@@ -6,7 +6,7 @@ import { isValidEventType } from 'shared';
 import { type WebSocket, WebSocketServer } from 'ws';
 import { env } from '#/env';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
-import { entityCache, publicEntityCache } from '#/middlewares/entity-cache';
+import { entityCache } from '#/middlewares/entity-cache';
 import { activityActionSchema, activitySchema } from '#/modules/activities/activities-schema';
 import { log } from '#/utils/logger';
 
@@ -345,7 +345,6 @@ class CdcWebSocketServer {
 
       // Clear all entity caches — counters were recalculated, data may be stale
       entityCache.clear();
-      publicEntityCache.clear();
 
       log.info('CDC catchup complete — entity caches cleared', {
         eventsProcessed,

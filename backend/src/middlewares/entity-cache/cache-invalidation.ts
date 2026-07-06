@@ -1,4 +1,4 @@
-import { isProductEntity, isPublicStreamEntity } from 'shared';
+import { isProductEntity } from 'shared';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import { log } from '#/utils/logger';
 import { entityCache } from './app-entity-cache';
@@ -15,11 +15,6 @@ function handleActivityEvent(event: ActivityEvent): void {
 
   // Only handle delete for product entities with valid entityType and entityId
   if (action !== 'delete' || !entityType || !subjectId || !isProductEntity(entityType)) {
-    return;
-  }
-
-  // Skip public entities - they use their own cache (publicEntityCache)
-  if (isPublicStreamEntity(entityType)) {
     return;
   }
 

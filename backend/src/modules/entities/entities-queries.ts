@@ -152,31 +152,6 @@ export const findDeleteActivities = async (
     .limit(DELETE_ENUMERATE_CAP + 1);
 };
 
-/**
- * Scan public entity deletes after a cursor.
- *
- * Capped at `DELETE_ENUMERATE_CAP + 1` for overflow detection (same contract as
- * {@link findDeleteActivities}).
- */
-export const findPublicDeleteActivities = async (
-  { var: { db } }: DbContext,
-  cursor: string,
-  publicTypes: SharedEntityType[],
-) => {
-  return db
-    .select({ id: activitiesTable.id, entityType: activitiesTable.entityType, subjectId: activitiesTable.subjectId })
-    .from(activitiesTable)
-    .where(
-      and(
-        inArray(activitiesTable.entityType, publicTypes as (typeof activitiesTable.entityType.enumValues)[number][]),
-        sql`${activitiesTable.action} = 'delete'`,
-        gt(activitiesTable.id, cursor),
-      ),
-    )
-    .orderBy(activitiesTable.id)
-    .limit(DELETE_ENUMERATE_CAP + 1);
-};
-
 /** Get the latest activity ID relevant to a user's organizations. */
 export const findLatestUserActivityId = async (
   { var: { db } }: DbContext,
@@ -192,18 +167,6 @@ export const findLatestUserActivityId = async (
         and(inArray(activitiesTable.entityType, entityTypes), inArray(activitiesTable.organizationId, organizationIds)),
       ),
     )
-    .orderBy(desc(activitiesTable.id))
-    .limit(1);
-
-  return result[0]?.id ?? null;
-};
-
-/** Get latest public entity activity ID (for cursor). */
-export const findLatestPublicActivityId = async ({ var: { db } }: DbContext, publicTypes: SharedEntityType[]) => {
-  const result = await db
-    .select({ id: activitiesTable.id })
-    .from(activitiesTable)
-    .where(inArray(activitiesTable.entityType, publicTypes))
     .orderBy(desc(activitiesTable.id))
     .limit(1);
 

@@ -15,7 +15,7 @@ const propagationHintSchema = z.object({
 
 /**
  * Stream notification schema for SSE streams.
- * Shared by both app and public streams — identical payload shape.
+ * Notification payload shape for the app stream.
  * Lightweight payload - client fetches entity data via API if needed.
  *
  * For product entities (page, attachment):
@@ -74,8 +74,8 @@ export const streamCatchupBodySchema = z.object({
     .record(z.string(), z.number().int())
     .optional()
     .openapi({
-      description: 'Client-side sequence numbers per scope: { "organizationId:s:page": 42 }',
-      example: { 'abc123:s:page': 10 },
+      description: 'Client-side sequence numbers per scope: { "organizationId:s:attachment": 42 }',
+      example: { 'abc123:s:attachment': 10 },
     }),
 });
 
@@ -125,16 +125,3 @@ export const appCatchupResponseSchema = z.object({
 });
 
 export type AppCatchupResponse = z.infer<typeof appCatchupResponseSchema>;
-
-/**
- * Catchup response schema for public stream.
- * Changes keyed by entityType (e.g., 'page').
- */
-export const publicCatchupResponseSchema = z.object({
-  changes: z.record(z.string(), catchupChangeSummarySchema).openapi({
-    description: 'Per-entityType change summary: { [entityType]: { entitySeqs? } }',
-  }),
-  cursor: z.string().nullable().openapi({ description: 'Last activity ID (use as offset for next request)' }),
-});
-
-export type PublicCatchupResponse = z.infer<typeof publicCatchupResponseSchema>;

@@ -3,20 +3,18 @@
  *
  * Fork contract: Every tenant-scoped table must have tenant_id. Tables with an organization
  * parent must also have organization_id with a composite FK to organizations(tenant_id, id).
- * Parentless products require tenant_id only.
  */
 
 /**
- * Public read mode — declares how an entity becomes publicly readable.
- * - 'always': Always publicly readable (e.g., pages). No runtime check needed.
+ * Public read mode — declares how an entity becomes publicly readable (via publicGuard REST reads).
  * - 'publicSelf': Public when own publicAt is set (e.g., project with a toggle).
  * - 'publicParent': Public when parent context's publicAt is set (e.g., tasks inherit from project).
  * - 'publicParentOrSelf': Public when either own or parent's publicAt is set.
  */
-export type PublicReadMode = 'always' | 'publicSelf' | 'publicParent' | 'publicParentOrSelf';
+export type PublicReadMode = 'publicSelf' | 'publicParent' | 'publicParentOrSelf';
 
 /** Modes allowed on context entities (they cannot inherit from a parent context). */
-export type ContextPublicReadMode = 'always' | 'publicSelf';
+export type ContextPublicReadMode = 'publicSelf';
 
 // Role Registry
 function buildRoleMap<T extends readonly string[]>(roleNames: T): { readonly [K in T[number]]: K } {
@@ -46,7 +44,7 @@ interface ContextEntry<R extends string = string> {
 }
 interface ProductEntry {
   kind: 'product';
-  parent: string | null;
+  parent: string;
   publicRead?: PublicReadMode;
   /** Non-ancestor context entities referenced as optional denormalized columns. */
   relatedContexts?: readonly string[];
@@ -63,7 +61,7 @@ export interface ContextEntityView<R extends string = string> {
 
 export interface ProductEntityView {
   readonly kind: 'product';
-  readonly parent: string | null;
+  readonly parent: string;
   readonly publicRead?: PublicReadMode;
   readonly relatedContexts?: readonly string[];
 }
@@ -79,7 +77,6 @@ class EntityHierarchyBuilder<
   TRoles extends { all: readonly string[] },
   TContexts extends string = never,
   TProducts extends string = never,
-  TParentlessProducts extends string = never,
   TParentMap extends Record<string, string | null> = Record<never, never>,
   TRelatedMap extends Record<string, string> = Record<never, never>,
 > {
@@ -99,9 +96,9 @@ class EntityHierarchyBuilder<
   }
 
   /** Add user entity (required, once). */
-  user(): EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentlessProducts, TParentMap, TRelatedMap> {
+  user(): EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentMap, TRelatedMap> {
     if (this.entities.has('user')) throw new Error('EntityHierarchy: user() can only be called once');
-    return new EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentlessProducts, TParentMap, TRelatedMap>(
+    return new EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentMap, TRelatedMap>(
       this.roles,
       this.withEntity('user', { kind: 'user' }),
     );
@@ -115,7 +112,6 @@ class EntityHierarchyBuilder<
     TRoles,
     TContexts | N,
     TProducts,
-    TParentlessProducts,
     TParentMap & { [K in N]: P },
     TRelatedMap & { [K in N]: RC[number] }
   > {
@@ -127,7 +123,6 @@ class EntityHierarchyBuilder<
       TRoles,
       TContexts | N,
       TProducts,
-      TParentlessProducts,
       TParentMap & { [K in N]: P },
       TRelatedMap & { [K in N]: RC[number] }
     >(
@@ -148,37 +143,30 @@ class EntityHierarchyBuilder<
    * Every product has exactly one **home context**: its `parent`. The home is where each row
    * physically lives — it becomes a non-null `<context>Id` column (see `contextRelationColumns`)
    * and is the most-specific link in the entity's ancestor chain used for permissions and
-   * public-read inheritance. A product can never have more than one home.
-   *
-   * `parent` is therefore required and critical for any non-public product: without a home there
-   * is no context to derive access from. The only products allowed to be parentless (`parent: null`,
-   * tenant-scoped only) are public ones — they MUST declare a `publicRead` mode. This is enforced
-   * at build time.
+   * public-read inheritance. A product can never have more than one home, and `parent` is
+   * required: without a home there is no context to derive access from.
    *
    * Optional `relatedContexts` declare non-ancestor context references (nullable id columns); they
    * are cross-links, not homes.
    */
-  product<N extends string, P extends TContexts | null, const RC extends readonly TContexts[] = []>(
+  product<N extends string, P extends TContexts, const RC extends readonly TContexts[] = []>(
     name: N,
     options: { parent: P; publicRead?: PublicReadMode; relatedContexts?: RC },
   ): EntityHierarchyBuilder<
     TRoles,
     TContexts,
     TProducts | N,
-    P extends null ? TParentlessProducts | N : TParentlessProducts,
     TParentMap & { [K in N]: P },
     TRelatedMap & { [K in N]: RC[number] }
   > {
     this.validateName(name);
     this.validateParent(name, options.parent, 'product');
-    this.validateProductHome(name, options.parent, options.publicRead);
     this.validatePublicRead(name, options.parent, options.publicRead);
     this.validateRelatedContexts(name, options.parent, options.relatedContexts);
     return new EntityHierarchyBuilder<
       TRoles,
       TContexts,
       TProducts | N,
-      P extends null ? TParentlessProducts | N : TParentlessProducts,
       TParentMap & { [K in N]: P },
       TRelatedMap & { [K in N]: RC[number] }
     >(
@@ -193,7 +181,7 @@ class EntityHierarchyBuilder<
   }
 
   /** Build and freeze the hierarchy. */
-  build(): EntityHierarchy<TRoles, TContexts, TProducts, TParentlessProducts, TParentMap, TRelatedMap> {
+  build(): EntityHierarchy<TRoles, TContexts, TProducts, TParentMap, TRelatedMap> {
     if (!this.entities.has('user')) throw new Error('EntityHierarchy: user() must be called before build()');
     if (!this.entities.has('organization')) throw new Error('EntityHierarchy: organization context is required');
     return new EntityHierarchy(this.roles, this.entities);
@@ -209,7 +197,16 @@ class EntityHierarchyBuilder<
   }
 
   private validateParent(name: string, parent: string | null, kind: 'context' | 'product'): void {
-    if (parent === null) return;
+    if (parent === null) {
+      // Products always need a home context (also enforced at the type level)
+      if (kind === 'product') {
+        throw new Error(
+          `EntityHierarchy: product "${name}" has no parent. ` +
+            'Every product needs a context parent (its home) to derive permissions from.',
+        );
+      }
+      return;
+    }
 
     const parentEntry = this.entities.get(parent);
     if (!parentEntry) {
@@ -222,22 +219,6 @@ class EntityHierarchyBuilder<
       throw new Error(
         `EntityHierarchy: ${kind} "${name}" parent "${parent}" must be a context entity, ` +
           `but it is a ${parentEntry.kind} entity.`,
-      );
-    }
-  }
-
-  /**
-   * Enforce the single-home invariant: a non-public product must have a parent (home context).
-   * A product with no parent has no context to derive permissions from, so it is only valid when
-   * it is explicitly public (declares a `publicRead` mode). This keeps "parent is required" true
-   * for every product that relies on membership-based access.
-   */
-  private validateProductHome(name: string, parent: string | null, publicRead?: PublicReadMode): void {
-    if (parent === null && !publicRead) {
-      throw new Error(
-        `EntityHierarchy: product "${name}" has no parent and is not public. ` +
-          'A non-public product needs a parent (its home context) to derive permissions from. ' +
-          "Give it a context parent, or mark it public with a publicRead mode (e.g. 'always').",
       );
     }
   }
@@ -306,16 +287,10 @@ class EntityHierarchyBuilder<
     }
   }
 
-  private validatePublicRead(name: string, parent: string | null, publicRead?: PublicReadMode): void {
+  private validatePublicRead(name: string, parent: string, publicRead?: PublicReadMode): void {
     if (!publicRead) return;
 
     if (publicRead === 'publicParent' || publicRead === 'publicParentOrSelf') {
-      if (!parent) {
-        throw new Error(
-          `EntityHierarchy: product "${name}" has publicRead '${publicRead}' but no parent. ` +
-            "Parentless products can only use 'always' or 'publicSelf'.",
-        );
-      }
       const parentEntry = this.entities.get(parent);
       if (!parentEntry || parentEntry.kind !== 'context' || parentEntry.publicRead !== 'publicSelf') {
         throw new Error(
@@ -334,7 +309,6 @@ export class EntityHierarchy<
   TRoles extends { all: readonly string[] },
   TContexts extends string = string,
   TProducts extends string = string,
-  TParentlessProducts extends string = string,
   TParentMap extends Record<string, string | null> = Record<string, string | null>,
   TRelatedMap extends Record<string, string> = Record<string, string>,
 > {
@@ -353,8 +327,6 @@ export class EntityHierarchy<
   readonly productTypes: readonly TProducts[];
   readonly allTypes: readonly ('user' | TContexts | TProducts)[];
   readonly relatableContextTypes: readonly TContexts[];
-  readonly parentlessProductTypes: readonly TParentlessProducts[];
-  readonly publicStreamTypes: readonly TParentlessProducts[];
 
   constructor(roles: TRoles, entities: Map<string, EntityEntry>) {
     this.roleRegistry = roles;
@@ -364,9 +336,7 @@ export class EntityHierarchy<
     const contexts: TContexts[] = [];
     const products: TProducts[] = [];
     const all: ('user' | TContexts | TProducts)[] = [];
-    const parentlessProducts: TParentlessProducts[] = [];
     const relatableContexts = new Set<TContexts>();
-    const publicStreamTypes: TParentlessProducts[] = [];
 
     for (const [name, entry] of entities) {
       all.push(name as 'user' | TContexts | TProducts);
@@ -375,23 +345,14 @@ export class EntityHierarchy<
         contexts.push(name as TContexts);
       } else if (entry.kind === 'product') {
         products.push(name as TProducts);
-        if (entry.parent === null) {
-          parentlessProducts.push(name as TParentlessProducts);
-          if (entry.publicRead) {
-            publicStreamTypes.push(name as TParentlessProducts);
-          }
-        } else {
-          relatableContexts.add(entry.parent as TContexts);
-        }
+        relatableContexts.add(entry.parent as TContexts);
       }
     }
 
     this.contextTypes = Object.freeze(contexts);
     this.productTypes = Object.freeze(products);
     this.allTypes = Object.freeze(all);
-    this.parentlessProductTypes = Object.freeze(parentlessProducts);
     this.relatableContextTypes = Object.freeze([...relatableContexts]);
-    this.publicStreamTypes = Object.freeze(publicStreamTypes);
     Object.freeze(this);
   }
 
@@ -528,7 +489,7 @@ export class EntityHierarchy<
 /** Create a new entity hierarchy builder with a role registry. */
 export function createEntityHierarchy<R extends { all: readonly string[] }>(
   roles: R,
-): EntityHierarchyBuilder<R, never, never, never> {
+): EntityHierarchyBuilder<R, never, never> {
   return new EntityHierarchyBuilder(roles);
 }
 

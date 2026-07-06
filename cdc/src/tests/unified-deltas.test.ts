@@ -208,7 +208,7 @@ describe('computeUnifiedDeltas', () => {
     expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:pending': -1, 's:membership': 1 });
   });
 
-  it('attachment with no organizationId: seq still computed, no count deltas', () => {
+  it('attachment with no organizationId: no context resolvable, seq deltas skipped', () => {
     const plan = computeUnifiedDeltas(
       mockResult({
         tableMeta: attachmentEntry(),
@@ -218,10 +218,9 @@ describe('computeUnifiedDeltas', () => {
       }),
     );
 
-    // Falls back to 'public:attachment' since parent column is missing and org is null
-    expect(plan.seqContextKey).toBe('public:attachment');
-    expect(plan.deltasByContextKey.get('public:attachment')).toEqual({ 's:attachment': 1 });
-    expect(plan.deltasByContextKey.size).toBe(1);
+    // No parent column and no org — malformed row, no seq scope to stamp
+    expect(plan.seqContextKey).toBeNull();
+    expect(plan.deltasByContextKey.size).toBe(0);
   });
 });
 

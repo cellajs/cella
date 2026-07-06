@@ -52,19 +52,17 @@ export interface SeqGroup {
 /**
  * Resolve the context key for a product entity from its row data.
  * Uses hierarchy to find the parent context (e.g., project) or falls back to org.
- * Parentless entities (e.g. page) resolve to 'public:{type}'.
+ * Returns null when neither is present (malformed row) — callers skip seq deltas.
  */
-export function resolveContextKey(entityType: string, rowData: CdcRowData, activity: ActivityWithoutId): string {
+export function resolveContextKey(entityType: string, rowData: CdcRowData, activity: ActivityWithoutId): string | null {
   const parentType = hierarchy.getParent(entityType);
-  if (!parentType) return `public:${entityType}`;
+  if (parentType) {
+    const parentIdKey = appConfig.entityIdColumnKeys[parentType];
+    const parentId = rowData[parentIdKey];
+    if (typeof parentId === 'string') return parentId;
+  }
 
-  const parentIdKey = appConfig.entityIdColumnKeys[parentType];
-  const parentId = rowData[parentIdKey];
-  if (typeof parentId === 'string') return parentId;
-
-  if (activity.organizationId) return activity.organizationId;
-
-  return `public:${entityType}`;
+  return activity.organizationId ?? null;
 }
 
 /** Merge deltas into an existing map entry, summing values for matching keys. */
@@ -98,10 +96,11 @@ export function computeUnifiedDeltas(result: ParseMessageResult): UnifiedDeltaPl
   let seqKey: string | null = null;
   let entityStamp: UnifiedDeltaPlan['entityStamp'] = null;
 
-  // Seq deltas (product entity create/update only)
-  if (isStampable(tableMeta, action)) {
+  // Seq deltas (product entity create/update only; skipped when no context is resolvable)
+  const stampCtxKey = isStampable(tableMeta, action) ? resolveContextKey(tableMeta.type, rowData, activity) : null;
+  if (isStampable(tableMeta, action) && stampCtxKey) {
     const entityType = tableMeta.type;
-    const ctxKey = resolveContextKey(entityType, rowData, activity);
+    const ctxKey = stampCtxKey;
     seqKey = `s:${entityType}`;
     seqContextKey = ctxKey;
     entityStamp = { tableName: getTableName(tableMeta.table), entityId: rowData.id };
@@ -139,10 +138,11 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[]): BatchUnifiedD
     const { tableMeta, activity, rowData } = event.result;
     const { action } = activity;
 
-    // Seq grouping (product entity create/update only)
-    if (isStampable(tableMeta, action)) {
+    // Seq grouping (product entity create/update only; skipped when no context is resolvable)
+    const groupCtxKey = isStampable(tableMeta, action) ? resolveContextKey(tableMeta.type, rowData, activity) : null;
+    if (isStampable(tableMeta, action) && groupCtxKey) {
       const entityType = tableMeta.type;
-      const ctxKey = resolveContextKey(entityType, rowData, activity);
+      const ctxKey = groupCtxKey;
       const groupKey = `${ctxKey}\0${entityType}`;
 
       const existing = seqGroupMap.get(groupKey);

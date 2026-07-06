@@ -75,23 +75,14 @@ describe('EntityHierarchyBuilder', () => {
       }).toThrow('must have at least one role');
     });
 
-    it('throws if a parentless product is not public', () => {
+    it('throws if a product has no parent', () => {
       expect(() => {
         createEntityHierarchy(roles)
           .user()
           .context('organization', { parent: null, roles: roles.all })
+          // @ts-expect-error - Testing runtime validation (parent is required at the type level)
           .product('page', { parent: null });
-      }).toThrow('has no parent and is not public');
-    });
-
-    it('allows a parentless product when it declares a publicRead mode', () => {
-      expect(() => {
-        createEntityHierarchy(roles)
-          .user()
-          .context('organization', { parent: null, roles: roles.all })
-          .product('page', { parent: null, publicRead: 'always' })
-          .build();
-      }).not.toThrow();
+      }).toThrow('has no parent');
     });
   });
 
@@ -101,7 +92,6 @@ describe('EntityHierarchyBuilder', () => {
     // - workspace: context under organization (parallel to project)
     // - project: context under organization
     // - task, label, attachment: products scoped to project (inherit org permissions)
-    // - page: global product (no parent)
     const hierarchy = createEntityHierarchy(roles)
       .user()
       .context('organization', { parent: null, roles: [roles.admin, roles.member] })
@@ -110,7 +100,6 @@ describe('EntityHierarchyBuilder', () => {
       .product('task', { parent: 'project' })
       .product('label', { parent: 'project' })
       .product('attachment', { parent: 'project' }) // Scoped to project, inherits org
-      .product('page', { parent: null, publicRead: 'always' }) // Global, parentless → must be public
       .build();
 
     it('getKind returns correct kind', () => {
@@ -146,7 +135,6 @@ describe('EntityHierarchyBuilder', () => {
       expect(hierarchy.getParent('task')).toBe('project');
       expect(hierarchy.getParent('label')).toBe('project');
       expect(hierarchy.getParent('attachment')).toBe('project');
-      expect(hierarchy.getParent('page')).toBe(null);
       expect(hierarchy.getParent('user')).toBe(null);
     });
 
@@ -157,8 +145,6 @@ describe('EntityHierarchyBuilder', () => {
       expect(hierarchy.getOrderedAncestors('label')).toEqual(['project', 'organization']);
       // attachment → project → organization (key: gets BOTH ancestors via parent chain)
       expect(hierarchy.getOrderedAncestors('attachment')).toEqual(['project', 'organization']);
-      // page → [] (global, no ancestors)
-      expect(hierarchy.getOrderedAncestors('page')).toEqual([]);
       // workspace → organization
       expect(hierarchy.getOrderedAncestors('workspace')).toEqual(['organization']);
       // project → organization
@@ -174,8 +160,6 @@ describe('EntityHierarchyBuilder', () => {
       // Attachment now has both project and organization as ancestors
       expect(hierarchy.hasAncestor('attachment', 'project')).toBe(true);
       expect(hierarchy.hasAncestor('attachment', 'organization')).toBe(true);
-      // Page is global - no ancestors
-      expect(hierarchy.hasAncestor('page', 'organization')).toBe(false);
     });
 
     it('contextTypes and productTypes are correct', () => {
@@ -185,7 +169,6 @@ describe('EntityHierarchyBuilder', () => {
       expect(hierarchy.productTypes).toContain('task');
       expect(hierarchy.productTypes).toContain('label');
       expect(hierarchy.productTypes).toContain('attachment');
-      expect(hierarchy.productTypes).toContain('page');
     });
 
     it('relatableContextTypes contains only context parents of products', () => {
@@ -194,7 +177,6 @@ describe('EntityHierarchyBuilder', () => {
       // organization and workspace are NOT direct parents of any product
       expect(hierarchy.relatableContextTypes).not.toContain('organization');
       expect(hierarchy.relatableContextTypes).not.toContain('workspace');
-      // page has null parent, so no context added
       expect(hierarchy.relatableContextTypes).toHaveLength(1);
     });
 
@@ -217,7 +199,6 @@ describe('EntityHierarchyBuilder', () => {
       })
       .product('task', { parent: 'project', publicRead: 'publicParent' })
       .product('attachment', { parent: 'project' }) // No public read
-      .product('page', { parent: null, publicRead: 'always' }) // Standalone always-public
       .build();
 
     it('getPublicReadMode returns undefined for entities without publicRead', () => {
@@ -229,18 +210,9 @@ describe('EntityHierarchyBuilder', () => {
     it('getPublicReadMode returns configured mode', () => {
       expect(publicHierarchy.getPublicReadMode('project')).toBe('publicSelf');
       expect(publicHierarchy.getPublicReadMode('task')).toBe('publicParent');
-      expect(publicHierarchy.getPublicReadMode('page')).toBe('always');
       expect(publicHierarchy.getPublicReadMode('attachment')).toBeUndefined();
       expect(publicHierarchy.getPublicReadMode('organization')).toBeUndefined();
       expect(publicHierarchy.getPublicReadMode('user')).toBeUndefined();
-    });
-
-    it('publicStreamTypes contains parentless products with publicRead', () => {
-      expect(publicHierarchy.publicStreamTypes).toContain('page');
-      expect(publicHierarchy.publicStreamTypes).not.toContain('project');
-      expect(publicHierarchy.publicStreamTypes).not.toContain('task');
-      expect(publicHierarchy.publicStreamTypes).not.toContain('attachment');
-      expect(publicHierarchy.publicStreamTypes).toHaveLength(1);
     });
 
     it('getContextConfig includes publicRead', () => {
@@ -272,24 +244,6 @@ describe('EntityHierarchyBuilder', () => {
   });
 
   describe('public read validation', () => {
-    it('throws if publicParent on parentless product', () => {
-      expect(() => {
-        createEntityHierarchy(roles)
-          .user()
-          .context('organization', { parent: null, roles: roles.all })
-          .product('page', { parent: null, publicRead: 'publicParent' });
-      }).toThrow("has publicRead 'publicParent' but no parent");
-    });
-
-    it('throws if publicParentOrSelf on parentless product', () => {
-      expect(() => {
-        createEntityHierarchy(roles)
-          .user()
-          .context('organization', { parent: null, roles: roles.all })
-          .product('page', { parent: null, publicRead: 'publicParentOrSelf' });
-      }).toThrow("has publicRead 'publicParentOrSelf' but no parent");
-    });
-
     it("throws if publicParent but parent lacks publicRead 'publicSelf'", () => {
       expect(() => {
         createEntityHierarchy(roles)
@@ -308,16 +262,6 @@ describe('EntityHierarchyBuilder', () => {
       }).toThrow("doesn't have publicRead 'publicSelf'");
     });
 
-    it('allows always on parentless product', () => {
-      expect(() => {
-        createEntityHierarchy(roles)
-          .user()
-          .context('organization', { parent: null, roles: roles.all })
-          .product('page', { parent: null, publicRead: 'always' })
-          .build();
-      }).not.toThrow();
-    });
-
     it('allows publicSelf on context entity', () => {
       expect(() => {
         createEntityHierarchy(roles)
@@ -328,13 +272,5 @@ describe('EntityHierarchyBuilder', () => {
       }).not.toThrow();
     });
 
-    it('allows always on context entity', () => {
-      expect(() => {
-        createEntityHierarchy(roles)
-          .user()
-          .context('organization', { parent: null, roles: roles.all, publicRead: 'always' })
-          .build();
-      }).not.toThrow();
-    });
   });
 });

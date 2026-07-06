@@ -18,12 +18,6 @@ export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];
 /** Product entities aka (user-generated) content (no memberships assigned) */
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
-/** Parentless product entities (no organization_id) - tenant-scoped only */
-export type ParentlessProductEntityType = (typeof hierarchy.parentlessProductTypes)[number];
-
-/** Public stream entity types (parentless products with publicRead) */
-export type PublicProductEntityType = (typeof hierarchy.publicStreamTypes)[number];
-
 /** Relatable context entities - context entities that appear as parents of product entities. Used for activities table columns and CDC context extraction. */
 export type RelatableContextEntityType = (typeof hierarchy.relatableContextTypes)[number];
 

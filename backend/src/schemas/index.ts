@@ -64,8 +64,6 @@ export {
   appCatchupResponseSchema,
   type CatchupChangeSummary,
   catchupChangeSummarySchema,
-  type PublicCatchupResponse,
-  publicCatchupResponseSchema,
   type StreamNotification,
   streamCatchupBodySchema,
   streamNotificationSchema,

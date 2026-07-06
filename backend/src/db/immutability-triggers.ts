@@ -11,13 +11,12 @@
  */
 
 import { getTableName } from 'drizzle-orm';
-import { appConfig, hierarchy, toColumnName } from 'shared';
+import { appConfig, toColumnName } from 'shared';
 import { entityTables } from '#/tables';
 
 // ─── Immutable column sets ──────────────────────────────────────────────────
 
 const BASE_ENTITY_COLUMNS = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'] as const;
-const PARENTLESS_ENTITY_COLUMNS = ['id', 'entity_type', 'created_at', 'created_by'] as const;
 const MEMBERSHIP_CONTEXT_ID_COLUMNS = appConfig.contextEntityTypes.map((type) =>
   toColumnName(appConfig.entityIdColumnKeys[type]),
 );
@@ -72,12 +71,6 @@ CREATE TRIGGER ${triggerName}
 /** Shared by context entities (has tenant_id) */
 export const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', BASE_ENTITY_COLUMNS);
 
-/** Parentless product entities (no tenant_id) */
-export const parentlessEntityImmutabilityFunctionSQL = buildFunctionSQL(
-  'parentless_entity_immutable_keys',
-  PARENTLESS_ENTITY_COLUMNS,
-);
-
 /** Product entities with parent — adds organization_id */
 export const productEntityImmutabilityFunctionSQL = buildFunctionSQL(
   'product_entity_immutable_keys',
@@ -104,24 +97,15 @@ $$ LANGUAGE plpgsql;`;
 
 // ─── Table → function mapping (derived from appConfig) ──────────────────────
 
-const parentlessTypes = new Set<string>(hierarchy.parentlessProductTypes);
-
 const contextEntityConfigs: TableImmutabilityConfig[] = appConfig.contextEntityTypes.map((t) => ({
   tableName: getTableName(entityTables[t]),
   functionName: 'base_entity_immutable_keys',
 }));
 
-const parentlessProductConfigs: TableImmutabilityConfig[] = hierarchy.parentlessProductTypes.map((t) => ({
+const productWithParentConfigs: TableImmutabilityConfig[] = appConfig.productEntityTypes.map((t) => ({
   tableName: getTableName(entityTables[t]),
-  functionName: 'parentless_entity_immutable_keys',
+  functionName: 'product_entity_immutable_keys',
 }));
-
-const productWithParentConfigs: TableImmutabilityConfig[] = appConfig.productEntityTypes
-  .filter((t) => !parentlessTypes.has(t))
-  .map((t) => ({
-    tableName: getTableName(entityTables[t]),
-    functionName: 'product_entity_immutable_keys',
-  }));
 
 const membershipConfigs: TableImmutabilityConfig[] = [
   { tableName: 'memberships', functionName: 'membership_immutable_keys' },
@@ -135,7 +119,6 @@ const appendOnlyConfigs: TableImmutabilityConfig[] = [
 /** Every table that has an immutability trigger */
 export const allImmutabilityTables: TableImmutabilityConfig[] = [
   ...contextEntityConfigs,
-  ...parentlessProductConfigs,
   ...productWithParentConfigs,
   ...membershipConfigs,
   ...appendOnlyConfigs,
@@ -151,12 +134,9 @@ const names = (configs: TableImmutabilityConfig[]) => configs.map((c) => c.table
  * Run after migrations to ensure protection is in place.
  */
 export const immutabilityTriggersSQL = `
--- Functions (6)
+-- Functions (5)
 -- Base entities: ${names(baseEntityTables)}
 ${baseEntityImmutabilityFunctionSQL}
-
--- Parentless product entities: ${names(parentlessProductConfigs) || 'none'}
-${parentlessEntityImmutabilityFunctionSQL}
 
 -- Product entities with parent: ${names(productWithParentConfigs) || 'none'}
 ${productEntityImmutabilityFunctionSQL}

@@ -47,9 +47,7 @@ export type {
   EntityType,
   Language,
   MenuSection,
-  ParentlessProductEntityType,
   ProductEntityType,
-  PublicProductEntityType,
   SeenTrackedEntityType,
   RelatableContextEntityType,
   RelatedContextType,
@@ -68,10 +66,8 @@ export { activityActions, activityEventTypes, activityVerbs, actionToVerb, isVal
 
 export {
   getContextRoles,
-  hasParentEntity,
   isContextEntity,
   isProductEntity,
-  isPublicStreamEntity,
 } from './src/entity-guards';
 
 export { hasKey, recordFromKeys, identityRecord, typedEntries, typedKeys } from './src/config-builder/utils';
