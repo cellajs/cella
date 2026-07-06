@@ -56,11 +56,16 @@ export const magicLinkLimiter = rateLimiter('limit', 'magicLink', ['email'], {
   description: 'Max 2 magic link emails per 30 min per email address',
 });
 
-// TODO [#05] perhaps its more logical to make this a failseries somehow even if user didnt use challenge generation?
 /**
  * Passkey challenge rate limiter to prevent challenge generation abuse.
  * Higher limit because conditional mediation (passkey autofill) generates
  * a challenge on every sign-in form mount.
+ *
+ * Deliberately a flat 'limit', not a 'failseries': challenge generation always
+ * succeeds so there is no failure signal here. Brute force is bounded by the
+ * failseries `tokenLimiter('passkey')` on the verification route; this limiter
+ * only bounds the email -> credentialIds lookup (enumeration surface) and
+ * request volume.
  */
 export const passkeyChallengeLimiter = rateLimiter('limit', 'passkeyChallenge', ['ip'], {
   limits: { points: 30, duration: 60 * 60, blockDuration: 60 * 5 },
