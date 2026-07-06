@@ -12,14 +12,18 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const resourcesDir = resolve(__dirname, '../../resources')
+const infraDir = resolve(__dirname, '../..')
+const resourcesDir = resolve(infraDir, 'resources')
 const read = (resource: string) => readFileSync(resolve(resourcesDir, resource), 'utf-8')
+const readInfra = (path: string) => readFileSync(resolve(infraDir, path), 'utf-8')
 
 const lb = read('loadbalancer.ts')
 const dns = read('dns.ts')
 const db = read('database.ts')
 const reg = read('registry.ts')
 const secrets = read('secrets.ts')
+const configuredSecret = read('configured-secret.ts')
+const vmReaderSecret = readInfra('lib/scaleway/vm-reader-secret.ts')
 
 describe('loadbalancer resource', () => {
   it('HTTPS frontend on port 443 is defined', () => {
@@ -77,8 +81,10 @@ describe('database resource', () => {
   })
 
   it('generated passwords have at least 32 chars and special-char floor', () => {
-    expect(db).toMatch(/length:\s*32/)
-    expect(db).toMatch(/minSpecial:\s*[2-9]/)
+    expect(db).toContain('configuredOrRandomSecret(`${name}Password`, `${name}-password`)')
+    expect(configuredSecret).toMatch(/new random\.RandomPassword\(/)
+    expect(configuredSecret).toMatch(/length:\s*32/)
+    expect(configuredSecret).toMatch(/minSpecial:\s*[2-9]/)
   })
 
   it('production instance is protected from accidental deletion', () => {
@@ -108,16 +114,19 @@ describe('secrets module', () => {
   })
 
   it('seeds stable pulumi-owned runtime secrets from stack config only as a migration fallback', () => {
-    expect(secrets).toMatch(/new random\.RandomPassword\(/)
-    expect(secrets).toContain('const configured = infraConfig.getSecret(configKey)')
+    expect(secrets).toContain("import { configuredOrRandomSecret } from './configured-secret'")
+    expect(configuredSecret).toMatch(/new random\.RandomPassword\(/)
+    expect(configuredSecret).toContain('const configured = infraConfig.getSecret(configKey)')
     // Random-generated values come generically from the registry definition,
     // not a hand-maintained per-key list.
+    expect(secrets).toContain('return configuredOrRandomSecret(configKey, `generated-${name}`)')
     expect(secrets).toContain("pulumiOwnedRuntimeSecret(definition.id, definition.secretName)")
     expect(secrets).toMatch(/generation === 'random'/)
   })
 
   it('namespaces every secret under the slug/mode path', () => {
-    expect(secrets).toMatch(/const secretPath = `\/\$\{naming\.slug\}-\$\{mode\}\/`/)
+    expect(secrets).toContain('const secretPath = secretManagerPath(naming.slug, mode)')
+    expect(vmReaderSecret).toMatch(/return `\/\$\{slug\}-\$\{mode\}\/`/)
     // The Secret resource must set path: secretPath so secrets never land at root.
     expect(secrets).toMatch(/path:\s*secretPath/)
   })
@@ -138,4 +147,3 @@ describe('secrets module', () => {
     }
   })
 })
-
