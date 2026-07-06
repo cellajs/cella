@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { circuitBreaker } from '../services/circuit-breaker';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 
 // Access private state for reset between tests
 function resetCircuitBreaker() {
@@ -54,7 +54,7 @@ describe('CircuitBreaker', () => {
 
       circuitBreaker.recordFailure('tasks');
       expect(circuitBreaker.shouldProcess('tasks')).toBe(false);
-      expect(logEvent).toHaveBeenCalledWith('warn', expect.stringContaining('Circuit OPEN'), expect.any(Object));
+      expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('Circuit OPEN'), expect.any(Object));
     });
 
     it('tracks failures independently per table', () => {
@@ -82,7 +82,8 @@ describe('CircuitBreaker', () => {
 
     it('is a no-op for tables with no failures', () => {
       circuitBreaker.recordSuccess('tasks');
-      expect(logEvent).not.toHaveBeenCalled();
+      expect(log.warn).not.toHaveBeenCalled();
+      expect(log.info).not.toHaveBeenCalled();
     });
   });
 
@@ -113,7 +114,7 @@ describe('CircuitBreaker', () => {
 
       circuitBreaker.recordSuccess('tasks');
       expect(circuitBreaker.shouldProcess('tasks')).toBe(true);
-      expect(logEvent).toHaveBeenCalledWith('info', expect.stringContaining('Circuit CLOSED'), expect.any(Object));
+      expect(log.info).toHaveBeenCalledWith(expect.stringContaining('Circuit CLOSED'), expect.any(Object));
     });
 
     it('re-opens circuit on failure in half_open', () => {
@@ -128,7 +129,7 @@ describe('CircuitBreaker', () => {
 
       circuitBreaker.recordFailure('tasks');
       expect(circuitBreaker.shouldProcess('tasks')).toBe(false);
-      expect(logEvent).toHaveBeenCalledWith('warn', expect.stringContaining('re-OPENED'), expect.any(Object));
+      expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('re-OPENED'), expect.any(Object));
     });
   });
 

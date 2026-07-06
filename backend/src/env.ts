@@ -84,6 +84,7 @@ export const env = createEnv({
     YJS_SECRET: z.string().min(16, 'YJS_SECRET must be at least 16 characters'),
     CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters'),
     PII_HASH_SECRET: z.string().min(16, 'PII_HASH_SECRET must be at least 16 characters'),
+    DATA_ENCRYPTION_KEY: z.string().min(32, 'DATA_ENCRYPTION_KEY must be at least 32 characters'),
 
     GEOIP_COUNTRY_DB_PATH: z.string().default('./geoip/dbip-country-lite.mmdb'),
     GEOIP_ASN_DB_PATH: z.string().default('./geoip/dbip-asn-lite.mmdb'),

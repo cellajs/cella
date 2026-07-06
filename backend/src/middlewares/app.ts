@@ -9,8 +9,14 @@ import type { Env } from '#/core/context';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { clientVersionMiddleware } from '#/middlewares/client-version';
 import { loggerMiddleware } from '#/middlewares/logger';
+import { runWithLogContext } from '#/utils/logger';
 
 const app = new OpenAPIHono<Env>();
+
+// Ambient log context: stores the live ctx in AsyncLocalStorage so the log
+// facade binds request ids without call sites passing ctx. First in the chain
+// so every downstream log (including error handling) carries context.
+app.use('*', (ctx, next) => runWithLogContext(ctx, () => next()));
 
 // Secure headers
 app.use(

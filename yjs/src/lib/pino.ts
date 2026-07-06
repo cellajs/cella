@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { createLogHelpers, createLogger } from 'shared/pino';
+import { createLog, createLogger } from 'shared/pino';
 import { env } from '../env';
 
 const isProduction = env.NODE_ENV === 'production';
@@ -12,4 +12,4 @@ const logger = createLogger({
   serviceName: `${appConfig.slug}-yjs`,
 });
 
-export const { logEvent, logError } = createLogHelpers(logger, isProduction);
+export const log = createLog(logger);

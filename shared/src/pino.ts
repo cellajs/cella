@@ -1,3 +1,4 @@
+import { trace } from '@opentelemetry/api';
 import pino from 'pino';
 import { appConfig } from './config-builder/app-config';
 import type { Severity } from '../types';
@@ -84,6 +85,16 @@ export const createLogger = ({
   return pino(
     {
       level: level ?? (isTest ? 'silent' : 'info'),
+      // Pino convention: an Error under the `err` key is expanded to { type, message, stack },
+      // with nested `cause` chains preserved (Drizzle wraps pg errors as cause).
+      // pino-pretty renders `err` with its stack in dev; the OTel transport ships it structured.
+      serializers: { err: pino.stdSerializers.errWithCause },
+      // Correlate every log line with the active OTel span so Maple can join
+      // logs to traces (including traces originated by the frontend's traceparent).
+      mixin() {
+        const spanContext = trace.getActiveSpan()?.spanContext();
+        return spanContext?.traceId ? { trace_id: spanContext.traceId, span_id: spanContext.spanId } : {};
+      },
       formatters: {
         // Keep `level` numeric (10–60) when exporting to OTel so pino-opentelemetry-transport can
         // map it to an OTel severity; otherwise stringify it for nicer human-facing JSON.
@@ -96,12 +107,75 @@ export const createLogger = ({
   );
 };
 
-export const createLogHelpers = (logger: pino.Logger, isProduction: boolean) => ({
-  logEvent: (severity: Severity, msg: string, meta?: object): void => {
-    logger[severity]({ ...(meta ?? {}), msg });
-  },
-  logError: (msg: string, error: unknown): void => {
-    if (!isProduction && error instanceof Error) logger.error(error, msg);
-    else logger.error({ error: error instanceof Error ? error.message : String(error), msg });
-  },
-});
+// Suppress repeats of the same warn/error/fatal line within this window (spam from retry
+// loops, reconnects). The first repeat after the window carries `repeated: N` so suppression
+// is never silent — same shape as zap sampling and Kubernetes event counts.
+const DEDUP_WINDOW_MS = 30_000;
+const DEDUP_MAX_KEYS = 500;
+
+/** Wrap non-Error throwables so the `err` serializer always yields { type, message, stack }. */
+const toError = (err: unknown): Error => {
+  if (err instanceof Error) return err;
+  try {
+    return new Error(typeof err === 'string' ? err : JSON.stringify(err));
+  } catch {
+    return new Error(String(err));
+  }
+};
+
+export type LogMeta = { err?: unknown } & Record<string, unknown>;
+
+export type LogFn = (msg: string, meta?: LogMeta) => void;
+export type Log = Record<Severity, LogFn>;
+
+/**
+ * Level-method log facade over a pino logger: `log.warn('msg', { err, ...meta })`.
+ * An `err` in meta may be any throwable; it is normalized to an Error and expanded
+ * by the `err` serializer to { type, message, stack } at any severity.
+ */
+export const createLog = (logger: pino.Logger): Log => {
+  const recent = new Map<string, { lastEmitAt: number; suppressed: number }>();
+
+  // Dedup applies to warn and above only — info/debug/trace repetition is intentional
+  // (heartbeats, progress) and filtered by level instead.
+  const shouldEmit = (severity: Severity, msg: string): { emit: boolean; repeated?: number } => {
+    if (severity !== 'warn' && severity !== 'error' && severity !== 'fatal') return { emit: true };
+    const key = `${severity}:${msg}`;
+    const now = Date.now();
+    const entry = recent.get(key);
+    if (entry && now - entry.lastEmitAt < DEDUP_WINDOW_MS) {
+      entry.suppressed += 1;
+      return { emit: false };
+    }
+    if (recent.size >= DEDUP_MAX_KEYS) {
+      for (const [staleKey, stale] of recent) {
+        if (now - stale.lastEmitAt >= DEDUP_WINDOW_MS) recent.delete(staleKey);
+      }
+    }
+    recent.set(key, { lastEmitAt: now, suppressed: 0 });
+    return { emit: true, repeated: entry?.suppressed || undefined };
+  };
+
+  const emitAt =
+    (severity: Severity): LogFn =>
+    (msg, meta) => {
+      const { emit, repeated } = shouldEmit(severity, msg);
+      if (!emit) return;
+      const { err, ...rest } = meta ?? {};
+      logger[severity]({
+        ...rest,
+        ...(err !== undefined && { err: toError(err) }),
+        ...(repeated && { repeated }),
+        msg,
+      });
+    };
+
+  return {
+    trace: emitAt('trace'),
+    debug: emitAt('debug'),
+    info: emitAt('info'),
+    warn: emitAt('warn'),
+    error: emitAt('error'),
+    fatal: emitAt('fatal'),
+  };
+};

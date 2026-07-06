@@ -60,7 +60,7 @@ app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
   // Save public key in database
   const newPasskey = await insertPasskey(ctx, { values: passkeyValue });
 
-  sendAccountSecurityEmail(ctx, user, 'passkey-added');
+  sendAccountSecurityEmail(user, 'passkey-added');
 
   return ctx.json(newPasskey, 201);
 });
@@ -83,7 +83,7 @@ app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
     }
   });
 
-  sendAccountSecurityEmail(ctx, user, 'passkey-removed');
+  sendAccountSecurityEmail(user, 'passkey-removed');
 
   return ctx.body(null, 204);
 });

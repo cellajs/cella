@@ -1,7 +1,7 @@
 import type { WebSocket } from 'ws';
 import type { DocContext } from '../constants';
 import { YJS_CLEANUP_DELAY_MS } from '../constants';
-import { logError } from '../lib/pino';
+import { log } from '../lib/pino';
 import { deleteState, saveState } from '../data/storage';
 
 interface CollabSession {
@@ -98,7 +98,7 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
         try {
           await saveState(collab.ctx, collab.pendingState);
         } catch (err) {
-          logError(`Failed to flush pending state for ${key}`, err);
+          log.error(`Failed to flush pending state for ${key}`, { err: err });
         }
         collab.pendingState = undefined;
       }
@@ -106,7 +106,7 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
       try {
         await deleteState(collab.ctx);
       } catch (err) {
-        logError(`Failed to delete state for ${key}`, err);
+        log.error(`Failed to delete state for ${key}`, { err: err });
       }
 
       collabSessions.delete(key);

@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { cdcDb } from "../lib/db";
 import { CDC_SLOT_NAME, RESOURCE_LIMITS } from "../constants";
 import { wsClient } from "../network/websocket-client";
-import { logEvent } from "../lib/pino";
+import { log } from "../lib/pino";
 
 const BUCKET_MS = 10_000; // 10s per bucket
 const BUCKET_COUNT = 6; // 6 buckets = 60s rolling window
@@ -169,7 +169,7 @@ class CdcMetrics {
     // Warn threshold crossed
     if (currentBytes >= warnBytes && !this.hasWarned) {
       this.hasWarned = true;
-      logEvent("warn", "WAL lag approaching backpressure limit", {
+      log.warn("WAL lag approaching backpressure limit", {
         lagBytes: currentBytes,
         warnThreshold: warnBytes,
         unhealthyThreshold: unhealthyBytes,
@@ -180,7 +180,7 @@ class CdcMetrics {
     // Unhealthy threshold crossed
     if (currentBytes >= unhealthyBytes && !this.hasGoneUnhealthy) {
       this.hasGoneUnhealthy = true;
-      logEvent("error", "WAL lag exceeded backpressure limit — CDC unhealthy", {
+      log.error("WAL lag exceeded backpressure limit — CDC unhealthy", {
         lagBytes: currentBytes,
         unhealthyThreshold: unhealthyBytes,
       });
@@ -198,7 +198,7 @@ class CdcMetrics {
       slotStatus: this.walSlotStatus,
     };
     if (!wsClient.send(payload)) {
-      logEvent("warn", "Failed to send WAL lag control message to backend");
+      log.warn("Failed to send WAL lag control message to backend");
     }
   }
 

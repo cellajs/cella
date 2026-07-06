@@ -8,7 +8,7 @@ import { insertMemberships } from '#/modules/memberships/helpers/membership-help
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { countOrgsInTenant, insertOrganizations } from '#/modules/organization/organization-queries';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 import { filterWithRejection, takeWithRestriction } from '#/utils/rejection-utils';
 import { defaultWelcomeText } from '#json/text-blocks.json';
 
@@ -69,7 +69,7 @@ export async function createOrganizationsOp(ctx: AuthContext, items: CreateOrgan
     })),
   });
 
-  logEvent(ctx, 'info', 'Organizations created', {
+  log.info('Organizations created', {
     count: organizationRecords.length,
     ids: organizationRecords.map((org) => org.id),
   });
@@ -82,7 +82,7 @@ export async function createOrganizationsOp(ctx: AuthContext, items: CreateOrgan
     entity: org,
   }));
 
-  const createdMemberships = await insertMemberships({ var: { db } }, { items: membershipInserts, logCtx: ctx });
+  const createdMemberships = await insertMemberships({ var: { db } }, { items: membershipInserts });
 
   // Invalidate membership cache so subsequent requests see the new membership
   invalidateCache.user(user.id);

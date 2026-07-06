@@ -10,7 +10,7 @@ import type {
   RateLimitMode,
 } from '#/middlewares/rate-limiter/types';
 import { toRateLimitIp } from '#/utils/ip-subnet';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 // Default options
 export const defaultOptions = {
@@ -129,7 +129,7 @@ export const rateLimiter = (
         try {
           onBlock?.(rateLimitKey);
         } catch (err) {
-          logEvent(ctx, 'warn', 'Rate limit onBlock callback failed', { rateLimitKey, err: String(err) });
+          log.warn('Rate limit onBlock callback failed', { rateLimitKey, err });
         }
         return rateLimitError(ctx, limitState, rateLimitKey);
       }
@@ -139,7 +139,7 @@ export const rateLimiter = (
         try {
           onBlock?.(rateLimitKey);
         } catch (err) {
-          logEvent(ctx, 'warn', 'Rate limit onBlock callback failed', { rateLimitKey, err: String(err) });
+          log.warn('Rate limit onBlock callback failed', { rateLimitKey, err });
         }
         return rateLimitError(ctx, slowLimitState, rateLimitKey);
       }
@@ -179,7 +179,7 @@ export const rateLimiter = (
           try {
             await limiter.consume(rateLimitKey);
           } catch (err) {
-            logEvent(ctx, 'warn', 'Rate limit consume failed', { rateLimitKey, err: String(err) });
+            log.warn('Rate limit consume failed', { rateLimitKey, err });
           }
           // If the mode is 'failseries', delete the rate limit on successful request
         } else if (mode === 'failseries') {
@@ -200,7 +200,7 @@ export const rateLimiter = (
         try {
           await limiter.consume(rateLimitKey);
         } catch (err) {
-          logEvent(ctx, 'warn', 'Rate limit consume failed', { rateLimitKey, err: String(err) });
+          log.warn('Rate limit consume failed', { rateLimitKey, err });
         }
       }
     },

@@ -29,15 +29,11 @@ export async function selfCreateTenantOp(ctx: AuthContext, input: SelfCreateTena
     return { ...existingTenant, domainsCount };
   }
 
-  const tenant = await createTenantForUser(
-    db,
-    {
-      name: input.name,
-      createdBy: user.id,
-      userEmail: user.email,
-    },
-    ctx,
-  );
+  const tenant = await createTenantForUser(db, {
+    name: input.name,
+    createdBy: user.id,
+    userEmail: user.email,
+  });
 
   const domainsCount = await countDomainsByTenant(ctx, { targetTenantId: tenant.id });
   return { ...tenant, domainsCount };

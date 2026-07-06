@@ -5,7 +5,7 @@ import { bulkBodyLength } from '#/middlewares/rate-limiter/helpers';
 import { sendLockoutEmail } from '#/middlewares/rate-limiter/helpers/send-lockout-email';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 
-// TODO spam limiter might block legitimate users behind a shared IP. Can it use user id and fallback to IP?
+// TODO [#04] spam limiter might block legitimate users behind a shared IP. Can it use user id and fallback to IP?
 /**
  * Email spam limit for endpoints where emails are sent to others. Identifier: IP. Max 10 requests per hour. For sign up, public requests etc.
  */
@@ -56,7 +56,7 @@ export const magicLinkLimiter = rateLimiter('limit', 'magicLink', ['email'], {
   description: 'Max 2 magic link emails per 30 min per email address',
 });
 
-// TODO perhaps its more logical to make this a failseries somehow even if user didnt use challenge generation?
+// TODO [#05] perhaps its more logical to make this a failseries somehow even if user didnt use challenge generation?
 /**
  * Passkey challenge rate limiter to prevent challenge generation abuse.
  * Higher limit because conditional mediation (passkey autofill) generates

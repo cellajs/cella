@@ -1,11 +1,12 @@
+import { trace } from '@opentelemetry/api';
 import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
-import { eventLogger } from '#/lib/pino';
 import { getIsoDate } from '#/utils/iso-date';
+import { log } from '#/utils/logger';
 
 const isProduction = appConfig.mode === 'production';
 const severitiesRequiringDetails = new Set(['warn', 'error', 'fatal']);
@@ -63,7 +64,7 @@ function isPoolTimeoutError(err: unknown): boolean {
 export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   // Handle pool exhaustion as 503 Service Unavailable
   if (isPoolTimeoutError(err)) {
-    eventLogger.error({ msg: 'Database pool exhausted', path: ctx.req.path, method: ctx.req.method });
+    log.error('Database pool exhausted', { err, path: ctx.req.path, method: ctx.req.method });
     return ctx.json(
       {
         message: 'Service temporarily unavailable, please retry',
@@ -81,7 +82,7 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   // Handle Hono's built-in HTTPException (e.g. from CSRF middleware)
   if (err instanceof HTTPException) {
     const status = err.status as ContentfulStatusCode;
-    eventLogger.warn({ msg: `HTTPException ${status}`, path: ctx.req.path, method: ctx.req.method });
+    log.warn(`HTTPException ${status}`, { err, path: ctx.req.path, method: ctx.req.method });
     return ctx.json(
       {
         message: err.message || 'Request rejected',
@@ -117,36 +118,35 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   const organization = ctx.get('organization');
   const detailsRequired = severitiesRequiringDetails.has(severity);
 
-  const logId = ctx.get('requestId');
+  // Client-facing correlation id: the active OTel trace id. One id now joins the
+  // browser trace (frontend injects traceparent), the server span, every log line
+  // (pino mixin stamps trace_id), and the Maple session timeline. Falls back to
+  // the request id when no span is recording (tracing disabled/misconfigured).
+  const logId = trace.getActiveSpan()?.spanContext().traceId ?? ctx.get('requestId');
   const timestamp = getIsoDate();
 
-  // Full error details for server-side logging only (never sent to client)
-  const serverError = {
-    message,
-    name,
-    status,
-    type,
-    severity,
-    entityType,
-    cause: err.cause,
-    logId,
-    stack: err.stack,
-    path: ctx.req.path,
-    method: ctx.req.method,
-    userId: user?.id,
-    organizationId: organization?.id,
-    timestamp,
-    meta,
-    ...(pgError && { pgCode: pgError.code, pgDetail: pgError.detail, pgConstraint: pgError.constraint }),
-  };
-
-  // Log with full details for warn/error/fatal, minimal for info
-  const logPayload = detailsRequired
-    ? { msg: serverError.name, error: serverError, ...(isProduction && meta) }
-    : { msg: serverError.name };
-
-  // Log through event logger
-  eventLogger[severity](logPayload);
+  // Message carries name + type so dedup keys on the error kind, not just the class name
+  // (`AppError: forbidden` and `AppError: invalid_request` suppress independently).
+  // Full details (err with stack/cause, request context) for warn/error/fatal, minimal for info.
+  // tenantId/userId/organizationId/requestId are bound from the ambient log context;
+  // trace_id (stamped on every log line by the pino mixin) is the client-facing logId.
+  log[severity](
+    `${name}: ${type}`,
+    detailsRequired
+      ? {
+          err,
+          status,
+          type,
+          entityType,
+          path: ctx.req.path,
+          method: ctx.req.method,
+          ...(user && { userId: user.id }),
+          ...(organization && { organizationId: organization.id }),
+          ...(pgError && { pgCode: pgError.code, pgDetail: pgError.detail, pgConstraint: pgError.constraint }),
+          ...(meta && { meta }),
+        }
+      : undefined,
+  );
 
   // Handle redirect if needed
   if (willRedirect) {

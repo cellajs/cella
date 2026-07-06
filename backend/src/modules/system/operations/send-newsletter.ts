@@ -4,7 +4,7 @@ import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
 import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 import { findNewsletterRecipients } from '#/modules/system/system-queries';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 import { newsletterEmail } from '../../../../emails';
 
 interface SendNewsletterInput {
@@ -51,5 +51,5 @@ export async function sendNewsletterOp(ctx: AuthContext, input: SendNewsletterIn
   const staticProps = { content: newContent, subject, testEmail: toSelf };
   await mailer.prepareEmails(newsletterEmail, staticProps, recipients, user.email);
 
-  logEvent(ctx, 'info', 'Newsletter sent', { count: recipients.length });
+  log.info('Newsletter sent', { count: recipients.length });
 }

@@ -1,7 +1,7 @@
 import { createServer, type Server } from 'node:http';
 import { WebSocketServer } from 'ws';
 import { env } from '../env';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 import { closeDb } from '../data/db';
 import { handleHttpRequest } from './health';
 import { setupUpgradeHandler, setupConnectionHandler } from './upgrade';
@@ -19,12 +19,12 @@ export function startWsServer(): void {
   setupConnectionHandler(server);
 
   httpServer.listen(env.YJS_PORT, () => {
-    logEvent('info', 'Yjs WebSocket server listening', { port: env.YJS_PORT });
+    log.info('Yjs WebSocket server listening', { port: env.YJS_PORT });
   });
 }
 
 export async function closeWsServer(): Promise<void> {
-  logEvent('info', 'Yjs worker stopping...');
+  log.info('Yjs worker stopping...');
 
   if (wss) {
     for (const client of wss.clients) {
@@ -41,7 +41,7 @@ export async function closeWsServer(): Promise<void> {
 
   await closeDb();
 
-  logEvent('info', 'Yjs worker stopped');
+  log.info('Yjs worker stopped');
 }
 
 /** 

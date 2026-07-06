@@ -9,7 +9,7 @@ import { getRequestsOp } from '#/modules/requests/operations/get-requests';
 import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
 import requestRoutes from '#/modules/requests/requests-routes';
 import { defaultHook } from '#/utils/default-hook';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 // ============================================
 // ActivityBus: link waitlist requests to invitation tokens
@@ -21,7 +21,7 @@ activityBus.on('inactive_membership.created', async (event: ActivityEvent) => {
   try {
     await linkWaitlistRequest({ var: { db: baseDb } }, { email: membership.email, tokenId: membership.tokenId });
   } catch (error) {
-    logEvent(null, 'error', 'Failed to link waitlist request to token', { error, email: membership.email });
+    log.error('Failed to link waitlist request to token', { error, email: membership.email });
   }
 });
 

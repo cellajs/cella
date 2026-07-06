@@ -1,9 +1,9 @@
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/nanoid';
 import { env } from '#/env';
-import { logError, logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
-// TODO-032(IMPROVEMENT) handle all matrix/element message types
+// TODO-032(IMPROVEMENT) [#06] handle all matrix/element message types
 // export type matrixMsgTypes = 'm.text', 'm.notice', 'm.emote', 'm.image', 'm.audio', 'm.video', 'm.file', 'm.location', 'm.sticker'
 
 type MatrixMsgTypes = 'm.text' | 'm.notice';
@@ -21,7 +21,7 @@ export const sendMatrixMessage = async ({
   html?: string;
 }) => {
   if (!env.ELEMENT_ROOM_ID || !env.ELEMENT_BOT_ACCESS_TOKEN) {
-    logEvent(null, 'info', 'Missing required Element env values (roomId and/or  botAccessToken).');
+    log.info('Missing required Element env values (roomId and/or  botAccessToken).');
     return;
   }
   // Construct payload
@@ -46,10 +46,10 @@ export const sendMatrixMessage = async ({
   });
 
   if (matrixResponse.ok) {
-    logEvent(null, 'info', 'Matrix message sent successfully to specified room');
+    log.info('Matrix message sent successfully to specified room');
   } else {
     const errorBody = await matrixResponse.json();
-    logError(null, 'Failed to send Matrix message', errorBody);
+    log.error('Failed to send Matrix message', { err: errorBody });
   }
   return matrixResponse;
 };

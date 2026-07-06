@@ -8,7 +8,7 @@ import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { extractKeywords } from '#/utils/extract-keywords';
 import { checkIdempotency, getEntityByTransaction } from '#/utils/idempotency';
 import { getIsoDate } from '#/utils/iso-date';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 type CreatePagesInput = z.infer<typeof pageCreateManyStxBodySchema>;
 
@@ -44,7 +44,7 @@ export async function createPagesOp(ctx: AuthContext, rawInput: CreatePagesInput
   }));
 
   const pageRecords = await insertPages(ctx, { pages: pagesToInsert });
-  logEvent(ctx, 'info', 'Pages created', { count: pageRecords.length });
+  log.info('Pages created', { count: pageRecords.length });
   const pageResponses = await withAuditUsers(ctx, pageRecords, user);
 
   return { success: true as const, data: { data: pageResponses, rejectedIds: [] as string[] } };

@@ -78,7 +78,7 @@ app.openapi(authTotpsRoutes.createTotp, async (ctx) => {
   // Clean up the challenge cookie to prevent reuse
   deleteAuthCookie(ctx, 'totp-challenge');
 
-  sendAccountSecurityEmail(ctx, user, 'totp-added');
+  sendAccountSecurityEmail(user, 'totp-added');
 
   return ctx.body(null, 201);
 });
@@ -99,7 +99,7 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
     }
   });
 
-  sendAccountSecurityEmail(ctx, user, 'totp-removed');
+  sendAccountSecurityEmail(user, 'totp-removed');
 
   return ctx.body(null, 204);
 });

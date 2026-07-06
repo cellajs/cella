@@ -9,7 +9,7 @@ import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { canCreateEntity } from '#/permissions/can-create';
 import { checkIdempotency } from '#/utils/idempotency';
 import { getIsoDate } from '#/utils/iso-date';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 type CreateAttachmentsInput = z.infer<typeof attachmentCreateManyStxBodySchema>;
 export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAttachmentsInput) {
@@ -60,7 +60,7 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
     insertAttachments(txCtx, { attachments: attachmentsToInsert }),
   );
 
-  logEvent(ctx, 'info', 'Attachments created', { count: createdAttachments.length });
+  log.info('Attachments created', { count: createdAttachments.length });
 
   const attachmentResponses = await withAuditUsers(ctx, createdAttachments, ctx.var.user);
 

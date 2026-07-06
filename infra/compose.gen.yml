@@ -43,7 +43,8 @@ services:
       primaryRollout: true
       drainPolicy: requests
       lbRoute: default
-      dockerfile: backend/Dockerfile
+      dockerfile: Dockerfile
+      target: backend
   migrate:
     image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
     profiles: [backend]
@@ -90,7 +91,8 @@ services:
       replacementStrategy: exclusive
       drainSeconds: 0
       instanceType: DEV1-S
-      dockerfile: cdc/Dockerfile
+      dockerfile: Dockerfile
+      target: cdc
       coHosted: true
       bindings:
         API_WS_URL: ws://@{backend.privateIp}:@{backend.port}/internal/cdc
@@ -127,7 +129,8 @@ services:
       drainPolicy: reconnect
       lbRoute: host
       lbWebsockets: true
-      dockerfile: yjs/Dockerfile
+      dockerfile: Dockerfile
+      target: yjs
       coHosted: true
   mcp:
     image: ${REGISTRY}/backend:${MCP_TAG:-latest}

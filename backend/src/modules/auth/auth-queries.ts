@@ -3,6 +3,7 @@ import type { DbContext } from '#/core/context';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
+import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
@@ -106,7 +107,7 @@ interface InsertTotpOpts {
 /** Insert a TOTP record. */
 export const insertTotp = async (ctx: DbContext, { userId, secret }: InsertTotpOpts) => {
   const { db } = ctx.var;
-  return db.insert(totpsTable).values({ userId, secret });
+  return db.insert(totpsTable).values({ userId, secret: encryptTotpSecret(secret) });
 };
 
 interface LinkTokenToUserOpts {

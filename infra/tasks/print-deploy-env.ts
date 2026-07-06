@@ -71,7 +71,7 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     .filter((service) => !service.reusesImageOf)
     .map((service) => {
       if (!service.dockerfile) throw new Error(`Service '${service.slug}' builds its own image but has no dockerfile in services.config.ts`)
-      return { service: service.slug, dockerfile: service.dockerfile }
+      return { service: service.slug, dockerfile: service.dockerfile, target: service.target ?? '' }
     })
 
   return {

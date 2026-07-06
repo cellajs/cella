@@ -34,6 +34,7 @@ export default defineConfig({
       CDC_SECRET: 'test-cdc-secret-min16chars',
       YJS_SECRET: 'test-yjs-secret-min16',
       PII_HASH_SECRET: 'test-pii-hash-secret-min16',
+      DATA_ENCRYPTION_KEY: 'test-data-encryption-key-minimum-32-chars',
       SYSTEM_ADMIN_IP_ALLOWLIST: '*',
       DATABASE_URL: testDatabaseUrl,
     },

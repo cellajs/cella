@@ -8,7 +8,7 @@ import { withAuditUser, withAuditUserLite } from '#/modules/user/helpers/audit-u
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { extractKeywords } from '#/utils/extract-keywords';
 import { getIsoDate } from '#/utils/iso-date';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 type UpdatePageInput = z.infer<typeof pageUpdateStxBodySchema>;
 
@@ -41,7 +41,7 @@ export async function updatePageOp(
     stx: resolved.stx,
   };
   const updatedPageRecord = await updatePage(ctx, { id, values });
-  logEvent(ctx, 'info', 'Page updated', { pageId: updatedPageRecord.id });
+  log.info('Page updated', { pageId: updatedPageRecord.id });
 
   const pageResponse = fullResponse
     ? await withAuditUser(ctx, updatedPageRecord, user)

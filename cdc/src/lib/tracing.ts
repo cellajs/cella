@@ -16,7 +16,7 @@ import {
   type TraceContext,
 } from 'shared/tracing';
 import { env } from '../env';
-import { logEvent } from './pino';
+import { log } from './pino';
 
 // Re-export span names and attribute helpers from shared package
 export { activityAttrs, cdcAttrs, cdcSpanNames };
@@ -28,7 +28,7 @@ export type { TraceContext };
 
 const debugProcessor = createSpanStoreProcessor({
   onSpanEnd: (span) => {
-    logEvent('trace', `Span: ${span.name}`, {
+    log.trace(`Span: ${span.name}`, {
       traceId: span.traceId,
       duration: `${span.duration}ms`,
       status: span.status,

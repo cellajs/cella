@@ -1,6 +1,6 @@
 import type { ActivityEvent } from '#/lib/activity-bus';
 import type { StreamNotification } from '#/schemas';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 import { writeChange, writeChangeRaw } from './helpers';
 import type { CursoredSubscriber } from './types';
 
@@ -24,7 +24,7 @@ export async function sendNotificationToSubscriber<T extends CursoredSubscriber>
     await writeChange(subscriber.stream, event.id, final);
   }
 
-  logEvent(null, 'debug', 'SSE notification sent', {
+  log.debug('SSE notification sent', {
     subscriberId: subscriber.id,
     activityId: event.id,
     entityType: event.entityType,

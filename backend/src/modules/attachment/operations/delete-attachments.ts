@@ -4,7 +4,7 @@ import { tenantContextIncludingDeleted } from '#/db/tenant-context';
 import { deleteAttachmentsByIds } from '#/modules/attachment/attachment-queries';
 import { splitByPermission } from '#/permissions/split-by-permission';
 import { getIsoDate } from '#/utils/iso-date';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 export async function deleteAttachmentsOp(
   ctx: AuthContext,
@@ -18,7 +18,7 @@ export async function deleteAttachmentsOp(
     deleteAttachmentsByIds(txCtx, { ids: allowedIds, deletedAt, deletedBy }),
   );
 
-  logEvent(ctx, 'info', 'Attachments deleted', { ids: allowedIds });
+  log.info('Attachments deleted', { ids: allowedIds });
 
   return { success: true, data: { data: [], rejectedIds } };
 }

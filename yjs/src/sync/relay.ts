@@ -4,7 +4,7 @@ import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
 import type { DocContext } from '../constants';
 import { YJS_AWARENESS_RATE_LIMIT, YJS_SAVE_DEBOUNCE_MS } from '../constants';
-import { logError, logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 import { broadcastToCollab, getCollab } from './session-manager';
 import { createDoc, loadState, saveState } from '../data/storage';
 
@@ -46,7 +46,7 @@ export function flushPendingBuffer(ws: WebSocket): void {
 
   for (const raw of messages) {
     handleMessage(ctx, ws, raw).catch((err) => {
-      logError(`Failed to flush buffered message for ${ctx.entityType}:${ctx.entityId}`, err);
+      log.error(`Failed to flush buffered message for ${ctx.entityType}:${ctx.entityId}`, { err: err });
     });
   }
 }
@@ -55,7 +55,7 @@ export function flushPendingBuffer(ws: WebSocket): void {
 export function discardPendingBuffer(ws: WebSocket): void {
   const buf = pendingBuffers.get(ws);
   if (buf) {
-    logEvent('debug', `Discarding ${buf.messages.length} buffered messages for ${buf.ctx.entityType}:${buf.ctx.entityId}`);
+    log.debug(`Discarding ${buf.messages.length} buffered messages for ${buf.ctx.entityType}:${buf.ctx.entityId}`);
   }
   pendingBuffers.delete(ws);
 }
@@ -98,7 +98,7 @@ export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8A
     const syncType = decoding.readVarUint(decoder);
 
     if (syncType === YSync.Step1) {
-      logEvent('trace', `Sync step 1 from ${ctx.entityType}:${ctx.entityId}`, { bytes: data.length });
+      log.trace(`Sync step 1 from ${ctx.entityType}:${ctx.entityId}`, { bytes: data.length });
       const clientStateVector = decoding.readVarUint8Array(decoder);
       await handleSyncStep1(ctx, ws, clientStateVector);
     } else if (syncType === YSync.Step2 || syncType === YSync.Update) {
@@ -189,7 +189,7 @@ async function handleSyncUpdate(ctx: DocContext, ws: WebSocket, update: Uint8Arr
     try {
       await savePromise;
     } catch (err) {
-      logError(`Failed to save state for ${ctx.entityType}:${ctx.entityId}`, err);
+      log.error(`Failed to save state for ${ctx.entityType}:${ctx.entityId}`, { err: err });
       // Merge the failed snapshot with any new updates that arrived during the await
       collab.pendingState = collab.pendingState ? safeMerge(snapshotToSave, collab.pendingState) : snapshotToSave;
     } finally {

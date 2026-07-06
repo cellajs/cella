@@ -4,7 +4,7 @@ import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { countDomainsByTenant, findTenantById, updateTenant } from '#/modules/tenants/tenants-queries';
 import type { updateTenantBodySchema } from '#/modules/tenants/tenants-schema';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 type UpdateTenantInput = z.infer<typeof updateTenantBodySchema>;
 
@@ -32,7 +32,7 @@ export async function updateTenantOp(ctx: AuthContext, tenantId: string, updates
 
   invalidateCache.tenant(tenantId);
 
-  logEvent(ctx, 'info', 'Tenant updated', { tenantId, updates });
+  log.info('Tenant updated', { tenantId, updates });
 
   const domainsCount = await countDomainsByTenant(ctx, { targetTenantId: tenantId });
   return { ...tenant, domainsCount };
