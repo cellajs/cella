@@ -29,35 +29,37 @@ cdc/src
 │   ├── index.ts                 Re-exports
 │   ├── insert.ts                INSERT handler
 │   ├── update.ts                UPDATE handler
-│   ├── delete.ts                DELETE handler
-│   └── create-activity.ts       Build activity record from change
+│   └── delete.ts                DELETE handler
 ├── network
 │   ├── websocket-client.ts      WS connection to API server
-│   └── health.ts                HTTP health endpoint
+│   ├── health.ts                Health status snapshot
+│   └── health-reporter.ts       Periodic health push
 ├── services
-│   ├── activity-service.ts      Activity persistence
+│   ├── create-activity.ts       Build activity record from change
+│   ├── activity-service.ts      Activity ID, WS payload builder + send
 │   ├── flush-buffer.ts          Debounced buffer flush
 │   ├── transaction-buffer.ts    Buffer changes per transaction
 │   ├── circuit-breaker.ts       Failure circuit breaker
-│   ├── retry.ts                 Retry with backoff
+│   ├── retry.ts                 Retry with backoff + error normalization
 │   ├── replication-state.ts     LSN tracking state
 │   ├── catchup-recovery.ts      Catchup after reconnect
-│   ├── cdc-metrics.ts           OpenTelemetry metrics
-│   └── get-error-message.ts     Error normalization
+│   └── cdc-metrics.ts           OpenTelemetry metrics
 ├── utils
 │   ├── index.ts                 Re-exports
 │   ├── action-to-verb.ts        Map DB action to activity verb
 │   ├── apply-unified-deltas.ts  Apply delta objects
 │   ├── compact-row-data.ts      Strip unchanged fields
 │   ├── compute-unified-deltas.ts  Diff old/new rows
+│   ├── context-columns.ts       Precomputed context ID column keys
 │   ├── convert-row-keys.ts      snake_case → camelCase
 │   ├── embedding-cleanup.ts     Clean up stale embeddings
 │   ├── extract-row-data.ts      Extract columns from WAL tuple
 │   ├── extract-stx-data.ts      Extract context from row data
 │   ├── get-changed-fields.ts    Detect changed columns
 │   ├── get-row-value.ts         Safe row field access
+│   ├── is-soft-delete-transition.ts  Detect live→soft-deleted flips
 │   ├── snake-to-camel.ts        Case conversion helper
-│   └── update-counts.ts         Entity count updates
+│   └── update-counts.ts         Entity + membership count deltas
 ├── lib
 │   ├── db.ts                    PG pool for CDC
 │   ├── pino.ts                  Structured logger

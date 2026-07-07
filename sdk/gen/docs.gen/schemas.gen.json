@@ -329,6 +329,12 @@
     "schema": {
       "type": "object",
       "properties": {
+        "kind": {
+          "type": "string",
+          "required": true,
+          "description": "Discriminant for the notification: product-entity sync vs membership change",
+          "enum": ["entity", "membership"]
+        },
         "action": {
           "type": "string",
           "required": true,
@@ -452,6 +458,7 @@
     },
     "description": "Realtime notification delivered via SSE for entity and membership changes.",
     "example": {
+      "kind": "entity",
       "action": "update",
       "entityType": "attachment",
       "resourceType": null,

@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import format from 'pg-format';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
-import type { BatchUnifiedDeltaPlan, UnifiedDeltaPlan } from './compute-unified-deltas';
+import type { BatchUnifiedDeltaPlan } from './compute-unified-deltas';
 
 // ── Counter upsert ───────────────────────────────────────────────────────────
 
@@ -48,65 +48,17 @@ async function mergedUpsert(
   `);
 }
 
-// ── Entity seq stamp ─────────────────────────────────────────────────────────
+// ── Batch execution ──────────────────────────────────────────────────────────
 
-/**
- * UPDATE a single entity's seq column.
- * Also strips stx.changedFields — it's transient metadata from the last user mutation
- * and would cause handleUpdate to create a spurious activity from stale fields.
- */
-async function updateEntitySeq(tableName: string, entityId: string, newSeq: number): Promise<void> {
-  await cdcDb.execute(
-    sql`UPDATE ${sql.raw(format('%I', tableName))} SET seq = ${newSeq}, stx = stx - 'changedFields' WHERE id = ${entityId}`,
-  );
-}
-
-// ── Single event execution ───────────────────────────────────────────────────
-
-/**
- * Apply a unified delta plan for a single CDC event.
- *
- * Phase 1 (sequential): UPSERT the seqContextKey row with RETURNING to get the new seq.
- * Phase 2 (parallel): All remaining context UPSERTs + entity seq UPDATE.
- *
- * Returns the new seq value (or undefined if no seq stamp was needed).
- */
-export async function applyUnifiedDeltas(plan: UnifiedDeltaPlan): Promise<number | undefined> {
-  const { seqContextKey, seqKey, entityStamp, deltasByContextKey } = plan;
-
-  if (deltasByContextKey.size === 0 && !entityStamp) return undefined;
-
-  let newSeq: number | undefined;
-
-  // Phase 1: UPSERT the seq row with RETURNING
-  if (seqContextKey && seqKey) {
-    const seqDeltas = deltasByContextKey.get(seqContextKey);
-    if (seqDeltas) {
-      const counts = await mergedUpsert(seqContextKey, seqDeltas, true);
-      newSeq = counts[seqKey] ?? undefined;
+/** Add each source delta into `target` in place, summing on key collision. */
+function sumInto(target: Record<string, number>, source: Record<string, number> | undefined): Record<string, number> {
+  if (source) {
+    for (const [k, v] of Object.entries(source)) {
+      target[k] = (target[k] ?? 0) + v;
     }
   }
-
-  // Phase 2: All remaining UPSERTs + entity seq stamp in parallel
-  const phase2: Promise<void>[] = [];
-
-  for (const [contextKey, deltas] of deltasByContextKey) {
-    if (contextKey === seqContextKey) continue; // Already handled in Phase 1
-    phase2.push(mergedUpsert(contextKey, deltas));
-  }
-
-  if (entityStamp && newSeq !== undefined) {
-    phase2.push(updateEntitySeq(entityStamp.tableName, entityStamp.entityId, newSeq));
-  }
-
-  if (phase2.length > 0) {
-    await Promise.all(phase2);
-  }
-
-  return newSeq;
+  return target;
 }
-
-// ── Batch execution ──────────────────────────────────────────────────────────
 
 /**
  * Apply a unified delta plan for a batch of CDC events.
@@ -127,13 +79,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan): Prom
   // Phase 1: Sequential UPSERT per seq group (need RETURNING for each)
   for (const group of seqGroups) {
     // Merge seq deltas with any count deltas for this contextKey
-    const mergedDeltas: Record<string, number> = { [group.seqKey]: group.count };
-    const countDeltas = countDeltasByContextKey.get(group.contextKey);
-    if (countDeltas) {
-      for (const [k, v] of Object.entries(countDeltas)) {
-        mergedDeltas[k] = (mergedDeltas[k] ?? 0) + v;
-      }
-    }
+    const mergedDeltas = sumInto({ [group.seqKey]: group.count }, countDeltasByContextKey.get(group.contextKey));
     handledContextKeys.add(group.contextKey);
 
     const counts = await mergedUpsert(group.contextKey, mergedDeltas, true);
@@ -150,13 +96,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan): Prom
 
     // Org signal: merge with any count deltas for the org
     if (group.orgSignal) {
-      const orgMerged: Record<string, number> = { [group.orgSignal.seqKey]: group.orgSignal.count };
-      const orgCounts = countDeltasByContextKey.get(group.orgSignal.orgKey);
-      if (orgCounts) {
-        for (const [k, v] of Object.entries(orgCounts)) {
-          orgMerged[k] = (orgMerged[k] ?? 0) + v;
-        }
-      }
+      const orgMerged = sumInto({ [group.orgSignal.seqKey]: group.orgSignal.count }, countDeltasByContextKey.get(group.orgSignal.orgKey));
       handledContextKeys.add(group.orgSignal.orgKey);
       await mergedUpsert(group.orgSignal.orgKey, orgMerged);
     }
@@ -201,79 +141,5 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan): Prom
 
   if (phase2.length > 0) {
     await Promise.all(phase2);
-  }
-}
-
-// ── Catchup-mode: seq-only batch execution ───────────────────────────────────
-
-/**
- * Apply only seq stamps from a batch plan, skipping all counter UPSERTs.
- * Used during catchup mode where counters will be recalculated after replay.
- *
- * For each seq group: UPSERT seq delta with RETURNING, assign seq values,
- * then bulk UPDATE entity rows. Org signals are included since they carry
- * seq counters too.
- */
-export async function applyBatchSeqOnlyDeltas(plan: BatchUnifiedDeltaPlan): Promise<void> {
-  const { seqGroups } = plan;
-
-  if (seqGroups.length === 0) return;
-
-  const allEntityStamps: Array<{ tableName: string; id: string; seq: number }> = [];
-
-  // Phase 1: Sequential UPSERT per seq group (need RETURNING for each)
-  for (const group of seqGroups) {
-    // Only the seq delta — no count deltas merged
-    const seqDelta: Record<string, number> = { [group.seqKey]: group.count };
-
-    const counts = await mergedUpsert(group.contextKey, seqDelta, true);
-    const highSeq = counts[group.seqKey] ?? group.count;
-    const baseSeq = highSeq - group.count;
-
-    // Assign seq values to events
-    for (let i = 0; i < group.events.length; i++) {
-      const seq = baseSeq + i + 1;
-      const entityId = group.events[i].result.rowData.id;
-      group.events[i].result.rowData.seq = seq;
-      allEntityStamps.push({ tableName: group.tableName, id: entityId, seq });
-    }
-
-    // Org-level seq signal (needed for frontend sync protocol)
-    if (group.orgSignal) {
-      const orgSeqDelta: Record<string, number> = { [group.orgSignal.seqKey]: group.orgSignal.count };
-      await mergedUpsert(group.orgSignal.orgKey, orgSeqDelta);
-    }
-
-    log.trace('Catchup seq stamped', {
-      entityType: group.seqKey.replace('s:', ''),
-      count: group.count,
-      baseSeq: baseSeq + 1,
-      highSeq,
-    });
-  }
-
-  // Phase 2: Bulk entity seq stamp
-  if (allEntityStamps.length > 0) {
-    const byTable = new Map<string, Array<{ id: string; seq: number }>>();
-    for (const stamp of allEntityStamps) {
-      const list = byTable.get(stamp.tableName);
-      if (list) list.push(stamp);
-      else byTable.set(stamp.tableName, [stamp]);
-    }
-
-    const stampPromises: Promise<void>[] = [];
-    for (const [tableName, stamps] of byTable) {
-      const valuesList = stamps.map((s) => sql`(${s.id}::uuid, ${s.seq}::bigint)`);
-      stampPromises.push(
-        cdcDb.execute(sql`
-          UPDATE ${sql.raw(format('%I', tableName))} AS t
-          SET seq = v.seq, stx = t.stx - 'changedFields'
-          FROM (VALUES ${sql.join(valuesList, sql`, `)}) AS v(id, seq)
-          WHERE t.id = v.id
-        `).then(() => {}),
-      );
-    }
-
-    await Promise.all(stampPromises);
   }
 }

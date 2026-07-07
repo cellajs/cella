@@ -48,5 +48,8 @@ export type AppStreamProductEvent = EntityScopedEvent<
   ActivityEvent & { entityType: ProductEntityType } & Partial<ContextEntityIdColumns>
 >;
 
+/** Membership event routed via the app (authenticated) stream. */
+export type AppStreamMembershipEvent = EntityScopedEvent<ActivityEvent & { resourceType: 'membership' }>;
+
 /** Combined event type accepted by the app stream dispatcher. */
-export type AppStreamEvent = AppStreamProductEvent | EntityScopedEvent<ActivityEvent & { resourceType: 'membership' }>;
+export type AppStreamEvent = AppStreamProductEvent | AppStreamMembershipEvent;

@@ -1,10 +1,9 @@
 import { appConfig, hierarchy } from 'shared';
 import type { ActivityAction } from 'shared';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
-import type { InactiveMembershipModel } from '#/modules/memberships/inactive-memberships-db';
-import type { MembershipModel } from '#/modules/memberships/memberships-db';
 import type { TableMeta } from '../types';
 import type { CdcRowData } from '../types';
+import { isSoftDeleteTransition } from './is-soft-delete-transition';
 import { log } from '../lib/pino';
 
 export interface CountDelta {
@@ -42,22 +41,16 @@ export function getCountDeltas(
 ): CountDelta[] {
   const { action, organizationId } = activity;
 
-  // Active memberships: track role counts + total
-  if (tableMeta.kind === 'resource' && tableMeta.type === 'membership') {
-    const delta = getMembershipDelta(action, newRow as MembershipModel, oldRow as MembershipModel | null);
+  // Memberships (active + inactive): counter deltas plus an org-level membership seq signal.
+  if (tableMeta.kind === 'resource' && (tableMeta.type === 'membership' || tableMeta.type === 'inactive_membership')) {
+    const delta =
+      tableMeta.type === 'membership'
+        ? getMembershipDelta(action, newRow, oldRow)
+        : getInactiveMembershipDelta(action, newRow, oldRow);
     const deltas = delta ? [delta] : [];
-    // Bump the org-level membership seq on every membership activity so catchup can detect
-    // membership changes via O(1) counter screening (no activity scan needed).
-    if (organizationId) deltas.push({ contextKey: organizationId, deltas: { 's:membership': 1 } });
-    return deltas;
-  }
-
-  // Inactive memberships: track pending count
-  if (tableMeta.kind === 'resource' && tableMeta.type === 'inactive_membership') {
-    const delta = getInactiveMembershipDelta(action, newRow as InactiveMembershipModel, oldRow as InactiveMembershipModel | null);
-    const deltas = delta ? [delta] : [];
-    // Pending invitations appear in member lists too — bump the membership seq so the client
-    // refreshes them on catchup.
+    // Bump the org-level membership seq on every membership / inactive-membership activity so
+    // catchup can detect membership changes via O(1) counter screening (no activity scan needed).
+    // Pending invitations appear in member lists too, so inactive memberships bump it as well.
     if (organizationId) deltas.push({ contextKey: organizationId, deltas: { 's:membership': 1 } });
     return deltas;
   }
@@ -116,32 +109,35 @@ function getArrayValue(row: CdcRowData | undefined, key: string): string[] {
   return Array.isArray(v) ? v.filter((item): item is string => typeof item === 'string') : [];
 }
 
-function isSoftDeleteTransition(newRow: CdcRowData, oldRow: CdcRowData | null): boolean {
-  return oldRow !== null && oldRow.deletedAt == null && newRow.deletedAt != null;
-}
-
 /**
  * Get membership count delta based on create/update/delete action and role change.
+ * Reads only the fields it needs (contextId, role) off the WAL row — both are
+ * NOT NULL columns, so a missing value means a malformed row and yields no delta.
  */
 function getMembershipDelta(
   action: ActivityAction,
-  newRow: MembershipModel,
-  oldRow: MembershipModel | null,
+  newRow: CdcRowData,
+  oldRow: CdcRowData | null,
 ): CountDelta | null {
-  const { contextId } = newRow;
+  const contextId = getStringValue(newRow, 'contextId');
+  if (!contextId) return null;
 
   if (action === 'create') {
-    return { contextKey: contextId, deltas: { [`m:${newRow.role}`]: 1, 'm:total': 1 } };
+    const role = getStringValue(newRow, 'role');
+    return role ? { contextKey: contextId, deltas: { [`m:${role}`]: 1, 'm:total': 1 } } : null;
   }
 
   if (action === 'delete') {
-    return { contextKey: contextId, deltas: { [`m:${newRow.role}`]: -1, 'm:total': -1 } };
+    const role = getStringValue(newRow, 'role');
+    return role ? { contextKey: contextId, deltas: { [`m:${role}`]: -1, 'm:total': -1 } } : null;
   }
 
   if (action === 'update' && oldRow) {
+    const oldRole = getStringValue(oldRow, 'role');
+    const newRole = getStringValue(newRow, 'role');
     // Only emit delta if role actually changed
-    if (oldRow.role !== newRow.role) {
-      return { contextKey: contextId, deltas: { [`m:${oldRow.role}`]: -1, [`m:${newRow.role}`]: 1 } };
+    if (oldRole && newRole && oldRole !== newRole) {
+      return { contextKey: contextId, deltas: { [`m:${oldRole}`]: -1, [`m:${newRole}`]: 1 } };
     }
   }
 
@@ -152,10 +148,11 @@ function getMembershipDelta(
  */
 function getInactiveMembershipDelta(
   action: ActivityAction,
-  newRow: InactiveMembershipModel,
-  oldRow: InactiveMembershipModel | null,
+  newRow: CdcRowData,
+  oldRow: CdcRowData | null,
 ): CountDelta | null {
-  const { contextId } = newRow;
+  const contextId = getStringValue(newRow, 'contextId');
+  if (!contextId) return null;
 
   if (action === 'create') {
     // Only count pending (not rejected)

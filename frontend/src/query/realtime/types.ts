@@ -1,4 +1,5 @@
 import type { StreamNotification } from 'sdk';
+import type { ProductEntityType } from 'shared';
 
 /** Stream connection state. */
 export type StreamState = 'disconnected' | 'connecting' | 'catching-up' | 'live' | 'error';
@@ -24,8 +25,21 @@ export interface StreamTraceContext {
   lsn?: string;
 }
 
-/** App stream notification with optional trace context for debugging. */
-export type AppStreamNotification = StreamNotification & {
+/**
+ * Product-entity notification — the seq/cacheToken sync path. `entityType` is
+ * guaranteed non-null when `kind === 'entity'`.
+ */
+export type EntityNotification = StreamNotification & { kind: 'entity'; entityType: ProductEntityType };
+
+/** Membership notification — the query-invalidation path. */
+export type MembershipNotification = StreamNotification & { kind: 'membership'; resourceType: 'membership' };
+
+/**
+ * App stream notification with optional trace context for debugging.
+ * Discriminated on `kind` so entity vs membership branches are exhaustive and
+ * the compiler proves which fields are present in each.
+ */
+export type AppStreamNotification = (EntityNotification | MembershipNotification) & {
   _trace?: StreamTraceContext;
 };
 

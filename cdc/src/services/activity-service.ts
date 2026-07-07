@@ -1,20 +1,32 @@
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
-import { appConfig, hierarchy, isProductEntity } from 'shared';
+import { isProductEntity } from 'shared';
 import { log } from '../lib/pino';
 import type { TraceContext } from '../lib/tracing';
 import type { CdcRowData } from '../types';
-import { excludedRowDataKeys } from '../utils/compact-row-data';
 import { wsClient } from '../network/websocket-client';
 import { nanoid } from 'shared/nanoid';
 
-/** Strip large columns from row data before WS transmission. */
-function stripExcludedColumns(rowData: CdcRowData): CdcRowData {
-  if (excludedRowDataKeys.size === 0) return rowData;
-  const slim: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(rowData)) {
-    if (!excludedRowDataKeys.has(key)) slim[key] = value;
-  }
-  return slim as CdcRowData;
+// ── Wire contract ─────────────────────────────────────────────────────────────
+// The CDC → API-server WebSocket payload. This is the *producing* end of the
+// contract; the backend independently *validates* the same shape with
+// `cdcMessageSchema` (see backend/src/lib/cdc-websocket.ts → `CdcMessage`).
+// The two definitions must stay in sync — a field added here needs a matching
+// field there or the backend will reject the message at runtime.
+
+/** An individual entity cache-reservation token, sent with batch payloads. */
+export interface CdcBatchReservation {
+  token: string;
+  entityType: string;
+  entityId: string;
+}
+
+/** Outbound activity + row-data message the CDC worker sends to the API server. */
+export interface CdcOutboundMessage {
+  activity: InsertActivityModel & { id?: string; seq?: number; batchUntilSeq?: number };
+  rowData: CdcRowData;
+  cacheToken: string | null;
+  batchReservations?: CdcBatchReservation[];
+  _trace: TraceContext;
 }
 
 /**
@@ -44,24 +56,15 @@ function buildActivityPayload(
   rowData: CdcRowData,
   traceContext: TraceContext,
   seq?: number,
-) {
+): CdcOutboundMessage {
   // Generate cache token for product entities
   const cacheToken = baseActivity.entityType && isProductEntity(baseActivity.entityType) ? nanoid() : null;
 
-  // Derive context entity IDs from hierarchy (mirrors createActivity logic)
-  const subjectType = baseActivity.entityType ?? baseActivity.resourceType;
-  const contextIds: Record<string, string | null> = {};
-  if (subjectType) {
-    for (const ancestor of hierarchy.getOrderedAncestors(subjectType)) {
-      const key = appConfig.entityIdColumnKeys[ancestor];
-      const value = (baseActivity as Record<string, unknown>)[key];
-      contextIds[key] = typeof value === 'string' ? value : null;
-    }
-  }
+  // Context entity IDs are already populated on the activity by createActivity;
+  // rowData is already compacted by the handlers (compactRowData).
+  const activity = { ...baseActivity, seq };
 
-  const activity = { ...baseActivity, ...contextIds, seq }
-
-  return { activity, rowData: stripExcludedColumns(rowData), cacheToken,  _trace: traceContext };
+  return { activity, rowData, cacheToken, _trace: traceContext };
 }
 
 /**
@@ -115,7 +118,7 @@ export function sendBatchMessageToApi(
   const batchToken = first.activity.entityType && isProductEntity(first.activity.entityType) ? nanoid() : null;
 
   // Build individual cache reservations for each entity
-  const batchReservations = batchToken
+  const batchReservations: CdcBatchReservation[] | undefined = batchToken
     ? events
         .filter((e) => e.activity.entityType && e.activity.subjectId)
         .map((e) => ({
@@ -129,7 +132,7 @@ export function sendBatchMessageToApi(
   const base = buildActivityPayload(first.activity, first.rowData, traceContext, minSeq);
   const activity = { ...base.activity, batchUntilSeq };
 
-  const payload = {  ...base, activity, cacheToken: batchToken, batchReservations };
+  const payload: CdcOutboundMessage = { ...base, activity, cacheToken: batchToken, batchReservations };
 
   if (!wsClient.send(payload)) {
     log.warn('Failed to send batch message to API', { batchSize: events.length });

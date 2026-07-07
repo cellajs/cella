@@ -10,11 +10,21 @@ import { circuitBreaker } from '../services/circuit-breaker';
 import { withRetry } from '../services/retry';
 import { replicationState } from '../services/replication-state';
 import { activityAttrs, cdcAttrs, cdcSpanNames, withSpan } from '../lib/tracing';
+import type { TraceContext } from '../lib/tracing';
 import { applyBatchUnifiedDeltas } from '../utils/apply-unified-deltas';
 import { computeBatchUnifiedDeltas } from '../utils/compute-unified-deltas';
 import { cleanupEmbeddingReferences } from '../utils/embedding-cleanup';
 
+import type { CdcRowData } from '../types';
 import type { ParseMessageResult } from './parse-message';
+
+/** An event prepared for persistence + dispatch: activity with a generated id, its row data, and seq. */
+interface PreparedEvent {
+  activityWithId: BatchEventInfo['activity'];
+  seq: number | undefined;
+  lsn: string;
+  rowData: CdcRowData;
+}
 
 // ================================
 // Activity persistence
@@ -105,11 +115,33 @@ async function persistActivities(
 }
 
 // ================================
+// Sync dispatch
+// ================================
+
+/** Forward stamped events to the API server: one batch payload, or a single payload. */
+function dispatchToApi(stamped: PreparedEvent[], traceCtx: TraceContext): void {
+  if (stamped.length > 1) {
+    const batchInfos: BatchEventInfo[] = stamped.map(({ activityWithId, rowData, seq }) => ({
+      activity: activityWithId,
+      rowData,
+      seq,
+    }));
+    sendBatchMessageToApi(batchInfos, traceCtx);
+  } else {
+    const { activityWithId, rowData, seq } = stamped[0];
+    sendMessageToApi(activityWithId, rowData, traceCtx, seq);
+  }
+}
+
+// ================================
 // Unified event processing
 // ================================
 
 /**
- * Process one or more CDC events: compute deltas, persist activities, send via WebSocket, clean up.
+ * Process one or more CDC events through three sequenced concerns:
+ *   1. persist the activity/audit-log rows (all tracked tables)
+ *   2. apply counter + seq deltas (entities and memberships)
+ *   3. dispatch the real-time sync notification over WebSocket, then embedding cleanup
  * Handles both single-event and batch paths through a unified pipeline.
  */
 export async function processEvents(events: Array<{ lsn: string; result: ParseMessageResult }>): Promise<void> {
@@ -168,18 +200,8 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
       });
     }
 
-    // Send via WebSocket — single vs batch payload
-    if (isBatch) {
-      const batchInfos: BatchEventInfo[] = stamped.map(({ activityWithId, rowData, seq }) => ({
-        activity: activityWithId,
-        rowData,
-        seq,
-      }));
-      sendBatchMessageToApi(batchInfos, traceCtx);
-    } else {
-      const { activityWithId, rowData, seq } = stamped[0];
-      sendMessageToApi(activityWithId, rowData, traceCtx, seq);
-    }
+    // Send the real-time sync notification (single vs batch payload)
+    dispatchToApi(stamped, traceCtx);
 
     // Embedding cleanup: strip deleted embedded-entity IDs from host-entity arrays
     const { tableMeta } = events[0].result;

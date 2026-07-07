@@ -27,6 +27,9 @@ const propagationHintSchema = z.object({
  */
 export const streamNotificationSchema = z
   .object({
+    kind: z
+      .enum(['entity', 'membership'])
+      .describe('Discriminant for the notification: product-entity sync vs membership change'),
     action: z.enum(activityActions),
     entityType: z.enum(appConfig.productEntityTypes).nullable(),
     resourceType: z.enum(appConfig.resourceTypes).nullable(),

@@ -4,7 +4,8 @@ import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
 import { convertRowKeys, extractRowData, getChangedFields } from '../utils';
 import { compactRowData } from '../utils/compact-row-data';
-import { createActivity } from './create-activity';
+import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
+import { createActivity } from '../services/create-activity';
 
 /** Columns that hold embedded entity ID arrays (e.g. task.labels) */
 const embeddingColumns: Set<string> = new Set(appConfig.entityEmbeddings.map((e) => e.hostColumn));
@@ -20,10 +21,6 @@ function getStxChangedFields(row: Record<string, unknown>): string[] | null {
     if (Array.isArray(cf)) return cf.filter((x): x is string => typeof x === 'string');
   }
   return null;
-}
-
-function isSoftDeleteTransition(rowData: Record<string, unknown>, oldRowData: Record<string, unknown> | null): boolean {
-  return oldRowData !== null && oldRowData.deletedAt == null && rowData.deletedAt != null;
 }
 
 function isAlreadySoftDeleted(rowData: Record<string, unknown>, oldRowData: Record<string, unknown> | null): boolean {

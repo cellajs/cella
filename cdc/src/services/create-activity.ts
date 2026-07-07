@@ -4,6 +4,7 @@ import { appConfig, hierarchy } from 'shared';
 import type { TableMeta } from '../types';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import { actionToVerb, extractStxData } from '../utils';
+import { contextIdColumnKeys } from '../utils/context-columns';
 import { getRowValue } from '../utils/get-row-value';
 import { log } from '../lib/pino';
 
@@ -40,8 +41,7 @@ export function createActivity(
 
   // Build default nulls for all context entity ID columns, driven by config
   const defaultContextIds: Record<string, null> = {};
-  for (const contextType of appConfig.contextEntityTypes) {
-    const idKey = appConfig.entityIdColumnKeys[contextType];
+  for (const idKey of contextIdColumnKeys) {
     defaultContextIds[idKey] = null;
   }
 
