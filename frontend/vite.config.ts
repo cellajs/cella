@@ -23,6 +23,7 @@ import { execSync } from 'node:child_process';
 import { sdkWatch } from './vite/sdk-watch';
 import { localesHMR } from './vite/locales-hmr';
 import { docsFrontmatter } from './vite/docs-frontmatter';
+import { remarkLinkRepoPaths } from './vite/remark-link-repo-paths';
 
 // Repo docs (cella/*.md) start with an h1 for GitHub readers, but the docs page view
 // already renders the frontmatter title as h1 — drop the leading h1 when such a file
@@ -110,7 +111,17 @@ const viteConfig = {
         // `components` prop does not cross into imported modules, and wrapper pages
         // render imported repo docs (cella/*.md) as their body.
         providerImportSource: '@mdx-js/react',
-        remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter, remarkGfm, remarkStripRepoDocH1],
+        remarkPlugins: [
+          remarkFrontmatter,
+          remarkMdxFrontmatter,
+          remarkGfm,
+          remarkStripRepoDocH1,
+          // Autolink inline code that names a real repo file to its GitHub blob URL.
+          [
+            remarkLinkRepoPaths,
+            { repoRoot: path.resolve(__dirname, '..'), repoUrl: appConfig.company.githubUrl },
+          ],
+        ],
         // Heading ids for anchor links + scroll spy. The `spy-` DOM id prefix follows the
         // spy store convention (hooks/use-scroll-spy-store.ts); the slug part is
         // github-slugger, so URL hashes match GitHub's anchors for the same markdown.
