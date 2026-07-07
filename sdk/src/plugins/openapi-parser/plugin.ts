@@ -1,14 +1,3 @@
-/**
- * OpenAPI Parser Plugin for API Documentation
- *
- * Transforms OpenAPI spec into lightweight operation summaries for docs UI.
- * Generates JSON files in the SDK's docs.gen folder for runtime fetching:
- * - operations.json, tags.json, schemas.json, info.json
- * - details/{tagName}.json for per-tag operation details
- *
- * All data is fetched at runtime via React Query to reduce bundle size.
- */
-
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { DefinePlugin } from '@hey-api/openapi-ts';
@@ -30,8 +19,10 @@ type Config = {
 type OpenApiParserPlugin = DefinePlugin<Config>;
 
 /**
- * Handler function for the openapi-parser plugin.
- * Orchestrates parsing and JSON file generation.
+ * Handler for the openapi-parser plugin: transforms the OpenAPI spec into lightweight
+ * operation/tag/schema summaries and writes them as JSON to the docs.gen folder
+ * (operations, tags, schemas, info, and per-tag details), fetched at runtime via
+ * React Query to keep the SDK bundle small.
  */
 const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
   // Parse the OpenAPI spec (pure function)
@@ -63,9 +54,6 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
   writeFileSync(resolve(publicDocsDir, 'schema-tags.gen.json'), formatJson(parsed.schemaTags), 'utf-8');
 };
 
-/**
- * Default plugin configuration
- */
 const defaultConfig: OpenApiParserPlugin['Config'] = {
   dependencies: ['@hey-api/typescript'],
   handler,
@@ -75,7 +63,4 @@ const defaultConfig: OpenApiParserPlugin['Config'] = {
   },
 };
 
-/**
- * Plugin factory function
- */
 export const defineConfig = definePluginConfig(defaultConfig);

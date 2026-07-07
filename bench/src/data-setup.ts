@@ -1,14 +1,3 @@
-/**
- * Database setup script for load tests.
- *
- * Seeds deterministic bench data into the dev database.
- * Uses mock generators from backend/mocks for type-safe, schema-aligned records.
- * Idempotent: cleans existing bench data before re-seeding.
- *
- * Run with: pnpm db:seed       (clean + seed)
- *           pnpm db:teardown   (delete all bench data)
- */
-
 import { readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import process from 'node:process';
@@ -95,12 +84,12 @@ async function runBenchSeed(pool: pg.Pool, seed: BenchSeed, now: string): Promis
 async function cleanLoadtestData(pool: pg.Pool) {
   startSpinner('cleaning existing bench data...');
 
-  // Drop CDC replication slot if it exists — an unconsumed slot blocks DELETEs on published tables
+  // Drop the CDC replication slot if it exists: an unconsumed slot blocks DELETEs on published tables
   await pool
     .query(`SELECT pg_drop_replication_slot(slot_name) FROM pg_replication_slots WHERE slot_name = 'cdc_slot'`)
     .catch(() => {});
 
-  // Disable FK trigger checks for this session — avoids expensive SET NULL cascades
+  // Disable FK trigger checks for this session: avoids expensive SET NULL cascades
   // across 19 FK constraints when deleting loadtest users (full-table scans on each)
   const client = await pool.connect();
   try {
@@ -119,6 +108,11 @@ async function cleanLoadtestData(pool: pg.Pool) {
 
 // ── Seed ───────────────────────────────────────────────────────────────────
 
+/**
+ * Seeds deterministic bench data into the dev database using mock generators
+ * from backend/mocks for type-safe, schema-aligned rows. Idempotent: cleans
+ * existing bench data before re-seeding. Run with `pnpm db:seed`.
+ */
 async function seed() {
   const pool = new Pool({ connectionString: DB_URL, statement_timeout: QUERY_TIMEOUT_MS });
 
@@ -148,6 +142,7 @@ async function seed() {
 
 // ── Teardown ───────────────────────────────────────────────────────────────
 
+/** Deletes all bench data without reseeding. Run with `pnpm db:teardown`. */
 async function teardown() {
   const pool = new Pool({ connectionString: DB_URL, statement_timeout: QUERY_TIMEOUT_MS });
 

@@ -1,24 +1,3 @@
-/**
- * React Query IndexedDB Persister — hybrid per-query + bundled storage
- *
- * UNIVERSAL PATTERN - Part of the offline persistence layer.
- *
- * Product entity queries (task, label, attachment, page, …) are stored as
- * individual IDB records for incremental diffing — only changed queries are
- * written. Context queries (me, organization, members, …) are bundled into
- * the meta record since they are few, small, and all needed at startup.
- *
- * Owner-aware facade (decision 1d): records live in the per-user `appdb`
- * (`~/query/app-db`), resolved live on every op. While signed out no DB is bound,
- * so the persister is a no-op (`restoreClient`→undefined ⇒ in-memory cache,
- * `persistClient`→skip). The provider therefore stays mounted at root; persistence
- * simply follows the user. Scope no longer carries the owner (the DB name does):
- *
- * - **Offline mode** (`offlineAccess=true`): scope `rq`, survives browser restart.
- * - **Session mode** (`offlineAccess=false`): scope `s-<uuid>`, survives refresh,
- *   cleaned on tab close via `beforeunload`; orphans swept on next startup.
- */
-
 import type { DehydratedState } from '@tanstack/react-query';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { appConfig } from 'shared';
@@ -121,18 +100,17 @@ function createIDBPersister(scope = 'rq') {
   const MIGRATION_CHUNK_SIZE = 200;
 
   /**
-   * Boot-time lens migration (runtime touch point 2): rewrite cached
-   * product-entity rows, bundled context queries, and queued mutation variables
-   * from the persisted schema ordinal up to the bundle's currentSchemaVersion —
-   * locally, no refetch. Chunked so a crash mid-pass resumes idempotently: the
-   * pointer only advances in the final meta transaction, and re-running the
-   * chain over already-migrated rows is a no-op by construction.
+   * Boot-time lens migration: rewrite cached product entity rows, bundled
+   * context queries, and queued mutation variables from the persisted schema
+   * ordinal up to the bundle's currentSchemaVersion, locally with no refetch.
+   * Chunked; the pointer only advances in the final meta transaction, so a
+   * crash mid-pass resumes idempotently.
    */
   async function migrateScopeToCurrent(db: AppDatabase, fromVersion: number) {
     const records = await db.queries.where('scope').equals(scope).toArray();
     for (let i = 0; i < records.length; i += MIGRATION_CHUNK_SIZE) {
       const chunk = records.slice(i, i + MIGRATION_CHUNK_SIZE);
-      // Rewrites are computed before the write — Dexie transactions auto-commit
+      // Rewrites are computed before the write: Dexie transactions auto-commit
       // on non-Dexie awaits, and the lens chain (doba) is async.
       const rewritten: PersistedQueryRecord[] = [];
       for (const record of chunk) {
@@ -171,8 +149,6 @@ function createIDBPersister(scope = 'rq') {
     timeoutId = null;
     if (!client) return;
 
-    // Persist guard (1.7): a stale bundle must never write old-shape data over
-    // a newer bundle's migrated store.
     if (isBundleStale()) return;
 
     const db = getAppDb();
@@ -190,7 +166,6 @@ function createIDBPersister(scope = 'rq') {
 
       const { queries, mutations } = client.clientState;
 
-      // Partition into product vs context
       const productQueries: DehydratedQuery[] = [];
       const contextQueries: DehydratedQuery[] = [];
       for (const q of queries) {
@@ -198,7 +173,6 @@ function createIDBPersister(scope = 'rq') {
         else contextQueries.push(q);
       }
 
-      // 1. Diff product queries: collect only changed
       const upserts: PersistedQueryRecord[] = [];
       const currentHashes = new Set<string>();
 
@@ -218,7 +192,6 @@ function createIDBPersister(scope = 'rq') {
         lastPersistedAt.set(q.queryHash, q.state.dataUpdatedAt);
       }
 
-      // 2. Detect removals: tracked product queries no longer in dehydrated state
       const removals: string[] = [];
       for (const hash of lastPersistedAt.keys()) {
         if (!currentHashes.has(hash)) {
@@ -227,11 +200,10 @@ function createIDBPersister(scope = 'rq') {
         }
       }
 
-      // 3. Diff context queries by a lightweight snapshot
+      // Diff context queries by a lightweight snapshot
       const contextSnapshot = JSON.stringify(contextQueries.map((q) => [q.queryHash, q.state.dataUpdatedAt]));
       const contextChanged = contextSnapshot !== lastContextSnapshot;
 
-      // 4. Batch write in a single IDB transaction
       const hasProductChanges = upserts.length > 0 || removals.length > 0;
       if (hasProductChanges || contextChanged) {
         await db.transaction('rw', db.queries, db.meta, async () => {
@@ -285,13 +257,12 @@ function createIDBPersister(scope = 'rq') {
         if (!meta) return undefined;
 
         // Cache-bust on breaking schema change: a mismatch between the persisted
-        // version and appConfig.clientCacheVersion wipes cached query data (keeping
-        // queued mutations). A missing version (pre-feature build) seeds without
-        // wiping.
+        // version and appConfig.clientCacheVersion wipes cached query data
+        // (keeping queued mutations). A missing version seeds without wiping.
         const persistedVersion = meta.clientCacheVersion ?? appConfig.clientCacheVersion;
         if (persistedVersion !== appConfig.clientCacheVersion) {
           if (scope.startsWith(SESSION_KEY_PREFIX)) {
-            // Session scopes are cold — wipe entirely rather than salvage.
+            // Session scopes are cold; wipe entirely rather than salvage.
             await clearScope(db);
             return undefined;
           }
@@ -299,28 +270,25 @@ function createIDBPersister(scope = 'rq') {
           meta = (await db.meta.get(scope)) ?? meta;
         }
 
-        // Lens boot migration: persisted schema ordinal behind the bundle →
-        // rewrite cached rows + queued mutations locally (no refetch). Ahead
-        // (rollback deploy) → wipe query data, keep mutations. A missing ordinal
-        // (pre-feature meta) seeds as current — genuinely old caches are covered
-        // by the clientCacheVersion bust above.
+        // Lens boot migration: a persisted schema ordinal behind the bundle is
+        // rewritten locally (cached rows + queued mutations, no refetch). A
+        // missing ordinal seeds as current; genuinely old caches are covered by
+        // the clientCacheVersion bust above.
         const pointer = meta.schemaVersion ?? currentSchemaVersion;
         if (pointer !== currentSchemaVersion) {
           if (scope.startsWith(SESSION_KEY_PREFIX)) {
-            // Session scopes are cold — wipe rather than migrate.
+            // Session scopes are cold; wipe rather than migrate.
             await clearScope(db);
             return undefined;
           }
           if (pointer > currentSchemaVersion) {
-            // Disk is ahead of this bundle — another tab migrated forward, or a
-            // rollback deploy. Never write downward (a stale tab must not wipe a
-            // newer tab's migrated cache): restore nothing, stop persisting, and
-            // let the PWA update flow replace this bundle.
+            // Disk is ahead (another tab migrated forward, or a rollback deploy):
+            // stop persisting and let the PWA update flow replace this bundle.
             markBundleStale();
             return undefined;
           }
           await withMigrationLock(async () => {
-            // Re-read after acquiring the lock — another tab may have migrated.
+            // Re-read after acquiring the lock; another tab may have migrated.
             const fresh = await db.meta.get(scope);
             const freshPointer = fresh?.schemaVersion ?? currentSchemaVersion;
             if (freshPointer < currentSchemaVersion) await migrateScopeToCurrent(db, freshPointer);
@@ -328,15 +296,12 @@ function createIDBPersister(scope = 'rq') {
           meta = (await db.meta.get(scope)) ?? meta;
         }
 
-        // Product queries from individual records
         const productRecords = await db.queries.where('scope').equals(scope).toArray();
 
-        // Populate change tracker for subsequent writes
         for (const q of productRecords) {
           lastPersistedAt.set(q.queryHash, q.dataUpdatedAt);
         }
 
-        // Merge product records + context queries from meta
         const allQueries: DehydratedQuery[] = [
           ...productRecords.map((q) => ({
             queryHash: q.queryHash,
@@ -392,7 +357,7 @@ function createIDBPersister(scope = 'rq') {
         timeoutId = null;
       }
       const db = getAppDb();
-      // Fire-and-forget — best effort during beforeunload
+      // Fire-and-forget; best effort during beforeunload
       db?.transaction('rw', db.queries, db.meta, async () => {
         const ids = await db.queries.where('scope').equals(scope).primaryKeys();
         await db.queries.bulkDelete(ids);
@@ -403,10 +368,10 @@ function createIDBPersister(scope = 'rq') {
   } satisfies Persister & { flush: () => Promise<void>; teardown: () => void };
 }
 
-/** Persistent offline persister — scope `rq`, survives browser restart. */
+/** Persistent offline persister: scope `rq`, survives browser restart. */
 export const persister = createIDBPersister('rq');
 
-/** Session-scoped persister — per-tab scope, cleaned on tab close. */
+/** Session-scoped persister: per-tab scope, cleaned on tab close. */
 export const sessionPersister = createIDBPersister(`${SESSION_KEY_PREFIX}${getTabSessionId()}`);
 
 /** Reset persister change trackers (called on owner rebind so they match the freshly bound DB). */
@@ -415,10 +380,9 @@ export function resetPersisters(): void {
 }
 
 /**
- * Remove orphaned session records older than 2 hours.
- * Handles cases where `beforeunload` didn't fire (crash, mobile kill).
- * Also skips the current tab's session to avoid self-cleanup on refresh.
- * Call once on app startup (fire-and-forget). No-ops while signed out.
+ * Remove session records older than 2 hours, for tabs where `beforeunload`
+ * didn't fire (crash, mobile kill). Skips the current tab. Call once on app
+ * startup (fire-and-forget); no-ops while signed out.
  */
 export async function cleanupOrphanedSessions(): Promise<void> {
   const db = getAppDb();
@@ -442,14 +406,13 @@ export async function cleanupOrphanedSessions(): Promise<void> {
       console.debug(`[QueryPersister] Cleaned up ${orphanScopes.length} orphaned session(s)`);
     }
   } catch (error) {
-    // Non-critical — orphans will be cleaned up next time
+    // Non-critical; orphans are cleaned up on a later startup
     console.debug('[QueryPersister] Orphan cleanup failed:', error);
   }
 }
 
-// Best-effort cleanup of session cache on tab close.
-// Uses teardown() to cancel any pending throttled flush before deleting,
-// preventing the race where flush() re-creates the record after deletion.
+// Best-effort cleanup of session cache on tab close. teardown() cancels any
+// pending throttled flush first, so it can't re-create the record after deletion.
 window.addEventListener('beforeunload', () => {
   sessionPersister.teardown();
 });

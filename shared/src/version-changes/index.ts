@@ -1,9 +1,4 @@
-/**
- * Schema-evolution lens registry — public barrel.
- *
- * The ordered, append-only lens list lives in `lens-list.ts` (the designated
- * append point). `currentSchemaVersion` is derived as the list length (engine.ts).
- */
+/** Public barrel for the schema-evolution lens registry (see README.md). */
 export { lenses } from './lens-list';
 export { schemaEvolutionPolicy, type UnknownFieldHandling } from './config';
 export { defineLens, LENS_FORMAT_VERSION, resolveAddDefault } from './define';

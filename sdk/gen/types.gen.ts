@@ -3284,6 +3284,172 @@ export type GetPublicCountsResponses = {
 
 export type GetPublicCountsResponse = GetPublicCountsResponses[keyof GetPublicCountsResponses];
 
+export type GetUsersData = {
+  body?: never;
+  path?: never;
+  query?: {
+    q?: string;
+    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    seqCursor?: string;
+    role?: 'admin';
+  };
+  url: '/users/users';
+};
+
+export type GetUsersErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
+
+export type GetUsersResponses = {
+  /**
+   * Users
+   */
+  200: {
+    /**
+     * Base user schema with essential fields for identification and display.
+     */
+    items: Array<
+      UserBase & {
+        lastSeenAt: string | null;
+        role?: 'admin' | null;
+      }
+    >;
+    total: number;
+  };
+};
+
+export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
+
+export type GetUserData = {
+  body?: never;
+  path: {
+    relatableUserId: string;
+  };
+  query?: {
+    slug?: string | boolean;
+  };
+  url: '/users/users/{relatableUserId}';
+};
+
+export type GetUserErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetUserError = GetUserErrors[keyof GetUserErrors];
+
+export type GetUserResponses = {
+  /**
+   * Base user schema with essential fields for identification and display.
+   */
+  200: UserBase & {
+    lastSeenAt: string | null;
+  };
+};
+
+export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
+
+export type GetYjsTokenData = {
+  body?: never;
+  path?: never;
+  query: {
+    entityType: string;
+    tenantId: string;
+    organizationId: string;
+  };
+  url: '/yjs/token';
+};
+
+export type GetYjsTokenErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetYjsTokenError = GetYjsTokenErrors[keyof GetYjsTokenErrors];
+
+export type GetYjsTokenResponses = {
+  /**
+   * Yjs auth token
+   */
+  200: {
+    token: string;
+  };
+};
+
+export type GetYjsTokenResponse = GetYjsTokenResponses[keyof GetYjsTokenResponses];
+
 export type DeleteOrganizationsData = {
   body: {
     ids: Array<string>;
@@ -3603,82 +3769,17 @@ export type UpdateOrganizationResponses = {
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
 
-export type GetUsersData = {
-  body?: never;
-  path?: never;
-  query?: {
-    q?: string;
-    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
-    order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    seqCursor?: string;
-    role?: 'admin';
-  };
-  url: '/users/users';
-};
-
-export type GetUsersErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
-
-export type GetUsersResponses = {
-  /**
-   * Users
-   */
-  200: {
-    /**
-     * Base user schema with essential fields for identification and display.
-     */
-    items: Array<
-      UserBase & {
-        lastSeenAt: string | null;
-        role?: 'admin' | null;
-      }
-    >;
-    total: number;
-  };
-};
-
-export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
-
-export type GetUserData = {
-  body?: never;
+export type HandleMcpData = {
+  body: unknown;
   path: {
-    relatableUserId: string;
+    tenantId: string;
+    organizationId: string;
   };
-  query?: {
-    slug?: string | boolean;
-  };
-  url: '/users/users/{relatableUserId}';
+  query?: never;
+  url: '/{tenantId}/{organizationId}/mcp';
 };
 
-export type GetUserErrors = {
+export type HandleMcpErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -3705,18 +3806,14 @@ export type GetUserErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetUserError = GetUserErrors[keyof GetUserErrors];
+export type HandleMcpError = HandleMcpErrors[keyof HandleMcpErrors];
 
-export type GetUserResponses = {
+export type HandleMcpResponses = {
   /**
-   * Base user schema with essential fields for identification and display.
+   * JSON-RPC response
    */
-  200: UserBase & {
-    lastSeenAt: string | null;
-  };
+  200: unknown;
 };
-
-export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 
 export type DeleteAttachmentsData = {
   body: {
@@ -4524,100 +4621,3 @@ export type MarkSeenResponses = {
 };
 
 export type MarkSeenResponse = MarkSeenResponses[keyof MarkSeenResponses];
-
-export type GetYjsTokenData = {
-  body?: never;
-  path?: never;
-  query: {
-    entityType: string;
-    tenantId: string;
-    organizationId: string;
-  };
-  url: '/yjs/token';
-};
-
-export type GetYjsTokenErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetYjsTokenError = GetYjsTokenErrors[keyof GetYjsTokenErrors];
-
-export type GetYjsTokenResponses = {
-  /**
-   * Yjs auth token
-   */
-  200: {
-    token: string;
-  };
-};
-
-export type GetYjsTokenResponse = GetYjsTokenResponses[keyof GetYjsTokenResponses];
-
-export type HandleMcpData = {
-  body: unknown;
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/mcp';
-};
-
-export type HandleMcpErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type HandleMcpError = HandleMcpErrors[keyof HandleMcpErrors];
-
-export type HandleMcpResponses = {
-  /**
-   * JSON-RPC response
-   */
-  200: unknown;
-};

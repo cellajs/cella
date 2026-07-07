@@ -5,7 +5,7 @@ import { log } from '../lib/pino';
 
 // Access private state for reset between tests
 function resetCircuitBreaker() {
-  // @ts-expect-error — accessing private field for test isolation
+  // @ts-expect-error: accessing private field for test isolation
   circuitBreaker.circuits.clear();
 }
 
@@ -94,7 +94,7 @@ describe('CircuitBreaker', () => {
       circuitBreaker.recordFailure('tasks');
 
       // Fast-forward past cooldown
-      // @ts-expect-error — accessing private field for test
+      // @ts-expect-error: accessing private field for test
       const entry = circuitBreaker.circuits.get('tasks')!;
       entry.openedAt = Date.now() - 61_000;
 
@@ -107,7 +107,7 @@ describe('CircuitBreaker', () => {
       circuitBreaker.recordFailure('tasks');
       circuitBreaker.recordFailure('tasks');
 
-      // @ts-expect-error — accessing private field for test
+      // @ts-expect-error: accessing private field for test
       const entry = circuitBreaker.circuits.get('tasks')!;
       entry.openedAt = Date.now() - 61_000;
       circuitBreaker.shouldProcess('tasks'); // triggers half_open
@@ -122,7 +122,7 @@ describe('CircuitBreaker', () => {
       circuitBreaker.recordFailure('tasks');
       circuitBreaker.recordFailure('tasks');
 
-      // @ts-expect-error — accessing private field for test
+      // @ts-expect-error: accessing private field for test
       const entry = circuitBreaker.circuits.get('tasks')!;
       entry.openedAt = Date.now() - 61_000;
       circuitBreaker.shouldProcess('tasks'); // triggers half_open

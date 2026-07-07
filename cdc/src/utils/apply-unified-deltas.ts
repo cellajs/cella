@@ -61,18 +61,12 @@ function sumInto(target: Record<string, number>, source: Record<string, number> 
 }
 
 /**
- * Apply a unified delta plan for a batch of CDC events.
- *
- * 1. For each seq group: UPSERT with RETURNING to reserve a seq range,
- *    merge count deltas for that contextKey, assign seq values to entities.
- * 2. Parallel: all remaining count UPSERTs + bulk entity seq UPDATE.
- *
- * Mutates event.result.rowData.seq for each stampable event.
+ * Apply a unified delta plan for a batch of CDC events. Mutates
+ * `event.result.rowData.seq` for each stampable event.
  */
 export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan): Promise<void> {
   const { seqGroups, countDeltasByContextKey, entityStamps: _stamps } = plan;
 
-  // Track which contextKeys have been handled by seq groups
   const handledContextKeys = new Set<string>();
   const allEntityStamps: Array<{ tableName: string; id: string; seq: number }> = [];
 
@@ -86,7 +80,6 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan): Prom
     const highSeq = counts[group.seqKey] ?? group.count;
     const baseSeq = highSeq - group.count;
 
-    // Assign seq values to events
     for (let i = 0; i < group.events.length; i++) {
       const seq = baseSeq + i + 1;
       const entityId = group.events[i].result.rowData.id;

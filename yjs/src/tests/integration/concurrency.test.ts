@@ -137,7 +137,7 @@ describe('2.3 State consistency under concurrency', () => {
     Y.applyUpdate(docB, stateB!);
     docB.getMap('data').set('fromB', true);
 
-    // Save concurrently — last write wins, one update may be lost
+    // Save concurrently: last write wins, one update may be lost
     await Promise.all([
       saveState(c, Y.encodeStateAsUpdate(docA)),
       saveState(c, Y.encodeStateAsUpdate(docB)),
@@ -153,8 +153,7 @@ describe('2.3 State consistency under concurrency', () => {
     const hasB = map.get('fromB') === true;
     expect(hasA || hasB).toBe(true);
 
-    // Document the race: without merging, one update is typically lost.
-    // The relay's debounce + safeMerge pattern prevents this in practice.
+    // Without merging, one concurrent update is typically lost; the relay's debounce + safeMerge pattern mitigates this in production (untested here).
     if (!hasA || !hasB) {
       console.info('  ℹ Last-write-wins confirmed: one concurrent update was lost (expected without merge)');
     }

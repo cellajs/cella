@@ -4,7 +4,7 @@ import { mockDocContext, mockWebSocket, storageMock } from './helpers';
 // Mock storage to avoid DB calls in unit tests
 vi.mock('../data/storage', () => storageMock());
 
-// Mock materialization — cleanup gating is exercised via its return value
+// Mock materialization: cleanup gating is exercised via its return value
 vi.mock('../sync/materialize', () => ({
   materializeState: vi.fn().mockResolvedValue('ok'),
   postMaterialize: vi.fn().mockResolvedValue('ok'),
@@ -147,11 +147,11 @@ describe('joinCollab / leaveCollab', () => {
 
     await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
 
-    // Durable record hasn't absorbed the session — row and session must survive
+    // Durable record hasn't absorbed the session: row and session must survive
     expect(deleteState).not.toHaveBeenCalled();
     expect(getCollab(ctx.entityType, ctx.entityId)).toBe(collab);
 
-    // Backend recovers — rescheduled cleanup converges and deletes.
+    // Backend recovers: rescheduled cleanup converges and deletes.
     // The flushed state was consumed; the retry loads it back from storage.
     vi.mocked(loadState).mockResolvedValueOnce(new Uint8Array([1]));
     await vi.advanceTimersByTimeAsync(5 * 60 * 1000);

@@ -25,7 +25,7 @@ const COOLDOWN_MS = 60_000;
  *
  * Prevents a single table's persistent failures from blocking the entire
  * pipeline. When a table hits consecutive failure threshold, its circuit
- * opens — events are skipped (LSN acked, logged) until the cooldown expires
+ * opens: events are skipped (LSN acked, logged) until the cooldown expires
  * and a test event succeeds.
  *
  * States:
@@ -55,7 +55,7 @@ class CircuitBreaker {
     if (entry.state === 'closed') return true;
     if (entry.state === 'half_open') return true;
 
-    // State is 'open' — check if cooldown has elapsed
+    // State is 'open': check if cooldown has elapsed
     const now = Date.now();
     if (entry.openedAt && now - entry.openedAt >= COOLDOWN_MS) {
       entry.state = 'half_open';
@@ -66,7 +66,7 @@ class CircuitBreaker {
       return true;
     }
 
-    // Still in cooldown — skip
+    // Still in cooldown: skip
     entry.skippedCount++;
     return false;
   }
@@ -81,7 +81,7 @@ class CircuitBreaker {
     entry.lastFailureAt = Date.now();
 
     if (entry.state === 'half_open') {
-      // Recovery test failed — reopen
+      // Recovery test failed: reopen
       entry.state = 'open';
       entry.openedAt = Date.now();
       log.warn(`Circuit re-OPENED for table '${tableName}' — recovery test failed`, {

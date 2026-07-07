@@ -37,9 +37,9 @@ export interface SeqGroup {
 /**
  * Resolve the context key for a product entity from its row data: the row's deepest non-null
  * ancestor (variable-depth rows scope to their effective home, e.g. a course-stream item with
- * `projectId = null` scopes to its course). Without nullable ancestors this is the declared
- * parent — identical to the previous parent-else-org rule. Falls back to the activity's org,
- * then to `public:{type}` when the row has no context at all.
+ * `projectId = null` scopes to its course). Without nullable ancestors this equals the
+ * declared parent. Falls back to the activity's org, then to `public:{type}` when the row
+ * has no context at all.
  */
 export function resolveContextKey(
   entityType: string,

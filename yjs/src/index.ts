@@ -40,7 +40,7 @@ export async function startYjsWorker(): Promise<void> {
   });
 
   if (env.NODE_ENV === 'development') {
-    // Wait for backend, but don't crash if it times out — the server
+    // Wait for backend, but don't crash if it times out: the server
     // is already listening and can handle requests once backend is up.
     // Sweep crash-orphaned session rows once the backend is reachable.
     waitForBackend(BACKEND_POLL_INTERVAL_MS, BACKEND_POLL_TIMEOUT_MS)

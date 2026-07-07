@@ -1,13 +1,8 @@
-/**
- * YJS Worker tracing module.
- *
- * Uses shared OTel factory for traces/metrics/logs.
- */
-
 import { appConfig } from 'shared';
 import { createOtelSDK, type OtelSDK } from 'shared/otel';
 import { env } from '../env';
 
+/** OTel SDK for the Yjs worker, built from the shared factory (traces/metrics/logs). */
 export const otel: OtelSDK = createOtelSDK({
   serviceName: `${appConfig.slug}-yjs`,
   mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,

@@ -60,14 +60,12 @@ export const getTextFromBlock = (block: Block): string => {
 
   let text = '';
 
-  // Extract text from content
   if (Array.isArray(content)) {
     text += content
       .map((item) => ('text' in item && typeof item.text === 'string' ? item.text : ''))
       .join(' ')
       .trim();
   } else if (content?.type === 'tableContent' && Array.isArray(content.rows)) {
-    // Handle tableContent (rows and cells)
     text += content.rows
       .flatMap((row) =>
         row.cells.flatMap((cell) =>
@@ -79,7 +77,6 @@ export const getTextFromBlock = (block: Block): string => {
       .join(' ')
       .trim();
   } else if (
-    // Handle file-based blocks: audio, image, video, file
     mediaBlockTypes.has(block.type) &&
     'name' in block.props &&
     typeof block.props.name === 'string'
@@ -87,7 +84,6 @@ export const getTextFromBlock = (block: Block): string => {
     text += block.props.name;
   }
 
-  // Process children recursively
   if (Array.isArray(children)) {
     const childrenText = children
       .map(getTextFromBlock)

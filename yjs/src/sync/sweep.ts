@@ -5,13 +5,13 @@ import { postMaterialize, stateToBlocksJson } from './materialize';
 
 /**
  * Startup sweep: recover sessions orphaned by a relay crash between last-disconnect
- * and cleanup. Rows with `lastEditedBy` carried edits — materialize them into the
+ * and cleanup. Rows with `lastEditedBy` carried edits: materialize them into the
  * durable record before deleting. Rows without never diverged from their seed
  * (saveState only runs on updates), so they are deleted directly.
  *
- * Retry-class failures (backend down) leave the row for the next boot or the next
- * session on that entity. Double-materialization across relay instances is harmless:
- * unchanged content no-ops server-side and HLC LWW converges the rest.
+ * Retry-class failures leave the row for the next boot or a later session on that
+ * entity; concurrent materializations from different relay instances converge via
+ * server-side HLC last-write-wins.
  */
 export async function runStartupSweep(): Promise<void> {
   let stale: Awaited<ReturnType<typeof listStaleDocs>>;

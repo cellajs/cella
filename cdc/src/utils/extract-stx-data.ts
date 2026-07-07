@@ -9,15 +9,11 @@ import type { RowData } from '../types';
 export function extractStxData(row: RowData): StxBase | null {
   const stx = row.stx;
 
-  // Not present or null
   if (!stx) return null;
-
-  // Must be an object with required fields
   if (typeof stx !== 'object' || Array.isArray(stx)) return null;
 
   const stxObj = stx as Record<string, unknown>;
 
-  // Validate required fields
   if (typeof stxObj.mutationId !== 'string' || typeof stxObj.sourceId !== 'string') {
     return null;
   }

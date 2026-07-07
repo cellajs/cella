@@ -83,10 +83,10 @@ describe('TransactionBuffer', () => {
     // Delete project-1
     const proj = mockParseResult({ action: 'delete', entityType: 'organization', subjectId: 'org-1', organizationId: 'org-1' });
 
-    // Attachment in a DIFFERENT org — should NOT be suppressed
+    // Attachment in a DIFFERENT org, should NOT be suppressed
     const t1 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-99', organizationId: 'org-other' });
 
-    // Attachment in the deleted org — should be suppressed
+    // Attachment in the deleted org, should be suppressed
     const t2 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-1', organizationId: 'org-1' });
 
     await buffer.onEvent('0/1', proj);
@@ -141,7 +141,7 @@ describe('TransactionBuffer', () => {
     const org = mockParseResult({ action: 'delete', entityType: 'organization', subjectId: 'org-1' });
     await buffer.onEvent('0/0', org);
 
-    // Simulate 50,000 cascaded child deletes — well beyond old maxBufferedEvents (20k)
+    // Simulate 50,000 cascaded child deletes to prove suppression stays memory-bounded
     for (let i = 0; i < 50_000; i++) {
       const task = mockParseResult({
         action: 'delete',
@@ -155,7 +155,7 @@ describe('TransactionBuffer', () => {
 
     await buffer.onCommit();
 
-    // Only the org delete should survive — all 50k tasks suppressed inline
+    // Only the org delete should survive, all 50k tasks suppressed inline
     expect(processedEvents).toHaveLength(1);
     expect(processedEvents[0].result.activity.entityType).toBe('organization');
 
@@ -167,7 +167,7 @@ describe('TransactionBuffer', () => {
   it('suppresses child deletes that arrive before parent context entity delete', async () => {
     buffer.onBegin({ tag: 'begin', xid: 101, commitLsn: null, commitTime: BigInt(0) });
 
-    // Children arrive before parent (edge case — non-standard WAL order)
+    // Children arrive before parent (edge case: non-standard WAL order)
     const t1 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-1', organizationId: 'org-1' });
     const t2 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-2', organizationId: 'org-1' });
     const proj = mockParseResult({ action: 'delete', entityType: 'organization', subjectId: 'org-1', organizationId: 'org-1' });
@@ -178,7 +178,7 @@ describe('TransactionBuffer', () => {
 
     await buffer.onCommit();
 
-    // Only project delete should survive — tasks caught by second pass at commit
+    // Only project delete should survive, tasks caught by second pass at commit
     expect(processedEvents).toHaveLength(1);
     expect(processedEvents[0].result.activity.entityType).toBe('organization');
   });
@@ -199,11 +199,8 @@ describe('TransactionBuffer', () => {
 
     await buffer.onCommit();
 
-    // Only the org delete should survive — project is a context entity but its ID is in deletedContextIds,
-    // however context entity deletes themselves are never suppressed.
-    // Actually: project.delete has organizationId = 'org-1' which is in deletedContextIds,
-    // but isCascadedDelete returns false for context entities. So project delete IS processed.
-    // Task has organizationId = 'org-1' in deletedContextIds → suppressed
+    // Both context entity deletes survive (context entity deletes are never suppressed);
+    // only the attachment, matched via organizationId, is suppressed as a cascade.
     expect(processedEvents).toHaveLength(2); // org + project
     const types = processedEvents.map((e) => e.result.activity.entityType);
     expect(types).toContain('organization');

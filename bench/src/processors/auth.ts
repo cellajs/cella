@@ -1,14 +1,3 @@
-/**
- * Artillery auth processor — uses pre-seeded sessions.
- *
- * Used as `beforeScenario` in all scenarios. Builds the session cookie
- * directly from deterministic tokens seeded by data-setup.ts — no HTTP
- * sign-in call, instant VU start.
- *
- * The token format matches what data-setup inserts:
- *   cookie = "{hashedToken}.{sessionId}."
- * where hashedToken = SHA-256 hex of the deterministic token string.
- */
 import { SESSION_COOKIE_NAME } from '../config';
 import { sessionId } from '../seeds/ids';
 import { hashToken, sessionToken } from '../seeds/session-auth';
@@ -32,6 +21,13 @@ function buildCookie(userIndex: number): string {
 
 // ── Authenticate ───────────────────────────────────────────────────────────
 
+/**
+ * Builds the session cookie for a virtual user from pre-seeded, deterministic
+ * session tokens (used as `beforeScenario` in every scenario), skipping the
+ * HTTP sign-in call for an instant VU start. Cookie format:
+ * `{hashedToken}.{sessionId}.` where hashedToken is the SHA-256 hex of the
+ * deterministic token (matches what data-setup inserts).
+ */
 export async function authenticate(context: { vars: Record<string, unknown> }, _events: unknown) {
   const userIndex = userCounter++ % TOTAL_USERS;
   context.vars.cookie = buildCookie(userIndex);

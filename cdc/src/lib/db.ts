@@ -3,9 +3,6 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/postgres-tls';
 import { env } from '../env';
 
-/**
- * Database configuration for CDC Worker.
- */
 const dbConfig: DrizzleConfig = {
   logger: env.DEBUG,
 };

@@ -5,15 +5,15 @@ import { yUpdateToBlocks } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
 
 /**
- * `ok`        — persisted (or content unchanged).
- * `permanent` — backend rejected (4xx: entity deleted, permission revoked, unknown type).
- *               Do NOT retry the same content; cleanup may proceed.
- * `retry`     — backend/network unavailable (5xx / fetch error). Retry later; cleanup
- *               must keep the session row so the durable record can still absorb it.
+ * `ok`: persisted (or content unchanged).
+ * `permanent`: backend rejected (4xx: entity deleted, permission revoked, unknown type).
+ *              Do NOT retry the same content; cleanup may proceed.
+ * `retry`: backend/network unavailable (5xx / fetch error). Retry later; cleanup
+ *          must keep the session row so the durable record can still absorb it.
  */
 export type MaterializeResult = 'ok' | 'permanent' | 'retry';
 
-/** Minimal session shape materialization reads/writes — matches CollabSession. */
+/** Minimal session shape materialization reads/writes: matches CollabSession. */
 export interface MaterializableSession {
   ctx: DocContext;
   lastMaterializedJson?: string;
@@ -64,7 +64,7 @@ export function stateToBlocksJson(state: Uint8Array): string | null {
  */
 export async function materializeState(collab: MaterializableSession, state: Uint8Array): Promise<MaterializeResult> {
   const json = stateToBlocksJson(state);
-  // Unparseable state can never converge — treat as permanent so cleanup isn't wedged
+  // Unparseable state can never converge: treat as permanent so cleanup isn't wedged
   if (json === null) return 'permanent';
 
   if (json === collab.lastMaterializedJson) return 'ok';

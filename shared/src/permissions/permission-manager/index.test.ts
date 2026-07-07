@@ -61,13 +61,8 @@ const attachmentSubject = (
   ...overrides,
 });
 
-/**
- * These tests use appConfig.hierarchy which defines:
- * - organization: context entity with roles ['admin', 'member']
- * - attachment: product entity with parent 'organization'
- * - page: product entity with parent null (global)
- */
-
+// Uses appConfig.hierarchy: organization (context, roles admin/member), attachment
+// (product, parent organization), page (product, no parent).
 describe('hierarchy (from appConfig.hierarchy)', () => {
   describe('hierarchy.getOrderedAncestors', () => {
     it('returns empty array for root context', () => {
@@ -412,7 +407,7 @@ describe('own permission policy — ownership-scoped access', () => {
     const subject = attachmentSubject('att1', 'org1', {
       createdBy: userId, // Same user, but userId not passed in options
     });
-    // No userId in options — own check cannot succeed
+    // No userId in options: own check cannot succeed
     const { can } = getAllDecisions(ownPolicies, memberships, subject);
 
     expect(can.update).toBe(false);
@@ -521,7 +516,7 @@ describe('own permission — grant attribution', () => {
     });
     const decision = getAllDecisions(ownPolicies, memberships, subject, { userId });
 
-    // Update/delete denied — no grants at all
+    // Update/delete denied: no grants at all
     expect(decision.actions.update.enabled).toBe(false);
     expect(decision.actions.update.grantedBy).toHaveLength(0);
     expect(decision.actions.delete.enabled).toBe(false);
@@ -572,17 +567,17 @@ describe('own permission — batch subjects', () => {
 
     const results = getAllDecisions(ownPolicies, memberships, subjects, { userId });
 
-    // Own entity — full access via ownership
+    // Own entity: full access via ownership
     const ownDecision = results.get('att-own')!;
     expect(ownDecision.can.update).toBe(true);
     expect(ownDecision.can.delete).toBe(true);
 
-    // Other's entity — denied
+    // Other's entity: denied
     const otherDecision = results.get('att-other')!;
     expect(otherDecision.can.update).toBe(false);
     expect(otherDecision.can.delete).toBe(false);
 
-    // Null createdBy — denied
+    // Null createdBy: denied
     const nullDecision = results.get('att-null')!;
     expect(nullDecision.can.update).toBe(false);
     expect(nullDecision.can.delete).toBe(false);

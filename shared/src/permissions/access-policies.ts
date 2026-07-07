@@ -37,7 +37,7 @@ const createContextPolicyBuilder = (
     builder[role as EntityRole] = (permissions: Partial<Record<EntityActionType, PermissionValue>>) => {
       // Normalize to a full record so the engine always reads an explicit value: any action the
       // policy omits defaults to 0 (denied), and the `'own'` sugar literal resolves to the
-      // built-in row condition. Omitting an action is therefore equivalent to `0`.
+      // built-in row condition.
       const fullPermissions = {} as EntityActionPermissions;
       for (const action of appConfig.entityActions as readonly EntityActionType[]) {
         fullPermissions[action] = normalizePermissionValue(permissions[action] ?? 0);
@@ -150,8 +150,7 @@ export const configurePermissions = (
 
 /**
  * A parent-dependent public grant only works if the parent itself can become public:
- * its own grant must include self-publication. Mirrors the validation the entity
- * hierarchy performed when `publicRead` lived there.
+ * its own grant must include self-publication.
  */
 const validatePublicReadGrants = (grants: PublicReadGrants): void => {
   for (const [entityType, mode] of Object.entries(grants) as [ContextEntityType | ProductEntityType, PublicReadMode][]) {
@@ -168,8 +167,8 @@ const validatePublicReadGrants = (grants: PublicReadGrants): void => {
 };
 
 /**
- * Configures access policies only (no public read grants) — kept for tests and callers
- * that drive the engine with synthetic policies. App configs should use
+ * Configures access policies only (no public read grants). Kept for tests and callers
+ * that drive the engine with synthetic policies; app configs should use
  * `configurePermissions`.
  */
 export const configureAccessPolicies = (

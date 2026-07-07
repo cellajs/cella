@@ -19,17 +19,6 @@ type TestMembership = {
   projectId: string | null;
 };
 
-/**
- * Performance regression tests for permission checking.
- *
- * Tests two aspects:
- * 1. Absolute performance: checking 100 entities should complete in < 10ms
- * 2. Relative performance: array input should be at least 2x faster than looping single calls
- *
- * Uses 10 runs with average to reduce variance from system load.
- */
-
-// Setup: Configure policies
 const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
   switch (subject.name) {
     case 'organization':
@@ -43,7 +32,6 @@ const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, cont
   }
 });
 
-// Helper to create memberships
 const createMemberships = (count: number): TestMembership[] =>
   Array.from({ length: count }, (_, i) => ({
     id: `mem${i}`,
@@ -60,7 +48,6 @@ const createMemberships = (count: number): TestMembership[] =>
     projectId: null,
   }));
 
-// Helper to create subjects
 const createSubjects = (count: number): SubjectForPermission[] =>
   Array.from({ length: count }, (_, i) => ({
     entityType: 'attachment' as const,
@@ -83,6 +70,7 @@ const measureAverage = (fn: () => void, runs = 10): number => {
   return times.reduce((a, b) => a + b, 0) / times.length;
 };
 
+// Array checks must stay under 10ms and beat per-subject looping by 2x (avg of 10 runs).
 describe('Permission batch performance', () => {
   const memberships = createMemberships(50);
   const subjects = createSubjects(100);

@@ -135,7 +135,7 @@ class ReplicationStateManager {
     this._lastLagMs = lagMs;
 
     if (!this._catchingUp) {
-      // Not in catchup — check if we should enter
+      // Not in catchup: check if we should enter
       if (lagMs > enterLagMs) {
         this._catchingUp = true;
         this._catchupStartedAt = Date.now();
@@ -149,7 +149,7 @@ class ReplicationStateManager {
       return this._catchingUp;
     }
 
-    // In catchup — check if we should exit
+    // In catchup: check if we should exit
     if (lagMs < exitLagMs) {
       this._consecutiveLiveTxns++;
       if (this._consecutiveLiveTxns >= exitConsecutiveLive) {

@@ -28,11 +28,8 @@ export interface PermissionMembership {
  * Subject (entity) for permission evaluation.
  *
  * In Zanzibar terms, this represents the "object" being accessed. The `createdBy` field
- * enables an implicit "owner" relation — when a policy uses `'own'`, the engine checks
+ * enables an implicit "owner" relation: when a policy uses `'own'`, the engine checks
  * `subject.createdBy === options.userId` to determine if the actor is the owner.
- *
- * Future: This could be extended to carry explicit relation tuples (e.g., `relations: Array<{ type, userId }>`)
- * for a full Zanzibar model without changing the outer interface.
  */
 export type SubjectForPermission = {
   entityType: ContextEntityType | ProductEntityType;
@@ -49,8 +46,8 @@ export type SubjectForPermission = {
   row?: Record<string, unknown>;
   /**
    * The parent context row's fields, for rules that depend on another row (e.g.
-   * `publicRead: 'publicParent'`). Resolved by the caller once per request/event —
-   * the engine never loads rows (see `design-cross-row-visibility.md`).
+   * `publicRead: 'publicParent'`). Resolved by the caller once per request/event:
+   * the engine never loads rows itself.
    */
   parentRow?: Record<string, unknown>;
   /**
@@ -62,7 +59,7 @@ export type SubjectForPermission = {
 };
 
 /**
- * Source that granted an action — a context membership, a row condition
+ * Source that granted an action: a context membership, a row condition
  * (`relation` is the condition's name, e.g. `'own'`), or a public read grant.
  */
 export type GrantSource =

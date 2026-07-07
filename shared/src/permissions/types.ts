@@ -41,7 +41,7 @@ export type SubjectAccessPolicies = AccessPolicyEntry[];
 
 /**
  * Full access policy configuration mapping subjects to their policies.
- * Only context and product entities have access policies — user access uses separate logic.
+ * Only context and product entities have access policies: user access uses separate logic.
  */
 export type AccessPolicies = Partial<Record<ContextEntityType | ProductEntityType, SubjectAccessPolicies>>;
 
@@ -50,8 +50,8 @@ export type AccessPolicies = Partial<Record<ContextEntityType | ProductEntityTyp
  * Maps entity roles to their permission setters.
  *
  * Permissions are partial: any action you omit defaults to `0` (denied). This lets a policy list
- * only the actions it grants — e.g. a context entity's own ("self") rows can omit `create`, since
- * an entity can never be created from inside itself (creation is granted on ancestor rows).
+ * only the actions it grants (e.g. a context entity's own ("self") rows can omit `create`, since
+ * an entity can never be created from inside itself: creation is granted on ancestor rows).
  */
 export type ContextPolicyBuilder = {
   [R in EntityRole]: (permissions: Partial<Record<EntityActionType, PermissionValue>>) => void;
@@ -69,7 +69,7 @@ export interface AccessPolicyConfiguration {
   restrict: (restriction: RowRestrictionInput) => void;
   /**
    * Delegate the listed actions to the host row's decision (hierarchy `host:`): a hosted
-   * row allows an action if the HOST row allows it — including the host's row conditions,
+   * row allows an action if the HOST row allows it, including the host's row conditions,
    * public grants and restrictions. Additive (unions with the subject's own grants);
    * strictly-inherited subjects (e.g. comments) simply declare no own grants for the
    * delegated actions. Requires the caller to resolve `subject.hostRow` (load-at-check);

@@ -1,12 +1,3 @@
-/**
- * Tests for the docs deep-link builder used in generated SDK TSDoc comments.
- *
- * The URL format must stay in sync with the frontend docs operations route,
- * which reads the `operationTag` search param and resolves the anchor via
- * `generateOperationHash`. These tests guard against silently shipping links
- * that no longer resolve (e.g. legacy `api.cellajs.com/docs#...` URLs).
- */
-
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -14,6 +5,9 @@ import { config } from '../../../../../shared/config/config.default';
 import { generateOperationHash } from '../../openapi-parser/file-generators';
 import { buildOperationDocsUrl } from '../plugin';
 
+// Docs URL format must match the frontend operations route: reads `operationTag`
+// and resolves the anchor via generateOperationHash. Guards against emitting
+// unresolvable api.cellajs.com/docs#... links.
 describe('buildOperationDocsUrl', () => {
   it('builds a frontend docs link with the operationTag param and hash anchor', () => {
     const url = buildOperationDocsUrl('post', '/auth/check-email', 'auth');

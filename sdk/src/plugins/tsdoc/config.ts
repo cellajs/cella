@@ -22,8 +22,8 @@ const defaultConfig: TsdocPlugin['Config'] = {
   name: 'tsdoc',
 
   /**
-   * Name of the output file (relative to output path).
-   * Will generate `tsdoc.gen.ts` (now it doesnt generate a file, but maybe it will in the future).
+   * Name of the output file (relative to output path). Currently unused: the
+   * handler enriches operation descriptions in place and writes no file.
    */
   config: {
     output: 'tsdoc',

@@ -1,16 +1,3 @@
-/**
- * doba facade — the ONLY module that imports `dobajs`. Keeps the dependency
- * swappable (vendoring escape hatch) and concentrates the integration.
- *
- * Builds, per lens-capable entity type (product + context):
- * - a doba migration registry over derived version nodes (cache-row migration,
- *   Phase 2 peer downgrade) — lazily, only when that entity has lenses;
- * - sync key maps for `ops` + `stx.fieldTimestamps` (server normalize seam,
- *   queued-mutation rewrite).
- *
- * With an empty lens list (`currentSchemaVersion === 0`) every export is a
- * safe passthrough no-op.
- */
 import { createRegistry, type Registry, type RegistryHooks } from 'dobajs';
 import { schemaEvolutionPolicy, type UnknownFieldHandling } from './config';
 import { deltaRenameMap, type LensContext, type LensDefinition, type LensEntityType, resolveAddDefault } from './define';
@@ -21,7 +8,7 @@ export type { RegistryHooks } from 'dobajs';
 
 type AnyRecord = Record<string, unknown>;
 
-/** Permissive Standard Schema node — transforms always run with `validate: 'none'`. */
+/** Permissive Standard Schema node: transforms always run with `validate: 'none'`. */
 const passthroughSchema = {
   '~standard': {
     version: 1 as const,
@@ -135,7 +122,7 @@ function buildEntityMigration(lens: LensDefinition): {
   if ('drop' in delta) {
     const { field } = delta.drop;
     return {
-      // backward is lossy by construction — the value is gone.
+      // backward is lossy by construction: the value is gone.
       forward: (v) => dropKeyDeep(v, field),
       backward: (v, ctx) => {
         if (lens.lossyBackward) return v;
@@ -181,7 +168,7 @@ function getRegistry(entityType: LensEntityType): Registry<Record<string, typeof
   return registry;
 }
 
-/** Clears memoized registries — test-only, after telemetry/lens reconfiguration. */
+/** Clears memoized registries. Test-only, after telemetry/lens reconfiguration. */
 export function resetLensEngine(): void {
   registryCache.clear();
 }
@@ -329,7 +316,7 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
 /**
  * Client seam: rewrite a queued mutation's variables from its persisted global
  * version up to current canonical keys (applied to top-level keys, `ops`, and
- * `stx.fieldTimestamps`). Sync — pure key renames.
+ * `stx.fieldTimestamps`). Sync: pure key renames.
  */
 export function migrateQueuedMutation<V extends AnyRecord>(
   entityType: LensEntityType,
@@ -373,7 +360,7 @@ export function migrateQueuedMutation<V extends AnyRecord>(
 
 /**
  * Build-time helper: old→new key alias map for an entity's active expand lenses.
- * Used to widen ops/create wire schemas (and in tests). Empty when no expand lenses.
+ * Consumed by ops/create wire-schema widening (and tests). Empty when no expand lenses.
  */
 export function widenedOpsKeyMap(entityType: LensEntityType): Record<string, string> {
   const map: Record<string, string> = {};

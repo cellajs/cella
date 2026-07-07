@@ -1,21 +1,3 @@
-/**
- * Self-registration registry for extensible bench seed targets.
- *
- * Mirrors the cella module/tag registry pattern (shared/src/module-registry.ts):
- * each seed module calls `registerBenchSeed()` as an import side effect.
- * `data-setup.ts` auto-imports every `*.bench.ts` file under seeds/, so core
- * and fork seeds register without editing any shared file — a fork load-tests a new
- * table (entity OR resource) by dropping in a single new file.
- *
- * The contract supports ordinary table row seeds plus custom lifecycle hooks for
- * targets that need bespoke SQL (for example tenant upserts or cleanup-only rows).
- *
- * Identity bands: every id-based seed claims a UUID variant byte (`idVariant`).
- * cella core owns the `a*` band; forks claim the `b*` band so new core and fork
- * entities never collide across upstream syncs (mirrors the order <100 / ≥100
- * split). `registerBenchSeed` rejects malformed or duplicate variants at load time.
- */
-
 import type pg from 'pg';
 import { BENCH_UUID_PREFIX } from 'shared/bench-identity';
 
@@ -30,7 +12,7 @@ export interface BenchCleanupContext {
 
 export interface TableBenchSeed {
   kind?: 'table';
-  /** Target database table — also used for dedup and seed/cleanup logging. */
+  /** Target database table, also used for dedup and seed/cleanup logging. */
   table: string;
   /**
    * Columns kept as native Postgres arrays instead of JSON-stringified.
@@ -47,21 +29,21 @@ export interface TableBenchSeed {
    */
   idVariant?: string;
   /**
-   * Explicit cleanup predicate — use only when rows aren't identified by an id
+   * Explicit cleanup predicate: use only when rows aren't identified by an id
    * variant (e.g. `"tenant_id = '...'"`). Prefer `idVariant` for id-based rows.
    */
   cleanupWhere?: string;
   /**
-   * Produce records to insert. `now` is an ISO timestamp shared across the seed run.
-   * INSERT columns are derived from each record's keys (camelCase → snake_case), so
-   * generators should return typed insert records whose keys are real columns.
+   * Produce rows to insert. `now` is an ISO timestamp shared across the seed run.
+   * INSERT columns are derived from each row's keys (camelCase → snake_case), so
+   * generators should return typed insert rows whose keys are real columns.
    */
   rows: (ctx: BenchSeedContext) => Record<string, unknown>[];
 }
 
 export interface CustomBenchSeed {
   kind: 'custom';
-  /** Logical seed name — used for dedup and seed/cleanup logging. */
+  /** Logical seed name, used for dedup and seed/cleanup logging. */
   name: string;
   /** Seed order (lower seeds first; cleanup runs in reverse order). */
   order: number;
@@ -87,7 +69,13 @@ export const getBenchSeedCleanupWhere = (seed: TableBenchSeed): string => {
   throw new Error(`Bench seed '${seed.table}' must define either 'idVariant' or 'cleanupWhere' for cleanup.`);
 };
 
-/** Register a bench seed target. Idempotent by name; rejects malformed or duplicate id variants. */
+/**
+ * Registers a bench seed target as an import side effect (mirrors the cella
+ * module/tag registry pattern in `shared/src/module-registry.ts`); `data-setup.ts`
+ * auto-imports every `*.bench.ts` file under seeds/, so a fork adds a load-test
+ * table by dropping in one file. See `seeds/README.md` for the identity-band
+ * contract. Idempotent by name; rejects malformed or duplicate id variants.
+ */
 export const registerBenchSeed = (seed: BenchSeed): void => {
   const name = getBenchSeedName(seed);
   if (seeds.some((s) => getBenchSeedName(s) === name)) return;

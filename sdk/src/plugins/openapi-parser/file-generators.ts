@@ -1,8 +1,4 @@
 /**
- * Utilities for OpenAPI documentation generation.
- */
-
-/**
  * Generate a Scalar-like hash for an operation.
  * Format: tag/{tagName}/{METHOD}{path}
  */

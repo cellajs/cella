@@ -29,7 +29,7 @@ let httpServer: ReturnType<typeof createServer>;
 let wss: InstanceType<typeof WebSocketServer>;
 
 /**
- * Reject the upgrade at the HTTP level — no WebSocket handshake is completed.
+ * Reject the upgrade at the HTTP level: no WebSocket handshake is completed.
  */
 function rejectAtHttp(
   _wsServer: WebSocketServer,
@@ -98,7 +98,7 @@ beforeAll(async () => {
     wss.handleUpgrade(req, socket, head, async (ws) => {
       wss.emit('connection', ws);
 
-      // Async local entity authorization — close connection on failure
+      // Async local entity authorization: close connection on failure
       try {
         const allowed = await mockVerify({ entityType, entityId, tenantId, userId: payload.userId });
         if (!allowed) {

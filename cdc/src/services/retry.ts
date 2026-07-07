@@ -67,12 +67,10 @@ export async function withRetry<T>(fn: () => Promise<T>, context: string): Promi
       lastError = error instanceof Error ? error : new Error(String(error));
       isLastErrorTransient = isTransientError(error);
 
-      // Only retry if error is transient and we have attempts left
       if (!isLastErrorTransient || attempt >= RETRY_CONFIG.maxAttempts) {
         break;
       }
 
-      // Calculate delay with exponential backoff
       const delay = Math.min(
         RETRY_CONFIG.initialDelayMs * Math.pow(RETRY_CONFIG.backoffMultiplier, attempt - 1),
         RETRY_CONFIG.maxDelayMs,

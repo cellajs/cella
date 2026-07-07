@@ -1,19 +1,9 @@
-/**
- * Lens module convention for schema evolution (doba lenses).
- *
- * A lens declares a single breaking schema change once; everything else
- * (widened wire schemas, ops/stx key maps, cache-row migrations, versioned
- * OpenAPI specs) is derived from that declaration.
- *
- * Lens modules are FROZEN once shipped and appended in date order to
- * `index.ts`. The global schema version is the lens count (D2).
- */
 import type { ContextEntityType, ProductEntityType } from '../../types';
 
 /**
  * Entity types lenses can target. Product entities get the full artifact set
  * (ops/stx normalization, mirror writes); context entities get the reduced set
- * (body widening + normalization + cache migration) — their writes are plain
+ * (body widening + normalization + cache migration): their writes are plain
  * full-body PUTs with no per-field merge.
  */
 export type LensEntityType = ProductEntityType | ContextEntityType;
@@ -32,7 +22,7 @@ export type RenameDelta = { rename: { from: string; to: string } };
 /**
  * Add a new field. `default` fills the value when migrating older rows forward:
  * a plain value, or a pure `(row) => value` function for computed defaults
- * (must pass the lens purity lint — no I/O, no dynamic key access).
+ * (must pass the lens purity lint: no I/O, no dynamic key access).
  */
 export type AddDelta = { add: { field: string; default: unknown } };
 
@@ -77,7 +67,7 @@ export interface LensDefinition {
   entityType: LensEntityType;
   /** Human-readable summary of the change. */
   description: string;
-  /** Lifecycle phase — drives wire widening and spec generation. */
+  /** Lifecycle phase: drives wire widening and spec generation. */
   phase: LensPhase;
   /** Single declarative source of truth for the change. */
   delta: LensDelta;

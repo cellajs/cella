@@ -2,10 +2,6 @@ import path from 'node:path';
 import { defineProject } from 'vitest/config';
 import { testDatabaseUrl } from 'shared/test-db';
 
-/**
- * Vitest configuration for CDC worker tests.
- * Unit tests only - no database connection required.
- */
 export default defineProject({
   resolve: {
     alias: {

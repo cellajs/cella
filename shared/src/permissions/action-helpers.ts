@@ -25,8 +25,8 @@ export const allActionsAllowed = Object.freeze(createActionRecord(() => true as 
  * Resolves a three-state permission (`true | false | condition name`) to a boolean.
  *
  * Handles the built-in `'own'` condition (actor created the entity, derived from
- * `entity.createdBy`). Any other condition name resolves to `false` here — secure
- * default; call sites using a custom row condition must resolve it via the
+ * `entity.createdBy`). Any other condition name resolves to `false` here (a secure
+ * default); call sites using a custom row condition must resolve it via the
  * condition's own check-form.
  *
  * @param permission - The permission state from `EntityCanMap` (`true`, `false`, or a condition name)

@@ -1,10 +1,3 @@
-/**
- * Centralized span names for all tracing layers.
- *
- * Organized by layer (cdc, backend, frontend) for type-safe usage.
- * All span names follow the convention: layer.domain.action
- */
-
 // ================================
 // CDC Span Names
 // ================================
@@ -70,7 +63,7 @@ export type FrontendSpanName = (typeof frontendSpanNames)[keyof typeof frontendS
 // Combined Span Names
 // ================================
 
-/** All span names organized by layer. */
+/** All span names organized by layer; each name follows the convention `layer.domain.action`. */
 export const spanNames = {
   cdc: cdcSpanNames,
   backend: backendSpanNames,

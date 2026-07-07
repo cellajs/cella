@@ -76,7 +76,7 @@ describe('6.1 Storage CRUD', () => {
     // Create
     await createDoc(c);
 
-    // Load — row exists with empty state
+    // Load: row exists with empty state
     const empty = await loadState(c);
     expect(empty).not.toBeNull();
     expect(empty!.length).toBe(0);
@@ -87,7 +87,7 @@ describe('6.1 Storage CRUD', () => {
     const update = Y.encodeStateAsUpdate(doc);
     await saveState(c, update);
 
-    // Load — should return saved state
+    // Load: should return saved state
     const loaded = await loadState(c);
     expect(loaded).not.toBeNull();
     expect(loaded!.length).toBeGreaterThan(0);
@@ -100,7 +100,7 @@ describe('6.1 Storage CRUD', () => {
     // Delete
     await deleteState(c);
 
-    // Load — should return null (no row)
+    // Load: should return null (no row)
     const deleted = await loadState(c);
     expect(deleted).toBeNull();
   });

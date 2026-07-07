@@ -59,7 +59,7 @@ describe('Catchup mode — replicationState', () => {
     it('resets consecutive counter on a high-lag spike', () => {
       replicationState.updateLag(1_000);
       replicationState.updateLag(1_000);
-      // Spike — resets counter
+      // Spike, resets counter
       replicationState.updateLag(5_000);
       // Start counting again
       replicationState.updateLag(1_000);

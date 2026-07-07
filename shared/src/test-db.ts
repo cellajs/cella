@@ -2,7 +2,7 @@
 try {
   process.loadEnvFile(new URL('../../backend/.env', import.meta.url));
 } catch {
-  // .env not present (e.g. CI) — DB_TEST_PORT must come from process.env instead.
+  // .env not present (e.g. CI): DB_TEST_PORT must come from process.env instead.
 }
 
 const port = process.env.DB_TEST_PORT;

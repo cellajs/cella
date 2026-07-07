@@ -5,13 +5,13 @@ import { mockDocContext, mockWebSocket, buildSyncStep1, buildSyncUpdate, buildAw
 // Mock dependencies
 vi.mock('../data/storage', () => storageMock());
 
-// No entity description by default — individual tests override to exercise seeding.
+// No entity description by default: individual tests override to exercise seeding.
 // (Also keeps the pg pool in data/db from being instantiated by the import chain.)
 vi.mock('../data/entity-content', () => ({
   loadEntityDescription: vi.fn().mockResolvedValue(null),
 }));
 
-// Mock materialization — the save-window integration is asserted via call args
+// Mock materialization: the save-window integration is asserted via call args
 vi.mock('../sync/materialize', () => ({
   materializeState: vi.fn().mockResolvedValue('ok'),
   postMaterialize: vi.fn().mockResolvedValue('ok'),
@@ -61,7 +61,7 @@ describe('handleMessage — pre-verification buffering', () => {
     const ws = mockWebSocket();
     await handleMessage(unverifiedCtx, ws as any, buildSyncStep1(new Uint8Array([])));
 
-    // No response yet — message is buffered
+    // No response yet: message is buffered
     expect(ws.sent).toHaveLength(0);
     expect(loadState).not.toHaveBeenCalled();
   });
@@ -74,7 +74,7 @@ describe('handleMessage — pre-verification buffering', () => {
     doc.getMap('test').set('key', 'value');
     await handleMessage(unverifiedCtx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
 
-    // Update not applied — no broadcast, no pending state
+    // Update not applied: no broadcast, no pending state
     expect(broadcastToCollab).not.toHaveBeenCalled();
   });
 
@@ -104,7 +104,7 @@ describe('handleMessage — sync step 1', () => {
 
   it('2.1.1c first connection with entity content — seeds the doc server-side', async () => {
     // Simulate real storage for the fresh-doc path: createDoc persists, loadState reads back.
-    // Once-queued mocks only — persistent overrides would leak past clearAllMocks.
+    // Once-queued mocks only: persistent overrides would leak past clearAllMocks.
     let stored: Uint8Array | null = null;
     vi.mocked(createDoc).mockImplementationOnce(async (_ctx, initialState?: Uint8Array | null) => {
       stored = initialState ?? new Uint8Array(0);
@@ -129,12 +129,12 @@ describe('handleMessage — sync step 1', () => {
   });
 
   it('2.1.1d concurrent seeders converge on the canonical row', async () => {
-    // Second connector's insert loses (ON CONFLICT DO NOTHING) — it must adopt the winner's seed
+    // Second connector's insert loses (ON CONFLICT DO NOTHING): it must adopt the winner's seed
     const winner = new TextEncoder().encode('winner-seed-state');
     vi.mocked(loadState)
       .mockResolvedValueOnce(null) // storedState: no row yet
       .mockResolvedValueOnce(winner as Uint8Array); // re-load after createDoc: winner's row
-    // createDoc keeps its factory default (resolves undefined) — exactly the conflict no-op
+    // createDoc keeps its factory default (resolves undefined): exactly the conflict no-op
     vi.mocked(loadEntityDescription).mockResolvedValueOnce(
       JSON.stringify([{ id: 'b1', type: 'paragraph', props: {}, content: [], children: [] }]),
     );
@@ -457,7 +457,7 @@ describe('debounced save', () => {
     const ws = mockWebSocket();
     joinCollab(ctx);
 
-    // Send 3 updates rapidly — all within the debounce window, no pendingState yet each time
+    // Send 3 updates rapidly, all within the debounce window, no pendingState yet each time.
     // First update sets pendingState, subsequent updates merge into it,
     // so loadState should only be called once (on the first update).
     const doc = new Y.Doc();
@@ -466,7 +466,7 @@ describe('debounced save', () => {
 
     expect(loadState).toHaveBeenCalledTimes(1);
 
-    // Second and third updates merge into pendingState — no loadState needed
+    // Second and third updates merge into pendingState: no loadState needed
     doc.getMap('test').set('key2', 'value2');
     await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
     doc.getMap('test').set('key3', 'value3');
@@ -489,7 +489,7 @@ describe('debounced save', () => {
     await vi.advanceTimersByTimeAsync(3000);
     expect(saveState).toHaveBeenCalledTimes(1);
 
-    // Cache should be cleared — next update re-queries DB
+    // Cache should be cleared: next update re-queries DB
     const collab = getCollab(ctx.entityType, ctx.entityId);
     expect(collab.cachedDbState).toBeUndefined();
   });

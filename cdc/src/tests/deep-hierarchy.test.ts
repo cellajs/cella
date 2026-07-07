@@ -7,20 +7,6 @@ import { computeBatchUnifiedDeltas, resolveContextKey } from '../utils/compute-u
 import { getCountDeltas } from '../utils/update-counts';
 import { log } from '../lib/pino';
 
-/**
- * Deepest-non-null-ancestor attribution, proven on a synthetic 4-level hierarchy
- * (projectcampus-shaped): `organization > course > courseSection > project` with an `item`
- * product whose rows attach at any depth (`nullableAncestors: ['project', 'courseSection']`).
- *
- * raak/cella configs cannot exhibit this: their ancestor columns are NOT NULL, so
- * deepest-non-null degrades to the declared parent (covered by the existing suites).
- *
- * - seq scope (resolveContextKey): the deepest non-null ancestor; `public:{type}` when the
- *   row has no context at all
- * - counters (getCountDeltas): FULL attribution — org + every non-null ancestor; reparent
- *   updates re-credit the diff; soft-delete/restore count as delete/create
- */
-
 const roles = createRoleRegistry(['admin', 'member'] as const);
 const h = createEntityHierarchy(roles)
   .user()
@@ -69,6 +55,10 @@ const mockEvent = (
 beforeEach(() => {
   vi.mocked(log.warn).mockClear();
 });
+
+// Deepest-non-null-ancestor attribution on a synthetic 4-level hierarchy (organization >
+// course > courseSection > project) where an `item` product attaches at any depth. raak/cella
+// hierarchies use NOT NULL ancestor columns, so this degrades to the declared parent there.
 
 // ── Seq scope ────────────────────────────────────────────────────────────────
 

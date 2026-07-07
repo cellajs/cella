@@ -159,7 +159,7 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
   await withSpan(cdcSpanNames.processWal, cdcAttrs({ lsn: firstLsn, tag: action, table: tableName }), async (traceCtx) => {
     const startMs = performance.now();
 
-    // Compute unified deltas (pure — no side effects yet)
+    // Compute unified deltas (pure, no side effects yet)
     const batchPlan = computeBatchUnifiedDeltas(events);
 
     // Prepare all activities (generate IDs, extract seq)
@@ -169,17 +169,17 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
       return { activityWithId, seq, lsn, rowData: result.rowData };
     });
 
-    // Persist activities FIRST — if this fails, no deltas are applied (no side effects)
+    // Persist activities FIRST: if this fails, no deltas are applied (no side effects)
     const persisted = await withSpan(cdcSpanNames.createActivity, activityAttrs(prepared[0].activityWithId), async () => {
       return persistActivities(prepared.map(({ activityWithId, lsn }) => ({ activityWithId, lsn })), tableName);
     });
 
     if (!persisted) {
-      // Activity insert failed permanently — skip deltas and WS send
+      // Activity insert failed permanently: skip deltas and WS send
       return;
     }
 
-    // Apply deltas SECOND — only after activities are safely persisted
+    // Apply deltas SECOND: only after activities are safely persisted
     await applyBatchUnifiedDeltas(batchPlan);
 
     const stamped = prepared.map((item) => ({

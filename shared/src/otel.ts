@@ -1,15 +1,3 @@
-/**
- * Shared OpenTelemetry SDK factory.
- *
- * Creates a configured NodeSDK + MeterProvider for any service.
- * Centralizes Maple.dev exporter config so backend, CDC, and YJS share one source of truth.
- *
- * Usage:
- *   const otel = createOtelSDK({ serviceName: 'raak-development-api', mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY });
- *   otel.start();
- *   // on shutdown: await otel.shutdown();
- */
-
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
@@ -49,6 +37,15 @@ export interface OtelSDK {
   verifyConnection: () => Promise<void>;
 }
 
+/**
+ * Creates a configured NodeSDK + MeterProvider for a service, centralizing Maple.dev exporter
+ * config so backend, CDC, and YJS share one source of truth.
+ *
+ * @example
+ * const otel = createOtelSDK({ serviceName: 'raak-development-api', mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY });
+ * otel.start();
+ * // on shutdown: await otel.shutdown();
+ */
 export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   const {
     serviceName,
@@ -70,7 +67,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     'deployment.environment.name': appConfig.mode,
   });
 
-  // Maple exporter config factory — defined only when an ingest key is present, so `hasMaple`
+  // Maple exporter config factory: defined only when an ingest key is present, so `hasMaple`
   // being undefined is the single "telemetry export is off" signal used throughout this function.
   const hasMaple = mapleSecretIngestKey
     ? (signal: 'traces' | 'metrics' | 'logs') => ({

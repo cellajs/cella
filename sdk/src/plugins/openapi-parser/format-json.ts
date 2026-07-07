@@ -1,8 +1,3 @@
-/**
- * Custom JSON formatter that collapses simple arrays and objects to single lines.
- * Complex structures with nesting remain multi-line for readability.
- */
-
 const isPrimitive = (v: unknown): boolean => v === null || typeof v !== 'object';
 
 /**

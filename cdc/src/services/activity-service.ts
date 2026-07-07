@@ -6,13 +6,6 @@ import type { CdcRowData } from '../types';
 import { wsClient } from '../network/websocket-client';
 import { nanoid } from 'shared/nanoid';
 
-// ── Wire contract ─────────────────────────────────────────────────────────────
-// The CDC → API-server WebSocket payload. This is the *producing* end of the
-// contract; the backend independently *validates* the same shape with
-// `cdcMessageSchema` (see backend/src/lib/cdc-websocket.ts → `CdcMessage`).
-// The two definitions must stay in sync — a field added here needs a matching
-// field there or the backend will reject the message at runtime.
-
 /** An individual entity cache-reservation token, sent with batch payloads. */
 export interface CdcBatchReservation {
   token: string;
@@ -20,7 +13,13 @@ export interface CdcBatchReservation {
   entityId: string;
 }
 
-/** Outbound activity + row-data message the CDC worker sends to the API server. */
+/**
+ * Outbound activity + row-data message the CDC worker sends to the API server.
+ * This is the producing end of the wire contract; the backend independently validates
+ * the same shape with `cdcMessageSchema` (see backend/src/lib/cdc-websocket.ts, `CdcMessage`).
+ * Keep both in sync: a field added here needs a matching field there, or the backend
+ * will reject the message at runtime.
+ */
 export interface CdcOutboundMessage {
   activity: InsertActivityModel & { id?: string; seq?: number; batchUntilSeq?: number };
   rowData: CdcRowData;
@@ -43,7 +42,7 @@ export interface CdcOutboundMessage {
  */
 export function generateActivityId(lsn: string): string {
   const [hi, lo] = lsn.split('/');
-  if (lo === undefined) return lsn; // not in LSN format — return unchanged
+  if (lo === undefined) return lsn; // not in LSN format, return unchanged
   return `${hi.padStart(8, '0')}-${lo.padStart(8, '0')}`;
 }
 
@@ -57,7 +56,6 @@ function buildActivityPayload(
   traceContext: TraceContext,
   seq?: number,
 ): CdcOutboundMessage {
-  // Generate cache token for product entities
   const cacheToken = baseActivity.entityType && isProductEntity(baseActivity.entityType) ? nanoid() : null;
 
   // Context entity IDs are already populated on the activity by createActivity;
@@ -107,17 +105,14 @@ export function sendBatchMessageToApi(
   const batchUntilSeq = seqs.length > 0 ? Math.max(...seqs) : undefined;
   const minSeq = seqs.length > 0 ? Math.min(...seqs) : undefined;
 
-  // Invariant: seqs must be contiguous within a batch — gap detection and unseen counts depend on this.
   if (minSeq !== undefined && batchUntilSeq !== undefined && batchUntilSeq - minSeq + 1 !== seqs.length) {
     log.error('Non-contiguous seqs in batch — sync integrity at risk', {
       minSeq, batchUntilSeq, seqCount: seqs.length, expected: batchUntilSeq - minSeq + 1,
     });
   }
 
-  // Generate batch cache token for product entities
   const batchToken = first.activity.entityType && isProductEntity(first.activity.entityType) ? nanoid() : null;
 
-  // Build individual cache reservations for each entity
   const batchReservations: CdcBatchReservation[] | undefined = batchToken
     ? events
         .filter((e) => e.activity.entityType && e.activity.subjectId)
@@ -128,7 +123,6 @@ export function sendBatchMessageToApi(
         }))
     : undefined;
 
-  // Build payload using the first event as representative, enriched with batch fields
   const base = buildActivityPayload(first.activity, first.rowData, traceContext, minSeq);
   const activity = { ...base.activity, batchUntilSeq };
 

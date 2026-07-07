@@ -1,11 +1,8 @@
 /**
- * Identity markers for bench / load-test data.
- *
- * Single source of truth shared between the bench seeds (which create the data)
- * and the backend (which suppresses logs for it), so both stay in sync.
+ * Tenant id used by all bench traffic. Shared between the bench seeds (which
+ * create the data) and the backend (which suppresses logs for it), so both
+ * stay in sync.
  */
-
-/** Tenant id used by all bench traffic. */
 export const BENCH_TENANT_ID = 'xbench';
 
 /**

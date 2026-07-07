@@ -15,7 +15,7 @@ interface CreateLoggerOptions {
   redact?: pino.LoggerOptions['redact'];
   formatters?: pino.LoggerOptions['formatters'];
   transportOptions?: Record<string, unknown>;
-  /** When true (and a `mapleSecretIngestKey` is set), ships structured logs to Maple.dev via pino-opentelemetry-transport — in dev and production alike, alongside the console output. */
+  /** When true (and a `mapleSecretIngestKey` is set), ships structured logs to Maple.dev via pino-opentelemetry-transport, in dev and production alike, alongside the console output. */
   enableOtelTransport?: boolean;
   /** Maple.dev secret ingest key. Without it the OTel transport is skipped. */
   mapleSecretIngestKey?: string;
@@ -109,7 +109,7 @@ export const createLogger = ({
 
 // Suppress repeats of the same warn/error/fatal line within this window (spam from retry
 // loops, reconnects). The first repeat after the window carries `repeated: N` so suppression
-// is never silent — same shape as zap sampling and Kubernetes event counts.
+// is never silent, matching the shape of zap sampling and Kubernetes event counts.
 const DEDUP_WINDOW_MS = 30_000;
 const DEDUP_MAX_KEYS = 500;
 
@@ -136,7 +136,7 @@ export type Log = Record<Severity, LogFn>;
 export const createLog = (logger: pino.Logger): Log => {
   const recent = new Map<string, { lastEmitAt: number; suppressed: number }>();
 
-  // Dedup applies to warn and above only — info/debug/trace repetition is intentional
+  // Dedup applies to warn and above only: info/debug/trace repetition is intentional
   // (heartbeats, progress) and filtered by level instead.
   const shouldEmit = (severity: Severity, msg: string): { emit: boolean; repeated?: number } => {
     if (severity !== 'warn' && severity !== 'error' && severity !== 'fatal') return { emit: true };

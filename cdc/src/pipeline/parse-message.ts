@@ -5,7 +5,7 @@ import type { CdcRowData } from '../types';
 import type { TableMeta } from '../types';
 import { tableRegistry } from '../table-registry';
 
-/** Activity without id — assigned later from WAL LSN in prepareActivity. */
+/** Activity without id, assigned later from WAL LSN in prepareActivity. */
 export type ActivityWithoutId = Omit<InsertActivityModel, 'id'>;
 
 /**

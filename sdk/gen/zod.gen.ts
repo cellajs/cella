@@ -1127,6 +1127,61 @@ export const zGetPublicCountsResponse = z.object({
   attachment: z.number(),
 });
 
+export const zGetUsersQuery = z.object({
+  q: z.string().max(255).optional(),
+  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).optional().default('createdAt'),
+  order: z.enum(['asc', 'desc']).optional().default('asc'),
+  offset: z.string().optional(),
+  limit: z.string().optional(),
+  seqCursor: z.string().optional(),
+  role: z.enum(['admin']).optional(),
+});
+
+/**
+ * Users
+ */
+export const zGetUsersResponse = z.object({
+  items: z.array(
+    zUserBase.and(
+      z.object({
+        lastSeenAt: z.string().nullable(),
+        role: z.enum(['admin']).nullish(),
+      }),
+    ),
+  ),
+  total: z.number(),
+});
+
+export const zGetUserPath = z.object({
+  relatableUserId: z.string().max(50),
+});
+
+export const zGetUserQuery = z.object({
+  slug: z.union([z.string(), z.boolean()]).optional().default('false'),
+});
+
+/**
+ * Base user schema with essential fields for identification and display.
+ */
+export const zGetUserResponse = zUserBase.and(
+  z.object({
+    lastSeenAt: z.string().nullable(),
+  }),
+);
+
+export const zGetYjsTokenQuery = z.object({
+  entityType: z.string().max(50),
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Yjs auth token
+ */
+export const zGetYjsTokenResponse = z.object({
+  token: z.string(),
+});
+
 export const zDeleteOrganizationsBody = z.object({
   ids: z.array(z.string()).min(1).max(50),
 });
@@ -1285,47 +1340,12 @@ export const zUpdateOrganizationPath = z.object({
  */
 export const zUpdateOrganizationResponse = zOrganization;
 
-export const zGetUsersQuery = z.object({
-  q: z.string().max(255).optional(),
-  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).optional().default('createdAt'),
-  order: z.enum(['asc', 'desc']).optional().default('asc'),
-  offset: z.string().optional(),
-  limit: z.string().optional(),
-  seqCursor: z.string().optional(),
-  role: z.enum(['admin']).optional(),
-});
+export const zHandleMcpBody = z.unknown();
 
-/**
- * Users
- */
-export const zGetUsersResponse = z.object({
-  items: z.array(
-    zUserBase.and(
-      z.object({
-        lastSeenAt: z.string().nullable(),
-        role: z.enum(['admin']).nullish(),
-      }),
-    ),
-  ),
-  total: z.number(),
+export const zHandleMcpPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
 });
-
-export const zGetUserPath = z.object({
-  relatableUserId: z.string().max(50),
-});
-
-export const zGetUserQuery = z.object({
-  slug: z.union([z.string(), z.boolean()]).optional().default('false'),
-});
-
-/**
- * Base user schema with essential fields for identification and display.
- */
-export const zGetUserResponse = zUserBase.and(
-  z.object({
-    lastSeenAt: z.string().nullable(),
-  }),
-);
 
 export const zDeleteAttachmentsBody = z.object({
   ids: z.array(z.string()).min(1).max(50),
@@ -1617,24 +1637,4 @@ export const zMarkSeenPath = z.object({
  */
 export const zMarkSeenResponse = z.object({
   newCount: z.int().gte(0),
-});
-
-export const zGetYjsTokenQuery = z.object({
-  entityType: z.string().max(50),
-  tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
-});
-
-/**
- * Yjs auth token
- */
-export const zGetYjsTokenResponse = z.object({
-  token: z.string(),
-});
-
-export const zHandleMcpBody = z.unknown();
-
-export const zHandleMcpPath = z.object({
-  tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
 });

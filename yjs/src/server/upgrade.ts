@@ -11,11 +11,11 @@ import { checkConnectionRate } from './rate-limiter';
 import { joinCollab, leaveCollab } from '../sync/session-manager';
 import { handleMessage, flushPendingBuffer, discardPendingBuffer } from '../sync/relay';
 
-/** 
- * Reject the upgrade at the HTTP level — no WebSocket handshake is completed.
- * This is critical: if we called handleUpgrade + ws.close(), the client's
- * `onopen` would fire (resetting its backoff counter) before `onclose`,
- * causing a rapid ~100ms retry loop with the same bad credentials.
+/**
+ * Reject the upgrade at the HTTP level: no WebSocket handshake is completed.
+ * Calling handleUpgrade + ws.close() instead would fire the client's `onopen`
+ * (resetting its backoff counter) before `onclose`, causing a rapid ~100ms
+ * retry loop with the same bad credentials.
  */
 function rejectUpgrade(socket: Duplex, code: number, reason: string): void {
   if (socket.destroyed) return;
@@ -38,9 +38,9 @@ function applyVerifyResult(ws: WebSocket, ctx: DocContext, allowed: boolean): vo
   }
 }
 
-/** 
+/**
  * Verify entity access asynchronously after the WebSocket connection is established.
- * The authorization decision is computed locally by the shared permission engine — no backend
+ * The authorization decision is computed locally by the shared permission engine, no backend
  * round-trip. If verification fails, the client is disconnected and queued writes are discarded.
  */
 async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> {
@@ -64,9 +64,9 @@ async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> 
   }
 }
 
-/** 
+/**
  * Handle the HTTP→WS upgrade: validate params, verify token, accept connection optimistically.
- * Entity-level access is verified asynchronously — all sync messages are buffered until verified.
+ * Entity-level access is verified asynchronously: all sync messages are buffered until verified.
  */
 export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {
   return async (req, socket, head) => {
@@ -118,7 +118,7 @@ export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMess
 
     if (socket.destroyed) return;
 
-    // Accept the connection optimistically — all sync messages are buffered until entity access is verified
+    // Accept the connection optimistically: all sync messages are buffered until entity access is verified
     const ctx: DocContext = {
       entityType: rawEntityType,
       entityId,
@@ -131,7 +131,7 @@ export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMess
     log.info(`Connection accepted for ${rawEntityType}:${entityId}`, { userId: ctx.userId, tenantId: ctx.tenantId });
     server.handleUpgrade(req, socket, head, (ws) => {
       server.emit('connection', ws, ctx);
-      // Start async entity verification — all sync messages are buffered until this completes
+      // Start async entity verification: all sync messages are buffered until this completes
       verifyEntityAsync(ws, ctx);
     });
   };

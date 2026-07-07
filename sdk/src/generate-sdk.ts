@@ -9,21 +9,6 @@ import chokidar from 'chokidar';
 import { changeMark, checkMark, crossMark, loadingMark, timestamp } from 'shared/console';
 import { openApiConfig } from '../openapi-ts.config';
 
-/**
- * SDK generation script with optional watch mode.
- *
- * One-shot: `node generate-sdk.ts` — generates SDK once
- * Watch:   `node generate-sdk.ts --watch` — watches openapi.cache.json and regenerates on change
- *
- * Generation is incremental: generates to a temp folder first, then compares
- * with existing output. Only updates the actual output if there are differences.
- *
- * This approach catches all changes including:
- * - OpenAPI spec changes
- * - Hey API version updates
- * - Plugin configuration changes
- */
-
 const watchMode = process.argv.includes('--watch');
 
 const srcDir = dirname(fileURLToPath(import.meta.url));
@@ -138,7 +123,7 @@ const hashSpec = (): string => {
   }
 };
 
-/** Read the previously stored spec hash. */
+/** Read the spec hash stored on disk. */
 const readStoredHash = (): string => {
   try {
     return readFileSync(specHashFile, 'utf-8').trim();
@@ -162,7 +147,11 @@ const specChanged = (): boolean => {
   return current !== readStoredHash();
 };
 
-/** Run the SDK generation. */
+/**
+ * Run the SDK generation once, or in a watch loop when invoked with `--watch`.
+ * Generates to a temp folder first and only overwrites `sdk/gen` if the output differs,
+ * avoiding unnecessary file modifications and HMR triggers.
+ */
 const generate = async () => {
   const lockAcquired = await acquireLock();
   if (!lockAcquired) {
@@ -195,7 +184,6 @@ const generate = async () => {
 
     console.info(`${timestamp()} ${loadingMark} Generating SDK to temp folder...`);
 
-    // Get output config
     const outputConfig = typeof openApiConfig.output === 'object' ? openApiConfig.output : {};
     const sourceConfig = 'source' in outputConfig ? outputConfig.source : undefined;
     const sourceFileName =
@@ -203,7 +191,6 @@ const generate = async () => {
         ? String(sourceConfig.fileName)
         : 'openapi';
 
-    // Configure plugins with temp docs output path
     // Cast through unknown to handle custom plugin properties not in Hey API's strict types
     const pluginsWithDocsPath = (openApiConfig.plugins || []).map((plugin) => {
       // If it's the openapi-parser plugin, add docsOutputPath to its config
@@ -221,7 +208,6 @@ const generate = async () => {
       return plugin;
     }) as typeof openApiConfig.plugins;
 
-    // Run Hey API generation to temp folder
     await createClient({
       ...openApiConfig,
       plugins: pluginsWithDocsPath,
@@ -264,7 +250,6 @@ const generate = async () => {
 
     console.info(`${timestamp()} [Openapi gen] ${changeMark} SDK changed — updating output...`);
 
-    // Helper to safely update a directory
     const updateDirectory = (tempPath: string, finalPath: string) => {
       if (!existsSync(tempPath)) return;
 
@@ -281,7 +266,7 @@ const generate = async () => {
       // Copy all new files (this overwrites existing files atomically per-file)
       cpSync(tempPath, finalPath, { recursive: true });
 
-      // Remove files that no longer exist in the new version
+      // Remove files absent from the new version
       for (const oldFile of oldFiles) {
         if (!newFiles.has(oldFile)) {
           const oldFilePath = resolve(finalPath, oldFile.slice(1)); // Remove leading slash
@@ -337,7 +322,7 @@ if (watchMode) {
   };
 
   // Run initial generation only if sdk/gen doesn't exist yet (first-time setup).
-  // On subsequent dev starts, existing files work fine — the watcher handles spec changes.
+  // On subsequent dev starts, existing files work fine: the watcher handles spec changes.
   const indexFile = resolve(sdkDir, 'gen/index.ts');
   if (existsSync(specPath) && !existsSync(indexFile)) {
     if (!existsSync(lockFilePath)) {

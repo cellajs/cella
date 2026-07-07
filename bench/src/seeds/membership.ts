@@ -1,14 +1,11 @@
-/**
- * Load-test membership seed helper — uses backend mocks for type-safe records.
- * Runs in Node.js (data-setup), not in k6.
- */
-
 import type { InsertMembershipModel } from '#/modules/memberships/memberships-db';
 import { mockContextMembership } from '#/modules/memberships/memberships-mocks';
 import { ORG_ID, TENANT_ID, userId } from './ids';
 
 /**
- * Generate organization-level membership for a load-test user.
+ * Generate organization-level membership for a load-test user, using backend
+ * mocks for a type-safe entity. Runs in Node.js (data-setup), not in Artillery
+ * scenarios.
  */
 export const loadtestOrgMembership = (userIndex: number): InsertMembershipModel => {
   const membership = mockContextMembership(

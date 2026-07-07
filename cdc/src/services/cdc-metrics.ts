@@ -227,7 +227,7 @@ class CdcMetrics {
         this.hasGoneUnhealthy = false;
       }
     } catch {
-      // Non-critical — skip silently
+      // Non-critical: skip silently
     }
   }
 }

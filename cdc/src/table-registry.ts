@@ -24,7 +24,6 @@ function buildColumnNameMap(columnKeys: string[]): Map<string, string> {
 function buildTableRegistry(): Map<string, TableMeta> {
   const registry = new Map<string, TableMeta>();
 
-  // Register entity tables
   for (const [type, table] of typedEntries(entityTables)) {
     const tableName = getTableName(table);
     const meta: EntityTableMeta = {
@@ -36,7 +35,6 @@ function buildTableRegistry(): Map<string, TableMeta> {
     registry.set(tableName, meta);
   }
 
-  // Register resource tables
   for (const [type, table] of typedEntries(resourceTables)) {
     const tableName = getTableName(table);
     const meta: ResourceTableMeta = {

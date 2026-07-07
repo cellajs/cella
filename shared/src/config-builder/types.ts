@@ -26,7 +26,7 @@ export type BaseOAuthProviders = 'github' | 'google' | 'microsoft';
  * CONFIG SUB-TYPES
  ******************************************************************************/
 
-/** Input S3 config — only host and region are required, rest derived from slug in app-config */
+/** Input S3 config: only host and region are required, rest derived from slug in app-config */
 export interface S3ConfigInput {
   region: string;
   host: string;
@@ -36,7 +36,7 @@ export interface S3ConfigInput {
   privateCDNUrl?: string;
 }
 
-/** Resolved S3 config with all fields guaranteed present after derivation */
+/** Resolved S3 config with all fields present after derivation */
 export interface S3Config extends Required<S3ConfigInput> {}
 
 export interface RequestLimitsConfig {

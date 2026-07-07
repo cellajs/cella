@@ -75,7 +75,7 @@ export interface EntityScopeRow extends Partial<ContextEntityIdColumns> {
  *
  * Reads only the columns the permission engine needs. Table and column names are derived from the
  * app's schema conventions (`toTableName`/`toColumnName`, validated against drizzle by a backend
- * test) and filtered to the columns the table actually has via {@link getTableColumnNames} — so it
+ * test) and filtered to the columns the table actually has via {@link getTableColumnNames}, so it
  * works for every fork's entity types without importing backend drizzle schema. The entity id is
  * parameterized. Returns `null` if the entity type is not declared or the row does not exist.
  */
@@ -111,7 +111,7 @@ export async function resolveEntityScope(
  *
  * Mirrors the backend `verifyEntityOp`: resolves the entity scope and memberships in one RLS-scoped
  * connection, then runs the shared permission engine for the `update` action. The decision is computed
- * by exactly the same engine the backend uses — no HTTP round-trip.
+ * by exactly the same engine the backend uses, no HTTP round-trip.
  *
  * @throws MissingScopeError if the resolved entity is missing a required ancestor scope.
  */

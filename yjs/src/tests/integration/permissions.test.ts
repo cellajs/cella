@@ -1,15 +1,3 @@
-/**
- * Integration tests for the relay's local authorization (`canEditEntity`).
- *
- * These exercise the real `loadMemberships` / `resolveEntityScope` raw SQL and the shared permission
- * engine against Postgres, proving the relay reaches the same decisions the retired
- * `/yjs/verify-entity` backend callback used to return — cross-tenant and cross-organization
- * isolation included.
- *
- * Migrations are owned by the backend package — run `pnpm test` (or `pnpm vitest --project=backend`)
- * first to ensure the test DB schema is up to date.
- */
-
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pg from 'pg';
@@ -167,6 +155,8 @@ async function seedAttachment(
   );
 }
 
+// Exercises the real `loadMemberships` / `resolveEntityScope` SQL and the shared permission engine
+// against Postgres, covering cross-tenant and cross-organization isolation.
 describe('Local entity authorization (canEditEntity)', () => {
   let admin: pg.Client;
 
