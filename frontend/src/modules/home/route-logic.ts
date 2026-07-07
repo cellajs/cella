@@ -2,7 +2,7 @@ import { useUserStore } from '~/modules/user/user-store';
 
 // Dynamic import to avoid circular dependency: router -> routeTree.gen -> route files
 const navigate = (to: '/home' | '/welcome', replace = true) => {
-  void import('~/routes/router').then(({ default: router }) => {
+  void import('~/routes/router').then(({ router }) => {
     router.navigate({ to, replace, ignoreBlocker: true });
   });
 };

@@ -114,4 +114,4 @@ const authPasskeysRoutes = {
   }),
 };
 
-export default authPasskeysRoutes;
+export { authPasskeysRoutes };

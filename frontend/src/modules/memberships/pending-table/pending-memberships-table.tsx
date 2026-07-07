@@ -102,5 +102,3 @@ export function PendingMembershipsTable({ contextEntity }: PendingMembershipsTab
     </div>
   );
 }
-
-export default PendingMembershipsTable;

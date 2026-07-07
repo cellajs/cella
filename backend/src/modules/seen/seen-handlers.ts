@@ -3,7 +3,7 @@ import type { Env } from '#/core/context';
 import '#/modules/seen/seen-module';
 import { getUnseenCountsOp } from '#/modules/seen/operations/get-unseen-counts';
 import { markSeenOp } from '#/modules/seen/operations/mark-seen';
-import seenRoutes from '#/modules/seen/seen-routes';
+import { seenRoutes } from '#/modules/seen/seen-routes';
 import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });

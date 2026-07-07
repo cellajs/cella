@@ -68,4 +68,4 @@ app.use('*', (c, next) => {
   return next();
 });
 
-export default app;
+export { app };

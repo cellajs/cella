@@ -10,7 +10,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { select } from '@inquirer/prompts'
-import pc from 'shared/cli-utils/colors'
+import { pc } from 'shared/cli-utils/colors';
 import { printHeader } from 'shared/cli-utils/display'
 import { warningMark } from 'shared/console'
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env'

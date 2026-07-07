@@ -40,7 +40,7 @@ import { fileURLToPath } from 'node:url';
 import { select } from '@inquirer/prompts';
 import ora from 'ora';
 import pg from 'pg';
-import pc from 'shared/cli-utils/colors';
+import { pc } from 'shared/cli-utils/colors';
 import { printHeader } from 'shared/cli-utils/display';
 import { createBenchProcessEnv, DB_URL } from './config';
 import { isPostgresReady, isServiceHealthy, SERVICES } from './preflight';

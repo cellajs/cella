@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/car
 import { InviteUsers } from '~/modules/user/invite-users';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { useUserStore } from '~/modules/user/user-store';
-import { flattenInfiniteData } from '~/query/basic';
+import { flattenInfiniteData } from '~/query/basic/flatten';
 import { cn } from '~/utils/cn';
 
 export type OnboardingStates = 'start' | 'stepper' | 'completed';

@@ -3,7 +3,7 @@
 import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import enBackend from '../../../locales/en/backend.json';
-import i18n from '../../emails/i18n';
+import { i18n } from '../../emails/i18n';
 import { type EmailPreviewFixture, emailPreviewFixtures } from '../../emails/preview-fixtures';
 import { render } from '../../emails/renderer/render';
 

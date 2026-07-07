@@ -93,4 +93,4 @@ function DebugDropdown({ className }: DebugDropdownProps) {
   );
 }
 
-export default DebugDropdown;
+export { DebugDropdown };

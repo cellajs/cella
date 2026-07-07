@@ -1,7 +1,7 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { ChevronDownIcon, PencilIcon } from 'lucide-react';
-import { lazy, Suspense, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -25,12 +25,15 @@ import {
 import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
+import { lazyNamed } from '~/utils/lazy-named';
 import { useSheeter } from '../../common/sheeter/use-sheeter';
 import { UserTheme } from '../../me/user-theme';
 import { openApiSpecQueryOptions, openApiUrl } from '../query';
 
 const DebugDropdown =
-  appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-dropdown')) : () => null;
+  appConfig.mode !== 'production'
+    ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown')
+    : () => null;
 
 /** Suspense-wrapped JsonActions for OpenAPI spec */
 function OpenApiJsonActions() {

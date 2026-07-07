@@ -14,6 +14,7 @@ export type {
   LensCustom,
   LensDefinition,
   LensDelta,
+  LensEntityType,
   LensPhase,
   RenameDelta,
   RetypeDelta,

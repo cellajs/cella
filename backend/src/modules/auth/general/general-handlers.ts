@@ -19,7 +19,7 @@ import {
   insertInvitationToken,
   linkTokenToUser,
 } from '#/modules/auth/auth-queries';
-import authGeneralRoutes from '#/modules/auth/general/general-routes';
+import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleEmailVerification } from '#/modules/auth/general/helpers/handle-email-verification';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';

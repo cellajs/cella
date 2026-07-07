@@ -85,6 +85,7 @@
         "noUnusedTemplateLiteral": "error",
         "useNumberNamespace": "error",
         "noInferrableTypes": "error",
+        "noDefaultExport": "error",
         "noUselessElse": "error",
         "noDescendingSpecificity": "off",
         "useNodejsImportProtocol": "error",
@@ -123,6 +124,29 @@
   },
   "overrides": [
     {
+      // Default exports remain only where external tooling expects them.
+      "includes": [
+        "**/vite.config.ts",
+        "**/vitest.config.ts",
+        "**/tsup.config.ts",
+        "**/tailwind.config.ts",
+        "**/drizzle.config.ts",
+        "cella.config.ts",
+        "sdk/openapi-ts.config.ts",
+        "frontend/.storybook/**",
+        "frontend/src/content/mdx.d.ts",
+        "backend/tests/global-setup.ts",
+        "yjs/src/tests/integration/global-setup.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    },
+    {
       // Frontend boundary rules:
       // - paths: ban cross-package imports (backend, cdc, infra)
       // - patterns: ban direct SDK operation calls (camelCase imports from `sdk`).
@@ -139,7 +163,7 @@
               "options": {
                 "paths": {
                   "backend": "Frontend cannot import backend code. Use the SDK or move shared types to `shared/`.",
-                  "cdc": "Frontend cannot import CDC worker code.",
+                  "cdc-worker": "Frontend cannot import CDC worker code.",
                   "infra": "Frontend cannot import infra code."
                 },
                 "patterns": [
@@ -180,7 +204,7 @@
               "options": {
                 "paths": {
                   "backend": "Frontend cannot import backend code. Use the SDK or move shared types to `shared/`.",
-                  "cdc": "Frontend cannot import CDC worker code.",
+                  "cdc-worker": "Frontend cannot import CDC worker code.",
                   "infra": "Frontend cannot import infra code."
                 }
               }
@@ -199,7 +223,7 @@
               "options": {
                 "paths": {
                   "frontend": "Backend cannot import frontend code. Move shared types to `shared/`.",
-                  "cdc": "Backend cannot import CDC worker code. Communicate via the database/CDC stream.",
+                  "cdc-worker": "Backend cannot import CDC worker code. Communicate via the database/CDC stream.",
                   "studio": "Backend cannot import studio (Drizzle Studio) code.",
                   "sdk": "Backend cannot import the generated SDK; the SDK is generated from backend."
                 }
@@ -241,7 +265,7 @@
                 "paths": {
                   "backend": "`shared` must stay a leaf package.",
                   "frontend": "`shared` must stay a leaf package.",
-                  "cdc": "`shared` must stay a leaf package.",
+                  "cdc-worker": "`shared` must stay a leaf package.",
                   "sdk": "`shared` must stay a leaf package.",
                   "infra": "`shared` must stay a leaf package."
                 }
@@ -297,6 +321,9 @@
           "suspicious": {
             "noExplicitAny": "off",
             "noArrayIndexKey": "off"
+          },
+          "style": {
+            "noDefaultExport": "off"
           },
           "a11y": {
             "noLabelWithoutControl": "off",

@@ -16,12 +16,8 @@ vi.mock('shared', () => ({
 }));
 
 vi.mock('~/modules/common/blocknote/yjs-editor', () => ({
-  useYjsEditorStore: {
-    getState: () => ({
-      isActive: () => false,
-      getOwnedFields: () => [],
-    }),
-  },
+  isYjsEditorActive: () => false,
+  getYjsOwnedFields: () => [],
 }));
 
 vi.mock('~/query/offline', () => ({

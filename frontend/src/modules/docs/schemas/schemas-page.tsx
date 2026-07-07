@@ -139,4 +139,4 @@ function SchemaTagSection({ tag, schemas: tagSchemas, tagKinds, isOpen, onPreren
   );
 }
 
-export default SchemasPage;
+export { SchemasPage };

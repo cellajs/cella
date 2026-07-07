@@ -5,6 +5,19 @@ import { mockDocContext, mockWebSocket, buildSyncStep1, buildSyncUpdate, buildAw
 // Mock dependencies
 vi.mock('../data/storage', () => storageMock());
 
+// No entity description by default — individual tests override to exercise seeding.
+// (Also keeps the pg pool in data/db from being instantiated by the import chain.)
+vi.mock('../data/entity-content', () => ({
+  loadEntityDescription: vi.fn().mockResolvedValue(null),
+}));
+
+// Mock materialization — the save-window integration is asserted via call args
+vi.mock('../sync/materialize', () => ({
+  materializeState: vi.fn().mockResolvedValue('ok'),
+  postMaterialize: vi.fn().mockResolvedValue('ok'),
+  stateToBlocksJson: vi.fn(() => '[]'),
+}));
+
 vi.mock('../sync/session-manager', () => {
   const collabs = new Map<string, any>();
   return {
@@ -25,6 +38,9 @@ vi.mock('../sync/session-manager', () => {
 
 const { handleMessage } = await import('../sync/relay');
 const { loadState, saveState, createDoc } = await import('../data/storage');
+const { loadEntityDescription } = await import('../data/entity-content');
+const { materializeState } = await import('../sync/materialize');
+const { yUpdateToBlocks } = await import('../lib/blocknote-seed');
 const { broadcastToCollab, getCollab, joinCollab, _collabs } = await import('../sync/session-manager') as any;
 
 const unverifiedCtx = mockDocContext();
@@ -73,17 +89,62 @@ describe('handleMessage — pre-verification buffering', () => {
 });
 
 describe('handleMessage — sync step 1', () => {
-  it('2.1.1 first connection — creates empty doc', async () => {
-    vi.mocked(loadState).mockResolvedValueOnce(null);
+  it('2.1.1 first connection without entity content — creates empty doc', async () => {
+    vi.mocked(loadState).mockResolvedValue(null);
     const ws = mockWebSocket();
 
     await handleMessage(ctx, ws as any, buildSyncStep1(new Uint8Array([])));
 
-    expect(createDoc).toHaveBeenCalledWith(ctx);
+    expect(createDoc).toHaveBeenCalledWith(ctx, null);
     expect(ws.sent).toHaveLength(1);
     // Should be a valid sync-step-2 with empty doc state
     const update = decodeSyncStep2(ws.sent[0]);
     expect(update.length).toBeGreaterThan(0);
+  });
+
+  it('2.1.1c first connection with entity content — seeds the doc server-side', async () => {
+    // Simulate real storage for the fresh-doc path: createDoc persists, loadState reads back.
+    // Once-queued mocks only — persistent overrides would leak past clearAllMocks.
+    let stored: Uint8Array | null = null;
+    vi.mocked(createDoc).mockImplementationOnce(async (_ctx, initialState?: Uint8Array | null) => {
+      stored = initialState ?? new Uint8Array(0);
+    });
+    vi.mocked(loadState)
+      .mockResolvedValueOnce(null) // storedState: no row yet
+      .mockImplementationOnce(async () => stored); // canonical re-load after createDoc
+    const description = JSON.stringify([
+      { id: 'b1', type: 'paragraph', props: {}, content: [{ type: 'text', text: 'seeded', styles: {} }], children: [] },
+      { id: 'b2', type: 'checklistItem', props: { checkboxId: 'cb-1', checked: true }, content: [], children: [] },
+    ]);
+    vi.mocked(loadEntityDescription).mockResolvedValueOnce(description);
+    const ws = mockWebSocket();
+
+    await handleMessage(ctx, ws as any, buildSyncStep1(new Uint8Array([])));
+
+    expect(ws.sent).toHaveLength(1);
+    const update = decodeSyncStep2(ws.sent[0]);
+    const blocks = yUpdateToBlocks(update);
+    expect(blocks.map((b) => b.type)).toEqual(['paragraph', 'checklistItem']);
+    expect(blocks[1].props).toMatchObject({ checkboxId: 'cb-1', checked: true });
+  });
+
+  it('2.1.1d concurrent seeders converge on the canonical row', async () => {
+    // Second connector's insert loses (ON CONFLICT DO NOTHING) — it must adopt the winner's seed
+    const winner = new TextEncoder().encode('winner-seed-state');
+    vi.mocked(loadState)
+      .mockResolvedValueOnce(null) // storedState: no row yet
+      .mockResolvedValueOnce(winner as Uint8Array); // re-load after createDoc: winner's row
+    // createDoc keeps its factory default (resolves undefined) — exactly the conflict no-op
+    vi.mocked(loadEntityDescription).mockResolvedValueOnce(
+      JSON.stringify([{ id: 'b1', type: 'paragraph', props: {}, content: [], children: [] }]),
+    );
+    const ws = mockWebSocket();
+
+    await handleMessage(ctx, ws as any, buildSyncStep1(new Uint8Array([])));
+
+    // The client receives the canonical (winner's) state, not this connector's own seed
+    expect(ws.sent).toHaveLength(1);
+    expect(decodeSyncStep2(ws.sent[0])).toEqual(winner);
   });
 
   it('2.1.1b existing row with empty state — skips createDoc', async () => {
@@ -298,6 +359,27 @@ describe('debounced save', () => {
     await vi.advanceTimersByTimeAsync(3000);
 
     expect(saveState).toHaveBeenCalledTimes(1);
+  });
+
+  it('2.2.1b materialization runs once per save window with the saved state and last editor', async () => {
+    vi.mocked(loadState).mockResolvedValue(null);
+    const ws = mockWebSocket();
+    const collab = joinCollab(ctx);
+
+    const doc = new Y.Doc();
+    doc.getMap('test').set('key', 'value');
+    const update = Y.encodeStateAsUpdate(doc);
+    await handleMessage(ctx, ws as any, buildSyncUpdate(update));
+
+    expect(materializeState).not.toHaveBeenCalled();
+    expect(collab.lastEditor).toBe(ctx);
+
+    await vi.advanceTimersByTimeAsync(3000);
+
+    expect(materializeState).toHaveBeenCalledTimes(1);
+    expect(materializeState).toHaveBeenCalledWith(collab, update);
+    // saveState carries the last editor for crash-orphan attribution
+    expect(saveState).toHaveBeenCalledWith(ctx, update, ctx.userId);
   });
 
   it('2.2.2 rapid updates reset debounce — single save', async () => {

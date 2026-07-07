@@ -26,17 +26,16 @@ import type {
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { useUserStore } from '~/modules/user/user-store';
+import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
+import { invalidateOnMembershipChange } from '~/query/basic/invalidation-helpers';
 import {
-  changeInfiniteQueryData,
-  changeQueryData,
   formatUpdatedCacheData,
-  getEntityQueryKeys,
   getQueryItems,
   getSimilarQueries,
-  invalidateOnMembershipChange,
   isInfiniteQueryData,
   isQueryData,
-} from '~/query/basic';
+} from '~/query/basic/mutate-query';
 import { queryClient } from '~/query/query-client';
 
 const limit = appConfig.requestLimits.members;

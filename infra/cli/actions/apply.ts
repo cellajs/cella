@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { confirm } from '@inquirer/prompts'
-import pc from 'shared/cli-utils/colors'
+import { pc } from 'shared/cli-utils/colors';
 import { warningMark } from 'shared/console'
 import { adoptOrphanedPolicy } from '../../lib/scaleway/adopt-orphaned-policy'
 import { adoptOrphanedSecrets } from '../../lib/scaleway/adopt-orphaned-secrets'

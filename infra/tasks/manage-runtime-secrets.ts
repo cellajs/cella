@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import pc from 'shared/cli-utils/colors'
+import { pc } from 'shared/cli-utils/colors';
 import { checkMark, tildeMark, warningMark } from 'shared/console'
 import { isMain } from '../lib/utils/is-main'
 import { runtimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'

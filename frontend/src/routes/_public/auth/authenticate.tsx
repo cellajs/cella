@@ -4,7 +4,7 @@ import { useAuthStore } from '~/modules/auth/auth-store';
 import { AuthenticatePage } from '~/modules/auth/authenticate-page';
 import { authenticateRouteSearchParamsSchema } from '~/modules/auth/search-params-schemas';
 import { useUserStore } from '~/modules/user/user-store';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
 
 /**
  * Main authentication page for user sign-in and sign-up flows.

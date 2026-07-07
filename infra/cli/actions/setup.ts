@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import { resolve } from 'node:path'
 import { confirm, input } from '@inquirer/prompts'
-import pc from 'shared/cli-utils/colors'
+import { pc } from 'shared/cli-utils/colors';
 import { DIVIDER } from 'shared/cli-utils/display'
 import { checkMark, warningMark } from 'shared/console'
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'

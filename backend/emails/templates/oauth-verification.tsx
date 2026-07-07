@@ -9,7 +9,7 @@ import {
   EmailText,
   SafeHtml,
 } from '../components';
-import i18n from '../i18n';
+import { i18n } from '../i18n';
 import { greetingStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
 

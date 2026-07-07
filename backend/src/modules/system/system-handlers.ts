@@ -4,7 +4,7 @@ import { createInviteOp } from '#/modules/system/operations/create-invite';
 import { deleteUsersOp } from '#/modules/system/operations/delete-users';
 import { sendNewsletterOp } from '#/modules/system/operations/send-newsletter';
 import { updateUserOp } from '#/modules/system/operations/update-user';
-import systemRoutes from '#/modules/system/system-routes';
+import { systemRoutes } from '#/modules/system/system-routes';
 import '#/modules/system/system-module';
 import { defaultHook } from '#/utils/default-hook';
 

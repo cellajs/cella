@@ -3,6 +3,9 @@ import { hierarchy } from '../../../config/hierarchy-config';
 import type { ContextEntityType, ProductEntityType } from '../../../types';
 import { getContextRoles, isContextEntity } from '../../entity-guards';
 import { allActionsAllowed, createActionRecord } from '../action-helpers';
+import { type PublicReadGrants, publicReadMatches } from '../public-read';
+import { type ConditionActor, isRowCondition, type RowForCondition } from '../row-conditions';
+import { membershipGrantQualifies, type RowRestrictions } from '../row-restrictions';
 import type { AccessPolicies, EntityActionPermissions } from '../types';
 import { formatBatchPermissionSummary, formatPermissionDecision } from './format';
 import type {
@@ -84,8 +87,9 @@ const getSubjectContextId = (
  * Internal function to check permissions for a single subject using pre-built indices.
  * This is the core logic shared by both single and batch permission checks.
  *
- * Supports Zanzibar-style implicit "owner" relation: when a policy value is `'own'`,
- * the engine checks if `subject.createdBy === userId` to determine grant.
+ * Supports row-conditional grants: when a policy value is a `RowCondition` (e.g. the
+ * built-in `own`, normalized from the `'own'` literal), the engine evaluates its
+ * check-form against the subject's row fields to determine the grant.
  */
 const checkWithIndices = <T extends PermissionMembership>(
   membershipIndex: MembershipIndex<T>,
@@ -94,6 +98,8 @@ const checkWithIndices = <T extends PermissionMembership>(
   orderedContexts: ContextEntityType[],
   isSystemAdmin: boolean,
   userId?: string,
+  publicGrants?: PublicReadGrants,
+  restrictions?: RowRestrictions,
   debug?: boolean,
 ): PermissionDecision<T> => {
   // Primary context is always the first (most specific) in the hierarchy.
@@ -138,6 +144,13 @@ const checkWithIndices = <T extends PermissionMembership>(
   // Collect resolved context IDs for debugging
   const contextIds: ResolvedContextIds = {};
 
+  // Row fields + actor for row-condition evaluation, built once per subject
+  const conditionRow: RowForCondition = { ...subject.row, createdBy: subject.createdBy };
+  const conditionActor: ConditionActor = { userId };
+
+  // Row restriction for this entity type (narrows membership grants; see row-restrictions.ts)
+  const restriction = restrictions?.[subject.entityType];
+
   // Walk through each context level (most specific first, then ancestors)
   for (const contextType of orderedContexts) {
     // Strict: context in hierarchy must have roles defined
@@ -174,12 +187,19 @@ const checkWithIndices = <T extends PermissionMembership>(
         );
       }
 
+      // Row restriction: does this membership grant qualify for this row? Narrows
+      // membership grants only; row-condition and public grants are never narrowed,
+      // and `create` is never restricted (no row exists yet). Fail-closed without row data.
+      const grantQualifies =
+        !restriction || membershipGrantQualifies(restriction, subject, orderedContexts, contextType, m.role);
+
       // Attribute each granted action to this membership
       for (const action of appConfig.entityActions) {
         const policyValue = permissions[action];
 
         // Unconditional grant
         if (policyValue === 1) {
+          if (!grantQualifies && action !== 'create') continue;
           actions[action].enabled = true;
           actions[action].grantedBy.push({
             type: 'membership',
@@ -190,14 +210,22 @@ const checkWithIndices = <T extends PermissionMembership>(
           continue;
         }
 
-        // Implicit "owner" relation check: grant if actor created this entity.
-        // In Zanzibar terms: check(actor, action, object) where relation(actor, 'owner', object) exists.
-        if (policyValue === 'own' && userId && subject.createdBy === userId) {
+        // Row-conditional grant: allowed only when the row satisfies the condition for this
+        // actor (e.g. built-in `own`: actor created the row). Attributed by condition name.
+        if (isRowCondition(policyValue) && policyValue.matches(conditionRow, conditionActor)) {
           actions[action].enabled = true;
-          actions[action].grantedBy.push({ type: 'relation', relation: 'owner' });
+          actions[action].grantedBy.push({ type: 'relation', relation: policyValue.name });
         }
       }
     }
+  }
+
+  // Subject-level public read grant: rows can be readable by ANY actor — anonymous
+  // included — based on row data (see `public-read.ts`). Membership-independent.
+  const publicMode = publicGrants?.[subject.entityType];
+  if (publicMode && publicReadMatches(publicMode, subject)) {
+    actions.read.enabled = true;
+    actions.read.grantedBy.push({ type: 'public', mode: publicMode });
   }
 
   // Derive simple `can` map from actions table
@@ -265,6 +293,9 @@ export function getAllDecisions<T extends PermissionMembership>(
   const subjectArray = isSingle ? [subjects] : subjects;
   const isSystemAdmin = options?.isSystemAdmin === true;
   const userId = options?.userId;
+  const publicGrants = options?.publicGrants;
+  const restrictions = options?.restrictions;
+  const hostDelegation = options?.hostDelegation;
   const debug = options?.debug === true;
 
   const results = new Map<string, PermissionDecision<T>>();
@@ -286,23 +317,76 @@ export function getAllDecisions<T extends PermissionMembership>(
   // Cache for relevant contexts by entity type
   const contextCache = new Map<ContextEntityType | ProductEntityType, ContextEntityType[]>();
 
-  for (const subject of subjectArray) {
-    // Get or compute ordered contexts for this entity type (most specific → root).
-    // For context entities (e.g., project): [project, organization] — includes self + ancestors
-    // For product entities (e.g., attachment): [organization] — just ancestors
-    // The first element [0] is always the primary context used for membership capture.
-    let orderedContexts = contextCache.get(subject.entityType);
-
+  // Ordered contexts for an entity type (most specific → root), cached.
+  // For context entities (e.g., project): [project, organization] — includes self + ancestors
+  // For product entities (e.g., attachment): [organization] — just ancestors
+  // The first element [0] is always the primary context used for membership capture.
+  const resolveOrderedContexts = (entityType: ContextEntityType | ProductEntityType): ContextEntityType[] => {
+    let orderedContexts = contextCache.get(entityType);
     if (!orderedContexts) {
-      const ancestors = hierarchy.getOrderedAncestors(subject.entityType) as ContextEntityType[];
-      orderedContexts = isContextEntity(subject.entityType) ? [subject.entityType, ...ancestors] : [...ancestors];
-      contextCache.set(subject.entityType, orderedContexts);
+      const ancestors = hierarchy.getOrderedAncestors(entityType) as ContextEntityType[];
+      orderedContexts = isContextEntity(entityType) ? [entityType, ...ancestors] : [...ancestors];
+      contextCache.set(entityType, orderedContexts);
     }
+    return orderedContexts;
+  };
+
+  for (const subject of subjectArray) {
+    const orderedContexts = resolveOrderedContexts(subject.entityType);
     // Get or build policy index for this entity type
     const policyIndex = getOrBuildPolicyIndex(policies, subject.entityType, policyIndexCache);
 
     // Perform the permission check using pre-built indices
-    const decision = checkWithIndices(membershipIndex, policyIndex, subject, orderedContexts, isSystemAdmin, userId, debug);
+    const decision = checkWithIndices(
+      membershipIndex,
+      policyIndex,
+      subject,
+      orderedContexts,
+      isSystemAdmin,
+      userId,
+      publicGrants,
+      restrictions,
+      debug,
+    );
+
+    // Host delegation: a hosted row allows a delegated action if the HOST row allows it,
+    // including the host's row conditions, public grants and restrictions. Additive —
+    // unions with the subject's own decision, attributed as {type:'host'}. Requires the
+    // caller-resolved subject.hostRow (load-at-check); absent → contributes nothing.
+    const delegatedActions = hostDelegation?.[subject.entityType];
+    const hostType = delegatedActions?.length ? hierarchy.getHostType(subject.entityType) : undefined;
+    if (!isSystemAdmin && delegatedActions && hostType && subject.hostRow) {
+      const hostRow = subject.hostRow;
+      const hostSubject: SubjectForPermission = {
+        entityType: hostType as ProductEntityType,
+        ...(typeof hostRow.id === 'string' && { id: hostRow.id }),
+        ...(hostRow.createdBy !== undefined && { createdBy: hostRow.createdBy as string | null }),
+        // Host and hosted share the home context (enforced by the hierarchy builder)
+        contextIds: subject.contextIds,
+        row: hostRow,
+        ...(subject.parentRow !== undefined && { parentRow: subject.parentRow }),
+        // deliberately no hostRow: hosts cannot themselves be hosted (no chains)
+      };
+      const hostDecision = checkWithIndices(
+        membershipIndex,
+        getOrBuildPolicyIndex(policies, hostType as ProductEntityType, policyIndexCache),
+        hostSubject,
+        resolveOrderedContexts(hostType as ProductEntityType),
+        false,
+        userId,
+        publicGrants,
+        restrictions,
+        debug,
+      );
+      for (const action of delegatedActions) {
+        if (hostDecision.can[action]) {
+          decision.actions[action].enabled = true;
+          decision.actions[action].grantedBy.push({ type: 'host', hostType });
+          decision.can[action] = true;
+        }
+      }
+    }
+
     const key = subject.id ?? `_idx:${subjectArray.indexOf(subject)}`;
     results.set(key, decision);
   }

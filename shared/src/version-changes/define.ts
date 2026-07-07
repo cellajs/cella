@@ -8,7 +8,15 @@
  * Lens modules are FROZEN once shipped and appended in date order to
  * `index.ts`. The global schema version is the lens count (D2).
  */
-import type { ProductEntityType } from '../../types';
+import type { ContextEntityType, ProductEntityType } from '../../types';
+
+/**
+ * Entity types lenses can target. Product entities get the full artifact set
+ * (ops/stx normalization, mirror writes); context entities get the reduced set
+ * (body widening + normalization + cache migration) — their writes are plain
+ * full-body PUTs with no per-field merge.
+ */
+export type LensEntityType = ProductEntityType | ContextEntityType;
 
 /**
  * Version of the lens-module *format* itself (Cambria's "lens inception" guard).
@@ -65,8 +73,8 @@ export interface LensDefinition {
   id: string;
   /** Lens-module format version. Omit to get the current `LENS_FORMAT_VERSION`; frozen with the module. */
   formatVersion?: number;
-  /** Product entity this lens applies to. */
-  entityType: ProductEntityType;
+  /** Entity this lens applies to (product or context). */
+  entityType: LensEntityType;
   /** Human-readable summary of the change. */
   description: string;
   /** Lifecycle phase — drives wire widening and spec generation. */

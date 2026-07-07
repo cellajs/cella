@@ -18,7 +18,7 @@ import {
 } from 'sdk';
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
-import { baseInfiniteQueryOptions } from '~/query/basic';
+import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 import type { MutationData } from '~/query/types';
 
 type TenantFilters = Omit<GetTenantsData['query'], 'limit' | 'offset'>;

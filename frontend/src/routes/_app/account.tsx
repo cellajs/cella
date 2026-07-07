@@ -1,5 +1,4 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { lazy } from 'react';
 import { getErrorInfo } from '~/modules/common/error-helpers';
 import { errorSearchSchema } from '~/modules/common/search-params-schemas';
 import { useToastStore } from '~/modules/common/toaster/toast-store';
@@ -7,9 +6,10 @@ import type { ToastSeverity } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
 import { withSuspenseSpinner } from '~/routes/route-utils';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const UserAccountPage = lazy(() => import('~/modules/me/account-page'));
+const UserAccountPage = lazyNamed(() => import('~/modules/me/account-page'), 'UserAccountPage');
 
 /**
  * User account settings page for personal configuration.

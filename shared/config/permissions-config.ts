@@ -1,5 +1,5 @@
 import { appConfig } from '../src/config-builder/app-config';
-import { configureAccessPolicies } from '../src/permissions/access-policies';
+import { configurePermissions } from '../src/permissions/access-policies';
 
 /**
  * Access policies for each entity type.
@@ -20,24 +20,32 @@ import { configureAccessPolicies } from '../src/permissions/access-policies';
  * Product entities have no self rows: their context rows are *home* rows, where `create` is
  * meaningful (it grants creating the product inside that context).
  *
+ * Beyond plain cells, the builder callback also exposes:
+ * - `publicRead(mode)` — declare how the subject becomes publicly readable (requires a matching
+ *   `publicRead` declaration in the hierarchy config)
+ * - `delegateToHost(actions)` — delegate actions on a hosted product to its host row (requires a
+ *   `host:` declaration in the hierarchy config)
+ * - row conditions like `read: 'own'` — grant an action only on rows the user created
+ *
  * ## Adding new entities
  *
- * 1. Add entity to appConfig.entityConfig with kind, parent/ancestors, and roles (for context)
- * 2. Add entity type to appConfig.entityTypes array
- * 3. Define access policies in the switch statement below
- * 4. Create DB schema in `backend/src/db/schema/`
- * 5. Run `pnpm generate` to create migrations
+ * Defining access policies (a `case` in the switch below) is only one step of adding an entity.
+ * For the full end-to-end recipe — hierarchy declaration, config arrays, DB table + RLS, module
+ * wiring, sync engine, and frontend registration — see `cella/ADD_ENTITY.md`.
  */
-export const accessPolicies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
-  switch (subject.name) {
-    case 'organization':
-      // self (this organization) — create is inert here: org creation is gated by tenant quota, not this policy
-      contexts.organization.admin({ read: 1, update: 1, delete: 1 });
-      contexts.organization.member({ read: 1, update: 0, delete: 0 });
-      break;
-    case 'attachment':
-      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-      contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
-      break;
-  }
-});
+export const { accessPolicies, publicReadGrants, rowRestrictions, hostDelegation } = configurePermissions(
+  appConfig.entityTypes,
+  ({ subject, contexts }) => {
+    switch (subject.name) {
+      case 'organization':
+        // self (this organization) — create is inert here: org creation is gated by tenant quota, not this policy
+        contexts.organization.admin({ read: 1, update: 1, delete: 1 });
+        contexts.organization.member({ read: 1, update: 0, delete: 0 });
+        break;
+      case 'attachment':
+        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+        contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
+        break;
+    }
+  },
+);

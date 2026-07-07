@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { lazy } from 'react';
 import { infoQueryOptions, openApiSpecQueryOptions } from '~/modules/docs/query';
 import { queryClient } from '~/query/query-client';
 import { withSuspense } from '~/routes/route-utils';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const OverviewPage = lazy(() => import('~/modules/docs/overview-page'));
+const OverviewPage = lazyNamed(() => import('~/modules/docs/overview-page'), 'OverviewPage');
 
 /**
  * Overview route - shows OpenAPI info in a table format and spec in JSON viewer.

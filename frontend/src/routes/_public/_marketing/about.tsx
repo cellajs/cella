@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import AboutPage from '~/modules/marketing/about/about-page';
-import appTitle from '~/utils/app-title';
+import { AboutPage } from '~/modules/marketing/about/about-page';
+import { appTitle } from '~/utils/app-title';
 
 /**
  * Public about page describing the application.

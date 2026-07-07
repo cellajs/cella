@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText, SafeHtml } from '../components';
-import i18n from '../i18n';
+import { i18n } from '../i18n';
 import { defineEmailTemplate } from '../types';
 import type { RequestType } from './request-was-sent';
 

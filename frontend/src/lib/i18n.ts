@@ -4,7 +4,7 @@ import Backend from 'i18next-http-backend';
 import { initReactI18next } from 'react-i18next';
 import { appConfig } from 'shared';
 import { env } from '~/env';
-import locales from '~/lib/i18n-locales';
+import { locales } from '~/lib/i18n-locales';
 
 /**
  * i18n options with hybrid preload and lazy loading strategy

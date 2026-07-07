@@ -2,6 +2,7 @@ import { boolean, foreignKey, index, snakeCase, uuid, varchar } from 'drizzle-or
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { contextRelationColumns } from '#/db/utils/context-relation-columns';
+import { hostRelationColumns } from '#/db/utils/host-relation-columns';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
 import { organizationsTable } from '#/modules/organization/organization-db';
 
@@ -13,8 +14,13 @@ export const attachmentsTable = snakeCase.table(
   'attachments',
   {
     ...productEntityColumns('attachment'),
+    // Host relation columns (hierarchy `host:`): a nullable <host>Id column when a host is
+    // declared (raak: attachment -> task); empty in the template hierarchy. Hosted rows
+    // cascade with their host and feed the host counter.
+    ...hostRelationColumns('attachment'),
     public: boolean().notNull().default(false),
     bucketName: varchar({ length: maxLength.field }).notNull(),
+    /** Upload batch grouping (multi-file uploads shown as one carousel) — NOT ownership. */
     groupId: uuid(),
     filename: varchar({ length: maxLength.field }).notNull(),
     contentType: varchar({ length: maxLength.field }).notNull(),

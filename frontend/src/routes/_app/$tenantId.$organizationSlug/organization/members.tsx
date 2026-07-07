@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
 import { OrganizationMembersComponent } from '~/modules/organization/route-components';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
 
 /**
  * Organization members table for managing memberships.

@@ -1,6 +1,7 @@
+import type { QueryKey } from '@tanstack/react-query';
 import type { ProductEntityType } from 'shared';
 import { appConfig } from 'shared';
-import { useYjsEditorStore } from '~/modules/common/blocknote/yjs-editor';
+import { getYjsOwnedFields, isYjsEditorActive } from '~/modules/common/blocknote/yjs-editor';
 import {
   type EntityQueryKeys,
   getEntityDeltaFetch,
@@ -56,6 +57,29 @@ function hasParentContextChanged(cached: ItemData, incoming: ItemData): boolean 
 function isSoftDeleted(entity: ItemData): boolean {
   const deletedAt = (entity as unknown as Record<string, unknown>).deletedAt;
   return typeof deletedAt === 'string' && deletedAt.length > 0;
+}
+
+/**
+ * If a Yjs editor is active for this entity, replace Yjs-owned fields on the incoming
+ * server snapshot with the locally cached values, so a slightly stale server read can't
+ * overwrite the local Y.Doc-derived state. Returns the entity unchanged otherwise.
+ */
+function stripYjsOwnedFields(entityType: string, entity: ItemData, detailKey: QueryKey): ItemData {
+  // SSE payloads carry entityType as a runtime string; isActive misses are harmless
+  const type = entityType as ProductEntityType;
+  if (!isYjsEditorActive(type, entity.id)) return entity;
+
+  const existing = queryClient.getQueryData<ItemData>(detailKey);
+  if (!existing) return entity;
+
+  const filtered = { ...entity };
+  // Dynamic field copy — ItemData lacks an index signature, so cast once here
+  const target: Record<string, unknown> = filtered as never;
+  const source: Record<string, unknown> = existing as never;
+  for (const field of getYjsOwnedFields(type)) {
+    if (field in source) target[field] = source[field];
+  }
+  return filtered;
 }
 
 /**
@@ -231,25 +255,7 @@ export async function fetchEntityAndUpdateList(
       meta: organizationId ? { organizationId, tenantId } : undefined,
     });
     if (entity) {
-      // If a Yjs editor is active for this entity, strip Yjs-owned fields to avoid
-      // overwriting the local Y.Doc state with a slightly stale server snapshot
-      let filtered = entity;
-      if (entityType) {
-        const yjsStore = useYjsEditorStore.getState();
-        if (yjsStore.isActive(entityType as ProductEntityType, entityId)) {
-          const ownedFields = yjsStore.getOwnedFields(entityType as ProductEntityType);
-          const existing = queryClient.getQueryData<ItemData>(keys.detail.byId(entityId));
-          if (existing) {
-            filtered = { ...entity };
-            // Dynamic field copy — ItemData lacks an index signature, so cast once here
-            const target: Record<string, unknown> = filtered as never;
-            const source: Record<string, unknown> = existing as never;
-            for (const field of ownedFields) {
-              if (field in source) target[field] = source[field];
-            }
-          }
-        }
-      }
+      const filtered = entityType ? stripYjsOwnedFields(entityType, entity, keys.detail.byId(entityId)) : entity;
 
       // Update detail cache
       queryClient.setQueryData(keys.detail.byId(entityId), (old: ItemData | undefined) => {
@@ -314,22 +320,7 @@ function patchFetchedEntity(
     return;
   }
 
-  // If a Yjs editor is active for this entity, strip Yjs-owned fields to avoid
-  // overwriting the local Y.Doc state with a slightly stale server snapshot
-  let filtered = entity;
-  const yjsStore = useYjsEditorStore.getState();
-  if (yjsStore.isActive(entityType as ProductEntityType, entity.id)) {
-    const ownedFields = yjsStore.getOwnedFields(entityType as ProductEntityType);
-    const existing = queryClient.getQueryData<ItemData>(keys.detail.byId(entity.id));
-    if (existing) {
-      filtered = { ...entity };
-      const target: Record<string, unknown> = filtered as never;
-      const source: Record<string, unknown> = existing as never;
-      for (const field of ownedFields) {
-        if (field in source) target[field] = source[field];
-      }
-    }
-  }
+  const filtered = stripYjsOwnedFields(entityType, entity, keys.detail.byId(entity.id));
 
   // Update detail cache
   queryClient.setQueryData(keys.detail.byId(entity.id), (old: ItemData | undefined) => {

@@ -144,4 +144,4 @@ function OrganizationSettings({ organization }: { organization: Organization }) 
   );
 }
 
-export default OrganizationSettings;
+export { OrganizationSettings };

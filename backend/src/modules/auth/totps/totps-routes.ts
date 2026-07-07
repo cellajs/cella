@@ -104,4 +104,4 @@ const authTotpsRoutes = {
   }),
 };
 
-export default authTotpsRoutes;
+export { authTotpsRoutes };

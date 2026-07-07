@@ -150,4 +150,4 @@ function TagSection({ tag, operations, isOpen, onPrerender }: TagSectionProps) {
   );
 }
 
-export default OperationsPage;
+export { OperationsPage };

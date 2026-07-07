@@ -160,4 +160,5 @@ const organizationRoutes = {
     },
   }),
 };
-export default organizationRoutes;
+
+export { organizationRoutes };

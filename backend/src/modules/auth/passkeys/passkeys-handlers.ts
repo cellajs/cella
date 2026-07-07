@@ -22,7 +22,7 @@ import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-ac
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { parseAndValidatePasskeyAttestation, validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
-import authPasskeysRoutes from '#/modules/auth/passkeys/passkeys-routes';
+import { authPasskeysRoutes } from '#/modules/auth/passkeys/passkeys-routes';
 import type { UserModel } from '#/modules/user/user-db';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';

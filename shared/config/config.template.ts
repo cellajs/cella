@@ -386,4 +386,3 @@ export const config = {
   },
 } satisfies RequiredConfig;
 
-export default config;

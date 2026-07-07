@@ -6,6 +6,7 @@ import { env } from './env';
 import { log } from './lib/pino';
 import { otel } from './lib/tracing';
 import { closeWsServer, startWsServer } from './server/ws-server';
+import { runStartupSweep } from './sync/sweep';
 
 export { closeWsServer };
 
@@ -41,8 +42,14 @@ export async function startYjsWorker(): Promise<void> {
   if (env.NODE_ENV === 'development') {
     // Wait for backend, but don't crash if it times out — the server
     // is already listening and can handle requests once backend is up.
-    waitForBackend(BACKEND_POLL_INTERVAL_MS, BACKEND_POLL_TIMEOUT_MS).catch((err) => {
-      log.warn('waitForBackend failed. Yjs will retry per-request.', { err });
-    });
+    // Sweep crash-orphaned session rows once the backend is reachable.
+    waitForBackend(BACKEND_POLL_INTERVAL_MS, BACKEND_POLL_TIMEOUT_MS)
+      .then(() => runStartupSweep())
+      .catch((err) => {
+        log.warn('waitForBackend failed. Yjs will retry per-request.', { err });
+      });
+  } else {
+    // Materialize + clean up sessions orphaned by a previous crash
+    runStartupSweep().catch((err) => log.warn('Startup sweep failed', { err }));
   }
 }

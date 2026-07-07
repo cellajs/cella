@@ -1,8 +1,9 @@
 import type { WebSocket } from 'ws';
 import type { DocContext } from '../constants';
 import { YJS_CLEANUP_DELAY_MS } from '../constants';
+import { deleteState, loadState, saveState } from '../data/storage';
 import { log } from '../lib/pino';
-import { deleteState, saveState } from '../data/storage';
+import { materializeState } from './materialize';
 
 interface CollabSession {
   ctx: DocContext;
@@ -15,6 +16,10 @@ interface CollabSession {
   savingPromise?: Promise<void>;
   /** Cached DB state from the first loadState call within a debounce window. */
   cachedDbState?: Uint8Array | null;
+  /** Blocks JSON of the last successful (or seed) materialization — diff baseline. */
+  lastMaterializedJson?: string;
+  /** Context of the last client whose update was relayed — materialization attribution. */
+  lastEditor?: DocContext;
 }
 
 const collabSessions = new Map<string, CollabSession>();
@@ -80,7 +85,7 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
   collab.clients.delete(ws);
 
   if (collab.clients.size === 0) {
-    collab.cleanupTimer = setTimeout(async () => {
+    const cleanup = async () => {
       if (collab.clients.size > 0) return;
       if (collab.saveTimer) clearTimeout(collab.saveTimer);
 
@@ -94,13 +99,33 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
       }
 
       // Flush any un-saved pendingState before deleting the DB row
-      if (collab.pendingState && collab.pendingState.length > 0) {
+      let finalState = collab.pendingState;
+      if (finalState && finalState.length > 0) {
         try {
-          await saveState(collab.ctx, collab.pendingState);
+          await saveState(collab.ctx, finalState, collab.lastEditor?.userId ?? null);
         } catch (err) {
           log.error(`Failed to flush pending state for ${key}`, { err: err });
         }
         collab.pendingState = undefined;
+      } else {
+        try {
+          finalState = (await loadState(collab.ctx)) ?? undefined;
+        } catch {
+          finalState = undefined;
+        }
+      }
+
+      // Gate deletion on a final materialization: the durable record must absorb the
+      // session before its state is destroyed. Only 'retry' (backend/network down)
+      // blocks — reschedule and keep the row. 'permanent' (entity deleted, permission
+      // revoked) can never converge, so deletion proceeds.
+      if (finalState && finalState.length > 0) {
+        const result = await materializeState(collab, finalState);
+        if (result === 'retry') {
+          log.warn(`Materialize unavailable for ${key} — keeping session row, retrying cleanup`);
+          collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
+          return;
+        }
       }
 
       try {
@@ -110,7 +135,9 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
       }
 
       collabSessions.delete(key);
-    }, YJS_CLEANUP_DELAY_MS);
+    };
+
+    collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
   }
 }
 

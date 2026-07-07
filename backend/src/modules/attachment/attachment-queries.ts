@@ -94,23 +94,6 @@ export const findAttachmentByKey = async (ctx: DbContext, { key }: FindAttachmen
   return att;
 };
 
-interface FindAttachmentKeysByGroupIdOpts {
-  groupId: string;
-}
-
-/** Find attachment IDs and S3 keys by group ID (e.g. to check which attachments belong to an entity). */
-export const findAttachmentKeysByGroupId = async (ctx: DbContext, { groupId }: FindAttachmentKeysByGroupIdOpts) => {
-  const { db } = ctx.var;
-  return db
-    .select({
-      id: attachmentsTable.id,
-      convertedKey: attachmentsTable.convertedKey,
-      originalKey: attachmentsTable.originalKey,
-    })
-    .from(attachmentsTable)
-    .where(eq(attachmentsTable.groupId, groupId));
-};
-
 interface FindAttachmentViewCountOpts {
   entityId: string;
 }

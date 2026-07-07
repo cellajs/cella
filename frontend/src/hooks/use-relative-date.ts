@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
-import type locale from '~/../../locales';
+import type { locale } from '~/../../locales';
 import { dateMini } from '~/utils/date-mini';
 
 const minute = 6e4;

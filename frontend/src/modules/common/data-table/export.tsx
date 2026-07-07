@@ -9,7 +9,7 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { uiStore } from '~/modules/ui/ui-store';
-import router from '~/routes/router';
+import { router } from '~/routes/router';
 
 interface Props<TData> {
   filename: string;

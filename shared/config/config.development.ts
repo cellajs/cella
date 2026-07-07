@@ -1,7 +1,7 @@
 import type { DeepPartial } from '../src/config-builder/types';
-import type _default from './config.default';
+import type { config as _default } from './config.default';
 
-export default {
+export const development = {
   mode: 'development',
   name: 'Cella DEVELOPMENT',
   slug: 'cella-development',

@@ -1,4 +1,4 @@
-import { lazy } from 'react';
+import { lazyNamed } from '~/utils/lazy-named';
 
 /**
  * Shared React.lazy wrapper for BlockNoteFullHtml.
@@ -7,4 +7,4 @@ import { lazy } from 'react';
  * (e.g. via usePreloadLazyComponents on board mount) resolves the same
  * wrapper used by every consumer, eliminating the Suspense spinner flash.
  */
-export const BlockNoteFullHtml = lazy(() => import('~/modules/common/blocknote/full-html'));
+export const BlockNoteFullHtml = lazyNamed(() => import('~/modules/common/blocknote/full-html'), 'BlockNoteFullHtml');

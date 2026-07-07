@@ -1,5 +1,5 @@
-import { lazy } from 'react';
 import type { CollectedDataCategory, LegalTexts, SharedDataType, Subprocessor } from '~/modules/auth/legal/legal-types';
+import { lazyNamed } from '~/utils/lazy-named';
 
 export type LegalSubject = keyof typeof legalConfig;
 
@@ -9,7 +9,7 @@ export type LegalSubject = keyof typeof legalConfig;
  */
 export const legalConfig = {
   privacy: {
-    component: lazy(() => import('~/modules/auth/legal/privacy-text')),
+    component: lazyNamed(() => import('~/modules/auth/legal/privacy-text'), 'PrivacyText'),
     label: 'c:privacy_policy',
     sections: [
       { id: 'overview', label: null },
@@ -27,7 +27,7 @@ export const legalConfig = {
     ],
   },
   terms: {
-    component: lazy(() => import('~/modules/auth/legal/terms-text')),
+    component: lazyNamed(() => import('~/modules/auth/legal/terms-text'), 'TermsText'),
     label: 'c:terms_of_use',
     sections: [
       { id: 'overview', label: null },

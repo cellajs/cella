@@ -8,6 +8,10 @@ import { ReloadPrompt } from '~/modules/common/reload-prompt';
 import { ToasterProvider } from '~/modules/common/toaster/toaster-provider';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 
+function NoChatSupport() {
+  return null;
+}
+
 export function Root() {
   const isOnline = useOnlineManager();
 
@@ -16,7 +20,8 @@ export function Root() {
     () =>
       appConfig.has.chatSupport && isOnline
         ? import('~/modules/common/gleap-support')
-        : new Promise<{ default: () => null }>((res) => res({ default: () => null })),
+        : Promise.resolve({ GleapSupport: NoChatSupport }),
+    'GleapSupport',
     5000,
   ); // 5 seconds delay
 

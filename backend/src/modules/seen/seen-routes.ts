@@ -57,4 +57,4 @@ const seenRoutes = {
   }),
 };
 
-export default seenRoutes;
+export { seenRoutes };

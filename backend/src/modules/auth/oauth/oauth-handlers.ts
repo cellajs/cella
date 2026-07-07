@@ -17,7 +17,7 @@ import {
 } from '#/modules/auth/oauth/helpers/providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
 import { validateOidcNonce } from '#/modules/auth/oauth/helpers/validate-oidc-nonce';
-import authOAuthRoutes from '#/modules/auth/oauth/oauth-routes';
+import { authOAuthRoutes } from '#/modules/auth/oauth/oauth-routes';
 import { defaultHook } from '#/utils/default-hook';
 
 // Scopes for OAuth providers. `openid` is required for Google/Microsoft so the token

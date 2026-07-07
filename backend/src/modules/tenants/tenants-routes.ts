@@ -140,5 +140,3 @@ export const tenantRoutes = {
     },
   }),
 };
-
-export default tenantRoutes;

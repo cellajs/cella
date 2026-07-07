@@ -1,7 +1,8 @@
 import { codeBlockOptions } from '@blocknote/code-block';
-import { BlockNoteSchema, type CodeBlockOptions, createCodeBlockSpec, type Dictionary } from '@blocknote/core';
+import { BlockNoteSchema, createCodeBlockSpec, type Dictionary } from '@blocknote/core';
 import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
+import { codeBlockConfig } from 'shared/blocknote-schema-configs';
 import {
   checklistItemBlock,
   getChecklistSlashItem,
@@ -21,47 +22,14 @@ import type {
  *  Basic Configuration
  */
 
-// Config for supported languages for BlockNote code blocks
-export const supportedLanguages = {
-  text: {
-    name: 'Plain Text',
-    aliases: ['text', 'txt', 'plain'],
-  },
-  html: {
-    name: 'HTML',
-    aliases: ['htm'],
-  },
-  javascript: {
-    name: 'JavaScript',
-    aliases: ['javascript', 'js'],
-  },
-  json: {
-    name: 'JSON',
-    aliases: ['json'],
-  },
-  jsonc: {
-    name: 'JSON with Comments',
-    aliases: ['jsonc'],
-  },
-  markdown: {
-    name: 'Markdown',
-    aliases: ['markdown', 'md'],
-  },
-  typescript: {
-    name: 'TypeScript',
-    aliases: ['typescript', 'ts'],
-  },
-} satisfies CodeBlockOptions['supportedLanguages'];
-
-// Base custom schema
+// Base custom schema — block/inline configs are shared with the Yjs relay's
+// server-side seeder (shared/blocknote-schema-configs); only renders live here.
 export const customSchema = BlockNoteSchema.create().extend({
   blockSpecs: {
     checklistItem: checklistItemBlock(),
     notify: notifyBlock(), // Adds Notify block
     codeBlock: createCodeBlockSpec({
-      indentLineWithTab: true,
-      supportedLanguages,
-      defaultLanguage: 'text',
+      ...codeBlockConfig,
       createHighlighter: codeBlockOptions.createHighlighter,
     }),
   },

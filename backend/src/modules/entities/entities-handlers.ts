@@ -4,7 +4,7 @@ import type { Env } from '#/core/context';
 import { assertSuccess } from '#/core/operation-result';
 import '#/modules/entities/entities-listeners';
 import '#/modules/entities/entities-module';
-import entityRoutes from '#/modules/entities/entities-routes';
+import { entityRoutes } from '#/modules/entities/entities-routes';
 import { appCatchupOp, getLatestUserActivityId } from '#/modules/entities/operations/app-catchup';
 import { checkSlugOp } from '#/modules/entities/operations/check-slug';
 import { defaultHook } from '#/utils/default-hook';

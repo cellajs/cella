@@ -5,7 +5,7 @@
  * read the raw provider trace.
  */
 import { spawn } from 'node:child_process'
-import pc from 'shared/cli-utils/colors'
+import { pc } from 'shared/cli-utils/colors';
 import { warningMark } from 'shared/console'
 import { isBootstrapOwned } from '../scaleway/permissions'
 

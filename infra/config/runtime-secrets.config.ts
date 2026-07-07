@@ -26,7 +26,7 @@ import { defineRuntimeSecrets } from '../lib/runtime-secrets'
  * service, duplicate envVar/secretName, empty `services`) fails fast at load
  * time in `runtime-secrets.ts` rather than as a missing variable at runtime.
  */
-export default defineRuntimeSecrets({
+export const runtimeSecretsConfig = defineRuntimeSecrets({
   databaseUrlRuntime: {
     secretName: 'database-url-runtime',
     description: 'PostgreSQL runtime_role connection string (backend API, subject to RLS)',
@@ -172,4 +172,4 @@ export default defineRuntimeSecrets({
     generation: 'manual',
     services: ['backend', 'mcp'],
   },
-})
+});

@@ -6,7 +6,7 @@ import { env } from '#/env';
 import { appErrorHandler } from '#/lib/error';
 import { getHealthResponse } from '#/lib/health';
 import '#/lib/lens-telemetry'; // registers doba lens otel hooks
-import middlewares from '#/middlewares/app';
+import { app as middlewares } from '#/middlewares/app';
 
 const baseApp = new OpenAPIHono<Env>();
 
@@ -49,4 +49,4 @@ baseApp.notFound(() => {
 // Error handler
 baseApp.onError(appErrorHandler);
 
-export default baseApp;
+export { baseApp };

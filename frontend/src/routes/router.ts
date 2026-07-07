@@ -75,4 +75,4 @@ declare module '@tanstack/react-router' {
   }
 }
 
-export default router;
+export { router };

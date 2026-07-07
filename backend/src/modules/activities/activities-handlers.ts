@@ -3,7 +3,7 @@ import { eq, ilike } from 'drizzle-orm';
 import type { Env } from '#/core/context';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { buildActivitiesListQuery, countActivitiesList } from '#/modules/activities/activities-queries';
-import activityRoutes from '#/modules/activities/activities-routes';
+import { activityRoutes } from '#/modules/activities/activities-routes';
 import '#/modules/activities/activities-module';
 import { defaultHook } from '#/utils/default-hook';
 import { prepareStringForILikeFilter } from '#/utils/sql';

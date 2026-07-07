@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { lazy } from 'react';
 import { schemasQueryOptions, tagDetailsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
 import { queryClient } from '~/query/query-client';
 import { createErrorComponent, createNotFoundComponent, withSuspense } from '~/routes/route-utils';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const DocsLayout = lazy(() => import('~/modules/docs/docs-layout'));
+const DocsLayout = lazyNamed(() => import('~/modules/docs/docs-layout'), 'DocsLayout');
 
 /**
  * Documentation layout route for API reference and developer guides.

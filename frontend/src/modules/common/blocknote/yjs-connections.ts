@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { useEffect, useState } from 'react';
-import { appConfig } from 'shared';
+import { appConfig, type ProductEntityType } from 'shared';
 import { toWsUrl } from 'shared/ws-url';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
@@ -52,7 +52,7 @@ const useYjsSyncStore = create<YjsSyncState>(() => ({
   synced: {},
 }));
 
-function acquireConnection(editSessionId: string, entityType: string, tenantId: string): YjsConnection {
+function acquireConnection(editSessionId: string, entityType: ProductEntityType, tenantId: string): YjsConnection {
   const existing = connections.get(editSessionId);
 
   if (existing) {
@@ -181,7 +181,7 @@ function releaseConnection(editSessionId: string) {
  *
  * Pass `undefined` for editSessionId to disable (returns `null`).
  */
-export function useYjsConnection(editSessionId: string | undefined, entityType: string, tenantId: string) {
+export function useYjsConnection(editSessionId: string | undefined, entityType: ProductEntityType, tenantId: string) {
   const [conn, setConn] = useState<YjsConnection | null>(() => {
     // Check for a cached connection (instant remounts within grace period)
     return editSessionId ? (connections.get(editSessionId) ?? null) : null;

@@ -1,4 +1,4 @@
-import docsFrontmatter from 'virtual:docs-frontmatter';
+import { docsIndex as docsFrontmatter } from 'virtual:docs-frontmatter';
 import type { ComponentType } from 'react';
 import { z } from 'zod';
 

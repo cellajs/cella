@@ -1,4 +1,4 @@
-import { queryClient } from '~/query';
+import { queryClient } from '~/query/query-client';
 
 /**
  * Fetches data via React Query (for retries/error handling) and caches it under id.

@@ -163,14 +163,14 @@ CMD ["node", "dist/main.js"]
 FROM manifests AS cdc-deps
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --prod --ignore-scripts --filter cdc...
+    pnpm install --frozen-lockfile --prod --ignore-scripts --filter cdc-worker...
 
 # Install all dependencies (including dev for build) and build with tsup
 # Install cdc and shared deps; backend deps needed for bundling backend/src imports
 FROM manifests AS cdc-builder
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --ignore-scripts --filter cdc... --filter backend...
+    pnpm install --frozen-lockfile --ignore-scripts --filter cdc-worker... --filter backend...
 
 COPY cdc/ ./cdc/
 COPY backend/src ./backend/src

@@ -1,13 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { lazy } from 'react';
 import { operationsQueryOptions } from '~/modules/docs/query';
 import { operationsRouteSearchParamsSchema } from '~/modules/docs/search-params-schemas';
 import { queryClient } from '~/query/query-client';
 import { withSuspense } from '~/routes/route-utils';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
+import { lazyNamed } from '~/utils/lazy-named';
 import { stripParams } from '~/utils/strip-search-params';
 
-const OperationsPage = lazy(() => import('~/modules/docs/operations/operations-page'));
+const OperationsPage = lazyNamed(() => import('~/modules/docs/operations/operations-page'), 'OperationsPage');
 
 /**
  * Operations route - shows operations list view.

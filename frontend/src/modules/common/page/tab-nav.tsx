@@ -9,7 +9,7 @@ import { useMountedState } from '~/hooks/use-mounted-state';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useScrollReset } from '~/modules/common/scroll-reset';
 import { StickyBox } from '~/modules/common/sticky-box';
-import router from '~/routes/router';
+import { router } from '~/routes/router';
 import { cn } from '~/utils/cn';
 import { truncateMiddle } from '~/utils/truncate-middle';
 

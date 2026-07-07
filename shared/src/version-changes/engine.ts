@@ -2,7 +2,7 @@
  * doba facade — the ONLY module that imports `dobajs`. Keeps the dependency
  * swappable (vendoring escape hatch) and concentrates the integration.
  *
- * Builds, per product entity type:
+ * Builds, per lens-capable entity type (product + context):
  * - a doba migration registry over derived version nodes (cache-row migration,
  *   Phase 2 peer downgrade) — lazily, only when that entity has lenses;
  * - sync key maps for `ops` + `stx.fieldTimestamps` (server normalize seam,
@@ -12,9 +12,8 @@
  * safe passthrough no-op.
  */
 import { createRegistry, type Registry, type RegistryHooks } from 'dobajs';
-import type { ProductEntityType } from '../../types';
 import { schemaEvolutionPolicy, type UnknownFieldHandling } from './config';
-import { deltaRenameMap, type LensContext, type LensDefinition, resolveAddDefault } from './define';
+import { deltaRenameMap, type LensContext, type LensDefinition, type LensEntityType, resolveAddDefault } from './define';
 import { lenses } from './lens-list';
 
 /** Re-exported doba type so telemetry consumers don't import dobajs directly. */
@@ -43,7 +42,7 @@ export function configureLensTelemetry(hooks: RegistryHooks<string>): void {
 export const currentSchemaVersion: number = lenses.length;
 
 /** Lenses for an entity, paired with their 1-based global ordinal, in order. */
-function lensesFor(entityType: ProductEntityType): { lens: LensDefinition; ordinal: number }[] {
+function lensesFor(entityType: LensEntityType): { lens: LensDefinition; ordinal: number }[] {
   const result: { lens: LensDefinition; ordinal: number }[] = [];
   lenses.forEach((lens, i) => {
     if (lens.entityType === entityType) result.push({ lens, ordinal: i + 1 });
@@ -52,7 +51,7 @@ function lensesFor(entityType: ProductEntityType): { lens: LensDefinition; ordin
 }
 
 /** Version node id for a global version (latest entity ordinal ≤ version, else `v0`). */
-export function versionNodeFor(entityType: ProductEntityType, globalVersion: number): string {
+export function versionNodeFor(entityType: LensEntityType, globalVersion: number): string {
   const entityLenses = lensesFor(entityType);
   let node = 'v0';
   for (const { ordinal } of entityLenses) {
@@ -62,7 +61,7 @@ export function versionNodeFor(entityType: ProductEntityType, globalVersion: num
   return node;
 }
 
-function currentNode(entityType: ProductEntityType): string {
+function currentNode(entityType: LensEntityType): string {
   const last = lensesFor(entityType).at(-1);
   return last === undefined ? 'v0' : `v${last.ordinal}`;
 }
@@ -152,9 +151,9 @@ function buildEntityMigration(lens: LensDefinition): {
 
 // ── Lazy per-entity doba registry ──
 
-const registryCache = new Map<ProductEntityType, Registry<Record<string, typeof passthroughSchema>> | null>();
+const registryCache = new Map<LensEntityType, Registry<Record<string, typeof passthroughSchema>> | null>();
 
-function getRegistry(entityType: ProductEntityType): Registry<Record<string, typeof passthroughSchema>> | null {
+function getRegistry(entityType: LensEntityType): Registry<Record<string, typeof passthroughSchema>> | null {
   if (registryCache.has(entityType)) return registryCache.get(entityType) ?? null;
 
   const entityLenses = lensesFor(entityType);
@@ -195,7 +194,7 @@ export function resetLensEngine(): void {
  * doba's `transform` is async.
  */
 export async function migrateCachedEntity<T extends AnyRecord>(
-  entityType: ProductEntityType,
+  entityType: LensEntityType,
   entity: T,
   fromVersion: number,
 ): Promise<T> {
@@ -213,7 +212,7 @@ export async function migrateCachedEntity<T extends AnyRecord>(
  * `lossyBackward` lenses omit removed fields rather than restoring them.
  */
 export async function downgradeEntity<T extends AnyRecord>(
-  entityType: ProductEntityType,
+  entityType: LensEntityType,
   entity: T,
   toVersion: number,
 ): Promise<T> {
@@ -249,7 +248,7 @@ export interface NormalizeOpsOptions {
  * readers stay fresh. No-op when the entity has no lenses.
  */
 export function normalizeOps<O extends AnyRecord, S extends StxLike>(
-  entityType: ProductEntityType,
+  entityType: LensEntityType,
   ops: O,
   stx: S,
   options?: NormalizeOpsOptions,
@@ -333,7 +332,7 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
  * `stx.fieldTimestamps`). Sync — pure key renames.
  */
 export function migrateQueuedMutation<V extends AnyRecord>(
-  entityType: ProductEntityType,
+  entityType: LensEntityType,
   variables: V,
   fromVersion: number,
 ): V {
@@ -376,7 +375,7 @@ export function migrateQueuedMutation<V extends AnyRecord>(
  * Build-time helper: old→new key alias map for an entity's active expand lenses.
  * Used to widen ops/create wire schemas (and in tests). Empty when no expand lenses.
  */
-export function widenedOpsKeyMap(entityType: ProductEntityType): Record<string, string> {
+export function widenedOpsKeyMap(entityType: LensEntityType): Record<string, string> {
   const map: Record<string, string> = {};
   for (const { lens } of lensesFor(entityType)) {
     if (lens.phase !== 'expand') continue;

@@ -95,4 +95,4 @@ function OperationsTable() {
   );
 }
 
-export default OperationsTable;
+export { OperationsTable };

@@ -25,7 +25,7 @@ import { withClient } from './db';
  */
 const tableColumnsCache = new Map<string, Promise<Set<string>>>();
 
-function getTableColumnNames(client: pg.PoolClient, table: string): Promise<Set<string>> {
+export function getTableColumnNames(client: pg.PoolClient, table: string): Promise<Set<string>> {
   let cached = tableColumnsCache.get(table);
   if (!cached) {
     cached = client

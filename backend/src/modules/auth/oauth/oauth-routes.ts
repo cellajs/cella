@@ -141,4 +141,4 @@ const authOAuthRoutes = {
   }),
 };
 
-export default authOAuthRoutes;
+export { authOAuthRoutes };

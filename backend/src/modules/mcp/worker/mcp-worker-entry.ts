@@ -7,7 +7,7 @@ import { getPgBoss, stopPgBoss } from '#/lib/pg-boss';
 import { baseLog } from '#/lib/pino';
 import { otel } from '#/lib/tracing';
 import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
-import baseApp from '#/server';
+import { baseApp } from '#/server';
 
 const port = Number(env.PORT ?? '4003');
 

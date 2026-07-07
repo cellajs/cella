@@ -120,4 +120,6 @@ export const storageMock = () => ({
   saveState: vi.fn().mockResolvedValue(undefined),
   createDoc: vi.fn().mockResolvedValue(undefined),
   deleteState: vi.fn().mockResolvedValue(undefined),
+  listStaleDocs: vi.fn().mockResolvedValue([]),
+  deleteStaleDoc: vi.fn().mockResolvedValue(undefined),
 });

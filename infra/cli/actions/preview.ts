@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import pc from 'shared/cli-utils/colors'
+import { pc } from 'shared/cli-utils/colors';
 import { warningMark } from 'shared/console'
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'
 import { infraDir } from '../../lib/utils/paths'

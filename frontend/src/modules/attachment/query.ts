@@ -19,29 +19,20 @@ import {
 } from 'sdk';
 import { zAttachment } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
-import {
-  baseInfiniteQueryOptions,
-  createCacheFinder,
-  createEntityKeys,
-  createOptimisticEntity,
-  fetchAllPages,
-  invalidateIfLastMutation,
-  registerEntityQueryKeys,
-  removePendingMutations,
-} from '~/query/basic';
 import { cacheCreate, cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
+import { createOptimisticEntity } from '~/query/basic/create-optimistic';
+import { createEntityKeys } from '~/query/basic/create-query-keys';
+import { registerEntityQueryKeys, SYNC_CHUNK_SIZE } from '~/query/basic/entity-query-registry';
+import { fetchAllPages } from '~/query/basic/fetch-all-pages';
+import { createCacheFinder } from '~/query/basic/find-in-list-cache';
+import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
+import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/invalidation-helpers';
 import { syncStaleTime } from '~/query/basic/sync-stale-config';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import {
-  coalescePendingCreate,
-  createStxForCreate,
-  createStxForDelete,
-  createStxForUpdate,
-  mergeServerResponse,
-  squashPendingMutation,
-  syncEntityToCache,
-} from '~/query/offline';
-import { getCacheToken } from '~/query/realtime';
+import { coalescePendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
+import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
+import { mergeServerResponse, syncEntityToCache } from '~/query/offline/update-success-utils';
+import { getCacheToken } from '~/query/realtime/cache-token-store';
 import { getRouteOrgId, getRouteTenantId } from '~/query/realtime/sync-priority';
 import type { QueryOrgContext } from '~/query/types';
 import { createResourceError } from '~/utils/resource-error';
@@ -68,7 +59,7 @@ const keys = {
 registerEntityQueryKeys('attachment', keys, (organizationId, tenantId, seqCursor, options) => {
   return getAttachments({
     path: { tenantId: tenantId!, organizationId: organizationId! },
-    query: { seqCursor, limit: '1000' },
+    query: { seqCursor, limit: String(SYNC_CHUNK_SIZE) },
     headers: options?.cacheToken ? { 'x-cache-token': options.cacheToken } : undefined,
   });
 });

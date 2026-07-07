@@ -4,6 +4,7 @@ import type { ContextEntityType, EntityActionType, EntityRole, EntityType } from
 import { recordFromKeys } from '../config-builder/utils';
 import { getPolicyPermissions, getSubjectPolicies } from './access-policies';
 import { allActionsDenied } from './action-helpers';
+import { isRowCondition } from './row-conditions';
 import type { AccessPolicies, ActionPermissionState } from './types';
 
 /**
@@ -11,12 +12,12 @@ import type { AccessPolicies, ActionPermissionState } from './types';
  *
  * - `true` = unconditionally allowed (policy value `1`)
  * - `false` = denied (policy value `0`)
- * - `'own'` = allowed only when the actor owns the entity (policy value `'own'`).
- *   This is an implicit "owner" relation — the frontend must compare `entity.createdBy`
- *   against the current user ID to resolve to a final boolean.
+ * - condition name (e.g. `'own'`) = allowed only for rows satisfying that row condition.
+ *   The frontend resolves it per row: `resolvePermission` handles the built-in `'own'`
+ *   (compare `entity.createdBy` against the current user ID); custom conditions resolve
+ *   via their check-form.
  *
- * This three-state model preserves the Zanzibar-style relation semantics at the UI layer,
- * making it straightforward to later introduce explicit relation tuples.
+ * Keeping the state three-valued preserves row-condition semantics at the UI layer.
  */
 type ActionStates = Record<EntityActionType, ActionPermissionState>;
 
@@ -41,7 +42,9 @@ function computeEntityPermissions(
   return recordFromKeys(appConfig.entityActions, (action) => {
     const value = permissions[action];
     if (value === 1) return true;
-    if (value === 'own') return 'own';
+    // Row-conditional grant → surface the condition name (e.g. 'own'); the frontend
+    // resolves it per row via resolvePermission / the condition's check-form.
+    if (isRowCondition(value)) return value.name;
     return false;
   }) as ActionStates;
 }

@@ -114,7 +114,7 @@ const validateSchemaTags = (doc: Record<string, unknown>) => {
   }
 };
 
-export default initDocs;
+export { initDocs };
 
 /**
  * Walk the spec and strip a trailing `/<flags>` suffix from any `pattern`

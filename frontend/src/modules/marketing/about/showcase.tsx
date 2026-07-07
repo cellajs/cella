@@ -1,13 +1,14 @@
 import { ArrowUpRightIcon } from 'lucide-react';
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { appConfig } from 'shared';
 import { Spinner } from '~/modules/common/spinner';
 import { useCountUp } from '~/modules/marketing/about/counters';
 import { showcaseItems } from '~/modules/marketing/marketing-config';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const DeviceMockup = lazy(() => import('~/modules/marketing/device-mockup'));
+const DeviceMockup = lazyNamed(() => import('~/modules/marketing/device-mockup'), 'DeviceMockup');
 
 export type ShowcaseItem = {
   id: string;

@@ -8,7 +8,7 @@
  *   - resources/compute.ts  — the per-VM `.env.runtime` manifest;
  *   - tasks/manage-runtime-secrets.ts, tasks/seed-operator-secrets.ts.
  */
-import runtimeSecretsConfig from '../config/runtime-secrets.config'
+import { runtimeSecretsConfig } from '../config/runtime-secrets.config';
 import { serviceNames } from './services'
 import type { ServiceName } from '../compose/compose'
 

@@ -4,7 +4,7 @@ import { setTestConfig } from './test-utils';
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 async function fetchHealth(query = '') {
-  const { default: app } = await import('#/routes');
+  const { baseApp: app } = await import('#/routes');
   return app.fetch(new Request(`http://localhost/health${query}`));
 }
 

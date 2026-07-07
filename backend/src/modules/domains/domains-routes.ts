@@ -148,5 +148,3 @@ export const domainRoutes = {
     },
   }),
 };
-
-export default domainRoutes;

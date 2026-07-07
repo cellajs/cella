@@ -100,4 +100,4 @@ function RequestsTable() {
   );
 }
 
-export default RequestsTable;
+export { RequestsTable };

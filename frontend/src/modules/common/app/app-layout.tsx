@@ -11,7 +11,7 @@ import { AppNav } from '~/modules/navigation/app-nav';
 import { SeenTracker } from '~/modules/seen/seen-tracker';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
 import { UserSheetHandler } from '~/modules/user/user-sheet-handler';
-import { AppStream } from '~/query/realtime';
+import { AppStream } from '~/query/realtime/app-stream';
 import { TabCoordinator } from '~/query/realtime/tab-coordinator';
 
 /**
@@ -47,4 +47,4 @@ function AppLayout() {
   );
 }
 
-export default AppLayout;
+export { AppLayout };

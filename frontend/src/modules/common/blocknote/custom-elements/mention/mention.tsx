@@ -1,39 +1,24 @@
 import { createReactInlineContentSpec, type DefaultReactGridSuggestionItem } from '@blocknote/react';
+import { mentionConfig } from 'shared/blocknote-schema-configs';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { Member } from '~/modules/memberships/types';
 
 // The Mention inline content.
-export const MentionSchema = createReactInlineContentSpec(
-  {
-    type: 'mention',
-    propSchema: {
-      id: {
-        default: 'Unknown',
-      },
-      slug: {
-        default: 'Unknown',
-      },
-      name: {
-        default: 'Unknown',
-      },
-    },
-    content: 'none',
-  },
-  {
-    render: (props) => {
-      const { name } = props.inlineContent.props;
+// Schema config is shared with the Yjs relay's server-side seeder — see shared/blocknote-schema-configs
+export const MentionSchema = createReactInlineContentSpec(mentionConfig, {
+  render: (props) => {
+    const { name } = props.inlineContent.props;
 
-      const mentionContent = (
-        <span className="inline-flex items-center gap-1 rounded border-none bg-muted px-1.5 py-0.5 font-semibold text-[0.875em] text-foreground">
-          @ {name}
-        </span>
-      );
+    const mentionContent = (
+      <span className="inline-flex items-center gap-1 rounded border-none bg-muted px-1.5 py-0.5 font-semibold text-[0.875em] text-foreground">
+        @ {name}
+      </span>
+    );
 
-      return mentionContent;
-    },
+    return mentionContent;
   },
-);
+});
 
 // Function which gets all users for the mentions menu.
 export const getMentionMenuItems = (

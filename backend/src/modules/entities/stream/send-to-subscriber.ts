@@ -10,9 +10,9 @@ import type { CursoredSubscriber } from './types';
  * When preSerialized is provided, skips JSON.stringify (used when all subscribers
  * receive identical notifications without per-subscriber transforms).
  */
-export async function sendNotificationToSubscriber<T extends CursoredSubscriber>(
+export async function sendNotificationToSubscriber<T extends CursoredSubscriber, E extends ActivityEvent>(
   subscriber: T,
-  event: ActivityEvent,
+  event: E,
   notification: StreamNotification,
   transformNotification?: (notification: StreamNotification, subscriber: T) => StreamNotification,
   preSerialized?: string,

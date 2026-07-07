@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { HomePage } from '~/modules/home/home-page';
 import { redirectToWelcomeIfOnboarding } from '~/modules/home/route-logic';
 import { withSuspense } from '~/routes/route-utils';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
 
 /**
  * Alias for the home page, with an optional skipWelcome param.

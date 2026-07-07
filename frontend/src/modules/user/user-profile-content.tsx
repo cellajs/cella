@@ -10,10 +10,8 @@ interface Props {
 /**
  * This is a placeholder component for the user profile content
  **/
-function UserProfileContent({ isSheet, user }: Props) {
+export function UserProfileContent({ isSheet, user }: Props) {
   return (
     <OrganizationsGrid fixedQuery={{ relatableUserId: user.id }} saveDataInSearch={!isSheet} focusView={!isSheet} />
   );
 }
-
-export default UserProfileContent;

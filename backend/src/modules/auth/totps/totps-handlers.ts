@@ -13,7 +13,7 @@ import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-ac
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { signInWithTotp, validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
-import { default as authTotpRoutes, default as authTotpsRoutes } from '#/modules/auth/totps/totps-routes';
+import { authTotpsRoutes } from '#/modules/auth/totps/totps-routes';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -104,7 +104,7 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
   return ctx.body(null, 204);
 });
 
-app.openapi(authTotpRoutes.signInWithTotp, async (ctx) => {
+app.openapi(authTotpsRoutes.signInWithTotp, async (ctx) => {
   const { code } = ctx.req.valid('json');
 
   const strategy = 'totp';

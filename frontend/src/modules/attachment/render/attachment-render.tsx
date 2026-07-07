@@ -1,13 +1,14 @@
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { getFileIcon } from '~/modules/attachment/file-placeholder';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { Spinner } from '~/modules/common/spinner';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const ReactPanZoom = lazy(() => import('~/modules/attachment/render/image'));
-const RenderAudio = lazy(() => import('~/modules/attachment/render/audio'));
-const RenderPDF = lazy(() => import('~/modules/attachment/render/pdf'));
-const RenderVideo = lazy(() => import('~/modules/attachment/render/video'));
+const ReactPanZoom = lazyNamed(() => import('~/modules/attachment/render/image'), 'ReactPanZoom');
+const RenderAudio = lazyNamed(() => import('~/modules/attachment/render/audio'), 'RenderAudio');
+const RenderPDF = lazyNamed(() => import('~/modules/attachment/render/pdf'), 'RenderPDF');
+const RenderVideo = lazyNamed(() => import('~/modules/attachment/render/video'), 'RenderVideo');
 
 interface AttachmentRenderProps {
   type: string;

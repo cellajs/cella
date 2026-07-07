@@ -87,4 +87,5 @@ const requestRoutes = {
     },
   }),
 };
-export default requestRoutes;
+
+export { requestRoutes };

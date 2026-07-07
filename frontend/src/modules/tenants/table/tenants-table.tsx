@@ -102,4 +102,4 @@ function TenantsTable() {
   );
 }
 
-export default TenantsTable;
+export { TenantsTable };

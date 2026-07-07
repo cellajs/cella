@@ -1,7 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { type GetMembersData, type GetPendingMembershipsData, getMembers, getPendingMemberships } from 'sdk';
 import { appConfig } from 'shared';
-import { baseInfiniteQueryOptions } from '~/query/basic';
+import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 
 type GetPendingMembershipsParams = Omit<GetPendingMembershipsData['query'], 'limit' | 'offset'> &
   GetPendingMembershipsData['path'];

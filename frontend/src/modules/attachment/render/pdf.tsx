@@ -28,7 +28,7 @@ interface RenderPDFProps {
   fitMode?: 'width' | 'contain';
 }
 
-export default function RenderPDF({ file, className, fitMode = 'width' }: RenderPDFProps) {
+export function RenderPDF({ file, className, fitMode = 'width' }: RenderPDFProps) {
   const [pageSizes, setPageSizes] = useState<PageSize[]>([]);
   const [container, setContainer] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 

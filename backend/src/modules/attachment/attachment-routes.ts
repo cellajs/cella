@@ -198,4 +198,5 @@ const attachmentRoutes = {
     },
   }),
 };
-export default attachmentRoutes;
+
+export { attachmentRoutes };

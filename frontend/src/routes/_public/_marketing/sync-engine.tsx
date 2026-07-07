@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { SyncEnginePage } from '~/modules/marketing/sync-engine-page';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
 
 /**
  * Dedicated page explaining Cella's sync engine.

@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import locale from '~/../../locales';
+import { locale } from '~/../../locales';
 
 const second = 1e3;
 const minute = 6e4;

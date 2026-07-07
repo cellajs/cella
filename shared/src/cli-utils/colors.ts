@@ -1,3 +1,3 @@
 import pc from 'picocolors';
 
-export default pc;
+export { pc };

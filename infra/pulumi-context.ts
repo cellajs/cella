@@ -1,7 +1,7 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { appConfig } from '../shared'
-import generalConfig from './config/general.config'
+import { generalConfig } from './config/general.config';
 import type { Environment } from './lib/stack/bootstrap-stack-state'
 import { resolvePerMode } from './lib/general-config'
 import { deriveInfra } from './lib/naming'

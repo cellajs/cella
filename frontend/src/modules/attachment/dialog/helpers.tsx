@@ -1,6 +1,6 @@
 import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import router from '~/routes/router';
+import { router } from '~/routes/router';
 
 interface OpenAttachmentDialogParams {
   attachmentIndex: number;

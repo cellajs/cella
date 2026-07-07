@@ -1,9 +1,9 @@
 import type { z } from '@hono/zod-openapi';
 import type { AuthContext } from '#/core/context';
-import { buildStx, normalizeCreateItem } from '#/core/stx';
+import { buildStx } from '#/core/stx';
 import { tenantContext, tenantRead } from '#/db/tenant-context';
 import { findAttachmentsByStxMutationId, insertAttachments } from '#/modules/attachment/attachment-queries';
-import type { attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
+import { type attachmentCreateManyStxBodySchema, attachmentWire } from '#/modules/attachment/attachment-schema';
 import { getOrgEntityCount } from '#/modules/entities/helpers/get-entity-counts';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { canCreateEntity } from '#/permissions/can-create';
@@ -14,7 +14,7 @@ import { log } from '#/utils/logger';
 type CreateAttachmentsInput = z.infer<typeof attachmentCreateManyStxBodySchema>;
 export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAttachmentsInput) {
   // Lens seam: canonicalize old-shape field names before any body access
-  const input = rawInput.map((item) => normalizeCreateItem('attachment', item));
+  const input = rawInput.map((item) => attachmentWire.normalizeCreateItem(item));
   const { organization, tenant } = ctx.var;
   const attachmentRestrictions = tenant.restrictions.quotas.attachment;
 
@@ -52,7 +52,10 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
       stx: buildStx(stx),
     };
 
-    canCreateEntity(ctx, { entityType: 'attachment', contextIds: { organization: organization.id } });
+    canCreateEntity(ctx, {
+      entityType: 'attachment',
+      contextIds: { organization: organization.id },
+    });
     return attachment;
   });
 

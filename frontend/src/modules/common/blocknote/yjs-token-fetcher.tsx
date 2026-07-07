@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 // biome-ignore lint/style/noRestrictedImports: runtime token fetcher consumed by the Yjs provider — query options live here because they're tightly coupled to user-store side effects.
 import { getYjsToken } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, type ProductEntityType } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { ApiError } from '~/lib/api';
 import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
@@ -23,7 +23,7 @@ export function YjsTokenFetcher({
   tenantId,
   organizationId,
 }: {
-  entityType: string;
+  entityType: ProductEntityType;
   tenantId: string;
   organizationId: string;
 }) {

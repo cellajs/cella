@@ -206,4 +206,5 @@ const membershipRoutes = {
     },
   }),
 };
-export default membershipRoutes;
+
+export { membershipRoutes };

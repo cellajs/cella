@@ -7,6 +7,9 @@
  *    fields, CDC counter fields, or declared entity-embedding host columns.
  * 3. Lens purity lint — dated lens modules must be pure (no await / dynamic
  *    import / value-dependent dynamic key access).
+ * 4. Entity-wire completeness — every configured product/context entity type
+ *    must register through the entity-wire factory in backend/src/modules, so
+ *    an entity can never silently miss the lens seams (widening + normalize).
  *
  * Exit code 1 on any violation. Run via `pnpm --filter shared lens:check`.
  */
@@ -142,11 +145,41 @@ function checkPurity(files: string[]) {
   }
 }
 
+// ── 4. Entity-wire completeness ──
+function checkWireCompleteness() {
+  const modulesDir = join(repoRoot, 'backend', 'src', 'modules');
+  let combined = '';
+  try {
+    for (const entry of readdirSync(modulesDir, { recursive: true }) as string[]) {
+      if (!entry.endsWith('.ts')) continue;
+      combined += readFileSync(join(modulesDir, entry), 'utf8');
+    }
+  } catch {
+    console.warn('[lens:check] backend/src/modules unavailable — skipping wire-completeness check');
+    return;
+  }
+  for (const type of appConfig.productEntityTypes) {
+    if (!combined.includes(`createProductEntityWire('${type}'`)) {
+      failures.push(
+        `Wire completeness: product entity "${type}" never calls createProductEntityWire('${type}', …) in backend/src/modules — its wire schemas bypass the lens seams.`,
+      );
+    }
+  }
+  for (const type of appConfig.contextEntityTypes) {
+    if (!combined.includes(`createContextEntityWire('${type}'`)) {
+      failures.push(
+        `Wire completeness: context entity "${type}" never calls createContextEntityWire('${type}', …) in backend/src/modules — its wire schemas bypass the lens seams.`,
+      );
+    }
+  }
+}
+
 const files = datedLensFiles();
 checkAppendOnly(files);
 checkCollisions();
 checkContractInvariant();
 checkPurity(files);
+checkWireCompleteness();
 
 if (failures.length > 0) {
   console.error(`[lens:check] ${failures.length} violation(s):`);

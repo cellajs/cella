@@ -1,6 +1,6 @@
 import type { DeepPartial } from '../src/config-builder/types';
-import type _default from './config.default';
-import development from './config.development';
+import type { config as _default } from './config.default';
+import { development } from './config.development';
 
 /**
  * Ensure that this file does not include or use any sensitive information.
@@ -8,7 +8,7 @@ import development from './config.development';
  * Use it to override default settings for testing purposes.
  * Make sure to keep it minimal and focused on the test environment (must run on localhost).
  */
-export default {
+export const test = {
   mode: 'test',
   name: 'Raak TEST',
 

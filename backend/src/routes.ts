@@ -18,7 +18,7 @@ import { systemHandlers } from '#/modules/system/system-handlers';
 import { tenantHandlers } from '#/modules/tenants/tenants-handlers';
 import { userHandlers } from '#/modules/user/user-handlers';
 import { yjsHandlers } from '#/modules/yjs/yjs-handlers';
-import baseApp from '#/server';
+import { baseApp } from '#/server';
 import { emailPreviewHandlers } from '../emails/preview-route';
 
 // Define backend routes of your app
@@ -51,4 +51,4 @@ baseApp.route('/:tenantId/:organizationId/mcp', mcpHandlers);
 // Dev-only email preview (local authoring + Storybook email stories)
 if (appConfig.mode !== 'production') baseApp.route('/dev/emails', emailPreviewHandlers);
 
-export default baseApp;
+export { baseApp };

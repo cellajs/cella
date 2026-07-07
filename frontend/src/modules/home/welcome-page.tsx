@@ -58,4 +58,4 @@ function WelcomePage() {
   );
 }
 
-export default WelcomePage;
+export { WelcomePage };

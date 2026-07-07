@@ -148,4 +148,4 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
   );
 }
 
-export default MembersTable;
+export { MembersTable };

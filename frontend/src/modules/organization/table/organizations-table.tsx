@@ -120,4 +120,4 @@ function OrganizationsTable() {
   );
 }
 
-export default OrganizationsTable;
+export { OrganizationsTable };

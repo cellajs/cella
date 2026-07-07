@@ -28,4 +28,5 @@ const metricRouteConfig = {
     },
   }),
 };
-export default metricRouteConfig;
+
+export { metricRouteConfig };

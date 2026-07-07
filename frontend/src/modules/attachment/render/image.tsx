@@ -169,4 +169,4 @@ function RenderImage(
   );
 }
 
-export default forwardRef<HTMLImageElement, RenderImageProps>(RenderImage);
+export const ReactPanZoom = forwardRef<HTMLImageElement, RenderImageProps>(RenderImage);

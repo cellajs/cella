@@ -7,9 +7,14 @@ export {
 } from './check-permission';
 export {
   type CollectionReadFilter,
+  type ConditionalScope,
+  hasNoReadScope,
+  type RestrictedGrantScope,
+  type RestrictedScope,
   resolveCollectionReadFilter,
 } from './collection-scope';
 export { getValidContextEntity, type ValidContextEntityResult } from './get-context-entity';
 export { getValidProductEntity, type ValidProductEntityResult } from './get-product-entity';
+export { buildCollectionReadWhere, type CollectionReadWhere, compileRowConditionSql } from './row-predicates';
 export { splitByPermission } from './split-by-permission';
 export { validateAncestorScope } from './validate-ancestor-scope';

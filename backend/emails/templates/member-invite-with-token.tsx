@@ -11,7 +11,7 @@ import {
   SafeHtml,
 } from '../components';
 import { Column, Row } from '../components/primitives';
-import i18n from '../i18n';
+import { i18n } from '../i18n';
 import { avatarRowStyle, greetingStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
 

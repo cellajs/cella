@@ -1,11 +1,12 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { appConfig } from 'shared';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { AppFooterLinks, type FooterLinkProps } from '~/modules/common/app/app-footer';
 import { Logo } from '~/modules/common/logo';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const BgAnimation = lazy(() => import('~/modules/common/bg-animation/bg-animation'));
+const BgAnimation = lazyNamed(() => import('~/modules/common/bg-animation/bg-animation'), 'BgAnimation');
 
 export function AuthLayout() {
   const { hasStarted, hasWaited } = useMountedState();

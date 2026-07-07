@@ -127,4 +127,5 @@ const systemRoutes = {
     },
   }),
 };
-export default systemRoutes;
+
+export { systemRoutes };

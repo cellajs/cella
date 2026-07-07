@@ -6,7 +6,7 @@ import { getTenantsOp } from '#/modules/tenants/operations/get-tenants';
 import { selfCreateTenantOp } from '#/modules/tenants/operations/self-create-tenant';
 import { updateTenantOp } from '#/modules/tenants/operations/update-tenant';
 import { defaultHook } from '#/utils/default-hook';
-import tenantRoutes from './tenants-routes';
+import { tenantRoutes } from './tenants-routes';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 

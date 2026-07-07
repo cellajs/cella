@@ -50,4 +50,4 @@ const startTunnel = async (info: AddressInfo): Promise<string | null> => {
   }
 };
 
-export default startTunnel;
+export { startTunnel };

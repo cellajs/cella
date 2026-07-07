@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/react-router';
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Spinner } from '~/modules/common/spinner';
 import { whyDarkSlides, whyItems, whyLightSlides } from '~/modules/marketing/marketing-config';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const DeviceMockup = lazy(() => import('~/modules/marketing/device-mockup'));
+const DeviceMockup = lazyNamed(() => import('~/modules/marketing/device-mockup'), 'DeviceMockup');
 export function Why() {
   const { t } = useTranslation();
 

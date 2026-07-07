@@ -24,4 +24,4 @@ function LeaveOrgButton(props: LeaveEntityButtonProps) {
   );
 }
 
-export default LeaveOrgButton;
+export { LeaveOrgButton };

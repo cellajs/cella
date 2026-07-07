@@ -10,7 +10,7 @@
  * This file owns only the policy-rule shape that binds them.
  */
 
-import pc from 'shared/cli-utils/colors'
+import { pc } from 'shared/cli-utils/colors';
 import { DIVIDER } from 'shared/cli-utils/display'
 import { checkMark } from 'shared/console'
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env'

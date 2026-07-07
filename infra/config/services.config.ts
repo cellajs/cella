@@ -15,7 +15,7 @@ import { defineServices } from '../compose/infrastructure'
  * Removing an entry removes the service everywhere it is derived: VM, LB
  * backend, DNS record, cert, compose profile, and release SHA config.
  */
-export default defineServices({
+export const appServices = defineServices({
   backend: {
     image: '${REGISTRY}/backend:${BACKEND_TAG:-latest}',
     dockerfile: 'Dockerfile',
@@ -143,4 +143,4 @@ export default defineServices({
       ORIGIN_HOST: '${ORIGIN_HOST}',
     },
   },
-})
+});

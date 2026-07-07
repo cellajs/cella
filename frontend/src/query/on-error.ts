@@ -131,7 +131,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
       // same user typically re-authenticates and recovers their data.
       flushStores(false);
       // Dynamic import breaks circular dep: query-client → on-error → router → route tree → query-client
-      import('~/routes/router').then(({ default: r }) => r.navigate(redirectOptions));
+      import('~/routes/router').then(({ router: r }) => r.navigate(redirectOptions));
     }
   }
 };

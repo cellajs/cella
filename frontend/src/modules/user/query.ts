@@ -4,8 +4,11 @@ import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData,
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import type { BaseUser } from '~/modules/user/types';
-import { baseInfiniteQueryOptions, createCacheFinder, createEntityKeys, invalidateIfLastMutation } from '~/query/basic';
 import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
+import { createEntityKeys } from '~/query/basic/create-query-keys';
+import { createCacheFinder } from '~/query/basic/find-in-list-cache';
+import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
+import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import type { MutationData } from '~/query/types';
 
 type UserFilters = Omit<GetUsersData['query'], 'limit' | 'offset'>;

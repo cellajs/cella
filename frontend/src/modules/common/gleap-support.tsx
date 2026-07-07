@@ -84,5 +84,3 @@ export function GleapSupport() {
 
   return null;
 }
-
-export default GleapSupport;

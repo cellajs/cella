@@ -33,4 +33,4 @@ const authMagicLinkRoutes = {
   }),
 };
 
-export default authMagicLinkRoutes;
+export { authMagicLinkRoutes };

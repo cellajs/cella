@@ -1,6 +1,6 @@
 # Cella sync engine
 
-> The [Architecture](./ARCHITECTURE.md) document explains why Cella uses notify-then-fetch. This document explains the reasoning behind the sync engine. It also provides more details on how a mutation travels through the sync pipeline and how clients stay consistent while online and offline.
+> The [ARCHITECTURE.md](./ARCHITECTURE.md) document explains why Cella uses notify-then-fetch. This document explains the reasoning behind the sync engine. It also provides more details on how a mutation travels through the sync pipeline and how clients stay consistent while online and offline.
 
 ## TL;DR
 
@@ -33,7 +33,7 @@ Postgres + OpenAPI + React Query are the foundational primitives. This means sta
 | Entity type | Features | Example |
 |------|--------------|---------|
 | `ContextEntityType` | Standard REST CRUD, server-generated IDs | `organization` |
-| `ProductEntityType` | + Per-field merge strategies (HLC LWW, AWSet), offline queue, Yjs collaborative editing, Live stream (SSE), live cache updates, multi-tab leader election | `attachment` |
+| `ProductEntityType` | + Per-field merge strategies (HLC LWW, AWSet), offline queue, Yjs collaborative editing, Live stream (SSE), live cache updates, multi-tab leader election | `page`, `attachment` |
 
 ---
 
@@ -95,7 +95,7 @@ Postgres → CDC Worker → API Server → SSE → Client
 - **Per-field merge strategies** - Scalars use HLC-based LWW (latest timestamp wins); sets use commutative AWSet deltas (`{ add, remove }`); descriptions use Yjs CRDT via dedicated worker
 - **Offline mutation queue** - Persist pending mutations to IndexedDB, replay on reconnect
 - **Conflict strategy** - Scalars: latest HLC wins silently (no 409). Sets: commutative, conflict-free. Descriptions: character-level Yjs CRDT merge
-- **Yjs collaborative editing** - Standalone WebSocket relay worker for real-time description co-editing; client-side materialization of derived fields
+- **Yjs collaborative editing** - Standalone WebSocket relay worker for real-time description co-editing; the relay is the single writer — it seeds fresh sessions and materializes descriptions + derived fields server-side
 - **Smart mutations** The mutation layer (`query.ts`) encapsulates all sync logic so forms remain simple:
 
 ## Architecture
@@ -214,9 +214,11 @@ SSE transport wraps this as `event: change`, `id: activityId`, `data: JSON(Strea
 
 ---
 
-## App stream
+## Stream types
 
-### `/entities/app/stream`
+Cella has two stream types with different characteristics:
+
+### App stream (`/entities/app/stream`)
 
 
 Authenticated stream for all user-scoped entities and memberships.
@@ -227,9 +229,20 @@ Authenticated stream for all user-scoped entities and memberships.
 | **Scope** | All contexts user belongs to + memberships |
 | **Cursor storage** | Persisted in sync store (survives refresh) |
 
+### Public stream (`/entities/public/stream`)
+
+
+Unauthenticated stream for public entities (e.g., pages).
+
+| Aspect | Implementation |
+|--------|----------------|
+| **Auth** | No authentication required |
+| **Scope** | All public entity types (from `hierarchy.publicStreamTypes`) |
+| **Cursor storage** | In-memory only (module-level variable) |
+
 **How catchup works:**
 
-The backend returns `{ changes, cursor }` where `changes` is keyed by organizationId. Each value is a shared summary shape:
+The backend returns `{ changes, cursor }` where `changes` is keyed by organizationId (app) or entityType (public). Each value is a shared summary shape:
 ```typescript
 interface CatchupChangeSummary {
   entitySeqs?: Record<string, number>;     // Entity-type seqs from context_counters counts JSONB (managed by CDC worker)
@@ -341,7 +354,7 @@ Uses entity-type sequence numbers (`seq`) for **create/update/soft-delete detect
 
 **Two modes of gap detection:**
 
-1. **Catchup (offline/reconnect):** Client compares stored contextEntity-scoped `clientEntitySeq` (`{contextEntityId}:s:{entityType}`) with `serverEntitySeq` from catchup summary (sourced from `context_counters.counts['s:{type}']`, managed by CDC worker). The delta tells whether product entity mutations happened. The delta fetch includes tombstone rows, and the client removes those entities from cache.
+1. **Catchup (offline/reconnect):** Client compares stored contextEntity-scoped `clientEntitySeq` (app stream: `{contextEntityId}:s:{entityType}`) or unscoped `clientEntitySeq` (public stream: `{entityType}`) with `serverEntitySeq` from catchup summary (sourced from `context_counters.counts['s:{type}']`, managed by CDC worker). The delta tells whether product entity mutations happened. The delta fetch includes tombstone rows, and the client removes those entities from cache.
 
 2. **Live (SSE):** Each product entity notification includes `seq`, scoped to its entity type + context (e.g., tasks within a project). Client updates stored seq watermark on each notification. On reconnect, the catchup comparison detects any missed changes.
 
@@ -545,7 +558,7 @@ This runs at the top of every update mutation’s `onMutate` — before squash o
 
 ## Schema evolution (version tolerance)
 
-Deploys change entity schemas; offline clients don't update in lockstep. A PWA tab can run last week's bundle with a persisted cache and queued offline edits in last week's shape. Breaking changes ship as **append-only lens modules** (`shared/src/version-changes/`) that declare the change once; the sync engine derives everything else. See [Schema evolution](./SCHEMA_EVOLUTION.md) for the module format and the shipping playbook.
+Deploys change entity schemas; offline clients don't update in lockstep. A PWA tab can run last week's bundle with a persisted cache and queued offline edits in last week's shape. Breaking changes ship as **append-only lens modules** (`shared/src/version-changes/`) that declare the change once; the sync engine derives everything else. See [SCHEMA_EVOLUTION.md](./SCHEMA_EVOLUTION.md) for the module format and the shipping playbook.
 
 Exactly two runtime touch points; the rest is build-time schema generation:
 
@@ -594,8 +607,8 @@ All tabs of one user share a single IndexedDB record for the React Query cache, 
 ```
 Problem: Race condition on shared IDB record
 
-Tab A: Edits attachment, persists cache { mutations: [A1] }
-Tab B: Edits attachment, persists cache { mutations: [B1] }  ← overwrites A1!
+Tab A: Edits page, persists cache { mutations: [A1] }
+Tab B: Edits page, persists cache { mutations: [B1] }  ← overwrites A1!
 Tab A: Refreshes → restores { mutations: [B1] } → replays B1, loses A1
 
 With leader-only (current implementation):
@@ -623,7 +636,7 @@ Both tiers are **entity-keyed** (`entityType:entityId` → data). Tokens are a l
 
 | Tier | Cache key | Token role | TTL | Use case |
 |------|-----------|------------|-----|----------|
-| **Public** | `{entityType}:{entityId}` (LRU) | None | 60 min | Public product entities (no auth required) |
+| **Public** | `{entityType}:{entityId}` (LRU) | None | 60 min | Public pages (no auth required) |
 | **App** | `{entityType}:{entityId}` (TTL) | Access control (forward-only) | 10 min | Authenticated entities (tasks, attachments) |
 
 **Forward-only token design (app cache):** Multiple tokens can point to the same entity key. When an entity changes, the old cache entry is invalidated but old tokens still resolve to the same entity key. This means stale clients with an old token get a cache hit (latest data) instead of a DB round-trip. No duplicate cache entries per entity.
@@ -761,25 +774,31 @@ An `updatedAt` guard prevents replacing a fresher embedding with an older one (r
 
 ## Yjs collaborative editing
 
-Descriptions on product entities (`task`, `attachment`, etc.) use Yjs CRDT for real-time collaborative editing via a standalone WebSocket relay worker.
+Descriptions on product entities (`task`, `page`, etc.) use Yjs CRDT for real-time collaborative editing via a standalone WebSocket relay worker.
 
 ### Architecture
 
-The Yjs worker is a standalone `yjs/` workspace package (like `cdc/`). It is a **pure binary relay** — the server never instantiates a `Y.Doc`. It stores and relays raw `Uint8Array` updates with zero document memory.
+The Yjs worker is a standalone `yjs/` workspace package (like `cdc/`). During editing it is a **binary relay** — it stores and forwards raw `Uint8Array` updates without parsing document content. Content is parsed only at the session boundaries: **seeding** (fresh session → `entity.description` → Y.Doc via `@blocknote/server-util` `blocksToYDoc`) and **materialization** (Y.Doc → description via a secret-gated internal backend endpoint). The relay is the **single writer** for descriptions during collaboration — clients never seed and never persist.
 
 > **Authorization.** The relay authorizes each connection **locally** rather than calling back to the backend. On WS upgrade it verifies the HMAC token, then runs the shared permission engine (`shared/src/permissions`, the same engine the backend uses) against an RLS-scoped read of the entity scope + the user's memberships — see `yjs/src/data/permissions.ts` (`canEditEntity`). Denied → close `4003`, missing ancestor scope → `4400`, DB/resolver error → `4503`. Extracting the engine into `shared` means the relay and the backend can never drift on the same decision.
+
+> **Schema parity.** The relay builds its BlockNote schema from the same React-free configs the frontend editor uses (`shared/blocknote-schema-configs`), so the ProseMirror node specs are identical on both sides — a doc seeded server-side round-trips through the client editor without loss.
 
 ```
 Online editing:
   Browser → y-websocket provider → Yjs worker (standalone service, own port)
-  Client (debounced 3s):
-    → Compute derived fields from local Y.Doc (summary, keywords, checkboxCount, etc.)
-    → PATCH /:entityType/:entityId/derived → backend validates + writes to entity table
+  Fresh session: relay seeds Y.Doc from entity.description (server-side)
+  Relay (debounced 3s, one call per doc regardless of editor count):
+    → Save binary state, diff materialized blocks vs last materialization
+    → Changed? POST /yjs/materialize (secret-gated, on behalf of the window's
+      last editor) → backend re-checks permission, sanitizes media URLs,
+      derives fields, stamps server HLC, writes the row
     → CDC detects row change → SSE → non-editing clients update
 
 Offline editing:
-  Browser → BlockNote → JSON save on blur → REST mutation → entity.description
-  On reconnect: y-websocket connects, client initializes Y.Doc from entity.description
+  Browser → BlockNote (standalone mode) → JSON save on blur → REST mutation → entity.description
+  Pending flushes land in the offline mutation queue and replay on reconnect
+  Next collaborative session re-seeds from the durable entity.description
 
 Other users (non-editing, online):
   CDC detects materialized row change → SSE → TanStack Query cache update
@@ -788,18 +807,18 @@ Other users (non-editing, online):
 
 ### Ephemeral lifecycle
 
-1. First WS connect → relay creates `yjs_documents` row (empty state). Client pushes Y.Doc (initialized from `entity.description` JSON via `initialContent`).
-2. During editing → relay stores raw binary state (debounced 3s). Subsequent clients sync from stored state.
-3. Last WS disconnect → 5 min grace timer. If no reconnect → deletes `yjs_documents` row.
-4. On editor close → flush derived fields via REST (cancel debounce, fire with `keepalive: true`), seed TanStack Query cache from editor state.
+1. First WS connect → relay creates the `yjs_documents` row, seeded server-side from `entity.description` (empty when there is none). Concurrent first-connectors converge on one canonical seed: the insert is `ON CONFLICT DO NOTHING` and every connector re-loads the row afterwards. The seed initializes the materialization diff baseline, so seed-only sessions never write back.
+2. During editing → relay stores raw binary state (debounced 3s) and materializes changed content into the entity row in the same window.
+3. Last WS disconnect → 5 min grace timer → **final materialization gates row deletion**: backend unreachable keeps the row and reschedules; entity-deleted/permission-revoked (permanent) proceeds. A boot-time sweep recovers rows orphaned by a relay crash (`last_edited_by` carries attribution).
+4. On editor close → the client writes a cache-only optimistic summary for instant card updates; the relay's authoritative materialization arrives via SSE moments later.
 
 ### SSE suppression while editing
 
-While a Yjs editor is active, the SSE handler skips description-derived fields for that entity (to avoid overwriting the fresher local Y.Doc state). Non-description fields (`labels`, `status`, etc.) still flow through normally. On editor close, the query cache is seeded from the editor state and normal SSE flow resumes.
+While a Yjs editor is active, the SSE handler skips Yjs-owned fields (description + its derived fields, registered per entity type via `registerYjsOwnedFields`) for that entity — a slightly stale server snapshot must not overwrite the fresher local Y.Doc state. Non-description fields (`labels`, `status`, etc.) still flow through normally. Registration is the client's only collab-mode responsibility besides rendering; unregister happens on editor unmount.
 
 ### Derived fields
 
-Derived fields (`summary`, `checkboxCount`, `keywords`, etc.) are computed server-side on every create/update (authoritative). During collaborative editing, the client pre-computes them for optimistic UI (3s debounce) and sends them via the standard PUT mutation; the server re-derives before persisting.
+Derived fields (`summary`, `checkboxCount`, `keywords`, etc.) are computed server-side on every create/update (authoritative). During collaborative editing they are refreshed by the relay's materialization calls — one per document per save window, with write amplification O(1) in the number of editors. The materialize request carries an empty `fieldTimestamps`, so the stx pipeline stamps a **server HLC** for `description` — LWW semantics against offline solo edits stay coherent. Entities opt in by registering a materializer (`registerYjsMaterializer` in the entity's backend module), a thin wrapper around their standard update operation.
 
 ---
 

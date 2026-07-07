@@ -8,7 +8,7 @@ import { Dialoger } from '~/modules/common/dialoger/provider';
 import { type ErrorNoticeError, getErrorInfo, handleAskForHelp } from '~/modules/common/error-helpers';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
-import router from '~/routes/router';
+import { router } from '~/routes/router';
 import type { BoundaryType } from '~/routes/types';
 
 export type { ErrorNoticeError } from '~/modules/common/error-helpers';

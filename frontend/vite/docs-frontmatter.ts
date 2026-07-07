@@ -127,7 +127,7 @@ export function docsFrontmatter(): Plugin {
     },
     load(id) {
       if (id !== RESOLVED_ID) return;
-      return `export default ${JSON.stringify(buildIndex().index)};`;
+      return `export const docsIndex = ${JSON.stringify(buildIndex().index)};`;
     },
     // Dev: re-emit the index when a page or an imported repo doc changes the index
     // (frontmatter or headings). Body-only edits are left to normal per-module HMR.

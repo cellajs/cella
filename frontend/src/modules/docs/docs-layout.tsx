@@ -149,4 +149,4 @@ function DocsLayout() {
   );
 }
 
-export default DocsLayout;
+export { DocsLayout };

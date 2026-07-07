@@ -1,13 +1,17 @@
 import { onlineManager } from '@tanstack/react-query';
-import { lazy, Suspense, useRef } from 'react';
+import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const PendingMembershipsTable = lazy(() => import('~/modules/memberships/pending-table/pending-memberships-table'));
+const PendingMembershipsTable = lazyNamed(
+  () => import('~/modules/memberships/pending-table/pending-memberships-table'),
+  'PendingMembershipsTable',
+);
 
 type EntityWithIncluded = EnrichedContextEntity & Pick<Organization, 'included'>;
 const hasIncluded = (contextEntity: EnrichedContextEntity): contextEntity is EntityWithIncluded =>

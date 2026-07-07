@@ -57,4 +57,5 @@ const userRoutes = {
     },
   }),
 };
-export default userRoutes;
+
+export { userRoutes };

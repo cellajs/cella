@@ -9,7 +9,11 @@ import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
 import { getFileUrl } from '~/modules/attachment/file-url';
 import { findAttachmentInCache } from '~/modules/attachment/query';
-import { getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
+import {
+  findClickedMedia,
+  getHeadlessEditor,
+  getParsedContent,
+} from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/modules/ui/ui-store';
 
@@ -134,18 +138,15 @@ function BlockNoteFullHtml({
   }, [defaultValue, publicFiles]);
 
   const handleClick: MouseEventHandler = (event) => {
-    const target = event.target as HTMLElement;
-
     if (!clickOpensPreview || renderState.mediaItems.length === 0) return;
 
-    const mediaElement = target.closest('img, video, audio');
-    if (!mediaElement) return;
+    const media = findClickedMedia(event.target as HTMLElement);
+    if (!media) return;
 
     event.preventDefault();
-    const clickedSrc = (mediaElement as HTMLMediaElement).src;
     const attachmentIndex = Math.max(
       0,
-      renderState.mediaItems.findIndex(({ url }) => url === clickedSrc),
+      renderState.mediaItems.findIndex(({ url }) => url === media.src),
     );
 
     openAttachmentDialog({
@@ -177,4 +178,4 @@ function BlockNoteFullHtml({
   );
 }
 
-export default BlockNoteFullHtml;
+export { BlockNoteFullHtml };

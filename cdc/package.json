@@ -1,5 +1,5 @@
 {
-  "name": "cdc",
+  "name": "cdc-worker",
   "version": "0.0.1",
   "description": "PostgreSQL logical-replication worker for activity and sync events",
   "type": "module",

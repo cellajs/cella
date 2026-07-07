@@ -283,4 +283,5 @@ const meRoutes = {
     },
   }),
 };
-export default meRoutes;
+
+export { meRoutes };

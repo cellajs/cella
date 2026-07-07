@@ -4,7 +4,7 @@ import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { seenKeys } from '~/modules/seen/query';
 import { useSeenStore } from '~/modules/seen/seen-store';
 import { type EntityQueryKeys, getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
-import { sourceId } from '~/query/offline';
+import { sourceId } from '~/query/offline/stx-utils';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';

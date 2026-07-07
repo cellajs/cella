@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
@@ -7,19 +7,21 @@ import { zUpdateOrganizationBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
+import { blocknoteFieldIsDirty } from '~/modules/common/blocknote/helpers/blocknote-field-is-dirty';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
-import type BlockNoteContentFormFieldType from '~/modules/common/form-fields/blocknote';
+import type { BlockNoteContentFormField as BlockNoteContentFormFieldType } from '~/modules/common/form-fields/blocknote';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
-import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const BlockNoteContentFormField = lazy(
+const BlockNoteContentFormField = lazyNamed(
   () => import('~/modules/common/form-fields/blocknote'),
+  'BlockNoteContentFormField',
 ) as unknown as typeof BlockNoteContentFormFieldType;
 
 const formSchema = zUpdateOrganizationBody;

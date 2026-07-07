@@ -1,11 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { lazy } from 'react';
 import { operationsQueryOptions } from '~/modules/docs/query';
 import { queryClient } from '~/query/query-client';
 import { withSuspense } from '~/routes/route-utils';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const OperationsTable = lazy(() => import('~/modules/docs/operations/operations-table/operations-table'));
+const OperationsTable = lazyNamed(
+  () => import('~/modules/docs/operations/operations-table/operations-table'),
+  'OperationsTable',
+);
 
 /**
  * Operations table route - shows operations in a table format.

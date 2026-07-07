@@ -6,7 +6,7 @@ import { getDomainOp } from '#/modules/domains/operations/get-domain';
 import { getDomainsOp } from '#/modules/domains/operations/get-domains';
 import { verifyDomainOp } from '#/modules/domains/operations/verify-domain';
 import { defaultHook } from '#/utils/default-hook';
-import domainRoutes from './domains-routes';
+import { domainRoutes } from './domains-routes';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 

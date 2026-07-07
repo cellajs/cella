@@ -188,89 +188,73 @@ describe('EntityHierarchyBuilder', () => {
     });
   });
 
-  describe('public read configuration', () => {
-    const publicHierarchy = createEntityHierarchy(roles)
+  describe('host relationships (product-to-product ownership)', () => {
+    const hostHierarchy = createEntityHierarchy(roles)
       .user()
       .context('organization', { parent: null, roles: roles.all })
-      .context('project', {
-        parent: 'organization',
-        roles: roles.all,
-        publicRead: 'publicSelf',
-      })
-      .product('task', { parent: 'project', publicRead: 'publicParent' })
-      .product('attachment', { parent: 'project' }) // No public read
+      .context('project', { parent: 'organization', roles: roles.all })
+      .product('task', { parent: 'project' })
+      .product('attachment', { parent: 'project', host: 'task' })
+      .product('label', { parent: 'project' })
       .build();
 
-    it('getPublicReadMode returns undefined for entities without publicRead', () => {
-      expect(publicHierarchy.getPublicReadMode('attachment')).toBeUndefined();
-      expect(publicHierarchy.getPublicReadMode('organization')).toBeUndefined();
-      expect(publicHierarchy.getPublicReadMode('user')).toBeUndefined();
+    it('exposes host type, hosted types and relations with id columns', () => {
+      expect(hostHierarchy.getHostType('attachment')).toBe('task');
+      expect(hostHierarchy.getHostType('task')).toBeUndefined();
+      expect(hostHierarchy.getHostType('label')).toBeUndefined();
+      expect(hostHierarchy.getHostedTypes('task')).toEqual(['attachment']);
+      expect(hostHierarchy.getHostedTypes('label')).toEqual([]);
+      expect(hostHierarchy.getHostRelations()).toEqual([
+        { hostedType: 'attachment', hostType: 'task', hostIdColumn: 'taskId' },
+      ]);
     });
 
-    it('getPublicReadMode returns configured mode', () => {
-      expect(publicHierarchy.getPublicReadMode('project')).toBe('publicSelf');
-      expect(publicHierarchy.getPublicReadMode('task')).toBe('publicParent');
-      expect(publicHierarchy.getPublicReadMode('attachment')).toBeUndefined();
-      expect(publicHierarchy.getPublicReadMode('organization')).toBeUndefined();
-      expect(publicHierarchy.getPublicReadMode('user')).toBeUndefined();
+    it('includes host in the product view', () => {
+      expect(hostHierarchy.getProductConfig('attachment')?.host).toBe('task');
+      expect(hostHierarchy.getProductConfig('task')?.host).toBeUndefined();
     });
 
-    it('getContextConfig includes publicRead', () => {
-      const projectConfig = publicHierarchy.getContextConfig('project');
-      expect(projectConfig?.publicRead).toBe('publicSelf');
-
-      const orgConfig = publicHierarchy.getContextConfig('organization');
-      expect(orgConfig?.publicRead).toBeUndefined();
-    });
-
-    it('getProductConfig includes publicRead', () => {
-      const taskConfig = publicHierarchy.getProductConfig('task');
-      expect(taskConfig?.publicRead).toBe('publicParent');
-
-      const attachmentConfig = publicHierarchy.getProductConfig('attachment');
-      expect(attachmentConfig?.publicRead).toBeUndefined();
-    });
-
-    it('supports publicParentOrSelf mode', () => {
-      const h = createEntityHierarchy(roles)
-        .user()
-        .context('organization', { parent: null, roles: roles.all })
-        .context('project', { parent: 'organization', roles: roles.all, publicRead: 'publicSelf' })
-        .product('task', { parent: 'project', publicRead: 'publicParentOrSelf' })
-        .build();
-
-      expect(h.getPublicReadMode('task')).toBe('publicParentOrSelf');
-    });
-  });
-
-  describe('public read validation', () => {
-    it("throws if publicParent but parent lacks publicRead 'publicSelf'", () => {
-      expect(() => {
+    it('throws when the host is not defined before the hosted product', () => {
+      expect(() =>
         createEntityHierarchy(roles)
           .user()
           .context('organization', { parent: null, roles: roles.all })
-          .product('task', { parent: 'organization', publicRead: 'publicParent' });
-      }).toThrow("doesn't have publicRead 'publicSelf'");
+          .context('project', { parent: 'organization', roles: roles.all })
+          .product('attachment', { parent: 'project', host: 'task' as never }),
+      ).toThrow('unknown host');
     });
 
-    it("throws if publicParentOrSelf but parent lacks publicRead 'publicSelf'", () => {
-      expect(() => {
+    it('throws when the host is not a product', () => {
+      expect(() =>
         createEntityHierarchy(roles)
           .user()
           .context('organization', { parent: null, roles: roles.all })
-          .product('task', { parent: 'organization', publicRead: 'publicParentOrSelf' });
-      }).toThrow("doesn't have publicRead 'publicSelf'");
+          .context('project', { parent: 'organization', roles: roles.all })
+          .product('attachment', { parent: 'project', host: 'project' as never }),
+      ).toThrow('must be a product entity');
     });
 
-    it('allows publicSelf on context entity', () => {
-      expect(() => {
+    it('throws when host and hosted do not share the home context', () => {
+      expect(() =>
         createEntityHierarchy(roles)
           .user()
           .context('organization', { parent: null, roles: roles.all })
-          .context('project', { parent: 'organization', roles: roles.all, publicRead: 'publicSelf' })
-          .build();
-      }).not.toThrow();
+          .context('project', { parent: 'organization', roles: roles.all })
+          .product('task', { parent: 'project' })
+          .product('attachment', { parent: 'organization', host: 'task' }),
+      ).toThrow('must share the same home context');
     });
 
+    it('throws on host chains', () => {
+      expect(() =>
+        createEntityHierarchy(roles)
+          .user()
+          .context('organization', { parent: null, roles: roles.all })
+          .context('project', { parent: 'organization', roles: roles.all })
+          .product('task', { parent: 'project' })
+          .product('comment', { parent: 'project', host: 'task' })
+          .product('reaction', { parent: 'project', host: 'comment' }),
+      ).toThrow('host chains are not supported');
+    });
   });
 });

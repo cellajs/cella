@@ -49,6 +49,9 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          # Full history: lens:check compares dated lens modules against their first commit (append-only guard)
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
@@ -64,6 +67,9 @@ jobs:
 
       - name: Run Biome
         run: pnpm biome check .
+
+      - name: Run lens checks (append-only / collision / purity / wire completeness)
+        run: pnpm --filter shared lens:check
 
   # Runs all tests (full mode with PostgreSQL)
   test:

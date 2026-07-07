@@ -8,7 +8,7 @@
  * and `serviceNames` here are computed from the Compose model, so they cannot
  * drift from it.
  */
-import appServices from '../config/services.config'
+import { appServices } from '../config/services.config';
 import { assembleCompose } from './infrastructure'
 import type { ServiceMeta } from './types'
 

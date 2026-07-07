@@ -5,7 +5,7 @@ import { DialogerDialog } from '~/modules/common/dialoger/dialog';
 import { DialogerDrawer } from '~/modules/common/dialoger/drawer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useUIStore } from '~/modules/ui/ui-store';
-import router from '~/routes/router';
+import { router } from '~/routes/router';
 
 /**
  * Dialoger provider to render drawers on mobile and dialogs on other screens.

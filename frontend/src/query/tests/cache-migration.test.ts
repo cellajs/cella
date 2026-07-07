@@ -28,8 +28,13 @@ describe('entityTypeOf', () => {
     expect(entityTypeOf(['attachment'])).toBe('attachment');
   });
 
-  it('returns null for non-product keys', () => {
-    expect(entityTypeOf(['organization'])).toBeNull();
+  it('extracts a context entity type from a query key', () => {
+    expect(entityTypeOf(['organization', 'detail'])).toBe('organization');
+    expect(entityTypeOf(['organization'])).toBe('organization');
+  });
+
+  it('returns null for non-entity keys', () => {
+    expect(entityTypeOf(['me'])).toBeNull();
     expect(entityTypeOf('attachment')).toBeNull();
     expect(entityTypeOf(undefined)).toBeNull();
   });
@@ -87,8 +92,13 @@ describe('migrateMutations', () => {
     expect(result[0].state.variables).toEqual({ title: 'x' });
   });
 
-  it('skips mutations without a product entity key', () => {
-    const input = [{ mutationKey: ['organization'], state: { variables: { name: 'x' } } } as any];
+  it('migrates context-entity mutation variables', () => {
+    const input = [{ mutationKey: ['organization', 'update'], state: { variables: { name: 'x' } } } as any];
+    expect(migrateMutations(input, 0)[0].state.variables).toEqual({ title: 'x' });
+  });
+
+  it('skips mutations without a lens-entity key', () => {
+    const input = [{ mutationKey: ['me'], state: { variables: { name: 'x' } } } as any];
     expect(migrateMutations(input, 0)[0].state.variables).toEqual({ name: 'x' });
   });
 });

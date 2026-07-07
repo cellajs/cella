@@ -2,7 +2,7 @@ import type { GetMyMembershipsResponse } from 'sdk';
 import { hierarchy, type ProductEntityType } from 'shared';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
-import router from '~/routes/router';
+import { router } from '~/routes/router';
 
 type SyncPriority = 'high' | 'medium' | 'low';
 

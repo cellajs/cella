@@ -169,4 +169,4 @@ function TermsText() {
   );
 }
 
-export default TermsText;
+export { TermsText };

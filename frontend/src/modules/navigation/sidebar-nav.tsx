@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { appConfig } from 'shared';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
@@ -19,9 +19,12 @@ import {
   SidebarMenu,
 } from '~/modules/ui/sidebar';
 import { navItems } from '~/nav-config';
+import { lazyNamed } from '~/utils/lazy-named';
 
 const DebugDropdown =
-  appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-dropdown')) : () => null;
+  appConfig.mode !== 'production'
+    ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown')
+    : () => null;
 
 // Sidebar dimensions from config
 const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } =

@@ -1,5 +1,4 @@
 import { createFileRoute, defer, redirect } from '@tanstack/react-router';
-import { lazy } from 'react';
 import { meQueryOptions } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
@@ -9,8 +8,9 @@ import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
 import { appStreamManager } from '~/query/realtime/stream-store';
 import { withSuspenseSpinner } from '~/routes/route-utils';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const AppLayout = lazy(() => import('~/modules/common/app/app-layout'));
+const AppLayout = lazyNamed(() => import('~/modules/common/app/app-layout'), 'AppLayout');
 
 /**
  * Layout for authenticated users requiring a valid user session.

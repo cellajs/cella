@@ -28,4 +28,4 @@ const mcpRoutes = {
   }),
 };
 
-export default mcpRoutes;
+export { mcpRoutes };

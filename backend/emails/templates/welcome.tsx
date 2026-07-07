@@ -2,7 +2,7 @@ import { appConfig } from 'shared';
 import welcomeConfig from '../../../json/text-blocks.json';
 import { EmailAvatar, EmailBody, EmailContainer, EmailFooter, EmailLogo, EmailText } from '../components';
 import { Column, Link, Row } from '../components/primitives';
-import i18n from '../i18n';
+import { i18n } from '../i18n';
 import { avatarRowStyle, greetingStyle, smallTextStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
 

@@ -1,7 +1,7 @@
 import type { DeepPartial } from '../src/config-builder/types';
-import type _default from './config.default';
+import type { config as _default } from './config.default';
 
-export default {
+export const production = {
   mode: 'production',
   maintenance: false, // Set to true to enable maintenance mode
   googleMapsKey: 'AIzaSyBc1KkCJr6TNMeAw9XK4OunGVWDSXJAKEM',

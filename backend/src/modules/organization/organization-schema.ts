@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
 import { roles } from 'shared';
+import { createContextEntityWire } from '#/core/entity-wire';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { authStrategiesEnum } from '#/modules/auth/sessions-db';
@@ -45,51 +46,55 @@ export const organizationWithMembershipSchema = organizationSchema.extend({
   included: organizationIncludedSchema.extend({ membership: membershipBaseSchema }),
 });
 
-const organizationCreateItemSchema = z.object({
-  id: validTempIdSchema,
-  name: validNameSchema,
-  slug: validSlugSchema,
+/** Wire registration: lens-widened schemas + entity-bound runtime seam for organization */
+export const organizationWire = createContextEntityWire('organization', {
+  createItem: z.object({
+    id: validTempIdSchema,
+    name: validNameSchema,
+    slug: validSlugSchema,
+  }),
+  updateBody: createInsertSchema(organizationsTable, {
+    slug: validSlugSchema,
+    name: validNameSchema,
+    shortName: validNameSchema.nullable(),
+    languages: z.array(languageSchema).min(1),
+    defaultLanguage: languageSchema.optional(),
+    authStrategies: z.array(z.enum(authStrategiesEnum)).optional(),
+    websiteUrl: validUrlSchema.nullable(),
+    thumbnailUrl: validCDNUrlSchema.nullable(),
+    bannerUrl: validCDNUrlSchema.nullable(),
+    logoUrl: validCDNUrlSchema.nullable(),
+    welcomeText: z.string().max(maxLength.html).nullable(),
+  })
+    .pick({
+      slug: true,
+      name: true,
+      shortName: true,
+      country: true,
+      timezone: true,
+      defaultLanguage: true,
+      languages: true,
+      notificationEmail: true,
+      color: true,
+      thumbnailUrl: true,
+      logoUrl: true,
+      bannerUrl: true,
+      websiteUrl: true,
+      welcomeText: true,
+      authStrategies: true,
+      chatSupport: true,
+    })
+    .partial(),
 });
 
 /** Array schema for batch creates - rejects duplicate slugs */
-export const organizationCreateBodySchema = organizationCreateItemSchema
+export const organizationCreateBodySchema = organizationWire.createItemSchema
   .array()
   .min(1)
   .max(10)
   .refine(noDuplicateSlugsRefine, t('error:duplicate_slugs'));
 
-export const organizationUpdateBodySchema = createInsertSchema(organizationsTable, {
-  slug: validSlugSchema,
-  name: validNameSchema,
-  shortName: validNameSchema.nullable(),
-  languages: z.array(languageSchema).min(1),
-  defaultLanguage: languageSchema.optional(),
-  authStrategies: z.array(z.enum(authStrategiesEnum)).optional(),
-  websiteUrl: validUrlSchema.nullable(),
-  thumbnailUrl: validCDNUrlSchema.nullable(),
-  bannerUrl: validCDNUrlSchema.nullable(),
-  logoUrl: validCDNUrlSchema.nullable(),
-  welcomeText: z.string().max(maxLength.html).nullable(),
-})
-  .pick({
-    slug: true,
-    name: true,
-    shortName: true,
-    country: true,
-    timezone: true,
-    defaultLanguage: true,
-    languages: true,
-    notificationEmail: true,
-    color: true,
-    thumbnailUrl: true,
-    logoUrl: true,
-    bannerUrl: true,
-    websiteUrl: true,
-    welcomeText: true,
-    authStrategies: true,
-    chatSupport: true,
-  })
-  .partial();
+export const organizationUpdateBodySchema = organizationWire.updateBodySchema;
 
 export const organizationQuerySchema = z.object({
   slug: booleanTransformSchema.optional(),

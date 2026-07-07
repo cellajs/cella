@@ -1,5 +1,5 @@
 # Architecture
-This document describes the high-level architecture of the TypeScript template Cella.
+This document describes the high-level architecture of Cella.
 
 ### Target product
 * Frequent-use or heavy use web applications focused on user-generated content
@@ -14,30 +14,6 @@ This document describes the high-level architecture of the TypeScript template C
  * Use open standards and be interoperable from the start.
  * Focused on client-side rendering (CSR) and in future static site generation (SSG).
  * EU Data Sovereignty: Deploy on European-owned cloud infrastructure. 
-
-### Overview
-
-The full sync architecture combines normal request/response APIs, CDC-driven
-notifications, and a Yjs relay for collaborative fields:
-
-```
-Client        API server        Postgres DB        CDC worker        Yjs worker
-  | <--- HTTP ---> | <--- SQL ---> |                 |                 |
-  |                |               | -- WAL stream ->|                 |
-  |                | <- WS change -|                 |                 |
-  |                |               | <----- SQL -----|                 |
-  | <-- SSE ------ |               |                 |                 |
-  | <----------------------- Yjs WebSocket -------------------------> |
-  |                |               | <--- SQL + permissions + docs --> |
-```
-
-Request/response paths are still authoritative: the client uses HTTP to reach
-the API server, and the API server talks SQL to Postgres. The sync layer adds a
-CDC worker that reads the Postgres WAL and forwards changed entity notifications
-to the API server over WebSocket; the API then notifies clients over SSE so they
-can fetch fresh data. For collaborative editing and presence, the Yjs worker
-exchanges document updates with clients over a Yjs WebSocket connection,
-verifies permissions against Postgres, and persists merged document state there.
 
 | Backend    | Frontend    | Build    | Deploy    |
 |------------|-------------|----------|-----------|
@@ -54,10 +30,10 @@ verifies permissions against Postgres, and persists merged document state there.
 
 Tables can be split in `entity`,  `resource` and _other_ tables (see `backend/src/db/schema/`). Entities are split in categories:
 * `ContextEntityType`: Has memberships (`organization`)
-* `ProductEntityType`: Content related, no membership (`attachment`)
-* All entities, including `user`: (`user`, `organization`, `attachment`)
+* `ProductEntityType`: Content related, no membership (`attachment`, `page`)
+* All entities, including `user`: (`user`, `organization`, `attachment`, `page`)
 
-The cella template has a single context entity: `organization`. It has one product entity: `attachment`, with parent `organization`. But in a typical app you would likely have more context entities such as a 'bookclub' and more product entities such as 'book' and 'review'.
+The cella template has a single context entity : `organization`. It has two product entities: `attachment` - with parent `organization` - and a public product entity, `page`. But in a typical app you would likely have more context entities such as a 'bookclub' and more product entities such as 'book' and 'review'.
 
 Both frontend and backend have business logic split in modules. Most of them are in both backend and frontend, such as `authentication`, `user` and `organization`. The benefit of modularity is twofold: better code (readability, portability etc) and to pull upstream cella changes with less friction.
 
@@ -75,11 +51,13 @@ Key methods: `getOrderedAncestors()`, `getChildren()`, `getOrderedDescendants()`
 
 ## Sync engine
 
-Cella has a different approach to sync and offline. Context entities (e.g. organizations) use standard CRUD OpenAPI endpoints — they only have offline read access. Product entities (e.g. attachments) have a full sync layer using a 'notify-then-fetch' pattern. All data is collected by the react-query queryClient.
+Cella has a different approach to sync and offline. Context entities (e.g. organizations) use standard CRUD OpenAPI endpoints — they only have offline read access. Product entities (e.g. attachments, pages) have a full sync layer using a 'notify-then-fetch' pattern. All data is collected by the react-query queryClient.
 
-The pipeline flows: **Postgres WAL → CDC Worker → WebSocket → ActivityBus → SSE → Client**. A single authenticated **app stream** (`/entities/app/stream`) carries membership events, org events, and product entity notifications. It uses the leader-tab pattern (Web Locks API) — one tab holds the SSE connection, followers sync via BroadcastChannel.
+The pipeline flows: **Postgres WAL → CDC Worker → WebSocket → ActivityBus → SSE → Client**. There are two independent streams:
+- **App stream** (`/entities/app/stream`): authenticated, carries membership events, org events, and product entity notifications. Uses leader-tab pattern (Web Locks API) — one tab holds the SSE connection, followers sync via BroadcastChannel.
+- **Public stream** (`/entities/public/stream`): unauthenticated, carries events for public product entities (e.g. pages). Each tab maintains its own connection (no leader election).
 
-Sequence numbers are hierarchy-aware: the CDC worker stamps `seq` on all product entity rows after processing each WAL event. The seq is scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). List endpoints support `seqCursor` for delta fetches during catchup. Bulk operations in a single database transaction produce batched notifications — one per (entityType, action, context) — rather than per-entity, reducing SSE fan-out. See [Sync engine](/docs/page/architecture/sync-engine) for details.
+Sequence numbers are hierarchy-aware: the CDC worker stamps `seq` on all product entity rows after processing each WAL event. The seq is scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). List endpoints support `seqCursor` for delta fetches during catchup. Bulk operations in a single database transaction produce batched notifications — one per (entityType, action, context) — rather than per-entity, reducing SSE fan-out. See [SYNC_ENGINE.md](./SYNC_ENGINE.md) for details.
 
 ### Per-field merge strategies
 
@@ -91,7 +69,7 @@ Product entity mutations use per-field merge strategies instead of a single conf
 | **AWSet** | Add-Wins Set | `labels`, `assignedTo` | Commutative `{ add, remove }` deltas |
 | **YATA** | Yjs CRDT | `description` | Character-level merge via standalone Yjs worker |
 
-Scalars resolve silently via HLC comparison; set fields are conflict-free; descriptions use a dedicated Yjs WebSocket relay for real-time co-editing with client-side materialization of derived fields. See [Merge resolution](/docs/page/architecture/sync-engine#merge-resolution-hlc--awset) for full implementation details.
+Scalars resolve silently via HLC comparison; set fields are conflict-free; descriptions use a dedicated Yjs WebSocket relay for real-time co-editing; the relay materializes descriptions and derived fields server-side (single writer). See [FIELD_MERGE_STRATEGIES.md](./FIELD_MERGE_STRATEGIES.md) for full implementation details.
 
 ### Client sync cycle
 
@@ -116,19 +94,19 @@ Offline mutations are queued with stx metadata (HLC timestamps for scalars, AWSe
 
 ### Schema evolution
 
-Offline clients don't update in lockstep with deploys, so breaking schema changes to product entities ship as **append-only lens modules** (`shared/src/version-changes/`; global schema version = lens count). Each lens declares one change (`rename`, `add`, `drop`, `retype`, `setRename`); from that declaration the system derives widened wire schemas for the expand window, server-side ops normalization (inside `resolveUpdateOps`), and a boot-time client cache migration that rewrites cached rows and queued mutations locally — no refetch. Tabs broadcast their schema version so a stale bundle stops persisting before it can downgrade a migrated store. With an empty lens list (current state) everything is a passthrough; the interim mechanism for breaking changes is a `clientCacheVersion` bump (cache wipe, mutations kept), CI-enforced by `schema-bust-gate`. See [Schema evolution](#schema-evolution) for the shipping playbook.
+Offline clients don't update in lockstep with deploys, so breaking schema changes to product entities ship as **append-only lens modules** (`shared/src/version-changes/`; global schema version = lens count). Each lens declares one change (`rename`, `add`, `drop`, `retype`, `setRename`); from that declaration the system derives widened wire schemas for the expand window, server-side ops normalization (inside `resolveUpdateOps`), and a boot-time client cache migration that rewrites cached rows and queued mutations locally — no refetch. Tabs broadcast their schema version so a stale bundle stops persisting before it can downgrade a migrated store. With an empty lens list (current state) everything is a passthrough; the interim mechanism for breaking changes is a `clientCacheVersion` bump (cache wipe, mutations kept), CI-enforced by `schema-bust-gate`. See [SCHEMA_EVOLUTION.md](./SCHEMA_EVOLUTION.md) for the shipping playbook.
 
-For more details, see [Sync engine](/docs/page/architecture/sync-engine).
+For more details, see [SYNC_ENGINE.md](./SYNC_ENGINE.md).
 
 ## Query layer
 
 React Query (TanStack Query) is the central data layer on the frontend (`frontend/src/query/`) for entities but also other data. Each entity module creates standardized query keys via `createEntityKeys(entityType)` and registers them in a central `contextEntityQueryRegistry` (see `frontend/src/list-queries-config.tsx`), enabling dynamic lookup by stream handlers, cache ops, and invalidation helpers. Optimistic updates (`createOptimisticEntity`) and last-mutation-wins invalidation helpers are core patterns.
 
-Product entity queries (e.g. attachment) use a sync-aware `staleTime` (`syncStaleTime` in `query/basic/sync-stale-config.ts`): Infinity when the sync stream is live, 5 minutes as fallback when disconnected. Freshness is controlled by catchup-based seq invalidation and count-based integrity checks — not time-based staleness. Non-synced queries (users, tenants, requests) keep the global 30-second default.
+Product entity queries (attachment, page) use a sync-aware `staleTime` (`syncStaleTime` in `query/basic/sync-stale-config.ts`): Infinity when the sync stream is live, 5 minutes as fallback when disconnected. Freshness is controlled by catchup-based seq invalidation and count-based integrity checks — not time-based staleness. Non-synced queries (users, tenants, requests) keep the global 30-second default.
 
 ### Canonical vs derived queries
 
-Each product entity has one **canonical query** per parent-context scope — a flat list of all entities in that scope (per organization for attachments). It's the single source of truth the sync layer keeps fresh and patches in place. Components derive narrower views from it via `select()` (e.g. filtering attachments by group) instead of issuing separate server queries. **Filtered** lists that rely on server-side params the client can't replicate are simply refetched on relevant events rather than patched. One canonical source per scope is what makes optimistic updates, offline persistence, and conflict-free patching tractable.
+Each product entity has one **canonical query** per parent-context scope — a flat list of all entities in that scope (per organization for attachments, global for pages). It's the single source of truth the sync layer keeps fresh and patches in place. Components derive narrower views from it via `select()` (e.g. filtering attachments by group) instead of issuing separate server queries. **Filtered** lists that rely on server-side params the client can't replicate are simply refetched on relevant events rather than patched. One canonical source per scope is what makes optimistic updates, offline persistence, and conflict-free patching tractable.
 
 ### Client storage (`appdb`)
 
@@ -146,7 +124,7 @@ While signed out the persister simply does nothing and the cache stays in memory
 
 Only the leader tab (elected via Web Locks API) persists mutations to prevent cross-tab conflicts. Since `mutationFn` cannot be serialized, entity modules register their defaults via `addMutationRegistrar()` at load time so paused mutations can resume after page reload.
 
-The meta record also carries a `schemaVersion` ordinal (see [Schema evolution](#schema-evolution)): when it's behind the running bundle, a chunked boot-migration pass rewrites cached rows and queued mutations in place before hydration; when it's ahead (another tab migrated forward, or a rollback), the bundle marks itself stale and stops persisting rather than downgrade the store.
+The meta record also carries a `schemaVersion` ordinal (see [SCHEMA_EVOLUTION.md](./SCHEMA_EVOLUTION.md)): when it's behind the running bundle, a chunked boot-migration pass rewrites cached rows and queued mutations in place before hydration; when it's ahead (another tab migrated forward, or a rollback), the bundle marks itself stale and stops persisting rather than downgrade the store.
 
 ### Enrichment pipeline
 
@@ -213,7 +191,7 @@ The `tenantRead` callback receives a `readCtx` with `{ var: { ...ctx.var, db: tx
 | Category | SELECT | Write | Builder | Use case |
 |----------|--------|-------|---------|----------|
 | Tenant-scoped | tenant + auth | No policy (app-layer) | `tenantSelectPolicy()` | Product entity tables (attachments, tasks, labels, yjs-docs) |
-| No RLS | — | — | — | Context entities (organizations, projects, workspaces), memberships |
+| No RLS | — | — | — | Context entities (organizations, projects, workspaces), memberships, pages |
 
 ### Database roles
 
@@ -239,7 +217,7 @@ Identity columns (`tenant_id`, `organization_id`, `user_id` on memberships, etc.
 
 OTel-based observability across all services (backend, CDC, YJS, frontend) with [Maple.dev](https://maple.dev) as the default telemetry backend. Node services share a `createOtelSDK()` factory for traces, metrics, and logs (gated by the `MAPLE_SECRET_INGEST_KEY` env var); the frontend uses a browser `WebTracerProvider` for `traceparent` propagation and can export spans directly to Maple when `appConfig.maplePublicIngestKey` is set. Logging is Pino-based, bridged to OTel in production via `pino-opentelemetry-transport`.
 
-See [Observability](/docs/page/architecture/observability) for the full observability architecture, including per-service setup, health endpoints, and graceful shutdown.
+See [OTEL.md](./OTEL.md) for the full observability architecture, including per-service setup, health endpoints, and graceful shutdown.
 
 
 ## API design
@@ -264,7 +242,7 @@ Mock generators in `backend/mocks/` serve three purposes:
 
 ## Testing
 
-See [Testing](/docs/page/guides/testing) for test modes, infrastructure, and writing guidelines.
+See [cella/TESTING.md](./TESTING.md) for test modes, infrastructure, and writing guidelines.
 
 
 ## File structure
@@ -275,7 +253,7 @@ Cella is a flat-root monorepo.
 ├── ai                        AI worker entrypoint (delegates to backend)
 ├── backend
 │   ├── drizzle               DB migrations
-│   ├── emails                Email templates with jsx-email
+│   ├── emails                Email templates
 │   ├── scripts               Seed scripts and other dev scripts
 ├── bench                     Artillery load testing
 ├── cdc                       Change Data Capture worker (WAL → activities → SSE)
@@ -289,3 +267,5 @@ Cella is a flat-root monorepo.
 ├── studio                    Drizzle Studio launcher for local DB inspection
 └── yjs                       Yjs collaborative editing worker (ws binary relay)
 ```
+
+

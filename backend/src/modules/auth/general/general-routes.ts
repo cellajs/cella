@@ -187,4 +187,4 @@ const authGeneralRoutes = {
   }),
 };
 
-export default authGeneralRoutes;
+export { authGeneralRoutes };

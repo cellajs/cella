@@ -39,4 +39,4 @@ const yjsRoutes = {
   }),
 };
 
-export default yjsRoutes;
+export { yjsRoutes };

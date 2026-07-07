@@ -3,7 +3,7 @@ import { zAttachment } from 'sdk/zod.gen';
 import { generateId } from 'shared/entity-id';
 import { uploadTemplates } from 'shared/transloadit-config';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
-import { createOptimisticEntity } from '~/query/basic';
+import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 
 export const parseUploadedAttachments = (
   result: UploadedUppyFile<'attachment'>,

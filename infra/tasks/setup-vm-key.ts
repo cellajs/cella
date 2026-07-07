@@ -23,7 +23,7 @@
  * which Pulumi consumes via `VM_PROJECT_PERMISSION_SETS`.
  */
 
-import pc from 'shared/cli-utils/colors'
+import { pc } from 'shared/cli-utils/colors';
 import { DIVIDER } from 'shared/cli-utils/display'
 import { checkMark } from 'shared/console'
 import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam'

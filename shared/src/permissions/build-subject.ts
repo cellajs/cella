@@ -21,12 +21,21 @@ import { validateAncestorScope } from './validate-ancestor-scope';
  * @param ancestorContextIds - Object containing ancestor ID values (e.g., route params, event data)
  * @param options.id - Entity ID (defaults to a generated ID for collection-level checks)
  * @param options.createdBy - Creator for ownership checks
+ * @param options.row - Row fields for row-condition / public read evaluation
+ * @param options.parentRow - Parent context row for parent-dependent rules (e.g. `publicRead: 'publicParent'`),
+ *   resolved by the caller once per request/event
  * @throws MissingScopeError if any required ancestor context ID is missing (undefined)
  */
 export const buildSubject = (
   entityType: ContextEntityType | ProductEntityType,
   ancestorContextIds: Partial<ContextEntityIdColumns>,
-  options?: { id?: string; createdBy?: string | null },
+  options?: {
+    id?: string;
+    createdBy?: string | null;
+    row?: Record<string, unknown>;
+    parentRow?: Record<string, unknown>;
+    hostRow?: Record<string, unknown>;
+  },
 ): SubjectForPermission => {
   const contextIds: ContextScope = {};
 
@@ -43,6 +52,9 @@ export const buildSubject = (
     id: options?.id ?? generateId(),
     contextIds,
     ...(options?.createdBy !== undefined && { createdBy: options.createdBy }),
+    ...(options?.row !== undefined && { row: options.row }),
+    ...(options?.parentRow !== undefined && { parentRow: options.parentRow }),
+    ...(options?.hostRow !== undefined && { hostRow: options.hostRow }),
   };
 
   validateAncestorScope(subject);

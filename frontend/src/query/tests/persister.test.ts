@@ -6,7 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('shared', () => ({
   appConfig: {
     slug: 'test-app',
-    productEntityTypes: ['task', 'label', 'attachment', 'page'],
+    productEntityTypes: ['task', 'label', 'attachment'],
+    contextEntityTypes: ['organization', 'workspace', 'project'],
     clientCacheVersion: 'v1',
   },
 }));
@@ -211,7 +212,6 @@ describe('per-query IDB persister', () => {
         makeQuery('["task","list"]', 'task', 1000),
         makeQuery('["label","list"]', 'label', 1000),
         makeQuery('["attachment","list"]', 'attachment', 1000),
-        makeQuery('["page","list"]', 'page', 1000),
       ];
 
       await persister.persistClient(makePersistedClient(queries));
@@ -219,7 +219,7 @@ describe('per-query IDB persister', () => {
 
       // Read from DB directly — product queries should be in queries table
       const productRecords = await getAppDb()!.queries.where('scope').equals('rq').toArray();
-      expect(productRecords).toHaveLength(4);
+      expect(productRecords).toHaveLength(3);
     });
 
     it('bundles context queries into the meta record', async () => {

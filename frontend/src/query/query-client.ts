@@ -32,7 +32,7 @@ function quarantineOnClientError(error: ApiError, vars: unknown, mutationKey: un
   if (!mutationId) return;
 
   const entityType = entityTypeOf(mutationKey);
-  import('~/query/offline')
+  import('~/query/offline/failed-sync')
     .then(({ quarantineFailedSync }) =>
       quarantineFailedSync({
         mutationId,

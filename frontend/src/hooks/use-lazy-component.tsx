@@ -7,23 +7,24 @@ import { type ComponentType, type LazyExoticComponent, lazy, useEffect, useRef, 
  * @param delay - Delay in milliseconds before loading.
  * @returns Lazily loaded component.
  */
-// biome-ignore lint/suspicious/noExplicitAny: Any component can be included
-export function useLazyComponent<T extends ComponentType<any>>(
-  importFunc: () => Promise<{ default: T }>,
-  delay: number,
-): LazyExoticComponent<T> | null {
+export function useLazyComponent<
+  // biome-ignore lint/suspicious/noExplicitAny: Supports components with any prop shape.
+  T extends ComponentType<any>,
+  TModule extends Record<TKey, T>,
+  TKey extends keyof TModule,
+>(importFunc: () => Promise<TModule>, exportName: TKey, delay: number): LazyExoticComponent<T> | null {
   const [Component, setComponent] = useState<LazyExoticComponent<T> | null>(null);
   const importRef = useRef(importFunc);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       importRef.current().then((module) => {
-        setComponent(lazy(() => Promise.resolve(module)));
+        setComponent(lazy(() => Promise.resolve({ default: module[exportName] })));
       });
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [delay]);
+  }, [delay, exportName]);
 
   return Component;
 }

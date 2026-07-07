@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { OrganizationSettingsComponent } from '~/modules/organization/route-components';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
 
 /**
  * Organization settings page.

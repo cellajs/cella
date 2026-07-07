@@ -6,7 +6,7 @@ import { deleteOrganizationsOp } from '#/modules/organization/operations/delete-
 import { getOrganizationOp } from '#/modules/organization/operations/get-organization';
 import { getOrganizationsOp } from '#/modules/organization/operations/get-organizations';
 import { updateOrganizationOp } from '#/modules/organization/operations/update-organization';
-import organizationRoutes from '#/modules/organization/organization-routes';
+import { organizationRoutes } from '#/modules/organization/organization-routes';
 import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });

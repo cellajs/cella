@@ -7,7 +7,7 @@ import { createRequestOp } from '#/modules/requests/operations/create-request';
 import { deleteRequestsOp } from '#/modules/requests/operations/delete-requests';
 import { getRequestsOp } from '#/modules/requests/operations/get-requests';
 import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
-import requestRoutes from '#/modules/requests/requests-routes';
+import { requestRoutes } from '#/modules/requests/requests-routes';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 

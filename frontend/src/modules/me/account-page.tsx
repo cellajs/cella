@@ -254,4 +254,4 @@ function UserAccountPage() {
   );
 }
 
-export default UserAccountPage;
+export { UserAccountPage };

@@ -3,7 +3,7 @@ import { appConfig, type ContextEntityType } from 'shared';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
-import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic';
+import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 
 /**

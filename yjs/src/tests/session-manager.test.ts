@@ -4,6 +4,13 @@ import { mockDocContext, mockWebSocket, storageMock } from './helpers';
 // Mock storage to avoid DB calls in unit tests
 vi.mock('../data/storage', () => storageMock());
 
+// Mock materialization — cleanup gating is exercised via its return value
+vi.mock('../sync/materialize', () => ({
+  materializeState: vi.fn().mockResolvedValue('ok'),
+  postMaterialize: vi.fn().mockResolvedValue('ok'),
+  stateToBlocksJson: vi.fn(() => '[]'),
+}));
+
 vi.mock('../lib/pino', () => ({
   log: {
     trace: vi.fn(),
@@ -17,7 +24,8 @@ vi.mock('../lib/pino', () => ({
 
 // Import real session-manager (not mocked)
 const { getCollab, joinCollab, leaveCollab, broadcastToCollab } = await import('../sync/session-manager');
-const { deleteState } = await import('../data/storage');
+const { deleteState, loadState, saveState } = await import('../data/storage');
+const { materializeState } = await import('../sync/materialize');
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -95,6 +103,58 @@ describe('joinCollab / leaveCollab', () => {
 
     await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
 
+    expect(deleteState).toHaveBeenCalledWith(ctx);
+    expect(getCollab(ctx.entityType, ctx.entityId)).toBeUndefined();
+  });
+
+  it('4.1.6b cleanup materializes final state before deleting', async () => {
+    const ctx = uniqueCtx();
+    const ws = mockWebSocket();
+    const collab = joinCollab(ctx, ws as any);
+    collab.pendingState = new Uint8Array([1, 2, 3]);
+    leaveCollab(ctx.entityType, ctx.entityId, ws as any);
+
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+
+    // Pending state flushed, then materialized, then the row deleted
+    expect(saveState).toHaveBeenCalled();
+    expect(materializeState).toHaveBeenCalledWith(collab, new Uint8Array([1, 2, 3]));
+    expect(deleteState).toHaveBeenCalledWith(ctx);
+    expect(getCollab(ctx.entityType, ctx.entityId)).toBeUndefined();
+  });
+
+  it('4.1.6c cleanup materializes stored state when nothing is pending', async () => {
+    const ctx = uniqueCtx();
+    const stored = new Uint8Array([9, 9]);
+    vi.mocked(loadState).mockResolvedValueOnce(stored);
+    const ws = mockWebSocket();
+    const collab = joinCollab(ctx, ws as any);
+    leaveCollab(ctx.entityType, ctx.entityId, ws as any);
+
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+
+    expect(materializeState).toHaveBeenCalledWith(collab, stored);
+    expect(deleteState).toHaveBeenCalledWith(ctx);
+  });
+
+  it('4.1.6d retry-class materialize failure blocks deletion and reschedules cleanup', async () => {
+    const ctx = uniqueCtx();
+    const ws = mockWebSocket();
+    const collab = joinCollab(ctx, ws as any);
+    collab.pendingState = new Uint8Array([1]);
+    vi.mocked(materializeState).mockResolvedValueOnce('retry');
+    leaveCollab(ctx.entityType, ctx.entityId, ws as any);
+
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+
+    // Durable record hasn't absorbed the session — row and session must survive
+    expect(deleteState).not.toHaveBeenCalled();
+    expect(getCollab(ctx.entityType, ctx.entityId)).toBe(collab);
+
+    // Backend recovers — rescheduled cleanup converges and deletes.
+    // The flushed state was consumed; the retry loads it back from storage.
+    vi.mocked(loadState).mockResolvedValueOnce(new Uint8Array([1]));
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
     expect(deleteState).toHaveBeenCalledWith(ctx);
     expect(getCollab(ctx.entityType, ctx.entityId)).toBeUndefined();
   });

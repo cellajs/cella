@@ -1,5 +1,5 @@
 import type { EntityActionType } from '../../types';
-import { accessPolicies } from '../../config/permissions-config';
+import { accessPolicies, hostDelegation, publicReadGrants, rowRestrictions } from '../../config/permissions-config';
 import { getAllDecisions } from './permission-manager/check';
 import type {
   PermissionCheckOptions,
@@ -65,12 +65,20 @@ export function checkPermission<T extends PermissionMembership>(
 ): PermissionResult<T> | BatchPermissionResult<T> {
   const isSingle = !Array.isArray(entityOrEntities);
 
+  // Inject the configured grants/restrictions; explicit options (tests) take precedence.
+  const optionsWithGrants: PermissionCheckOptions = {
+    publicGrants: publicReadGrants,
+    restrictions: rowRestrictions,
+    hostDelegation,
+    ...options,
+  };
+
   if (isSingle) {
-    const { can, membership } = getAllDecisions(accessPolicies, memberships, entityOrEntities, options);
+    const { can, membership } = getAllDecisions(accessPolicies, memberships, entityOrEntities, optionsWithGrants);
     return { isAllowed: can[action], membership };
   }
 
-  const decisions = getAllDecisions(accessPolicies, memberships, entityOrEntities, options);
+  const decisions = getAllDecisions(accessPolicies, memberships, entityOrEntities, optionsWithGrants);
   const results = new Map<string, PermissionResult<T>>();
 
   for (const [id, decision] of decisions) {

@@ -142,4 +142,4 @@ function PrivacyText() {
   );
 }
 
-export default PrivacyText;
+export { PrivacyText };

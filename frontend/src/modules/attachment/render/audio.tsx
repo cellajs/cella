@@ -9,4 +9,4 @@ function RenderAudio({ src, className }: { src: string; className?: string }) {
   );
 }
 
-export default RenderAudio;
+export { RenderAudio };

@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { lazy } from 'react';
 import { pagesRouteSearchParamsSchema } from '~/modules/page/search-params-schemas';
 import { withSuspense } from '~/routes/route-utils';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
+import { lazyNamed } from '~/utils/lazy-named';
 import { stripParams } from '~/utils/strip-search-params';
 
-const PagesTable = lazy(() => import('~/modules/page/table/pages-table'));
+const PagesTable = lazyNamed(() => import('~/modules/page/table/pages-table'), 'PagesTable');
 
 /**
  * Pages table route - manages documentation pages.

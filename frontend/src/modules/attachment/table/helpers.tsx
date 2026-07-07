@@ -7,7 +7,7 @@ import { attachmentQueryKeys } from '~/modules/attachment/query';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
-import { createStxForCreate } from '~/query/offline';
+import { createStxForCreate } from '~/query/offline/stx-utils';
 import { queryClient } from '~/query/query-client';
 
 const maxNumberOfFiles = 20;

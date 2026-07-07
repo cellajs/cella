@@ -88,4 +88,4 @@ function UsersTable() {
   );
 }
 
-export default UsersTable;
+export { UsersTable };

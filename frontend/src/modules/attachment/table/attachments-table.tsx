@@ -157,4 +157,4 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
   );
 }
 
-export default AttachmentsTable;
+export { AttachmentsTable };

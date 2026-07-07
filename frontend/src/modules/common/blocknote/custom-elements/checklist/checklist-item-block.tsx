@@ -1,7 +1,8 @@
-import { createExtension, defaultProps, getBlockInfoFromTransaction } from '@blocknote/core';
+import { createExtension, getBlockInfoFromTransaction } from '@blocknote/core';
 import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
 import { CheckSquareIcon } from 'lucide-react';
+import { checklistItemConfig } from 'shared/blocknote-schema-configs';
 import { nanoid } from 'shared/nanoid';
 import { ChecklistItemRender } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-render';
 import type { CustomBlockNoteEditor, IconType } from '~/modules/common/blocknote/types';
@@ -58,16 +59,8 @@ const checklistExtensions = createExtension({
   ],
 });
 
-export const checklistItemConfig = {
-  type: 'checklistItem' as const,
-  propSchema: {
-    textAlignment: defaultProps.textAlignment,
-    textColor: defaultProps.textColor,
-    checkboxId: { default: '' as string },
-    checked: { default: false as boolean },
-  },
-  content: 'inline' as const,
-};
+// Schema config is shared with the Yjs relay's server-side seeder — see shared/blocknote-schema-configs
+export { checklistItemConfig };
 
 export const checklistItemBlock = createReactBlockSpec(
   checklistItemConfig,

@@ -33,4 +33,4 @@ const activityRoutes = {
   }),
 };
 
-export default activityRoutes;
+export { activityRoutes };

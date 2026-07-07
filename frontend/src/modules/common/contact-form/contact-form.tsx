@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { MailIcon, MessageSquareIcon, SendIcon, UserIcon } from 'lucide-react';
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zCreateRequestBody } from 'sdk/zod.gen';
@@ -15,8 +15,9 @@ import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
 import { useUserStore } from '~/modules/user/user-store';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-form-map'));
+const ContactFormMap = lazyNamed(() => import('~/modules/common/contact-form/contact-form-map'), 'ContactFormMap');
 
 /** Main contact form component */
 export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {

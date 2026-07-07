@@ -15,7 +15,7 @@ import {
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { baseInfiniteQueryOptions } from '~/query/basic';
+import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.

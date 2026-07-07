@@ -1,10 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { lazy } from 'react';
 import { organizationsRouteSearchParamsSchema } from '~/modules/organization/search-params-schemas';
 import { withSuspense } from '~/routes/route-utils';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const OrganizationsTable = lazy(() => import('~/modules/organization/table/organizations-table'));
+const OrganizationsTable = lazyNamed(
+  () => import('~/modules/organization/table/organizations-table'),
+  'OrganizationsTable',
+);
 
 /**
  * System organizations table for managing all organizations.

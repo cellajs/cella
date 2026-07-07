@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { confirm, input } from '@inquirer/prompts'
-import pc from 'shared/cli-utils/colors'
+import { pc } from 'shared/cli-utils/colors';
 import { crossMark, warningMark } from 'shared/console'
 import type { appConfig as AppConfig } from 'shared'
 import type { Environment, StackState } from '../lib/stack/bootstrap-stack-state'

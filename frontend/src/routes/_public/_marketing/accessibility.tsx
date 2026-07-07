@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { AccessibilityPage } from '~/modules/marketing/accessibility-page';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
 
 /**
  * Accessibility statement page for compliance information.

@@ -21,7 +21,7 @@ import { UppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar/formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu/side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu/slash-menu';
-import { getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
+import { findClickedMedia, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { createResolveFileUrl } from '~/modules/common/blocknote/helpers/resolve-file-url';
@@ -29,7 +29,7 @@ import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
 import { useEditorKeyboard } from '~/modules/common/blocknote/hooks/use-editor-keyboard';
 import { useSmartBlur } from '~/modules/common/blocknote/hooks/use-smart-blur';
 import { useUntrustedMediaWarning } from '~/modules/common/blocknote/hooks/use-untrusted-media-warning';
-import { useYjsContentSeed } from '~/modules/common/blocknote/hooks/use-yjs-content-seed';
+import { useYjsSseSuppression } from '~/modules/common/blocknote/hooks/use-yjs-sse-suppression';
 import { useYjsUndoManagerFix } from '~/modules/common/blocknote/hooks/use-yjs-undo-manager-fix';
 import type {
   CommonBlockNoteProps,
@@ -38,39 +38,30 @@ import type {
   CustomBlockRegularTypes,
   CustomBlockTypes,
 } from '~/modules/common/blocknote/types';
-import { useDerivedFieldsSender } from '~/modules/common/blocknote/use-derived-fields-sender';
 import { useUIStore } from '~/modules/ui/ui-store';
-import router from '~/routes/router';
+import { router } from '~/routes/router';
 
-/** Pre-built collaboration config from the connection manager store. */
-interface CollaborationConfig {
+/**
+ * Everything collaborative mode needs, bundled: the Yjs wiring (provider, fragment,
+ * cursor user) plus the entity identity for SSE suppression while editing.
+ * Presence of the bundle switches the editor into collaborative mode.
+ * Persistence is relay-side — the relay materializes sessions into the entity row.
+ */
+export interface CollaborationBundle {
   provider: WebsocketProvider;
   fragment: XmlFragment;
   user: { name: string; color: string };
-  showCursorLabels?: 'activity' | 'always';
+  entityType: ProductEntityType;
+  entityId: string;
 }
 
-type BlockNoteProps =
-  | (CommonBlockNoteProps & {
-      updateData: (strBlocks: string) => void;
-      autoFocus?: boolean;
-      /** When true, fire `updateData` on every change (form-binding mode). Default: only on blur/Escape/Cmd+Enter. */
-      commitOnEveryChange?: boolean;
-      collaboration: CollaborationConfig;
-      entityType: ProductEntityType;
-      entityId: string;
-      /** Callback that sends description update through a React Query mutation (fires lifecycle hooks). */
-      sendDerivedUpdate: (entityId: string, description: string) => Promise<void>;
-    })
-  | (CommonBlockNoteProps & {
-      updateData: (strBlocks: string) => void;
-      autoFocus?: boolean;
-      commitOnEveryChange?: boolean;
-      collaboration?: never;
-      entityType?: never;
-      entityId?: never;
-      sendDerivedUpdate?: never;
-    });
+type BlockNoteProps = CommonBlockNoteProps & {
+  updateData: (strBlocks: string) => void;
+  autoFocus?: boolean;
+  /** When true, fire `updateData` on every change (form-binding mode). Default: only on blur/Escape/Cmd+Enter. */
+  commitOnEveryChange?: boolean;
+  collaboration?: CollaborationBundle;
+};
 
 function BlockNote({
   id,
@@ -97,9 +88,6 @@ function BlockNote({
   commitOnEveryChange = false,
   // Collaboration
   collaboration,
-  entityType: entityTypeProp,
-  entityId: entityIdProp,
-  sendDerivedUpdate,
   // Functions
   updateData,
   onEscapeClick,
@@ -131,7 +119,11 @@ function BlockNote({
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
-    collaboration,
+    // Only the Yjs wiring goes to the editor — the entity identity in the bundle
+    // is consumed by the SSE suppression hook below.
+    collaboration: collaboration
+      ? { provider: collaboration.provider, fragment: collaboration.fragment, user: collaboration.user }
+      : undefined,
 
     extensions: [checkedExtension(), ...(extensions ?? [])],
     resolveFileUrl: createResolveFileUrl({ publicFiles, baseFilePanelProps }),
@@ -140,27 +132,11 @@ function BlockNote({
   // Re-subscribe Yjs UndoManager after TipTap mount cycles so CMD+Z keeps working.
   useYjsUndoManagerFix(editor, collaborative);
 
-  // Send derived fields (summary, checkbox counts, etc.) to backend in collaborative mode.
-  // Also manages Yjs editor store registration for SSE suppression — unregister is
-  // chained after the flush mutation completes so SSE can't overwrite with stale data.
-  const { markContentAsSent } = useDerivedFieldsSender(
-    collaborative && entityTypeProp && entityIdProp && sendDerivedUpdate
-      ? {
-          entityId: entityIdProp,
-          entityType: entityTypeProp,
-          editor,
-          sendUpdate: sendDerivedUpdate,
-        }
-      : null,
+  // Shield Yjs-owned fields from SSE while this editor is active. The relay owns
+  // persistence (seeding + materialization), so no client sends description updates.
+  useYjsSseSuppression(
+    collaboration ? { entityType: collaboration.entityType, entityId: collaboration.entityId } : null,
   );
-
-  // Seed Y.Doc with existing content on first sync when document is empty
-  useYjsContentSeed({
-    editor,
-    provider: collaboration?.provider,
-    defaultValue,
-    markContentAsSent,
-  });
 
   const handleKeyDown = useEditorKeyboard({
     editor,
@@ -203,19 +179,12 @@ function BlockNote({
   const handleClick: MouseEventHandler = (event) => {
     if (!clickOpensPreview || editable) return;
 
-    const target = event.target as HTMLElement;
-
-    // Check if click is on or inside a media element
-    const mediaElement = target.closest('img, video, audio') || target.querySelector('img, video, audio');
-    const insideFileBlock = !!target.closest('.bn-file-block-content-wrapper');
-
-    if (!mediaElement && !insideFileBlock) return;
+    const media = findClickedMedia(event.target as HTMLElement, { includeWrapped: true });
+    if (!media) return;
 
     event.preventDefault();
-
-    // Get the src of the clicked media to start carousel at that item
-    const clickedSrc = (mediaElement as HTMLMediaElement)?.src;
-    openAttachment(editor, blockNoteRef, clickedSrc);
+    // The clicked media's src starts the carousel at that item
+    openAttachment(editor, blockNoteRef, media.src);
   };
 
   useEffect(() => {
@@ -271,4 +240,4 @@ function BlockNote({
   );
 }
 
-export default BlockNote;
+export { BlockNote };

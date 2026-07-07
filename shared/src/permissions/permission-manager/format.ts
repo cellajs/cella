@@ -4,8 +4,12 @@ import { createActionRecord } from '../action-helpers';
 import type { GrantSource, PermissionDecision, PermissionMembership } from './types';
 
 /** Format a grant source for debug output. */
-const formatGrant = (g: GrantSource): string =>
-  g.type === 'membership' ? `${g.contextType}:${g.contextId}/${g.role}` : `relation:${g.relation}`;
+const formatGrant = (g: GrantSource): string => {
+  if (g.type === 'membership') return `${g.contextType}:${g.contextId}/${g.role}`;
+  if (g.type === 'public') return `public:${g.mode}`;
+  if (g.type === 'host') return `host:${g.hostType}`;
+  return `relation:${g.relation}`;
+};
 
 /**
  * Formats a PermissionDecision for debug logging.

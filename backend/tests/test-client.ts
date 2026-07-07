@@ -42,6 +42,6 @@ export function sdk(client: Client) {
  * Defers the import so mocks are set up first.
  */
 export async function createAppClient() {
-  const { default: app } = await import('#/routes');
+  const { baseApp: app } = await import('#/routes');
   return sdk(createTestClient(app));
 }

@@ -1,10 +1,9 @@
 import type { z } from '@hono/zod-openapi';
 import type { AuthContext } from '#/core/context';
 import type { OperationResult } from '#/core/operation-result';
-import { resolveUpdateOps } from '#/core/stx';
 import { tenantContext } from '#/db/tenant-context';
 import { updateAttachment } from '#/modules/attachment/attachment-queries';
-import type { attachmentUpdateStxBodySchema } from '#/modules/attachment/attachment-schema';
+import { type attachmentUpdateStxBodySchema, attachmentWire } from '#/modules/attachment/attachment-schema';
 import { withAuditUser, withAuditUserLite } from '#/modules/user/helpers/audit-user';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { getIsoDate } from '#/utils/iso-date';
@@ -26,7 +25,7 @@ export async function updateAttachmentOp(
   const updatedAttachmentRecord = await tenantContext(ctx, async (txCtx) => {
     const { entity } = await getValidProductEntity(txCtx, id, 'attachment', 'update');
 
-    const resolved = resolveUpdateOps('attachment', entity, rawOps, stx);
+    const resolved = attachmentWire.resolveUpdateOps(entity, rawOps, stx);
 
     const values = {
       ...(resolved.changed ? resolved.values : {}),

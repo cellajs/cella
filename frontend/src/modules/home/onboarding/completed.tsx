@@ -9,7 +9,7 @@ import { useUpdateSelfFlagsMutation } from '~/modules/me/query';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { useUserStore } from '~/modules/user/user-store';
-import { flattenInfiniteData } from '~/query/basic';
+import { flattenInfiniteData } from '~/query/basic/flatten';
 
 interface OnboardingCompletedProps {
   createdOrganization: Organization | null;

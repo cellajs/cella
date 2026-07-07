@@ -88,7 +88,7 @@ function canSkipGeneration(): { skip: boolean; reason: string; hash: string | nu
   }
 
   try {
-    const [{ default: app }, { default: docs }] = await Promise.all([
+    const [{ baseApp: app }, { initDocs: docs }] = await Promise.all([
       import('#/routes'),
       import('#/core/init-docs'),
     ]);

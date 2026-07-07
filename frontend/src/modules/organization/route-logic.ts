@@ -5,7 +5,7 @@ import {
   organizationQueryKeys,
   organizationQueryOptions,
 } from '~/modules/organization/query';
-import { fetchSlugCacheId } from '~/query/basic';
+import { fetchSlugCacheId } from '~/query/basic/fetch-slug-cache-id';
 import { queryClient } from '~/query/query-client';
 import { redirectOnMissing } from '~/utils/redirect-on-missing';
 import { rewriteUrlToSlug } from '~/utils/rewrite-url-to-slug';

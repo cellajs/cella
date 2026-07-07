@@ -1,5 +1,5 @@
 import type { FieldValues } from 'react-hook-form';
-import BlockNote from '~/modules/common/blocknote/block-note-editor';
+import { BlockNote } from '~/modules/common/blocknote/block-note-editor';
 import type { BaseUppyFilePanelProps, CommonBlockNoteProps } from '~/modules/common/blocknote/types';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
@@ -58,4 +58,4 @@ const BlockNoteContentFormField = <TFieldValues extends FieldValues>({
   );
 };
 
-export default BlockNoteContentFormField;
+export { BlockNoteContentFormField };

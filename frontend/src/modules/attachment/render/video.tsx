@@ -9,4 +9,4 @@ function RenderVideo({ src, className }: { src: string; className?: string }) {
   );
 }
 
-export default RenderVideo;
+export { RenderVideo };

@@ -1,5 +1,4 @@
 import type { ProductEntityType } from 'shared';
-import { create } from 'zustand';
 
 /** Runtime registry of fields owned by Yjs during collaborative editing — SSE updates skip these */
 const yjsOwnedFields = new Map<ProductEntityType, string[]>();
@@ -9,47 +8,32 @@ export function registerYjsOwnedFields(entityType: ProductEntityType, fields: st
   yjsOwnedFields.set(entityType, fields);
 }
 
-interface YjsEditorState {
-  /** Map of entityType → Set of entityIds with active Yjs editors */
-  active: Map<ProductEntityType, Set<string>>;
-  register: (entityType: ProductEntityType, entityId: string) => void;
-  unregister: (entityType: ProductEntityType, entityId: string) => void;
-  isActive: (entityType: ProductEntityType, entityId: string) => boolean;
-  getOwnedFields: (entityType: ProductEntityType) => string[];
+/** Fields owned by Yjs for an entity type while a collaborative editor is active. */
+export function getYjsOwnedFields(entityType: ProductEntityType): string[] {
+  return yjsOwnedFields.get(entityType) ?? ['description'];
 }
 
 /**
- * Tracks which entities have active Yjs editors.
- * Used by SSE cache ops to suppress description-derived field updates
- * while the local editor has a more recent Y.Doc state.
+ * Registry of entities with active Yjs editors, used by SSE cache ops to suppress
+ * description-derived field updates while the local editor has a more recent
+ * Y.Doc state. Plain module state — consumers only do imperative lookups,
+ * nothing subscribes reactively.
  */
-export const useYjsEditorStore = create<YjsEditorState>((set, get) => ({
-  active: new Map(),
+const activeYjsEditors = new Map<ProductEntityType, Set<string>>();
 
-  register: (entityType, entityId) =>
-    set((state) => {
-      const next = new Map(state.active);
-      const ids = new Set(next.get(entityType));
-      ids.add(entityId);
-      next.set(entityType, ids);
-      return { active: next };
-    }),
+export function registerActiveYjsEditor(entityType: ProductEntityType, entityId: string): void {
+  const ids = activeYjsEditors.get(entityType) ?? new Set();
+  ids.add(entityId);
+  activeYjsEditors.set(entityType, ids);
+}
 
-  unregister: (entityType, entityId) =>
-    set((state) => {
-      const next = new Map(state.active);
-      const ids = new Set(next.get(entityType));
-      ids.delete(entityId);
-      if (ids.size === 0) next.delete(entityType);
-      else next.set(entityType, ids);
-      return { active: next };
-    }),
+export function unregisterActiveYjsEditor(entityType: ProductEntityType, entityId: string): void {
+  const ids = activeYjsEditors.get(entityType);
+  if (!ids) return;
+  ids.delete(entityId);
+  if (ids.size === 0) activeYjsEditors.delete(entityType);
+}
 
-  isActive: (entityType, entityId) => {
-    return get().active.get(entityType)?.has(entityId) ?? false;
-  },
-
-  getOwnedFields: (entityType) => {
-    return yjsOwnedFields.get(entityType) ?? ['description'];
-  },
-}));
+export function isYjsEditorActive(entityType: ProductEntityType, entityId: string): boolean {
+  return activeYjsEditors.get(entityType)?.has(entityId) ?? false;
+}

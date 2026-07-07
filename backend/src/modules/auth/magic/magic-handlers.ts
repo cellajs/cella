@@ -8,7 +8,7 @@ import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { findUserByEmail } from '#/modules/auth/auth-queries';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
-import authMagicLinkRoutes from '#/modules/auth/magic/magic-routes';
+import { authMagicLinkRoutes } from '#/modules/auth/magic/magic-routes';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';

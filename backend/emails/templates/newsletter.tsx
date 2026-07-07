@@ -1,6 +1,6 @@
 import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText, SafeHtml } from '../components';
 import { Link } from '../components/primitives';
-import i18n from '../i18n';
+import { i18n } from '../i18n';
 import { newsletterContentStyles, smallTextStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
 

@@ -1,6 +1,6 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
-import type router from '~/routes/router';
+import type { router } from '~/routes/router';
 import { objectKeys } from '~/utils/object-keys';
 
 type RoutesById = keyof typeof router.routesById;

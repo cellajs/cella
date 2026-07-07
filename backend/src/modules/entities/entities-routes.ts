@@ -91,4 +91,5 @@ const entityRoutes = {
     },
   }),
 };
-export default entityRoutes;
+
+export { entityRoutes };

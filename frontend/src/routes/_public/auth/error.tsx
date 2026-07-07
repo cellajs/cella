@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { AuthErrorPage } from '~/modules/auth/auth-error-page';
 import { authErrorRouteSearchParamsSchema } from '~/modules/auth/search-params-schemas';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
 
 /**
  * Error page for authentication-related failures.

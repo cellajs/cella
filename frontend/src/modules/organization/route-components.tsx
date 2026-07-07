@@ -1,13 +1,17 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi } from '@tanstack/react-router';
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { Spinner } from '~/modules/common/spinner';
 import { organizationQueryOptions } from '~/modules/organization/query';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const OrganizationPage = lazy(() => import('~/modules/organization/organization-page'));
-const MembersTable = lazy(() => import('~/modules/memberships/members-table/members-table'));
-const AttachmentsTable = lazy(() => import('~/modules/attachment/table/attachments-table'));
-const OrganizationSettings = lazy(() => import('~/modules/organization/organization-settings'));
+const OrganizationPage = lazyNamed(() => import('~/modules/organization/organization-page'), 'OrganizationPage');
+const MembersTable = lazyNamed(() => import('~/modules/memberships/members-table/members-table'), 'MembersTable');
+const AttachmentsTable = lazyNamed(() => import('~/modules/attachment/table/attachments-table'), 'AttachmentsTable');
+const OrganizationSettings = lazyNamed(
+  () => import('~/modules/organization/organization-settings'),
+  'OrganizationSettings',
+);
 
 const orgRouteApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization');
 const orgMembersApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/members');

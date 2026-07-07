@@ -74,9 +74,7 @@ pnpm --filter frontend exec playwright install chromium
 pnpm sdk
 
 # run the storybook test project
-pnpm test:storybook
+pnpm --filter frontend exec vitest run --project=storybook
 ```
-
-`pnpm test:storybook` is the root shortcut for `pnpm --filter frontend exec vitest run --project=storybook`. Use `pnpm story` when you want the interactive Storybook dev server in a browser; it does not run the Vitest browser tests by itself.
 
 Every story is render-tested in headless Chromium, and stories with `play` functions get their interactions exercised. When you add a frontend component story, it becomes a test automatically — no separate test file needed.

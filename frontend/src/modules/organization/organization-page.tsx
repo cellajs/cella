@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet } from '@tanstack/react-router';
-import { lazy, Suspense, useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/header';
@@ -8,8 +8,9 @@ import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { ScrollReset } from '~/modules/common/scroll-reset';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organization/query';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const LeaveOrgButton = lazy(() => import('~/modules/organization/leave-organization'));
+const LeaveOrgButton = lazyNamed(() => import('~/modules/organization/leave-organization'), 'LeaveOrgButton');
 
 interface Props {
   organizationId: string;
@@ -80,4 +81,4 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
   );
 }
 
-export default OrganizationPage;
+export { OrganizationPage };

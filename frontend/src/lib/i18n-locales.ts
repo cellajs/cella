@@ -23,15 +23,15 @@ const locales = {
   en: { about: enAbout, c: enCommonExtended, error: enError },
 };
 
-export default locales;
+export { locales };
 
 // HMR boundary: accept updated locale modules and push them into i18next
 if (import.meta.hot) {
   import.meta.hot.accept(async (newModule) => {
-    if (!newModule?.default) return;
+    if (!newModule?.locales) return;
     const i18next = await import('i18next');
     const i18n = i18next.default;
-    const updated = newModule.default as typeof locales;
+    const updated = newModule.locales as typeof locales;
     for (const [lang, namespaces] of Object.entries(updated)) {
       for (const [ns, resources] of Object.entries(namespaces)) {
         i18n.addResourceBundle(lang, ns, resources, true, true);

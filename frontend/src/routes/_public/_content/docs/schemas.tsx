@@ -1,13 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { lazy } from 'react';
 import { schemasQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
 import { schemasRouteSearchParamsSchema } from '~/modules/docs/search-params-schemas';
 import { queryClient } from '~/query/query-client';
 import { withSuspense } from '~/routes/route-utils';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
+import { lazyNamed } from '~/utils/lazy-named';
 import { stripParams } from '~/utils/strip-search-params';
 
-const SchemasPage = lazy(() => import('~/modules/docs/schemas/schemas-page'));
+const SchemasPage = lazyNamed(() => import('~/modules/docs/schemas/schemas-page'), 'SchemasPage');
 
 /**
  * Schemas list route - displays all API schemas.

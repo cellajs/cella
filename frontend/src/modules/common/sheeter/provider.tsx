@@ -6,7 +6,7 @@ import { SheeterSheet } from '~/modules/common/sheeter/sheet';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUIStore } from '~/modules/ui/ui-store';
-import router from '~/routes/router';
+import { router } from '~/routes/router';
 
 /**
  * Sheeter provider to render drawers on mobile, sheets on desktop.

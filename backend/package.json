@@ -65,7 +65,7 @@
     "@t3-oss/env-core": "^0.13.11",
     "@tanstack/ai": "^0.39.1",
     "arctic": "^3.7.0",
-    "cdc": "workspace:*",
+    "cdc-worker": "workspace:*",
     "drizzle-orm": "1.0.0-rc.3",
     "enforce-unique": "^1.3.0",
     "hono": "^4.12.28",

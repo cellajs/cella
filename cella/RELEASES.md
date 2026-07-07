@@ -2,18 +2,18 @@
 
 Releases are automated with [release-please](https://github.com/googleapis/release-please); versions and changelogs derive from [Conventional Commits](https://www.conventionalcommits.org). Never bump versions or push tags by hand.
 
-## How it works
+### How it works
 
 1. Land work on `main` with Conventional Commit messages (a lefthook `commit-msg` hook runs commitlint locally).
 2. release-please keeps an open **release PR per package**, continuously updating the proposed version bump and generated [Changelog](/docs/page/changelog).
 3. Merge the release PR when ready — it bumps the version, updates the changelog, tags, and publishes the GitHub Release.
 4. On merge, the `release-gate` job (security audit + full e2e) runs before the GitHub Release is finalized — see below.
 
-## Deploys happen on release, not per merge
+### Deploys happen on release, not per merge
 
 Production deploys fire only when the `cella` template GitHub Release is published, not on every merge: [deploy.yml](https://github.com/cellajs/cella/blob/main/.github/workflows/deploy.yml) listens for `release: published`. Manual staging/production deploys remain available via `workflow_dispatch`.
 
-## Release gate (security + e2e)
+### Release gate (security + e2e)
 
 Heavy checks run **only at release time** in [release.yml](https://github.com/cellajs/cella/blob/main/.github/workflows/release.yml), not as branch-protection required checks:
 
@@ -22,7 +22,7 @@ Heavy checks run **only at release time** in [release.yml](https://github.com/ce
 
 This keeps day-to-day PRs fast and gates only the irreversible publish. Add release-only checks as steps in `release-gate` — no ruleset changes needed.
 
-## Packages
+### Packages
 
 Versioning is per package via [release-please-config.json](https://github.com/cellajs/cella/blob/main/.github/release-please-config.json) and [release-please-manifest.json](https://github.com/cellajs/cella/blob/main/.github/release-please-manifest.json):
 
@@ -32,7 +32,7 @@ Versioning is per package via [release-please-config.json](https://github.com/ce
 
 The scaffolder (`@cellajs/create-cella`) lives in its own repo, [cellajs/create-cella](https://github.com/cellajs/create-cella), with its own release automation. **Add another releasable package by adding one entry to both files — no workflow changes.**
 
-## Commit types → changelog sections
+### Commit types → changelog sections
 
 Types map to changelog sections (`changelog-sections` in [release-please-config.json](https://github.com/cellajs/cella/blob/main/.github/release-please-config.json)):
 
@@ -45,11 +45,11 @@ Types map to changelog sections (`changelog-sections` in [release-please-config.
 
 A `!` (e.g. `feat!:`) or a `BREAKING CHANGE:` footer forces a breaking-change section and larger bump; link a fork-facing migration note in `cella/` from the commit body.
 
-## Pre-1.0 versioning
+### Pre-1.0 versioning
 
 While on `0.x` (`bump-minor-pre-major`), breaking changes bump the minor and features bump the patch — keeping versions meaningful for forks consuming upstream via `pnpm cella`.
 
-## Release automation setup (one-time)
+### Release automation setup (one-time)
 
 [release.yml](https://github.com/cellajs/cella/blob/main/.github/workflows/release.yml) needs a few secrets/settings. A per-repo GitHub App is set up once per repo; an org-wide App (recommended when one org owns multiple repos/forks) is mostly set up once for the org.
 
@@ -67,3 +67,4 @@ While on `0.x` (`bump-minor-pre-major`), breaking changes bump the minor and fea
 **Repo settings:**
 - `main` ruleset: squash-merge only, linear history, require `pr-title`, `lint`, `test`, `test-cella-cli`. Do **not** require `release-gate` (it runs at release time, not on PRs).
 - "Allow GitHub Actions to create and approve pull requests" can stay **disabled** — the App, not Actions, creates the release PR.
+

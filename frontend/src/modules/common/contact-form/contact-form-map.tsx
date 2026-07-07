@@ -158,4 +158,5 @@ function ContactFormMap() {
     </ErrorBoundary>
   );
 }
-export default ContactFormMap;
+
+export { ContactFormMap };

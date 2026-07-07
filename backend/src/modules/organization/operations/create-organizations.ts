@@ -7,18 +7,17 @@ import { checkSlugsAvailable } from '#/modules/entities/helpers/check-slug';
 import { insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { countOrgsInTenant, insertOrganizations } from '#/modules/organization/organization-queries';
+import { organizationWire } from '#/modules/organization/organization-schema';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { log } from '#/utils/logger';
 import { filterWithRejection, takeWithRestriction } from '#/utils/rejection-utils';
 import { defaultWelcomeText } from '#json/text-blocks.json';
 
-interface CreateOrganizationItem {
-  id: string;
-  name: string;
-  slug: string;
-}
+type CreateOrganizationItem = { id: string; name: string; slug: string };
 
-export async function createOrganizationsOp(ctx: AuthContext, items: CreateOrganizationItem[], tenantId: string) {
+export async function createOrganizationsOp(ctx: AuthContext, rawItems: CreateOrganizationItem[], tenantId: string) {
+  // Lens seam: canonicalize old-shape field names before any body access
+  const items = rawItems.map((item) => organizationWire.normalizeBody(item));
   const user = ctx.var.user;
   const isSystemAdmin = ctx.var.isSystemAdmin;
   const db = ctx.var.db;

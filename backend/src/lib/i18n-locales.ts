@@ -13,4 +13,4 @@ const locales = {
   nl: { backend: nlBackend, c: nlCommon, error: nlError },
 };
 
-export default locales;
+export { locales };

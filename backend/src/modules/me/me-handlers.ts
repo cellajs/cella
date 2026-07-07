@@ -12,7 +12,7 @@ import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { getUserSessions } from '#/modules/me/helpers/get-user-info';
 import { deleteSessionsByIds, deleteUser, findUserById, updateUserMfa } from '#/modules/me/me-queries';
-import meRoutes from '#/modules/me/me-routes';
+import { meRoutes } from '#/modules/me/me-routes';
 import { deleteMyMembershipOp } from '#/modules/me/operations/delete-my-membership';
 import { getMeOp } from '#/modules/me/operations/get-me';
 import { getMyAuthOp } from '#/modules/me/operations/get-my-auth';

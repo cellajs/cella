@@ -11,7 +11,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('shared', () => ({
   appConfig: {
     slug: 'test-app',
-    productEntityTypes: ['task', 'label', 'attachment', 'page'],
+    productEntityTypes: ['task', 'label', 'attachment'],
+    contextEntityTypes: ['organization', 'workspace', 'project'],
     clientCacheVersion: 'v1',
   },
 }));

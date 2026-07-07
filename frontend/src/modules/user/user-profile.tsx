@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { FlameKindlingIcon, UserRoundCogIcon } from 'lucide-react';
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase } from 'sdk';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
@@ -9,8 +9,9 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUserUpdateMutation } from '~/modules/user/query';
 import { useUserStore } from '~/modules/user/user-store';
+import { lazyNamed } from '~/utils/lazy-named';
 
-const ProfilePageContent = lazy(() => import('~/modules/user/user-profile-content'));
+const ProfilePageContent = lazyNamed(() => import('~/modules/user/user-profile-content'), 'UserProfileContent');
 
 interface Props {
   user: UserBase;

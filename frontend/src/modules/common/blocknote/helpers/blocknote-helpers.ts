@@ -16,6 +16,41 @@ export const getHeadlessEditor = () => {
   return headlessEditor;
 };
 
+/**
+ * Depth-first walk over parsed (JSON) blocks and their nested children.
+ * Returning `false` from the visitor stops the traversal early — mirrors the
+ * signature of `editor.forEachBlock`, which only works on a live editor's
+ * document; this walker covers our JSON-string helpers.
+ */
+// biome-ignore lint/suspicious/noConfusingVoidType: `boolean | void` lets visitors omit a return (mirrors editor.forEachBlock)
+export const walkBlocks = (blocks: CustomBlock[], visitor: (block: CustomBlock) => boolean | void): boolean => {
+  for (const block of blocks) {
+    if (visitor(block) === false) return false;
+    if (block.children?.length && !walkBlocks(block.children as CustomBlock[], visitor)) return false;
+  }
+  return true;
+};
+
+/**
+ * Locate the media element for a click in rendered BlockNote content.
+ * `includeWrapped` extends detection to media nested inside the click target and to
+ * `.bn-file-block-content-wrapper` hits (file blocks without a media preview) — used
+ * by the live editor; the static full-HTML renderer only matches direct media clicks.
+ * Returns null when the click isn't on media.
+ */
+export const findClickedMedia = (
+  target: HTMLElement,
+  { includeWrapped = false } = {},
+): { src: string | undefined } | null => {
+  const mediaElement =
+    target.closest<HTMLElement>('img, video, audio') ??
+    (includeWrapped ? target.querySelector<HTMLElement>('img, video, audio') : null);
+  const insideFileBlock = includeWrapped && !!target.closest('.bn-file-block-content-wrapper');
+
+  if (!mediaElement && !insideFileBlock) return null;
+  return { src: (mediaElement as HTMLMediaElement | null)?.src };
+};
+
 export const getParsedContent = (initialStringifiedBlocks: string | undefined) => {
   if (!initialStringifiedBlocks) return undefined;
   try {
@@ -57,43 +92,21 @@ export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<b
   }
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: schema-agnostic — custom block renderers pass narrower-schema editors
+type AnyBlockNoteEditor = BlockNoteEditor<any, any, any>;
+
 /**
  * Update a block without recording it in the undo/redo history.
  * Works in both collaborative (Yjs UndoManager) and non-collaborative (ProseMirror history) modes.
  * Uses BlockNote's `transact` so the outer transaction carries `addToHistory: false`.
  */
-type Editor = ReturnType<typeof BlockNoteEditor.create>;
-
-export const updateBlockWithoutHistory = (
-  editor: Editor,
-  blockId: Parameters<Editor['updateBlock']>[0],
-  update: Parameters<Editor['updateBlock']>[1],
+export const updateBlockWithoutHistory = <TEditor extends AnyBlockNoteEditor>(
+  editor: TEditor,
+  blockId: Parameters<TEditor['updateBlock']>[0],
+  update: Parameters<TEditor['updateBlock']>[1],
 ) => {
   editor.transact((tr: { setMeta: (key: string, value: boolean) => void }) => {
     tr.setMeta('addToHistory', false);
     editor.updateBlock(blockId, update);
   });
-};
-
-/**
- * Clear the Yjs UndoManager stacks (undo + redo) so programmatic seeding
- * doesn't pollute the user's undo history. No-op if not in collaborative mode.
- */
-export const clearYjsUndoManagerStacks = (editor: Editor) => {
-  try {
-    const yUndoExt = editor.extensions.get('yUndo');
-    if (!yUndoExt) return;
-
-    // The yUndo ProseMirror plugin stores the UndoManager in the plugin state
-    // Access it via: pluginKey.getState(editorState).undoManager
-    for (const plugin of editor.prosemirrorState.plugins) {
-      const state = plugin.getState(editor.prosemirrorState) as { undoManager?: { clear: () => void } } | undefined;
-      if (state?.undoManager?.clear) {
-        state.undoManager.clear();
-        return;
-      }
-    }
-  } catch {
-    // Silently fail — undo history pollution is non-critical
-  }
 };

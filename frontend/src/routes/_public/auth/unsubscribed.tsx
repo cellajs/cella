@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Unsubscribed as UnsubscribedPage } from '~/modules/auth/unsubscribed-page';
-import appTitle from '~/utils/app-title';
+import { appTitle } from '~/utils/app-title';
 
 /**
  * Confirmation page shown after unsubscribing from emails.

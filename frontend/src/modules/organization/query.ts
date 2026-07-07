@@ -15,15 +15,13 @@ import { appConfig } from 'shared';
 import { ApiError } from '~/lib/api';
 import { addMyMembershipCache, getApiIncludedMembership } from '~/modules/memberships/query-mutations';
 import type { EnrichedOrganization } from '~/modules/organization/types';
-import {
-  baseInfiniteQueryOptions,
-  createCacheFinder,
-  createEntityKeys,
-  invalidateIfLastMutation,
-  preserveIncluded,
-  registerEntityQueryKeys,
-} from '~/query/basic';
 import { cacheCreate, cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
+import { createEntityKeys } from '~/query/basic/create-query-keys';
+import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import { createCacheFinder } from '~/query/basic/find-in-list-cache';
+import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
+import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
+import { preserveIncluded } from '~/query/basic/preserve-included';
 import type { MutationData } from '~/query/types';
 
 type OrganizationFilters = Omit<GetOrganizationsData['query'], 'limit' | 'offset'>;
