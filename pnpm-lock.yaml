@@ -19,8 +19,8 @@ importers:
         specifier: ^2.5.2
         version: 2.5.2
       '@cellajs/cli':
-        specifier: ^0.0.4
-        version: 0.0.4(@shikijs/themes@4.3.1)(@types/node@25.9.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: ^0.0.5
+        version: 0.0.5(@shikijs/themes@4.3.1)(@types/node@25.9.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@commitlint/cli':
         specifier: ^21.2.0
         version: 21.2.0(@types/node@25.9.2)(conventional-commits-parser@6.4.0)(typescript@6.0.3)
@@ -367,7 +367,7 @@ importers:
         version: 2.0.33(@types/node@24.10.13)(supports-color@8.1.1)
       artillery-plugin-ensure:
         specifier: ^1.27.0
-        version: 1.27.0(supports-color@8.1.1)
+        version: 1.27.0
       tsx:
         specifier: ^4.23.0
         version: 4.23.0
@@ -2191,8 +2191,8 @@ packages:
       react-dom: ^18.0 || ^19.0 || >= 19.0.0-rc
       tailwindcss: ^4.1.12
 
-  '@cellajs/cli@0.0.4':
-    resolution: {integrity: sha512-vYR5qId+B7kQOUG1aYG9h/vQuVzLAJjYiOBeCNHHK446IY/ZaMkzyFI1K079duC/HHrrUJMYmFW/7HTEb3cVWQ==}
+  '@cellajs/cli@0.0.5':
+    resolution: {integrity: sha512-Q4ZyeVspmIUgx9y8EvslsssqrhAwkIAfQJApyR39l3DE8kR7nvP9b6/oR0oZqwEK19NyfP2ftU/ENdhLDyGGKw==}
     engines: {node: 24.x}
     hasBin: true
 
@@ -14632,7 +14632,7 @@ snapshots:
       - refractor
       - sugar-high
 
-  '@cellajs/cli@0.0.4(@shikijs/themes@4.3.1)(@types/node@25.9.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@cellajs/cli@0.0.5(@shikijs/themes@4.3.1)(@types/node@25.9.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@inquirer/core': 11.2.1(@types/node@25.9.2)
       '@inquirer/prompts': 8.5.2(@types/node@25.9.2)
@@ -19988,7 +19988,7 @@ snapshots:
 
   artillery-plugin-apdex@1.24.0: {}
 
-  artillery-plugin-ensure@1.27.0(supports-color@8.1.1):
+  artillery-plugin-ensure@1.27.0:
     dependencies:
       chalk: 2.4.2
       debug: 4.4.3(supports-color@8.1.1)
@@ -20079,7 +20079,7 @@ snapshots:
       '@upstash/redis': 1.38.0
       artillery-engine-playwright: 1.30.0(supports-color@8.1.1)
       artillery-plugin-apdex: 1.24.0
-      artillery-plugin-ensure: 1.27.0(supports-color@8.1.1)
+      artillery-plugin-ensure: 1.27.0
       artillery-plugin-expect: 2.27.0(supports-color@8.1.1)
       artillery-plugin-fake-data: 1.24.0
       artillery-plugin-metrics-by-endpoint: 1.27.0(supports-color@8.1.1)
