@@ -25,7 +25,7 @@
     "@types/pg-format": "^1.0.5",
     "artillery": "^2.0.33",
     "artillery-plugin-ensure": "^1.27.0",
-    "tsx": "^4.22.4",
+    "tsx": "^4.23.0",
     "typescript": "^6.0.3"
   }
 }

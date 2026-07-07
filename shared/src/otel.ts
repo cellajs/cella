@@ -122,7 +122,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   const sdk = new NodeSDK({
     resource,
     traceExporter,
-    logRecordProcessors: logExporter ? [new SimpleLogRecordProcessor(logExporter)] : [],
+    logRecordProcessors: logExporter ? [new SimpleLogRecordProcessor({ exporter: logExporter })] : [],
     // Metrics are owned by the explicit meterProvider above. Without this, NodeSDK
     // creates a second env-driven OTLP metrics reader that can block hot restarts.
     metricReaders: [],
@@ -169,7 +169,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     try {
       const verifyLogProvider = new LoggerProvider({
         resource,
-        processors: [new SimpleLogRecordProcessor(logExporter)],
+        processors: [new SimpleLogRecordProcessor({ exporter: logExporter })],
       });
       const logger = verifyLogProvider.getLogger(serviceName);
       logger.emit({

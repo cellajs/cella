@@ -60,18 +60,18 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.2",
-    "@cellajs/cli": "^0.0.3",
+    "@cellajs/cli": "^0.0.4",
     "@commitlint/cli": "^21.2.0",
     "@commitlint/config-conventional": "^21.2.0",
     "@evilmartians/lefthook": "^2.1.9",
-    "@typescript/native-preview": "7.0.0-dev.20260702.3",
+    "@typescript/native-preview": "7.0.0-dev.20260706.1",
     "cross-env": "^10.1.0",
     "knip": "^6.24.0",
     "rimraf": "^6.1.3",
     "semver": "^7.7.3",
-    "tsx": "^4.22.4",
+    "tsx": "^4.23.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   },
   "packageManager": "pnpm@11.8.0",
   "commitlint": {
