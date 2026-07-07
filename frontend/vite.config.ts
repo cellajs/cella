@@ -23,6 +23,7 @@ import { execSync } from 'node:child_process';
 import { sdkWatch } from './vite/sdk-watch';
 import { localesHMR } from './vite/locales-hmr';
 import { docsFrontmatter } from './vite/docs-frontmatter';
+import { docsEditor } from './vite/docs-editor';
 import { remarkLinkRepoPaths } from './vite/remark-link-repo-paths';
 
 // Repo docs (cella/*.md) start with an h1 for GitHub readers, but the docs page view
@@ -148,6 +149,9 @@ const viteConfig = {
     // Build-time frontmatter index of docs pages (virtual:docs-frontmatter), so the
     // docs sidebar/table metadata doesn't statically import the page bodies.
     docsFrontmatter(),
+    // Dev-only write-back endpoint so the pages table can edit frontmatter and
+    // reparent pages by rewriting/moving the md/mdx files (apply: 'serve').
+    docsEditor(),
     react(),
     babel({ presets: [reactCompilerPreset()], include: ['./src/**/*.{ts,tsx,js,jsx}'] }),
     tailwindcss(),

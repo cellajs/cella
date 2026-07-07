@@ -12,6 +12,8 @@ export interface TreeItem {
 export type TreeRow<T> = T & {
   _depth: number;
   _hasChildren: boolean;
+  /** Number of direct children. Stable across expand/collapse. */
+  _childCount: number;
   _isExpanded: boolean;
   /** True when this row is the last child of its parent (or last root). */
   _isLastChild: boolean;
@@ -103,7 +105,8 @@ export function buildTree<T>(items: T[], opts: BuildTreeOptions<T>): TreeRow<T>[
     for (let i = 0; i < children.length; i++) {
       const item = children[i];
       const id = getId(item);
-      const hasChildren = childrenMap.has(id);
+      const directChildren = childrenMap.get(id);
+      const hasChildren = directChildren !== undefined;
       const isToggled = toggledIds.has(id);
       const isExpanded = hasChildren && (defaultExpanded ? !isToggled : isToggled);
       const isLastChild = i === children.length - 1;
@@ -111,6 +114,7 @@ export function buildTree<T>(items: T[], opts: BuildTreeOptions<T>): TreeRow<T>[
         ...(item as object),
         _depth: depth,
         _hasChildren: hasChildren,
+        _childCount: directChildren?.length ?? 0,
         _isExpanded: isExpanded,
         _isLastChild: isLastChild,
         _parentIsLastChild: parentIsLastChild,

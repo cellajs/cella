@@ -15,6 +15,30 @@ This document describes the high-level architecture of the TypeScript template C
  * Focused on client-side rendering (CSR) and in future static site generation (SSG).
  * EU Data Sovereignty: Deploy on European-owned cloud infrastructure. 
 
+### Overview
+
+The full sync architecture combines normal request/response APIs, CDC-driven
+notifications, and a Yjs relay for collaborative fields:
+
+```
+Client        API server        Postgres DB        CDC worker        Yjs worker
+  | <--- HTTP ---> | <--- SQL ---> |                 |                 |
+  |                |               | -- WAL stream ->|                 |
+  |                | <- WS change -|                 |                 |
+  |                |               | <----- SQL -----|                 |
+  | <-- SSE ------ |               |                 |                 |
+  | <----------------------- Yjs WebSocket -------------------------> |
+  |                |               | <--- SQL + permissions + docs --> |
+```
+
+Request/response paths are still authoritative: the client uses HTTP to reach
+the API server, and the API server talks SQL to Postgres. The sync layer adds a
+CDC worker that reads the Postgres WAL and forwards changed entity notifications
+to the API server over WebSocket; the API then notifies clients over SSE so they
+can fetch fresh data. For collaborative editing and presence, the Yjs worker
+exchanges document updates with clients over a Yjs WebSocket connection,
+verifies permissions against Postgres, and persists merged document state there.
+
 | Backend    | Frontend    | Build    | Deploy    |
 |------------|-------------|----------|-----------|
 | [nodejs](https://nodejs.org) | [react](https://reactjs.org) | [pnpm](https://pnpm.io) | [pulumi](https://www.pulumi.com) |
