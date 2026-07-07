@@ -3,7 +3,7 @@ import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
 import { convertRowKeys, extractRowData } from '../utils';
 import { compactRowData } from '../utils/compact-row-data';
-import { createActivity } from './create-activity';
+import { createActivity } from '../services/create-activity';
 
 /**
  * Handle a DELETE message and create an activity with entity data.

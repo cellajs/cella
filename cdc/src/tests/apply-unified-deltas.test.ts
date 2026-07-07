@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { UnifiedDeltaPlan, BatchUnifiedDeltaPlan } from '../utils/compute-unified-deltas';
+import type { BatchUnifiedDeltaPlan } from '../utils/compute-unified-deltas';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import type { EntityTableMeta } from '../types';
@@ -38,87 +38,11 @@ vi.mock('../lib/db', () => {
 });
 
 // Import after mocks are set up
-const { applyUnifiedDeltas, applyBatchUnifiedDeltas } = await import('../utils/apply-unified-deltas');
+const { applyBatchUnifiedDeltas } = await import('../utils/apply-unified-deltas');
 
 beforeEach(() => {
   dbOps.length = 0;
   upsertReturnValue = {};
-});
-
-describe('applyUnifiedDeltas', () => {
-  it('returns undefined for empty plan', async () => {
-    const plan: UnifiedDeltaPlan = {
-      seqContextKey: null,
-      seqKey: null,
-      entityStamp: null,
-      deltasByContextKey: new Map(),
-    };
-
-    const result = await applyUnifiedDeltas(plan);
-    expect(result).toBeUndefined();
-    expect(dbOps).toHaveLength(0);
-  });
-
-  it('executes Phase 1 UPSERT with RETURNING for seqContextKey', async () => {
-    upsertReturnValue = { 's:task': 42, 'e:task': 10 };
-
-    const plan: UnifiedDeltaPlan = {
-      seqContextKey: 'proj-1',
-      seqKey: 's:task',
-      entityStamp: { tableName: 'tasks', entityId: 'task-1' },
-      deltasByContextKey: new Map([
-        ['proj-1', { 's:task': 1, 'e:task': 1 }],
-        ['org-1', { 's:task': 1, 'e:task': 1 }],
-      ]),
-    };
-
-    const result = await applyUnifiedDeltas(plan);
-
-    expect(result).toBe(42);
-    // Phase 1: 1 upsert (proj-1 with RETURNING)
-    // Phase 2: 1 upsert (org-1) + 1 execute (entity seq)
-    expect(dbOps.length).toBeGreaterThanOrEqual(2);
-  });
-
-  it('runs Phase 2 operations in parallel (org UPSERT + entity stamp)', async () => {
-    upsertReturnValue = { 's:task': 1 };
-
-    const plan: UnifiedDeltaPlan = {
-      seqContextKey: 'proj-1',
-      seqKey: 's:task',
-      entityStamp: { tableName: 'tasks', entityId: 'task-1' },
-      deltasByContextKey: new Map<string, Record<string, number>>([
-        ['proj-1', { 's:task': 1 }],
-        ['org-1', { 's:task': 1 }],
-        ['lbl-1', { 'e:task': 1 }],
-        ['lbl-2', { 'e:task': 1 }],
-      ]),
-    };
-
-    const result = await applyUnifiedDeltas(plan);
-    expect(result).toBe(1);
-
-    // Phase 1: 1 upsert (proj-1)
-    // Phase 2: 3 upserts (org-1, lbl-1, lbl-2) + 1 execute (entity seq) = 4
-    // Total: 5 DB ops
-    expect(dbOps.length).toBeGreaterThanOrEqual(4);
-  });
-
-  it('handles count-only plan (no seq stamp)', async () => {
-    const plan: UnifiedDeltaPlan = {
-      seqContextKey: null,
-      seqKey: null,
-      entityStamp: null,
-      deltasByContextKey: new Map([
-        ['org-1', { 'm:admin': 1, 'm:total': 1 }],
-      ]),
-    };
-
-    const result = await applyUnifiedDeltas(plan);
-    expect(result).toBeUndefined();
-    // Single upsert for membership counts
-    expect(dbOps.length).toBe(1);
-  });
 });
 
 describe('applyBatchUnifiedDeltas', () => {

@@ -5,6 +5,7 @@ import { getEntityTable } from '#/tables';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
+import { isSoftDeleteTransition } from './is-soft-delete-transition';
 
 type EmbeddingCleanupAction = Extract<ActivityAction, 'update' | 'delete'>;
 
@@ -50,11 +51,6 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
 
 /** Pre-resolved embedding lookups, keyed by embedded entity type. */
 const embeddingsByEntity = resolveEmbeddings();
-
-/** True when an update event flips a row from live to soft-deleted (deletedAt newly set). */
-function isSoftDeleteTransition(rowData: CdcRowData, oldRowData: CdcRowData | null | undefined): boolean {
-  return oldRowData != null && oldRowData.deletedAt == null && rowData.deletedAt != null;
-}
 
 /**
  * Strip deleted embedded-entity IDs from host-entity array columns.

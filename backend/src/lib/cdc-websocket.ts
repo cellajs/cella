@@ -14,6 +14,10 @@ import { log } from '#/utils/logger';
  * Zod schema for CDC WebSocket message payload.
  * Validates the { activity, entity, cacheToken, _trace } structure sent by CDC Worker.
  * Reuses activitySchema with stricter typing for fields that must be present in CDC context.
+ *
+ * This is the *validating* end of the CDC → API-server wire contract. The CDC worker
+ * *produces* the same shape as `CdcOutboundMessage` (see cdc/src/services/activity-service.ts).
+ * Keep the two in sync — a field added there needs a matching field here.
  */
 const cdcMessageSchema = z.object({
   activity: z.object({
@@ -48,6 +52,9 @@ const cdcMessageSchema = z.object({
     })
     .optional(),
 });
+
+/** The validated CDC → API-server message shape. Counterpart of the CDC worker's `CdcOutboundMessage`. */
+export type CdcMessage = z.infer<typeof cdcMessageSchema>;
 
 /** Idle timeout in ms - close connection if no message received within this time */
 const IDLE_TIMEOUT_MS = 90_000;

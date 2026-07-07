@@ -2,26 +2,11 @@ import { getTableName } from 'drizzle-orm';
 import { appConfig, hierarchy, isProductEntity } from 'shared';
 import type { ActivityAction } from 'shared';
 import type { PendingEvent, TableMeta } from '../types';
-import type { ActivityWithoutId, ParseMessageResult } from '../pipeline/parse-message';
+import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData } from '../types';
 import { getCountDeltas } from './update-counts';
 
 // ── Types ────────────────────────────────────────────────────────────────────
-
-/**
- * Plan for a single CDC event: all counter deltas merged by contextKey,
- * plus optional seq stamp metadata.
- */
-export interface UnifiedDeltaPlan {
-  /** Context key that needs RETURNING (parent context for seq). Null if no seq stamp needed. */
-  seqContextKey: string | null;
-  /** Seq counter key, e.g. 's:task'. Null if no seq stamp. */
-  seqKey: string | null;
-  /** Entity row to stamp with the new seq value. Null if no seq stamp. */
-  entityStamp: { tableName: string; entityId: string } | null;
-  /** All deltas grouped by contextKey — seq and count deltas merged per row. */
-  deltasByContextKey: Map<string, Record<string, number>>;
-}
 
 /**
  * Plan for a batch of CDC events: seq groups that need RETURNING,
@@ -80,47 +65,6 @@ function mergeDelta(map: Map<string, Record<string, number>>, contextKey: string
 /** Check if this event should get a seq stamp (product entity create/update). */
 function isStampable(tableMeta: TableMeta, action: ActivityAction): boolean {
   return tableMeta.kind === 'entity' && isProductEntity(tableMeta.type) && (action === 'create' || action === 'update');
-}
-
-// ── Single event ─────────────────────────────────────────────────────────────
-
-/**
- * Compute a unified delta plan for a single CDC event.
- * Merges seq deltas and count deltas by contextKey so each row is UPSERTed once.
- */
-export function computeUnifiedDeltas(result: ParseMessageResult): UnifiedDeltaPlan {
-  const { tableMeta, activity, rowData, oldRowData } = result;
-  const { action } = activity;
-  const deltasByContextKey = new Map<string, Record<string, number>>();
-  let seqContextKey: string | null = null;
-  let seqKey: string | null = null;
-  let entityStamp: UnifiedDeltaPlan['entityStamp'] = null;
-
-  // Seq deltas (product entity create/update only; skipped when no context is resolvable)
-  const stampCtxKey = isStampable(tableMeta, action) ? resolveContextKey(tableMeta.type, rowData, activity) : null;
-  if (isStampable(tableMeta, action) && stampCtxKey) {
-    const entityType = tableMeta.type;
-    const ctxKey = stampCtxKey;
-    seqKey = `s:${entityType}`;
-    seqContextKey = ctxKey;
-    entityStamp = { tableName: getTableName(tableMeta.table), entityId: rowData.id };
-
-    // Parent-context seq delta
-    mergeDelta(deltasByContextKey, ctxKey, { [seqKey]: 1 });
-
-    // Org-level seq signal (skip if ctx === org or no org)
-    if (activity.organizationId && ctxKey !== activity.organizationId) {
-      mergeDelta(deltasByContextKey, activity.organizationId, { [seqKey]: 1 });
-    }
-  }
-
-  // Count deltas (entity counts, membership counts, embedding counts)
-  const countDeltas = getCountDeltas(tableMeta, activity, rowData, oldRowData);
-  for (const { contextKey, deltas } of countDeltas) {
-    mergeDelta(deltasByContextKey, contextKey, deltas);
-  }
-
-  return { seqContextKey, seqKey, entityStamp, deltasByContextKey };
 }
 
 // ── Batch ────────────────────────────────────────────────────────────────────

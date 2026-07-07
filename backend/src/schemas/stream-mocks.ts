@@ -17,6 +17,7 @@ import { mockStxBase } from './sync-transaction-mocks';
  */
 export const mockStreamNotification = (key = 'stream-notification:default') =>
   withFakerSeed(key, () => ({
+    kind: 'entity' as const,
     action: faker.helpers.arrayElement(['create', 'update', 'delete'] as const),
     entityType: 'attachment' as const,
     resourceType: null,

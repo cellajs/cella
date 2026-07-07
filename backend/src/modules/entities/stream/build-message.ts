@@ -1,6 +1,22 @@
 import { appConfig, type ContextEntityType, hierarchy, isProductEntity } from 'shared';
 import { type ActivityEvent, getEventData } from '#/lib/activity-bus';
 import type { StreamNotification } from '#/schemas';
+import type { AppStreamEvent, AppStreamMembershipEvent } from './types';
+
+/**
+ * The app stream carries exactly two concerns: product-entity sync (seq/cacheToken
+ * range fetch on the client) and membership changes (query invalidation). This is the
+ * single source of the `kind` discriminant — used both to shape the wire notification
+ * and to branch dispatch/handling on either end.
+ */
+export function appNotificationKind(event: Pick<ActivityEvent, 'entityType'>): 'entity' | 'membership' {
+  return isProductEntity(event.entityType) ? 'entity' : 'membership';
+}
+
+/** Type-guard form of {@link appNotificationKind}: narrows an app-stream event to the membership member. */
+export function isMembershipEvent(event: AppStreamEvent): event is AppStreamMembershipEvent {
+  return appNotificationKind(event) === 'membership';
+}
 
 /**
  * Build stream notification from activity event.
@@ -54,6 +70,9 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   }
 
   return {
+    // Discriminant: product entities go through the seq/cacheToken sync path;
+    // everything else on this stream is a membership change (query invalidation).
+    kind: appNotificationKind(event),
     action: event.action,
     entityType: isProduct ? entityType : null,
     resourceType: event.resourceType,

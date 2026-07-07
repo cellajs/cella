@@ -21,87 +21,81 @@ import type { AppStreamNotification } from './types';
  * to trigger refetch, or use cacheToken for efficient fetches.
  */
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
-  const {
-    subjectId,
-    action,
-    resourceType,
-    entityType,
-    stx,
-    organizationId,
-    tenantId,
-    contextType,
-    seq,
-    cacheToken,
-    _trace,
-  } = notification;
+  const { subjectId, action, stx, organizationId, tenantId, contextType, seq, cacheToken, _trace } = notification;
 
-  withSpanSync(syncSpanNames.messageProcess, { entityType, action, entityId: subjectId, _trace }, () => {
-    // Store cache token if present (for product entities)
-    if (cacheToken && entityType && subjectId) {
-      cacheOps.storeEntityCacheToken(entityType, subjectId, cacheToken);
-    }
-
-    // Store tenantId in sync store whenever we see it in a notification
-    if (organizationId && tenantId) {
-      useSyncStore.getState().setOrgTenantId(organizationId, tenantId);
-    }
-
-    // Membership events (resourceType = 'membership')
-    if (resourceType === 'membership') {
-      handleMembershipNotification(action, organizationId, contextType);
-      return;
-    }
-
-    if (!isProductEntity(entityType))
-      return console.error('Unknown entityType in app stream notification:', entityType);
-
-    // Create/update batch: range fetch also handles soft-delete tombstones.
-    if (notification.batchUntilSeq && seq != null && organizationId && hasEntityQueryKeys(entityType)) {
-      const keys = getEntityQueryKeys(entityType);
-      const seqCursor = `${seq},${notification.batchUntilSeq}`;
-
-      cacheOps
-        .fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys, cacheToken ?? undefined)
-        .then((success) => {
-          if (success && notification.batchUntilSeq) {
-            // Store project-scoped seq when contextId (projectId) is available, else org-scoped
-            if (notification.contextId) {
-              useSyncStore
-                .getState()
-                .setContextSeq(organizationId, notification.contextId, entityType, notification.batchUntilSeq);
-            } else {
-              useSyncStore.getState().setOrgSeq(organizationId, entityType, notification.batchUntilSeq);
-            }
-          }
-          // Propagate after fresh source data is in cache
-          if (notification.propagation) propagateEmbeddings(notification.propagation);
-        })
-        .catch((err) => console.warn('[AppStream] Batch fetch failed:', err));
-
-      // Unseen count: derive from contiguous seq range (single-context constraint)
-      if (action === 'create') {
-        adjustUnseenCount(entityType, notification.contextId ?? null, notification.batchUntilSeq - seq + 1);
+  withSpanSync(
+    syncSpanNames.messageProcess,
+    { entityType: notification.entityType, action, entityId: subjectId, _trace },
+    () => {
+      // Store cache token if present (for product entities)
+      if (cacheToken && notification.entityType && subjectId) {
+        cacheOps.storeEntityCacheToken(notification.entityType, subjectId, cacheToken);
       }
-      return;
-    }
 
-    const keys = getEntityQueryKeys(entityType);
-    if (!organizationId || !subjectId)
-      return console.error('Missing organizationId/subjectId for product entity event:', entityType, subjectId);
+      // Store tenantId in sync store whenever we see it in a notification
+      if (organizationId && tenantId) {
+        useSyncStore.getState().setOrgTenantId(organizationId, tenantId);
+      }
 
-    handleEntityNotification(
-      entityType,
-      subjectId,
-      action,
-      stx,
-      organizationId,
-      tenantId,
-      seq ?? null,
-      notification.contextId ?? null,
-      keys,
-      notification.propagation,
-    );
-  });
+      // Membership changes use targeted query invalidation, not the seq/cacheToken sync path.
+      if (notification.kind === 'membership') {
+        handleMembershipNotification(action, organizationId, contextType);
+        return;
+      }
+
+      // kind === 'entity' — entityType is narrowed to a product entity type (non-null).
+      const entityType = notification.entityType;
+      if (!isProductEntity(entityType))
+        return console.error('Unknown entityType in app stream notification:', entityType);
+
+      // Create/update batch: range fetch also handles soft-delete tombstones.
+      if (notification.batchUntilSeq && seq != null && organizationId && hasEntityQueryKeys(entityType)) {
+        const keys = getEntityQueryKeys(entityType);
+        const seqCursor = `${seq},${notification.batchUntilSeq}`;
+
+        cacheOps
+          .fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys, cacheToken ?? undefined)
+          .then((success) => {
+            if (success && notification.batchUntilSeq) {
+              // Store project-scoped seq when contextId (projectId) is available, else org-scoped
+              if (notification.contextId) {
+                useSyncStore
+                  .getState()
+                  .setContextSeq(organizationId, notification.contextId, entityType, notification.batchUntilSeq);
+              } else {
+                useSyncStore.getState().setOrgSeq(organizationId, entityType, notification.batchUntilSeq);
+              }
+            }
+            // Propagate after fresh source data is in cache
+            if (notification.propagation) propagateEmbeddings(notification.propagation);
+          })
+          .catch((err) => console.warn('[AppStream] Batch fetch failed:', err));
+
+        // Unseen count: derive from contiguous seq range (single-context constraint)
+        if (action === 'create') {
+          adjustUnseenCount(entityType, notification.contextId ?? null, notification.batchUntilSeq - seq + 1);
+        }
+        return;
+      }
+
+      const keys = getEntityQueryKeys(entityType);
+      if (!organizationId || !subjectId)
+        return console.error('Missing organizationId/subjectId for product entity event:', entityType, subjectId);
+
+      handleEntityNotification(
+        entityType,
+        subjectId,
+        action,
+        stx,
+        organizationId,
+        tenantId,
+        seq ?? null,
+        notification.contextId ?? null,
+        keys,
+        notification.propagation,
+      );
+    },
+  );
 }
 
 /**

@@ -5,6 +5,7 @@ import { checkPermission } from '#/permissions';
 import { buildSubject } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
 import type { CursoredSubscriber } from '../stream';
+import { isMembershipEvent } from '../stream/build-message';
 import { createStreamDispatcher } from '../stream/dispatcher';
 import type { AppStreamEvent } from '../stream/types';
 
@@ -31,7 +32,7 @@ export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, A
   getChannel: (event) => `org:${event.organizationId}`,
   shouldReceive: (subscriber, event) => {
     // For membership events, check if user is the subject
-    if (event.resourceType === 'membership') {
+    if (isMembershipEvent(event)) {
       const membership = getEventData(event, 'membership');
       return membership?.userId === subscriber.userId;
     }

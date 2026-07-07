@@ -1,7 +1,9 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import { isContextEntity, appConfig } from 'shared';
+import type { ContextEntityIdColumns } from 'shared';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
+import { contextIdColumnKeys } from '../utils/context-columns';
 import { log } from '../lib/pino';
 import { RESOURCE_LIMITS } from '../constants';
 
@@ -200,9 +202,8 @@ export class TransactionBuffer {
     if (activity.entityType && isContextEntity(activity.entityType)) return false;
 
     // Check all context entity ID columns on this activity
-    for (const contextType of appConfig.contextEntityTypes) {
-      const idColumn = appConfig.entityIdColumnKeys[contextType];
-      const value = (activity as Record<string, unknown>)[idColumn];
+    for (const idColumn of contextIdColumnKeys) {
+      const value = (activity as Partial<ContextEntityIdColumns>)[idColumn];
       if (typeof value === 'string' && deletedContextIds.has(value)) {
         return true;
       }
@@ -286,17 +287,4 @@ export class TransactionBuffer {
       this.timeoutHandle = null;
     }
   }
-}
-
-/**
- * Extract the most specific context ID from an activity for batch grouping.
- * Checks context entity ID columns (e.g., projectId, organizationId).
- */
-export function extractContextId(activity: ParseMessageResult['activity']): string | null {
-  for (const contextType of appConfig.contextEntityTypes) {
-    const idColumn = appConfig.entityIdColumnKeys[contextType];
-    const value = (activity as Record<string, unknown>)[idColumn];
-    if (typeof value === 'string') return value;
-  }
-  return null;
 }

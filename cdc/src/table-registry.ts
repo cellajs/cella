@@ -27,23 +27,25 @@ function buildTableRegistry(): Map<string, TableMeta> {
   // Register entity tables
   for (const [type, table] of typedEntries(entityTables)) {
     const tableName = getTableName(table);
-    registry.set(tableName, {
+    const meta: EntityTableMeta = {
       kind: 'entity',
       table,
       type,
       columnNameMap: buildColumnNameMap(Object.keys(getColumns(table))),
-    } as EntityTableMeta);
+    };
+    registry.set(tableName, meta);
   }
 
   // Register resource tables
   for (const [type, table] of typedEntries(resourceTables)) {
     const tableName = getTableName(table);
-    registry.set(tableName, {
+    const meta: ResourceTableMeta = {
       kind: 'resource',
       table,
       type,
       columnNameMap: buildColumnNameMap(Object.keys(getColumns(table))),
-    } as ResourceTableMeta);
+    };
+    registry.set(tableName, meta);
   }
 
   return registry;
