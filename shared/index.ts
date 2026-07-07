@@ -27,6 +27,14 @@ export {
   createRoleRegistry,
 } from './src/config-builder/entity-hierarchy';
 
+// Row-to-context attribution (shared rule for CDC seq/counters, notifications, recalculation)
+export type { AncestorSource, ResolvedAncestor } from './src/config-builder/resolve-row-context';
+export {
+  possibleHomeContexts,
+  resolveDeepestAncestorId,
+  resolveNonNullAncestors,
+} from './src/config-builder/resolve-row-context';
+
 // Config builder types
 export type { AppServiceEndpointConfig, RequestLimitsConfig, RequiredConfig, S3Config, S3ConfigInput } from './src/config-builder/types';
 
@@ -47,6 +55,7 @@ export type {
   HostEntityType,
   Language,
   MenuSection,
+  NullableAncestorType,
   ProductEntityType,
   SeenTrackedEntityType,
   RelatableContextEntityType,

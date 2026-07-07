@@ -7,7 +7,9 @@ import { compactRowData } from '../utils/compact-row-data';
 import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
 import { createActivity } from '../services/create-activity';
 
-/** Columns that hold embedded entity ID arrays (e.g. task.labels) */
+/** 
+ * Columns that hold embedded entity ID arrays (e.g. task.labels).
+ */
 const embeddingColumns: Set<string> = new Set(appConfig.entityEmbeddings.map((e) => e.hostColumn));
 
 /**

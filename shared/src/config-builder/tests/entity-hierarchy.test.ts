@@ -257,4 +257,49 @@ describe('EntityHierarchyBuilder', () => {
       ).toThrow('host chains are not supported');
     });
   });
+
+  describe('nullable ancestors (variable-depth rows)', () => {
+    const deep = () =>
+      createEntityHierarchy(roles)
+        .user()
+        .context('organization', { parent: null, roles: roles.all })
+        .context('course', { parent: 'organization', roles: roles.all })
+        .context('courseSection', { parent: 'course', roles: roles.all })
+        .context('project', { parent: 'courseSection', roles: roles.all });
+
+    it('exposes declared nullable ancestors via accessor and product view', () => {
+      const h = deep().product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection'] }).build();
+      expect(h.getNullableAncestors('item')).toEqual(['project', 'courseSection']);
+      expect(h.getProductConfig('item')?.nullableAncestors).toEqual(['project', 'courseSection']);
+    });
+
+    it('returns empty array when none declared', () => {
+      const h = deep().product('item', { parent: 'project' }).build();
+      expect(h.getNullableAncestors('item')).toEqual([]);
+      expect(h.getNullableAncestors('course')).toEqual([]);
+    });
+
+    it('throws when a nullable ancestor is not in the ancestor chain', () => {
+      expect(() =>
+        createEntityHierarchy(roles)
+          .user()
+          .context('organization', { parent: null, roles: roles.all })
+          .context('workspace', { parent: 'organization', roles: roles.all })
+          .context('project', { parent: 'organization', roles: roles.all })
+          .product('task', { parent: 'project', nullableAncestors: ['workspace'] }),
+      ).toThrow('is not an ancestor');
+    });
+
+    it('throws when the chain root is declared nullable', () => {
+      expect(() => deep().product('item', { parent: 'project', nullableAncestors: ['organization'] })).toThrow(
+        'chain root and must stay non-null',
+      );
+    });
+
+    it('throws on duplicate nullable ancestors', () => {
+      expect(() =>
+        deep().product('item', { parent: 'project', nullableAncestors: ['project', 'project'] }),
+      ).toThrow('duplicate nullableAncestor');
+    });
+  });
 });

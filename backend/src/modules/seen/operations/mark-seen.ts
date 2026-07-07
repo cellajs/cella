@@ -1,7 +1,7 @@
 import { and, eq, getColumns, gt, inArray, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { SeenTrackedEntityType } from 'shared';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig, hierarchy, possibleHomeContexts } from 'shared';
 import { generateId } from 'shared/entity-id';
 import type { AuthContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
@@ -26,8 +26,8 @@ export function isTrackedEntityType(entityType: string): entityType is SeenTrack
   return trackedEntityTypeSet.has(entityType);
 }
 
-/** Context types that group unseen counts (derived from hierarchy parents of tracked types) */
-export const groupingContextTypes = new Set(trackedEntityTypes.map((t) => hierarchy.getParent(t)).filter(Boolean));
+/** Context types that group unseen counts: every context a tracked row can have as its effective home */
+export const groupingContextTypes = new Set(trackedEntityTypes.flatMap((t) => possibleHomeContexts(hierarchy, t)));
 
 export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityType: string) {
   const user = ctx.var.user;
@@ -50,11 +50,16 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
   const orgTable = entityTable as OrgScopedEntityTable;
   const columns = getColumns(entityTable);
 
-  // Derive context ID column from hierarchy parent (e.g., task → project → 'projectId')
-  const parentType = hierarchy.getParent(entityType);
-  const contextIdColumnKey = parentType ? appConfig.entityIdColumnKeys[parentType] : 'organizationId';
-  const contextIdColumn =
-    (columns as Record<string, typeof orgTable.organizationId>)[contextIdColumnKey] ?? orgTable.organizationId;
+  // Derive the row's home context id: deepest non-null ancestor (e.g. task → projectId; a
+  // variable-depth row with a null parent column falls through to the next ancestor). Must
+  // match the notification contextId (build-message) or unseen badges land under the wrong key.
+  const ancestorColumns = hierarchy
+    .getOrderedAncestors(entityType)
+    .map((ancestor) => (columns as Record<string, PgColumn | undefined>)[appConfig.entityIdColumnKeys[ancestor]])
+    .filter((column): column is PgColumn => Boolean(column));
+  const contextIdColumn = ancestorColumns.length
+    ? sql<string>`COALESCE(${sql.join(ancestorColumns, sql`, `)})`
+    : orgTable.organizationId;
 
   // Filter to only entities that exist, belong to this org, and are within 90-day window
   const windowCutoff = new Date(Date.now() - seenWindowMs).toISOString();

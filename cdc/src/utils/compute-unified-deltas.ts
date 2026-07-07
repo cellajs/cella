@@ -1,10 +1,10 @@
 import { getTableName } from 'drizzle-orm';
-import { appConfig, hierarchy, isProductEntity } from 'shared';
-import type { ActivityAction } from 'shared';
+import { hierarchy, resolveDeepestAncestorId } from 'shared';
+import type { ActivityAction, AncestorSource } from 'shared';
 import type { PendingEvent, TableMeta } from '../types';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData } from '../types';
-import { getCountDeltas } from './update-counts';
+import { type CountsHierarchy, getCountDeltas } from './update-counts';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,19 +35,21 @@ export interface SeqGroup {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Resolve the context key for a product entity from its row data.
- * Uses hierarchy to find the parent context (e.g., project) or falls back to org.
- * Returns null when neither is present (malformed row) — callers skip seq deltas.
+ * Resolve the context key for a product entity from its row data: the row's deepest non-null
+ * ancestor (variable-depth rows scope to their effective home, e.g. a course-stream item with
+ * `projectId = null` scopes to its course). Without nullable ancestors this is the declared
+ * parent — identical to the previous parent-else-org rule. Falls back to the activity's org,
+ * then to `public:{type}` when the row has no context at all.
  */
-export function resolveContextKey(entityType: string, rowData: CdcRowData, activity: ActivityWithoutId): string | null {
-  const parentType = hierarchy.getParent(entityType);
-  if (parentType) {
-    const parentIdKey = appConfig.entityIdColumnKeys[parentType];
-    const parentId = rowData[parentIdKey];
-    if (typeof parentId === 'string') return parentId;
-  }
-
-  return activity.organizationId ?? null;
+export function resolveContextKey(
+  entityType: string,
+  rowData: CdcRowData,
+  activity: ActivityWithoutId,
+  h: AncestorSource = hierarchy,
+): string {
+  const deepest = resolveDeepestAncestorId(h, entityType, rowData);
+  if (deepest) return deepest;
+  return activity.organizationId ?? `public:${entityType}`;
 }
 
 /** Merge deltas into an existing map entry, summing values for matching keys. */
@@ -63,8 +65,8 @@ function mergeDelta(map: Map<string, Record<string, number>>, contextKey: string
 }
 
 /** Check if this event should get a seq stamp (product entity create/update). */
-function isStampable(tableMeta: TableMeta, action: ActivityAction): boolean {
-  return tableMeta.kind === 'entity' && isProductEntity(tableMeta.type) && (action === 'create' || action === 'update');
+function isStampable(tableMeta: TableMeta, action: ActivityAction, h: CountsHierarchy): boolean {
+  return tableMeta.kind === 'entity' && h.isProduct(tableMeta.type) && (action === 'create' || action === 'update');
 }
 
 // ── Batch ────────────────────────────────────────────────────────────────────
@@ -73,7 +75,7 @@ function isStampable(tableMeta: TableMeta, action: ActivityAction): boolean {
  * Compute a unified delta plan for a batch of CDC events.
  * Reserves seq ranges per (contextKey, entityType), accumulates all count deltas.
  */
-export function computeBatchUnifiedDeltas(events: PendingEvent[]): BatchUnifiedDeltaPlan {
+export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHierarchy = hierarchy): BatchUnifiedDeltaPlan {
   const countDeltasByContextKey = new Map<string, Record<string, number>>();
   const seqGroupMap = new Map<string, SeqGroup>();
   const entityStamps: BatchUnifiedDeltaPlan['entityStamps'] = [];
@@ -82,11 +84,10 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[]): BatchUnifiedD
     const { tableMeta, activity, rowData } = event.result;
     const { action } = activity;
 
-    // Seq grouping (product entity create/update only; skipped when no context is resolvable)
-    const groupCtxKey = isStampable(tableMeta, action) ? resolveContextKey(tableMeta.type, rowData, activity) : null;
-    if (isStampable(tableMeta, action) && groupCtxKey) {
+    // Seq grouping (product entity create/update only)
+    if (isStampable(tableMeta, action, h)) {
       const entityType = tableMeta.type;
-      const ctxKey = groupCtxKey;
+      const ctxKey = resolveContextKey(entityType, rowData, activity, h);
       const groupKey = `${ctxKey}\0${entityType}`;
 
       const existing = seqGroupMap.get(groupKey);
@@ -109,7 +110,7 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[]): BatchUnifiedD
     }
 
     // Count deltas
-    const countDeltas = getCountDeltas(tableMeta, activity, rowData, event.result.oldRowData);
+    const countDeltas = getCountDeltas(tableMeta, activity, rowData, event.result.oldRowData, h);
     for (const { contextKey, deltas } of countDeltas) {
       mergeDelta(countDeltasByContextKey, contextKey, deltas);
     }

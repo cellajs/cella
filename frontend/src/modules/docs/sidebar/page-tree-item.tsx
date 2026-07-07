@@ -97,7 +97,9 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
         {hasChildren && (
           <CollapsibleContent className="overflow-hidden data-closed:animate-collapsible-up data-open:animate-collapsible-down">
             {isRoot ? (
-              <div className="flex flex-col gap-1 py-1">
+              // A <ul> so the nested parent-tier rows (each a SidebarMenuItem <li>)
+              // aren't direct <li> children of this row's <li> (invalid HTML).
+              <ul className="flex list-none flex-col gap-1 py-1">
                 {children.map((child) => (
                   <PageBranch
                     key={child.page.id}
@@ -109,7 +111,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
                     onClose={onClose}
                   />
                 ))}
-              </div>
+              </ul>
             ) : (
               <div className="relative flex flex-col px-0 py-0.5">
                 <ActiveIndicator activeIndex={activeChildIndex} layoutId={layoutId} isMobile={isMobile} />

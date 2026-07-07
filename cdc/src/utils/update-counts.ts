@@ -1,9 +1,9 @@
-import { appConfig, hierarchy } from 'shared';
-import type { ActivityAction } from 'shared';
+import { appConfig, hierarchy, resolveNonNullAncestors } from 'shared';
+import type { ActivityAction, AncestorSource, HostRelation } from 'shared';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
 import type { CdcRowData } from '../types';
-import { isSoftDeleteTransition } from './is-soft-delete-transition';
+import { isRestoreTransition, isSoftDeleteTransition } from './is-soft-delete-transition';
 import { log } from '../lib/pino';
 
 export interface CountDelta {
@@ -12,6 +12,12 @@ export interface CountDelta {
   /** Key-value deltas: e.g. { 'm:admin': 1, 'm:total': 1 } or { 'e:attachment': -1 } */
   deltas: Record<string, number>;
 }
+
+/** Hierarchy surface the counter machinery needs — injectable for synthetic-hierarchy tests. */
+export type CountsHierarchy = AncestorSource & {
+  isProduct(entityType: string): boolean;
+  getHostRelations(): readonly HostRelation[];
+};
 
 /**
  * Determine count deltas from a CDC event.
@@ -30,14 +36,18 @@ export interface CountDelta {
  *   - update rejectedAt null→non-null → -1 pending
  *
  * Entity counts (e: prefix):
- *   - entity create → +1 on org AND parent context (e.g., project)
- *   - entity delete → -1 on org AND parent context
+ *   - entity create → +1 on org AND every non-null ancestor context (full attribution:
+ *     intermediate levels get counters so members at any depth can screen catchup changes)
+ *   - entity delete → -1 on the same set
+ *   - entity update with changed ancestor ids (reparent / re-attach at another depth) →
+ *     -1 on ancestors left, +1 on ancestors gained
  */
 export function getCountDeltas(
   tableMeta: TableMeta,
   activity: ActivityWithoutId,
   newRow: CdcRowData,
   oldRow: CdcRowData | null,
+  h: CountsHierarchy = hierarchy,
 ): CountDelta[] {
   const { action, organizationId } = activity;
 
@@ -55,10 +65,15 @@ export function getCountDeltas(
     return deltas;
   }
 
-  // Entities: track entity type counts on org + parent context
+  // Entities: track entity type counts on org + non-null ancestor contexts.
+  // Soft-delete/restore transitions count as delete/create (live rows only, like recalculation).
   if (tableMeta.kind === 'entity' && organizationId) {
-    const countAction = isSoftDeleteTransition(newRow, oldRow) ? 'delete' : action;
-    const deltas = getEntityDeltas(countAction, organizationId, tableMeta.type, newRow, oldRow);
+    const countAction = isSoftDeleteTransition(newRow, oldRow)
+      ? 'delete'
+      : isRestoreTransition(newRow, oldRow)
+        ? 'create'
+        : action;
+    const deltas = getEntityDeltas(countAction, organizationId, tableMeta.type, newRow, oldRow, h);
 
     // Embedding counters: track e:<hostEntity> counts per embedded entity ID
     for (const embedding of appConfig.entityEmbeddings) {
@@ -86,6 +101,31 @@ export function getCountDeltas(
         const removed = oldIds.filter((id) => !newIds.includes(id));
         for (const id of added) deltas.push({ contextKey: id, deltas: { [counterKey]: 1 } });
         for (const id of removed) deltas.push({ contextKey: id, deltas: { [counterKey]: -1 } });
+      }
+    }
+
+    // Host-relation counters: e:<hostedType> per host row (hierarchy `host:`, e.g. e:attachment
+    // per owning task). Live rows only, mirroring recalculation phase 4c — soft-delete/restore
+    // transitions arrive here remapped to delete/create via countAction.
+    for (const relation of h.getHostRelations()) {
+      if (relation.hostedType !== tableMeta.type) continue;
+      const counterKey = `e:${relation.hostedType}`;
+      const col = relation.hostIdColumn;
+
+      if (countAction === 'create') {
+        const hostId = getStringValue(newRow, col);
+        if (hostId) deltas.push({ contextKey: hostId, deltas: { [counterKey]: 1 } });
+      } else if (countAction === 'delete') {
+        const hostId = getStringValue(oldRow ?? newRow, col);
+        if (hostId) deltas.push({ contextKey: hostId, deltas: { [counterKey]: -1 } });
+      } else if (countAction === 'update' && oldRow && newRow.deletedAt == null && oldRow.deletedAt == null) {
+        // Re-host: -1 on the old host, +1 on the new one (live→live only)
+        const oldHostId = getStringValue(oldRow, col);
+        const newHostId = getStringValue(newRow, col);
+        if (oldHostId !== newHostId) {
+          if (oldHostId) deltas.push({ contextKey: oldHostId, deltas: { [counterKey]: -1 } });
+          if (newHostId) deltas.push({ contextKey: newHostId, deltas: { [counterKey]: 1 } });
+        }
       }
     }
 
@@ -184,7 +224,11 @@ function getInactiveMembershipDelta(
 }
 
 /**
- * Get entity count deltas based on create/delete action. Also emits deltas for parent context if applicable (e.g., project for a task).
+ * Get entity count deltas. Full attribution: a row counts on its organization and on every
+ * non-null ancestor context (course AND section AND project, not just the declared parent),
+ * so members at any level can screen catchup changes against their own context's counters.
+ * Updates re-credit counters when ancestor ids changed (reparent / re-attach at another depth);
+ * soft-delete and restore transitions are remapped to delete/create by the caller.
  */
 function getEntityDeltas(
   action: ActivityAction,
@@ -192,30 +236,53 @@ function getEntityDeltas(
   entityType: string,
   newRow: CdcRowData,
   oldRow: CdcRowData | null,
+  h: AncestorSource,
 ): CountDelta[] {
-  // Updates don't change counts
-  if (action !== 'create' && action !== 'delete') return [];
-
   // Assert required fields are present
   if (!newRow.id) {
     log.warn(`getEntityDeltas: missing "id" for ${entityType}`, { action });
     return [];
   }
 
-  const value = action === 'create' ? 1 : -1;
-  const deltas: CountDelta[] = [{ contextKey: organizationId, deltas: { [`e:${entityType}`]: value } }];
+  const counterKey = `e:${entityType}`;
 
-  // Also emit delta for parent context (e.g., task -> project)
-  const parentType = hierarchy.getParent(entityType);
-  if (parentType && parentType !== 'organization') {
-    const parentIdColumn = appConfig.entityIdColumnKeys[parentType];
+  if (action === 'create' || action === 'delete') {
+    const value = action === 'create' ? 1 : -1;
     const row = action === 'delete' ? (oldRow ?? newRow) : newRow;
-    const parentId = getStringValue(row, parentIdColumn);
-    if (!parentId) log.warn(`getEntityDeltas: missing "${parentIdColumn}" for ${entityType}`, { id: row.id });
-    if (parentId) {
-      deltas.push({ contextKey: parentId, deltas: { [`e:${entityType}`]: value } });
+    const deltas: CountDelta[] = [{ contextKey: organizationId, deltas: { [counterKey]: value } }];
+    for (const ancestor of resolveNonNullAncestors(h, entityType, row)) {
+      if (ancestor.id === organizationId) continue; // org already counted above
+      deltas.push({ contextKey: ancestor.id, deltas: { [counterKey]: value } });
     }
+    warnMissingAncestors(h, entityType, row);
+    return deltas;
   }
 
-  return deltas;
+  // Plain update: ancestor ids may have changed (reparent / re-attach at another depth) —
+  // diff old vs new and re-credit. Only live→live moves counters: a soft-deleted row is not
+  // counted anywhere, and soft-delete/restore transitions were already remapped above.
+  if (action === 'update' && oldRow && newRow.deletedAt == null && oldRow.deletedAt == null) {
+    const oldIds = new Set(resolveNonNullAncestors(h, entityType, oldRow).map((a) => a.id));
+    const newIds = new Set(resolveNonNullAncestors(h, entityType, newRow).map((a) => a.id));
+    const deltas: CountDelta[] = [];
+    for (const id of newIds) {
+      if (!oldIds.has(id)) deltas.push({ contextKey: id, deltas: { [counterKey]: 1 } });
+    }
+    for (const id of oldIds) {
+      if (!newIds.has(id)) deltas.push({ contextKey: id, deltas: { [counterKey]: -1 } });
+    }
+    return deltas;
+  }
+
+  return [];
+}
+
+/** Warn for missing ancestor ids, except ancestors declared nullable (variable-depth rows). */
+function warnMissingAncestors(h: AncestorSource, entityType: string, row: CdcRowData): void {
+  const nullable = h.getNullableAncestors(entityType);
+  for (const ancestor of h.getOrderedAncestors(entityType)) {
+    if (typeof row[`${ancestor}Id`] === 'string') continue;
+    if (nullable.includes(ancestor)) continue;
+    log.warn(`getEntityDeltas: missing "${ancestor}Id" for ${entityType}`, { id: row.id });
+  }
 }

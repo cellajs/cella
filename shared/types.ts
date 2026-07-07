@@ -145,6 +145,17 @@ export type RelatedContextType<E extends string> = E extends keyof HierarchyRela
   ? HierarchyRelatedMap[E]
   : never;
 
+/** Type-level map of each product to its nullable-ancestor union. */
+type HierarchyNullableMap = typeof hierarchy._nullableMap;
+
+/**
+ * Ancestors declared nullable for a product via `nullableAncestors` (variable-depth rows).
+ * Example (ProjectCampus): `NullableAncestorType<'item'>` → `'project' | 'courseSection'`.
+ */
+export type NullableAncestorType<E extends string> = E extends keyof HierarchyNullableMap
+  ? HierarchyNullableMap[E]
+  : never;
+
 /** Type-level map of each hosted product to its host product. */
 type HierarchyHostMap = typeof hierarchy._hostMap;
 

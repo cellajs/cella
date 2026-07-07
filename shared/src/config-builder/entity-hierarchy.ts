@@ -40,6 +40,8 @@ interface ProductEntry {
   host?: string;
   /** Non-ancestor context entities referenced as optional denormalized columns. */
   relatedContexts?: readonly string[];
+  /** Ancestors whose id columns are nullable — rows may attach above the declared parent. */
+  nullableAncestors?: readonly string[];
 }
 type EntityEntry = UserEntry | ContextEntry | ProductEntry;
 
@@ -65,6 +67,7 @@ export interface ProductEntityView {
   readonly parent: string;
   readonly host?: string;
   readonly relatedContexts?: readonly string[];
+  readonly nullableAncestors?: readonly string[];
 }
 
 export interface UserEntityView { readonly kind: 'user' }
@@ -81,6 +84,7 @@ class EntityHierarchyBuilder<
   TParentMap extends Record<string, string | null> = Record<never, never>,
   TRelatedMap extends Record<string, string> = Record<never, never>,
   THostMap extends Record<string, string> = Record<never, never>,
+  TNullableMap extends Record<string, string> = Record<never, never>,
 > {
   private readonly entities: Map<string, EntityEntry>;
   private readonly roles: TRoles;
@@ -98,9 +102,9 @@ class EntityHierarchyBuilder<
   }
 
   /** Add user entity (required, once). */
-  user(): EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentMap, TRelatedMap, THostMap> {
+  user(): EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentMap, TRelatedMap, THostMap, TNullableMap> {
     if (this.entities.has('user')) throw new Error('EntityHierarchy: user() can only be called once');
-    return new EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentMap, TRelatedMap, THostMap>(
+    return new EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentMap, TRelatedMap, THostMap, TNullableMap>(
       this.roles,
       this.withEntity('user', { kind: 'user' }),
     );
@@ -116,7 +120,8 @@ class EntityHierarchyBuilder<
     TProducts,
     TParentMap & { [K in N]: P },
     TRelatedMap & { [K in N]: RC[number] },
-    THostMap
+    THostMap,
+    TNullableMap
   > {
     this.validateName(name);
     this.validateParent(name, options.parent, 'context');
@@ -128,7 +133,8 @@ class EntityHierarchyBuilder<
       TProducts,
       TParentMap & { [K in N]: P },
       TRelatedMap & { [K in N]: RC[number] },
-      THostMap
+      THostMap,
+      TNullableMap
     >(
       this.roles,
       this.withEntity(name, {
@@ -157,34 +163,43 @@ class EntityHierarchyBuilder<
    * cascade to hosted rows (API + CDC), and the CDC counter machinery maintains per-host
    * `e:<hostedType>` counts. The host must be a previously declared product sharing the same home
    * context, and cannot itself be hosted.
+   *
+   * Optional `nullableAncestors` declare ancestors whose id columns are NULLABLE: rows may attach
+   * above the declared parent (variable-depth rows, e.g. a course-stream item with
+   * `projectId = null`). The chain root stays non-null — a row always belongs to the root context.
+   * CDC attributes each row to its deepest non-null ancestor (see `resolveDeepestAncestorId`).
    */
   product<
     N extends string,
     P extends TContexts,
     const RC extends readonly TContexts[] = [],
     H extends TProducts = never,
+    const NA extends readonly TContexts[] = [],
   >(
     name: N,
-    options: { parent: P; host?: H; relatedContexts?: RC },
+    options: { parent: P; host?: H; relatedContexts?: RC; nullableAncestors?: NA },
   ): EntityHierarchyBuilder<
     TRoles,
     TContexts,
     TProducts | N,
     TParentMap & { [K in N]: P },
     TRelatedMap & { [K in N]: RC[number] },
-    THostMap & ([H] extends [never] ? Record<never, never> : { [K in N]: H })
+    THostMap & ([H] extends [never] ? Record<never, never> : { [K in N]: H }),
+    TNullableMap & { [K in N]: NA[number] }
   > {
     this.validateName(name);
     this.validateParent(name, options.parent, 'product');
     this.validateHost(name, options.parent, options.host);
     this.validateRelatedContexts(name, options.parent, options.relatedContexts);
+    this.validateNullableAncestors(name, options.parent, options.nullableAncestors);
     return new EntityHierarchyBuilder<
       TRoles,
       TContexts,
       TProducts | N,
       TParentMap & { [K in N]: P },
       TRelatedMap & { [K in N]: RC[number] },
-      THostMap & ([H] extends [never] ? Record<never, never> : { [K in N]: H })
+      THostMap & ([H] extends [never] ? Record<never, never> : { [K in N]: H }),
+      TNullableMap & { [K in N]: NA[number] }
     >(
       this.roles,
       this.withEntity(name, {
@@ -192,12 +207,13 @@ class EntityHierarchyBuilder<
         parent: options.parent,
         host: options.host,
         relatedContexts: options.relatedContexts,
+        nullableAncestors: options.nullableAncestors,
       }),
     );
   }
 
   /** Build and freeze the hierarchy. */
-  build(): EntityHierarchy<TRoles, TContexts, TProducts, TParentMap, TRelatedMap, THostMap> {
+  build(): EntityHierarchy<TRoles, TContexts, TProducts, TParentMap, TRelatedMap, THostMap, TNullableMap> {
     if (!this.entities.has('user')) throw new Error('EntityHierarchy: user() must be called before build()');
     if (!this.entities.has('organization')) throw new Error('EntityHierarchy: organization context is required');
     return new EntityHierarchy(this.roles, this.entities);
@@ -333,6 +349,44 @@ class EntityHierarchyBuilder<
     }
   }
 
+  /**
+   * Validate nullable-ancestor declarations. Each must be part of the strict ancestor chain,
+   * and the chain root must stay non-null: a row with every ancestor id null would belong to
+   * no context at all (counters, seq scoping and permissions all need at least the root).
+   */
+  private validateNullableAncestors(name: string, parent: string, nullableAncestors?: readonly string[]): void {
+    if (!nullableAncestors?.length) return;
+
+    const chain: string[] = [];
+    let current: string | null = parent;
+    while (current !== null) {
+      chain.push(current);
+      const entry = this.entities.get(current);
+      current = entry && entry.kind !== 'user' ? entry.parent : null;
+    }
+    const root = chain[chain.length - 1];
+
+    const seen = new Set<string>();
+    for (const ancestor of nullableAncestors) {
+      if (seen.has(ancestor)) {
+        throw new Error(`EntityHierarchy: product "${name}" has duplicate nullableAncestor "${ancestor}"`);
+      }
+      seen.add(ancestor);
+
+      if (!chain.includes(ancestor)) {
+        throw new Error(
+          `EntityHierarchy: product "${name}" nullableAncestor "${ancestor}" is not an ancestor. ` +
+            `Ancestor chain: ${chain.join(' > ')}.`,
+        );
+      }
+      if (ancestor === root) {
+        throw new Error(
+          `EntityHierarchy: product "${name}" nullableAncestor "${ancestor}" is the chain root and must stay non-null.`,
+        );
+      }
+    }
+  }
+
 }
 
 // Entity Hierarchy (Frozen Result)
@@ -345,6 +399,7 @@ export class EntityHierarchy<
   TParentMap extends Record<string, string | null> = Record<string, string | null>,
   TRelatedMap extends Record<string, string> = Record<string, string>,
   THostMap extends Record<string, string> = Record<string, string>,
+  TNullableMap extends Record<string, string> = Record<string, string>,
 > {
   /** Phantom type carrier: maps each entity to its strict parent (null = root). Type-only, no runtime value. */
   declare readonly _parentMap: TParentMap;
@@ -352,6 +407,8 @@ export class EntityHierarchy<
   declare readonly _relatedMap: TRelatedMap;
   /** Phantom type carrier: maps each hosted product to its host product. Type-only, no runtime value. */
   declare readonly _hostMap: THostMap;
+  /** Phantom type carrier: maps each product to its nullable-ancestor union. Type-only, no runtime value. */
+  declare readonly _nullableMap: TNullableMap;
 
   private readonly entities: ReadonlyMap<string, EntityEntry>;
   private readonly roleRegistry: TRoles;
@@ -452,6 +509,16 @@ export class EntityHierarchy<
     return (entry.relatedContexts ?? []) as readonly TContexts[];
   }
 
+  /**
+   * Ancestors declared nullable for a product (rows may attach above the declared parent).
+   * These map to NULLABLE id columns; all other ancestor id columns are non-null. Returns [] if none.
+   */
+  getNullableAncestors(entityType: string): readonly TContexts[] {
+    const entry = this.entities.get(entityType);
+    if (entry?.kind !== 'product') return [];
+    return (entry.nullableAncestors ?? []) as readonly TContexts[];
+  }
+
   /** Get entity view (kind + parent + roles if context). */
   getConfig(entityType: string): EntityView | undefined {
     const entry = this.entities.get(entityType);
@@ -460,7 +527,13 @@ export class EntityHierarchy<
     if (entry.kind === 'context') {
       return { kind: 'context', parent: entry.parent, roles: entry.roles, relatedContexts: entry.relatedContexts };
     }
-    return { kind: 'product', parent: entry.parent, host: entry.host, relatedContexts: entry.relatedContexts };
+    return {
+      kind: 'product',
+      parent: entry.parent,
+      host: entry.host,
+      relatedContexts: entry.relatedContexts,
+      nullableAncestors: entry.nullableAncestors,
+    };
   }
 
   /** Get product entity view. */

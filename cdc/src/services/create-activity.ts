@@ -22,13 +22,17 @@ export function createActivity(
   const resourceType = tableMeta.kind === 'resource' ? tableMeta.type : null;
   const subjectType = tableMeta.type;
 
-  // Derive context entity IDs from hierarchy ancestors
+  // Derive context entity IDs from hierarchy ancestors. Declared-nullable ancestors may
+  // legitimately be null (variable-depth rows, e.g. a course-stream item) — no warning.
   const contextEntityIds: Record<string, string | null> = {};
   if (subjectType) {
+    const nullableAncestors = hierarchy.getNullableAncestors(subjectType);
     for (const ancestor of hierarchy.getOrderedAncestors(subjectType)) {
       const colKey = appConfig.entityIdColumnKeys[ancestor];
       const value = getRowValue(row, colKey);
-      if (!value) log.warn(`Missing ancestor "${colKey}" for ${subjectType}`, { id: getRowValue(row, 'id') });
+      if (!value && !nullableAncestors.includes(ancestor)) {
+        log.warn(`Missing ancestor "${colKey}" for ${subjectType}`, { id: getRowValue(row, 'id') });
+      }
       contextEntityIds[colKey] = value ?? null;
     }
   }

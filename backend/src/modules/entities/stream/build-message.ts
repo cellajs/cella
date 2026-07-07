@@ -1,4 +1,4 @@
-import { appConfig, type ContextEntityType, hierarchy, isProductEntity } from 'shared';
+import { appConfig, type ContextEntityType, hierarchy, isProductEntity, resolveDeepestAncestorId } from 'shared';
 import { type ActivityEvent, getEventData } from '#/lib/activity-bus';
 import type { StreamNotification } from '#/schemas';
 import type { AppStreamEvent, AppStreamMembershipEvent } from './types';
@@ -39,14 +39,12 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   const membership = event.resourceType === 'membership' ? getEventData(event, 'membership') : null;
   const contextType: ContextEntityType | null = (membership?.contextType as ContextEntityType | undefined) ?? null;
 
-  // Resolve context ID for unseen count grouping (e.g., task → projectId)
+  // Resolve context ID for seq-cursor and unseen-count grouping: the row's deepest non-null
+  // ancestor (variable-depth rows group under their effective home, e.g. course for a
+  // course-stream item). The client buckets by this id — it must match CDC's seq scope.
   let contextId: string | null = null;
   if (isProduct && entityType) {
-    const parentType = hierarchy.getParent(entityType);
-    if (parentType) {
-      const idKey = appConfig.entityIdColumnKeys[parentType] as keyof typeof event;
-      contextId = (event[idKey] as string | null) ?? null;
-    }
+    contextId = resolveDeepestAncestorId(hierarchy, entityType, event as unknown as Record<string, unknown>);
   }
 
   const stx = (isProduct && event.stx) || null;

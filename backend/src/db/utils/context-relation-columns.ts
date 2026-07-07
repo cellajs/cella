@@ -5,6 +5,7 @@ import {
   type EntityIdColumnKey,
   type EntityType,
   hierarchy,
+  type NullableAncestorType,
   type ProductEntityType,
   type RelatedContextType,
 } from 'shared';
@@ -16,17 +17,16 @@ type NullableUuid = ReturnType<typeof uuid>;
 
 /**
  * Context-entity id columns generated for a product entity, derived from the hierarchy:
- * - strict ancestors (parent chain) → non-null id columns, unless listed in `NullableAncestors`
+ * - strict ancestors (parent chain) → non-null id columns, unless declared in the hierarchy's
+ *   `nullableAncestors` (variable-depth rows, e.g. a project-scoped entity that may also exist
+ *   at a higher level) — those stay in the chain for permission/public-read inheritance but
+ *   become nullable columns
  * - related contexts (`relatedContexts`) → nullable id columns
- *
- * `NullableAncestors` lets a fork opt specific ancestor id columns into being nullable (e.g. a
- * project-scoped entity that may also exist at org level only) while keeping the ancestor in the
- * hierarchy for permission/public-read inheritance.
  */
-export type ContextRelationColumns<E extends string, NullableAncestors extends string = never> = {
-  [C in Exclude<AncestorContextType<E>, NullableAncestors> & EntityType as EntityIdColumnKey<C>]: NotNullUuid;
+export type ContextRelationColumns<E extends string> = {
+  [C in Exclude<AncestorContextType<E>, NullableAncestorType<E>> & EntityType as EntityIdColumnKey<C>]: NotNullUuid;
 } & {
-  [C in Extract<AncestorContextType<E>, NullableAncestors> & EntityType as EntityIdColumnKey<C>]: NullableUuid;
+  [C in Extract<AncestorContextType<E>, NullableAncestorType<E>> & EntityType as EntityIdColumnKey<C>]: NullableUuid;
 } & {
   [C in RelatedContextType<E> & EntityType as EntityIdColumnKey<C>]: NullableUuid;
 };
@@ -42,22 +42,16 @@ export type ActivityContextColumns = {
 
 /**
  * Generates context-entity id columns for a product entity based on the hierarchy config.
- * Ancestors (organization, and any intermediate context parents) become non-null columns;
+ * Ancestors (organization, and any intermediate context parents) become non-null columns —
+ * except ancestors the hierarchy declares in `nullableAncestors` (variable-depth rows);
  * declared related contexts become nullable columns. Keeps product schemas fork-agnostic:
  * forks only adjust the hierarchy, not each table definition.
- *
- * Pass `options.nullableAncestors` to make specific ancestor id columns nullable. This keeps the
- * ancestor in the hierarchy (so permissions and `publicParent` inheritance still apply) while
- * allowing rows that aren't scoped to that ancestor (e.g. org-level attachments without a project).
  *
  * Indexes and foreign keys still live in the table definition (they reference fork-specific
  * parent tables), but the columns and their inferred insert/select types come from here.
  */
-export const contextRelationColumns = <E extends ProductEntityType, NA extends AncestorContextType<E> = never>(
-  entityType: E,
-  options?: { nullableAncestors?: readonly NA[] },
-): ContextRelationColumns<E, NA> => {
-  const nullableAncestors = new Set<string>(options?.nullableAncestors ?? []);
+export const contextRelationColumns = <E extends ProductEntityType>(entityType: E): ContextRelationColumns<E> => {
+  const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(entityType));
   const columns = {} as Record<string, NotNullUuid | NullableUuid>;
 
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
@@ -67,7 +61,7 @@ export const contextRelationColumns = <E extends ProductEntityType, NA extends A
     columns[appConfig.entityIdColumnKeys[related]] = uuid();
   }
 
-  return columns as ContextRelationColumns<E, NA>;
+  return columns as ContextRelationColumns<E>;
 };
 
 /**
