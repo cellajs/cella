@@ -1,5 +1,5 @@
 # Architecture
-This document describes the high-level architecture of Cella.
+This document describes the high-level architecture of the TypeScript template Cella.
 
 ### Target product
 * Frequent-use or heavy use web applications focused on user-generated content
@@ -55,7 +55,7 @@ Cella has a different approach to sync and offline. Context entities (e.g. organ
 
 The pipeline flows: **Postgres WAL → CDC Worker → WebSocket → ActivityBus → SSE → Client**. A single authenticated **app stream** (`/entities/app/stream`) carries membership events, org events, and product entity notifications. It uses the leader-tab pattern (Web Locks API) — one tab holds the SSE connection, followers sync via BroadcastChannel.
 
-Sequence numbers are hierarchy-aware: the CDC worker stamps `seq` on all product entity rows after processing each WAL event. The seq is scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). List endpoints support `seqCursor` for delta fetches during catchup. Bulk operations in a single database transaction produce batched notifications — one per (entityType, action, context) — rather than per-entity, reducing SSE fan-out. See [Sync engine](./SYNC_ENGINE.md) for details.
+Sequence numbers are hierarchy-aware: the CDC worker stamps `seq` on all product entity rows after processing each WAL event. The seq is scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). List endpoints support `seqCursor` for delta fetches during catchup. Bulk operations in a single database transaction produce batched notifications — one per (entityType, action, context) — rather than per-entity, reducing SSE fan-out. See [Sync engine](/docs/page/architecture/sync-engine) for details.
 
 ### Per-field merge strategies
 
@@ -67,7 +67,7 @@ Product entity mutations use per-field merge strategies instead of a single conf
 | **AWSet** | Add-Wins Set | `labels`, `assignedTo` | Commutative `{ add, remove }` deltas |
 | **YATA** | Yjs CRDT | `description` | Character-level merge via standalone Yjs worker |
 
-Scalars resolve silently via HLC comparison; set fields are conflict-free; descriptions use a dedicated Yjs WebSocket relay for real-time co-editing with client-side materialization of derived fields. See [Merge resolution](./SYNC_ENGINE.md#merge-resolution-hlc--awset) for full implementation details.
+Scalars resolve silently via HLC comparison; set fields are conflict-free; descriptions use a dedicated Yjs WebSocket relay for real-time co-editing with client-side materialization of derived fields. See [Merge resolution](/docs/page/architecture/sync-engine#merge-resolution-hlc--awset) for full implementation details.
 
 ### Client sync cycle
 
@@ -92,9 +92,9 @@ Offline mutations are queued with stx metadata (HLC timestamps for scalars, AWSe
 
 ### Schema evolution
 
-Offline clients don't update in lockstep with deploys, so breaking schema changes to product entities ship as **append-only lens modules** (`shared/src/version-changes/`; global schema version = lens count). Each lens declares one change (`rename`, `add`, `drop`, `retype`, `setRename`); from that declaration the system derives widened wire schemas for the expand window, server-side ops normalization (inside `resolveUpdateOps`), and a boot-time client cache migration that rewrites cached rows and queued mutations locally — no refetch. Tabs broadcast their schema version so a stale bundle stops persisting before it can downgrade a migrated store. With an empty lens list (current state) everything is a passthrough; the interim mechanism for breaking changes is a `clientCacheVersion` bump (cache wipe, mutations kept), CI-enforced by `schema-bust-gate`. See [Schema evolution](./SCHEMA_EVOLUTION.md) for the shipping playbook.
+Offline clients don't update in lockstep with deploys, so breaking schema changes to product entities ship as **append-only lens modules** (`shared/src/version-changes/`; global schema version = lens count). Each lens declares one change (`rename`, `add`, `drop`, `retype`, `setRename`); from that declaration the system derives widened wire schemas for the expand window, server-side ops normalization (inside `resolveUpdateOps`), and a boot-time client cache migration that rewrites cached rows and queued mutations locally — no refetch. Tabs broadcast their schema version so a stale bundle stops persisting before it can downgrade a migrated store. With an empty lens list (current state) everything is a passthrough; the interim mechanism for breaking changes is a `clientCacheVersion` bump (cache wipe, mutations kept), CI-enforced by `schema-bust-gate`. See [Schema evolution](#schema-evolution) for the shipping playbook.
 
-For more details, see [Sync engine](./SYNC_ENGINE.md).
+For more details, see [Sync engine](/docs/page/architecture/sync-engine).
 
 ## Query layer
 
@@ -122,7 +122,7 @@ While signed out the persister simply does nothing and the cache stays in memory
 
 Only the leader tab (elected via Web Locks API) persists mutations to prevent cross-tab conflicts. Since `mutationFn` cannot be serialized, entity modules register their defaults via `addMutationRegistrar()` at load time so paused mutations can resume after page reload.
 
-The meta record also carries a `schemaVersion` ordinal (see [Schema evolution](./SCHEMA_EVOLUTION.md)): when it's behind the running bundle, a chunked boot-migration pass rewrites cached rows and queued mutations in place before hydration; when it's ahead (another tab migrated forward, or a rollback), the bundle marks itself stale and stops persisting rather than downgrade the store.
+The meta record also carries a `schemaVersion` ordinal (see [Schema evolution](#schema-evolution)): when it's behind the running bundle, a chunked boot-migration pass rewrites cached rows and queued mutations in place before hydration; when it's ahead (another tab migrated forward, or a rollback), the bundle marks itself stale and stops persisting rather than downgrade the store.
 
 ### Enrichment pipeline
 
@@ -215,7 +215,7 @@ Identity columns (`tenant_id`, `organization_id`, `user_id` on memberships, etc.
 
 OTel-based observability across all services (backend, CDC, YJS, frontend) with [Maple.dev](https://maple.dev) as the default telemetry backend. Node services share a `createOtelSDK()` factory for traces, metrics, and logs (gated by the `MAPLE_SECRET_INGEST_KEY` env var); the frontend uses a browser `WebTracerProvider` for `traceparent` propagation and can export spans directly to Maple when `appConfig.maplePublicIngestKey` is set. Logging is Pino-based, bridged to OTel in production via `pino-opentelemetry-transport`.
 
-See [Observability](./OTEL.md) for the full observability architecture, including per-service setup, health endpoints, and graceful shutdown.
+See [Observability](/docs/page/architecture/observability) for the full observability architecture, including per-service setup, health endpoints, and graceful shutdown.
 
 
 ## API design
@@ -240,7 +240,7 @@ Mock generators in `backend/mocks/` serve three purposes:
 
 ## Testing
 
-See [Testing](./TESTING.md) for test modes, infrastructure, and writing guidelines.
+See [Testing](/docs/page/guides/testing) for test modes, infrastructure, and writing guidelines.
 
 
 ## File structure

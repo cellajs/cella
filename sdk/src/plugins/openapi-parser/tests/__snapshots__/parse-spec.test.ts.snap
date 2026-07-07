@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
 {
-  "inputHash": "592d714ecb0187f4",
+  "inputHash": "fe71a7493c2299f0",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!
@@ -3257,6 +3257,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "contextId": "967b4d7e-cf6a-480d-8005-cee1180d3e4a",
           "contextType": null,
           "entityType": "attachment",
+          "kind": "entity",
           "organizationId": "3a9fc6f0-5cf3-491b-a437-8e8c3a3796f6",
           "propagation": null,
           "resourceType": null,
@@ -3328,6 +3329,15 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                 "string",
                 "null",
               ],
+            },
+            "kind": {
+              "description": "Discriminant for the notification: product-entity sync vs membership change",
+              "enum": [
+                "entity",
+                "membership",
+              ],
+              "required": true,
+              "type": "string",
             },
             "organizationId": {
               "required": true,
