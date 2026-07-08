@@ -63,6 +63,7 @@ frontend/stats.html
 .claude
 .custom
 .kilo
+.devcontainer/
 
 # Cella
 *storybook.log
