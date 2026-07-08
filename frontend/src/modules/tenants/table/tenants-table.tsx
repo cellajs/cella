@@ -15,7 +15,7 @@ import { useColumns } from '~/modules/tenants/table/tenants-columns';
 
 const LIMIT = appConfig.requestLimits.users; // Use users limit as fallback
 
-/** Stable row key getter function */
+/** Stable row key getter function. */
 function rowKeyGetter(row: Tenant) {
   return row.id;
 }
@@ -28,7 +28,6 @@ function TenantsTable() {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<TenantsRouteSearchParams>({ from: '/_app/system/tenants' });
 
-  // Table state
   const { q, sort, order } = search;
   const limit = LIMIT;
 
@@ -49,7 +48,6 @@ function TenantsTable() {
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
 
-  // isFetching already includes next page fetch scenario
   const fetchMore = async () => {
     if (!hasNextPage || isLoading || isFetching) return;
     await fetchNextPage();

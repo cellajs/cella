@@ -4,7 +4,7 @@ import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 
 declare const self: ServiceWorkerGlobalScope;
 
-// Periodic Background Sync API (Chromium-only) — not yet in lib.dom.
+// Periodic Background Sync API (Chromium-only), not yet in lib.dom.
 interface PeriodicSyncEvent extends ExtendableEvent {
   readonly tag: string;
 }
@@ -25,11 +25,10 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Workbox precaching — manifest injected by vite-plugin-pwa
+// Workbox precaching: manifest injected by vite-plugin-pwa.
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
-// ─── Periodic Background Sync: silently update app badge ────────────
 // Chromium-only (Chrome 80+, Edge). Fires at browser-determined intervals.
 // Fetches the real unseen count from the server so badge stays accurate.
 
@@ -60,6 +59,6 @@ async function updateBadge() {
       (self.navigator as Navigator).clearAppBadge();
     }
   } catch {
-    // Network error or auth expired — silently ignore
+    // Network error or auth expired, silently ignore.
   }
 }

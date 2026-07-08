@@ -67,7 +67,7 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
       meta: { errorPagePath: '/auth/error' },
     });
 
-  // Fetch token record and associated user
+  // Fetch token row and associated user
   const tokenRecord = await getValidToken({
     ctx,
     token: tokenFromCookie,

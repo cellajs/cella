@@ -1,11 +1,3 @@
-/**
- * Interactive infra CLI for the Pulumi/Scaleway infra. Safe to re-run.
- * Inspects the local Pulumi stack file to decide whether this is a fresh
- * fork or an existing setup, then offers a mode menu. Credentials live in
- * memory only — never written to disk. See infra/README.md.
- *
- * Usage: pnpm --filter infra cli
- */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -54,9 +46,9 @@ async function loadContext(): Promise<InfraContext> {
     throw new Error('SCW_PROJECT_ID is not set — add it to backend/.env before running the infra CLI.')
   }
 
-  // Operator application id — required like SCW_PROJECT_ID once bootstrapped:
+  // Operator application id: required like SCW_PROJECT_ID once bootstrapped:
   // granted full S3 on the CI-scoped buckets (storage.ts) so operator keys can
-  // read/refresh them. On a fresh stack it doesn't exist yet — bootstrap creates
+  // read/refresh them. On a fresh stack it doesn't exist yet; bootstrap creates
   // the app and writes the id into backend/.env, so only enforce it afterwards.
   const operatorApplicationId = process.env.SCW_OPERATOR_APPLICATION_ID?.trim()
   if (!operatorApplicationId && state === 'bootstrapped') {

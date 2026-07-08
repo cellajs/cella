@@ -1,12 +1,3 @@
-/**
- * Generate Script Runner
- *
- * Runs all generation scripts defined in appConfig.generateScripts.
- *
- * Usage:
- *   pnpm generate
- */
-
 import { runGenerateScripts } from './migrations/helpers/run-generate-scripts';
 import { generateScripts } from './scripts-discovery';
 

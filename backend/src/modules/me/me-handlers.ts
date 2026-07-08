@@ -129,7 +129,7 @@ app.openapi(meRoutes.deleteMe, async (ctx) => {
   // Check if user exists
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: 'self' } });
 
-  // Delete user — CASCADE SET NULL on createdBy/updatedBy propagates to product entities
+  // CASCADE SET NULL on createdBy/updatedBy propagates to product entities.
   await deleteUser(ctx);
 
   invalidateCache.user(user.id);
@@ -160,7 +160,7 @@ app.openapi(meRoutes.unsubscribeMe, async (ctx) => {
 app.openapi(meRoutes.getMyMemberships, async (ctx) => {
   const memberships = ctx.var.memberships;
 
-  // Strip createdBy (not in membershipBaseSchema) — the rest already matches MembershipBaseModel
+  // Strip createdBy; the rest already matches MembershipBaseModel.
   const items = memberships.map(({ createdBy, ...rest }) => rest);
 
   return ctx.json({ items }, 200);

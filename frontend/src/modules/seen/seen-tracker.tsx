@@ -96,6 +96,6 @@ async function registerPeriodicBadgeSync() {
       minInterval: 60 * 60 * 1000, // Hint: 1 hour (browser decides actual interval)
     });
   } catch {
-    // Unsupported or permission denied — silently ignore
+    // Unsupported or permission denied.
   }
 }

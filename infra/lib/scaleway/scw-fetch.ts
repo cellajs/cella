@@ -1,13 +1,3 @@
-/**
- * Shared Scaleway REST plumbing: one authenticated fetch wrapper for every
- * module that talks to the Scaleway HTTP APIs (IAM, Secret Manager, Account),
- * plus the S3-protocol endpoint the Object Storage / Pulumi-state helpers
- * address.
- *
- * `scwFetch` is for JSON-returning calls and throws on an empty body, so its
- * `Promise<T>` is honest; use `scwSend` for fire-and-forget calls (DELETE,
- * 204-No-Content) where no body is expected.
- */
 import { type FetchLike, resolveFetch } from '../utils/fetch-like'
 
 const DEBUG = process.env.SCW_DEBUG === '1' || process.env.DEBUG === '1'

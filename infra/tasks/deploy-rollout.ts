@@ -15,7 +15,7 @@ function parseRolloutJson(raw: string, flag: string): RolloutItem[] {
 
 function runDeployService(item: RolloutItem, opts: { stack: string; sha: string }): void {
   // Each deploy-service does its own final `pulumi up` after a healthy cutover,
-  // reaping the old generation inline — no `previous` is retained. Rollback is a
+  // reaping the displaced generation inline; no `previous` is retained. Rollback is a
   // revert commit + redeploy, which recreates every service (cdc included).
   const args = ['--filter', 'infra', 'deploy-service', '--service', item.service, '--sha', opts.sha, '--stack', opts.stack]
   if (item.health_url) args.push('--health-url', item.health_url)

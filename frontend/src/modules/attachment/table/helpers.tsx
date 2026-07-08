@@ -1,5 +1,5 @@
 import { t } from 'i18next';
-// biome-ignore lint/style/noRestrictedImports: colocated mutation — imperative attachment creation called from drag-drop helpers.
+// biome-ignore lint/style/noRestrictedImports: colocated mutation, imperative attachment creation called from drag-drop helpers.
 import { createAttachments } from 'sdk';
 import { appConfig } from 'shared';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';

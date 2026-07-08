@@ -50,7 +50,7 @@ export type DocPage = {
   headings: DocHeading[];
 };
 
-/** DOM id prefix the mdx pipeline (rehype-slug) puts on heading ids — spy store convention. */
+/** DOM id prefix the mdx pipeline (rehype-slug) puts on heading ids; spy store convention. */
 const HEADING_ID_PREFIX = 'spy-';
 
 // Frontmatter + headings come from a build-time index (vite/docs-frontmatter.ts) rather

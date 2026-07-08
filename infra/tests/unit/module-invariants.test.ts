@@ -1,13 +1,3 @@
-/**
- * Source-level security invariants for the LB / DNS / DB / registry
- * / secrets resources.
- *
- * These resources either gate on deploy phase (LB, DNS) or read deeply from
- * stack config (DB), making a live render via the Pulumi mock harness brittle
- * and slow. Static checks here are intentionally narrow and target the few
- * security invariants that have caused production outages or audits in the
- * past (TLS, CAA, DB privacy, public registry leaks).
- */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -25,6 +15,8 @@ const secrets = read('secrets.ts')
 const configuredSecret = read('configured-secret.ts')
 const vmReaderSecret = readInfra('lib/scaleway/vm-reader-secret.ts')
 
+// Static checks pin security contracts that are brittle in live renders.
+// Scope: TLS, CAA, DB privacy, public registry leaks, and secret handling.
 describe('loadbalancer resource', () => {
   it('HTTPS frontend on port 443 is defined', () => {
     expect(lb).toMatch(/inboundPort:\s*443/)
@@ -91,7 +83,7 @@ describe('database resource', () => {
     expect(db).toMatch(/protect:\s*isProduction/)
   })
 
-  // Known gaps surfaced by the testing plan — these are configuration
+  // Known gaps surfaced by the testing plan: these are configuration
   // decisions the operator must make per environment. Listed here so a
   // reviewer sees them in `pnpm test` output.
   it.todo('production instance runs as HA cluster (isHaCluster: true)')
@@ -132,7 +124,7 @@ describe('secrets module', () => {
   })
 
   it('writes SecretVersions only through the createSecretVersion helper', () => {
-    // Exactly one construction site for the Version resource — the helper.
+    // Exactly one construction site for the Version resource: the helper.
     const versionConstructions = secrets.match(/new scaleway\.secrets\.Version\(/g) ?? []
     expect(versionConstructions).toHaveLength(1)
     expect(secrets).toMatch(/function createSecretVersion\(/)

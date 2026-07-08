@@ -1,10 +1,3 @@
-/**
- * Hybrid Logical Clock for per-tab causal ordering.
- * Each browser tab has its own HLC instance.
- *
- * Format: "millis:counter:source" — lexicographic comparison gives causal ordering.
- */
-
 import { hashSourceId } from 'shared/hash-source-id';
 import { uuidv7 } from 'uuidv7';
 
@@ -16,7 +9,7 @@ import { uuidv7 } from 'uuidv7';
  */
 export const sourceId = uuidv7();
 
-// Module-scoped state — one clock per tab
+// Module-scoped state: one clock per tab.
 let lastTimestamp = 0;
 let lastCounter = 0;
 
@@ -25,7 +18,7 @@ const sourceHash = hashSourceId(sourceId);
 
 /**
  * Create an HLC string for this tab.
- * Monotonically increasing within a tab — safe for concurrent field edits.
+ * Format: "millis:counter:source"; lexicographic comparison gives causal ordering.
  */
 export function createHLC(): string {
   const now = Date.now();

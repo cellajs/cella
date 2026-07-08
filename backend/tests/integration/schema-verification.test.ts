@@ -1,27 +1,12 @@
-/**
- * Schema verification meta-tests.
- *
- * These tests query PostgreSQL system catalogs to verify that all entity tables
- * have the expected security infrastructure in place:
- * - Immutability triggers on identity columns
- * - FORCE ROW LEVEL SECURITY on RLS-protected tables
- * - Write-through + tenant-select RLS policies on RLS tables
- * - Composite foreign keys (tenant_id, organization_id) on org-scoped product entities
- *
- * Data-driven from appConfig so new entity types are auto-tested.
- *
- * IMPORTANT: Requires PostgreSQL. Run with `pnpm test:full`.
- */
-
 import { getTableName, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb } from '#/db/db';
 import { entityTables } from '#/tables';
 
-// ─── Derived table sets ─────────────────────────────────────────────────────
+// Derived table sets
 
-/** Product entities with a parent org (tasks, labels, attachments) — have RLS + composite FK */
+/** Product entities with a parent org (tasks, labels, attachments) have RLS and composite FK. */
 const orgScopedProductTables = appConfig.productEntityTypes.map((t) =>
   getTableName(entityTables[t as keyof typeof entityTables]),
 );
@@ -39,7 +24,7 @@ const allProductTables = appConfig.productEntityTypes.map((t) =>
 /** Tables that should have FORCE RLS (org-scoped product entities + yjs_documents) */
 const rlsTableNames = [...orgScopedProductTables, 'yjs_documents'];
 
-// ─── Helper: query system catalogs ──────────────────────────────────────────
+// Helper: query system catalogs
 
 function getRows<T = Record<string, unknown>>(result: any): T[] {
   if (Array.isArray(result)) return result;
@@ -47,10 +32,9 @@ function getRows<T = Record<string, unknown>>(result: any): T[] {
   return [];
 }
 
-// ─── Tests ──────────────────────────────────────────────────────────────────
-
+// Verifies entity-table security infrastructure from PostgreSQL system catalogs.
 describe('Schema verification', () => {
-  // ── Immutability triggers ──────────────────────────────────────────────
+  // Immutability triggers
 
   describe('Immutability triggers', () => {
     const allImutableTables = [...allProductTables, ...contextEntityTables];

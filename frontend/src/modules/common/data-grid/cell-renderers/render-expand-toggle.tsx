@@ -7,11 +7,11 @@ export interface RenderExpandToggleProps {
   hasChildren: boolean;
   /** Pixel height of the row the toggle is rendered in. Required so the SVG connector paths can be drawn in row-relative pixel coordinates. */
   rowHeight: number;
-  /** Nesting depth of the row. 0 = root. Used to draw a connector line above nested rows. */
+  /** Nesting depth of the row. 0 = root. Draws a connector line above nested rows. */
   depth?: number;
   /** True when this row is the last child of its parent. Suppresses the connector line below. */
   isLastChild?: boolean;
-  /** True when this row's parent is itself the last child of its grandparent. Used to know
+  /** True when this row's parent is itself the last child of its grandparent. Determines
    *  whether the depth-1 trunk should keep going through deeper rows. */
   parentIsLastChild?: boolean;
   /**
@@ -64,7 +64,7 @@ interface ConnectorGeometry {
 }
 
 /**
- * Smooth elbow above the chevron — straight stem on the offset track, then a
+ * Smooth elbow above the chevron: straight stem on the offset track, then a
  * cubic-Bézier S-curve that lands on the chevron's top edge (not its center).
  * Terminating at the chevron edge means the entire curve stays visible above
  * the button rather than being clipped behind it. Tangents are vertical at
@@ -88,7 +88,7 @@ function elbowBelowPath(xStart: number, xEnd: number, rowHeight: number): string
 
 /**
  * Pure helper: returns all connector path segments for a row. One SVG path
- * per element. Trivially testable — snapshot the array for each visual case.
+ * per element. Snapshot the array for each visual case.
  */
 function buildConnectorPaths(g: ConnectorGeometry): ConnectorPath[] {
   const paths: ConnectorPath[] = [];
@@ -121,7 +121,7 @@ function buildConnectorPaths(g: ConnectorGeometry): ConnectorPath[] {
   }
 
   // Lower-half solid trunk on an expanded parent whose children are on the
-  // thin track — keeps the depth-1 line continuous to the next sibling at
+  // thin track; keeps the depth-1 line continuous to the next sibling at
   // this depth, and balances the thin elbow on the right.
   if (g.solidTrunkBelow) {
     paths.push({ d: elbowBelowPath(CX, SOLID_X, H), thin: false });
@@ -133,7 +133,7 @@ function buildConnectorPaths(g: ConnectorGeometry): ConnectorPath[] {
 /**
  * Reusable, focusable expand/collapse toggle for tree-style data grids.
  *
- * Visual language (calibrated for a tree with 2 or 3 levels — the consumer
+ * Visual language (calibrated for a tree with 2 or 3 levels; the consumer
  * sets the limit via `maxDepth`):
  * - Root rows (`depth = 0`): chevron only, no connector lines.
  * - Inner rows: 2px solid connector lines + filled bullet for leaves, all on
@@ -166,7 +166,7 @@ export function RenderExpandToggle({
   const showLineBelow = (hasChildren && expanded) || (depth > 0 && !isLastChild);
 
   // Visual flags derived from the depth limit. Kept here so consumers only
-  // need to pass the underlying tree shape — they don't have to memorise the
+  // need to pass the underlying tree shape, so they don't have to memorise the
   // visual language.
   const isDeepest = maxDepth !== undefined && depth >= maxDepth - 1;
   const childIsDeepest = maxDepth !== undefined && depth + 1 >= maxDepth - 1;
@@ -178,7 +178,7 @@ export function RenderExpandToggle({
   // ancestor still has more siblings to come.
   const parentTrunkContinues = isDeepest && !parentIsLastChild;
   // Lower-half centered trunk on an expanded parent whose children sit on the
-  // deeper (thin) track — keeps the centered trunk continuous to the next
+  // deeper thin track; keeps the centered trunk continuous to the next
   // sibling at this depth.
   const solidTrunkBelow = hasChildren && expanded && !isLastChild && childIsDeepest;
 

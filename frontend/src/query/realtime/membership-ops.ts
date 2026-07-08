@@ -26,7 +26,7 @@ function invalidateAllContextDetails(): void {
  */
 export function invalidateContextList(contextType: ContextEntityType | null): void {
   if (contextType && hasEntityQueryKeys(contextType)) {
-    // Invalidate by the `list` prefix key — covers all filtered list variants for this context type.
+    // Invalidate by the `list` prefix key; covers all filtered list variants for this context type.
     queryClient.invalidateQueries({ queryKey: getEntityQueryKeys(contextType).list.base, refetchType: 'active' });
   } else {
     invalidateAllContextDetails();
@@ -64,7 +64,7 @@ export function invalidateMemberships(): void {
 }
 
 /**
- * Fetch memberships via fetchQuery — ensures fresh data while deduplicating
+ * Fetch memberships via fetchQuery, ensuring fresh data while deduplicating
  * with any in-flight getMyMemberships request (e.g., from getMenuData's ensureQueryData).
  * Preferred over invalidateQueries during catchup to avoid redundant fetches on app init.
  */

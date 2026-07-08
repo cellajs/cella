@@ -54,7 +54,7 @@ router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
   cleanupOnBoundaryChange(getBoundary(router.state.matches), getBoundary(pendingMatches));
 
   // Skip the page-enter mask when moving between two pages of the same leaf route (e.g. org -> org)
-  // via a forward navigation — there is no scroll delta to mask in that case.
+  // via a forward navigation; there is no scroll delta to mask in that case.
   const fromLeafId = router.state.matches.at(-1)?.routeId;
   const toLeafId = pendingMatches.at(-1)?.routeId;
   const isForward = lastHistoryAction === 'PUSH' || lastHistoryAction === 'REPLACE';

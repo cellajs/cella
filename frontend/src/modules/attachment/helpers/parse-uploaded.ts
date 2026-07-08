@@ -42,7 +42,7 @@ export const parseUploadedAttachments = (
     });
 
     attachments.push(attachment as Attachment);
-    // Note: cast needed because hey-api generates non-nullable intersection for nullable refs
+    // Cast needed because hey-api generates non-nullable intersection for nullable refs.
     if (uploadId) attachmentsByUploadId.set(uploadId, attachment as Attachment);
   }
 

@@ -76,7 +76,7 @@ async function handleList(ctx: MenuContext): Promise<void> {
     const current = byName.get(secret.secretName)
     // A secret *object* can exist with zero versions (created but never given a
     // value). Only a versioned secret actually has content the services can read,
-    // so gate "present" on version_count — otherwise an empty container reports a
+    // so gate "present" on version_count. Otherwise an empty container reports a
     // false positive. The in-between state (object, no version) is called out
     // explicitly so the operator knows to run "Set or update".
     const status = !current
@@ -137,7 +137,7 @@ async function handleSet(ctx: MenuContext): Promise<void> {
   const secret = await selectSecret(ctx, 'Select a runtime secret to set (Esc to go back)', ctx.secrets)
   if (!secret) return
   // Pulumi owns container creation (resources/secrets.ts). Refuse to create one
-  // out-of-band here — that would make the next `pulumi up` fail with "secret
+  // out-of-band here. That would make the next `pulumi up` fail with "secret
   // already exists". The operator must deploy first so the (empty) container
   // exists, then set its value here.
   const existingSecret = await ctx.client.getSecretByName(secret.secretName, ctx.path)
@@ -202,7 +202,7 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
       ],
     })
 
-    // Esc on the top menu behaves like "Exit" — there is no parent menu to return
+    // Esc on the top menu behaves like "Exit"; there is no parent menu to return
     // to (the infra CLI exits once secrets management is done).
     if (action === BACK || action === 'exit') return
     if (action === 'list') await handleList(ctx)

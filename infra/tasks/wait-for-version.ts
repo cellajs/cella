@@ -1,19 +1,3 @@
-/**
- * Poll a service's /health endpoint until it serves the expected release SHA.
- *
- * The deploy pipeline asserts X-App-Version == <git sha> before declaring a
- * service rolled. Centralising the health/header contract here makes it
- * testable and runnable locally.
- *
- * Health contract (see backend /health + infra/caddy):
- *   - backend / yjs / ai return 204 (no body)
- *   - frontend (Caddy) returns 200 with body 'ok'
- *   - all emit an `X-App-Version` header carrying the baked-in RELEASE_SHA
- *
- * Usage:
- *   tsx infra/tasks/wait-for-version.ts --url https://api.example/health \
- *     --sha <git-sha> [--attempts 100] [--interval 3000] [--timeout 8000]
- */
 import { isMain } from '../lib/utils/is-main'
 import { pollUntil } from '../lib/utils/retry'
 import { getFlag, getNumFlag, sleep } from './args'
@@ -33,7 +17,7 @@ export type ProbeFn = (url: string) => Promise<ProbeResult>
  * Only the fields the poller acts on are typed; the object carries more.
  */
 export interface RollStatus {
-  /** Tag the reconciler is rolling TO — must match our SHA to be relevant. */
+  /** Tag the reconciler is rolling TO; must match our SHA to be relevant. */
   desired?: string
   /** Current phase: pulling|migrating|slot-up|probing|flipping|…|done. */
   phase?: string
@@ -49,7 +33,7 @@ export interface RollStatus {
  * Reconciler exit codes that mean THE RELEASE ITSELF is bad and waiting won't
  * help: 4 compose-up, 5 health/blue-green, 6 migrate. The reconciler is a
  * converging loop, so the infra transients (2 tag-fetch, 3 pull) self-heal on
- * the next 20s tick — we keep polling through those and only fast-fail here.
+ * the next 20s tick. Keep polling through those and only fast-fail here.
  */
 const TERMINAL_EXIT_CODES = new Set(['4', '5', '6'])
 
@@ -66,10 +50,10 @@ export interface PollOptions {
   log?: (msg: string) => void
   /**
    * Optional reconciler status reader. When provided, a TERMINAL failure for
-   * OUR sha (a bad release — see TERMINAL_EXIT_CODES) aborts the poll
+   * OUR sha (a bad release; see TERMINAL_EXIT_CODES) aborts the poll
    * immediately with the reconciler's reason instead of burning the whole
    * budget. Infra transients (tag-fetch/pull) self-heal on the next tick, so we
-   * keep polling through those and just surface the phase. Best-effort — a
+   * keep polling through those and just surface the phase. Best-effort: a
    * missing/unparseable status never changes the outcome.
    */
   status?: StatusFn
@@ -88,7 +72,7 @@ export interface PollOutcome {
  * A probe is "healthy" when the status is a documented success (200 for the
  * Caddy frontend, 204 for the API services) AND the served version matches the
  * SHA we are rolling to. A 200/204 with a stale or missing version means the
- * old container is still answering — keep waiting.
+ * stale container is still answering: keep waiting.
  */
 export function isHealthy(result: ProbeResult, expectedSha: string): boolean {
   const statusOk = result.status === 200 || result.status === 204

@@ -40,7 +40,7 @@ describe('validateAncestorScope', () => {
   // Test every product entity type from the hierarchy
   for (const entityType of hierarchy.productTypes) {
     const ancestors = hierarchy.getOrderedAncestors(entityType);
-    if (ancestors.length === 0) continue; // parentless products (e.g., page) — no ancestors to validate
+    if (ancestors.length === 0) continue; // parentless products (e.g., page) have no ancestors to validate
 
     describe(`${entityType} (ancestors: ${ancestors.join(' → ')})`, () => {
       it('passes when all ancestor context IDs are provided', () => {
@@ -68,7 +68,7 @@ describe('validateAncestorScope', () => {
   // Test every context entity type that has ancestors (e.g., project → organization)
   for (const entityType of hierarchy.contextTypes) {
     const ancestors = hierarchy.getOrderedAncestors(entityType);
-    if (ancestors.length === 0) continue; // root contexts (organization) — already tested above
+    if (ancestors.length === 0) continue; // root contexts (organization) are tested above
 
     describe(`${entityType} context (ancestors: ${ancestors.join(' → ')})`, () => {
       it('passes when all ancestor context IDs are provided', () => {

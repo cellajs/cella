@@ -1,10 +1,3 @@
-/**
- * Pulumi entrypoint — orchestrates all infrastructure resources.
- *
- * Resources are imported and composed here in dependency order:
- * storage → edge/dns → network/registry → database → secrets/compute → loadbalancer.
- * Comment out a group to deploy incrementally (see README.md → Architecture).
- */
 import { naming, region, mode } from './pulumi-context'
 
 console.info(`Pulumi stack: ${mode}`)
@@ -78,7 +71,7 @@ export const computeGenerationMetadata = compute.computeGenerationMetadata
 
 import * as lb from './resources/loadbalancer'
 
-// Public URL per LB-exposed service slug (e.g. { backend: 'https://api.…', … }).
+// Public URL per LB-exposed service slug (e.g. { backend: 'https://api...', ... }).
 // Empty object when no domain / compute. Consumers (CI summary, docs) read
 // slugs from this map instead of per-service named outputs, so a new service
 // needs no export added here.

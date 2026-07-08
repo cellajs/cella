@@ -79,7 +79,7 @@ export const sdkWatch = (): Plugin => {
         console.warn(`[sdk-watch] ${crossMark} sdk/gen/index.ts not found, waiting for generation...`);
       }
 
-      // Watch sdk/gen directory — triggers when generate-sdk updates the output
+      // Watch sdk/gen directory; triggers when generate-sdk updates the output.
       watcher = watch(sdkGenDir, (eventType) => {
         if (eventType !== 'change' && eventType !== 'rename') return;
 

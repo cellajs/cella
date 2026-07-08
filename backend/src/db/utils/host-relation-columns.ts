@@ -21,7 +21,7 @@ type NullableUuid = ReturnType<typeof uuid>;
  * NOT NULL constraint in their migration; the mechanism (cascade, counters) treats null
  * as "not hosted".
  *
- * No FK is generated — the reference is soft, like embedding id arrays: the CDC cascade
+ * No FK is generated, the reference is soft, like embedding id arrays: the CDC cascade
  * owns lifecycle consistency, and a hard FK would force cross-module table imports.
  * Indexes still live in the table definition.
  */

@@ -23,7 +23,7 @@ export function PagesSidebar({ onClose }: PagesSidebarProps) {
   // Tree of pages for nested rendering
   const pageTree = buildPageNodeTree(pages);
 
-  // Expanded subtree state — additive: ancestors of the active page are seeded on route change,
+  // Expanded subtree state is additive: ancestors of the active page are seeded on route change,
   // but the user remains free to collapse them afterwards without them snapping back open.
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   useEffect(() => {

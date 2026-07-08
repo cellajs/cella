@@ -67,7 +67,6 @@ export const ShouldOpenCloseWithContinue: Story = {
 
     await step('Close the dialog', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /continue/i }));
-      // Wait for the dialog to be removed from DOM after closing animation
       await waitFor(
         () => {
           expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();
@@ -93,7 +92,6 @@ export const ShouldOpenCloseWithCancel: Story = {
 
     await step('Close the dialog', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /cancel/i }));
-      // Wait for the dialog to be removed from DOM after closing animation
       await waitFor(
         () => {
           expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();
@@ -119,7 +117,6 @@ export const ShouldOpenCloseCross: Story = {
 
     await step('Close the dialog', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /close/i }));
-      // Wait for the dialog to be removed from DOM after closing animation
       await waitFor(
         () => {
           expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();

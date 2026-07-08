@@ -1,22 +1,6 @@
-/**
- * Cella-owned Compose machinery. Forks should NOT edit this file — fork-facing
- * service *data* lives in `services.config.ts`; this module turns that data into
- * a full Compose model.
- *
- * What lives here:
- *   - the per-VM `ingress` reverse proxy (zero-downtime host-port owner);
- *   - the blue-green expansion: how a `blue-green` service (the backend) becomes
- *     two named slots + a one-shot `migrate` companion. The fork still owns the
- *     backend's image/sizing/env as a normal `services.config.ts` entry;
- *   - the uniform healthcheck/env scaffolding injected into every app service;
- *   - `assembleCompose()`, which expands the service registry into the
- *     `ComposeFile` that `synth.ts` emits.
- *
- * See infra/README.md (Zero-downtime deploys).
- */
 import type { AppServiceConfig, AppServices, ServiceMeta, ComposeFile, ComposeService, HealthCheck } from './types'
 
-/** Helper for `services.config.ts` — typed identity that preserves literal keys. */
+/** Helper for `services.config.ts`: typed identity that preserves literal keys. */
 export function defineServices<const T extends AppServices>(services: T): T {
   return services
 }
@@ -85,7 +69,7 @@ function appBlock(
     image: cfg.image,
     profiles: [slug],
     restart: 'unless-stopped',
-    // Publish the host port directly — the LB targets it and health-checks the
+    // Publish the host port directly: the LB targets it and health-checks the
     // app's real `/health` (no ingress hop in the immutable-node model).
     ports: [`${cfg.port}:${cfg.port}`],
     stop_grace_period: cfg.stopGracePeriod ?? '30s',
@@ -114,7 +98,7 @@ function migrateBlock(slug: string, cfg: AppServiceConfig): ComposeService {
 }
 
 // ---------------------------------------------------------------------------
-// Machinery — hand-authored, cella-owned. The one-shot migrate companion and
+// Machinery: hand-authored, cella-owned. The one-shot migrate companion and
 // the compose assembly. Not fork data; driven by the fork's service registry.
 // ---------------------------------------------------------------------------
 

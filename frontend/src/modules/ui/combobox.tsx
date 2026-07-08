@@ -311,7 +311,7 @@ function ComboboxSearchInput({
         data-lpignore="true"
         {...props}
         ref={(el) => {
-          // Set type="search" imperatively — base-ui omits it from its types.
+          // Set type="search" imperatively because base-ui omits it from its types.
           // Password managers skip search inputs.
           if (el) el.type = 'search';
           if (typeof ref === 'function') ref(el);
@@ -336,7 +336,7 @@ function ComboboxSearchInput({
 }
 
 // ============================================================================
-// High-level ComboboxSelect — drop-in for form fields
+// High-level ComboboxSelect: drop-in for form fields
 // ============================================================================
 
 interface ComboBoxOption {

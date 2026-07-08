@@ -203,11 +203,11 @@ export function useTreeRows<T>(opts: UseTreeRowsOptions<T>) {
     buildRows,
     /** Toggle a row by id. Stable across renders. */
     onToggle,
-    /** Drop validator — pass current rows + drop args. */
+    /** Drop validator; pass current rows + drop args. */
     canDrop,
-    /** Top/bottom drop handler — pass current rows + drag info + edge. */
+    /** Top/bottom drop handler; pass current rows + drag info + edge. */
     onReorder,
-    /** Center drop handler — pass current rows + drag info. */
+    /** Center drop handler; pass current rows + drag info. */
     onReparent,
     /** Pass to `<TreeProvider value={tree.context}>`. */
     context,

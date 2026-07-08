@@ -1,10 +1,3 @@
-/**
- * Helpers for mutation onSuccess handlers.
- *
- * - mergeServerResponse: merge only mutated fields from server onto cached entity
- * - syncEntityToCache: write entity to both list + detail cache
- */
-
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import { cacheUpdate } from '~/query/basic/cache-mutations';
 import type { ItemData } from '~/query/basic/types';
@@ -42,9 +35,6 @@ export function mergeServerResponse<T extends { id: string; stx?: unknown; updat
 
 /**
  * Write an entity to both the list cache and the detail cache.
- *
- * - List cache: cacheUpdate with the provided listKey
- * - Detail cache: setQueryData with guard to avoid creating entries that were never fetched
  */
 export function syncEntityToCache<T extends ItemData>(opts: {
   entity: T;

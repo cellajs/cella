@@ -50,7 +50,7 @@ export async function handleMcpMessage(ctx: AuthContext, message: JsonRpcMessage
       });
     }
 
-    // Notifications — acknowledged with no response body.
+    // Notifications are acknowledged with no response body.
     case 'notifications/initialized':
     case 'notifications/cancelled':
       return null;

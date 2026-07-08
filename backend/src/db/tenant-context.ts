@@ -2,10 +2,14 @@ import { sql } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
 import { baseDb } from './db';
 
+// ============================================================================
+// Tenant context helpers, set session vars for RLS policies
+// ============================================================================
+
 /**
  * Apply tenant/session variables for RLS policies within a transaction.
  *
- * Convention: keep the callback focused on DB queries. Return raw data —
+ * Convention: keep the callback focused on DB queries. Return raw data;
  * hydration, response formatting, and ctx.json() belong outside.
  */
 async function setTenantSessionVars(
@@ -22,8 +26,7 @@ async function setTenantSessionVars(
 
 /** Read-only tenant RLS transaction for normal product queries. */
 export async function tenantRead<T>(ctx: AuthContext, fn: (readCtx: AuthContext) => Promise<T>): Promise<T> {
-  // Fold READ ONLY into BEGIN (drizzle emits `begin read only` in a single round trip)
-  // instead of a separate `SET TRANSACTION READ ONLY` statement — saves one DB round trip per read.
+  // Fold READ ONLY into BEGIN, saving one DB round trip per read.
   return baseDb.transaction(
     async (tx) => {
       await setTenantSessionVars(tx, ctx, false);

@@ -8,12 +8,12 @@ import { xMiddleware } from '#/core/x-middleware';
  * past quota checks. When an insert is already in-flight for a given tenant,
  * subsequent requests receive a 409 Conflict instead of queuing.
  *
- * Scoped by `tenantId` — a normal user only works in one tenant at a time,
+ * Scoped by `tenantId`: a normal user only works in one tenant at a time,
  * so this effectively serializes their create requests without being too
  * granular. The lock is held only for the duration of the request handler
  * and auto-releases on completion or error.
  *
- * Single-process only — with multiple backend instances the worst-case
+ * Single-process only: with multiple backend instances the worst-case
  * overshoot is bounded to one batch per instance, which is acceptable
  * given quotas are soft business guardrails.
  */

@@ -64,7 +64,7 @@ export function AppNav() {
         side: sheetSide as 'left' | 'right',
         modal: 'trap-focus',
         // Outside-press handling is gated by `keepNavOpen` inside the sheeter's onOpenChange,
-        // so don't disable it at the Base UI level — that would suppress the event entirely.
+        // so don't disable it at the Base UI level, which would suppress the event entirely.
         disablePointerDismissal: false,
         className: navSheetClassName,
         skipAnimation: options?.skipAnimation,

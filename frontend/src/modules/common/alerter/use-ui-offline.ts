@@ -11,16 +11,15 @@ const showDelay = 2000;
  * Derives the *UI* offline state from the *logic* offline state (`onlineManager`).
  *
  * `onlineManager` is the single source of truth for connectivity (driven by the /health
- * probe). It reacts instantly — ideal for pausing queries/mutations, but unsuitable for UI,
+ * probe). It reacts instantly, ideal for pausing queries/mutations but unsuitable for UI,
  * since a transient blip would flash a toast. This hook is a low-pass filter over that signal:
  *
- * - logic offline → UI offline: only after `showDelay` of *sustained* disconnection (debounced)
- * - logic online → UI offline cleared: immediately
+ * - logic offline to UI offline: only after `showDelay` of *sustained* disconnection (debounced)
+ * - logic online to UI offline cleared: immediately
  * - on tab resume while offline: re-verify with a real request, since mobile's 'online' event
  *   is laggy and the pre-freeze offline state may be stale
  *
- * UI offline is therefore always a function of logic offline + time — never an independent
- * state — so the two layers cannot desync.
+ * UI offline is derived from logic offline + time, not stored as an independent state.
  */
 export const useUiOffline = () => {
   const isOnline = useOnlineManager();
@@ -43,7 +42,7 @@ export const useUiOffline = () => {
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return;
-      if (onlineManager.isOnline()) return; // not offline — nothing stale to clear
+      if (onlineManager.isOnline()) return; // not offline, nothing stale to clear
       revalidateConnectivity();
     };
     document.addEventListener('visibilitychange', onVisible);

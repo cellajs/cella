@@ -9,12 +9,8 @@ import { parse } from 'yaml';
  * (src/content/docs md/mdx) keyed by content-root-relative module path, each entry
  * holding the page's parsed frontmatter and extracted headings.
  *
- * The docs metadata index (~/modules/page/content.ts) previously read frontmatter via
- * an eager `import.meta.glob`, which statically imported every page module and pulled
- * all page bodies into one chunk — defeating the lazy per-page glob. Parsing here,
- * without importing the page modules, keeps each page body in its own code-split chunk
- * and lets the "on this page" aside render before the body chunk loads.
- *
+ * Parsing here, without importing page modules, keeps each page body in its own
+ * code-split chunk and lets the "on this page" aside render before the body chunk loads.
  * Headings must produce the same ids as the mdx pipeline (rehype-slug with the `spy-`
  * prefix, vite.config.ts): same slugger (github-slugger), fresh instance per source
  * file, and the leading h1 of repo docs skipped (mirrors remarkStripRepoDocH1).
@@ -50,9 +46,9 @@ function collectPages(dir: string): string[] {
 function toTextContent(markdown: string): string {
   return markdown
     .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1') // links/images → label
-    .replace(/`([^`]*)`/g, '$1') // inline code → content
-    .replace(/(\*\*|__)(.*?)\1/g, '$2') // strong → content
-    .replace(/(\*|\b_)(.*?)\1/g, '$2') // emphasis → content
+    .replace(/`([^`]*)`/g, '$1') // inline code -> content
+    .replace(/(\*\*|__)(.*?)\1/g, '$2') // strong -> content
+    .replace(/(\*|\b_)(.*?)\1/g, '$2') // emphasis -> content
     .trim();
 }
 
@@ -134,7 +130,7 @@ export function docsFrontmatter(): Plugin {
     configureServer(server) {
       const initial = buildIndex();
       let index = JSON.stringify(initial.index);
-      // Imported repo docs live outside the frontend root — make sure they're watched.
+      // Imported repo docs live outside the frontend root, make sure they're watched.
       for (const target of initial.targets) server.watcher.add(target);
 
       const maybeInvalidate = (file: string) => {

@@ -18,12 +18,12 @@ export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItem
       return;
     }
 
-    // Detect duplicate checkboxIds (from block split — both halves get the same props)
+    // Detect duplicate checkboxIds from block splits where both halves get the same props.
     for (const b of editor.document) {
       if (b.type !== 'checklistItem') continue;
       if ((b.props as { checkboxId?: string }).checkboxId !== id) continue;
-      if (b.id === block.id) break; // We're the first occurrence — keep our ID
-      // Another block above us has the same checkboxId — assign a fresh one
+      if (b.id === block.id) break; // This is the first occurrence, keep its ID
+      // Another block above us has the same checkboxId, so assign a fresh one.
       setTimeout(() => updateBlockWithoutHistory(editor, block, { props: { checkboxId: nanoid(12) } }), 0);
       break;
     }
@@ -34,7 +34,7 @@ export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItem
 
   const handleToggle = () => {
     if (!persisted) return;
-    // Toggle checked state directly in block props — this is a Y.Doc update when collaborative
+    // Toggle checked state directly in block props; this is a Y.Doc update when collaborative.
     editor.updateBlock(block, { props: { checked: !isChecked } });
   };
 

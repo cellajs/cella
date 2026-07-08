@@ -9,7 +9,7 @@ export const OfflineAccessSwitch = () => {
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
 
   const onCheckedChange = (isOffline: boolean) => {
-    // setTimeout is used to show the toast after the switch is toggled (QueryProvider updates)
+    // Delay the toast until after the switch state updates through QueryProvider.
     setTimeout(() => {
       toaster(t(`c:offline_access_${isOffline ? 'on' : 'off'}.text`, { appName: appConfig.name }), 'info');
     }, 0);

@@ -4,8 +4,8 @@
  * the VM boot agent, the shared Scaleway clients).
  *
  * Shaped so the native `fetch` (DOM lib or Node's undici) is directly
- * assignable — narrower parameter types, `Response` is a superset of the
- * return shape — which is what lets `resolveFetch` avoid any casting.
+ * assignable: narrower parameter types, `Response` is a superset of the
+ * return shape. This lets `resolveFetch` avoid any casting.
  */
 export type FetchLike = (
   url: string,

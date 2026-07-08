@@ -22,7 +22,7 @@ const MAX_SELECTABLE_ROWS = 1000;
 /**
  * Engine props DataTable forwards to <DataGrid> unchanged. Sourced from
  * DataGridProps so their types/docs live in one place and new pure-passthrough
- * props only need adding to this key list — they then flow through `...gridProps`
+ * props only need adding to this key list; they then flow through `...gridProps`
  * with no extra plumbing.
  */
 type ForwardedGridProps<TData> = Pick<
@@ -48,7 +48,7 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   rows: TData[] | undefined;
   rowKeyGetter: (row: TData) => string;
 
-  /** Query/async state — DataTable's own concern (skeleton, error, empty, infinite scroll). */
+  /** Query/async state: DataTable's own concern (skeleton, error, empty, infinite scroll). */
   hasNextPage: boolean;
   error?: Error | null;
   isLoading?: boolean;
@@ -65,11 +65,11 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   readOnly?: boolean;
   enableVirtualization?: boolean;
 
-  /** Selection — DataTable wraps onSelectedRowsChange with the max-selection cap. */
+  /** Selection: DataTable wraps onSelectedRowsChange with the max-selection cap. */
   selectedRows?: Set<string>;
   onSelectedRowsChange?: (selectedRows: Set<string>) => void;
 
-  /** Renderers — DataTable bundles these into a stable `renderers` object. */
+  /** Renderers: DataTable bundles these into a stable `renderers` object. */
   renderRow?: (key: Key, props: RenderRowProps<TData, unknown>) => ReactNode;
   renderCell?: (key: Key, props: CellRendererProps<TData, unknown>) => ReactNode;
 
@@ -79,15 +79,15 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
 }
 
 /**
- * Query-backed table — the boundary between a data query and the grid engine.
+ * Query-backed table, the boundary between a data query and the grid engine.
  * Owns async/presentation state (loading skeleton, error panel, empty state,
  * infinite scroll, the max-selection cap, column-width reset) and forwards
  * everything else to <DataGrid> (the engine: virtualization, selection, editing,
  * keyboard nav, column layout). Pure engine props flow through untouched via
- * `...gridProps` — see {@link ForwardedGridProps}.
+ * `...gridProps`; see {@link ForwardedGridProps}.
  */
 export const DataTable = <TData,>({
-  // DataTable-owned / transformed props — destructured so they don't leak into `...gridProps`
+  // DataTable-owned / transformed props, destructured so they don't leak into `...gridProps`.
   columns,
   rows,
   rowKeyGetter,
@@ -135,7 +135,7 @@ export const DataTable = <TData,>({
     : undefined;
 
   // Wrap selection handler to enforce max selection limit. Memoized so the
-  // identity stays stable across renders — `DataGrid` passes it through to
+  // identity stays stable across renders; `DataGrid` passes it through to
   // memoized rows; a fresh function each render would defeat that memo.
   const handleSelectedRowsChange = useCallback(
     (newSelectedRows: Set<string>) => {

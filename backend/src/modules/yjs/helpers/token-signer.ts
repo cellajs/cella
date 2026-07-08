@@ -1,14 +1,3 @@
-/**
- * Yjs auth token signing for the backend API.
- *
- * Generates HMAC-SHA256 signed tokens for Yjs relay worker authentication.
- * Same signing algorithm as yjs/src/auth.ts — both share YJS_SECRET.
- *
- * Tokens are context-scoped: they embed the context entity (e.g. project)
- * and the product entity type (e.g. task) the user is authorized to edit.
- * This lets the Yjs worker verify access locally without a backend round-trip.
- */
-
 import { createHmac } from 'node:crypto';
 import { env } from '#/env';
 
@@ -32,9 +21,9 @@ function computeSignature(encodedPayload: string): string {
 
 /**
  * Sign a context-scoped Yjs auth token.
- * The token proves the user has update permission for the given entity type
- * within a specific context (e.g. project). The Yjs worker can verify this
- * locally via HMAC without calling back to the backend.
+ * Uses the same HMAC-SHA256 signing algorithm as the Yjs relay. The token
+ * embeds the context entity and product entity type the user may edit, so the
+ * relay can verify access locally without calling back to the backend.
  */
 export function signYjsToken(params: Omit<YjsTokenPayload, 'exp'>): string {
   const payload: YjsTokenPayload = {

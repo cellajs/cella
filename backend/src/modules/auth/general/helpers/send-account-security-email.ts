@@ -7,7 +7,7 @@ type AccountSecurityType = Parameters<typeof accountSecurityEmail.translate>[1][
 
 /**
  * Send an account security notification email.
- * Fire-and-forget — errors are logged but never thrown.
+ * Fire-and-forget: errors are logged but never thrown.
  */
 export const sendAccountSecurityEmail = (
   recipient: { email: string; name?: string; language?: string },

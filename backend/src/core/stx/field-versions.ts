@@ -1,9 +1,3 @@
-/**
- * HLC-based field conflict resolution for sync engine.
- * Replaces version-based conflict detection with per-field HLC timestamps.
- * Newer HLC wins, older silently dropped — no 409, no retry.
- */
-
 import { compareHLC } from './hlc';
 
 function isPrimitive(value: unknown): value is string | number | boolean | null {
@@ -12,7 +6,7 @@ function isPrimitive(value: unknown): value is string | number | boolean | null 
 
 /**
  * Filter out primitive fields where the incoming value is identical to the current entity value.
- * Non-primitive fields (arrays, objects) are always kept — no deep equality.
+ * Non-primitive fields (arrays, objects) are kept without deep equality checks.
  * Returns a new object with only the effectively changed fields.
  */
 export function filterNoOpFields<T extends Record<string, unknown>>(
@@ -28,15 +22,15 @@ export function filterNoOpFields<T extends Record<string, unknown>>(
 }
 
 interface ResolveResult<T> {
-  /** Fields that won the HLC comparison (newer timestamp), with their values */
+  /** Fields that won the HLC comparison, with their values. */
   acceptedFields: Partial<T>;
-  /** Field names that lost the HLC comparison (older timestamp) */
+  /** Field names that lost the HLC comparison. */
   dropped: string[];
 }
 
 /**
  * Resolve field-level conflicts using HLC timestamps.
- * For each scalar field: incoming HLC > stored HLC → accept, otherwise drop.
+ * For each scalar field, accept when incoming HLC > stored HLC; otherwise drop.
  * Returns accepted fields as a partial object (preserving the input type)
  * and dropped field names.
  *
@@ -56,8 +50,8 @@ export function resolveFieldConflicts<T extends Record<string, unknown>>(
     const incomingHLC = incomingTimestamps[field];
     const storedHLC = storedTimestamps[field];
 
-    // No stored HLC → first write, always accept
-    // No incoming HLC → not tracked (set fields), always accept
+    // No stored HLC: first write, always accept.
+    // No incoming HLC: not tracked (set fields), always accept.
     if (!storedHLC || !incomingHLC || compareHLC(incomingHLC, storedHLC) > 0) {
       (acceptedFields as Record<string, unknown>)[field] = incomingFields[field];
     } else {

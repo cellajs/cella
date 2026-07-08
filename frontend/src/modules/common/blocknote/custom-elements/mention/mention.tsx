@@ -5,7 +5,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { Member } from '~/modules/memberships/types';
 
 // The Mention inline content.
-// Schema config is shared with the Yjs relay's server-side seeder — see shared/blocknote-schema-configs
+// Schema config is shared with the Yjs relay's server-side seeder; see shared/blocknote-schema-configs.
 export const MentionSchema = createReactInlineContentSpec(mentionConfig, {
   render: (props) => {
     const { name } = props.inlineContent.props;

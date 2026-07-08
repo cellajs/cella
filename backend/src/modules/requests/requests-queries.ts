@@ -43,7 +43,7 @@ interface InsertRequestOpts {
   message?: string | null;
 }
 
-/** Insert a request and return the created record (without tokenId). */
+/** Insert a request and return the created row (without tokenId). */
 export const insertRequest = async (ctx: DbContext, { email, type, message }: InsertRequestOpts) => {
   const { db } = ctx.var;
   const { tokenId, ...requestsSelect } = getColumns(requestsTable);

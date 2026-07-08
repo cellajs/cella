@@ -22,7 +22,7 @@ const derived = deriveInfra(appConfig)
 
 export const { naming, dnsZone, region, zone, tags, tagsAsMap, isProduction } = derived
 
-// Deploys require a real domain — fail fast here instead of gating each resource
+// Deploys require a real domain; fail fast here instead of gating each resource
 // module on `hasDomain` independently.
 if (!derived.hasDomain) {
   throw new Error(
@@ -69,10 +69,10 @@ function requireEnv(name: string): string {
   return value
 }
 
-/** Scaleway project id — scopes every provider call. */
+/** Scaleway project id: scopes every provider call. */
 export const projectId: string = requireEnv('SCW_DEFAULT_PROJECT_ID')
 
-/** Scaleway organization id — scopes the org-level IAM application lookups below. */
+/** Scaleway organization id: scopes the org-level IAM application lookups below. */
 export const organizationId: string = requireEnv('SCW_DEFAULT_ORGANIZATION_ID')
 
 /**
@@ -84,7 +84,7 @@ export const organizationId: string = requireEnv('SCW_DEFAULT_ORGANIZATION_ID')
  * Empty = only the CI deploy app + public reads, the default. */
 export const operatorApplicationId: string | undefined = process.env.SCW_OPERATOR_APPLICATION_ID?.trim() || undefined
 
-/** CI deploy application id — the `<slug>-ci-deploy` principal CI authenticates as. */
+/** CI deploy application id: the `<slug>-ci-deploy` principal CI authenticates as. */
 export const ciDeployApplicationId = scaleway.iam
   .getApplicationOutput({ name: `${appConfig.slug}-ci-deploy`, organizationId })
   .apply((app) => {
@@ -92,7 +92,7 @@ export const ciDeployApplicationId = scaleway.iam
     return app.applicationId
   })
 
-/** VM reader application id — the `<slug>-vm-reader` principal baked into service VMs. */
+/** VM reader application id: the `<slug>-vm-reader` principal baked into service VMs. */
 export const vmReaderApplicationId = scaleway.iam
   .getApplicationOutput({ name: `${appConfig.slug}-vm-reader`, organizationId })
   .apply((app) => {
@@ -104,7 +104,7 @@ export const vmReaderApplicationId = scaleway.iam
 // bootstrap CLI sets `bootstrap:computeDeferred` before the first `pulumi up`
 const computeDeferred = new pulumi.Config('bootstrap').get('computeDeferred') !== undefined
 
-// VM size is per-service  — declared in config/services.config.ts
+// VM size is per-service, declared in config/services.config.ts
 const registryInstanceType = (serviceName: ServiceName): string => {
   const size = servicesByName.get(serviceName)?.instanceType
   const resolved = typeof size === 'string' ? size : size?.[deployMode]
@@ -142,4 +142,3 @@ function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulum
 const vmReaderKey = computeDeferred ? undefined : readVmReaderKey()
 export const vmAccessKey = vmReaderKey?.accessKey ?? pulumi.secret('')
 export const vmSecretKey = vmReaderKey?.secretKey ?? pulumi.secret('')
-

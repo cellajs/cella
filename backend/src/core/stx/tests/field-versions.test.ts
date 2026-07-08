@@ -1,16 +1,7 @@
-/**
- * Tests for HLC-based field conflict resolution and no-op filtering.
- *
- * Enforces the core sync contract:
- * - Newer HLC timestamps win, older are silently dropped
- * - Missing stored HLC → first write, always accept
- * - Missing incoming HLC → untracked field, always accept
- * - No-op primitive fields are filtered out
- */
-
 import { describe, expect, it } from 'vitest';
 import { filterNoOpFields, resolveFieldConflicts } from '#/core/stx/field-versions';
 
+// Covers HLC conflict resolution, untracked fields, and no-op filtering.
 describe('resolveFieldConflicts', () => {
   it('accepts all fields when no stored timestamps exist', () => {
     const incoming = { name: 'New', status: 'done' };

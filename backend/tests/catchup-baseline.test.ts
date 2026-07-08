@@ -1,14 +1,3 @@
-/**
- * Catchup baseline integration tests.
- *
- * Verifies that the catchup endpoint returns correct entitySeqs and entityCounts
- * when called without a cursor (baseline mode). This is the foundation for the
- * first-connect flow where catchup seeds the sync store baseline instead of
- * triggering delta-fetches or invalidations.
- *
- * Requires: PostgreSQL (core mode or higher)
- */
-
 import { sql } from 'drizzle-orm';
 import { postAppCatchup } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -25,6 +14,7 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 const legacyProductDeleteActivityId = '00000000-00000001';
 
+// Verifies baseline catchup entitySeqs and entityCounts for first-connect sync.
 describe('Catchup baseline', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
@@ -111,7 +101,7 @@ describe('Catchup baseline', async () => {
 
     const { changes } = result.data as AppCatchupResponse;
 
-    // Org should be pruned — seqs match, no deletes
+    // Org is pruned when seqs match and there are no deletes.
     expect(changes[tenant.organization.id]).toBeUndefined();
   });
 
@@ -150,7 +140,7 @@ describe('Catchup baseline', async () => {
 
     const { changes } = result.data as AppCatchupResponse;
 
-    // Org should be present — task seq differs
+    // Org is present when the task seq differs.
     const orgChanges = changes[tenant.organization.id];
     expect(orgChanges).toBeDefined();
     expect(orgChanges.entitySeqs!.task).toBe(42);

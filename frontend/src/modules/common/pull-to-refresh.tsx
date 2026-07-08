@@ -119,7 +119,7 @@ export function PullToRefresh({
     isDraggingRef.current = false;
 
     if (!pulledEnough) {
-      // Not enough pull — animate back to 0
+      // Not enough pull: animate back to 0.
       setPullPosition(0);
       return;
     }
@@ -130,7 +130,7 @@ export function PullToRefresh({
     sawFetchRef.current = false;
 
     Promise.resolve(onRefresh()).finally(() => {
-      // Static routes have nothing to refetch — skip the animation and hard-reload.
+      // Static routes have nothing to refetch, so skip the animation and hard-reload.
       if (!sawFetchRef.current) {
         window.location.reload();
         return;

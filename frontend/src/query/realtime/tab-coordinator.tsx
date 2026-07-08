@@ -190,10 +190,10 @@ const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => 
 
   if (message.type === 'schema-version') {
     if (message.version > currentSchemaVersion) {
-      // A newer bundle runs in another tab — stop persisting (schema-version-guard).
+      // A newer bundle runs in another tab, stop persisting (schema-version-guard).
       markBundleStale();
     } else if (message.version < currentSchemaVersion) {
-      // An older tab announced itself after we booted — re-announce so it learns.
+      // An older tab announced itself after we booted, re-announce so it learns.
       broadcastChannel?.postMessage({
         type: 'schema-version',
         version: currentSchemaVersion,

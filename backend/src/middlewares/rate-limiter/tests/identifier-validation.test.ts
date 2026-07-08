@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { describe, expect, it, vi } from 'vitest';
 import { AppError } from '#/core/error';
 
-// Undo setup.ts mock — this test needs the real rateLimiter to exercise identifier validation
+// Undo setup.ts mock: this test needs the real rateLimiter to exercise identifier validation.
 vi.unmock('#/middlewares/rate-limiter/core');
 
 // Mock the helpers module to isolate identifier extraction from DB/limiter internals

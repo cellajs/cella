@@ -191,7 +191,7 @@ export const useMemberUpdateMutation = () =>
       } else if (body?.displayOrder !== undefined)
         context.toastMessage = t('c:success.update_item', { item: t('c:order') });
 
-      // Update myMemberships cache — global subscriber enriches entity lists automatically
+      // Update myMemberships cache; the global subscriber enriches entity lists.
       updateMyMembershipCache(membershipInfo);
 
       // Get affected queries
@@ -223,7 +223,7 @@ export const useMemberUpdateMutation = () =>
       { entityId, entityType, path: { tenantId, organizationId } },
       { toastMessage },
     ) => {
-      // Update myMemberships cache — global subscriber enriches entity lists automatically
+      // Update myMemberships cache; the global subscriber enriches entity lists.
       updateMyMembershipCache(updatedMembership);
 
       // Get affected queries
@@ -256,7 +256,7 @@ export const useMemberUpdateMutation = () =>
       toaster(toastMessage, 'success');
     },
     onError: (_, __, context) => {
-      // Invalidate memberships to undo the optimistic update — enrichment subscriber re-syncs entity lists
+      // Invalidate memberships to undo the optimistic update; the enrichment subscriber syncs entity lists.
       queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
       onError(_, __, context?.queryContext);
     },
@@ -381,7 +381,7 @@ export const useChangeEntityRoleMutation = () =>
       if (!organizationId) throw new Error(`Missing organizationId for ${entityType} entity`);
 
       if (membership?.id) {
-        // Existing membership — update role
+        // Existing membership, update role.
         const updated = await updateMembership({
           body: { role },
           path: { id: membership.id, tenantId, organizationId },
@@ -389,7 +389,7 @@ export const useChangeEntityRoleMutation = () =>
         return { entity, membership: updated, wasNew: false };
       }
 
-      // No membership — create via invite
+      // No membership, create via invite.
       const { email } = useUserStore.getState().user;
       const result = await membershipInvite({
         query: { entityId, entityType },
@@ -402,7 +402,7 @@ export const useChangeEntityRoleMutation = () =>
       return { entity, membership: created, wasNew: true };
     },
     onSuccess: ({ entity, membership }) => {
-      // Update myMemberships cache — global subscriber enriches entity lists automatically
+      // Update myMemberships cache; the global subscriber enriches entity lists.
       upsertMyMembershipCache(membership);
 
       // Update entity list cache with the new/updated membership

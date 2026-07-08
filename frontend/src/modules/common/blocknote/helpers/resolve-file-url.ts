@@ -34,7 +34,7 @@ export function createResolveFileUrl({ publicFiles, baseFilePanelProps }: Resolv
 
     const isPublic = publicFiles ?? baseFilePanelProps?.isPublic ?? false;
 
-    // Public files use CDN URL directly — no tenantId/organizationId needed.
+    // Public files use CDN URL directly; no tenantId/organizationId needed.
     if (isPublic) return getFileUrl(key, true, '', '');
 
     const cachedAttachment = isAttachmentId ? findAttachmentInCache(key) : null;

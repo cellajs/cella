@@ -33,8 +33,8 @@ export const sessionsTable = snakeCase.table(
     browser: varchar({ length: maxLength.field }),
     authStrategy: varchar({ enum: authStrategiesEnum }).notNull(),
     // Pseudonymized network identity. Raw IP is never persisted.
-    // ipHash: per-user HMAC of the IP — supports "have I seen this IP for this user?" checks (MFA trust).
-    // ipSubnetHash: global HMAC of the /24 (v4) or /48 (v6) — supports cross-user blocklist matching.
+    // ipHash: per-user HMAC of the IP for "have I seen this IP for this user?" checks (MFA trust).
+    // ipSubnetHash: global HMAC of the /24 (v4) or /48 (v6) for cross-user blocklist matching.
     // ipCountry / ipAsn: derived from GeoIP at session creation, used for geo-aware MFA and bot defense.
     ipHash: varchar({ length: 64 }),
     ipSubnetHash: varchar({ length: 64 }),

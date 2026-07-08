@@ -19,7 +19,7 @@ export const countOrgsInTenant = async (ctx: DbContext, tenantId: string) => {
   return result?.count ?? 0;
 };
 
-/** Insert organizations and return the created records. */
+/** Insert organizations and return the created rows. */
 export const insertOrganizations = async (
   ctx: DbContext,
   { orgs }: { orgs: (typeof organizationsTable.$inferInsert)[] },
@@ -33,7 +33,7 @@ interface UpdateOrganizationOpts {
   values: Partial<typeof organizationsTable.$inferInsert>;
 }
 
-/** Update an organization by ID and return the updated record. */
+/** Update an organization by ID and return the updated row. */
 export const updateOrganization = async (ctx: AuthContext, { id, values }: UpdateOrganizationOpts) => {
   const { db, tenantId } = ctx.var;
   const [updated] = await db
@@ -113,7 +113,7 @@ export const getOrganizationsList = async ({ var: { db } }: DbContext, opts: Get
     total: sql<number>`count(*) over()`.mapWith(Number),
   } as const;
 
-  // Main query — admin LEFT JOIN vs regular INNER JOIN on memberships
+  // Admins use LEFT JOIN; regular users use INNER JOIN on memberships.
   let query = isSystemAdmin
     ? db.select(selectShape).from(organizationsTable).leftJoin(membershipsTable, membershipOn).$dynamic()
     : db.select(selectShape).from(organizationsTable).innerJoin(membershipsTable, membershipOn).$dynamic();

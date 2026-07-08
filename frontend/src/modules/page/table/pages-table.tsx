@@ -15,12 +15,12 @@ import { usePagesTableColumns } from '~/modules/page/table/pages-columns';
 import type { PagesRouteSearchParams } from '~/modules/page/types';
 import { canEditDocs, type DocEditOps, editDocPage } from '~/modules/page/utils/edit-doc-page';
 
-/** Stable row key getter — defined outside the component to keep its identity stable. */
+/** Stable row key getter, defined outside the component to keep its identity stable. */
 function rowKeyGetter(row: PageTreeRow) {
   return row.id;
 }
 
-/** Stable drag preview renderer — defined at module scope so DataGrid's prop identity stays stable. */
+/** Stable drag preview renderer, defined at module scope so DataGrid's prop identity stays stable. */
 function renderRowDragPreview(row: PageTreeRow) {
   return <PageRowPreview page={row} />;
 }

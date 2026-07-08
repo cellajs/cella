@@ -7,7 +7,7 @@ import type { HmrContext, ModuleNode, Plugin } from 'vite';
  *
  * This plugin watches locale files (JSON/YAML) in the source directory and:
  * 1. Syncs them to a cache directory for faster access
- * 2. Merges specified namespaces into a target namespace (e.g., 'app' → 'common')
+ * 2. Merges specified namespaces into a target namespace (e.g., 'app' -> 'common')
  * 3. Sends custom HMR events to trigger i18next reloads without full page refresh
  *
  * @example

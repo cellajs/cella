@@ -1,13 +1,3 @@
-/**
- * Print deploy env values derived from shared/* config, as `key=value` lines
- * suitable for `>> $GITHUB_OUTPUT`. Avoids duplicating naming/region in CI.
- *
- * Output is constrained to an explicit allowlist so a future refactor can't
- * accidentally widen the surface area or leak a secret-shaped value into the
- * GitHub Actions log.
- *
- * Usage: tsx infra/tasks/print-deploy-env.ts <staging|production>
- */
 import { isMain } from '../lib/utils/is-main'
 import type { appConfig as AppConfig } from '../../shared'
 import { deriveInfra } from '../lib/naming'
@@ -44,7 +34,7 @@ export function isAllowedProductionRef(gitRef: string): boolean {
   return gitRef === 'refs/heads/main' || gitRef.startsWith('refs/tags/')
 }
 
-/** Pure builder — given an appConfig, produce the deploy env table. */
+/** Pure builder that produces the deploy env table from an appConfig. */
 export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {}): Record<AllowedKey, string> {
   const { naming } = deriveInfra(appConfig)
   const enabled = enabledServices(appConfig.services)

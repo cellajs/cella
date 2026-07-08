@@ -4,7 +4,7 @@ import { Label } from '~/modules/ui/label';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 
 /**
- * A set of checkable buttons—known as radio buttons—where no more than one of
+ * A set of checkable buttons, known as radio buttons, where no more than one of
  * the buttons can be checked at a time.
  */
 const meta = {

@@ -33,7 +33,7 @@ function focusItem(items: HTMLElement[], idx: number) {
  * - Printable characters: typeahead (matches start of item text, resets after ~500ms).
  *
  * Items themselves still own click/Enter/Space activation (native button behavior).
- * No-op when the container has no `[role="menuitem"]` descendants — safe to call
+ * No-op when the container has no `[role="menuitem"]` descendants; safe to call
  * unconditionally on every dropdowner popover.
  */
 export function useMenuKeyNav(containerRef: RefObject<HTMLElement | null>) {
@@ -44,7 +44,7 @@ export function useMenuKeyNav(containerRef: RefObject<HTMLElement | null>) {
     if (!container) return;
 
     const initialItems = getMenuItems(container);
-    if (initialItems.length === 0) return; // not a menu — leave focus handling to FocusTrap
+    if (initialItems.length === 0) return; // not a menu, leave focus handling to FocusTrap
 
     // Set up roving tabindex so Tab moves out of the menu and FocusTrap.initialFocus
     // lands on the first item rather than skipping all -1 elements.
@@ -66,7 +66,7 @@ export function useMenuKeyNav(containerRef: RefObject<HTMLElement | null>) {
       if (event.altKey || event.ctrlKey || event.metaKey) return;
 
       // Skip typing contexts. Only one dropdowner menu can be open at a time,
-      // so we don't need to gate by focus location — if a text field is the
+      // so we don't need to gate by focus location; if a text field is the
       // target the user is typing into it, not navigating the menu.
       const target = event.target as HTMLElement | null;
       if (target) {

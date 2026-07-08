@@ -1,14 +1,3 @@
-/**
- * Yjs token security tests.
- *
- * Verifies that the getYjsToken endpoint correctly enforces:
- * - Permission checking at token-signing time
- * - Context-scoped token payload
- *
- * Per-entity access (cross-tenant / cross-organization isolation) is now decided locally by the
- * relay worker's shared permission engine; see `yjs/src/data/permissions.ts` and its tests.
- */
-
 import { getYjsToken } from 'sdk';
 import { appConfig } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -19,6 +8,7 @@ import { clearSecurityTestData, createTestTenant, type TestTenant } from './help
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
+// Verifies getYjsToken permission checks and context-scoped token payloads.
 describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', async () => {
   const call = await createAppClient();
   let tenantA: TestTenant;
@@ -34,7 +24,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
     await clearSecurityTestData();
   });
 
-  // ── Token signing (getYjsToken) ────────────────────────────────
+  // Token signing (getYjsToken)
 
   describe('Token signing', () => {
     it('should return a non-empty token for authenticated user with permission', async () => {

@@ -1,28 +1,3 @@
-/**
- * Last-mile smoke checks against the now-live bundle + API, run after the
- * frontend bundle cutover. Each check targets a single HTTP contract that, if
- * broken, makes the app unusable for everyone; anything heavier (auth, DB
- * writes) belongs in the e2e suite, not the critical-path deploy pipeline.
- *
- * The assertions are pure and unit-tested; only the HTTP fetches are
- * side-effecting (and injected). All checks run even if an earlier one fails so
- * a single deploy surfaces every broken contract at once, then the task exits
- * non-zero if any failed.
- * Checks:
- *   1. Frontend index.html references a hashed entry asset. When the freshly
- *      built bundle hash is supplied via --dist, the check is stricter: the
- *      served index.html must reference that exact entry asset (the post-publish
- *      bundle verification, folded in from the former verify-frontend-bundle).
- *   2. Backend /openapi.json is reachable (API router mounted).
- *   3. Public service /health endpoints report the deployed release SHA.
- *   4. A random path returns an HTML document (SPA fallback / deep links work).
- *   5. Frontend responses carry the OWASP security-header baseline (Caddy live).
- *   6. Backend /health?depth=full shows every component healthy (no degraded
- *      database / cdc / yjs / ai after the rollout settled).
- *
- * Usage:
- *   tsx infra/tasks/smoke.ts --frontend <url> --backend <url> --sha <git-sha> [--services-json <enabled_services_json>] [--dist dist/index.html]
- */
 import { readFileSync } from 'node:fs'
 import { sleep as defaultSleep } from 'shared/sleep'
 import { errorMessage } from '../lib/utils/errors'
@@ -80,7 +55,7 @@ export interface ComponentIssue {
  * healthy. A non-critical worker that is fully down surfaces as `degraded`
  * (the backend rollup caps non-critical components there so it never
  * deregisters itself), so this check intentionally treats anything other than
- * `healthy` as a failure — by the time smoke runs, all services have rolled
+ * `healthy` as a failure: by the time smoke runs, all services have rolled
  * green and nothing should be degraded. A malformed/empty body yields a
  * synthetic issue so the check fails loudly instead of passing silently.
  */
@@ -200,7 +175,7 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
 
   // 1. Frontend index.html references the freshly built hashed entry asset.
   // When the local dist hash is known (expectedAsset), assert the served HTML
-  // references that exact bundle — the post-publish bundle check folded in from
+  // references that exact bundle; the post-publish bundle check folded in from
   // the former verify-frontend-bundle task. Otherwise fall back to "references
   // some hashed asset" so the check still runs without the artifact.
   await check(opts.expectedAsset ? 'index.html references freshly built bundle' : 'index.html references hashed asset', async () => {
@@ -285,7 +260,7 @@ interface CliArgs {
   backendUrl: string
   sha: string
   services?: SmokeService[]
-  /** Path to the freshly built local index.html, used to derive the expected bundle hash. */
+  /** Path to the freshly built local index.html for deriving the expected bundle hash. */
   dist?: string
   timeoutMs: number
 }

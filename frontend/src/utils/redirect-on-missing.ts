@@ -6,7 +6,7 @@ import { useToastStore } from '~/modules/common/toaster/toast-store';
 /**
  * Throws a redirect to /home when a required entity is missing.
  * Shows an offline cache miss toast when the user is offline.
- * Acts as a type guard — narrows the entity to non-nullable after the call.
+ * Acts as a type guard, narrowing the entity to non-nullable after the call.
  */
 export function redirectOnMissing<T>(entity: T): asserts entity is NonNullable<T> {
   if (entity != null) return;

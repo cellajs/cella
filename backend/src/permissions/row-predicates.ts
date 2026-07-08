@@ -8,7 +8,7 @@ import type { CollectionReadFilter, RestrictedScope } from './collection-scope';
  * `shared/src/permissions/row-conditions.ts`) into drizzle predicates, and assembles the
  * full WHERE clause for a conditionally-scoped collection read.
  *
- * The compiled SQL must agree with each condition's check-form — asserted by the parity
+ * The compiled SQL must agree with each condition's check-form, asserted by the parity
  * property test (`row-predicates.test.ts`).
  */
 
@@ -41,7 +41,7 @@ export const compileRowConditionSql = (condition: RowCondition, table: AnyPgTabl
 
 /**
  * Assembled WHERE clause for a collection read. Discriminated so "no restriction" can
- * never be confused with "no rows" — returning a bare `undefined` where-clause for an
+ * never be confused with "no rows". Returning a bare `undefined` where-clause for an
  * empty scope would leak the whole table.
  */
 export type CollectionReadWhere =
@@ -52,7 +52,7 @@ export type CollectionReadWhere =
 /**
  * SQL-form of a row restriction for ONE membership grant (see
  * `shared/src/permissions/row-restrictions.ts` for semantics; this must agree with
- * `membershipGrantQualifies` — asserted by the parity property test):
+ * `membershipGrantQualifies`, asserted by the parity property test):
  * - depth: row depth is NULL or among the depths this grant's context level qualifies for
  * - roles: row audience is NULL/empty or contains this grant's role
  */

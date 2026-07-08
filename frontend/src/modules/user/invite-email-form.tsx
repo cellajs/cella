@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { SendIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-// biome-ignore lint/style/noRestrictedImports: colocated mutation — system-level invite called from stepper flow.
+// biome-ignore lint/style/noRestrictedImports: colocated mutation for system-level invite called from stepper flow.
 import { systemInvite as baseSystemInvite } from 'sdk';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectEmails } from '~/modules/common/form-fields/select-emails';
@@ -47,8 +47,7 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
     if (rejectedIds.length)
       toaster(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }), 'info');
 
-    // Since this form is also used in onboarding, we need to call the next step
-    // This should ideally be done through the callback, but we need to refactor stepper
+    // Onboarding advances through stepper state instead of the optional callback.
     nextStep?.();
   };
 
@@ -59,7 +58,7 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
   });
 
   const onSubmit = (body: InviteFormValues) => {
-    // When no context its a system invite, otherwise its a membership invite
+    // With no context, this is a system invite; otherwise it is a membership invite.
     if (!contextEntity) return systemInvite(body);
 
     const organizationId = contextEntity.organizationId || contextEntity.id;

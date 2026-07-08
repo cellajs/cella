@@ -28,7 +28,7 @@ export const crossTenantGuard = xMiddleware(
       });
     }
 
-    // Set baseDb — handlers use tenantRead for product entity RLS reads
+    // Handlers use tenantRead for product entity RLS reads.
     ctx.set('db', baseDb);
     await next();
   },

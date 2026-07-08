@@ -35,7 +35,7 @@ export const defaultRestrictions = (): Restrictions => {
   };
 };
 
-/** Merge stored restrictions with current defaults so legacy rows gain any newly added fields */
+/** Merge stored restrictions with current defaults so stored rows gain missing fields. */
 export const normalizeRestrictions = (stored?: Partial<Restrictions> | null): Restrictions => {
   const defaults = defaultRestrictions();
   return {

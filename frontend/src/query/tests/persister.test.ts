@@ -196,7 +196,7 @@ describe('per-query IDB persister', () => {
       await persister.persistClient(makePersistedClient([q1, q2, q3]));
       await persister.flush();
 
-      // Persist with only q1 — q2 and q3 should be removed
+      // Persist with only q1; q2 and q3 should be removed.
       await persister.persistClient(makePersistedClient([q1]));
       await persister.flush();
 
@@ -217,7 +217,7 @@ describe('per-query IDB persister', () => {
       await persister.persistClient(makePersistedClient(queries));
       await persister.flush();
 
-      // Read from DB directly — product queries should be in queries table
+      // Read from DB directly; product queries should be in queries table.
       const productRecords = await getAppDb()!.queries.where('scope').equals('rq').toArray();
       expect(productRecords).toHaveLength(3);
     });

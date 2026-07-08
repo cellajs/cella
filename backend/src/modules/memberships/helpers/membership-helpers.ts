@@ -12,7 +12,7 @@ import {
 import { log } from '#/utils/logger';
 
 /**
- * The root context entity type — the parentless context entity (e.g. 'organization').
+ * The root context entity type: the parentless context entity (e.g. 'organization').
  * Derived from the hierarchy so forks that change the root entity type
  * don't need to update membership helper code.
  */

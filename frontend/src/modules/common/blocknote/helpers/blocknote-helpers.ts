@@ -3,7 +3,7 @@ import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 
-// Shared headless editor singleton — avoids expensive BlockNoteEditor.create() on every call
+// Shared headless editor singleton avoids expensive BlockNoteEditor.create() on every call.
 let headlessEditor: ReturnType<typeof BlockNoteEditor.create> | null = null;
 export const getHeadlessEditor = () => {
   if (!headlessEditor) {
@@ -18,7 +18,7 @@ export const getHeadlessEditor = () => {
 
 /**
  * Depth-first walk over parsed (JSON) blocks and their nested children.
- * Returning `false` from the visitor stops the traversal early — mirrors the
+ * Returning `false` from the visitor stops the traversal early; mirrors the
  * signature of `editor.forEachBlock`, which only works on a live editor's
  * document; this walker covers our JSON-string helpers.
  */
@@ -34,7 +34,7 @@ export const walkBlocks = (blocks: CustomBlock[], visitor: (block: CustomBlock) 
 /**
  * Locate the media element for a click in rendered BlockNote content.
  * `includeWrapped` extends detection to media nested inside the click target and to
- * `.bn-file-block-content-wrapper` hits (file blocks without a media preview) — used
+ * `.bn-file-block-content-wrapper` hits (file blocks without a media preview), used
  * by the live editor; the static full-HTML renderer only matches direct media clicks.
  * Returns null when the click isn't on media.
  */
@@ -92,7 +92,7 @@ export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<b
   }
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: schema-agnostic — custom block renderers pass narrower-schema editors
+// biome-ignore lint/suspicious/noExplicitAny: schema-agnostic; custom block renderers pass narrower-schema editors
 type AnyBlockNoteEditor = BlockNoteEditor<any, any, any>;
 
 /**

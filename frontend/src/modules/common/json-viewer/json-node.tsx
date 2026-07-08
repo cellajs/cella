@@ -233,7 +233,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
       return ap && typeof ap === 'object' ? ap : null;
     })();
 
-    // Check if this is an array schema (has type: 'array') - used to hoist items.properties
+    // Array schemas hoist items.properties.
     const isArraySchema =
       openapiMode === 'schema' &&
       !isArray &&
@@ -249,7 +249,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
     // Filter out 'required' key in schema mode (it will be shown as label instead)
     // Also filter out 'type' and 'ref' keys when not inside 'properties' (they will be shown as labels after open bracket)
     // For array schemas, filter out 'items' key (its properties will be hoisted)
-    // Note: 'anyOf' and 'oneOf' are NOT filtered - they are flattened like 'properties' but still rendered
+    // 'anyOf' and 'oneOf' are flattened like 'properties' but still rendered.
     const filteredEntries =
       openapiMode === 'schema' && !isArray
         ? rawEntries.filter(
@@ -376,7 +376,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
     const isExpandable = hasNestedObjects;
 
     // Should hide the expand header (for flattened nodes or root in schema mode)
-    // Note: items nodes remain visible (unlike properties) to show the array item structure
+    // Items nodes remain visible to show the array item structure.
     const hideExpandHeader = isFlattenedNode || isRootInSchemaMode;
 
     return (

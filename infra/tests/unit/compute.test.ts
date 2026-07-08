@@ -1,13 +1,3 @@
-/**
- * Source-level security smoke tests for the compute stack
- * (`infra/resources/compute.ts` + its compose-env / generations split).
- *
- * compute.ts is hard to render with the Pulumi mock harness (cascading
- * requireSecret + image-tag pin guard + cross-module imports), so the most
- * valuable invariants are verified by static analysis of the file text.
- * These assertions catch regressions like "someone added an SSH ingress rule"
- * or "someone dropped the secret-scrubbing sed line".
- */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -19,6 +9,8 @@ const generationsSource = readFileSync(resolve(__dirname, '../../resources/gener
 // of the three files a pattern lives in.
 const source = computeSource + composeEnvSource + generationsSource
 
+// Static checks pin structural compute contracts without rendering Pulumi.
+// Scope: closed ingress, VM reader credentials, immutable generations, registry wiring.
 describe('compute module source invariants', () => {
   it('SecurityGroup defaults to drop on ingress', () => {
     expect(source).toMatch(/inboundDefaultPolicy:\s*['"]drop['"]/)
@@ -68,7 +60,7 @@ describe('compute module source invariants', () => {
 
   it('uses the configured compute image and delegates boot inputs to cloud-init', () => {
     expect(source).toMatch(/image:\s*computeImageId/)
-    // The marketplace label / UUID is passed straight through — no plan-time getImage lookup.
+    // The marketplace label / UUID is passed straight through: no plan-time getImage lookup.
     expect(source).toMatch(/const computeImageId:\s*pulumi\.Input<string>\s*=\s*infra\.computeImage/)
     expect(source).not.toMatch(/getImageOutput/)
     expect(source).toMatch(/bootDiagBucket,/)
@@ -101,7 +93,7 @@ describe('compute module source invariants', () => {
   })
 
   it('contains no inter-service env wiring — service topology lives in registry bindings', () => {
-    // cdc's API_WS_URL and mcp's MCP_API_URL are declared as @{…} binding
+    // cdc's API_WS_URL and mcp's MCP_API_URL are declared as @{...} binding
     // templates in config/services.config.ts; compute.ts only provides the
     // generic resolver. The backend IS named (it exposes the one stable
     // internal address the resolver targets), but no service's ENV wiring may
@@ -128,7 +120,7 @@ describe('compute module source invariants', () => {
     // label can resolve to a rotated UUID over time; without ignoring `image`, the
     // base `pulumi up` would diff every running generation and destructively replace
     // the live frontend/backend/cdc VMs (delete-before-create, bypassing the
-    // LB-overlap cutover) — the cause of the recurring fleet-wide downtime. A new
+    // LB-overlap cutover). A new
     // image is only ever picked up by a NEW generation (new resource name).
     expect(source).toMatch(/ignoreChanges: \['cloudInit', 'image'\]/)
   })
@@ -149,7 +141,7 @@ describe('compute module source invariants', () => {
 
   it('envPool does not bind backend secrets as compose env values', () => {
     // The .env file is still mounted via env_file: .env, but secrets travel via
-    // the runtime-secrets manifest — never as envPool compose values.
+    // the runtime-secrets manifest, never as envPool compose values.
     const poolBlock = source.match(/const envPool:[\s\S]*?\n\}/)
     expect(poolBlock, 'could not locate envPool').not.toBeNull()
     const body = poolBlock?.[0] ?? ''

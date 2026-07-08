@@ -1,17 +1,10 @@
-/**
- * Source-level invariants on the load balancer module.
- *
- * The LB is rendered live in Pulumi previews, but the cross-resource wiring
- * (cert ↔ DNS ↔ backend ↔ route) is hard to test that way without a full
- * Pulumi runtime. These string-level checks pin the contracts the rollout
- * pipeline and CI rollout verification depend on.
- */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const src = readFileSync(resolve(__dirname, '../../resources/loadbalancer.ts'), 'utf-8')
 
+// Pins registry-driven LB wiring and the cutover-owned server list contract.
 describe('loadbalancer module — registry-driven wiring', () => {
   it('derives the LB-exposed service set from the registry, never by name', () => {
     expect(src).toMatch(/enabledServices\(appConfig\.services\)\.filter\(\(s\) => s\.lbRoute\)/)
@@ -40,18 +33,18 @@ describe('loadbalancer module — registry-driven wiring', () => {
 
   it('lets the explicit cutover task own the live server list', () => {
     // Pulumi sets the initial serverIps, then ignores live drift so
-    // tasks/cutover.ts can do expand→contract with SetBackendServers.
+    // tasks/cutover.ts can do expand/contract with SetBackendServers.
     expect(src).toMatch(/ignoreChanges:\s*\['serverIps'\]/)
   })
 
   it('health-checks the app\'s own /health (no ingress hop)', () => {
     // The app binds the host port directly in the immutable-node model, so the
-    // LB health-checks its real /health — a crashed generation is marked down.
+    // LB health-checks its real /health: a crashed generation is marked down.
     expect(src).toMatch(/uri:\s*'\/health'/)
     expect(src).not.toContain('__ingress/health')
     // onMarkedDownAction follows the service drainPolicy.
     expect(src).toMatch(/onMarkedDownAction:/)
-    // Exactly one Backend construction site — the registry loop.
+    // Exactly one Backend construction site: the registry loop.
     expect(src.match(/new scaleway\.loadbalancers\.Backend\(/g)).toHaveLength(1)
   })
 
@@ -81,7 +74,7 @@ describe('loadbalancer module — registry-driven wiring', () => {
 
   it('exports a public URL per exposed service via the generic map only', () => {
     expect(src).toMatch(/export const serviceDomainUrls/)
-    // No per-service named exports — a new service needs no export added.
+    // No per-service named exports: a new service needs no export added.
     expect(src).not.toMatch(/export const (api|yjs|ai)DomainUrl/)
   })
 })

@@ -69,7 +69,7 @@ describe('downloadQueue', () => {
       await downloadQueue.transition('att-1', 'pending');
 
       const entry = await attachmentsDb.downloadQueue.get('att-1');
-      expect(entry?.status).toBe('failed'); // unchanged — failed is terminal
+      expect(entry?.status).toBe('failed'); // failed is terminal
     });
 
     it('skipped → pending re-queues', async () => {

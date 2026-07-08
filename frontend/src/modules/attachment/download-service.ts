@@ -1,19 +1,3 @@
-/**
- * Download Service
- *
- * Background service that downloads attachments from cloud for offline viewing.
- * Uses the download queue in Dexie and respects config filters (size, content type).
- *
- * Variant download priority: thumbnail → converted → original
- * After downloading 'original', evicts 'raw' blob if present.
- *
- * Integration with react-query:
- * - Attachments are fetched via normal queries and cached
- * - This service queues them for blob download in background
- * - Uses findAttachmentInCache to lookup attachment metadata from react-query cache
- * - Blobs are stored in IndexedDB for offline access
- */
-
 import { onlineManager } from '@tanstack/react-query';
 import { liveQuery, type Subscription } from 'dexie';
 import type { Attachment } from 'sdk';
@@ -29,7 +13,7 @@ import { subscribeOwnerChange } from '~/query/app-storage';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { queryClient } from '~/query/query-client';
 
-/** Variant download priority - download in this order */
+/** Variant download priority, in download order. */
 const variantPriority: BlobVariant[] = ['thumbnail', 'converted', 'original'];
 
 /** Per-fetch timeout for variant downloads. */
@@ -68,8 +52,7 @@ class AttachmentDownloadService {
       if (online) this.processQueueSoon();
     });
 
-    // Drive processing reactively from the queue itself: any time there are pending
-    // rows, schedule a run. Replaces the previous setInterval polling.
+    // Drive processing reactively from the queue itself.
     this.subscribeQueue();
 
     // The queue lives in the per-user appdb, which rebinds on sign-in / account switch.
@@ -123,8 +106,8 @@ class AttachmentDownloadService {
    * (Re)subscribe the pending-queue liveQuery against the currently bound appdb.
    * No-ops to a 0 count while signed out (no DB). Tears down any prior subscription first.
    *
-   * Note: uses a table-scan `.filter` rather than `.where('status')` because `status`
-   * is only part of a compound index (`[organizationId+status]`) in the schema —
+   * Uses a table-scan `.filter` rather than `.where('status')` because `status`
+   * is only part of a compound index (`[organizationId+status]`) in the schema,
    * the queue is small so a scan is cheap and avoids a schema migration.
    */
   private subscribeQueue(): void {
@@ -211,14 +194,14 @@ class AttachmentDownloadService {
     if (!this.config?.enabled) return;
     if (this.processing) return;
     if (!onlineManager.isOnline()) return;
-    if (!getAppDb()) return; // Signed out — no per-user queue to process
+    if (!getAppDb()) return; // Signed out, no per-user queue to process.
 
     this.processing = true;
 
     try {
       const concurrency = this.config.downloadConcurrency ?? 2;
 
-      // Get all pending downloads (table scan is fine — small table)
+      // Get all pending downloads. Table scan is fine for this small table.
       const pendingAll = await attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').toArray();
 
       if (pendingAll.length === 0) return;
@@ -257,7 +240,7 @@ class AttachmentDownloadService {
 
   /**
    * Download a single attachment by looking up metadata from react-query cache.
-   * Downloads variants in priority order: thumbnail → converted → original.
+   * Downloads variants in priority order: thumbnail, converted, original.
    * Evicts raw blob after original is downloaded.
    */
   private async downloadAttachment(attachmentId: string, organizationId: string): Promise<void> {
@@ -295,7 +278,7 @@ class AttachmentDownloadService {
           downloadedAny = true;
           if (variant === 'original') downloadedOriginal = true;
         } else if (result === 'failed-auth') {
-          // Auth/permission failures will repeat for every variant — bail out.
+          // Auth/permission failures will repeat for every variant.
           authFailed = true;
           break;
         }
@@ -334,7 +317,7 @@ class AttachmentDownloadService {
     const key = this.getVariantKey(attachment, variant);
     if (!key) return 'skipped';
 
-    // Already have it locally — nothing to do.
+    // Already have it locally.
     if (await attachmentStorage.hasVariant(attachment.id, variant)) return 'skipped';
 
     // Guarded above in downloadAttachment, but keep narrow types happy.
@@ -392,4 +375,5 @@ class AttachmentDownloadService {
   }
 }
 
+/** Background service that downloads cloud attachments for offline viewing. */
 export const downloadService = new AttachmentDownloadService();

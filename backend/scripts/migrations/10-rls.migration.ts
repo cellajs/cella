@@ -21,7 +21,7 @@ async function run() {
     .filter(([entityType]) => entityType !== 'user')
     .map(([, table]) => getTableName(table));
 
-  // Context entity and membership tables no longer use RLS — access control is application-layer (guards)
+  // Context entity and membership tables use application-layer guards for access control.
   const contextEntityTableNames = appConfig.contextEntityTypes.map((entityType) => {
     const table = entityTables[entityType as keyof typeof entityTables];
     if (!table) throw new Error(`No table found for context entity type: ${entityType}`);
@@ -29,7 +29,7 @@ async function run() {
   });
   const membershipTableNames = [getTableName(membershipsTable), getTableName(inactiveMembershipsTable)];
 
-  // Pages have no RLS — parentless, always public, protected by sysAdminGuard
+  // Pages have no RLS: parentless, always public, and protected by sysAdminGuard.
   const noRlsProductEntityNames = ['pages'];
 
   // Only product entity tables + yjs_documents still use RLS (excluding pages)

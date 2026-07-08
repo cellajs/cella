@@ -59,7 +59,7 @@ export const languageSchema = z.enum(appConfig.languages);
 /** Schema for entity identifier id */
 export const entityIdParamSchema = z.object({ id: validIdSchema });
 
-/** Schema for optional slug query flag — when true, resolve entity by slug instead of ID */
+/** Schema for optional slug query flag; true resolves entity by slug instead of ID. */
 export const slugQuerySchema = z.object({ slug: booleanTransformSchema.optional() });
 
 /** Schema for tenant-scoped entity id (for organization routes) */
@@ -146,7 +146,7 @@ export const excludeArchivedQuerySchema = z
   .optional()
   .transform((val) => val === 'true');
 
-/** Schema for optional fullResponse query param — when true, return fully hydrated relations */
+/** Schema for optional fullResponse query param; true returns fully hydrated relations. */
 export const fullResponseQuerySchema = z.object({
   fullResponse: booleanTransformSchema.optional(),
 });
@@ -166,7 +166,7 @@ export const includeQuerySchema = z
   .transform((val) => (val ? val.split(',').map((s) => s.trim()) : []))
   .pipe(z.array(z.enum(includeOptions)));
 
-/** Schema for slug + include query params — used by single-get context entity routes */
+/** Schema for slug + include query params used by single-get context entity routes. */
 export const slugIncludeQuerySchema = z.object({
   slug: booleanTransformSchema.optional(),
   include: includeQuerySchema,

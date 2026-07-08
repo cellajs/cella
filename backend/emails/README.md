@@ -4,25 +4,9 @@ Transactional email templates, authored as React components and rendered to
 static HTML on the server. This module has **no runtime dependency on the
 [`jsx-email`](https://jsx.email/) package** — a small, behavior-preserving subset
 of jsx-email v3.2.1 (MIT) is vendored under [renderer/](renderer/) and
-[components/primitives/](components/primitives/), so we own and lint it as
-first-party code.
+[components/primitives/](components/primitives/).
 
-## Layout
-
-```
-emails/
-  index.ts             Barrel exporting every template (the *Email defs)
-  types.ts             EmailRecipient, EmailTemplateDef, defineEmailTemplate()
-  i18n.ts              Email-scoped i18next instance
-  styles.ts            Shared style tokens
-  templates/           One file per email (account-security, member-invite, …)
-  components/           Reusable, app-styled building blocks (Email* + SafeHtml)
-    primitives/         Vendored jsx-email primitives (Body, Button, Container, …)
-  renderer/             Vendored jsx-email render pipeline (JSX → HTML string)
-  preview-fixtures.ts  Maps preview slugs to templates (sample data lives on each template's `preview`)
-  render-preview.ts    renderEmailPreview(name, { lng, placeholders })
-  preview-route.ts     Dev-only Hono app mounted at /dev/emails
-```
+<!-- TODO update, simplify some texts, developer just want to know how to create preveiw and test an email and hoe to use it in code. And add to docs through mdx/frontmatter -->
 
 ## Authoring a template
 

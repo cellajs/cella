@@ -12,9 +12,8 @@ type RolloutGeneration = Pick<GenerationMetadata, 'service' | 'genId' | 'sha'>
 
 /**
  * Validate the raw `computeGenerationMetadata` stack output instead of blind-
- * casting — this exact output once carried corrupt (missing) genIds, so rows
- * are checked field-by-field. A row with a non-string genId is normalised to ''
- * and filtered out by `seedCandidates` (the pre-migration numeric-gen shape).
+ * casting: rows are checked field-by-field. A row with a non-string genId is
+ * normalised to '' and filtered out by `seedCandidates`.
  */
 export function parseRolloutGenerations(raw: string): RolloutGeneration[] {
   const parsed: unknown = JSON.parse(raw)
@@ -24,7 +23,7 @@ export function parseRolloutGenerations(raw: string): RolloutGeneration[] {
     if (!isRecord(item)) continue
     const { service, genId, sha } = item
     if (typeof service !== 'string' || typeof sha !== 'string') continue
-    // Only rows for services the registry knows — a stale output row for a
+    // Only rows for services the registry knows. A stale output row for a
     // removed service must not seed the ledger.
     if (!(serviceNames as readonly string[]).includes(service)) continue
     rows.push({ service: service as ServiceName, sha, genId: typeof genId === 'string' ? genId : '' })
@@ -52,8 +51,7 @@ export function generationsByService(metadata: RolloutGeneration[]): Map<string,
 /**
  * Build the per-service seed candidates from live metadata. Only CONTENT-ADDRESSED
  * generations qualify: an item whose `genId` is missing/blank is from a pre-migration
- * (numeric-gen) stack output and must NOT be seeded — doing so wrote `active.id =
- * undefined` and corrupted the control object. Pure + unit-tested.
+ * stack output and must NOT be seeded. Pure + unit-tested.
  */
 export function seedCandidates(metadata: RolloutGeneration[]): Map<string, RolloutGeneration> {
   const valid = metadata.filter((item) => typeof item.genId === 'string' && item.genId.length > 0)
@@ -83,7 +81,7 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
 }
 
 /**
- * Seed the `active` pointer for any service that has none yet — first adoption
+ * Seed the `active` pointer for any service that has none yet: first adoption
  * of a live generation into the ledger. Deliberately NEVER promotes a pending
  * generation or demotes an existing active: the orchestrator (deploy-service)
  * owns promotion after a health-gated cutover, so a freshly-materialised but
@@ -101,7 +99,7 @@ async function seedActivePointers(stack: string, seeds: Map<string, RolloutGener
   let changed = false
   for (const [svc, gen] of seeds) {
     const current = state.rollout[svc] ?? emptyRollout()
-    // Never seed over an existing active, nor while a deploy intent is pending —
+    // Do not seed over an existing active, nor while a deploy intent is pending:
     // the orchestrator promotes the pending generation after its health gate.
     if (current.active || current.pendingSha) continue
     const seq = current.seq + 1

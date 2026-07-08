@@ -22,7 +22,7 @@ const sensitiveKeys = [
 ];
 export const redactedFields = sensitiveKeys.flatMap((key) => [key, `*.${key}`]);
 
-// Check both NODE_ENV and appConfig.mode — NODE_ENV=production in containers disables pino-pretty.
+// NODE_ENV=production in containers disables pino-pretty.
 const isProduction = appConfig.mode === 'production' || env.NODE_ENV === 'production';
 const isTest = appConfig.mode === 'test';
 

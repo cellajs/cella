@@ -1,15 +1,15 @@
 // ───────────────────────────────────────────────────────────────────────────
-// CI deploy key (`<slug>-ci-deploy`) — project scope
+// CI deploy key (`<slug>-ci-deploy`): project scope
 // ───────────────────────────────────────────────────────────────────────────
 
 /**
  * Permission sets granted to the CI deploy key at project scope. The `…ReadOnly`
  * entries are bootstrap-owned (see BOOTSTRAP_OWNED_FRAGMENTS): CI refreshes them
- * on every `pulumi up` but may never mutate them — structural changes go through
+ * on every `pulumi up` but may not mutate them; structural changes go through
  * a local bootstrap `pulumi up`.
  */
 export const PROJECT_PERMISSION_SETS = [
-  // Write — touched by routine CI deploys.
+  // Write: touched by routine CI deploys.
   'BlockStorageFullAccess', // block volumes attached to instances (split from InstancesFullAccess upstream)
   'ContainerRegistryFullAccess', // image push
   'IPAMFullAccess', // reserve + attach stable private IPAM IPs for VMs
@@ -18,20 +18,20 @@ export const PROJECT_PERMISSION_SETS = [
   'ObjectStorageFullAccess', // frontend bucket uploads, policy refresh
   'PrivateNetworksFullAccess', // VM PN attachments (write required by InstancesFullAccess replacements)
   'SecretManagerFullAccess', // secret version rotation
-  // Read-only — bootstrap-owned, refreshed but never mutated by CI.
+  // Read-only: bootstrap-owned, refreshed but not mutated by CI.
   'VPCReadOnly',
   'RelationalDatabasesReadOnly',
 ] as const
 
 // ───────────────────────────────────────────────────────────────────────────
-// CI deploy key — organization scope
+// CI deploy key: organization scope
 // ───────────────────────────────────────────────────────────────────────────
 
 // Org-level grants are split by Scaleway *scope type*: a single IAM policy rule
 // may only hold permission sets of ONE scope type, so these become two separate
 // org-keyed rules in setup-ci-key.ts buildRules.
 
-/** Project-scoped sets granted org-wide (all projects) — DNS is "Scoped by Project". */
+/** Project-scoped sets granted org-wide (all projects); DNS is "Scoped by Project". */
 export const ORG_WIDE_PROJECT_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const
 
 /**
@@ -41,16 +41,16 @@ export const ORG_WIDE_PROJECT_PERMISSION_SETS = ['DomainsDNSFullAccess'] as cons
  */
 export const ORG_SCOPED_PERMISSION_SETS = ['IAMReadOnly'] as const
 
-/** Union of all org-level grants — for audit/drift checks only (rule-agnostic). */
+/** Union of all org-level grants, for audit/drift checks only (rule-agnostic). */
 export const ORG_PERMISSION_SETS = [...ORG_WIDE_PROJECT_PERMISSION_SETS, ...ORG_SCOPED_PERMISSION_SETS] as const
 
 // ───────────────────────────────────────────────────────────────────────────
-// VM reader key (`<slug>-vm-reader`) — project scope
+// VM reader key (`<slug>-vm-reader`): project scope
 // ───────────────────────────────────────────────────────────────────────────
 
 /**
  * Permission sets granted to the VM reader key at project scope. Deliberately
- * minimal — VMs only pull images and fetch runtime
+ * minimal: VMs only pull images and fetch runtime
  * secrets. SecretManagerSecretAccess decrypts secret VALUES (read-only, no
  * write); SecretManagerReadOnly alone is metadata-only and 403s the sync.
  */
@@ -72,12 +72,12 @@ export const VM_PROJECT_PERMISSION_SETS = [
  * case-insensitive substring (Scaleway emits `rdb_instance`, `vpc_private_network`, …).
  */
 export const BOOTSTRAP_OWNED_FRAGMENTS = [
-  'private_network', // VPC private network — CI is read-only
+  'private_network', // VPC private network; CI is read-only
   'vpc', // the VPC itself
   'rdb', // managed PostgreSQL (rdb_instance, rdb_acl, rdb_user, …)
   'instance_db', // DB-bearing instance resources
   'domain_zone', // DNS zone
-  'policy', // VM reader IAM policy — IAM write is forbidden for the CI key (perm-escalation)
+  'policy', // VM reader IAM policy; IAM write is forbidden for the CI key (perm-escalation)
 ] as const
 
 /** True when a Scaleway resource token names a bootstrap-owned resource. */

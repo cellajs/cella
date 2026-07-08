@@ -1,25 +1,3 @@
-/**
- * Assert the live `<slug>-vm-reader` IAM application actually grants the
- * permission sets the VMs depend on — a cheap, read-only verification run in CI
- * right after `pulumi up`.
- *
- * Why this exists: a VM whose key cannot decrypt runtime secrets boots into a
- * crash-loop behind a 502 with no automatic recovery (the failure that took
- * cellajs.com down). `resources/vm-iam.ts` makes the grant drift-proof by
- * declaring it as a Pulumi resource, but this task is the belt-and-suspenders
- * check that the reconcile actually took effect on the live policy BEFORE the
- * deploy proceeds to roll/replace VMs that rely on it. If a grant is missing it
- * fails the deploy loudly (with the exact missing permission sets) instead of
- * letting a fleet-wide 502 surface only after rollout.
- *
- * Read-only: lists the application's IAM policies and their rules and checks
- * that the union of granted permission sets covers VM_PROJECT_PERMISSION_SETS.
- *
- * Usage:
- *   tsx infra/tasks/assert-vm-grants.ts \
- *     --application-id <vm-app-id> --project-id <project-id> [--organization-id <org>]
- *   (SCW_SECRET_KEY in env)
- */
 import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like'
 import { isMain } from '../lib/utils/is-main'
 import { VM_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'

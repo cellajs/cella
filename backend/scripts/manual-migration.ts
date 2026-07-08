@@ -1,26 +1,6 @@
-/**
- * Add Manual SQL Migration Script
- *
- * Adds a custom SQL migration to Drizzle's migration folder and journal.
- * Use this for SQL that can't be auto-generated (triggers, functions, etc.).
- *
- * Usage:
- *   pnpm manual-migration <tag> <sql-file-or-string>
- *
- * Examples:
- *   # From SQL file:
- *   pnpm manual-migration cdc_setup ./sql/cdc-setup.sql
- *
- *   # From inline SQL (use quotes):
- *   pnpm manual-migration my_index "CREATE INDEX my_idx ON users(email);"
- *
- * The migration will be automatically applied with other Drizzle migrations.
- */
-
 import pc from 'picocolors';
 import { logMigrationResult, resolveSqlContent, upsertMigration } from './migrations/helpers/drizzle-utils';
 
-// CLI entry point
 const args = process.argv.slice(2);
 
 if (args.length < 2) {

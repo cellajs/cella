@@ -12,7 +12,7 @@ function entityTypeOf(key: unknown): string | undefined {
   return typeof head === 'string' && productEntitySet.has(head) ? head : undefined;
 }
 
-// Lazy import to break circular dependency: query-client → on-error → flush-stores → query-client
+// Lazy import to break circular dependency: query-client -> on-error -> flush-stores -> query-client
 // Without this, HMR re-evaluation hits a TDZ error on `onError`.
 const handleError = (error: ApiError, meta: QueryMeta | undefined) =>
   import('~/query/on-error').then((m) => m.onError(error, meta));
@@ -70,7 +70,7 @@ const offlineStaleTime = Number.POSITIVE_INFINITY; // Infinite when offline
 const defaultGcTime = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 /**
- * Handle online status — guarded to avoid duplicate listeners on HMR.
+ * Handle online status, guarded to avoid duplicate listeners on HMR.
  */
 function handleOnlineStatus() {
   onlineManager.setOnline(navigator.onLine);
@@ -84,7 +84,7 @@ if (!import.meta.hot?.data?.listenersAttached) {
 }
 
 /**
- * Our queryClient instance — preserved across HMR to keep the cache intact.
+ * QueryClient instance preserved across HMR to keep the cache intact.
  *
  * @link https://tanstack.com/query/latest/docs/reference/QueryClient
  */

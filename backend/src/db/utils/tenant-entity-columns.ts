@@ -6,7 +6,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /**
  * Creates base columns shared by all tenant-scoped entities (context entities, product entities).
- * Note: users are cross-tenant and do not use this.
+ * Users are cross-tenant and do not use this.
  */
 export const tenantEntityColumns = <T extends string>(entityType: T) => ({
   createdAt: timestampColumns.createdAt,

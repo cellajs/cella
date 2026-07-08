@@ -1,22 +1,3 @@
-/**
- * Adopt pre-existing operator Secret Manager containers into Pulumi state.
- *
- * Pulumi owns the container for every runtime secret (`resources/secrets.ts`),
- * but operator-managed containers are filled out-of-band and can exist in
- * Scaleway while being absent from Pulumi state — e.g. after the state object is
- * rebuilt/restored, or when they were created before Pulumi owned them. In that
- * case every `pulumi up` tries to *create* them and Scaleway rejects the dup:
- *
- *   scaleway-sdk-go: invalid argument(s): name is wrongly formatted,
- *   cannot have same secret name in same path
- *
- * The fix is a one-time `pulumi import` of each orphan. This helper performs that
- * import automatically and idempotently from the "Apply infra change" flow,
- * mirroring `adopt-orphaned-policy.ts`: it is a no-op once a container is in
- * state (or absent in Scaleway), so re-running is safe. It supersedes the manual
- * `OPERATOR_SECRET_IMPORTS` env hook in `resources/secrets.ts`, which remains as
- * a fallback escape hatch.
- */
 import { spawnSync } from 'node:child_process'
 import { stackExportHasResource } from './adopt-orphaned-policy'
 import { operatorManagedRuntimeSecrets } from '../runtime-secrets'
@@ -27,9 +8,9 @@ import { errorMessage } from '../utils/errors'
 const SECRET_TYPE = 'scaleway:secrets/secret:Secret'
 
 export type SecretAdoptOutcome =
-  | 'in-state' // already managed by Pulumi — nothing to do
+  | 'in-state' // already managed by Pulumi; nothing to do
   | 'imported' // existed in Scaleway, now adopted into state
-  | 'absent' // not in Scaleway either — `pulumi up` will create it
+  | 'absent' // not in Scaleway either; `pulumi up` will create it
   | 'unavailable' // could not list Secret Manager containers (skipped; up will report the real error)
 
 export interface AdoptOrphanedSecretsOptions {
@@ -89,7 +70,7 @@ export async function adoptOrphanedSecrets(opts: AdoptOrphanedSecretsOptions): P
   if (missing.length === 0) return result
 
   // 2. List live containers once (only when something is missing). A read
-  //    failure is non-fatal — skip adoption and let `pulumi up` report the real
+  //    failure is non-fatal; skip adoption and let `pulumi up` report the real
   //    error rather than masking it.
   let liveByName: Map<string, { id: string; region?: string }>
   try {
@@ -111,7 +92,7 @@ export async function adoptOrphanedSecrets(opts: AdoptOrphanedSecretsOptions): P
       result.outcomes[secret.secretName] = 'absent'
       continue
     }
-    // Scaleway Secret `.id` form is `region/uuid` — the REST list returns the
+    // Scaleway Secret `.id` form is `region/uuid`; the REST list returns the
     // bare uuid plus a separate region, so reassemble it for `pulumi import`.
     const importId = `${live.region ?? opts.region}/${live.id}`
     const pulumiName = `secret-${secret.secretName}`

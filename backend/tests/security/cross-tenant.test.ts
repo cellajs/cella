@@ -1,11 +1,3 @@
-/**
- * Cross-tenant API isolation tests.
- *
- * Verifies that the tenant guard middleware correctly prevents
- * authenticated users from accessing resources in other tenants.
- * This is the first line of defense for multi-tenant isolation.
- */
-
 import { createAttachments, getAttachments, getOrganization, updateOrganization } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateMockEntityBodyContextIdColumns } from '#/mocks';
@@ -29,6 +21,7 @@ const attachmentBody = (id: string) => ({
   stx: { mutationId: id, sourceId: 'cross-tenant', fieldTimestamps: {} },
 });
 
+// Verifies tenant guard isolation for authenticated users across tenants.
 describe('Cross-tenant API isolation', async () => {
   const call = await createAppClient();
   let tenantA: TestTenant;

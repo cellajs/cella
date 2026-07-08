@@ -1,21 +1,3 @@
-/**
- * Stack control object — the single source of truth for mutable rollout state
- * (per-service generation + image SHA) and bootstrap state, stored as one JSON
- * object in the Pulumi state bucket rather than in committed `Pulumi.<stack>.yaml`
- * config. See info memory `cella-infra-rollout-state-plan`.
- *
- * Layout: `s3://<slug>-pulumi-state/control/<stack>.json` (plaintext — none of
- * this is secret). The Pulumi program reads it at plan time so a bare `pulumi up`
- * converges to live truth; the deploy orchestrator writes it around a cutover.
- *
- * Scaleway Object Storage supports conditional writes (`If-Match`/`If-None-Match`),
- * so the optional `ifMatch`/`ifNoneMatch` give optimistic concurrency and the
- * atomic create-if-absent used by the lock.
- *
- * The pure parse/serialize/merge helpers carry no S3 dependency and are unit
- * tested directly; the I/O functions take an injected client (`.send`) so they
- * can be exercised with a mock, mirroring `ensure-state-bucket.ts`.
- */
 import { isRecord } from '../utils/guards'
 import { scwS3Endpoint } from '../scaleway/scw-fetch'
 import { errorMessage } from '../utils/errors'
@@ -24,7 +6,7 @@ import { errorMessage } from '../utils/errors'
  *  `vm-<svc>-<id>`, baked with `sha`, promoted at monotonic `seq`. */
 export interface GenRef {
   /** Content-addressed generation id (see lib/gen-id.ts). Authoritative resource
-   *  suffix — the live VM exists under THIS id, so it is stored, not re-derived. */
+   *  suffix. The live VM exists under THIS id, so it is stored, not re-derived. */
   id: string
   /** Image SHA baked into this generation. */
   sha: string
@@ -36,12 +18,12 @@ export interface GenRef {
  * Per-service rollout ledger. The pointers (not a single mutable gen number) are
  * the source of truth so a partial deploy is always recoverable by recomputing
  * desired-vs-live rather than replaying a transition:
- *   - `active`   — the generation currently serving live on the LB.
- *   - `pendingSha` — a deploy INTENT: the SHA being rolled in. The genId is
+ *   - `active`: the generation currently serving live on the LB.
+ *   - `pendingSha`: a deploy INTENT, the SHA being rolled in. The genId is
  *                  derived and materialized by the Pulumi program (the genId
- *                  authority), then read back by the orchestrator — so the
+ *                  authority), then read back by the orchestrator, so the
  *                  ledger never has to predict an id the program owns.
- *   - `seq`      — monotonic counter, bumped on each promotion (ordering + GC).
+ *   - `seq`: monotonic counter, bumped on each promotion (ordering + GC).
  * No `previous` is kept: the old generation is reaped once the new one is
  * healthy, and rollback is a revert commit + forward redeploy (recreates every
  * service, including cdc, from its content-addressed id).
@@ -75,7 +57,7 @@ export interface S3Like {
   send(command: unknown): Promise<{ Body?: { transformToString(): Promise<string> }; ETag?: string }>
 }
 
-/** Lazy SDK loader — keeps `@aws-sdk/client-s3` out of the Pulumi plan path. */
+/** Lazy SDK loader, keeps `@aws-sdk/client-s3` out of the Pulumi plan path. */
 const s3sdk = () => import('@aws-sdk/client-s3')
 
 /** Conditional-write options mapping to Scaleway's `If-Match`/`If-None-Match`. */
@@ -212,7 +194,7 @@ export function serializeControlState(state: ControlState): string {
 }
 
 // ---------------------------------------------------------------------------
-// Pure ledger transitions — every rollout state change is a total function over
+// Pure ledger transitions: every rollout state change is a total function over
 // the previous rollout, so the orchestrator never hand-mutates pointer fields
 // and the transitions are unit-tested in isolation.
 // ---------------------------------------------------------------------------
@@ -230,7 +212,7 @@ export function setPending(current: ServiceRollout | undefined, sha: string): Se
 }
 
 /** Promote a resolved generation to active: `seq` advances and the pending
- *  intent is cleared. The old active is not retained — its VM is reaped once the
+ *  intent is cleared. The old active is not retained; its VM is reaped once the
  *  new one is healthy, so rollback is a revert commit + redeploy. */
 export function promote(current: ServiceRollout | undefined, resolved: { id: string; sha: string }): ServiceRollout {
   const base = current ?? emptyRollout()
@@ -239,7 +221,7 @@ export function promote(current: ServiceRollout | undefined, resolved: { id: str
 }
 
 /** Read the control object. Returns the empty state (and no etag) when the
- *  object does not exist yet — the caller decides whether that is acceptable. */
+ *  object does not exist yet. The caller decides whether that is acceptable. */
 export async function readControlState(s3: S3Like, bucket: string, key: string): Promise<{ state: ControlState; etag?: string }> {
   const { body, etag } = await getObjectText(s3, bucket, key)
   return { state: body ? parseControlState(body) : emptyControlState(), etag }
@@ -296,7 +278,7 @@ export interface ControlContext {
  * environment: sets APP_MODE from the stack's short name (so `shared`'s
  * appConfig resolves the right mode), builds the S3 client from SCW_* (or
  * AWS_*) credentials, and derives bucket + keys. Returns null (with a warning)
- * when no credentials are present — the caller then skips control-store writes.
+ * when no credentials are present; the caller then skips control-store writes.
  */
 export async function controlContextForStack(stack: string, log: (msg: string) => void = console.warn): Promise<ControlContext | null> {
   const accessKey = process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID
@@ -312,7 +294,7 @@ export async function controlContextForStack(stack: string, log: (msg: string) =
 }
 
 /** Read-modify-write a single service's rollout entry. Uses `If-Match` when the
- *  object already exists (optimistic concurrency — Scaleway supports it) so a
+ *  object already exists (optimistic concurrency; Scaleway supports it) so a
  *  racing writer is rejected rather than silently clobbered. */
 export async function updateServiceRollout(
   s3: S3Like,
@@ -329,7 +311,7 @@ export async function updateServiceRollout(
 }
 
 // ---------------------------------------------------------------------------
-// Distributed lock — prevents concurrent mutating ops (two operators, or an
+// Distributed lock: prevents concurrent mutating ops (two operators, or an
 // operator and CI) from racing on the same stack. Built on Scaleway's
 // conditional writes: atomic create-if-absent via `If-None-Match: *`, stale
 // break via `If-Match: <etag>`.
@@ -387,7 +369,7 @@ export async function acquireLock(
   } catch (err) {
     if (!isPreconditionFailed(err)) throw err
   }
-  // A lock object exists — break it only if it has expired.
+  // A lock object exists; break it only if it has expired.
   const { info: held, etag } = await readLock(s3, bucket, key)
   if (held && Date.parse(held.expiresAt) > now) return { acquired: false, held }
   try {

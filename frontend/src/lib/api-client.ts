@@ -18,7 +18,7 @@ export const createClientConfig: CreateClientConfig = (baseConfig) => ({
   fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
     // Tag each request with the client schema version (lens fleet-floor telemetry).
     // hey-api passes a Request as the sole arg, so merge onto its existing headers
-    // (never pass a fresh init — that drops Content-Type).
+    // (never pass a fresh init, that drops Content-Type).
     const version = String(currentSchemaVersion);
     let nextInput = input;
     let nextInit = init;
@@ -36,7 +36,7 @@ export const createClientConfig: CreateClientConfig = (baseConfig) => ({
     try {
       response = await clientConfig.fetch(nextInput, nextInit);
     } catch (error) {
-      // Network-level failure (no HTTP response) — probe actual connectivity
+      // Network-level failure (no HTTP response), probe actual connectivity
       if (error instanceof TypeError) checkConnectivity();
       throw error;
     }

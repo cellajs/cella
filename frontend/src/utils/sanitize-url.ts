@@ -8,5 +8,5 @@ export function sanitizeUrl(input: string): string {
     const u = new URL(input, window.location.origin);
     if (u.protocol === 'http:' || u.protocol === 'https:') return u.toString();
   } catch {}
-  return ''; // invalid → treat as empty
+  return ''; // invalid -> treat as empty
 }

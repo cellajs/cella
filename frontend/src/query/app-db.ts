@@ -1,14 +1,3 @@
-/**
- * Single per-user IndexedDB (`appdb`).
- *
- * The DB NAME carries the owner (`${appConfig.slug}:${userId}`). The DB is opened
- * only once a real user is known and closed on sign-out.
- *
- * Lifecycle is auth-driven (see `~/query/app-storage`): bound on sign-in, closed on
- * sign-out, rebound on account switch. Consumers must resolve the live instance via
- * {@link getAppDb} (it changes on rebind) and tolerate `null` while signed out.
- */
-
 import type { DehydratedState } from '@tanstack/react-query';
 import { Dexie } from 'dexie';
 import { appConfig } from 'shared';
@@ -25,7 +14,7 @@ export interface KvRecord {
   value: string;
 }
 
-/** Per-query React Query record — product entity queries, stored individually for incremental diffing. */
+/** Per-query React Query row for product entity queries, stored individually for incremental diffing. */
 export interface PersistedQueryRecord {
   /** Compound key: `${scope}:${queryHash}`. */
   id: string;
@@ -36,7 +25,7 @@ export interface PersistedQueryRecord {
   dataUpdatedAt: number;
 }
 
-/** React Query meta record — one per scope; bundles context queries + mutations + cache-bust version. */
+/** React Query meta row, one per scope, bundling context queries, mutations, and cache-bust version. */
 export interface PersistedMetaRecord {
   /** Scope key: `rq` (offline) or `s-<uuid>` (session). */
   key: string;
@@ -44,7 +33,7 @@ export interface PersistedMetaRecord {
   buster: string;
   /** Persisted client cache version (appConfig.clientCacheVersion). Mismatch wipes cached queries. */
   clientCacheVersion?: string;
-  /** Persisted global lens schema ordinal. Behind the bundle → boot migration pass. */
+  /** Persisted global lens schema ordinal. Values behind the bundle trigger boot migration. */
   schemaVersion?: number;
   mutations: DehydratedState['mutations'];
   /** Context queries bundled directly in meta. */
@@ -52,7 +41,7 @@ export interface PersistedMetaRecord {
 }
 
 /**
- * Per-user Dexie database. All tables share one version ladder — bump the single
+ * Per-user Dexie database. All tables share one version ladder: bump the single
  * `version(n)` here and centralize schema changes (concurrent PRs must serialize).
  */
 export class AppDatabase extends Dexie {
@@ -103,7 +92,7 @@ export function closeAppDb(): void {
   currentOwnerId = null;
 }
 
-/** Permanently delete the current per-user DB (account removal) — single atomic wipe. */
+/** Permanently delete the current per-user DB for account removal. */
 export async function deleteAppDb(): Promise<void> {
   const owner = currentOwnerId;
   closeAppDb();

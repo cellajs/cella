@@ -1,15 +1,3 @@
-/**
- * Compose environment derivation — the `${VAR}` placeholder scan and the
- * `@{slug.prop}` binding DSL that turn a service's registry entry into the
- * fully-bound env its compose blocks consume.
- *
- * The registry declares WHICH vars a service consumes (by referencing them in
- * its compose blocks) and how service-specific ones are wired (`bindings`
- * templates); this module supplies the generic resolver plus the shared,
- * app-wide `envPool`. Per-generation values (`currentGenBindingIp`) are owned
- * by compute.ts and injected via {@link createComposeEnvBuilder} so this module
- * never depends on VM creation state.
- */
 import * as pulumi from '@pulumi/pulumi'
 import { composeConfig } from '../compose/compose'
 import type { ServiceName } from '../compose/compose'
@@ -35,9 +23,8 @@ const envPool: Record<string, () => pulumi.Input<string>> = {
 }
 
 // Vars satisfied outside the pool:
-//  - REGISTRY / APP_MODE — universal, injected into every VM's .env;
-//  - *_TAG               — the baked image tag (the generation's SHA), injected
-//                          per service below.
+//  - REGISTRY / APP_MODE: universal, injected into every VM's .env;
+//  - *_TAG: the baked image tag, injected per service below.
 const INJECTED_VARS = new Set(['REGISTRY', 'APP_MODE'])
 const PLACEHOLDER_RE = /\$\{([A-Z][A-Z0-9_]*)(?::-[^}]*)?\}/g
 
@@ -53,12 +40,12 @@ function composePlaceholders(slug: string): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// Registry bindings — resolve `@{<slug>.<prop>}` templates from the registry's
+// Registry bindings: resolve `@{<slug>.<prop>}` templates from the registry's
 // `bindings` field. Supported properties:
-//   @{<slug>.url}        — the service's public URL (from the endpoint registry)
-//   @{<slug>.privateIp}  — the service's CURRENT-generation private-network IP
-//   @{<slug>.port}       — the service's health/app port
-//   @{self.<prop>}       — the consuming service's own values
+//   @{<slug>.url}: the service's public URL from the endpoint registry
+//   @{<slug>.privateIp}: the service's current-generation private-network IP
+//   @{<slug>.port}: the service's health/app port
+//   @{self.<prop>}: the consuming service's own values
 // ---------------------------------------------------------------------------
 
 const BINDING_RE = /@\{([a-z]+)\.([a-zA-Z]+)\}/g
@@ -67,15 +54,14 @@ const endpointBySlug = new Map(endpoints.map((e) => [e.slug, e]))
 /** Current-generation private-network IP supplier, owned by compute.ts. */
 export type CurrentGenBindingIp = (slug: ServiceName) => pulumi.Output<string>
 
-/** The compose `*_TAG` variable a service's image reference reads (e.g. backend → BACKEND_TAG). */
+/** The compose `*_TAG` variable a service's image reference reads, e.g. backend to BACKEND_TAG. */
 function tagVar(slug: string): string {
   return `${slug.toUpperCase()}_TAG`
 }
 
 /**
- * Build the per-service compose-env builder. `currentGenBindingIp` resolves
- * `@{<slug>.privateIp}` against the live generation's reserved IP, which only
- * compute.ts knows.
+ * Build the per-service compose-env builder from registry placeholders,
+ * registry `bindings`, and the shared env pool.
  */
 export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp) {
   function bindingPart(selfSlug: ServiceName, target: string, prop: string): pulumi.Input<string> {
@@ -97,7 +83,7 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
     }
   }
 
-  /** Resolve a binding template (`ws://@{backend.privateIp}:@{backend.port}/…`) to a Pulumi value. */
+  /** Resolve a binding template such as `ws://@{backend.privateIp}:@{backend.port}/...` to a Pulumi value. */
   function resolveBinding(selfSlug: ServiceName, template: string): pulumi.Input<string> {
     const parts: pulumi.Input<string>[] = []
     let last = 0
@@ -116,7 +102,7 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
     const env: Record<string, () => pulumi.Input<string>> = {
       REGISTRY: () => registryEndpoint,
       APP_MODE: () => mode,
-      // The generation's pinned image tag — the VM pulls exactly this SHA at boot.
+      // The generation's pinned image tag: the VM pulls exactly this SHA at boot.
       [tagVar(slug)]: () => releaseSha,
     }
     for (const name of composePlaceholders(slug)) {

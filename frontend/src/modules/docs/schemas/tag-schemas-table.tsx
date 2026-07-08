@@ -7,7 +7,7 @@ import { Badge } from '~/modules/ui/badge';
 
 interface TagSchemasTableProps {
   schemas: GenComponentSchema[];
-  /** Schema-kind tag name (used to set the `schemaTag` search param on row click). */
+  /** Schema-kind tag name for setting the `schemaTag` search param on row click. */
   tagName: string;
   /** Tag kinds (e.g., 'module', 'ownership') to render as dynamic columns. */
   tagKinds: string[];

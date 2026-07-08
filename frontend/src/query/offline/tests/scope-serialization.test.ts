@@ -1,13 +1,3 @@
-/**
- * Test: React Query scope serialization ensures sequential HLC freshness.
- *
- * Verifies that when multiple mutations share a `scope`, the second mutation's
- * `mutationFn` only executes after the first mutation's full lifecycle (including
- * `onSuccess`) completes. This is critical for per-key updates: the first mutation's
- * `onSuccess` writes the new `stx` to cache, so the second mutation reads fresh
- * HLC timestamps.
- */
-
 import { MutationObserver, QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -18,6 +8,7 @@ interface FakeEntity {
   stx: { mutationId: string; sourceId: string; fieldTimestamps: Record<string, string> };
 }
 
+// Covers React Query scope serialization for sequential HLC freshness.
 describe('scope serialization: sequential HLC freshness', () => {
   let queryClient: QueryClient;
   const listKey = ['test', 'list'] as const;
@@ -108,7 +99,7 @@ describe('scope serialization: sequential HLC freshness', () => {
     let counter = 1;
 
     const mutationOptions = {
-      // No scope — mutations run concurrently
+      // No scope: mutations run concurrently.
       mutationFn: async ({ key, data }: { key: string; data: string }) => {
         const cached = queryClient.getQueryData<FakeEntity>(listKey);
         capturedTimestamps.push({ ...(cached?.stx?.fieldTimestamps ?? {}) });
@@ -142,7 +133,7 @@ describe('scope serialization: sequential HLC freshness', () => {
     const p2 = observer2.mutate({ key: 'description', data: 'New Desc' });
     await Promise.all([p1, p2]);
 
-    // Both should see the same initial timestamps (concurrent — neither waited for the other's onSuccess)
+    // Both should see the same initial timestamps; neither waited for the other's onSuccess.
     expect(capturedTimestamps[0].name).toBe('100:0001:aaa');
     expect(capturedTimestamps[1].name).toBe('100:0001:aaa');
   });

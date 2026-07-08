@@ -276,7 +276,7 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   isCompact?: Maybe<boolean>;
   /** Hide the header row entirely */
   hideHeader?: Maybe<boolean>;
-  /** Mark grid as read-only — suppresses selection outlines and edit affordances */
+  /** Mark grid as read-only; suppresses selection outlines and edit affordances. */
   readOnly?: Maybe<boolean>;
   'data-testid'?: Maybe<string>;
   'data-cy'?: Maybe<string>;
@@ -445,7 +445,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const [isColumnResizing, setColumnResizing] = useState(false);
   const shouldFocusCellRef = useRef(false);
   // When true, the next focus effect should skip scrollIntoView. Set on EDIT→SELECT
-  // close, where the cell hasn't moved — calling scrollIntoView there would honor
+  // close, where the cell hasn't moved. Calling scrollIntoView there would honor
   // `scroll-mt-32` and visibly jump the page after the editor closes near the
   // viewport edge.
   const skipScrollOnFocusRef = useRef(false);
@@ -512,8 +512,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   // function that accounts for multi-line content. Merged host cells with occupied
   // top/bottom slot rows additionally need constant extra height (virtualization
   // needs heights without rendering). On the mobile breakpoint rows are scaled up
-  // for easier touch targets — the single source for this (previously duplicated
-  // in DataTable via a second breakpoint read).
+  // for easier touch targets. DataGrid owns this breakpoint-specific scaling.
   const rowHeight = useMemo(() => {
     const slotExtra = computeMergedSlotExtraHeight(columns);
     const mobileScale = isMobileBreakpoint ? 1.2 : 1;
@@ -639,7 +638,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       // Avoid re-renders if the selected cell state is the same.
       // Only scroll into view when a caller explicitly asked for cell focus
       // (keyboard / programmatic paths). Mouse callers (Cell.handleMouseDown)
-      // omit `shouldFocusCell` because the cell was just clicked — it is by
+      // omit `shouldFocusCell` because the cell was just clicked; it is by
       // definition under the cursor, and our cells have `scroll-mt-32` for
       // sticky-header avoidance, which would otherwise jump the page on every
       // re-click of an already-selected cell near the viewport edge.
@@ -689,7 +688,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
             effectiveOnSelectedRowsChange(new Set([rowKey]));
           }
         } else {
-          // 'multi' — toggle, with shift extending range
+          // 'multi': toggle, with shift extending range
           const isShiftClick = options?.extendSelection === true;
           const isSelected = effectiveSelectedRows?.has(rowKey) === true;
           selectRow({ row, checked: !isSelected, isShiftClick });
@@ -1013,7 +1012,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     handleColumnResizeEndWidths();
     // This check is needed as double click on the resize handle triggers onPointerMove
     if (isColumnResizing) {
-      // Re-read columnWidths after cleanup — the hook already updated the map
+      // Re-read columnWidths after cleanup; the hook already updated the map
       onColumnWidthsChangeRaw?.(columnWidthsInternal);
       setColumnResizing(false);
     }
@@ -1169,7 +1168,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         if (editCommittedRef.current) return;
         editCommittedRef.current = true;
         // flushSync so `onRowsChange` runs (and any optimistic cache update inside
-        // it) before we close the editor — without it, `commitEditorChanges` could
+        // it) before we close the editor. Without it, `commitEditorChanges` could
         // be called before the cell state flips to SELECT and `onRowChange` fires
         // a second time.
         //
@@ -1274,7 +1273,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     return rowElements;
   }
 
-  // Reset the positions if the current values are no longer valid. This can happen if a column or row is removed
+  // Reset the positions if the current values are invalid after a column or row is removed.
   if (selectedPosition.idx > maxColIdx || selectedPosition.rowIdx > maxRowIdx) {
     setSelectedPosition({ idx: -1, rowIdx: minRowIdx - 1, mode: 'SELECT' });
   }

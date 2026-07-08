@@ -1,25 +1,10 @@
-/**
- * Cache token signing utilities for defense-in-depth security.
- *
- * Cache tokens are signed with a user-specific secret derived from:
- * - Server's COOKIE_SECRET (stable across restarts)
- * - User's session token (unique per session)
- *
- * This ensures:
- * - Tokens are useless if leaked (require matching session)
- * - Cache is still shared (same base token for all users)
- * - Session invalidation implicitly invalidates token usage
- *
- * Format: `{baseToken}.{signature}` where signature is 10 hex chars (40 bits)
- */
-
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { env } from '#/env';
 
-/** Signature length in characters (10 chars = 40 bits, sufficient for defense-in-depth) */
+/** Signature length in characters (10 chars = 40 bits, sufficient for defense-in-depth). */
 const SIGNATURE_LENGTH = 10;
 
-/** Delimiter between base token and signature */
+/** Delimiter between base token and signature. */
 const DELIMITER = '.';
 
 /**
@@ -32,7 +17,7 @@ function deriveSigningKey(sessionToken: string): Buffer {
 
 /**
  * Sign a base cache token with the user's session-derived key.
- * Returns format: `{baseToken}.{signature}`
+ * Returns format: `{baseToken}.{signature}`.
  *
  * @param baseToken - The cache token from CDC (nanoid)
  * @param sessionToken - The user's hashed session token

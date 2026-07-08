@@ -62,7 +62,7 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
   const newToken = nanoid(40);
   const hashedToken = encodeLowerCased(newToken);
 
-  // Create token record with 15-minute expiry
+  // Create token row with 15-minute expiry
   const [tokenRecord] = await db
     .insert(tokensTable)
     .values({

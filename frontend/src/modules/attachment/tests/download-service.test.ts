@@ -133,7 +133,7 @@ describe('downloadService.processQueue — failed download retry', () => {
 
     await downloadService.processQueue();
 
-    // Downloaded rows now serve as the dedupe registry — they must NOT be gc'd in the hot path.
+    // Downloaded rows serve as the dedupe registry.
     const downloaded = await attachmentsDb.downloadQueue.get('att-done');
     expect(downloaded?.status).toBe('downloaded');
   });
@@ -191,7 +191,7 @@ describe('downloadService — cache lookup before claim', () => {
     await downloadService.processQueue();
 
     const entry = await attachmentsDb.downloadQueue.get('att-1');
-    expect(entry?.status).toBe('pending'); // unchanged — liveQuery will retrigger when cache fills
+    expect(entry?.status).toBe('pending'); // liveQuery will retrigger when cache fills
     expect(entry?.attempts).toBe(0); // no attempt burned
     // The service must not have claimed the row.
     expect(transitionSpy).not.toHaveBeenCalledWith('att-1', 'downloading');
@@ -231,7 +231,7 @@ describe('downloadService — auth fail-fast (401/403)', () => {
 
     const entry = await attachmentsDb.downloadQueue.get('att-1');
     expect(entry?.status).toBe('failed');
-    // Should bail out after the first 403 — the loop must not request the other 2 variants.
+    // A 403 stops the loop before the other 2 variants.
     expect(fetchMock).toHaveBeenCalledTimes(1);
     // No blobs stored for a fully-failed attachment.
     expect(attachmentStorage.storeDownloadBlobWithVariant).not.toHaveBeenCalled();
@@ -279,7 +279,7 @@ describe('flushStores clears attachment IDB', () => {
 
     await flushStores();
 
-    // Sign-out deletes + unbinds the appdb — attachment blobs/queue go with it.
+    // Sign-out deletes and unbinds the appdb.
     expect(getAppDb()).toBeNull();
 
     // Re-bind so the suite's afterEach table cleanup has a DB to operate on.

@@ -1,28 +1,3 @@
-/**
- * One-time migration of the S3 control object from schemaVersion 1 (numeric
- * `gen` rollout) to schemaVersion 2 (the content-addressed deploy ledger).
- *
- * Why a migration is needed at all: the VM resource NAMING scheme changed from
- * `vm-<svc>-<gen>` (numeric) to `vm-<svc>-<genId>` (content hash). The first
- * `pulumi up` after this change therefore REPLACES every generation VM — the
- * old numeric-named resources can no longer be produced by the program, so they
- * are destroyed and the content-addressed ones are created. That is a one-time,
- * bounded downtime per service (backend rolls first), which is acceptable.
- *
- * What this task does: it carries each service's CURRENT live `sha` over as
- * `pendingSha` in the v2 ledger. That makes the Pulumi program materialise the
- * new content-addressed generation at the LIVE image (not the `latest`
- * placeholder a wiped control object would default to), and the rollout
- * reconciler then points the LB at it and promotes it to `active`.
- *
- * Idempotent and safe to re-run:
- *   - absent control object  → nothing to migrate (a fresh fork seeds on deploy)
- *   - already schemaVersion 2 → no-op
- *   - schemaVersion 1        → rewritten to v2 (with an If-Match guard)
- *
- * Usage (operator, locally, with SCW creds in env):
- *   pnpm --filter infra migrate-control-store --stack production [--dry-run]
- */
 import { isMain } from '../lib/utils/is-main'
 import {
   type BootstrapState,
@@ -53,7 +28,7 @@ export type MigrationResult =
 
 /** Sanitise a schemaVersion-2 document: drop any `active` pointer that lacks a
  *  valid `id` (the corruption a pre-fix sync could write) and strip any obsolete
- *  `previous` pointer (generations are no longer retained for rollback). Returns
+ *  `previous` pointer (rollback generations are absent). Returns
  *  `already-v2` when nothing needed repair, else `migrated` with the clean state. */
 function sanitizeV2(doc: Record<string, unknown>): MigrationResult {
   const bootstrap: BootstrapState = isRecord(doc.bootstrap) ? (doc.bootstrap as BootstrapState) : {}
@@ -126,7 +101,7 @@ export async function migrateControlStore(argv = process.argv.slice(2)): Promise
   const { s3, bucket, controlKey: key } = ctx
   const { GetObjectCommand, PutObjectCommand } = await import('@aws-sdk/client-s3')
 
-  // Raw read — deliberately NOT readControlState(), which now rejects v1.
+  // Raw read, deliberately NOT readControlState().
   let raw: string | undefined
   let etag: string | undefined
   try {

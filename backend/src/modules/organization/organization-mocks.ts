@@ -67,7 +67,7 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
 };
 
 /**
- * Generates a mock organization record with all fields populated.
+ * Generates a mock organization row with all fields populated.
  * Used for DB seeding, tests, and as base for API response examples.
  * Enforces unique organization names.
  */

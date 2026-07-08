@@ -1,15 +1,3 @@
-/**
- * Integration tests for CDC → Activities → ActivityBus flow.
- *
- * These tests verify:
- * 1. ActivityBus can receive events locally
- * 2. Full flow: DB change → CDC Worker → WebSocket → ActivityBus
- *
- * Prerequisites:
- * - Real PostgreSQL with logical replication enabled
- * - For full CDC tests: CDC worker running with WebSocket connection
- */
-
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { ActivityEvent } from '#/lib/activity-bus';
@@ -42,6 +30,8 @@ import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { mockUser } from '#/modules/user/user-mocks';
 import { clearDatabase, ensureCdcSetup, startInProcessCdcWorker, waitFor, waitForEvent } from './test-utils';
 
+// Covers local ActivityBus events and full DB change to CDC worker to WebSocket
+// to ActivityBus delivery.
 describe('EventBus Integration', () => {
   beforeAll(async () => {
     // Migrations are handled by global-setup.ts

@@ -13,7 +13,7 @@ interface TableSpec {
 /**
  * Build per-table publication specs.
  *
- * NOTE: Publication column lists are incompatible with REPLICA IDENTITY FULL (PG error 42P10).
+ * Publication column lists are incompatible with REPLICA IDENTITY FULL (PG error 42P10).
  * Since the CDC worker needs REPLICA IDENTITY FULL for old-row diffs, we publish all columns.
  * Large columns are still stripped from WS payloads via cdcExcludeColumnLengthThreshold in the activity service.
  */
@@ -33,7 +33,7 @@ async function run() {
 
   const trackedTableNames = tableSpecs.map((s) => s.tableName);
 
-  // Build table list for CREATE PUBLICATION (no column lists — incompatible with REPLICA IDENTITY FULL)
+  // Build table list for CREATE PUBLICATION without column lists.
   const tableList = trackedTableNames.join(', ');
 
   const migrationSql = `-- CDC (Change Data Capture) Setup
@@ -88,7 +88,7 @@ ${trackedTableNames.map((table) => `    ALTER TABLE ${table} REPLICA IDENTITY FU
 END $$;
 `;
 
-  // Use shared migration utility
+  // Use the shared migration utility.
   const result = upsertMigration('cdc_setup', migrationSql);
   logMigrationResult(result, 'CDC setup');
 

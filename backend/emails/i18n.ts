@@ -8,10 +8,7 @@ import nlBackend from '../../locales/nl/backend.json';
 import nlCommon from '../../locales/nl/common.json';
 import nlError from '../../locales/nl/error.json';
 
-/**
- * Initialize i18n for email templates.
- * This ensures translations work both during server runtime and CLI preview.
- */
+// Email templates use the same translation resources in server runtime and CLI preview.
 if (!i18n.isInitialized) {
   i18n.use(initReactI18next).init({
     resources: {

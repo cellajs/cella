@@ -21,7 +21,7 @@ const propagationHintSchema = z.object({
  * For product entities (page, attachment):
  * - Includes stx, seq, cacheToken for sync engine
  *
- * For membership — app stream only:
+ * For membership, app stream only:
  * - seq is null (membership changes detected via activity scan on catchup)
  * - stx/seq/cacheToken are null
  */
@@ -93,8 +93,8 @@ const childContextChangeSummarySchema = z.object({
  * Used in catchup responses to give client minimal info to sync efficiently.
  *
  * Dual-level design:
- * - entitySeqs (org-level): quick screening — "did anything change for this entity type in this org?"
- * - childContextChanges: precision drill-down — per-child-context entitySeqs for delta fetch
+ * - entitySeqs (org-level): quick screening for changes by entity type within the org.
+ * - childContextChanges: precision drill-down with per-child-context entitySeqs for delta fetch.
  *
  * Client logic:
  * 1. Compare org-level entitySeqs for quick skip (unchanged → skip entirely)

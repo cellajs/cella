@@ -86,7 +86,7 @@ export const collectedData: CollectedDataCategory[] = [
 
 /**
  * Subprocessors that handle personal data on behalf of the service.
- * Mark optional services with `optional: true` — forks can filter by this.
+ * Mark optional services with `optional: true`; forks can filter by this.
  */
 export const subprocessors: Subprocessor[] = [
   {
@@ -159,7 +159,7 @@ export const subprocessors: Subprocessor[] = [
 
 /**
  * Shared data types describing how personal data flows through the service.
- * Mark optional types with `optional: true` — forks can filter by this.
+ * Mark optional types with `optional: true`; forks can filter by this.
  */
 export const sharedDataTypes: SharedDataType[] = [
   {

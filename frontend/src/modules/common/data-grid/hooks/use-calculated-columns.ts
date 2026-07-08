@@ -89,7 +89,7 @@ export function useCalculatedColumns<R, SR>({
 
     // Resolve merge rules up front: a rule is only valid when its host resolves
     // to a real grid column right now (visible at this breakpoint, not merged
-    // away itself). Invalid rules deactivate — the column then falls back to
+    // away itself). Invalid rules deactivate, and the column falls back to
     // its normal visibility rules below.
     const validMerges = new Map<string, ColumnMergeRule>();
     {
@@ -122,7 +122,7 @@ export function useCalculatedColumns<R, SR>({
       parent?: MutableCalculatedColumnParent<R, SR>,
     ) {
       for (const rawColumn of rawColumns) {
-        // Reactive hide flag (column-visibility toggle etc.) — hard exclude, same as a failing breakpoint.
+        // Reactive hide flag, such as a column-visibility toggle: hard exclude, same as a failing breakpoint.
         if (rawColumn.hidden) continue;
 
         if ('children' in rawColumn) {
@@ -139,7 +139,7 @@ export function useCalculatedColumns<R, SR>({
           continue;
         }
 
-        // Merged columns are relocated into their host cell, not hidden — they
+        // Merged columns are relocated into their host cell rather than hidden, so they
         // bypass the breakpoint visibility check.
         const mergeRule = validMerges.get(rawColumn.key);
         if (mergeRule == null && !isVisibleAtBreakpoint(rawColumn)) continue;
@@ -211,7 +211,7 @@ export function useCalculatedColumns<R, SR>({
     });
 
     // Attach slot columns to their hosts, grouped by side and sorted by
-    // `order` (ties keep column order). Hosts are guaranteed to exist —
+    // `order` (ties keep column order). Hosts exist here because
     // rules with unresolvable hosts were deactivated above.
     if (slotColumns.length > 0) {
       const slotsByHost = new Map<string, typeof slotColumns>();
@@ -282,7 +282,7 @@ export function useCalculatedColumns<R, SR>({
         columnMetrics.set(column, { width: clampedWidth, left });
         left += clampedWidth;
       } else {
-        // CSS-native flex distribution — CSS grid handles sizing between breakpoints.
+        // CSS-native flex distribution: CSS grid handles sizing between breakpoints.
         // No JS measurement needed; minmax distributes remaining space with proper constraints.
         // maxWidth is only enforced during resize, not for initial flex sizing.
         lastAutoColumnIndex = i;

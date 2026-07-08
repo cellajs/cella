@@ -11,7 +11,7 @@ export const jsonbInt = (col: Column, key: string) => sql<number>`GREATEST(0, CO
 
 /**
  * Build a raw SQL fragment for reading an integer key from a JSONB column.
- * Uses sql.raw() for the key — suitable for building dynamic JSON objects
+ * Uses sql.raw() for the key, suitable for building dynamic JSON objects
  * where parameterized keys aren't supported (e.g. json_build_object).
  */
 export const jsonbIntRaw = (tableAndCol: string, key: string) => {
@@ -23,7 +23,7 @@ export const jsonbIntRaw = (tableAndCol: string, key: string) => {
  * Build a JSONB atomic increment expression for a single key.
  * Returns a jsonb_build_object fragment: { key: GREATEST(0, current + delta) }
  *
- * Uses sql.raw() for the key literal — required for jsonb_build_object / GREATEST / COALESCE.
+ * Uses sql.raw() for the key literal required by jsonb_build_object / GREATEST / COALESCE.
  */
 export const jsonbIncFragment = (col: Column, key: string, delta: number) => {
   const safeKey = key.replace(/'/g, "''");

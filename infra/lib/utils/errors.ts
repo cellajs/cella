@@ -1,5 +1,5 @@
 /**
- * Message of a caught value without assuming it is an `Error` — a thrown
+ * Message of a caught value without assuming it is an `Error`; a thrown
  * string/object would make `(err as Error).message` yield `undefined` in
  * operator-facing output.
  */

@@ -1,7 +1,3 @@
-/**
- * Cache metrics for monitoring hit rates and performance.
- */
-
 interface CacheMetricsData {
   hits: number;
   misses: number;

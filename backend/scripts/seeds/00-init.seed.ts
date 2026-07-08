@@ -57,14 +57,14 @@ export const initSeed = async () => {
     .returning()
     .onConflictDoNothing();
 
-  // Insert system role record into the database
+  // Insert system role row into the database
   await db.insert(systemRolesTable).values({ userId: adminUser.id, role: 'admin' }).onConflictDoNothing();
 
-  // Make unsubscribeToken record → Insert into the database
+  // Make unsubscribeToken row, then insert into the database
   const unsubscribeTokenRecord = await mockUnsubscribeToken(adminUser);
   await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRecord).onConflictDoNothing();
 
-  // Make email record → Insert into the database
+  // Make email row, then insert into the database
   const emailRecord = mockEmail(adminUser);
   await db
     .insert(emailsTable)

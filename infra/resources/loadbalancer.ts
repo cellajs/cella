@@ -1,24 +1,3 @@
-/**
- * Load Balancer — TLS termination, host-header routing, and the public DNS
- * records for every LB-exposed service.
- *
- * One LB-S sits on the main private network with a static public IPv4. HTTPS on
- * 443 fans out by Host header; each exposed service gets its own Let's Encrypt
- * cert and health check. WHICH services are exposed — and how — is derived from
- * the canonical service registry (`lbRoute` in `config/services.config.ts`):
- *  - 'default' — the LB's fallback backend (the API); DNS + cert, no route.
- *  - 'host'    — host-header routed; own DNS record + cert + route.
- *  - absent    — internal-only (cdc); nothing is created here.
- * Adding a registry entry with an `lbRoute` is enough to get its DNS record,
- * cert, LB backend and route — no service is listed by name in this file.
- *
- * The apex/www machinery (apex→www redirect, apex cert) is cella-owned
- * structure keyed to the frontend service, not per-service data. HTTP on 80
- * only carries the HTTP→HTTPS redirect ACL.
- *
- * Only provisioned when a real domain is configured AND compute is enabled,
- * since without compute VMs the LB has no backends to route to.
- */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { appConfig } from '../../shared'
@@ -29,9 +8,8 @@ import { privateNetworkId } from './network'
 import { serviceGenerationIps } from './compute'
 
 /**
- * Pre-refactor resource base names, kept so Pulumi URNs (and Scaleway display
- * names) stay stable for resources that predate the registry-driven loop.
- * Migration metadata only — a NEW service needs no entry here.
+ * Resource base names for resources whose shipped Pulumi URNs and Scaleway
+ * display names predate the registry-driven loop.
  */
 const legacyBaseNames: Partial<Record<ServiceName, string>> = { backend: 'api', frontend: 'app' }
 const baseName = (slug: ServiceName) => legacyBaseNames[slug] ?? slug
@@ -55,8 +33,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     throw new Error("loadbalancer: no enabled service declares lbRoute 'default' — the HTTPS frontend needs a fallback backend.")
   }
 
-  // Public scheme per service (https: / wss:), from the appConfig-derived
-  // registry endpoints — not re-decided here.
+  // Public scheme per service (https: / wss:) from the appConfig-derived registry endpoints.
   const schemeBySlug = new Map(endpoints.map((e) => [e.slug, new URL(e.url).protocol]))
 
   const appHost = serviceHost('frontend')
@@ -86,7 +63,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   })
 
   // -------------------------------------------------------------------------
-  // DNS A Records — all point to the LB public IP.
+  // DNS A Records: all point to the LB public IP.
   // Must exist BEFORE Let's Encrypt certificates, since Scaleway validates
   // the cert by resolving the FQDN to the LB IP at creation time.
   // -------------------------------------------------------------------------
@@ -97,7 +74,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   for (const service of lbServices) {
     const host = serviceHost(service.slug)
     // A service whose host IS the zone apex (frontend at apex) gets no own
-    // record/cert/route — the default backend would have to serve it, which we
+    // record/cert/route. The default backend would have to serve it, which we
     // don't currently support; the apex handling below covers that hostname.
     if (host === dnsZone) continue
     dnsRecords.set(service.slug, new scaleway.domain.Record(`${baseName(service.slug)}-dns`, {
@@ -122,7 +99,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   }
 
   // -------------------------------------------------------------------------
-  // Let's Encrypt certificates — depend on DNS records so the FQDN
+  // Let's Encrypt certificates: depend on DNS records so the FQDN
   // resolves to the LB IP before Scaleway runs the ACME validation.
   // -------------------------------------------------------------------------
 
@@ -149,13 +126,13 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   }
 
   // -------------------------------------------------------------------------
-  // LB Backends — each targets the private IPs of its service's active VM
+  // LB Backends: each targets the private IPs of its service's active VM
   // generation(s). Pulumi sets the initial list, then ignores live changes so
   // tasks/cutover.ts can perform explicit expand→health→contract handoff via
   // Scaleway SetBackendServers without Pulumi fighting drift. Health checks hit
   // the app's own `/health` (no ingress hop): a crashed generation is correctly
   // marked down.
-  // `onMarkedDownAction` follows the service's drainPolicy — HTTP services let
+  // `onMarkedDownAction` follows the service's drainPolicy: HTTP services let
   // in-flight requests finish ('none'); WebSocket services shed sessions so
   // clients reconnect to the new generation ('shutdown_sessions').
   // -------------------------------------------------------------------------
@@ -185,7 +162,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   const defaultBackend = backends.get(defaultService.slug)!
 
   // -------------------------------------------------------------------------
-  // HTTPS Frontend (port 443) — TLS termination + host-header routes
+  // HTTPS Frontend (port 443): TLS termination + host-header routes
   // -------------------------------------------------------------------------
 
   const allCertIds: pulumi.Input<string>[] = [...certs.values()].map((cert) => cert.id)
@@ -222,7 +199,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
           // Preserve the original path and query so deep links (e.g. /static/logo/logo.png)
           // survive the apex→www redirect. Scaleway supports {{host}}, {{path}} and {{query}}
           // placeholders; {{path}} does NOT include the leading slash, so it must be added
-          // literally — matching Scaleway's documented format `https://{{host}}/{{path}}?{{query}}`.
+          // literally, matching Scaleway's documented format `https://{{host}}/{{path}}?{{query}}`.
           // Omitting it yields a garbled redirect like `https://www.example.comauth/authenticate`.
           target: `https://${appHost}/{{path}}?{{query}}`,
           code: 301,
@@ -237,7 +214,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   }
 
   // -------------------------------------------------------------------------
-  // HTTP Frontend (port 80) — redirect all to HTTPS
+  // HTTP Frontend (port 80): redirect all to HTTPS
   // -------------------------------------------------------------------------
 
   const httpFrontend = new scaleway.loadbalancers.Frontend('http-frontend', {
@@ -266,7 +243,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   })
 
   // -------------------------------------------------------------------------
-  // Outputs — public URL per LB-exposed service (scheme from appConfig)
+  // Outputs: public URL per LB-exposed service (scheme from appConfig)
   // -------------------------------------------------------------------------
 
   const serviceUrls: Record<string, pulumi.Output<string>> = {}
@@ -285,7 +262,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   }
 }
 
-// Guard — skip while compute is deferred (fresh bootstrap); without compute VMs
+// Guard: skip while compute is deferred (fresh bootstrap); without compute VMs
 // the LB has no backends to route to. A real domain is asserted in pulumi-context.
 const outputs: LoadBalancerOutputs = infra.computeEnabled
   ? provisionLoadBalancer()

@@ -1,17 +1,3 @@
-/**
- * Database maintenance CLI — pg_partman partition maintenance.
- *
- * Thin wrapper around `runDbMaintenance` in `src/lib/db-maintenance.ts`. The same logic also
- * runs in-process on a daily schedule (see `scheduleDbMaintenance`), so this script is only
- * needed for ad-hoc runs or when driving maintenance from an external scheduler.
- *
- * Usage:
- *   pnpm --filter backend db:maintenance
- *
- * Schedule in production (optional — the server already schedules it in-process):
- *   Run daily at 03:00 UTC: 0 3 * * *
- */
-
 import pc from 'picocolors';
 import { runDbMaintenance } from '#/lib/db-maintenance';
 

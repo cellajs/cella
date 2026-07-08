@@ -1,9 +1,3 @@
-/**
- * `pulumi up` wrapper used by bootstrap. Streams stdout/stderr through, also
- * captures stderr so we can scan for Scaleway "insufficient permissions"
- * errors and print an actionable next-step hint without the user having to
- * read the raw provider trace.
- */
 import { spawn } from 'node:child_process'
 import { pc } from 'shared/cli-utils/colors';
 import { warningMark } from 'shared/console'

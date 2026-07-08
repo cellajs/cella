@@ -168,7 +168,7 @@ function BlockNoteFullHtml({
       onClick={handleClick}
     >
       <div
-        // select-text: opt static (read-only) content into text selection — it sits inside a focusable,
+        // select-text opts static read-only content into text selection; it sits inside a focusable,
         // click-to-expand task Card, so without this the user can't highlight/copy the text.
         className="bn-static-editor bn-default-styles select-text"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: input is sanitized via DOMPurify before render

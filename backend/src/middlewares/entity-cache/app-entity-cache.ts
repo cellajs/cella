@@ -1,26 +1,12 @@
-/**
- * Entity cache service - entity-keyed store with token-based access.
- *
- * Forward-only design: cache is keyed by entityType:entityId (single entry per entity).
- * Tokens are a lightweight index for resolving client requests to the entity key.
- * Old tokens still resolve to the same entity, so stale clients get cache hits
- * instead of unnecessary DB round-trips.
- *
- * Flow:
- * 1. CDC reserves token → maps token to entity key, invalidates stale data
- * 2. First client fetch (any valid token) → enriches cache with DB data
- * 3. Subsequent clients (any token, old or new) → cache hit
- */
-
 import { TTLCache } from '#/lib/ttl-cache';
 import { log } from '#/utils/logger';
 import { coalesce, isInFlight } from '#/utils/request-coalescing';
 import { entityCacheMetrics } from './metrics';
 
-/** Cache TTL: 10 minutes */
+/** Cache TTL: 10 minutes. */
 const cacheTtl = 10 * 60 * 1000;
 
-/** Cache configuration */
+/** Cache configuration. */
 const cacheConfig = {
   /** Max entries in entity cache */
   maxSize: 5000,
@@ -30,10 +16,10 @@ const cacheConfig = {
   defaultTtl: cacheTtl,
 };
 
-/** Entity data type - null means reserved but not enriched */
+/** Entity data type. Null means reserved but not enriched. */
 type CacheValue = Record<string, unknown> | null;
 
-/** Main cache: entityKey → entity data (or null if reserved) */
+/** Main cache: entityKey to entity data, or null if reserved. */
 const cache = new TTLCache<CacheValue>({
   maxSize: cacheConfig.maxSize,
   defaultTtl: cacheConfig.defaultTtl,
@@ -44,19 +30,19 @@ const cache = new TTLCache<CacheValue>({
   },
 });
 
-/** Token index: token → entityKey (forward-only: old tokens still resolve) */
+/** Token index: token to entityKey (forward-only: old tokens still resolve). */
 const tokenIndex = new TTLCache<string>({
   maxSize: cacheConfig.tokenIndexMaxSize,
   defaultTtl: cacheConfig.defaultTtl,
 });
 
-/** Batch token index: batchToken → entityKey[] */
+/** Batch token index: batchToken to entityKey[]. */
 const batchTokenIndex = new TTLCache<string[]>({
   maxSize: 1000,
   defaultTtl: cacheConfig.defaultTtl,
 });
 
-/** Build entity key */
+/** Build entity key. */
 function entityKey(entityType: string, entityId: string): string {
   return `${entityType}:${entityId}`;
 }
@@ -82,10 +68,9 @@ export const entityCache = {
     const key = entityKey(entityType, entityId);
     const ttl = ttlMs ?? cacheConfig.defaultTtl;
 
-    // Map token to entity key (forward-only: old tokens remain)
     tokenIndex.set(token, key, ttl);
 
-    // Invalidate stale data — set null (reserved, not enriched)
+    // Mark as reserved so the next fetch refreshes stale data.
     cache.set(key, null, ttl);
   },
 

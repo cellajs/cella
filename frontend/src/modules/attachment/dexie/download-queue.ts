@@ -1,26 +1,9 @@
-/**
- * Download Queue
- *
- * Manages the download queue for background fetching of cloud attachments.
- * Modeled after React Query's mutation state machine:
- * - enqueue() — add items to queue (like mutate())
- * - transition() — explicit state transitions with validation
- * - gc() — garbage collect completed/skipped entries
- *
- * Valid status transitions:
- *   pending → downloading | skipped
- *   downloading → downloaded | failed
- *   skipped → pending (re-queue when keys arrive)
- *   failed → (terminal)
- *   downloaded → (terminal)
- */
-
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
 import { attachmentsDb, type DownloadQueueEntry, type DownloadStatus } from './attachments-db';
 import { attachmentStorage } from './storage-service';
 
-/** Valid status transitions — mirrors RQ's internal state machine pattern */
+/** Valid status transitions for background attachment downloads. */
 const transitions: Record<DownloadStatus, DownloadStatus[]> = {
   pending: ['downloading', 'skipped'],
   downloading: ['downloaded', 'failed'],
@@ -31,7 +14,7 @@ const transitions: Record<DownloadStatus, DownloadStatus[]> = {
 
 /**
  * Transition a queue entry to a new status.
- * Validates the transition and increments attempts on pending → downloading.
+ * Validates the transition and increments attempts when a download starts.
  */
 async function transition(id: string, to: DownloadStatus, skipReason?: string): Promise<void> {
   try {
@@ -47,7 +30,7 @@ async function transition(id: string, to: DownloadStatus, skipReason?: string): 
     const updates: Partial<DownloadQueueEntry> = { status: to };
     if (skipReason) updates.skipReason = skipReason;
 
-    // Count attempts on the start of each download (pending → downloading)
+    // Count attempts on the start of each download.
     if (entry.status === 'pending' && to === 'downloading') {
       updates.attempts = entry.attempts + 1;
     }
@@ -64,7 +47,7 @@ async function transition(id: string, to: DownloadStatus, skipReason?: string): 
  * The queue table itself is the registry of "have I seen this attachment?":
  *   - Any existing row (pending / downloading / downloaded / failed) is left untouched.
  *   - The single exception is rows that were `skipped` because the attachment had no
- *     `originalKey` at queue time but now has one — those get reset to `pending`.
+ *     `originalKey` at queue time but now has one. Those get reset to `pending`.
  *
  * Skips attachments that already have a processed variant cached locally (no work to do).
  */
@@ -77,7 +60,7 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
   try {
     const ids = attachments.map((a) => a.id);
 
-    // Single indexed lookup — primary key on `id` makes this O(log n).
+    // Single indexed lookup: primary key on `id` makes this O(log n).
     const existingEntries = await attachmentsDb.downloadQueue.where('id').anyOf(ids).toArray();
     const existingById = new Map(existingEntries.map((e) => [e.id, e]));
 
@@ -95,7 +78,7 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
         continue;
       }
 
-      // Skip if blob is already cached with a processed variant — nothing to download.
+      // Skip if blob is already cached with a processed variant.
       const storedVariants = (await attachmentStorage.getStoredVariants(attachment.id)) ?? [];
       if (storedVariants.some((v) => v !== 'raw')) continue;
 
@@ -185,4 +168,5 @@ function calculatePriority(attachment: Attachment): number {
   return 5;
 }
 
+/** Queue API for background fetching of cloud attachments. */
 export const downloadQueue = { enqueue, transition, gc };

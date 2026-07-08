@@ -59,7 +59,7 @@ export function resolveUpdateOps<T extends Record<string, unknown>>(
   const filtered = filterNoOpFields(entity, scalarOps);
   const { acceptedFields } = resolveFieldConflicts(filtered, stx.fieldTimestamps, entity.stx.fieldTimestamps);
 
-  // Apply AWSet deltas (commutative — no conflict resolution needed)
+  // Apply AWSet deltas (commutative, no conflict resolution needed)
   const resolvedArrays: Record<string, string[]> = {};
   for (const [key, delta] of Object.entries(deltaOps)) {
     const current = Array.isArray(entity[key]) ? entity[key] : [];

@@ -1,5 +1,5 @@
 import type { GetUnseenCountsResponse } from 'sdk';
-// biome-ignore lint/style/noRestrictedImports: imperative call from Zustand action — batched seen-flush, not eligible for a React Query hook.
+// biome-ignore lint/style/noRestrictedImports: imperative call from Zustand action, batched seen-flush not eligible for a React Query hook.
 import { markSeen } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
 import { create } from 'zustand';
@@ -27,7 +27,7 @@ interface SeenStoreState {
   /** Interval ID for periodic flush */
   flushIntervalId: ReturnType<typeof setInterval> | null;
 
-  /** Record an entity as seen — queued for next flush */
+  /** Record an entity as seen and queue it for the next flush. */
   markEntitySeen: (
     tenantId: string,
     organizationId: string,
@@ -39,7 +39,7 @@ interface SeenStoreState {
   startFlushInterval: () => void;
   /** Stop the periodic flush interval */
   stopFlushInterval: () => void;
-  /** Flush all pending seen records to the server */
+  /** Flush all pending seen rows to the server */
   flush: () => Promise<void>;
   /** Reset in-memory state to initial (call on sign-out; persisted data lives in appdb). */
   reset: () => void;
@@ -59,9 +59,8 @@ const batchKey = (organizationId: string, entityType: string) => `${organization
  * over the entire cache. With offline access and hundreds of cached queries, this
  * creates significant main-thread jank.
  *
- * Instead of updating the cache per-entity, we accumulate decrements and apply
- * them in a single `setQueryData` call via microtask, so one scroll batch
- * produces at most one cache event.
+ * Decrements are accumulated and applied in a single `setQueryData` call via
+ * microtask, so one scroll batch produces at most one cache event.
  */
 const pendingDecrements: { contextId: string; entityType: string }[] = [];
 let decrementScheduled = false;
@@ -136,7 +135,7 @@ export const useSeenStore = create<SeenStoreState>()(
           // Skip entity types not configured for seen tracking
           if (!(appConfig.seenTrackedEntityTypes as readonly string[]).includes(entityType)) return;
 
-          // Skip if already flushed to server in a previous session
+          // Persisted flush state means the server has already seen this entity.
           if (get().flushedIds.has(entityId)) return;
 
           const pending = get().pending;
@@ -144,7 +143,7 @@ export const useSeenStore = create<SeenStoreState>()(
           const existing = pending.get(key);
           const entityIds = existing?.entityIds ?? new Set<string>();
 
-          // Dedup — already queued this session
+          // Dedup within the current session.
           if (entityIds.has(entityId)) return;
 
           const newSet = new Set(entityIds);
@@ -154,7 +153,7 @@ export const useSeenStore = create<SeenStoreState>()(
           newMap.set(key, { tenantId, organizationId, contextId, entityType, entityIds: newSet });
           set({ pending: newMap });
 
-          // Batch optimistic unseen count decrement — applied via microtask to
+          // Batch optimistic unseen count decrement, applied via microtask to
           // avoid per-entity cache events during rapid scroll
           scheduleUnseenDecrement(contextId, entityType);
 
@@ -200,7 +199,7 @@ export const useSeenStore = create<SeenStoreState>()(
             batches.map((b) => `${b.entityType}:${b.organizationId.slice(0, 8)}(${b.entityIds.length})`),
           );
 
-          // Clear pending optimistically — failed batches will be re-added
+          // Clear pending optimistically, failed batches are re-added.
           set({ pending: new Map() });
 
           for (const batch of batches) {
@@ -245,8 +244,7 @@ export const useSeenStore = create<SeenStoreState>()(
             }
           }
 
-          // No refetch needed after flush — unseen counts are already patched
-          // optimistically in markEntitySeen, and SSE handles external changes.
+          // No refetch needed: markEntitySeen patches unseen counts, and SSE handles external changes.
         },
 
         reset: () => {
@@ -260,7 +258,7 @@ export const useSeenStore = create<SeenStoreState>()(
         name: 'seen',
         skipHydration: true,
         storage: createJSONStorage(() => idbKvStorage('seen')),
-        // Only persist flushedIds — store as array for JSON compatibility
+        // Store flushedIds as an array for JSON compatibility.
         partialize: (state) => ({ flushedIds: [...state.flushedIds] }),
         // Rehydrate array back to Set
         merge: (persisted, current) => ({

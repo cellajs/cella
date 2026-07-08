@@ -21,9 +21,8 @@ import type { EmailTemplateDef } from './types';
  * - `recipient` are the per-recipient display props the component reads (the
  *   values the mailer turns into Brevo `{{params.x}}` placeholders at send time).
  *
- * Sample data now lives on each template's `preview` field (type-checked against
- * the template's own props). This registry just maps the preview slug — which
- * doubles as the dev-preview URL and Storybook story name — to its template.
+ * Sample data lives on each template's `preview` field (type-checked against
+ * the template's own props). This registry maps the preview slug to its template.
  */
 export interface EmailPreviewFixture {
   // Template defs are heterogeneous (each binds its own statics/recipient shape).

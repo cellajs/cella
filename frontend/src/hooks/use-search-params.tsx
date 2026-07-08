@@ -31,7 +31,7 @@ export function useSearchParams<T extends Record<string, string | string[] | und
   const params = useParams(from ? { from, strict: true } : { strict: false });
   const search = useSearch(from ? { from, strict: true } : { strict: false });
 
-  // Stable serialization of URL search — only changes when URL actually changes
+  // Stable serialization of URL search, changes only when the URL changes.
   const searchKey = saveDataInSearch ? JSON.stringify(search) : '';
   const prevSearchKeyRef = useRef(searchKey);
 

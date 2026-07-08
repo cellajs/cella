@@ -1,14 +1,3 @@
-/**
- * Dexie Database for Attachment Blob Storage
- *
- * Unified storage for local-first attachments:
- * - blobs: File blobs for uploads (pending/synced) and downloads (cached)
- * - downloadQueue: Queue for background fetching of cloud attachments
- *
- * React-query cache is the source of truth for attachment metadata.
- * This database only stores the actual blob data and sync state.
- */
-
 import type { EntityTable } from 'dexie';
 import type { UploadTemplateId } from 'shared';
 import { getAppDb } from '~/query/app-db';
@@ -160,13 +149,8 @@ export interface DownloadQueueEntry {
 }
 
 /**
- * Attachment blob + download-queue tables live in the unified per-user `appdb`
- * (`~/query/app-db`). This facade resolves the live tables on every access so callers
- * keep using `attachmentsDb.blobs` / `attachmentsDb.downloadQueue` unchanged.
- *
- * Accessors THROW while signed out (no DB bound) — attachment features are authed-only,
- * and long-lived consumers (download service, blob-status hooks) re-subscribe on owner
- * change via `subscribeOwnerChange`. Guard with `getAppDb()` where a no-DB state is reachable.
+ * Resolves attachment blob and download-queue tables from the active per-user appdb.
+ * Accessors throw while signed out; guard with `getAppDb()` where no DB is reachable.
  */
 export const attachmentsDb = {
   get blobs(): EntityTable<AttachmentBlob, 'id'> {

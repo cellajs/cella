@@ -1,9 +1,3 @@
-/**
- * Pure parser for Pulumi.<stack>.yaml bootstrap state. Used by the bootstrap
- * command handlers and by tests. No fs; the caller passes the YAML text (or
- * undefined if file is missing).
- */
-
 export type Environment = 'production' | 'staging'
 export type StackState = 'fresh' | 'partial' | 'bootstrapped'
 
@@ -13,17 +7,12 @@ export interface StackProbe {
 }
 
 /**
- * - `fresh`        — no stack file at all
- * - `partial`      — file exists but no CI deploy key has been minted yet
- * - `bootstrapped` — file exists and records a minted CI deploy key
+ * - `fresh`: no stack file at all
+ * - `partial`: file exists but no CI deploy key has been minted yet
+ * - `bootstrapped`: file exists and records a minted CI deploy key
  *
- * Nothing secret remains in stack config: the CI deploy key lives in the GitHub
- * Environment (provider auth from SCW_* env), the identity ids are derived from
- * the IAM API, and the VM reader key lives in Secret Manager.
- * The marker is therefore a dedicated non-secret breadcrumb, `infra:bootstrapComplete`,
- * stamped once the CI key is minted. Legacy markers (`infra:vmAccessKey`,
- * `infra:applicationId`) are still honoured so stacks bootstrapped before this
- * change keep reporting `bootstrapped` until the operator runs `pulumi config rm`.
+ * `infra:bootstrapComplete` is a non-secret breadcrumb. Compat markers
+ * (`infra:vmAccessKey`, `infra:applicationId`) also count as bootstrapped.
  */
 const BOOTSTRAP_MARKERS = ['infra:bootstrapComplete', 'infra:vmAccessKey', 'infra:applicationId'] as const
 
@@ -52,7 +41,7 @@ export function extractComputeDeferredMarker(yamlText: string): string | undefin
 }
 
 /**
- * Detect a leftover `bootstrap:computeDeferred` marker — the trace of a fresh
+ * Detect a leftover `bootstrap:computeDeferred` marker, the trace of a fresh
  * provision whose initial `pulumi up` did not complete. While present, compute
  * stays gated off (helpers.ts), which is correct until images are pushed; the
  * next successful provisioning `pulumi up` clears it. Returns the marker value

@@ -2,7 +2,7 @@ import { appConfig } from 'shared';
 
 /**
  * Default headers used in tests.
- * These headers can be used to simulate requests in tests without needing to set them up each time.
+ * Simulates requests without rebuilding the same header set in each test.
  */
 export const defaultHeaders = {
   'Content-Type': 'application/json',
@@ -10,9 +10,7 @@ export const defaultHeaders = {
   Origin: appConfig.frontendUrl,
 };
 
-/**
- * It provides a consistent user object that can be used across multiple tests.
- */
+/** Consistent user object shared across tests. */
 export const signUpUser = {
   email: 'test-user@example.com',
 };

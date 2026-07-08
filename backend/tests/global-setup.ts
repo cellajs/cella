@@ -1,8 +1,3 @@
-/**
- * Global setup for Vitest.
- * Runs once before all tests to check Postgres availability and run migrations.
- */
-
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -12,13 +7,12 @@ import { testDatabaseUrl } from 'shared/test-db';
 import { immutabilityTriggersSQL } from '#/db/immutability-triggers';
 import { crossMark, startSpinner, succeedSpinner } from '#/utils/console';
 
-// Get directory path for ESM
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const DATABASE_URL = testDatabaseUrl;
 
 /**
- * Check if Postgres is available and run migrations.
+ * Run Vitest global setup: check Postgres availability and run migrations.
  * If Postgres is not available, exit gracefully with a message.
  */
 export default async function globalSetup() {
@@ -28,7 +22,6 @@ export default async function globalSetup() {
     process.exit(1);
   }
 
-  // Try to connect to Postgres
   const client = new pg.Client({ connectionString: DATABASE_URL });
 
   try {
@@ -42,12 +35,11 @@ export default async function globalSetup() {
     process.exit(1);
   }
 
-  // Run migrations once for all tests
   const spinner = startSpinner('Running database migrations...');
 
   const pool = new pg.Pool({ connectionString: DATABASE_URL });
   const db = drizzle({ client: pool });
-  // Use __dirname to get absolute path regardless of cwd (works with vitest workspace)
+  // Resolve from __dirname so Vitest workspace cwd does not affect migration lookup.
   const migrationsFolder = path.resolve(__dirname, '../drizzle');
 
   try {

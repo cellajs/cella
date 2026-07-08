@@ -93,7 +93,7 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
     // Check if the user still has any passkeys or TOTP entries registered
     const { passkeys, totps } = await findRemainingMfaMethods({ var: { ...ctx.var, db: tx } }, { userId: user.id });
 
-    // MFA requires both passkeys and TOTP as backup — disable if either is missing
+    // MFA requires both passkeys and TOTP as backup.
     if (!passkeys.length || !totps.length) {
       await disableMfa({ var: { ...ctx.var, db: tx } }, { userId: user.id });
     }

@@ -1,10 +1,3 @@
-/**
- * Source-level invariants on the production frontend Caddyfile.
- *
- * The Caddyfile is plain text and easy to break in ways that pass review
- * (deleting a header line, breaking SPA fallback, forgetting /health).
- * These checks pin the contract the rollout + smoke tests depend on.
- */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -18,6 +11,7 @@ const dockerfile = readFileSync(resolve(__dirname, '../../caddy/Dockerfile'), 'u
 // fork-agnostic (the point is "no bucket is hardcoded", not "not this slug").
 const frontendBucket = deriveInfra(fakeConfig()).naming.frontendBucket
 
+// Pins the Caddyfile contract the rollout and smoke tests depend on.
 describe('frontend Caddyfile', () => {
   it('emits every required security header', () => {
     for (const header of [

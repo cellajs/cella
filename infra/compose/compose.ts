@@ -1,18 +1,8 @@
-/**
- * Cella-owned aggregator — assembles the full Compose model from the fork's app
- * services (`services.config.ts`) plus the cella machinery (`infrastructure.ts`)
- * and exports the derived service registry every other infra surface consumes.
- *
- * Forks edit `services.config.ts`, not this file. `synth.ts` emits
- * `compose.gen.yml` from `composeConfig`; the `ServiceName` union, `services`,
- * and `serviceNames` here are computed from the Compose model, so they cannot
- * drift from it.
- */
 import { appServices } from '../config/services.config';
 import { assembleCompose } from './infrastructure'
 import type { ServiceMeta } from './types'
 
-/** The full Compose model — machinery + app services. Emitted by `synth.ts`. */
+/** The full Compose model: machinery + app services. Emitted by `synth.ts`. */
 export const composeConfig = assembleCompose(appServices)
 
 /**
@@ -26,7 +16,7 @@ export const services: readonly ServiceMeta[] = Object.values(composeConfig.serv
   .map((svc) => svc['x-service'])
   .filter((meta): meta is ServiceMeta => meta !== undefined)
 
-/** Ordered service slugs — the canonical list every consumer derives from.
+/** Ordered service slugs: the canonical list every consumer derives from.
  *  `ServiceMeta.slug` is a plain string on the Compose model, but every
  *  `x-service` block is authored from an `appServices` key, so the assertion
  *  restores the literal union the model cannot carry. */

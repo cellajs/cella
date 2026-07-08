@@ -1,43 +1,3 @@
-/**
- * Compute — one Docker Compose VM per enabled service GENERATION.
- *
- * Immutable-node model: every release provisions a NEW VM generation
- * `vm-<svc>-<genId>` with the image SHA baked into its cloud-init. There is no
- * background deploy agent and no out-of-band tag channel — the generation IS
- * the release. Pulumi creates/destroys generations; tasks/cutover.ts owns the
- * live LB server list and backend internal-IP handoff during deploy.
- *
- * The `genId` is CONTENT-ADDRESSED (lib/gen-id.ts): a short hash of the release
- * SHA plus a fingerprint of the generation's static, plan-time config. This
- * program is the genId authority — it derives the id for a pending SHA and
- * surfaces it in `computeGenerationMetadata` for the orchestrator to promote.
- *
- * Generation state lives in the S3 control object (resources/control.ts), an
- * append-only-ish ledger written by the orchestrator around a cutover:
- *   active     — the generation currently serving live on the LB
- *   pendingSha — the SHA being rolled in (the genId is derived here, not stored)
- * compute materialises a VM for {active} ∪ {pending}, deduplicated by id, so a
- * same-config redeploy collapses to a single VM. The old generation is reaped as
- * soon as the new one is healthy (no retained `previous`); rollback is a revert
- * commit + redeploy, which recreates every service — including cdc, which is
- * never retained — from its content-addressed id.
- *
- * Each VM has a fully-closed inbound security group and is reachable only over the
- * main private network from the load balancer and database. The baked TypeScript
- * boot agent logs into the container registry, writes the shared compose.yml + .env
- * (with the baked image tag), runs the one-shot migrate companion for services
- * that opt in, and starts the service compose profile binding the host port.
- *
- * Constraint: Scaleway has no instance-attached IAM identities, so app secrets
- * and the registry-login credential are embedded in cloud-init userdata; anyone
- * with `InstancesReadOnly` on the project can read them. Break-glass access is
- * the Scaleway serial console (no SSH listener is opened).
- *
- * Credentials embedded in cloud-init use the dedicated `<slug>-vm-reader` IAM
- * application (provisioned by tasks/setup-vm-key.ts in the bootstrap Rotate keys
- * flow). That identity has only ContainerRegistryReadOnly + SecretManagerReadOnly
- * + SecretManagerSecretAccess — no write access to any Scaleway resource.
- */
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as pulumi from '@pulumi/pulumi'
@@ -57,9 +17,9 @@ import { bootDiagBucketName } from './storage'
 import { vmReaderPolicy } from './vm-iam'
 
 // ---------------------------------------------------------------------------
-// Security Group — fully closed inbound; LB reaches VMs via private network.
+// Security Group: fully closed inbound; LB reaches VMs via private network.
 // Break-glass access is via Scaleway's serial console (no SSH on the public
-// internet). See infra/README.md → "Emergency access".
+// internet). See infra/README.md, "Emergency access".
 // ---------------------------------------------------------------------------
 
 const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
@@ -72,7 +32,7 @@ const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
 })
 
 // ---------------------------------------------------------------------------
-// Runtime secret manifest — metadata only (secret IDs + env var names, never
+// Runtime secret manifest: metadata only (secret IDs + env var names, never
 // values). Baked directly into the new generation's cloud-init: under immutable
 // releases every change replaces the VM anyway, so there is no reason to deliver
 // it out-of-band. The on-VM boot agent reads it to hydrate /opt/app/.env.runtime
@@ -88,7 +48,7 @@ function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi
         secretName: definition.secretName,
         // Pulumi's scaleway Secret `.id` is the composite `<region>/<uuid>`.
         // The Secret Manager access URL the VM builds already carries the
-        // region in its path, so emit ONLY the bare uuid here — otherwise the
+        // region in its path, so emit ONLY the bare uuid here. Otherwise the
         // VM requests `/secrets/<region>/<uuid>/...` and every read 404s.
         secretId: (ids[index] ?? '').split('/').pop(),
         envVar: definition.envVar,
@@ -142,7 +102,7 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
   return pulumi.all([
     envLines,
     buildRuntimeSecretsManifest(service.secretConsumers),
-    // VM reader credentials — minimal-privilege key (registry pull + Secret
+    // VM reader credentials: minimal-privilege key (registry pull + Secret
     // Manager read), never the operator/CI key.
     vmAccessKey,
     vmSecretKey,
@@ -167,7 +127,7 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
 }
 
 // ---------------------------------------------------------------------------
-// Compose env — the `${VAR}` placeholder scan + `@{slug.prop}` binding DSL live
+// Compose env: the `${VAR}` placeholder scan + `@{slug.prop}` binding DSL live
 // in resources/compose-env.ts; the per-generation private-IP supplier is the
 // only piece compute owns (it depends on VM planning state below).
 // ---------------------------------------------------------------------------
@@ -175,7 +135,7 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
 const buildComposeEnv = createComposeEnvBuilder(currentGenBindingIp)
 
 // ---------------------------------------------------------------------------
-// Create VMs — the service set (`enabled`, `coHosted`, `hostSlug`) and the
+// Create VMs: the service set (`enabled`, `coHosted`, `hostSlug`) and the
 // content-addressed generation plan come from resources/generations.ts; the
 // program derives the content-addressed id for a pending SHA there and
 // materialises each generation here.
@@ -215,20 +175,20 @@ function genIpKey(slug: string, genId: string): string {
  * cdc binds to `@{backend.privateIp}` to reach the live backend directly over the
  * private network. Because every release rolls all services together with the
  * stable service (backend) FIRST, a consumer redeployed afterwards bakes the
- * freshly promoted generation's IP — no moving IP and no NIC mutation, so the
- * generation NIC is created once and never replaced.
+ * freshly promoted generation's IP. The generation NIC is created once and not
+ * moved.
  */
 function currentGenBindingIp(slug: ServiceName): pulumi.Output<string> {
   const liveGen = generationsByService.get(slug)?.[0]
   if (!liveGen) throw new Error(`compute: @{${slug}.privateIp} requested but '${slug}' has no active generation.`)
   const ip = genIps.get(genIpKey(slug, liveGen.id))
   if (!ip) throw new Error(`compute: @{${slug}.privateIp} — no reserved IP for ${slug} gen ${liveGen.id}.`)
-  // Strip any CIDR suffix the provider may include ("10.0.0.9/22" → "10.0.0.9").
+  // Strip any CIDR suffix the provider may include, for example "10.0.0.9/22" to "10.0.0.9".
   return ip.address.apply((addr) => addr.split('/')[0] ?? addr)
 }
 
 // Compute base image. `compute.image` is a Scaleway marketplace LABEL ('docker'
-// — Docker + compose preinstalled and current) or a literal image UUID to pin a
+// with Docker + compose preinstalled and current) or a literal image UUID to pin a
 // specific image. The provider's instance `image` accepts either directly, so
 // there is no plan-time getImage lookup: the boot agent ships as a registry
 // container pulled at first boot (no baked golden image). `ignoreChanges:['image']`
@@ -268,16 +228,13 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     // in-place replacement of a live VM. Without ignoring `image`, re-baking the
     // golden image (which rotates the UUID behind the stable name resolved by
     // getImage latest:true) makes the base `pulumi up` diff every running
-    // generation on `image` and destructively replace them (delete-before-create
-    // — the LB-overlap cutover is bypassed), taking the live frontend/backend/cdc
-    // VMs down at once. The vm-reader IAM grant must exist before first boot so
-    // cloud-init can hydrate secrets.
+    // generation on `image` and destructively replace them, bypassing the
+    // LB-overlap cutover. The vm-reader IAM grant must exist before first boot.
     dependsOn: [vmReaderPolicy],
     ignoreChanges: ['cloudInit', 'image'],
   })
 
-  // The generation's own private-network NIC carries exactly one fixed IP, so
-  // it is created once and never mutated — no stable-IP move, no replacement.
+  // The generation's own private-network NIC carries exactly one fixed IP.
   const ipamIpIds: pulumi.Input<string>[] = [genPrivateIp.id]
   const privateNic = new scaleway.instance.PrivateNic(`pnic-${svc.slug}-${generation.id}`, {
     serverId: server.id,
@@ -307,7 +264,7 @@ function generationsFor(slug: ServiceName): Generation[] {
 if (infra.computeEnabled) {
   for (const svc of enabled) generationsByService.set(svc.slug, activeGenerations(svc))
 
-  // Pass 1 — reserve every (service, generation) private IP up front so
+  // Pass 1: reserve every (service, generation) private IP up front so
   // `@{backend.privateIp}` bindings resolve at plan time with no VM
   // creation-order constraints.
   for (const svc of enabled) {
@@ -324,7 +281,7 @@ if (infra.computeEnabled) {
     }
   }
 
-  // Pass 2 — create the VMs (order-independent; bindings read reserved IPs).
+  // Pass 2: create the VMs. Bindings read reserved IPs, so order does not matter.
   for (const svc of enabled) {
     for (const generation of generationsFor(svc.slug)) createGenerationVm(svc, generation)
   }
@@ -348,12 +305,12 @@ export const computeGenerationMetadata = pulumi.all(instances.map((i) => pulumi.
 }))))
 
 /**
- * Private IPs of every active generation of a service — the initial LB backend
+ * Private IPs of every active generation of a service: the initial LB backend
  * server list. The live list is then owned by the cutover task (the LB backend
  * declares `ignoreChanges: ['serverIps']`).
  *
- * Under singleVM a co-hosted worker (cdc/yjs/ai) has no VM of its own — it runs
- * in the host (backend) process — so its LB backend targets the HOST VM's
+ * Under singleVM a co-hosted worker (cdc/yjs/ai) runs in the host backend
+ * process, so its LB backend targets the host VM's
  * generation IPs (on the worker's own port, which the host block publishes).
  */
 export function serviceGenerationIps(slug: string): pulumi.Output<string>[] {

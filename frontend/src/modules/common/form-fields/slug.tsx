@@ -4,7 +4,7 @@ import { UndoIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-// biome-ignore lint/style/noRestrictedImports: colocated mutation — single-use validator hook scoped to this form field.
+// biome-ignore lint/style/noRestrictedImports: colocated mutation; single-use validator hook scoped to this form field.
 import { type CheckSlugData, type CheckSlugResponse, checkSlug } from 'sdk';
 import type { ContextEntityType } from 'shared';
 import slugify from 'slugify';

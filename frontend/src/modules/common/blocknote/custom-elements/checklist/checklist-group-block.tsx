@@ -5,7 +5,7 @@ import { checklistGroupConfig } from 'shared/blocknote-schema-configs';
 import { ChecklistGroupRender } from '~/modules/common/blocknote/custom-elements/checklist/checklist-group-render';
 import type { CustomBlockNoteEditor, IconType } from '~/modules/common/blocknote/types';
 
-// Schema config is shared with the Yjs relay's server-side seeder — see shared/blocknote-schema-configs
+// Schema config is shared with the Yjs relay's server-side seeder; see shared/blocknote-schema-configs.
 export { checklistGroupConfig };
 
 export const checklistGroupBlock = createReactBlockSpec(checklistGroupConfig, {

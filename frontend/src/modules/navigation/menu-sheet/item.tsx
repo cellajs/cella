@@ -29,7 +29,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className }: MenuSheetItemProp
   const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
   const isSubitem = !item.submenu;
 
-  // Unseen count — shown on grouping contexts (direct) and their parents (aggregated from submenu).
+  // Unseen count for grouping contexts and their parents.
   // When detailedMenu is on, sub-items show their own badges so skip parent-level aggregation.
   let contextIds: string | string[] | undefined;
   if (seenGroupingContextTypes.has(item.entityType)) contextIds = item.id;

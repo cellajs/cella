@@ -1,22 +1,3 @@
-/**
- * Auth-driven lifecycle for the per-user `appdb` and its hydrated zustand stores.
- *
- * Persistence follows the USER, not the route (resolves the root-mounted-persister
- * conflict — see `.todos/single-idb-storage-plan.md`, decision 1d). The `user-store`
- * hydrates synchronously from localStorage at boot, so the owner is known cold/offline
- * before `/me`. We subscribe to it (and the impersonation flag) and:
- *   - sign-in        → open `appdb`, eagerly rehydrate every app kv store;
- *   - sign-out       → close `appdb`;
- *   - account switch → close + reopen + re-rehydrate.
- *
- * Eager (not route-driven) hydration starts the moment the owner is known — before
- * `_app beforeLoad` — so {@link appStorageReady} can gate stream connect on a populated
- * sync cursor. Impersonation is gated out (ephemeral; never opens the impersonated
- * user's durable DB).
- *
- * Imported for side effects at root (via `~/query/provider`) so the subscription is
- * active before any route `beforeLoad` runs.
- */
 import { appConfig } from 'shared';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import { useBoardStore } from '~/modules/common/board/board-store';
@@ -49,7 +30,7 @@ export function subscribeOwnerChange(listener: (owner: string | null) => void): 
   return () => ownerListeners.delete(listener);
 }
 
-/** Owner to bind: the current user, unless impersonating (then ephemeral → no durable DB). */
+/** Owner to bind: the current user, unless impersonating (then ephemeral, no durable DB). */
 function resolveOwner(): string | null {
   if (useUIStore.getState().impersonating) return null;
   const id = userStore.getState().user?.id;
@@ -92,15 +73,15 @@ export function appStorageReady(): Promise<void> {
 
 /**
  * One-time best-effort cleanup of pre-appdb client storage (hard cutover, no migration):
- * the legacy per-store localStorage/sessionStorage keys (incl. orphaned `…:anon`) and the
- * old standalone IndexedDB databases. Failures are ignored — this only removes dead noise.
+ * obsolete per-store localStorage/sessionStorage keys (incl. orphaned `...:anon`) and the
+ * retired standalone IndexedDB databases. Failures are ignored because this only removes dead noise.
  */
 function gcLegacyStorage(): void {
   const flag = `${appConfig.slug}-storage-gc-v2`;
   try {
     if (localStorage.getItem(flag)) return;
 
-    // Legacy zustand bases that moved into appdb.kv — keys were `<slug>-<base>:<owner>`.
+    // Obsolete zustand bases with keys in the `<slug>-<base>:<owner>` shape.
     const legacyBases = ['seen', 'sync', 'navigation', 'drafts', 'alerts'];
     const prefixes = legacyBases.map((b) => `${appConfig.slug}-${b}:`);
     for (const web of [localStorage, sessionStorage]) {
@@ -109,10 +90,10 @@ function gcLegacyStorage(): void {
       }
     }
 
-    // Board store moved from a single global localStorage key into appdb.kv (per-user).
+    // Retired global board-store key.
     localStorage.removeItem(`${appConfig.slug}-board-store`);
 
-    // Legacy standalone IndexedDB databases (now unified into `<slug>:<owner>`).
+    // Retired standalone IndexedDB databases.
     indexedDB
       ?.databases?.()
       .then((dbs) => {
@@ -129,7 +110,7 @@ function gcLegacyStorage(): void {
 
     localStorage.setItem(flag, '1');
   } catch {
-    // Non-critical — orphans are harmless and can be retried next boot.
+    // Non-critical: orphans are harmless and can be retried next boot.
   }
 }
 

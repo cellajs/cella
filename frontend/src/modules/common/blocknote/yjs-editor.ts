@@ -1,6 +1,6 @@
 import type { ProductEntityType } from 'shared';
 
-/** Runtime registry of fields owned by Yjs during collaborative editing — SSE updates skip these */
+/** Runtime registry of Yjs-owned fields that SSE updates should skip during collaborative editing. */
 const yjsOwnedFields = new Map<ProductEntityType, string[]>();
 
 /** Register Yjs-owned fields for an entity type. Call at module load time (e.g., in the entity's query.ts). */
@@ -16,7 +16,7 @@ export function getYjsOwnedFields(entityType: ProductEntityType): string[] {
 /**
  * Registry of entities with active Yjs editors, used by SSE cache ops to suppress
  * description-derived field updates while the local editor has a more recent
- * Y.Doc state. Plain module state — consumers only do imperative lookups,
+ * Y.Doc state. Plain module state: consumers only do imperative lookups,
  * nothing subscribes reactively.
  */
 const activeYjsEditors = new Map<ProductEntityType, Set<string>>();

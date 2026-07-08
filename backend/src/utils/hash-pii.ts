@@ -5,12 +5,12 @@ import { env } from '#/env';
  * One-way pseudonymize a PII value (e.g. email) into a stable, opaque key.
  *
  * Uses HMAC-SHA256 with `PII_HASH_SECRET` as a server-side pepper, then truncates
- * to 16 hex chars (64 bits) — collision-resistant enough for lookup buckets while
+ * to 16 hex chars (64 bits), collision-resistant enough for lookup buckets while
  * keeping keys short for storage and logs.
  *
  * Use this for any PII that is stored or logged purely as a key (rate-limit
  * buckets, audit event subjects, analytics dimensions). Do NOT use this where
- * the original value must be recoverable — encrypt instead.
+ * the original value must be recoverable. Encrypt instead.
  *
  * Properties:
  * - Deterministic: same input always produces the same output (good for keying).
@@ -32,7 +32,7 @@ export const hashPii = (value: string, namespace = 'pii'): string => {
 
 /**
  * Hash an IP address bound to a specific user. Different users with the same IP
- * produce different hashes — prevents cross-user IP correlation if the table leaks.
+ * produce different hashes, preventing cross-user IP correlation if the table leaks.
  * Used for "have I seen this IP for this user before?" checks (MFA trust).
  */
 export const hashIpForUser = (ip: string, userId: string): string => {
@@ -43,7 +43,7 @@ export const hashIpForUser = (ip: string, userId: string): string => {
 /**
  * Hash a network subnet (IPv4 /24 or IPv6 /48) with a global namespace so the
  * same subnet always produces the same hash. Used for cross-user blocklist
- * matching — different from `hashIpForUser` by design.
+ * matching. This differs from `hashIpForUser` by design.
  */
 export const hashSubnet = (subnet: string): string => {
   if (!subnet) return '';

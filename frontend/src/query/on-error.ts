@@ -6,7 +6,7 @@ import { checkConnectivity } from '~/query/offline/connectivity';
 import type { QueryMeta } from '~/query/react-query';
 import { flushStores } from '~/utils/flush-stores';
 
-/** Fallback messages for common errors — called lazily so i18next is initialized */
+/** Fallback messages for common errors, called lazily so i18next is initialized. */
 const getFallbackMessage = (status: number): string | undefined => {
   const messages: Partial<Record<number, string>> = {
     400: i18n.t('error:bad_request_action'),
@@ -20,7 +20,7 @@ const getFallbackMessage = (status: number): string | undefined => {
 
 /**
  * Resolves the best error message for display.
- * Priority: resource-specific translation → type translation → raw message → status fallback
+ * Priority: resource-specific translation -> type translation -> raw message -> status fallback
  */
 const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
   // Priority 1: Resource-specific translation (e.g., resource_not_found with entity interpolation)
@@ -87,7 +87,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
       });
     }
 
-    // Honor opt-out from query/mutation `meta` — local handler will (or already did) show its own toast.
+    // Honor opt-out from query/mutation `meta`; local handler will (or already did) show its own toast.
     const suppress = meta?.suppressGlobalErrorToast;
     const skipToast = typeof suppress === 'function' ? suppress(error) : suppress === true;
 
@@ -102,8 +102,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
         const minutes = Math.ceil(seconds / 60);
         description = i18n.t('c:retry_in_minutes', { count: minutes });
       }
-      // Surface the correlation id on error toasts so users can quote it to support
-      // (previously only full-page ErrorNotice showed it).
+      // Surface the correlation id on error toasts so users can quote it to support.
       else if (error.severity === 'error' && error.logId) {
         description = `Log ID: ${error.logId}`;
       }
@@ -127,10 +126,10 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
       }
 
       // Soft-flush sensitive stores and navigate to the sign-in page. Pass `false` so the appdb
-      // (and the user's unsynced offline work) is kept on disk — a 401 is involuntary and the
+      // (and the user's unsynced offline work) is kept on disk. A 401 is involuntary and the
       // same user typically re-authenticates and recovers their data.
       flushStores(false);
-      // Dynamic import breaks circular dep: query-client → on-error → router → route tree → query-client
+      // Dynamic import breaks circular dep: query-client -> on-error -> router -> route tree -> query-client
       import('~/routes/router').then(({ router: r }) => r.navigate(redirectOptions));
     }
   }

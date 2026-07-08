@@ -17,7 +17,7 @@ import * as Tabs from '~/modules/ui/tabs';
 import * as Toggle from '~/modules/ui/toggle';
 import * as Tooltip from '~/modules/ui/tooltip';
 
-// BlockNote passes Radix-style `asChild` — translate to Base UI's `render` prop
+// BlockNote passes Radix-style `asChild`; translate to Base UI's `render` prop.
 function BlockNoteDropdownMenuTrigger({
   asChild,
   children,

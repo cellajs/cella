@@ -25,7 +25,7 @@ export function computeArrayDelta(oldIds: string[], newIds: string[]): ArrayDelt
 
 /**
  * Apply an AWSet delta to a current array.
- * Removes first, then appends — preserves order, idempotent.
+ * Removes first, then appends to preserve order and stay idempotent.
  */
 export function applyArrayDelta(current: string[], delta: ArrayDelta): string[] {
   const removeSet = new Set(delta.remove);

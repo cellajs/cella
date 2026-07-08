@@ -1,31 +1,3 @@
-/**
- * CI preflight: assert every runtime secret a soon-to-roll VM will hydrate can
- * actually be DELIVERED into `/opt/app/.env.runtime` — fetched from Secret
- * Manager and expressible as a single env-file line.
- *
- * Why this exists: a `required` runtime secret that cannot be delivered fails
- * the on-VM `runtime-secret-sync`, which by design blocks the service from
- * booting. A multi-line PEM (`DATABASE_SSL_CA`) did exactly this and took the
- * backend down for a full rollout. `pulumi up` writing the secret value is not
- * enough — the value must also be single-line/decodable the way the VM reads
- * it. This task runs in CI right after `pulumi up` (alongside the existing
- * "Verify VM reader IAM grant" preflight) and BEFORE any VM is rolled, failing
- * the deploy loudly with the offending env vars instead of bricking the fleet.
- *
- * Mirrors the on-VM Python sync semantics exactly (resources/cloud-init.ts):
- *   - secret MISSING (no version) → an offender only if the secret is required;
- *     an absent optional secret is skipped (the sync skips it too).
- *   - secret PRESENT but multi-line/empty → always an offender (the sync rejects
- *     any multi-line value regardless of required).
- *
- * Read-only: lists secrets by name and reads their latest version. The CI key's
- * SecretManagerFullAccess covers the decrypt-read.
- *
- * Usage:
- *   tsx infra/tasks/assert-secrets-deliverable.ts \
- *     --region <region> --project-id <project-id> [--services backend,cdc,frontend]
- *   (SCW_SECRET_KEY in env)
- */
 import { isMain } from '../lib/utils/is-main'
 import { isEnvFileDeliverable } from '../lib/utils/env-file'
 import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like'
@@ -145,7 +117,7 @@ export async function assertSecretsDeliverable(opts: AssertSecretsDeliverableOpt
 
 /**
  * Build the probe list from the runtime-secrets registry, scoped to the secrets
- * that the given enabled services actually receive — so an optional secret for a
+ * that the given enabled services actually receive, so an optional secret for a
  * disabled service (e.g. ai) never produces a false failure.
  */
 export function secretsForServices(enabled: readonly ServiceName[]): SecretToCheck[] {

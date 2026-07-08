@@ -1,16 +1,3 @@
-/**
- * Attachment Storage Service
- *
- * Unified service for local-first attachment handling:
- * - Store uploaded blobs locally (pending cloud sync or local-only)
- * - Cache downloaded blobs for offline viewing
- * - Manage sync status and retry logic
- * - Provide blob URLs for rendering
- *
- * React-query cache is the source of truth for attachment metadata.
- * This service manages the actual blob data.
- */
-
 import { appConfig } from 'shared';
 import {
   type AttachmentBlob,
@@ -23,7 +10,7 @@ import {
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import { getAppDb } from '~/query/app-db';
 
-/** Fallback chain for blob resolution - try these variants in order */
+/** Fallback chain for blob resolution, in lookup order. */
 const displayFallbackChain: BlobVariant[] = ['converted', 'original', 'raw'];
 const thumbnailFallbackChain: BlobVariant[] = ['thumbnail', 'original', 'raw'];
 
@@ -323,4 +310,5 @@ class AttachmentStorageService {
   }
 }
 
+/** Stores upload/download blobs and exposes blob URLs for attachment rendering. */
 export const attachmentStorage = new AttachmentStorageService();

@@ -22,7 +22,7 @@ export const getAndSetMe = async () => {
   // A different user signed in on this browser. Per-user storage namespaces are
   // bound at boot from the persisted user id (just updated above), so a full
   // reload rebinds every cache/store to the new owner. The previous user's data
-  // stays isolated in its own namespace — no surgical flush, and no cross-user bleed.
+  // stays isolated in its own namespace, with no surgical flush or cross-user bleed.
   if (!skipLastUser && previousUserId && previousUserId !== user.id) window.location.reload();
 
   return user;

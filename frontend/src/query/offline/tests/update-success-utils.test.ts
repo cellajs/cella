@@ -1,10 +1,3 @@
-/**
- * Tests for mutation onSuccess cache-merge utilities.
- *
- * Enforces:
- * - syncEntityToCache writes to both list and detail cache
- */
-
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { syncEntityToCache } from '../update-success-utils';
@@ -25,6 +18,7 @@ interface FakeEntity {
   updatedBy: string;
 }
 
+// Covers mutation onSuccess cache writes to list and detail cache.
 describe('syncEntityToCache', () => {
   let queryClient: QueryClient;
 

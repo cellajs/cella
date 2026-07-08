@@ -4,9 +4,9 @@ import type { StreamNotification } from '#/schemas';
 import type { AppStreamEvent, AppStreamMembershipEvent } from './types';
 
 /**
- * The app stream carries exactly two concerns: product-entity sync (seq/cacheToken
+ * The app stream carries exactly two concerns: product entity sync (seq/cacheToken
  * range fetch on the client) and membership changes (query invalidation). This is the
- * single source of the `kind` discriminant — used both to shape the wire notification
+ * single source of the `kind` discriminant, used both to shape the wire notification
  * and to branch dispatch/handling on either end.
  */
 export function appNotificationKind(event: Pick<ActivityEvent, 'entityType'>): 'entity' | 'membership' {
@@ -40,8 +40,8 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   const contextType: ContextEntityType | null = (membership?.contextType as ContextEntityType | undefined) ?? null;
 
   // Resolve context ID for seq-cursor and unseen-count grouping: the row's deepest non-null
-  // ancestor (variable-depth rows group under their effective home, e.g. course for a
-  // course-stream item). The client buckets by this id — it must match CDC's seq scope.
+  // ancestor. Variable-depth rows group under their effective home. The client buckets
+  // by this id, which must match CDC's seq scope.
   let contextId: string | null = null;
   if (isProduct && entityType) {
     contextId = resolveDeepestAncestorId(hierarchy, entityType, event as unknown as Record<string, unknown>);
@@ -51,7 +51,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
 
   // Derive propagation hint for source entity types (e.g., label → task.labels).
   // For batch events, propagation is pre-set by the CDC worker. For single entity
-  // events, derive from entityEmbeddings config — no DB queries needed.
+  // events, derive from entityEmbeddings config without DB queries.
   let propagation = event.propagation;
   if (!propagation && entityType) {
     const embedding = appConfig.entityEmbeddings.find((e) => e.embeddedEntity === entityType);

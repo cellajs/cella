@@ -1,13 +1,3 @@
-/**
- * Cella-owned runtime-secrets machinery. Forks should NOT edit this file — the
- * fork-facing secret→service *mapping* lives in `runtime-secrets.config.ts`;
- * this module supplies the typed `defineRuntimeSecrets` helper, flattens that
- * config into the `runtimeSecrets` list, validates it, and derives the lookups
- * the rest of infra consumes:
- *   - resources/secrets.ts  — one Secret Manager container per definition;
- *   - resources/compute.ts  — the per-VM `.env.runtime` manifest;
- *   - tasks/manage-runtime-secrets.ts, tasks/seed-operator-secrets.ts.
- */
 import { runtimeSecretsConfig } from '../config/runtime-secrets.config';
 import { serviceNames } from './services'
 import type { ServiceName } from '../compose/compose'
@@ -49,7 +39,7 @@ export interface RuntimeSecretDefinition extends RuntimeSecretConfig {
   id: RuntimeSecretId
 }
 
-/** Helper for `runtime-secrets.config.ts` — typed identity preserving literal keys. */
+/** Helper for `runtime-secrets.config.ts`: typed identity preserving literal keys. */
 export function defineRuntimeSecrets<const T extends Record<string, RuntimeSecretConfig>>(secrets: T): T {
   return secrets
 }
@@ -98,7 +88,7 @@ export function runtimeSecretsForConsumer(consumer: RuntimeSecretConsumer): Runt
 /**
  * Union of the runtime-secret definitions across consumers (the singleVM host
  * carries its co-hosted workers' secrets too), deduplicated by id. Order is
- * per-consumer registry order with duplicates dropped — LOAD-BEARING: the
+ * per-consumer registry order with duplicates dropped. LOAD-BEARING: the
  * manifest metadata is hashed into each generation's genId
  * (resources/compute.ts `serviceFingerprint`), so reordering would re-roll
  * every generation.

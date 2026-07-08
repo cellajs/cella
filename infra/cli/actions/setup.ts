@@ -58,7 +58,7 @@ interface CiKeyResult {
 
 /**
  * Warn (read-only) about required operator-managed runtime secrets that still
- * have no value. Non-fatal — a brand-new project may not have the containers
+ * have no value. Non-fatal: a brand-new project may not have the containers
  * yet, and the first `pulumi up` creates them.
  */
 async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
@@ -75,7 +75,7 @@ async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
       )
     }
   } catch {
-    // Secret Manager unreachable (e.g. fresh project) — skip the gap check.
+    // Secret Manager unreachable (e.g. fresh project): skip the gap check.
   }
 }
 
@@ -99,7 +99,7 @@ async function warnOnCiPolicyDrift(ctx: SetupContext): Promise<void> {
       )
     }
   } catch {
-    // IAM unreachable (e.g. fresh project) — skip the advisory drift check.
+    // IAM unreachable (e.g. fresh project): skip the advisory drift check.
   }
 }
 
@@ -117,7 +117,7 @@ async function mintCiKey(ctx: SetupContext): Promise<CiKeyResult> {
 }
 
 /**
- * VM reader key — minimal-privilege identity baked into service VMs. Provisioned
+ * VM reader key: minimal-privilege identity baked into service VMs. Provisioned
  * alongside the CI key on fresh/rotate, OR on its own to self-heal a stack that
  * is missing it (a plain Resume). provisionScopedKey is idempotent: it reuses
  * the `<slug>-vm-reader` app by name and just mints a fresh key, so a repeated
@@ -170,7 +170,7 @@ async function ensureVmKey(ctx: SetupContext, needsCiKey: boolean): Promise<stri
 }
 
 /**
- * Operator IAM application — created on fresh/rotate (bootstrap key has
+ * Operator IAM application, created on fresh/rotate (bootstrap key has
  * IAMManager). Grants Object Storage access so a key minted under it can
  * read/refresh the CI-scoped buckets (storage.ts OperatorAccess). No key is
  * minted; the dev makes one in the console. The app id is exported as
@@ -218,9 +218,8 @@ function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; vmAccess
   console.info(divider)
 
   // The VM reader IAM *policy* is Pulumi-managed (resources/vm-iam.ts), not minted
-  // here. After rotating, if a CI deploy fails with "insufficient permissions:
-  // write policy" the policy exists in Scaleway but not in Pulumi state — run
-  // "Apply infra change" once to adopt it (it imports the policy automatically).
+  // here. If a CI deploy fails with "insufficient permissions: write policy",
+  // run "Apply infra change" once to adopt the existing Scaleway policy into state.
   if (mode === 'rotate' && vmAccessKey) {
     console.info(
       `  ${pc.dim(`Note: the VM reader IAM policy is reconciled by \`pulumi up\`. If a deploy reports ${pc.italic('"write policy"')}, run ${pc.italic('"Apply infra change"')} once to adopt it.`)}`,
@@ -290,8 +289,8 @@ async function provisionBaseInfra(ctx: SetupContext, values: OperatorSecretValue
 
   // Pulumi has now created the (empty) operator secret containers, so write
   // the first VERSION for any values gathered at the prompt. Doing this here
-  // — rather than before `up` — is what keeps a fresh fork from failing with
-  // "secret already exists". Empty/undefined values are skipped and can be
+  // after `up` so a fresh fork does not fail with "secret already exists".
+  // Empty/undefined values are skipped and can be
   // set later via "Manage runtime secrets".
   await seedOperatorSecrets({
     secretKey: ctx.secretKey,
@@ -316,10 +315,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   const pulumiPassphrase = await resolveVerifiedPassphrase(context.stackYaml)
 
   // Provider authentication and all IAM / Secret-Manager work use an operator
-  // bootstrap key supplied here. The CI deploy key is no longer stored in stack
-  // config (it lives only in GitHub secrets, minted once and unrecoverable), so
-  // it cannot be decrypted and reused — every interactive setup run authenticates
-  // with a freshly-pasted bootstrap key. The provider reads it from SCW_* env
+  // bootstrap key supplied here. The provider reads it from SCW_* env
   // (childEnv below), not from stack config.
   const scwProjectId = context.projectId
   const scwAccessKey = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () => promptRequiredInput('Scaleway bootstrap access key'))
@@ -425,7 +421,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   if (canDeploy) {
     console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network — no compute yet)`)
     // First provision (fresh stack) needs a local `pulumi up` with the bootstrap
-    // key — the CI key can't create VPC/PN/RDB. After that, the recommended path
+    // key: the CI key can't create VPC/PN/RDB. After that, the recommended path
     // is to let CI run `pulumi up` on push, so default to skipping it here.
     const isFirstProvision = context.state === 'fresh'
     if (!isFirstProvision) {

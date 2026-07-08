@@ -97,15 +97,15 @@ export function passkeySignInBody(opts: {
  * Create a user with a verified email.
  */
 export async function createTestUser(email: string, verified = true) {
-  // Make user record → Insert into the database
+  // Make user row, then insert into the database
   const userRecord = mockUser({ email });
   const [user] = await db.insert(usersTable).values(userRecord).returning();
 
-  // Make unsubscribeToken record → Insert into the database
+  // Make unsubscribeToken row, then insert into the database
   const unsubscribeTokenRecord = await mockUnsubscribeToken(user);
   await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRecord).onConflictDoNothing();
 
-  // Make email record for user → Insert into the database
+  // Make email row for user, then insert into the database
   const emailRecord = {
     email: user.email,
     userId: user.id,

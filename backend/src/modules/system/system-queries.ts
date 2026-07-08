@@ -48,7 +48,7 @@ export const findPendingInvitationTokens = async (ctx: DbContext, { emails }: Fi
     );
 };
 
-/** Insert invitation tokens and return created records. */
+/** Insert invitation tokens and return created rows. */
 export const insertTokens = async (ctx: DbContext, { tokens }: { tokens: (typeof tokensTable.$inferInsert)[] }) => {
   const { db } = ctx.var;
   return db.insert(tokensTable).values(tokens).returning();
@@ -100,7 +100,7 @@ interface UpdateUserOpts {
   values: Partial<typeof usersTable.$inferInsert>;
 }
 
-/** Update a user by ID and return the updated record. */
+/** Update a user by ID and return the updated row. */
 export const updateUser = async (ctx: DbContext, { id, values }: UpdateUserOpts) => {
   const { db } = ctx.var;
   const [updated] = await db.update(usersTable).set(values).where(eq(usersTable.id, id)).returning();

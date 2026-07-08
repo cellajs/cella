@@ -4,7 +4,7 @@ import { clientSchemaVersionSeen } from '#/lib/schema-version-metrics';
 
 /**
  * Records the client's schema version (X-Client-Version header) into an otel
- * counter. Telemetry-only in Phase 1 — no correctness depends on it. Missing or
+ * counter. Missing or
  * malformed headers are bucketed as `unknown`.
  */
 export const clientVersionMiddleware = createMiddleware<Env>(async (c, next) => {

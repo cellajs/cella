@@ -49,7 +49,7 @@ function resolveDropZone(
  * A `bottom` zone on row N is painted as `top` on row N+1 so the indicator
  * doesn't jump across the row seam; the last row falls back to `bottom` on
  * itself. The visual edge is therefore independent of the logical drop zone
- * stored in `self.data.dropZone` — `onDrop` still uses the original zone.
+ * stored in `self.data.dropZone`; `onDrop` still uses the original zone.
  */
 function setRowDropEdge(
   rowEl: HTMLElement | null,
@@ -66,7 +66,7 @@ function setRowDropEdge(
       // Only redirect to the next .rdg-row sibling. This skips ancillary nodes
       // (focus sinks, measuring cells) that data-grid renders alongside rows.
       // Skip the redirect when the next row would reject this drag's `top`
-      // zone — otherwise the indicator gets painted on a row whose hit area
+      // zone; otherwise the indicator gets painted on a row whose hit area
       // refuses the drop, the user chases it, and the indicator vanishes.
       if (allowRedirect && next instanceof HTMLElement && next.classList.contains('rdg-row')) {
         targetEl = next;
@@ -120,7 +120,7 @@ export interface RowDragConfig<R> {
  * Per-cell wiring (rather than per-row) is required because data-grid uses
  * `display: contents` on the row container, so the row element has no
  * bounding rect for hit-testing. Drop indicators are written imperatively to
- * the row element (`data-drop-edge` attribute) and styled by CSS — no React
+ * the row element (`data-drop-edge` attribute) and styled by CSS, with no React
  * state changes during drag, and no `:has()` selectors.
  */
 export function RowDragCell<R, SR>({
@@ -133,7 +133,7 @@ export function RowDragCell<R, SR>({
 }: CellRendererProps<R, SR> & { config: RowDragConfig<R> }) {
   const ref = useRef<HTMLDivElement>(null);
   // `isDragging` only flips twice per drag (start + end), so React state is
-  // fine here — it's not on the per-mousemove hot path.
+  // fine here because it's not on the per-mousemove hot path.
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<{ container: HTMLElement; rect: DOMRect } | null>(null);
   // Tracks the row element we last marked with `data-drop-edge` so we can

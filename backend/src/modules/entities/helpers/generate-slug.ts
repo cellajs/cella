@@ -18,6 +18,6 @@ export const generateUniqueSlug = async (
   const withSuffix = `${baseSlug}-${nanoid(6)}`;
   if (await checkSlugAvailable(ctx, withSuffix, entityType)) return withSuffix;
 
-  // Fully random — virtually guaranteed to be unique
+  // Final fallback uses enough entropy that collisions are not expected.
   return `${withSuffix}-${nanoid(10)}`;
 };

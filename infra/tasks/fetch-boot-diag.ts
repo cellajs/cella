@@ -1,21 +1,3 @@
-/**
- * Fetch a service's boot diagnostics from the dedicated boot diagnostics bucket
- * on a failed rollout. The boot path uploads objects under
- * `boot-diag/`:
- *   - full logs: `<service>-<YYYYMMDD>T<...>-boot.log` — the complete boot transcript.
- *   - failure logs: `<service>-failed-<YYYYMMDD>T<...>.log` when first boot exits non-zero.
- * Older marker objects (`<service>-stage-*`) are still rendered when present.
- *
- * The key selection/filtering (which markers to show, which full log is the
- * latest) is pure and unit-tested; only the two S3 calls are side-effecting and
- * injected. We shell out to the preinstalled `aws` CLI with an arg array (no
- * shell), matching the rest of the deploy tasks; this runs failure-only so it
- * never blocks a green deploy.
- *
- * Usage:
- *   tsx infra/tasks/fetch-boot-diag.ts --bucket <boot-diag-bucket> \
- *     --service <name> --region <scw-region>
- */
 import { spawnSync } from 'node:child_process'
 import { isMain } from '../lib/utils/is-main'
 import { getFlag } from './args'
@@ -84,8 +66,8 @@ export interface DiagReader {
 
 /**
  * Default reader shelling out to the preinstalled aws CLI (no shell). Unlike a
- * bare `.stdout ?? ''`, this surfaces the *reason* a read failed — a missing aws
- * binary, bad credentials, or the wrong bucket — instead of silently returning
+ * bare `.stdout ?? ''`, this surfaces the read failure reason: a missing aws
+ * binary, bad credentials, or the wrong bucket, instead of silently returning
  * an empty string that the renderer would misreport as "no logs uploaded". The
  * `list` failure throws (without it nothing else can run); a per-object `cat`
  * failure is left for the renderer to annotate inline so one unreadable object
@@ -124,7 +106,7 @@ export interface BundleSummary {
 }
 
 /**
- * Summarise the boot-diag prefix per service — a quick "what's here" overview so
+ * Summarise the boot-diag prefix per service: a quick "what's here" overview so
  * a caller (or Copilot) can see which services have evidence and which have a
  * failure capture worth opening, without dumping every body.
  */
@@ -161,7 +143,7 @@ export function renderDiagnostics(
     }
   }
 
-  // Failure captures first — this is usually the actual answer (pull/auth error
+  // Failure captures first. This is usually the actual answer (pull/auth error
   // or the failed slot's logs), so surface it before the boot transcript.
   for (const key of sel.failureKeys ?? []) {
     open(`⚠️ ${key}`)

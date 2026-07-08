@@ -1,14 +1,9 @@
-/**
- * Request coalescing (singleflight pattern).
- * Prevents thundering herd by coalescing concurrent requests for the same key.
- */
-
-/** In-flight requests map */
 const inFlight = new Map<string, Promise<unknown>>();
 
 /**
  * Coalesce concurrent requests for the same key.
- * First request executes the fetcher, subsequent requests wait for the same promise.
+ * Uses the singleflight pattern: first request executes the fetcher, and
+ * concurrent requests wait for the same promise.
  *
  * @param key - Unique identifier for the request (e.g., 'attachment:abc:5')
  * @param fetcher - Async function to fetch the data
@@ -29,7 +24,7 @@ export async function coalesce<T>(key: string, fetcher: () => Promise<T>): Promi
     return existing as Promise<T>;
   }
 
-  // First request - execute the fetcher
+  // First request executes the fetcher.
   const promise = fetcher().finally(() => {
     inFlight.delete(key);
   });

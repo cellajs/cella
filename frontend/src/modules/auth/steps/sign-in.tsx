@@ -79,7 +79,7 @@ export function SignInStep() {
     };
 
     startConditionalMediation(handleCredential, controller.signal, emailForMediation).catch(() => {
-      // Aborted or no credential selected — expected when retrying or navigating.
+      // Aborted or no credential selected, expected when retrying or navigating.
     });
   };
 
@@ -90,7 +90,7 @@ export function SignInStep() {
     };
   }, []);
 
-  // Handle sign in — verify email exists, then start passkey mediation for that verified email.
+  // Handle sign in: verify email exists, then start passkey mediation for that verified email.
   const { mutate: _checkEmail, isPending } = useMutation<void, ApiError, CheckEmailData['body']>({
     mutationFn: (body) => checkEmail({ body }),
     onSuccess: () => {

@@ -91,7 +91,7 @@ export interface Column<TRow, TSummaryRow = unknown> {
   /**
    * Reactive hide flag for non-breakpoint conditions (e.g. a user column-visibility
    * toggle, or `isSheet`). When true the column is excluded from the grid, same as
-   * a failing `minBreakpoint`/`maxBreakpoint`. Filtered inside the grid — consumers
+   * a failing `minBreakpoint`/`maxBreakpoint`. Filtered inside the grid; consumers
    * pass the full column list and toggle this flag.
    */
   readonly hidden?: boolean;
@@ -133,7 +133,7 @@ export interface Column<TRow, TSummaryRow = unknown> {
   /**
    * Mark this column's cells as the row drag handle (drag source) for row
    * reordering. Combine with DataGrid `onRowReorder` to enable.
-   * If no column is marked, no row dragging is possible — drop targets are
+   * If no column is marked, no row dragging is possible; drop targets are
    * still active per-cell so other columns can be dragged onto.
    */
   readonly rowDragHandle?: Maybe<boolean>;
@@ -154,7 +154,7 @@ export interface Column<TRow, TSummaryRow = unknown> {
   /**
    * Minimum breakpoint at which this column is visible.
    * Below this breakpoint the column is excluded from the grid.
-   * Evaluated by the grid against its internal breakpoint — keep this static.
+   * Evaluated by the grid against its internal breakpoint; keep this static.
    * @example minBreakpoint: 'md'  // Hidden on xs, sm
    */
   readonly minBreakpoint?: BreakpointKey;
@@ -169,7 +169,7 @@ export interface Column<TRow, TSummaryRow = unknown> {
    * Enable text wrapping in cells.
    * - number: Max visible lines (CSS line-clamp). Row height auto-adjusts per row based on content.
    * - true: Unlimited wrapping (equivalent to a high line cap, e.g. 10).
-   * Pair with a base `rowHeight` — the grid computes `max(rowHeight, lines * lineHeight)` per row.
+   * Pair with a base `rowHeight`; the grid computes `max(rowHeight, lines * lineHeight)` per row.
    * @default undefined (single-line truncation)
    */
   readonly wrapText?: Maybe<number | boolean>;
@@ -186,7 +186,7 @@ export interface Column<TRow, TSummaryRow = unknown> {
    * Each mode can override widths and/or declare a `merge` rule that folds this
    * column into a host column's cell. When both modes are active, `mobile` wins
    * per overridden property. A merge rule whose host is not currently a grid
-   * column is inactive — the column then falls back to its normal visibility.
+   * column is inactive, and the column falls back to its normal visibility.
    * @example modes: { compact: { width: 50 }, mobile: { merge: { into: 'summary', side: 'left' } } }
    */
   readonly modes?: Maybe<Partial<Record<GridMode, ColumnModeOverrides>>>;
@@ -245,7 +245,7 @@ export interface ColumnGroup<R, SR = unknown> {
   readonly name: string | ReactElement;
   readonly headerCellClass?: Maybe<string>;
   readonly children: readonly ColumnOrColumnGroup<R, SR>[];
-  /** Reactive hide flag — see {@link Column.hidden}. When true the whole group is excluded. */
+  /** Reactive hide flag; see {@link Column.hidden}. When true the whole group is excluded. */
   readonly hidden?: boolean;
 }
 
@@ -464,17 +464,17 @@ export interface ColumnWidth {
 export type ColumnWidths = ReadonlyMap<string, ColumnWidth>;
 
 /**
- * Cell selection mode — governs cell focus & range selection.
+ * Cell selection mode governs cell focus & range selection.
  * Independent of row selection (which is driven by `selectedRows`/`onSelectedRowsChange`
  * and the optional checkbox column).
  * - 'none': No cell focus, keyboard navigation disabled
- * - 'cell': Single cell focus (keyboard nav, copy/paste single cell) — default
+ * - 'cell': Single cell focus (keyboard nav, copy/paste single cell), default
  * - 'cell-range': Multi-cell range selection (Shift+Click/Arrow, range copy/paste)
  */
 export type CellSelectionMode = 'none' | 'cell' | 'cell-range';
 
 /**
- * Row selection mode — governs what clicking a row body does.
+ * Row selection mode governs what clicking a row body does.
  * The checkbox column (if present) always operates as multi-select regardless of this prop.
  * - 'none': Clicking a row body does not change row selection (default)
  * - 'single': Clicking a row body selects only that row (replaces selection)

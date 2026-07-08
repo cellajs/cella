@@ -1,10 +1,3 @@
-/**
- * Security test helpers for multi-tenant isolation testing.
- *
- * Provides scaffolding to create fully isolated tenants with
- * organizations, users, memberships, and active sessions.
- */
-
 import { sql } from 'drizzle-orm';
 import type { EntityRole } from 'shared';
 import { baseDb as db } from '#/db/db';
@@ -24,7 +17,7 @@ type Call = Awaited<ReturnType<typeof createAppClient>>;
 
 /**
  * Creates a fully isolated tenant with organization, user, membership, and active session.
- * Each call produces a unique tenant — safe for side-by-side cross-tenant tests.
+ * Each call produces a unique tenant for side-by-side cross-tenant tests.
  */
 export async function createTestTenant(_call: Call, label: string): Promise<TestTenant> {
   const email = `${label}-user@security-test.com`;

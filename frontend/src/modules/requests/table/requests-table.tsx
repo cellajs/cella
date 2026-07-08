@@ -15,7 +15,7 @@ import type { RequestsRouteSearchParams } from '~/modules/requests/types';
 
 const LIMIT = appConfig.requestLimits.requests;
 
-/** Stable row key getter function - defined outside component to prevent re-renders */
+/** Stable row key getter function defined outside the component to prevent re-renders. */
 function rowKeyGetter(row: Request) {
   return row.id;
 }
@@ -24,11 +24,9 @@ function RequestsTable() {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<RequestsRouteSearchParams>({ from: '/_app/system/requests' });
 
-  // Table state
   const { q, sort, order } = search;
   const limit = LIMIT;
 
-  // Build columns
   const [selected, setSelected] = useState<Request[]>([]);
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
@@ -46,7 +44,6 @@ function RequestsTable() {
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
 
-  // isFetching already includes next page fetch scenario
   const fetchMore = async () => {
     if (!hasNextPage || isLoading || isFetching) return;
     await fetchNextPage();

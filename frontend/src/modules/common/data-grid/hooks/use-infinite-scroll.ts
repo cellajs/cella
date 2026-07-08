@@ -29,7 +29,7 @@ interface UseInfiniteScrollOptions {
  * of the row dataset. Useful for implementing infinite scroll / load-more.
  *
  * Tracks `lastFiredForRowsLength` to prevent re-triggering immediately after
- * new data arrives — the callback fires once per `totalRows` value.
+ * new data arrives, so the callback fires once per `totalRows` value.
  */
 export function useInfiniteScroll({
   totalRows,

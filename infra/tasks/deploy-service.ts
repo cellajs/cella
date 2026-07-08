@@ -18,7 +18,7 @@ import { createLbGetServers, createLbSetServers, sequenceCutover } from './cutov
 import { createFetchProbe, pollForVersion } from './wait-for-version'
 
 // ---------------------------------------------------------------------------
-// Control object (S3) — the source of truth for rollout state. Lazily resolved;
+// Control object (S3): the source of truth for rollout state. Lazily resolved;
 // null when no S3 credentials are present (the deploy then cannot record state).
 // ---------------------------------------------------------------------------
 let controlCtxPromise: Promise<ControlContext | null> | undefined
@@ -95,8 +95,8 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   const current = await currentRollout(stack, service)
   const healthUrl = healthUrlFromFlag(getFlag(argv, '--health-url'))
 
-  // Record the deploy INTENT (pendingSha) and let the Pulumi program — the genId
-  // authority — derive the content-addressed id and materialise the VM. We read
+  // Record the deploy INTENT (pendingSha) and let the Pulumi program, the genId
+  // authority, derive the content-addressed id and materialise the VM. We read
   // the resolved id back from `computeGenerationMetadata`.
   await updateStore(stack, service, (cur) => setPending(cur, sha))
   runPulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
@@ -120,7 +120,7 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   const backendId = backendIds[service]
   if (!backendId) throw new Error(`Could not resolve LB backend id for ${service}`)
 
-  // Old serving generation (the active one). Empty on a first deploy — the
+  // Serving generation before this deploy (the active one). Empty on a first deploy:
   // reconciler then drives the LB straight to [new] once it is healthy.
   const activeRef = current?.active
   const oldGen = activeRef ? generations.find((item) => item.service === service && item.genId === activeRef.id) : undefined

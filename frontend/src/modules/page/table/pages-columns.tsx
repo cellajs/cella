@@ -24,7 +24,7 @@ type PublishStatus = (typeof publishStatuses)[number];
  * (set up in `pages-table.tsx`), so no per-column wiring is needed here.
  *
  * When {@link canEditDocs} (dev only), title / render mode / published status
- * are inline-editable and a drag handle enables reorder + reparent — edits are
+ * are inline-editable and a drag handle enables reorder + reparent. Edits are
  * written back to the md/mdx frontmatter by the dev server (vite/docs-editor.ts).
  * In production the columns render read-only.
  */

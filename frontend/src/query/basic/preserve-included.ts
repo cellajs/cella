@@ -7,9 +7,9 @@ type WithIncluded = { included?: Record<string, unknown> };
  * Preserves `included` sub-fields (e.g. `counts`, `membership`) from the cached
  * data when the incoming data omits them. This prevents a refetch or
  * `setQueryData` call that carries a partial `included` from wiping out
- * previously-fetched enrichment data such as membership counts.
+ * cached enrichment data such as membership counts.
  *
- * Usage – add to any entity detail `queryOptions`:
+ * Usage: add to any entity detail `queryOptions`:
  * ```ts
  * queryOptions({
  *   queryKey: keys.detail.byId(id),

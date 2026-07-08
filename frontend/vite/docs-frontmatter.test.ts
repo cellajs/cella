@@ -5,7 +5,7 @@ import { extractHeadings } from './docs-frontmatter';
 
 /**
  * The extracted heading ids must match what rehype-slug (prefix: 'spy-') assigns when
- * the same markdown compiles (vite.config.ts) — same slugger, same text content, same
+ * the same markdown compiles (vite.config.ts): same slugger, same text content, same
  * leading-h1 rule for repo docs. These fixtures pin the text-content derivation.
  */
 describe('extractHeadings', () => {
@@ -74,7 +74,7 @@ describe('extractHeadings', () => {
     expect(ids).toContain('spy-running-tests');
     expect(ids).toContain('spy-storybook-component-tests');
     expect(ids).not.toContain('spy-testing-guide'); // leading h1 stripped
-    // Fenced blocks in the doc contain `# comment` lines — none may leak as headings
+    // Fenced blocks in the doc contain `# comment` lines; none may leak as headings.
     expect(headings.every((h) => h.depth <= 3)).toBe(true);
   });
 });

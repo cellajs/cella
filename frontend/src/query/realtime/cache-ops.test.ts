@@ -73,7 +73,7 @@ describe('realtime cache ops', () => {
 
     const patched = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '1', keys);
 
-    // Patching a truncated window would drop the remainder — caller must invalidate instead
+    // Patching a truncated window would drop the remainder; caller must invalidate instead.
     expect(patched).toBe(false);
     expect(queryClient.getQueryData(keys.detail.byId('att-1'))).toBeUndefined();
   });

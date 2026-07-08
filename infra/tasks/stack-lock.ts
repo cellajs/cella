@@ -1,16 +1,3 @@
-/**
- * Acquire/release the stack lock from CI (or any shell), so a pipeline deploy
- * and an operator `apply` cannot mutate the same stack concurrently. Uses the
- * same S3 conditional-write lock as the CLI (lib/control-store.ts).
- *
- * Usage:
- *   stack-lock acquire --stack <stack> [--operation deploy] [--ttl-min 60]
- *   stack-lock release --stack <stack>
- *
- * Env: SCW_ACCESS_KEY, SCW_SECRET_KEY (state-bucket access), APP_MODE (config mode).
- * The owner is derived from GITHUB_RUN_NUMBER (CI) or the local user, so the
- * separate acquire/release CI steps — different processes, same run — match.
- */
 import { isMain } from '../lib/utils/is-main'
 import { acquireLock, controlActor, controlContextForStack, releaseLock } from '../lib/stack/control-store'
 import { errorMessage } from '../lib/utils/errors'

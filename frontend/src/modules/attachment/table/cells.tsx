@@ -66,7 +66,7 @@ const SyncStatusBadge = ({ attachmentId }: { attachmentId: string }) => {
   const { t } = useTranslation();
   const { hasLocalBlob, isUploaded, isUploading, isFailed, isPending, isLocalOnly } = useBlobUploadStatus(attachmentId);
 
-  // No local blob or already uploaded — no badge needed
+  // No local blob or already uploaded, no badge needed.
   if (!hasLocalBlob || isUploaded) return null;
 
   let icon: React.ReactNode;

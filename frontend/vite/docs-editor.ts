@@ -8,7 +8,7 @@ import { parse, stringify } from 'yaml';
  * Dev-only write-back endpoint for the docs pages table (`POST /__docs-edit`).
  *
  * Since #855 pages are plain `src/content/docs/**\/*.{md,mdx}` files, not a DB
- * entity — so "editing" a page means rewriting its frontmatter (and, for
+ * entity, so "editing" a page means rewriting its frontmatter (and, for
  * reparenting, moving the file on disk). This plugin is the counterpart to
  * `docsFrontmatter()`: that one reads the frontmatter index, this one mutates
  * the source files. It only exists on the dev server (`apply: 'serve'`); in a
@@ -72,7 +72,7 @@ export function applyFrontmatter(source: string, patch: Record<string, unknown>)
   return block + source.slice(match[0].length).replace(/^\r?\n/, '\n');
 }
 
-/** Slug → its derived parent slug (`a/b/c` → `a/b`, `a` → null). */
+/** Slug -> its derived parent slug (`a/b/c` -> `a/b`, `a` -> null). */
 function parentOf(slug: string): string | null {
   const idx = slug.lastIndexOf('/');
   return idx === -1 ? null : slug.slice(0, idx);
@@ -84,7 +84,7 @@ function parentOf(slug: string): string | null {
  * directory page first so children can live beside its `index` file.
  *
  * TODO [#16]: reparenting changes the moved page's slug (its URL), but inbound
- * internal links still point at the old slug and are left untouched — they 404
+ * internal links still point at the old slug and are left untouched, so they 404
  * until fixed by hand. Auto-rewrite links to the old slug across the docs
  * content (and imported repo docs) as part of the move.
  */

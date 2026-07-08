@@ -22,7 +22,7 @@ import { getMembershipCache, getSessionCache, setMembershipCache, setSessionCach
  *
  * Fetches memberships/system role in a short-lived RLS transaction that completes
  * before calling next(). This avoids holding a transaction open for long-lived
- * requests (SSE streams, etc.). Sets baseDb on context — downstream guards
+ * requests (SSE streams, etc.). Sets baseDb on context; downstream guards
  * (tenantGuard, crossTenantGuard) also set baseDb; product entity handlers
  * create their own RLS read transactions via tenantRead().
  */
@@ -58,7 +58,7 @@ export const authGuard = xMiddleware(
         }
         ctx.set('memberships', memberships);
 
-        // Update last seen (in-memory throttle — no DB hit in practice)
+        // Update last seen with the in-memory throttle.
         if (ctx.req.method === 'GET') {
           updateLastSeenAt(cachedSession.user.id);
         }
@@ -66,7 +66,6 @@ export const authGuard = xMiddleware(
         return next();
       }
 
-      // Cache miss — full validation flow
       const { session, user } = await validateSession(sessionToken);
 
       // Update user last seen date (throttled to 5 min intervals)

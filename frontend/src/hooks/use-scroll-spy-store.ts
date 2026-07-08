@@ -1,7 +1,3 @@
-// NOTE: docs pages use window scrolling; performScroll still finds the nearest
-// scroll container for shared scroll-spy consumers and re-asserts across two frames to
-// win the race against TanStack Router's async scrollRestoration on hash changes.
-
 /** DOM id prefix (e.g. id="spy-intro") prevents browser auto-scroll on hash change */
 const SPY_PREFIX = 'spy-';
 
@@ -23,7 +19,7 @@ const notify = () => {
 
 /**
  * Toggle data-spy-active on DOM elements with matching data-spy-link.
- * Called from IO callback — bypasses React for jank-free scroll updates.
+ * Called from IO callback, bypasses React for jank-free scroll updates.
  */
 const syncActiveDOM = () => {
   for (const el of document.querySelectorAll('[data-spy-active]')) {
@@ -71,7 +67,7 @@ const blockHashWrites = (ms: number) => {
   }, ms + 50);
 };
 
-/** Find the best visible section — "pin to top" approach.
+/** Find the best visible section using a "pin to top" approach.
  *  Picks the last anchor to have crossed a trigger line near the top of the viewport. */
 const getBestSection = (): string | null => {
   const visible = [...sections.entries()].filter(([, r]) => r > 0);
@@ -90,7 +86,7 @@ const getBestSection = (): string | null => {
   const pastTrigger = withPositions.filter(({ top }) => top <= triggerY);
   if (pastTrigger.length) return pastTrigger[pastTrigger.length - 1].id;
 
-  // No anchor past trigger yet — pick the closest one approaching it
+  // No anchor past trigger yet, pick the closest one approaching it.
   return withPositions[0].id;
 };
 
@@ -163,7 +159,7 @@ export const registerSections = (ids: string[]) => {
   savedSection = '';
 
   // Scroll to initial hash if present.
-  // Allow during init window even if a child set currentSection first — prevents early
+  // Allow during init window even if a child set currentSection first. This prevents early
   // registration from overriding the parent's hash-matched section.
   const hash = location.hash.slice(1);
   const inInitWindow = Date.now() - initTime < 500;
@@ -216,7 +212,7 @@ const findScrollParent = (el: HTMLElement): HTMLElement => {
   return (document.scrollingElement as HTMLElement) ?? document.documentElement;
 };
 
-/** Scroll to element and update hash/state */
+/** Scroll to element and update hash, reasserting across router scroll restoration. */
 const performScroll = (el: HTMLElement, id: string) => {
   // Drive the overflow container directly; for the root scroller use 0 as reference (not rect.top).
   const scroller = findScrollParent(el);
@@ -283,9 +279,7 @@ const tryFlushPendingScroll = () => {
   }
 };
 
-/** Scroll to section and update hash. Uses smooth scroll if target is within 2 viewport heights.
- *  If the target isn't in the DOM yet — or is mounted but not laid out (collapsed / prerendered with
- *  content-visibility:hidden) — queues the scroll and retries each frame until it's ready. */
+/** Scroll to section and update hash. Queues hidden or missing targets until layout is ready. */
 export const scrollToSectionById = (id: string) => {
   pendingScrollTarget = id;
   pendingFrameAttempts = 0;

@@ -54,7 +54,7 @@ function MdxLink({ href = '', children, ...props }: ComponentProps<'a'>) {
 
 /**
  * Registers the page's headings with the scroll spy. Rendered inside the Suspense
- * boundary AFTER the content so it mounts only once the lazy body is in the DOM —
+ * boundary after the content so it mounts only once the lazy body is in the DOM.
  * registerSections only observes elements that exist at call time, and its
  * initial-hash scroll needs the targets present.
  */
@@ -65,7 +65,7 @@ function RegisterSpySections({ ids }: { ids: string[] }) {
 
 /**
  * Section heading (h2) with a hover copy-link button. The copied URL carries the bare
- * hash slug (spy store convention) — the DOM id keeps its `spy-` prefix. Deeper
+ * hash slug (spy store convention). The DOM id keeps its `spy-` prefix. Deeper
  * headings keep their anchor ids but render plain (the button sits awkwardly at h3 size).
  */
 function MdxHeading({ id = '', children, ...props }: ComponentProps<'h2'>) {
@@ -101,7 +101,7 @@ function ViewPage({ slug }: ViewPageProps) {
     return loader ? lazy(async () => ({ default: await loader() })) : null;
   }, [slug]);
 
-  // "On this page" nav: h2 only — deeper levels stay reachable via anchors but
+  // "On this page" nav: h2 only. Deeper levels stay reachable via anchors but
   // would make the aside noisy. Stable array identity for the spy registration effect.
   const tocHeadings = useMemo(() => (page?.headings ?? []).filter((h) => h.depth === 2), [page]);
   const tocIds = useMemo(() => tocHeadings.map((h) => h.id), [tocHeadings]);

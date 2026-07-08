@@ -3,20 +3,6 @@ import { appConfig } from 'shared';
 import { emailPreviewFixtures, emailPreviewNames } from './preview-fixtures';
 import { renderEmailPreview } from './render-preview';
 
-/**
- * Email preview routes.
- *
- * Renders email templates through the real `emails/jsx-email` pipeline so the
- * output matches what the mailer sends. Mounted only outside production (see
- * `src/routes.ts`) and intended for local authoring and the Storybook email
- * stories, which fetch the rendered HTML through the Storybook Vite proxy.
- *
- * - `GET /`           → index page linking every template × language.
- * - `GET /list`       → JSON `{ names, languages }` (used to generate stories).
- * - `GET /:name`      → rendered HTML for one template.
- *     query: `lng` (default: first configured language),
- *            `placeholders=1` to show Brevo `{{params.x}}` instead of samples.
- */
 const app = new Hono();
 
 const isPreviewName = (value: string): value is (typeof emailPreviewNames)[number] =>
@@ -63,4 +49,5 @@ app.get('/:name', async (c) => {
   return c.html(html);
 });
 
+/** Email preview routes for local authoring and Storybook template rendering. */
 export const emailPreviewHandlers = app;

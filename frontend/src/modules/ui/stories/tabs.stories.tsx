@@ -3,7 +3,7 @@ import { expect, userEvent, waitFor } from 'storybook/test';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/modules/ui/tabs';
 
 /**
- * A set of layered sections of content—known as tab panels—that are displayed
+ * A set of layered sections of content, known as tab panels, that are displayed
  * one at a time.
  */
 const meta = {

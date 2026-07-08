@@ -4,7 +4,7 @@ import { isEnvFileDeliverable } from './env-file'
 describe('isEnvFileDeliverable', () => {
   it('accepts a single-line value', () => {
     expect(isEnvFileDeliverable('postgres://user:pass@host:5432/db')).toEqual({ ok: true })
-    // base64 of a multi-line PEM is single-line and therefore deliverable — the fix.
+    // base64 of a multi-line PEM is single-line and therefore deliverable.
     expect(isEnvFileDeliverable('LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t')).toEqual({ ok: true })
   })
 

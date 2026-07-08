@@ -3,12 +3,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-/**
- * Docs pages can import repo docs (e.g. cella/TESTING.md) as their body — a broken
- * import only fails at frontend build time, which PR CI does not run. This guard
- * checks every relative import in src/content/docs resolves to an existing file.
- */
-
 const contentRoot = path.dirname(fileURLToPath(import.meta.url));
 
 function collectPages(dir: string): string[] {
@@ -19,6 +13,8 @@ function collectPages(dir: string): string[] {
   });
 }
 
+// Guards relative imports in docs wrappers because PR CI does not run the frontend build.
+// Broken repo-doc imports otherwise fail only at build time.
 describe('docs content wrapper imports', () => {
   const pages = collectPages(contentRoot);
 
@@ -29,7 +25,7 @@ describe('docs content wrapper imports', () => {
   it('every relative import in a docs page resolves to an existing file', () => {
     const broken: string[] = [];
     // Only .mdx pages can have real imports (.md compiles as plain markdown), and
-    // fenced code blocks may contain example import statements — skip both.
+    // fenced code blocks may contain example import statements. Skip both.
     for (const page of pages.filter((p) => p.endsWith('.mdx'))) {
       const source = readFileSync(page, 'utf8').replace(/^```.*?^```/gms, '');
       for (const match of source.matchAll(/^import\s[^\n]*?from\s+['"]([^'"]+)['"]/gm)) {

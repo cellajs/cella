@@ -39,7 +39,7 @@ interface YjsConnection {
   unsubToken?: () => void;
 }
 
-/** Module-level connection map — mutations happen outside React render. */
+/** Module-level connection map; mutations happen outside React render. */
 const connections = new Map<string, YjsConnection>();
 
 interface YjsSyncState {
@@ -84,7 +84,7 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   });
 
   // Keep provider params in sync with the latest token from the store.
-  // This ensures reconnects (after sleep/background) use a fresh token.
+  // Reconnects after sleep/background use a fresh token.
   const unsubToken = useUserStore.subscribe((state) => {
     const newToken = state.yjsTokens[tokenKey];
     if (newToken && provider.params) {
@@ -102,7 +102,7 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   const handleConnectionClose = (event: CloseEvent | null) => {
     if (!event || event.code === 1000) return;
 
-    // TOKEN_INVALID is recoverable — y-websocket's exponential backoff
+    // TOKEN_INVALID is recoverable: y-websocket's exponential backoff
     // gives the token refresher time to push a fresh token via the store
     // subscription. Only give up after MAX_TOKEN_FAILURES consecutive hits.
     if (event.code === YJS_CLOSE.TOKEN_INVALID) {
@@ -111,7 +111,7 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
       console.warn(`[yjs] Circuit breaker: ${tokenFailures} consecutive token failures for ${editSessionId}`);
     }
 
-    // Non-recoverable or circuit breaker tripped — stop retrying.
+    // Non-recoverable or circuit breaker tripped: stop retrying.
     provider.off('connection-close', handleConnectionClose);
     provider.disconnect();
 
@@ -176,7 +176,7 @@ function releaseConnection(editSessionId: string) {
 /**
  * Acquires a Yjs connection on mount, releases on unmount.
  * The connection (Y.Doc + WebsocketProvider) is ref-counted and survives
- * a 30 s grace period after the last consumer unmounts — enabling instant
+ * a 30 s grace period after the last consumer unmounts, enabling instant
  * remounts without reconnecting or re-seeding.
  *
  * Pass `undefined` for editSessionId to disable (returns `null`).

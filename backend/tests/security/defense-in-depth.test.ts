@@ -1,14 +1,3 @@
-/**
- * Defense-in-depth data isolation tests.
- *
- * Verifies that API responses return properly scoped data — no cross-tenant
- * data leakage even with valid authentication. This complements guard tests
- * (which verify rejection) by confirming the returned data sets are correct.
- *
- * Also verifies that raw DB queries via runtime_role + RLS prevent
- * cross-tenant reads at the database level, independent of middleware.
- */
-
 import { sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { getAttachments, getOrganizations } from 'sdk';
@@ -46,6 +35,7 @@ async function ensureRuntimeRoleAccess() {
   `);
 }
 
+// Verifies scoped API response data and runtime_role RLS reads for tenant isolation.
 describe('Defense-in-depth data isolation', async () => {
   const call = await createAppClient();
   let tenantA: TestTenant;
@@ -71,7 +61,7 @@ describe('Defense-in-depth data isolation', async () => {
         rolesAvailable = true;
       }
     } catch {
-      // Roles not available — skip RLS-level tests
+      // Skip RLS-level tests when roles are unavailable.
     }
   });
 
@@ -117,7 +107,7 @@ describe('Defense-in-depth data isolation', async () => {
     it('should allow cross-tenant organization reads (no RLS on context entities — app-layer isolation)', async () => {
       if (!rolesAvailable || !runtimeDb) return;
 
-      // Organizations have no RLS — runtime_role can read all orgs.
+      // Organizations have no RLS, so runtime_role can read all orgs.
       // Cross-tenant isolation for context entities is enforced at the API layer (tenantGuard/orgGuard).
       const rows = await runtimeDb.transaction(async (tx) => {
         await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantA.tenantId}, true)`);

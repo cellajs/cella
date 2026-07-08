@@ -275,13 +275,12 @@ function resolveLayout(
         }
 
         if (clampedWidth >= victim.minWidth) {
-          // Snapped back to minWidth — in collapse zone, layout freezes
+          // Snapped back to minWidth; in collapse zone, layout freezes.
           widths[victim.id] = victim.minWidth;
           break;
         }
 
-        // Between snap point and collapsedWidth — shouldn't normally happen
-        // but handle gracefully
+        // Between snap point and collapsedWidth; handle gracefully.
         widths[victim.id] = clampedWidth;
         break;
       }
@@ -289,7 +288,7 @@ function resolveLayout(
   }
 
   // ─── Growing side (A2, O1, O2) ──────────────────────────────────────
-  // No max-width cap — grower absorbs all freed pixels to keep total
+  // No max-width cap: grower absorbs all freed pixels to keep total
   // panel sum constant. The viewport clamp in redistributePanels
   // prevents any panel from exceeding the visible area after drag ends.
   if (growPanel) {
@@ -482,7 +481,7 @@ export function ResizablePanelGroup({
   };
 
   // ─── Mode detection (G6) ───────────────────────────────────────────────
-  // Uses parent's width — the container itself may have min-width set by
+  // Uses parent's width because the container itself may have min-width set by
   // updateContainerWidth(), which would inflate its own getBoundingClientRect().
   const computeAutoFill = () => {
     const container = containerRef.current;
@@ -1019,7 +1018,7 @@ export function ResizableSeparator({ index, className, children, ...rest }: Sepa
 
     const now = Date.now();
     if (now - lastPointerDownRef.current < 300) {
-      // Double-click detected — toggle collapse instead of starting drag
+      // Double-click detected: toggle collapse instead of starting drag.
       lastPointerDownRef.current = 0;
       dragCtx.toggleCollapseAtSeparator(index);
       return;

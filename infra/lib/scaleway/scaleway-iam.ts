@@ -1,19 +1,3 @@
-/**
- * Shared Scaleway IAM plumbing for provisioning scoped, non-human API keys.
- *
- * Both the CI deploy key (`tasks/setup-ci-key.ts`) and the VM reader key
- * (`tasks/setup-vm-key.ts`) follow the same four-step flow:
- *   1. find or create a `<slug>-<suffix>` IAM application,
- *   2. recreate its policy so permission set changes always take effect,
- *   3. purge any orphan API keys (their secret_key is unrecoverable), and
- *   4. mint a single fresh API key.
- *
- * The only things that vary between identities are the application name suffix,
- * the descriptions, and the policy rules — all supplied via `ScopedKeyConfig`.
- * The permission sets themselves live in each task file so they stay
- * independently auditable (see `tasks/permission-sets.test.ts`).
- */
-
 import { changeMark, checkMark, tildeMark } from 'shared/console'
 import { scwFetch, scwSend } from './scw-fetch'
 
@@ -41,7 +25,7 @@ export interface PolicyRule {
   organization_id?: string
 }
 
-/** Per-identity differences between the CI and VM provisioning flows. */
+/** Per-identity differences in the scoped IAM application, policy, and API key flow. */
 export interface ScopedKeyConfig {
   /** Application/policy name suffix and API-key description prefix, e.g. `ci-deploy`. */
   suffix: string
@@ -57,7 +41,7 @@ export interface ScopedKeyConfig {
    * Set `false` when the policy is declared as a Pulumi-managed resource
    * instead (so `pulumi up` reconciles its permission sets on every deploy and
    * the grant can never drift). In that case this flow provisions only the
-   * application + API key and leaves the policy untouched — never deleting a
+   * application + API key and leaves the policy untouched, without deleting a
    * policy it does not own.
    */
   managePolicy?: boolean
@@ -136,12 +120,12 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
   }
 
   // 2. Find or create the policy. Always recreate when found so the rules stay
-  //    in sync with the caller's permission sets — an existing policy silently
+  //    in sync with the caller's permission sets. An existing policy silently
   //    loses new permissions if we just skip it.
   //
   //    Skipped entirely when `managePolicy` is false: the policy is then owned
   //    by a Pulumi-managed `iam.Policy` resource, so this flow must not create
-  //    (or delete) one — doing so would either race Pulumi or leave an orphan
+  //    (or delete) one; doing so would either race Pulumi or leave an orphan
   //    second policy on the application.
   if (config.managePolicy !== false) {
     if (!config.buildRules) {
@@ -170,7 +154,7 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
 
   // 3. Delete any existing API keys before minting a new one. Scaleway only
   //    returns the secret_key at creation time, so pre-existing keys are
-  //    unrecoverable dead weight — purging them keeps re-runs from accumulating
+  //    unrecoverable dead weight; purging them keeps re-runs from accumulating
   //    orphans.
   if (config.mintKey === false) {
     log(`  ${checkMark} Key minting skipped — create one in the console for ${app.name}`)
@@ -205,7 +189,7 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
 
 /**
  * Find an IAM policy id by exact name within an organization, or undefined when
- * none matches. Used to detect a pre-existing (orphaned) policy that must be
+ * none matches. Detects a pre-existing (orphaned) policy that must be
  * adopted into Pulumi state rather than re-created.
  */
 export async function findPolicyIdByName(secretKey: string, organizationId: string, name: string): Promise<string | undefined> {

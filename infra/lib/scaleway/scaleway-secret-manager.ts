@@ -66,7 +66,7 @@ function buildSecretsUrl(region: string, query: URLSearchParams) {
  * Scaleway stores secret folder paths in canonical form WITHOUT a trailing
  * slash (it normalizes `/foo/` → `/foo`). Both the `path` list filter and the
  * `path` returned on each secret use that form, so we must normalize before
- * filtering or comparing — otherwise a container created by an earlier run
+ * filtering or comparing; otherwise a container created by an earlier run
  * (queried/compared as `/foo/`) is never found, breaking idempotency and
  * triggering a `cannot have same secret name in same path` 400 on re-create.
  */

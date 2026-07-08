@@ -21,7 +21,7 @@ type OrganizationLayoutBeforeLoadArgs = {
  * fetches org, and provides context for all nested routes.
  */
 export const organizationLayoutBeforeLoad = async ({ params, cause }: OrganizationLayoutBeforeLoadArgs) => {
-  // TODO [#12] not working Only revalidate on initial entry — search param changes are handled by child useSuspenseQuery
+  // TODO [#12] Revalidate on initial entry; child useSuspenseQuery handles search param changes.
   const shouldRevalidate = cause === 'enter';
 
   const { tenantId, organizationSlug } = params;

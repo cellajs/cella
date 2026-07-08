@@ -51,10 +51,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Root row with an expandable subtree — chevron only, no connectors. */
+/** Root row with an expandable subtree: chevron only, no connectors. */
 export const Root: Story = {};
 
-/** Root row with no children — renders nothing at depth 0. */
+/** Root row with no children: renders nothing at depth 0. */
 export const RootLeaf: Story = {
   args: { hasChildren: false },
 };
@@ -74,12 +74,12 @@ export const DeepestLeaf: Story = {
   args: { depth: 2, hasChildren: false, maxDepth: 3 },
 };
 
-/** Deepest row that is also the last child — connector below should not be drawn. */
+/** Deepest row that is also the last child; connector below should not be drawn. */
 export const DeepestLeafLastChild: Story = {
   args: { depth: 2, hasChildren: false, isLastChild: true, maxDepth: 3 },
 };
 
-/** Inner row whose parent is itself a last child — depth-1 trunk should NOT continue. */
+/** Inner row whose parent is itself a last child; depth-1 trunk should NOT continue. */
 export const DeepestParentIsLast: Story = {
   args: { depth: 2, hasChildren: false, parentIsLastChild: true, maxDepth: 3 },
 };

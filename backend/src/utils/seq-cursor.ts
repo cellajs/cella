@@ -5,8 +5,8 @@ import { gte, lte } from 'drizzle-orm';
  * Parse a seqCursor string into gte/lte boundaries.
  *
  * Formats:
- * - "51" → { gte: 51 } — open-ended (seq >= 51), used by catchup
- * - "51,150" → { gte: 51, lte: 150 } — bounded range, used by batch notifications
+ * - "51" maps to { gte: 51 }: open-ended (seq >= 51), used by catchup.
+ * - "51,150" maps to { gte: 51, lte: 150 }: bounded range, used by batch notifications.
  */
 export function parseSeqCursor(raw: string | undefined): { gte?: number; lte?: number } | undefined {
   if (!raw) return undefined;

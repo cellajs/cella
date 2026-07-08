@@ -10,7 +10,7 @@ import type { OpenApiSpec, OpenApiTag } from '../types';
  * These replace the old full-spec snapshot: the OpenAPI *contract* is now
  * guarded in CI by oasdiff (`schema-bust-gate`), which watches the parser's
  * *input*. Here we assert the parser's *transformation* against small,
- * hand-owned fixtures, so a test only fails when parser behaviour changes —
+ * hand-owned fixtures, so a test only fails when parser behaviour changes,
  * never on ordinary API/schema churn.
  */
 
@@ -138,7 +138,7 @@ const goldenSpec = {
   },
 } as OpenApiSpec;
 
-describe('parseOpenApiSpec — golden fixture', () => {
+describe('parseOpenApiSpec, golden fixture', () => {
   const result = parseOpenApiSpec(goldenSpec);
   const getUsers = result.operations.find((o) => o.id === 'getUsers');
 

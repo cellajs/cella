@@ -1,11 +1,3 @@
-/**
- * LRU cache with prefix invalidation support.
- * Wraps the lru-cache package for least-recently-used eviction.
- *
- * Best suited for frequently accessed items that should stay cached,
- * with eviction based on access patterns rather than time.
- */
-
 import { LRUCache as LRU } from 'lru-cache';
 
 /** Dispose reason */
@@ -23,6 +15,7 @@ export interface LRUCacheOptions<T> {
 /**
  * LRU cache with prefix invalidation.
  * Evicts least recently used items when capacity is reached.
+ * Best for frequently accessed items where access recency matters more than age.
  */
 export class LRUCache<T extends {}> {
   private cache: LRU<string, T>;

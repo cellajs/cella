@@ -1,16 +1,3 @@
-/**
- * Pulumi mock harness — lets us instantiate `infra/resources/*.ts` in a Vitest
- * process without actually talking to Scaleway.
- *
- * Pulumi's runtime stores per-process state (project name, stack name, config,
- * mocks). `installPulumiMocks()` wires all of that up + records every resource
- * the module under test creates. `renderModule()` dynamically imports a module
- * after the runtime is primed, then waits for its top-level outputs to settle.
- *
- * Limitations: cross-module state (e.g. compute.ts reading database.ts's output)
- * is captured because the mocks return the inputs as state, which Pulumi then
- * threads through `pulumi.all([...]).apply(...)`.
- */
 import type * as PulumiNS from '@pulumi/pulumi'
 
 export interface CapturedResource {
@@ -39,7 +26,7 @@ export interface InstallOpts {
 
 /**
  * Installs Pulumi mocks for the current Node process. Must be called BEFORE
- * any module that imports `@pulumi/pulumi` is loaded — that's why this is
+ * any module that imports `@pulumi/pulumi` is loaded; that is why this is
  * paired with `renderModule(importPath)`.
  */
 export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHarness> {

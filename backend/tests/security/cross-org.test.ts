@@ -1,15 +1,3 @@
-/**
- * Cross-organization API isolation tests.
- *
- * Verifies that the org guard middleware prevents users in one
- * organization from accessing resources in another organization
- * within the same tenant.
- *
- * Since RLS enforces tenant-level isolation only, org-level isolation
- * relies entirely on the guard chain (authGuard → tenantGuard → orgGuard).
- * These tests are the primary safety net for cross-org data leaks.
- */
-
 import { createAttachments, deleteAttachments, getAttachments, getOrganization, updateOrganization } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateMockEntityBodyContextIdColumns } from '#/mocks';
@@ -33,6 +21,8 @@ const attachmentBody = (id: string) => ({
   stx: { mutationId: id, sourceId: 'cross-org', fieldTimestamps: {} },
 });
 
+// Verifies org guard isolation for users in different organizations within
+// the same tenant.
 describe('Cross-organization API isolation', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;

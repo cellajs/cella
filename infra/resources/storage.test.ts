@@ -1,17 +1,3 @@
-/**
- * Smoke tests for `infra/resources/storage.ts` — guards the public/private
- * access split between the storage buckets.
- *
- * Critical invariants:
- *   - Frontend + public-uploads buckets MUST have a BucketPolicy that grants
- *     Principal '*' s3:GetObject so the SPA + uploaded public assets are
- *     directly readable.
- *   - Private uploads + boot diagnostics buckets MUST NOT have a public
- *     BucketPolicy. Private uploads are gated by signed URLs; boot diagnostics
- *     are writable only by the VM reader application and readable by deploy CI.
- *   - CORS on upload buckets must restrict allowedOrigins to the configured
- *     frontend URL (no '*').
- */
 import { beforeAll, describe, expect, it } from 'vitest'
 import { flushPulumi, installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock'
 
@@ -23,7 +9,7 @@ beforeAll(async () => {
     // bootstrap:computeDeferred gates compute off so pulumi-context.ts skips the
     // image-tag pin assertion (these tests don't render compute). The CI/VM
     // application ids are derived from the IAM API (stubbed in the mock harness),
-    // no longer read from stack config.
+    // absent from stack config.
     config: { 'bootstrap:computeDeferred': 'test' },
   })
   await import('./storage')

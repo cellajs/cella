@@ -4,7 +4,7 @@ export interface TreeContextValue {
   /** Toggle a row's expansion state by id. */
   onToggle: (id: string) => void;
   /**
-   * Pixel height of each row — needed by the SVG connector layout in
+   * Pixel height of each row, needed by the SVG connector layout in
    * `RenderExpandToggle`. Must match the `rowHeight` passed to `<DataTable>`.
    */
   rowHeight: number;

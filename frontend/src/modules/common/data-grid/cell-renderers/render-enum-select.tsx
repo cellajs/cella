@@ -7,10 +7,10 @@ import type { RenderEditCellProps } from '../types';
 
 /**
  * Recommended `editorOptions` for any column using `RenderEnumSelect`.
- * - `commitOnOutsideClick: false` — the popover is portaled, so the grid's
+ * - `commitOnOutsideClick: false`: the popover is portaled, so the grid's
  *   window-level outside-click handler would otherwise treat its own popover
  *   as "outside" and double-commit. We commit on item select instead.
- * - `displayCellContent: true` — keep the cell content visible underneath
+ * - `displayCellContent: true`: keep the cell content visible underneath
  *   the popover/drawer while the editor is mounted.
  */
 export const enumSelectEditorOptions = {
@@ -45,7 +45,7 @@ type Props<TRow, TValue extends string> = Pick<RenderEditCellProps<TRow>, 'onRow
  *
  * Renders a popover (desktop) or drawer (mobile) anchored to the gridcell.
  * Uses base-ui's Popover/Drawer directly (not via the dropdowner store) so
- * the editor lifecycle is fully owned by `EditCell` — commit/dismiss flow
+ * the editor lifecycle is fully owned by `EditCell`; commit/dismiss flow
  * through the standard `onRowChange` / `onClose` callbacks with no extra
  * coordination layer.
  *
@@ -88,7 +88,7 @@ export function RenderEnumSelect<TRow extends { id: string }, TValue extends str
   };
 
   // Commit the chosen value via EditCell's onRowChange (commitChanges=true).
-  // EditCell handles flushSync + focus restoration to the cell — same path
+  // EditCell handles flushSync + focus restoration to the cell, same path
   // as text and toggle editors.
   const handleSelect = (value: TValue) => {
     onRowChange(buildNextRow(value), true);

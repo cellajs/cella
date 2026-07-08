@@ -1,12 +1,3 @@
-/**
- * Tests for mutation squashing and coalescing utilities.
- *
- * These ensure the offline queue produces minimal requests:
- * - Same-entity field updates squash into one mutation
- * - Updates to pending creates are coalesced
- * - Pending creates coalesce with subsequent updates
- */
-
 import { MutationObserver, QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { coalescePendingCreate, squashPendingMutation } from '../squash-utils';
@@ -34,6 +25,7 @@ function queuePendingMutation(
   return () => resolve();
 }
 
+// Covers same-entity mutation squashing and pending-create coalescing.
 describe('squashPendingMutation', () => {
   let queryClient: QueryClient;
   const mutationKey = ['task', 'update'] as const;

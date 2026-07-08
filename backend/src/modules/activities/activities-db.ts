@@ -14,7 +14,7 @@ import type { StxBase } from '#/schemas/sync-transaction-schemas';
  *
  * Id is a a LSN-based string (e.g. "0-16B3748") for deterministic idempotent WAL listening.
  *
- * No FKs — partitioned tables don't support foreign key constraints,
+ * No FKs: partitioned tables don't support foreign key constraints,
  * and activities are append-only CDC logs that don't need referential integrity.
  */
 export const activitiesTable = snakeCase.table(

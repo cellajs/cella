@@ -63,7 +63,7 @@ export function warnInvalidMergeRule(columnKey: string, into: string): void {
 
 /**
  * Extra row height needed for merged host cells with occupied top/bottom slot
- * rows (left/right slots render inline and add no height). Constant per grid —
+ * rows (left/right slots render inline and add no height). Constant per grid;
  * row virtualization needs heights without rendering.
  */
 export function computeMergedSlotExtraHeight<R, SR>(columns: readonly CalculatedColumn<R, SR>[]): number {

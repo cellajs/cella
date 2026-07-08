@@ -1,14 +1,3 @@
-/**
- * Hybrid Logical Clock (HLC) for causal ordering of concurrent mutations.
- *
- * Format: "1710500000123:0001:abcde"
- *   - Unix millis (physical time)
- *   - 4-digit zero-padded logical counter
- *   - 5-char sourceId hash (deterministic tie-breaking)
- *
- * Lexicographic string comparison gives correct causal ordering.
- */
-
 import { hashSourceId } from 'shared/hash-source-id';
 
 /** Server-side HLC state (module-scoped singleton). */
@@ -17,7 +6,7 @@ let lastCounter = 0;
 
 /**
  * Create a new HLC timestamp.
- * Always advances — never returns a timestamp <= the last one generated.
+ * Advances beyond the last generated timestamp.
  */
 export function createHLC(now: number, sourceId: string): string {
   if (now > lastTimestamp) {
@@ -32,7 +21,7 @@ export function createHLC(now: number, sourceId: string): string {
 
 /**
  * Compare two HLC timestamps.
- * Lexicographic — works because all segments are fixed-width.
+ * Lexicographic comparison is valid because all segments are fixed-width.
  */
 export function compareHLC(a: string, b: string): -1 | 0 | 1 {
   if (a < b) return -1;
@@ -42,8 +31,7 @@ export function compareHLC(a: string, b: string): -1 | 0 | 1 {
 
 /**
  * Advance the local clock from an incoming HLC.
- * Ensures server-initiated timestamps are always causally-later
- * than client writes that triggered them.
+ * Keeps server-initiated timestamps causally later than triggering client writes.
  */
 export function advanceClock(receivedHLC: string): void {
   const parts = receivedHLC.split(':');

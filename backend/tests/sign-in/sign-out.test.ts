@@ -44,7 +44,7 @@ describe('Sign-out scoping', async () => {
     // The forged secret matches no session row → fail closed.
     expect(res.status).toBe(401);
 
-    // The victim's session must still exist.
+    // The victim's session remains.
     const remaining = await db.select().from(sessionsTable).where(eq(sessionsTable.id, victimSessionId));
     expect(remaining).toHaveLength(1);
   });

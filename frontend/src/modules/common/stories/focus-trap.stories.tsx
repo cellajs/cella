@@ -183,7 +183,7 @@ export const Default: Story = {
 
 /**
  * Toggle the trap between active and inactive states.
- * When inactive with `disableInactive`, children are removed from tab order.
+ * When inactive with `disableInactive`, children are taken out of tab order.
  */
 export const Toggleable: Story = {
   render: () => <ToggleTrap />,
@@ -198,7 +198,7 @@ export const InitialFocus: Story = {
 };
 
 /**
- * When `returnFocus` is set, focus returns to the previously-focused element
+ * When `returnFocus` is set, focus returns to the earlier focused element
  * when the trap deactivates.
  */
 export const ReturnFocus: Story = {

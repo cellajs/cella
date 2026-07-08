@@ -63,7 +63,6 @@ export const tenantGuard = xMiddleware(
       return next();
     }
 
-    // Cache miss — load tenant row from DB
     const [tenant] = await findTenantById.execute({ id: tenantId });
 
     if (!tenant) {
@@ -75,7 +74,7 @@ export const tenantGuard = xMiddleware(
       throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
     }
 
-    // Merge with current defaults so legacy rows gain any newly added fields
+    // Normalize nullable restrictions against current defaults.
     tenant.restrictions = normalizeRestrictions(tenant.restrictions);
 
     if (tenant.status !== 'active') {
@@ -85,7 +84,7 @@ export const tenantGuard = xMiddleware(
     // Populate cache for subsequent requests
     setTenantCache(tenantId, tenant);
 
-    // Set tenant context — handlers use tenantRead for product entity RLS reads
+    // Handlers use tenantRead for product entity RLS reads.
     ctx.set('db', baseDb);
     ctx.set('tenantId', tenantId);
     ctx.set('tenant', tenant);

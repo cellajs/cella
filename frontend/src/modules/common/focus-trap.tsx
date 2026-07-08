@@ -48,7 +48,7 @@ export function FocusTrap({
   disableInactive?: boolean;
   /** Move focus into the trap when activated (true = first element, ref = specific element) */
   initialFocus?: boolean | RefObject<HTMLElement | null>;
-  /** Restore focus to the previously-focused element on deactivation */
+  /** Restore focus to the earlier focused element on deactivation. */
   returnFocus?: boolean;
   /** Pull focus back inside when it escapes via click or programmatic move */
   containFocus?: boolean;
@@ -161,17 +161,17 @@ export function FocusTrap({
     }
   }, [active, disableInactive]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sentinel focus handlers — use relatedTarget to distinguish cycling vs entering
+  // Sentinel focus handlers use relatedTarget to distinguish cycling from entering.
   const handleBeforeGuardFocus = (e: React.FocusEvent) => {
     const trap = getContainer();
     if (!trap) return;
     const cameFromInside = e.relatedTarget instanceof Node && trap.contains(e.relatedTarget);
     const focusable = getFocusableElements(trap);
     if (cameFromInside) {
-      // Shift+Tab from first element → wrap to last
+      // Shift+Tab from first element: wrap to last.
       (focusable[focusable.length - 1] ?? trap).focus();
     } else {
-      // Tabbing forward into trap from outside → land on first
+      // Tabbing forward into trap from outside: land on first.
       (focusable[0] ?? trap).focus();
     }
   };
@@ -182,10 +182,10 @@ export function FocusTrap({
     const cameFromInside = e.relatedTarget instanceof Node && trap.contains(e.relatedTarget);
     const focusable = getFocusableElements(trap);
     if (cameFromInside) {
-      // Tab from last element → wrap to first
+      // Tab from last element: wrap to first.
       (focusable[0] ?? trap).focus();
     } else {
-      // Shift+Tab backward into trap from outside → land on last
+      // Shift+Tab backward into trap from outside: land on last.
       (focusable[focusable.length - 1] ?? trap).focus();
     }
   };

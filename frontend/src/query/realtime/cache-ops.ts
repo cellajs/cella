@@ -73,7 +73,7 @@ function stripYjsOwnedFields(entityType: string, entity: ItemData, detailKey: Qu
   if (!existing) return entity;
 
   const filtered = { ...entity };
-  // Dynamic field copy — ItemData lacks an index signature, so cast once here
+  // Dynamic field copy, ItemData lacks an index signature, so cast once here
   const target: Record<string, unknown> = filtered as never;
   const source: Record<string, unknown> = existing as never;
   for (const field of getYjsOwnedFields(type)) {
@@ -86,7 +86,7 @@ function stripYjsOwnedFields(entityType: string, entity: ItemData, detailKey: Qu
  * Whether `queryKey` is the canonical scope key for `entity`.
  * Keys shaped like [entityType, 'list', ...ancestorIds] match when every string segment
  * equals the entity's corresponding ancestor ID column. Filtered keys (object segments)
- * never match — those lists are scoped by server-side filters we can't replicate here.
+ * never match, those lists are scoped by server-side filters we can't replicate here.
  */
 function matchesCanonicalScope(queryKey: readonly unknown[], entity: ItemData, scopeKeys: readonly string[]): boolean {
   const segments = queryKey.slice(2);
@@ -200,7 +200,7 @@ export function invalidateEntityListForOrg(
 
 /**
  * Invalidate org-scoped lists whose key tail contains a filter object (i.e. filtered lists).
- * Canonical scope lists (string-only tails) are left alone — they're patched directly.
+ * Canonical scope lists (string-only tails) are left alone, they're patched directly.
  */
 function invalidateFilteredLists(orgListKey: readonly unknown[]): void {
   queryClient.invalidateQueries({
@@ -244,7 +244,7 @@ export async function fetchEntityAndUpdateList(
   // Skip remote writes for entities with pending mutations to preserve optimistic state.
   // The mutation's onSuccess will reconcile the cache when it settles.
   if (entityType && hasPendingMutationForEntity(entityType, entityId)) {
-    console.debug(`[CacheOps] Skipping remote ${action} for ${entityType}:${entityId} — has pending mutation`);
+    console.debug(`[CacheOps] Skipping remote ${action} for ${entityType}:${entityId}, has pending mutation`);
     return;
   }
 
@@ -273,7 +273,7 @@ export async function fetchEntityAndUpdateList(
         const effectiveAction = inScope ? action : 'update';
 
         if (isInfiniteQueryData<ItemData>(queryData)) {
-          // Remove from caches where entity no longer belongs (e.g. parent context changed)
+          // Remove from caches where the entity does not belong (e.g. parent context changed).
           const cachedItem = queryData.pages.flatMap((p) => p.items).find((item) => item.id === entityId);
           if (cachedItem && hasParentContextChanged(cachedItem, filtered)) {
             changeInfiniteQueryData(queryKey, [filtered], 'remove');
@@ -297,7 +297,7 @@ export async function fetchEntityAndUpdateList(
       }
     }
   } catch {
-    // No query defaults registered for this entity type — fall back to list invalidation
+    // No query defaults registered for this entity type, fall back to list invalidation
     invalidateEntityList(keys, 'all');
   }
 }
@@ -316,7 +316,7 @@ function patchFetchedEntity(
 
   // Skip entities with pending mutations to preserve optimistic state
   if (hasPendingMutationForEntity(entityType, entity.id)) {
-    console.debug(`[CacheOps] Delta fetch: skipping ${entityType}:${entity.id} — has pending mutation`);
+    console.debug(`[CacheOps] Delta fetch: skipping ${entityType}:${entity.id}, has pending mutation`);
     return;
   }
 
@@ -332,7 +332,7 @@ function patchFetchedEntity(
   const listPrefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
   for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: listPrefix })) {
     if (isInfiniteQueryData<ItemData>(queryData)) {
-      // Remove from caches where entity no longer belongs (e.g. parent context changed)
+      // Remove from caches where the entity does not belong (e.g. parent context changed).
       const cachedItem = queryData.pages.flatMap((p) => p.items).find((item) => item.id === entity.id);
       if (cachedItem && hasParentContextChanged(cachedItem, filtered)) {
         changeInfiniteQueryData(queryKey, [filtered], 'remove');
@@ -354,12 +354,12 @@ function patchFetchedEntity(
  * Fetch changed entities by seq range and patch them into list + detail caches.
  * Uses the registered deltaFetch function to call the list endpoint with `seqCursor`.
  * Returns true only when the FULL range was ingested (callers may then advance their sync
- * cursor); false when unavailable, failed, or the window overflows one response — callers
+ * cursor); false when unavailable, failed, or the window overflows one response, callers
  * fall back to full list invalidation and react-query owns recovery.
  *
  * seqCursor formats:
- * - "51" — open-ended (seq >= 51), used by catchup
- * - "51,150" — bounded range, used by batch notifications
+ * - "51", open-ended (seq >= 51), used by catchup
+ * - "51,150", bounded range, used by batch notifications
  *
  * When cacheToken is provided (batch notifications), it's passed through to the API call
  * as X-Cache-Token header, enabling entity cache fan-out on the backend.
@@ -386,7 +386,7 @@ export async function fetchRangeAndPatch(
     // Overflow guard: registrars request SYNC_CHUNK_SIZE, so a full response means the seq
     // window may exceed what one fetch returns. Patching a truncated window would silently
     // drop the remainder (the backend orders seq reads by seq, but the caller advances its
-    // cursor to the window end) — treat as "delta too large" and let the caller invalidate.
+    // cursor to the window end), treat as "delta too large" and let the caller invalidate.
     if (items.length >= SYNC_CHUNK_SIZE) {
       console.debug(`[CacheOps] Delta fetch: ${entityType} window overflow (seqCursor=${seqCursor}) → invalidation`);
       return false;

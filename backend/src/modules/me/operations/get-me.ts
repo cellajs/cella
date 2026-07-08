@@ -9,7 +9,7 @@ export async function getMeOp(ctx: AuthContext) {
   const isSystemAdmin = ctx.var.isSystemAdmin;
   const userId = ctx.var.userId;
 
-  // Throttle lastStartedAt upsert — fire-and-forget like lastSeenAt
+  // Throttle lastStartedAt upsert; fire-and-forget like lastSeenAt.
   const now = Date.now();
   const last = lastStartedMemory.get(userId) ?? 0;
   if (now - last >= THROTTLE_MS) {

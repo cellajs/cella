@@ -1,23 +1,3 @@
-/**
- * General infra config — machinery for the fork-owned `config/general.config.ts`.
- *
- * Mirrors the `services.config.ts` / `runtime-secrets.config.ts` split: this
- * module owns the types + the `defineGeneral` identity helper + the per-mode
- * resolver, while the fork declares the *values* in `config/general.config.ts`.
- *
- * These are the non-service capacity/feature knobs that used to live as
- * hardcoded literals in `pulumi-context.ts` with a `pulumi config set` escape
- * hatch. Centralising them here makes a resize a one-line edit to a committed,
- * type-checked file (then a normal deploy) instead of an out-of-band stack-config
- * mutation. Secrets, transient break-glass toggles (DB public endpoint), and
- * bootstrap lifecycle markers deliberately stay in Pulumi config — they are not
- * fork data and must not be committed.
- *
- * Note: `database.*` changes are bootstrap-owned (the CI key is read-only on
- * RDB), so editing them here still requires a human `pulumi up` via the CLI's
- * "Apply infra change" — this file changes *where the value lives*, not *who
- * may apply it*.
- */
 import type { Environment } from './stack/bootstrap-stack-state'
 
 /** A value fixed for all deploy modes, or varying per mode (e.g. a larger DB in prod only). */
@@ -40,7 +20,7 @@ export interface GeneralConfig {
   }
 }
 
-/** Identity helper — gives `config/general.config.ts` compile-time checking. */
+/** Identity helper for `config/general.config.ts` compile-time checking. */
 export function defineGeneral<const T extends GeneralConfig>(config: T): T {
   return config
 }

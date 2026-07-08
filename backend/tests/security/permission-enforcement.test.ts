@@ -1,11 +1,3 @@
-/**
- * Permission enforcement tests via HTTP.
- *
- * Verifies that the permission manager correctly enforces role-based
- * access control through the API. Tests admin vs member permissions
- * on organization operations and unauthenticated access rejection.
- */
-
 import { getAttachments, getOrganization, updateOrganization } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { defaultHeaders } from '../fixtures';
@@ -16,6 +8,7 @@ import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
+// Verifies role-based organization permissions and unauthenticated rejection via HTTP.
 describe('Permission enforcement via HTTP', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;

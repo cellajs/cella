@@ -158,7 +158,7 @@ interface UpdateMembershipOpts {
   values: Partial<typeof membershipsTable.$inferInsert>;
 }
 
-/** Update a membership by ID and return the updated record. */
+/** Update a membership by ID and return the updated row. */
 export const updateMembership = async (ctx: AuthContext, { id, values }: UpdateMembershipOpts) => {
   const { db, organizationId } = ctx.var;
   const [updated] = await db
@@ -169,7 +169,7 @@ export const updateMembership = async (ctx: AuthContext, { id, values }: UpdateM
   return updated;
 };
 
-/** Insert tokens in bulk and return the created records. */
+/** Insert tokens in bulk and return the created rows. */
 export const insertTokens = async (ctx: DbContext, { tokens }: { tokens: (typeof tokensTable.$inferInsert)[] }) => {
   const { db } = ctx.var;
   return db.insert(tokensTable).values(tokens).returning({

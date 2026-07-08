@@ -1,7 +1,7 @@
 import { defineRuntimeSecrets } from '../lib/runtime-secrets'
 
 /**
- * The fork-owned runtime-secrets registry — the single place a fork maps an
+ * The fork-owned runtime-secrets registry: the single place a fork maps an
  * application secret to the services that receive it, and declares whether it is
  * required or optional. Mirrors `config/services.config.ts`: data only, while
  * `runtime-secrets.ts` owns the machinery (Secret Manager provisioning, the
@@ -9,17 +9,17 @@ import { defineRuntimeSecrets } from '../lib/runtime-secrets'
  *
  * Each VM is hydrated from a PER-SERVICE manifest, so a secret is only ever
  * written to `/opt/app/.env.runtime` on a VM whose service appears in its
- * `services` list — e.g. the cdc VM never receives `COOKIE_SECRET`. Narrowing a
+ * `services` list, e.g. the cdc VM never receives `COOKIE_SECRET`. Narrowing a
  * `services` array is therefore the lever for "only share what the VM needs".
  *
  * Field meanings (hover any field for the `RuntimeSecretConfig` docs):
- *  - `secretName`  — Scaleway Secret Manager container name (kebab-case).
- *  - `envVar`      — environment variable the container consumes it as.
- *  - `required`    — whether deploy/health gating treats its absence as fatal.
- *  - `valueSource` — `'pulumi'` (cella generates/derives + writes a version) or
+ *  - `secretName`: Scaleway Secret Manager container name (kebab-case).
+ *  - `envVar`: environment variable the container consumes it as.
+ *  - `required`: whether deploy/health gating treats its absence as fatal.
+ *  - `valueSource`: `'pulumi'` (cella generates/derives + writes a version) or
  *                    `'operator'` (a human supplies the value out-of-band).
- *  - `generation`  — `'random'` (Pulumi RandomPassword) or `'manual'`.
- *  - `services`    — which deployable services receive it.
+ *  - `generation`: `'random'` (Pulumi RandomPassword) or `'manual'`.
+ *  - `services`: which deployable services receive it.
  *
  * Forks pin this file (see `overrides.pinned` in `cella.config.ts`) to customize the
  * mapping without conflicting on `pnpm cella` upstream syncs. A typo (unknown

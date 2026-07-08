@@ -57,7 +57,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
     })
     .returning();
 
-  // Link token to existing email record (only if not already verified by another flow)
+  // Link token to existing email row (only if not already verified by another flow)
   if (!emailInUse) {
     await db
       .update(emailsTable)

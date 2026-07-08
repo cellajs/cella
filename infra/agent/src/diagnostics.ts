@@ -69,7 +69,7 @@ export async function uploadBootDiagnostics(opts: UploadBootDiagnosticsOptions):
   }
   const parts = [`service=${opts.service}`, `release=${opts.releaseSha}`, `boot_rc=${opts.bootRc}`, '', log]
   // The agent runs containerized without the host boot log mounted, so the file
-  // read above is usually empty — the captured app logs carry the crash reason.
+  // read above is usually empty; the captured app logs carry the crash reason.
   if (opts.appLogs?.trim()) parts.push('', '--- app logs ---', opts.appLogs)
   const body = parts.join('\n')
   const keys = [`boot-diag/${opts.service}-${keyStamp}-boot.log`]

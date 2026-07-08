@@ -81,7 +81,7 @@ function createProviderWithTokenSync(token: string) {
 function wireCloseHandler(provider: MockProvider) {
   const handleConnectionClose = (event: { code: number } | null) => {
     if (!event || event.code === 1000) return;
-    if (event.code === 4001) return; // Recoverable — let provider retry
+    if (event.code === 4001) return; // Recoverable, let provider retry
     provider.disconnect();
   };
   provider.on('connection-close', handleConnectionClose as (...args: unknown[]) => void);
@@ -243,7 +243,7 @@ describe('yjs-connections edge cases', () => {
   it('should pass forged tokens through to provider params (server-side HMAC is the real gate)', () => {
     const { provider, unsubToken } = createProviderWithTokenSync('valid-token');
 
-    // A forged token will be pushed to params — the frontend has no way to verify HMAC.
+    // A forged token will be pushed to params; the frontend has no way to verify HMAC.
     // Defense-in-depth: the yjs server's verifyToken() rejects it (see yjs/src/tests/auth.test.ts).
     const forgedPayload = Buffer.from(JSON.stringify({ userId: 'attacker', exp: Date.now() + 99999999 })).toString(
       'base64url',

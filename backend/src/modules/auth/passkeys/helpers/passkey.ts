@@ -108,7 +108,7 @@ export const validatePasskey = async (
   deleteAuthCookie(ctx, 'passkey-challenge');
   if (!challengeFromCookie) throw new AppError(401, 'invalid_credentials', 'warn');
 
-  // Fetch passkey record for this user and credential ID
+  // Fetch passkey row for this user and credential ID
   const [passkeyRecord] = await db
     .select()
     .from(passkeysTable)

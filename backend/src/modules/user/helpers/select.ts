@@ -55,7 +55,7 @@ export const userBaseSelect: UserBaseSelect = (() => {
 })();
 
 /**
- * Member select — returns only userBaseSelect columns + lastSeenAt.
+ * Member select, limited to userBaseSelect columns plus lastSeenAt.
  * Used for cross-tenant user endpoints and member lists.
  */
 export const memberSelect = (() => {

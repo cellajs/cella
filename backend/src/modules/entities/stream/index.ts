@@ -1,10 +1,3 @@
-/**
- * Stream infrastructure for SSE connections.
- *
- * Provides a subscriber manager with optional indexing and helper functions.
- * All routing/filtering logic lives in module handlers.
- */
-
 export { buildStreamNotification } from './build-message';
 export { createStreamDispatcher } from './dispatcher';
 export {

@@ -34,7 +34,7 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
 
   const isMobile = window.innerWidth < 640;
 
-  // Create form — sign-up is handled by OAuth/passkey providers rendered below
+  // Create form; sign-up is handled by OAuth/passkey providers rendered below.
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { email },

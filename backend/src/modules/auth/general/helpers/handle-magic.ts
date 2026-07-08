@@ -21,7 +21,7 @@ export const handleMagicLink = async (ctx: Context<Env>, token: TokenModel) => {
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, token.userId)).limit(1);
   if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user', meta: { userId: token.userId } });
 
-  // Clicking a magic link proves email ownership — mark email as verified
+  // Clicking a magic link proves email ownership.
   if (token.email) {
     await db
       .update(emailsTable)
@@ -32,7 +32,6 @@ export const handleMagicLink = async (ctx: Context<Env>, token: TokenModel) => {
   // Start MFA challenge if the user has MFA enabled
   const mfaRedirectPath = await initiateMfa(ctx, user);
 
-  // Determine redirect path — new users go to welcome page
   const redirectPath = mfaRedirectPath || getPostAuthRedirectPath(user);
   const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 

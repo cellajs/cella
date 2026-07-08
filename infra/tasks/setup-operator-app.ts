@@ -1,14 +1,3 @@
-/**
- * Create (or reuse) a scoped IAM application `<slug>-operator` with a policy
- * granting Object Storage access, so operator keys minted under it can read &
- * refresh the CI-scoped buckets (storage.ts OperatorAccess) without being the
- * CI deploy app. No key is minted here — the dev creates one in the console:
- * https://console.scaleway.com/iam/api-keys. The application id is what
- * SCW_OPERATOR_APPLICATION_ID points at.
- *
- * The shared provisioning flow lives in `lib/scaleway-iam.ts`; this file owns
- * only the operator-specific policy rules.
- */
 import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam'
 
 export type SetupOperatorAppOptions = ProvisionScopedKeyOptions

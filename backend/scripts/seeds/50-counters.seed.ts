@@ -3,7 +3,7 @@ import { seedDb } from '#/db/db';
 import { recalculateCounters } from '#/modules/entities/helpers/recalculate-counters';
 import { startSpinner, succeedSpinner } from '#/utils/console';
 
-// Seed scripts use admin connection for privileged operations
+// Seed scripts use the admin connection for privileged operations.
 const db = seedDb;
 
 /**
@@ -11,7 +11,7 @@ const db = seedDb;
  *
  * Delegates to recalculateCounters() which uses ON CONFLICT with || merge,
  * so it's safe to run even when rows already exist (e.g. pre-populated by triggers).
- * Always runs — never skips.
+ * Runs on every seed invocation.
  */
 export const countersSeed = async () => {
   startSpinner('Recalculating counters...');

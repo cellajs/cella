@@ -1,20 +1,8 @@
-/**
- * Immutability triggers for identity columns.
- *
- * Prevents modification of identity columns (id, tenant_id, organization_id, etc.)
- * after row creation. Defense-in-depth: catches bugs even if someone bypasses RLS or
- * the guard chain.
- *
- * Uses BEFORE UPDATE plpgsql triggers that check `NEW.col IS DISTINCT FROM OLD.col`
- * and raise an exception. One shared function per column-set, one trigger per table.
- * Table configs are derived from appConfig, so new entity types are auto-protected.
- */
-
 import { getTableName } from 'drizzle-orm';
 import { appConfig, toColumnName } from 'shared';
 import { entityTables } from '#/tables';
 
-// ─── Immutable column sets ──────────────────────────────────────────────────
+// --- Immutable column sets --------------------------------------------------
 
 const BASE_ENTITY_COLUMNS = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'] as const;
 const MEMBERSHIP_CONTEXT_ID_COLUMNS = appConfig.contextEntityTypes.map((type) =>
@@ -22,16 +10,16 @@ const MEMBERSHIP_CONTEXT_ID_COLUMNS = appConfig.contextEntityTypes.map((type) =>
 );
 const BASE_MEMBERSHIP_COLUMNS = ['tenant_id', 'context_id', 'context_type', ...MEMBERSHIP_CONTEXT_ID_COLUMNS] as const;
 
-/** Product entities with a parent org (tasks, labels, attachments) */
+/** Product entities with a parent org (tasks, labels, attachments). */
 export const productEntityImmutableColumns = [...BASE_ENTITY_COLUMNS, 'organization_id'] as const;
 
-/** Active memberships — includes user_id */
+/** Active memberships include user_id. */
 export const membershipImmutableColumns = [...BASE_MEMBERSHIP_COLUMNS, 'user_id'] as const;
 
-/** Inactive memberships — user_id is mutable (re-assignable invitations) */
+/** Inactive memberships allow mutable user_id for re-assignable invitations. */
 export const inactiveMembershipImmutableColumns = BASE_MEMBERSHIP_COLUMNS;
 
-// ─── SQL builders ───────────────────────────────────────────────────────────
+// --- SQL builders -----------------------------------------------------------
 
 interface TableImmutabilityConfig {
   tableName: string;
@@ -40,7 +28,7 @@ interface TableImmutabilityConfig {
 
 /**
  * Generates a plpgsql function that raises an exception when any of the given
- * columns change. Uses `IS DISTINCT FROM` so NULL → value transitions are caught.
+ * columns change. Uses `IS DISTINCT FROM` so NULL-to-value transitions are caught.
  */
 function buildFunctionSQL(functionName: string, columns: readonly string[]): string {
   const guard = columns.map((col) => `NEW.${col} IS DISTINCT FROM OLD.${col}`).join('\n       OR ');
@@ -66,12 +54,12 @@ CREATE TRIGGER ${triggerName}
   FOR EACH ROW EXECUTE FUNCTION ${functionName}();`;
 }
 
-// ─── Pre-built trigger functions ────────────────────────────────────────────
+// --- Pre-built trigger functions -------------------------------------------
 
-/** Shared by context entities (has tenant_id) */
+/** Shared by context entities with tenant_id. */
 export const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', BASE_ENTITY_COLUMNS);
 
-/** Product entities with parent — adds organization_id */
+/** Product entities with a parent include organization_id. */
 export const productEntityImmutabilityFunctionSQL = buildFunctionSQL(
   'product_entity_immutable_keys',
   productEntityImmutableColumns,
@@ -87,7 +75,7 @@ export const inactiveMembershipImmutabilityFunctionSQL = buildFunctionSQL(
   inactiveMembershipImmutableColumns,
 );
 
-/** Blocks ALL updates — for audit/append-only tables */
+/** Blocks all updates for audit and append-only tables. */
 export const appendOnlyImmutabilityFunctionSQL = `
 CREATE OR REPLACE FUNCTION append_only_immutable_row() RETURNS TRIGGER AS $$
 BEGIN
@@ -95,7 +83,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;`;
 
-// ─── Table → function mapping (derived from appConfig) ──────────────────────
+// --- Table to function mapping ---------------------------------------------
 
 const contextEntityConfigs: TableImmutabilityConfig[] = appConfig.contextEntityTypes.map((t) => ({
   tableName: getTableName(entityTables[t]),
@@ -116,7 +104,7 @@ const appendOnlyConfigs: TableImmutabilityConfig[] = [
   { tableName: 'activities', functionName: 'append_only_immutable_row' },
 ];
 
-/** Every table that has an immutability trigger */
+/** Every table that has an immutability trigger. */
 export const allImmutabilityTables: TableImmutabilityConfig[] = [
   ...contextEntityConfigs,
   ...productWithParentConfigs,
@@ -124,14 +112,14 @@ export const allImmutabilityTables: TableImmutabilityConfig[] = [
   ...appendOnlyConfigs,
 ];
 
-// ─── Combined SQL output ────────────────────────────────────────────────────
+// --- Combined SQL output ----------------------------------------------------
 
 const baseEntityTables = contextEntityConfigs;
 const names = (configs: TableImmutabilityConfig[]) => configs.map((c) => c.tableName).join(', ');
 
 /**
- * Complete SQL to create all immutability functions + triggers.
- * Run after migrations to ensure protection is in place.
+ * Complete SQL to create all immutability functions and triggers.
+ * Run after migrations so protection is in place.
  */
 export const immutabilityTriggersSQL = `
 -- Functions (5)

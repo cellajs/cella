@@ -8,7 +8,7 @@ type BlockLike = { type: string; props?: Record<string, unknown>; children?: Blo
  * Sanitize untrusted media URLs in relay-materialized description content.
  *
  * Client PUTs reject untrusted URLs outright (`assertBlockMediaUrls`), but relay
- * materializations must NEVER be permanently unable to persist — a client could
+ * materializations must stay persistable: a client could
  * inject a bad URL directly into the Y.Doc, and rejecting would wedge the
  * materialization retry loop and block session-row cleanup forever. Instead we
  * blank the offending `url` props (blank/non-URL values are treated as trusted
@@ -28,7 +28,7 @@ export function sanitizeBlockMediaUrls(description: string): {
   try {
     blocks = JSON.parse(description) as BlockLike[];
   } catch {
-    // Malformed JSON can't be sanitized — persist an empty document rather than wedging
+    // Persist an empty document when malformed JSON cannot be sanitized.
     return { description: '[]', sanitized: true, invalidUrls: result.invalidUrls };
   }
 

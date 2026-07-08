@@ -5,7 +5,7 @@ import { buildMenuFromCache, menuEntityTypes } from './build-menu-from-cache';
 
 /**
  * React hook that fetches and builds the user menu based on their memberships.
- * Subscribes to entity list queries for granular reactivity — when the cache
+ * Subscribes to entity list queries for granular reactivity. When the cache
  * subscriber enriches data, useQueries detects the update and re-builds the menu.
  *
  * @param userId - The ID of the user to fetch menu data for (optional - queries disabled when undefined)
@@ -25,7 +25,7 @@ export function useMenu(userId: string | undefined) {
   // Stable recompute key when query data changes
   const recomputeKey = results.map((r) => r.dataUpdatedAt).join('|');
 
-  // Build menu from cache — shared logic with getMenuData
+  // Build menu from cache using shared logic with getMenuData.
   const menu = useMemo(() => (userId ? buildMenuFromCache(userId) : buildMenuFromCache('')), [userId, recomputeKey]);
 
   const isLoading = results.some((r) => r.isLoading || r.isPending);

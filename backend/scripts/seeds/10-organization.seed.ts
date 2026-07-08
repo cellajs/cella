@@ -105,12 +105,12 @@ export const organizationsSeed = async () => {
       .returning()
       .onConflictDoNothing();
 
-    // Make unsubscribeToken record for each user → Insert into the database
+    // Make unsubscribeToken row for each user, then insert into the database
     const unsubscribeTokenRecords = await Promise.all(users.map(user => mockUnsubscribeToken(user)));
     await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRecords).onConflictDoNothing();
 
 
-    // Make email record for each user → Insert into the database
+    // Make email row for each user, then insert into the database
     const emailRecords = users.map(mockEmail);
     await db
       .insert(emailsTable)
