@@ -1,9 +1,20 @@
-import { appConfig, configureAccessPolicies } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { computeCan } from './compute-can';
+import { computeWideCan, configureWidePermissions, wideMembership, wideTopology } from '../testing/wide-fixture';
 
-// Policies with 'own' permission for attachment update/delete
-const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
+/**
+ * `computeCan` derives an entity-type-keyed `can` map (context entity + descendants) from a
+ * membership + policies over a hierarchy topology, preserving three-state ('own') semantics.
+ *
+ * Runs against the wide fixture (organization → workspace/project → task/label/attachment, with a
+ * guest role on the nested contexts), which every fork can exercise regardless of its own config's
+ * shape. `wideTopology` is threaded through as `computeCan`'s optional 4th argument so the
+ * hierarchy/entityActions used to compute the map match the wide policies driving it.
+ */
+
+// Policies with 'own' permission for attachment update/delete, plus project-scoped grants
+// (attachment guest-read, task member-update) used by the wider coverage below.
+const { accessPolicies: policies } = configureWidePermissions(({ subject, contexts }) => {
   switch (subject.name) {
     case 'organization':
       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
@@ -12,6 +23,13 @@ const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, cont
     case 'attachment':
       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
       contexts.organization.member({ create: 1, read: 1, update: 'own', delete: 'own' });
+      contexts.project.admin({ create: 1, read: 1, update: 1, delete: 1 });
+      contexts.project.member({ create: 1, read: 1, update: 'own', delete: 'own' });
+      contexts.project.guest({ create: 0, read: 1, update: 0, delete: 0 });
+      break;
+    case 'task':
+      contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0 });
+      contexts.project.member({ create: 1, read: 1, update: 1, delete: 0 });
       break;
   }
 });
@@ -20,16 +38,16 @@ describe('computeCan with own permissions', () => {
   // --- Pass cases: 'own' state should be preserved ---
 
   it('returns own for member attachment update/delete', () => {
-    const membership = { contextType: 'organization' as const, role: 'member' as const };
-    const can = computeCan('organization', membership, policies);
+    const membership = wideMembership('organization', 'org1', 'member');
+    const can = computeCan('organization', membership, policies, wideTopology);
 
     expect(can.attachment?.update).toBe('own');
     expect(can.attachment?.delete).toBe('own');
   });
 
   it('returns true for member attachment create/read alongside own', () => {
-    const membership = { contextType: 'organization' as const, role: 'member' as const };
-    const can = computeCan('organization', membership, policies);
+    const membership = wideMembership('organization', 'org1', 'member');
+    const can = computeCan('organization', membership, policies, wideTopology);
 
     expect(can.attachment?.create).toBe(true);
     expect(can.attachment?.read).toBe(true);
@@ -38,8 +56,8 @@ describe('computeCan with own permissions', () => {
   // --- Pass cases: admin gets unconditional true ---
 
   it('returns true (not own) for admin on all attachment actions', () => {
-    const membership = { contextType: 'organization' as const, role: 'admin' as const };
-    const can = computeCan('organization', membership, policies);
+    const membership = wideMembership('organization', 'org1', 'admin');
+    const can = computeCan('organization', membership, policies, wideTopology);
 
     expect(can.attachment?.create).toBe(true);
     expect(can.attachment?.read).toBe(true);
@@ -50,8 +68,8 @@ describe('computeCan with own permissions', () => {
   // --- Fail cases: denied actions stay false ---
 
   it('returns false for member organization create/update/delete', () => {
-    const membership = { contextType: 'organization' as const, role: 'member' as const };
-    const can = computeCan('organization', membership, policies);
+    const membership = wideMembership('organization', 'org1', 'member');
+    const can = computeCan('organization', membership, policies, wideTopology);
 
     expect(can.organization?.create).toBe(false);
     expect(can.organization?.update).toBe(false);
@@ -61,19 +79,47 @@ describe('computeCan with own permissions', () => {
   // --- Edge case: no membership ---
 
   it('returns empty map when membership is null', () => {
-    const can = computeCan('organization', null, policies);
+    const can = computeCan('organization', null, policies, wideTopology);
     expect(can).toEqual({});
   });
 
   it('returns empty map when membership is undefined', () => {
-    const can = computeCan('organization', undefined, policies);
+    const can = computeCan('organization', undefined, policies, wideTopology);
     expect(can).toEqual({});
+  });
+
+  // --- Wider coverage: contexts/roles the shallow org/attachment shape couldn't express ---
+
+  it('grants read-only access to a project guest on attachment (guest-only grant)', () => {
+    const membership = wideMembership('project', 'p1', 'guest');
+    const can = computeWideCan('project', membership, policies);
+
+    expect(can.attachment?.read).toBe(true);
+    expect(can.attachment?.create).toBe(false);
+    expect(can.attachment?.update).toBe(false);
+    expect(can.attachment?.delete).toBe(false);
+  });
+
+  it('differs between an organization member and a project member on the same descendant (task)', () => {
+    const orgMembership = wideMembership('organization', 'org1', 'member');
+    const projectMembership = wideMembership('project', 'p1', 'member');
+
+    const orgCan = computeWideCan('organization', orgMembership, policies);
+    const projectCan = computeWideCan('project', projectMembership, policies);
+
+    // Org members can read tasks across the org, but not update them...
+    expect(orgCan.task?.read).toBe(true);
+    expect(orgCan.task?.update).toBe(false);
+
+    // ...while project members additionally get update rights scoped to their project.
+    expect(projectCan.task?.read).toBe(true);
+    expect(projectCan.task?.update).toBe(true);
   });
 });
 
 describe('computeCan three-state semantics', () => {
   // Policies where every action is 'own' for member
-  const allOwnPolicies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
+  const { accessPolicies: allOwnPolicies } = configureWidePermissions(({ subject, contexts }) => {
     switch (subject.name) {
       case 'attachment':
         contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
@@ -83,8 +129,8 @@ describe('computeCan three-state semantics', () => {
   });
 
   it('preserves own for every action when all policies are own', () => {
-    const membership = { contextType: 'organization' as const, role: 'member' as const };
-    const can = computeCan('organization', membership, allOwnPolicies);
+    const membership = wideMembership('organization', 'org1', 'member');
+    const can = computeCan('organization', membership, allOwnPolicies, wideTopology);
 
     expect(can.attachment?.create).toBe('own');
     expect(can.attachment?.read).toBe('own');
@@ -93,8 +139,8 @@ describe('computeCan three-state semantics', () => {
   });
 
   it('does not conflate own with true — they are distinct values', () => {
-    const membership = { contextType: 'organization' as const, role: 'member' as const };
-    const can = computeCan('organization', membership, allOwnPolicies);
+    const membership = wideMembership('organization', 'org1', 'member');
+    const can = computeCan('organization', membership, allOwnPolicies, wideTopology);
 
     // 'own' is truthy but !== true
     expect(can.attachment?.update).not.toBe(true);

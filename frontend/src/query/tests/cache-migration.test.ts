@@ -1,3 +1,4 @@
+import { appConfig } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the lens engine: simulate a single attachment rename name → title.
@@ -30,7 +31,8 @@ describe('entityTypeOf', () => {
 
   it('extracts a context entity type from a query key', () => {
     expect(entityTypeOf(['organization', 'detail'])).toBe('organization');
-    expect(entityTypeOf(['organization'])).toBe('organization');
+    const deepestContext = appConfig.contextEntityTypes[appConfig.contextEntityTypes.length - 1];
+    expect(entityTypeOf([deepestContext])).toBe(deepestContext);
   });
 
   it('returns null for non-entity keys', () => {
