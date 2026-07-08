@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/cellajs/cella/compare/0.3.0...0.3.1) (2026-07-08)
+
+
+### 🎉 New features
+
+* deploy improvements and fix for otel core override deploy ([#864](https://github.com/cellajs/cella/issues/864)) ([0370090](https://github.com/cellajs/cella/commit/0370090a81d3376b0393a3d2e76b2843135e99bf))
+
 ## [0.3.0](https://github.com/cellajs/cella/compare/0.2.2...0.3.0) (2026-07-08)
 
 
