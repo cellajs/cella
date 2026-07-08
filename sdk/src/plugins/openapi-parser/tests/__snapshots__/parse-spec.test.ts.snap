@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
 {
-  "inputHash": "fe71a7493c2299f0",
+  "inputHash": "958725bcec33529f",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!
@@ -1934,6 +1934,106 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
+        "description": "Returns a list of users.",
+        "entityType": "user",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "authGuard",
+            "crossTenantGuard",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
+        "hasParams": true,
+        "hasRequestBody": false,
+        "hasResponseBody": true,
+        "hash": "tag/users/GET/users/users",
+        "id": "getUsers",
+        "method": "get",
+        "path": "/users/users",
+        "summary": "Get list of users",
+        "tags": [
+          "users",
+        ],
+        "tagsByKind": {
+          "module": [
+            "users",
+          ],
+          "owner": [
+            "cella",
+          ],
+        },
+      },
+      {
+        "deprecated": false,
+        "description": "Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead.",
+        "entityType": "user",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "authGuard",
+            "crossTenantGuard",
+            "relatableGuard",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
+        "hasParams": true,
+        "hasRequestBody": false,
+        "hasResponseBody": true,
+        "hash": "tag/users/GET/users/users/{relatableUserId}",
+        "id": "getUser",
+        "method": "get",
+        "path": "/users/users/{relatableUserId}",
+        "summary": "Get user",
+        "tags": [
+          "users",
+        ],
+        "tagsByKind": {
+          "module": [
+            "users",
+          ],
+          "owner": [
+            "cella",
+          ],
+        },
+      },
+      {
+        "deprecated": false,
+        "description": "Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "authGuard",
+          ],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
+        },
+        "hasExample": false,
+        "hasParams": true,
+        "hasRequestBody": false,
+        "hasResponseBody": true,
+        "hash": "tag/yjs/GET/yjs/token",
+        "id": "getYjsToken",
+        "method": "get",
+        "path": "/yjs/token",
+        "summary": "Get Yjs token",
+        "tags": [
+          "yjs",
+        ],
+        "tagsByKind": {
+          "module": [
+            "yjs",
+          ],
+          "owner": [
+            "cella",
+          ],
+        },
+      },
+      {
+        "deprecated": false,
         "description": "Creates one or more new organizations within a tenant.",
         "entityType": "organization",
         "extensions": {
@@ -2114,73 +2214,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           ],
           "module": [
             "organizations",
-          ],
-          "owner": [
-            "cella",
-          ],
-        },
-      },
-      {
-        "deprecated": false,
-        "description": "Returns a list of users.",
-        "entityType": "user",
-        "extensions": {
-          "xCache": [],
-          "xGuard": [
-            "authGuard",
-            "crossTenantGuard",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": true,
-        "hasParams": true,
-        "hasRequestBody": false,
-        "hasResponseBody": true,
-        "hash": "tag/users/GET/users/users",
-        "id": "getUsers",
-        "method": "get",
-        "path": "/users/users",
-        "summary": "Get list of users",
-        "tags": [
-          "users",
-        ],
-        "tagsByKind": {
-          "module": [
-            "users",
-          ],
-          "owner": [
-            "cella",
-          ],
-        },
-      },
-      {
-        "deprecated": false,
-        "description": "Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead.",
-        "entityType": "user",
-        "extensions": {
-          "xCache": [],
-          "xGuard": [
-            "authGuard",
-            "crossTenantGuard",
-            "relatableGuard",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": true,
-        "hasParams": true,
-        "hasRequestBody": false,
-        "hasResponseBody": true,
-        "hash": "tag/users/GET/users/users/{relatableUserId}",
-        "id": "getUser",
-        "method": "get",
-        "path": "/users/users/{relatableUserId}",
-        "summary": "Get user",
-        "tags": [
-          "users",
-        ],
-        "tagsByKind": {
-          "module": [
-            "users",
           ],
           "owner": [
             "cella",
@@ -2656,39 +2689,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
         "tagsByKind": {
           "module": [
             "seen",
-          ],
-          "owner": [
-            "cella",
-          ],
-        },
-      },
-      {
-        "deprecated": false,
-        "description": "Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.",
-        "extensions": {
-          "xCache": [],
-          "xGuard": [
-            "authGuard",
-          ],
-          "xRateLimiter": [
-            "pointsLimiter",
-          ],
-        },
-        "hasExample": false,
-        "hasParams": true,
-        "hasRequestBody": false,
-        "hasResponseBody": true,
-        "hash": "tag/yjs/GET/yjs/token",
-        "id": "getYjsToken",
-        "method": "get",
-        "path": "/yjs/token",
-        "summary": "Get Yjs token",
-        "tags": [
-          "yjs",
-        ],
-        "tagsByKind": {
-          "module": [
-            "yjs",
           ],
           "owner": [
             "cella",
