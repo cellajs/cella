@@ -19,6 +19,7 @@ export default defineProject({
     testTimeout: 15000,
     hookTimeout: 15000,
     globalSetup: testMode === 'full' ? './src/tests/integration/global-setup.ts' : undefined,
+    setupFiles: ['./src/tests/setup.ts'],
     include: ['src/**/*.test.ts'],
     exclude: excludePatterns,
     fileParallelism: false,

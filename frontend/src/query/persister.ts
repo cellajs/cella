@@ -1,7 +1,7 @@
 import type { DehydratedState } from '@tanstack/react-query';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { appConfig } from 'shared';
-import { currentSchemaVersion } from 'shared/version-changes';
+import { currentSchemaVersion } from 'shared/schema-evolution';
 import { reportCriticalError } from '~/lib/tracing';
 import { type AppDatabase, getAppDb, type PersistedQueryRecord } from '~/query/app-db';
 import { entityTypeOf, migrateMutations, migrateQueryState } from '~/query/cache-migration';

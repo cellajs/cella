@@ -1,5 +1,6 @@
 import type {
   ContextEntityType,
+  EntityIdColumnKeysShape,
   EntityType,
   ProductEntityType,
 } from '../../types';
@@ -13,9 +14,8 @@ type _ConfigSatisfiesRequired = Config extends RequiredConfig ? true : never;
 const _configValid: _ConfigSatisfiesRequired = true;
 void _configValid;
 
-// Validate entityIdColumnKeys has all entity types as keys with correct naming
-type ExpectedIdColumnKeys = { readonly [K in EntityType]: `${K}Id` };
-const _entityIdKeysCheck: ExpectedIdColumnKeys = appConfig.entityIdColumnKeys;
+// Validate entityIdColumnKeys has all entity types as keys with correct `${K}Id` naming
+const _entityIdKeysCheck: EntityIdColumnKeysShape = appConfig.entityIdColumnKeys;
 void _entityIdKeysCheck;
 
 // Validate entityTypes matches hierarchy.allTypes (bi-directional type check)

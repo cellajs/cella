@@ -5,6 +5,8 @@ export type EntityRouteEntry = {
   path: string;
   /** Route param name this entity's slug fills (both as self and as ancestor) */
   paramName: string;
+  /** Search params to apply when navigating to this entity's default route. */
+  search?: Record<string, string>;
   /** When shown as subitem, navigate to a parent entity's route instead */
   subitemOf?: { entityType: ContextEntityType; searchParam: string };
 };
@@ -18,7 +20,8 @@ export type EntityRouteEntry = {
  */
 export const entityRouteConfig = {
   organization: {
-    path: '/$tenantId/$organizationSlug/organization',
+    path: '/$tenantId/$organizationSlug/organization/attachments',
     paramName: 'organizationSlug',
+    search: { sort: 'createdAt', order: 'desc' },
   },
 } as const satisfies Record<ContextEntityType, EntityRouteEntry>;

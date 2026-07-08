@@ -18,7 +18,7 @@ vi.mock('shared', () => ({
 }));
 
 // Lens engine mock: bundle is at schema v1 with a single attachment rename name → title.
-vi.mock('shared/version-changes', () => ({
+vi.mock('shared/schema-evolution', () => ({
   currentSchemaVersion: 1,
   migrateCachedEntity: vi.fn(async (_entityType: string, entity: Record<string, unknown>) => {
     if ('name' in entity) {
@@ -51,7 +51,7 @@ vi.stubGlobal('sessionStorage', {
 const { persister, sessionPersister } = await import('~/query/persister');
 const { bindAppDb, deleteAppDb, getAppDb } = await import('~/query/app-db');
 const { isBundleStale, resetBundleStale } = await import('~/query/schema-version-guard');
-const { migrateCachedEntity } = await import('shared/version-changes');
+const { migrateCachedEntity } = await import('shared/schema-evolution');
 
 const queuedMutation = (variables: Record<string, unknown>) => ({
   mutationKey: ['attachment', 'update'] as unknown[],

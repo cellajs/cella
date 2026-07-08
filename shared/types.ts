@@ -109,6 +109,14 @@ export type EntityIdColumnKeys = typeof appConfig.entityIdColumnKeys;
 /** Entity ID column key for a specific entity type */
 export type EntityIdColumnKey<T extends EntityType> = EntityIdColumnKeys[T];
 
+/**
+ * Maps a set of entity types `TS` to their id-column keys (via {@link EntityIdColumnKey}), each
+ * carrying value type `V`. The single generic behind every "context id columns" shape: pass the
+ * entity-type subset and the column value; a drizzle uuid builder, `string`, `string | null`, a
+ * zod field, etc.
+ */
+export type EntityIdColumns<TS extends EntityType, V> = { [T in TS as EntityIdColumnKey<T>]: V };
+
 /******************************************************************************
  * CONTEXT RELATION TYPES
  * Derived from the hierarchy's phantom parent/related maps. Used to generate
@@ -132,6 +140,15 @@ export type AncestorContextType<E extends string> = E extends keyof HierarchyPar
       : never
     : never
   : never;
+
+/**
+ * The root context entity type: the parentless context (no ancestors), e.g. `'organization'`.
+ * Derived from the hierarchy so forks that rename/restructure the root don't need code changes.
+ * Use `EntityIdColumnKey<RootContextType>` instead of hardcoding `'organizationId'`.
+ */
+export type RootContextType = {
+  [K in ContextEntityType]: [AncestorContextType<K>] extends [never] ? K : never;
+}[ContextEntityType];
 
 /**
  * Related (non-ancestor) context types declared for an entity via `relatedContexts`.

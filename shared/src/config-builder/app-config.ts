@@ -14,7 +14,15 @@ const configModes = { development, tunnel, staging, production, test } satisfies
 // This lets containers run with NODE_ENV=production (to avoid dev-only
 // behaviour like pino-pretty worker threads) while still loading the
 // development config for correct slug/naming.
-const mode = (process.env.APP_MODE || process.env.NODE_ENV || 'development') as Config['mode'];
+const rawMode = process.env.APP_MODE || process.env.NODE_ENV || 'development';
+// Fail loud on an unknown mode: an unchecked value would index `configModes` to `undefined` and
+// silently boot the default config instead of the intended environment.
+if (!Object.hasOwn(configModes, rawMode)) {
+  throw new Error(
+    `Invalid config mode "${rawMode}": must be one of ${Object.keys(configModes).join(', ')} (set APP_MODE or NODE_ENV).`,
+  );
+}
+const mode = rawMode as Config['mode'];
 
 /**
  * Merged app configuration which combines default config with environment-specific overrides.

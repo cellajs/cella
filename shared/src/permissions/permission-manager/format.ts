@@ -8,6 +8,7 @@ const formatGrant = (g: GrantSource): string => {
   if (g.type === 'membership') return `${g.contextType}:${g.contextId}/${g.role}`;
   if (g.type === 'public') return `public:${g.mode}`;
   if (g.type === 'host') return `host:${g.hostType}`;
+  if (g.type === 'systemAdmin') return 'systemAdmin';
   return `relation:${g.relation}`;
 };
 

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { currentSchemaVersion } from 'shared/version-changes';
+import { currentSchemaVersion } from 'shared/schema-evolution';
 import { create } from 'zustand';
 import { markBundleStale } from '~/query/schema-version-guard';
 import type { AppStreamNotification } from './types';

@@ -8,7 +8,7 @@
  */
 import type { DehydratedState } from '@tanstack/react-query';
 import { appConfig } from 'shared';
-import { type LensEntityType, migrateCachedEntity, migrateQueuedMutation } from 'shared/version-changes';
+import { type LensEntityType, migrateCachedEntity, migrateQueuedMutation } from 'shared/schema-evolution';
 
 type AnyRecord = Record<string, unknown>;
 

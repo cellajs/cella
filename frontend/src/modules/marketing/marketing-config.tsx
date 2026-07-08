@@ -306,7 +306,7 @@ export const faqsData = [
 
 export const counts = [
   { id: 'user', title: 'c:users', icon: UsersIcon },
-  { id: 'organization', title: 'c:organizations', icon: Building2Icon },
+  { id: 'organization', title: 'c:organization_other', icon: Building2Icon },
 ] as const satisfies readonly { id: EntityType; title: string; icon: LucideIcon }[];
 
 /*************************************************************************************************

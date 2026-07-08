@@ -16,6 +16,13 @@ export type DialogData = {
   description?: ReactNode;
   drawerOnMobile?: boolean;
   outsideScroll?: boolean;
+  /**
+   * Skip the exit animation and remove the dialog immediately on ESC / outside-press.
+   * Use for dialogs whose open state is externally owned (e.g. a URL search param): the delayed
+   * removal would otherwise leave the store closing while the URL still says open, flashing the
+   * dialog back. Removing immediately clears that external state in the same tick.
+   */
+  instantClose?: boolean;
   className?: string;
   headerClassName?: string;
   container?: DialogContainerOptions;
@@ -82,15 +89,16 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
   },
 
   remove: (id, opts) => {
-    set((state) => {
-      const dialogsToRemove = id ? state.dialogs.filter((d) => d.id === id) : state.dialogs;
+    const { dialogs } = get();
+    const dialogsToRemove = id ? dialogs.filter((d) => d.id === id) : dialogs;
+    if (!dialogsToRemove.length) return;
 
-      for (const dialog of dialogsToRemove) dialog.onClose?.(opts?.isCleanup);
+    // Update the store first, then run onClose. onClose callbacks may navigate (e.g. clearing
+    // the attachment dialog's search params); dispatching that from inside the set() updater
+    // interleaves a router update with this state update and flashes a stale frame of the dialog.
+    set({ dialogs: dialogs.filter((d) => !dialogsToRemove.some((r) => r.id === d.id)) });
 
-      const dialogs = state.dialogs.filter(({ id }) => !dialogsToRemove.some(({ id: removedId }) => removedId === id));
-
-      return { dialogs };
-    });
+    for (const dialog of dialogsToRemove) dialog.onClose?.(opts?.isCleanup);
   },
 
   get: (id) => get().dialogs.find((d) => d.id === id),

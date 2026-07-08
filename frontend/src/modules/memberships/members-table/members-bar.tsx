@@ -125,7 +125,7 @@ export const MembersTableBar = ({
       offset,
       q,
       sort: sort || 'createdAt',
-      order: order || 'asc',
+      order: order || 'desc',
       role,
       entityId: contextEntity.id,
       entityType: contextEntity.entityType,

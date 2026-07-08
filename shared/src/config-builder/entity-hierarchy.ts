@@ -420,6 +420,9 @@ export class EntityHierarchy<
         products.push(name as TProducts);
         relatableContexts.add(entry.parent as TContexts);
         if (entry.host) {
+          // `${entry.host}Id` (not appConfig.entityIdColumnKeys): this runs while the config — and
+          // thus entityIdColumnKeys itself — is being assembled, so the map isn't available yet. It
+          // mints the same `${type}Id` name the map will hold. See AGENTS.md "Entity id columns".
           hostRelations.push({ hostedType: name, hostType: entry.host, hostIdColumn: `${entry.host}Id` });
         }
       }

@@ -53,26 +53,13 @@ function RenderImage(
 
   const imgRef = useRef<HTMLImageElement>(null);
 
-  const calculateInitialZoom = () => {
-    const imageElement = imgRef.current;
-    if (imageElement) {
-      const windowWidth = window.innerWidth - 40;
-      const windowHeight = window.innerHeight - 100;
-
-      const renderedWidth = imageElement.offsetWidth;
-      const renderedHeight = imageElement.offsetHeight;
-
-      const scaleX = windowWidth / renderedWidth;
-      const scaleY = windowHeight / renderedHeight;
-
-      setZoom(Math.min(scaleX, scaleY)); // Set zoom based on rendered size
-    }
-  };
-
+  // The image fits its container via CSS (object-contain), so zoom = 1 is the natural "fit" state.
+  // We no longer measure the rendered size on load and rescale — that caused a visible resize jump
+  // one frame after the image appeared (and never fit cached images, whose load event never fires).
   const resetAll = () => {
     setDx(0);
     setDy(0);
-    calculateInitialZoom();
+    setZoom(1);
     setRotation(0);
   };
 
@@ -88,12 +75,6 @@ function RenderImage(
     setDx(dx);
     setDy(dy);
   };
-
-  useEffect(() => {
-    const imageElement = imgRef.current;
-    imageElement?.addEventListener('load', calculateInitialZoom); // Wait for image load if not
-    return () => imageElement?.removeEventListener('load', calculateInitialZoom);
-  }, [image]);
 
   useEffect(() => {
     if (!forwardedRef) return;
@@ -154,13 +135,12 @@ function RenderImage(
         pandy={dy}
         onPan={onPan}
         rotation={rotation}
-        key={dx}
       >
         {/* Image */}
         <img
           ref={imgRef}
-          style={{ transform: `rotate(${rotation * 90}deg)`, width: '100%' }}
-          className={imageClassName}
+          style={{ transform: `rotate(${rotation * 90}deg)` }}
+          className={cn(imageClassName, 'h-full w-full object-contain')}
           src={image}
           alt={alt}
         />

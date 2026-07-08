@@ -24,7 +24,7 @@ const roleReadValue = (
   role: string,
 ): NormalizedPermissionValue => {
   const subjectPolicies = getSubjectPolicies(entityType, policies);
-  const permissions = getPolicyPermissions(subjectPolicies, contextType, role as never);
+  const permissions = getPolicyPermissions(subjectPolicies, contextType, role);
   return permissions?.read ?? 0;
 };
 

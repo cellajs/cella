@@ -1,6 +1,4 @@
-import { appConfig } from '../config-builder/app-config';
-import { hierarchy } from '../../config/hierarchy-config';
-import type { ContextEntityType, EntityActionType, EntityRole, EntityType, ProductEntityType } from '../../types';
+import type { ContextEntityType, EntityActionType, EntityType, ProductEntityType } from '../../types';
 import type { PublicReadGrants, PublicReadMode } from './public-read';
 import { own } from './row-conditions';
 import { normalizeRestriction, type RowRestrictionInput, type RowRestrictions } from './row-restrictions';
@@ -16,6 +14,7 @@ import type {
   PermissionValue,
   SubjectAccessPolicies,
 } from './types';
+import { resolveTopology } from './permission-manager/resolve-topology';
 import type { PermissionTopology } from './permission-manager/topology';
 
 /** Resolves the `'own'` sugar literal to the built-in condition; passes everything else through. */
@@ -32,10 +31,11 @@ const createContextPolicyBuilder = (
   entries: AccessPolicyEntry[],
   entityActions: readonly EntityActionType[],
 ): ContextPolicyBuilder => {
-  const builder = {} as ContextPolicyBuilder;
+
+  const builder: Record<string, (permissions: Partial<Record<EntityActionType, PermissionValue>>) => void> = {};
 
   for (const role of roles) {
-    builder[role as EntityRole] = (permissions: Partial<Record<EntityActionType, PermissionValue>>) => {
+    builder[role] = (permissions: Partial<Record<EntityActionType, PermissionValue>>) => {
       // Normalize to a full record so the engine always reads an explicit value: any action the
       // policy omits defaults to 0 (denied), and the `'own'` sugar literal resolves to the
       // built-in row condition.
@@ -43,11 +43,11 @@ const createContextPolicyBuilder = (
       for (const action of entityActions) {
         fullPermissions[action] = normalizePermissionValue(permissions[action] ?? 0);
       }
-      entries.push({ contextType, role: role as EntityRole, permissions: fullPermissions });
+      entries.push({ contextType, role, permissions: fullPermissions });
     };
   }
 
-  return builder;
+  return builder as ContextPolicyBuilder;
 };
 
 /**
@@ -105,16 +105,7 @@ export const configurePermissions = (
   const hostDelegation: HostDelegation = {};
 
   // Topology defaults to the app's real config; tests pass a synthetic one (wide-fixture.ts).
-  // Context set and roles derive from the (possibly synthetic) hierarchy — its own contextTypes,
-  // not appConfig's, so a fork whose real config is narrower than the fixture still builds every
-  // context. Method refs are wrapped in arrows so `this` stays bound to the hierarchy object.
-  const entityActions = (topology?.entityActions ?? appConfig.entityActions) as readonly EntityActionType[];
-  const contextEntityTypes = (
-    topology ? topology.hierarchy.contextTypes : appConfig.contextEntityTypes
-  ) as readonly ContextEntityType[];
-  const getRoles = (type: string): readonly string[] => (topology?.hierarchy ?? hierarchy).getRoles(type);
-  const getHostType = (type: string) => (topology?.hierarchy ?? hierarchy).getHostType(type);
-  const getParent = (type: string) => (topology?.hierarchy ?? hierarchy).getParent(type);
+  const { entityActions, contextEntityTypes, getRoles, getHostType, getParent } = resolveTopology(topology);
 
   const permissionableTypes = entityTypes.filter(
     (type): type is ContextEntityType | ProductEntityType => type !== 'user',
@@ -217,7 +208,7 @@ export const getSubjectPolicies = (
 export const getPolicyPermissions = (
   policies: SubjectAccessPolicies,
   contextType: ContextEntityType,
-  role: EntityRole,
+  role: string,
 ): EntityActionPermissions | undefined => {
   const entry = policies.find((p) => p.contextType === contextType && p.role === role);
   return entry?.permissions;

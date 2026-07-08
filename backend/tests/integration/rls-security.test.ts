@@ -31,6 +31,8 @@ import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shar
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb, type Tx } from '#/db/db';
 import { membershipImmutableColumns } from '#/db/immutability-triggers';
+import { seenWindowMs, trackedEntityTypes } from '#/modules/seen/operations/mark-seen';
+import { findUnseenCountsByUser } from '#/modules/seen/seen-queries';
 import { entityTables } from '#/tables';
 
 /** Local read-only tenant context helper — mirrors tenantRead without importing it. */
@@ -66,6 +68,8 @@ let runtimeDb: NodePgDatabase;
 /** Whether runtime_role exists in the test database */
 let rolesAvailable = false;
 let requiredTablesAvailable = false;
+/** Whether the seen_by table exists (partman-partitioned; may be absent in a minimal test DB). */
+let seenByAvailable = false;
 
 const attachmentHierarchyA = buildTestEntityHierarchyPlan({
   entityType: 'attachment',
@@ -256,7 +260,9 @@ async function ensureRlsRoles() {
   }
 
   // Non-RLS tables runtime_role must access (write isolation enforced by guards at the app layer).
-  const nonRlsTables = ['organizations', 'memberships', 'inactive_memberships', 'users', 'tenants'];
+  // seen_by is non-RLS (production classifies it in fullCrudTables) — runtime_role reads it in the
+  // NOT EXISTS of the unseen-count query, so it needs a grant here too.
+  const nonRlsTables = ['organizations', 'memberships', 'inactive_memberships', 'users', 'tenants', 'seen_by'];
   for (const table of nonRlsTables) {
     if (!(await tableExists(table))) continue;
     const priv = table === 'tenants' ? 'SELECT' : 'SELECT, INSERT, UPDATE, DELETE';
@@ -559,6 +565,9 @@ const rlsSuiteReady = await (async () => {
 
     // 5. Set up test data as superuser
     await setupTestData();
+
+    // 6. seen_by is partman-partitioned — record whether it exists for the unseen-count tests.
+    seenByAvailable = await tableExists('seen_by');
   });
 
   afterAll(async () => {
@@ -698,6 +707,59 @@ const rlsSuiteReady = await (async () => {
         tx.execute(sql`SELECT id FROM attachments WHERE id IN (${TEST_ATTACHMENT_A}, ${TEST_ATTACHMENT_C})`),
       );
       expect(rows).toHaveLength(0);
+    });
+  });
+
+  // ---- Unseen counts: entity-table read must run with tenant context (getUnseenCounts) ----
+
+  describe('Unseen counts (seen-tracking RLS regression)', () => {
+    // getUnseenCounts delegates to findUnseenCountsByUser, which counts entity-table rows the user
+    // has not seen. Entity tables have FORCE RLS, so this MUST run inside a tenant context
+    // (tenantRead sets app.tenant_id); a context-less baseDb read silently returns zero and the
+    // unseen badge breaks. These lock that behaviour in. Org A holds exactly one in-window
+    // attachment (TEST_ATTACHMENT_A) and User A has no seen_by rows initially.
+    type UnseenRow = { contextId: string; entityType: string; unseenCount: number };
+    const cutoff = () => new Date(Date.now() - seenWindowMs).toISOString();
+    const countUnseen = (tx: NodePgTx) =>
+      findUnseenCountsByUser({ var: { db: tx } } as Parameters<typeof findUnseenCountsByUser>[0], {
+        userId: TEST_USER_A,
+        contextIds: [TEST_ORG_A],
+        entityTypes: trackedEntityTypes,
+        cutoff: cutoff(),
+      });
+
+    it('counts in-window unseen entities under tenant context', async () => {
+      if (!rolesAvailable || !requiredTablesAvailable || !seenByAvailable) return;
+      const rows = await queryAsRuntimeRole<UnseenRow>(TEST_TENANT_A, TEST_USER_A, countUnseen);
+      const orgA = rows.find((r) => r.contextId === TEST_ORG_A);
+      expect(orgA).toBeDefined();
+      expect(orgA?.entityType).toBe('attachment');
+      expect(orgA?.unseenCount).toBe(1);
+    });
+
+    it('returns zero without tenant context (RLS regression canary)', async () => {
+      if (!rolesAvailable || !requiredTablesAvailable || !seenByAvailable) return;
+      // Entity rows are invisible without app.tenant_id → no unseen counts. If getUnseenCounts
+      // ever reverts to a context-less baseDb read, this fails.
+      const rows = await queryWithoutContext<UnseenRow>(countUnseen);
+      expect(rows).toHaveLength(0);
+    });
+
+    it('drops the count once the entity is marked seen', async () => {
+      if (!rolesAvailable || !requiredTablesAvailable || !seenByAvailable) return;
+      const seenId = '00000000-0000-4000-a000-0000000000a1';
+      await adminDb.execute(sql`
+        INSERT INTO seen_by (id, user_id, entity_id, entity_type, context_id, organization_id, tenant_id, created_at)
+        VALUES (${seenId}, ${TEST_USER_A}, ${TEST_ATTACHMENT_A}, 'attachment', ${TEST_ORG_A}, ${TEST_ORG_A}, ${TEST_TENANT_A}, NOW())
+        ON CONFLICT (user_id, entity_id) DO NOTHING
+      `);
+      try {
+        const rows = await queryAsRuntimeRole<UnseenRow>(TEST_TENANT_A, TEST_USER_A, countUnseen);
+        // Org A's only in-window attachment is now seen → no unseen row for that context.
+        expect(rows.find((r) => r.contextId === TEST_ORG_A)).toBeUndefined();
+      } finally {
+        await adminDb.execute(sql`DELETE FROM seen_by WHERE id = ${seenId}`);
+      }
     });
   });
 

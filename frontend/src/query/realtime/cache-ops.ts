@@ -48,7 +48,7 @@ function hasParentContextChanged(cached: ItemData, incoming: ItemData): boolean 
   const c = cached as unknown as Record<string, unknown>;
   const i = incoming as unknown as Record<string, unknown>;
   for (const entityType of appConfig.contextEntityTypes) {
-    const key = `${entityType}Id`;
+    const key = appConfig.entityIdColumnKeys[entityType];
     if (typeof c[key] === 'string' && typeof i[key] === 'string' && c[key] !== i[key]) return true;
   }
   return false;

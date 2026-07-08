@@ -5,7 +5,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts } from '#/modules/entities/helpers/get-entity-counts';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { updateOrganization } from '#/modules/organization/organization-queries';
-import { organizationWire } from '#/modules/organization/organization-schema';
+import { organizationContract } from '#/modules/organization/organization-schema';
 import { withAuditUser } from '#/modules/user/helpers/audit-user';
 import { getValidContextEntity } from '#/permissions';
 import { getIsoDate } from '#/utils/iso-date';
@@ -19,7 +19,7 @@ export async function updateOrganizationOp(
   rawInput: Record<string, unknown>,
 ) {
   // Lens seam: canonicalize old-shape field names before any body access
-  const input = organizationWire.normalizeBody(rawInput);
+  const input = organizationContract.normalizeBody(rawInput);
   const user = ctx.var.user;
 
   const { entity: organization, membership } = await getValidContextEntity(ctx, id, 'organization', 'update');

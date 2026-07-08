@@ -2,11 +2,11 @@ import { eq } from 'drizzle-orm';
 import { isProductEntity } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { getYjsMaterializer } from '#/core/yjs-materializers';
 import { baseDb } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
 import { sanitizeBlockMediaUrls } from '#/modules/yjs/helpers/sanitize-block-media';
+import { getYjsMaterializer } from '#/modules/yjs/yjs-materializers';
 import { log } from '#/utils/logger';
 
 export interface MaterializeDescriptionInput {

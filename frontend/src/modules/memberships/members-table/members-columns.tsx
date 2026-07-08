@@ -72,6 +72,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         key: 'createdAt',
         name: t('c:created_at'),
         sortable: true,
+        sortDescendingFirst: true,
         hidden: isSheet,
         minBreakpoint: 'md',
         minWidth: 120,

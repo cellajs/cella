@@ -12,10 +12,6 @@ import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
  * keeps working.
  *
  * No-op when `enabled` is false (non-collaborative editors don't use yUndoPlugin).
- *
- * TODO [#15]: revisit whether this workaround is still needed with current
- * @blocknote/react + y-prosemirror versions, or if the UndoManager can be
- * owned outside the plugin to avoid the introspection.
  */
 export function useYjsUndoManagerFix(editor: CustomBlockNoteEditor, enabled: boolean) {
   useEffect(() => {

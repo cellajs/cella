@@ -116,8 +116,8 @@ export async function resolveEntityScope(
  * @throws MissingScopeError if the resolved entity is missing a required ancestor scope.
  */
 export async function canEditEntity(ctx: DocContext): Promise<boolean> {
-  if (!isContextEntity(ctx.entityType) && !isProductEntity(ctx.entityType)) return false;
-  const entityType = ctx.entityType as ContextEntityType | ProductEntityType;
+  const { entityType } = ctx;
+  if (!isContextEntity(entityType) && !isProductEntity(entityType)) return false;
 
   return withClient(ctx.tenantId, ctx.userId, async (client) => {
     const [entity, memberships] = await Promise.all([

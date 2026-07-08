@@ -123,7 +123,7 @@ const limitRefine = (value: number) => value > 0 && value <= limitMax;
 export const paginationQuerySchema = z.object({
   q: z.string().max(maxLength.field).optional(), // Optional search query
   sort: z.enum(['createdAt']).default('createdAt').optional(), // Sorting field
-  order: z.enum(['asc', 'desc']).default('asc').optional(), // Sorting order
+  order: z.enum(['asc', 'desc']).default('desc').optional(), // Sorting order
   // Pagination offset
   offset: z
     .string()

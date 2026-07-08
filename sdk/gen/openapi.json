@@ -4459,7 +4459,7 @@
         "operationId": "getUnseenCounts",
         "tags": ["seen", "cella"],
         "summary": "Get unseen counts",
-        "description": "Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the current user. Computed as total (from context_counters) minus seen (from seen_by).",
+        "description": "Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.",
         "x-guard": ["authGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -5228,7 +5228,7 @@
             "schema": {
               "type": "string",
               "enum": ["asc", "desc"],
-              "default": "asc"
+              "default": "desc"
             },
             "required": false,
             "name": "order",
@@ -6200,7 +6200,7 @@
             "schema": {
               "type": "string",
               "enum": ["asc", "desc"],
-              "default": "asc"
+              "default": "desc"
             },
             "required": false,
             "name": "order",
@@ -6481,7 +6481,7 @@
             "schema": {
               "type": "string",
               "enum": ["asc", "desc"],
-              "default": "asc"
+              "default": "desc"
             },
             "required": false,
             "name": "order",
@@ -8026,7 +8026,7 @@
             "schema": {
               "type": "string",
               "enum": ["asc", "desc"],
-              "default": "asc"
+              "default": "desc"
             },
             "required": false,
             "name": "order",
@@ -9480,7 +9480,7 @@
             "schema": {
               "type": "string",
               "enum": ["asc", "desc"],
-              "default": "asc"
+              "default": "desc"
             },
             "required": false,
             "name": "order",
@@ -9745,7 +9745,7 @@
             "schema": {
               "type": "string",
               "enum": ["asc", "desc"],
-              "default": "asc"
+              "default": "desc"
             },
             "required": false,
             "name": "order",

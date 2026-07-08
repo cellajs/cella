@@ -2,14 +2,14 @@ import { createRoute } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
 import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
-import type { ServiceGate, XMiddlewareHandler } from '#/core/extensions';
+import type { ServiceGate, XMiddlewareHandler } from '#/core/openapi-extensions';
 import {
   collectExtensionMiddleware,
   createSpecificationExtensions,
   type ExtensionPropId,
   getExtensionPropIds,
   type XMiddlewareOptions,
-} from '#/core/extensions';
+} from '#/core/openapi-extensions';
 import { publicGuard } from '#/middlewares/guard/public-guard';
 
 /**

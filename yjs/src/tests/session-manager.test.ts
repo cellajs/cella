@@ -11,17 +11,6 @@ vi.mock('../sync/materialize', () => ({
   stateToBlocksJson: vi.fn(() => '[]'),
 }));
 
-vi.mock('../lib/pino', () => ({
-  log: {
-    trace: vi.fn(),
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    fatal: vi.fn(),
-  },
-}));
-
 // Import real session-manager (not mocked)
 const { getCollab, joinCollab, leaveCollab, broadcastToCollab } = await import('../sync/session-manager');
 const { deleteState, loadState, saveState } = await import('../data/storage');

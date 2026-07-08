@@ -128,7 +128,7 @@ export const fetchMembersForExport = async (params: GetMembersParams & { limit: 
     query: {
       q: rest.q,
       sort: rest.sort ?? 'createdAt',
-      order: rest.order ?? 'asc',
+      order: rest.order ?? 'desc',
       role: rest.role,
       limit: String(limit),
       offset: String(offset),

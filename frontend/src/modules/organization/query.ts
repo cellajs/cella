@@ -188,7 +188,8 @@ export const fetchOrganizationsForExport = async (params: {
   sort?: NonNullable<GetOrganizationsData['query']>['sort'];
   order?: NonNullable<GetOrganizationsData['query']>['order'];
 }) => {
-  const { limit, offset = 0, q = '', sort = 'createdAt', order = 'asc' } = params;
+  const { limit, offset = 0, q = '', sort = 'createdAt' } = params;
+  const order = params.order ?? (sort === 'displayOrder' ? 'asc' : 'desc');
   const response = await getOrganizations({
     query: { limit: String(limit), q, sort, order, offset: String(offset) },
   });

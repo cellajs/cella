@@ -5,7 +5,7 @@ import pc from 'picocolors';
 import { appConfig } from 'shared';
 import { renderAscii } from 'shared/ascii';
 import { setupGracefulShutdown } from 'shared/worker-lifecycle';
-import { initDocs } from '#/core/init-docs';
+import { registerOpenApiDocs } from '#/core/openapi-registration';
 import { migrateConfig, migrationDb } from '#/db/db';
 import '#/lib/i18n';
 import process from 'node:process';
@@ -25,8 +25,8 @@ let stopDbMaintenance: (() => void) | undefined;
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).startTunnel : () => null;
 
-// Init OpenAPI docs
-await initDocs(app);
+// Register OpenAPI docs
+await registerOpenApiDocs(app);
 
 const main = async () => {
   const port = Number(env.PORT ?? '4000');

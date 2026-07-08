@@ -1,11 +1,10 @@
-import { appConfig } from '../config-builder/app-config';
-import { hierarchy } from '../../config/hierarchy-config';
 import type { ContextEntityType, EntityActionType, EntityRole, EntityType } from '../../types';
 import { recordFromKeys } from '../config-builder/utils';
 import { getPolicyPermissions, getSubjectPolicies } from './access-policies';
 import { allActionsDenied } from './action-helpers';
 import { isRowCondition } from './row-conditions';
 import type { AccessPolicies, ActionPermissionState } from './types';
+import { resolveTopology } from './permission-manager/resolve-topology';
 import type { PermissionTopology } from './permission-manager/topology';
 
 /**
@@ -81,8 +80,7 @@ export const computeCan = (
   if (!membership) return {};
 
   // Topology defaults to the app's real config; tests pass a synthetic one (wide-fixture.ts).
-  const h = topology?.hierarchy ?? hierarchy;
-  const entityActions = topology?.entityActions ?? appConfig.entityActions;
+  const { hierarchy: h, entityActions } = resolveTopology(topology);
   const map: EntityCanMap = {};
 
   // Permissions for the context entity itself

@@ -1,4 +1,4 @@
-import { type EntityActionType, hierarchy, hostDelegation, type ProductEntityType } from 'shared';
+import { appConfig, type EntityActionType, hierarchy, hostDelegation, type ProductEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -20,7 +20,7 @@ const resolveHostRow = async (
   const hostType = hierarchy.getHostType(entityType);
   if (!hostType) return undefined;
 
-  const hostId = entity[`${hostType}Id`];
+  const hostId = entity[appConfig.entityIdColumnKeys[hostType]];
   if (typeof hostId !== 'string') return undefined;
 
   const hostRow =

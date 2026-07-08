@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
 import { roles } from 'shared';
-import { createContextEntityWire } from '#/core/entity-wire';
 import { schemaTags } from '#/core/openapi-helpers';
+import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { authStrategiesEnum } from '#/modules/auth/sessions-db';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
@@ -47,7 +47,7 @@ export const organizationWithMembershipSchema = organizationSchema.extend({
 });
 
 /** Wire registration: lens-widened schemas + entity-bound runtime seam for organization */
-export const organizationWire = createContextEntityWire('organization', {
+export const organizationContract = evolutionContract.context('organization', {
   createItem: z.object({
     id: validTempIdSchema,
     name: validNameSchema,
@@ -88,13 +88,13 @@ export const organizationWire = createContextEntityWire('organization', {
 });
 
 /** Array schema for batch creates - rejects duplicate slugs */
-export const organizationCreateBodySchema = organizationWire.createItemSchema
+export const organizationCreateBodySchema = organizationContract.createItemSchema
   .array()
   .min(1)
   .max(10)
   .refine(noDuplicateSlugsRefine, t('error:duplicate_slugs'));
 
-export const organizationUpdateBodySchema = organizationWire.updateBodySchema;
+export const organizationUpdateBodySchema = organizationContract.updateBodySchema;
 
 export const organizationQuerySchema = z.object({
   slug: booleanTransformSchema.optional(),
@@ -103,6 +103,7 @@ export const organizationQuerySchema = z.object({
 
 export const organizationListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'createdAt', 'displayOrder']).default('displayOrder').optional(),
+  order: z.enum(['asc', 'desc']).default('asc').optional(),
   relatableUserId: z.string().max(maxLength.id).optional(),
   role: z.enum(roles.all).optional(),
   excludeArchived: excludeArchivedQuerySchema,

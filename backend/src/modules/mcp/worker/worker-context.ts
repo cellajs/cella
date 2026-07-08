@@ -16,6 +16,7 @@ export interface AiJobData {
  * (from #/utils/logger) so worker logs carry tenant/user/org ids like request logs do.
  *
  * TODO [#08]: as unknown as AuthContext
+// this was used in MCP before we removed all tools again? Perhaps better to just remove and redesign if we need it?
  * Phase 5 will use this for Yjs peer mode and retry tasks.
  */
 export function buildWorkerContext(jobData: AiJobData): AuthContext {

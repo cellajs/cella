@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { AlertCircleIcon, CloudOffIcon, DownloadIcon, LoaderIcon, TrashIcon, UploadCloudIcon } from 'lucide-react';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import type { Attachment } from 'sdk';
@@ -106,7 +106,12 @@ interface DownloadCellProps {
 
 export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
   const { t } = useTranslation();
-  const { download, isInProgress } = useDownloader();
+  const { download, error, isInProgress } = useDownloader();
+
+  useEffect(() => {
+    if (!error) return;
+    toaster(t('error:download_failed'), 'error');
+  }, [error, t]);
 
   // Check if blob is uploaded to cloud
   const { isUploaded, hasLocalBlob } = useBlobUploadStatus(row.id);

@@ -252,7 +252,9 @@ function getEntityDeltas(
   return [];
 }
 
-/** Warn for missing ancestor ids, except ancestors declared nullable (variable-depth rows). */
+/**
+ * Warn for missing ancestor ids, except ancestors declared nullable (variable-depth rows).
+ */
 function warnMissingAncestors(h: AncestorSource, entityType: string, row: CdcRowData): void {
   const nullable = h.getNullableAncestors(entityType);
   for (const ancestor of h.getOrderedAncestors(entityType)) {

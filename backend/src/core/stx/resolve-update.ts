@@ -1,5 +1,5 @@
 import type { ProductEntityType } from 'shared';
-import { normalizeOps } from 'shared/version-changes';
+import { normalizeOps } from 'shared/schema-evolution';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 import type { ArrayDelta } from './array-delta';
 import { applyArrayDelta, isArrayDelta } from './array-delta';

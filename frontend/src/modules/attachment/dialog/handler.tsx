@@ -43,6 +43,9 @@ function AttachmentDialogHandlerBase() {
         onClose: (isCleanup?: boolean) => {
           if (!isCleanup) close();
         },
+        // Open state lives in the URL — remove immediately on ESC/outside-press so onClose clears
+        // the search param synchronously instead of 200ms later (which flashed the dialog back).
+        instantClose: true,
         drawerOnMobile: false,
         className: 'min-w-full h-dvh max-h-dvh border-0 p-0 rounded-none flex flex-col mt-0',
         headerClassName: 'hidden',
