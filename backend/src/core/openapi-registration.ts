@@ -52,6 +52,16 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
       "Authentication cookie. Copy cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
 
+  // Bearer JWT for the MCP resource server (OAuth access token from the
+  // Authorization Server). Used by the MCP endpoint instead of cookieAuth.
+  registry.registerComponent('securitySchemes', 'mcpBearerAuth', {
+    type: 'http',
+    scheme: 'bearer',
+    bearerFormat: 'JWT',
+    description:
+      'OAuth 2.1 access token (JWT) issued by the Cella Authorization Server, audience-bound to the MCP resource.',
+  });
+
   // Register base schemas (not auto-registered as they're only used for extending other schemas)
   registry.register('UserMinimalBase', userMinimalBaseSchema);
   registry.register('UserBase', userBaseSchema);

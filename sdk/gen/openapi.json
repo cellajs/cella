@@ -43,6 +43,10 @@
           "tenantGuard": {
             "name": "tenant",
             "description": "Requires authGuard, validates tenant access, and sets baseDb + tenantId context"
+          },
+          "mcpAuthGuard": {
+            "name": "mcpAuth",
+            "description": "Requires a valid OAuth Bearer JWT (audience-bound to the MCP resource) and sets auth context"
           }
         }
       },
@@ -175,6 +179,12 @@
       "kind": "module"
     },
     {
+      "name": "auth-server",
+      "description": "Experimental OAuth 2.1 / OIDC Authorization Server (panva/node-oidc-provider) mounted\n    in-process at `${backendUrl}/oauth`. Issues audience-bound JWT access tokens for the MCP\n    resource so external MCP clients can authenticate without browser sessions. Off by default\n    (AUTH_SERVER_ENABLED); the same key/issuer infrastructure is intended to later back LTI 1.3.",
+      "parent": "cella",
+      "kind": "module"
+    },
+    {
       "name": "entities",
       "description": "Endpoints that operate across multiple entity types, such as users and organizations.\n    Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child\n    relations), or actor-like. These routes provide shared logic across modules, including slug validation\n    and entity visibility.",
       "parent": "cella",
@@ -254,6 +264,12 @@
         "in": "cookie",
         "name": "cella-development-session-v1",
         "description": "Authentication cookie. Copy cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first."
+      },
+      "mcpBearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "OAuth 2.1 access token (JWT) issued by the Cella Authorization Server, audience-bound to the MCP resource."
       }
     },
     "responses": {
@@ -7901,15 +7917,15 @@
       "post": {
         "security": [
           {
-            "cookieAuth": []
+            "mcpBearerAuth": []
           }
         ],
         "x-service": "mcp",
         "operationId": "handleMcp",
         "tags": ["mcp", "cella"],
         "summary": "MCP endpoint",
-        "description": "Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "description": "Model Context Protocol (JSON-RPC 2.0) endpoint. Authenticates with an OAuth Bearer JWT (audience-bound to the MCP resource) and exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).",
+        "x-guard": ["mcpAuthGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [

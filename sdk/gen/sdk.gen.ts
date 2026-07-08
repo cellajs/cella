@@ -2749,7 +2749,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
 /**
  * MCP endpoint
  *
- * Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).
+ * Model Context Protocol (JSON-RPC 2.0) endpoint. Authenticates with an OAuth Bearer JWT (audience-bound to the MCP resource) and exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).
  *
  * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/POST/{tenantId}/{organizationId}/mcp) ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/mcp) ·· _mcp_cella_
  *
@@ -2771,13 +2771,7 @@ export const handleMcp = <ThrowOnError extends boolean = true>(
         })
         .parseAsync(data),
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/{tenantId}/{organizationId}/mcp',
     ...options,
     headers: {

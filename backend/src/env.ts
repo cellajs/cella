@@ -96,6 +96,22 @@ export const env = createEnv({
 
     SCW_AI_API_KEY: z.string().optional(),
 
+    // --- Experimental OAuth/OIDC Authorization Server (node-oidc-provider) ---
+    // Off by default. When true, MODE=api mounts an in-process OIDC provider at
+    // `${backendUrl}/oauth` that issues audience-bound JWT access tokens for the
+    // MCP resource. See .todos/MCP_PLAN.md (Experiment 0).
+    AUTH_SERVER_ENABLED: z
+      .string()
+      .default('false')
+      .transform((v) => v === 'true'),
+    // RS256 private signing key as a JSON JWK string. Optional: when omitted the
+    // provider generates an ephemeral dev key at boot (tokens die on restart).
+    // Generate a stable one with: pnpm --filter backend exec tsx scripts/gen-oidc-jwk.ts
+    OIDC_PRIVATE_JWK: z.string().optional(),
+    // Secret for the pre-registered dev confidential client (client_credentials
+    // smoke test). Dev-only; ignored unless AUTH_SERVER_ENABLED.
+    OIDC_DEV_CLIENT_SECRET: z.string().default('dev-mcp-client-secret'),
+
     MODE: z.enum(['api', 'mcp-worker', 'cdc', 'migrate']).default('api'),
 
     // When true, the API server applies pending migrations + ensures DB roles

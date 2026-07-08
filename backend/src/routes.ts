@@ -1,13 +1,16 @@
 import { appConfig } from 'shared';
+import { env } from '#/env';
 import { attachmentHandlers } from '#/modules/attachment/attachment-handlers';
 import { authGeneralHandlers } from '#/modules/auth/general/general-handlers';
 import { authMagicLinkHandlers } from '#/modules/auth/magic/magic-handlers';
 import { authOAuthHandlers } from '#/modules/auth/oauth/oauth-handlers';
 import { authPasskeysHandlers } from '#/modules/auth/passkeys/passkeys-handlers';
 import { authTotpHandlers } from '#/modules/auth/totps/totps-handlers';
+import { authServerHandlers } from '#/modules/auth-server/auth-server-handlers';
 import { domainHandlers } from '#/modules/domains/domains-handlers';
 import { entityHandlers } from '#/modules/entities/entities-handlers';
 import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
+import { mcpWellKnownHandlers } from '#/modules/mcp/mcp-well-known';
 import { meHandlers } from '#/modules/me/me-handlers';
 import { membershipHandlers } from '#/modules/memberships/memberships-handlers';
 import { metricHandlers } from '#/modules/metrics/metrics-handlers';
@@ -41,6 +44,14 @@ baseApp.route('/metrics', metricHandlers);
 baseApp.route('/users', userHandlers);
 
 baseApp.route('/yjs', yjsHandlers);
+
+// Experimental in-process OAuth/OIDC Authorization Server (off by default).
+// Mounted before param routes so `/oauth/...` and `/.well-known/...` are not
+// shadowed by `/:tenantId/...`. See .todos/MCP_PLAN.md (Experiment 0).
+if (env.AUTH_SERVER_ENABLED) {
+  baseApp.route('/oauth', authServerHandlers);
+  baseApp.route('/', mcpWellKnownHandlers);
+}
 
 // Modules with absolute route paths: cross-tenant list + tenant-scoped routes in one app.
 // Registered after all static mounts so param segments (/:tenantId/...) cannot shadow static paths.

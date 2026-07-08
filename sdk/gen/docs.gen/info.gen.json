@@ -32,6 +32,10 @@
         "tenantGuard": {
           "name": "tenant",
           "description": "Requires authGuard, validates tenant access, and sets baseDb + tenantId context"
+        },
+        "mcpAuthGuard": {
+          "name": "mcpAuth",
+          "description": "Requires a valid OAuth Bearer JWT (audience-bound to the MCP resource) and sets auth context"
         }
       }
     },

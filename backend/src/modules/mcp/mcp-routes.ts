@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { orgGuard, tenantGuard } from '#/middlewares/guard';
+import { mcpAuthGuard } from '#/modules/mcp/mcp-auth-guard';
 import { errorResponseRefs, tenantOrgParamSchema } from '#/schemas';
 
 const mcpRoutes = {
@@ -9,11 +10,14 @@ const mcpRoutes = {
     operationId: 'handleMcp',
     method: 'post',
     path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    // Bearer-only: MCP clients authenticate with an OAuth JWT (no session cookie).
+    xGuard: [mcpAuthGuard, tenantGuard, orgGuard],
+    // Override the default cookieAuth scheme — MCP advertises only HTTP bearer.
+    security: [{ mcpBearerAuth: [] }],
     tags: ['mcp', 'cella'],
     summary: 'MCP endpoint',
     description:
-      'Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).',
+      'Model Context Protocol (JSON-RPC 2.0) endpoint. Authenticates with an OAuth Bearer JWT (audience-bound to the MCP resource) and exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).',
     request: {
       params: tenantOrgParamSchema,
       body: { required: true, content: { 'application/json': { schema: z.any() } } },
