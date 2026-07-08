@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.3.0](https://github.com/cellajs/cella/compare/0.2.2...0.3.0) (2026-07-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* Worktree mdx pages instead of db model for pages ([#855](https://github.com/cellajs/cella/issues/855))
+
+### 🎉 New features
+
+* autolink repo file paths in docs inline code to GitHub ([#858](https://github.com/cellajs/cella/issues/858)) ([3a3b382](https://github.com/cellajs/cella/commit/3a3b3822309c0e1eace2aaed6ba863be322b59b2))
+* deepest-non-null-ancestor context attribution + template-adapted tests ([7f6d940](https://github.com/cellajs/cella/commit/7f6d9402e2ffef0139871c47466c04f1046b8fde))
+* fork alignment ([ded27fb](https://github.com/cellajs/cella/commit/ded27fb10e183ab4696e5d9723b47b589d0f97f6))
+* many improvements ([#862](https://github.com/cellajs/cella/issues/862)) ([6b1ca8f](https://github.com/cellajs/cella/commit/6b1ca8f33d7f6ab41e38ac022ec3bef7cc6ccd34))
+* mdx consolidation ([#857](https://github.com/cellajs/cella/issues/857)) ([5e69279](https://github.com/cellajs/cella/commit/5e69279581d9e728e45ba57cd64eaf7df45fff2f))
+* **permissions:** topology seam + wide-fixture kit for fork-independent engine tests ([#861](https://github.com/cellajs/cella/issues/861)) ([d4c3de6](https://github.com/cellajs/cella/commit/d4c3de6e857479ec67915f92b61167cada1e36aa))
+* Worktree mdx pages instead of db model for pages ([#855](https://github.com/cellajs/cella/issues/855)) ([d7af703](https://github.com/cellajs/cella/commit/d7af70330ec915ee3725ed9530e5e0e9476e995a))
+
+
+### 🐞 Bug fixes
+
+* docs imporvements ([049df07](https://github.com/cellajs/cella/commit/049df0719a5e7e07649f7a698494ffc8a9c1bf7d))
+* omitted generated changes from page model removal ([91a4c10](https://github.com/cellajs/cella/commit/91a4c10fe392e261d2a398629c6b4ead9f0f590a))
+
+
+### 🔧 Small improvements
+
+* **cdc:** cleanup + typed wire contract + app-stream kind discriminant ([#859](https://github.com/cellajs/cella/issues/859)) ([4b2bf27](https://github.com/cellajs/cella/commit/4b2bf2716c421bd488d4780d3d3fe8c3b62f4ff9))
+* consolidate service Dockerfiles into one multi-target file ([#851](https://github.com/cellajs/cella/issues/851)) ([0e055b4](https://github.com/cellajs/cella/commit/0e055b4b3bbb808139631f18b99b635e9cab4244))
+
+
+### 📖 Documentation
+
+* document the lens schema-evolution system ([c44cde2](https://github.com/cellajs/cella/commit/c44cde28e62b37d3115232ff9b29308b617f87d9))
+
 ## [0.2.2](https://github.com/cellajs/cella/compare/0.2.1...0.2.2) (2026-07-05)
 
 
