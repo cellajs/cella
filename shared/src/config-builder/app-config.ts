@@ -22,7 +22,7 @@ const mode = (process.env.APP_MODE || process.env.NODE_ENV || 'development') as 
  */
 const merged = mergeDeep(structuredClone(_default), configModes[mode]);
 
-// Allow environment variables to override URLs — enables deploying the dev
+// Allow environment variables to override URLs: enables deploying the dev
 // config to Scaleway containers while keeping localhost defaults for local dev.
 if (process.env.FRONTEND_URL) merged.frontendUrl = process.env.FRONTEND_URL;
 if (process.env.BACKEND_URL) merged.backendUrl = process.env.BACKEND_URL;
@@ -45,8 +45,7 @@ merged.services = {
 // Validate slug is a true, URL-safe slug. It feeds resource names (S3 buckets,
 // Scaleway Container Registry namespace, etc). Scaleway registry namespaces
 // require >= 4 chars with no hyphens, so we enforce a 4-char minimum on the
-// hyphen-stripped form. This replaces the old silent `app` padding — forks
-// must pick a valid slug rather than have one quietly mangled.
+// hyphen-stripped form. Forks must pick a valid slug rather than have one quietly mangled.
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 if (!slugPattern.test(merged.slug)) {
   throw new Error(`Invalid config slug "${merged.slug}": must be lowercase alphanumeric, hyphen-separated (e.g. "my-app").`);

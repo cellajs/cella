@@ -1,13 +1,3 @@
-/**
- * Entity hierarchy builder with compile-time validation and parent inheritance.
- *
- * Public readability is a permission concern, declared per subject via `publicRead(mode)`
- * in the permissions config (`shared/src/permissions/public-read.ts`) — not here.
- *
- * Fork contract: Every tenant-scoped table must have tenant_id. Tables with an organization
- * parent must also have organization_id with a composite FK to organizations(tenant_id, id).
- */
-
 // Role Registry
 function buildRoleMap<T extends readonly string[]>(roleNames: T): { readonly [K in T[number]]: K } {
   return Object.fromEntries(roleNames.map((r) => [r, r])) as { readonly [K in T[number]]: K };
@@ -40,7 +30,7 @@ interface ProductEntry {
   host?: string;
   /** Non-ancestor context entities referenced as optional denormalized columns. */
   relatedContexts?: readonly string[];
-  /** Ancestors whose id columns are nullable — rows may attach above the declared parent. */
+  /** Ancestors whose id columns are nullable: rows may attach above the declared parent. */
   nullableAncestors?: readonly string[];
 }
 type EntityEntry = UserEntry | ContextEntry | ProductEntry;
@@ -76,7 +66,11 @@ export type EntityView = UserEntityView | ContextEntityView | ProductEntityView;
 
 // Hierarchy Builder
 
-/** Builder for entity hierarchy. Chain calls to define entities, then call build(). */
+/**
+ * Builder for entity hierarchy. Chain calls to define entities, then call build().
+ * See README.md in this directory for the fork contract and the home/related/host/
+ * nullable-ancestor model.
+ */
 class EntityHierarchyBuilder<
   TRoles extends { all: readonly string[] },
   TContexts extends string = never,
@@ -94,7 +88,7 @@ class EntityHierarchyBuilder<
     this.entities = new Map(entities);
   }
 
-  /** Copy the current entities and add one more — basis for immutable, cast-free chaining. */
+  /** Copy the current entities and add one more, the basis for immutable, cast-free chaining. */
   private withEntity(name: string, entry: EntityEntry): Map<string, EntityEntry> {
     const entities = new Map(this.entities);
     entities.set(name, entry);
@@ -147,27 +141,10 @@ class EntityHierarchyBuilder<
   }
 
   /**
-   * Add a product entity.
-   *
-   * Every product has exactly one **home context**: its `parent`. The home is where each row
-   * physically lives — it becomes a non-null `<context>Id` column (see `contextRelationColumns`)
-   * and is the most-specific link in the entity's ancestor chain used for permissions and
-   * public-read inheritance. A product can never have more than one home, and `parent` is
-   * required: without a home there is no context to derive access from.
-   *
-   * Optional `relatedContexts` declare non-ancestor context references (nullable id columns); they
-   * are cross-links, not homes.
-   *
-   * Optional `host` declares product-to-product ownership (e.g. attachment → task): the hosted
-   * product gets a generated nullable `<host>Id` column (see `hostRelationColumns`), host deletes
-   * cascade to hosted rows (API + CDC), and the CDC counter machinery maintains per-host
-   * `e:<hostedType>` counts. The host must be a previously declared product sharing the same home
-   * context, and cannot itself be hosted.
-   *
-   * Optional `nullableAncestors` declare ancestors whose id columns are NULLABLE: rows may attach
-   * above the declared parent (variable-depth rows, e.g. a course-stream item with
-   * `projectId = null`). The chain root stays non-null — a row always belongs to the root context.
-   * CDC attributes each row to its deepest non-null ancestor (see `resolveDeepestAncestorId`).
+   * Add a product entity. Every product has exactly one home context (`parent`): a non-null
+   * `<context>Id` column and the most-specific link used for permissions and public-read
+   * inheritance. Optional `relatedContexts`, `host`, and `nullableAncestors` add further
+   * non-home links; see README.md in this directory for the full model.
    */
   product<
     N extends string,

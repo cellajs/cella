@@ -10,14 +10,9 @@ export interface GracefulShutdownOptions {
 }
 
 /**
- * Shared graceful shutdown + crash handler for all services (api, cdc, yjs).
- *
- * Registers:
- * - SIGINT/SIGTERM → run cleanup, exit 0
- * - Double-signal guard → immediate exit on second signal
- * - Shutdown timeout → force exit if cleanup hangs
- * - unhandledRejection → log to stderr
- * - uncaughtException → log to stderr, exit 1
+ * Shared graceful shutdown and crash handler for all services (api, cdc, yjs):
+ * runs cleanup on SIGINT/SIGTERM, force-exiting if cleanup hangs or a second
+ * signal arrives, and logs unhandledRejection/uncaughtException to stderr.
  */
 export function setupGracefulShutdown(options: GracefulShutdownOptions): void {
   const { name, cleanup: cleanupFn, log: logFn, timeoutMs = 10_000 } = options;

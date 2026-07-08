@@ -1,8 +1,3 @@
-/**
- * Snapshot test for OpenAPI parser.
- * Compares parsing output against saved snapshots to catch regressions.
- */
-
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -33,6 +28,7 @@ function hashSpec(spec: OpenApiSpec): string {
   return createHash('sha256').update(JSON.stringify(spec)).digest('hex').slice(0, 16);
 }
 
+// Snapshot test: compares parser output against saved snapshots to catch regressions.
 describe('parseOpenApiSpec', () => {
   it('parses backend spec correctly', () => {
     const specJson = readFileSync(BACKEND_SPEC, 'utf-8');
@@ -48,7 +44,7 @@ describe('parseOpenApiSpec', () => {
 
     // Use hash for input to detect spec changes without huge diffs
     // - Input hash changed + output changed = spec update (run: pnpm test:update)
-    // - Input hash same + output changed = parser bug!
+    // - Input hash same + output changed = parser bug
     expect({ inputHash: hashSpec(spec), output: snapshotResult }).toMatchSnapshot();
   });
 

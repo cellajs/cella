@@ -1,18 +1,9 @@
 /**
- * Row-to-context attribution: which context "owns" a row.
- *
- * Rule: walk the strict ancestor chain most-specific-first and take non-null ancestor ids.
- * With nullable ancestors (see `product({ nullableAncestors })`), rows may attach above their
- * declared parent (e.g. a course-stream item with `projectId = null`); the deepest non-null
- * ancestor is then the row's effective home. Without nullable ancestors this degrades to the
- * declared parent, else the chain root.
- *
- * Every site that answers "which context owns this row" must share this rule or client
- * catchup breaks: CDC seq scoping + counter deltas, wire-notification contextId, seen-by
- * grouping, and counter recalculation.
+ * Row-to-context attribution: which context "owns" a row. See README.md in this directory
+ * for the full rule and why every attribution site must share it.
  */
 
-/** Minimal hierarchy surface needed for attribution — lets tests inject a synthetic hierarchy. */
+/** Minimal hierarchy surface needed for attribution: lets tests inject a synthetic hierarchy. */
 export interface AncestorSource {
   getOrderedAncestors(entityType: string): readonly string[];
   getNullableAncestors(entityType: string): readonly string[];

@@ -4,12 +4,12 @@ import { withClient } from './db';
 import { getTableColumnNames } from './permissions';
 
 /**
- * Load the BlockNote content column for the entity backing a Yjs document,
- * used to seed a fresh collaborative session server-side.
+ * Load the BlockNote content column for the entity backing a Yjs document, to
+ * seed a fresh collaborative session server-side.
  *
  * Convention (mirrors {@link resolveEntityScope}'s fork-agnostic approach): the
- * Yjs-edited column is `description`. Entity types whose table lacks it — or
- * that this app doesn't declare — simply don't seed. Runs on an RLS-scoped
+ * Yjs-edited column is `description`. Entity types whose table lacks it (or
+ * that this app doesn't declare) simply don't seed. Runs on an RLS-scoped
  * client, and only after entity access has been verified.
  */
 export async function loadEntityDescription(ctx: DocContext): Promise<string | null> {

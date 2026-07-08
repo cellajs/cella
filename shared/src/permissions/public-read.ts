@@ -2,24 +2,9 @@ import type { ContextEntityType, ProductEntityType } from '../../types';
 import type { SubjectForPermission } from './permission-manager/types';
 
 /**
- * Public read: subject-level grants that make rows readable by ANY actor — anonymous
- * included — based on row data, independent of memberships.
- *
- * - `publicSelf`: readable when the row's own `publicAt` timestamp is set.
- * - `publicParent`: readable when the parent context row's `publicAt` is set.
- * - `publicParentOrSelf`: either of the above.
- *
- * Declared per subject in the permissions config (`configurePermissions` →
- * `publicRead(mode)`), evaluated by the permission engine for the `read` action, and
- * attributed as `grantedBy: { type: 'public', mode }`. This replaces the former
- * `publicRead` key on the entity hierarchy and the hand-rolled `if (!row.publicAt)`
- * checks in public route handlers — one declaration, every path.
- *
- * `publicParent` reads *another row's* field. Per the cross-row design decision
- * (load-at-check, resolved once per request/event), the caller resolves the parent row
- * and passes it as `subject.parentRow`; the engine never loads rows itself. A subject
- * without `row`/`parentRow` simply never matches — paths that don't resolve row data
- * (e.g. stream dispatch today) are unaffected.
+ * Public read mode: subject-level grant that makes rows readable by any actor, including
+ * anonymous, based on row data, independent of memberships. See `README.md` for the mode
+ * semantics and the cross-row (`publicParent`) design.
  */
 export type PublicReadMode = 'publicSelf' | 'publicParent' | 'publicParentOrSelf';
 

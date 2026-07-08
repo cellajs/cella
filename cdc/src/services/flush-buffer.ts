@@ -9,7 +9,7 @@ import { cdcMetrics } from './cdc-metrics';
  * Accumulates surviving events (post-cascade-analysis) from multiple committed
  * transactions, then flushes them as merged groups after a configurable window.
  *
- * When windowMs is 0, events are processed immediately (current behavior).
+ * When windowMs is 0, events are processed immediately.
  * When windowMs > 0, events accumulate for up to windowMs before flushing,
  * amortizing DB roundtrips across independent single-row commits.
  *
@@ -55,7 +55,7 @@ export class FlushBuffer {
       return;
     }
 
-    // Batch size reached — flush immediately
+    // Batch size reached: flush immediately
     if (this.pending.length >= this.batchSize) {
       await this.flush();
       return;
@@ -99,7 +99,7 @@ export class FlushBuffer {
     this.flushing = true;
     const flushStart = performance.now();
     try {
-      // Group by (type, action) — merges events across transactions
+      // Group by (type, action): merges events across transactions
       const groups = new Map<string, PendingEvent[]>();
       for (const event of events) {
         const type = event.result.tableMeta.type;
@@ -120,7 +120,7 @@ export class FlushBuffer {
         }
       }
 
-      // Ack the highest LSN — implicitly covers all prior LSNs
+      // Ack the highest LSN: implicitly covers all prior LSNs
       await this.acknowledgeLsn(lsn);
 
       cdcMetrics.recordFlush(events.length, performance.now() - flushStart);

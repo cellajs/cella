@@ -55,7 +55,7 @@ const embeddingsByEntity = resolveEmbeddings();
 /**
  * Strip deleted embedded-entity IDs from host-entity array columns.
  *
- * Driven by `appConfig.entityEmbeddings` — adding a new embedding relationship
+ * Driven by `appConfig.entityEmbeddings`: adding a new embedding relationship
  * (e.g. tags on attachments) requires zero changes here.
  *
  * Handles both hard deletes (`action === 'delete'`) and soft deletes (an UPDATE that

@@ -1,20 +1,3 @@
-/**
- * Shared display order utilities for fractional ordering.
- *
- * Items are placed between neighbors by averaging their orders, allowing
- * (in theory) infinite re-insertions without renumbering. In practice, after
- * many inserts between the same two items the float gap converges and a
- * rebalance is needed — `getOrderBetween` returns `null` in that case so the
- * caller can decide how to recover.
- *
- * Entities use this with different sort directions:
- * - Pages, memberships → ascending (lower order = top)
- * - Tasks (board column) → descending (higher order = top)
- *
- * The `ascending` flag on `getRelativeOrder` only affects how `'top'`/`'bottom'`
- * drop edges map to "before"/"after" the target. The math is identical.
- */
-
 /** Default gap between items when no neighbor exists. */
 export const orderGap = 10;
 
@@ -37,7 +20,7 @@ interface OrderedItem {
  * Compute an order strictly between `prev` and `next`. Either bound may be
  * omitted to get an edge order (extends past the existing bound by `orderGap`).
  *
- * Returns `null` when both bounds are present and too close to split — the
+ * Returns `null` when both bounds are present and too close to split. The
  * caller should rebalance the sibling group.
  *
  * - `getOrderBetween(undefined, undefined)` → `defaultOrder`
@@ -54,7 +37,7 @@ export const getOrderBetween = (prev: number | undefined, next: number | undefin
 };
 
 /**
- * Compute an order at one edge of an existing list — at the visual top or
+ * Compute an order at one edge of an existing list: at the visual top or
  * bottom of the stack.
  *
  * - `ascending = true` (default): visual top = lowest order.
@@ -114,7 +97,7 @@ export const getRelativeOrder = (
   const taken = new Set(sorted.map((i) => i.displayOrder));
 
   const targetIdx = sorted.findIndex((item) => item.displayOrder === targetOrder);
-  // Target not found — extend past it on the requested side, snapped to an integer.
+  // Target not found: extend past it on the requested side, snapped to an integer.
   if (targetIdx === -1) {
     return insertBefore ? Math.floor(targetOrder) - orderGap : Math.ceil(targetOrder) + orderGap;
   }

@@ -139,17 +139,13 @@ describe('EntityHierarchyBuilder', () => {
     });
 
     it('getOrderedAncestors returns ancestors most-specific first', () => {
-      // task → project → organization (inherits permissions from both)
+      // Inherits permissions from both ancestors
       expect(hierarchy.getOrderedAncestors('task')).toEqual(['project', 'organization']);
-      // label → project → organization
       expect(hierarchy.getOrderedAncestors('label')).toEqual(['project', 'organization']);
-      // attachment → project → organization (key: gets BOTH ancestors via parent chain)
+      // Gets both ancestors via the parent chain
       expect(hierarchy.getOrderedAncestors('attachment')).toEqual(['project', 'organization']);
-      // workspace → organization
       expect(hierarchy.getOrderedAncestors('workspace')).toEqual(['organization']);
-      // project → organization
       expect(hierarchy.getOrderedAncestors('project')).toEqual(['organization']);
-      // organization → [] (root)
       expect(hierarchy.getOrderedAncestors('organization')).toEqual([]);
     });
 
@@ -157,7 +153,6 @@ describe('EntityHierarchyBuilder', () => {
       expect(hierarchy.hasAncestor('task', 'project')).toBe(true);
       expect(hierarchy.hasAncestor('task', 'organization')).toBe(true);
       expect(hierarchy.hasAncestor('task', 'workspace')).toBe(false); // Different branch
-      // Attachment now has both project and organization as ancestors
       expect(hierarchy.hasAncestor('attachment', 'project')).toBe(true);
       expect(hierarchy.hasAncestor('attachment', 'organization')).toBe(true);
     });

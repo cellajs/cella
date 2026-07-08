@@ -6,7 +6,7 @@ const BATCH_SIZE = 200;
 
 /**
  * Convert a camelCase record key to its snake_case Postgres column name.
- * Inverse of the transform in `recordToRow` — relies on the DB using snake_case
+ * Inverse of the transform in `recordToRow`. Relies on the DB using snake_case
  * columns (all bench tables do).
  */
 function camelToSnake(key: string): string {

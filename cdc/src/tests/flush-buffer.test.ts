@@ -179,7 +179,7 @@ describe('FlushBuffer', () => {
       await vi.advanceTimersByTimeAsync(10);
 
       // Should ack the last-enqueued LSN (0/3) since it's the highest seen
-      // (monotonic from WAL — events arrive in order)
+      // (monotonic from WAL: events arrive in order)
       expect(acknowledgedLsns).toEqual(['0/3']);
     });
   });

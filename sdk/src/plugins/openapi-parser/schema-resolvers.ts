@@ -1,7 +1,3 @@
-/**
- * Schema resolution functions for OpenAPI parsing.
- */
-
 import type { GenSchema, GenSchemaProperty } from '../../../../frontend/src/modules/docs/types';
 import type { OpenApiSchema, OpenApiSpec } from './types';
 
@@ -70,7 +66,7 @@ function mergeAllOfSchemas(
       }
     }
 
-    // Merge type (prefer object if any)
+    // Track the most specific type seen (falls back to 'object' below if none is set)
     if (resolvedSubSchema.type) {
       mergedType = resolvedSubSchema.type;
     }
@@ -188,8 +184,8 @@ export function resolveSchemaProperty(
 
   // Handle array items - unwrap simple items to parent level
   if (schema.items) {
-    // Note: we pass false for isRequired since array items don't have a meaningful required field
-    // (items are either present in the array or not - there's no "optional" array element concept)
+    // Array items don't have a meaningful required field (present or absent, not optional),
+    // so isRequired is always passed as false here.
     const resolvedItem = resolveSchemaProperty(schema.items, false, spec, visited);
     // Remove the redundant 'required' field from array items
     delete resolvedItem.required;
@@ -287,7 +283,7 @@ export function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited:
     type: schema.type || 'object',
   };
 
-  // Note: Don't copy description to refDescription here - that's only for $ref contexts.
+  // Don't copy description to refDescription here - that's only for $ref contexts.
   // Component schemas get their description at the GenComponentSchema level.
 
   // Handle enum
@@ -296,7 +292,7 @@ export function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited:
   }
 
   // Handle description and format constraints
-  // Note: example is NOT copied here - it's handled at the GenComponentSchema level in parse-spec.ts
+  // example is NOT copied here - it's handled at the GenComponentSchema level in parse-spec.ts
   // to avoid duplication (schema.example vs schema.schema.example)
   if (schema.description) result.description = schema.description;
   if (schema.format) result.format = schema.format;

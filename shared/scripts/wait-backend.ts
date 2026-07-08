@@ -1,9 +1,4 @@
-/**
- * Wait for the backend health endpoint before proceeding.
- *
- * Usage: tsx shared/scripts/wait-backend.ts [-i interval] [-t timeout]
- * Example: tsx shared/scripts/wait-backend.ts -i 2000 -t 60000
- */
+/** Waits for the backend health endpoint before proceeding. See README.md in this directory for usage. */
 import { waitForBackend } from '../src/utils/wait-for-backend';
 
 const args = process.argv.slice(2);

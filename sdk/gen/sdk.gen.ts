@@ -2408,6 +2408,123 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Get list of users
+ *
+ * Returns a list of users.
+ *
+ * **GET /users/users** ·· [getUsers](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/users) ·· [getUsers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/users/users) ·· _users_cella_
+ *
+ * @param {getUsersData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.seqcursor - `string` (optional)
+ * @param {enum=} options.query.role - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getUsers = <ThrowOnError extends boolean = true>(
+  options?: Options<GetUsersData, ThrowOnError>,
+): RequestResult<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetUsersQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetUsersResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/users/users',
+    ...options,
+  });
+
+/**
+ * Get user
+ *
+ * Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead.
+ *
+ * **GET /users/users/{relatableUserId}** ·· [getUser](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/users/{relatableUserId}) ·· [getUser](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/users/users/{relatableUserId}) ·· _users_cella_
+ *
+ * @param {getUserData} options
+ * @param {string} options.path.relatableuserid - `string`
+ * @param {string | boolean=} options.query.slug - `string | boolean` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getUser = <ThrowOnError extends boolean = true>(
+  options: Options<GetUserData, ThrowOnError>,
+): RequestResult<GetUserResponses, GetUserErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetUserPath,
+          query: zGetUserQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetUserResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/users/users/{relatableUserId}',
+    ...options,
+  });
+
+/**
+ * Get Yjs token
+ *
+ * Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.
+ *
+ * **GET /yjs/token** ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/GET/yjs/token) ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/yjs/token) ·· _yjs_cella_
+ *
+ * @param {getYjsTokenData} options
+ * @param {string} options.query.entitytype - `string`
+ * @param {string} options.query.tenantid - `string`
+ * @param {string} options.query.organizationid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getYjsToken = <ThrowOnError extends boolean = true>(
+  options: Options<GetYjsTokenData, ThrowOnError>,
+): RequestResult<GetYjsTokenResponses, GetYjsTokenErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetYjsTokenResponses, GetYjsTokenErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetYjsTokenQuery,
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetYjsTokenResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/yjs/token',
+    ...options,
+  });
+
+/**
  * Delete organizations
  *
  * Deletes one or more organizations by ID within a tenant.
@@ -2630,35 +2747,29 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Get list of users
+ * MCP endpoint
  *
- * Returns a list of users.
+ * Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).
  *
- * **GET /users/users** ·· [getUsers](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/users) ·· [getUsers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/users/users) ·· _users_cella_
+ * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/POST/{tenantId}/{organizationId}/mcp) ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/mcp) ·· _mcp_cella_
  *
- * @param {getUsersData} options
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.seqcursor - `string` (optional)
- * @param {enum=} options.query.role - `enum` (optional)
+ * @param {handleMcpData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
-export const getUsers = <ThrowOnError extends boolean = true>(
-  options?: Options<GetUsersData, ThrowOnError>,
-): RequestResult<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
+export const handleMcp = <ThrowOnError extends boolean = true>(
+  options: Options<HandleMcpData, ThrowOnError>,
+): RequestResult<HandleMcpResponses, HandleMcpErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<HandleMcpResponses, HandleMcpErrors, ThrowOnError, 'data'>({
     requestValidator: async (data) =>
       await z
         .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: zGetUsersQuery.optional(),
+          body: zHandleMcpBody,
+          path: zHandleMcpPath,
+          query: z.never().optional(),
         })
         .parseAsync(data),
-    responseValidator: async (data) => await zGetUsersResponse.parseAsync(data),
     responseStyle: 'data',
     security: [
       {
@@ -2667,45 +2778,12 @@ export const getUsers = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/users/users',
+    url: '/{tenantId}/{organizationId}/mcp',
     ...options,
-  });
-
-/**
- * Get user
- *
- * Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead.
- *
- * **GET /users/users/{relatableUserId}** ·· [getUser](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/users/{relatableUserId}) ·· [getUser](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/users/users/{relatableUserId}) ·· _users_cella_
- *
- * @param {getUserData} options
- * @param {string} options.path.relatableuserid - `string`
- * @param {string | boolean=} options.query.slug - `string | boolean` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getUser = <ThrowOnError extends boolean = true>(
-  options: Options<GetUserData, ThrowOnError>,
-): RequestResult<GetUserResponses, GetUserErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: zGetUserPath,
-          query: zGetUserQuery.optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetUserResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/users/users/{relatableUserId}',
-    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 
 /**
@@ -3261,84 +3339,6 @@ export const markSeen = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/{tenantId}/{organizationId}/seen',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get Yjs token
- *
- * Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.
- *
- * **GET /yjs/token** ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/GET/yjs/token) ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/yjs/token) ·· _yjs_cella_
- *
- * @param {getYjsTokenData} options
- * @param {string} options.query.entitytype - `string`
- * @param {string} options.query.tenantid - `string`
- * @param {string} options.query.organizationid - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getYjsToken = <ThrowOnError extends boolean = true>(
-  options: Options<GetYjsTokenData, ThrowOnError>,
-): RequestResult<GetYjsTokenResponses, GetYjsTokenErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetYjsTokenResponses, GetYjsTokenErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: zGetYjsTokenQuery,
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetYjsTokenResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/yjs/token',
-    ...options,
-  });
-
-/**
- * MCP endpoint
- *
- * Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).
- *
- * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/POST/{tenantId}/{organizationId}/mcp) ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/mcp) ·· _mcp_cella_
- *
- * @param {handleMcpData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.organizationid - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const handleMcp = <ThrowOnError extends boolean = true>(
-  options: Options<HandleMcpData, ThrowOnError>,
-): RequestResult<HandleMcpResponses, HandleMcpErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<HandleMcpResponses, HandleMcpErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zHandleMcpBody,
-          path: zHandleMcpPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/{organizationId}/mcp',
     ...options,
     headers: {
       'Content-Type': 'application/json',

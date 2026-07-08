@@ -1,14 +1,3 @@
-/**
- * Shared tracing types and utilities.
- *
- * Provides SpanData / SpanStore for devtools UI, span names,
- * attribute helpers, and the SpanStoreProcessor bridge (OTel → SpanStore).
- *
- * All services use real OTel tracers for span creation.
- * This module only provides the data types and storage layer.
- */
-
-// Re-export span names
 export * from './span-names';
 export { createSpanStoreProcessor, type SpanStoreProcessorOptions } from './span-store-processor';
 
@@ -19,7 +8,7 @@ export { createSpanStoreProcessor, type SpanStoreProcessorOptions } from './span
 /** Span status aligned with OTel conventions. */
 export type SpanStatus = 'ok' | 'error' | 'unset';
 
-/** Span data structure for storage and display. */
+/** Span data structure for storage and display; real OTel tracers create the underlying spans (see span-store-processor.ts for the bridge). */
 export interface SpanData {
   traceId: string;
   spanId: string;

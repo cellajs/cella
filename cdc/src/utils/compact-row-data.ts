@@ -5,14 +5,14 @@ import type { CdcRowData } from '../types';
 /**
  * Columns with varchar length >= this threshold are excluded from the CDC publication.
  * Keeps WAL events small (e.g. ~1KB vs ~34KB for tasks) while preserving all metadata.
- * Detected automatically from Drizzle schema — no per-entity config needed.
+ * Detected automatically from Drizzle schema: no per-entity config needed.
  */
 const cdcExcludeColumnLengthThreshold = 10_000;
 
 /**
  * Set of camelCase column keys whose schema length exceeds the CDC threshold.
  * These columns carry large text (description, keywords, summary, welcomeText)
- * that the CDC pipeline never reads — only change detection needs them,
+ * that the CDC pipeline never reads, only change detection needs them,
  * and that happens before compaction in the handlers.
  *
  * Built once at startup from Drizzle schema introspection.

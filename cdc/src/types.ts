@@ -1,8 +1,3 @@
-/**
- * Type definitions for CDC tables.
- * Derived from the tracked tables registry.
- */
-
 import { entityTables } from '#/tables';
 import { resourceTables } from '#/tables';
 import type { ParseMessageResult } from './pipeline/parse-message';

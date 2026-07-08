@@ -3,7 +3,7 @@ import { withClient } from '../../data/db';
 
 describe('6.2 Pool behavior', () => {
   it('withClient releases connection back to pool even on error', async () => {
-    // Run 50 iterations — if pool leaks, it will hang (pool exhausted at 20)
+    // Run 50 iterations: if pool leaks, it will hang (pool exhausted at 20)
     for (let i = 0; i < 50; i++) {
       try {
         await withClient('test-tenant', 'test-user', async (client) => {

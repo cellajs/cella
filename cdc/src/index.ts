@@ -19,16 +19,13 @@ const BACKEND_POLL_TIMEOUT_MS = 60_000;
  * deploy) and the backend `MODE=cdc` shim (single backend image).
  */
 export async function runCdcWorker(): Promise<void> {
-  // Wait for backend in development before starting
   if (env.NODE_ENV === 'development') {
     await waitForBackend(BACKEND_POLL_INTERVAL_MS, BACKEND_POLL_TIMEOUT_MS);
   }
 
-  // Start OTel SDK
   otel.start();
   otel.verifyConnection();
 
-  // Health server
   const healthServer = createServer((req, res) => {
     if (req.url?.startsWith('/health')) {
       const version = process.env.RELEASE_SHA ?? 'unknown';
@@ -51,7 +48,6 @@ export async function runCdcWorker(): Promise<void> {
     res.end();
   });
 
-  // Handle graceful shutdown
   setupGracefulShutdown({
     name: 'cdc',
     cleanup: async () => {

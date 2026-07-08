@@ -5,7 +5,7 @@ import { log } from '../lib/pino';
 
 /**
  * DB-backed per-user WebSocket connection rate limiter.
- * Shares the backend's `rate_limits` table via a raw pg.Pool — no Drizzle needed.
+ * Shares the backend's `rate_limits` table via a raw pg.Pool, no Drizzle needed.
  * Falls back to in-memory limiting when the DB is unreachable (fail-open with safety net).
  */
 const connectionLimiter = env.NODB
@@ -17,7 +17,7 @@ const connectionLimiter = env.NODB
       keyPrefix: 'yjs_ws',
       points: 20, // 20 connections per minute per user
       duration: 60,
-      blockDuration: 0, // No extra block — budget resets after the window
+      blockDuration: 0, // No extra block: budget resets after the window
       insuranceLimiter: new RateLimiterMemory({
         keyPrefix: 'yjs_ws',
         points: 20,

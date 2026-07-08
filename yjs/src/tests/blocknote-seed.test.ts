@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { descriptionToYUpdate, yUpdateToBlocks } from '../lib/blocknote-seed';
 
-/**
- * Round-trip tests for server-side seeding. These guard schema parity: every custom
- * block/inline type the frontend editor supports must survive blocks → Y.Doc → blocks
- * through the server schema built from shared/blocknote-schema-configs.
- */
-
 const block = (type: string, props: Record<string, unknown> = {}, content?: unknown, children: unknown[] = []) => ({
   id: crypto.randomUUID(),
   type,
@@ -17,6 +11,8 @@ const block = (type: string, props: Record<string, unknown> = {}, content?: unkn
 
 const text = (t: string) => [{ type: 'text', text: t, styles: {} }];
 
+// Guards schema parity: every custom block/inline type the frontend editor supports
+// must survive blocks → Y.Doc → blocks through the server schema.
 describe('descriptionToYUpdate / yUpdateToBlocks round-trip', () => {
   it('round-trips default blocks (paragraph, heading, table-free basics)', () => {
     const blocks = [

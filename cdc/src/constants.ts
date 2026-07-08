@@ -1,16 +1,7 @@
-/**
- * Publication name for CDC.
- */
 export const CDC_PUBLICATION_NAME = "cdc_pub";
 
-/**
- * Replication slot name for CDC.
- */
 export const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? "cdc_slot";
 
-/**
- * CDC Resource Limits and Thresholds
- */
 export const RESOURCE_LIMITS = {
   // Runtime monitoring thresholds
   runtime: {
@@ -43,7 +34,7 @@ export const RESOURCE_LIMITS = {
   slotTakeover: {
     /** Number of fast retries that make up the handoff window. */
     maxAttempts: 12,
-    /** Delay between handoff retries (ms) — tightened for a sub-second takeover. */
+    /** Delay between handoff retries (ms), tightened for a sub-second takeover. */
     retryDelayMs: 500,
   },
 
@@ -81,10 +72,7 @@ export const RESOURCE_LIMITS = {
   },
 } as const;
 
-/**
- * Transient error codes that should trigger retry.
- * These are PostgreSQL error codes that indicate temporary failures.
- */
+/** PostgreSQL error codes that indicate transient failures and should trigger retry. */
 export const TRANSIENT_ERROR_CODES = new Set([
   "40001", // serialization_failure
   "40P01", // deadlock_detected

@@ -1,10 +1,3 @@
-/**
- * OTel SpanProcessor that bridges real OTel spans into the SpanStore.
- *
- * Converts ReadableSpan → SpanData so devtools UI (frontend)
- * and debug logging (CDC) can consume OTel spans transparently.
- */
-
 import type { Context } from '@opentelemetry/api';
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import type { SpanData, SpanStore } from './tracing';
@@ -51,8 +44,9 @@ function readableSpanToSpanData(span: ReadableSpan): SpanData {
 }
 
 /**
- * Create a SpanProcessor that converts OTel spans to SpanData
- * and pushes them into a SpanStore and/or fires a callback.
+ * Bridges OTel spans into the SpanStore: converts each ReadableSpan to SpanData and pushes
+ * it into a SpanStore and/or fires a callback, so devtools UI (frontend) and debug logging
+ * (CDC) can consume OTel spans transparently.
  */
 export function createSpanStoreProcessor(options: SpanStoreProcessorOptions): SpanProcessor {
   const { store, onSpanEnd } = options;

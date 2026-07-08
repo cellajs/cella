@@ -1,16 +1,3 @@
-/**
- * Shared in-process CDC pipeline harness for integration tests.
- *
- * Brings up the real replication pipeline (slot → service → backpressure → WS
- * client → subscribe) without the production reconnect loop, so teardown is
- * deterministic. Used by both the CDC backpressure suite and the backend
- * full-flow suite — they only differ in the downstream WebSocket server the
- * worker is pointed at (a stub receiver vs. the real `/internal/cdc` endpoint).
- *
- * CDC modules parse env at import time, so callers that set env at runtime
- * (e.g. the backend suite) must `import()` this module after configuring env.
- */
-
 import { setTimeout as sleep } from 'node:timers/promises';
 import { sql } from 'drizzle-orm';
 import { PgoutputPlugin } from 'pg-logical-replication';
@@ -45,8 +32,14 @@ export interface CdcPipelineHarness {
 }
 
 /**
- * Start the CDC pipeline in-process and wait until it is streaming.
- * Assumes a downstream WS server is already listening at `API_WS_URL`.
+ * Start the CDC pipeline in-process (slot, service, backpressure, WS client, subscribe) and
+ * wait until it is streaming, skipping the production reconnect loop so teardown is
+ * deterministic. Assumes a downstream WS server is already listening at `API_WS_URL`.
+ *
+ * Shared by the CDC backpressure suite and the backend full-flow suite, which point the
+ * worker at different WS servers (a stub vs. the real `/internal/cdc` endpoint). CDC modules
+ * parse env at import time, so callers that set env at runtime must `import()` this module
+ * after configuring env.
  */
 export async function startCdcPipeline(): Promise<CdcPipelineHarness> {
   // Drop a leftover slot from a previous run; bail if one is actively held.

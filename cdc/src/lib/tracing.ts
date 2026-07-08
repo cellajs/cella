@@ -1,10 +1,3 @@
-/**
- * CDC Worker tracing module.
- *
- * Uses real OTel tracer via the shared factory.
- * SpanStoreProcessor bridges spans to pino debug logging.
- */
-
 import { SpanStatusCode, trace } from '@opentelemetry/api';
 import { appConfig } from 'shared';
 import { createOtelSDK, type OtelSDK } from 'shared/otel';
@@ -18,7 +11,6 @@ import {
 import { env } from '../env';
 import { log } from './pino';
 
-// Re-export span names and attribute helpers from shared package
 export { activityAttrs, cdcAttrs, cdcSpanNames };
 export type { TraceContext };
 
@@ -37,6 +29,7 @@ const debugProcessor = createSpanStoreProcessor({
   },
 });
 
+/** OTel SDK instance: real tracer via the shared factory; SpanStoreProcessor bridges spans to pino debug logging. */
 export const otel: OtelSDK = createOtelSDK({
   serviceName: `${appConfig.slug}-cdc`,
   mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,

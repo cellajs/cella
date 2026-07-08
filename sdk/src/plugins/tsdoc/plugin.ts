@@ -20,10 +20,9 @@ export function buildOperationDocsUrl(method: string, path: string, tag: string)
 /**
  * Handler function for the `tsdoc` plugin.
  *
- * Enhances OpenAPI operations with rich TSDoc comments:
- * - Adds `@function`, `@param`, `@returns`, `@remarks`, and `@see` tags
- * - Improves editor integration and autocomplete for SDK developers
- * - Processes path, query, and body parameters, as well as response codes
+ * Enriches each generated operation's description with a TSDoc-style summary: a
+ * method/path heading, links to the hosted docs, and `@param`/`@returns` tags derived
+ * from the operation's path, query, and body parameters and its response codes.
  *
  * @param plugin - The TSDoc Plugin instance
  */
@@ -74,7 +73,7 @@ export const handler: TsdocPlugin['Handler'] = ({ plugin }) => {
  * @param responses - The operation’s responses object, keyed by status code
  * @returns A `@returns` string listing possible status codes, or `undefined` if none exist
  *
- * biome-ignore lint/suspicious/noExplicitAny: For now we use `any` to allow flexibility in schema definitions
+ * biome-ignore lint/suspicious/noExplicitAny: allows flexibility in schema definitions
  */
 function extractResponseCodes(responses: Record<string, any>): string | undefined {
   const codes = Object.keys(responses);
@@ -92,7 +91,7 @@ function extractResponseCodes(responses: Record<string, any>): string | undefine
  * @param parameters - The parameter definitions from the OpenAPI operation
  * @returns An array of formatted TSDoc `@param` strings
  *
- * biome-ignore lint/suspicious/noExplicitAny: For now we use `any` to allow flexibility in schema definitions
+ * biome-ignore lint/suspicious/noExplicitAny: allows flexibility in schema definitions
  */
 function extractParamTags(location: 'path' | 'query', parameters: Record<string, any> = {}): string[] {
   return Object.entries(parameters).map(([name, param]) => {
@@ -110,7 +109,7 @@ function extractParamTags(location: 'path' | 'query', parameters: Record<string,
  * @param properties - The properties of the request body schema
  * @returns An array of formatted TSDoc `@param` strings for body fields
  *
- * biome-ignore lint/suspicious/noExplicitAny: For now we use `any` to allow flexibility in schema definitions
+ * biome-ignore lint/suspicious/noExplicitAny: allows flexibility in schema definitions
  */
 function extractBodyParamTags(properties: Record<string, any>): string[] {
   return Object.entries(properties).map(([name, prop]) => {
@@ -129,7 +128,7 @@ function extractBodyParamTags(properties: Record<string, any>): string[] {
  * @param schema - The schema object to resolve
  * @returns A string representing the resolved TypeScript-compatible type
  *
- * biome-ignore lint/suspicious/noExplicitAny: For now we use `any` to allow flexibility in schema definitions
+ * biome-ignore lint/suspicious/noExplicitAny: allows flexibility in schema definitions
  */
 function getSchemaType(schema: any): string {
   if (!schema) return 'any';

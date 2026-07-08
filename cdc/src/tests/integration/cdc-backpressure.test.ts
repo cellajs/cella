@@ -1,25 +1,3 @@
-/**
- * CDC backpressure integration test (real logical replication).
- *
- * Exercises the core durability contract implemented by `setupBackpressure`
- * ([replication.ts](../../pipeline/replication.ts)): while the downstream
- * WebSocket is down the worker stops acknowledging the replication slot, so
- * Postgres retains WAL (no data loss); when the WebSocket returns, acks resume
- * and the slot advances again.
- *
- * Unlike the unit suites (which mock `replicationState`), this drives the real
- * pipeline against a logical-replication-capable Postgres and a stub WS server
- * standing in for the backend's `/internal/cdc` endpoint.
- *
- * Requirements (otherwise the whole suite is skipped):
- * - `DATABASE_CDC_URL` reachable with `wal_level = logical`
- * - the `cdc_pub` publication present (created by migrations)
- * - not running in `core` test mode
- *
- * Env (`DATABASE_CDC_URL`, `CDC_SECRET`, `API_WS_URL`) is provided by
- * [vitest.config.ts](../../../vitest.config.ts).
- */
-
 import { sql } from 'drizzle-orm';
 import { nanoidTenant } from 'shared/nanoid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -66,6 +44,11 @@ async function insertTenant(name: string): Promise<string> {
   return id;
 }
 
+/**
+ * Verifies `setupBackpressure`: while the downstream WebSocket is down the worker stops
+ * acking the replication slot (WAL retained, no data loss), and acks resume once it returns.
+ * Skipped unless `DATABASE_CDC_URL` runs with `wal_level = logical` and `cdc_pub` exists.
+ */
 describe.skipIf(!READY)('CDC backpressure (integration)', () => {
   // biome-ignore lint/suspicious/noExplicitAny: lightweight ws stub typing
   let WebSocketServer: any;
@@ -142,7 +125,7 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
 
     const lagAfter = await slotLagBytes();
     expect(lagAfter).toBeGreaterThan(lagBefore);
-    // The replication connection to Postgres itself stays up — only acking pauses.
+    // The replication connection to Postgres itself stays up: only acking pauses.
     expect(await slotActive()).toBe(true);
   }, 30_000);
 
@@ -161,7 +144,6 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
     // Acks resume → retained WAL drains well below the WS-down peak.
     await waitFor(async () => (await slotLagBytes()) < Math.max(65_536, lagPeak / 2), 30_000, 'slot drained after reconnect');
 
-    // Delivery resumes for new changes.
     const id = await insertTenant(`bp-resume-${Date.now()}`);
     await waitFor(() => activityMsgs.some((m) => m.subjectId === id), 15_000, 'delivery resumed after reconnect');
   }, 60_000);

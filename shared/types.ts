@@ -1,7 +1,3 @@
-/**
- * App-specific types derived from the merged configuration and entity hierarchy.
- * These types narrow the generic builder types to the concrete app setup.
- */
 import { hierarchy, roles } from './config/config.default';
 import { appConfig } from './src/config-builder/app-config';
 
@@ -15,7 +11,7 @@ export type EntityType = (typeof appConfig.entityTypes)[number];
 /** Context entities (entities with memberships only) */
 export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];
 
-/** Product entities aka (user-generated) content (no memberships assigned) */
+/** Product entities: user-generated content (no memberships assigned) */
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
 /** Relatable context entities - context entities that appear as parents of product entities. Used for activities table columns and CDC context extraction. */

@@ -5,7 +5,7 @@ export function sessionToken(index: number): string {
   return `xbench-session-token-${String(index).padStart(12, '0')}`;
 }
 
-/** SHA-256 hex lowercase — same as backend's encodeLowerCased (oslojs). */
+/** SHA-256 hex lowercase, matching backend's encodeLowerCased (oslojs). */
 export function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }

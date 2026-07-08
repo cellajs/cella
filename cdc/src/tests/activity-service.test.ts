@@ -59,7 +59,7 @@ describe('sendBatchMessageToApi', () => {
   });
 
   it('logs error for non-contiguous seqs (gap detection invariant)', () => {
-    // seq 10, 12 — gap at 11
+    // seq 10, 12: gap at 11
     const events = [mockBatchEvent(10), mockBatchEvent(12)];
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
 

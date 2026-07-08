@@ -1,25 +1,4 @@
 /**
- * Row conditions: per-row qualifications on access-policy grants.
- *
- * A policy cell value of `1` grants an action on every row the context scope reaches.
- * A `RowCondition` cell value grants the action only on rows that satisfy the condition
- * (e.g. "rows the actor created"). Conditions are declared once and consumed by every
- * enforcement path:
- *
- * - **check-form** (`matches`): evaluated by the permission engine per subject, and by
- *   the frontend to resolve conditional `can` states per row.
- * - **SQL-form** (`sqlForm`): a declarative descriptor — this package is ORM-free — that
- *   the backend compiles into a row predicate for collection reads and any other
- *   set-based path. Keeping it declarative (instead of a SQL-building function) is what
- *   makes the check-form/SQL-form parity property testable and the descriptor safe to
- *   evaluate in shared code.
- *
- * The legacy `'own'` policy literal is sugar for the built-in {@link own} condition and
- * is normalized away when policies are configured; engine and consumers only ever see
- * `0 | 1 | RowCondition`.
- */
-
-/**
  * Declarative SQL form of a row condition. Compiled by the backend
  * (`backend/src/permissions/row-predicates.ts`) into an ORM predicate.
  *
@@ -37,16 +16,21 @@ export type ConditionActor = { userId?: string };
  */
 export type RowForCondition = { createdBy?: string | null } & Record<string, unknown>;
 
+/**
+ * Per-row qualification on an access-policy grant: a `RowCondition` cell value grants an
+ * action only on rows that satisfy `matches`, which must agree with `sqlForm`. See
+ * `README.md` for the check-form/SQL-form design.
+ */
 export interface RowCondition {
   /**
    * Stable identifier. Surfaces as the conditional state in `can` maps
    * (`ActionPermissionState`) and as `grantedBy: { type: 'relation', relation: name }`
-   * in decision attribution — treat it as part of the public contract.
+   * in decision attribution: treat it as part of the public contract.
    */
   name: string;
   /**
    * Check-form: does this row satisfy the condition for this actor?
-   * Must be pure and must agree with `sqlForm` — the parity property test asserts this.
+   * Must be pure and must agree with `sqlForm`, which the parity property test asserts.
    */
   matches: (row: RowForCondition, actor: ConditionActor) => boolean;
   /** SQL-form descriptor, compiled by the backend for set-based reads. */

@@ -1,9 +1,3 @@
-/**
- * Shared package - Main barrel file
- *
- * Re-exports configuration, entity hierarchy, types, guards and utility functions.
- */
-
 // App configuration
 export { appConfig } from './src/config-builder/app-config';
 export type { ConfigMode } from './src/config-builder/types';

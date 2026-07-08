@@ -1,15 +1,5 @@
 import { type CodeBlockOptions, defaultProps } from '@blocknote/core';
 
-/**
- * React-free BlockNote schema configs, shared between the frontend editor and the
- * Yjs relay's server-side seeder. Both build their schema from these configs so the
- * ProseMirror node specs (names, attributes, content) stay identical — a seeded
- * Y.Doc must round-trip through the client editor without loss.
- *
- * Render implementations stay in the frontend; the relay pairs these configs with
- * stub renders that are never invoked during block ↔ Y.Doc conversion.
- */
-
 export const checklistItemConfig = {
   type: 'checklistItem' as const,
   propSchema: {
@@ -31,7 +21,7 @@ export const checklistGroupConfig = {
   content: 'none' as const,
 };
 
-/** Notify variants — presentation (icons, colors) lives in the frontend's notify-options. */
+/** Notify variants. Presentation (icons, colors) lives in the frontend's notify-options. */
 export const notifyTypeValues = ['warning', 'error', 'info', 'success'] as const;
 
 export const notifyConfig = {
@@ -54,7 +44,7 @@ export const mentionConfig = {
   content: 'none' as const,
 };
 
-/** Options for the code block spec — shared so the `language` attribute behaves identically. */
+/** Options for the code block spec: shared so the `language` attribute behaves identically. */
 export const codeBlockConfig = {
   indentLineWithTab: true,
   defaultLanguage: 'text' as const,

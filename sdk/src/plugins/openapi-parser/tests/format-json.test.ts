@@ -1,8 +1,3 @@
-/**
- * Tests for the custom JSON formatter.
- * Verifies that formatJson produces valid, parseable JSON.
- */
-
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -16,6 +11,7 @@ const PUBLIC_SPEC = resolve(__dirname, '../../../../gen/openapi.json');
 const CACHE_SPEC = resolve(__dirname, '../../../../../backend/openapi.cache.json');
 const BACKEND_SPEC = existsSync(PUBLIC_SPEC) ? PUBLIC_SPEC : CACHE_SPEC;
 
+// Verifies formatJson produces valid, parseable JSON output.
 describe('formatJson', () => {
   it('produces valid JSON for primitive values', () => {
     const cases = [null, 'string', 123, true, false, 0, -1, ''];

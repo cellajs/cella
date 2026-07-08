@@ -14,7 +14,6 @@ export function handleInsert(
 ): ParseMessageResult {
   const rowData = convertRowKeys(extractRowData(message.new), tableMeta.columnNameMap);
 
-  // Create activity with new row data
   const activity = createActivity(tableMeta, rowData, 'create');
 
   return { activity, rowData: compactRowData(rowData), oldRowData: null, tableMeta };

@@ -8,9 +8,6 @@ dotenv({
   files: ['.env'],
 });
 
-/**
- * Zod schema for CDC Worker environment variables.
- */
 const envSchema = z.object({
   DATABASE_CDC_URL: z.url(),
   // PEM CA cert (Scaleway RDB instance) to verify the PostgreSQL TLS connection.

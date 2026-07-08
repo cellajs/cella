@@ -9,7 +9,7 @@ import {
 import * as Y from 'yjs';
 import { log } from './pino';
 
-/** Fragment name the client editor binds to — must match yjs-connections.ts in the frontend. */
+/** Fragment name the client editor binds to: must match yjs-connections.ts in the frontend. */
 export const YJS_FRAGMENT_NAME = 'document-store';
 
 /**
@@ -23,13 +23,13 @@ const serverRender = () => {
 /**
  * Server-side mirror of the frontend's custom schema, built from the same shared
  * configs (shared/blocknote-schema-configs) so the ProseMirror node specs are
- * identical — a doc seeded here must round-trip through the client editor.
+ * identical: a doc seeded here must round-trip through the client editor.
  */
 const serverSchema = BlockNoteSchema.create().extend({
   blockSpecs: {
     checklistItem: createBlockSpec(checklistItemConfig, { render: serverRender })(),
     notify: createBlockSpec(notifyConfig, { render: serverRender })(),
-    // No highlighter server-side — only the node spec matters for seeding
+    // No highlighter server-side: only the node spec matters for seeding
     codeBlock: createCodeBlockSpec(codeBlockConfig),
   },
   inlineContentSpecs: {
@@ -37,14 +37,13 @@ const serverSchema = BlockNoteSchema.create().extend({
   },
 });
 
-// Reuse a single editor instance — schema construction is expensive, conversions are stateless
+// Reuse a single editor instance: schema construction is expensive, conversions are stateless
 const editor = ServerBlockNoteEditor.create({ schema: serverSchema });
 
 /**
  * Convert a stored BlockNote description (JSON string of blocks) into a Y.Doc
  * update that seeds a fresh collaborative session. Returns null when there is
- * nothing to seed (empty/invalid description) — the session then starts empty,
- * matching the previous client-side behavior.
+ * nothing to seed (empty/invalid description); the session then starts empty.
  */
 export function descriptionToYUpdate(description: string | null): Uint8Array | null {
   if (!description) return null;
@@ -59,7 +58,7 @@ export function descriptionToYUpdate(description: string | null): Uint8Array | n
   }
 }
 
-/** Read a Y.Doc update back into BlockNote blocks — the inverse of {@link descriptionToYUpdate}. */
+/** Read a Y.Doc update back into BlockNote blocks: the inverse of {@link descriptionToYUpdate}. */
 export function yUpdateToBlocks(update: Uint8Array) {
   const ydoc = new Y.Doc();
   Y.applyUpdate(ydoc, update);

@@ -1,8 +1,3 @@
-/**
- * Config builder utilities and types.
- * Contains entity hierarchy builder, type guards, and config type definitions.
- */
-
 // Entity hierarchy builder
 export type {
   ContextEntityView,

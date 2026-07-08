@@ -14,7 +14,7 @@ export async function loadState({ entityType, entityId, tenantId, userId }: DocC
 
 /**
  * Overwrites the stored Y.Doc state. Called on debounced flush from the relay.
- * `lastEditedBy` records the last writer for materialization attribution — it lets
+ * `lastEditedBy` records the last writer for materialization attribution: it lets
  * the startup sweep persist crash-orphaned sessions on behalf of the right user.
  */
 export async function saveState(
@@ -33,7 +33,7 @@ export async function saveState(
 
 /**
  * Inserts a document row on first connection, optionally with a server-side seed
- * as its initial state. No-ops if it already exists — concurrent connectors must
+ * as its initial state. No-ops if it already exists: concurrent connectors must
  * re-load afterwards and use the canonical row (two independently generated seeds
  * would duplicate content when merged).
  */
@@ -70,10 +70,10 @@ export interface StaleDocRow {
 }
 
 /**
- * List document rows untouched for longer than the cleanup grace — orphans left by a
+ * List document rows untouched for longer than the cleanup grace: orphans left by a
  * relay crash between last-disconnect and cleanup. Cross-tenant by design, so this runs
  * on the pool directly (no tenant context). If the DB role enforces RLS it returns no
- * rows and the sweep degrades to a no-op — normal gated cleanup is unaffected.
+ * rows and the sweep degrades to a no-op, and normal gated cleanup is unaffected.
  */
 export async function listStaleDocs(olderThanMs: number): Promise<StaleDocRow[]> {
   const result = await pool.query(
@@ -92,7 +92,7 @@ export async function listStaleDocs(olderThanMs: number): Promise<StaleDocRow[]>
   }));
 }
 
-/** Delete a swept orphan row (pool-direct — same cross-tenant caveat as {@link listStaleDocs}). */
+/** Delete a swept orphan row (pool-direct, same cross-tenant caveat as {@link listStaleDocs}). */
 export async function deleteStaleDoc(entityType: string, entityId: string): Promise<void> {
   await pool.query('DELETE FROM yjs_documents WHERE entity_type = $1 AND entity_id = $2', [entityType, entityId]);
 }

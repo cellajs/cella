@@ -1,17 +1,6 @@
 /**
- * CI guards for schema-evolution lenses.
- *
- * 1. Append-only lint — dated lens module files must never change after their
- *    first commit (frozen). lens-list.ts / define.ts / engine.ts are exempt.
- * 2. Config-collision validator — a lens delta must not touch frozen-envelope
- *    fields, CDC counter fields, or declared entity-embedding host columns.
- * 3. Lens purity lint — dated lens modules must be pure (no await / dynamic
- *    import / value-dependent dynamic key access).
- * 4. Entity-wire completeness — every configured product/context entity type
- *    must register through the entity-wire factory in backend/src/modules, so
- *    an entity can never silently miss the lens seams (widening + normalize).
- *
- * Exit code 1 on any violation. Run via `pnpm --filter shared lens:check`.
+ * CI guards for schema-evolution lenses. See README.md in this directory for what each
+ * check enforces. Exit code 1 on any violation; run via `pnpm --filter shared lens:check`.
  */
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -82,7 +71,7 @@ function checkAppendOnly(files: string[]) {
         .filter(Boolean);
       firstCommit = log[log.length - 1];
     } catch {
-      continue; // not yet committed — nothing to compare against
+      continue; // not yet committed, nothing to compare against
     }
     if (!firstCommit) continue;
     const original = execFileSync('git', ['show', `${firstCommit}:${rel}`], { cwd: repoRoot, encoding: 'utf8' });

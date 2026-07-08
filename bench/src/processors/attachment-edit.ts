@@ -1,8 +1,3 @@
-/**
- * Attachment Edit processor for Artillery.
- *
- * Builds attachment name-edit payloads and sets context variables.
- */
 import { nanoid } from 'nanoid';
 import { uuidv7 } from 'uuidv7';
 import { TOTAL_ATTACHMENTS } from '../seeds/attachment.bench';
@@ -28,6 +23,7 @@ function hlcTimestamp(sourceId: string, counter = 0): string {
   return `${Date.now()}:${String(counter).padStart(4, '0')}:${hashSourceId(sourceId)}`;
 }
 
+/** Builds attachment name-edit payloads and sets Artillery context variables. */
 export function buildAttachmentEditPayload(
   context: { vars: Record<string, unknown> },
   _events: unknown,

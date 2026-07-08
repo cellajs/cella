@@ -1,17 +1,5 @@
 #!/usr/bin/env tsx
 import process from 'node:process';
-/**
- * CDC Health Poller — metrics collector.
- *
- * Polls the CDC worker's /health endpoint during load tests to capture
- * throughput (ops/s), p95 latency, WAL lag, and event counts.
- *
- * Bench starts this automatically in the background for every run (`--quiet`),
- * so it stays silent unless CDC actually processed events — the developer never
- * has to think about it. Run it standalone for live per-interval logging:
- *
- *   tsx src/cdc-poller.ts [--interval 3] [--duration 120] [--quiet]
- */
 import pc from 'picocolors';
 import { CDC_HEALTH_URL } from './config';
 
@@ -79,7 +67,7 @@ async function poll(state: PollState, quiet: boolean) {
         `batch=${batchAvg}`,
     );
   } catch {
-    // Non-critical — CDC worker may not be running yet
+    // Non-critical: CDC worker may not be running yet
   }
 }
 
@@ -100,6 +88,16 @@ function printSummary(samples: PollState['samples']) {
   console.info(`  Samples: ${samples.length}`);
 }
 
+/**
+ * Polls the CDC worker's /health endpoint during a bench run to capture
+ * throughput (ops/s), p95 latency, WAL lag, and event counts.
+ *
+ * Bench starts this automatically in the background for every run (`--quiet`),
+ * so it stays silent unless CDC actually processed events. Run standalone for
+ * live per-interval logging:
+ *
+ *   tsx src/cdc-poller.ts [--interval 3] [--duration 120] [--quiet]
+ */
 async function main() {
   const { interval, duration, quiet } = parseArgs();
   const state: PollState = { prevEvents: 0, prevTime: 0, samples: [] };

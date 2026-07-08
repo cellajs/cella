@@ -1,8 +1,3 @@
-/**
- * Pure parsing logic for OpenAPI spec transformation.
- * Separated from plugin handler for testability.
- */
-
 import type {
   GenComponentSchema,
   GenExtensionDefinition,
@@ -47,7 +42,7 @@ interface ParsedOpenApiSpec {
 
 /**
  * Parse an OpenAPI spec into documentation-ready data structures.
- * This is a pure function with no side effects.
+ * Pure function (no side effects), kept separate from the plugin handler for testability.
  */
 export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
   const operations: GenOperationSummary[] = [];

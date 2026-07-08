@@ -1,14 +1,10 @@
-/**
- * Load-test user seed helper — uses backend mocks for type-safe records.
- * Runs in Node.js (data-setup), not in k6.
- */
-
 import type { UserModel } from '#/modules/user/user-db';
 import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import { emailId, sessionId, userEmail, userId } from './ids';
 
 /**
- * Generate a load-test user insert record by index.
+ * Generate a load-test user insert row by index, using backend mocks for a
+ * type-safe entity. Runs in Node.js (data-setup), not in Artillery scenarios.
  */
 export function loadtestUser(index: number) {
   const id = userId(index);
@@ -27,7 +23,7 @@ export function loadtestUser(index: number) {
 }
 
 /**
- * Generate a verified email record for a load-test user.
+ * Generate a verified email row for a load-test user.
  */
 export function loadtestEmail(index: number) {
   return {
@@ -37,7 +33,7 @@ export function loadtestEmail(index: number) {
 }
 
 /**
- * Generate a session record + cookie string for a load-test user.
+ * Generate a session row + cookie string for a load-test user.
  * Token is deterministic per index so the Artillery processor can reconstruct
  * the cookie without querying the DB.
  */

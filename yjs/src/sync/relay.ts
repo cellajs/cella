@@ -82,7 +82,7 @@ function safeMerge(existing: Uint8Array, update: Uint8Array): Uint8Array {
 
 /**
  * Handle an incoming WebSocket message from a client. Routes based on y-protocols message type.
- * All sync messages (reads and writes) are gated on ctx.verified — buffered until async
+ * All sync messages (reads and writes) are gated on ctx.verified: buffered until async
  * entity verification completes. Awareness (cursors) is always allowed since it's ephemeral.
  */
 export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8Array): Promise<void> {
@@ -109,7 +109,7 @@ export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8A
       await handleSyncUpdate(ctx, ws, update, data);
     }
   } else if (messageType === YMessage.Awareness) {
-    // Awareness (cursor positions) is always allowed — it's ephemeral and read-like
+    // Awareness (cursor positions) is always allowed: it's ephemeral and read-like
     const now = Date.now();
     const lastTime = awarenessTimestamps.get(ws) ?? 0;
     if (now - lastTime < 1000 / YJS_AWARENESS_RATE_LIMIT) return;
@@ -141,7 +141,7 @@ async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector
     fullState = storedState;
   }
 
-  // No row in DB and no pending state — fresh session. Seed the doc from the
+  // No row in DB and no pending state: fresh session. Seed the doc from the
   // entity's stored description server-side, so clients never seed (no client
   // seed race, no undo-history pollution, no markContentAsSent handshake).
   if (!fullState && storedState === null) {
@@ -149,7 +149,7 @@ async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector
     const seed = descriptionToYUpdate(description);
     await createDoc(ctx, seed);
     // Re-load the canonical row: a concurrent connector (this or another instance)
-    // may have won the insert with its own seed — merging two independently
+    // may have won the insert with its own seed; merging two independently
     // generated seeds would duplicate content, so everyone adopts the winner's.
     const canonical = await loadState(ctx);
     if (canonical && canonical.length > 0) fullState = canonical;
@@ -162,7 +162,7 @@ async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector
     collabForBaseline.lastMaterializedJson = stateToBlocksJson(fullState) ?? undefined;
   }
 
-  // No content to diff against — send empty doc update
+  // No content to diff against: send empty doc update
   if (!fullState) {
     ws.send(encodeSyncStep2(Y.encodeStateAsUpdate(new Y.Doc())));
     return;
@@ -184,7 +184,7 @@ async function handleSyncUpdate(ctx: DocContext, ws: WebSocket, update: Uint8Arr
   const collab = getCollab(ctx.entityType, ctx.entityId);
   if (!collab) return;
 
-  // Last writer in the save window — attribution for the debounced save + materialization
+  // Last writer in the save window: attribution for the debounced save + materialization
   collab.lastEditor = ctx;
 
   if (collab.pendingState && collab.pendingState.length > 0) {
@@ -203,7 +203,7 @@ async function handleSyncUpdate(ctx: DocContext, ws: WebSocket, update: Uint8Arr
     if (!collab.pendingState) return;
     const snapshotToSave = collab.pendingState;
     collab.pendingState = undefined;
-    // Clear cached DB state — next window should re-fetch
+    // Clear cached DB state: next window should re-fetch
     collab.cachedDbState = undefined;
 
     const savePromise = saveState(ctx, snapshotToSave, collab.lastEditor?.userId ?? null);
@@ -212,7 +212,7 @@ async function handleSyncUpdate(ctx: DocContext, ws: WebSocket, update: Uint8Arr
       await savePromise;
       // Materialize the saved state into the entity's durable record (single writer:
       // one call per doc per save window, regardless of how many clients are typing).
-      // A 'retry' failure leaves the diff baseline stale — the next save window or the
+      // A 'retry' failure leaves the diff baseline stale; the next save window or the
       // gated session cleanup converges it.
       await materializeState(collab, snapshotToSave);
     } catch (err) {

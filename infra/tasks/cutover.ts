@@ -1,43 +1,3 @@
-/**
- * Explicit LB-overlap cutover controller for the immutable-node model.
- *
- * Every release provisions a NEW VM generation (`vm-<svc>-<gen>`) with the image
- * SHA baked into its cloud-init. This task can health-gate that new generation
- * and atomically re-point the load balancer from the old generation to the new
- * one, draining the old before CI destroys it. deploy.yml calls
- * tasks/deploy-service.ts, which wraps this controller with Pulumi create/destroy
- * bookends and stack-output discovery.
- *
- * Design:
- *   - PURE CORE — `contractBackend` / `sequenceCutover` orchestrate the rollout
- *     over INJECTED effects, so the ordering (expand BEFORE contract, health
- *     before contract, drain BEFORE destroy) is fully unit-testable with a fake
- *     LB + fetch.
- *   - IMPURE EDGES — `createLbSetServers` (direct Scaleway `SetBackendServers`
- *     REST call) and the `pulumi up` create/destroy bookends in the entrypoint.
- *     These touch live infra and are exercised only in a real deploy / preview,
- *     never in the unit tests.
- *
- * The LB re-point is the atomic primitive: `SetBackendServers` replaces the whole
- * backend server list server-side in one call. Near-zero-drop comes from
- * expand-then-contract — `[old, new]` (overlap while new health-checks UP) then
- * `[new]` (old removed, in-flight connections drain).
- *
- * cdc is `exclusive`, not `lb-overlap`: it holds one PostgreSQL replication slot
- * that Postgres permits exactly one consumer for, so there is no LB and no
- * overlap. The old worker must release the slot before the new one can acquire
- * it; the new generation only reports `/health` healthy once it holds the slot,
- * so "destroy old → poll new healthy" confirms the handoff (deploy-service.ts
- * orchestrates that ordering around its pulumi bookends).
- *
- * Usage:
- *   tsx infra/tasks/cutover.ts --service backend --sha <git-sha> \
- *     --strategy lb-overlap --drain-policy requests \
- *     --lb-zone fr-par-1 --backend-id <uuid> \
- *     --health-url https://api.example/health \
- *     --old-ips 10.0.0.4 --new-ips 10.0.0.9 --drain-seconds 10
- *   (SCW_SECRET_KEY in env for the live LB call)
- */
 import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like'
 import { isRecord } from '../lib/utils/guards'
 import { isMain } from '../lib/utils/is-main'
@@ -50,11 +10,6 @@ import { createFetchProbe, pollForVersion } from './wait-for-version'
 
 export type { DrainPolicy, ReplacementStrategy }
 
-// ---------------------------------------------------------------------------
-// Injected effects — every side effect the rollout performs is a function the
-// caller supplies, so the sequencer is pure and the tests assert ordering.
-// ---------------------------------------------------------------------------
-
 /** Atomically replace a backend's entire server list (Scaleway SetBackendServers). */
 export type SetServersFn = (serverIps: string[]) => Promise<void>
 
@@ -65,7 +20,7 @@ export type GetServersFn = () => Promise<string[]>
 export type HealthGateFn = () => Promise<boolean>
 
 // ---------------------------------------------------------------------------
-// Pure LB operations — one atomic `SetBackendServers` call each.
+// Pure LB operations: one atomic `SetBackendServers` call each.
 // ---------------------------------------------------------------------------
 
 /** Contract the backend to serve ONLY the new generation (old removed, drains). */
@@ -74,7 +29,7 @@ export async function contractBackend(setServers: SetServersFn, newIps: string[]
 }
 
 // ---------------------------------------------------------------------------
-// The sequencer — orders the rollout steps over injected effects. Never touches
+// The sequencer: orders the rollout steps over injected effects. Never touches
 // the network or a subprocess itself; that is the entrypoint's job.
 // ---------------------------------------------------------------------------
 
@@ -108,23 +63,19 @@ export interface CutoverResult {
   ok: boolean
   /** Why the cutover stopped, when not ok. */
   aborted?: 'unhealthy'
-  /** Ordered record of the steps performed — asserted by the unit tests. */
+  /** Ordered list of the steps performed; asserted by the unit tests. */
   steps: string[]
 }
 
 /**
- * Run a single service's cutover. The new generation VM already exists (created
- * by the `pulumi up` bookend); this gates it healthy and re-points traffic.
- *
- * lb-overlap:  health-gate → expand [old,new] → reattach internal IP → contract [new] → drain
- *              or expand → health-gate → reattach → contract when CI must probe through the public LB
- * exclusive:   health-gate(process up); the destroy-old / slot-handoff ordering
- *              is orchestrated by deploy-service.ts around its pulumi bookends
- *
- * With a direct new-generation probe, an unhealthy generation aborts before any
- * LB mutation. With `healthAfterExpand`, the new generation is first attached
- * to the LB and the public endpoint is polled until the LB can serve the new
- * SHA; failure leaves the LB in the safe expanded state for manual diagnosis.
+ * Run a single service's cutover. Every release provisions a new VM generation
+ * (`vm-<svc>-<gen>`) with the image SHA baked into its cloud-init; deploy.yml
+ * runs this controller through tasks/deploy-service.ts, which wraps it with
+ * `pulumi up` create/destroy bookends. The new generation VM therefore already
+ * exists; this gates it healthy and re-points traffic. Every side effect
+ * (health probe, LB writes) is passed in via `plan`, so this function stays
+ * pure and the unit tests can assert exact step order. See
+ * infra/tasks/README.md for the lb-overlap vs exclusive strategy design.
  */
 export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult> {
   const sleep = plan.sleep ?? defaultSleep
@@ -158,19 +109,17 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
     return normalize(actual) === normalize(expected)
   }
   // Level-triggered reconcile: the desired final state is `[new]`, reached only
-  // AFTER the new generation is health-verified; the safe intermediate state is
-  // the overlap `[old, new]`. We always DRIVE the live list toward desired with
-  // idempotent SetBackendServers calls and never return success while the live
-  // list still differs from desired. This is the core fix for the stranded-LB
-  // class of bugs: an empty, stale, or unexpected live pool is reconciled rather
-  // than assumed-correct, and an `old == new` (idempotent redeploy) still asserts
-  // the pool instead of silently skipping the only corrective call.
+  // after the new generation is health-verified; the safe intermediate state is
+  // the overlap `[old, new]`. Drive the live list toward desired with idempotent
+  // SetBackendServers calls; an empty, stale, or unexpected live pool (including
+  // old == new on an idempotent redeploy) is reconciled rather than assumed
+  // correct.
   const overlap = [...new Set([...plan.oldIps, ...plan.newIps])]
   let live = plan.getServers ? await plan.getServers() : plan.oldIps
   record(`observed LB server list: ${live.join(',') || '<empty>'}`)
 
-  // Phase 1 — ensure the overlap is attached before verifying, unless the live
-  // list is ALREADY exactly the desired `[new]` (a prior run contracted it).
+  // Phase 1: ensure the overlap is attached before verifying, unless the live
+  // list is already exactly the desired `[new]` (a prior run contracted it).
   if (!sameIps(live, plan.newIps)) {
     if (sameIps(live, overlap)) {
       record('LB already expanded to [old, new]')
@@ -186,7 +135,7 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
     if (!(await plan.healthGate())) return { ok: false, aborted: 'unhealthy', steps }
   }
 
-  // Phase 2 — contract to the new generation only (verified above). Idempotent:
+  // Phase 2: contract to the new generation only (verified above). Idempotent:
   // skipped only when the live list is already exactly `[new]`.
   if (!sameIps(live, plan.newIps)) {
     record('contract LB to [new]')
@@ -203,7 +152,7 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
 }
 
 // ---------------------------------------------------------------------------
-// Impure edge — the real Scaleway `SetBackendServers` REST call.
+// Impure edge: the real Scaleway `SetBackendServers` REST call.
 //
 // PUT /lb/v1/zones/{zone}/backends/{backendId}/servers   body: { server_ip: [...] }
 // replaces the whole server list in one atomic server-side operation (Scaleway
@@ -285,7 +234,7 @@ export function createLbGetServers(opts: LbSetServersOptions): GetServersFn {
 }
 
 // ---------------------------------------------------------------------------
-// Standalone entry point — wires the live effects and runs the cutover. The
+// Standalone entry point: wires the live effects and runs the cutover. The
 // `pulumi up` create/destroy bookends are CI-orchestrated around this call
 // (see .github/workflows/deploy.yml), keeping subprocess calls out of the core.
 // ---------------------------------------------------------------------------

@@ -1,16 +1,9 @@
-/**
- * Infrastructure readiness checks shared between the bench CLI and the bench
- * smoke test. Side-effect free (no spinners, no `process.exit`) so it can be
- * imported from a Vitest test to decide whether to skip when `pnpm dev` is not
- * running.
- */
-
 import pg from 'pg';
 import { appConfig } from 'shared';
 import { BACKEND_PORT, BASE_URL, DB_URL } from './config';
 
-// Only services the app actually runs are health-checked. yjs and ai are skipped
-// when disabled in appConfig.services.
+// Only services the app actually runs are health-checked: cdc, yjs, and mcp are
+// skipped when disabled in appConfig.services.
 export const SERVICES = {
   backend: `${BASE_URL}/health`,
   ...(appConfig.services.cdc.enabled !== false ? { cdc: `http://localhost:${BACKEND_PORT + 1}/health` } : {}),
@@ -41,9 +34,9 @@ export async function isServiceHealthy(url: string): Promise<boolean> {
 
 /**
  * One-shot readiness probe: Postgres reachable and every enabled service
- * healthy. Unlike the CLI's `assertInfrastructureReady`, this does not poll or
- * exit — it returns `false` immediately so callers (e.g. the smoke test) can
- * skip gracefully.
+ * healthy. Shared between the bench CLI and the Vitest smoke test. Unlike the
+ * CLI's `assertInfrastructureReady`, this does not poll or exit: it returns
+ * `false` immediately so callers can skip gracefully.
  */
 export async function isInfrastructureReady(): Promise<boolean> {
   if (!(await isPostgresReady())) return false;

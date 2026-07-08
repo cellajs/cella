@@ -39,7 +39,7 @@ function getMessageRow(msg: DmlMessage): Record<string, unknown> | null {
  * Check if a message is a seeded INSERT during catch-up and should be skipped.
  * Detects seeded entities by UUID prefix '00000000-' (from mockUuid in script context)
  * or legacy nanoid prefix 'gen-'.
- * Only skips inserts — updates/deletes to seeded entities must still be tracked.
+ * Only skips inserts; updates/deletes to seeded entities must still be tracked.
  */
 function isSeededInsert(msg: DmlMessage): boolean {
   if (msg.tag !== 'insert' || !replicationState.catchingUp) return false;
@@ -91,7 +91,7 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
       const lagMs = Date.now() - commitTimeMs;
       const stillCatchingUp = replicationState.updateLag(lagMs);
 
-      // Transition: catchup → live — run post-catchup recovery
+      // catchup → live transition: run post-catchup recovery
       if (wasCatchingUp && !stillCatchingUp) {
         await flushBuffer.drain();
         runPostCatchupRecovery();
@@ -102,7 +102,7 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
     return;
   }
 
-  // Transaction boundary: COMMIT — analyze and flush buffered events
+  // Transaction boundary: COMMIT; analyze and flush buffered events
   if (tag === 'commit') {
     try {
       await txBuffer.onCommit();

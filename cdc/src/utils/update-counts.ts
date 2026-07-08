@@ -7,13 +7,13 @@ import { isRestoreTransition, isSoftDeleteTransition } from './is-soft-delete-tr
 import { log } from '../lib/pino';
 
 export interface CountDelta {
-  /** Context key (organizationId or sub-context id) — the row to update */
+  /** Context key (organizationId or sub-context id): the row to update */
   contextKey: string;
   /** Key-value deltas: e.g. { 'm:admin': 1, 'm:total': 1 } or { 'e:attachment': -1 } */
   deltas: Record<string, number>;
 }
 
-/** Hierarchy surface the counter machinery needs — injectable for synthetic-hierarchy tests. */
+/** Hierarchy surface the counter machinery needs; injectable for synthetic-hierarchy tests. */
 export type CountsHierarchy = AncestorSource & {
   isProduct(entityType: string): boolean;
   getHostRelations(): readonly HostRelation[];
@@ -22,25 +22,11 @@ export type CountsHierarchy = AncestorSource & {
 /**
  * Determine count deltas from a CDC event.
  *
- * Membership counts (m: prefix):
- *   - membership create → +1 role, +1 total
- *   - membership delete → -1 role, -1 total
- *   - membership update (role change) → -1 old role, +1 new role
- *
- * Membership seq (s:membership on the org row):
- *   - +1 on every membership / inactive_membership activity (change signal for catchup screening)
- *
- * Inactive membership counts (m:pending):
- *   - create with rejectedAt=null → +1 pending
- *   - delete with rejectedAt=null → -1 pending
- *   - update rejectedAt null→non-null → -1 pending
- *
- * Entity counts (e: prefix):
- *   - entity create → +1 on org AND every non-null ancestor context (full attribution:
- *     intermediate levels get counters so members at any depth can screen catchup changes)
- *   - entity delete → -1 on the same set
- *   - entity update with changed ancestor ids (reparent / re-attach at another depth) →
- *     -1 on ancestors left, +1 on ancestors gained
+ * Membership rows yield `m:<role>` / `m:total` deltas plus an org-level
+ * `s:membership` seq bump used for catchup change screening. Inactive
+ * memberships count as `m:pending` while rejectedAt is null. Entity rows yield
+ * `e:<type>` deltas on the org and every non-null ancestor context; updates
+ * that change ancestor ids re-credit the counters.
  */
 export function getCountDeltas(
   tableMeta: TableMeta,
@@ -82,19 +68,16 @@ export function getCountDeltas(
       const counterKey = `e:${embedding.hostEntity}`;
 
       if (action === 'delete') {
-        // Decrement for all embedded IDs in the deleted entity
         const ids = getArrayValue(oldRow ?? newRow, col);
         for (const id of ids) {
           deltas.push({ contextKey: id, deltas: { [counterKey]: -1 } });
         }
       } else if (action === 'create') {
-        // Increment for all embedded IDs in the new entity
         const ids = getArrayValue(newRow, col);
         for (const id of ids) {
           deltas.push({ contextKey: id, deltas: { [counterKey]: 1 } });
         }
       } else if (action === 'update' && oldRow) {
-        // Diff: increment added, decrement removed
         const oldIds = getArrayValue(oldRow, col);
         const newIds = getArrayValue(newRow, col);
         const added = newIds.filter((id) => !oldIds.includes(id));
@@ -105,7 +88,7 @@ export function getCountDeltas(
     }
 
     // Host-relation counters: e:<hostedType> per host row (hierarchy `host:`, e.g. e:attachment
-    // per owning task). Live rows only, mirroring recalculation phase 4c — soft-delete/restore
+    // per owning task). Live rows only, mirroring recalculation phase 4c; soft-delete/restore
     // transitions arrive here remapped to delete/create via countAction.
     for (const relation of h.getHostRelations()) {
       if (relation.hostedType !== tableMeta.type) continue;
@@ -150,9 +133,9 @@ function getArrayValue(row: CdcRowData | undefined, key: string): string[] {
 }
 
 /**
- * Get membership count delta based on create/update/delete action and role change.
- * Reads only the fields it needs (contextId, role) off the WAL row — both are
- * NOT NULL columns, so a missing value means a malformed row and yields no delta.
+ * Membership count delta for create/update/delete and role changes. Reads only
+ * contextId and role off the WAL row; both are NOT NULL columns, so a missing
+ * value means a malformed row and yields no delta.
  */
 function getMembershipDelta(
   action: ActivityAction,
@@ -175,7 +158,6 @@ function getMembershipDelta(
   if (action === 'update' && oldRow) {
     const oldRole = getStringValue(oldRow, 'role');
     const newRole = getStringValue(newRow, 'role');
-    // Only emit delta if role actually changed
     if (oldRole && newRole && oldRole !== newRole) {
       return { contextKey: contextId, deltas: { [`m:${oldRole}`]: -1, [`m:${newRole}`]: 1 } };
     }
@@ -183,9 +165,7 @@ function getMembershipDelta(
 
   return null;
 }
-/**
- * Get inactive membership delta based on create/update/delete action and rejectedAt field.
- */
+/** Inactive membership m:pending delta; only rows with rejectedAt null count as pending. */
 function getInactiveMembershipDelta(
   action: ActivityAction,
   newRow: CdcRowData,
@@ -195,13 +175,11 @@ function getInactiveMembershipDelta(
   if (!contextId) return null;
 
   if (action === 'create') {
-    // Only count pending (not rejected)
     if (newRow.rejectedAt != null) return null;
     return { contextKey: contextId, deltas: { 'm:pending': 1 } };
   }
 
   if (action === 'delete') {
-    // Only decrement if it was pending (rejectedAt was null)
     const rejectedAt = newRow.rejectedAt ?? oldRow?.rejectedAt;
     if (rejectedAt != null) return null;
     return { contextKey: contextId, deltas: { 'm:pending': -1 } };
@@ -210,11 +188,9 @@ function getInactiveMembershipDelta(
   if (action === 'update' && oldRow) {
     const wasNull = oldRow.rejectedAt == null;
     const isNull = newRow.rejectedAt == null;
-    // Transition from pending to rejected
     if (wasNull && !isNull) {
       return { contextKey: contextId, deltas: { 'm:pending': -1 } };
     }
-    // Transition from rejected to pending (unlikely but handle it)
     if (!wasNull && isNull) {
       return { contextKey: contextId, deltas: { 'm:pending': 1 } };
     }
@@ -224,11 +200,10 @@ function getInactiveMembershipDelta(
 }
 
 /**
- * Get entity count deltas. Full attribution: a row counts on its organization and on every
- * non-null ancestor context (course AND section AND project, not just the declared parent),
- * so members at any level can screen catchup changes against their own context's counters.
- * Updates re-credit counters when ancestor ids changed (reparent / re-attach at another depth);
- * soft-delete and restore transitions are remapped to delete/create by the caller.
+ * Entity count deltas. Full attribution: a row counts on its organization and on
+ * every non-null ancestor context (not just the declared parent), so members at
+ * any level can screen catchup changes against their own context's counters.
+ * Soft-delete and restore transitions are remapped to delete/create by the caller.
  */
 function getEntityDeltas(
   action: ActivityAction,
@@ -238,7 +213,6 @@ function getEntityDeltas(
   oldRow: CdcRowData | null,
   h: AncestorSource,
 ): CountDelta[] {
-  // Assert required fields are present
   if (!newRow.id) {
     log.warn(`getEntityDeltas: missing "id" for ${entityType}`, { action });
     return [];
@@ -258,9 +232,10 @@ function getEntityDeltas(
     return deltas;
   }
 
-  // Plain update: ancestor ids may have changed (reparent / re-attach at another depth) —
-  // diff old vs new and re-credit. Only live→live moves counters: a soft-deleted row is not
-  // counted anywhere, and soft-delete/restore transitions were already remapped above.
+  // Plain update: ancestor ids may have changed (reparent / re-attach at another
+  // depth), so diff old vs new and re-credit. Only live→live moves counters: a
+  // soft-deleted row is not counted anywhere, and soft-delete/restore transitions
+  // were already remapped to delete/create by the caller.
   if (action === 'update' && oldRow && newRow.deletedAt == null && oldRow.deletedAt == null) {
     const oldIds = new Set(resolveNonNullAncestors(h, entityType, oldRow).map((a) => a.id));
     const newIds = new Set(resolveNonNullAncestors(h, entityType, newRow).map((a) => a.id));

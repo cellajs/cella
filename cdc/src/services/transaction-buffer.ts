@@ -30,7 +30,7 @@ const { transactionTimeoutMs } = RESOURCE_LIMITS.buffers;
  *
  * Uses streaming cascade suppression: as DELETE events arrive, context entity
  * IDs (organization, project, workspace) are tracked in a Set. Child deletes
- * referencing a tracked context ID are dropped inline — never buffered.
+ * referencing a tracked context ID are dropped inline, never buffered.
  *
  * This keeps memory bounded to surviving events only (context entity deletes +
  * non-delete mutations), regardless of cascade size. A 100k-task org delete
@@ -62,7 +62,7 @@ export class TransactionBuffer {
   }
 
   /**
-   * Handle a BEGIN message — start accumulating events for this transaction.
+   * Handle a BEGIN message: start accumulating events for this transaction.
    */
   onBegin(msg: Pgoutput.MessageBegin): void {
     // If there's already an active transaction (shouldn't happen), flush it
@@ -89,7 +89,7 @@ export class TransactionBuffer {
    * parent context entity delete has already been seen.
    */
   async onEvent(lsn: string, result: ParseMessageResult): Promise<void> {
-    // No active transaction — emit immediately (passthrough)
+    // No active transaction: emit immediately (passthrough)
     if (this.activeXid === null) {
       await this.onSurvivingEvents([{ lsn, result }]);
       return;
@@ -107,7 +107,7 @@ export class TransactionBuffer {
       this.deletedHostIds.add(activity.subjectId);
     }
 
-    // Drop cascaded child deletes inline — never buffer them
+    // Drop cascaded child deletes inline, never buffer them
     if ((this.deletedContextIds.size > 0 || this.deletedHostIds.size > 0) && this.isCascadedDelete(result)) {
       this.suppressedCount++;
       return;
@@ -117,7 +117,7 @@ export class TransactionBuffer {
   }
 
   /**
-   * Handle a COMMIT message — process surviving buffered events.
+   * Handle a COMMIT message: process surviving buffered events.
    * Most cascade suppression happens inline in onEvent(). A second pass catches
    * any child deletes that arrived before their parent context entity delete.
    */
@@ -163,7 +163,7 @@ export class TransactionBuffer {
 
     if (events.length === 0) return;
 
-    // Single-event transaction — no further analysis needed
+    // Single-event transaction: no further analysis needed
     if (events.length === 1) {
       await this.onSurvivingEvents(events);
       return;
@@ -254,8 +254,8 @@ export class TransactionBuffer {
   /**
    * Suppress embedding-propagation updates triggered by deletes in the same transaction.
    * Handles cases where a host entity array is updated synchronously alongside
-   * an embedded entity delete (the client handles this via propagateEmbeddings).
-   * Note: label cleanup is now async via CDC, but this remains as a generic safeguard.
+   * an embedded entity delete (the client handles this via propagateEmbeddings); acts
+   * as a generic safeguard against soft cascade duplication.
    */
   private suppressSoftCascades(events: PendingEvent[]): PendingEvent[] {
     const deleteTypes = new Set<string>();

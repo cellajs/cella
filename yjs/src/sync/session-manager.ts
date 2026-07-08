@@ -16,9 +16,9 @@ interface CollabSession {
   savingPromise?: Promise<void>;
   /** Cached DB state from the first loadState call within a debounce window. */
   cachedDbState?: Uint8Array | null;
-  /** Blocks JSON of the last successful (or seed) materialization — diff baseline. */
+  /** Blocks JSON of the last successful (or seed) materialization: diff baseline. */
   lastMaterializedJson?: string;
-  /** Context of the last client whose update was relayed — materialization attribution. */
+  /** Context of the last client whose update was relayed: materialization attribution. */
   lastEditor?: DocContext;
 }
 
@@ -94,7 +94,7 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
         try {
           await collab.savingPromise;
         } catch {
-          // Save failed — continue to flush + delete
+          // Save failed: continue to flush + delete
         }
       }
 
@@ -117,7 +117,7 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
 
       // Gate deletion on a final materialization: the durable record must absorb the
       // session before its state is destroyed. Only 'retry' (backend/network down)
-      // blocks — reschedule and keep the row. 'permanent' (entity deleted, permission
+      // blocks: reschedule and keep the row. 'permanent' (entity deleted, permission
       // revoked) can never converge, so deletion proceeds.
       if (finalState && finalState.length > 0) {
         const result = await materializeState(collab, finalState);

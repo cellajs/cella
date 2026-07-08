@@ -103,8 +103,7 @@ const checkWithIndices = <T extends PermissionMembership>(
   restrictions?: RowRestrictions,
   debug?: boolean,
 ): PermissionDecision<T> => {
-  // Primary context is always the first (most specific) in the hierarchy.
-  // orderedContexts is derived from the entity hierarchy and is never empty.
+  // Primary context is orderedContexts[0]; the hierarchy guarantees the array is never empty.
   const primaryContext = orderedContexts[0];
   if (primaryContext === undefined) throw new Error('checkSubject: orderedContexts must not be empty');
 
@@ -139,7 +138,6 @@ const checkWithIndices = <T extends PermissionMembership>(
     };
   }
 
-  // Initialize action attribution table: each action starts denied with no grants
   const actions = createActionRecord((): ActionAttribution => ({ enabled: false, grantedBy: [] }));
 
   // Collect resolved context IDs for debugging
@@ -162,7 +160,6 @@ const checkWithIndices = <T extends PermissionMembership>(
       );
     }
 
-    // Get the context ID from the subject for this context type
     const subjectContextId = getSubjectContextId(subject, contextType);
     if (!subjectContextId) {
       // This can be valid for optional context levels - log warning in debug mode
@@ -179,7 +176,6 @@ const checkWithIndices = <T extends PermissionMembership>(
     const matchingMemberships = membershipIndex.get(`${contextType}:${subjectContextId}`) ?? [];
 
     for (const m of matchingMemberships) {
-      // Look up what permissions this role grants for this entity type in this context
       const permissions = policyIndex.get(`${contextType}:${m.role}`);
       if (!permissions) {
         // Strict: role exists in membership but has no policy - likely config/data issue
@@ -221,8 +217,8 @@ const checkWithIndices = <T extends PermissionMembership>(
     }
   }
 
-  // Subject-level public read grant: rows can be readable by ANY actor — anonymous
-  // included — based on row data (see `public-read.ts`). Membership-independent.
+  // Subject-level public read grant: rows can be readable by any actor (anonymous
+  // included), based on row data (see `public-read.ts`). Membership-independent.
   const publicMode = publicGrants?.[subject.entityType];
   if (publicMode && publicReadMatches(publicMode, subject)) {
     actions.read.enabled = true;
@@ -243,34 +239,10 @@ const checkWithIndices = <T extends PermissionMembership>(
 };
 
 /**
- * Checks all permissions for one or more subjects.
- * When passed a single subject, returns a PermissionDecision.
- * When passed an array of subjects, returns a Map keyed by subject.id.
+ * Checks all permissions for one or more subjects. A single subject returns a
+ * `PermissionDecision`; an array returns a `Map` keyed by subject.id.
  *
- * The decision includes:
- * - `actions`: Per-action attribution showing which memberships granted each action
- * - `can`: Simple boolean map (true if action is enabled)
- * - `membership`: First membership from primaryContext
- *
- * ## Key concepts
- * - `orderedContexts`: Context types to check, ordered from most specific to root.
- *   For product entities (e.g., attachment): just ancestors [organization].
- *   For context entities (e.g., project): [project, organization] (self + ancestors).
- *
- * - `primaryContext`: Always orderedContexts[0]. This is where we capture
- *   the user's "direct" membership to the entity. For products, this is the closest ancestor.
- *
- * - `actions` attribution: For each action, tracks all grants that enabled it.
- *   Useful for debugging ("why can user delete?") and auditing.
- *
- * - `options.systemRole`: If 'admin', grants all permissions regardless of memberships.
- *
- * ## Example: Checking "attachment" with contextIds.organization="org1"
- * 1. orderedContexts = [organization] (attachment's ancestor)
- * 2. primaryContext = organization
- * 3. Find user's memberships where contextType=organization AND contextId=org1
- * 4. For each membership, look up permissions and attribute each granted action
- * 5. Derive `can` from actions, capture first membership
+ * See README.md in this directory for the context/attribution data model and a worked example.
  */
 export function getAllDecisions<T extends PermissionMembership>(
   policies: AccessPolicies,
@@ -325,8 +297,8 @@ export function getAllDecisions<T extends PermissionMembership>(
   const contextCache = new Map<ContextEntityType | ProductEntityType, ContextEntityType[]>();
 
   // Ordered contexts for an entity type (most specific → root), cached.
-  // For context entities (e.g., project): [project, organization] — includes self + ancestors
-  // For product entities (e.g., attachment): [organization] — just ancestors
+  // For context entities (e.g., project): [project, organization] (includes self and ancestors)
+  // For product entities (e.g., attachment): [organization] (just ancestors)
   // The first element [0] is always the primary context used for membership capture.
   const resolveOrderedContexts = (entityType: ContextEntityType | ProductEntityType): ContextEntityType[] => {
     let orderedContexts = contextCache.get(entityType);
@@ -363,7 +335,7 @@ export function getAllDecisions<T extends PermissionMembership>(
     );
 
     // Host delegation: a hosted row allows a delegated action if the HOST row allows it,
-    // including the host's row conditions, public grants and restrictions. Additive —
+    // including the host's row conditions, public grants and restrictions. Additive:
     // unions with the subject's own decision, attributed as {type:'host'}. Requires the
     // caller-resolved subject.hostRow (load-at-check); absent → contributes nothing.
     const delegatedActions = hostDelegation?.[subject.entityType];

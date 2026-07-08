@@ -1,7 +1,3 @@
-/**
- * Entity type guard functions bound to the app's hierarchy.
- * Single source of truth — calls hierarchy methods directly.
- */
 import { hierarchy } from '../config/config.default';
 import type { ContextEntityType, ProductEntityType } from '../types';
 

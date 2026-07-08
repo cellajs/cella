@@ -47,8 +47,8 @@ function mockEvent(overrides: {
 
 // ── Membership count deltas ──────────────────────────────────────────────────
 // Memberships are never seq-stampable, so all their deltas land in
-// countDeltasByContextKey (no seq group). Exercised through the batch path — the
-// only path the pipeline runs — by wrapping a single event in an array.
+// countDeltasByContextKey (no seq group). Exercised through the batch path (the
+// only path the pipeline runs) by wrapping a single event in an array.
 
 describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
   it('membership create: role + total count, plus org membership seq signal', () => {

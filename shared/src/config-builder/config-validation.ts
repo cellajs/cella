@@ -1,8 +1,3 @@
-/**
- * Compile-time validation for config consistency.
- * Ensures appConfig arrays match the hierarchy builder types.
- * This file has no runtime effect — all checks are erased at compile time.
- */
 import type {
   ContextEntityType,
   EntityType,

@@ -23,7 +23,7 @@ export function createActivity(
   const subjectType = tableMeta.type;
 
   // Derive context entity IDs from hierarchy ancestors. Declared-nullable ancestors may
-  // legitimately be null (variable-depth rows, e.g. a course-stream item) — no warning.
+  // legitimately be null (variable-depth rows, e.g. a course-stream item): no warning.
   const contextEntityIds: Record<string, string | null> = {};
   if (subjectType) {
     const nullableAncestors = hierarchy.getNullableAncestors(subjectType);
@@ -40,7 +40,7 @@ export function createActivity(
   const rawSubjectId = getRowValue(row, 'id');
   if (!rawSubjectId) throw new Error(`createActivity: row missing "id" for ${subjectType} ${action}`);
 
-  // For the tenant resource itself, the row has no tenantId column — its own id IS the tenantId.
+  // For the tenant resource itself, the row has no tenantId column: its own id IS the tenantId.
   const tenantId = getRowValue(row, 'tenantId') ?? (resourceType === 'tenant' ? rawSubjectId : null);
 
   // Build default nulls for all context entity ID columns, driven by config
@@ -58,7 +58,7 @@ export function createActivity(
     tableName: getTableName(tableMeta.table),
     type: `${subjectType}.${actionToVerb(action)}`,
     subjectId: rawSubjectId,
-    // Default context IDs to null — overridden by contextEntityIds for entities with hierarchy ancestors
+    // Default context IDs to null, overridden by contextEntityIds for entities with hierarchy ancestors
     ...defaultContextIds,
     createdAt: new Date().toISOString(),
     ...contextEntityIds,

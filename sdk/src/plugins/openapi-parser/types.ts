@@ -1,14 +1,9 @@
-/**
- * Type aliases for OpenAPI schema structures, backed by @hey-api/spec-types.
- * Used by schema resolution and parsing functions.
- *
- * Re-exported as aliases to maintain stable imports across the parser.
- * Non-standard spec fields (e.g., tag.kind) are handled via extension types.
- */
-
 import type { JSONSchemaDraft2020_12, OpenAPIV3_1 } from '@hey-api/spec-types';
 
-/** OpenAPI schema (JSON Schema 2020-12 with OpenAPI v3.1 extensions) */
+/**
+ * OpenAPI schema (JSON Schema 2020-12 with OpenAPI v3.1 extensions), backed by
+ * @hey-api/spec-types and re-exported as a stable alias for the parser to import.
+ */
 export type OpenApiSchema = JSONSchemaDraft2020_12.Document;
 
 /** OpenAPI parameter */

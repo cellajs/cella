@@ -1,5 +1,5 @@
 /**
- * Bench smoke test — runs every scenario through the real CLI in `--short` mode
+ * Bench smoke test: runs every scenario through the real CLI in `--short` mode
  * (1s / 1 VU, no thresholds, no baselines) to catch scenarios that break, e.g.
  * after a route/schema change. It is a smoke check, not a performance gate.
  *
