@@ -20,11 +20,13 @@
 import { inArray } from 'drizzle-orm';
 import { getAttachments } from 'sdk';
 import { generateId } from 'shared/entity-id';
+import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from './fixtures';
+import { cleanupEntityHierarchy, seedEntityHierarchy } from './hierarchy-helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
 import { mockFetchRequest, setTestConfig } from './test-utils';
@@ -44,6 +46,9 @@ const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 10
 describe('Attachment seq reads', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
+  // Ancestor context chain for attachment, derived from the app's real hierarchy: a fork with
+  // organization → project → attachment seeds a project; an org-only fork seeds nothing.
+  let plan: TestEntityHierarchyPlan;
 
   const listAttachments = async (query: Record<string, string | number>) => {
     const result = await call(getAttachments, {
@@ -59,11 +64,22 @@ describe('Attachment seq reads', async () => {
     mockFetchRequest();
     tenant = await createTestTenant(call, 'attachment-seq-reads');
 
+    plan = buildTestEntityHierarchyPlan({
+      entityType: 'attachment',
+      rootContextId: tenant.organization.id,
+      makeContextId: () => generateId(),
+    });
+    await seedEntityHierarchy(db, plan, {
+      tenantId: tenant.tenantId,
+      createdBy: tenant.user.id,
+      slugPrefix: 'attachment-seq',
+    });
+
     // Insert order is DESCENDING seq so createdAt order disagrees with seq order —
     // B1 would pass accidentally if the endpoint sorted by createdAt.
     const baseAttachment = {
       tenantId: tenant.tenantId,
-      organizationId: tenant.organization.id,
+      ...plan.contextIdColumns,
       bucketName: 'attachments',
       contentType: 'image/png',
       size: '1000',
@@ -114,12 +130,15 @@ describe('Attachment seq reads', async () => {
       },
     ];
     for (const row of rows) {
-      await db.insert(attachmentsTable).values(row);
+      // Cast: `...plan.contextIdColumns` is a config-derived Record<string,string>, which widens
+      // the row type; the runtime shape matches the attachment insert (organization/project ids).
+      await db.insert(attachmentsTable).values(row as typeof attachmentsTable.$inferInsert);
     }
   });
 
   afterAll(async () => {
     await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, Object.values(attachmentIds)));
+    await cleanupEntityHierarchy(db, plan);
     await clearSecurityTestData();
   });
 

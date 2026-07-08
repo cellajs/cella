@@ -1,7 +1,6 @@
 import { appConfig } from '../../config-builder/app-config';
 import { hierarchy } from '../../../config/hierarchy-config';
-import type { ContextEntityType, ProductEntityType } from '../../../types';
-import { getContextRoles, isContextEntity } from '../../entity-guards';
+import type { ContextEntityType, EntityActionType, ProductEntityType } from '../../../types';
 import { allActionsAllowed, createActionRecord } from '../action-helpers';
 import { type PublicReadGrants, publicReadMatches } from '../public-read';
 import { type ConditionActor, isRowCondition, type RowForCondition } from '../row-conditions';
@@ -96,6 +95,8 @@ const checkWithIndices = <T extends PermissionMembership>(
   policyIndex: PolicyIndex,
   subject: SubjectForPermission,
   orderedContexts: ContextEntityType[],
+  getRoles: (contextType: ContextEntityType) => readonly string[],
+  entityActions: readonly EntityActionType[],
   isSystemAdmin: boolean,
   userId?: string,
   publicGrants?: PublicReadGrants,
@@ -154,7 +155,7 @@ const checkWithIndices = <T extends PermissionMembership>(
   // Walk through each context level (most specific first, then ancestors)
   for (const contextType of orderedContexts) {
     // Strict: context in hierarchy must have roles defined
-    const contextRoles = getContextRoles(contextType);
+    const contextRoles = getRoles(contextType);
     if (contextRoles.length === 0) {
       throw new Error(
         `[Permission] Context "${contextType}" has no roles defined but is in hierarchy for ${subject.entityType}`,
@@ -194,7 +195,7 @@ const checkWithIndices = <T extends PermissionMembership>(
         !restriction || membershipGrantQualifies(restriction, subject, orderedContexts, contextType, m.role);
 
       // Attribute each granted action to this membership
-      for (const action of appConfig.entityActions) {
+      for (const action of entityActions) {
         const policyValue = permissions[action];
 
         // Unconditional grant
@@ -297,6 +298,12 @@ export function getAllDecisions<T extends PermissionMembership>(
   const restrictions = options?.restrictions;
   const hostDelegation = options?.hostDelegation;
   const debug = options?.debug === true;
+  // Topology defaults to the app's real config; tests override it to drive the engine on a
+  // synthetic hierarchy (see shared/src/testing/wide-fixture.ts). No override → unchanged behavior.
+  const topoHierarchy = options?.topology?.hierarchy ?? hierarchy;
+  const entityActions = options?.topology?.entityActions ?? appConfig.entityActions;
+  // Bind the method to its hierarchy object: it reads `this`, so a bare reference would unbind it.
+  const getRoles = (contextType: ContextEntityType): readonly string[] => topoHierarchy.getRoles(contextType);
 
   const results = new Map<string, PermissionDecision<T>>();
 
@@ -304,8 +311,8 @@ export function getAllDecisions<T extends PermissionMembership>(
     return isSingle ? results.get(subjects.id ?? '_idx:0')! : results;
   }
 
-  // Validate all inputs before processing
-  subjectArray.forEach((subject, i) => validateSubject(subject, i));
+  // Validate all inputs before processing (against the topology hierarchy, which may be synthetic)
+  subjectArray.forEach((subject, i) => validateSubject(subject, i, topoHierarchy));
   memberships.forEach((membership, i) => validateMembership(membership, i));
 
   // Build membership index once for all subjects
@@ -324,8 +331,12 @@ export function getAllDecisions<T extends PermissionMembership>(
   const resolveOrderedContexts = (entityType: ContextEntityType | ProductEntityType): ContextEntityType[] => {
     let orderedContexts = contextCache.get(entityType);
     if (!orderedContexts) {
-      const ancestors = hierarchy.getOrderedAncestors(entityType) as ContextEntityType[];
-      orderedContexts = isContextEntity(entityType) ? [entityType, ...ancestors] : [...ancestors];
+      const ancestors = topoHierarchy.getOrderedAncestors(entityType) as ContextEntityType[];
+      // isContext (unlike the entity-guards type guard) returns plain boolean, so cast the
+      // context-branch result: a true isContext means entityType is a context by construction.
+      orderedContexts = (
+        topoHierarchy.isContext(entityType) ? [entityType, ...ancestors] : [...ancestors]
+      ) as ContextEntityType[];
       contextCache.set(entityType, orderedContexts);
     }
     return orderedContexts;
@@ -342,6 +353,8 @@ export function getAllDecisions<T extends PermissionMembership>(
       policyIndex,
       subject,
       orderedContexts,
+      getRoles,
+      entityActions,
       isSystemAdmin,
       userId,
       publicGrants,
@@ -354,7 +367,7 @@ export function getAllDecisions<T extends PermissionMembership>(
     // unions with the subject's own decision, attributed as {type:'host'}. Requires the
     // caller-resolved subject.hostRow (load-at-check); absent → contributes nothing.
     const delegatedActions = hostDelegation?.[subject.entityType];
-    const hostType = delegatedActions?.length ? hierarchy.getHostType(subject.entityType) : undefined;
+    const hostType = delegatedActions?.length ? topoHierarchy.getHostType(subject.entityType) : undefined;
     if (!isSystemAdmin && delegatedActions && hostType && subject.hostRow) {
       const hostRow = subject.hostRow;
       const hostSubject: SubjectForPermission = {
@@ -372,6 +385,8 @@ export function getAllDecisions<T extends PermissionMembership>(
         getOrBuildPolicyIndex(policies, hostType as ProductEntityType, policyIndexCache),
         hostSubject,
         resolveOrderedContexts(hostType as ProductEntityType),
+        getRoles,
+        entityActions,
         false,
         userId,
         publicGrants,

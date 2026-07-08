@@ -2,6 +2,7 @@ import type { ContextEntityType, EntityActionType, EntityIdColumnKeys, EntityRol
 import type { PublicReadGrants, PublicReadMode } from '../public-read';
 import type { RowRestrictions } from '../row-restrictions';
 import type { HostDelegation } from '../types';
+import type { PermissionTopology } from './topology';
 
 export type ContextEntityIdColumns = {
   [K in ContextEntityType as EntityIdColumnKeys[K]]: string | null;
@@ -115,6 +116,11 @@ export interface PermissionCheckOptions {
    * `checkPermission` wrapper like `publicGrants`.
    */
   hostDelegation?: HostDelegation;
+  /**
+   * Override the hierarchy/action topology the engine reads (defaults to the app's config).
+   * Tests use this to exercise a synthetic hierarchy; see `shared/src/testing/wide-fixture.ts`.
+   */
+  topology?: PermissionTopology;
   /** When `true`, emit debug logging of the decision tree. Off by default to keep the engine quiet. */
   debug?: boolean;
 }

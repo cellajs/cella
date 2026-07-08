@@ -21,7 +21,8 @@
     "./module-registry": "./src/module-registry.ts",
     "./version-changes": "./src/version-changes/index.ts",
     "./test-db": "./src/test-db.ts",
-    "./testing/entity-hierarchy": "./src/testing/entity-hierarchy.ts"
+    "./testing/entity-hierarchy": "./src/testing/entity-hierarchy.ts",
+    "./testing/wide-fixture": "./src/testing/wide-fixture.ts"
   },
   "dependencies": {
     "@blocknote/core": "^0.51.4",

@@ -40,6 +40,7 @@ export type {
   ResolvedContextIds,
   SubjectForPermission,
 } from './permission-manager/types';
+export type { PermissionTopology, TopologyHierarchy } from './permission-manager/topology';
 export { buildSubject, buildSubjectFromEntity } from './build-subject';
 export { validateAncestorScope } from './validate-ancestor-scope';
 export { MissingScopeError } from './missing-scope-error';
