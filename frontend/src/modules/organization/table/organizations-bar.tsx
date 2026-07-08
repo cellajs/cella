@@ -85,7 +85,13 @@ export const OrganizationsTableBar = ({
   };
 
   const fetchExport = async (limit: number, offset: number) => {
-    return fetchOrganizationsForExport({ limit, offset, q, sort: sort || 'createdAt', order: order || 'asc' });
+    return fetchOrganizationsForExport({
+      limit,
+      offset,
+      q,
+      sort: sort || 'createdAt',
+      order: order || (sort === 'displayOrder' ? 'asc' : 'desc'),
+    });
   };
 
   return (

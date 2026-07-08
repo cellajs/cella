@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-type CarouselApi = UseEmblaCarouselType[1];
+export type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
 type CarouselOptions = UseCarouselParameters[0];
 type CarouselPlugin = UseCarouselParameters[1];
@@ -59,11 +59,11 @@ function Carousel({
   const [canScrollPrev, setCanScrollPrev] = React.useState(false);
   const [canScrollNext, setCanScrollNext] = React.useState(false);
 
-  const onSelect = (api: CarouselApi) => {
+  const onSelect = React.useCallback((api: CarouselApi) => {
     if (!api) return;
     setCanScrollPrev(api.canScrollPrev());
     setCanScrollNext(api.canScrollNext());
-  };
+  }, []);
 
   const scrollPrev = () => {
     api?.scrollPrev();
@@ -83,10 +83,14 @@ function Carousel({
     }
   };
 
+  // Expose the api to the consumer once it's ready. Keep setApi in a ref so an unstable
+  // (inline) setApi prop doesn't re-run this effect every render and re-register listeners.
+  const setApiRef = React.useRef(setApi);
+  setApiRef.current = setApi;
   React.useEffect(() => {
-    if (!api || !setApi) return;
-    setApi(api);
-  }, [api, setApi]);
+    if (!api) return;
+    setApiRef.current?.(api);
+  }, [api]);
 
   React.useEffect(() => {
     if (!api) return;
@@ -95,7 +99,8 @@ function Carousel({
     api.on('select', onSelect);
 
     return () => {
-      api?.off('select', onSelect);
+      api.off('reInit', onSelect);
+      api.off('select', onSelect);
     };
   }, [api, onSelect]);
 

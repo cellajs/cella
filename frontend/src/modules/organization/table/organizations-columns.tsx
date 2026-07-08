@@ -119,6 +119,7 @@ export const useColumns = () => {
       key: 'createdAt',
       name: t('c:created_at'),
       sortable: true,
+      sortDescendingFirst: true,
       minBreakpoint: 'md',
       minWidth: 120,
       placeholderValue: '-',
@@ -136,7 +137,7 @@ export const useColumns = () => {
     // Dynamic membership count columns from role config
     ...roles.all.map((role) => ({
       key: `${role}Count`,
-      name: t(`c:${role}s`),
+      name: t(`c:${role}`, { count: 2 }),
       minBreakpoint: 'md' as const,
       minWidth: 60,
       maxWidth: 140,

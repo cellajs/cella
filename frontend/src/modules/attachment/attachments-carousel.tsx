@@ -2,9 +2,10 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
 import i18n from 'i18next';
 import { DownloadIcon, ExternalLinkIcon } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { isCDNUrl } from 'shared/is-cdn-url';
+import { useLatestCallback, useLatestRef } from '~/hooks/use-latest-ref';
 import { clearAttachmentDialogSearchParams, openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
 import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
@@ -14,6 +15,7 @@ import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import {
   Carousel as BaseCarousel,
+  type CarouselApi,
   CarouselContent,
   CarouselDots,
   CarouselItem,
@@ -105,6 +107,19 @@ export function AttachmentsCarousel({
 
   const toggleWatchDrag = (enabled: boolean) => setWatchDrag(enabled && items.length > 1);
 
+  // Register the Embla `select` listener once (stable setApi), reading the latest items and
+  // updateSearchParam via refs. Previously setApi was an inline arrow re-invoked on every render,
+  // stacking duplicate `select` listeners that fired redundant navigations on each slide change.
+  const itemsRef = useLatestRef(items);
+  const handleSelect = useLatestCallback(updateSearchParam);
+  const handleSetApi = useCallback(
+    (api: CarouselApi) => {
+      if (!api) return;
+      api.on('select', () => handleSelect(itemsRef.current[api.selectedScrollSnap()]));
+    },
+    [itemsRef, handleSelect],
+  );
+
   if (!items.length || !currentItem) return null;
 
   return (
@@ -113,13 +128,7 @@ export function AttachmentsCarousel({
       opts={{ duration: 20, loop: true, startIndex: startIndexRef.current ?? 0, watchDrag }}
       plugins={isDialog ? [] : [Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })]}
       className="group h-full w-full"
-      setApi={(api) => {
-        if (!api) return;
-        api.on('select', () => {
-          const newItem = items[api.selectedScrollSnap()];
-          updateSearchParam(newItem);
-        });
-      }}
+      setApi={handleSetApi}
     >
       {currentItem && isDialog && (
         <div className="fixed top-0 left-0 z-10 flex w-full gap-2 bg-background/60 p-3 text-center backdrop-blur-xs sm:text-left">

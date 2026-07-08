@@ -2,7 +2,7 @@ import { uuid } from 'drizzle-orm/pg-core';
 import {
   type AncestorContextType,
   appConfig,
-  type EntityIdColumnKey,
+  type EntityIdColumns,
   type EntityType,
   hierarchy,
   type NullableAncestorType,
@@ -23,22 +23,19 @@ type NullableUuid = ReturnType<typeof uuid>;
  *   become nullable columns
  * - related contexts (`relatedContexts`) → nullable id columns
  */
-export type ContextRelationColumns<E extends string> = {
-  [C in Exclude<AncestorContextType<E>, NullableAncestorType<E>> & EntityType as EntityIdColumnKey<C>]: NotNullUuid;
-} & {
-  [C in Extract<AncestorContextType<E>, NullableAncestorType<E>> & EntityType as EntityIdColumnKey<C>]: NullableUuid;
-} & {
-  [C in RelatedContextType<E> & EntityType as EntityIdColumnKey<C>]: NullableUuid;
-};
+export type ContextRelationColumns<E extends string> = EntityIdColumns<
+  Exclude<AncestorContextType<E>, NullableAncestorType<E>> & EntityType,
+  NotNullUuid
+> &
+  EntityIdColumns<Extract<AncestorContextType<E>, NullableAncestorType<E>> & EntityType, NullableUuid> &
+  EntityIdColumns<RelatedContextType<E> & EntityType, NullableUuid>;
 
 /**
  * Nullable ancestor-context id columns spanning all product entities. Intended for shared
  * cross-entity tables (e.g. `activities`) that store rows for many entity types at once.
  * Every column is nullable because a given row may not belong to every context.
  */
-export type ActivityContextColumns = {
-  [C in AncestorContextType<ProductEntityType> & EntityType as EntityIdColumnKey<C>]: NullableUuid;
-};
+export type ActivityContextColumns = EntityIdColumns<AncestorContextType<ProductEntityType> & EntityType, NullableUuid>;
 
 /**
  * Generates context-entity id columns for a product entity based on the hierarchy config.

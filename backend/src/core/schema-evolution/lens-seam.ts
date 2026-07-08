@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { type LensEntityType, normalizeOps, widenedOpsKeyMap } from 'shared/version-changes';
+import { type LensEntityType, normalizeOps, widenedOpsKeyMap } from 'shared/schema-evolution';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
 /**
@@ -65,6 +65,3 @@ export function widenBodySchema<T extends z.ZodObject<z.ZodRawShape>>(entityType
     }
   }) as unknown as T;
 }
-
-/** @deprecated Use `widenBodySchema` (same function; renamed when context entities joined the lens system). */
-export const widenCreateSchema = widenBodySchema;

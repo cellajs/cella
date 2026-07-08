@@ -34,7 +34,7 @@ export const getContextEntityRoute = (item: EnrichedContextEntity, isSubitem?: b
   const config = entityRouteConfig[entityType];
   let to = config.path;
   const params: Record<string, string> = { tenantId };
-  const search: Record<string, string> = {};
+  const search: Record<string, string> = { ...(config.search ?? {}) };
 
   // Set this entity's slug in its designated param
   params[config.paramName] = slug;
@@ -53,6 +53,8 @@ export const getContextEntityRoute = (item: EnrichedContextEntity, isSubitem?: b
       const parentConfig = entityRouteConfig[subitemConfig.entityType];
       to = parentConfig.path;
       params[parentConfig.paramName] = parentSlug;
+      for (const key of Object.keys(search)) delete search[key];
+      Object.assign(search, parentConfig.search ?? {});
       search[subitemConfig.searchParam] = slug;
     }
   }

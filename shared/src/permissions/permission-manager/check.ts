@@ -1,5 +1,3 @@
-import { appConfig } from '../../config-builder/app-config';
-import { hierarchy } from '../../../config/hierarchy-config';
 import type { ContextEntityType, EntityActionType, ProductEntityType } from '../../../types';
 import { allActionsAllowed, createActionRecord } from '../action-helpers';
 import { type PublicReadGrants, publicReadMatches } from '../public-read';
@@ -7,6 +5,7 @@ import { type ConditionActor, isRowCondition, type RowForCondition } from '../ro
 import { membershipGrantQualifies, type RowRestrictions } from '../row-restrictions';
 import type { AccessPolicies, EntityActionPermissions } from '../types';
 import { formatBatchPermissionSummary, formatPermissionDecision } from './format';
+import { resolveTopology } from './resolve-topology';
 import type {
   ActionAttribution,
   PermissionCheckOptions,
@@ -119,9 +118,7 @@ const checkWithIndices = <T extends PermissionMembership>(
     const allGranted = createActionRecord(
       (): ActionAttribution => ({
         enabled: true,
-        grantedBy: [
-          { type: 'membership', contextType: 'system' as ContextEntityType, contextId: 'admin', role: 'admin' },
-        ],
+        grantedBy: [{ type: 'systemAdmin' }],
       }),
     );
 
@@ -272,10 +269,7 @@ export function getAllDecisions<T extends PermissionMembership>(
   const debug = options?.debug === true;
   // Topology defaults to the app's real config; tests override it to drive the engine on a
   // synthetic hierarchy (see shared/src/testing/wide-fixture.ts). No override → unchanged behavior.
-  const topoHierarchy = options?.topology?.hierarchy ?? hierarchy;
-  const entityActions = options?.topology?.entityActions ?? appConfig.entityActions;
-  // Bind the method to its hierarchy object: it reads `this`, so a bare reference would unbind it.
-  const getRoles = (contextType: ContextEntityType): readonly string[] => topoHierarchy.getRoles(contextType);
+  const { hierarchy: topoHierarchy, entityActions, getRoles } = resolveTopology(options?.topology);
 
   const results = new Map<string, PermissionDecision<T>>();
 

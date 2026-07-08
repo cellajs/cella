@@ -27,10 +27,13 @@ export type EntityActionPermissions = Record<EntityActionType, NormalizedPermiss
 
 /**
  * Access policy entry for a specific context and role combination.
+ *
+ * `role` is a plain string: roles arrive from the (possibly synthetic) hierarchy's `getRoles`
+ * and are only ever equality-compared / index-keyed here, never narrowed to `EntityRole`.
  */
 export interface AccessPolicyEntry {
   contextType: ContextEntityType;
-  role: EntityRole;
+  role: string;
   permissions: EntityActionPermissions;
 }
 

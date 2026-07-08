@@ -3,7 +3,7 @@ import type { AuthContext } from '#/core/context';
 import { buildStx } from '#/core/stx';
 import { tenantContext, tenantRead } from '#/db/tenant-context';
 import { findAttachmentsByStxMutationId, insertAttachments } from '#/modules/attachment/attachment-queries';
-import { type attachmentCreateManyStxBodySchema, attachmentWire } from '#/modules/attachment/attachment-schema';
+import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
 import { getOrgEntityCount } from '#/modules/entities/helpers/get-entity-counts';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { canCreateEntity } from '#/permissions/can-create';
@@ -14,7 +14,7 @@ import { log } from '#/utils/logger';
 type CreateAttachmentsInput = z.infer<typeof attachmentCreateManyStxBodySchema>;
 export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAttachmentsInput) {
   // Lens seam: canonicalize old-shape field names before any body access
-  const input = rawInput.map((item) => attachmentWire.normalizeCreateItem(item));
+  const input = rawInput.map((item) => attachmentContract.normalizeCreateItem(item));
   const { organization, tenant } = ctx.var;
   const attachmentRestrictions = tenant.restrictions.quotas.attachment;
 

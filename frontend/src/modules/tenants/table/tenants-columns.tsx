@@ -53,7 +53,7 @@ export const useColumns = () => {
       sortable: true,
       resizable: true,
       minWidth: 180,
-      renderCell: ({ row }) => <span className="font-medium">{row.name}</span>,
+      placeholderValue: '-',
     },
     {
       key: 'ellipsis',
@@ -110,6 +110,7 @@ export const useColumns = () => {
       key: 'createdAt',
       name: t('c:created_at'),
       sortable: true,
+      sortDescendingFirst: true,
       minBreakpoint: 'md',
       minWidth: 120,
       placeholderValue: '-',

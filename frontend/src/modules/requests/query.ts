@@ -46,7 +46,7 @@ export const requestsKeys = {
 export const requestsListQueryOptions = ({
   q = '',
   sort = 'createdAt',
-  order = 'asc',
+  order = 'desc',
   limit: baseLimit = appConfig.requestLimits.requests,
 }: Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const limit = String(baseLimit);
@@ -114,7 +114,7 @@ export const fetchRequestsForExport = async (params: {
   sort?: NonNullable<GetRequestsData['query']>['sort'];
   order?: NonNullable<GetRequestsData['query']>['order'];
 }) => {
-  const { limit, offset = 0, q = '', sort = 'createdAt', order = 'asc' } = params;
+  const { limit, offset = 0, q = '', sort = 'createdAt', order = 'desc' } = params;
   const response = await getRequests({
     query: { q, sort, order, limit: String(limit), offset: String(offset) },
   });

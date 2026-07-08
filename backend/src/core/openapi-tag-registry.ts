@@ -1,6 +1,6 @@
 import { onModuleRegister } from 'shared/module-registry';
 
-// Bridge shared module registry to backend tag registry
+// Bridge shared module registry to OpenAPI tag registry
 onModuleRegister(({ name, owner, description, scope }) => {
   if (scope.includes('backend')) {
     registerTag({ tag: name, kind: 'module', parent: owner, description });

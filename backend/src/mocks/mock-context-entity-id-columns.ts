@@ -2,9 +2,13 @@ import {
   type AncestorContextType,
   appConfig,
   type ContextEntityType,
+  type EntityIdColumnKey,
+  type EntityIdColumns,
+  type EntityType,
   hierarchy,
   type ProductEntityType,
   type RelatedContextType,
+  type RootContextType,
 } from 'shared';
 import { mockUuid } from './mock-nanoid';
 
@@ -12,9 +16,7 @@ import { mockUuid } from './mock-nanoid';
  * Type for dynamically generated context entity ID columns in mocks.
  * Maps each context entity type to its corresponding ID column (e.g., organization -> organizationId).
  */
-export type MockContextIdColumns = {
-  [K in ContextEntityType as (typeof appConfig.entityIdColumnKeys)[K]]: string;
-};
+export type MockContextIdColumns = EntityIdColumns<ContextEntityType, string>;
 
 /**
  * Generates mock ID columns dynamically based on context entity types from appConfig.
@@ -39,11 +41,10 @@ export const generateMockContextIdColumns = (mode: 'all' | 'relatable' = 'all'):
  * Mock context-entity id columns for a specific product entity, mirroring its DB schema:
  * strict ancestors and declared related contexts (see `contextRelationColumns`).
  */
-export type MockEntityContextIdColumns<E extends string> = {
-  [C in AncestorContextType<E> as `${C}Id`]: string;
-} & {
-  [C in RelatedContextType<E> as `${C}Id`]: string;
-};
+export type MockEntityContextIdColumns<E extends string> = EntityIdColumns<
+  (AncestorContextType<E> | RelatedContextType<E>) & EntityType,
+  string
+>;
 
 /**
  * Generates the exact set of context-entity id columns a product entity carries, derived from
@@ -79,7 +80,7 @@ const rootContextType = hierarchy.contextTypes.find((t) => hierarchy.getParent(t
  */
 export const generateMockEntityBodyContextIdColumns = <E extends ProductEntityType>(
   entityType: E,
-): Omit<MockEntityContextIdColumns<E>, 'organizationId'> => {
+): Omit<MockEntityContextIdColumns<E>, EntityIdColumnKey<RootContextType>> => {
   const columns = {} as Record<string, string>;
 
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
@@ -91,5 +92,5 @@ export const generateMockEntityBodyContextIdColumns = <E extends ProductEntityTy
     columns[appConfig.entityIdColumnKeys[related]] = mockUuid();
   }
 
-  return columns as Omit<MockEntityContextIdColumns<E>, 'organizationId'>;
+  return columns as Omit<MockEntityContextIdColumns<E>, EntityIdColumnKey<RootContextType>>;
 };

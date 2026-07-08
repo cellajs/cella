@@ -28,7 +28,7 @@ The bulk of this guide covers **product entities**. Context-entity differences a
 
 ## Guardrail: the compiler keeps config in sync
 
-Before diving in, know your safety net. The three "declare it" edits (hierarchy, `config.default.ts` arrays, `entityIdColumnKeys`) are cross-checked **at compile time** by [`shared/src/config-builder/config-validation.ts`](../shared/src/config-builder/config-validation.ts). It bidirectionally asserts that `entityTypes ≡ hierarchy.allTypes`, `contextEntityTypes ≡ hierarchy.contextTypes`, `productEntityTypes ≡ hierarchy.productTypes`, and that `entityIdColumnKeys` has a `` `${K}Id` `` entry for every type. If you add to the hierarchy but forget an array (or vice versa), **the build fails** — you cannot get these out of step silently. Separately, the CI job `lens:check` fails if a product/context entity does not register its wire schema (Step 6).
+Before diving in, know your safety net. The three "declare it" edits (hierarchy, `config.default.ts` arrays, `entityIdColumnKeys`) are cross-checked **at compile time** by [`shared/src/config-builder/config-validation.ts`](../shared/src/config-builder/config-validation.ts). It bidirectionally asserts that `entityTypes ≡ hierarchy.allTypes`, `contextEntityTypes ≡ hierarchy.contextTypes`, `productEntityTypes ≡ hierarchy.productTypes`, and that `entityIdColumnKeys` has a `` `${K}Id` `` entry for every type. If you add to the hierarchy but forget an array (or vice versa), **the build fails** — you cannot get these out of step silently. Separately, the CI job `lens:check` fails if a product/context entity does not register its evolution contract (Step 6).
 
 ---
 
@@ -165,20 +165,20 @@ export const entityTables = {
 
 This is **the single most load-bearing manual edit**. The RLS migration, CDC publication migration, immutability triggers, activity tracking, and `getEntityTable()` all iterate this map — registering here is what makes those 🟢 automatic.
 
-### Step 6 — 🔴 Register the wire schema (mandatory)
+### Step 6 — 🔴 Register the evolution contract (mandatory)
 
-In `backend/src/modules/note/note-schema.ts`, register version-tolerant wire schemas via `createProductEntityWire` (from [`entity-wire.ts`](../backend/src/core/entity-wire.ts)). Model on [`task-schema.ts`](../backend/src/modules/task/task-schema.ts):
+In `backend/src/modules/note/note-schema.ts`, register version-tolerant create/update body schemas via `evolutionContract.product` (from [`evolution-contract.ts`](../backend/src/core/schema-evolution/evolution-contract.ts)). Model on [`task-schema.ts`](../backend/src/modules/task/task-schema.ts):
 
 ```ts
-export const noteWire = createProductEntityWire('note', {
+export const noteContract = evolutionContract.product('note', {
   createItem: noteCreateSchema,
-  updatable: { name: /* ... */, /* ...updatable fields... */ },
+  updateOps: { name: /* ... */, /* ...updatable fields... */ },
 });
-export const noteUpdateStxBodySchema = noteWire.updateBodySchema;
-export const noteCreateManyStxBodySchema = noteWire.createItemSchema.array().min(1).max(50);
+export const noteUpdateStxBodySchema = noteContract.updateBodySchema;
+export const noteCreateManyStxBodySchema = noteContract.createItemSchema.array().min(1).max(50);
 ```
 
-This is the single registration point for the schema-evolution lens seams (`normalizeCreateItem`, `resolveUpdateOps` — HLC/AWSet merge). **It is enforced by CI** (`lens:check`, "entity-wire completeness"): every configured product/context entity must call its wire factory, or the build fails. See [SCHEMA_EVOLUTION.md](./SCHEMA_EVOLUTION.md) and the lens-seam note in [AGENTS.md](./AGENTS.md).
+This is the single registration point for the schema-evolution lens seams (`normalizeCreateItem`, `resolveUpdateOps` — HLC/AWSet merge). **It is enforced by CI** (`lens:check`, "contract completeness"): every configured product/context entity must call its contract factory, or the build fails. See [SCHEMA_EVOLUTION.md](./SCHEMA_EVOLUTION.md) and the lens-seam note in [AGENTS.md](./AGENTS.md).
 
 ### Step 7 — 🔴 Write the module (routes, handlers, operations)
 
@@ -187,7 +187,7 @@ The canonical file set for a product entity module (`backend/src/modules/note/`)
 | File | Role |
 |---|---|
 | `note-db.ts` | Drizzle table (Step 4). |
-| `note-schema.ts` | Zod schemas + `createProductEntityWire` (Step 6). |
+| `note-schema.ts` | Zod schemas + `evolutionContract.product` (Step 6). |
 | `note-routes.ts` | OpenAPI route defs via `createXRoute(...)`, each carrying the guard chain. |
 | `note-handlers.ts` | `new OpenAPIHono<Env>()` app; binds routes to operations; **exports the mountable app**. |
 | `note-module.ts` | `registerModule({ name, owner, scope, description })` (OpenAPI tag + metadata). Side-effect imported by handlers. |
@@ -324,7 +324,7 @@ Context entities do **not** go through the CDC/SSE product pipeline or the wire-
 3. [`shared/config/permissions-config.ts`](../shared/config/permissions-config.ts) — a `case` in the policy switch
 4. `backend/src/modules/<name>/<name>-db.ts` — the Drizzle table
 5. [`backend/src/tables.ts`](../backend/src/tables.ts) — add to `entityTables`
-6. `backend/src/modules/<name>/<name>-schema.ts` — `createProductEntityWire(...)` (CI-enforced)
+6. `backend/src/modules/<name>/<name>-schema.ts` — `evolutionContract.product(...)` (CI-enforced)
 7. `backend/src/modules/<name>/` — routes, handlers, module, queries, operations (with guards + RLS helpers)
 8. [`backend/src/routes.ts`](../backend/src/routes.ts) — import + `baseApp.route(...)`
 9. `operations/get-<name>s.ts` — `seqCursor` delta handling

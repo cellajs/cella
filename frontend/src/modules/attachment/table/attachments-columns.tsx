@@ -1,3 +1,4 @@
+import { UserIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
@@ -9,7 +10,19 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { SeenMark } from '~/modules/seen/seen-mark';
 import { UserCell } from '~/modules/user/user-cell';
+import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
+
+const seenWindowMs = 90 * 24 * 60 * 60 * 1000;
+
+const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
+  if (!createdAt) return false;
+
+  const createdTime = new Date(createdAt).getTime();
+  if (Number.isNaN(createdTime)) return false;
+
+  return Date.now() - createdTime > seenWindowMs;
+};
 
 export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolean) => {
   const { t } = useTranslation();
@@ -42,7 +55,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
               organizationId={contextEntity.id}
               entityType="attachment"
             />
-            <span className="font-medium">{row.name || '-'}</span>
+            <span className="truncate font-medium">{row.name || '-'}</span>
           </>
         ),
         // Enable inline editing when user has update permission (unconditional or owner-scoped).
@@ -96,16 +109,26 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         hidden: isSheet,
         minBreakpoint: 'md',
         width: 100,
-        renderCell: ({ row }) => (
-          <div className="group relative inline-flex h-full w-full items-center gap-1 opacity-50">
-            {row.viewCount ?? 0}
-          </div>
-        ),
+        renderCell: ({ row }) => {
+          const outsideSeenWindow = isOutsideSeenWindow(row.createdAt);
+
+          return (
+            <span
+              className="inline-flex h-full w-full items-center"
+              data-tooltip={outsideSeenWindow ? 'true' : undefined}
+              data-tooltip-content={outsideSeenWindow ? t('c:views_retention_hint') : undefined}
+            >
+              <UserIcon className="mr-2 opacity-50" size={16} />
+              <span className={cn(outsideSeenWindow && 'text-muted-foreground/60')}>{row.viewCount ?? 0}</span>
+            </span>
+          );
+        },
       },
       {
         key: 'createdAt',
         name: t('c:created_at'),
         sortable: true,
+        sortDescendingFirst: true,
         hidden: isSheet,
         minBreakpoint: 'md',
         minWidth: 120,

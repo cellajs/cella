@@ -33,6 +33,10 @@ export const attachmentsTable = snakeCase.table(
   },
   (table) => [
     index('attachments_organization_id_index').on(table.organizationId),
+    // Serves the unseen-count scan (WHERE organization_id IN (...) AND created_at > cutoff) and
+    // the recency-sorted attachment listing. Supersedes the org-only index above for those reads;
+    // that index can be dropped in a follow-up once nothing else relies on it by name.
+    index('attachments_organization_id_created_at_index').on(table.organizationId, table.createdAt),
     index('attachments_tenant_id_index').on(table.tenantId),
     index('attachments_created_by_index').on(table.createdBy),
     index('attachments_updated_by_index').on(table.updatedBy),

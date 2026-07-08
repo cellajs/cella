@@ -46,7 +46,7 @@ const seenRoutes = {
     summary: 'Get unseen counts',
     description:
       'Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the current user. ' +
-      'Computed as total (from context_counters) minus seen (from seen_by).',
+      'Computed within the rolling seen window so entities older than seen_by retention do not participate.',
     responses: {
       200: {
         description: 'Unseen counts per parent context entity per entity type',

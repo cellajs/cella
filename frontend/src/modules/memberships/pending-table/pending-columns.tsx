@@ -43,6 +43,7 @@ export const useColumns = () => {
       key: 'createdAt',
       name: t('c:invited_at'),
       sortable: true,
+      sortDescendingFirst: true,
       minBreakpoint: 'md',
       placeholderValue: '-',
       renderCell: ({ row }) => dateShort(row.createdAt),

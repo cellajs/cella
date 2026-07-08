@@ -1,4 +1,4 @@
-# shared/src/version-changes
+# shared/src/schema-evolution
 
 Schema-evolution lens registry (doba lenses).
 

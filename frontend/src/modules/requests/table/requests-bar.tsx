@@ -107,7 +107,7 @@ export const RequestsTableBar = ({
   };
 
   const fetchExport = async (limit: number, offset: number) => {
-    return fetchRequestsForExport({ limit, offset, q, sort: sort || 'createdAt', order: order || 'asc' });
+    return fetchRequestsForExport({ limit, offset, q, sort: sort || 'createdAt', order: order || 'desc' });
   };
 
   return (

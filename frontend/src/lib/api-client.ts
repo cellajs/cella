@@ -1,6 +1,6 @@
 import type { CreateClientConfig } from 'sdk/client.gen';
 import { appConfig } from 'shared';
-import { currentSchemaVersion } from 'shared/version-changes';
+import { currentSchemaVersion } from 'shared/schema-evolution';
 import { ApiError, clientConfig } from '~/lib/api';
 import { checkConnectivity } from '~/query/offline/connectivity';
 

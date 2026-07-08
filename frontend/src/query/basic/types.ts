@@ -1,15 +1,10 @@
-import type { ContextEntityType, EntityIdColumnKeys, EntityType } from 'shared';
+import type { ContextEntityIdColumns, EntityType } from 'shared';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
 
 export interface ItemData {
   id: string;
   membership?: { id: string } | null;
 }
-
-/** Mapped type for all context entity ID columns (e.g., organizationId, workspaceId, projectId) */
-export type ContextEntityIdColumns = {
-  [K in ContextEntityType as EntityIdColumnKeys[K]]: string | null;
-};
 
 /** Entity data with optional context columns */
 export type ItemDataWithContext = ItemData & Partial<ContextEntityIdColumns>;

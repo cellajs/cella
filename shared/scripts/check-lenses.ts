@@ -7,11 +7,11 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { appConfig } from '../index';
-import { deltaRenameMap } from '../src/version-changes/define';
-import { lenses } from '../src/version-changes/lens-list';
+import { deltaRenameMap } from '../src/schema-evolution/define';
+import { lenses } from '../src/schema-evolution/lens-list';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const lensDir = join(here, '..', 'src', 'version-changes');
+const lensDir = join(here, '..', 'src', 'schema-evolution');
 const repoRoot = join(here, '..', '..');
 
 const DATED_LENS = /^\d{4}-\d{2}-\d{2}-.+\.ts$/;
@@ -134,8 +134,8 @@ function checkPurity(files: string[]) {
   }
 }
 
-// ── 4. Entity-wire completeness ──
-function checkWireCompleteness() {
+// ── 4. Contract completeness ──
+function checkContractCompleteness() {
   const modulesDir = join(repoRoot, 'backend', 'src', 'modules');
   let combined = '';
   try {
@@ -144,20 +144,20 @@ function checkWireCompleteness() {
       combined += readFileSync(join(modulesDir, entry), 'utf8');
     }
   } catch {
-    console.warn('[lens:check] backend/src/modules unavailable — skipping wire-completeness check');
+    console.warn('[lens:check] backend/src/modules unavailable — skipping contract-completeness check');
     return;
   }
   for (const type of appConfig.productEntityTypes) {
-    if (!combined.includes(`createProductEntityWire('${type}'`)) {
+    if (!combined.includes(`evolutionContract.product('${type}'`)) {
       failures.push(
-        `Wire completeness: product entity "${type}" never calls createProductEntityWire('${type}', …) in backend/src/modules — its wire schemas bypass the lens seams.`,
+        `Contract completeness: product entity "${type}" never calls evolutionContract.product('${type}', …) in backend/src/modules — its create/update body schemas bypass the lens seams.`,
       );
     }
   }
   for (const type of appConfig.contextEntityTypes) {
-    if (!combined.includes(`createContextEntityWire('${type}'`)) {
+    if (!combined.includes(`evolutionContract.context('${type}'`)) {
       failures.push(
-        `Wire completeness: context entity "${type}" never calls createContextEntityWire('${type}', …) in backend/src/modules — its wire schemas bypass the lens seams.`,
+        `Contract completeness: context entity "${type}" never calls evolutionContract.context('${type}', …) in backend/src/modules — its create/update body schemas bypass the lens seams.`,
       );
     }
   }
@@ -168,7 +168,7 @@ checkAppendOnly(files);
 checkCollisions();
 checkContractInvariant();
 checkPurity(files);
-checkWireCompleteness();
+checkContractCompleteness();
 
 if (failures.length > 0) {
   console.error(`[lens:check] ${failures.length} violation(s):`);

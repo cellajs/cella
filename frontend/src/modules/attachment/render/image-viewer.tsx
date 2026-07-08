@@ -69,13 +69,24 @@ export class ImageViewer extends React.PureComponent<ImageViewerProps, ImageView
   public state = this.getInitialState();
 
   public componentDidUpdate(prevProps: ImageViewerProps) {
-    const { zoom } = this.props;
-    if (prevProps.zoom !== zoom) {
-      const newMatrixData = [...this.state.matrixData];
+    const { zoom, pandx, pandy } = this.props;
+    const zoomChanged = prevProps.zoom !== zoom;
+    // Sync pan from props too (e.g. on reset). Previously the parent forced a full remount via a
+    // `key` to apply pan/reset, which reloaded the <img> and flickered after every pan gesture.
+    const panChanged = prevProps.pandx !== pandx || prevProps.pandy !== pandy;
+    if (!zoomChanged && !panChanged) return;
+
+    const newMatrixData = [...this.state.matrixData];
+    if (zoomChanged) {
       newMatrixData[0] = zoom || newMatrixData[0];
       newMatrixData[3] = zoom || newMatrixData[3];
-      this.setState({ matrixData: newMatrixData });
     }
+    if (panChanged) {
+      // Nullish so a legitimate 0 (reset / centered) is applied rather than skipped.
+      newMatrixData[4] = pandx ?? newMatrixData[4];
+      newMatrixData[5] = pandy ?? newMatrixData[5];
+    }
+    this.setState({ matrixData: newMatrixData });
   }
 
   public reset = () => {
@@ -134,6 +145,7 @@ export class ImageViewer extends React.PureComponent<ImageViewerProps, ImageView
         }}
       >
         <div
+          className="flex h-full w-full items-center justify-center"
           ref={(ref: HTMLDivElement | null): void => {
             this.panContainer = ref;
           }}

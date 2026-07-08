@@ -2,10 +2,6 @@ import { sql } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
 import { baseDb } from './db';
 
-// ============================================================================
-// Tenant context helpers — set session vars for RLS policies
-// ============================================================================
-
 /**
  * Apply tenant/session variables for RLS policies within a transaction.
  *

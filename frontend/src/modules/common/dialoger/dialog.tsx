@@ -37,6 +37,14 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
       if (dropdown || !modal) return;
     }
 
+    // Externally-owned dialogs (e.g. URL-driven) must remove immediately so onClose clears that
+    // state in the same tick — otherwise the 200ms animation gap leaves the URL "open" while the
+    // dialog is closing, flashing it back. This matches the direct removeDialog() path.
+    if (!nextOpen && dialog.instantClose) {
+      closeDialog();
+      return;
+    }
+
     useDialoger.getState().update(dialog.id, { open: nextOpen });
     if (!nextOpen) {
       // Delay removal to allow exit animation to complete

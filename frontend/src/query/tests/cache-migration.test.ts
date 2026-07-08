@@ -2,7 +2,7 @@ import { appConfig } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the lens engine: simulate a single attachment rename name → title.
-vi.mock('shared/version-changes', () => ({
+vi.mock('shared/schema-evolution', () => ({
   migrateCachedEntity: vi.fn(async (_entityType: string, entity: Record<string, unknown>) => {
     if ('name' in entity) {
       const { name, ...rest } = entity;

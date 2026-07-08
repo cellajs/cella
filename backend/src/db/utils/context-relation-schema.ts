@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import {
   appConfig,
-  type EntityIdColumnKey,
+  type EntityIdColumns,
   type EntityType,
   hierarchy,
   type ProductEntityType,
@@ -11,9 +11,10 @@ import {
 /**
  * Zod raw-shape type for an entity's optional related-context id fields.
  */
-export type RelatedContextShape<E extends string> = {
-  [C in RelatedContextType<E> & EntityType as EntityIdColumnKey<C>]: z.ZodOptional<z.ZodString>;
-};
+export type RelatedContextShape<E extends string> = EntityIdColumns<
+  RelatedContextType<E> & EntityType,
+  z.ZodOptional<z.ZodString>
+>;
 
 /**
  * Builds a Zod raw shape with optional uuid fields for an entity's declared `relatedContexts`.

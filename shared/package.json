@@ -19,9 +19,10 @@
     "./config-builder": "./src/config-builder/index.ts",
     "./pino": "./src/pino.ts",
     "./module-registry": "./src/module-registry.ts",
-    "./version-changes": "./src/version-changes/index.ts",
+    "./schema-evolution": "./src/schema-evolution/index.ts",
     "./test-db": "./src/test-db.ts",
     "./testing/entity-hierarchy": "./src/testing/entity-hierarchy.ts",
+    "./testing/pino": "./src/testing/pino.ts",
     "./testing/wide-fixture": "./src/testing/wide-fixture.ts"
   },
   "dependencies": {

@@ -62,6 +62,8 @@ export const useColumns = () => {
     {
       key: 'createdAt',
       name: t('c:created_at'),
+      sortable: true,
+      sortDescendingFirst: true,
       minBreakpoint: 'md',
       minWidth: 120,
       placeholderValue: '-',

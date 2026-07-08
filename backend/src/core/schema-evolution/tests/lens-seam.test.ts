@@ -2,17 +2,17 @@
  * Tests for the lens seams: wire-schema widening (update + create) and
  * ops normalization inside resolveUpdateOps.
  *
- * `shared/version-changes` is mocked with a synthetic expand rename lens
+ * `shared/schema-evolution` is mocked with a synthetic expand rename lens
  * (attachment.name → title); `LENSLESS` is a synthetic entity without lenses,
  * exercising the passthrough
  * branches. End-to-end engine behavior with real lens modules is covered in
- * shared/src/version-changes/tests.
+ * shared/src/schema-evolution/tests.
  */
 import { z } from '@hono/zod-openapi';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('shared/version-changes', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('shared/version-changes')>();
+vi.mock('shared/schema-evolution', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('shared/schema-evolution')>();
   return {
     ...actual,
     widenedOpsKeyMap: (entityType: string) => (entityType === 'attachment' ? { name: 'title' } : {}),
@@ -39,9 +39,9 @@ vi.mock('shared/version-changes', async (importOriginal) => {
 });
 
 import type { ProductEntityType } from 'shared';
-import { normalizeCreateItem, widenCreateSchema } from '#/core/stx/lens-seam';
+import { normalizeCreateItem, widenBodySchema } from '#/core/schema-evolution/lens-seam';
+import { createUpdateSchema } from '#/core/schema-evolution/update-schema';
 import { resolveUpdateOps } from '#/core/stx/resolve-update';
-import { createUpdateSchema } from '#/core/stx/update-schema';
 
 const stx = (fieldTimestamps: Record<string, string>) => ({ mutationId: 'm1', sourceId: 's1', fieldTimestamps });
 
@@ -67,22 +67,22 @@ describe('createUpdateSchema widening', () => {
   });
 });
 
-describe('widenCreateSchema', () => {
+describe('widenBodySchema', () => {
   const body = z.object({ id: z.string(), title: z.string(), size: z.number().optional() });
 
   it('is identity for entities without lenses', () => {
-    const widened = widenCreateSchema(LENSLESS, body);
+    const widened = widenBodySchema(LENSLESS, body);
     expect(widened).toBe(body);
   });
 
   it('accepts the alias in place of a required canonical field', () => {
-    const widened = widenCreateSchema('attachment', body);
+    const widened = widenBodySchema('attachment', body);
     expect(widened.parse({ id: '1', name: 'x' })).toEqual({ id: '1', name: 'x' });
     expect(widened.parse({ id: '1', title: 'x' })).toEqual({ id: '1', title: 'x' });
   });
 
   it('rejects when neither alias nor canonical is present', () => {
-    const widened = widenCreateSchema('attachment', body);
+    const widened = widenBodySchema('attachment', body);
     expect(() => widened.parse({ id: '1' })).toThrow(/title/);
   });
 });

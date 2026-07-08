@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/core/context';
-import type { ExtensionType, XMiddlewareHandler } from '#/core/extensions';
+import type { ExtensionType, XMiddlewareHandler } from '#/core/openapi-extensions';
 
 export type { ExtensionType, XMiddlewareHandler };
 

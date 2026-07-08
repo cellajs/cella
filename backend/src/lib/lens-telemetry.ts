@@ -5,7 +5,7 @@
  * limited (graph payoff is Phase 2), but the hooks are registered up front so any
  * transform — including Phase 2 peer downgrades — is observable from day one.
  */
-import { configureLensTelemetry, type RegistryHooks } from 'shared/version-changes';
+import { configureLensTelemetry, type RegistryHooks } from 'shared/schema-evolution';
 import { otel } from '#/lib/tracing';
 
 const meter = otel.meterProvider.getMeter('app-lens');

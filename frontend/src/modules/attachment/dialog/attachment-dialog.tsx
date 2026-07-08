@@ -38,6 +38,10 @@ export function AttachmentDialog() {
   }
   const initialAttachmentId = initialAttachmentIdRef.current;
 
+  // Tracks whether the carousel has been shown at least once. After that we never fall back to
+  // the full-screen spinner, keeping the Embla instance and <img> mounted across refetches.
+  const hasRenderedRef = useRef(false);
+
   // Reactively subscribe to group attachments - re-renders when cache updates
   const groupAttachments = useGroupAttachments(tenantId, organizationId, groupId);
 
@@ -64,8 +68,12 @@ export function AttachmentDialog() {
   const index = resolvedItems.findIndex(({ id }) => id === initialAttachmentId);
   const itemIndex = index === -1 ? 0 : index;
 
-  // Loading state - still resolving URLs or waiting for group data
-  if (isLoading || awaitingContext || awaitingGroup || isFetchingSingle) {
+  // Loading state - still resolving URLs or waiting for group data.
+  // Only gate on the INITIAL load: once the carousel has mounted we keep it mounted, so a
+  // background refetch (isFetchingSingle), a transient group-null, or a URL re-resolve can't
+  // swap the whole carousel back to a full-screen spinner and make the image reappear.
+  const blocking = isLoading || awaitingContext || awaitingGroup || isFetchingSingle;
+  if (blocking && !hasRenderedRef.current) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Spinner className="h-12 w-12" />
@@ -91,6 +99,7 @@ export function AttachmentDialog() {
   }
 
   // Success state - show carousel with resolved attachments
+  hasRenderedRef.current = true;
   return (
     <div className="relative -z-1 flex h-screen grow flex-wrap justify-center p-2">
       <AttachmentsCarousel items={resolvedItems} isDialog itemIndex={itemIndex} saveInSearchParams />

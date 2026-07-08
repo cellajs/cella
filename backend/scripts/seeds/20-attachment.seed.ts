@@ -56,7 +56,7 @@ export const attachmentsSeed = async () => {
   for (const org of organizations) {
     const records = SEED_FILES.map((file, i) =>
       withFakerSeed(`attachment:seed:${org.id}:${i}`, () => {
-        const createdAt = faker.date.past({ refDate: new Date('2025-01-01') }).toISOString();
+        const createdAt = faker.date.recent({ days: 30 }).toISOString();
         return {
           id: mockUuid(),
           entityType: 'attachment' as const,

@@ -1,5 +1,12 @@
 import { uuid } from 'drizzle-orm/pg-core';
-import { type HostEntityType, hierarchy, type ProductEntityType } from 'shared';
+import {
+  appConfig,
+  type EntityIdColumns,
+  type EntityType,
+  type HostEntityType,
+  hierarchy,
+  type ProductEntityType,
+} from 'shared';
 
 /** Column builder type for a nullable uuid host id column. */
 type NullableUuid = ReturnType<typeof uuid>;
@@ -18,10 +25,7 @@ type NullableUuid = ReturnType<typeof uuid>;
  * owns lifecycle consistency, and a hard FK would force cross-module table imports.
  * Indexes still live in the table definition.
  */
-// TODO use EntityIdColumnKey
-export type HostRelationColumns<E extends string> = {
-  [H in HostEntityType<E> & string as `${H}Id`]: NullableUuid;
-};
+export type HostRelationColumns<E extends string> = EntityIdColumns<HostEntityType<E> & EntityType, NullableUuid>;
 
 /**
  * Generates the host id column for a hosted product entity from the hierarchy config.
@@ -31,6 +35,6 @@ export type HostRelationColumns<E extends string> = {
 export const hostRelationColumns = <E extends ProductEntityType>(entityType: E): HostRelationColumns<E> => {
   const hostType = hierarchy.getHostType(entityType);
   const columns: Record<string, NullableUuid> = {};
-  if (hostType) columns[`${hostType}Id`] = uuid();
+  if (hostType) columns[appConfig.entityIdColumnKeys[hostType]] = uuid();
   return columns as HostRelationColumns<E>;
 };

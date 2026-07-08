@@ -5,17 +5,6 @@ import { MissingScopeError } from 'shared';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import { createSignedToken, createExpiredToken } from './helpers';
 
-vi.mock('../lib/pino', () => ({
-  log: {
-    trace: vi.fn(),
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    fatal: vi.fn(),
-  },
-}));
-
 const { verifyToken } = await import('../server/auth');
 
 // Stands in for the relay's local authorization (`canEditEntity`). Tests drive its outcome:
