@@ -1,14 +1,18 @@
 import { eq } from 'drizzle-orm';
 import { createRemoteJWKSet, type JWTVerifyGetKey, jwtVerify } from 'jose';
+import type { McpActor } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
+import { env } from '#/env';
 import {
   MCP_PROTECTED_RESOURCE_METADATA_URL,
   mcpResourceUri,
   OIDC_ISSUER,
   OIDC_JWKS_URI,
 } from '#/modules/auth-server/oidc-constants';
+import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import type { UserModel } from '#/modules/user/user-db';
 import { usersTable } from '#/modules/user/user-db';
 
 /**
@@ -34,9 +38,14 @@ import { usersTable } from '#/modules/user/user-db';
  * @see .todos/MCP_PLAN.md (Experiment 0)
  */
 
-// Default resolver: fetch (and cache) the Authorization Server's public JWKS.
-// Tests override via `setMcpJwksResolver`.
-let jwksResolver: JWTVerifyGetKey = createRemoteJWKSet(new URL(OIDC_JWKS_URI));
+// Default resolver: fetch (and cache) the Authorization Server's public JWKS,
+// with bounded fetch time and a cooldown to avoid hammering the AS on a burst of
+// unknown-kid tokens. Tests override via `setMcpJwksResolver`.
+let jwksResolver: JWTVerifyGetKey = createRemoteJWKSet(new URL(OIDC_JWKS_URI), {
+  timeoutDuration: 5_000,
+  cooldownDuration: 30_000,
+  cacheMaxAge: 10 * 60_000,
+});
 
 /** Test seam: swap the JWKS resolver (e.g. a `createLocalJWKSet`). */
 export function setMcpJwksResolver(resolver: JWTVerifyGetKey): void {
@@ -45,6 +54,20 @@ export function setMcpJwksResolver(resolver: JWTVerifyGetKey): void {
 
 /** Minimum scope required to reach the MCP endpoint at all. */
 const REQUIRED_SCOPE = 'mcp:tools:read';
+
+/**
+ * Client ids allowed to act as MCP service actors. Normalized here because
+ * `@t3-oss/env-core` skips its transform under vitest, so the value may arrive
+ * as a string[], a raw comma string, or undefined.
+ */
+const SERVICE_CLIENT_IDS: string[] = Array.isArray(env.MCP_SERVICE_CLIENT_IDS)
+  ? env.MCP_SERVICE_CLIENT_IDS
+  : typeof env.MCP_SERVICE_CLIENT_IDS === 'string'
+    ? (env.MCP_SERVICE_CLIENT_IDS as string)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
 
 export const mcpAuthGuard = xMiddleware(
   {
@@ -89,11 +112,50 @@ export const mcpAuthGuard = xMiddleware(
       });
     }
 
-    // 4. Resolve subject to a Cella user. Service clients (client_credentials,
-    //    sub = client_id) don't map to a user yet — deferred to worker-auth phase.
-    //    The lookup is wrapped so a non-UUID/unknown subject fails closed as 401
-    //    rather than surfacing a Postgres uuid cast error as a 500.
+    ctx.set('db', baseDb);
+    ctx.set('isSystemAdmin', false);
+
+    // 4a. Service actor: a client_credentials token has `sub === client_id` and no
+    //     user. It is already cryptographically bound to this tenant/org via `aud`
+    //     (verified above); we additionally gate by an allowlist until per-client
+    //     tenant binding lands (Phase 1). Authorize by synthesizing a membership
+    //     scoped to exactly the token's tenant/org, so the shared tenantGuard/
+    //     orgGuard authorize it without changes.
+    const clientId = typeof payload.client_id === 'string' ? payload.client_id : undefined;
     const subject = typeof payload.sub === 'string' ? payload.sub : '';
+    const isServiceToken = !!clientId && subject === clientId;
+
+    if (isServiceToken) {
+      if (!SERVICE_CLIENT_IDS.includes(clientId)) {
+        return ctx.json({ error: 'invalid_client', error_description: 'Client may not act as an MCP service' }, 403, {
+          'WWW-Authenticate': challenge(', error="invalid_client"'),
+        });
+      }
+
+      // Minimal synthetic user + membership: only `.id`, `tenantId`,
+      // `organizationId`, `contextType` are read by the downstream guards.
+      const serviceMembership = {
+        id: `mcp-service:${clientId}`,
+        tenantId,
+        organizationId,
+        contextId: organizationId,
+        contextType: 'organization',
+        userId: clientId,
+        role: 'member',
+        createdBy: null,
+      } as unknown as MembershipBaseModel & { createdBy: string | null };
+
+      ctx.set('user', { id: clientId } as unknown as UserModel);
+      ctx.set('userId', clientId);
+      ctx.set('memberships', [serviceMembership]);
+      ctx.set('mcpActor', { type: 'service', clientId, scopes } satisfies McpActor);
+
+      return next();
+    }
+
+    // 4b. User actor: resolve the subject to a Cella user. The lookup is wrapped
+    //     so a non-UUID/unknown subject fails closed as 401 rather than surfacing
+    //     a Postgres uuid cast error as a 500.
     const [user] = await baseDb
       .select()
       .from(usersTable)
@@ -106,13 +168,11 @@ export const mcpAuthGuard = xMiddleware(
       });
     }
 
-    // 5. Populate auth context for downstream tenantGuard/orgGuard (unchanged).
     const memberships = await baseDb.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
     ctx.set('user', user);
     ctx.set('userId', user.id);
     ctx.set('memberships', memberships);
-    ctx.set('isSystemAdmin', false);
-    ctx.set('db', baseDb);
+    ctx.set('mcpActor', { type: 'user', userId: user.id, scopes } satisfies McpActor);
 
     await next();
   },

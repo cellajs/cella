@@ -23,18 +23,21 @@ export function buildTools(ctx: AuthContext): ServerTool[] {
   if (!env.AUTH_SERVER_ENABLED) return [];
 
   // Demo tool: proves an audience-bound token maps to a real, tenant-scoped
-  // identity. Returns the workspace the caller's token is scoped to.
+  // identity. Returns the actor and workspace the caller's token is scoped to.
   const whoami = toolDefinition({
     name: 'whoami',
-    description: 'Return the user id and workspace (tenant/organization) the current MCP access token is scoped to.',
+    description:
+      'Return the actor (user or service client) and workspace (tenant/organization) the current MCP access token is scoped to.',
     inputSchema: z.object({}),
     outputSchema: z.object({
-      userId: z.string(),
+      actorType: z.enum(['user', 'service']),
+      subject: z.string(),
       organizationId: z.string(),
       tenantId: z.string(),
     }),
   }).server(() => ({
-    userId: ctx.var.userId,
+    actorType: ctx.var.mcpActor?.type ?? 'user',
+    subject: ctx.var.userId,
     organizationId: ctx.var.organizationId,
     tenantId: ctx.var.tenantId,
   }));

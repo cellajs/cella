@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { MCP_SCOPES, mcpResourceUri, OIDC_ISSUER } from '#/modules/auth-server/oidc-constants';
 
@@ -22,6 +23,11 @@ const metadata = (resource: string) => ({
   scopes_supported: [...MCP_SCOPES],
   bearer_methods_supported: ['header'],
 });
+
+// Root metadata: for clients that probe the non-path-specific well-known before
+// they know a tenant/org. Advertises the same Authorization Server; `resource` is
+// the backend base (per-org resources use the path-specific document below).
+app.get('/.well-known/oauth-protected-resource', (c) => c.json(metadata(appConfig.backendUrl)));
 
 // Per-resource metadata for a specific tenant/org MCP endpoint.
 app.get('/.well-known/oauth-protected-resource/:tenantId/:organizationId/mcp', (c) => {

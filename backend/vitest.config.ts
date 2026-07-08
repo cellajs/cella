@@ -39,6 +39,8 @@ export default defineConfig({
       DATABASE_URL: testDatabaseUrl,
       // Public routes read via the admin connection (tenant-less); point it at the test DB
       DATABASE_ADMIN_URL: testDatabaseUrl,
+      // MCP service-actor allowlist (Experiment 0 / Phase 3 guard tests)
+      MCP_SERVICE_CLIENT_IDS: 'mcp-dev-client',
     },
   },
 });

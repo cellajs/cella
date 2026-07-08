@@ -111,6 +111,19 @@ export const env = createEnv({
     // Secret for the pre-registered dev confidential client (client_credentials
     // smoke test). Dev-only; ignored unless AUTH_SERVER_ENABLED.
     OIDC_DEV_CLIENT_SECRET: z.string().default('dev-mcp-client-secret'),
+    // Comma-separated OAuth client ids allowed to call MCP as a service actor
+    // (client_credentials, no user). Each token is still audience-bound to a
+    // single tenant/org. Until per-client tenant binding lands (Phase 1), this
+    // allowlist is the gate that keeps arbitrary DCR clients out.
+    MCP_SERVICE_CLIENT_IDS: z
+      .string()
+      .default('mcp-dev-client')
+      .transform((v) =>
+        v
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
 
     MODE: z.enum(['api', 'mcp-worker', 'cdc', 'migrate']).default('api'),
 

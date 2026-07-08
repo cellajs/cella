@@ -22,8 +22,12 @@ const FULL_SCOPE = 'mcp:tools:read mcp:tools:call';
 
 let privateKey: CryptoKey;
 
-async function mint(opts: { sub?: string; aud?: string; scope?: string; iss?: string } = {}): Promise<string> {
-  return new SignJWT({ scope: opts.scope ?? FULL_SCOPE })
+async function mint(
+  opts: { sub?: string; aud?: string; scope?: string; iss?: string; clientId?: string } = {},
+): Promise<string> {
+  const payload: Record<string, unknown> = { scope: opts.scope ?? FULL_SCOPE };
+  if (opts.clientId) payload.client_id = opts.clientId; // client_credentials marker
+  return new SignJWT(payload)
     .setProtectedHeader({ alg: 'RS256', kid: 'test' })
     .setIssuer(opts.iss ?? OIDC_ISSUER)
     .setAudience(opts.aud ?? AUDIENCE)
@@ -33,9 +37,12 @@ async function mint(opts: { sub?: string; aud?: string; scope?: string; iss?: st
     .sign(privateKey);
 }
 
-// Minimal app mirroring the MCP route's guard + param shape.
+// Minimal app mirroring the MCP route's guard + param shape. The unit app omits
+// tenant/org guards, so it asserts the actor decision + context the guard sets.
 const app = new Hono<Env>();
-app.post('/:tenantId/:organizationId/mcp', mcpAuthGuard, (c) => c.json({ ok: true, userId: c.var.userId }));
+app.post('/:tenantId/:organizationId/mcp', mcpAuthGuard, (c) =>
+  c.json({ ok: true, userId: c.var.userId, actor: c.var.mcpActor?.type }),
+);
 
 const call = (headers?: Record<string, string>) => app.request(`/${TENANT}/${ORG}/mcp`, { method: 'POST', headers });
 
@@ -89,10 +96,26 @@ describe('mcpAuthGuard', () => {
   });
 
   it('fails closed (401, not 500) when the subject is not a valid user id', async () => {
-    // A service-client sub (e.g. client_credentials client_id) is not a UUID;
-    // the user lookup must not surface a Postgres cast error as a 500.
-    const token = await mint({ sub: 'mcp-dev-client' });
+    // A non-service token whose sub isn't a UUID: the user lookup must not
+    // surface a Postgres cast error as a 500.
+    const token = await mint({ sub: 'not-a-uuid-and-no-client-id' });
     const res = await call({ Authorization: `Bearer ${token}` });
     expect(res.status).toBe(401);
+  });
+
+  it('authorizes an allowlisted service client (client_credentials) as a service actor', async () => {
+    // sub === client_id marks a client_credentials token; mcp-dev-client is in
+    // the test allowlist (vitest.config MCP_SERVICE_CLIENT_IDS).
+    const token = await mint({ sub: 'mcp-dev-client', clientId: 'mcp-dev-client' });
+    const res = await call({ Authorization: `Bearer ${token}` });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true, userId: 'mcp-dev-client', actor: 'service' });
+  });
+
+  it('rejects a service client that is not in the allowlist (403 invalid_client)', async () => {
+    const token = await mint({ sub: 'rogue-client', clientId: 'rogue-client' });
+    const res = await call({ Authorization: `Bearer ${token}` });
+    expect(res.status).toBe(403);
+    expect(res.headers.get('www-authenticate') ?? '').toContain('error="invalid_client"');
   });
 });

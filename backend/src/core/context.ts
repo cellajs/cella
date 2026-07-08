@@ -14,6 +14,16 @@ type Bindings = HttpBindings & {
   /* ... */
 };
 
+/**
+ * Identity behind an MCP request. `user` actors are real Cella users (from an
+ * Authorization Code token); `service` actors are OAuth clients authenticating
+ * via client_credentials (e.g. flue/worker), authorized by the token's
+ * audience-bound tenant/org rather than by membership. Set by `mcpAuthGuard`.
+ */
+export type McpActor =
+  | { type: 'user'; userId: string; scopes: string[] }
+  | { type: 'service'; clientId: string; scopes: string[] };
+
 /** Minimal context for query functions that only need a database connection. */
 export type DbContext = {
   var: Pick<Env['Variables'], 'db'>;
@@ -40,6 +50,8 @@ export type Env = {
     db: DbOrTx;
     tenantId: string;
     tenant: TenantModel;
+    /** Present only on MCP requests; identifies the token's user or service actor. */
+    mcpActor: McpActor;
   };
   Bindings: Bindings;
 };
