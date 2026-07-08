@@ -7,7 +7,7 @@ import type { Organization } from 'sdk';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for a self-creation flow with multi-step navigation side-effects.
 import { selfCreateTenant } from 'sdk';
 import { zCreateOrganizationsBody } from 'sdk/zod.gen';
-import { generateId } from 'shared/entity-id';
+import { generateId } from 'shared/utils/entity-id';
 import { z } from 'zod';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';

@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { URL } from 'node:url';
-import { getEventLoopLagMs } from 'shared/event-loop-monitor';
+import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { env } from '../env';
 import { getActiveClientCount, getActiveDocumentCount } from '../sync/session-manager';
 import { getConnectionCount } from './ws-server';

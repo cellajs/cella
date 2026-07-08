@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { appConfig, type UploadTemplateId } from 'shared';
-import { nanoid } from 'shared/nanoid';
 import { uploadTemplates } from 'shared/transloadit-config';
+import { nanoid } from 'shared/utils/nanoid';
 import { env } from '#/env';
 import { utcDateString } from '#/utils/utc-data-string';
 

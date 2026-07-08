@@ -2,7 +2,7 @@ import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
 import { MessageCircleIcon } from 'lucide-react';
 import { useState } from 'react';
-import { notifyConfig } from 'shared/blocknote-schema-configs';
+import { notifyConfig } from 'shared/utils/blocknote-schema-configs';
 import { notifyTypes } from '~/modules/common/blocknote/custom-elements/notify/notify-options';
 import type { CustomBlockNoteEditor, IconType } from '~/modules/common/blocknote/types';
 import {

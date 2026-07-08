@@ -1,5 +1,5 @@
 import type pg from 'pg';
-import { BENCH_UUID_PREFIX } from 'shared/bench-identity';
+import { BENCH_UUID_PREFIX } from 'shared/utils/bench-identity';
 
 export interface BenchSeedContext {
   now: string;

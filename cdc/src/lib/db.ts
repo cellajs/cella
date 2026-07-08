@@ -1,6 +1,6 @@
 import { type DrizzleConfig } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/postgres-tls';
+import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
 import { env } from '../env';
 
 const dbConfig: DrizzleConfig = {

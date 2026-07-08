@@ -1,6 +1,6 @@
 import { exec } from 'node:child_process';
 import os from 'node:os';
-import { checkMark } from 'shared/console';
+import { checkMark } from 'shared/utils/console';
 
 const isWindows = os.platform() === 'win32';
 

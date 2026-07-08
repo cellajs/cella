@@ -1,6 +1,6 @@
 import { foreignKey, index, primaryKey, snakeCase, timestamp, unique, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
-import { generateId } from 'shared/entity-id';
+import { generateId } from 'shared/utils/entity-id';
 import { tenantIdLength } from '#/db/utils/constraints';
 import { usersTable } from '#/modules/user/user-db';
 

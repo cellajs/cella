@@ -1,6 +1,6 @@
 import { confirm } from '@inquirer/prompts'
 import { pc } from 'shared/cli-utils/colors';
-import { checkMark, tildeMark, warningMark } from 'shared/console'
+import { checkMark, tildeMark, warningMark } from 'shared/utils/console'
 import { resolveProjectId } from './bootstrap-scw-env'
 import { isMain } from '../utils/is-main'
 import { errorMessage } from '../utils/errors'

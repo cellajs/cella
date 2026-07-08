@@ -19,8 +19,8 @@
 
 import { inArray } from 'drizzle-orm';
 import { getAttachments } from 'sdk';
-import { generateId } from 'shared/entity-id';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';

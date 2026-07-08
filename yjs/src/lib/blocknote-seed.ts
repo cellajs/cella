@@ -5,7 +5,7 @@ import {
   codeBlockConfig,
   mentionConfig,
   notifyConfig,
-} from 'shared/blocknote-schema-configs';
+} from 'shared/utils/blocknote-schema-configs';
 import * as Y from 'yjs';
 import { log } from './pino';
 

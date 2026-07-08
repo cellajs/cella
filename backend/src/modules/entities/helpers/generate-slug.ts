@@ -1,5 +1,5 @@
 import type { ContextEntityType } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 

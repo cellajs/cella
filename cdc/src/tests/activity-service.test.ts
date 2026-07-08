@@ -5,7 +5,7 @@ import { mockBatchEvent } from './factories';
 vi.mock('../network/websocket-client', () => ({
   wsClient: { send: vi.fn(() => true) },
 }));
-vi.mock('shared/nanoid', () => ({
+vi.mock('shared/utils/nanoid', () => ({
   nanoid: () => 'mock-token',
   nanoidTenant: () => 'mock-t',
 }));

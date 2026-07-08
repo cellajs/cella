@@ -1,6 +1,6 @@
 import { boolean, doublePrecision, foreignKey, index, snakeCase, unique, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, roles } from 'shared';
-import { generateId } from 'shared/entity-id';
+import { generateId } from 'shared/utils/entity-id';
 import { tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { organizationsTable } from '#/modules/organization/organization-db';

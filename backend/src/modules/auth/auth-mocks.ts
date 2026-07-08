@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import { MOCK_REF_DATE, mockUuid, withFakerSeed } from '#/mocks';
 
 /**

@@ -1,9 +1,11 @@
 import { randomBytes } from 'node:crypto'
 import { pc } from 'shared/cli-utils/colors';
-import { checkMark, tildeMark, warningMark } from 'shared/console'
+import { checkMark, tildeMark, warningMark } from 'shared/utils/console'
 import { isMain } from '../lib/utils/is-main'
+import { managedKeys } from '../lib/managed-keys'
 import { runtimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager'
+import { provisionManagedKey } from './provision-managed-key'
 
 type PromptOption<T extends string> = { name: string; value: T; description?: string }
 
@@ -24,13 +26,15 @@ export interface ManageRuntimeSecretsOptions {
   secretKey: string
   projectId: string
   region: string
+  /** App slug, used to name the `<slug>-<suffix>` IAM app when minting a managed key. */
+  slug: string
   path: string
   prompts: RuntimeSecretPrompts
   log?: (message: string) => void
 }
 
 type ManagedRuntimeSecret = RuntimeSecretDefinition
-type Action = 'list' | 'set' | 'delete' | 'rotate' | 'exit'
+type Action = 'list' | 'set' | 'delete' | 'rotate' | 'mint' | 'exit'
 
 const defaultLog = (message: string) => console.info(message)
 
@@ -56,6 +60,11 @@ interface MenuContext {
   secrets: ManagedRuntimeSecret[]
   prompts: RuntimeSecretPrompts
   path: string
+  /** IAM-capable caller key + identity, used by the mint action. */
+  secretKey: string
+  projectId: string
+  region: string
+  slug: string
   log: (message: string) => void
 }
 
@@ -167,12 +176,62 @@ async function handleSet(ctx: MenuContext): Promise<void> {
   ctx.log(`${checkMark} Updated ${secret.secretName} ${pc.dim(`(revision ${version.revision}, ${value.length} chars)`)}`)
 }
 
+/**
+ * Mint (or rotate) a managed key: a scoped Scaleway IAM key cella creates and
+ * writes into its runtime secret(s), instead of the operator hand-creating one.
+ * Needs an IAMManager-capable caller key. The heavy lifting (verify containers
+ * exist → mint → write versions) lives in `provision-managed-key.ts`.
+ */
+async function handleMint(ctx: MenuContext): Promise<void> {
+  if (managedKeys.length === 0) {
+    ctx.log(`${tildeMark} No mintable managed keys are configured.`)
+    return
+  }
+  const selectedId = await ctx.prompts.select<string>({
+    message: 'Select a managed key to mint / rotate (Esc to go back)',
+    choices: managedKeys.map((key) => {
+      const targets = Object.values(key.assign).map((id) => runtimeSecrets.find((secret) => secret.id === id)?.envVar ?? id)
+      return { name: `${key.suffix} — ${key.label}`, value: key.id, description: `${ctx.slug}-${key.suffix} → ${targets.join(', ')}` }
+    }),
+  })
+  if (selectedId === BACK) return
+  const key = managedKeys.find((entry) => entry.id === selectedId)
+  if (!key) throw new Error(`manage-runtime-secrets: prompt returned unknown managed key id '${selectedId}'`)
+
+  const confirmed = await ctx.prompts.confirm({
+    message: `${warningMark} Mint a fresh scoped Scaleway key for ${key.label}? Supersedes any current value on the next deploy; needs an IAMManager-capable key.`,
+    default: false,
+  })
+  if (!confirmed) {
+    ctx.log(`${tildeMark} Mint cancelled.`)
+    return
+  }
+  try {
+    const result = await provisionManagedKey({
+      definition: key,
+      callerSecretKey: ctx.secretKey,
+      projectId: ctx.projectId,
+      region: ctx.region,
+      slug: ctx.slug,
+      path: ctx.path,
+      log: ctx.log,
+    })
+    ctx.log(`${checkMark} Minted ${key.label} ${pc.dim(`(app ${result.applicationId})`)}`)
+  } catch (error) {
+    ctx.log(`${warningMark} Mint failed: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
 export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions): Promise<void> {
   const ctx: MenuContext = {
     client: createSecretManagerClient({ secretKey: options.secretKey, region: options.region, projectId: options.projectId }),
     secrets: operatorManagedSecrets(),
     prompts: options.prompts,
     path: options.path,
+    secretKey: options.secretKey,
+    projectId: options.projectId,
+    region: options.region,
+    slug: options.slug,
     log: options.log ?? defaultLog,
   }
 
@@ -197,6 +256,7 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
         { name: 'List', value: 'list', description: 'Show operator-managed runtime secrets and whether a secret object exists.' },
         { name: 'Set or update', value: 'set', description: 'Create a new secret version for a selected runtime secret.' },
         { name: 'Rotate', value: 'rotate', description: 'Generate a fresh random value for a selected runtime secret when supported.' },
+        { name: 'Mint key', value: 'mint', description: 'Mint (or rotate) a scoped Scaleway IAM key and write it into its runtime secret(s).' },
         { name: 'Delete', value: 'delete', description: 'Delete an entire runtime secret object after confirmation.' },
         { name: 'Exit', value: 'exit', description: 'Leave the runtime secrets menu.' },
       ],
@@ -207,6 +267,7 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     if (action === BACK || action === 'exit') return
     if (action === 'list') await handleList(ctx)
     else if (action === 'rotate') await handleRotate(ctx)
+    else if (action === 'mint') await handleMint(ctx)
     else if (action === 'delete') await handleDelete(ctx)
     else await handleSet(ctx)
   }

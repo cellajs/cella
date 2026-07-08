@@ -6,7 +6,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@hey-api/openapi-ts';
 import chokidar from 'chokidar';
-import { changeMark, checkMark, crossMark, loadingMark, timestamp } from 'shared/console';
+import { changeMark, checkMark, crossMark, loadingMark, timestamp } from 'shared/utils/console';
 import { openApiConfig } from '../openapi-ts.config';
 
 const watchMode = process.argv.includes('--watch');

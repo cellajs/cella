@@ -22,7 +22,6 @@ services:
       TZ: UTC
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
-      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
       RUN_MIGRATIONS_ON_BOOT: 'false'
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/health']
@@ -59,7 +58,6 @@ services:
       MODE: migrate
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
-      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
   cdc:
     image: ${REGISTRY}/cdc:${CDC_TAG:-latest}
     profiles: [cdc]
@@ -151,7 +149,6 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
       MCP_API_URL: ${MCP_API_URL}
-      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4003/health']
       interval: '30s'

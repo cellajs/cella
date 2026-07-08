@@ -1,17 +1,11 @@
-import { appConfig } from 'shared';
+import type { ContextEntityType } from 'shared';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import type { EntityRoute } from '~/modules/navigation/types';
 import { type EntityRouteEntry, entityRouteConfig } from '~/routes-config';
 
 /**
- * Navigation hint for entity-page links. Spread into a `<Link>` or `navigate()`.
- *
- * `hash`/`hashScrollIntoView` land a new/forward navigation on the page header (`id="pt"`), leaving
- * the cover scrolled just above it. Works with TanStack Router's scroll restoration: on PUSH/REPLACE
- * the router's hash path runs `scrollIntoView` on the header; on history back/forward the cached
- * scroll position is restored and this hint is ignored. The scroll travel itself is masked by the
- * page-enter fade on the org page (see `.animate-page-enter`), not by a view transition (the router's
- * `viewTransition` doesn't capture React's concurrent commit here).
+ * Nav hint for entity-page links: lands forward navigation on the header (`id="pt"`) via
+ * `scrollIntoView`; on back/forward the router restores cached scroll and ignores it.
  */
 export const pageTopHashNav: { hash: string; hashScrollIntoView: ScrollIntoViewOptions } = {
   hash: 'pt',
@@ -19,45 +13,29 @@ export const pageTopHashNav: { hash: string; hashScrollIntoView: ScrollIntoViewO
 };
 
 /**
- * Config-driven entity path resolver
- *
- * Resolves an entity to its route using `entityRouteConfig`. Each entity declares
- * its route path, its param name, and optional subitem behavior. Ancestor slugs
- * (populated via cache enrichment) are mapped to params using the same config.
- *
- * When ancestor slugs are unavailable (cache miss), the route's `beforeLoad` +
- * `rewriteUrlToSlug` handles the fallback by redirecting to the slug-based URL after data loads.
+ * Resolve an entity to its route via `entityRouteConfig`. On cache miss, `beforeLoad` +
+ * `rewriteUrlToSlug` redirect to the slug URL after load.
  */
 export const getContextEntityRoute = (item: EnrichedContextEntity, isSubitem?: boolean): EntityRoute => {
   const { entityType, slug, tenantId, ancestorSlugs = {} } = item;
 
+  // Narrow config keeps `path` a literal route type (for `to`); the widened view exposes the
+  // optional `subitemOf`, not a common member when `config` is a union in a deep-hierarchy fork.
   const config = entityRouteConfig[entityType];
-  let to = config.path;
+  const entry: EntityRouteEntry = config;
+
+  // `ancestorSlugs` is this entity's exact ancestor set; map each to its route param.
   const params: Record<string, string> = { tenantId };
-  const search: Record<string, string> = { ...(config.search ?? {}) };
+  for (const [type, ancestorSlug] of Object.entries(ancestorSlugs)) {
+    if (ancestorSlug) params[entityRouteConfig[type as ContextEntityType].paramName] = ancestorSlug;
+  }
 
-  // Set this entity's slug in its designated param
+  // Subitem: render on the parent's page (param already set above) with this entity as search.
+  const subitemOf = isSubitem ? entry.subitemOf : undefined;
+  if (subitemOf && ancestorSlugs[subitemOf.entityType]) {
+    return { to: entityRouteConfig[subitemOf.entityType].path, params, search: { [subitemOf.searchParam]: slug } };
+  }
+
   params[config.paramName] = slug;
-
-  // Set ancestor slugs in their designated params
-  for (const type of appConfig.contextEntityTypes) {
-    const ancestorSlug = ancestorSlugs[type];
-    if (ancestorSlug) params[entityRouteConfig[type].paramName] = ancestorSlug;
-  }
-
-  // Subitem: navigate to parent route with entity slug as search param
-  const subitemConfig = isSubitem && 'subitemOf' in config && (config.subitemOf as EntityRouteEntry['subitemOf']);
-  if (subitemConfig) {
-    const parentSlug = ancestorSlugs[subitemConfig.entityType];
-    if (parentSlug) {
-      const parentConfig = entityRouteConfig[subitemConfig.entityType];
-      to = parentConfig.path;
-      params[parentConfig.paramName] = parentSlug;
-      for (const key of Object.keys(search)) delete search[key];
-      Object.assign(search, parentConfig.search ?? {});
-      search[subitemConfig.searchParam] = slug;
-    }
-  }
-
-  return { to, params, search };
+  return { to: config.path, params, search: {} };
 };

@@ -1,6 +1,6 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import type { ContextEntityType } from 'shared';
-import { getRelativeOrder } from 'shared/display-order';
+import { getRelativeOrder } from 'shared/utils/display-order';
 import type { UserMenu } from '~/modules/me/types';
 import { sortAndFilterMenu } from './sort-and-filter-menu';
 

@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import { env } from '#/env';
 import { log } from '#/utils/logger';
 

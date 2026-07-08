@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
 import { appConfig } from 'shared';
-import { isCDNUrl } from 'shared/is-cdn-url';
+import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { maxLength } from '#/db/utils/constraints';
 
 export { maxLength };

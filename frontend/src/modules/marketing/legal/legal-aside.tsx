@@ -3,7 +3,7 @@ import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';

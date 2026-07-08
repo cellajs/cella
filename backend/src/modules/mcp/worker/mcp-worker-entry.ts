@@ -1,7 +1,7 @@
 import { type ServerType, serve } from '@hono/node-server';
 import { appConfig } from 'shared';
-import { waitForBackend } from 'shared/wait-for-backend';
-import { setupGracefulShutdown } from 'shared/worker-lifecycle';
+import { waitForBackend } from 'shared/utils/wait-for-backend';
+import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { env } from '#/env';
 import { getPgBoss, stopPgBoss } from '#/lib/pg-boss';
 import { baseLog } from '#/lib/pino';

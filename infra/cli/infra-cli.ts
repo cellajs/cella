@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import { select } from '@inquirer/prompts'
 import { pc } from 'shared/cli-utils/colors';
 import { printHeader } from 'shared/cli-utils/display'
-import { warningMark } from 'shared/console'
+import { warningMark } from 'shared/utils/console'
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env'
 import { detectComputeDeferred, detectStackState, pickStackShort } from '../lib/stack/bootstrap-stack-state'
 import { infraDir } from '../lib/utils/paths'

@@ -12,7 +12,7 @@
 
 import { pc } from 'shared/cli-utils/colors';
 import { DIVIDER } from 'shared/cli-utils/display'
-import { checkMark } from 'shared/console'
+import { checkMark } from 'shared/utils/console'
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env'
 import { isMain } from '../lib/utils/is-main'
 import { ORG_SCOPED_PERMISSION_SETS, ORG_WIDE_PROJECT_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'

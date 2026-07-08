@@ -1,6 +1,6 @@
 import { boolean, foreignKey, index, jsonb, snakeCase, text, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, type UserFlags } from 'shared';
-import { generateId } from 'shared/entity-id';
+import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 

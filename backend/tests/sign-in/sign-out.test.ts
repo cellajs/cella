@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { signOut } from 'sdk';
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { sessionsTable } from '#/modules/auth/sessions-db';

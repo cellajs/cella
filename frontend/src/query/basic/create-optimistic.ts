@@ -1,4 +1,4 @@
-import { generateId } from 'shared/entity-id';
+import { generateId } from 'shared/utils/entity-id';
 import type { z } from 'zod';
 import { useUserStore } from '~/modules/user/user-store';
 

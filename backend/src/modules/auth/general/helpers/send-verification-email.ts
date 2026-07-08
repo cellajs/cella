@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';

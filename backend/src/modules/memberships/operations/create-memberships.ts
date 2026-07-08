@@ -1,6 +1,6 @@
 import { appConfig, type ContextEntityType, type EntityRole, hierarchy } from 'shared';
-import { generateId } from 'shared/entity-id';
-import { nanoid } from 'shared/nanoid';
+import { generateId } from 'shared/utils/entity-id';
+import { nanoid } from 'shared/utils/nanoid';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';

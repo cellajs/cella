@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';

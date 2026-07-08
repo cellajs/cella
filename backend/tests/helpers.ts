@@ -1,8 +1,8 @@
 import type { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import { appConfig, type EntityRole } from 'shared';
-import { generateId } from 'shared/entity-id';
-import { nanoid } from 'shared/nanoid';
+import { generateId } from 'shared/utils/entity-id';
+import { nanoid } from 'shared/utils/nanoid';
 import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { sessionsTable } from '#/modules/auth/sessions-db';

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { sleep as defaultSleep } from 'shared/sleep'
+import { sleep as defaultSleep } from 'shared/utils/sleep'
 import { errorMessage } from '../lib/utils/errors'
 import { isMain } from '../lib/utils/is-main'
 import { pollUntil } from '../lib/utils/retry'
