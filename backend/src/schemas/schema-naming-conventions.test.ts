@@ -7,7 +7,7 @@ import { entityTables } from '#/tables';
 /**
  * The yjs relay can't import backend drizzle tables (it builds in isolation), so it derives physical
  * table/column names from `toTableName`/`toColumnName` conventions in `shared`. These tests keep the
- * conventions honest by asserting they match the live drizzle schema for every entity table — so a
+ * conventions honest by asserting they match the live drizzle schema for every entity table, so a
  * fork whose table/column naming diverges fails CI here instead of silently denying edits at runtime.
  */
 describe('yjs schema-naming conventions match the drizzle schema', () => {
@@ -28,7 +28,7 @@ describe('yjs schema-naming conventions match the drizzle schema', () => {
 
       const cols = getColumns(table) as Record<string, { name: string }>;
       for (const key of readKeys) {
-        // Only columns the table actually has matter — the relay probes presence at runtime.
+        // Only columns the table actually has matter; the relay probes presence at runtime.
         if (cols[key]) expect(cols[key].name, `column "${entityType}.${key}"`).toBe(toColumnName(key));
       }
     }

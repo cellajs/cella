@@ -31,7 +31,7 @@ export const env = createEnv({
     DATABASE_URL: z.url(),
     DATABASE_ADMIN_URL: z.url(),
     DATABASE_POOL_MAX: z.coerce.number().default(80),
-    // PEM CA cert (Scaleway RDB instance) used to verify the managed PostgreSQL
+    // PEM CA cert (Scaleway RDB instance) for verifying the managed PostgreSQL
     // TLS connection. Auto-provisioned by `pulumi up`; required in production
     // (the DB client fails fast if missing). Unused in local development.
     DATABASE_SSL_CA: z.string().optional(),

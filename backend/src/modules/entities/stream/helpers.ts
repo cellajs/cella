@@ -57,7 +57,7 @@ export async function writeError(stream: SSEStreamingApi, payload: StreamErrorPa
 
 /**
  * Write an SSE heartbeat as a comment line. Per the SSE spec, lines starting
- * with `:` are ignored by EventSource — they keep the socket and any proxies
+ * with `:` are ignored by EventSource. They keep the socket and any proxies
  * (Caddy, nginx, Cloudflare) from idling out, without firing a client event.
  */
 export async function writeHeartbeat(stream: SSEStreamingApi): Promise<void> {

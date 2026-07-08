@@ -37,7 +37,7 @@ export interface DispatcherConfig<T extends CursoredSubscriber, E extends Activi
   transformNotification?: (notification: StreamNotification, subscriber: T) => StreamNotification;
 }
 
-/** Event with subjectId and organizationId guaranteed present. */
+/** Event with subjectId and organizationId already narrowed to strings. */
 export type EntityScopedEvent<E extends ActivityEvent = ActivityEvent> = E & {
   subjectId: string;
   organizationId: string;

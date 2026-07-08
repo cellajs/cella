@@ -53,7 +53,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
   const isResetting = useRef(false);
   const draftTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Only subscribes to isDirty (binary state change — minimal re-renders)
+  // Only subscribes to isDirty, a binary state change with minimal re-renders.
   const { isDirty } = useFormState({ control: form.control });
 
   // Keep formId fresh for use in subscription callbacks
@@ -68,7 +68,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
   };
 
   // Debounced draft persistence via form.watch subscription.
-  // Unlike useWatch, form.watch(callback) does NOT trigger React re-renders —
+  // Unlike useWatch, form.watch(callback) does NOT trigger React re-renders:
   // it invokes the callback directly, letting us debounce the save without
   // cascading re-renders through the form component tree.
   useEffect(() => {
@@ -83,7 +83,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
           const cleaned = Object.fromEntries(Object.entries(values).filter(([_, v]) => v !== undefined));
           if (Object.keys(cleaned).length > 0) setDraftForm(id, cleaned);
         } else {
-          // User reverted to defaults — clear saved draft
+          // User reverted to defaults, so clear saved draft.
           resetDraftForm(id);
         }
       }, 1000);

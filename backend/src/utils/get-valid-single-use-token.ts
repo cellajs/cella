@@ -16,7 +16,7 @@ type Props = {
  *
  * @param ctx - Hono context
  * @param tokenType (optional) The required type of the token (e.g., 'email-verification').
- * @returns The valid single use token record from the database.
+ * @returns The valid single use token row from the database.
  * @throws AppError if the token is not found or of an invalid type.
  */
 export const getValidSingleUseToken = async ({ ctx, tokenType }: Props): Promise<TokenModel> => {
@@ -24,7 +24,7 @@ export const getValidSingleUseToken = async ({ ctx, tokenType }: Props): Promise
   const singleUseToken = await getAuthCookie(ctx, tokenType);
   if (!singleUseToken) throw new AppError(400, 'invalid_token', 'warn');
 
-  // Get token record that matches type and singleUseToken value
+  // Get token row that matches type and singleUseToken value
   const [tokenRecord] = await db
     .select()
     .from(tokensTable)

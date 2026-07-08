@@ -38,7 +38,7 @@ describe('Passkey Authentication', async () => {
     it('should generate challenge for authentication', async () => {
       const user = await createUser(signUpUser.email);
 
-      // Create passkey record
+      // Create passkey row
       const passkeyRecord = mockPasskeyRecord(user.id);
       await db.insert(passkeysTable).values(passkeyRecord);
 
@@ -167,7 +167,7 @@ describe('Passkey Authentication', async () => {
 
   describe('Passkey Deletion (IDOR)', () => {
     // GHSA-4vcf-q4xf-f48m: deleting a passkey must be scoped to the owner; a user
-    // must not be able to delete another user's passkey by id.
+    // cannot delete another user's passkey by id.
     it("should not allow a user to delete another user's passkey", async () => {
       const victim = await createUser('victim@example.com');
       const attacker = await createUser('attacker@example.com');
@@ -187,7 +187,7 @@ describe('Passkey Authentication', async () => {
       // The delete is scoped to the caller, so it is a no-op for the attacker.
       expect(res.status).toBe(204);
 
-      // The victim's passkey must still exist.
+      // The victim's passkey remains.
       const remaining = await db.select().from(passkeysTable).where(eq(passkeysTable.id, victimPasskey.id));
       expect(remaining).toHaveLength(1);
     });

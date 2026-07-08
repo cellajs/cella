@@ -7,7 +7,7 @@ type ElementVisitor = (node: Element, index: number | undefined, parent: Parents
  * only thing the email render pipeline needs: a depth-first, pre-order walk that
  * calls `visitor` for every `element` node with its index and parent.
  *
- * Visitors must not mutate the tree during the walk — our plugins collect
+ * Visitors must not mutate the tree during the walk. Plugins collect
  * matches first and mutate afterwards, so this stays safe and simple.
  */
 export const visitElements = (tree: Root, visitor: ElementVisitor): void => {

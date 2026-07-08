@@ -1,9 +1,3 @@
-/**
- * First-boot cloud-init for a service generation VM. Writes the boot plan +
- * credentials + a launcher to /etc/cella, then starts a systemd oneshot that
- * `docker run`s the containerized boot agent (which drives the host Docker
- * daemon through the mounted socket to bring the service's compose stack up).
- */
 import { type BootPlan, parseRuntimeSecretManifest, supportedImageContract, supportedSchemaVersion } from '../agent/src/plan'
 
 export interface CloudInitParams {
@@ -129,14 +123,8 @@ exec docker run --rm --network host \\
   boot --plan ${agentPlanPath}`
 }
 
-// Runs on first boot AND every subsequent reboot (the unit is `enable`d in
-// startAgent, and `[Install] WantedBy=multi-user.target` wires it into each
-// boot). Re-running is intentional: the agent is idempotent and re-hydrates
-// /opt/app/.env.runtime from Secret Manager every boot, so a reboot picks up
-// any new runtime-secret versions without needing a fresh VM generation. The
-// boot sequence is fail-safe on reboot — Docker's restart policy has already
-// brought the app up on the previous .env.runtime, so a transient hydration
-// failure leaves the service running on the last-known-good values.
+// The systemd unit runs on first boot and each reboot. Re-running is intentional:
+// the idempotent agent re-hydrates /opt/app/.env.runtime from Secret Manager.
 const agentUnit = `[Unit]
 Description=Cella boot agent (first boot + every reboot)
 After=docker.service network-online.target
@@ -164,7 +152,7 @@ systemctl daemon-reload
 systemctl enable cella-boot-agent.service 2>&1 | tail -1
 systemctl start cella-boot-agent.service`
 
-/** Render the first-boot cloud-init script for a single service generation VM. */
+/** Render the first-boot cloud-init script for one service generation VM. */
 export function renderCloudInit(p: CloudInitParams): string {
   return [
     bootHeader(p.service, p.releaseSha),

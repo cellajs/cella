@@ -1,15 +1,3 @@
-/**
- * Download DB-IP Lite Country + ASN MMDB databases for the current month.
- *
- * Free, no signup. Updated monthly on the 1st by db-ip.com.
- * Licensed CC BY 4.0 — public-facing attribution required ("IP geolocation by DB-IP").
- *
- * Usage:
- *   pnpm --filter backend geoip:download           # current month
- *   pnpm --filter backend geoip:download 2026-04   # specific month (fallback)
- *
- * Output: backend/geoip/dbip-{country,asn}-lite.mmdb (gitignored)
- */
 import { createWriteStream, existsSync, mkdirSync } from 'node:fs';
 import { rename, unlink } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -45,7 +33,7 @@ for (const db of databases) {
   try {
     await download(db);
   } catch (err) {
-    // Best-effort cleanup of partial file
+    // Best-effort cleanup of a partial file.
     const tmp = resolve(OUT_DIR, `${db.out}.tmp`);
     if (existsSync(tmp)) await unlink(tmp).catch(() => {});
     console.error(err instanceof Error ? err.message : err);

@@ -45,7 +45,7 @@ describe('oauth strategy disabled', async () => {
   });
 });
 
-// OAuth provider configuration — only GitHub enabled
+// OAuth provider configuration: only GitHub enabled.
 describe('oauth provider configuration', async () => {
   beforeAll(() => {
     setTestConfig({

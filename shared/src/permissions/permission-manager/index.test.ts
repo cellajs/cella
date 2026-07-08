@@ -14,7 +14,7 @@ import type { SubjectForPermission } from './types';
 /**
  * Engine decision tests. The policy-driven cases run against the wide fixture (a synthetic
  * hierarchy: organization → workspace/project → task/label/attachment, guest role on the nested
- * contexts, attachment hosted by task) via the `topology` seam — so this suite covers guest roles,
+ * contexts, attachment hosted by task) via the `topology` seam, so this suite covers guest roles,
  * multi-level ancestor resolution and host delegation regardless of a fork's own config.
  */
 
@@ -276,7 +276,7 @@ describe('PermissionDecision action attribution', () => {
 
 // ── 'own' permission value tests ─────────────────────────────────────────────
 
-describe('own permission policy — ownership-scoped access', () => {
+describe('own permission policy, ownership-scoped access', () => {
   const { accessPolicies: ownPolicies } = configureWidePermissions(({ subject, contexts }) => {
     switch (subject.name) {
       case 'organization':
@@ -375,7 +375,7 @@ describe('own permission policy — ownership-scoped access', () => {
   });
 });
 
-describe('own permission — grant attribution', () => {
+describe('own permission, grant attribution', () => {
   const { accessPolicies: ownPolicies } = configureWidePermissions(({ subject, contexts }) => {
     switch (subject.name) {
       case 'attachment':
@@ -446,7 +446,7 @@ describe('own permission — grant attribution', () => {
   });
 });
 
-describe('own permission — batch subjects', () => {
+describe('own permission, batch subjects', () => {
   const { accessPolicies: ownPolicies } = configureWidePermissions(({ subject, contexts }) => {
     switch (subject.name) {
       case 'attachment':
@@ -494,7 +494,7 @@ describe('own permission — batch subjects', () => {
 
 // ── Deep-hierarchy coverage the template's org-only config cannot express ─────
 
-describe('wide hierarchy — guest role, multi-level ancestors, host delegation', () => {
+describe('wide hierarchy, guest role, multi-level ancestors, host delegation', () => {
   const { accessPolicies: policies, hostDelegation } = configureWidePermissions(
     ({ subject, contexts, delegateToHost }) => {
       switch (subject.name) {

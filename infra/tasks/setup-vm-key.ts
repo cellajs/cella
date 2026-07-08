@@ -1,16 +1,16 @@
 /**
  * Create (or reuse) a scoped IAM application `<slug>-vm-reader` and mint a fresh
  * API key (deleting any orphans). The application's IAM **policy** is NOT created
- * here — it is declared as a Pulumi-managed `iam.Policy` resource
+ * here: it is declared as a Pulumi-managed `iam.Policy` resource
  * (`infra/resources/vm-iam.ts`) so `pulumi up` reconciles the permission sets on
  * every deploy and the VM's grant can never silently drift.
  *
  * The VM reader identity is granted exactly these capabilities (by Pulumi):
- *   - ContainerRegistryReadOnly  — docker pull from the project registry
- *   - SecretManagerReadOnly      — list/describe runtime secrets by ID
- *   - SecretManagerSecretAccess  — decrypt + read the runtime secret VALUES
+ *   - ContainerRegistryReadOnly: docker pull from the project registry
+ *   - SecretManagerReadOnly: list/describe runtime secrets by ID
+ *   - SecretManagerSecretAccess: decrypt + read the runtime secret VALUES
  *
- * It intentionally has NO write access to anything — not instances, not the LB,
+ * It intentionally has NO write access to anything: not instances, not the LB,
  * not IAM. A compromised container can exfiltrate its own secrets but cannot
  * provision infrastructure or escalate privileges.
  *

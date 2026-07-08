@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '~/modules/ui/dropdown-menu';
 
-// Schema config is shared with the Yjs relay's server-side seeder — see shared/blocknote-schema-configs
+// Schema config is shared with the Yjs relay's server-side seeder; see shared/blocknote-schema-configs.
 export const notifyBlock = createReactBlockSpec(notifyConfig, {
   render: ({ block, editor, contentRef }) => {
     const [open, setOpen] = useState(false);

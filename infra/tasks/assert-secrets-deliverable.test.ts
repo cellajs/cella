@@ -53,7 +53,7 @@ describe('assertSecretsDeliverable', () => {
       log: silent,
       fetchImpl: fakeFetch({
         'database-url': { value: 'postgres://u:p@h:5432/db' },
-        // base64-encoded PEM is single-line on the wire — deliverable.
+        // base64-encoded PEM is single-line on the wire: deliverable.
         'database-ssl-ca': { value: b64('-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----') },
       }),
     })
@@ -69,7 +69,7 @@ describe('assertSecretsDeliverable', () => {
       projectId: PROJECT,
       secrets: [{ envVar: 'DATABASE_SSL_CA', secretName: 'database-ssl-ca', required: false }],
       log: silent,
-      // Stored as a RAW multi-line PEM — the exact value that took prod down.
+      // Stored as a raw multi-line PEM.
       fetchImpl: fakeFetch({ 'database-ssl-ca': { value: '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----' } }),
     })
     expect(res.ok).toBe(false)

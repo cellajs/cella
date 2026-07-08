@@ -23,7 +23,7 @@ import { useUserStore } from '~/modules/user/user-store';
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
 // Auth health probe timing. Warn the user the server seems slow after the "slow"
-// delay, and give up (treating the backend as down) after the timeout — otherwise
+// delay, and give up (treating the backend as down) after the timeout. Otherwise
 // a down backend can leave the spinner hanging on the browser's default timeout.
 const HEALTH_SLOW_MS = 5000;
 const HEALTH_TIMEOUT_MS = 20000;
@@ -134,7 +134,7 @@ export function AuthenticatePage() {
         </>
       )}
 
-      {/* Health probe failed (timeout or network error) — surface that the backend is down */}
+      {/* Health probe failed (timeout or network error), surface that the backend is down */}
       {isHealthError && (
         <Alert variant="destructive">
           <ServerOff />

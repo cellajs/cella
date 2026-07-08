@@ -10,7 +10,7 @@ const STICKY_CLASS = 'rdg-header-sticky';
  * horizontal position minus its scrollLeft.
  *
  * Vertical pinning is zero-lag (fixed positioning is compositor-handled).
- * Horizontal sync runs in a rAF callback — acceptable trade-off per requirements.
+ * Horizontal sync runs in a rAF callback, an acceptable trade-off per requirements.
  */
 export function useStickyHeader(
   gridRef: RefObject<HTMLDivElement | null>,

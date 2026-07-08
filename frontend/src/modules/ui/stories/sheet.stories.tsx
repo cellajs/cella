@@ -77,7 +77,6 @@ export const ShouldOpenCloseWithSubmit: Story = {
 
     await step('close the sheet', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /submit/i }));
-      // Wait for the sheet to be removed from DOM after closing animation
       await waitFor(
         () => {
           expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();
@@ -103,7 +102,6 @@ export const ShouldOpenCloseWithCancel: Story = {
 
     await step('close the sheet', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /cancel/i }));
-      // Wait for the sheet to be removed from DOM after closing animation
       await waitFor(
         () => {
           expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();
@@ -129,7 +127,6 @@ export const ShouldOpenCloseWithClose: Story = {
 
     await step('close the sheet', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /close/i }));
-      // Wait for the sheet to be removed from DOM after closing animation
       await waitFor(
         () => {
           expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();

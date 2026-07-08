@@ -8,7 +8,7 @@ import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 /**
- * Scroll spy test bed — each story runs in its own Storybook iframe
+ * Scroll spy test bed: each story runs in its own Storybook iframe
  * with isolated `window`, `history`, and `location`.
  *
  * Open in **Canvas** tab (not Docs) for proper iframe isolation.
@@ -98,7 +98,7 @@ const SidebarWithRouter = () => (
   </div>
 );
 
-/** Simplified sidebar without router Link — for comparison/isolation testing */
+/** Simplified sidebar without router Link, for comparison/isolation testing. */
 const SidebarWithoutRouter = () => (
   <div className="flex w-full flex-col gap-1">
     {tabs.map(({ id, label, icon: Icon }) => (
@@ -129,7 +129,7 @@ const Sidebar = ({ withRouter = true }: { withRouter?: boolean }) => {
 // ─── Interactive test panel ──────────────────────────────────────────────────
 
 /**
- * Interactive test panel — click buttons to trigger scroll actions
+ * Interactive test panel: click buttons to trigger scroll actions
  * and verify the scroll spy tracks correctly without jank.
  */
 const TestPanel = () => {
@@ -337,17 +337,17 @@ type Story = StoryObj<typeof meta>;
 
 // ─── Stories ─────────────────────────────────────────────────────────────────
 
-/** Baseline — scroll spy with plain buttons, no router. */
+/** Baseline: scroll spy with plain buttons, no router. */
 export const WithoutRouter: Story = {
   render: () => <ScrollSpyPage withRouter={false} label="Without Router (baseline)" />,
 };
 
-/** Production-like — TanStack Router with scroll restoration enabled. */
+/** Production-like: TanStack Router with scroll restoration enabled. */
 export const WithRouter: Story = {
   render: () => <WithRouterWrapper label="With Router" />,
 };
 
-/** Interactive test — scroll-to buttons, cycle test, and state checker. */
+/** Interactive test: scroll-to buttons, cycle test, and state checker. */
 export const Interactive: Story = {
   render: () => <WithRouterWrapper label="Interactive Test" showTests />,
 };

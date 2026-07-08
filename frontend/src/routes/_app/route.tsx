@@ -24,10 +24,10 @@ export const Route = createFileRoute('/_app')({
 
     const storedUser = useUserStore.getState().user;
 
-    // No stored user → treat as unauthenticated and redirect immediately. We must NOT
+    // No stored user -> treat as unauthenticated and redirect immediately. We must NOT
     // await /me here: doing so gates first paint on the round-trip and shows a blank
     // screen when the backend is slow or unreachable. Instead we hydrate /me in the
-    // background — a valid session still populates the store (the rare case of a cookie
+    // background. A valid session still populates the store (the rare case of a cookie
     // without a stored user simply resolves on the next navigation). Failures are
     // handled by the global query error handler.
     if (!storedUser) {
@@ -47,7 +47,7 @@ export const Route = createFileRoute('/_app')({
       throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: redirectPath } });
     }
 
-    // Stored user → continue into the app and revalidate the session in the background
+    // Stored user -> continue into the app and revalidate the session in the background
     console.info('Continuing user with session');
     // Wait for the per-user appdb to open + sync store to rehydrate so the stream
     // connects with a valid cursor (else catchup resyncs from `now`). Eager hydration
@@ -55,7 +55,7 @@ export const Route = createFileRoute('/_app')({
     await appStorageReady();
     // Start stream early so catchup runs in parallel with route loaders
     appStreamManager.connect();
-    // Validate session in parallel — disconnect stream if stale
+    // Validate session in parallel; disconnect stream if stale.
     queryClient.ensureQueryData({ ...meQueryOptions() }).catch(() => {
       appStreamManager.disconnect();
     });

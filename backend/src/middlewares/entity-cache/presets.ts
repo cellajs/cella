@@ -1,14 +1,3 @@
-/**
- * Cache middleware presets for common caching patterns.
- * Similar to rate-limiter/limiters.ts, these wrap the core cache middleware
- * with sensible defaults for different use cases.
- *
- * Both presets use passthrough pattern:
- * 1. Middleware checks cache → HIT returns immediately
- * 2. MISS → handler fetches/enriches data, sets ctx.set('entityCacheData', data)
- * 3. Middleware caches result after handler completes
- */
-
 import type { MiddlewareHandler } from 'hono';
 import type { Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
@@ -18,12 +7,12 @@ import { entityCache } from './app-entity-cache';
 import { validateSignedCacheToken } from './token-signer';
 
 /**
- * App entity cache middleware - entity-keyed TTL cache with forward-only token resolution.
+ * Entity-keyed TTL cache middleware with forward-only token resolution.
  * Uses X-Cache-Token header for access, validates session-signed tokens,
  * resolves token to entity key for cache lookup.
  *
  * Forward-only flow:
- * 1. CDC reserves token → maps token to entity key, invalidates stale data
+ * 1. CDC reserves token, maps token to entity key, invalidates stale data
  * 2. SSE signs token per-subscriber with their session
  * 3. Client sends signed token, we validate and resolve to entity key
  * 4. First user fetch enriches: handler sets actual data under entity key
@@ -93,11 +82,9 @@ export const appCache = (): MiddlewareHandler<Env> =>
         return ctx.json(cached);
       }
 
-      // Cache miss or reserved — check if another request is already fetching
       ctx.set('entityCacheHit', false);
 
       if (isInFlight(resolvedKey)) {
-        // Another request is fetching this entity — wait for it, then serve from cache
         await coalesce(resolvedKey, () => Promise.resolve());
 
         const coalesced = entityCache.get(resolvedKey);
@@ -108,7 +95,6 @@ export const appCache = (): MiddlewareHandler<Env> =>
         }
       }
 
-      // First request (or coalesced miss) — fetch via handler
       ctx.header('X-Cache', cached === null ? 'RESERVED' : 'MISS');
 
       await coalesce(resolvedKey, async () => {

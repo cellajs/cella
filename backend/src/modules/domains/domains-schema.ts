@@ -11,7 +11,7 @@ export const domainSchema = z.object({
 });
 
 /**
- * Domain schema including verificationToken — used for the detail/verify endpoints
+ * Domain schema including verificationToken for the detail/verify endpoints,
  * so the admin can see the DNS TXT record value they need to configure.
  */
 export const domainWithTokenSchema = z.object({

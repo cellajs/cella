@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { ySyncPluginKey, yUndoPluginKey } from 'y-prosemirror';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
 /**
@@ -17,44 +18,27 @@ export function useYjsUndoManagerFix(editor: CustomBlockNoteEditor, enabled: boo
   useEffect(() => {
     if (!enabled) return;
 
-    const tiptap = editor._tiptapEditor;
-
     const resubscribeUndoManager = () => {
-      try {
-        const pmState = tiptap.state;
-        if (!pmState) return;
+      const pmState = editor._tiptapEditor.state;
+      if (!pmState) return;
 
-        // Find the ySyncPlugin state (contains the Y.Doc) and the yUndoPlugin
-        // state (contains the UndoManager) by walking ProseMirror plugins.
-        let doc: { on: (e: string, h: unknown) => void; off: (e: string, h: unknown) => void } | undefined;
-        let undoManager: { afterTransactionHandler: unknown } | undefined;
+      // Read the Y.Doc from the ySyncPlugin state and the UndoManager from the
+      // yUndoPlugin state via their public plugin keys (identity-shared with the
+      // y-prosemirror instance BlockNote uses).
+      const doc = ySyncPluginKey.getState(pmState)?.doc;
+      const undoManager = yUndoPluginKey.getState(pmState)?.undoManager;
+      if (!doc || !undoManager?.afterTransactionHandler) return;
 
-        for (const plugin of pmState.plugins) {
-          const s = plugin.getState(pmState) as Record<string, unknown> | undefined;
-          if (!s) continue;
-          if (s.doc && typeof (s.doc as Record<string, unknown>).on === 'function') doc = s.doc as typeof doc;
-          if (s.undoManager && typeof (s as Record<string, unknown>).undoManager === 'object') {
-            undoManager = s.undoManager as typeof undoManager;
-          }
-        }
-
-        if (doc && undoManager?.afterTransactionHandler) {
-          doc.off('afterTransaction', undoManager.afterTransactionHandler);
-          doc.on('afterTransaction', undoManager.afterTransactionHandler);
-        }
-      } catch {
-        // Non-critical — if this fails, undo just won't work until next mount
-      }
+      // Idempotent re-attach: drop any existing subscription, then re-add so a
+      // destroyed-then-reused UndoManager captures changes again.
+      doc.off('afterTransaction', undoManager.afterTransactionHandler);
+      doc.on('afterTransaction', undoManager.afterTransactionHandler);
     };
 
     // Fix immediately (editor is already mounted by the time this effect runs)
     resubscribeUndoManager();
 
     // Also fix on future mounts (e.g. editability changes cause unmount→remount)
-    tiptap.on('mount', resubscribeUndoManager);
-
-    return () => {
-      tiptap.off('mount', resubscribeUndoManager);
-    };
+    return editor.onMount(resubscribeUndoManager);
   }, [enabled, editor]);
 }

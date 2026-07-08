@@ -1,10 +1,3 @@
-/**
- * TTL-based cache with prefix invalidation support.
- * Wraps @isaacs/ttlcache with additional methods.
- *
- * Uses pure TTL eviction (soonest-expiring first) rather than LRU.
- */
-
 import { TTLCache as BaseTTLCache } from '@isaacs/ttlcache';
 
 /** Dispose reason from ttlcache */
@@ -22,6 +15,7 @@ export interface TTLCacheOptions<T> {
 /**
  * TTL cache with prefix invalidation.
  * Automatic expiration via timer (no manual prune needed).
+ * Uses soonest-expiring-first eviction rather than access recency.
  */
 export class TTLCache<T> {
   private cache: BaseTTLCache<string, T>;

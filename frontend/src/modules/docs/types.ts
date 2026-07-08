@@ -122,7 +122,7 @@ export interface GenSchemaProperty {
   anyOf?: GenSchemaProperty[];
   /** oneOf schemas (for discriminated unions) */
   oneOf?: GenSchemaProperty[];
-  // Note: example is intentionally NOT included here.
+  // Example is intentionally omitted here.
   // Examples belong at the GenComponentSchema level only, not inside nested properties.
 }
 
@@ -171,7 +171,7 @@ export interface GenSchema {
   anyOf?: GenSchema[];
   /** oneOf schemas */
   oneOf?: GenSchema[];
-  // Note: example is intentionally NOT included here.
+  // Example is intentionally omitted here.
   // Examples belong at the GenComponentSchema level, not inside schema.schema.
   // This prevents duplication of example data in the generated output.
 }
@@ -296,7 +296,7 @@ export interface GenComponentSchema {
   schema: GenSchema;
   /** Whether this schema extends another via allOf */
   extendsRef?: string;
-  /** Schema tag for categorization — name of a backend-registered `kind: 'schema'` tag. */
+  /** Schema tag for categorization: a backend-registered `kind: 'schema'` tag name. */
   schemaTag: string;
   /** Tags grouped by their kind (e.g., { module: ['pages'], owner: ['cella'], schema: ['data'] }). */
   tagsByKind: Record<string, string[]>;

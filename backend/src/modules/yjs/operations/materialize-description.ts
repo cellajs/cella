@@ -15,7 +15,7 @@ export interface MaterializeDescriptionInput {
   tenantId: string;
   organizationId: string | null;
   description: string;
-  /** Last editor in the relay's save window — becomes `updatedBy` and the permission subject. */
+  /** Last editor in the relay's save window, becomes `updatedBy` and the permission subject. */
   editedBy: string;
 }
 
@@ -25,7 +25,7 @@ export interface MaterializeDescriptionInput {
  *
  * Synthesizes an AuthContext for the editing user and dispatches to the entity's
  * registered materializer, which runs the standard update pipeline: permission
- * re-check (defense in depth — the relay already verified, but access may have been
+ * re-check (defense in depth, the relay already verified, but access may have been
  * revoked mid-session), server-HLC stamping, derived-field computation, CDC/SSE.
  */
 export async function materializeDescriptionOp(input: MaterializeDescriptionInput): Promise<{ sanitized: boolean }> {
@@ -47,7 +47,7 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
 
   const memberships = await baseDb.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
-  // Synthesized worker context — carries exactly what the update pipeline reads
+  // Synthesized worker context, carries exactly what the update pipeline reads
   // (user, memberships, tenant/org scope, base db). Session-bound vars don't apply here.
   const ctx = {
     var: {

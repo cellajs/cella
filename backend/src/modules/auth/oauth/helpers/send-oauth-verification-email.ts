@@ -66,7 +66,7 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
     })
     .returning();
 
-  // Link token to existing email record (only if not already verified by another flow)
+  // Link token to existing email row (only if not already verified by another flow)
   if (!emailInUse) {
     await db
       .update(emailsTable)

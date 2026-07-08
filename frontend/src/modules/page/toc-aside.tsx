@@ -18,7 +18,7 @@ interface TocAsideProps {
 /**
  * "On this page" navigation for a docs page: the page's h2/h3 headings with a
  * cursor bar that follows the scroll position (spy store). Section registration
- * happens next to the content (view-page.tsx), not here — the body is lazy and
+ * happens next to the content (view-page.tsx), not here. The body is lazy and
  * the spy observer only picks up elements that exist at registration time.
  */
 export const TocAside = ({ headings, className }: TocAsideProps) => {

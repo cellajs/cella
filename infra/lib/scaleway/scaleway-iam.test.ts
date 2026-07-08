@@ -146,7 +146,7 @@ describe('provisionScopedKey', () => {
     const result = await provisionScopedKey(baseOpts, { ...config, managePolicy: false })
 
     expect(result).toMatchObject({ accessKey: 'SCWNEW', applicationId: 'app-1' })
-    // No policy reads, deletes, or creates — Pulumi owns the policy resource.
+    // No policy reads, deletes, or creates: Pulumi owns the policy resource.
     expect(calls.some((c) => c.url.includes('/policies'))).toBe(false)
   })
 
@@ -184,7 +184,7 @@ describe('provisionScopedKey', () => {
     const result = await provisionScopedKey(baseOpts, { ...config, mintKey: false })
 
     expect(result).toMatchObject({ accessKey: '', secretKey: '', applicationId: 'app-op' })
-    // No api-key reads, deletes, or creates — the human mints one in the console.
+    // No api-key reads, deletes, or creates: the human mints one in the console.
     expect(calls.some((c) => c.url.includes('/api-keys'))).toBe(false)
   })
 })

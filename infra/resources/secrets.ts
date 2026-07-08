@@ -1,11 +1,3 @@
-/**
- * Secrets — registry-driven runtime secret containers in Scaleway Secret Manager.
- *
- * Pulumi provisions the secret containers for every runtime secret in the central
- * registry. Values are only written by Pulumi for secrets marked `valueSource:
- * 'pulumi'`; operator-managed secrets are created as empty containers and filled
- * later via the bootstrap secret-management flow.
- */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tags, mode } from '../pulumi-context'
@@ -28,7 +20,7 @@ const secretPath = secretManagerPath(naming.slug, mode)
  *
  * Entries are `secretName=region/uuid` (the Scaleway Secret `.id` form) and are
  * only consulted for operator secrets. Once a container is in state the variable
- * is no longer needed and should be removed.
+ * can be removed.
  *
  * Manual fallback only: the "Apply infra change" CLI flow now self-heals this
  * drift automatically via `lib/adopt-orphaned-secrets.ts` (it lists the live
@@ -53,7 +45,7 @@ function parseOperatorSecretImports(raw: string | undefined): Record<string, str
 const operatorSecretImports = parseOperatorSecretImports(process.env.OPERATOR_SECRET_IMPORTS)
 
 // ---------------------------------------------------------------------------
-// Helper — create a Secret container, optionally with a Version
+// Helper: create a Secret container, optionally with a Version
 // ---------------------------------------------------------------------------
 
 function createSecretContainer(
@@ -90,12 +82,12 @@ function pulumiOwnedRuntimeSecret(configKey: string, name: string) {
 
 /**
  * Pulumi-derived secret values that cannot be produced generically from the
- * registry — the database connection strings (built from database resources) and
+ * registry: the database connection strings (built from database resources) and
  * the database CA certificate (the RDB instance's own cert). Every other
  * `valueSource: 'pulumi'` secret is resolved from its registry definition
  * (`generation: 'random'` → a stable RandomPassword named after its
- * `secretName`), so adding a new pulumi-owned random secret requires no edit
- * here — only a registry entry.
+ * `secretName`), so adding a new pulumi-owned random secret only requires a
+ * registry entry.
  */
 const derivedRuntimeSecretData: Record<string, pulumi.Input<string>> = {
   databaseUrlAdmin: connectionStringAdmin,
@@ -103,7 +95,7 @@ const derivedRuntimeSecretData: Record<string, pulumi.Input<string>> = {
   databaseUrlCdc: connectionStringCdc,
   // The RDB CA is a multi-line PEM. Runtime secrets are delivered to VMs via
   // `.env.runtime` (a docker-compose env_file), which is line-based and rejects
-  // multi-line values — a multi-line secret fails the boot agent's runtime-secret
+  // multi-line values. A multi-line secret fails the boot agent's runtime-secret
   // hydration and blocks the app from booting. Store it base64-encoded (single
   // line); the app db clients decode it back to PEM. See backend/src/db/db.ts.
   databaseSslCa: pulumi.output(caCertificate).apply((pem) => Buffer.from(pem, 'utf-8').toString('base64')),
@@ -126,10 +118,9 @@ const secretResources = Object.fromEntries(runtimeSecrets.map((definition) => {
   const isOperator = definition.valueSource === 'operator'
   // Pulumi owns the container for EVERY runtime secret. Operator-managed ones are
   // created empty (no version) and filled out-of-band via the "Manage runtime
-  // secrets" CLI; a missing/renamed operator container therefore no longer hard-
-  // fails the stack (the previous getSecretOutput lookup did). `retainOnDelete`
-  // keeps the operator-supplied value from being deleted when a registry entry is
-  // renamed or removed — the orphaned old container is cleaned up by hand.
+  // secrets" CLI. `retainOnDelete` keeps the operator-supplied value from being
+  // deleted when a registry entry is renamed or removed; the orphaned old
+  // container is cleaned up by hand.
   const secret = createSecretContainer(definition.secretName, definition.description, {
     retainOnDelete: isOperator,
     importId: isOperator ? operatorSecretImports[definition.secretName] : undefined,
@@ -141,7 +132,7 @@ const secretResources = Object.fromEntries(runtimeSecrets.map((definition) => {
 }))
 
 // ---------------------------------------------------------------------------
-// Exports — secret IDs for container references
+// Exports: secret IDs for container references
 // ---------------------------------------------------------------------------
 
 /** Map of runtime secret IDs to their Scaleway Secret IDs. The key type is the

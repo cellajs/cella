@@ -46,7 +46,7 @@ export interface PollUntilOptions {
 /**
  * Probe until `probe` returns a non-undefined value (the poll's result), or the
  * attempt budget is spent (undefined). Unlike {@link retry}, a probe that
- * "misses" is not an error — it simply returns undefined to keep polling — so
+ * "misses" is not an error: it simply returns undefined to keep polling, so
  * per-attempt logging and terminal fast-fail decisions live inside the probe.
  */
 export async function pollUntil<T>(probe: (attempt: number) => Promise<T | undefined>, opts: PollUntilOptions): Promise<T | undefined> {

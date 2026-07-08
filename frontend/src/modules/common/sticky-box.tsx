@@ -36,13 +36,13 @@ type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
 
 /**
  * Affix header that pins to the top of its scroll container via CSS
- * `position: sticky`. Placement is owned by the browser — robust inside
+ * `position: sticky`. Placement is owned by the browser, robust inside
  * transformed/virtualized ancestors where `position: fixed` would anchor to the
  * wrong containing block. A zero-height sentinel + IntersectionObserver is the
  * single source of truth for the `data-sticky` state (used for styling), and an
  * optional `offsetBottom` releases the bar before the container's bottom edge.
  *
- * Not for tall sticky *sidebars*: use plain CSS instead —
+ * Not for tall sticky *sidebars*: use plain CSS instead:
  * `sticky top-X max-h-[calc(100vh-…)] overflow-y-auto`.
  */
 export function StickyBox({
@@ -190,7 +190,7 @@ export function StickyBox({
   }
 
   // The bar is a near-direct child (only preceded by the sentinel) so its sticky
-  // containing block is the caller's parent — letting it travel the full content.
+  // containing block is the caller's parent, letting it travel the full content.
   return (
     <>
       <div ref={sentinelRef} aria-hidden className={cn('pointer-events-none -mb-px h-px', placeholderClassName)} />

@@ -46,7 +46,6 @@ export const ShouldOpenClose: Story = {
 
     await step('click the trigger to close the popover', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /open/i }));
-      // Wait for the dialog to be removed from DOM after closing animation
       await waitFor(
         () => {
           expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();

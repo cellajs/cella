@@ -18,7 +18,7 @@ import { acquireStackLockOrExit, envOr, type InfraContext, promptRequiredInput, 
  *  private network) that the read-only CI key cannot make, without
  *  permanently widening CI permissions. Runs against an already-bootstrapped
  *  stack with live compute, so it must NOT defer compute (no computeDeferred
- *  marker) — that is reserved for the fresh-provision flow in setup.ts. */
+ *  marker), which is reserved for the fresh-provision flow in setup.ts. */
 export async function runApply(context: InfraContext): Promise<void> {
   if (context.state !== 'bootstrapped') {
     console.error(`${warningMark} "Apply infra change" requires a fully bootstrapped stack (state=${context.state}). Run Resume first.`)
@@ -69,7 +69,7 @@ export async function runApply(context: InfraContext): Promise<void> {
   }
 
   // The VM reader IAM policy is Pulumi-managed but the original bootstrap created
-  // it out-of-band, so it can be missing from Pulumi state — which makes
+  // it out-of-band, so it can be missing from Pulumi state. That makes
   // `pulumi up` try to create it and fail (409 locally / no IAM write in CI).
   // Adopt the pre-existing policy into state first; idempotent once imported.
   if (organizationId) {
@@ -111,8 +111,8 @@ export async function runApply(context: InfraContext): Promise<void> {
   // Reconcile gen/sha into the local Pulumi config from live state before
   // `pulumi up`, so a stale committed Pulumi.<stack>.yaml can't converge compute
   // back to an old generation (destroying newer live VMs). CI does this in the
-  // deploy workflow; the operator apply path must too. Best-effort by design —
-  // it skips cleanly when there is no compute output yet — but a hard failure
+  // deploy workflow; the operator apply path must too. Best-effort by design:
+  // it skips cleanly when there is no compute output yet, but a hard failure
   // (bad creds/passphrase) aborts rather than risk applying against stale config.
   console.info(pc.dim('\n→ Reconciling rollout config from live state (sync-rollout-config)…'))
   const sync = spawnSync('pnpm', ['--filter', 'infra', 'sync-rollout-config', '--stack', targetStack], { cwd: infraDir, env: applyEnv, stdio: 'inherit' })
@@ -125,7 +125,7 @@ export async function runApply(context: InfraContext): Promise<void> {
   // No compute-deferred marker and no stack-file backup here: the stack is
   // already bootstrapped with live compute, the bootstrap key reaches
   // `pulumi up` via SCW_* env (applyEnv) rather than stack config, and
-  // `pulumi up` is idempotent — an interrupted run is recovered simply by
+  // `pulumi up` is idempotent; an interrupted run is recovered simply by
   // re-running it. Deferring compute (as the fresh-provision flow does) would
   // tear down the running VMs/LB on an established stack.
   while (true) {

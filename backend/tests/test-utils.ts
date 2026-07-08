@@ -1,19 +1,3 @@
-/**
- * Test setup utilities for configuring test environments.
- *
- * This file contains helper functions to:
- * - Mock global behaviors like `fetch`
- * - Clean up the database (e.g., clear users and emails tables)
- * - Dynamically enable/disable config flags (e.g., auth strategies)
- *
- * Database migrations are handled by global-setup.ts before tests run.
- * These functions are intended to be used in test files to keep setup DRY and consistent.
- *
- * IMPORTANT: vi.mock() calls must be at the top level of each test file (vitest hoists them).
- * Use the exported mock factory functions (rateLimiterCoreMock, rateLimiterHelpersMock, arcticMock,
- * cookieMock, sessionMock) in your top-level vi.mock() calls instead of wrapping them in helper functions.
- */
-
 import { sql } from 'drizzle-orm';
 import type { Context, Next } from 'hono';
 import { appConfig } from 'shared';
@@ -22,9 +6,6 @@ import { baseDb as db } from '#/db/db';
 import { resetOrganizationMockEnforcers } from '#/modules/organization/organization-mocks';
 import { resetUserMockEnforcers } from '#/modules/user/user-mocks';
 
-/**
- * Types
- */
 type AuthStrategy = 'passkey' | 'oauth' | 'totp';
 type OAuthProvider = 'github' | 'google' | 'microsoft';
 
@@ -89,6 +70,7 @@ export async function clearDatabase() {
 
 /**
  * Mock factory for rate limiter core module.
+ * vi.mock() calls must be at the top level of each test file because Vitest hoists them.
  * Use at top level: vi.mock('#/middlewares/rate-limiter/core', rateLimiterCoreMock)
  */
 export const rateLimiterCoreMock = () => ({

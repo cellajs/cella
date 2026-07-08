@@ -1,4 +1,3 @@
-// Email templates barrel file
 export { accountSecurityEmail } from './templates/account-security';
 export { emailVerificationEmail } from './templates/email-verification';
 export { magicLinkEmail } from './templates/magic-link';

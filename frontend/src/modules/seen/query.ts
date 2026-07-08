@@ -13,5 +13,5 @@ export const unseenCountsQueryOptions = () =>
   queryOptions({
     queryKey: seenKeys.unseenCounts,
     queryFn: () => getUnseenCounts(),
-    staleTime: 60 * 1000, // 1 minute — refetch on SSE entity.created or menu open
+    staleTime: 60 * 1000, // 1 minute, refetch on SSE entity.created or menu open
   });

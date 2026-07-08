@@ -1,19 +1,3 @@
-/**
- * Dev-only frontend tracer.
- *
- * In staging/production the Maple browser SDK owns tracing end-to-end
- * (see lib/maple.ts): its provider registers globally, its fetch
- * instrumentation creates network spans, and every span carries the replay
- * session id. There is deliberately NO parallel provider or OTLP export here.
- *
- * In development (where the SDK is off unless VITE_DEBUG_MODE) this module
- * registers a local WebTracerProvider so the withSpan helpers and the
- * sync-devtools SpanStore keep working. Spans stay local — nothing exports.
- *
- * The exported `tracer` is a ProxyTracer bound to the OTel global API: it
- * resolves against whichever provider registered (dev: local, prod: Maple SDK),
- * so withSpan/reportCriticalError work identically in both environments.
- */
 import { trace } from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
@@ -24,7 +8,7 @@ import { appConfig } from 'shared';
 import { createSpanStore, createSpanStoreProcessor } from 'shared/tracing';
 import { mapleEnabled } from './maple-enabled';
 
-// Devtools span ring. Only fed in dev (no processor is attached otherwise).
+// Devtools span ring. Only fed in development.
 export const spanStore = createSpanStore({ maxSpans: 500 });
 
 if (!mapleEnabled) {
@@ -38,8 +22,7 @@ if (!mapleEnabled) {
 
   provider.register();
 
-  // Guarded so the module is import-safe in test environments where appConfig
-  // is partially mocked (no backendUrl → nothing to propagate headers to).
+  // Guarded for test environments where appConfig is partially mocked.
   if (appConfig.backendUrl) {
     registerInstrumentations({
       instrumentations: [
@@ -53,4 +36,5 @@ if (!mapleEnabled) {
   }
 }
 
+/** Active frontend tracer from the provider registered for the current environment. */
 export const tracer = trace.getTracer(`${appConfig.slug}-frontend`);

@@ -1,14 +1,3 @@
-/**
- * "No unexpected public surface" sweep.
- *
- * Walks every `infra/resources/*.ts` file looking for patterns that widen the
- * public attack surface (open ingress, wildcard CORS, public buckets,
- * Principal:'*' policies, public DB endpoints, public registries). Every match
- * MUST be present in `EXPECTED` below — otherwise the test fails and the
- * reviewer has to either justify the new surface or remove it.
- *
- * This is the cheap, in-repo equivalent of Pulumi's StackValidationArgs policy.
- */
 import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -33,10 +22,10 @@ const PATTERNS: Array<{ name: string; rx: RegExp }> = [
 // Allowlist: every entry MUST be justified by a real, intentional public
 // surface. Keep this list short. Format: `<resource>:<pattern-name>`.
 const EXPECTED = new Set<string>([
-  // Frontend SPA bucket — served by the Caddy frontend VM, must be readable.
+  // Frontend SPA bucket: served by the Caddy frontend VM, must be readable.
   'storage.ts:principal-wildcard',
-  // Public-uploads bucket — user-uploaded assets meant to be public.
-  // (Same resource, same pattern — counted once because we dedupe per resource.)
+  // Public-uploads bucket: user-uploaded assets meant to be public.
+  // Same resource, same pattern: counted once because we dedupe per resource.
 ])
 
 const resourcesDir = resolve(__dirname, '../../resources')
@@ -58,6 +47,8 @@ function scan(): Finding[] {
   return findings
 }
 
+// Scans resources for public buckets, registries, DB endpoints, and ingress.
+// Intentional public surfaces must be listed in EXPECTED.
 describe('no-unexpected-public sweep', () => {
   it('every public-surface pattern is in the EXPECTED allowlist', () => {
     const findings = scan()

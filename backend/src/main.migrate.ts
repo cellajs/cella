@@ -1,17 +1,3 @@
-/**
- * One-shot migration entrypoint (MODE=migrate).
- *
- * Applies pending drizzle migrations and ensures DB roles against the DB
- * pointed to by DATABASE_ADMIN_URL, then exits. This is the production path:
- * the reconciler runs this as a short-lived container BEFORE rolling the
- * serve-only API, so schema changes land while the old code is still serving
- * (expand-before-rollover). Exits non-zero on failure so the caller can gate.
- *
- * Shares its implementation intent with scripts/migrate.ts, but lives under
- * src/ so it is bundled into the single dist/main.js image entry and selected
- * via MODE — no extra build target or tsx in the runtime image.
- */
-
 import process from 'node:process';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import pc from 'picocolors';
@@ -46,7 +32,7 @@ try {
       cause instanceof Error ? `${cause.message}${cause.stack ? `\n${cause.stack}` : ''}` : String(cause);
     console.error(pc.red(`${timestamp()} [migrate]   cause: ${causeMsg}`));
   }
-  // Also ship the failure to Maple — container stdout is not centrally collected,
+  // Also ship the failure to Maple; container stdout is not centrally collected,
   // so without this a failed production migration is invisible in the log backend.
   // The OTel transport batches with a 5s schedule; wait past it so the export
   // actually leaves before the one-shot container exits.

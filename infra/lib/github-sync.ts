@@ -1,9 +1,3 @@
-/**
- * GitHub sync for bootstrap: writes CI deploy creds + config-derived Actions
- * variables into the GitHub Environment matching the Pulumi stack. Scoped to
- * an Environment so credentials are only injected into jobs that opt in via
- * `environment:` in their workflow.
- */
 import { spawnSync } from 'node:child_process'
 import type { Environment } from './stack/bootstrap-stack-state'
 import { crossMark, warningMark } from 'shared/console'

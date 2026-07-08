@@ -1,16 +1,8 @@
-/**
- * Tests for server-side STX (sync transaction) metadata construction.
- *
- * Enforces:
- * - Creates start with empty fieldTimestamps
- * - Updates merge incoming HLC timestamps for accepted fields
- * - mutationId and sourceId are preserved through
- */
-
 import { describe, expect, it } from 'vitest';
 import { buildStx } from '#/core/stx/build-stx';
 import { _resetHLC } from '#/core/stx/hlc';
 
+// Covers server-side STX metadata construction for creates and updates.
 describe('buildStx', () => {
   const baseRequest = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: {} };
 
@@ -43,7 +35,7 @@ describe('buildStx', () => {
       const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { name: '300:0001:ccc' } };
       const result = buildStx(stx, entity, ['name']);
 
-      // name updated to incoming HLC, status preserved
+      // Accepted fields use incoming HLC values; unchanged fields preserve stored HLCs.
       expect(result.fieldTimestamps.name).toBe('300:0001:ccc');
       expect(result.fieldTimestamps.status).toBe('200:0001:bbb');
     });

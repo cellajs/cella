@@ -1,13 +1,3 @@
-/**
- * Embedded entity propagation for client-side cache patching.
- *
- * When a source entity changes (e.g., label renamed), target entities that embed it
- * (e.g., task.labels[]) need their cached copies updated. This module scans the React
- * Query cache using Set lookups — sub-millisecond for typical cache sizes.
- *
- * Used by both live SSE handler (single/batch events) and catchup processor (post-delta-fetch).
- */
-
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
@@ -25,7 +15,7 @@ type PropagationHintInput = {
 
 /**
  * Scan cached target entities and patch stale embedded source references.
- * Uses Set lookups for O(cached targets × avg embeddings) — sub-ms for typical caches.
+ * Used by live SSE handlers and catchup after delta fetches.
  */
 export function propagateEmbeddings(hint: PropagationHintInput): void {
   const { sourceType, targetType, field, update, remove } = hint;
@@ -35,7 +25,7 @@ export function propagateEmbeddings(hint: PropagationHintInput): void {
   const updateSet = new Set(update);
   const removeSet = new Set(remove);
 
-  // Read fresh source data for updates (must be in cache — caller ensures this)
+  // Read fresh source data for updates. The caller ensures it is cached.
   const freshSources = new Map<string, ItemData>();
   for (const id of update) {
     const data = findInCache<ItemData>(sourceType, id);
@@ -125,7 +115,7 @@ function patchSingleTarget(
         const freshRecord = fresh as unknown as Record<string, unknown>;
         if (item.updatedAt && freshRecord.updatedAt && freshRecord.updatedAt > item.updatedAt) return fresh;
         if (!item.updatedAt) return fresh;
-        // fresh is same age or older — keep cached version (concurrent edit edge case)
+        // fresh is same age or older, keep cached version (concurrent edit edge case).
         return item;
       });
 

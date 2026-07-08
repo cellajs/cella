@@ -42,7 +42,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
         className={cn('relative', isRoot ? 'group/page-root' : 'group/page-parent')}
         data-expanded={isExpanded}
       >
-        {/* Vertical guideline (parent tier only) — reads expanded state from the row scope */}
+        {/* Vertical guideline (parent tier only), reads expanded state from the row scope */}
         {!isRoot && hasChildren && (
           <div className="pointer-events-none absolute top-8 bottom-2 left-2.5 hidden w-px bg-muted-foreground/30 group-data-[expanded=true]/page-parent:block" />
         )}
@@ -71,7 +71,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
             onClose();
           }}
         >
-          {/* Leading dot (parent tier only) — reads expanded state from the row scope */}
+          {/* Leading dot (parent tier only), reads expanded state from the row scope */}
           {!isRoot && (
             <div className="absolute left-[0.53rem] h-1 w-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/page-parent:bg-muted-foreground/60" />
           )}

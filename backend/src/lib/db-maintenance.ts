@@ -1,20 +1,3 @@
-/**
- * Database maintenance: pg_partman partition maintenance.
- *
- * Calls partman.run_maintenance() to create upcoming partitions and drop
- * partitions past their retention window for the partitioned tables
- * (sessions, tokens, unsubscribe_tokens, activities, seen_by).
- *
- * pg_partman has no background worker configured, so run_maintenance() must be
- * invoked periodically. It runs in-process via the daily scheduler
- * (`scheduleDbMaintenance`) on the migration-owning instance.
- *
- * run_maintenance() is idempotent, so overlapping runs are harmless.
- *
- * Requires the pg_partman extension (local dev installs it via backend/db/Dockerfile;
- * production managed Postgres has it enabled). If it is missing, maintenance is
- * skipped with a warning and the partitioned tables will grow unbounded.
- */
 import { sql } from 'drizzle-orm';
 import { baseDb as db } from '#/db/db';
 import { baseLog } from '#/lib/pino';
@@ -33,6 +16,7 @@ async function isPgPartmanAvailable(): Promise<boolean> {
 
 /**
  * Run a single pg_partman maintenance pass (creates upcoming partitions, drops expired ones).
+ * Skips with a warning when the pg_partman extension is not installed.
  *
  * @param log - Optional log sink (defaults to console.info). Throws on failure; callers decide how to handle it.
  */

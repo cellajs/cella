@@ -6,7 +6,7 @@ const paragraph = () => ({ id: '2', type: 'paragraph', props: {}, content: [], c
 
 describe('sanitizeBlockMediaUrls', () => {
   it('passes trusted content through unchanged', () => {
-    // Non-URL values are internal attachment keys — always trusted
+    // Non-URL values are internal attachment keys and always trusted.
     const description = JSON.stringify([paragraph(), image('attachment-key-123')]);
     const result = sanitizeBlockMediaUrls(description);
 

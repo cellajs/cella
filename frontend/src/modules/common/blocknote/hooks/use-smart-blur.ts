@@ -10,7 +10,7 @@ import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
 interface UseSmartBlurArgs {
   editor: CustomBlockNoteEditor;
-  /** Editor root, used to detect focus moves to a child element. */
+  /** Editor root for detecting focus moves to a child element. */
   containerRef: RefObject<HTMLDivElement | null>;
   /** Called when the blur is "real" (not into a menu/toolbar/file panel). */
   onBlur: () => void;

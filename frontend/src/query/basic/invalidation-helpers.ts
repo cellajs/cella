@@ -1,20 +1,10 @@
-/**
- * Invalidation helpers for preventing over-invalidation.
- *
- * Based on TkDodo's concurrent optimistic updates pattern:
- * When multiple mutations are in flight, only the last one should trigger invalidation.
- * This prevents unnecessary refetches that could cause UI flickering.
- *
- * @see https://tkdodo.eu/blog/concurrent-optimistic-updates-in-react-query
- */
-
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import type { ContextEntityType } from 'shared';
 import { getEntityQueryKeys } from './entity-query-registry';
 
 /**
  * Remove pending update mutations for entities about to be deleted.
- * Prevents stale updates from firing after the entity no longer exists.
+ * Prevents stale updates from firing after the entity is deleted.
  */
 export function removePendingMutations(queryClient: QueryClient, updateKey: QueryKey, ids: string[]): void {
   const idSet = new Set(ids);
@@ -34,6 +24,8 @@ export function removePendingMutations(queryClient: QueryClient, updateKey: Quer
  * @param queryClient - React Query client
  * @param mutationKey - Key to filter mutations (typically entity mutation key)
  * @returns true if invalidation should be skipped
+ *
+ * @see https://tkdodo.eu/blog/concurrent-optimistic-updates-in-react-query
  *
  * @example
  * ```ts

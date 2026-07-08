@@ -79,7 +79,7 @@ export const handleCreateUser = async (
     // Delete any unverified email under a different user
     await db.delete(emailsTable).where(and(eq(emailsTable.email, normalizedEmail), eq(emailsTable.verified, false)));
 
-    // Always create email record — verified or unverified based on sign-up strategy
+    // Create the email row with verification state from the sign-up strategy.
     await db.insert(emailsTable).values({
       email: normalizedEmail,
       userId: user.id,

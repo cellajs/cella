@@ -1,15 +1,3 @@
-/**
- * Decrypt Pulumi passphrase-encrypted stack secrets locally without `pulumi`
- * or any network call. Recovers stored credentials (e.g. the CI deploy key)
- * from just the passphrase + the local Pulumi.<stack>.yaml file.
- *
- * Pulumi's passphrase secret manager uses:
- *   - PBKDF2-SHA256(passphrase, salt, 1_000_000 iterations) → 32-byte key
- *   - AES-256-GCM with 12-byte nonce; ciphertext has the 16-byte tag appended
- *
- * Header line `encryptionsalt: v1:<salt>:v1:<nonce>:<ct>` carries both the
- * salt and an encrypted check value ("pulumi") used to verify the passphrase.
- */
 import { createDecipheriv, pbkdf2Sync } from 'node:crypto'
 import { escapeRegExp } from '../utils/escape-regexp'
 
@@ -38,7 +26,7 @@ function deriveKey(passphrase: string, encryptionsalt: string): Buffer {
   return pbkdf2Sync(passphrase, Buffer.from(saltB64, 'base64'), PBKDF2_ITERATIONS, KEY_LEN, 'sha256')
 }
 
-/** Verify a passphrase against the salt header by decrypting the embedded check value. */
+/** Verify a passphrase against Pulumi's passphrase secret-manager check value. */
 function verify(key: Buffer, encryptionsalt: string): boolean {
   // Format: v1:<salt>:v1:<nonce>:<ct>  → check ciphertext is "v1:<nonce>:<ct>"
   const check = encryptionsalt.split(':').slice(2).join(':')
@@ -65,7 +53,7 @@ export function verifyStackPassphrase(yamlText: string, passphrase: string): boo
   }
 }
 
-/** Pure-string decryption of `secure:` values — exercised via `__testing` only. */
+/** Pure-string decryption of `secure:` values, exercised via `__testing` only. */
 function decryptStackSecretsFromText(text: string, passphrase: string, keys: string[]): Record<string, string> {
   const salt = text.match(/^encryptionsalt:\s*(\S+)/m)?.[1]
   if (!salt) throw new Error('No encryptionsalt header')

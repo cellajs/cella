@@ -13,7 +13,7 @@ export const isBenchTraffic = (userId?: string, tenantId?: string) => {
   return tenantId === BENCH_TENANT_ID || userId?.startsWith(BENCH_UUID_PREFIX);
 };
 
-/** Ambient log context — the live Hono ctx, or a synthetic { var } for worker jobs. */
+/** Ambient log context: the live Hono ctx, or a synthetic { var } for worker jobs. */
 export type LogContext = {
   var: Partial<Pick<Env['Variables'], 'tenantId' | 'userId' | 'organizationId' | 'requestId'>>;
 } | null;
@@ -25,7 +25,7 @@ const logContextStorage = new AsyncLocalStorage<LogContext>();
  * from it without call sites passing ctx. Installed per-request by contextMiddleware;
  * worker jobs can wrap their execution with a synthetic context.
  *
- * Ambient context follows await chains, NOT event emitters or timers — code invoked
+ * Ambient context follows await chains, not event emitters or timers. Code invoked
  * from detached callbacks logs without ids, same as code outside any request.
  */
 export const runWithLogContext = <T>(ctx: LogContext, fn: () => T): T => logContextStorage.run(ctx, fn);
@@ -55,7 +55,7 @@ const logAt =
     baseLog[severity](msg, { ...extractBase(ctx), ...meta });
   };
 
-/** Log facade: `log.warn('msg', { err, ...meta })` — binds ids from the ambient request/job context. */
+/** Log facade: `log.warn('msg', { err, ...meta })`, binding ids from the ambient request/job context. */
 export const log = {
   trace: logAt('trace'),
   debug: logAt('debug'),

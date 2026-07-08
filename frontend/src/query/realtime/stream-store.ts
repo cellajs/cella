@@ -73,7 +73,7 @@ function createStreamStore(name: string) {
 /**
  * Module-level gate that resolves when the first stream completes catchup
  * after page load. Used by the query provider to delay `resumePausedMutations`
- * until the cache is fresh — even though the provider's `onSuccess` fires
+ * until the cache is fresh, even though the provider's `onSuccess` fires
  * before any stream has called `connect()`.
  *
  * The gate is created eagerly at import time. Once resolved it stays resolved
@@ -122,7 +122,7 @@ class StreamManager {
     return this.eventSource?.readyState === EventSource.OPEN;
   }
 
-  /** Connect to stream (two-phase: catchup → live SSE). */
+  /** Connect to stream (two-phase: catchup -> live SSE). */
   async connect() {
     // Set up reconnect listeners (idempotent, cleaned up in disconnect)
     this.startVisibilityReconnect();
@@ -186,7 +186,7 @@ class StreamManager {
 
       console.debug(`[${this.name}] Catchup complete, cursor:`, newCursor);
 
-      // Signal that catchup is done — paused mutations can now safely resume
+      // Signal that catchup is done; paused mutations can now safely resume.
       this.catchupResolve?.();
       this.catchupResolve = null;
       resolveInitialCatchupGate();
@@ -294,7 +294,7 @@ class StreamManager {
           this.scheduleReconnect();
         }
       } catch {
-        // Malformed payload — let onerror handle the eventual transport close.
+        // Malformed payload, let onerror handle the eventual transport close.
       }
     });
 
@@ -383,7 +383,7 @@ class StreamManager {
         console.debug(`[${this.name}] Health check passed, reconnecting`);
         this.reconnect();
       } else {
-        // Health check failed — reset cooldown timer
+        // Health check failed, reset cooldown timer.
         this.circuitOpenedAt = Date.now();
         console.debug(`[${this.name}] Health check failed, extending cooldown`);
       }
@@ -505,7 +505,7 @@ appStreamManager.useStore.subscribe((s) => setSyncStreamLive(s.state === 'live')
 /**
  * Wait for the first stream catchup to complete after page load.
  * Returns a promise created at module init time and resolved when
- * the app stream finishes its first catchup — or fails.
+ * the app stream finishes its first catchup or fails.
  *
  * Safe to call before any stream has connected: the promise is
  * already pending and will resolve once a stream catches up.

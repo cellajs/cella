@@ -1,12 +1,3 @@
-/**
- * Tenant schema definitions for API validation.
- *
- * Tenants are system-level resources for RLS isolation.
- * Managed exclusively by system admins.
- *
- * @see cella/ARCHITECTURE.md for architecture documentation
- */
-
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
@@ -36,6 +27,7 @@ const restrictionsSchema = z.object({
 
 /**
  * Base tenant schema for API responses.
+ * Tenants are system-level resources for RLS isolation managed by system admins.
  */
 export const tenantSchema = z
   .object({

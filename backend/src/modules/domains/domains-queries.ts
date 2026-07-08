@@ -35,7 +35,7 @@ interface InsertDomainOpts {
   domain: string;
 }
 
-/** Insert a new domain and return the created record. */
+/** Insert a new domain and return the created row. */
 export const insertDomain = async (ctx: AuthContext, { domain }: InsertDomainOpts) => {
   const { db, tenantId } = ctx.var;
   const [created] = await db.insert(domainsTable).values({ tenantId, domain }).returning();
@@ -57,7 +57,7 @@ export const findDomain = async (ctx: AuthContext, { id }: FindDomainOpts) => {
   return domain;
 };
 
-/** Delete a domain by ID and tenant. Returns the deleted record. */
+/** Delete a domain by ID and tenant. Returns the deleted row. */
 export const deleteDomain = async (ctx: AuthContext, { id }: FindDomainOpts) => {
   const { db, tenantId } = ctx.var;
   const [deleted] = await db
@@ -72,7 +72,7 @@ interface UpdateDomainOpts {
   values: Partial<typeof domainsTable.$inferInsert>;
 }
 
-/** Update a domain by ID and return the updated record. */
+/** Update a domain by ID and return the updated row. */
 export const updateDomain = async (ctx: DbContext, { id, values }: UpdateDomainOpts) => {
   const { db } = ctx.var;
   const [updated] = await db.update(domainsTable).set(values).where(eq(domainsTable.id, id)).returning();

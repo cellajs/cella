@@ -131,7 +131,7 @@ export const mockHierarchy = {
   },
 };
 
-/** Stub computeCan — returns all-false for each entity type (self + descendants) */
+/** Stub computeCan, returns all-false for each entity type (self + descendants). */
 export function mockComputeCan(contextType: string): Record<string, Record<string, boolean>> {
   const denied = Object.fromEntries(mockAppConfig.entityActions.map((a) => [a, false]));
   const map: Record<string, Record<string, boolean>> = { [contextType]: { ...denied } };

@@ -37,7 +37,6 @@ export const handleEmailVerification = async (ctx: Context<Env>, token: TokenMod
   // Start MFA challenge if the user has MFA enabled
   const mfaRedirectPath = await initiateMfa(ctx, user);
 
-  // Determine redirect path — new users go to welcome page
   const redirectPath = mfaRedirectPath || getPostAuthRedirectPath(user);
   const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 

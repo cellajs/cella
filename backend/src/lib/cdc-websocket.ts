@@ -17,7 +17,7 @@ import { log } from '#/utils/logger';
  *
  * This is the *validating* end of the CDC → API-server wire contract. The CDC worker
  * *produces* the same shape as `CdcOutboundMessage` (see cdc/src/services/activity-service.ts).
- * Keep the two in sync — a field added there needs a matching field here.
+ * Keep the two in sync: a field added there needs a matching field here.
  */
 const cdcMessageSchema = z.object({
   activity: z.object({
@@ -67,7 +67,7 @@ function normalizeIp(ip: string): string {
   return ip.startsWith('::ffff:') ? ip.slice(7) : ip;
 }
 
-/** Loopback — co-located deploys (standalone Compose / single pod). */
+/** Loopback for co-located deploys (standalone Compose / single pod). */
 function isLoopbackIp(ip: string): boolean {
   return ip === '127.0.0.1' || ip === '::1';
 }
@@ -78,7 +78,7 @@ function isVpcIp(ip: string): boolean {
 }
 
 /**
- * Docker bridge private ranges (172.16.0.0/12, 192.168.0.0/16) — the network
+ * Docker bridge private ranges (172.16.0.0/12, 192.168.0.0/16), the network
  * the per-VM Caddy `ingress` container runs on. The local ingress is the only
  * thing that can be the direct TCP peer when a request is proxied.
  */
@@ -94,7 +94,7 @@ function isDockerBridgeIp(ip: string): boolean {
  * owns host port 4000 and reverse-proxies to the backend app container (see
  * infra/compose.yml + infra/ingress.Caddyfile). The app therefore sees the
  * ingress container's Docker-bridge IP as the direct TCP peer, NOT the worker's
- * VPC IP — so when the peer is the trusted local proxy we read the real client
+ * VPC IP, so when the peer is the trusted local proxy we read the real client
  * IP from `X-Forwarded-For` (set by our own ingress; Caddy's default empty
  * `trusted_proxies` means it overwrites any client-supplied value, so it can't
  * be spoofed). The mandatory `x-cdc-secret` shared secret remains the primary
@@ -121,7 +121,7 @@ function isAllowedCdcSource(remoteIp: string | undefined, forwardedFor: string |
 }
 
 /**
- * CDC WebSocket Server — INTERNAL SERVICE ONLY.
+ * CDC WebSocket server for the internal CDC worker channel.
  *
  * Accepts connections exclusively from the co-located CDC Worker process.
  * This is a server-to-server channel (Node.js → Node.js) that carries full
@@ -185,7 +185,7 @@ class CdcWebSocketServer {
 
       // In production, restrict to loopback (co-located: Compose / single pod)
       // or the Scaleway VPC subnet (10.0.0.0/24) used by the multi-VM
-      // production infra — see infra/modules/network.ts. The worker reaches the
+      // production infra; see infra/modules/network.ts. The worker reaches the
       // app through the per-VM Caddy ingress, so the real client IP arrives in
       // X-Forwarded-For while the socket peer is the local proxy.
       const remoteIp = request.socket.remoteAddress;
@@ -199,7 +199,7 @@ class CdcWebSocketServer {
         return;
       }
 
-      // Validate shared secret — always required
+      // Validate shared secret for every environment.
       const secret = request.headers['x-cdc-secret'];
       if (!env.CDC_SECRET || secret !== env.CDC_SECRET) {
         log.warn('CDC WebSocket auth failed', {
@@ -350,7 +350,7 @@ class CdcWebSocketServer {
       const eventsProcessed = message.eventsProcessed ?? 0;
       const catchupDurationMs = message.catchupDurationMs ?? 0;
 
-      // Clear all entity caches — counters were recalculated, data may be stale
+      // Clear entity caches after counter recalculation.
       entityCache.clear();
 
       log.info('CDC catchup complete — entity caches cleared', {
@@ -372,7 +372,7 @@ class CdcWebSocketServer {
   }
 
   /**
-   * Reset idle timer - connection will be closed if no activity.
+   * Reset idle timer; connection closes when no activity arrives.
    */
   private resetIdleTimer(): void {
     if (this.idleTimer) clearTimeout(this.idleTimer);

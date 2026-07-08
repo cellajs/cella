@@ -14,11 +14,11 @@ type OrgScopedEntityTable = AnyPgTable & {
   createdAt: PgColumn;
 };
 
-/** Product entity types tracked for seen/unseen — configured in appConfig.seenTrackedEntityTypes */
+/** Product entity types tracked for seen/unseen, configured in appConfig.seenTrackedEntityTypes. */
 export const trackedEntityTypes = appConfig.seenTrackedEntityTypes;
 const trackedEntityTypeSet = new Set<string>(trackedEntityTypes);
 
-/** 90-day rolling window — entities older than this are ignored for seen/unseen tracking */
+/** 90-day rolling window; older entities are ignored for seen/unseen tracking. */
 export const seenWindowMs = 90 * 24 * 60 * 60 * 1000;
 
 /** Type guard: narrows a product entity type to a seen-tracked entity type */
@@ -43,7 +43,7 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
     return { newCount: 0 };
   }
 
-  // After narrowing, entityType is SeenTrackedEntityType — a valid key of entityTables
+  // After narrowing, entityType is SeenTrackedEntityType and a valid key of entityTables.
   const entityTable = getEntityTable(entityType);
 
   // Narrow to org-scoped table shape (all org-scoped product tables have these columns)
@@ -64,7 +64,7 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
   // Filter to only entities that exist, belong to this org, and are within 90-day window
   const windowCutoff = new Date(Date.now() - seenWindowMs).toISOString();
 
-  // Use tenantContext to set RLS session vars — entity tables have FORCE ROW LEVEL SECURITY
+  // Use tenantContext to set RLS session vars; entity tables have FORCE ROW LEVEL SECURITY.
   const { validIds, newCount } = await tenantContext(ctx, async (txCtx) => {
     const db = txCtx.var.db;
     const validEntities: { id: string; contextId: string }[] = await db
@@ -90,7 +90,7 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
     // Single-roundtrip CTE that:
     // 1. Bulk-inserts seen_by rows, skipping duplicates (ON CONFLICT DO NOTHING)
     // 2. Upserts product_counters only for newly inserted rows (increments view_count)
-    // 3. Returns the count of genuinely new seen records
+    // 3. Returns the count of genuinely new seen rows
     const values = sql.join(
       vIds.map(
         (entityId) =>

@@ -11,9 +11,9 @@ import { queryClient } from '~/query/query-client';
  * owner (`~/query/app-db`). Nulling the user drives the auth-driven lifecycle
  * (`~/query/app-storage`) to unbind that DB and reset the in-memory per-user zustand stores.
  *
- * Two modes — the difference is whether the user's data is destroyed or merely closed:
+ * Two modes control whether the user's data is destroyed or merely closed:
  * - `wipe = true` (explicit sign-out, default): delete the appdb outright and forget `lastUser`.
- *   Nothing per-user lingers on disk — a clean slate for shared machines.
+ *   Nothing per-user lingers on disk, a clean slate for shared machines.
  * - `wipe = false` (involuntary session loss, e.g. a 401): keep the appdb and `lastUser` on disk.
  *   The DB is only closed, so the SAME user recovers their offline work (queued mutations, drafts)
  *   and gets a prefilled sign-in after re-authenticating. Avoids data loss on a transient expiry.

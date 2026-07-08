@@ -1,10 +1,3 @@
-/**
- * Synth — emit `infra/compose.gen.yml` from the typed Compose model.
- *
- * Usage:
- *   tsx infra/compose/synth.ts            # write infra/compose.gen.yml
- *   tsx infra/compose/synth.ts --check    # exit 1 if the file is out of date
- */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { isMain } from '../lib/utils/is-main'
@@ -65,7 +58,7 @@ function emitMapping(obj: object, indent: number): string[] {
   return lines
 }
 
-/** Render a ComposeFile to deterministic YAML text. Pure — exported for tests. */
+/** Render a ComposeFile to deterministic YAML text. Pure, exported for tests. */
 export function renderCompose(file: ComposeFile): string {
   const lines: string[] = ['services:']
   for (const [name, svc] of Object.entries(file.services)) {
@@ -75,7 +68,7 @@ export function renderCompose(file: ComposeFile): string {
   return `${GENERATED_HEADER}\n\n${lines.join('\n')}\n`
 }
 
-/** The generated deploy artifact — read by resources/compute.ts and shipped to each VM. */
+/** The generated deploy artifact, read by resources/compute.ts and shipped to each VM. */
 export const OUTPUT_PATH = join(infraDir, 'compose.gen.yml')
 
 function main(): void {

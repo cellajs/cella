@@ -1,27 +1,12 @@
-/**
- * Service registry adapter — re-exposes the typed Compose model as the
- * `ServiceDefinition` registry the rest of infra consumes.
- *
- * The canonical registry lives in `infra/`: a fork edits
- * `config/services.config.ts`, and `compose/compose.ts` derives the ordered
- * `x-service` metadata (`ServiceMeta[]`) from the assembled Compose model. This
- * module adapts that metadata to `ServiceDefinition` and is the single place
- * every other surface derives the service set from, so none re-declares
- * `['backend','cdc','yjs','mcp','frontend']`:
- *   - resources/compute.ts      — one VM per enabled service + its compose env
- *   - resources/loadbalancer.ts — which services get a public LB backend/route
- *   - tasks/wait-for-images.ts  — which images CI waits for in the registry
- *   - lib/runtime-secrets.ts    — which services a runtime secret is exposed to
- */
 import { services as composeServices, type ServiceName } from '../compose/compose'
 import type { ServiceMeta } from '../compose/types'
 import type { AppServiceEndpointConfig } from '../../shared'
-// Type-only — erased at compile, so this module stays appConfig-free at runtime
+// Type-only: erased at compile, so this module stays appConfig-free at runtime
 // (pulumi-context.ts imports it before setting APP_MODE; see `serviceEndpoints` below).
 import type { appConfig as AppConfig } from '../../shared'
 
 /**
- * One deployable service — the Compose model's `x-service` (`ServiceMeta`) narrowed
+ * One deployable service: the Compose model's `x-service` (`ServiceMeta`) narrowed
  * to this app's slug, plus `placement`. Field meanings
  * are documented on `ServiceMeta` in `../compose/types.ts`; every other infra
  * surface derives from this list (see this module's header).
@@ -30,12 +15,12 @@ export interface ServiceDefinition extends ServiceMeta {
   slug: ServiceName
   /**
    * Where the service runs:
-   *  - 'dedicated-vm'   — its own Scaleway VM (today's model; the default when
+   *  - 'dedicated-vm': its own Scaleway VM (today's model; the default when
    *    omitted).
-   *  - 'shared-workers' — co-located as a container on a shared workers VM.
+   *  - 'shared-workers': co-located as a container on a shared workers VM.
    * The shared-workers placement is the lever for the multi-fork "N worker
    * containers on one VM" model and is not yet
-   * implemented by the compute module — no service sets it today.
+   * implemented by the compute module. No service sets it today.
    */
   placement?: 'dedicated-vm' | 'shared-workers'
 }
@@ -43,7 +28,7 @@ export interface ServiceDefinition extends ServiceMeta {
 /** Ordered service definitions, derived from the typed Compose model. */
 export const services = composeServices as readonly ServiceDefinition[]
 
-/** Ordered service slugs — the canonical list every consumer derives from. */
+/** Ordered service slugs: the canonical list every consumer derives from. */
 export const serviceNames = services.map((s) => s.slug)
 
 /** Lookup a service definition by slug. */
@@ -55,7 +40,7 @@ export const imageServiceNames = services.filter((s) => !s.reusesImageOf).map((s
 /**
  * Services enabled for an app given appConfig.services. Services are enabled by
  * default; a service entry can opt out with `{ enabled: false }`. Single source
- * of truth for "which services this app deploys" — compute (VMs), the load
+ * of truth for "which services this app deploys": compute (VMs), the load
  * balancer, and any future deploy-plan artifact all derive from it.
  */
 export function enabledServices(serviceConfig: Record<string, AppServiceEndpointConfig>): readonly ServiceDefinition[] {
@@ -65,8 +50,8 @@ export function enabledServices(serviceConfig: Record<string, AppServiceEndpoint
 /**
  * Services that get their OWN dedicated VM for a given app. In the normal
  * split-VM deploy this is every enabled service. Under `singleVM` the enabled
- * `coHosted` workers (cdc/yjs/ai) are dropped — they run in-process on the host
- * (backend) VM instead — so only the host and any non-co-hosted service (the
+ * `coHosted` workers (cdc/yjs/ai) are dropped. They run in-process on the host
+ * (backend) VM instead, so only the host and any non-co-hosted service (the
  * SPA proxy) keep their own VM. The load balancer still derives its routes from
  * `enabledServices`, so a co-hosted service keeps its public endpoint; only its
  * backend target changes (see `serviceGenerationIps`).
@@ -82,7 +67,7 @@ export function deployedServices(
 
 /**
  * Enabled co-hosted worker services for an app under singleVM (empty when
- * singleVM is off) — the workers folded into the host process, used to union
+ * singleVM is off), the workers folded into the host process; this unions
  * their runtime secrets onto the host VM and to gate the host's replacement
  * strategy (a co-hosted `exclusive` worker forces the host to cut over
  * exclusively).
@@ -100,7 +85,7 @@ export interface ServiceEndpoint {
   slug: ServiceName
   /** Full public URL from appConfig (e.g. `https://api.example.com`). */
   url: string
-  /** Hostname only (e.g. `api.example.com`) — for DNS records, certs, LB routes. */
+  /** Hostname only (e.g. `api.example.com`), for DNS records, certs, LB routes. */
   host: string
 }
 

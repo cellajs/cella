@@ -14,10 +14,10 @@ type HostedTable = AnyPgTable & {
 /**
  * Soft-delete all hosted rows of the given host rows (hierarchy `host:` relationships,
  * e.g. deleting tasks soft-deletes their attachments). The API-layer half of the
- * host lifecycle cascade — the CDC pipeline handles hard-delete suppression and host
+ * host lifecycle cascade. The CDC pipeline handles hard-delete suppression and host
  * counter deltas from the resulting tombstone events.
  *
- * Tombstones intentionally flow per hosted row (no event suppression here): delta-sync
+ * Tombstones intentionally flow per hosted row (no event suppression here): delta sync
  * clients need each one to drop cached rows.
  *
  * @returns The soft-deleted row ids per hosted entity type.

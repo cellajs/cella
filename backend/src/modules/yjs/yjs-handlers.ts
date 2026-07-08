@@ -27,7 +27,7 @@ const materializeBodySchema = z.object({
 
 /**
  * Internal relay → backend endpoint: persist a Yjs collab session's description.
- * Plain (non-OpenAPI) route — not part of the public API contract. Secret-gated
+ * Plain (non-OpenAPI) route, outside the public API contract. Secret-gated
  * with the same shared secret the relay uses for edit tokens (CDC-auth precedent).
  */
 app.post('/materialize', async (ctx) => {

@@ -1,17 +1,7 @@
-/**
- * Tests for sync transaction metadata (stx) creation utilities.
- *
- * Enforces:
- * - Creates send empty fieldTimestamps
- * - Updates generate HLC timestamps for scalar fields
- * - Deletes send empty fieldTimestamps
- * - sourceId is stable within a session
- * - mutationId is unique per call
- */
-
 import { describe, expect, it } from 'vitest';
 import { createStxForCreate, createStxForDelete, createStxForUpdate, sourceId } from '../stx-utils';
 
+// Covers stx metadata shape for create, update, delete, and source identity.
 describe('sourceId', () => {
   it('is a non-empty string', () => {
     expect(sourceId).toBeTruthy();

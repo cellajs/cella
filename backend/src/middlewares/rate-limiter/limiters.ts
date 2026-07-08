@@ -88,7 +88,7 @@ export const pointsLimiter = (cost = 1) =>
     limits: {
       points: 5000, // Hard ceiling: no user can exceed this regardless of tenant config
       duration: 60 * 60, // 1-hour window
-      blockDuration: 0, // No additional block time — budget simply resets after the hour
+      blockDuration: 0, // Budget resets after the hour.
     },
     functionName: 'pointsLimiter',
     name: 'points',

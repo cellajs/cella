@@ -35,7 +35,7 @@ export const CustomSideMenu = ({ editor, allowedTypes, headingLevels }: CustomBl
   );
 };
 
-// Custom drag handle — separates drag from menu-open.
+// Custom drag handle separates drag from menu-open.
 // Mismatch: Base UI's Menu.Trigger opens on mousedown, Radix on click.
 // With Base UI, dragging fires mousedown which incorrectly opens the menu.
 // We use controlled menu state toggled only by onClick to match Radix behavior.
@@ -103,7 +103,7 @@ function DragHandle({
     <DropdownMenu
       open={menuOpen}
       onOpenChange={(open, details) => {
-        // Ignore trigger-initiated events ('trigger-press') — our onClick
+        // Ignore trigger-initiated events ('trigger-press'); our onClick
         // handles all opens and closes. Only respond to external dismiss
         // events like escape-key and outside-press.
         if (details.reason === 'trigger-press') return;

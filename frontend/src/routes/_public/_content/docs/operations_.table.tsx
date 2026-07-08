@@ -12,7 +12,7 @@ const OperationsTable = lazyNamed(
 
 /**
  * Operations table route - shows operations in a table format.
- * Not nested under the operations route (trailing underscore) — it is a sibling view.
+ * Not nested under the operations route (trailing underscore); it is a sibling view.
  */
 export const Route = createFileRoute('/_public/_content/docs/operations_/table')({
   staticData: { isAuth: false },

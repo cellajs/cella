@@ -1,8 +1,3 @@
-/**
- * Mock generators for sync transaction (stx) schemas.
- * Used for OpenAPI examples on sync transaction schemas.
- */
-
 import { mockUuid, withFakerSeed } from '#/mocks';
 
 /**

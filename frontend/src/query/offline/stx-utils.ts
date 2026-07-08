@@ -1,10 +1,3 @@
-/**
- * Sync transaction metadata utilities for offline mutations.
- *
- * Creates stx metadata for synced entity mutations.
- * Uses nanoid for unique mutation IDs and HLC-based per-field timestamps.
- */
-
 import type { StxBase } from 'sdk';
 import { uuidv7 } from 'uuidv7';
 import { createFieldTimestamps, sourceId } from './hlc';

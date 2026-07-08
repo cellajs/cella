@@ -28,7 +28,7 @@ export const SetupTotp = () => {
   const [formVersion, setFormVersion] = useState(0);
   const [expired, setExpired] = useState(false);
 
-  // Cookie TTL is 5 minutes — expire slightly before to avoid race
+  // Cookie TTL is 5 minutes; expire slightly before to avoid a race.
   useEffect(() => {
     const timer = setTimeout(() => setExpired(true), 4.5 * 60 * 1000);
     return () => clearTimeout(timer);

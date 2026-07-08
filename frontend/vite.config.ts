@@ -27,7 +27,7 @@ import { docsEditor } from './vite/docs-editor';
 import { remarkLinkRepoPaths } from './vite/remark-link-repo-paths';
 
 // Repo docs (cella/*.md) start with an h1 for GitHub readers, but the docs page view
-// already renders the frontmatter title as h1 — drop the leading h1 when such a file
+// already renders the frontmatter title as h1. Drop the leading h1 when such a file
 // is compiled as page content. Content-root files are authored without an h1.
 const remarkStripRepoDocH1 = () => (tree: { children: { type: string; depth?: number }[] }, file: { path?: string }) => {
   if (!file.path || file.path.includes('/src/content/docs/')) return;
@@ -75,7 +75,7 @@ const viteConfig = {
         },
       },
     },
-    // NOTE: Production source maps are public by choice (open-source frontend): Maple has no
+    // Production source maps are public by choice (open-source frontend): Maple has no
     // sourcemap upload/symbolication, so public maps are what make minified stacks in error
     // events and session replays readable. Switch to 'hidden' if the frontend ever closes source.
     sourcemap: isDev ? false : true,
@@ -101,14 +101,14 @@ const viteConfig = {
     // `frontmatter` named export (consumed by ~/modules/page/content.ts). Must run
     // before react() so the compiled JSX output is plain JS by the time react() sees it.
     // Repo docs (cella/*.md and package READMEs like infra/README.md) are also compilable
-    // so a thin content/docs .mdx wrapper can import them as the page body — single
+    // so a thin content/docs .mdx wrapper can import them as the page body. Single
     // source of truth for docs that live in the repo.
     {
       enforce: 'pre' as const,
       ...mdx({
         include: /\/(src\/content\/docs\/.*\.(md|mdx)|cella\/[A-Z][A-Z_]*\.md|[a-z-]+\/README\.md)$/,
         format: 'detect',
-        // Read component overrides (links, headings) from MDXProvider context — a
+        // Read component overrides (links, headings) from MDXProvider context. A
         // `components` prop does not cross into imported modules, and wrapper pages
         // render imported repo docs (cella/*.md) as their body.
         providerImportSource: '@mdx-js/react',
@@ -129,7 +129,7 @@ const viteConfig = {
         // Must stay in sync with the heading extraction in vite/docs-frontmatter.ts.
         rehypePlugins: [
           [rehypeSlug, { prefix: 'spy-' }],
-          // Syntax highlighting at build time (Node) — no runtime highlighter shipped
+          // Syntax highlighting at build time (Node): no runtime highlighter shipped
           // and none of the CSP/WASM constraints that force the runtime CodeViewer onto
           // Shiki's JS engine. Same github theme pair; dual-theme output picks light/dark
           // via CSS vars keyed off the `.dark` class (styling/tailwind.css).
@@ -180,7 +180,7 @@ const viteConfig = {
         },
       },
     }),
-    // Terser removes console.debug — skip in dev for faster builds
+    // Terser removes console.debug. Skip in dev for faster builds.
     ...(isDev
       ? []
       : [
@@ -194,7 +194,7 @@ const viteConfig = {
   ],
   resolve: {
     // react + @mdx-js/react deduped so repo docs outside the frontend package (cella/*.md,
-    // package READMEs — compiled by the mdx plugin) resolve their jsx runtime and MDX
+    // package READMEs compiled by the mdx plugin) resolve their jsx runtime and MDX
     // provider imports to the frontend's copies.
     dedupe: ['yjs', 'react', 'react-dom', '@mdx-js/react'],
     alias: {

@@ -64,7 +64,7 @@ export const WithText: Story = {
 
 /**
  * Use the `Button` component to indicate that the text area can be submitted
- * or used to trigger an action.
+ * or can trigger an action.
  */
 export const WithButton: Story = {
   render: (args) => (

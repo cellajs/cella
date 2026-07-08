@@ -5,12 +5,12 @@ import { contextCountersTable } from '#/modules/entities/context-counters-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { getEntityTable } from '#/tables';
 
-// ── SQL builder helpers ─────────────────────────────────────────────────
+// SQL builder helpers
 
-/** Entity type → SQL table name (e.g. 'task' → 'tasks') */
+/** Entity type to SQL table name (e.g. 'task' to 'tasks') */
 const tbl = (et: EntityType) => getTableName(getEntityTable(et));
 
-/** Entity type → FK column name (e.g. 'project' → 'project_id') */
+/** Entity type to FK column name (e.g. 'project' to 'project_id') */
 const fkCol = (et: string) => `${et.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`)}_id`;
 
 /**
@@ -128,7 +128,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   }
 
   // ── Phase 3: Seq counters from MAX(seq) ───────────────────────────────
-  // Grouped by the deepest non-null ancestor — the same scope CDC stamps seqs from.
+  // Grouped by the deepest non-null ancestor, the same scope CDC stamps seqs from.
   // Tombstones keep their seq, so no live filter: MAX is a high-water mark.
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);
@@ -179,7 +179,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   }
 
   // 4c: Hosted-row counters → context_counters, keyed by host id (hierarchy `host:`,
-  // e.g. e:attachment per owning task). Live rows only — the CDC deltas decrement on
+  // e.g. e:attachment per owning task). Live rows only: the CDC deltas decrement on
   // soft-delete transitions, so recalculation must exclude tombstones to agree.
   for (const relation of hierarchy.getHostRelations()) {
     const src = tbl(relation.hostedType as EntityType);

@@ -28,7 +28,7 @@ const limiterRegistry = new Map<string, RateLimiterDrizzle | RateLimiterMemory>(
  * Resilience features:
  * - `insuranceLimiter`: RateLimiterMemory fallback when DB is unreachable (fail-open with memory safety net)
  * - `inMemoryBlockOnConsumed`: Once a key exceeds its points budget, subsequent requests are rejected
- *   in-memory without hitting the DB — reduces DDoS DB pressure to zero for blocked keys
+ *   in-memory without hitting the DB, reducing DB pressure from blocked keys
  */
 export const getRateLimiterInstance = (options: RateLimiterOptions) => {
   const keyPrefix = options.keyPrefix ?? '';

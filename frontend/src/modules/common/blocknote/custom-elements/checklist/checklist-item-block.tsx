@@ -34,7 +34,7 @@ const checklistExtensions = createExtension({
           const pos = tr.selection.from;
           const info = getBlockInfoFromTransaction(tr);
           if (!info.isBlockContainer) return;
-          // Empty attrs for both container and content — the new block gets default props
+          // Empty attrs for both container and content: the new block gets default props.
           // (render component auto-assigns a fresh checkboxId when it's empty)
           tr.split(pos, 2, [
             { type: info.bnBlock.node.type, attrs: {} },
@@ -59,7 +59,7 @@ const checklistExtensions = createExtension({
   ],
 });
 
-// Schema config is shared with the Yjs relay's server-side seeder — see shared/blocknote-schema-configs
+// Schema config is shared with the Yjs relay's server-side seeder; see shared/blocknote-schema-configs.
 export { checklistItemConfig };
 
 export const checklistItemBlock = createReactBlockSpec(
@@ -88,7 +88,7 @@ export const checklistItemBlock = createReactBlockSpec(
   [checklistExtensions],
 );
 
-// Slash menu item — inserts a checklistItem with a pre-generated checkboxId
+// Slash menu item that inserts a checklistItem with a pre-generated checkboxId.
 export const getChecklistSlashItem = (editor: CustomBlockNoteEditor) => ({
   title: 'Todos',
   key: 'checklistItem',

@@ -1,19 +1,3 @@
-/**
- * Adopt a pre-existing Scaleway IAM policy into Pulumi state.
- *
- * The VM reader grant is a Pulumi-managed `iam.Policy` (`resources/vm-iam.ts`),
- * but the original bootstrap created it out-of-band via the IAM REST API. After
- * that flow switched to `managePolicy: false`, the live policy was never in
- * Pulumi state — so every `pulumi up` tries to *create* it and deadlocks:
- *   - locally (bootstrap key): HTTP 409 "resource already exists"
- *   - in CI (read-only key):   "insufficient permissions: write policy"
- *
- * Neither caller can create it, and only a bootstrap key can write Pulumi state,
- * so the fix is a one-time `pulumi import`. This helper performs that import
- * automatically and idempotently from the "Apply infra change" flow: it is a
- * no-op once the policy is in state (or absent in Scaleway), so re-running is
- * safe.
- */
 import { spawnSync } from 'node:child_process'
 import { findPolicyIdByName } from './scaleway-iam'
 import { errorMessage } from '../utils/errors'
@@ -39,9 +23,9 @@ export function stackExportHasResource(stackExportJson: string, type: string, na
 }
 
 export type AdoptOutcome =
-  | 'in-state' // already managed by Pulumi — nothing to do
+  | 'in-state' // already managed by Pulumi; nothing to do
   | 'imported' // existed in Scaleway, now adopted into state
-  | 'absent' // not in Scaleway either — `pulumi up` will create it
+  | 'absent' // not in Scaleway either; `pulumi up` will create it
   | 'unavailable' // could not query Scaleway IAM (skipped; up will report the real error)
 
 export interface AdoptOrphanedPolicyOptions {

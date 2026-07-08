@@ -96,7 +96,7 @@ export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
   return breakpointState as BreakpointKey;
 }
 
-/** Internal hook for breakpoint state — not exported directly. */
+/** Internal hook for breakpoint state, not exported directly. */
 function useBreakpointState(enableReactivity = true) {
   const breakpointState = useSyncExternalStore(
     enableReactivity ? subscribe : () => () => {},

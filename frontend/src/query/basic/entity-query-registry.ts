@@ -6,7 +6,7 @@ export interface EntityQueryKeys {
   list: {
     base: readonly unknown[];
     org: (organizationId: string) => readonly unknown[];
-    /** Canonical scope key — args are hierarchy ancestor IDs (root-first) */
+    /** Canonical scope key: args are hierarchy ancestor IDs (root-first) */
     scope: (...ancestorIds: string[]) => readonly unknown[];
     /** Ancestor ID column keys in root-first order, e.g. ['organizationId', 'projectId'] for task */
     scopeKeys: readonly string[];
@@ -15,7 +15,7 @@ export interface EntityQueryKeys {
 }
 
 /**
- * Chunk size for delta-sync fetches — the backend's max limit. A response of exactly this
+ * Chunk size for delta sync fetches: the backend's max limit. A response of exactly this
  * size means the seq window may exceed one response; fetchRangeAndPatch treats that as
  * overflow and falls back to full list invalidation instead of paging.
  */
@@ -28,8 +28,8 @@ export const SYNC_CHUNK_SIZE = 1000;
  * Implementations should request `limit: String(SYNC_CHUNK_SIZE)`.
  *
  * seqCursor formats:
- * - "51" — open-ended (seq >= 51), used by catchup
- * - "51,150" — bounded range (seq >= 51 AND seq <= 150), used by batch notifications
+ * - "51": open-ended (seq >= 51), used by catchup
+ * - "51,150": bounded range (seq >= 51 AND seq <= 150), used by batch notifications
  */
 export type DeltaFetchFn = (
   organizationId: string | null,
@@ -77,7 +77,7 @@ export function registerEntityQueryKeys(
 
 /**
  * Get query keys for an entity type.
- * Throws if the entity type hasn't been registered — all entity types
+ * Throws if the entity type hasn't been registered: all entity types
  * must be registered at module load time before any stream/cache code runs.
  */
 export function getEntityQueryKeys(entityType: string): EntityQueryKeys {

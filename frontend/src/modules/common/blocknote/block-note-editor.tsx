@@ -45,7 +45,7 @@ import { router } from '~/routes/router';
  * Everything collaborative mode needs, bundled: the Yjs wiring (provider, fragment,
  * cursor user) plus the entity identity for SSE suppression while editing.
  * Presence of the bundle switches the editor into collaborative mode.
- * Persistence is relay-side — the relay materializes sessions into the entity row.
+ * Persistence is relay-side: the relay materializes sessions into the entity row.
  */
 export interface CollaborationBundle {
   provider: WebsocketProvider;
@@ -110,7 +110,7 @@ function BlockNote({
 
   // Parse initial content once at creation time so the undo history starts clean
   // (BlockNote's recommended pattern from https://www.blocknotejs.org/examples/backend/saving-loading)
-  // When using collaboration, skip initialContent — the Yjs provider supplies the document state.
+  // In collaboration mode, the Yjs provider supplies the document state.
   const initialContent = collaborative ? undefined : getParsedContent(defaultValue);
 
   const editor = useCreateBlockNote({
@@ -119,7 +119,7 @@ function BlockNote({
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
-    // Only the Yjs wiring goes to the editor — the entity identity in the bundle
+    // Only the Yjs wiring goes to the editor; the entity identity in the bundle
     // is consumed by the SSE suppression hook below.
     collaboration: collaboration
       ? { provider: collaboration.provider, fragment: collaboration.fragment, user: collaboration.user }

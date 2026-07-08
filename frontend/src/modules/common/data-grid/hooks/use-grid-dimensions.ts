@@ -41,7 +41,7 @@ function getScrollParent(node: HTMLElement): HTMLElement | null {
  * Auto-detects the nearest scrollable ancestor unless an explicit
  * scrollContainerRef is provided. Falls back to window-level scroll.
  *
- * Column virtualization is removed — the grid no longer tracks its own
+ * Column virtualization is absent, so the grid does not track its own
  * inline-size in JS. CSS grid handles column sizing natively between
  * breakpoints. Only viewportHeight and scroll positions are tracked
  * (needed for row virtualization).
@@ -81,13 +81,13 @@ export function useGridDimensions(
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (ResizeObserver == null || grid == null) return;
 
-    // Determine the scroll container: explicit ref → auto-detect → window
+    // Determine the scroll container: explicit ref, auto-detect, then window.
     const scrollContainer = scrollContainerRef?.current ?? getScrollParent(grid);
     const isWindowScroll = scrollContainer === null;
 
     // Commit a new snapshot only if it differs from the cached one. Mutating
     // snapshotRef + calling the React notifier triggers a re-read via
-    // getSnapshot — useSyncExternalStore handles the bailout when the
+    // getSnapshot. useSyncExternalStore handles the bailout when the
     // returned reference is identical.
     const commit = (next: GridDimensions) => {
       if (next === snapshotRef.current) return;
@@ -95,7 +95,7 @@ export function useGridDimensions(
       notifyRef.current();
     };
 
-    // rAF throttle — coalesces rapid scroll / resize calls into one frame
+    // rAF throttle coalesces rapid scroll / resize calls into one frame.
     let rafId = 0;
     const scheduleUpdate = (fn: () => void) => {
       cancelAnimationFrame(rafId);
@@ -158,14 +158,14 @@ export function useGridDimensions(
     });
     resizeObserver.observe(grid);
 
-    // --- Scroll handler (rAF-throttled) — only needed for row virtualization ---
+    // --- Scroll handler (rAF-throttled), only needed for row virtualization ---
     const handleScroll = () => {
       scheduleUpdate(() => {
         commit(measureScroll(snapshotRef.current));
       });
     };
 
-    // Window resize — viewport height changed (rAF-throttled)
+    // Window resize after viewport height changes (rAF-throttled).
     const handleResize = () => {
       scheduleUpdate(() => {
         commit(measureScroll(snapshotRef.current));

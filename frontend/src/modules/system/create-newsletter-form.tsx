@@ -4,7 +4,7 @@ import { InfoIcon, SendIcon } from 'lucide-react';
 import { useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-// biome-ignore lint/style/noRestrictedImports: colocated mutation — single-use admin newsletter send.
+// biome-ignore lint/style/noRestrictedImports: colocated mutation for a single-use admin newsletter send.
 import { type SendNewsletterData, type SendNewsletterResponse, sendNewsletter } from 'sdk';
 import { zSendNewsletterBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';

@@ -1,5 +1,5 @@
 /**
- * Note: Parts of this file are derived from [React](https://github.com/facebook/react).
+ * Parts of this file are derived from [React](https://github.com/facebook/react).
  * @license MIT
  */
 

@@ -105,7 +105,7 @@ describe('setupCiKey', () => {
     const policyBody = JSON.parse(policyCreate.init.body as string)
     expect(policyBody.application_id).toBe('app-new')
     // Three rules: project-scoped sets, org-wide DNS (project scope_type), and
-    // org-scoped IAM read — DNS and IAM must be separate rules because Scaleway
+    // org-scoped IAM read. DNS and IAM must be separate rules because Scaleway
     // rejects mixing scope types within one rule.
     expect(policyBody.rules).toHaveLength(3)
     // Project-scoped rule binds to project id.

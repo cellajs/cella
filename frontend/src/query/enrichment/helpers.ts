@@ -48,7 +48,7 @@ export function getMenuParentTypes(entityType: string): ContextEntityType[] {
 
 /**
  * Check if a context entity type is a menu parent of another.
- * Used to propagate ancestor slug re-enrichment when a menu parent's cache updates.
+ * Propagates ancestor slug re-enrichment when a menu parent's cache updates.
  */
 export function isMenuParentOf(parentType: string, childType: string): boolean {
   return appConfig.menuStructure.some((s) => s.entityType === parentType && s.subentityType === childType);

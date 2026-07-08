@@ -36,7 +36,7 @@ type UseSidebarReturn = {
  * and the content panel expands/collapses. This hook is simplified to just track
  * the keepNavOpen state for keyboard shortcuts.
  *
- * Note: Mobile sheets are handled by the sheeter service, not the sidebar.
+ * Mobile sheets are handled by the sheeter service, not the sidebar.
  */
 function useSidebar(): UseSidebarReturn {
   const isMobile = useBreakpointBelow('sm');

@@ -1,22 +1,3 @@
-/**
- * One-time setup: apply CORS rules to the development S3 buckets.
- *
- * Scaleway Object Storage is S3-compatible, so we use the AWS S3 SDK
- * (`@aws-sdk/client-s3`) with the same credentials the backend uses for
- * presigned URLs. CORS is a bucket-level config and is independent of
- * presigning — adding it does not affect existing signed URLs.
- *
- * Why this is needed: browser-side readers like `react-pdf` (PDF.js) fetch the
- * file bytes via `fetch`, so the S3 response must carry `Access-Control-Allow-Origin`
- * for the app origin. Without CORS the browser blocks the read even on a 200.
- *
- * Usage:
- *   pnpm --filter backend s3:cors                          # uses appConfig.frontendUrl as origin
- *   pnpm --filter backend s3:cors http://localhost:3000    # explicit origin(s), comma-separated
- *
- * Requires S3_ACCESS_KEY_ID / S3_ACCESS_KEY_SECRET in backend/.env with
- * ObjectStorageBucketsWrite (or ObjectStorageFullAccess) permission.
- */
 import { GetBucketCorsCommand, PutBucketCorsCommand, S3Client } from '@aws-sdk/client-s3';
 import { appConfig } from 'shared';
 import { env } from '#/env';
@@ -30,7 +11,7 @@ const allowedOrigins = (originArg ?? appConfig.frontendUrl)
   .map((o) => o.trim())
   .filter(Boolean);
 
-// Buckets to configure — the two shared development buckets.
+// Buckets to configure: the two shared development buckets.
 const buckets = [appConfig.s3.publicBucket, appConfig.s3.privateBucket];
 
 // CORS rule tuned for browser reads: GET/HEAD plus the headers PDF.js needs for

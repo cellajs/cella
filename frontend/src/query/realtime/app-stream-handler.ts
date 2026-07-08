@@ -43,7 +43,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
         return;
       }
 
-      // kind === 'entity' — entityType is narrowed to a product entity type (non-null).
+      // kind === 'entity', so entityType is narrowed to a product entity type.
       const entityType = notification.entityType;
       if (!isProductEntity(entityType))
         return console.error('Unknown entityType in app stream notification:', entityType);
@@ -216,9 +216,9 @@ function handleEntityNotification(
       break;
 
     case 'delete':
-      // Physical hard delete (rare — e.g. a DB admin). Product soft deletes are 'update' events
+      // Physical hard delete, rare except for DB admin cases. Product soft deletes are 'update' events
       // reconciled via seq-range tombstones; a hard delete leaves no row or tombstone to fetch,
-      // so mark the detail stale and invalidate the org-scoped list to reconcile — consistent
+      // so mark the detail stale and invalidate the org-scoped list to reconcile, consistent
       // with the catchup count-integrity invalidation flow. Covers single and batch deletes.
       cacheOps.invalidateEntityDetail(entityId, keys, 'none');
       cacheOps.invalidateEntityListForOrg(keys, organizationId, priority === 'low' ? 'none' : 'active');
@@ -278,7 +278,7 @@ function handleDeleteUnseenCount(entityType: string, entityId: string, contextId
   const wasSeen = seenStore.flushedIds.has(entityId) || isInPending(seenStore.pending, entityId);
 
   if (wasSeen) {
-    // Entity was seen — total and seen both decrease by 1, net unseen change is 0
+    // Entity was seen: total and seen both decrease by 1, net unseen change is 0.
     // Clean up flushedIds so it doesn't grow unbounded
     if (seenStore.flushedIds.has(entityId)) {
       const newFlushed = new Set(seenStore.flushedIds);
@@ -286,7 +286,7 @@ function handleDeleteUnseenCount(entityType: string, entityId: string, contextId
       useSeenStore.setState({ flushedIds: newFlushed });
     }
   } else {
-    // Entity was unseen from this client's perspective — decrement
+    // Entity was unseen from this client's perspective, decrement.
     adjustUnseenCount(entityType, contextId, -1);
   }
 }

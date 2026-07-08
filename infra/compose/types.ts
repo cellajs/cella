@@ -1,26 +1,11 @@
-/**
- * A minimal, typed subset of the Docker Compose Spec — just enough to model the
- * deploy Compose file as TypeScript and synthesize `infra/compose.gen.yml` from it.
- *
- * The hand-authored interfaces here give `services.config.ts` compile-time
- * checking; `synth.ts` emits the declarative `compose.gen.yml` that Docker
- * consumes.
- *
- * `x-service` is the Compose-Spec extension field (the `x-` prefix is the sole key
- * Compose silently ignores — see compose-spec/11-extension.md). It carries
- * deploy-plane metadata Compose has no native slot for (rollover strategy, LB
- * routing, per-mode VM size). Its presence on a service block also marks that
- * block as a *logical service*, so adding/removing a service is a single edit here.
- */
-
 import type { Environment } from '../lib/stack/bootstrap-stack-state'
 
 /**
  * How a service's VM generation is cut over on a deploy (immutable-node model):
- *  - 'lb-overlap' — create the new generation, health-gate it, atomically
+ *  - 'lb-overlap': create the new generation, health-gate it, atomically
  *    expand the LB to both generations then contract to the new one, drain the
  *    old (backend/frontend/yjs/ai).
- *  - 'exclusive'  — no LB overlap possible; the old generation must fully
+ *  - 'exclusive': no LB overlap possible; the old generation must fully
  *    release a singleton resource before the new one takes over (cdc holds one
  *    PostgreSQL replication slot).
  */
@@ -28,9 +13,9 @@ export type ReplacementStrategy = 'lb-overlap' | 'exclusive'
 
 /**
  * How the old generation is drained off the LB when it is de-registered:
- *  - 'requests'  — HTTP: `onMarkedDownAction: 'none'` lets in-flight requests
+ *  - 'requests': HTTP, `onMarkedDownAction: 'none'` lets in-flight requests
  *    finish over a short `drainSeconds` window (backend/frontend/ai).
- *  - 'reconnect' — WebSocket: sessions are NOT held; the old generation is
+ *  - 'reconnect': WebSocket sessions are NOT held; the old generation is
  *    de-registered and clients reconnect to the new one, resyncing from durable
  *    state (yjs). A few seconds is enough for clients to notice and re-dial.
  */
@@ -38,8 +23,8 @@ export type DrainPolicy = 'requests' | 'reconnect'
 
 /**
  * How the load balancer exposes a service publicly:
- *  - 'default' — the LB's fallback backend (the API).
- *  - 'host'    — host-header routed (own DNS record + cert + route).
+ *  - 'default': the LB's fallback backend (the API).
+ *  - 'host': host-header routed (own DNS record + cert + route).
  * Absent = internal-only (no public LB backend; e.g. cdc).
  */
 export type LbRoute = 'default' | 'host'
@@ -49,8 +34,9 @@ export type ServiceInstanceType = string | Partial<Record<Environment, string>>
 
 /**
  * Deploy-plane metadata for one *logical* service, carried in the Compose file
- * as `x-service`. The single source of truth for the deploy knobs; `lib/services.ts`
- * derives its `ServiceDefinition` registry from these blocks.
+ * as the Compose extension field `x-service`. The single source of truth for
+ * deploy knobs; `lib/services.ts` derives its `ServiceDefinition` registry from
+ * these blocks.
  *
  * Removing a block removes the service from the registry entirely (no VM, LB
  * backend, DNS, cert, or release SHA config). Optional per-app deployment is
@@ -58,7 +44,7 @@ export type ServiceInstanceType = string | Partial<Record<Environment, string>>
  */
 export interface ServiceMeta {
   /**
-  * Canonical service identifier — the compose profile, release SHA key, and VM
+  * Canonical service identifier: the compose profile, release SHA key, and VM
    * key. May differ from the YAML block name for slot-based services (the
    * `backend-blue` block carries `slug: 'backend'`).
    */
@@ -97,7 +83,7 @@ export interface ServiceMeta {
   target?: string
   /** Under `appConfig.singleVM`, this service runs in-process on the host VM (backend) */
   coHosted?: boolean
-  /** Per-service VM size; a fork resizes its fleet by editing this. Required — every service declares its own box. */
+  /** Per-service VM size; a fork resizes its fleet by editing this. Required: every service declares its own box. */
   instanceType: ServiceInstanceType
   /**
    * Deploy-time env bindings: env var → value template resolved by the compute
@@ -147,7 +133,7 @@ export interface ComposeFile {
  * never has to be repeated here and a fork picks up cella's changes to it on
  * sync without a merge conflict.
  *
- * To add a service: add an entry. To remove one: delete the entry — there is no
+ * To add a service: add an entry. To remove one: delete the entry; there is no
  * separate feature flag, presence here is what puts the service in the fleet.
  */
 export interface AppServiceConfig {
@@ -165,7 +151,7 @@ export interface AppServiceConfig {
    */
   healthTimeoutSeconds: number
   /**
-   * Compose healthcheck `start_period` — the grace window before failing probes
+   * Compose healthcheck `start_period`: the grace window before failing probes
    * count. Roughly the container's cold-boot time.
    */
   startPeriod: string
@@ -190,7 +176,7 @@ export interface AppServiceConfig {
   /**
    * How the load balancer exposes this service publicly. `'default'` = the LB's
    * fallback backend (the API); `'host'` = its own DNS record + cert + route.
-   * Omit for internal-only (no public LB backend — e.g. cdc).
+   * Omit for internal-only (no public LB backend; e.g. cdc).
    */
   lbRoute?: LbRoute
   /**
@@ -209,7 +195,7 @@ export interface AppServiceConfig {
   target?: string
   /**
    * Under `appConfig.singleVM`, co-host this service in-process on the host
-   * (backend) VM instead of giving it its own VM — the cost escape hatch for
+   * (backend) VM instead of giving it its own VM: the cost escape hatch for
    * zero/low-traffic apps. Mirrors the in-process worker startup in
    * `backend/src/main.api.ts`; set on the backend's worker subsystems (cdc, yjs,
    * mcp), never on the host service or the SPA proxy. Ignored when `singleVM` is
@@ -217,7 +203,7 @@ export interface AppServiceConfig {
    */
   coHosted?: boolean
   /**
-   * Per-service VM size — a fork resizes its fleet by editing this. Required:
+   * Per-service VM size: a fork resizes its fleet by editing this. Required:
    * every service declares its own box (there is no fleet-wide fallback). A
    * single type for all modes, or a per-mode map.
    */
@@ -225,7 +211,7 @@ export interface AppServiceConfig {
   /**
    * Service-specific environment variables (e.g. cdc's `API_WS_URL`, mcp's
    * `MODE: mcp-worker`). Merged AFTER the standard env so it can override it.
-   * The uniform `NODE_ENV`/`APP_MODE`/`TZ` are injected by cella — don't repeat
+   * The uniform `NODE_ENV`/`APP_MODE`/`TZ` are injected by cella; don't repeat
    * them here.
    */
   env?: Readonly<Record<string, string>>

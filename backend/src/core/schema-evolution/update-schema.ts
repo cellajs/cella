@@ -17,7 +17,7 @@ import { widenBodySchema } from './lens-seam';
  * (an ops object is a partial entity body): the old field name is accepted as
  * an alias of its canonical twin, so old bundles pass validation. `normalizeOps`
  * (via `resolveUpdateOps`) canonicalizes after validation. Aliases exist only
- * at runtime — the static type stays canonical.
+ * at runtime while the static type stays canonical.
  *
  * @param entityType - Product entity the ops apply to (drives lens widening)
  * @param opsShape - Zod object shape where each key maps to its accepted value type

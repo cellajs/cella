@@ -11,7 +11,7 @@ export const seenBatchBodySchema = z.object({
 });
 
 /**
- * Response for batch seen POST — returns the number of newly recorded views.
+ * Response for batch seen POST: returns the number of newly recorded views.
  */
 export const seenBatchResponseSchema = z.object({
   newCount: z.number().int().min(0).describe('Number of entities newly marked as seen (deduped)'),
@@ -20,6 +20,6 @@ export const seenBatchResponseSchema = z.object({
 /**
  * Response for GET /unseen/counts.
  * Shape: { [contextEntityId]: { [productEntityType]: unseenCount } }
- * Entity-agnostic — keys are dynamic IDs and type strings, not hardcoded field names.
+ * Entity-agnostic: keys are dynamic IDs and type strings, not hardcoded field names.
  */
 export const unseenCountsResponseSchema = z.record(z.string(), z.record(z.string(), z.number().int().min(0)));

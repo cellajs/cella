@@ -61,9 +61,9 @@ const processErrors = <TFieldValues extends FieldValues>(
 
 // Resolve a camelCase field name to a translated label via c:{snake_case} convention
 const resolveFieldLabel = (fieldName: string): string => {
-  // Take the last segment (e.g. 'nested.shortName' → 'shortName')
+  // Take the last segment (e.g. 'nested.shortName' -> 'shortName')
   const leaf = fieldName.includes('.') ? fieldName.split('.').pop()! : fieldName;
-  // Convert camelCase to snake_case (e.g. 'shortName' → 'short_name')
+  // Convert camelCase to snake_case (e.g. 'shortName' -> 'short_name')
   const key = leaf.replace(/[A-Z]/g, (ch) => `_${ch.toLowerCase()}`);
   const translated = t(`c:${key}`);
   // If i18next returns the key itself, fall back to the raw field name

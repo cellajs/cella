@@ -27,7 +27,7 @@ export const getExtensionValueMetadata = () => extensionValueMetadata;
 
 /**
  * Creates a named middleware for Hono with proper function naming and OpenAPI extension type.
- * This ensures the middleware's `.name`, `.__extensionType`, and `.__description` properties are set for OpenAPI introspection.
+ * Sets `.name`, `.__extensionType`, and `.__description` for OpenAPI introspection.
  *
  * @param options - Configuration for the middleware identity and documentation.
  * @param fn - The middleware handler function.
@@ -39,16 +39,16 @@ export const xMiddleware = <E extends Env = Env>(
 ): XMiddlewareHandler<E> => {
   const { functionName, type, name, description } = options;
 
-  // Store metadata in global map for later collection
+  // Store metadata in the global map for later collection.
   if (description) {
     extensionValueMetadata.set(`${type}:${functionName}`, { name, description });
   }
-  // Object.assign creates intersection type that TypeScript understands
+  // Object.assign creates an intersection type that TypeScript understands.
   const middleware = Object.assign(createMiddleware<E>(fn), {
     __extensionType: type,
     __description: description,
   });
-  // name requires Object.defineProperty since function.name is read-only in JS
+  // name requires Object.defineProperty since function.name is read-only in JS.
   Object.defineProperty(middleware, 'name', { value: functionName, writable: false });
   return middleware;
 };
@@ -66,16 +66,16 @@ export const setMiddlewareExtension = <E extends Env = Env>(
 ): XMiddlewareHandler<E> => {
   const { functionName, type, name, description } = options;
 
-  // Store metadata in global map for later collection
+  // Store metadata in the global map for later collection.
   if (description) {
     extensionValueMetadata.set(`${type}:${functionName}`, { name, description });
   }
-  // Object.assign creates intersection type that TypeScript understands
+  // Object.assign creates an intersection type that TypeScript understands.
   const extended = Object.assign(middleware, {
     __extensionType: type,
     __description: description,
   });
-  // name requires Object.defineProperty since function.name is read-only in JS
+  // name requires Object.defineProperty since function.name is read-only in JS.
   Object.defineProperty(extended, 'name', { value: functionName, writable: false });
   return extended;
 };

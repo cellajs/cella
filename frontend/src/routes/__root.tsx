@@ -7,7 +7,7 @@ import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 
 // Root boundary components are defined locally (not imported) so their bindings are never read
-// cross-module at route-definition eval time — which can TDZ during HMR re-evaluation.
+// cross-module at route-definition eval time, which can TDZ during HMR re-evaluation.
 const RootErrorComponent = ({ error }: { error: unknown }) => (
   <ErrorNotice boundary="root" error={error as ErrorNoticeError} />
 );

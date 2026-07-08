@@ -4,7 +4,7 @@ import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/utils/wait-for';
 import { getRouteOrgId } from './sync-priority';
 
-// Extended gc time for offline caching. staleTime is intentionally not set — product entity
+// Extended gc time for offline caching. staleTime is intentionally not set; product entity
 // queries use syncStaleTime from their own options (Infinity when stream is live, 5 min fallback)
 // so ensureQueryData skips fresh caches after catchup.
 const syncQueryConfig = {
@@ -62,7 +62,7 @@ export async function runSyncService(offlineAccess: boolean, signal: AbortSignal
 /**
  * Sync a single menu item by running ensureQueryData for its entity queries.
  *
- * ensureQueryData only fetches when data is missing or stale — if catchup marked
+ * ensureQueryData only fetches when data is missing or stale. If catchup marked
  * the list stale (creates/updates detected), it will refetch. If the list is fresh
  * (nothing changed), it's a no-op.
  */

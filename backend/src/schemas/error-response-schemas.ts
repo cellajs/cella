@@ -17,11 +17,11 @@ type Ref = ErrorOption['ref'];
 /** HTTP error status codes registered in the OpenAPI spec. */
 export type ErrorCode = ErrorOption['code'];
 
-/** Error codes that operations can produce (excludes 401 — handled by auth middleware). */
+/** Error codes that operations can produce; 401 is handled by auth middleware. */
 export type OperationErrorCode = Exclude<ErrorCode, 401>;
 
 /**
- * Standardized error response specifications, used to generate:
+ * Standardized error response specifications for:
  * - Zod-backed response objects for route definitions
  * - `$ref` objects for route definitions
  * - OpenAPI registry components
@@ -105,13 +105,13 @@ export const errorResponses: Responses = Object.fromEntries(
 );
 
 /**
- * Errors as `$ref` for route definitions — keeps OpenAPI output compact by referencing
+ * Errors as `$ref` for route definitions, keeping OpenAPI output compact by referencing
  * registered response components instead of inlining the full schema per route.
  *
  * NOTE: The type is cast to look like inline Zod-backed responses. Without this,
  * `@hono/zod-openapi` sees `$ref` objects (no `content` key) and widens the handler
  * return type to `Response`, silently disabling compile-time response type checking.
- * See: https://github.com/honojs/middleware/issues — no upstream fix as of 2026-02.
+ * See: https://github.com/honojs/middleware/issues.
  */
 export const errorResponseRefs = errorResponseOptions.reduce(
   (acc, { code, ref }) => {

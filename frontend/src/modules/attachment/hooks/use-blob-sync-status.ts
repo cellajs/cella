@@ -1,9 +1,3 @@
-/**
- * Hook to get blob upload status from Dexie storage.
- *
- * Uses Dexie's `useLiveQuery` so the UI updates reactively whenever the underlying
- * blob row changes (no polling, no cache invalidation needed).
- */
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   type AttachmentBlob,

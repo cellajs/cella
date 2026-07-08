@@ -19,7 +19,7 @@ export const extractIdentifiers = async (
   };
 
   // Use Hono's cached json() so the body stays available for downstream handlers.
-  // Email is hashed before use as rate-limit key — PII never stored or logged.
+  // Email is hashed before use as a rate-limit key, so PII is never stored or logged.
   if (identifiersToExtract.includes('email') && ctx.req.header('content-type')?.includes('application/json')) {
     try {
       const body = (await ctx.req.json()) as { email?: string };

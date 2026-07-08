@@ -1,11 +1,3 @@
-/**
- * Shared "stack-config secret else generated" value used for every
- * Pulumi-owned credential (DB role passwords, random runtime secrets).
- *
- * `resourceName` is part of the RandomPassword's Pulumi identity — renaming it
- * regenerates the credential on the next `pulumi up`, so callers must keep the
- * names they shipped with.
- */
 import type * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
 import { infraConfig } from '../pulumi-context'

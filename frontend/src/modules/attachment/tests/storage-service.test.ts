@@ -107,7 +107,7 @@ describe('attachmentStorage.hasVariant', () => {
     await attachmentsDb.blobs.add(makeBlob({ id: 'att-1:original', variant: 'original' }));
 
     expect(await attachmentStorage.hasVariant('att-1', 'original')).toBe(true);
-    // Other variants must not match — this is the bug `hasAnyVariant === variant` had.
+    // Other variants must not match this requested variant.
     expect(await attachmentStorage.hasVariant('att-1', 'thumbnail')).toBe(false);
     expect(await attachmentStorage.hasVariant('att-1', 'converted')).toBe(false);
     expect(await attachmentStorage.hasVariant('att-1', 'raw')).toBe(false);

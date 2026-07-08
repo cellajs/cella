@@ -1,11 +1,3 @@
-/**
- * Mock generators for base entity schemas.
- * Used for OpenAPI examples on shared entity schemas.
- *
- * These mocks use withFakerSeed() for deterministic output and
- * compose shared generators for DRY code.
- */
-
 import { faker } from '@faker-js/faker';
 import { mockNanoid, mockTimestamps, mockUuid, withFakerSeed } from '#/mocks';
 

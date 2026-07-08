@@ -1,10 +1,3 @@
-/**
- * Ensure the Pulumi state bucket exists (chicken-and-egg: Pulumi can't manage
- * the bucket its own state lives in). Idempotent.
- *
- * Usage:  tsx infra/tasks/ensure-state-bucket.ts
- * Env:    SCW_ACCESS_KEY, SCW_SECRET_KEY
- */
 import { isMain } from '../lib/utils/is-main'
 import { CreateBucketCommand, HeadBucketCommand, type S3Client } from '@aws-sdk/client-s3'
 

@@ -1,8 +1,3 @@
-/**
- * Pure function utilities for tracking rejected items in batch operations.
- * Provides immutable, composable functions for building rejection state.
- */
-
 /** Rejection state passed through the pipeline */
 export type RejectionState = {
   rejectedIds: string[];

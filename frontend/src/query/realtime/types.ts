@@ -26,12 +26,12 @@ export interface StreamTraceContext {
 }
 
 /**
- * Product-entity notification — the seq/cacheToken sync path. `entityType` is
- * guaranteed non-null when `kind === 'entity'`.
+ * Product-entity notification for the seq/cacheToken sync path. `entityType` is
+ * non-null when `kind === 'entity'`.
  */
 export type EntityNotification = StreamNotification & { kind: 'entity'; entityType: ProductEntityType };
 
-/** Membership notification — the query-invalidation path. */
+/** Membership notification for the query-invalidation path. */
 export type MembershipNotification = StreamNotification & { kind: 'membership'; resourceType: 'membership' };
 
 /**

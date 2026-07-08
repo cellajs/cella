@@ -72,7 +72,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Host delegation (hierarchy `host:` + delegateToHost): resolve the host row once so the
-  // engine can union the host's decision into this row's (load-at-check — the engine never
+  // engine can union the host's decision into this row's (load-at-check, the engine never
   // loads rows itself). Only for hosted rows of delegated entity types.
   const hostRow = await resolveHostRow(ctx, entityType, entity);
 

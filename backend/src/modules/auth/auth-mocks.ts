@@ -75,7 +75,7 @@ export const mockTokenDataResponse = (key = 'token-data:default') =>
   }));
 
 /**
- * Generates a mock passkey DB record for insertion.
+ * Generates a mock passkey DB row for insertion.
  * Used in passkey integration tests.
  */
 export const mockPasskeyRecord = (userId: string, nameOnDevice = 'Test Device', key = 'passkey-record:default') =>

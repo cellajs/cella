@@ -38,7 +38,7 @@ export const generateMockContextIdColumns = (mode: 'all' | 'relatable' = 'all'):
 };
 
 /**
- * Mock context-entity id columns for a specific product entity, mirroring its DB schema:
+ * Mock context entity id columns for a specific product entity, mirroring its DB schema:
  * strict ancestors and declared related contexts (see `contextRelationColumns`).
  */
 export type MockEntityContextIdColumns<E extends string> = EntityIdColumns<
@@ -47,7 +47,7 @@ export type MockEntityContextIdColumns<E extends string> = EntityIdColumns<
 >;
 
 /**
- * Generates the exact set of context-entity id columns a product entity carries, derived from
+ * Generates the exact set of context entity id columns a product entity carries, derived from
  * the hierarchy (ancestors + relatedContexts). Keeps mocks fork-agnostic and in sync with schema.
  */
 export const generateMockEntityContextIdColumns = <E extends ProductEntityType>(
@@ -69,7 +69,7 @@ export const generateMockEntityContextIdColumns = <E extends ProductEntityType>(
 const rootContextType = hierarchy.contextTypes.find((t) => hierarchy.getParent(t) === null) as ContextEntityType;
 
 /**
- * Generates the context-entity id columns a product entity carries in a create-request body, derived
+ * Generates the context entity id columns a product entity carries in a create-request body, derived
  * from the hierarchy but excluding the root context (e.g. 'organization'), which is supplied by the
  * route path rather than the body. In cella's default hierarchy this yields an empty object, so
  * cella-origin request-body mocks are unchanged; forks that add deeper context relations (e.g. a

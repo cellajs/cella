@@ -18,7 +18,7 @@ import { resolveCollectionReadFilterForPolicies } from './collection-scope';
 import { buildCollectionReadWhere } from './row-predicates';
 
 /**
- * Check-form / SQL-form / compute-can parity property test — merge blocker.
+ * Check-form / SQL-form / compute-can parity property test.
  *
  * One policy definition drives three enforcement paths:
  * 1. the permission engine's per-subject decision (`getAllDecisions`),

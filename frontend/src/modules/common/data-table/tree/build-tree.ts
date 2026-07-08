@@ -19,7 +19,7 @@ export type TreeRow<T> = T & {
   _isLastChild: boolean;
   /**
    * True when this row's immediate parent was the last child of *its* parent.
-   * Used to decide whether ancestor-trunk guide lines should continue through
+   * Decides whether ancestor-trunk guide lines should continue through
    * this row in deeper levels. Always false for depth-0 rows.
    */
   _parentIsLastChild: boolean;
@@ -76,7 +76,7 @@ export function buildTree<T>(items: T[], opts: BuildTreeOptions<T>): TreeRow<T>[
   }
 
   // Memoized subtree-height computation. Walks the full tree (not just
-  // expanded), so the value is stable across expand/collapse — needed for
+  // expanded), so the value is stable across expand/collapse and needed for
   // depth-limit drag validation while parts of the tree are hidden.
   const subtreeHeightCache = new Map<string, number>();
   function computeSubtreeHeight(itemId: string): number {

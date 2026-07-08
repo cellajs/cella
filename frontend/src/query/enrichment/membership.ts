@@ -2,7 +2,7 @@ import type { MembershipBase } from 'sdk';
 import { findMembership } from '~/query/enrichment/helpers';
 import type { EnrichableEntity } from '~/query/enrichment/types';
 
-/** Fields that affect enrichment — update when MembershipBase gains new meaningful fields */
+/** Fields that affect enrichment; update when MembershipBase gains new meaningful fields. */
 const comparedKeys: (keyof MembershipBase)[] = ['archived', 'muted', 'displayOrder', 'role'];
 
 /** Check if two memberships differ on meaningful fields */

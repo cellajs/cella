@@ -71,8 +71,7 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
       form.reset(updatedUser);
       if (isSheet) useSheeter.getState().remove(formContainerId);
 
-      // Since this form is also used in onboarding, we need to call the next step
-      // This should ideally be done through the callback, but we need to refactor stepper
+      // Onboarding advances through stepper state instead of the optional callback.
       nextStep?.();
 
       callback?.({ data: updatedUser, status: 'success' });
@@ -95,7 +94,7 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
           name="thumbnailUrl"
           entity={user}
         />
-        {/* Personal fields only shown for self — admins edit avatar/slug only */}
+        {/* Personal fields only shown for self. Admins edit avatar/slug only. */}
         {isSelf && (
           <div className="grid gap-6 sm:grid-cols-2 sm:gap-4">
             <InputFormField

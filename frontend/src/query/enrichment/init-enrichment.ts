@@ -186,7 +186,7 @@ export function initContextEntityEnrichment(): () => void {
 
     const queryKey = event.query.queryKey;
 
-    // Memberships updated — re-enrich all context entities
+    // Memberships updated, re-enrich all context entities.
     if (queryKey[0] === 'me' && queryKey[1] === 'memberships') {
       for (const { type } of getRegisteredContextEntities()) {
         runEnrichment(type);

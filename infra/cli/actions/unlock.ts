@@ -4,7 +4,7 @@ import { maskedSecret } from '../prompts/masked-secret'
 import { envOr, type InfraContext, promptRequiredInput, promptStackName } from '../shared'
 
 /** Clear a stale stack lock left behind by an interrupted apply or deploy.
- *  The escape hatch for the conditional-write lock guarding mutating ops — use
+ *  The escape hatch for the conditional-write lock guarding mutating ops. Use
  *  only when you are sure no other apply/deploy is actually in progress. */
 export async function runUnlock(context: InfraContext): Promise<void> {
   const { appConfig } = context

@@ -1,13 +1,3 @@
-/**
- * Prepared statements for high-frequency queries.
- *
- * These avoid PostgreSQL re-parsing and re-planning on every execution.
- * Only suitable for queries with a fixed shape that always run on baseDb
- * (not inside transactions).
- *
- * Skipped when NODB is set (e.g. OpenAPI generation) where baseDb is a stub.
- */
-
 import { eq, sql } from 'drizzle-orm';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -15,8 +5,9 @@ import { baseDb } from './db';
 
 const hasDb = typeof baseDb.select === 'function';
 
-// ── Tenant guard ─────────────────────────────────────────────────────────────
+// --- Tenant guard -----------------------------------------------------------
 
+/** Prepared tenant lookup by tenant id, omitted when baseDb is a stub. */
 export const findTenantById = hasDb
   ? baseDb
       .select()
@@ -26,8 +17,9 @@ export const findTenantById = hasDb
       .prepare('find_tenant_by_id')
   : (undefined as never);
 
-// ── Idempotency (sync engine) ────────────────────────────────────────────────
+// --- Idempotency (sync engine) ---------------------------------------------
 
+/** Prepared activity lookup by sync transaction mutation id. */
 export const findActivityByMutationId = hasDb
   ? baseDb
       .select({ id: activitiesTable.id })
@@ -37,6 +29,7 @@ export const findActivityByMutationId = hasDb
       .prepare('find_activity_by_mutation_id')
   : (undefined as never);
 
+/** Prepared activity reference lookup by sync transaction mutation id. */
 export const findActivityRefByMutationId = hasDb
   ? baseDb
       .select({

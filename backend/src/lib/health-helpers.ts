@@ -5,7 +5,7 @@ export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
 /**
  * One service or dependency in the health envelope. Every component shares the
  * same shape: a graded `status` plus optional probe metadata and a free-form
- * `details` bag. There is intentionally no discriminated union — consumers read
+ * `details` bag. There is intentionally no discriminated union: consumers read
  * `status` for grading and `details` for diagnostics.
  */
 export interface HealthComponent {
@@ -14,9 +14,9 @@ export interface HealthComponent {
   label?: string;
   /** How the status was obtained: `local` self-check, worker `push`, or active `probe`. */
   checkedVia?: 'local' | 'push' | 'probe';
-  /** Age of the underlying data (ms) — set for pushed/cached reports. */
+  /** Age of the underlying data (ms), set for pushed/cached reports. */
   ageMs?: number | null;
-  /** Round-trip latency of the check (ms) — set for db/probe checks. */
+  /** Round-trip latency of the check (ms), set for db/probe checks. */
   latencyMs?: number | null;
   /** Short machine-readable reason when degraded/unhealthy. */
   reason?: string;
@@ -39,10 +39,10 @@ export function worstStatus(a: HealthStatus, b: HealthStatus): HealthStatus {
 /**
  * Roll a set of components up into a single overall status.
  *
- * Critical components (the backend's own ability to serve — `api`, `database`)
+ * Critical components (the backend's own ability to serve: `api`, `database`)
  * contribute their full status. Non-critical dependency components are capped
  * at `degraded`, so a flaky worker degrades the API without marking it
- * `unhealthy` — which would otherwise deregister it from the load balancer.
+ * `unhealthy`, which would otherwise deregister it from the load balancer.
  */
 export function rollupStatus(
   components: Record<string, HealthComponent>,

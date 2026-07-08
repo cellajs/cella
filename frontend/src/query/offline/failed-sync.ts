@@ -1,13 +1,7 @@
-/**
- * Client-side `failed_sync` quarantine (cella/SCHEMA_EVOLUTION.md, 1.9).
- *
- * A migrated mutation that still fails replay with a 4xx is quarantined here
- * rather than dropped, so no offline edit is ever silently lost. Records are
- * surfaced in a non-blocking banner with JSON export (UI consumes `listFailedSync`).
- */
 import { reportCriticalError } from '~/lib/tracing';
 import { getAppDb } from '~/query/app-db';
 
+/** Client-side `failed_sync` quarantine row for failed offline mutation replay. */
 export interface FailedSyncRecord {
   /** Auto-increment primary key. */
   id?: number;

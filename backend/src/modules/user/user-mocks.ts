@@ -139,7 +139,7 @@ export const mockAdmin = (id: string | undefined, email: string): InsertUserMode
 };
 
 /**
- * Generates an unsubscribeToken record for a given user.
+ * Generates an unsubscribeToken row for a given user.
  */
 export const mockUnsubscribeToken = async (user: UserModel): Promise<InsertUnsubscribeTokenModel> => {
   const { generateUnsubscribeToken } = await import('#/utils/unsubscribe-token');
@@ -151,7 +151,7 @@ export const mockUnsubscribeToken = async (user: UserModel): Promise<InsertUnsub
 };
 
 /**
- * Generates a verified email record for a given user.
+ * Generates a verified email row for a given user.
  */
 export const mockEmail = (user: UserModel): InsertEmailModel => {
   return {

@@ -22,7 +22,7 @@ interface MaskedSecretConfig {
 
 /**
  * A password-style prompt that, instead of fully masking, live-reveals the ends
- * of the (typically pasted) value and shows its length — catching a wrong paste
+ * of the (typically pasted) value and shows its length, catching a wrong paste
  * before it is stored. Drop-in replacement for `@inquirer/prompts`' `password`:
  * same `{ message, validate? }` config and `Promise<string>` result.
  *

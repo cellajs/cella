@@ -9,12 +9,12 @@ import type { membershipCountSchema } from '#/schemas';
 import type { ResolvableTable, TableWithIdAndSlug } from '#/tables';
 import { type entityTables, getEntityTable } from '#/tables';
 
-// ── Types ────────────────────────────────────────────────────────────────
+// Types
 
 export type EntityType = keyof typeof entityTables;
 export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$inferSelect'];
 
-// ── Helpers ──────────────────────────────────────────────────────────────
+// Helpers
 
 function hasSlug(table: ResolvableTable): table is TableWithIdAndSlug {
   return 'slug' in table;
@@ -24,7 +24,7 @@ function hasDeletedAt(table: ResolvableTable): table is ResolvableTable & { dele
   return 'deletedAt' in table;
 }
 
-// ── Context counter queries ──────────────────────────────────────────────
+// Context counter queries
 
 /** Fetch context counter rows by keys (org IDs, project IDs, etc.). */
 export const findContextCountersByKeys = async ({ var: { db } }: DbContext, keys: string[]) => {
@@ -72,7 +72,7 @@ export const getEntityCountsSelect = (entityType: ContextEntityType) => {
 
 /**
  * Fetches aggregated counts for a specific entity from contextCountersTable.
- * Single LEFT JOIN on pre-computed JSONB — no COUNT(*) subqueries.
+ * Single LEFT JOIN on pre-computed JSONB, no COUNT(*) subqueries.
  */
 export const getEntityCounts = async ({ var: { db } }: DbContext, entityType: ContextEntityType, entityId: string) => {
   const { countsSelect } = getEntityCountsSelect(entityType);
@@ -97,7 +97,7 @@ export const getEntityCounts = async ({ var: { db } }: DbContext, entityType: Co
 
 /**
  * Reads a single pre-computed entity count from contextCountersTable.
- * Used for quota checks — reads `e:{entityType}` from the org's counter row.
+ * Used for quota checks: reads `e:{entityType}` from the org's counter row.
  */
 export const getOrgEntityCount = async ({ var: { db } }: DbContext, orgId: string, entityType: string) => {
   const key = `e:${entityType}`;
@@ -108,7 +108,7 @@ export const getOrgEntityCount = async ({ var: { db } }: DbContext, orgId: strin
   return row?.count ?? 0;
 };
 
-// ── Activity queries ─────────────────────────────────────────────────────
+// Activity queries
 
 /**
  * Max delete rows to enumerate per catchup before falling back to list invalidation.
@@ -119,11 +119,11 @@ export const getOrgEntityCount = async ({ var: { db } }: DbContext, orgId: strin
 export const DELETE_ENUMERATE_CAP = 200;
 
 /**
- * Scan product-entity delete activities after a cursor (app stream).
+ * Scan product entity delete activities after a cursor (app stream).
  *
  * Capped at `DELETE_ENUMERATE_CAP + 1` so the caller can detect overflow (more deletes than we
  * enumerate) and fall back to client-side list invalidation. Membership changes are intentionally
- * NOT scanned here — they are detected via the `s:membership` seq counter, so membership churn can
+ * Memberships are detected via the `s:membership` seq counter, so membership churn can
  * never consume the delete budget.
  */
 export const findDeleteActivities = async (
@@ -173,7 +173,7 @@ export const findLatestUserActivityId = async (
   return result[0]?.id ?? null;
 };
 
-// ── Entity resolution queries ────────────────────────────────────────────
+// Entity resolution queries
 
 /**
  * @internal Resolves an entity by ID or slug from its table.

@@ -4,7 +4,7 @@ import { registerActiveYjsEditor, unregisterActiveYjsEditor } from '~/modules/co
 
 /**
  * Register the entity as actively Yjs-edited for the lifetime of the editor, so SSE
- * cache ops skip Yjs-owned fields (description + derived) — a slightly stale server
+ * cache ops skip Yjs-owned fields (description + derived), since a slightly stale server
  * snapshot must not overwrite the fresher local Y.Doc state.
  *
  * Persistence is relay-side (the relay materializes the session into the entity row),

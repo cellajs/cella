@@ -16,7 +16,7 @@ export async function deleteUsersOp(ctx: AuthContext, ids: string[]) {
   // If no valid users found, return error
   if (!foundIds.length) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
-  // Delete users — CASCADE SET NULL on createdBy/updatedBy propagates to product entities
+  // CASCADE SET NULL on createdBy/updatedBy propagates to product entities.
   await deleteUsersByIds(ctx, { ids: foundIds });
 
   for (const id of foundIds) invalidateCache.user(id);

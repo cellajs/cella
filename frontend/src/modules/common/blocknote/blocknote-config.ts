@@ -22,7 +22,7 @@ import type {
  *  Basic Configuration
  */
 
-// Base custom schema — block/inline configs are shared with the Yjs relay's
+// Base custom schema: block/inline configs are shared with the Yjs relay's
 // server-side seeder (shared/blocknote-schema-configs); only renders live here.
 export const customSchema = BlockNoteSchema.create().extend({
   blockSpecs: {

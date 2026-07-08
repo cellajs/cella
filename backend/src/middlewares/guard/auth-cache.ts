@@ -11,7 +11,7 @@ export type MembershipCacheEntry = (MembershipBaseModel & { createdBy: string | 
 
 const sessionCache = new TTLCache<SessionCacheEntry>({
   maxSize: 5000,
-  defaultTtl: 60_000, // 1 min — security-sensitive, kept short
+  defaultTtl: 60_000, // 1 min, security-sensitive
   onDispose: (key, value) => {
     // Clean up reverse index when entry expires or is evicted
     const sessionIds = userIndex.get(value.user.id);
@@ -24,10 +24,10 @@ const sessionCache = new TTLCache<SessionCacheEntry>({
 
 const membershipCache = new TTLCache<MembershipCacheEntry>({
   maxSize: 5000,
-  defaultTtl: 5 * 60_000, // 5 min — actively invalidated on changes
+  defaultTtl: 5 * 60_000, // 5 min, actively invalidated on changes
 });
 
-/** Reverse index: userId → Set of sessionIds for user-wide invalidation */
+/** Reverse index: userId to Set of sessionIds for user-wide invalidation. */
 const userIndex = new Map<string, Set<string>>();
 
 export const getSessionCache = (sessionId: string): SessionCacheEntry | undefined => {

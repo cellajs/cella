@@ -3,7 +3,7 @@ import { MailIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiError, ResendInvitationWithTokenData, ResendInvitationWithTokenResponse } from 'sdk';
-// biome-ignore lint/style/noRestrictedImports: colocated mutation — single-button resend flow with bespoke error handling.
+// biome-ignore lint/style/noRestrictedImports: colocated mutation for single-button resend flow with bespoke error handling.
 import { resendInvitationWithToken } from 'sdk';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

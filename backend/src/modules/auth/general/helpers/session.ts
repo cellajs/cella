@@ -29,7 +29,7 @@ import { createDate, TimeSpan } from '#/utils/time-span';
 
 /**
  * Sets a user session and stores it in the database.
- * Generates a session token, records device information, and optionally associates an admin user for impersonation.
+ * Generates a session token, captures device information, and optionally associates an admin user for impersonation.
  */
 export const setUserSession = async (
   ctx: Context<Env>,

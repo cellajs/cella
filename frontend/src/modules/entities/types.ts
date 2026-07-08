@@ -1,14 +1,14 @@
 import type { ContextEntityBase, MembershipBase } from 'sdk';
 import type { ContextEntityType, EntityCanMap } from 'shared';
 
-/** Ancestor context entity slugs for URL building — populated via cache enrichment */
+/** Ancestor context entity slugs for URL building, populated via cache enrichment. */
 export type AncestorSlugs = Partial<Record<ContextEntityType, string>>;
 
 /**
- * Entity-type-keyed permission map — computed on the frontend from membership + access policies.
+ * Entity-type-keyed permission map, computed on the frontend from membership + access policies.
  *
  * Values can be `true` (unconditionally allowed), `false` (denied), or `'own'`
- * (allowed only when the actor owns the entity — an implicit "owner" relation).
+ * (allowed only when the actor owns the entity, an implicit "owner" relation).
  * Use `resolvePermission()` to resolve `'own'` to a boolean for a specific entity.
  */
 export type EntityCan = EntityCanMap;

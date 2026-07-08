@@ -536,8 +536,8 @@ export const ShouldSelectCellRange: Story = {
       const grid = canvas.getByRole('grid');
       // A real shift+pointer range drag can't run in the headless browser-test
       // runner (untrusted pointer events don't drive react-data-grid's range
-      // selection). cella also supports keyboard range extension — Shift+Arrow,
-      // wired to `extendSelection` in data-grid navigate — so we drive that
+      // selection). cella also supports keyboard range extension: Shift+Arrow,
+      // wired to `extendSelection` in data-grid navigate, so we drive that
       // deterministic path from the already-selected cell instead.
       const selected = grid.querySelector<HTMLElement>('.rdg-cell[aria-selected="true"]') ?? grid;
       selected.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', shiftKey: true, bubbles: true }));
@@ -643,7 +643,7 @@ export const ShouldResizeColumn: Story = {
       // A real pointer-drag on the resize handle can't run in the headless
       // browser-test runner: react-data-grid uses pointer capture, which ignores
       // untrusted synthetic PointerEvents. Instead we drive cella's own keyboard
-      // resize affordance (Ctrl+ArrowRight, see header-cell.tsx onKeyDown) — the
+      // resize affordance (Ctrl+ArrowRight, see header-cell.tsx onKeyDown), the
       // accessible, deterministic path to the same behaviour.
       firstHeader.focus();
       firstHeader.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', ctrlKey: true, bubbles: true }));
@@ -910,7 +910,7 @@ export const ShouldReorderRowOnDragDrop: Story = {
 /**
  * Drag rows in a long, scrollable list. With `enableDragAutoScroll`, dragging
  * near the top or bottom edge of the scroll container auto-scrolls so off-screen
- * rows become valid drop targets. Visual demo only — auto-scroll requires real
+ * rows become valid drop targets. Visual demo only: auto-scroll requires real
  * pointer drag and cannot be exercised by `userEvent`.
  */
 export const RowDragDropAutoScroll: Story = {

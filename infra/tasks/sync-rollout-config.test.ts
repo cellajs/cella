@@ -26,7 +26,7 @@ describe('sync rollout config helpers', () => {
 
   it('ignores pre-migration metadata that has no genId (never seeds active.id = undefined)', () => {
     // Numeric-gen stack output (old shape) carries no genId. Seeding from it
-    // corrupted the control object — these items must be filtered out.
+    // corrupted the control object, so these items must be filtered out.
     const seeds = seedCandidates([
       { service: 'backend', sha: '9fe4' } as never,
       { service: 'frontend', genId: '', sha: '9fe4' } as never,

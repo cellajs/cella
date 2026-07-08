@@ -1,13 +1,3 @@
-/**
- * Storage — S3 buckets for the frontend SPA, user file uploads, and boot diagnostics.
- *
- * Frontend bucket runs in website-hosting mode so direct bucket access (dev) and
- * the Caddy frontend proxy both fall back to index.html for SPA routes.
- * Two upload buckets: a public one served directly, and a private one accessed only
- * via signed URLs. Production buckets are `protect`-ed and `forceDestroy` is off.
- *
- * Config consumed from appConfig: slug, s3.region, s3.publicBucket, s3.privateBucket
- */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tagsAsMap, isProduction, infra, serviceUrl, ciDeployApplicationId, vmReaderApplicationId, operatorApplicationId } from '../pulumi-context'
@@ -28,7 +18,7 @@ const operatorAccess = (bucketName: pulumi.Input<string>) =>
       }]
     : []
 
-// Full S3 access for the CI deploy application — the same statement on every
+// Full S3 access for the CI deploy application: the same statement on every
 // bucket policy (bucket policies are deny-by-default, so without it even the
 // deploy key cannot touch the bucket).
 const deployAccess = (bucketName: pulumi.Input<string>) => ({
@@ -42,8 +32,8 @@ const deployAccess = (bucketName: pulumi.Input<string>) => ({
 // Days before stale, content-hashed frontend chunks under `assets/` are
 // expired by Object Storage. Must outlive any reasonable open browser tab on
 // a previous bundle (a tab may lazy-load a chunk it hasn't fetched yet).
-// Entry files (index.html, sw.js, manifest, etc.) live at the bucket root —
-// outside this prefix — so they are never touched by this rule.
+// Entry files (index.html, sw.js, manifest, etc.) live at the bucket root,
+// outside this prefix, so they are not touched by this rule.
 const assetRetentionDays = infra.assetRetentionDays
 
 // ---------------------------------------------------------------------------
@@ -65,8 +55,8 @@ const frontendBucket = new scaleway.object.Bucket('frontend-bucket', {
     },
     {
       // Prune stale, content-hashed chunks. Because filenames are immutable
-      // (content-hashed), "not modified in N days" reliably means "no longer
-      // referenced by the current index.html and outlived any open tab".
+      // (content-hashed), "not modified in N days" means "absent from the
+      // current index.html and past the open-tab window".
       // A rollback redeploy rebuilds identical hashes and re-uploads any
       // missing chunk, so expiring old assets never breaks rollback.
       id: 'expire-stale-assets',
@@ -77,9 +67,9 @@ const frontendBucket = new scaleway.object.Bucket('frontend-bucket', {
   ],
 }, { aliases: [{ type: 'scaleway:index/objectBucket:ObjectBucket' }], protect: isProduction })
 
-// SPA website configuration — enables S3 website hosting with index.html fallback.
+// SPA website configuration: enables S3 website hosting with index.html fallback.
 // Required for direct bucket access (dev) and the Caddy frontend proxy.
-// Note: requires ObjectStorageFullAccess IAM permission on the SCW API key.
+// Requires ObjectStorageFullAccess IAM permission on the SCW API key.
 const frontendWebsite = new scaleway.object.BucketWebsiteConfiguration(
   'frontend-website',
   {
@@ -91,7 +81,7 @@ const frontendWebsite = new scaleway.object.BucketWebsiteConfiguration(
 )
 
 // Public read access for frontend bucket.
-// dependsOn: website config must be created first — the restrictive policy
+// dependsOn: website config must be created first. The restrictive policy
 // (Principal: '*', Action: s3:GetObject only) would otherwise block the
 // provider's ListObjects call needed to set up website configuration.
 new scaleway.object.BucketPolicy('frontend-policy', {
@@ -173,7 +163,7 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
   ],
 }, { aliases: [{ type: 'scaleway:index/objectBucket:ObjectBucket' }] , protect: isProduction })
 
-// No public policy — access via signed URLs only
+// No public policy: access via signed URLs only.
 
 // ---------------------------------------------------------------------------
 // Boot diagnostics bucket (VM write-only diagnostics channel)

@@ -112,7 +112,7 @@ describe('persister lens boot migration', () => {
     expect(attachmentQuery!.state.data).toEqual([{ id: 'a1', title: 'pic' }]);
     expect(restored!.clientState.mutations[0].state.variables).toEqual({ title: 'offline edit' });
 
-    // Pointer advanced on disk — a second restore runs no migration.
+    // Pointer advanced on disk, a second restore runs no migration.
     const meta = await getAppDb()!.meta.get('rq');
     expect(meta!.schemaVersion).toBe(1);
     vi.mocked(migrateCachedEntity).mockClear();
@@ -125,7 +125,7 @@ describe('persister lens boot migration', () => {
 
     const restored = await persister.restoreClient();
     const attachmentQuery = restored!.clientState.queries.find((q) => q.queryHash === '["attachment","list"]');
-    // Row keeps its (old-shape) data untouched — nothing ran.
+    // Row keeps its (old-shape) data untouched, nothing ran.
     expect(attachmentQuery!.state.data).toEqual([{ id: 'a1', name: 'pic' }]);
     expect(migrateCachedEntity).not.toHaveBeenCalled();
   });
@@ -137,7 +137,7 @@ describe('persister lens boot migration', () => {
     expect(restored).toBeUndefined();
     expect(isBundleStale()).toBe(true);
 
-    // Newer store is untouched — no downgrade, no wipe.
+    // Newer store is untouched, no downgrade, no wipe.
     const meta = await getAppDb()!.meta.get('rq');
     expect(meta!.schemaVersion).toBe(5);
     expect(await getAppDb()!.queries.where('scope').equals('rq').count()).toBe(1);
@@ -154,7 +154,7 @@ describe('persister lens boot migration', () => {
     });
     await persister.flush();
 
-    // Meta unchanged — the stale bundle's write was refused.
+    // Meta unchanged, the stale bundle's write was refused.
     const meta = await getAppDb()!.meta.get('rq');
     expect(meta!.schemaVersion).toBe(5);
     expect(meta!.timestamp).not.toBe(999);

@@ -17,12 +17,12 @@ import { useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 /**
  * Initialize mutation defaults BEFORE any cache restoration.
  * This stores the queryClient so that entity modules can self-register their
- * mutationFn via addMutationRegistrar() whenever they load — no explicit imports needed.
+ * mutationFn via addMutationRegistrar() whenever they load, so no explicit imports are needed.
  */
 initMutationDefaults(queryClient);
 
 /**
- * Init context entity enrichment — guarded to prevent duplicate subscribers during HMR.
+ * Init context entity enrichment, guarded to prevent duplicate subscribers during HMR.
  */
 const unsubscribeEnrichment = initContextEntityEnrichment();
 
@@ -115,7 +115,7 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
         persister: activePersister,
         dehydrateOptions: {
           // Public routes (!isActive): always persist. App routes: only leader persists after ready.
-          // Only paused mutations are persisted — they're the offline replay queue. Active/streaming
+          // Only paused mutations are persisted; they're the offline replay queue. Active/streaming
           // mutations (e.g. AI chat SSE) can hold non-cloneable data (ReadableStream) and must be skipped.
           shouldDehydrateMutation: (mutation) => mutation.state.isPaused && (!isActive || (isReady && isLeader)),
           shouldDehydrateQuery: (query) => query.state.status === 'success' && query.meta?.persist !== false,
@@ -124,7 +124,7 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
       onSuccess={() => {
         markCacheRestored();
         // Wait for stream catchup to complete before resuming paused mutations.
-        // This ensures the cache has fresh data so replayed mutations work correctly.
+        // Wait until replayed mutations can use fresh cache data.
         waitForActiveCatchup().then(() => {
           queryClient.resumePausedMutations().then(() => {
             // Only invalidate queries if we're in offline mode (IDB persister)

@@ -19,7 +19,7 @@ export async function getUserOp(ctx: AuthContext, relatableUserId: string, opts:
 
   const userCondition = bySlug ? eq(usersTable.slug, relatableUserId) : eq(usersTable.id, relatableUserId);
 
-  // Check if requesting self (by id or slug) — skip relatable filter
+  // Skip relatable filtering when the caller requests themself by id or slug.
   const isSelf = relatableUserId === requestingUser.id || (bySlug && relatableUserId === requestingUser.slug);
 
   // Defense in depth: verify shared org membership at query level (mirrors relatableGuard)

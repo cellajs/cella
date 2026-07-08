@@ -2,7 +2,6 @@ import pc from 'picocolors';
 import { checkMark } from '#/utils/console';
 import type { GenerateScript } from '#/../scripts/types';
 
-// Re-export for convenience
 export type { GenerateScript } from '#/../scripts/types';
 
 /**
@@ -28,7 +27,7 @@ export async function runGenerateScripts(scripts: GenerateScript[]): Promise<voi
   let hasRunAny = false;
 
   for (const script of scripts) {
-    // Add 1-second delay before migration scripts for unique timestamps
+    // Delay migration scripts so timestamped folders remain unique.
     if (script.type === 'migration' && hasRunAny) {
       await sleep(1000);
     }

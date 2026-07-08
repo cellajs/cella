@@ -70,7 +70,7 @@ interface UpdateTenantOpts {
   values: Partial<typeof tenantsTable.$inferInsert>;
 }
 
-/** Update a tenant by ID and return the updated record. */
+/** Update a tenant by ID and return the updated row. */
 export const updateTenant = async (ctx: DbContext, { targetTenantId, values }: UpdateTenantOpts) => {
   const { db } = ctx.var;
   const [updated] = await db

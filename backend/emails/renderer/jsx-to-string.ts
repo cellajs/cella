@@ -1,5 +1,5 @@
 /**
- * Note: Parts of this file are derived from [Hyperons](https://github.com/i-like-robots/hyperons).
+ * Parts of this file are derived from [Hyperons](https://github.com/i-like-robots/hyperons).
  * @license MIT
  */
 import type { FC, ReactNode } from 'react';

@@ -1,10 +1,3 @@
-/**
- * Smoke tests for `infra/resources/network.ts` — proves the mock harness can
- * render a Pulumi module end-to-end without a Scaleway provider.
- *
- * State is shared across the file: Node ESM caches the module, so a second
- * `await import(...)` would not re-execute its top-level resource constructors.
- */
 import { beforeAll, describe, expect, it } from 'vitest'
 import { flushPulumi, installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock'
 

@@ -104,7 +104,7 @@ interface InsertTotpOpts {
   secret: string;
 }
 
-/** Insert a TOTP record. */
+/** Insert a TOTP row. */
 export const insertTotp = async (ctx: DbContext, { userId, secret }: InsertTotpOpts) => {
   const { db } = ctx.var;
   return db.insert(totpsTable).values({ userId, secret: encryptTotpSecret(secret) });
@@ -189,7 +189,7 @@ interface InsertPasskeyOpts {
   values: typeof passkeysTable.$inferInsert;
 }
 
-/** Insert a passkey and return the created record (excluding credentialId and publicKey). */
+/** Insert a passkey and return the created row (excluding credentialId and publicKey). */
 export const insertPasskey = async (ctx: DbContext, { values }: InsertPasskeyOpts) => {
   const { db } = ctx.var;
   const { credentialId: _, publicKey: __, ...passkeySelect } = getColumns(passkeysTable);

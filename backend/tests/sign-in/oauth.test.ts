@@ -253,7 +253,7 @@ describe('OAuth Authentication', async () => {
 
   describe('Account-linking safety (no implicit linking)', () => {
     // GHSA-g38m-r43w-p2q7 (nOAuth-class): an OAuth sign-in whose email matches an
-    // existing local user MUST NOT silently link/authenticate that account.
+    // existing local user cannot silently link/authenticate that account.
     it('should refuse OAuth sign-in when the email matches an existing local user without a linked account', async () => {
       // Local user owns the email, but there is NO linked OAuth account.
       await createUser('github-user@example.com');
@@ -272,7 +272,7 @@ describe('OAuth Authentication', async () => {
   });
 
   describe('Open-redirect regression (pre-validation redirect removed)', () => {
-    // GHSA-36rg-gfq2-3h56 / GHSA-vp58-j275-797x: the callback must never honor a
+    // GHSA-36rg-gfq2-3h56 / GHSA-vp58-j275-797x: the callback rejects a
     // redirect destination smuggled inside the OAuth `state` before validation.
     it('should not honor a redirectUrl embedded in the OAuth state', async () => {
       const malicious = { redirectUrl: 'https://evil.example' };
@@ -313,7 +313,7 @@ describe('OAuth Authentication', async () => {
 
   describe('Verified redirect ignores client-supplied destination', () => {
     // The verified sign-in redirect is server-determined; an attacker-controlled
-    // redirectAfter must not become the Location.
+    // redirectAfter cannot become the Location.
     it('should redirect a verified OAuth sign-in to a frontend path, not an attacker redirectAfter', async () => {
       const userEmail = 'github-user@example.com';
       const user = await createUser(userEmail);

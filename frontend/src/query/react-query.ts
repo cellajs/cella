@@ -8,7 +8,7 @@ export type QueryMeta = {
   /** Skip dehydrating this query into the persisted IDB cache. Default: true. */
   persist?: boolean;
   /**
-   * Skip the global error toast — useful when a local `onError` shows a more specific message.
+   * Skip the global error toast when a local `onError` shows a more specific message.
    * Pass a predicate to suppress only certain errors (e.g. only 403s).
    */
   suppressGlobalErrorToast?: boolean | ((err: ApiError) => boolean);

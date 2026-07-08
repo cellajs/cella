@@ -57,7 +57,7 @@ const handleList = <T extends WithId, M extends MutationType>(
     };
   }
 
-  const limit: number | null = null; // grab
+  const limit: number | null = null;
   const pageLimit = limit ?? (cached.pages.length > 1 ? cached.pages[0].items.length : null);
 
   // Dump everything in one page if no limit
@@ -98,8 +98,6 @@ const isListData = <T>(data: QueryData<T> | InfiniteQueryData<T>): data is Infin
   return 'pages' in data;
 };
 
-// could do something interesting with options + mutation keys
-
 export const useTableMutation = <N extends `${EntityType}s`, M extends MutationType, TVariables, TResult>({
   table,
   type,
@@ -115,7 +113,6 @@ export const useTableMutation = <N extends `${EntityType}s`, M extends MutationT
 
   return useMutation({
     mutationFn,
-    // at some point here, does shit get persisted locally?
     onMutate: async (variables, context): Promise<[QueryKey, unknown][]> => {
       const previous: [QueryKey, unknown][] = [];
 
@@ -152,13 +149,10 @@ export const useTableMutation = <N extends `${EntityType}s`, M extends MutationT
         });
       }
 
-      // side effects
-
       // Return a result with the snapshotted value(s)
       return previous;
     },
     onError: (_error, _variables, onMutateResult, context) => {
-      // maybe vary result based on if offline?
       console.error(_error);
       toaster(t(`error:${type}_resource`, { resource: t(`c:${table}`) }), 'error');
 

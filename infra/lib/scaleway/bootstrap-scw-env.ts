@@ -1,15 +1,8 @@
-/**
- * Small pure helpers shared between the bootstrap command handlers.
- *
- * The SCW env-var dance has a single goal: leave exactly ONE source of
- * Scaleway provider credentials per invocation, so the Terraform provider
- * never trips on an unrelated `~/.config/scw/config.yaml` profile.
- */
 import { resolve } from 'node:path'
 
 /** Path used as `SCW_CONFIG_PATH` to neutralise the user's local Scaleway CLI
  *  profile without giving the SDK a bogus profile name to look up. The file
- *  is never created — the SDK simply finds nothing to load. */
+ *  is never created, so the SDK simply finds nothing to load. */
 export const scwConfigPathNone = (infraDir: string): string => resolve(infraDir, '.scw-config-none')
 
 /**
@@ -20,7 +13,7 @@ export const scwConfigPathNone = (infraDir: string): string => resolve(infraDir,
  * `backend/.env.example`); `SCW_DEFAULT_PROJECT_ID` is the name the Scaleway
  * SDK / Terraform provider / `scw` CLI read natively (and what CI and
  * `buildProviderEnv` inject). Either is accepted, but if both are set they MUST
- * agree — a mismatch almost always means a stale `SCW_DEFAULT_PROJECT_ID`
+ * agree; a mismatch almost always means a stale `SCW_DEFAULT_PROJECT_ID`
  * exported in the shell is silently shadowing the repo's `SCW_PROJECT_ID`, so we
  * fail loudly rather than guess which one is intended.
  *
@@ -59,8 +52,8 @@ export interface ProviderEnvInput {
 /**
  * Build the child-process env for a Pulumi/Scaleway invocation.
  *
- * Single source of truth for the credential wiring that three different
- * consumers each read from differently-named variables: the Scaleway provider
+ * Leaves exactly one source of Scaleway provider credentials for each
+ * invocation. Three consumers read differently-named variables: the Scaleway provider
  * (`SCW_*`), the S3-protocol Pulumi state backend (`AWS_*`, same credentials,
  * different contract), and Pulumi itself (`PULUMI_CONFIG_PASSPHRASE`). It also
  * applies the two guards that pin provider auth to *these* credentials by

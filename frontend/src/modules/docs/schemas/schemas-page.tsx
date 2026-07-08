@@ -35,7 +35,7 @@ function SchemasPage() {
   const { data: schemaTags } = useSuspenseQuery(schemaTagsQueryOptions);
 
   // Derive distinct non-schema tag kinds (e.g., 'module', 'ownership') for dynamic columns.
-  // The `schema` kind is excluded — it's already implied by the section we're rendering in.
+  // The `schema` kind is excluded because this section already implies it.
   const tagKinds = useMemo(() => {
     const kinds = new Set<string>();
     for (const s of allSchemas) {
@@ -125,7 +125,7 @@ function SchemaTagSection({ tag, schemas: tagSchemas, tagKinds, isOpen, onPreren
         </CardContent>
       </Card>
 
-      {/* Schema details list — prerendered with content-visibility: hidden on hover */}
+      {/* Schema details list, prerendered with content-visibility: hidden on hover */}
       {shouldMount && (
         <CollapsibleContent keepMounted>
           <div style={style}>

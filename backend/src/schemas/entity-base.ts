@@ -25,9 +25,9 @@ const auditShape = {
 /**
  * Base schema for context entities, including common fields. Exported separately to avoid circular dependencies.
  *
- * Note: `included` is NOT part of the base schema to avoid circular dependencies.
- * Context entity response schemas should add `included: contextEntityIncludedSchema` explicitly.
- * Import `contextEntityIncludedSchema` directly from `#/schemas/context-entity-included`.
+ * `included` is not part of the base schema to avoid circular dependencies.
+ * Context entity response schemas add `included: contextEntityIncludedSchema` explicitly.
+ * Import `contextEntityIncludedSchema` directly from its context entity included schema module.
  * See organizationSchema for reference.
  */
 export const contextEntityBaseSchema = z

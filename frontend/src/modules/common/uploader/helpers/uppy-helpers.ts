@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
-// biome-ignore lint/style/noRestrictedImports: runtime token fetcher inside Uppy assembly callback — not eligible for a React Query hook.
+// biome-ignore lint/style/noRestrictedImports: runtime token fetcher inside Uppy assembly callback; not eligible for a React Query hook.
 import { getUploadToken, type UploadToken } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/nanoid';
@@ -32,7 +32,7 @@ export const createBaseTransloaditUppy = async (
   let hasCloudUpload = false;
 
   try {
-    // Skip cloud upload when uploadEnabled is false — all files go to IndexedDB
+    // Skip cloud upload when uploadEnabled is false; all files go to IndexedDB.
     if (appConfig.has.uploadEnabled && onlineManager.isOnline()) {
       cloudToken = await getUploadToken({ query: tokenQuery });
       // Cloud upload only available if Transloadit is configured

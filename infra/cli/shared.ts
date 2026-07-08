@@ -92,7 +92,7 @@ export function pulumiLoginUrl(appConfig: AppConfigType): string {
   return `s3://${stateBucket(appConfig.slug)}?endpoint=s3.${appConfig.s3.region}.scw.cloud&region=${appConfig.s3.region}`
 }
 
-/** `pulumi login` (exits on failure) + `pulumi stack select` (best-effort — the
+/** `pulumi login` (exits on failure) + `pulumi stack select` (best-effort: the
  *  caller may be about to init the stack) against the S3 state backend. */
 export function pulumiLoginAndSelect(infraDir: string, env: NodeJS.ProcessEnv, appConfig: AppConfigType, targetStack: string): void {
   const login = spawnSync('pulumi', ['login', pulumiLoginUrl(appConfig)], { cwd: infraDir, env, stdio: 'inherit' })

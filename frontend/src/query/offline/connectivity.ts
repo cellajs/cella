@@ -20,16 +20,16 @@ let inFlight: Promise<boolean> | null = null;
  * Probe actual internet connectivity via /health (shallow 204).
  *
  * Triggered by network-level fetch failures (TypeError) in lib/api-client.ts and on-error.ts
- * to detect "WiFi connected but no internet" — a scenario where navigator.onLine stays
+ * to detect "WiFi connected but no internet", a scenario where navigator.onLine stays
  * true but all API calls fail.
  *
  * Behavior:
  * - Results cached for 10s to debounce bursts of failing queries
  * - Concurrent calls are deduplicated (single in-flight probe)
  * - On failure: sets onlineManager.setOnline(false), which cascades to:
- *   → DownAlert shows "offline" banner
- *   → staleTime goes infinite (stops refetch attempts)
- *   → mutations pause until reconnect
+ *   -> DownAlert shows "offline" banner
+ *   -> staleTime goes infinite (stops refetch attempts)
+ *   -> mutations pause until reconnect
  * - On recovery: browser 'online' event resets cache (via resetConnectivityCache)
  *   and sets onlineManager back online, restoring normal operation
  */
@@ -48,7 +48,7 @@ export async function checkConnectivity(): Promise<boolean> {
   try {
     return await inFlight;
   } finally {
-    // Always clear inFlight — prevents stuck state if probeHealth throws unexpectedly
+    // Always clear inFlight to prevent stuck state if probeHealth throws unexpectedly.
     inFlight = null;
   }
 }
@@ -62,7 +62,7 @@ async function fetchHealthOnce(): Promise<boolean> {
     const response = await fetch(HEALTH_URL, {
       method: 'HEAD',
       // no-store bypasses browser cache so the request always hits the network/CDN.
-      // The CDN may still serve a cached 204 (max-age=5), which is fine — it proves
+      // The CDN may still serve a cached 204 (max-age=5), which is fine; it proves
       // the network path to the edge is working.
       cache: 'no-store',
       signal: controller.signal,
@@ -76,7 +76,7 @@ async function fetchHealthOnce(): Promise<boolean> {
 }
 
 async function probeHealth(): Promise<boolean> {
-  // Retry briefly before concluding offline — see PROBE_RETRIES comment.
+  // Retry briefly before concluding offline; see PROBE_RETRIES comment.
   let isReachable = false;
   for (let attempt = 0; attempt <= PROBE_RETRIES; attempt++) {
     isReachable = await fetchHealthOnce();
@@ -113,7 +113,7 @@ export async function revalidateConnectivity(): Promise<boolean> {
   return online;
 }
 
-/** User-initiated "force online" — resets probe cache and tells the system to try going online.
+/** User-initiated "force online": resets probe cache and tells the system to try going online.
  *  If still actually offline, the next failed fetch will re-trigger the probe and revert. */
 export function forceOnline() {
   resetConnectivityCache();

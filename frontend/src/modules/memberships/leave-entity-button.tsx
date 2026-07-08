@@ -2,7 +2,7 @@ import { onlineManager, useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { UserRoundXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-// biome-ignore lint/style/noRestrictedImports: colocated mutation — imperative leave-entity flow tied to confirmation dialog.
+// biome-ignore lint/style/noRestrictedImports: colocated mutation for an imperative leave-entity flow tied to a confirmation dialog.
 import { type ContextEntityBase, deleteMyMembership } from 'sdk';
 import { appConfig } from 'shared';
 import type { CallbackArgs } from '~/modules/common/data-table/types';

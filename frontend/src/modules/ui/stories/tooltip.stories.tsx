@@ -100,7 +100,6 @@ export const ShouldShowOnHover: Story = {
 
     await step('unhover trigger', async () => {
       await userEvent.unhover(triggerBtn);
-      // Wait for tooltip to disappear (be removed from DOM or hidden)
       await waitFor(
         () => {
           const tooltip = canvasElement.ownerDocument.body.querySelector('[data-slot="tooltip-content"]');

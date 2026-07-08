@@ -1,9 +1,3 @@
-/**
- * Container Registry — private namespace for Docker images.
- *
- * Pushed to by CI/CD, pulled by compute VMs at cloud-init time using a scoped
- * registry credential. Namespace names must not contain hyphens.
- */
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region } from '../pulumi-context'
 

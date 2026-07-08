@@ -22,10 +22,10 @@ export async function verifyDomainOp(ctx: AuthContext, id: string) {
 
   try {
     const txtRecords = await dns.resolveTxt(hostname);
-    // dns.resolveTxt returns string[][] — each record is an array of chunks, join them
+    // dns.resolveTxt returns string[][]: each row is an array of chunks to join.
     recordsFound = txtRecords.map((chunks) => chunks.join(''));
   } catch (err: unknown) {
-    // ENOTFOUND / ENODATA means no TXT records exist — not an error
+    // ENOTFOUND / ENODATA means no TXT rows exist.
     const code = err instanceof Error && 'code' in err ? (err as NodeJS.ErrnoException).code : undefined;
     if (code !== 'ENOTFOUND' && code !== 'ENODATA') {
       log.warn('DNS lookup failed', { domain: domain.domain, err });

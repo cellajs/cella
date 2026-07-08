@@ -7,7 +7,7 @@ import pc from 'picocolors';
 /**
  * Creates database roles for RLS tenant isolation.
  *
- * In production (Scaleway): roles are pre-created as Scaleway-managed users
+ * In production (Scaleway): roles are provisioned as Scaleway-managed users
  * (admin_role, runtime_role). This script only ensures schema grants
  * and role memberships are in place.
  *
@@ -31,10 +31,10 @@ return {
 
 /**
  * Build idempotent SQL to create roles with passwords from connection strings.
- * Only used in development — production roles are Scaleway-managed users.
+ * Development only; production roles are Scaleway-managed users.
  */
 function buildCreateRolesSql(runtimePassword: string, adminPassword: string): string {
-// Escape single quotes for SQL injection safety
+// Escape single quotes for SQL injection safety.
 const escSql = (s: string) => s.replace(/'/g, "''");
 
 return `

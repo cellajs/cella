@@ -1,23 +1,3 @@
-/**
- * Generate pg_partman Migration Script
- *
- * This script generates SQL for setting up pg_partman automatic partitioning
- * and cleanup for token/session/activity/seen_by tables.
- *
- * Tables affected:
- * - sessions: partitioned by expires_at (weekly, 30-day retention)
- * - tokens: partitioned by expires_at (weekly, 30-day retention)
- * - unsubscribe_tokens: partitioned by created_at (monthly, 90-day retention)
- * - activities: partitioned by created_at (weekly, 90-day retention)
- * - seen_by: partitioned by created_at (weekly, 90-day retention)
- *
- * The activities and seen_by tables use PostgreSQL's LIKE clause to clone whatever
- * structure Drizzle created, making them robust to schema changes and fork customizations.
- *
- * The generated migration is idempotent and gracefully skips if pg_partman
- * is not available.
- */
-
 import pc from 'picocolors';
 import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 import type { GenerateScript } from '../types';
@@ -26,7 +6,6 @@ import type { GenerateScript } from '../types';
 // PARTITION CONFIGURATION
 // =============================================================================
 
-// Configuration for each partitioned table
 interface PartitionConfig {
   name: string;
   /** Column to partition by */
@@ -44,8 +23,7 @@ interface PartitionConfig {
   indexesSql: string[];
 }
 
-// Define partition configurations - these must match the Drizzle schemas
-// See: modules/auth/sessions-db.ts, auth/tokens-db.ts, user/unsubscribe-tokens-db.ts, activities/activities-db.ts
+// Partition configurations must match the Drizzle schemas.
 const partitionConfigs: PartitionConfig[] = [
   {
     name: 'sessions',
@@ -118,23 +96,23 @@ const partitionConfigs: PartitionConfig[] = [
       'CREATE INDEX unsubscribe_tokens_user_id_idx ON unsubscribe_tokens (user_id)',
     ],
   },
-  // Activities uses LIKE clause to clone Drizzle's schema (supports dynamic context columns)
+  // Activities uses LIKE to clone Drizzle's dynamic context columns.
   {
     name: 'activities',
     partitionColumn: 'created_at',
     interval: '1 week',
     retention: '90 days',
-    createTableSql: null, // Use LIKE clause instead
-    indexesSql: [], // Indexes are cloned from original table
+    createTableSql: null, // Use LIKE clause instead.
+    indexesSql: [], // Indexes are cloned from original table.
   },
-  // seen_by uses LIKE clause — high-write table with 90-day rolling window
+  // seen_by uses LIKE for its high-write rolling window table.
   {
     name: 'seen_by',
     partitionColumn: 'created_at',
     interval: '1 week',
     retention: '90 days',
-    createTableSql: null, // Use LIKE clause instead
-    indexesSql: [], // Indexes are cloned from original table
+    createTableSql: null, // Use LIKE clause instead.
+    indexesSql: [], // Indexes are cloned from original table.
   },
 ];
 
@@ -148,7 +126,7 @@ const partitionConfigs: PartitionConfig[] = [
  * to clone the existing table structure. This makes it robust to dynamic columns.
  */
 function generateTablePartitionSql(config: PartitionConfig): string {
-  // Shared idempotency guard: skip if table is already partitioned
+  // Shared idempotency guard: skip if table is already partitioned.
   const idempotencyCheck = `  -- Skip if already partitioned
   IF EXISTS (
     SELECT 1 FROM pg_partitioned_table pt
@@ -167,7 +145,7 @@ function generateTablePartitionSql(config: PartitionConfig): string {
   const endGuard = `  END IF;
 `;
 
-  // Handle tables that use LIKE clause (dynamic schema)
+  // Handle tables that use LIKE clause for dynamic schema.
   if (config.createTableSql === null) {
     return `  -- ==========================================================================
   -- ${config.name.toUpperCase()} TABLE: Convert to partitioned (using LIKE clause)
@@ -222,7 +200,7 @@ ${endGuard}
 `;
   }
 
-  // Standard path for tables with explicit createTableSql
+  // Standard path for tables with explicit createTableSql.
   const escapedCreateTableSql = config.createTableSql.replace(/'/g, "''");
   const escapedIndexesSql = config.indexesSql.map((sql) => sql.replace(/'/g, "''"));
 
@@ -266,7 +244,7 @@ ${endGuard}
 }
 
 async function run() {
-  // Generate the full migration SQL
+  // Generate the full migration SQL.
   const tableSetupSql = partitionConfigs.map(generateTablePartitionSql).join('\n');
 
   const migrationSql = `-- =============================================================================

@@ -20,7 +20,7 @@ function mergeOps(older: Record<string, unknown>, newer: Record<string, unknown>
 /**
  * Squash pending same-entity mutations by merging their `ops` into the incoming mutation
  * (newer scalar values win; AWSet deltas merge via mergeArrayDeltas). Old pending mutations
- * are removed — the new one carries all accumulated ops. Returns the merged ops. Call from
+ * are removed. The new one carries all accumulated ops. Returns the merged ops. Call from
  * onMutate before optimistic updates.
  */
 export function squashPendingMutation(
@@ -45,7 +45,7 @@ export function squashPendingMutation(
       mergedOps = mergeOps(variables.ops, mergedOps);
     }
 
-    // Remove old mutation — new one will carry merged ops
+    // Remove old mutation; the new one will carry merged ops.
     mutationCache.remove(mutation);
   }
 
@@ -54,7 +54,7 @@ export function squashPendingMutation(
 
 /**
  * If a pending create exists for the entity (matched by temp `id`), merge the update `ops` into
- * its variables and return true — the caller should skip the normal update flow. Returns false
+ * its variables and return true. The caller should skip the normal update flow. Returns false
  * when there is no pending create to coalesce with.
  */
 export function coalescePendingCreate(

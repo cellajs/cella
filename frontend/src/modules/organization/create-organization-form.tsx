@@ -4,7 +4,7 @@ import type React from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
-// biome-ignore lint/style/noRestrictedImports: colocated mutation — self-creation flow with multi-step navigation side-effects.
+// biome-ignore lint/style/noRestrictedImports: colocated mutation for a self-creation flow with multi-step navigation side-effects.
 import { selfCreateTenant } from 'sdk';
 import { zCreateOrganizationsBody } from 'sdk/zod.gen';
 import { generateId } from 'shared/entity-id';
@@ -33,7 +33,7 @@ const withTenantSchema = zCreateOrganizationsBody.element.omit({ id: true }).ext
   tenantId: z.string().min(1, 'error:form.required'),
 });
 
-// Schema for first-time creation (no tenant yet — will be created automatically)
+// Schema for first-time creation; a tenant is created automatically.
 const noTenantSchema = zCreateOrganizationsBody.element.omit({ id: true });
 
 type WithTenantValues = z.infer<typeof withTenantSchema>;
@@ -78,7 +78,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
   const onSubmit = async (values: FormValues) => {
     let resolvedTenantId = 'tenantId' in values ? values.tenantId : '';
 
-    // No tenant yet — create one first, then create the org
+    // Create a tenant first, then create the org.
     if (!resolvedTenantId) {
       try {
         const tenant = await selfCreateTenant({ body: { name: `${values.name} workspace` } });

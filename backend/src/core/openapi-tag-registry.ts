@@ -26,7 +26,7 @@ export interface OpenApiTag {
 /** Ordered registry of OpenAPI tags. Insertion order = display order. */
 const tagRegistry = new Map<string, OpenApiTag>();
 
-/** Register a tag for OpenAPI documentation. Idempotent — skips if already registered. */
+/** Register a tag for OpenAPI documentation, skipping entries that are already registered. */
 export const registerTag = (tag: OpenApiTag): OpenApiTag => {
   if (!tagRegistry.has(tag.tag)) tagRegistry.set(tag.tag, tag);
   return tag;
@@ -35,7 +35,7 @@ export const registerTag = (tag: OpenApiTag): OpenApiTag => {
 /** Returns all registered tags in registration (display) order. */
 export const getRegisteredTags = (): OpenApiTag[] => [...tagRegistry.values()];
 
-/** Default owner tags — registered eagerly so module tags can reference them as parents. */
+/** Default owner tags, registered eagerly so module tags can reference them as parents. */
 registerTag({
   tag: 'cella',
   kind: 'owner',
@@ -49,7 +49,7 @@ registerTag({
 });
 
 /**
- * Default schema-kind tags — buckets used to group OpenAPI component schemas
+ * Default schema-kind tags: buckets for grouping OpenAPI component schemas
  * in the docs UI. Schemas declare membership via an `x-tags` extension on the
  * component schema itself; schemas without a matching tag fall back to the
  * tag flagged with `default: true`.
@@ -74,7 +74,7 @@ registerTag({
 });
 
 /**
- * Default entity-kind tags — declare an operation's entity scope. Routes opt in
+ * Default entity-kind tags declare an operation's entity scope. Routes opt in
  * by adding `'context'` or `'product'` to their `tags` array, the same way they
  * declare ownership (`'cella'` / `'app'`).
  */

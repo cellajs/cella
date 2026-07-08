@@ -1,11 +1,3 @@
-/**
- * Network — VPC and Private Network for internal service-to-service communication.
- *
- * The private network (10.0.0.0/24) carries the managed PostgreSQL private endpoint
- * and load-balancer-to-compute traffic, keeping the database off the public internet.
- *
- * Config consumed from appConfig: slug (via naming), s3.region
- */
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tags } from '../pulumi-context'
 
@@ -40,5 +32,5 @@ const privateNetwork = new scaleway.network.PrivateNetwork('main-private-network
 /** VPC ID */
 export const vpcId = vpc.id
 
-/** Private Network ID — used by database and containers */
+/** Private Network ID used by database and containers. */
 export const privateNetworkId = privateNetwork.id

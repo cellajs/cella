@@ -3,7 +3,7 @@ import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
 /**
  * Sync transaction column for sync-enabled entities (offline/realtime).
- * Used to track mutations and enable conflict detection via CDC Worker.
+ * Tracks mutations and enables conflict detection via CDC Worker.
  * Required (notNull) because all offline/realtime entity mutations MUST include stx metadata.
  */
 export const stxColumns = {

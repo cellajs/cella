@@ -1,11 +1,3 @@
-/**
- * Propagation hints for embedding relationships.
- *
- * Derived from `appConfig.entityEmbeddings` at module init. When a source entity
- * type changes (seq delta, including soft-delete tombstones), hints tell the client which host entity
- * types need to refetch their embedded data.
- */
-
 import { appConfig, type EntityType } from 'shared';
 import type { DbContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
@@ -16,7 +8,7 @@ const dbCtx: DbContext = { var: { db } };
 
 type PropagationTarget = { targetType: string; field: string };
 
-/** Source entity type → host entity types that embed it (derived from entityEmbeddings config). */
+/** Source entity type to host entity types that embed it, derived from entityEmbeddings config. */
 const propagationTargets: Partial<Record<EntityType, PropagationTarget[]>> = {};
 for (const embedding of appConfig.entityEmbeddings) {
   const source = embedding.embeddedEntity as EntityType;
@@ -27,8 +19,8 @@ for (const embedding of appConfig.entityEmbeddings) {
 
 /**
  * Build propagation hints for each org's change summary.
- * Checks propagationTargets config to find source entity types that changed,
- * then queries changed IDs (lightweight ID-only SELECT) and attaches hints.
+ * Source entity changes, including soft-delete tombstones, tell the client which
+ * host entity types need to refetch embedded data.
  */
 export async function buildPropagationHints(
   changes: AppCatchupResponse['changes'],

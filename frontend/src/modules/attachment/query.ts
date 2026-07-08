@@ -109,7 +109,7 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
 };
 
 /**
- * Canonical attachment query — one flat query per organization scope.
+ * Canonical attachment query, one flat query per organization scope.
  * Fetches all attachments for the org, stored at keys.list.org(organizationId).
  * Consumers derive views via select() for groupId filtering.
  * Sync (SSE + delta fetch) keeps this fresh; staleTime follows sync liveness.
@@ -186,7 +186,7 @@ export const useAttachmentCreateMutation = (tenantId: string, organizationId: st
     },
     onMutate: async (newAttachments) => {
       await queryClient.cancelQueries({ queryKey: orgKey });
-      // Attachments already have IDs from Transloadit — preserved in optimistic entity
+      // Attachments already have IDs from Transloadit, preserved in optimistic entity.
       const optimisticAttachments = newAttachments.map((att) => createOptimisticEntity(zAttachment, att));
       cacheCreate(orgKey, optimisticAttachments);
       return { optimisticAttachments };
@@ -292,7 +292,7 @@ export const useAttachmentDeleteMutation = (tenantId: string, organizationId: st
       handleError('delete');
       if (context?.deletedAttachments) cacheCreate(orgKey, context.deletedAttachments);
     },
-    // Error-only: onMutate removed from all caches, SSE handles other users
+    // Error-only: onMutate removed the attachment from all caches, SSE handles other users.
     onSettled: (_data, error) => {
       if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, orgKey);
     },
@@ -302,7 +302,7 @@ export const useAttachmentDeleteMutation = (tenantId: string, organizationId: st
 // --- Mutation defaults (offline persistence) ---
 
 addMutationRegistrar((queryClient: QueryClient) => {
-  // Detail query defaults for SSE stream handlers — resolves organizationId/tenantId from:
+  // Detail query defaults for SSE stream handlers, resolves organizationId/tenantId from:
   // 1. meta (SSE handler), 2. cached entity, 3. router context
   queryClient.setQueryDefaults(keys.detail.base, {
     queryFn: ({ queryKey, meta }) => {

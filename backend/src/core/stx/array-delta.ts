@@ -18,7 +18,7 @@ export function isArrayDelta(value: unknown): value is ArrayDelta {
 
 /**
  * Apply an AWSet delta to a current array.
- * Removes first, then appends — preserves order, idempotent.
+ * Removes first, then appends. Order is preserved and repeated applications are idempotent.
  */
 export function applyArrayDelta(current: string[], delta: ArrayDelta): string[] {
   const removeSet = new Set(delta.remove);

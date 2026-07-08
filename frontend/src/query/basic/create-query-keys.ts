@@ -8,11 +8,11 @@ type StandardEntityKeys<
   all: [E];
   list: {
     base: [E, 'list'];
-    /** Org-scoped prefix — prefix-matches all list queries for one org */
+    /** Org-scoped prefix: prefix-matches all list queries for one org */
     org: (organizationId: string) => [E, 'list', string];
     /** List key qualified with filters (default: no org segment) */
     filtered: (filters: LF) => [E, 'list', LF];
-    /** Canonical scope key — args are hierarchy ancestor IDs (root-first) */
+    /** Canonical scope key: args are hierarchy ancestor IDs (root-first) */
     scope: (...ancestorIds: string[]) => readonly [E, 'list', ...string[]];
     /** Ancestor ID column keys in root-first order, e.g. ['organizationId', 'projectId'] for task */
     scopeKeys: readonly string[];
@@ -30,14 +30,14 @@ type StandardEntityKeys<
  * Factory function to create standardized query keys for an entity module.
  *
  * Key hierarchy:
- *   [entity, 'list']                              — broadest (all queries)
- *   [entity, 'list', organizationId]              — all queries for one org
- *   [entity, 'list', organizationId, projectId]   — canonical scope (product entities)
- *   [entity, 'list', organizationId, {filters}]   — specific filtered query
+ *   [entity, 'list']: broadest (all queries)
+ *   [entity, 'list', organizationId]: all queries for one org
+ *   [entity, 'list', organizationId, projectId]: canonical scope (product entities)
+ *   [entity, 'list', organizationId, {filters}]: specific filtered query
  *
  * Scope keys are derived from hierarchy-config automatically:
- *   task (ancestors: project→organization) → scope(organizationId, projectId)
- *   page (no ancestors) → scope()
+ *   task (ancestors: project->organization) -> scope(organizationId, projectId)
+ *   page (no ancestors) -> scope()
  *
  * `list.scopeKeys` exposes ancestor ID column names for entity-agnostic scope derivation.
  */

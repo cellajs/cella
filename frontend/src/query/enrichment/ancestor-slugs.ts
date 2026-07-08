@@ -4,7 +4,7 @@ import type { AncestorSlugs } from '~/modules/entities/types';
 import type { EnrichableEntity } from '~/query/enrichment/types';
 import { getField } from '~/utils/get-field';
 
-/** entityType → entityId → slug */
+/** entityType -> entityId -> slug */
 export type SlugIndex = Map<string, Map<string, string>>;
 
 /** Check if ancestor slugs maps differ */
@@ -18,7 +18,7 @@ function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | nul
 
 /**
  * Enrich an item with ancestor slugs using a pre-built slug index.
- * Falls back to ancestor ID when slug isn't indexed — rewriteUrlToSlug corrects the URL later.
+ * Falls back to ancestor ID when slug isn't indexed; rewriteUrlToSlug corrects the URL later.
  * Returns the original reference when nothing changed.
  */
 export function enrichWithAncestorSlugs(

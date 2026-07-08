@@ -12,7 +12,7 @@ export type TestResult<TData = unknown, TError = unknown> =
 
 /**
  * Creates an SDK client wired to Hono's in-process app.fetch().
- * All requests run in-process — no HTTP server needed.
+ * Uses no HTTP server.
  */
 export function createTestClient(app: AppLike): Client {
   return createClient(

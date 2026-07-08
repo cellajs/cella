@@ -34,7 +34,7 @@ describe('formatPostgresUrl', () => {
   })
 
   it('keeps a password with @ and : from breaking out of the userinfo segment', () => {
-    // Authority must split into exactly userinfo + host:port — the encoded
+    // Authority must split into exactly userinfo + host:port. The encoded
     // password cannot inject a second `@` or `:` that re-parses the host.
     const url = formatPostgresUrl('u', 'p@ss:bad@host', 'real-host', 5432, 'd')
     const authority = url.slice('postgresql://'.length, url.indexOf('/d?'))

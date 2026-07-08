@@ -1,8 +1,3 @@
-/**
- * Mock generators for stream notification schemas.
- * Used for app stream notification OpenAPI examples.
- */
-
 import { faker } from '@faker-js/faker';
 import { mockNanoid, mockUuid, withFakerSeed } from '#/mocks';
 import { mockStxBase } from './sync-transaction-mocks';
@@ -27,8 +22,8 @@ export const mockStreamNotification = (key = 'stream-notification:default') =>
     contextType: null,
     contextId: mockUuid(),
     seq: faker.number.int({ min: 1, max: 500 }),
-    // Generate cacheToken BEFORE stx to ensure deterministic output
-    // (stx uses nested withFakerSeed which resets the seed after)
+    // Generate cacheToken before stx for deterministic output.
+    // stx uses nested withFakerSeed, which resets the seed after.
     cacheToken: faker.string.alphanumeric(32),
     stx: mockStxBase(`${key}:stx`),
     batchUntilSeq: null,

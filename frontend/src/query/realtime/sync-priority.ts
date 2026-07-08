@@ -36,7 +36,7 @@ export function getRouteTenantId(): string | null {
 
 /** Resolve tenantId for an organizationId. Checks sync store first (persisted, instant), then query cache. */
 export function getTenantIdForOrg(organizationId: string): string | null {
-  // Sync store is persisted to localStorage — available before query cache hydration
+  // Sync store is persisted to localStorage, available before query cache hydration.
   const fromStore = useSyncStore.getState().getOrgTenantId(organizationId);
   if (fromStore) return fromStore;
 
@@ -61,10 +61,10 @@ export function getSyncPriority(notification: SyncNotification): SyncPriority {
 
   const routeOrgId = getRouteOrgId();
 
-  // Not in an org route → low priority
+  // Not in an org route -> low priority
   if (!routeOrgId) return 'low';
 
-  // Different org → low priority
+  // Different org -> low priority
   if (organizationId && routeOrgId !== organizationId) return 'low';
 
   // User is in matching org context

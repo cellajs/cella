@@ -38,10 +38,10 @@ const loadAsn = async (): Promise<Reader<AsnResponse> | null> => {
 
 /**
  * Look up the ISO-3166 alpha-2 country code and ASN for an IP address.
- * Both fields are independent — either can be null if the database is missing
+ * Both fields are independent: either can be null if the database is missing
  * or the IP is unknown. Never throws; auth/session paths can call this safely.
  *
- * Attribution: IP geolocation by DB-IP (https://db-ip.com) — required by CC BY 4.0.
+ * Attribution: IP geolocation by DB-IP (https://db-ip.com), required by CC BY 4.0.
  */
 export const lookupIp = async (
   ip: string | null | undefined,

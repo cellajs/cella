@@ -1,15 +1,3 @@
-/**
- * Generation planning — which services get VMs, and which content-addressed
- * generations each service materialises.
- *
- * Pure derivation over the service registry, the deploy-mode config and the S3
- * control object; creates no Pulumi resources itself (that is compute.ts's
- * job). This program is the genId AUTHORITY: it derives the content-addressed
- * id for a pending SHA from the service's static, plan-time config, and
- * compute.ts materialises the VM as `vm-<svc>-<genId>` and surfaces the id back
- * in `computeGenerationMetadata` for the orchestrator to promote into the
- * ledger.
- */
 import { appConfig } from '../../shared'
 import { composeConfig } from '../compose/compose'
 import { deriveGenId } from '../lib/gen-id'
@@ -23,7 +11,7 @@ import { controlState } from './control'
 // and do NOT get their own VM (see `deployedServices`); the load balancer still
 // routes to them via the host VM (see `serviceGenerationIps`). Each remaining
 // service runs on its own dedicated VM (the multi-fork shared-workers placement
-// is not yet implemented here — guard loudly).
+// is guarded below).
 export const enabled = deployedServices(appConfig.services, appConfig.singleVM).map((svc) => {
   const placement = svc.placement ?? 'dedicated-vm'
   if (placement !== 'dedicated-vm') {
@@ -32,7 +20,7 @@ export const enabled = deployedServices(appConfig.services, appConfig.singleVM).
   return svc
 })
 
-// Workers folded into the host (backend) process under singleVM — empty in the
+// Workers folded into the host backend process under singleVM. Empty in the
 // normal split-VM deploy. Their runtime secrets are unioned onto the host VM and
 // an `exclusive` one among them forces the host to cut over exclusively.
 export const coHosted = coHostedServices(appConfig.services, appConfig.singleVM)
@@ -50,7 +38,7 @@ export function secretConsumersFor(svc: ServiceDefinition): RuntimeSecretConsume
 
 /** The replacement strategy a service's VM actually uses. Under singleVM a host
  *  co-hosting an `exclusive` worker (cdc holds the single replication slot) must
- *  itself cut over exclusively — two overlapping host generations would double-
+ *  itself cut over exclusively: two overlapping host generations would double-
  *  consume the slot. */
 export function effectiveStrategy(svc: ServiceDefinition): ServiceDefinition['replacementStrategy'] {
   if (appConfig.singleVM && svc.slug === hostSlug && coHosted.some((s) => s.replacementStrategy === 'exclusive')) {
@@ -89,7 +77,7 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
     port: svc.healthPort,
     runMigrate: svc.runMigrate ?? false,
     // Only fold in the strategy when singleVM changes it (host co-hosting an
-    // exclusive worker) — keeps the split-VM fingerprint byte-stable so this
+    // exclusive worker). Keeps the split-VM fingerprint byte-stable so this
     // feature doesn't churn every existing service's genId.
     ...(effectiveStrategy(svc) !== svc.replacementStrategy ? { singleVmStrategy: effectiveStrategy(svc) } : {}),
     bindings: svc.bindings ?? {},
@@ -103,7 +91,7 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
  * Generations a service materialises: the live one (`active`, else the pending
  * intent on first deploy) and the pending generation being rolled in. This
  * derives the content-addressed id for a pending SHA (the genId authority).
- * Deduplicated by id — when a pending SHA hashes to the active id (a same-config
+ * Deduplicated by id. When a pending SHA hashes to the active id (a same-config
  * redeploy) it collapses to a single VM. Index 0 is the live binding target.
  * The old generation is reaped once the new one is healthy, so no powered-off
  * rollback VM lingers; rollback is a revert commit + redeploy.

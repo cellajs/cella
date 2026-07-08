@@ -1,8 +1,3 @@
-/**
- * Hook to resolve attachment URL, preferring local blob over cloud.
- * Uses resolveAttachmentUrl() core function for consistent resolution logic.
- */
-
 import { useEffect, useRef, useState } from 'react';
 import type { Attachment } from 'sdk';
 import type { BlobVariant } from '~/modules/attachment/dexie/attachments-db';

@@ -48,7 +48,7 @@ function Cell<R, SR>({
   // Editable cells get an explicit cursor so the hover affordance matches the
   // editor: an I-beam for free-text inputs, a pointer for editors that open a
   // picker (select/popover/drawer). Without this, every editable cell inherits
-  // the browser's text I-beam from its selectable content — misleading for
+  // the browser's text I-beam from its selectable content, misleading for
   // non-text editors.
   const editorCursor = isEditable
     ? column.editorOptions?.editorType === 'select'
@@ -97,7 +97,7 @@ function Cell<R, SR>({
     // `tabIndex`'d for roving-tabindex keyboard nav and also has `scroll-mt-32`
     // (so keyboard navigation keeps the focused cell out from under the page's
     // sticky header). Together these cause a visible "page jumps after first
-    // click" when clicking a cell near the top edge of the viewport — the UA
+    // click" when clicking a cell near the top edge of the viewport; the UA
     // honors scroll-margin-top during the implicit focus scroll.
     //
     // Focus the cell ourselves *synchronously* with `preventScroll: true`. The

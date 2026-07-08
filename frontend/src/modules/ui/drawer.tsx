@@ -75,7 +75,7 @@ function DrawerContent({
             ref={popupRef}
             data-slot="drawer-content"
             className={cn(
-              // Popup is a flex child of Viewport — NOT position:fixed. Scrolls via overflow-y-auto.
+              // Popup is a flex child of Viewport, not position:fixed. Scrolls via overflow-y-auto.
               'group/drawer-content flex touch-auto flex-col overflow-y-auto overscroll-contain bg-background focus-visible:outline-none',
               'transition-discrete transition-transform duration-300 ease-out will-change-transform',
               'data-swiping:select-none data-swiping:transition-none!',
@@ -89,7 +89,7 @@ function DrawerContent({
               'data-[swipe-direction=up]:transform-[translateY(calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)))]',
               'data-[swipe-direction=right]:transform-[translateX(var(--drawer-swipe-movement-x,0px))]',
               'data-[swipe-direction=left]:transform-[translateX(var(--drawer-swipe-movement-x,0px))]',
-              // Enter animation — CSS @starting-style (native) + data-starting-style (Base UI fallback)
+              // Enter animation: CSS @starting-style (native) and data-starting-style (Base UI fallback).
               'starting:data-[swipe-direction=down]:transform-[translateY(100%)]',
               'starting:data-[swipe-direction=up]:transform-[translateY(-100%)]',
               'starting:data-[swipe-direction=right]:transform-[translateX(100%)]',
@@ -98,7 +98,7 @@ function DrawerContent({
               'data-starting-style:data-[swipe-direction=up]:transform-[translateY(-100%)]',
               'data-starting-style:data-[swipe-direction=right]:transform-[translateX(100%)]',
               'data-starting-style:data-[swipe-direction=left]:transform-[translateX(-100%)]',
-              // Exit animation — off-screen (driven by Base UI data-ending-style attribute)
+              // Exit animation: off-screen, driven by Base UI data-ending-style.
               'data-ending-style:data-[swipe-direction=down]:transform-[translateY(100%)]',
               'data-ending-style:data-[swipe-direction=up]:transform-[translateY(-100%)]',
               'data-ending-style:data-[swipe-direction=right]:transform-[translateX(100%)]',
@@ -107,7 +107,7 @@ function DrawerContent({
             )}
             {...props}
           >
-            {/* Drag handle — outside Content (no data-swipe-ignore) so mouse/pointer swipe works here. Hidden on left/right. */}
+            {/* Drag handle outside Content, with no data-swipe-ignore, so mouse/pointer swipe works here. Hidden on left/right. */}
             <div
               className={cn(
                 'sticky top-0 z-20 flex shrink-0 cursor-grab items-center justify-center bg-background active:cursor-grabbing',
@@ -118,7 +118,7 @@ function DrawerContent({
             >
               <div className="h-1 w-20 rounded-full bg-muted" />
             </div>
-            {/* shrink-0 prevents flex from collapsing Content — children grow naturally, Popup scrolls when overflow */}
+            {/* shrink-0 prevents flex from collapsing Content. Children grow naturally, Popup scrolls when overflow. */}
             <DrawerPrimitive.Content className="shrink-0">{children}</DrawerPrimitive.Content>
           </DrawerPrimitive.Popup>
         </DrawerPrimitive.Viewport>

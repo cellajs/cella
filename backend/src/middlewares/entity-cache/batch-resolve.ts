@@ -1,16 +1,3 @@
-/**
- * Batch-aware cache middleware for list endpoints that support seqCursor.
- *
- * When a list request includes an X-Cache-Token header with a batch token:
- * 1. Validate signed token, resolve batch token → entity keys
- * 2. Check entity cache for each key
- * 3. All hit → assemble paginated response from cache, skip handler
- * 4. Any miss → fall through to handler (normal DB query)
- *
- * Applied to list routes alongside the regular handler. Handlers remain
- * oblivious to batch caching — same pattern as appCache for detail routes.
- */
-
 import type { MiddlewareHandler } from 'hono';
 import type { Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
@@ -61,14 +48,12 @@ export const batchCache = (): MiddlewareHandler<Env> =>
       for (const key of entityKeys) {
         const cached = entityCache.get(key);
         if (cached === undefined || cached === null || !('id' in cached)) {
-          // At least one miss — fall through to handler
           await next();
           return;
         }
         items.push(cached);
       }
 
-      // All cache hits — assemble paginated response
       ctx.header('X-Cache', 'BATCH-HIT');
       return ctx.json({ items, total: items.length });
     },

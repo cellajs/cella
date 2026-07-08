@@ -6,8 +6,8 @@
  *
  * Architecture:
  * - SELECT-only RLS policies on product entity tables (attachments, tasks, labels, yjs_documents)
- * - Write-through RLS policies (unconditional allow) — write isolation enforced by guards + composite FKs + immutability triggers
- * - No RLS on context entities (organizations, memberships) — guarded at app layer
+ * - Write-through RLS policies (unconditional allow), write isolation enforced by guards + composite FKs + immutability triggers
+ * - No RLS on context entities (organizations, memberships), guarded at app layer
  *
  * IMPORTANT: These tests require PostgreSQL with RLS roles configured.
  * Run with `pnpm test:full` (not test:core).
@@ -35,7 +35,7 @@ import { seenWindowMs, trackedEntityTypes } from '#/modules/seen/operations/mark
 import { findUnseenCountsByUser } from '#/modules/seen/seen-queries';
 import { entityTables } from '#/tables';
 
-/** Local read-only tenant context helper — mirrors tenantRead without importing it. */
+/** Local read-only tenant context helper, mirrors tenantRead without importing it. */
 async function tenantReadTest<T>(tenantId: string, userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
   return adminDb.transaction(async (tx) => {
     await tx.execute(sql`SET TRANSACTION READ ONLY`);
@@ -143,7 +143,7 @@ interface RlsProductFixture {
   rowId: string;
   /** Original name of the representative row, for restore after update tests. */
   rowName: string;
-  /** Build an INSERT for a fresh row (caller supplies a unique id — no ON CONFLICT). */
+  /** Build an INSERT for a fresh row (caller supplies a unique id, no ON CONFLICT). */
   insert: (p: { id: string; tenantId: string; orgId: string; createdBy: string }) => SQL;
   /** Seed prerequisites + the representative row (runs as admin/superuser). */
   seed: () => Promise<void>;
@@ -180,7 +180,7 @@ const rlsProductFixtures: Record<string, RlsProductFixture> = {
 };
 
 /**
- * RLS product types that have a fixture — what the generic blocks iterate (collection-time).
+ * RLS product types that have a fixture, what the generic blocks iterate (collection-time).
  * Table existence is checked at runtime in `beforeAll` (see `activeRlsProducts`).
  */
 const iterableRlsProducts = rlsProductTypes
@@ -216,7 +216,7 @@ async function tableExists(tableName: string): Promise<boolean> {
 }
 
 async function checkRequiredTablesExist(): Promise<boolean> {
-  // Base entities present in every Cella app — fork-specific product tables are checked per-fixture.
+  // Base entities present in every Cella app, fork-specific product tables are checked per-fixture.
   const requiredTables = ['attachments', 'organizations', 'memberships'];
   const results = await Promise.all(requiredTables.map((tableName) => tableExists(tableName)));
   return results.every(Boolean);
@@ -227,7 +227,7 @@ async function checkRequiredTablesExist(): Promise<boolean> {
  * Also re-applies the RLS setup (FORCE RLS, ownership, grants).
  *
  * Table targets are derived from the entity model so the setup adapts to whatever
- * product entities the app defines — base Cella forces RLS on `attachments` +
+ * product entities the app defines, base Cella forces RLS on `attachments` +
  * `yjs_documents`; a fork additionally covers e.g. `tasks`, `labels`.
  */
 async function ensureRlsRoles() {
@@ -247,7 +247,7 @@ async function ensureRlsRoles() {
   await adminDb.execute(sql`GRANT USAGE ON SCHEMA public TO runtime_role`);
   await adminDb.execute(sql`GRANT ALL ON SCHEMA public TO admin_role`);
 
-  // RLS-subject tables (FORCE RLS) — org-scoped product entities + yjs_documents.
+  // RLS-subject tables (FORCE RLS), org-scoped product entities + yjs_documents.
   const rlsSubjectTables = [
     'yjs_documents',
     ...rlsProductTypes.map((t) => getTableName(entityTables[t as keyof typeof entityTables])),
@@ -260,7 +260,7 @@ async function ensureRlsRoles() {
   }
 
   // Non-RLS tables runtime_role must access (write isolation enforced by guards at the app layer).
-  // seen_by is non-RLS (production classifies it in fullCrudTables) — runtime_role reads it in the
+  // seen_by is non-RLS (production classifies it in fullCrudTables), runtime_role reads it in the
   // NOT EXISTS of the unseen-count query, so it needs a grant here too.
   const nonRlsTables = ['organizations', 'memberships', 'inactive_memberships', 'users', 'tenants', 'seen_by'];
   for (const table of nonRlsTables) {
@@ -312,7 +312,7 @@ async function setupTestData() {
   await seedEntityHierarchy(attachmentHierarchyC, TEST_TENANT_A, TEST_USER_B, `rls-c-${Date.now()}`);
 
   // Create memberships: User A in Org A (Tenant A), User B in Org B (Tenant B)
-  // Note: User A has NO membership in Org C — cross-org isolation tested at app layer
+  // Note: User A has NO membership in Org C, cross-org isolation tested at app layer
   await adminDb.execute(sql`
     INSERT INTO memberships (id, tenant_id, context_type, context_id, user_id, role, created_by, display_order, organization_id)
     VALUES
@@ -327,7 +327,7 @@ async function setupTestData() {
   }
 
   // Create activity row (needed for append-only trigger test). table_name is a plain
-  // varchar (no FK) — use any active product table, falling back to a base table.
+  // varchar (no FK), use any active product table, falling back to a base table.
   const activityTable = activeRlsProducts[0]?.fixture.table ?? 'attachments';
   await adminDb.execute(sql`
     INSERT INTO activities (id, tenant_id, action, table_name, type, created_at)
@@ -370,7 +370,7 @@ const unwrapDrizzle = <T>(promise: Promise<T>) =>
     throw err.cause ?? err;
   });
 
-/** Transaction type from NodePgDatabase — avoids `as unknown as` for tx ↔ db mismatch. */
+/** Transaction type from NodePgDatabase, avoids `as unknown as` for tx ↔ db mismatch. */
 type NodePgTx = Parameters<Parameters<NodePgDatabase['transaction']>[0]>[0];
 
 /**
@@ -392,7 +392,7 @@ async function queryAsRuntimeRole<T = Record<string, unknown>>(
 
 /**
  * Helper: Execute a query as runtime_role WITHOUT any session context.
- * Used to verify fail-closed behavior (no context → zero rows).
+ * Verifies fail-closed behavior (no context yields zero rows).
  */
 async function queryWithoutContext<T = Record<string, unknown>>(
   queryFn: (tx: NodePgTx) => Promise<unknown>,
@@ -445,7 +445,7 @@ describe('RLS Security Tests', () => {
         // Context is set here
       });
 
-      // set_config with `true` makes variables transaction-scoped — they reset on commit
+      // set_config with `true` makes variables transaction-scoped, they reset on commit
       const rows = getRows<{ value: string | null }>(
         await adminDb.execute(sql`SELECT current_setting('app.tenant_id', true) as value`),
       );
@@ -515,7 +515,7 @@ describe('RLS Security Tests', () => {
 });
 
 // ============================================================================
-// RLS policy verification (runtime_role connection — genuinely subject to RLS)
+// RLS policy verification (runtime_role connection, genuinely subject to RLS)
 // ============================================================================
 
 /**
@@ -535,7 +535,7 @@ const rlsSuiteReady = await (async () => {
   beforeAll(async () => {
     requiredTablesAvailable = await checkRequiredTablesExist();
     if (!requiredTablesAvailable) {
-      console.warn('required RLS tables not available — skipping RLS policy tests');
+      console.warn('required RLS tables not available, skipping RLS policy tests');
       return;
     }
 
@@ -544,7 +544,7 @@ const rlsSuiteReady = await (async () => {
     rolesAvailable = await checkRolesExist();
 
     if (!rolesAvailable) {
-      console.warn('runtime_role not available — skipping RLS policy tests');
+      console.warn('runtime_role not available, skipping RLS policy tests');
       return;
     }
 
@@ -566,7 +566,7 @@ const rlsSuiteReady = await (async () => {
     // 5. Set up test data as superuser
     await setupTestData();
 
-    // 6. seen_by is partman-partitioned — record whether it exists for the unseen-count tests.
+    // 6. seen_by is partman-partitioned, record whether it exists for the unseen-count tests.
     seenByAvailable = await tableExists('seen_by');
   });
 
@@ -582,7 +582,7 @@ const rlsSuiteReady = await (async () => {
       const rows = await queryWithoutContext(async (tx) =>
         tx.execute(sql`SELECT id FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B})`),
       );
-      // Context entities no longer have RLS — runtime_role can read all rows
+      // Context entities rely on app-layer guards, so runtime_role can read all rows.
       expect(rows.length).toBeGreaterThanOrEqual(2);
     });
 
@@ -594,7 +594,7 @@ const rlsSuiteReady = await (async () => {
     });
 
     it('should allow reading memberships without context (no RLS on memberships)', async () => {
-      // Memberships no longer have RLS — runtime_role can read all rows
+      // Memberships rely on app-layer guards, so runtime_role can read all rows.
       const rows = await queryWithoutContext(async (tx) =>
         tx.execute(sql`SELECT id FROM memberships WHERE id IN (${TEST_MEMBERSHIP_A}, ${TEST_MEMBERSHIP_B})`),
       );
@@ -610,7 +610,7 @@ const rlsSuiteReady = await (async () => {
         tx.execute(sql`SELECT id FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B})`),
       );
       const ids = rows.map((r) => r.id);
-      // No RLS — both orgs visible
+      // No RLS, both orgs visible
       expect(ids).toContain(TEST_ORG_A);
       expect(ids).toContain(TEST_ORG_B);
     });
@@ -639,7 +639,7 @@ const rlsSuiteReady = await (async () => {
   describe('Cross-tenant write isolation', () => {
     it('should allow inserting organization into any tenant (no RLS on context entities)', async () => {
       const fakeOrgId = '00000000-0000-4000-a000-000000000301';
-      // No RLS on organizations — insert succeeds (guard middleware prevents this at API layer)
+      // No RLS on organizations, insert succeeds (guard middleware prevents this at API layer)
       await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
         tx.execute(sql`
             INSERT INTO organizations (id, entity_type, tenant_id, name, slug, created_by, created_at)
@@ -651,7 +651,7 @@ const rlsSuiteReady = await (async () => {
     });
 
     it('should allow inserting membership into any tenant (no RLS on memberships)', async () => {
-      // No RLS on memberships — insert succeeds (guard middleware prevents this at API layer)
+      // No RLS on memberships, insert succeeds (guard middleware prevents this at API layer)
       await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
         tx.execute(sql`
             INSERT INTO memberships (id, tenant_id, context_type, context_id, user_id, role, created_by, display_order, organization_id)
@@ -663,7 +663,7 @@ const rlsSuiteReady = await (async () => {
     });
 
     it('should allow updating organizations in any tenant (no RLS, app-layer isolation)', async () => {
-      // No RLS on organizations — update succeeds even cross-tenant
+      // No RLS on organizations, update succeeds even cross-tenant
       await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
         tx.execute(sql`UPDATE organizations SET name = 'Updated Cross' WHERE id = ${TEST_ORG_B}`),
       );
@@ -693,7 +693,7 @@ const rlsSuiteReady = await (async () => {
     });
 
     it('should see attachments in other orgs within same tenant at RLS level (org isolation is app-layer)', async () => {
-      // User A can see Org C's attachment at the DB level — orgGuard prevents API access
+      // User A can see Org C's attachment at the DB level, orgGuard prevents API access
       const rows = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
         tx.execute(sql`SELECT id FROM attachments WHERE id = ${TEST_ATTACHMENT_C}`),
       );
@@ -767,7 +767,7 @@ const rlsSuiteReady = await (async () => {
 
   describe('Unauthenticated write denial', () => {
     it('should allow membership insert without authentication (no RLS on memberships)', async () => {
-      // No RLS on memberships — insert succeeds. Guard middleware prevents this at API layer.
+      // No RLS on memberships, insert succeeds. Guard middleware prevents this at API layer.
       // Use TEST_USER_B + TEST_ORG_A to avoid duplicate (tenant_id, user_id, context_id) with setup data.
       await queryAsRuntimeRole(TEST_TENANT_A, '', async (tx) =>
         tx.execute(sql`
@@ -836,7 +836,7 @@ const rlsSuiteReady = await (async () => {
       async () => {
         const [, fixture] = iterableRlsProducts[0];
         const id = randomUUID();
-        // Write without any session context — write-through policy uses sql`true`
+        // Write without any session context, write-through policy uses sql`true`
         await queryWithoutContext(async (tx) =>
           tx.execute(fixture.insert({ id, tenantId: TEST_TENANT_A, orgId: TEST_ORG_A, createdBy: TEST_USER_A })),
         );
@@ -856,7 +856,7 @@ const rlsSuiteReady = await (async () => {
   describe('Composite foreign key enforcement', () => {
     describe.each(iterableRlsProducts)('%s', (_type, fixture) => {
       it('should reject INSERT with mismatched tenant_id / organization_id', async () => {
-        // Org A belongs to Tenant A — inserting with Tenant B should violate the composite FK
+        // Org A belongs to Tenant A, inserting with Tenant B should violate the composite FK
         await expect(
           unwrapDrizzle(
             adminDb.execute(
@@ -924,7 +924,7 @@ const rlsSuiteReady = await (async () => {
     };
 
     it.each(allEntityCases)('should reject %s.%s mutation (%s)', async (tableName, column, _entityType, rowId) => {
-      // Attempt to modify an immutable column — trigger should raise exception
+      // Attempt to modify an immutable column, trigger should raise exception
       await expect(
         unwrapDrizzle(
           adminDb.execute(
@@ -946,14 +946,14 @@ const rlsSuiteReady = await (async () => {
     });
 
     it('should reject updates on append-only activities table', async () => {
-      // The activities table is append-only — all updates are rejected
+      // The activities table is append-only, all updates are rejected
       await expect(
         unwrapDrizzle(adminDb.execute(sql.raw("UPDATE activities SET id = 'hacked' WHERE 1=1"))),
       ).rejects.toThrow(/append.only|immutable/i);
     });
 
     it('should allow updating non-immutable columns', async () => {
-      // name is mutable — should succeed
+      // name is mutable, should succeed
       await expect(
         adminDb.execute(sql`UPDATE organizations SET name = 'Updated Name' WHERE id = ${TEST_ORG_A}`),
       ).resolves.not.toThrow();
@@ -966,7 +966,7 @@ const rlsSuiteReady = await (async () => {
   // Regression test: the CDC worker runs as admin_role (no app.tenant_id set)
   // and must be able to UPDATE seq on product entity rows under FORCE RLS.
   // Without BYPASSRLS on the connecting role, the tenant SELECT policy hides
-  // every row and the UPDATE silently affects 0 rows — counters then advance
+  // every row and the UPDATE silently affects 0 rows, counters then advance
   // while row.seq stays at 0, breaking the sync engine.
   describe('CDC seq stamping (admin_role under FORCE RLS)', () => {
     let adminRoleDb: NodePgDatabase;

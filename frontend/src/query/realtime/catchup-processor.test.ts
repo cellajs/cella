@@ -120,7 +120,7 @@ describe('catchup processor', () => {
     expect(deltaFetch).toHaveBeenCalled();
     // The failed window is handed to react-query via invalidation...
     expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
-    // ...and only alongside that does the cursor advance — never past a silently skipped window
+    // ...and only alongside that does the cursor advance, never past a silently skipped window.
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
   });
 
@@ -130,7 +130,7 @@ describe('catchup processor', () => {
     registerEntityQueryKeys('attachment', keys, deltaFetch);
 
     useSyncStore.getState().setOrgTenantId('org-1', 'tenant-1');
-    // Durable cursor survives from a wiped session cache — nothing is cached for this org
+    // Durable cursor survives from a wiped session cache; nothing is cached for this org.
     useSyncStore.getState().setOrgSeq('org-1', 'attachment', 4);
 
     await processAppCatchup({
@@ -138,7 +138,7 @@ describe('catchup processor', () => {
       changes: { 'org-1': { entitySeqs: { attachment: 6 } } },
     } as unknown as PostAppCatchupResponse);
 
-    // Nothing to patch → no fetch; hydration re-establishes the cursor when the scope mounts
+    // Nothing to patch -> no fetch; hydration re-establishes the cursor when the scope mounts
     expect(deltaFetch).not.toHaveBeenCalled();
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
   });

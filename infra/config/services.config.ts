@@ -1,7 +1,7 @@
 import { defineServices } from '../compose/infrastructure'
 
 /**
- * The fork-owned service registry — the single place a fork adds, removes, or
+ * The fork-owned service registry: the single place a fork adds, removes, or
  * resizes a deployable service. Run `pnpm --filter infra compose:synth` after
  * editing to regenerate `infra/compose.gen.yml` (the file Docker reads).
  *
@@ -82,7 +82,7 @@ export const appServices = defineServices({
     drainPolicy: 'reconnect',
     drainSeconds: 5,
     lbRoute: 'host',
-    // WebSocket service — LB keeps connections open for up to an hour.
+    // WebSocket service: LB keeps connections open for up to an hour.
     lbWebsockets: true,
     // Only deployed when appConfig.services.yjs.enabled is true.
     instanceType: 'DEV1-S',
@@ -134,7 +134,7 @@ export const appServices = defineServices({
     replacementStrategy: 'lb-overlap',
     drainPolicy: 'requests',
     lbRoute: 'host',
-    // The SPA proxy reads no app secret — no standard env, no .env files.
+    // The SPA proxy reads no app secret: no standard env, no .env files.
     includeStandardEnv: false,
     includeEnvFile: false,
     instanceType: 'DEV1-S',

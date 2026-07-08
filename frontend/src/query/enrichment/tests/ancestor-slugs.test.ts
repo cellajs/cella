@@ -158,7 +158,7 @@ describe('ancestor slug enrichment', () => {
     let data = queryClient.getQueryData(['project', 'list']) as any;
     expect(data.pages[0].items[0].ancestorSlugs?.workspace).toBe('ws-1');
 
-    // Workspace list loads — project should get re-enriched with slug
+    // Workspace list loads, so project should get re-enriched with slug.
     queryClient.setQueryData(['workspace', 'list'], makeInfiniteData([{ id: 'ws-1', slug: 'my-workspace' } as any]));
 
     data = queryClient.getQueryData(['project', 'list']) as any;

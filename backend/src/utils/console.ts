@@ -1,9 +1,3 @@
-/**
- * Console Utilities
- *
- * Re-exports shared console marks and provides backend-specific spinner utilities.
- */
-
 import ora, { type Ora } from 'ora';
 
 export { changeMark, checkMark, crossMark, loadingMark, tildeMark, timestamp, warningMark } from 'shared/console';

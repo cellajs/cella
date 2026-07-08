@@ -1,17 +1,3 @@
-/**
- * Tests for the offline→online reconciliation lifecycle.
- *
- * Simulates the full sync flow without real network:
- * 1. Mutations queue while "offline" (paused in React Query)
- * 2. Squash accumulates fields for same-entity mutations
- * 3. On "reconnect", mutations replay sequentially (scope serialization)
- * 4. Version chain is maintained (each mutation reads fresh stx from onSuccess)
- * 5. Create + edit coalescing produces a single create request
- *
- * These tests validate the critical invariants of the offline queue and
- * reconnection flow described in SYNC_ENGINE.md.
- */
-
 import { MutationObserver, QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { squashPendingMutation } from '../squash-utils';
@@ -46,6 +32,7 @@ interface FakeEntity {
   updatedAt: string;
 }
 
+// Covers offline queue replay, squashing, version chaining, and create/edit coalescing.
 describe('offline reconciliation lifecycle', () => {
   let queryClient: QueryClient;
   const listKey = ['test', 'list'] as const;
@@ -83,21 +70,21 @@ describe('offline reconciliation lifecycle', () => {
     const mutationKey = ['test', 'update'] as const;
 
     // Simulate 3 offline edits to the same entity, each changing different fields
-    // First edit — no pending, returns as-is
+    // First edit: no pending, returns as-is.
     const fields1 = squashPendingMutation(queryClient, mutationKey, entityId, { name: 'Edit 1' });
     expect(fields1).toEqual({ name: 'Edit 1' });
 
     // Queue first mutation as pending
     cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: fields1 }));
 
-    // Second edit — squashes with first
+    // Second edit: squashes with first.
     const fields2 = squashPendingMutation(queryClient, mutationKey, entityId, { description: 'Edit 2' });
     expect(fields2).toEqual({ name: 'Edit 1', description: 'Edit 2' });
 
     // Queue second mutation
     cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: fields2 }));
 
-    // Third edit — squashes with accumulated
+    // Third edit: squashes with accumulated.
     const fields3 = squashPendingMutation(queryClient, mutationKey, entityId, { status: 'done' });
     expect(fields3).toEqual({ name: 'Edit 1', description: 'Edit 2', status: 'done' });
   });
@@ -265,7 +252,7 @@ describe('create + edit coalescing', () => {
     const createVars = { id: 'temp-1', name: 'New Task', status: 'todo' };
     cleanups.push(queuePendingMutation(queryClient, createKey, createVars));
 
-    // User edits the description while still offline — coalescePendingCreate merges into the pending create
+    // User edits the description while still offline; coalescePendingCreate merges into the pending create.
     const mutations = queryClient.getMutationCache().findAll({ mutationKey: createKey });
     const pendingCreate = mutations.find((m) => {
       const vars = m.state.variables as { id?: string } | undefined;

@@ -1,21 +1,6 @@
-/**
- * Mutation defaults registry.
- *
- * For offline mutation persistence to work, mutationFn must be registered
- * globally via setMutationDefaults. This allows React Query to resume
- * paused mutations after page reload.
- *
- * Entity modules call addMutationRegistrar() at module load time to self-register.
- * Once initMutationDefaults() has been called, any subsequent addMutationRegistrar()
- * call applies immediately — so modules can load in any order without explicit
- * side-effect imports.
- *
- * @see https://tanstack.com/query/latest/docs/framework/react/guides/mutations#persist-mutations
- */
-
 import type { QueryClient } from '@tanstack/react-query';
 
-/** Registry of mutation default registration functions */
+/** Registry of mutation default registration functions. */
 type MutationDefaultsRegistrar = (queryClient: QueryClient) => void;
 
 const registrars: MutationDefaultsRegistrar[] = [];
@@ -43,8 +28,10 @@ export function addMutationRegistrar(registrar: MutationDefaultsRegistrar): void
 }
 
 /**
- * Initialize all buffered mutation defaults and store the client for future registrations.
+ * Initialize buffered mutation defaults and store the client for future registrations.
  * Call this once during app startup, before PersistQueryClientProvider restores.
+ *
+ * @see https://tanstack.com/query/latest/docs/framework/react/guides/mutations#persist-mutations
  */
 export function initMutationDefaults(queryClient: QueryClient): void {
   storedClient = queryClient;

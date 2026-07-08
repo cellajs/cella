@@ -49,7 +49,7 @@ function OperationsPage() {
   useEffect(() => {
     const hash = window.location.hash.slice(1);
     if (hash && tagSectionIds.includes(hash)) scrollToSectionById(hash);
-    // Mount only — re-running on tag changes would fight user scrolling.
+    // Mount only. Re-running on tag changes would fight user scrolling.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -136,7 +136,7 @@ function TagSection({ tag, operations, isOpen, onPrerender }: TagSectionProps) {
         </CardContent>
       </Card>
 
-      {/* Operation details list — prerendered with content-visibility: hidden on hover */}
+      {/* Operation details list, prerendered with content-visibility: hidden on hover */}
       {shouldMount && (
         <CollapsibleContent keepMounted>
           <div style={style}>

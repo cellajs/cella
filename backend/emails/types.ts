@@ -1,4 +1,4 @@
-// Per-recipient base: every recipient must have email + preferred language
+/** Per-recipient base fields shared by every email recipient. */
 export type EmailRecipient = { email: string; lng: string };
 
 /**
@@ -11,7 +11,7 @@ export type RecipientProps<TRecipient extends EmailRecipient> = {
 };
 
 /**
- * Sample data to render a template in previews and tests — co-located with the
+ * Sample data to render a template in previews and tests, co-located with the
  * template so it stays type-checked against the template's own props.
  */
 export interface EmailPreviewData<TStatic, TRecipient extends EmailRecipient = EmailRecipient> {
@@ -30,11 +30,11 @@ export interface EmailPreviewData<TStatic, TRecipient extends EmailRecipient = E
 export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient extends EmailRecipient = EmailRecipient> {
   /** Pre-compute all translated strings (+ pass-through statics the component needs). Must include `subject`. */
   translate(lng: string, statics: TStatic): { subject: string } & Record<string, unknown>;
-  /** Dumb React shell — receives translate() output + per-recipient display props. No i18n calls. */
+  /** React shell receiving translate() output and per-recipient display props. No i18n calls. */
   component(props: Record<string, unknown>): React.ReactElement;
   /** Sample data to render this template in previews and tests. */
   preview: EmailPreviewData<TStatic, TRecipient>;
-  /** Phantom field to carry recipient type — not set at runtime */
+  /** Phantom field carrying the recipient type; not set at runtime. */
   _recipientType?: TRecipient;
 }
 

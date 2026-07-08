@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
-// biome-ignore lint/style/noRestrictedImports: runtime token fetcher inside Uppy assembly callback — not eligible for a React Query hook.
+// biome-ignore lint/style/noRestrictedImports: runtime token fetcher inside Uppy assembly callback, not eligible for a React Query hook.
 import { getUploadToken } from 'sdk';
 import { reportCriticalError } from '~/lib/tracing';
 import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
@@ -53,7 +53,7 @@ class AttachmentUploadService {
   async attemptSync(): Promise<void> {
     if (this.processing) return;
     if (!onlineManager.isOnline()) return;
-    if (!getAppDb()) return; // Signed out — no per-user blob store to process
+    if (!getAppDb()) return; // Signed out, no per-user blob store to process.
 
     this.processing = true;
 

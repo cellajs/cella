@@ -1,27 +1,3 @@
-/**
- * Ensure the app's DNS zone is hosted on Scaleway DNS so the dns/loadbalancer
- * Pulumi modules can create records (CAA, A, CNAME).
- *
- * Scenario: domain is registered elsewhere (Gandi, Namecheap, Cloudflare…) and
- * we want Scaleway to host the zone. Activation requires two manual steps at
- * the *current* DNS provider — Scaleway can't write them for us because, by
- * definition, it isn't authoritative yet:
- *
- *   1. TXT `_scaleway-challenge.<domain>` with the per-domain token shown in
- *      the console (must land within 48h or the registration is dropped).
- *      Scaleway validates by public DNS lookup; once it resolves, the zone
- *      flips to `active`.
- *   2. Delegate NS for <domain> to ns0/ns1.dom.scw.cloud so Pulumi-managed
- *      records (CAA, A, CNAME) actually resolve.
- *
- * Flow here:
- *   - List dns-zones. If apex is `active`, return.
- *   - If missing, POST /external-domains (409 / 403 "already in process" are
- *     treated as "registration already exists, continue").
- *   - Defer to the email Scaleway sends with the exact records to add, then
- *     poll on a recheck prompt until the zone flips to `active`.
- */
-
 import { confirm } from '@inquirer/prompts'
 import { pc } from 'shared/cli-utils/colors';
 import { checkMark, tildeMark, warningMark } from 'shared/console'
@@ -41,7 +17,7 @@ interface DnsZone {
 }
 
 async function listZones(secretKey: string, projectId: string, domain: string): Promise<DnsZone[]> {
-  // Cache-bust with a timestamp param and explicit no-cache headers — some
+  // Cache-bust with a timestamp param and explicit no-cache headers; some
   // intermediaries seem to return stale zone status otherwise.
   const url = `${BASE}/dns-zones/?project_id=${projectId}&domain=${encodeURIComponent(domain)}&page_size=100&_=${Date.now()}`
   const res = await fetch(url, {

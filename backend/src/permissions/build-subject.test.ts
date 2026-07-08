@@ -57,7 +57,7 @@ describe('buildSubject', () => {
   describe('null vs undefined semantics', () => {
     it('allows null ancestor IDs (explicit unscoped)', () => {
       const ancestorContextIds: Record<string, string | null> = fullAncestorContextIds();
-      // Set all ancestors to null — should pass validation (intentionally unscoped)
+      // Null ancestors are intentionally unscoped and pass validation.
       for (const key of ancestorIdKeys) ancestorContextIds[key] = null;
       expect(() => buildSubject(productWithAncestors, ancestorContextIds)).not.toThrow();
     });

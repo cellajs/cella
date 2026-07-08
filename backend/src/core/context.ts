@@ -19,7 +19,7 @@ export type DbContext = {
   var: Pick<Env['Variables'], 'db'>;
 };
 
-/** Authenticated tenant-scoped context — usable from Hono handlers, operations, and workers. */
+/** Authenticated tenant-scoped context for Hono handlers, operations, and workers. */
 export type AuthContext = {
   var: Omit<Env['Variables'], 'requestId'>;
 };

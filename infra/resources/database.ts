@@ -1,14 +1,3 @@
-/**
- * Database — Managed PostgreSQL 17 reachable only via the main private network.
- *
- * Three role-based users (admin, runtime, cdc) get distinct passwords so app
- * traffic, migrations and CDC replication can be audited and rotated independently.
- * HA replica and automated backups are enabled outside dev mode. Passwords come
- * from stack-config secrets when set, otherwise generated and stored in state.
- *
- * Config consumed from appConfig: slug (via naming), mode (HA/backup logic)
- * Sizing (node type, volume) comes from config/general.config.ts via `infra`.
- */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, infraConfig, infra, isProduction } from '../pulumi-context'
@@ -22,7 +11,7 @@ const dbVolumeSize = infra.dbVolumeSize
 const dbSlug = naming.slug.replace(/-/g, '_') // PostgreSQL identifiers can't have hyphens
 
 // ---------------------------------------------------------------------------
-// Passwords — one per role, each from stack config secret or generated
+// Passwords: one per role, each from stack config secret or generated.
 // ---------------------------------------------------------------------------
 
 // Resource names (`<role>-password`) are load-bearing: they are the shipped
@@ -101,8 +90,8 @@ const database = new scaleway.databases.Database('main-database', {
 }, { aliases: [{ type: 'scaleway:index/database:Database' }] })
 
 // ---------------------------------------------------------------------------
-// Users — one per role, matching the PostgreSQL roles used by the application.
-// admin_role: migrations, seeds, system jobs, CDC worker (isAdmin → BYPASSRLS + REPLICATION)
+// Users: one per role, matching the PostgreSQL roles used by the application.
+// admin_role: migrations, seeds, system jobs, CDC worker (isAdmin gives BYPASSRLS + REPLICATION)
 // runtime_role: authenticated app requests, subject to RLS
 // ---------------------------------------------------------------------------
 
@@ -123,7 +112,7 @@ const runtimeUser = new scaleway.databases.User('runtime-user', {
 })
 
 // ---------------------------------------------------------------------------
-// Privileges — each role gets 'all' on the database (fine-grained table
+// Privileges: each role gets 'all' on the database (fine-grained table
 // permissions are enforced by the RLS migration, not Scaleway-level grants)
 // ---------------------------------------------------------------------------
 
@@ -162,7 +151,7 @@ export const caCertificate = instance.certificate
 export const databaseName = database.name
 
 // The instance is created with a privateNetwork block, so this only trips if
-// Scaleway ever returns an instance without one — fail with a real error
+// Scaleway ever returns an instance without one, fail with a real error
 // instead of an opaque undefined-property crash.
 const privateNetwork = instance.privateNetwork.apply((pn) => {
   if (!pn) throw new Error('database: main-postgres has no private network endpoint')
@@ -183,7 +172,7 @@ const port = privateNetwork.port
  *
  * User and password are percent-encoded so credentials containing `@`, `:`,
  * `/`, `?`, `#` or `&` cannot break out of the userinfo segment. Always pins
- * `sslmode=require&uselibpqcompat=true` — Scaleway private endpoints use
+ * `sslmode=require&uselibpqcompat=true`: Scaleway private endpoints use
  * self-signed certs, so libpq-compat mode encrypts without cert verification.
  *
  * Exported for unit testing; the Output-wrapping helpers below call it.
@@ -202,14 +191,14 @@ function buildConnectionString(
   return pulumi.all([user, pass, ip, port, database.name]).apply(([u, p, h, pt, db]) => formatPostgresUrl(u, p, h, pt, db))
 }
 
-/** Admin connection — for migrations, seeds, system jobs (BYPASSRLS) */
+/** Admin connection for migrations, seeds, system jobs (BYPASSRLS). */
 export const connectionStringAdmin = buildConnectionString(adminUser.name, adminPassword)
 
-/** Runtime connection — for backend API requests (subject to RLS) */
+/** Runtime connection for backend API requests (subject to RLS). */
 export const connectionStringRuntime = buildConnectionString(runtimeUser.name, runtimePassword)
 
 /**
- * CDC connection — for CDC worker (append-only + logical replication).
+ * CDC connection for CDC worker (append-only + logical replication).
  *
  * Uses admin credentials because Scaleway only grants the REPLICATION role
  * attribute (required to open a logical replication slot) to users with

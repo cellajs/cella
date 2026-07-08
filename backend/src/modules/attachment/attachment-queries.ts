@@ -24,7 +24,7 @@ export const findAttachmentsByStxMutationId = async (
     );
 };
 
-/** Insert attachments and return the created records. Silently skips duplicates (PK conflict). */
+/** Insert attachments and return the created rows. Silently skips duplicates (PK conflict). */
 export const insertAttachments = async (
   ctx: DbContext,
   { attachments }: { attachments: (typeof attachmentsTable.$inferInsert)[] },
@@ -38,7 +38,7 @@ interface UpdateAttachmentOpts {
   values: Partial<typeof attachmentsTable.$inferInsert>;
 }
 
-/** Update an attachment by ID and return the updated record. */
+/** Update an attachment by ID and return the updated row. */
 export const updateAttachment = async (ctx: AuthContext, { id, values }: UpdateAttachmentOpts) => {
   const { db, organizationId } = ctx.var;
   const [updated] = await db

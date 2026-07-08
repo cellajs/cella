@@ -2,7 +2,7 @@ import type { ServiceName } from '../compose/compose'
 
 /**
  * One entry of the `computeGenerationMetadata` Pulumi stack output
- * (resources/compute.ts) — the materialized facts of a live generation VM, read
+ * (resources/compute.ts): the materialized facts of a live generation VM, read
  * back as JSON by the deploy tasks. Single source of truth so the producer and
  * both consumers (tasks/deploy-service.ts, tasks/sync-rollout-config.ts) cannot
  * drift into partial, inconsistent shapes.

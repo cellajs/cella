@@ -14,7 +14,7 @@ if (typeof document !== 'undefined') {
 
 /**
  * Zustand `StateStorage` over the per-user `appdb.kv` table, keyed by the store's base name.
- * Resolves the live DB on every op so it follows rebinds, and no-ops while signed out — the
+ * Resolves the live DB on every op so it follows rebinds, and no-ops while signed out. The
  * structural replacement for the old `:anon` namespace: anonymous visitors simply never persist.
  *
  * Writes are trailing-debounced ({@link WRITE_DEBOUNCE_MS}) so high-frequency `set`s (e.g. a

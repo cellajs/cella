@@ -2,16 +2,6 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { ProductEntityType } from 'shared';
 import { useSeenStore } from '~/modules/seen/seen-store';
 
-/**
- * Shared singleton IntersectionObserver for all SeenMark instances.
- *
- * One observer handles all entity rows across the page. When an element
- * enters the viewport (≥50%), its entity ID is marked as seen in the store
- * and the element is unobserved. This works seamlessly with virtualized
- * tables — rows register on mount and unregister on unmount, so recycled
- * DOM nodes are handled correctly.
- */
-
 type SeenMeta = {
   tenantId: string;
   organizationId: string;
@@ -23,7 +13,7 @@ type SeenMeta = {
 const elementMeta = new WeakMap<Element, SeenMeta>();
 const markedIds = new Set<string>();
 
-// Pre-populate with IDs successfully flushed in previous sessions (persisted in Zustand store)
+// Seed IDs persisted by the seen store.
 for (const id of useSeenStore.getState().flushedIds) markedIds.add(id);
 
 let sharedObserver: IntersectionObserver | null = null;
@@ -41,7 +31,6 @@ function getSharedObserver(): IntersectionObserver {
           const meta = elementMeta.get(entry.target);
           if (!meta) continue;
 
-          // Skip if already marked this session
           if (markedIds.has(meta.entityId)) {
             sharedObserver?.unobserve(entry.target);
             continue;
@@ -81,7 +70,7 @@ function releaseObserver() {
 interface SeenMarkProps {
   entityId: string;
   tenantId: string;
-  /** Organization ID — used for the POST API route */
+  /** Organization ID for the POST API route. */
   organizationId: string;
   /** Parent context entity ID for badge grouping (e.g., projectId for tasks). Defaults to organizationId. */
   contextId?: string;
@@ -93,15 +82,15 @@ interface SeenMarkProps {
  * enters the viewport. Drop into any cell (e.g., name column) to
  * automatically mark the entity as seen.
  *
- * Uses a shared singleton IntersectionObserver — safe to render hundreds
+ * Uses a shared singleton IntersectionObserver, safe to render hundreds
  * of instances without performance impact.
  *
  * @example
  * ```tsx
- * // In a column's renderCell (attachment — organizationId is the badge context):
+ * // In a column's renderCell (attachment: organizationId is the badge context):
  * <SeenMark entityId={row.id} tenantId={tenantId} organizationId={organizationId} entityType="attachment" />
  *
- * // Task — badge groups by project, so pass contextId:
+ * // Task badge groups by project, so pass contextId:
  * <SeenMark entityId={task.id} tenantId={task.tenantId} organizationId={task.organizationId} contextId={task.projectId} entityType="task" />
  * ```
  */
@@ -109,16 +98,13 @@ export function SeenMark({ entityId, tenantId, organizationId, contextId, entity
   const resolvedContextId = contextId ?? organizationId;
   const elementRef = useRef<HTMLSpanElement>(null);
 
-  // Retain/release the shared observer with component lifecycle
   useEffect(() => {
     retainObserver();
     return () => releaseObserver();
   }, []);
 
-  // Register/unregister the element with the observer
   const refCallback = useCallback(
     (node: HTMLSpanElement | null) => {
-      // Clean up previous element
       if (elementRef.current) {
         elementMeta.delete(elementRef.current);
         sharedObserver?.unobserve(elementRef.current);
@@ -134,7 +120,7 @@ export function SeenMark({ entityId, tenantId, organizationId, contextId, entity
     [entityId, tenantId, organizationId, resolvedContextId, entityType],
   );
 
-  // Already seen this session — render nothing
+  // Already seen this session.
   if (markedIds.has(entityId)) return null;
 
   // Invisible overlay that inherits parent cell dimensions for intersection detection

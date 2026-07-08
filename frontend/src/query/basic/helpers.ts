@@ -36,7 +36,7 @@ export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], a
   queryClient.setQueryData<InfiniteEntityQueryData>(queryKey, (data) => {
     if (!data) return;
 
-    // Bail out early if none of the items exist in this query — returning the
+    // Bail out early if none of the items exist in this query. Returning the
     // same reference prevents React Query from notifying observers.
     if (action === 'update' || action === 'remove') {
       const updateIds = new Set(items.map((i) => i.id));
@@ -64,7 +64,7 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
   queryClient.setQueryData<EntityQueryData>(queryKey, (data) => {
     if (!data) return;
 
-    // Bail out early if none of the items exist in this query — returning the
+    // Bail out early if none of the items exist in this query. Returning the
     // same reference prevents React Query from notifying observers.
     if (action === 'update' || action === 'remove') {
       const updateIds = new Set(items.map((i) => i.id));

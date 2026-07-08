@@ -1,8 +1,3 @@
-/**
- * Shared `pulumi` subprocess runner for the deploy tasks — echoes the child's
- * output, throws on failure (unless `allowFailure`), and reads typed stack
- * outputs. Complements `lib/pulumi-up.ts` (the streaming bootstrap wrapper).
- */
 import { spawnSync } from 'node:child_process'
 import { infraDir } from '../utils/paths'
 

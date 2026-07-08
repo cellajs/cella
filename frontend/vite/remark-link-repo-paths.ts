@@ -3,7 +3,7 @@ import path from 'node:path';
 
 /**
  * Remark plugin: turn inline code that names a repo file into a link to that file on
- * GitHub. `` `backend/src/server.ts` `` → a link to the blob URL, with an optional
+ * GitHub. `` `backend/src/server.ts` `` -> a link to the blob URL, with an optional
  * `:line` / `:line-line` suffix mapped to `#L..`. Only paths that resolve to a real
  * file (checked against the repo root at build time) are linked, so dead links can't
  * be introduced and ambiguous bare names (e.g. `index.ts`) stay plain code.
@@ -34,7 +34,7 @@ export function remarkLinkRepoPaths({ repoRoot, repoUrl, branch = 'main' }: Opti
     const match = PATH_RE.exec(value);
     if (!match) return null;
     const [, filePath, startLine, endLine] = match;
-    // Stay inside the repo — reject traversal/absolute paths before touching the fs.
+    // Stay inside the repo; reject traversal/absolute paths before touching the fs.
     if (filePath.startsWith('/') || filePath.split('/').includes('..')) return null;
     if (!existsSync(path.join(repoRoot, filePath))) return null;
     const hash = startLine ? `#L${startLine}${endLine ? `-L${endLine}` : ''}` : '';

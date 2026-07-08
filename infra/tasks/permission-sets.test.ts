@@ -6,7 +6,7 @@ import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS, VM_PROJECT_PERMISSION_SET
  * in a PR; changing this test is the code-review trigger.
  *
  * Forbidden permissions are listed explicitly so a regex/typo can't sneak them
- * in (e.g. `IAMManager` would let the CI key mint more API keys for itself —
+ * in (e.g. `IAMManager` would let the CI key mint more API keys for itself,
  * a self-rotating super-key).
  */
 
@@ -39,7 +39,7 @@ describe('CI key permission sets', () => {
   it('ORG_PERMISSION_SETS exact membership snapshot', () => {
     // IAMReadOnly: org-scoped IAM *read* so `pulumi up` (helpers.ts) and the
     // deploy's "Verify VM reader IAM grant" step can look up applications/
-    // policies by name. Read-only — IAMManager/IAMFullAccess remain FORBIDDEN.
+    // policies by name. Read-only: IAMManager/IAMFullAccess remain FORBIDDEN.
     expect([...ORG_PERMISSION_SETS].sort()).toEqual(['DomainsDNSFullAccess', 'IAMReadOnly'])
   })
 
@@ -60,11 +60,11 @@ describe('CI key permission sets', () => {
 
 describe('VM reader key permission sets', () => {
   it('VM_PROJECT_PERMISSION_SETS exact membership snapshot', () => {
-    // Locked snapshot: VMs need exactly these read-scoped grants — nothing more.
+    // Locked snapshot: VMs need exactly these read-scoped grants, nothing more.
     // Any addition is a security regression requiring explicit code-review approval.
     // SecretManagerSecretAccess is the one non-`ReadOnly`-suffixed grant: it only
     // permits decrypting secret VALUES (no create/update/delete), which the VM's
-    // runtime-secret-sync requires — SecretManagerReadOnly is metadata-only.
+    // runtime-secret-sync requires; SecretManagerReadOnly is metadata-only.
     expect([...VM_PROJECT_PERMISSION_SETS].sort()).toEqual([
       'ContainerRegistryReadOnly',
       'SecretManagerReadOnly',

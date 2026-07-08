@@ -25,14 +25,14 @@ type BaseProps = {
  * @param token The token string to validate.
  * @param invokeToken (optional) Whether to create a single-use token after invoking/consuming the primary `token`.
  * @param tokenType The required type of the token (e.g., 'email-verification').
- * @returns The valid token record from the database.
+ * @returns The valid token row from the database.
  * @throws AppError if the token is not found, expired, or of an invalid type.
  */
 export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true }: BaseProps): Promise<TokenModel> => {
   // Hash token
   const hashedToken = encodeLowerCased(token);
 
-  // Get token record that matches (possibly invoked) token
+  // Get token row that matches (possibly invoked) token
   const [tokenRecord] = await db
     .select()
     .from(tokensTable)

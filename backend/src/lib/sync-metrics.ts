@@ -1,15 +1,3 @@
-/**
- * Backend sync metrics and tracing.
- *
- * Uses real OTel tracer + metrics via the shared OTel factory.
- * Tracks CDC messages, ActivityBus events, and SSE notifications.
- *
- * Terminology:
- * - Messages: JSON payloads from CDC Worker via WebSocket
- * - Events: In-memory events emitted by ActivityBus
- * - Notifications: SSE payloads sent to clients
- */
-
 import { type Span, SpanStatusCode, trace } from '@opentelemetry/api';
 import { backendSpanNames, eventAttrs, type TraceContext } from 'shared/tracing';
 import { otel } from '#/lib/tracing';

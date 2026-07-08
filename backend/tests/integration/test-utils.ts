@@ -1,17 +1,3 @@
-/**
- * Integration test setup for CDC + EventBus tests.
- *
- * These tests require:
- * - Real PostgreSQL with logical replication enabled
- * - DATABASE_URL environment variable pointing to the test database
- *
- * The setup handles:
- * - Database migrations
- * - Starting CDC worker in-process
- * - Starting EventBus listener
- * - Cleanup between tests
- */
-
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import path from 'node:path';

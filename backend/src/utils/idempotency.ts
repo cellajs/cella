@@ -2,7 +2,7 @@ import { findActivityByMutationId, findActivityRefByMutationId } from '#/db/prep
 
 /**
  * Check if a transaction has already been processed.
- * Used for idempotency - ensures replayed mutations don't create duplicates.
+ * Idempotency check for replayed mutations.
  *
  * Uses a prepared statement since this runs on every create/update mutation.
  *
@@ -31,7 +31,7 @@ interface EntityReference {
 
 /**
  * Get the entity created/modified by a transaction.
- * Used to return existing entity for idempotent responses.
+ * Returns the existing entity for idempotent responses.
  *
  * Uses a prepared statement since this runs on every create/update mutation.
  *

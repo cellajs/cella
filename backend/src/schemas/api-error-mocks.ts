@@ -1,11 +1,3 @@
-/**
- * Mock generators for API error responses.
- * Used for OpenAPI examples and tests.
- *
- * Messages use translation keys from locales/en/error.json
- */
-
-/** ApiError type matching apiErrorSchema structure */
 interface ApiError {
   name: string;
   message: string;
@@ -23,7 +15,7 @@ interface ApiError {
 
 /**
  * Generates a mock API error response.
- * Used for error schema examples.
+ * Messages use translation keys from locales/en/error.json for OpenAPI examples.
  */
 export const mockApiError = (status = 400): ApiError => ({
   name: 'BadRequestError',

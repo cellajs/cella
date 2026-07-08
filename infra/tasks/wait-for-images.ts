@@ -1,23 +1,3 @@
-/**
- * Wait for the release images to appear in the Scaleway container registry.
- *
- * A fresh/replaced VM pulls the pinned release SHA during cloud-init. We must
- * not let the deploy proceed before those images exist.
- *
- * Which services have their own image is derived here from a single source so
- * it can't silently drift from the service registry:
- *   - `ai` reuses the backend image, so there is no `ai:<tag>` to wait for —
- *     it is intentionally excluded.
- *   - every other tagged service ships its own image and is waited on.
- *
- * Inspection uses `docker buildx imagetools inspect` because Scaleway's
- * registry rejects Basic auth on /v2/ and requires the Docker bearer-token
- * flow. `docker login` must already have run before this task.
- *
- * Usage:
- *   tsx infra/tasks/wait-for-images.ts --registry rg.<region>.scw.cloud \
- *     --ns <namespace> --tag <git-sha> [--attempts 80] [--interval 15000]
- */
 import { spawnSync } from 'node:child_process'
 import { isMain } from '../lib/utils/is-main'
 import { pollUntil } from '../lib/utils/retry'
@@ -29,7 +9,7 @@ import { getFlag, getNumFlag, sleep } from './args'
 /** Inspect a single image ref; resolves true if it exists. Injectable for tests. */
 export type InspectFn = (imageRef: string) => Promise<boolean>
 
-/** Default inspector — `docker buildx imagetools inspect <ref>` (no shell). */
+/** Default inspector: `docker buildx imagetools inspect <ref>` (no shell). */
 export const dockerInspect: InspectFn = async (imageRef) => {
   const { status } = spawnSync('docker', ['buildx', 'imagetools', 'inspect', imageRef], { stdio: 'ignore' })
   return status === 0

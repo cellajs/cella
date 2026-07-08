@@ -1,17 +1,3 @@
-/**
- * App stream catch-up operation.
- *
- * Dual-level change detection:
- *   1. Org-level: O(1) entitySeqs check per org (quick screening)
- *   2. Sub-context: for changed orgs, drill into sub-context counters (precision)
- *
- * Entity seqs (from CDC worker) detect creates/updates/soft deletes. Membership changes are
- * detected via the `s:membership` seq counter (O(1) screening).
- *
- * When cursor is null (fresh connect), baselines are returned and membership
- * queries are always invalidated on the client side.
- */
-
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { OperationResult } from '#/core/operation-result';
@@ -25,6 +11,11 @@ import type { AppCatchupResponse } from '#/schemas';
 
 const dbCtx: DbContext = { var: { db } };
 
+/**
+ * Build app stream catch-up data with org-level and sub-context counter checks.
+ * Entity seqs detect product entity changes; `s:membership` detects membership changes.
+ * A null cursor returns baselines and causes client-side membership query invalidation.
+ */
 export async function appCatchupOp(
   memberships: MembershipBaseModel[],
   cursor?: string,
@@ -40,11 +31,11 @@ export async function appCatchupOp(
   const { byOrg: subContextIdsByOrg, all: allSubContextIdSet } = collectSubContextIds(memberships);
   const allSubContextIds = [...allSubContextIdSet];
 
-  // Step 1: Single query for all org + sub-context counters
+  // Step 1: single query for all org + sub-context counters.
   const allCounterRows = await findContextCountersByKeys(dbCtx, [...organizationIdArray, ...allSubContextIds]);
   const allCounters = new Map(allCounterRows.map((r) => [r.contextKey, r.counts]));
 
-  // Step 2: Build changes entries for all orgs (prune empty ones at the end)
+  // Step 2: build changes entries for all orgs; empty entries are pruned later.
   const changes: AppCatchupResponse['changes'] = {};
 
   for (const organizationId of organizationIdArray) {
@@ -79,11 +70,11 @@ export async function appCatchupOp(
     }
   }
 
-  // Step 3: Build propagation hints for embedding relationships.
+  // Step 3: build propagation hints for embedding relationships.
   // Soft-deleted embedded sources are returned as removal hints by seq-delta lookup.
   await buildPropagationHints(changes, seqs);
 
-  // Step 4: Prune orgs with no changes (seqs match client and no propagation)
+  // Step 4: prune orgs with no changes.
   if (seqs) {
     for (const [orgId, scope] of Object.entries(changes)) {
       const hasPropagation = scope.propagation && scope.propagation.length > 0;
@@ -99,7 +90,7 @@ export async function appCatchupOp(
     }
   }
 
-  // Step 5: Advance cursor.
+  // Step 5: advance cursor.
   let newCursor: string | null = cursor ?? null;
   if (!cursor || Object.keys(changes).length > 0) {
     newCursor =

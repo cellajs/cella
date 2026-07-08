@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-// biome-ignore lint/style/noRestrictedImports: runtime token fetcher consumed by the Yjs provider — query options live here because they're tightly coupled to user-store side effects.
+// biome-ignore lint/style/noRestrictedImports: runtime token fetcher consumed by the Yjs provider; query options live here because they're tightly coupled to user-store side effects.
 import { getYjsToken } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -48,7 +48,7 @@ export function YjsTokenFetcher({
       if (error instanceof ApiError && error.status === 403) return false;
       return count < 3;
     },
-    // Silently suppress global error toast — collaborative mode just stays disabled on failure
+    // Silently suppress global error toast; collaborative mode stays disabled on failure.
     meta: { suppressGlobalErrorToast: true },
   });
 
