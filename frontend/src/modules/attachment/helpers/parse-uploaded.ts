@@ -1,7 +1,7 @@
 import type { Attachment } from 'sdk';
 import { zAttachment } from 'sdk/zod.gen';
-import { generateId } from 'shared/entity-id';
 import { uploadTemplates } from 'shared/transloadit-config';
+import { generateId } from 'shared/utils/entity-id';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 

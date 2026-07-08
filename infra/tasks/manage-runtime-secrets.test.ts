@@ -12,6 +12,7 @@ const getSecretByName = vi.fn()
 const ensureSecret = vi.fn()
 const putSecretValue = vi.fn()
 const deleteSecret = vi.fn()
+const provisionManagedKey = vi.fn()
 
 vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
   createSecretManagerClient: () => ({
@@ -23,6 +24,10 @@ vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
   }),
 }))
 
+vi.mock('./provision-managed-key', () => ({
+  provisionManagedKey: (...args: unknown[]) => provisionManagedKey(...args),
+}))
+
 function resetMocks() {
   prompts.select.mockReset()
   prompts.password.mockReset()
@@ -32,12 +37,14 @@ function resetMocks() {
   ensureSecret.mockReset()
   putSecretValue.mockReset()
   deleteSecret.mockReset()
+  provisionManagedKey.mockReset()
 }
 
 const baseOptions = {
   secretKey: 'caller-secret',
   projectId: 'proj-1',
   region: 'nl-ams',
+  slug: 'demo',
   path: '/demo-production/',
   prompts,
   log: vi.fn(),
@@ -112,5 +119,30 @@ describe('manageRuntimeSecrets', () => {
 
     expect(deleteSecret).not.toHaveBeenCalled()
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Deletion cancelled'))
+  })
+
+  it('mints a managed key after confirmation, passing the caller identity through', async () => {
+    resetMocks()
+    prompts.select.mockResolvedValueOnce('mint').mockResolvedValueOnce('ai').mockResolvedValueOnce('exit')
+    prompts.confirm.mockResolvedValueOnce(true)
+    provisionManagedKey.mockResolvedValueOnce({ applicationId: 'app-ai', seeded: { 'scw-ai-api-key': 1 } })
+
+    await manageRuntimeSecrets(baseOptions)
+
+    expect(provisionManagedKey).toHaveBeenCalledWith(
+      expect.objectContaining({ callerSecretKey: 'caller-secret', projectId: 'proj-1', slug: 'demo', path: '/demo-production/' }),
+    )
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Minted'))
+  })
+
+  it('does not mint when the confirmation is declined', async () => {
+    resetMocks()
+    prompts.select.mockResolvedValueOnce('mint').mockResolvedValueOnce('ai').mockResolvedValueOnce('exit')
+    prompts.confirm.mockResolvedValueOnce(false)
+
+    await manageRuntimeSecrets(baseOptions)
+
+    expect(provisionManagedKey).not.toHaveBeenCalled()
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Mint cancelled'))
   })
 })

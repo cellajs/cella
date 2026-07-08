@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { confirm, input } from '@inquirer/prompts'
 import { pc } from 'shared/cli-utils/colors';
 import { DIVIDER } from 'shared/cli-utils/display'
-import { checkMark, warningMark } from 'shared/console'
+import { checkMark, warningMark } from 'shared/utils/console'
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone'
 import { writeEnvVar } from '../../lib/utils/env-file'
@@ -14,9 +14,11 @@ import { infraDir } from '../../lib/utils/paths'
 import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../../lib/scaleway/permissions'
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up'
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets'
+import { managedKeys, type ManagedKeyId } from '../../lib/managed-keys'
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager'
 import { maskedSecret } from '../prompts/masked-secret'
 import { secretManagerPath, VM_READER_SECRET_NAME } from '../../lib/scaleway/vm-reader-secret'
+import { provisionManagedKey } from '../../tasks/provision-managed-key'
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets'
 import { seedVmReaderKey } from '../../tasks/seed-vm-reader-key'
 import { fetchAppPermissionSetsByName } from '../../tasks/assert-vm-grants'
@@ -46,7 +48,17 @@ interface SetupContext {
 interface OperatorSecretValues {
   adminEmail: string
   brevoApiKey: string
-  scwAiApiKey: string
+}
+
+/**
+ * What the operator opted into at the initial-bootstrap prompts: which pasted
+ * secret values to seed, and which managed keys (scoped Scaleway IAM keys) to
+ * mint. Both are applied after the first `pulumi up`, once the containers exist.
+ */
+interface BootstrapSecretInputs {
+  operatorSecrets: OperatorSecretValues
+  /** Managed-key id → whether the operator asked to mint it now. */
+  mintDecisions: Map<ManagedKeyId, boolean>
 }
 
 /** Result of the CI-deploy-key phase; empty strings when nothing was minted. */
@@ -228,11 +240,39 @@ function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; vmAccess
 }
 
 /**
- * Base-infra provisioning: DNS zone check, stack lock, computeDeferred marker
- * on a fresh provision, the `pulumi up` retry loop, and the first-value seed
- * for operator secrets gathered at the prompts.
+ * Mint the scoped Scaleway IAM keys the operator opted into at the bootstrap
+ * prompts, now that `pulumi up` has created their (empty) runtime-secret
+ * containers. Non-fatal per key: a mint failure warns and continues so one bad
+ * key never blocks the rest of the bootstrap — it can be minted later via
+ * "Manage runtime secrets".
  */
-async function provisionBaseInfra(ctx: SetupContext, values: OperatorSecretValues): Promise<void> {
+async function provisionConfirmedManagedKeys(ctx: SetupContext, mintDecisions: Map<ManagedKeyId, boolean>): Promise<void> {
+  for (const key of managedKeys) {
+    if (!mintDecisions.get(key.id)) continue
+    console.info(`\n→ Minting ${key.label} key (${ctx.appConfig.slug}-${key.suffix})`)
+    try {
+      const result = await provisionManagedKey({
+        definition: key,
+        callerSecretKey: ctx.secretKey,
+        projectId: ctx.projectId,
+        region: ctx.appConfig.s3.region,
+        slug: ctx.appConfig.slug,
+        path: ctx.runtimeSecretPath,
+      })
+      console.info(`  ${checkMark} Minted ${key.label} ${pc.dim(`(app ${result.applicationId})`)}`)
+    } catch (error) {
+      console.warn(`  ${warningMark} ${key.label} mint failed: ${errorMessage(error)}. Mint later via "Manage runtime secrets".`)
+    }
+  }
+}
+
+/**
+ * Base-infra provisioning: DNS zone check, stack lock, computeDeferred marker
+ * on a fresh provision, the `pulumi up` retry loop, and — once the containers
+ * exist — the first-value seed for operator secrets and the mint of any
+ * managed keys the operator opted into at the prompts.
+ */
+async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInputs): Promise<void> {
   const { dnsZone, hasDomain } = deriveInfra(ctx.appConfig)
   if (hasDomain) {
     try {
@@ -298,11 +338,13 @@ async function provisionBaseInfra(ctx: SetupContext, values: OperatorSecretValue
     region: ctx.appConfig.s3.region,
     path: ctx.runtimeSecretPath,
     values: {
-      adminEmail: values.adminEmail || undefined,
-      brevoApiKey: values.brevoApiKey || undefined,
-      scwAiApiKey: values.scwAiApiKey || undefined,
+      adminEmail: inputs.operatorSecrets.adminEmail || undefined,
+      brevoApiKey: inputs.operatorSecrets.brevoApiKey || undefined,
     },
   })
+
+  // Mint the scoped Scaleway IAM keys the operator opted into (containers now exist).
+  await provisionConfirmedManagedKeys(ctx, inputs.mintDecisions)
 
   await stackLock.release()
 }
@@ -323,18 +365,28 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
 
   const stackName = await promptStackName(context)
 
-  // Operator-managed runtime secrets (admin email, Brevo, AI key) live in
-  // Scaleway Secret Manager and are owned by "Manage runtime secrets", not stack
-  // config. Only offer to seed them on the very first bootstrap so the first
-  // deploy works without a second step; on an already-bootstrapped stack we skip
-  // the prompts entirely (Resume/Rotate shouldn't re-ask) and instead warn below
-  // about any required ones still missing.
+  // Operator-managed runtime secrets (admin email, Brevo) live in Scaleway Secret
+  // Manager and are owned by "Manage runtime secrets", not stack config. Managed
+  // keys (AI, S3) are scoped Scaleway IAM keys cella can MINT here instead of a
+  // pasted value — confirmed now, minted after the first `pulumi up` once their
+  // containers exist. Only prompt on the very first bootstrap so the first deploy
+  // works without a second step; on an already-bootstrapped stack we skip the
+  // prompts (Resume/Rotate shouldn't re-ask) and instead warn below about any
+  // required secret still missing. Declined keys are set/minted later via
+  // "Manage runtime secrets".
   const isInitialBootstrap = !context.hasCiKey
-  const values: OperatorSecretValues = { adminEmail: '', brevoApiKey: '', scwAiApiKey: '' }
+  const inputs: BootstrapSecretInputs = {
+    operatorSecrets: { adminEmail: '', brevoApiKey: '' },
+    mintDecisions: new Map<ManagedKeyId, boolean>(),
+  }
   if (isInitialBootstrap) {
-    values.adminEmail = await input({ message: 'Admin email (optional, set later via "Manage runtime secrets")' })
-    values.brevoApiKey = values.adminEmail ? await maskedSecret({ message: 'Brevo API key (optional)' }).catch(() => '') : ''
-    values.scwAiApiKey = await maskedSecret({ message: 'Scaleway AI API key (optional, for the AI worker)' }).catch(() => '')
+    inputs.operatorSecrets.adminEmail = await input({ message: 'Admin email (optional, set later via "Manage runtime secrets")' })
+    inputs.operatorSecrets.brevoApiKey = inputs.operatorSecrets.adminEmail
+      ? await maskedSecret({ message: 'Brevo API key (optional)' }).catch(() => '')
+      : ''
+    for (const key of managedKeys) {
+      inputs.mintDecisions.set(key.id, await confirm({ message: key.prompt.message, default: key.prompt.default }))
+    }
   }
 
   const modeLabel = mode === 'rotate' ? 'Rotate keys' : 'Resume'
@@ -386,7 +438,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // (resources/secrets.ts), so creating them out-of-band before `up` would make
   // `pulumi up` fail with "secret already exists" on a fresh fork. The gap check
   // is read-only, so it is safe to run before `up`.
-  if (!values.adminEmail) await warnOnMissingOperatorSecrets(ctx)
+  if (!inputs.operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx)
 
   // -- Identities: CI deploy key, VM reader key, operator app ------------------
   let ciKey: CiKeyResult = { accessKey: '', secretKey: '', organizationId: '' }
@@ -431,7 +483,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     }
     const runNow = await confirm({ message: isFirstProvision ? 'Run the recommended first pulumi up now?' : 'Run pulumi up now?', default: isFirstProvision })
     if (runNow) {
-      await provisionBaseInfra(ctx, values)
+      await provisionBaseInfra(ctx, inputs)
     } else {
       console.info(`  ${pc.dim('Recommended: re-run `pnpm infra` and choose "Resume" to retry.')}`)
       console.info('  Manual fallback if needed:')

@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import { confirm, input } from '@inquirer/prompts'
 import { pc } from 'shared/cli-utils/colors';
-import { crossMark, warningMark } from 'shared/console'
+import { crossMark, warningMark } from 'shared/utils/console'
 import type { appConfig as AppConfig } from 'shared'
 import type { Environment, StackState } from '../lib/stack/bootstrap-stack-state'
 import { acquireLock, controlActor, lockKey, makeControlClient, releaseLock, stateBucket } from '../lib/stack/control-store'

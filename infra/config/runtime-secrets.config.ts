@@ -172,4 +172,35 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     generation: 'manual',
     services: ['backend', 'mcp'],
   },
+  systemAdminIpAllowlist: {
+    secretName: 'system-admin-ip-allowlist',
+    description: "System admin IP allowlist ('none' to disable, '*' for any IP, or comma-separated IPv4 addresses)",
+    envVar: 'SYSTEM_ADMIN_IP_ALLOWLIST',
+    required: false,
+    valueSource: 'operator',
+    generation: 'manual',
+    services: ['backend', 'mcp'],
+  },
+  // The S3 pair is minted as one scoped Object-Storage key (see managed-keys.config.ts,
+  // `s3`) or set by hand; `operator` keeps the (empty) containers Pulumi-owned and
+  // manageable via "Manage runtime secrets". Scoped to backend: attachment
+  // presigning/upload is a backend-API concern (modules/attachment, modules/me).
+  s3AccessKeyId: {
+    secretName: 's3-access-key-id',
+    description: 'Scaleway Object Storage access key id (attachment upload + presigned URLs)',
+    envVar: 'S3_ACCESS_KEY_ID',
+    required: false,
+    valueSource: 'operator',
+    generation: 'manual',
+    services: ['backend'],
+  },
+  s3AccessKeySecret: {
+    secretName: 's3-access-key-secret',
+    description: 'Scaleway Object Storage secret key (attachment upload + presigned URLs)',
+    envVar: 'S3_ACCESS_KEY_SECRET',
+    required: false,
+    valueSource: 'operator',
+    generation: 'manual',
+    services: ['backend'],
+  },
 });

@@ -1,7 +1,7 @@
 import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
 import { CheckSquareIcon } from 'lucide-react';
-import { checklistGroupConfig } from 'shared/blocknote-schema-configs';
+import { checklistGroupConfig } from 'shared/utils/blocknote-schema-configs';
 import { ChecklistGroupRender } from '~/modules/common/blocknote/custom-elements/checklist/checklist-group-render';
 import type { CustomBlockNoteEditor, IconType } from '~/modules/common/blocknote/types';
 

@@ -1,5 +1,5 @@
 import type { EntityRole } from 'shared';
-import { getEdgeOrder } from 'shared/display-order';
+import { getEdgeOrder } from 'shared/utils/display-order';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';

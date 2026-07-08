@@ -1,4 +1,4 @@
-import { hashSourceId } from 'shared/hash-source-id';
+import { hashSourceId } from 'shared/utils/hash-source-id';
 
 /** Server-side HLC state (module-scoped singleton). */
 let lastTimestamp = 0;

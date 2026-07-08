@@ -4,7 +4,7 @@ import { log } from '../lib/pino';
 import type { TraceContext } from '../lib/tracing';
 import type { CdcRowData } from '../types';
 import { wsClient } from '../network/websocket-client';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 
 /** An individual entity cache-reservation token, sent with batch payloads. */
 export interface CdcBatchReservation {

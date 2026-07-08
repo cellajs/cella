@@ -37,7 +37,6 @@ export const appServices = defineServices({
     env: {
       FRONTEND_URL: '${FRONTEND_URL}',
       BACKEND_URL: '${BACKEND_URL}',
-      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45',
     },
   },
 
@@ -115,7 +114,6 @@ export const appServices = defineServices({
       FRONTEND_URL: '${FRONTEND_URL}',
       BACKEND_URL: '${BACKEND_URL}',
       MCP_API_URL: '${MCP_API_URL}',
-      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45',
     },
     // The worker's own public URL (host-routed through the LB).
     bindings: {

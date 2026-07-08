@@ -1,6 +1,6 @@
 import { snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
-import { generateId } from 'shared/entity-id';
+import { generateId } from 'shared/utils/entity-id';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 

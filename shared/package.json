@@ -10,20 +10,12 @@
   },
   "exports": {
     ".": "./index.ts",
-    "./*": "./src/utils/*.ts",
+    "./*": "./src/*.ts",
+    "./utils/*": "./src/utils/*.ts",
     "./cli-utils/*": "./src/cli-utils/*.ts",
+    "./testing/*": "./src/testing/*.ts",
     "./blocknote": "./src/utils/text-from-block.ts",
-    "./transloadit-config": "./config/transloadit-config.ts",
-    "./tracing": "./src/tracing/tracing.ts",
-    "./otel": "./src/otel.ts",
-    "./config-builder": "./src/config-builder/index.ts",
-    "./pino": "./src/pino.ts",
-    "./module-registry": "./src/module-registry.ts",
-    "./schema-evolution": "./src/schema-evolution/index.ts",
-    "./test-db": "./src/test-db.ts",
-    "./testing/entity-hierarchy": "./src/testing/entity-hierarchy.ts",
-    "./testing/pino": "./src/testing/pino.ts",
-    "./testing/wide-fixture": "./src/testing/wide-fixture.ts"
+    "./transloadit-config": "./config/transloadit-config.ts"
   },
   "dependencies": {
     "@blocknote/core": "^0.51.4",

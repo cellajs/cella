@@ -1,7 +1,7 @@
 import process from 'node:process';
 import { sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { getEventLoopLagMs } from 'shared/event-loop-monitor';
+import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';

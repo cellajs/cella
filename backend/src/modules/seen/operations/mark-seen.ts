@@ -2,7 +2,7 @@ import { and, eq, getColumns, gt, inArray, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { SeenTrackedEntityType } from 'shared';
 import { appConfig, hierarchy, possibleHomeContexts } from 'shared';
-import { generateId } from 'shared/entity-id';
+import { generateId } from 'shared/utils/entity-id';
 import type { AuthContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
 import { getEntityTable } from '#/tables';

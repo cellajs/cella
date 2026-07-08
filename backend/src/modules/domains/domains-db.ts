@@ -1,6 +1,6 @@
 import { boolean, index, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import { generateId } from 'shared/entity-id';
-import { nanoid } from 'shared/nanoid';
+import { generateId } from 'shared/utils/entity-id';
+import { nanoid } from 'shared/utils/nanoid';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { tenantsTable } from '#/modules/tenants/tenants-db';

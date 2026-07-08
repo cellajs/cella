@@ -10,7 +10,7 @@ import '~/lib/i18n';
 import '~/lib/otel';
 import { client } from 'sdk/client.gen';
 import { appConfig } from 'shared';
-import { renderAscii } from 'shared/ascii';
+import { renderAscii } from 'shared/utils/ascii';
 import { createClientConfig } from '~/lib/api-client';
 import { reportReactError } from '~/lib/maple';
 import { AppRouter } from '~/modules/common/app/app-router';

@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';

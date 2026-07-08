@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import type { Env } from '#/core/context';
 import '#/modules/auth/auth-module';
 import { AppError, type ErrorKey } from '#/core/error';

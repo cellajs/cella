@@ -1,6 +1,6 @@
 import type { Block } from '@blocknote/core';
 import type { EntityType } from 'shared';
-import { validateBlockMediaUrls as validateUrls } from 'shared/validate-block-media-urls';
+import { validateBlockMediaUrls as validateUrls } from 'shared/utils/validate-block-media-urls';
 import { AppError } from '#/core/error';
 import trustedMediaDomains from '#json/trusted-media-domains.json';
 

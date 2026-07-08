@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { useEffect, useState } from 'react';
 import { appConfig, type ProductEntityType } from 'shared';
-import { toWsUrl } from 'shared/ws-url';
+import { toWsUrl } from 'shared/utils/ws-url';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import { create } from 'zustand';

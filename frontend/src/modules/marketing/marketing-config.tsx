@@ -16,7 +16,7 @@ import {
   WifiOffIcon,
 } from 'lucide-react';
 import { appConfig, type EntityType } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import { ElementIcon } from '~/modules/common/icons/element';
 import { GithubIcon } from '~/modules/common/icons/github';
 import type { InfoCard } from '~/modules/marketing/about/info-cards';

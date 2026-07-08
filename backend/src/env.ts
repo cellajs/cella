@@ -47,11 +47,16 @@ export const env = createEnv({
 
     COOKIE_SECRET: z.string(),
 
-    SYSTEM_ADMIN_IP_ALLOWLIST: z.union([
-      z.literal('none'),
-      z.literal('*'),
-      z.string().regex(/^(\d{1,3}\.){3}\d{1,3}(,(\d{1,3}\.){3}\d{1,3})*$/, 'Must be comma-separated IPv4 addresses'),
-    ]),
+    // Optional operator-managed runtime secret (system-admin-ip-allowlist). When
+    // the secret has no version the env var is omitted, so it defaults to 'none'
+    // (deny) — sys-admin routes stay off until an operator sets the allowlist.
+    SYSTEM_ADMIN_IP_ALLOWLIST: z
+      .union([
+        z.literal('none'),
+        z.literal('*'),
+        z.string().regex(/^(\d{1,3}\.){3}\d{1,3}(,(\d{1,3}\.){3}\d{1,3})*$/, 'Must be comma-separated IPv4 addresses'),
+      ])
+      .default('none'),
 
     ADMIN_EMAIL: z.email(),
 

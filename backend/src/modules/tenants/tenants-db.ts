@@ -1,5 +1,5 @@
 import { index, json, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
-import { nanoidTenant } from 'shared/nanoid';
+import { nanoidTenant } from 'shared/utils/nanoid';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { defaultRestrictions, type Restrictions } from '#/modules/tenants/tenant-restrictions';

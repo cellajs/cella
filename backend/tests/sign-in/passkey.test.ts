@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { deletePasskey, generatePasskeyChallenge, signInWithPasskey } from 'sdk';
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';

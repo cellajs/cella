@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import { confirm } from '@inquirer/prompts'
 import { pc } from 'shared/cli-utils/colors';
-import { warningMark } from 'shared/console'
+import { warningMark } from 'shared/utils/console'
 import { adoptOrphanedPolicy } from '../../lib/scaleway/adopt-orphaned-policy'
 import { adoptOrphanedSecrets } from '../../lib/scaleway/adopt-orphaned-secrets'
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'
@@ -41,7 +41,7 @@ export async function runApply(context: InfraContext): Promise<void> {
   }
 
   console.warn(
-    `${pc.yellow(pc.bold('\u26A0  Keep this run in the foreground.'))} ${pc.dim('If it is interrupted, re-run "Apply infra change" to converge — `pulumi up` is idempotent.')}`,
+    `${pc.yellow(pc.bold('\u26A0  Keep this run in the foreground.'))} ${pc.dim('If it is interrupted, re-run "Apply infra change" to converge.')}`,
   )
 
   const applyEnv = buildProviderEnv(infraDir, { accessKey: bootAccess, secretKey: bootSecret, projectId, passphrase })

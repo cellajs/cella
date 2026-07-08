@@ -4,7 +4,7 @@ import Transloadit from '@uppy/transloadit';
 // biome-ignore lint/style/noRestrictedImports: runtime token fetcher inside Uppy assembly callback; not eligible for a React Query hook.
 import { getUploadToken, type UploadToken } from 'sdk';
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import { makeBlobKey, type UploadContext } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepare-for-offline';

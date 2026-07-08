@@ -1,6 +1,6 @@
 import { inArray, max } from 'drizzle-orm';
 import { appConfig, type ContextEntityType, hierarchy } from 'shared';
-import { defaultOrder, orderGap } from 'shared/display-order';
+import { defaultOrder, orderGap } from 'shared/utils/display-order';
 import type { DbContext } from '#/core/context';
 import type { EntityModel } from '#/modules/entities/entities-queries';
 import { type MembershipBaseModel, membershipBaseSelect } from '#/modules/memberships/helpers/select';

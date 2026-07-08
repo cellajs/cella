@@ -1,5 +1,5 @@
 import { createReactInlineContentSpec, type DefaultReactGridSuggestionItem } from '@blocknote/react';
-import { mentionConfig } from 'shared/blocknote-schema-configs';
+import { mentionConfig } from 'shared/utils/blocknote-schema-configs';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { Member } from '~/modules/memberships/types';

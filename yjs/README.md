@@ -189,7 +189,7 @@ yjs/src
 └── tests/                       Unit + integration tests (seed round-trip, materialization, sweep)
 ```
 
-The backend counterpart lives in `backend/src/modules/yjs/` (token issuing, the `/yjs/materialize` internal endpoint, media-URL sanitization) and `backend/src/core/yjs-materializers.ts` (per-entity materializer registry — entities register in their module file, e.g. `task-module.ts`).
+The backend counterpart lives in `backend/src/modules/yjs/` (token issuing, the `/yjs/materialize` internal endpoint, media-URL sanitization) and `backend/src/modules/yjs/yjs-materializers.ts` (per-entity materializer registry — entities register in their module file, e.g. `task-module.ts`).
 
 ## Scripts
 

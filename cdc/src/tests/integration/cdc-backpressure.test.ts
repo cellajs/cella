@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { nanoidTenant } from 'shared/nanoid';
+import { nanoidTenant } from 'shared/utils/nanoid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../constants';

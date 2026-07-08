@@ -1,6 +1,6 @@
 import { foreignKey, index, snakeCase, timestamp, unique, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, roles } from 'shared';
-import { generateId } from 'shared/entity-id';
+import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { membershipContextColumns } from '#/modules/memberships/memberships-db';

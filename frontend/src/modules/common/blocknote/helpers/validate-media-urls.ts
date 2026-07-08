@@ -1,4 +1,4 @@
-import { hasUntrustedMediaUrls as hasUntrusted } from 'shared/validate-block-media-urls';
+import { hasUntrustedMediaUrls as hasUntrusted } from 'shared/utils/validate-block-media-urls';
 import trustedMediaDomains from '#json/trusted-media-domains.json';
 
 interface BlockLike {

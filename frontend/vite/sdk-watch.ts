@@ -1,6 +1,6 @@
 import { existsSync, type FSWatcher, watch } from 'node:fs';
 import { resolve } from 'node:path';
-import { checkMark, crossMark } from 'shared/console';
+import { checkMark, crossMark } from 'shared/utils/console';
 import type { Plugin, ViteDevServer } from 'vite';
 
 /**

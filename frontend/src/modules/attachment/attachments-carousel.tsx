@@ -4,7 +4,7 @@ import i18n from 'i18next';
 import { DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
-import { isCDNUrl } from 'shared/is-cdn-url';
+import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { useLatestCallback, useLatestRef } from '~/hooks/use-latest-ref';
 import { clearAttachmentDialogSearchParams, openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';

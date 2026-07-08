@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { operationsByTagQueryOptions, tagDetailsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';

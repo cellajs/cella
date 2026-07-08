@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { getRelativeOrder } from 'shared/display-order';
+import { getRelativeOrder } from 'shared/utils/display-order';
 import { type BuildTreeOptions, buildTree, type TreeItem, type TreeRow } from './build-tree';
 import type { TreeContextValue } from './tree-context';
 

@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { appConfig, type Severity } from 'shared';
-import { BENCH_TENANT_ID, BENCH_UUID_PREFIX } from 'shared/bench-identity';
 import type { LogMeta } from 'shared/pino';
+import { BENCH_TENANT_ID, BENCH_UUID_PREFIX } from 'shared/utils/bench-identity';
 import type { Env } from '#/core/context';
 import { baseLog } from '#/lib/pino';
 

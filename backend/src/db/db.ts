@@ -1,6 +1,6 @@
 import type { DrizzleConfig } from 'drizzle-orm';
 import { type NodePgClient, type NodePgDatabase, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
-import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/postgres-tls';
+import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
 import { env } from '../env';
 
 export const dbConfig = {
@@ -18,11 +18,6 @@ export type Tx = TxOf<DB>;
 export type DbOrTx = DB | Tx;
 
 // In production we require a verified TLS connection to the managed PostgreSQL.
-// The CA (Scaleway RDB instance cert) is provisioned automatically into the
-// DATABASE_SSL_CA runtime secret by `pulumi up`, so a missing value is a
-// misconfiguration we fail fast on rather than silently downgrading security.
-// The secret is base64-encoded (the PEM is multi-line and would break the
-// line-based `.env.runtime` delivery), so decode it back to PEM here.
 const sslCa =
   env.NODE_ENV === 'production' && !env.NODB
     ? (() => {

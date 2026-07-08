@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { tokensTable } from '#/modules/auth/tokens-db';

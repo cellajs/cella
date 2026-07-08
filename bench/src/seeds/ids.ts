@@ -1,4 +1,4 @@
-import { BENCH_TENANT_ID, BENCH_UUID_PREFIX } from 'shared/bench-identity';
+import { BENCH_TENANT_ID, BENCH_UUID_PREFIX } from 'shared/utils/bench-identity';
 
 /**
  * Single source of truth for load-test ID and email helpers, used by both

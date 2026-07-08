@@ -1,4 +1,4 @@
-import { changeMark, checkMark, tildeMark } from 'shared/console'
+import { changeMark, checkMark, tildeMark } from 'shared/utils/console'
 import { scwFetch, scwSend } from './scw-fetch'
 
 const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1'

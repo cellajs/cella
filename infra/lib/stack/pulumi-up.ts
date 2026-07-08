@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process'
 import { pc } from 'shared/cli-utils/colors';
-import { warningMark } from 'shared/console'
+import { warningMark } from 'shared/utils/console'
 import { isBootstrapOwned } from '../scaleway/permissions'
 
 function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {

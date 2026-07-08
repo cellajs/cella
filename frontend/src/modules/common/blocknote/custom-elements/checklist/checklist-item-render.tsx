@@ -1,6 +1,6 @@
 import { type ReactCustomBlockRenderProps, useExtensionState } from '@blocknote/react';
 import { useEffect } from 'react';
-import { nanoid } from 'shared/nanoid';
+import { nanoid } from 'shared/utils/nanoid';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import type { checklistItemConfig } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
 import { updateBlockWithoutHistory } from '~/modules/common/blocknote/helpers/blocknote-helpers';

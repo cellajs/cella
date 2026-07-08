@@ -2,7 +2,7 @@ import { codeBlockOptions } from '@blocknote/code-block';
 import { BlockNoteSchema, createCodeBlockSpec, type Dictionary } from '@blocknote/core';
 import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
-import { codeBlockConfig } from 'shared/blocknote-schema-configs';
+import { codeBlockConfig } from 'shared/utils/blocknote-schema-configs';
 import {
   checklistItemBlock,
   getChecklistSlashItem,
