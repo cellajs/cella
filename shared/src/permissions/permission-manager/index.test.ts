@@ -1,85 +1,58 @@
-import {
-  appConfig,
-  type ContextEntityType,
-  configureAccessPolicies,
-  type EntityRole,
-  getContextRoles,
-  hierarchy,
-  isContextEntity,
-  isProductEntity,
-} from 'shared';
+import { getContextRoles, hierarchy, isContextEntity, isProductEntity } from 'shared';
 import { describe, expect, it } from 'vitest';
+import {
+  configureWidePermissions,
+  wideHierarchy,
+  wideHostDelegation,
+  wideMembership,
+  wideSubject,
+  wideTopology,
+} from '../../testing/wide-fixture';
 import { getAllDecisions } from './check';
 import type { SubjectForPermission } from './types';
 
-/** Minimal test membership matching MembershipBaseModel structure */
-type TestMembership = {
-  id: string;
-  tenantId: string;
-  contextType: ContextEntityType;
-  contextId: string;
-  userId: string;
-  role: EntityRole;
-  displayOrder: number;
-  muted: boolean;
-  archived: boolean;
-  organizationId: string;
-  workspaceId: string | null;
-  projectId: string | null;
-};
+/**
+ * Engine decision tests. The policy-driven cases run against the wide fixture (a synthetic
+ * hierarchy: organization → workspace/project → task/label/attachment, guest role on the nested
+ * contexts, attachment hosted by task) via the `topology` seam — so this suite covers guest roles,
+ * multi-level ancestor resolution and host delegation regardless of a fork's own config.
+ */
 
-/** Creates a test membership with required fields */
-const createTestMembership = (
-  overrides: { contextType: ContextEntityType; role: EntityRole; organizationId: string } & Partial<TestMembership>,
-): TestMembership => ({
-  id: 'mem-test',
-  tenantId: 'test01',
-  contextId: overrides.organizationId,
-  userId: 'user-test',
-  displayOrder: 0,
-  muted: false,
-  archived: false,
-  workspaceId: null,
-  projectId: null,
-  ...overrides,
-});
-
-const organizationSubject = (id: string): SubjectForPermission => ({
-  entityType: 'organization',
-  id,
-  contextIds: {},
-});
+const organizationSubject = (id: string): SubjectForPermission =>
+  wideSubject({ entityType: 'organization', id, contextIds: {} });
 
 const attachmentSubject = (
   id: string,
   organizationId: string,
-  overrides?: Partial<SubjectForPermission>,
-): SubjectForPermission => ({
-  entityType: 'attachment',
-  id,
-  contextIds: { organization: organizationId },
-  ...overrides,
-});
+  overrides: { createdBy?: string | null; project?: string } = {},
+): SubjectForPermission => {
+  const { project, ...rest } = overrides;
+  return wideSubject({
+    entityType: 'attachment',
+    id,
+    contextIds: { organization: organizationId, ...(project !== undefined && { project }) },
+    ...rest,
+  });
+};
 
-// Uses appConfig.hierarchy: organization (context, roles admin/member), attachment
-// (product, parent organization), page (product, no parent).
-describe('hierarchy (from appConfig.hierarchy)', () => {
+// Real-config guard sanity checks. These assertions hold in every fork (organization is always the
+// root context with roles admin/member; a product is never a context), so the block is fork-stable.
+describe('hierarchy guards (real app config)', () => {
   describe('hierarchy.getOrderedAncestors', () => {
     it('returns empty array for root context', () => {
       const ancestors = hierarchy.getOrderedAncestors('organization');
       expect(ancestors).toEqual([]);
     });
 
-    it('returns direct parent for product entity', () => {
+    it('returns organization as an ancestor for a product entity', () => {
       const ancestors = hierarchy.getOrderedAncestors('attachment');
       expect(ancestors).toContain('organization');
     });
   });
 
   describe('getContextRoles', () => {
-    it('returns roles for context entity', () => {
+    it('returns roles for the organization context', () => {
       const roles = getContextRoles('organization');
-      // hierarchy has roles: ['admin', 'member'] for organization
       expect(roles).toEqual(['admin', 'member']);
     });
   });
@@ -99,9 +72,9 @@ describe('hierarchy (from appConfig.hierarchy)', () => {
   });
 });
 
-describe('configureAccessPolicies', () => {
+describe('configureWidePermissions', () => {
   it('configures policies for all entity types', () => {
-    const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
+    const { accessPolicies: policies } = configureWidePermissions(({ subject, contexts }) => {
       switch (subject.name) {
         case 'organization':
           contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
@@ -121,7 +94,7 @@ describe('configureAccessPolicies', () => {
   });
 
   it('creates empty policies when no config is set', () => {
-    const policies = configureAccessPolicies(appConfig.entityTypes, () => {
+    const { accessPolicies: policies } = configureWidePermissions(() => {
       // No configuration
     });
 
@@ -130,7 +103,7 @@ describe('configureAccessPolicies', () => {
 });
 
 describe('checkPermission', () => {
-  const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
+  const { accessPolicies: policies } = configureWidePermissions(({ subject, contexts }) => {
     switch (subject.name) {
       case 'organization':
         contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
@@ -144,11 +117,9 @@ describe('checkPermission', () => {
   });
 
   it('grants full permissions for admin on organization', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'admin' }),
-    ];
+    const memberships = [wideMembership('organization', 'org1', 'admin')];
     const subject = organizationSubject('org1');
-    const { can } = getAllDecisions(policies, memberships, subject);
+    const { can } = getAllDecisions(policies, memberships, subject, { topology: wideTopology });
 
     expect(can.create).toBe(true);
     expect(can.read).toBe(true);
@@ -157,11 +128,9 @@ describe('checkPermission', () => {
   });
 
   it('grants limited permissions for member on organization', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
-    ];
+    const memberships = [wideMembership('organization', 'org1', 'member')];
     const subject = organizationSubject('org1');
-    const { can } = getAllDecisions(policies, memberships, subject);
+    const { can } = getAllDecisions(policies, memberships, subject, { topology: wideTopology });
 
     expect(can.create).toBe(false);
     expect(can.read).toBe(true);
@@ -170,11 +139,9 @@ describe('checkPermission', () => {
   });
 
   it('grants create permission for member on attachment', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
-    ];
+    const memberships = [wideMembership('organization', 'org1', 'member')];
     const subject = attachmentSubject('att1', 'org1');
-    const { can } = getAllDecisions(policies, memberships, subject);
+    const { can } = getAllDecisions(policies, memberships, subject, { topology: wideTopology });
 
     expect(can.create).toBe(true);
     expect(can.read).toBe(true);
@@ -183,11 +150,9 @@ describe('checkPermission', () => {
   });
 
   it('denies access when no matching membership', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org2', role: 'member' }),
-    ];
+    const memberships = [wideMembership('organization', 'org2', 'member')];
     const subject = attachmentSubject('att1', 'org1');
-    const { can } = getAllDecisions(policies, memberships, subject);
+    const { can } = getAllDecisions(policies, memberships, subject, { topology: wideTopology });
 
     expect(can.create).toBe(false);
     expect(can.read).toBe(false);
@@ -197,7 +162,7 @@ describe('checkPermission', () => {
 });
 
 describe('permission inheritance from organization context', () => {
-  const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
+  const { accessPolicies: policies } = configureWidePermissions(({ subject, contexts }) => {
     switch (subject.name) {
       case 'attachment':
         contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
@@ -207,28 +172,24 @@ describe('permission inheritance from organization context', () => {
   });
 
   it('admin can delete attachments', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'admin' }),
-    ];
+    const memberships = [wideMembership('organization', 'org1', 'admin')];
     const subject = attachmentSubject('att1', 'org1');
-    const { can } = getAllDecisions(policies, memberships, subject);
+    const { can } = getAllDecisions(policies, memberships, subject, { topology: wideTopology });
 
     expect(can.delete).toBe(true);
   });
 
   it('member cannot delete attachments', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
-    ];
+    const memberships = [wideMembership('organization', 'org1', 'member')];
     const subject = attachmentSubject('att1', 'org1');
-    const { can } = getAllDecisions(policies, memberships, subject);
+    const { can } = getAllDecisions(policies, memberships, subject, { topology: wideTopology });
 
     expect(can.delete).toBe(false);
   });
 });
 
 describe('PermissionDecision action attribution', () => {
-  const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
+  const { accessPolicies: policies } = configureWidePermissions(({ subject, contexts }) => {
     switch (subject.name) {
       case 'attachment':
         contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
@@ -238,13 +199,10 @@ describe('PermissionDecision action attribution', () => {
   });
 
   it('returns action attribution with grantedBy details', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
-    ];
+    const memberships = [wideMembership('organization', 'org1', 'member')];
     const subject = attachmentSubject('att1', 'org1');
-    const decision = getAllDecisions(policies, memberships, subject);
+    const decision = getAllDecisions(policies, memberships, subject, { topology: wideTopology });
 
-    // Check actions structure exists
     expect(decision.actions).toBeDefined();
     expect(decision.actions.create).toBeDefined();
     expect(decision.actions.read).toBeDefined();
@@ -265,11 +223,9 @@ describe('PermissionDecision action attribution', () => {
   });
 
   it('returns subject context IDs for debugging', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
-    ];
+    const memberships = [wideMembership('organization', 'org1', 'member')];
     const subject = attachmentSubject('att1', 'org1');
-    const decision = getAllDecisions(policies, memberships, subject);
+    const decision = getAllDecisions(policies, memberships, subject, { topology: wideTopology });
 
     expect(decision.subject.entityType).toBe('attachment');
     expect(decision.subject.id).toBe('att1');
@@ -277,27 +233,23 @@ describe('PermissionDecision action attribution', () => {
   });
 
   it('returns orderedContexts and primaryContext', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
-    ];
+    const memberships = [wideMembership('organization', 'org1', 'member')];
     const subject = attachmentSubject('att1', 'org1');
-    const decision = getAllDecisions(policies, memberships, subject);
+    const decision = getAllDecisions(policies, memberships, subject, { topology: wideTopology });
 
-    // Derive expected contexts from hierarchy rather than hardcoding
-    const ancestors = hierarchy.getOrderedAncestors('attachment') as ContextEntityType[];
-    const expectedContexts = isContextEntity('attachment') ? ['attachment', ...ancestors] : [...ancestors];
-
-    expect(decision.orderedContexts).toEqual(expectedContexts);
-    expect(decision.primaryContext).toBe(expectedContexts[0]);
+    // Derive expected contexts from the wide hierarchy (attachment → project → organization)
+    const ancestors = wideHierarchy.getOrderedAncestors('attachment');
+    expect(decision.orderedContexts).toEqual(ancestors);
+    expect(decision.primaryContext).toBe(ancestors[0]);
   });
 
   it('accumulates multiple grants for same action from different roles', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'admin' }),
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
+    const memberships = [
+      wideMembership('organization', 'org1', 'admin'),
+      wideMembership('organization', 'org1', 'member'),
     ];
     const subject = attachmentSubject('att1', 'org1');
-    const decision = getAllDecisions(policies, memberships, subject);
+    const decision = getAllDecisions(policies, memberships, subject, { topology: wideTopology });
 
     // Both admin and member grant read permission
     expect(decision.actions.read.enabled).toBe(true);
@@ -325,8 +277,7 @@ describe('PermissionDecision action attribution', () => {
 // ── 'own' permission value tests ─────────────────────────────────────────────
 
 describe('own permission policy — ownership-scoped access', () => {
-  // Policies mirroring the real attachment config: member gets 'own' for update/delete
-  const ownPolicies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
+  const { accessPolicies: ownPolicies } = configureWidePermissions(({ subject, contexts }) => {
     switch (subject.name) {
       case 'organization':
         contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
@@ -345,39 +296,27 @@ describe('own permission policy — ownership-scoped access', () => {
   // --- Pass cases: permission IS granted ---
 
   it('grants update/delete when member is the creator (own entity)', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
-    ];
-    const subject = attachmentSubject('att1', 'org1', {
-      createdBy: userId,
-    });
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
+    const memberships = [wideMembership('organization', 'org1', 'member')];
+    const subject = attachmentSubject('att1', 'org1', { createdBy: userId });
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, topology: wideTopology });
 
     expect(can.update).toBe(true);
     expect(can.delete).toBe(true);
   });
 
   it('grants create/read to member regardless of ownership', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
-    ];
-    const subject = attachmentSubject('att1', 'org1', {
-      createdBy: otherUserId, // Not the actor
-    });
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
+    const memberships = [wideMembership('organization', 'org1', 'member')];
+    const subject = attachmentSubject('att1', 'org1', { createdBy: otherUserId });
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, topology: wideTopology });
 
     expect(can.create).toBe(true);
     expect(can.read).toBe(true);
   });
 
   it('admin gets full access regardless of createdBy', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'admin', userId }),
-    ];
-    const subject = attachmentSubject('att1', 'org1', {
-      createdBy: otherUserId, // Created by someone else
-    });
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
+    const memberships = [wideMembership('organization', 'org1', 'admin')];
+    const subject = attachmentSubject('att1', 'org1', { createdBy: otherUserId });
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, topology: wideTopology });
 
     expect(can.create).toBe(true);
     expect(can.read).toBe(true);
@@ -388,66 +327,46 @@ describe('own permission policy — ownership-scoped access', () => {
   // --- Fail cases: permission is NOT granted ---
 
   it('denies update/delete when member is NOT the creator', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
-    ];
-    const subject = attachmentSubject('att1', 'org1', {
-      createdBy: otherUserId, // Someone else created it
-    });
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
+    const memberships = [wideMembership('organization', 'org1', 'member')];
+    const subject = attachmentSubject('att1', 'org1', { createdBy: otherUserId });
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, topology: wideTopology });
 
     expect(can.update).toBe(false);
     expect(can.delete).toBe(false);
   });
 
   it('denies update/delete when userId is not provided in options', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
-    ];
-    const subject = attachmentSubject('att1', 'org1', {
-      createdBy: userId, // Same user, but userId not passed in options
-    });
+    const memberships = [wideMembership('organization', 'org1', 'member')];
+    const subject = attachmentSubject('att1', 'org1', { createdBy: userId });
     // No userId in options: own check cannot succeed
-    const { can } = getAllDecisions(ownPolicies, memberships, subject);
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { topology: wideTopology });
 
     expect(can.update).toBe(false);
     expect(can.delete).toBe(false);
   });
 
   it('denies update/delete when createdBy is null', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
-    ];
-    const subject = attachmentSubject('att1', 'org1', {
-      createdBy: null,
-    });
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
+    const memberships = [wideMembership('organization', 'org1', 'member')];
+    const subject = attachmentSubject('att1', 'org1', { createdBy: null });
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, topology: wideTopology });
 
     expect(can.update).toBe(false);
     expect(can.delete).toBe(false);
   });
 
   it('denies update/delete when createdBy is undefined (missing)', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
-    ];
-    const subject = attachmentSubject('att1', 'org1', {
-      // createdBy intentionally omitted
-    });
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
+    const memberships = [wideMembership('organization', 'org1', 'member')];
+    const subject = attachmentSubject('att1', 'org1');
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, topology: wideTopology });
 
     expect(can.update).toBe(false);
     expect(can.delete).toBe(false);
   });
 
   it('denies everything when membership is for wrong org', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org2', role: 'member', userId }),
-    ];
-    const subject = attachmentSubject('att1', 'org1', {
-      createdBy: userId,
-    });
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
+    const memberships = [wideMembership('organization', 'org2', 'member')];
+    const subject = attachmentSubject('att1', 'org1', { createdBy: userId });
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, topology: wideTopology });
 
     expect(can.create).toBe(false);
     expect(can.read).toBe(false);
@@ -457,7 +376,7 @@ describe('own permission policy — ownership-scoped access', () => {
 });
 
 describe('own permission — grant attribution', () => {
-  const ownPolicies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
+  const { accessPolicies: ownPolicies } = configureWidePermissions(({ subject, contexts }) => {
     switch (subject.name) {
       case 'attachment':
         contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
@@ -469,13 +388,9 @@ describe('own permission — grant attribution', () => {
   const userId = 'user-actor';
 
   it('attributes own-granted actions to the condition name (relation:own)', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
-    ];
-    const subject = attachmentSubject('att1', 'org1', {
-      createdBy: userId,
-    });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { userId });
+    const memberships = [wideMembership('organization', 'org1', 'member')];
+    const subject = attachmentSubject('att1', 'org1', { createdBy: userId });
+    const decision = getAllDecisions(ownPolicies, memberships, subject, { userId, topology: wideTopology });
 
     // Update was granted via the built-in `own` condition → attributed by condition name
     expect(decision.actions.update.enabled).toBe(true);
@@ -489,13 +404,9 @@ describe('own permission — grant attribution', () => {
   });
 
   it('attributes unconditional grants to membership (not relation)', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
-    ];
-    const subject = attachmentSubject('att1', 'org1', {
-      createdBy: userId,
-    });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { userId });
+    const memberships = [wideMembership('organization', 'org1', 'member')];
+    const subject = attachmentSubject('att1', 'org1', { createdBy: userId });
+    const decision = getAllDecisions(ownPolicies, memberships, subject, { userId, topology: wideTopology });
 
     // Create is unconditional 1 → membership grant
     expect(decision.actions.create.grantedBy).toHaveLength(1);
@@ -508,13 +419,9 @@ describe('own permission — grant attribution', () => {
   });
 
   it('does not attribute own grants when ownership check fails', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
-    ];
-    const subject = attachmentSubject('att1', 'org1', {
-      createdBy: 'user-other', // Not the actor
-    });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { userId });
+    const memberships = [wideMembership('organization', 'org1', 'member')];
+    const subject = attachmentSubject('att1', 'org1', { createdBy: 'user-other' });
+    const decision = getAllDecisions(ownPolicies, memberships, subject, { userId, topology: wideTopology });
 
     // Update/delete denied: no grants at all
     expect(decision.actions.update.enabled).toBe(false);
@@ -524,13 +431,9 @@ describe('own permission — grant attribution', () => {
   });
 
   it('admin gets membership grant (not relation) even with createdBy set', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'admin', userId }),
-    ];
-    const subject = attachmentSubject('att1', 'org1', {
-      createdBy: 'user-other',
-    });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { userId });
+    const memberships = [wideMembership('organization', 'org1', 'admin')];
+    const subject = attachmentSubject('att1', 'org1', { createdBy: 'user-other' });
+    const decision = getAllDecisions(ownPolicies, memberships, subject, { userId, topology: wideTopology });
 
     // Admin policy is unconditional 1, so grant is membership-based
     expect(decision.actions.update.enabled).toBe(true);
@@ -544,7 +447,7 @@ describe('own permission — grant attribution', () => {
 });
 
 describe('own permission — batch subjects', () => {
-  const ownPolicies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
+  const { accessPolicies: ownPolicies } = configureWidePermissions(({ subject, contexts }) => {
     switch (subject.name) {
       case 'attachment':
         contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
@@ -556,16 +459,14 @@ describe('own permission — batch subjects', () => {
   const userId = 'user-actor';
 
   it('correctly evaluates mixed ownership in batch', () => {
-    const memberships: TestMembership[] = [
-      createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
-    ];
+    const memberships = [wideMembership('organization', 'org1', 'member')];
     const subjects: SubjectForPermission[] = [
       attachmentSubject('att-own', 'org1', { createdBy: userId }),
       attachmentSubject('att-other', 'org1', { createdBy: 'user-other' }),
       attachmentSubject('att-null', 'org1', { createdBy: null }),
     ];
 
-    const results = getAllDecisions(ownPolicies, memberships, subjects, { userId });
+    const results = getAllDecisions(ownPolicies, memberships, subjects, { userId, topology: wideTopology });
 
     // Own entity: full access via ownership
     const ownDecision = results.get('att-own')!;
@@ -588,5 +489,75 @@ describe('own permission — batch subjects', () => {
       expect(d.can.create).toBe(true);
       expect(d.can.read).toBe(true);
     }
+  });
+});
+
+// ── Deep-hierarchy coverage the template's org-only config cannot express ─────
+
+describe('wide hierarchy — guest role, multi-level ancestors, host delegation', () => {
+  const { accessPolicies: policies, hostDelegation } = configureWidePermissions(
+    ({ subject, contexts, delegateToHost }) => {
+      switch (subject.name) {
+        case 'attachment':
+          // Read comes only from the host (task); guests can create at project level. Every
+          // context×role cell is declared (deny by default) so the engine's strict policy-coverage
+          // check is satisfied when memberships resolve at either level.
+          contexts.organization.admin({});
+          contexts.organization.member({});
+          contexts.project.admin({ create: 1, update: 1 });
+          contexts.project.member({ create: 1, update: 1 });
+          contexts.project.guest({ create: 1 });
+          delegateToHost(['read']);
+          break;
+        case 'task':
+          contexts.organization.admin({ read: 1 });
+          contexts.organization.member({});
+          contexts.project.admin({ read: 1, update: 1 });
+          contexts.project.member({ read: 1, update: 1 });
+          contexts.project.guest({});
+          break;
+      }
+    },
+  );
+
+  it('grants a project guest their configured project-level cell', () => {
+    const subject = attachmentSubject('att1', 'org1', { project: 'p1' });
+    const { can } = getAllDecisions(policies, [wideMembership('project', 'p1', 'guest')], subject, {
+      topology: wideTopology,
+    });
+    expect(can.create).toBe(true);
+    expect(can.update).toBe(false);
+  });
+
+  it('resolves grants from the correct ancestor level (project vs organization)', () => {
+    const subject = attachmentSubject('att1', 'org1', { project: 'p1' });
+
+    // A project member gets the project-level update grant.
+    const asProjectMember = getAllDecisions(policies, [wideMembership('project', 'p1', 'member')], subject, {
+      topology: wideTopology,
+    });
+    expect(asProjectMember.can.update).toBe(true);
+
+    // An organization member has no attachment cell at the organization level → no grant.
+    const asOrgMember = getAllDecisions(policies, [wideMembership('organization', 'org1', 'member')], subject, {
+      topology: wideTopology,
+    });
+    expect(asOrgMember.can.update).toBe(false);
+  });
+
+  it('delegates read to the host task through getAllDecisions', () => {
+    const subject = attachmentSubject('att1', 'org1', { project: 'p1' });
+    subject.hostRow = { id: 'task1', createdBy: 'someone' };
+
+    // Attachment has no read cell of its own; a project member reads the host task, so read is
+    // delegated and attributed to the host.
+    const decision = getAllDecisions(policies, [wideMembership('project', 'p1', 'member')], subject, {
+      hostDelegation: wideHostDelegation({ attachment: ['read'] }),
+      topology: wideTopology,
+    });
+    expect(decision.can.read).toBe(true);
+    expect(decision.actions.read.grantedBy).toContainEqual({ type: 'host', hostType: 'task' });
+    // Confirm the config actually declared the delegation.
+    expect(hostDelegation).toEqual({ attachment: ['read'] });
   });
 });

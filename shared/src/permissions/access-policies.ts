@@ -1,6 +1,5 @@
 import { appConfig } from '../config-builder/app-config';
 import { hierarchy } from '../../config/hierarchy-config';
-import { getContextRoles } from '../entity-guards';
 import type { ContextEntityType, EntityActionType, EntityRole, EntityType, ProductEntityType } from '../../types';
 import type { PublicReadGrants, PublicReadMode } from './public-read';
 import { own } from './row-conditions';
@@ -17,6 +16,7 @@ import type {
   PermissionValue,
   SubjectAccessPolicies,
 } from './types';
+import type { PermissionTopology } from './permission-manager/topology';
 
 /** Resolves the `'own'` sugar literal to the built-in condition; passes everything else through. */
 const normalizePermissionValue = (value: PermissionValue): NormalizedPermissionValue => {
@@ -30,6 +30,7 @@ const createContextPolicyBuilder = (
   contextType: ContextEntityType,
   roles: readonly string[],
   entries: AccessPolicyEntry[],
+  entityActions: readonly EntityActionType[],
 ): ContextPolicyBuilder => {
   const builder = {} as ContextPolicyBuilder;
 
@@ -39,7 +40,7 @@ const createContextPolicyBuilder = (
       // policy omits defaults to 0 (denied), and the `'own'` sugar literal resolves to the
       // built-in row condition.
       const fullPermissions = {} as EntityActionPermissions;
-      for (const action of appConfig.entityActions as readonly EntityActionType[]) {
+      for (const action of entityActions) {
         fullPermissions[action] = normalizePermissionValue(permissions[action] ?? 0);
       }
       entries.push({ contextType, role: role as EntityRole, permissions: fullPermissions });
@@ -52,12 +53,17 @@ const createContextPolicyBuilder = (
 /**
  * Creates a contexts object with builders for all context types.
  */
-const createContextBuilders = (entries: AccessPolicyEntry[]): Record<ContextEntityType, ContextPolicyBuilder> => {
+const createContextBuilders = (
+  entries: AccessPolicyEntry[],
+  contextEntityTypes: readonly ContextEntityType[],
+  getRoles: (contextType: string) => readonly string[],
+  entityActions: readonly EntityActionType[],
+): Record<ContextEntityType, ContextPolicyBuilder> => {
   const contexts = {} as Record<ContextEntityType, ContextPolicyBuilder>;
 
-  for (const contextType of appConfig.contextEntityTypes) {
-    const roles = getContextRoles(contextType);
-    contexts[contextType] = createContextPolicyBuilder(contextType, roles, entries);
+  for (const contextType of contextEntityTypes) {
+    const roles = getRoles(contextType);
+    contexts[contextType] = createContextPolicyBuilder(contextType, roles, entries, entityActions);
   }
 
   return contexts;
@@ -91,11 +97,24 @@ export interface PermissionsConfigResult {
 export const configurePermissions = (
   entityTypes: readonly EntityType[],
   callback: AccessPolicyCallback,
+  topology?: PermissionTopology,
 ): PermissionsConfigResult => {
   const policies: AccessPolicies = {};
   const publicReadGrants: PublicReadGrants = {};
   const rowRestrictions: RowRestrictions = {};
   const hostDelegation: HostDelegation = {};
+
+  // Topology defaults to the app's real config; tests pass a synthetic one (wide-fixture.ts).
+  // Context set and roles derive from the (possibly synthetic) hierarchy — its own contextTypes,
+  // not appConfig's, so a fork whose real config is narrower than the fixture still builds every
+  // context. Method refs are wrapped in arrows so `this` stays bound to the hierarchy object.
+  const entityActions = (topology?.entityActions ?? appConfig.entityActions) as readonly EntityActionType[];
+  const contextEntityTypes = (
+    topology ? topology.hierarchy.contextTypes : appConfig.contextEntityTypes
+  ) as readonly ContextEntityType[];
+  const getRoles = (type: string): readonly string[] => (topology?.hierarchy ?? hierarchy).getRoles(type);
+  const getHostType = (type: string) => (topology?.hierarchy ?? hierarchy).getHostType(type);
+  const getParent = (type: string) => (topology?.hierarchy ?? hierarchy).getParent(type);
 
   const permissionableTypes = entityTypes.filter(
     (type): type is ContextEntityType | ProductEntityType => type !== 'user',
@@ -103,7 +122,7 @@ export const configurePermissions = (
 
   for (const entityType of permissionableTypes) {
     const entries: AccessPolicyEntry[] = [];
-    const contexts = createContextBuilders(entries);
+    const contexts = createContextBuilders(entries, contextEntityTypes, getRoles, entityActions);
 
     const config: AccessPolicyConfiguration = {
       subject: { name: entityType },
@@ -127,7 +146,7 @@ export const configurePermissions = (
         if (actions.length === 0) {
           throw new Error(`[Permission] delegateToHost() for "${entityType}" needs at least one action`);
         }
-        if (!hierarchy.getHostType(entityType)) {
+        if (!getHostType(entityType)) {
           throw new Error(
             `[Permission] delegateToHost() for "${entityType}" requires a host declared in the hierarchy (host:)`,
           );
@@ -143,7 +162,7 @@ export const configurePermissions = (
     }
   }
 
-  validatePublicReadGrants(publicReadGrants);
+  validatePublicReadGrants(publicReadGrants, getParent);
 
   return { accessPolicies: policies, publicReadGrants, rowRestrictions, hostDelegation };
 };
@@ -152,11 +171,14 @@ export const configurePermissions = (
  * A parent-dependent public grant only works if the parent itself can become public:
  * its own grant must include self-publication.
  */
-const validatePublicReadGrants = (grants: PublicReadGrants): void => {
+const validatePublicReadGrants = (
+  grants: PublicReadGrants,
+  getParent: (type: string) => string | null,
+): void => {
   for (const [entityType, mode] of Object.entries(grants) as [ContextEntityType | ProductEntityType, PublicReadMode][]) {
     if (mode !== 'publicParent' && mode !== 'publicParentOrSelf') continue;
 
-    const parent = hierarchy.getParent(entityType);
+    const parent = getParent(entityType);
     const parentMode = parent ? grants[parent as ContextEntityType | ProductEntityType] : undefined;
     if (parentMode !== 'publicSelf' && parentMode !== 'publicParentOrSelf') {
       throw new Error(
@@ -174,8 +196,9 @@ const validatePublicReadGrants = (grants: PublicReadGrants): void => {
 export const configureAccessPolicies = (
   entityTypes: readonly EntityType[],
   callback: AccessPolicyCallback,
+  topology?: PermissionTopology,
 ): AccessPolicies => {
-  return configurePermissions(entityTypes, callback).accessPolicies;
+  return configurePermissions(entityTypes, callback, topology).accessPolicies;
 };
 
 /**

@@ -21,7 +21,6 @@ describe('appConfig service endpoints', () => {
     expect(appConfig.services.yjs.publicUrl).toBe(appConfig.yjsUrl);
     expect(appConfig.services.mcp.publicUrl).toBe(appConfig.mcpUrl);
     expect('publicUrl' in appConfig.services.cdc).toBe(false);
-
   });
 
   it('applies env URL overrides to service public URLs', async () => {
@@ -36,12 +35,5 @@ describe('appConfig service endpoints', () => {
     expect(appConfig.services.backend.publicUrl).toBe('https://api.example');
     expect(appConfig.services.yjs.publicUrl).toBe('wss://yjs.example');
     expect(appConfig.services.mcp.publicUrl).toBe('https://mcp.example');
-  });
-
-  it('loads service enablement from mode config overrides', async () => {
-    const appConfig = await loadAppConfig({ APP_MODE: 'test' });
-    expect(appConfig.services.cdc.enabled).toBe(true);
-    expect(appConfig.services.yjs.enabled).toBe(true);
-    expect(appConfig.services.mcp.enabled).toBe(false);
   });
 });

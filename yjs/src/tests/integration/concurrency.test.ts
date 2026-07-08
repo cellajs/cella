@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pg from 'pg';
+import { appConfig } from 'shared';
 import * as Y from 'yjs';
 import { createDoc, loadState, saveState, deleteState } from '../../data/storage';
 import type { DocContext } from '../../constants';
@@ -13,7 +14,8 @@ const testOrgId = '00000000-0000-4000-a000-000000000001';
 
 function ctx(entityId: string): DocContext {
   return {
-    entityType: 'task',
+    // Config-derived: yjs_documents has no FK to the entity table, so any product type works.
+    entityType: appConfig.productEntityTypes[0],
     entityId,
     tenantId: testTenantId,
     userId: testUserId,
