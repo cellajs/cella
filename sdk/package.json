@@ -23,7 +23,7 @@
     "@hey-api/openapi-ts": "^0.99.0",
     "@hey-api/spec-types": "^0.2.0",
     "@types/node": "24.10.13",
-    "@typescript/native-preview": "7.0.0-dev.20260706.1",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "chokidar": "^5.0.0",
     "tsx": "^4.23.0",
     "typescript": "^6.0.3"

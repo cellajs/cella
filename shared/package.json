@@ -37,7 +37,7 @@
     "@opentelemetry/sdk-metrics": "^2.9.0",
     "@opentelemetry/sdk-node": "^0.220.0",
     "@opentelemetry/sdk-trace-base": "^2.9.0",
-    "@opentelemetry/semantic-conventions": "^1.40.0",
+    "@opentelemetry/semantic-conventions": "^1.42.0",
     "dobajs": "0.1.0",
     "nanoid": "^5.1.16",
     "picocolors": "^1.1.1",
@@ -46,7 +46,7 @@
     "uuidv7": "^1.2.1"
   },
   "devDependencies": {
-    "@typescript/native-preview": "7.0.0-dev.20260706.1",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "strip-json-comments": "^5.0.3",
     "tsx": "^4.23.0",
     "typescript": "^6.0.3",
