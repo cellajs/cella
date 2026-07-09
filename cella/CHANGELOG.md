@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/cellajs/cella/compare/0.3.1...0.3.2) (2026-07-09)
+
+
+### 🎉 New features
+
+* docs search and ui improvements ([#867](https://github.com/cellajs/cella/issues/867)) ([f2e077a](https://github.com/cellajs/cella/commit/f2e077a37a68ad667758699c7134a95340d57b5a))
+
 ## [0.3.1](https://github.com/cellajs/cella/compare/0.3.0...0.3.1) (2026-07-08)
 
 
