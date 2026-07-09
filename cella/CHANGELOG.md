@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/cellajs/cella/compare/0.3.3...0.3.4) (2026-07-09)
+
+
+### 🐞 Bug fixes
+
+* ignore maintenances change ([2620872](https://github.com/cellajs/cella/commit/2620872acbd70364403c7cfef1ae1e116e517a43))
+
 ## [0.3.3](https://github.com/cellajs/cella/compare/0.3.2...0.3.3) (2026-07-09)
 
 
