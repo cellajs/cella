@@ -1,7 +1,9 @@
 import { Link } from '@tanstack/react-router';
+import { TextAlignStartIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
@@ -29,7 +31,9 @@ export const TocAside = ({ headings, className }: TocAsideProps) => {
 
   return (
     <nav className={cn('flex w-full flex-col', className)} aria-label={t('c:docs.on_this_page')}>
-      <span className="px-3 pb-2 font-medium text-muted-foreground text-sm lowercase">{t('c:docs.on_this_page')}</span>
+      <span aria-hidden="true" className="flex pr-3 pb-2 pl-5 text-muted-foreground">
+        <TextAlignStartIcon size={16} strokeWidth={appConfig.theme.strokeWidth} />
+      </span>
       <div className="relative flex flex-col">
         {headings.map(({ id, text, depth }) => {
           const isActive = currentSection === id;
@@ -50,7 +54,7 @@ export const TocAside = ({ headings, className }: TocAsideProps) => {
                 size="sm"
                 className={cn(
                   'group h-8 w-full justify-start gap-2 text-left font-normal text-sm opacity-75 hover:bg-accent/50',
-                  'group-data-[spy-active]/toc:opacity-100',
+                  'group-data-spy-active/toc:opacity-100',
                   depth >= 3 ? 'pl-8' : 'pl-5',
                 )}
                 render={

@@ -45,7 +45,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "24.10.13",
+    "@types/node": "26.1.1",
     "@types/pg-format": "^1.0.5",
     "@types/ws": "^8.18.1",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",

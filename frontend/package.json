@@ -45,6 +45,7 @@
     "@opentelemetry/resources": "^2.9.0",
     "@opentelemetry/sdk-trace-web": "^2.9.0",
     "@opentelemetry/semantic-conventions": "^1.42.0",
+    "@orama/orama": "^3.1.18",
     "@oslojs/encoding": "^1.1.0",
     "@t3-oss/env-core": "^0.13.11",
     "@tailwindcss/typography": "^0.5.20",
@@ -145,7 +146,7 @@
     "@tanstack/router-core": "^1.171.14",
     "@tanstack/router-plugin": "^1.168.19",
     "@types/canvas-confetti": "^1.9.0",
-    "@types/node": "24.10.13",
+    "@types/node": "26.1.1",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
@@ -174,7 +175,10 @@
     "vitest": "^4.1.10",
     "workbox-build": "^7.4.1",
     "workbox-core": "^7.4.1",
+    "workbox-expiration": "^7.4.1",
     "workbox-precaching": "^7.4.1",
+    "workbox-routing": "^7.4.1",
+    "workbox-strategies": "^7.4.1",
     "yaml": "^2.9.0"
   },
   "browserslist": [

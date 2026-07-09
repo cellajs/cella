@@ -27,6 +27,7 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { getContextEntityRoute, pageTopHashNav } from '~/utils/context-entity-route';
+import { addRecentSearch } from '~/utils/recent-searches';
 
 // Define searchable entity types
 const searchableEntityTypes = ['user', ...appConfig.contextEntityTypes] as const;
@@ -80,21 +81,10 @@ export const AppSearch = () => {
   };
 
   const updateRecentSearches = (value: string) => {
-    if (!value) return;
-    if (value.replaceAll(' ', '').length < 3) return;
-    const hasSubstringMatch = recentSearches.some((element) => element.toLowerCase().includes(value));
-    if (hasSubstringMatch) return;
     useNavigationStore.setState((state) => {
-      const searches = [...state.recentSearches];
-
-      if (searches.includes(value)) {
-        searches.splice(searches.indexOf(value), 1);
-        searches.push(value);
-      } else {
-        searches.push(value);
-        if (searches.length > 5) searches.shift();
-      }
-      return { ...state, recentSearches: searches };
+      // Most recent on top, normalized/containment dedupe (shared with docs search).
+      const searches = addRecentSearch(state.recentSearches, value);
+      return searches === state.recentSearches ? state : { ...state, recentSearches: searches };
     });
   };
 
@@ -184,8 +174,10 @@ export const AppSearch = () => {
           wrapClassName="h-12 text-lg"
           placeholder={t('c:placeholder.search')}
         />
-        <ScrollArea id={'item-search'} ref={scrollAreaRef} className="overflow-y-auto sm:h-[40vh]">
-          <ComboboxList className="h-full">
+        {/* Height + scrolling live on the ScrollArea viewport (styled scrollbar);
+            the list's own max-h/overflow are neutralized so it never scrolls natively. */}
+        <ScrollArea id={'item-search'} ref={scrollAreaRef} className="sm:h-[40vh]">
+          <ComboboxList className="h-full max-h-none overflow-visible">
             {!isLoading && notFound && !(!searchValue.length && !!recentSearches.length) && (
               <ComboboxEmpty className="h-full sm:h-[36vh]">
                 <ContentPlaceholder

@@ -57,3 +57,40 @@ describe('remarkLinkRepoPaths', () => {
     expect(link.children?.[0].type).toBe('inlineCode');
   });
 });
+
+describe('relative markdown links in repo docs', () => {
+  const repoDocFile = { path: path.join(repoRoot, 'cella', 'AGENTS.md') };
+  const contentFile = { path: path.join(repoRoot, 'frontend', 'src', 'content', 'docs', 'quickstart.md') };
+  const link = (url: string): Node => ({ type: 'link', url, children: [{ type: 'text', value: 'x' }] });
+
+  /** The first inline link node after running the plugin with the given source file. */
+  function runLink(url: string, file: { path?: string }): Node {
+    const tree = para(link(url));
+    transform(tree as never, file);
+    return firstInline(tree);
+  }
+
+  it('rewrites relative links in repo docs to GitHub blob URLs', () => {
+    expect(runLink('../shared/config/config.default.ts', repoDocFile).url).toBe(
+      `${repoUrl}/blob/main/shared/config/config.default.ts`,
+    );
+    expect(runLink('./ARCHITECTURE.md', repoDocFile).url).toBe(`${repoUrl}/blob/main/cella/ARCHITECTURE.md`);
+  });
+
+  it('keeps the hash fragment', () => {
+    expect(runLink('./ARCHITECTURE.md#anchor', repoDocFile).url).toBe(
+      `${repoUrl}/blob/main/cella/ARCHITECTURE.md#anchor`,
+    );
+  });
+
+  it('leaves unresolvable or out-of-repo relative links untouched', () => {
+    expect(runLink('./does-not-exist.md', repoDocFile).url).toBe('./does-not-exist.md');
+    expect(runLink('../../../../etc/passwd', repoDocFile).url).toBe('../../../../etc/passwd');
+  });
+
+  it('does not touch content-root pages or non-relative links', () => {
+    expect(runLink('../guides', contentFile).url).toBe('../guides');
+    expect(runLink('https://example.com', repoDocFile).url).toBe('https://example.com');
+    expect(runLink('/docs/operations', repoDocFile).url).toBe('/docs/operations');
+  });
+});

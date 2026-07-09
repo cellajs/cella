@@ -25,7 +25,8 @@ describe('mcp-server', () => {
       method: 'initialize',
       params: { protocolVersion: '2024-11-05' },
     });
-    expect((res?.result as Record<string, unknown>).protocolVersion).toBe('2024-11-05');
+    const result = res?.result as Record<string, unknown>;
+    expect(result.protocolVersion).toBe('2024-11-05');
   });
 
   it('returns an empty tool list for the default (fork-less) registry', async () => {

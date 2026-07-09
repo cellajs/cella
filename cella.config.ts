@@ -9,7 +9,7 @@ export default defineConfig({
     upstreamBranch: 'main',
     // upstreamTrack: 'release',
     syncWithPackages: true,
-    packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides', 'exports'],
+    packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides'],
     fileLinkMode: 'file',
   },
 

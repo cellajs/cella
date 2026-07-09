@@ -55,10 +55,14 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
           data-expanded={isExpanded}
           className={cn(
             buttonVariants({ variant: 'ghost' }),
-            'group h-8 w-full justify-start gap-2 pl-5 text-left lowercase',
+            'group w-full justify-start gap-2 pl-5 text-left lowercase',
             isRoot
-              ? 'px-3 font-medium data-[active=true]:bg-accent'
-              : 'font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
+              ? // Sticky tier-1 row (default button height, matching the operations/schemas
+                // triggers): pins just below the scroller top (top-2; the sidebar's mask bar
+                // covers the gap) while its subtree (the row's SidebarMenuItem) is scrolled,
+                // pushed out when the subtree ends.
+                'sticky top-2 z-10 bg-card px-3 font-medium data-[active=true]:bg-accent'
+              : 'h-8 font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
           )}
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey) return;

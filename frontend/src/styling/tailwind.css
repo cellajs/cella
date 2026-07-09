@@ -109,6 +109,14 @@
   }
 }
 
+/* Prose sizing. The 18px mobile root (html rule in @layer base below) makes prose
+   oversized for reading — pull it back to ~16px on small screens; em-based headings
+   and spacing scale along. Unlayered for the same reason as the code styling below:
+   it must beat the plugin's utilities-layer `font-size: 1rem`. */
+.prose {
+  @apply max-sm:text-md;
+}
+
 /* Docs code styling. Deliberately UNLAYERED so it beats @tailwindcss/typography's
    `prose` rules, which live in @layer utilities (later than @layer components) and set
    `pre` to a fixed dark background in both themes — a layered override loses to them by
