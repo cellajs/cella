@@ -83,6 +83,10 @@ describe('database resource', () => {
     expect(db).toMatch(/protect:\s*isProduction/)
   })
 
+  it('ignores Scaleway-managed maintenance metadata on the database instance', () => {
+    expect(db).toMatch(/ignoreChanges:\s*\['maintenances'\]/)
+  })
+
   // Known gaps surfaced by the testing plan: these are configuration
   // decisions the operator must make per environment. Listed here so a
   // reviewer sees them in `pnpm test` output.
