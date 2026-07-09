@@ -1,6 +1,9 @@
 /// <reference lib="webworker" />
 import { clientsClaim } from 'workbox-core';
+import { ExpirationPlugin } from 'workbox-expiration';
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import { registerRoute } from 'workbox-routing';
+import { StaleWhileRevalidate } from 'workbox-strategies';
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -28,6 +31,22 @@ self.addEventListener('message', (event) => {
 // Workbox precaching: manifest injected by vite-plugin-pwa.
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
+
+// Docs data JSON (openapi reference + search corpus) is fetched at runtime by
+// react-query and excluded from the precache glob (json isn't in globPatterns).
+// Serve it stale-while-revalidate so the docs section — reference pages and
+// search — works offline after one online visit. The files aren't
+// content-hashed, so background revalidation picks up new API docs per deploy.
+// Scoped to these prefixes; no other request is affected.
+registerRoute(
+  ({ url }) =>
+    url.origin === self.location.origin &&
+    (url.pathname.startsWith('/static/docs.gen/') || url.pathname === '/static/openapi.json'),
+  new StaleWhileRevalidate({
+    cacheName: 'docs-gen',
+    plugins: [new ExpirationPlugin({ maxEntries: 40 })],
+  }),
+);
 
 // Chromium-only (Chrome 80+, Edge). Fires at browser-determined intervals.
 // Fetches the real unseen count from the server so badge stays accurate.
