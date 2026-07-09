@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { ArrowRightIcon, SearchIcon } from 'lucide-react';
+import { HistoryIcon, SearchIcon, XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
@@ -11,8 +11,10 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { getDocsSearchClient } from '~/modules/docs/search/client';
 import { DocsSearchRow } from '~/modules/docs/search/docs-search-row';
+import { deleteRecentSearch, updateRecentSearches, useDocsSearchStore } from '~/modules/docs/search/docs-search-store';
 import type { DocsSearchResult, DocsSearchScope } from '~/modules/docs/search/types';
 import { docsConfig } from '~/modules/page/content';
+import { Button } from '~/modules/ui/button';
 import {
   Combobox,
   ComboboxGroup,
@@ -24,13 +26,8 @@ import {
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
-type DefaultLink = { kind: 'link'; label: string; to: string };
-type SearchSelection = DocsSearchResult | DefaultLink;
-
-/** Shown while the query is blank: internal docs-config tiles as quick links. */
-const defaultLinks: DefaultLink[] = docsConfig.tiles
-  .filter((tile) => tile.to.startsWith('/'))
-  .map((tile) => ({ kind: 'link' as const, label: tile.label, to: tile.to }));
+type HistoryEntry = { kind: 'history'; value: string };
+type SearchSelection = DocsSearchResult | HistoryEntry;
 
 /** Scope chips, labeled by the config-driven sidebar section labels. */
 const scopeChips: { value: DocsSearchScope; label: string }[] = [
@@ -51,6 +48,7 @@ export const DocsSearch = () => {
   const [searchValue, setSearchValue] = useState('');
   const debouncedValue = useDebounce(searchValue, 100, { immediateValue: '' });
   const [scope, setScope] = useState<DocsSearchScope>('all');
+  const { recentSearches } = useDocsSearchStore();
 
   // null = blank query (default links); previous results stay visible while a
   // new search runs so the list never blanks mid-typing.
@@ -89,16 +87,23 @@ export const DocsSearch = () => {
   };
 
   const onSelect = (selection: SearchSelection) => {
+    // History entry: re-run that query instead of navigating.
     if ('kind' in selection) {
-      navigate({ to: selection.to, resetScroll: false });
-      close();
+      setSearchValue(selection.value);
       return;
     }
+    updateRecentSearches(searchValue);
     navigate({ to: selection.to, params: selection.params, hash: selection.hash, resetScroll: false });
     // Queued scroll: resolves once the target section is mounted and laid out.
     if (selection.hash) scrollToSectionById(selection.hash);
     close();
   };
+
+  // Scoped placeholder mirrors the active chip ("Search API reference...").
+  const activeChipLabel = scopeChips.find((chip) => chip.value === scope)?.label;
+  const placeholder = activeChipLabel
+    ? t('c:placeholder.search_resource', { resource: activeChipLabel })
+    : t('c:docs.search.placeholder');
 
   return (
     <Combobox<SearchSelection>
@@ -109,7 +114,15 @@ export const DocsSearch = () => {
         if (selection) onSelect(selection);
       }}
       inputValue={searchValue}
-      onInputValueChange={setSearchValue}
+      onInputValueChange={(value) => {
+        // Typing a bare history index (shown next to the row) re-runs that search.
+        const historyIndexes = recentSearches.map((_, index) => index);
+        if (historyIndexes.includes(Number.parseInt(value, 10))) {
+          setSearchValue(recentSearches[+value]);
+          return;
+        }
+        setSearchValue(value);
+      }}
       filter={() => true}
     >
       <div className="rounded-lg shadow-2xl">
@@ -120,22 +133,42 @@ export const DocsSearch = () => {
           spinnerDelay={0}
           className="h-12 text-lg"
           wrapClassName="h-12 text-lg"
-          placeholder={t('c:docs.search.placeholder')}
+          placeholder={placeholder}
         />
         <ScrollArea className="overflow-y-auto sm:h-[45vh]">
           <ComboboxList className="h-full">
-            {results === null && defaultLinks.length > 0 && (
+            {results === null && recentSearches.length > 0 && (
               <ComboboxGroup className="p-1">
-                <ComboboxGroupLabel>{docsConfig.title}</ComboboxGroupLabel>
-                {defaultLinks.map((link) => (
-                  <ComboboxItem key={link.to} value={link}>
-                    <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" />
-                    <span className="truncate font-medium">{link.label}</span>
+                <ComboboxGroupLabel>{t('c:history')}</ComboboxGroupLabel>
+                {recentSearches.map((search, index) => (
+                  <ComboboxItem
+                    key={search}
+                    value={{ kind: 'history', value: search } as HistoryEntry}
+                    className="justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <HistoryIcon className="size-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate font-medium">{search}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="mx-3 text-xs opacity-50 max-sm:hidden">{index}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 p-0"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          deleteRecentSearch(search);
+                        }}
+                      >
+                        <XIcon className="size-4 opacity-70 hover:opacity-100" />
+                      </Button>
+                    </div>
                   </ComboboxItem>
                 ))}
               </ComboboxGroup>
             )}
-            {results === null && defaultLinks.length === 0 && (
+            {results === null && recentSearches.length === 0 && (
               <ContentPlaceholder icon={SearchIcon} title="c:docs.search.text" className="sm:h-[41vh]" />
             )}
             {results !== null && results.length === 0 && (

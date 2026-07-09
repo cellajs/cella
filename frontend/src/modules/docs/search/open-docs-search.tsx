@@ -23,7 +23,7 @@ export function openDocsSearch(triggerRef: TriggerRef = hotkeyTriggerRef) {
     {
       id: 'docs-search',
       triggerRef,
-      className: 'sm:max-w-2xl p-0 border-0 mb-4',
+      className: 'sm:max-w-3xl p-0 border-0 mb-4',
       headerClassName: 'hidden',
       drawerOnMobile: false,
     },
