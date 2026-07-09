@@ -12,9 +12,10 @@ import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useUIStore } from '~/modules/ui/ui-store';
+import { cn } from '~/utils/cn';
 
 const MIN_SIDEBAR_WIDTH = 220;
-const MAX_SIDEBAR_WIDTH = 600;
+const MAX_SIDEBAR_WIDTH = 400;
 
 function DocsLayout() {
   const navigate = useNavigate();
@@ -124,7 +125,7 @@ function DocsLayout() {
     return (
       <div>
         <FloatingNav items={floatingNavItems} bodyClass="docs-floating-nav" resetTrigger={sidebarOpen} />
-        <main className="pb-[70vh]">
+        <main className="pt-4 pb-[70vh]">
           <Outlet />
         </main>
       </div>
@@ -152,7 +153,7 @@ function DocsLayout() {
           />
         </aside>
       )}
-      <main className={focusView ? 'pb-[70vh]' : 'ml-(--docs-sidebar-width) pb-[70vh]'}>
+      <main className={cn('pt-12 pb-[70vh]', !focusView && 'ml-(--docs-sidebar-width)')}>
         <Outlet />
       </main>
     </div>

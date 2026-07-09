@@ -65,7 +65,7 @@ function ViewPage({ slug }: ViewPageProps) {
   return (
     <div className="container">
       <div className="mx-auto flex max-w-4xl justify-center gap-10 lg:max-w-292">
-        <div className="min-w-0 max-w-[52rem] flex-1">
+        <div className="min-w-0 max-w-208 flex-1">
           <div className="prose dark:prose-invert max-w-none">
             <h1 className="pt-6">{page.name}</h1>
             {page.updatedAt && <PageUpdatedAt updatedAt={page.updatedAt} />}
