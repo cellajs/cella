@@ -1,3 +1,4 @@
+import '~/lib/history-bind'; // Must run before otel/maple/router: they all patch history
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Themer } from '~/modules/common/themer';

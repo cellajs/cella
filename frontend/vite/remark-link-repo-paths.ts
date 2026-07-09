@@ -8,6 +8,10 @@ import path from 'node:path';
  * file (checked against the repo root at build time) are linked, so dead links can't
  * be introduced and ambiguous bare names (e.g. `index.ts`) stay plain code.
  *
+ * Also rewrites relative markdown links (`[x](../shared/...)`) inside imported repo
+ * docs to GitHub blob URLs — rendered in the SPA they would otherwise resolve as
+ * broken routes. Content-root pages are left untouched.
+ *
  * Runs at the mdast stage (before rehype), so it applies to content/docs pages and the
  * repo docs they import alike. Dependency-free: a manual walk avoids pulling in
  * unist-util-visit for one visitor.
@@ -41,12 +45,32 @@ export function remarkLinkRepoPaths({ repoRoot, repoUrl, branch = 'main' }: Opti
     return `${base}${filePath}${hash}`;
   };
 
-  return (tree: MdNode) => {
+  return (tree: MdNode, file?: { path?: string }) => {
+    // Repo docs (imported from outside the content root) carry repo-relative markdown
+    // links, which would resolve as broken SPA routes when rendered — point them at
+    // GitHub instead. Content-root pages keep their links untouched (authors there
+    // use absolute /docs/... or external URLs).
+    const docDir = file?.path && !file.path.includes('/src/content/docs/') ? path.dirname(file.path) : null;
+
+    const relativeLinkFor = (url: string): string | null => {
+      if (!docDir) return null;
+      const [target, hash] = url.split('#');
+      const abs = path.resolve(docDir, target);
+      const rel = path.relative(repoRoot, abs).replaceAll(path.sep, '/');
+      // Stay inside the repo and never introduce a dead link.
+      if (rel.startsWith('..') || !existsSync(abs)) return null;
+      return `${base}${rel}${hash ? `#${hash}` : ''}`;
+    };
+
     const walk = (node: MdNode, insideLink: boolean) => {
       const children = node.children;
       if (!children) return;
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
+        if (docDir && child.type === 'link' && child.url?.startsWith('.')) {
+          const url = relativeLinkFor(child.url);
+          if (url) child.url = url;
+        }
         // Don't re-link code that already sits inside a link.
         if (!insideLink && child.type === 'inlineCode' && typeof child.value === 'string') {
           const url = linkFor(child.value);

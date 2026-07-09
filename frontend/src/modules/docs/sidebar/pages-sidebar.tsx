@@ -14,7 +14,7 @@ export function PagesSidebar({ onClose }: PagesSidebarProps) {
   const { t } = useTranslation();
   const { location } = useRouterState();
 
-  const pages = useMemo(() => docPages.filter((page) => !page.draft), []);
+  const pages = useMemo(() => docPages.filter((page) => !page.draft && !page.hidden), []);
 
   // Active page slug from URL (e.g. /docs/page/<slug>, slug may contain slashes)
   const activeMatch = location.pathname.match(/\/docs\/page\/(.+?)\/?$/)?.[1];

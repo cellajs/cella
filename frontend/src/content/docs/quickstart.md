@@ -1,9 +1,12 @@
 ---
 title: Quickstart
 description: Quick tips to get started building your own web app using cella.
-order: 1
+order: -39
 keywords: install, setup, dev, modules, deploy
+updatedAt: 2026-07-09T08:01:16.810Z
 ---
+
+
 
 Quick tips to get started building your own web app with cella. Also read the [architecture](/docs/page/architecture) info.
 

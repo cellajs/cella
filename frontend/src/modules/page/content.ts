@@ -25,8 +25,60 @@ const frontmatterSchema = z.object({
   renderMode: z.enum(docRenderModes).default('default'),
   keywords: z.string().optional(),
   draft: z.boolean().default(false),
+  hidden: z.boolean().default(false),
   updatedAt: z.string().optional(),
 });
+
+/**
+ * Global docs config, authored as the frontmatter of the content root `index.mdx`.
+ * Drives the /docs landing page (title, intro body, tiles) and the docs sidebar
+ * sections so forks can customize both without code. Tiles and sections render
+ * in array order.
+ */
+const docsTileSchema = z.object({
+  label: z.string().min(1),
+  description: z.string().optional(),
+  /** Internal path (/docs/...) or absolute http(s) URL. */
+  to: z.string().min(1),
+});
+
+export const docsSectionIds = ['apiReference', 'pages', 'links'] as const;
+export type DocsSectionId = (typeof docsSectionIds)[number];
+
+const docsSectionSchema = z.object({
+  id: z.enum(docsSectionIds),
+  label: z.string().min(1),
+  visible: z.boolean().default(true),
+});
+
+const docsConfigSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  keywords: z.string().optional(),
+  tiles: z.array(docsTileSchema).default([]),
+  sections: z
+    .array(docsSectionSchema)
+    .default([])
+    .refine((sections) => new Set(sections.map((s) => s.id)).size === sections.length, 'section ids must be unique'),
+});
+
+export type DocsConfig = z.infer<typeof docsConfigSchema>;
+export type DocsTile = z.infer<typeof docsTileSchema>;
+export type DocsSection = z.infer<typeof docsSectionSchema>;
+
+// Migration cushion for forks that sync code before adding a root index.mdx: warn and
+// keep the docs section working with default section labels instead of failing the build.
+const defaultDocsConfig: DocsConfig = {
+  title: 'Docs',
+  description: undefined,
+  keywords: undefined,
+  tiles: [],
+  sections: [
+    { id: 'pages', label: 'Documentation', visible: true },
+    { id: 'apiReference', label: 'API reference', visible: true },
+    { id: 'links', label: 'Links', visible: true },
+  ],
+};
 
 /** A content heading (h2/h3/...) with its `spy-`-prefixed DOM id stripped to the bare hash slug. */
 export type DocHeading = { id: string; text: string; depth: number };
@@ -45,6 +97,8 @@ export type DocPage = {
   displayOrder: number;
   renderMode: DocRenderMode;
   draft: boolean;
+  /** Routable but excluded from the sidebar tree and child-page lists. */
+  hidden: boolean;
   updatedAt?: string;
   depth: number;
   headings: DocHeading[];
@@ -68,13 +122,24 @@ function pathToSlug(path: string): string {
   return slug.replace(/\/$/, '');
 }
 
-function buildIndex(): { pages: DocPage[]; loaders: Map<string, () => Promise<ComponentType>> } {
+function buildIndex(): {
+  pages: DocPage[];
+  loaders: Map<string, () => Promise<ComponentType>>;
+  config: DocsConfig;
+} {
   const slugs = new Set<string>();
   const parsed: { slug: string; path: string; meta: z.infer<typeof frontmatterSchema>; headings: DocHeading[] }[] = [];
+  let config: DocsConfig | null = null;
 
   for (const [path, entry] of Object.entries(metaModules)) {
     const slug = pathToSlug(path);
-    if (!slug) throw new Error(`Docs content: a root index file is not supported (${path}); use a named file.`);
+    if (!slug) {
+      // Root index: the global docs config + /docs landing body, not a regular page.
+      const result = docsConfigSchema.safeParse(entry.frontmatter);
+      if (!result.success) throw new Error(`Docs content: invalid docs config in ${path}: ${result.error.message}`);
+      config = result.data;
+      continue;
+    }
     if (slugs.has(slug)) throw new Error(`Docs content: duplicate slug "${slug}" (${path}).`);
     const result = frontmatterSchema.safeParse(entry.frontmatter);
     if (!result.success) throw new Error(`Docs content: invalid frontmatter in ${path}: ${result.error.message}`);
@@ -97,6 +162,7 @@ function buildIndex(): { pages: DocPage[]; loaders: Map<string, () => Promise<Co
       displayOrder: meta.order,
       renderMode: meta.renderMode,
       draft: meta.draft,
+      hidden: meta.hidden,
       updatedAt: meta.updatedAt,
       depth: slug.split('/').length - 1,
       headings,
@@ -107,10 +173,18 @@ function buildIndex(): { pages: DocPage[]; loaders: Map<string, () => Promise<Co
   const loaders = new Map<string, () => Promise<ComponentType>>();
   for (const [path, loader] of Object.entries(componentModules)) loaders.set(pathToSlug(path), loader);
 
-  return { pages, loaders };
+  if (!config) {
+    console.warn('Docs content: no root index.mdx found; using the default docs config.');
+    config = defaultDocsConfig;
+  }
+
+  return { pages, loaders, config };
 }
 
-const { pages, loaders } = buildIndex();
+const { pages, loaders, config } = buildIndex();
+
+/** Global docs config (landing page + sidebar sections), from the content root index.mdx. */
+export const docsConfig: DocsConfig = config;
 
 /** All docs pages, sorted by display order. Includes drafts (callers filter). */
 export const docPages: DocPage[] = pages;
@@ -119,12 +193,33 @@ export function getDocPage(slug: string): DocPage | undefined {
   return docPages.find((page) => page.id === slug);
 }
 
-/** Published (non-draft) child pages of the given page, in display order. */
+/** Published (non-draft, non-hidden) child pages of the given page, in display order. */
 export function getChildDocPages(slug: string): DocPage[] {
-  return docPages.filter((page) => page.parentId === slug && !page.draft);
+  return docPages.filter((page) => page.parentId === slug && !page.draft && !page.hidden);
 }
 
 /** Lazy loader for a page's compiled MDX component; undefined for unknown slugs. */
 export function getDocPageLoader(slug: string): (() => Promise<ComponentType>) | undefined {
   return loaders.get(slug);
+}
+
+// Components resolved ahead of render (docs page route loader), so the page view can
+// render the body synchronously — a fresh Suspense boundary otherwise commits its
+// fallback for at least a frame even when the chunk is already cached.
+const resolvedComponents = new Map<string, ComponentType>();
+
+/** Load and memoize a page's compiled MDX component; undefined for unknown slugs. */
+export async function ensureDocPageComponent(slug: string): Promise<ComponentType | undefined> {
+  const cached = resolvedComponents.get(slug);
+  if (cached) return cached;
+  const loader = loaders.get(slug);
+  if (!loader) return undefined;
+  const component = await loader();
+  resolvedComponents.set(slug, component);
+  return component;
+}
+
+/** Synchronous access to a component previously resolved via ensureDocPageComponent. */
+export function getResolvedDocPageComponent(slug: string): ComponentType | undefined {
+  return resolvedComponents.get(slug);
 }

@@ -1,55 +1,23 @@
 import { MDXProvider } from '@mdx-js/react';
 import { Link, notFound } from '@tanstack/react-router';
 import { ChevronRightIcon } from 'lucide-react';
-import { type ComponentProps, type ComponentType, lazy, Suspense, useMemo } from 'react';
+import { type ComponentType, lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import { HashUrlButton } from '~/modules/common/hash-url-button';
 import { Spinner } from '~/modules/common/spinner';
-import { getHashUrl } from '~/modules/docs/hash-url';
-import { CodeBlock } from '~/modules/page/code-block';
-import { type DocPage, getChildDocPages, getDocPage, getDocPageLoader } from '~/modules/page/content';
+import {
+  type DocPage,
+  getChildDocPages,
+  getDocPage,
+  getDocPageLoader,
+  getResolvedDocPageComponent,
+} from '~/modules/page/content';
+import { mdxComponents } from '~/modules/page/mdx-components';
 import { TocAside } from '~/modules/page/toc-aside';
 import { dateShort } from '~/utils/date-short';
 
 interface ViewPageProps {
   slug: string;
-}
-
-/**
- * Internal /docs links in content navigate via the router; in-page #anchor links scroll
- * via the spy store (which also queues until lazy content is laid out); external links
- * open in a new tab.
- */
-function MdxLink({ href = '', children, ...props }: ComponentProps<'a'>) {
-  if (href.startsWith('/')) {
-    return (
-      <Link to={href} {...props}>
-        {children}
-      </Link>
-    );
-  }
-  if (href.startsWith('#')) {
-    return (
-      <a
-        href={href}
-        {...props}
-        onClick={(e) => {
-          if (e.metaKey || e.ctrlKey) return;
-          e.preventDefault();
-          scrollToSectionById(decodeURIComponent(href.slice(1)));
-        }}
-      >
-        {children}
-      </a>
-    );
-  }
-  return (
-    <a href={href} target="_blank" rel="noreferrer" {...props}>
-      {children}
-    </a>
-  );
 }
 
 /**
@@ -64,27 +32,6 @@ function RegisterSpySections({ ids }: { ids: string[] }) {
 }
 
 /**
- * Section heading (h2) with a hover copy-link button. The copied URL carries the bare
- * hash slug (spy store convention). The DOM id keeps its `spy-` prefix. Deeper
- * headings keep their anchor ids but render plain (the button sits awkwardly at h3 size).
- */
-function MdxHeading({ id = '', children, ...props }: ComponentProps<'h2'>) {
-  const hash = id.replace(/^spy-/, '');
-  return (
-    <h2 id={id} className="group" {...props}>
-      {children}
-      {hash && <HashUrlButton url={getHashUrl(hash)} />}
-    </h2>
-  );
-}
-
-const mdxComponents = {
-  a: MdxLink,
-  h2: MdxHeading,
-  pre: CodeBlock,
-};
-
-/**
  * Displays a docs page: frontmatter title + compiled MDX body.
  * Supports three render modes:
  * - default: renders full page content
@@ -94,9 +41,13 @@ const mdxComponents = {
 function ViewPage({ slug }: ViewPageProps) {
   const page = getDocPage(slug);
 
-  // Lazy-load the code-split MDX body for this slug. The component is keyed by
-  // slug at the call site, so this memo lives for exactly one page.
+  // The code-split MDX body for this slug. On the docs route it is already resolved
+  // by the route loader (page.$.tsx), so the body renders synchronously — no Suspense
+  // fallback. The lazy path covers callers that render without that loader. The
+  // component is keyed by slug at the call site, so this memo lives for exactly one page.
   const Content = useMemo<ComponentType<{ components?: typeof mdxComponents }> | null>(() => {
+    const resolved = getResolvedDocPageComponent(slug);
+    if (resolved) return resolved;
     const loader = getDocPageLoader(slug);
     return loader ? lazy(async () => ({ default: await loader() })) : null;
   }, [slug]);
@@ -121,7 +72,7 @@ function ViewPage({ slug }: ViewPageProps) {
 
             {/* Default mode: render full content */}
             {renderMode === 'default' && (
-              <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
+              <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" />}>
                 <MDXProvider components={mdxComponents}>
                   <Content />
                 </MDXProvider>
@@ -132,7 +83,7 @@ function ViewPage({ slug }: ViewPageProps) {
             {/* Overview mode: intro content + child page cards */}
             {renderMode === 'overview' && (
               <>
-                <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
+                <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" />}>
                   <MDXProvider components={mdxComponents}>
                     <Content />
                   </MDXProvider>

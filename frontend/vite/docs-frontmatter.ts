@@ -133,10 +133,14 @@ export function docsFrontmatter(): Plugin {
       // Imported repo docs live outside the frontend root, make sure they're watched.
       for (const target of initial.targets) server.watcher.add(target);
 
-      const maybeInvalidate = (file: string) => {
-        const isPage = file.startsWith(contentDir) && /\.(md|mdx)$/.test(file);
-        const isImportTarget = initial.targets.has(file);
-        if (!isPage && !isImportTarget) return;
+      // Debounced: a reparent from the pages table moves files (unlink + add, sometimes
+      // several when a leaf becomes a directory page), and rebuilding per watcher event
+      // would ship a half-moved index and reload the client twice. Rebuild once after
+      // the burst settles.
+      let rebuildTimer: ReturnType<typeof setTimeout> | null = null;
+
+      const rebuild = () => {
+        rebuildTimer = null;
         const next = buildIndex();
         for (const target of next.targets) {
           if (!initial.targets.has(target)) {
@@ -150,6 +154,14 @@ export function docsFrontmatter(): Plugin {
         const mod = server.moduleGraph.getModuleById(RESOLVED_ID);
         if (mod) server.moduleGraph.invalidateModule(mod);
         server.ws.send({ type: 'full-reload' });
+      };
+
+      const maybeInvalidate = (file: string) => {
+        const isPage = file.startsWith(contentDir) && /\.(md|mdx)$/.test(file);
+        const isImportTarget = initial.targets.has(file);
+        if (!isPage && !isImportTarget) return;
+        if (rebuildTimer) clearTimeout(rebuildTimer);
+        rebuildTimer = setTimeout(rebuild, 200);
       };
       server.watcher.on('add', maybeInvalidate);
       server.watcher.on('unlink', maybeInvalidate);

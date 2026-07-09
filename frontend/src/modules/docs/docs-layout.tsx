@@ -1,8 +1,9 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useNavigate } from '@tanstack/react-router';
 import { ArrowUpIcon, MenuIcon } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -12,40 +13,42 @@ import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-const MIN_SIDEBAR_WIDTH = 256;
+const MIN_SIDEBAR_WIDTH = 220;
 const MAX_SIDEBAR_WIDTH = 600;
-const DEFAULT_SIDEBAR_WIDTH = 288;
 
 function DocsLayout() {
   const navigate = useNavigate();
-  const isMobile = useBreakpointBelow('sm');
+  const isDesktop = useBreakpointAbove('md');
   const focusView = useUIStore((state) => state.focusView);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
 
   // Resizable sidebar width (desktop only). The main content uses window scroll,
-  // offset by this width, so window scroll restoration just works.
-  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  // offset by the same CSS variable, so window scroll restoration just works.
+  const [resizedSidebarWidth, setResizedSidebarWidth] = useState<number | null>(null);
 
   // Track scroll position for scroll-to-top button visibility (mobile floating nav)
-  const { scrollTop } = useScrollVisibility(isMobile);
+  const { scrollTop } = useScrollVisibility(!isDesktop);
   const showScrollTop = scrollTop > 300;
 
   // Drag the sidebar edge to resize. Updates width during pointer move, ends on pointer up.
   const startSidebarResize = (e: React.PointerEvent) => {
     e.preventDefault();
     const startX = e.clientX;
-    const startWidth = sidebarWidth;
+    const startWidth = sidebarRef.current?.getBoundingClientRect().width ?? MIN_SIDEBAR_WIDTH;
     const onMove = (ev: PointerEvent) => {
       const next = Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, startWidth + (ev.clientX - startX)));
-      setSidebarWidth(next);
+      setResizedSidebarWidth(next);
     };
     const onUp = () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
       document.body.style.cursor = '';
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
     document.body.style.cursor = 'col-resize';
   };
 
@@ -61,10 +64,10 @@ function DocsLayout() {
   // Create or remove sheet based on mobile state
   useEffect(() => {
     // Clean up sheet when switching to desktop
-    if (!isMobile && sidebarOpen) {
+    if (isDesktop && sidebarOpen) {
       useSheeter.getState().remove('docs-sidebar');
     }
-  }, [isMobile, sidebarOpen]);
+  }, [isDesktop, sidebarOpen]);
 
   // Collapse all expanded items on ESC
   useHotkeys([
@@ -117,7 +120,7 @@ function DocsLayout() {
   ];
 
   // Mobile layout with floating nav
-  if (isMobile) {
+  if (!isDesktop) {
     return (
       <div>
         <FloatingNav items={floatingNavItems} bodyClass="docs-floating-nav" resetTrigger={sidebarOpen} />
@@ -128,11 +131,18 @@ function DocsLayout() {
     );
   }
 
+  const sidebarWidthStyle =
+    resizedSidebarWidth === null
+      ? undefined
+      : ({
+          '--docs-sidebar-width': `${resizedSidebarWidth}px`,
+        } as CSSProperties);
+
   // Desktop layout: fixed resizable sidebar + window-scrolled main content
   return (
-    <>
+    <div className="contents [--docs-sidebar-width:clamp(220px,24vw,288px)]" style={sidebarWidthStyle}>
       {!focusView && (
-        <aside className="fixed inset-y-0 left-0 z-30 flex bg-background" style={{ width: sidebarWidth }}>
+        <aside ref={sidebarRef} className="fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width) bg-background">
           <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
           <button
             type="button"
@@ -142,10 +152,10 @@ function DocsLayout() {
           />
         </aside>
       )}
-      <main className="pb-[70vh]" style={{ marginLeft: focusView ? 0 : sidebarWidth }}>
+      <main className={focusView ? 'pb-[70vh]' : 'ml-(--docs-sidebar-width) pb-[70vh]'}>
         <Outlet />
       </main>
-    </>
+    </div>
   );
 }
 

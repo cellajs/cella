@@ -50,7 +50,7 @@ export const TocAside = ({ headings, className }: TocAsideProps) => {
                 size="sm"
                 className={cn(
                   'group h-8 w-full justify-start gap-2 text-left font-normal text-sm opacity-75 hover:bg-accent/50',
-                  'group-data-[spy-active]/toc:opacity-100',
+                  'group-data-spy-active/toc:opacity-100',
                   depth >= 3 ? 'pl-8' : 'pl-5',
                 )}
                 render={
