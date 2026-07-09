@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { extractHeadings } from './docs-frontmatter';
+import { extractHeadings, extractStructure, pageStructure } from './docs-frontmatter';
 
 /**
  * The extracted heading ids must match what rehype-slug (prefix: 'spy-') assigns when
@@ -76,5 +76,88 @@ describe('extractHeadings', () => {
     expect(ids).not.toContain('spy-testing-guide'); // leading h1 stripped
     // Fenced blocks in the doc contain `# comment` lines; none may leak as headings.
     expect(headings.every((h) => h.depth <= 3)).toBe(true);
+  });
+});
+
+/**
+ * Sections drive the docs search corpus: every paragraph must anchor to the id
+ * of its nearest heading (bar the `spy-` prefix handling done at emit time),
+ * and stripped-away markup must never leak into the searchable text.
+ */
+describe('extractStructure sections', () => {
+  it('anchors paragraphs to their nearest heading; intro text gets null', () => {
+    const src = 'Intro paragraph.\n\n## First\n\nUnder first.\n\nAlso under first.\n\n## Second\n\nUnder second.\n';
+    expect(extractStructure(src).sections).toEqual([
+      { headingId: null, text: 'Intro paragraph.' },
+      { headingId: 'spy-first', text: 'Under first.' },
+      { headingId: 'spy-first', text: 'Also under first.' },
+      { headingId: 'spy-second', text: 'Under second.' },
+    ]);
+  });
+
+  it('keeps section anchors aligned with deduped heading ids', () => {
+    const src = '## Setup\n\nfirst setup\n\n## Setup\n\nsecond setup\n';
+    const { headings, sections } = extractStructure(src);
+    expect(headings.map((h) => h.id)).toEqual(['spy-setup', 'spy-setup-1']);
+    expect(sections).toEqual([
+      { headingId: 'spy-setup', text: 'first setup' },
+      { headingId: 'spy-setup-1', text: 'second setup' },
+    ]);
+  });
+
+  it('excludes frontmatter and fenced code from section text', () => {
+    const src = ['---', 'title: Page', '---', '', '## Real', '', 'kept', '', '```bash', 'dropped', '```'].join('\n');
+    expect(extractStructure(src).sections).toEqual([{ headingId: 'spy-real', text: 'kept' }]);
+  });
+
+  it('strips mdx imports, jsx tags, comments and markdown syntax to plain text', () => {
+    const src = [
+      "import Content from '../../cella/TESTING.md'",
+      '',
+      '## Section',
+      '',
+      '<Tiles a="b" />',
+      '',
+      '<!-- note to self -->',
+      '',
+      '> A **bold** [link](https://example.com) with `code`.',
+      '',
+      '- item one',
+      '- item two',
+      '',
+      '| cell a | cell b |',
+      '| --- | --- |',
+      '| cell c | cell d |',
+    ].join('\n');
+    const texts = extractStructure(src).sections.map((s) => s.text);
+    expect(texts).toContain('A bold link with code.');
+    expect(texts).toContain('item one item two');
+    expect(texts.join(' ')).toContain('cell a cell b');
+    expect(texts.join(' ')).not.toMatch(/import|Tiles|note to self|\||\*\*/);
+  });
+
+  it('skips the leading h1 of repo docs but keeps its text under null anchor', () => {
+    const src = '# Repo Doc\n\nrepo intro\n\n## Section\n\nbody\n';
+    expect(extractStructure(src, { stripLeadingH1: true }).sections).toEqual([
+      { headingId: null, text: 'repo intro' },
+      { headingId: 'spy-section', text: 'body' },
+    ]);
+  });
+
+  it('caps paragraph length', () => {
+    const src = `## Big\n\n${'word '.repeat(300)}\n`;
+    const [section] = extractStructure(src).sections;
+    expect(section.text.length).toBeLessThanOrEqual(500);
+  });
+
+  it('follows wrapper-page imports for sections (real repo doc)', () => {
+    const wrapperPath = path.resolve(__dirname, '../src/content/docs/fixture.mdx');
+    const wrapperSource = "import Content from '../../../../cella/TESTING.md'\n\n<Content />\n";
+    const { headings, sections } = pageStructure(wrapperPath, wrapperSource);
+    expect(headings.length).toBeGreaterThan(0);
+    expect(sections.length).toBeGreaterThan(0);
+    // Every non-null section anchor must be an actual heading id of the page.
+    const headingIds = new Set(headings.map((h) => h.id));
+    expect(sections.every((s) => s.headingId === null || headingIds.has(s.headingId))).toBe(true);
   });
 });

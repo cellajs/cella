@@ -113,8 +113,8 @@ const HEADING_ID_PREFIX = 'spy-';
 const metaModules = docsFrontmatter;
 const componentModules = import.meta.glob<ComponentType>('/src/content/docs/**/*.{md,mdx}', { import: 'default' });
 
-/** File path → slug (`architecture/index.md` → `architecture`). */
-function pathToSlug(path: string): string {
+/** File path → slug (`architecture/index.md` → `architecture`). Exported for the search corpus mapping. */
+export function pathToSlug(path: string): string {
   const slug = path
     .slice(CONTENT_ROOT.length)
     .replace(/\.(md|mdx)$/, '')

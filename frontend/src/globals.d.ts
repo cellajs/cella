@@ -8,3 +8,12 @@ declare module 'virtual:docs-frontmatter' {
     { frontmatter: unknown; headings: { id: string; text: string; depth: number }[] }
   >;
 }
+
+/**
+ * Build-time search corpus: plaintext body paragraphs per docs page, anchored to
+ * their nearest heading by bare anchor id (vite/docs-frontmatter.ts). Only the
+ * lazy docs search engine imports this.
+ */
+declare module 'virtual:docs-search-sections' {
+  export const docsSectionsIndex: Record<string, { headingId: string | null; text: string }[]>;
+}
