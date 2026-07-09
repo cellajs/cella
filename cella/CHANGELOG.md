@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/cellajs/cella/compare/0.3.2...0.3.3) (2026-07-09)
+
+
+### 🐞 Bug fixes
+
+* fix lockfile ([#870](https://github.com/cellajs/cella/issues/870)) ([36664c4](https://github.com/cellajs/cella/commit/36664c4ba35ebd5bb801ecc34278000adaae77f7))
+
 ## [0.3.2](https://github.com/cellajs/cella/compare/0.3.1...0.3.2) (2026-07-09)
 
 
