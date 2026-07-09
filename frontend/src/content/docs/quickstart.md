@@ -1,10 +1,11 @@
 ---
-title: Quickstart
+title: Getting started
 description: Quick tips to get started building your own web app using cella.
 order: -39
 keywords: install, setup, dev, modules, deploy
-updatedAt: 2026-07-09T08:01:16.810Z
+updatedAt: 2026-07-09T09:55:08.380Z
 ---
+
 
 
 

@@ -48,7 +48,7 @@ export function DocsSearchRow({ item }: { item: DocsSearchResult }) {
   if (item.type === 'heading' || item.type === 'text') {
     return (
       <div className="relative flex w-full min-w-0 items-center gap-1.5 ps-4">
-        <span aria-hidden="true" className="-inset-y-2 absolute left-1 w-px bg-border" />
+        <span aria-hidden="true" className="absolute -inset-y-2 left-1 w-px bg-border" />
         {item.type === 'heading' && <HashIcon className="size-3.5 shrink-0 text-muted-foreground" />}
         <span className={`truncate ${item.type === 'text' ? 'text-popover-foreground/80' : ''}`}>
           <MarkedText text={item.title} />
