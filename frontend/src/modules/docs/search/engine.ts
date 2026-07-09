@@ -1,7 +1,7 @@
 import { create, insertMultiple, search } from '@orama/orama';
 import { markMatches, trimAroundMatch } from '~/modules/docs/search/highlight';
-import type { DocsSearchResult, DocsSearchResultType } from '~/modules/docs/search/types';
-import type { GenOperationSummary } from '~/modules/docs/types';
+import type { DocsSearchResult, DocsSearchResultType, DocsSearchScope } from '~/modules/docs/search/types';
+import type { GenComponentSchema, GenOperationSummary } from '~/modules/docs/types';
 
 /**
  * Orama full-text engine, built in the browser on first search. Shipping raw
@@ -112,12 +112,38 @@ function operationDoc(op: GenOperationSummary): SearchDoc {
   };
 }
 
+function schemaDoc(schema: GenComponentSchema): SearchDoc {
+  return {
+    id: `schema:${schema.name}`,
+    kind: 'schema',
+    pageId: `schema:${schema.name}`,
+    title: schema.name,
+    content: schema.description ?? '',
+    path: '',
+    tags: [schema.schemaTag],
+    breadcrumbs: [schema.schemaTag],
+    to: '/docs/schemas',
+    // Anchor convention of the schemas page: the $ref path minus its leading '#'.
+    hash: schema.ref.replace(/^#/, ''),
+  };
+}
+
+/** Scope chip → the document kinds it allows. */
+const SCOPE_KINDS: Record<Exclude<DocsSearchScope, 'all'>, DocsSearchResultType[]> = {
+  pages: ['page', 'heading', 'text'],
+  api: ['operation', 'schema'],
+};
+
 /**
  * Build a search client over the given corpus. Pure — no data fetching — so
- * tests can drive it with fixtures. `addOperations` supports late arrival of
- * the operations corpus (offline with a cold query cache).
+ * tests can drive it with fixtures. `addOperations`/`addSchemas` support late
+ * arrival of the API corpus (offline with a cold query cache).
  */
-export function createEngine(pages: EnginePage[], operations: GenOperationSummary[] | null) {
+export function createEngine(
+  pages: EnginePage[],
+  operations: GenOperationSummary[] | null,
+  schemas: GenComponentSchema[] | null = null,
+) {
   const db = create({ schema: searchSchema });
   const docsById = new Map<string, SearchDoc>();
 
@@ -129,6 +155,7 @@ export function createEngine(pages: EnginePage[], operations: GenOperationSummar
 
   insert(pages.flatMap(pageDocs));
   if (operations) insert(operations.map(operationDoc));
+  if (schemas) insert(schemas.map(schemaDoc));
 
   const toRow = (doc: SearchDoc, terms: string[]): DocsSearchResult => ({
     id: doc.id,
@@ -149,7 +176,11 @@ export function createEngine(pages: EnginePage[], operations: GenOperationSummar
       insert(operations.map(operationDoc));
     },
 
-    async search(term: string): Promise<DocsSearchResult[]> {
+    addSchemas(schemas: GenComponentSchema[]) {
+      insert(schemas.map(schemaDoc));
+    },
+
+    async search(term: string, scope: DocsSearchScope = 'all'): Promise<DocsSearchResult[]> {
       const terms = term.toLowerCase().split(/\s+/).filter(Boolean);
       if (!terms.length) return [];
 
@@ -161,6 +192,7 @@ export function createEngine(pages: EnginePage[], operations: GenOperationSummar
         threshold: 0,
         boost: { title: 2, path: 1.5 },
         limit: MAX_HITS,
+        ...(scope !== 'all' && { where: { kind: { in: SCOPE_KINDS[scope] } } }),
       });
 
       // Group hits by page, preserving global score order for both group order
@@ -180,8 +212,8 @@ export function createEngine(pages: EnginePage[], operations: GenOperationSummar
       const rows: DocsSearchResult[] = [];
       for (const pageId of groupOrder) {
         const docs = grouped.get(pageId) ?? [];
-        // Standalone rows (operations): no parent/child structure.
-        if (pageId.startsWith('operation:')) {
+        // Standalone rows (operations, schemas): no parent/child structure.
+        if (pageId.startsWith('operation:') || pageId.startsWith('schema:')) {
           rows.push(...docs.map((doc) => toRow(doc, terms)));
           continue;
         }

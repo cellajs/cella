@@ -11,7 +11,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { getDocsSearchClient } from '~/modules/docs/search/client';
 import { DocsSearchRow } from '~/modules/docs/search/docs-search-row';
-import type { DocsSearchResult } from '~/modules/docs/search/types';
+import type { DocsSearchResult, DocsSearchScope } from '~/modules/docs/search/types';
 import { docsConfig } from '~/modules/page/content';
 import {
   Combobox,
@@ -22,6 +22,7 @@ import {
   ComboboxSearchInput,
 } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { cn } from '~/utils/cn';
 
 type DefaultLink = { kind: 'link'; label: string; to: string };
 type SearchSelection = DocsSearchResult | DefaultLink;
@@ -30,6 +31,12 @@ type SearchSelection = DocsSearchResult | DefaultLink;
 const defaultLinks: DefaultLink[] = docsConfig.tiles
   .filter((tile) => tile.to.startsWith('/'))
   .map((tile) => ({ kind: 'link' as const, label: tile.label, to: tile.to }));
+
+/** Scope chips, labeled by the config-driven sidebar section labels. */
+const scopeChips: { value: DocsSearchScope; label: string }[] = [
+  { value: 'pages', label: docsConfig.sections.find((s) => s.id === 'pages')?.label ?? 'Documentation' },
+  { value: 'api', label: docsConfig.sections.find((s) => s.id === 'apiReference')?.label ?? 'API' },
+];
 
 /**
  * Docs search dialog: full client-side search over docs pages and the API
@@ -43,6 +50,7 @@ export const DocsSearch = () => {
 
   const [searchValue, setSearchValue] = useState('');
   const debouncedValue = useDebounce(searchValue, 100, { immediateValue: '' });
+  const [scope, setScope] = useState<DocsSearchScope>('all');
 
   // null = blank query (default links); previous results stay visible while a
   // new search runs so the list never blanks mid-typing.
@@ -59,7 +67,7 @@ export const DocsSearch = () => {
     let cancelled = false;
     setIsSearching(true);
     getDocsSearchClient(queryClient)
-      .then((client) => client.search(term))
+      .then((client) => client.search(term, scope))
       .then((found) => {
         if (!cancelled) setResults(found);
       })
@@ -72,7 +80,7 @@ export const DocsSearch = () => {
     return () => {
       cancelled = true;
     };
-  }, [debouncedValue, queryClient]);
+  }, [debouncedValue, scope, queryClient]);
 
   const close = () => {
     useDialoger.getState().remove('docs-search');
@@ -149,6 +157,23 @@ export const DocsSearch = () => {
             )}
           </ComboboxList>
         </ScrollArea>
+        {/* Scope chips: outside the tab order (fumadocs pattern), arrow keys stay on the list. */}
+        <div className="flex items-center gap-1 border-t p-2">
+          {[{ value: 'all' as const, label: t('c:all') }, ...scopeChips].map((chip) => (
+            <button
+              type="button"
+              key={chip.value}
+              tabIndex={-1}
+              onClick={() => setScope(chip.value)}
+              className={cn(
+                'rounded-md border px-2 py-0.5 font-medium text-xs transition-colors',
+                scope === chip.value ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50',
+              )}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
       </div>
     </Combobox>
   );

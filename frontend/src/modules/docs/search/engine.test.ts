@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GenOperationSummary } from '~/modules/docs/types';
+import type { GenComponentSchema, GenOperationSummary } from '~/modules/docs/types';
 import { createEngine, type EnginePage } from './engine';
 
 /**
@@ -52,8 +52,19 @@ const operations: GenOperationSummary[] = [
   },
 ];
 
+const schemas: GenComponentSchema[] = [
+  {
+    name: 'UserBase',
+    ref: '#/components/schemas/UserBase',
+    description: 'Core user fields shared across responses.',
+    schema: { type: 'object' } as GenComponentSchema['schema'],
+    schemaTag: 'data',
+    tagsByKind: {},
+  },
+];
+
 describe('docs search engine', () => {
-  const engine = createEngine(pages, operations);
+  const engine = createEngine(pages, operations, schemas);
 
   it('finds a page by title and puts the page row first', async () => {
     const rows = await engine.search('architecture');
@@ -103,6 +114,25 @@ describe('docs search engine', () => {
     expect(await docsOnly.search('create organization')).toEqual([]);
     docsOnly.addOperations(operations);
     expect((await docsOnly.search('create organization')).some((row) => row.type === 'operation')).toBe(true);
+  });
+
+  it('finds schemas as standalone rows with the $ref-derived anchor', async () => {
+    const rows = await engine.search('userbase');
+    expect(rows.find((row) => row.type === 'schema')).toMatchObject({
+      to: '/docs/schemas',
+      hash: '/components/schemas/UserBase',
+      breadcrumbs: ['data'],
+    });
+  });
+
+  it('filters by scope', async () => {
+    // 'testing' hits the Testing page; 'organization' hits the operation.
+    const pagesOnly = await engine.search('organization', 'pages');
+    expect(pagesOnly.every((row) => ['page', 'heading', 'text'].includes(row.type))).toBe(true);
+    const apiOnly = await engine.search('testing', 'api');
+    expect(apiOnly.every((row) => ['operation', 'schema'].includes(row.type))).toBe(true);
+    const apiHit = await engine.search('create organization', 'api');
+    expect(apiHit.some((row) => row.type === 'operation')).toBe(true);
   });
 
   it('returns nothing for a blank query', async () => {

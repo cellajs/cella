@@ -1,4 +1,4 @@
-import { ChevronRightIcon, FileTextIcon, HashIcon } from 'lucide-react';
+import { BracesIcon, ChevronRightIcon, FileTextIcon, HashIcon } from 'lucide-react';
 import { Fragment } from 'react';
 import { getMethodColor } from '~/modules/docs/helpers/get-method-color';
 import type { DocsSearchResult } from '~/modules/docs/search/types';
@@ -48,7 +48,7 @@ export function DocsSearchRow({ item }: { item: DocsSearchResult }) {
   if (item.type === 'heading' || item.type === 'text') {
     return (
       <div className="relative flex w-full min-w-0 items-center gap-1.5 ps-4">
-        <span aria-hidden="true" className="absolute inset-y-[-0.375rem] left-1 w-px bg-border" />
+        <span aria-hidden="true" className="-inset-y-2 absolute left-1 w-px bg-border" />
         {item.type === 'heading' && <HashIcon className="size-3.5 shrink-0 text-muted-foreground" />}
         <span className={`truncate ${item.type === 'text' ? 'text-popover-foreground/80' : ''}`}>
           <MarkedText text={item.title} />
@@ -62,6 +62,7 @@ export function DocsSearchRow({ item }: { item: DocsSearchResult }) {
       <div className="flex w-full min-w-0 flex-col items-start gap-0.5">
         <Breadcrumbs crumbs={item.breadcrumbs} />
         <div className="flex w-full min-w-0 items-center gap-2">
+          {item.type === 'schema' && <BracesIcon className="size-4 shrink-0 text-muted-foreground" />}
           {item.method && (
             <Badge
               variant="secondary"

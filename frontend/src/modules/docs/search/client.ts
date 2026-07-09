@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import { operationsQueryOptions } from '~/modules/docs/query';
+import { operationsQueryOptions, schemasQueryOptions } from '~/modules/docs/query';
 import type { EnginePage } from '~/modules/docs/search/engine';
 import type { DocsSearchClient } from '~/modules/docs/search/types';
 import { docPages, getDocPage, pathToSlug } from '~/modules/page/content';
@@ -29,15 +29,16 @@ function pageBreadcrumbs(slug: string): string[] {
   return crumbs;
 }
 
-/** Assemble the corpus (build-time sections + query-cached operations) and wrap the engine. */
+/** Assemble the corpus (build-time sections + query-cached API docs) and wrap the engine. */
 async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> {
-  const [{ createEngine }, { docsSectionsIndex }, operations] = await Promise.all([
+  const [{ createEngine }, { docsSectionsIndex }, operations, schemas] = await Promise.all([
     import('~/modules/docs/search/engine'),
     import('virtual:docs-search-sections'),
     // Reads the same cache the API reference uses (staleTime: Infinity, prefetched
     // by the docs route loader). Offline with a cold cache the fetch fails —
     // degrade to docs-only and retry per search.
     queryClient.ensureQueryData(operationsQueryOptions).catch(() => null),
+    queryClient.ensureQueryData(schemasQueryOptions).catch(() => null),
   ]);
 
   const sectionsBySlug = new Map(Object.entries(docsSectionsIndex).map(([path, s]) => [pathToSlug(path), s]));
@@ -54,11 +55,12 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
       sections: sectionsBySlug.get(page.id) ?? [],
     }));
 
-  const engine = createEngine(pages, operations);
+  const engine = createEngine(pages, operations, schemas);
   let hasOperations = operations !== null;
+  let hasSchemas = schemas !== null;
 
   return {
-    async search(term) {
+    async search(term, scope) {
       if (!hasOperations) {
         const late = await queryClient.ensureQueryData(operationsQueryOptions).catch(() => null);
         if (late) {
@@ -66,7 +68,14 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
           hasOperations = true;
         }
       }
-      return engine.search(term);
+      if (!hasSchemas) {
+        const late = await queryClient.ensureQueryData(schemasQueryOptions).catch(() => null);
+        if (late) {
+          engine.addSchemas(late);
+          hasSchemas = true;
+        }
+      }
+      return engine.search(term, scope);
     },
   };
 }

@@ -23,7 +23,10 @@ export type DocsSearchResult = {
   deprecated?: boolean;
 };
 
+/** Scope chip filter: everything, docs pages only, or API reference only. */
+export type DocsSearchScope = 'all' | 'pages' | 'api';
+
 export type DocsSearchClient = {
   /** Returns a flat, pre-ordered list: page row first, then its child rows. */
-  search: (term: string) => Promise<DocsSearchResult[]>;
+  search: (term: string, scope?: DocsSearchScope) => Promise<DocsSearchResult[]>;
 };
