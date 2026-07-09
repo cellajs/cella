@@ -55,7 +55,8 @@ function MdxHeading({ id = '', children, ...props }: ComponentProps<'h2'>) {
   return (
     <h2 id={id} className="group" {...props}>
       {children}
-      {hash && <HashUrlButton url={getHashUrl(hash)} />}
+      {/* ms-2: inline in heading text, unlike the flex-gap card titles elsewhere */}
+      {hash && <HashUrlButton className="ms-2" url={getHashUrl(hash)} />}
     </h2>
   );
 }

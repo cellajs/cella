@@ -66,7 +66,10 @@ function ViewPage({ slug }: ViewPageProps) {
     <div className="container">
       <div className="mx-auto flex max-w-4xl justify-center gap-10 lg:max-w-292">
         <div className="min-w-0 max-w-208 flex-1">
-          <div className="prose dark:prose-invert max-w-none">
+          {/* scroll-mt on anchor targets (spy-prefixed heading ids): native hash scrolls
+              land with breathing room below the viewport edge (same technique as the
+              operations/schemas pages' scroll-mt-4 cards). */}
+          <div className="prose dark:prose-invert max-w-none [&_[id^=spy-]]:scroll-mt-4">
             <h1 className="pt-6">{page.name}</h1>
             {page.updatedAt && <PageUpdatedAt updatedAt={page.updatedAt} />}
 
