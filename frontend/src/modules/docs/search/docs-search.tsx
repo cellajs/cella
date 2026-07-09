@@ -135,8 +135,10 @@ export const DocsSearch = () => {
           wrapClassName="h-12 text-lg"
           placeholder={placeholder}
         />
-        <ScrollArea className="overflow-y-auto sm:h-[45vh]">
-          <ComboboxList className="h-full">
+        {/* Height + scrolling live on the ScrollArea viewport (styled scrollbar);
+            the list's own max-h/overflow are neutralized so it never scrolls natively. */}
+        <ScrollArea className="sm:h-[45vh]">
+          <ComboboxList className="h-full max-h-none overflow-visible">
             {results === null && recentSearches.length > 0 && (
               <ComboboxGroup className="p-1">
                 <ComboboxGroupLabel>{t('c:history')}</ComboboxGroupLabel>
