@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
+import { t } from 'i18next';
 import { operationsQueryOptions, schemasQueryOptions } from '~/modules/docs/query';
 import type { EnginePage } from '~/modules/docs/search/engine';
 import type { DocsSearchClient } from '~/modules/docs/search/types';
@@ -55,7 +56,11 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
       sections: sectionsBySlug.get(page.id) ?? [],
     }));
 
-  const engine = createEngine(pages, operations, schemas);
+  // Tier-1 breadcrumb labels match the sidebar's lowercase section rows.
+  const engine = createEngine(pages, operations, schemas, {
+    operations: t('c:operation', { count: 2 }).toLowerCase(),
+    schemas: t('c:schema', { count: 2 }).toLowerCase(),
+  });
   let hasOperations = operations !== null;
   let hasSchemas = schemas !== null;
 

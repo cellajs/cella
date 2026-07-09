@@ -95,7 +95,11 @@ function pageDocs(page: EnginePage): SearchDoc[] {
   ];
 }
 
-function operationDoc(op: GenOperationSummary): SearchDoc {
+/** Tier-1 breadcrumb labels: bare tag names ("base") are ambiguous on their own. */
+export type EngineLabels = { operations: string; schemas: string };
+const defaultLabels: EngineLabels = { operations: 'operations', schemas: 'schemas' };
+
+function operationDoc(op: GenOperationSummary, labels: EngineLabels): SearchDoc {
   return {
     id: `operation:${op.hash}`,
     kind: 'operation',
@@ -104,7 +108,7 @@ function operationDoc(op: GenOperationSummary): SearchDoc {
     content: op.description ?? '',
     path: `${op.method} ${op.path}`,
     tags: op.tags,
-    breadcrumbs: op.tags,
+    breadcrumbs: [labels.operations, ...op.tags],
     to: '/docs/operations',
     hash: op.hash,
     method: op.method,
@@ -112,7 +116,7 @@ function operationDoc(op: GenOperationSummary): SearchDoc {
   };
 }
 
-function schemaDoc(schema: GenComponentSchema): SearchDoc {
+function schemaDoc(schema: GenComponentSchema, labels: EngineLabels): SearchDoc {
   return {
     id: `schema:${schema.name}`,
     kind: 'schema',
@@ -121,7 +125,7 @@ function schemaDoc(schema: GenComponentSchema): SearchDoc {
     content: schema.description ?? '',
     path: '',
     tags: [schema.schemaTag],
-    breadcrumbs: [schema.schemaTag],
+    breadcrumbs: [labels.schemas, schema.schemaTag],
     to: '/docs/schemas',
     // Anchor convention of the schemas page: the $ref path minus its leading '#'.
     hash: schema.ref.replace(/^#/, ''),
@@ -143,6 +147,7 @@ export function createEngine(
   pages: EnginePage[],
   operations: GenOperationSummary[] | null,
   schemas: GenComponentSchema[] | null = null,
+  labels: EngineLabels = defaultLabels,
 ) {
   const db = create({ schema: searchSchema });
   const docsById = new Map<string, SearchDoc>();
@@ -154,8 +159,8 @@ export function createEngine(
   };
 
   insert(pages.flatMap(pageDocs));
-  if (operations) insert(operations.map(operationDoc));
-  if (schemas) insert(schemas.map(schemaDoc));
+  if (operations) insert(operations.map((op) => operationDoc(op, labels)));
+  if (schemas) insert(schemas.map((schema) => schemaDoc(schema, labels)));
 
   const toRow = (doc: SearchDoc, terms: string[]): DocsSearchResult => ({
     id: doc.id,
@@ -173,11 +178,11 @@ export function createEngine(
 
   return {
     addOperations(operations: GenOperationSummary[]) {
-      insert(operations.map(operationDoc));
+      insert(operations.map((op) => operationDoc(op, labels)));
     },
 
     addSchemas(schemas: GenComponentSchema[]) {
-      insert(schemas.map(schemaDoc));
+      insert(schemas.map((schema) => schemaDoc(schema, labels)));
     },
 
     async search(term: string, scope: DocsSearchScope = 'all'): Promise<DocsSearchResult[]> {

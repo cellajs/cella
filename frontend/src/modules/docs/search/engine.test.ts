@@ -104,7 +104,8 @@ describe('docs search engine', () => {
         to: '/docs/operations',
         hash: 'organizations-create',
         method: 'post',
-        breadcrumbs: ['organizations'],
+        // Tier-1 label first: a bare tag name is ambiguous in the results list.
+        breadcrumbs: ['operations', 'organizations'],
       });
     }
   });
@@ -121,7 +122,7 @@ describe('docs search engine', () => {
     expect(rows.find((row) => row.type === 'schema')).toMatchObject({
       to: '/docs/schemas',
       hash: '/components/schemas/UserBase',
-      breadcrumbs: ['data'],
+      breadcrumbs: ['schemas', 'data'],
     });
   });
 
