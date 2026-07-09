@@ -1,6 +1,6 @@
 import { exec } from 'node:child_process';
 import { STUDIO_PORT } from './port';
-import { checkMark } from '#/utils/console';
+import { checkMark } from '../../src/utils/console';
 
 /**
  * Stop Drizzle Studio programmatically.
@@ -24,4 +24,3 @@ const stopDrizzleStudio = () => {
 };
 
 stopDrizzleStudio();
-

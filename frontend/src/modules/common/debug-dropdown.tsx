@@ -2,6 +2,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { useEffect, useState } from 'react';
 import { scan } from 'react-scan';
+import { appConfig } from 'shared';
 import { SyncDevtools } from '~/modules/common/devtools';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -20,8 +21,11 @@ interface DebugDropdownProps {
   className?: string;
 }
 
+const drizzleStudioPort = Number(new URL(appConfig.backendUrl).port) + 983;
+const drizzleStudioUrl = `https://local.drizzle.studio?port=${drizzleStudioPort}`;
+
 const debugOptions: DebugItem[] = [
-  { id: 'drizzle-studio', icon: '💦', url: 'https://local.drizzle.studio/' },
+  { id: 'drizzle-studio', icon: '💦', url: drizzleStudioUrl },
   { id: 'storybook', icon: '📖', url: 'http://localhost:6006/' },
   { id: 'tanstack-router', icon: '🌴', parent: '.TanStackRouterDevtools', element: ':scope > button' },
   { id: 'react-query', icon: '📡', parent: '.tsqd-parent-container', element: '.tsqd-open-btn' },
