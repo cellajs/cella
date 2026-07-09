@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-
-const MAX_RECENT_SEARCHES = 5;
+import { addRecentSearch } from '~/utils/recent-searches';
 
 interface DocsSearchStoreState {
   recentSearches: string[];
@@ -26,15 +25,10 @@ export const deleteRecentSearch = (value: string) => {
   });
 };
 
-/** Record a submitted query; skips short values and near-duplicates (AppSearch rules). */
+/** Record a submitted query: most recent on top, normalized/containment dedupe. */
 export const updateRecentSearches = (value: string) => {
-  if (!value) return;
-  if (value.replaceAll(' ', '').length < 3) return;
   useDocsSearchStore.setState((state) => {
-    const hasSubstringMatch = state.recentSearches.some((entry) => entry.toLowerCase().includes(value.toLowerCase()));
-    if (hasSubstringMatch) return state;
-    const searches = [...state.recentSearches, value];
-    if (searches.length > MAX_RECENT_SEARCHES) searches.shift();
-    return { recentSearches: searches };
+    const searches = addRecentSearch(state.recentSearches, value);
+    return searches === state.recentSearches ? state : { recentSearches: searches };
   });
 };
