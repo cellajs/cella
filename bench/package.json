@@ -20,7 +20,7 @@
     "uuidv7": "^1.2.1"
   },
   "devDependencies": {
-    "@types/node": "24.10.13",
+    "@types/node": "26.1.1",
     "@types/pg": "^8.20.0",
     "@types/pg-format": "^1.0.5",
     "artillery": "^2.0.33",

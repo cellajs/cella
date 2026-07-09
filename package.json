@@ -59,11 +59,11 @@
     "session": "bash session.sh"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.2",
-    "@cellajs/cli": "^0.0.5",
-    "@commitlint/cli": "^21.2.0",
+    "@biomejs/biome": "^2.5.3",
+    "@cellajs/cli": "^0.0.6",
+    "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
-    "@evilmartians/lefthook": "^2.1.9",
+    "@evilmartians/lefthook": "^2.1.10",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "cross-env": "^10.1.0",
     "knip": "^6.25.0",
