@@ -1,8 +1,8 @@
 /// <reference lib="webworker" />
 import { clientsClaim } from 'workbox-core';
 import { ExpirationPlugin } from 'workbox-expiration';
-import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
-import { registerRoute } from 'workbox-routing';
+import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
+import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { StaleWhileRevalidate } from 'workbox-strategies';
 
 declare const self: ServiceWorkerGlobalScope;
@@ -31,6 +31,11 @@ self.addEventListener('message', (event) => {
 // Workbox precaching: manifest injected by vite-plugin-pwa.
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
+
+// SPA navigations (e.g. a reload on /docs) don't match any precache URL; serve
+// the precached app shell so every route loads offline. generateSW does this
+// automatically — injectManifest workers must register it themselves.
+registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')));
 
 // Docs data JSON (openapi reference + search corpus) is fetched at runtime by
 // react-query and excluded from the precache glob (json isn't in globPatterns).

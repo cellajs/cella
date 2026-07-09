@@ -1,5 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { schemasQueryOptions, tagDetailsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
+import {
+  operationsQueryOptions,
+  schemasQueryOptions,
+  tagDetailsQueryOptions,
+  tagsQueryOptions,
+} from '~/modules/docs/query';
 import { queryClient } from '~/query/query-client';
 import { createErrorComponent, createNotFoundComponent, withSuspense } from '~/routes/route-utils';
 import { appTitle } from '~/utils/app-title';
@@ -25,6 +30,9 @@ export const Route = createFileRoute('/_public/_content/docs')({
     for (const tag of tags) {
       if (tag.count > 0) queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name));
     }
+    // Operations feed the sidebar sections and the docs search corpus; prefetching
+    // here also lets the service worker cache them for offline search.
+    queryClient.prefetchQuery(operationsQueryOptions);
   },
   component: withSuspense(DocsLayout),
 });
