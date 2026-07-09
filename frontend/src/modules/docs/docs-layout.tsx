@@ -8,6 +8,7 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { tagsQueryOptions } from '~/modules/docs/query';
+import { toggleDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { ScrollArea } from '~/modules/ui/scroll-area';
@@ -70,8 +71,10 @@ function DocsLayout() {
     }
   }, [isDesktop, sidebarOpen]);
 
-  // Collapse all expanded items on ESC
+  // Search on ⌘K/Ctrl-K ('mod' matching is broken in the helper, so bind both), collapse on ESC
   useHotkeys([
+    ['meta + k', () => toggleDocsSearch()],
+    ['ctrl + k', () => toggleDocsSearch()],
     [
       'Escape',
       () => {

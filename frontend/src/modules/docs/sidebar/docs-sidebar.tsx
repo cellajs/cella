@@ -1,11 +1,12 @@
 import { Link } from '@tanstack/react-router';
 import { SearchIcon } from 'lucide-react';
-import { Suspense } from 'react';
+import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { Logo } from '~/modules/common/logo';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { openDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { ApiReferenceSection } from '~/modules/docs/sidebar/api-reference-section';
 import { LinksSection } from '~/modules/docs/sidebar/links-section';
 import { PagesSection } from '~/modules/docs/sidebar/pages-section';
@@ -33,6 +34,7 @@ interface DocsSidebarProps {
 export function DocsSidebar({ tags }: DocsSidebarProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
+  const searchTriggerRef = useRef<HTMLButtonElement>(null);
 
   const closeSheet = () => {
     if (!isMobile) return;
@@ -63,8 +65,14 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
           {docsConfig.title}
         </Link>
         <div className="ml-auto flex items-center gap-1">
-          {/* TODO(docs-search): styling anchor for the upcoming docs search feature */}
-          <Button variant="ghost" size="icon" className="size-8" aria-label={t('c:search')}>
+          <Button
+            ref={searchTriggerRef}
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label={t('c:search')}
+            onClick={() => openDocsSearch(searchTriggerRef)}
+          >
             <SearchIcon size={20} strokeWidth={appConfig.theme.strokeWidth} />
           </Button>
           <UserTheme buttonClassName="size-8" />
