@@ -95,6 +95,14 @@ export interface PermissionCheckOptions {
    */
   publicGrants?: PublicReadGrants;
   /**
+   * Grant scoping for PRODUCT subjects: roles listed here have subtree-scoped grants
+   * (their context and everything below); all other roles speak only for rows HOMED at
+   * their grant's context level. `undefined` (default) keeps every grant subtree-scoped
+   * — the template behavior. Injected by the `checkPermission` wrapper like
+   * `publicGrants`; see `shared/config/permissions-config.ts`.
+   */
+  subtreeRoles?: readonly string[];
+  /**
    * Override the hierarchy/action topology the engine reads (defaults to the app's config).
    * Tests use this to exercise a synthetic hierarchy; see `shared/src/testing/wide-fixture.ts`.
    */

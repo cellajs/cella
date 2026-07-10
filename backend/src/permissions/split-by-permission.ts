@@ -1,11 +1,11 @@
-import type { ContextEntityType, EntityActionType, ProductEntityType } from 'shared';
+import type { ContextEntityIdColumns, ContextEntityType, EntityActionType, ProductEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
 import { resolveEntities } from '#/modules/entities/entities-queries';
 import { checkPermission } from '#/permissions';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
+import { buildSubject } from '#/permissions/build-subject';
 
 /**
  * Splits entity IDs into allowed and disallowed based on the user's permissions.
@@ -38,8 +38,15 @@ export const splitByPermission = async (
       : await resolveEntities(ctx, entityType, ids);
 
   // Check permissions for all entities in a single batch operation.
-  // userId enables 'own' policy evaluation per entity.
-  const subjects = entities.map((entity) => buildSubjectFromEntity(entityType, entity));
+  // userId enables 'own' policy evaluation per entity; the entity doubles as `row` so
+  // row conditions and public read grants evaluate from real row data.
+  const subjects = entities.map((entity) =>
+    buildSubject(entityType, entity as Partial<ContextEntityIdColumns>, {
+      id: entity.id,
+      createdBy: 'createdBy' in entity ? (entity.createdBy as string | null) : undefined,
+      row: entity as Record<string, unknown>,
+    }),
+  );
   const { results } = checkPermission(memberships, action, subjects, { isSystemAdmin, userId });
 
   // Partition into allowed and disallowed

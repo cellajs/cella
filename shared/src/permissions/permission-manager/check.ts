@@ -98,6 +98,7 @@ const checkWithIndices = <T extends PermissionMembership>(
   isSystemAdmin: boolean,
   userId?: string,
   publicGrants?: PublicReadGrants,
+  subtreeRoles?: readonly string[],
   debug?: boolean,
 ): PermissionDecision<T> => {
   // Primary context is orderedContexts[0]; the hierarchy guarantees the array is never empty.
@@ -142,6 +143,14 @@ const checkWithIndices = <T extends PermissionMembership>(
   const conditionRow: RowForCondition = { ...subject.row, createdBy: subject.createdBy };
   const conditionActor: ConditionActor = { userId };
 
+  // Grant scoping (subtreeRoles): product subjects only — context subjects keep full
+  // elevation semantics (e.g. members of a parent context may still discover child
+  // contexts). The subject's HOME is the most specific context with an id; non-subtree
+  // roles speak only for rows homed at their own grant level.
+  const isProductSubject = (subject.entityType as string) !== primaryContext;
+  const homeContext =
+    subtreeRoles && isProductSubject ? orderedContexts.find((ct) => getSubjectContextId(subject, ct)) : undefined;
+
   // Walk through each context level (most specific first, then ancestors)
   for (const contextType of orderedContexts) {
     // Strict: context in hierarchy must have roles defined
@@ -174,6 +183,12 @@ const checkWithIndices = <T extends PermissionMembership>(
         throw new Error(
           `[Permission] Role "${m.role}" in context ${contextType} has no policy for ${subject.entityType}`,
         );
+      }
+
+      // Grant scope: applies to EVERY action of the grant, including create (a target
+      // placement's home decides which grants may create there) and 'own' conditions.
+      if (subtreeRoles && isProductSubject && !subtreeRoles.includes(m.role) && contextType !== homeContext) {
+        continue;
       }
 
       // Attribute each granted action to this membership
@@ -252,6 +267,7 @@ export function getAllDecisions<T extends PermissionMembership>(
   const isSystemAdmin = options?.isSystemAdmin === true;
   const userId = options?.userId;
   const publicGrants = options?.publicGrants;
+  const subtreeRoles = options?.subtreeRoles;
   const debug = options?.debug === true;
   // Topology defaults to the app's real config; tests override it to drive the engine on a
   // synthetic hierarchy (see shared/src/testing/wide-fixture.ts). No override → unchanged behavior.
@@ -310,6 +326,7 @@ export function getAllDecisions<T extends PermissionMembership>(
       isSystemAdmin,
       userId,
       publicGrants,
+      subtreeRoles,
       debug,
     );
 

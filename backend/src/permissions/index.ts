@@ -6,8 +6,10 @@ export {
   type PermissionResult,
 } from './check-permission';
 export {
+  type AncestorScope,
   type CollectionReadFilter,
   type ConditionalScope,
+  type HomeScope,
   hasNoReadScope,
   resolveCollectionReadFilter,
 } from './collection-scope';

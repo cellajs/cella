@@ -48,10 +48,13 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
       : await resolveEntity(ctx, entityType, id);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
-  // Step 2: Check permission for the requested action.
+  // Step 2: Check permission for the requested action. The entity doubles as `row` so
+  // 'own' row conditions and public read grants (e.g. `publicSelf`) evaluate from real
+  // row data — without it, row-dependent grants fail closed on every single-row check.
   const subject = buildSubject(entityType, entity, {
     id: entity.id,
     createdBy: 'createdBy' in entity ? (entity.createdBy as string | null) : undefined,
+    row: entity as Record<string, unknown>,
   });
   const { isAllowed } = checkPermission(memberships, action, subject, { isSystemAdmin, userId });
 

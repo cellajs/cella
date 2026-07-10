@@ -20,7 +20,7 @@ export type { PermissionsConfigResult } from './access-policies';
 export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './action-helpers';
 export { computeCan } from './compute-can';
 export type { EntityCanMap } from './compute-can';
-export { accessPolicies, publicReadGrants } from '../../config/permissions-config';
+export { accessPolicies, publicReadGrants, subtreeRoles } from '../../config/permissions-config';
 
 // Permission engine (tier-neutral decision logic)
 export { getAllDecisions } from './permission-manager/check';

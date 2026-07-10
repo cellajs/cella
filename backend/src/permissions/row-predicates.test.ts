@@ -6,10 +6,15 @@ import {
   type ContextEntityType,
   computeCan,
   configureAccessPolicies,
+  createEntityHierarchy,
+  createRoleRegistry,
+  type EntityType,
   getAllDecisions,
   getContextRoles,
   hierarchy,
+  type PermissionTopology,
   type PermissionValue,
+  type ProductEntityType,
   resolvePermission,
   type SubjectForPermission,
   toColumnName,
@@ -292,5 +297,281 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
         expect(fromSqlAll, `seed 0xbee5 scenario ${i} sub-context ${requestedSubContext}`).toEqual(expected);
       }
     });
+  });
+});
+
+/******************************************************************************
+ * Deep-chain parity: 4-level SYNTHETIC hierarchy (organization > course >
+ * courseSection > project, product `item` parented to project with nullable
+ * ancestors) — exercises intermediate ancestor-level grants (course /
+ * courseSection) that a 2-level config structurally cannot reach. Both paths
+ * run on the same topology seam: the engine via `getAllDecisions(…, { topology })`,
+ * the scope compiler via `resolveCollectionReadFilterForPolicies(…, topology)`.
+ * The casts naming synthetic entities are contained in the fixtures below,
+ * mirroring `shared/src/testing/wide-fixture.ts`.
+ ******************************************************************************/
+
+const deepRoles = createRoleRegistry(['admin', 'member', 'staff', 'student', 'owner', 'follower'] as const);
+const deepHierarchy = createEntityHierarchy(deepRoles)
+  .user()
+  .context('organization', { parent: null, roles: ['admin', 'member'] })
+  .context('course', { parent: 'organization', roles: ['staff', 'student'] })
+  .context('courseSection', { parent: 'course', roles: ['staff', 'student'] })
+  .context('project', { parent: 'courseSection', roles: ['owner', 'follower'] })
+  .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection', 'course'] })
+  .build();
+const deepTopology: PermissionTopology = { hierarchy: deepHierarchy };
+
+type DeepContextType = 'organization' | 'course' | 'courseSection' | 'project';
+const DEEP_ENTITY_TYPES = ['user', 'organization', 'course', 'courseSection', 'project', 'item'] as const;
+const DEEP_CONTEXT_ROLES = {
+  organization: ['admin', 'member'],
+  course: ['staff', 'student'],
+  courseSection: ['staff', 'student'],
+  project: ['owner', 'follower'],
+} as const satisfies Record<DeepContextType, readonly string[]>;
+const DEEP_ITEM = 'item' as unknown as ProductEntityType;
+
+// Column keys follow the `${contextType}Id` convention `buildCollectionReadWhere` falls
+// back to for topology levels absent from `appConfig.entityIdColumnKeys`.
+const deepParityTable = pgTable('test_permission_parity_deep_rows', {
+  id: varchar('id').primaryKey(),
+  organizationId: varchar('organization_id').notNull(),
+  courseId: varchar('course_id'),
+  courseSectionId: varchar('course_section_id'),
+  projectId: varchar('project_id'),
+  createdBy: varchar('created_by'),
+});
+
+interface DeepParityRow {
+  id: string;
+  organizationId: string;
+  courseId: string | null;
+  courseSectionId: string | null;
+  projectId: string | null;
+  createdBy: string | null;
+}
+
+/** Placements across all four depths; p1 sits under s1/c1, p2 under c2, p3 is org-level. */
+const DEEP_PLACEMENTS = [
+  { key: 'org', courseId: null, courseSectionId: null, projectId: null },
+  { key: 'c1', courseId: 'c1', courseSectionId: null, projectId: null },
+  { key: 's1', courseId: 'c1', courseSectionId: 's1', projectId: null },
+  { key: 'p1', courseId: 'c1', courseSectionId: 's1', projectId: 'p1' },
+  { key: 'p2', courseId: 'c2', courseSectionId: null, projectId: 'p2' },
+  { key: 'p3', courseId: null, courseSectionId: null, projectId: 'p3' },
+] as const;
+
+/** Fixed row set: every placement × creator. */
+const DEEP_ROWS: DeepParityRow[] = [...USERS, null].flatMap((createdBy) =>
+  DEEP_PLACEMENTS.map((placement) => ({
+    id: `${createdBy ?? 'nobody'}:${placement.key}`,
+    organizationId: ROOT_ID,
+    courseId: placement.courseId,
+    courseSectionId: placement.courseSectionId,
+    projectId: placement.projectId,
+    createdBy,
+  })),
+);
+
+/** Policies for `item` over the synthetic topology, one read cell per context × role. */
+const deepPolicies = (readValue: (contextType: DeepContextType, role: string) => PermissionValue): AccessPolicies =>
+  configureAccessPolicies(
+    DEEP_ENTITY_TYPES as unknown as readonly EntityType[],
+    ({ subject, contexts }) => {
+      if ((subject.name as string) !== 'item') return;
+      const builders = contexts as unknown as Record<
+        DeepContextType,
+        Record<string, (perms: { read: PermissionValue }) => void>
+      >;
+      for (const [contextType, roles] of Object.entries(DEEP_CONTEXT_ROLES) as [DeepContextType, readonly string[]][]) {
+        for (const role of roles) builders[contextType][role]({ read: readValue(contextType, role) });
+      }
+    },
+    deepTopology,
+  );
+
+const deepMembership = (contextType: DeepContextType, contextId: string, role: string): MembershipBaseModel =>
+  ({
+    id: `mem-${contextType}-${contextId}-${role}`,
+    userId: 'actor',
+    contextType,
+    contextId,
+    organizationId: ROOT_ID,
+    role,
+  }) as unknown as MembershipBaseModel;
+
+interface DeepScenario {
+  policies: AccessPolicies;
+  memberships: MembershipBaseModel[];
+  userId: string | undefined;
+}
+
+const randomDeepScenario = (random: () => number): DeepScenario => {
+  const memberships: MembershipBaseModel[] = [];
+  if (random() < 0.5)
+    memberships.push(deepMembership('organization', ROOT_ID, pick(random, DEEP_CONTEXT_ROLES.organization)));
+  if (random() < 0.5) memberships.push(deepMembership('course', 'c1', pick(random, DEEP_CONTEXT_ROLES.course)));
+  if (random() < 0.3) memberships.push(deepMembership('course', 'c2', pick(random, DEEP_CONTEXT_ROLES.course)));
+  if (random() < 0.5)
+    memberships.push(deepMembership('courseSection', 's1', pick(random, DEEP_CONTEXT_ROLES.courseSection)));
+  if (random() < 0.5) memberships.push(deepMembership('project', 'p1', pick(random, DEEP_CONTEXT_ROLES.project)));
+  if (random() < 0.3) memberships.push(deepMembership('project', 'p3', pick(random, DEEP_CONTEXT_ROLES.project)));
+  return {
+    policies: deepPolicies(() => randomReadValue(random)),
+    memberships,
+    userId: random() < 0.9 ? pick(random, USERS) : undefined,
+  };
+};
+
+const deepRowSubject = (row: DeepParityRow): SubjectForPermission =>
+  ({
+    entityType: 'item',
+    id: row.id,
+    createdBy: row.createdBy,
+    contextIds: {
+      organization: ROOT_ID,
+      course: row.courseId,
+      courseSection: row.courseSectionId,
+      project: row.projectId,
+    },
+  }) as unknown as SubjectForPermission;
+
+/** Path 1: the engine's per-row read decision, over the synthetic topology. */
+const deepEngineReadableIds = (scenario: DeepScenario, subtreeRoles?: readonly string[]): Set<string> => {
+  const readable = new Set<string>();
+  for (const row of DEEP_ROWS) {
+    const { can } = getAllDecisions(scenario.policies, scenario.memberships, deepRowSubject(row), {
+      userId: scenario.userId,
+      topology: deepTopology,
+      ...(subtreeRoles && { subtreeRoles }),
+    });
+    if (can.read) readable.add(row.id);
+  }
+  return readable;
+};
+
+/** Path 2: the compiled SQL predicate executed against Postgres, same topology. */
+const deepSqlReadableIds = async (scenario: DeepScenario, subtreeRoles?: readonly string[]): Promise<Set<string>> => {
+  const filter = resolveCollectionReadFilterForPolicies(
+    scenario.policies,
+    scenario.memberships,
+    DEEP_ITEM,
+    ROOT_ID,
+    undefined,
+    subtreeRoles,
+    deepTopology,
+  );
+  const where = buildCollectionReadWhere(filter, deepParityTable, deepParityTable.projectId, scenario.userId);
+
+  if (where.kind === 'none') return new Set();
+  const query = seedDb.select({ id: deepParityTable.id }).from(deepParityTable);
+  const rows = where.kind === 'all' ? await query : await query.where(where.where);
+  return new Set(rows.map((r) => r.id));
+};
+
+const deepScenarioLabel = (seed: string, i: number, scenario: DeepScenario): string =>
+  `seed ${seed} scenario ${i} (memberships: ${scenario.memberships
+    .map((m) => `${m.contextType}:${m.contextId}:${m.role}`)
+    .join(', ')}; user: ${scenario.userId ?? 'anonymous'})`;
+
+beforeAll(async () => {
+  await seedDb.execute(sql`drop table if exists test_permission_parity_deep_rows`);
+  await seedDb.execute(sql`
+    create table test_permission_parity_deep_rows (
+      id varchar primary key,
+      organization_id varchar not null,
+      course_id varchar,
+      course_section_id varchar,
+      project_id varchar,
+      created_by varchar
+    )
+  `);
+  await seedDb.insert(deepParityTable).values(DEEP_ROWS);
+});
+
+afterAll(async () => {
+  await seedDb.execute(sql`drop table if exists test_permission_parity_deep_rows`);
+});
+
+describe('deep-chain parity: intermediate ancestor grants agree between engine and SQL', () => {
+  it('agrees on every row across random policies, multi-level memberships and actors', async () => {
+    const random = mulberry32(0xdeec);
+
+    for (let i = 0; i < 250; i++) {
+      const scenario = randomDeepScenario(random);
+      const label = deepScenarioLabel('0xdeec', i, scenario);
+
+      const fromEngine = deepEngineReadableIds(scenario);
+      const fromSql = await deepSqlReadableIds(scenario);
+      expect(fromSql, label).toEqual(fromEngine);
+    }
+  });
+});
+
+/******************************************************************************
+ * subtreeRoles parity (same synthetic topology): with `subtreeRoles` configured,
+ * a product grant of a non-listed role speaks only for rows HOMED at its own
+ * context level, while listed roles (admin/staff) keep subtree scope. Engine
+ * (`getAllDecisions(…, { subtreeRoles })`) ≍ compiled SQL, row for row.
+ ******************************************************************************/
+
+const SUBTREE_ROLES = ['admin', 'staff'] as const;
+
+describe('subtreeRoles parity: home-scoped grants agree between engine and SQL', () => {
+  it('agrees on every row across random policies and memberships with subtreeRoles configured', async () => {
+    const random = mulberry32(0x50b7);
+
+    for (let i = 0; i < 100; i++) {
+      const scenario = randomDeepScenario(random);
+      const label = deepScenarioLabel('0x50b7', i, scenario);
+
+      const fromEngine = deepEngineReadableIds(scenario, SUBTREE_ROLES);
+      const fromSql = await deepSqlReadableIds(scenario, SUBTREE_ROLES);
+      expect(fromSql, label).toEqual(fromEngine);
+    }
+  });
+
+  it('scopes a non-subtree course grant to course-HOMED rows only', async () => {
+    const scenario: DeepScenario = {
+      policies: deepPolicies((contextType, role) => (contextType === 'course' && role === 'student' ? 1 : 0)),
+      memberships: [deepMembership('course', 'c1', 'student')],
+      userId: 'u1',
+    };
+    // Rows homed at c1 itself — NOT the section/project rows physically below it.
+    const expected = new Set(
+      DEEP_ROWS.filter((r) => r.courseId === 'c1' && r.courseSectionId === null && r.projectId === null).map(
+        (r) => r.id,
+      ),
+    );
+    expect(deepEngineReadableIds(scenario, SUBTREE_ROLES)).toEqual(expected);
+    expect(await deepSqlReadableIds(scenario, SUBTREE_ROLES)).toEqual(expected);
+  });
+
+  it('keeps subtree scope for a listed (staff) course grant', async () => {
+    const scenario: DeepScenario = {
+      policies: deepPolicies((contextType, role) => (contextType === 'course' && role === 'staff' ? 1 : 0)),
+      memberships: [deepMembership('course', 'c1', 'staff')],
+      userId: 'u1',
+    };
+    // Everything physically below c1: the course row plus its section and project rows.
+    const expected = new Set(DEEP_ROWS.filter((r) => r.courseId === 'c1').map((r) => r.id));
+    expect(deepEngineReadableIds(scenario, SUBTREE_ROLES)).toEqual(expected);
+    expect(await deepSqlReadableIds(scenario, SUBTREE_ROLES)).toEqual(expected);
+  });
+
+  it("matches a home-scoped 'own' grant only on the author's home-level rows", async () => {
+    const scenario: DeepScenario = {
+      policies: deepPolicies((contextType, role) => (contextType === 'course' && role === 'student' ? 'own' : 0)),
+      memberships: [deepMembership('course', 'c1', 'student')],
+      userId: 'u1',
+    };
+    const expected = new Set(
+      DEEP_ROWS.filter(
+        (r) => r.courseId === 'c1' && r.courseSectionId === null && r.projectId === null && r.createdBy === 'u1',
+      ).map((r) => r.id),
+    );
+    expect(deepEngineReadableIds(scenario, SUBTREE_ROLES)).toEqual(expected);
+    expect(await deepSqlReadableIds(scenario, SUBTREE_ROLES)).toEqual(expected);
   });
 });
