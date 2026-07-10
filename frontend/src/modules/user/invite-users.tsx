@@ -4,6 +4,7 @@ import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { zMembershipInviteBody } from 'sdk/zod.gen';
+import { type ContextEntityType, hierarchy } from 'shared';
 import type z from 'zod';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { AnimatedArrow } from '~/modules/common/animated-arrow';
@@ -12,21 +13,29 @@ import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
+import { InviteBulkEmailForm } from '~/modules/user/invite-bulk-email-form';
 import { InviteEmailForm } from '~/modules/user/invite-email-form';
 import { InviteSearchForm } from '~/modules/user/invite-search-form';
 
 const InviteFormSchema = zMembershipInviteBody;
 export type InviteFormValues = z.infer<typeof InviteFormSchema>;
 
+/** Default invite role for a context: 'member' when the vocabulary has it, else the least-privileged role. */
+const defaultInviteRole = (entityType?: ContextEntityType): InviteFormValues['role'] => {
+  const contextRoles = entityType ? hierarchy.getRoles(entityType) : [];
+  if (!contextRoles.length || contextRoles.includes('member')) return 'member';
+  return contextRoles[contextRoles.length - 1] as InviteFormValues['role'];
+};
+
 /**
  * Creates a draft-backed invite form for the given entity.
  */
-export function useInviteFormDraft(entityId?: string) {
+export function useInviteFormDraft(entityId?: string, entityType?: ContextEntityType) {
   return useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {
     formContainerId: 'invite-users',
     formOptions: {
       resolver: zodResolver(InviteFormSchema),
-      defaultValues: { emails: [], role: 'member' },
+      defaultValues: { emails: [], role: defaultInviteRole(entityType) },
     },
   });
 }
@@ -34,7 +43,7 @@ export function useInviteFormDraft(entityId?: string) {
 interface InviteUsersProps {
   contextEntity?: EnrichedContextEntity;
   dialog?: boolean;
-  mode?: 'search' | 'email' | null;
+  mode?: 'search' | 'email' | 'bulk' | null;
   children?: React.ReactNode;
 }
 
@@ -44,7 +53,7 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
 
   const [inviteMode, setInviteMode] = useState(baseMode);
 
-  const updateMode = (mode: ('search' | 'email')[]) => {
+  const updateMode = (mode: ('search' | 'email' | 'bulk')[]) => {
     // If mode is empty, go back to initial state
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
 
@@ -71,7 +80,9 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
                 transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               >
                 <ChevronRightIcon className="opacity-50" size={16} />
-                <UnsavedBadge title={mode[0] === 'search' ? t('c:search') : t('c:email')} />
+                <UnsavedBadge
+                  title={mode[0] === 'search' ? t('c:search') : mode[0] === 'bulk' ? t('app:email_bulk') : t('c:email')}
+                />
               </motion.span>
             )}
           </AnimatePresence>
@@ -133,12 +144,27 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
             className="flex flex-col gap-4"
           >
             <AlertBanner id={`invite_${inviteMode}`} variant="success" icon={InfoIcon}>
-              {t(inviteMode === 'email' ? 'c:explain.invite_email.text' : 'c:explain.invite_search.text')}
+              {t(
+                inviteMode === 'search'
+                  ? 'c:explain.invite_search.text'
+                  : inviteMode === 'bulk'
+                    ? 'app:explain.invite_bulk.text'
+                    : 'c:explain.invite_email.text',
+              )}
+              {inviteMode === 'email' && (
+                <button type="button" className="ml-1 underline" onClick={() => updateMode(['bulk'])}>
+                  {t('app:invite_bulk_link')}
+                </button>
+              )}
             </AlertBanner>
             {inviteMode === 'email' ? (
               <InviteEmailForm contextEntity={contextEntity} dialog={isDialog}>
                 {children}
               </InviteEmailForm>
+            ) : inviteMode === 'bulk' ? (
+              <InviteBulkEmailForm contextEntity={contextEntity} dialog={isDialog}>
+                {children}
+              </InviteBulkEmailForm>
             ) : (
               <InviteSearchForm contextEntity={contextEntity} dialog={isDialog} />
             )}

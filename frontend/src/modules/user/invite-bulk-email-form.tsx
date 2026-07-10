@@ -1,20 +1,25 @@
 import { useMutation } from '@tanstack/react-query';
 import { SendIcon } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-// biome-ignore lint/style/noRestrictedImports: colocated mutation for system-level invite called from stepper flow.
+// biome-ignore lint/style/noRestrictedImports: colocated mutation for system-level invite, mirrors invite-email-form.
 import { systemInvite as baseSystemInvite } from 'sdk';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
-import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
-import type { InviteMember } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { Form, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { Textarea } from '~/modules/ui/textarea';
 import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
+
+/** Extract unique, lowercased email addresses from any pasted text (commas, newlines, address-book dumps). */
+export const extractEmails = (text: string): string[] => {
+  const matches = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) ?? [];
+  return [...new Set(matches.map((email) => email.toLowerCase()))];
+};
 
 interface Props {
   contextEntity?: EnrichedContextEntity;
@@ -23,21 +28,28 @@ interface Props {
 }
 
 /**
- * Form for inviting users by email.
+ * Bulk variant of the email invite form: emails are extracted from freely pasted text.
+ * Operates the same invite flow in the background, only the input differs.
  */
-export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: Props) {
+export function InviteBulkEmailForm({ contextEntity, dialog: isDialog, children }: Props) {
   const { t } = useTranslation();
 
-  const { nextStep } = useStepper();
-
+  const [rawText, setRawText] = useState('');
   const form = useInviteFormDraft(contextEntity?.id, contextEntity?.entityType);
+
+  const onTextChange = (text: string) => {
+    setRawText(text);
+    form.setValue('emails', extractEmails(text), { shouldDirty: true });
+  };
+
+  const emails = form.getValues('emails') ?? [];
 
   const onSuccess = (
     { invitesSentCount, rejectedIds }: { rejectedIds: string[]; invitesSentCount: number },
-    variables: InviteFormValues | InviteMember,
+    submittedEmails: string[],
   ) => {
-    const emails = 'emails' in variables ? variables.emails : variables.body.emails;
-    form.reset(undefined, { keepDirtyValues: true });
+    form.reset();
+    setRawText('');
     if (isDialog) useDialoger.getState().remove();
 
     if (invitesSentCount > 0) {
@@ -45,16 +57,13 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
       toaster(t('c:success.resource_count_invited', { count: invitesSentCount, resource }), 'success');
     }
     if (rejectedIds.length)
-      toaster(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }), 'info');
-
-    // Onboarding advances through stepper state instead of the optional callback.
-    nextStep?.();
+      toaster(t('c:still_not_accepted', { count: rejectedIds.length, total: submittedEmails.length }), 'info');
   };
 
   const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
   const { mutate: systemInvite, isPending: isSystemInvitePending } = useMutation({
     mutationFn: (body: InviteFormValues) => baseSystemInvite({ body }),
-    onSuccess,
+    onSuccess: (result, body) => onSuccess(result, body.emails),
   });
 
   const onSubmit = (body: InviteFormValues) => {
@@ -65,27 +74,27 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
     const path = { tenantId: contextEntity.tenantId, organizationId: organizationId };
     const query = { entityId: contextEntity.id, entityType: contextEntity.entityType };
 
-    membershipInvite({ body, path, query, contextEntity }, { onSuccess });
+    membershipInvite({ body, path, query, contextEntity }, { onSuccess: (result) => onSuccess(result, body.emails) });
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="emails"
-          render={({ field: { onChange, value } }) => (
-            <FormItem>
-              <SelectEmails
-                placeholder={t('c:add_email')}
-                emails={value}
-                onValueChange={onChange}
-                inputProps={{ autoComplete: 'off' }}
-              />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <FormItem name="bulk-emails">
+          <FormLabel>{t('app:paste_emails')}</FormLabel>
+          <FormDescription>{t('app:paste_emails.text')}</FormDescription>
+          <Textarea
+            value={rawText}
+            onChange={(event) => onTextChange(event.target.value)}
+            placeholder={t('app:paste_emails.placeholder')}
+            autoResize
+            className="min-h-24"
+            autoComplete="off"
+          />
+          <div className="text-muted-foreground text-sm">{t('app:emails_recognized', { count: emails.length })}</div>
+          <FormField control={form.control} name="emails" render={() => <FormMessage />} />
+        </FormItem>
+
         {contextEntity && (
           <FormField
             control={form.control}
@@ -101,10 +110,10 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
         )}
 
         <div className="flex flex-col gap-2 sm:flex-row">
-          <SubmitButton loading={isPending || isSystemInvitePending} className="relative">
-            {!!form.getValues('emails')?.length && (
+          <SubmitButton disabled={!emails.length} loading={isPending || isSystemInvitePending} className="relative">
+            {!!emails.length && (
               <Badge variant="secondary" context="button">
-                {form.getValues('emails')?.length}
+                {emails.length}
               </Badge>
             )}{' '}
             <SendIcon size={16} className="mr-2" />
@@ -113,7 +122,14 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
           {children}
 
           {!children && form.isDirty && (
-            <Button type="reset" variant="secondary" onClick={() => form.reset()}>
+            <Button
+              type="reset"
+              variant="secondary"
+              onClick={() => {
+                form.reset();
+                setRawText('');
+              }}
+            >
               {t('c:cancel')}
             </Button>
           )}

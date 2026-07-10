@@ -1,1 +1,10 @@
-{}
+{
+  "email_bulk": "E-mail (bulk)",
+  "emails_recognized_one": "{{count}} e-mailadres herkend",
+  "emails_recognized_other": "{{count}} e-mailadressen herkend",
+  "explain.invite_bulk.text": "Plak tekst met e-mailadressen: komma's, nieuwe regels of adresboek-exports werken allemaal. Uitgenodigde leden ontvangen een e-mail om de uitnodiging te accepteren.",
+  "invite_bulk_link": "Klik hier om studenten in bulk uit te nodigen via kopiëren en plakken.",
+  "paste_emails": "Plak e-mailadressen",
+  "paste_emails.placeholder": "Plak tekst met e-mailadressen...",
+  "paste_emails.text": "E-mailadressen worden automatisch herkend; één rol geldt voor de hele batch."
+}
