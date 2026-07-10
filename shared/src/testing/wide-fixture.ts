@@ -100,6 +100,8 @@ export const configureWidePermissions = (callback: WideAccessPolicyCallback): Pe
     wideEntityTypes as unknown as readonly EntityType[],
     callback as unknown as AccessPolicyCallback,
     wideTopology,
+    // Test fixtures are deliberately partial; completeness is the app config's contract
+    { validateCompleteness: false },
   );
 
 /** Build a membership over a wide context. */
