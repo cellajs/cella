@@ -896,7 +896,7 @@ const rlsSuiteReady = await (async () => {
       const tableName = getTableName(entityTables[entityType as keyof typeof entityTables]);
       const rowId = seededContextRowIdsByTable.get(tableName);
       if (!rowId) return [];
-      return baseImmutableColumns.map((col) => [tableName, col, entityType, rowId]);
+      return baseImmutableColumns.map((col): ImmutableEntityCase => [tableName, col, entityType, rowId]);
     });
 
     const seededProductRowIdsByTable = new Map<string, string>(
@@ -908,7 +908,9 @@ const rlsSuiteReady = await (async () => {
       const tableName = getTableName(entityTables[entityType as keyof typeof entityTables]);
       const rowId = seededProductRowIdsByTable.get(tableName);
       if (!rowId) return [];
-      return [...baseImmutableColumns, 'organization_id'].map((col) => [tableName, col, entityType, rowId]);
+      return [...baseImmutableColumns, 'organization_id'].map(
+        (col): ImmutableEntityCase => [tableName, col, entityType, rowId],
+      );
     });
 
     const membershipCases: [string, string][] = membershipImmutableColumns.map((col) => ['memberships', col]);
