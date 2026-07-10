@@ -1,4 +1,4 @@
-import type { EntityRole } from 'shared';
+import { type EntityRole, hierarchy } from 'shared';
 import { getEdgeOrder } from 'shared/utils/display-order';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -30,6 +30,11 @@ export async function updateMembershipOp(ctx: AuthContext, membershipId: string,
   }
 
   const updatedType = membershipToUpdate.contextType;
+
+  // The new role must exist in the context's vocabulary (e.g. no org 'member' on a course)
+  if (role !== undefined && !hierarchy.getRoles(updatedType).includes(role)) {
+    throw new AppError(400, 'invalid_role', 'warn', { entityType: updatedType });
+  }
 
   await getValidContextEntity(ctx, membershipToUpdate.contextId, updatedType, role ? 'update' : 'read');
 

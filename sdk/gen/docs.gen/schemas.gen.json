@@ -840,6 +840,10 @@
           "type": ["string", "null"],
           "required": true
         },
+        "remindedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
         "createdBy": {
           "type": ["object", "null"],
           "required": true,
@@ -879,6 +883,7 @@
       "tokenId": "1ea0bf25-06d9-4e65-9415-68a14ed89fa2",
       "role": "admin",
       "rejectedAt": null,
+      "remindedAt": null,
       "createdAt": "2024-02-07T13:46:57.160Z",
       "createdBy": "d867375a-62c7-4ac5-86d4-66be272d180e",
       "organizationId": "4fa889f9-15ca-4730-a060-e4167170b7db",
@@ -1075,6 +1080,10 @@
           },
           "extendsRef": "#/components/schemas/UserMinimalBase"
         },
+        "publishedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
         "shortName": {
           "type": ["string", "null"],
           "required": true,
@@ -1223,6 +1232,7 @@
       "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
       "authStrategies": ["passkey"],
       "chatSupport": true,
+      "publishedAt": "2024-12-25T15:04:42.969Z",
       "createdAt": "2024-12-25T15:04:42.969Z",
       "createdBy": null,
       "updatedAt": "2024-12-25T15:04:42.969Z",

@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { appConfig, type ContextEntityType, type EntityRole, roles } from 'shared';
+import { appConfig, type ContextEntityType, type EntityRole, hierarchy, roles } from 'shared';
 import {
   generateMockContextIdColumns,
   MOCK_REF_DATE,
@@ -76,7 +76,8 @@ export const mockContextMembership = <T extends ContextEntityType>(
     ...contextEntityColumns,
     [appConfig.entityIdColumnKeys[contextType]]: contextEntity.id, // Set the correct context entity ID
     ...overrideIds,
-    role: faker.helpers.arrayElement(roles.all),
+    // Pick from the context's own role vocabulary (e.g. course → staff/student/guest)
+    role: faker.helpers.arrayElement(hierarchy.getRoles(contextType)),
     displayOrder: getMembershipOrderOffset(contextEntity.id) * 10,
     createdAt: mockPastIsoDate(),
     createdBy: userId,

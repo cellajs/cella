@@ -41,6 +41,11 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
   const normalizedEmails = [...new Set(emails.map((e: string) => e.toLowerCase().trim()))];
   if (!normalizedEmails.length) throw new AppError(400, 'no_recipients', 'warn');
 
+  // The invited role must exist in the target context's vocabulary (e.g. no org 'member' on a course)
+  if (!hierarchy.getRoles(entityType).includes(role)) {
+    throw new AppError(400, 'invalid_role', 'warn', { entityType });
+  }
+
   const { entity } = await getValidContextEntity(ctx, entityId, entityType, 'update');
 
   const { slug: entitySlug, name: entityName } = entity;

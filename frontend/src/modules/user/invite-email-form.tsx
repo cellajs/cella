@@ -93,7 +93,7 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
             render={({ field: { value, onChange } }) => (
               <FormItem className="ml-3 flex-row items-center gap-4">
                 <FormLabel>{t('c:role')}</FormLabel>
-                <SelectRoleRadio value={value} onValueChange={onChange} />
+                <SelectRoleRadio value={value} onValueChange={onChange} entityType={contextEntity.entityType} />
                 <FormMessage />
               </FormItem>
             )}

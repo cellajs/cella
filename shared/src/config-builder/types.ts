@@ -123,6 +123,13 @@ export interface CompanyConfig {
 export interface MenuStructureItem {
   entityType: string;
   subentityType: string | null;
+  /**
+   * When a subentity membership is created, an associated membership on the parent entity is
+   * auto-created. By default it gets the least-privileged fitting role (`member` when the parent
+   * vocabulary has it). Set `carryRole` to carry the invited role over instead, when valid in the
+   * parent's vocabulary (e.g. courseSection `student` → course `student`).
+   */
+  carryRole?: boolean;
 }
 
 /******************************************************************************
