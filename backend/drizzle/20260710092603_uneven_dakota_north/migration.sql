@@ -1,0 +1,1 @@
+DROP INDEX "attachments_organization_id_created_at_index";
