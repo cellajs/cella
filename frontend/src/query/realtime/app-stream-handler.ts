@@ -71,9 +71,11 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
           })
           .catch((err) => console.warn('[AppStream] Batch fetch failed:', err));
 
-        // Unseen count: derive from contiguous seq range (single-context constraint)
+        // Unseen counts: never derive user-facing numbers from shared seq ranges — a
+        // batch may contain drafts or span contexts, so its width is not "new for you".
+        // Refetch the predicate-exact server counts instead (React Query dedupes bursts).
         if (action === 'create') {
-          adjustUnseenCount(entityType, notification.contextId ?? null, notification.batchUntilSeq - seq + 1);
+          invalidateUnseenCounts(entityType);
         }
         return;
       }
@@ -228,6 +230,13 @@ function handleEntityNotification(
   }
 
   console.debug(`[handleEntityNotification] ${entityType}:${action} priority=${priority}`);
+}
+
+/** Refetch the server's predicate-exact unseen counts for a tracked entity type. */
+function invalidateUnseenCounts(entityType: string): void {
+  const trackedTypes = appConfig.seenTrackedEntityTypes as readonly string[];
+  if (!trackedTypes.includes(entityType)) return;
+  queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
 }
 
 /**

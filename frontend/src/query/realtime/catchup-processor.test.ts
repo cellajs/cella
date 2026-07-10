@@ -177,11 +177,13 @@ describe('catchup processor', () => {
     });
   });
 
-  it('invalidates org lists when child-context cached totals disagree with server counts', async () => {
+  it('invalidates org lists when a server count CHANGES between catchups (never vs cached totals)', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     registerEntityQueryKeys('attachment', keys);
 
     const scopedListKey = keys.list.scope('org-1', 'project-1');
+    // Cached total deliberately disagrees with the server count: caches are
+    // predicate-filtered per user, so equality with shared counts means nothing
     queryClient.setQueryData(scopedListKey, {
       items: [
         { id: 'attachment-1', organizationId: 'org-1', projectId: 'project-1' },
@@ -190,20 +192,30 @@ describe('catchup processor', () => {
       total: 2,
     });
 
-    await processAppCatchup({
-      cursor: 'cursor-1',
-      changes: {
-        'org-1': {
-          entityCounts: { attachment: 99 },
-          childContextChanges: {
-            'project-1': {
-              entityCounts: { attachment: 3 },
+    const catchup = (count: number) =>
+      processAppCatchup({
+        cursor: 'cursor-1',
+        changes: {
+          'org-1': {
+            childContextChanges: {
+              'project-1': {
+                entityCounts: { attachment: count },
+              },
             },
           },
         },
-      },
-    } as unknown as PostAppCatchupResponse);
+      } as unknown as PostAppCatchupResponse);
 
+    // First sight: nothing to compare against, no invalidation despite the "mismatch"
+    await catchup(3);
+    expect(queryClient.getQueryState(scopedListKey)?.isInvalidated).toBe(false);
+
+    // Unchanged count: still no signal
+    await catchup(3);
+    expect(queryClient.getQueryState(scopedListKey)?.isInvalidated).toBe(false);
+
+    // Count changed while this client wasn't watching → invalidate
+    await catchup(4);
     expect(queryClient.getQueryState(scopedListKey)?.isInvalidated).toBe(true);
   });
 });
