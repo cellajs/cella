@@ -21,8 +21,11 @@ import {
 } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { seedDb } from '#/db/db';
+import { canReceiveEntityEvent } from '#/modules/entities/helpers/dispatch-to-stream';
+import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { resolveCollectionReadFilterForPolicies } from './collection-scope';
+import { checkPermission } from './check-permission';
+import { resolveCollectionReadFilter, resolveCollectionReadFilterForPolicies } from './collection-scope';
 import { buildCollectionReadWhere } from './row-predicates';
 
 /**
@@ -573,5 +576,105 @@ describe('subtreeRoles parity: home-scoped grants agree between engine and SQL',
     );
     expect(deepEngineReadableIds(scenario, SUBTREE_ROLES)).toEqual(expected);
     expect(await deepSqlReadableIds(scenario, SUBTREE_ROLES)).toEqual(expected);
+  });
+});
+
+/******************************************************************************
+ * Three-way mirror parity under the REAL app config: collection SQL ≍ single-row
+ * engine check ≍ SSE dispatch predicate (`canReceiveEntityEvent`). The dispatch
+ * decision doubles as cacheToken issuance (a signed cache token is a read
+ * capability `appCache` honors without re-running predicates), so any divergence
+ * is a security bug.
+ *
+ * Config note: `canReceiveEntityEvent` evaluates through `checkPermission`, which
+ * binds the app's REAL policies — there is no policy-injection seam, and adding
+ * one only for tests would fork the code path under test. So unlike the
+ * synthetic-topology blocks above, this block runs the real config (cella:
+ * 2-level, unconditional org grants; a fork with a nested chain or `'own'` read
+ * cells exercises those automatically via the CHAIN-derived scenario space).
+ * Deep-chain and subtreeRoles decisions are asserted engine ≍ SQL above and reach
+ * dispatch through the same `checkPermission` call. Rows carry no publicAt,
+ * keeping public grants out of scope (collection SQL compiles no public clause).
+ ******************************************************************************/
+
+const realMembership = (
+  contextType: ContextEntityType,
+  contextId: string,
+  role: string,
+  organizationId: string,
+): MembershipBaseModel =>
+  ({
+    id: `mem-${contextType}-${contextId}-${role}`,
+    userId: 'actor',
+    contextType,
+    contextId,
+    organizationId,
+    role,
+  }) as unknown as MembershipBaseModel;
+
+const randomRealScenario = (random: () => number): { memberships: MembershipBaseModel[]; userId: string } => {
+  const memberships: MembershipBaseModel[] = [];
+  if (random() < 0.5) memberships.push(realMembership(ROOT, ROOT_ID, pick(random, getContextRoles(ROOT)), ROOT_ID));
+  // A grant in a DIFFERENT org must contribute nothing to this org's collection
+  if (random() < 0.3)
+    memberships.push(realMembership(ROOT, 'org-other', pick(random, getContextRoles(ROOT)), 'org-other'));
+  if (SUB) {
+    for (const subId of SUB_INSTANCES) {
+      if (random() < 0.4) memberships.push(realMembership(SUB, subId, pick(random, getContextRoles(SUB)), ROOT_ID));
+    }
+  }
+  // SSE subscribers are always authenticated; 'outsider' stands in for a user with no rows
+  return { memberships, userId: random() < 0.85 ? pick(random, USERS) : 'outsider' };
+};
+
+/** Context id columns as they appear on an activity event (and its row). */
+const rowContextColumns = (row: ParityRow): Record<string, unknown> => ({
+  [appConfig.entityIdColumnKeys[ROOT]]: ROOT_ID,
+  ...(subIdKey ? { [subIdKey]: row.subContextId } : {}),
+});
+
+const dispatchEvent = (row: ParityRow): AppStreamProductEvent =>
+  ({
+    entityType: 'attachment',
+    subjectId: row.id,
+    ...rowContextColumns(row),
+    rowData: { id: row.id, createdBy: row.createdBy, ...rowContextColumns(row) },
+  }) as unknown as AppStreamProductEvent;
+
+describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real app config', () => {
+  it('agrees on every row for random membership sets and actors', async () => {
+    const random = mulberry32(0x3a11);
+
+    for (let i = 0; i < 100; i++) {
+      const { memberships, userId } = randomRealScenario(random);
+      const label = `seed 0x3a11 scenario ${i} (memberships: ${memberships
+        .map((m) => `${m.contextType}:${m.contextId}:${m.role}`)
+        .join(', ')}; user: ${userId})`;
+
+      const filter = resolveCollectionReadFilter(memberships, 'attachment', ROOT_ID);
+      const where = buildCollectionReadWhere(filter, parityTable, subContextColumn, userId);
+      const query = seedDb.select({ id: parityTable.id }).from(parityTable);
+      const fromSql = new Set(
+        where.kind === 'none'
+          ? []
+          : (where.kind === 'all' ? await query : await query.where(where.where)).map((r) => r.id),
+      );
+
+      for (const row of ROWS) {
+        // Same subject shape dispatch builds: ancestor scope + createdBy + the row itself
+        const subject = { ...rowSubject(row), row: { createdBy: row.createdBy } };
+        const engineAllowed = checkPermission(memberships, 'read', subject, {
+          isSystemAdmin: false,
+          userId,
+        }).isAllowed;
+        const dispatchAllowed = canReceiveEntityEvent(
+          { userId, isSystemAdmin: false, memberships },
+          dispatchEvent(row),
+        );
+
+        expect(dispatchAllowed, `${label} → row ${row.id} dispatch-vs-engine`).toBe(engineAllowed);
+        expect(fromSql.has(row.id), `${label} → row ${row.id} sql-vs-engine`).toBe(engineAllowed);
+      }
+    }
   });
 });

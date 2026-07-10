@@ -25,9 +25,17 @@ const allEventTypes = new Set<ActivityEventType>(activityEventTypes);
  * passed through to StreamNotification for the client sync engine.
  * `trace` is backend-internal only (OTel span correlation).
  */
+/** Per-row batch payload (permission-relevant fields only), mirrored from the CDC wire. */
+export interface ActivityBatchRow {
+  seq?: number;
+  rowData: Record<string, unknown>;
+}
+
 export interface ActivityEvent extends Omit<ActivityModel, 'type' | 'createdAt'> {
   type: ActivityEventType;
   rowData: unknown;
+  /** Per-row permission fields for batch events — dispatch decides per subscriber per row. */
+  batchRows?: ActivityBatchRow[] | null;
   // Sync fields from CDC worker
   cacheToken: string | null;
   seq: number | null;
