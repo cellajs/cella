@@ -30,9 +30,6 @@ import {
   type PermissionValue,
   type PublicReadGrants,
   type PublicReadMode,
-  type RowRestriction,
-  type RowRestrictionInput,
-  type RowRestrictions,
   type SubjectForPermission,
 } from '../permissions';
 
@@ -83,7 +80,6 @@ export interface WideAccessPolicyConfiguration {
   subject: { name: WideEntityType };
   contexts: Record<WideContextType, WideContextBuilder>;
   publicRead: (mode: PublicReadMode) => void;
-  restrict: (restriction: RowRestrictionInput) => void;
 }
 
 export type WideAccessPolicyCallback = (config: WideAccessPolicyConfiguration) => void;
@@ -122,14 +118,6 @@ export const wideSubject = (input: {
 /** Wrap a wide-keyed public-read grant map for the engine's `publicGrants` option. */
 export const widePublicGrants = (grants: Partial<Record<WideEntityType, PublicReadMode>>): PublicReadGrants =>
   grants as PublicReadGrants;
-
-/**
- * Wrap a wide-keyed row-restriction map for the engine's `restrictions` option. Takes the
- * engine's normalized `RowRestriction` shape (depthColumn/rolesColumn/exemptRoles), matching what
- * the `restrictions` option expects — not the `restrict()` callback's `RowRestrictionInput`.
- */
-export const wideRestrictions = (restrictions: Partial<Record<WideEntityType, RowRestriction>>): RowRestrictions =>
-  restrictions as RowRestrictions;
 
 /** `computeCan`'s result keyed by the wide vocabulary, so tests read `.task` etc. cast-free. */
 export type WideCanMap = Partial<Record<WideEntityType, Record<EntityActionType, ActionPermissionState>>>;

@@ -87,7 +87,7 @@ You do **not** edit [`app-config.ts`](../shared/src/config-builder/app-config.ts
 
 ### Step 3 — 🔴 Declare access policies
 
-Add a `case` to the `switch` in [`shared/config/permissions-config.ts`](../shared/config/permissions-config.ts). The callback gives you `contexts` (CRUD cells per role×context), `publicRead`, and `restrict`. Model it on `task`:
+Add a `case` to the `switch` in [`shared/config/permissions-config.ts`](../shared/config/permissions-config.ts). The callback gives you `contexts` (CRUD cells per role×context) and `publicRead`. Model it on `task`:
 
 ```ts
 case 'note':
@@ -105,7 +105,6 @@ Cell values: `1` allowed, `0`/omitted denied, `'own'` = built-in "actor is creat
 
 - **Product entities have no "self" rows** — their context rows are *home* rows where `create` is meaningful. (Context entities distinguish *elevation* rows on an ancestor, which carry `create`, from *self* rows on the same context, which omit it. See the header comment in `permissions-config.ts`.)
 - **`publicRead(mode)`** — `'publicSelf'` (row's own `publicAt`), `'publicParent'` (parent's `publicAt`), or `'publicParentOrSelf'`. A `publicParent` grant requires the parent to declare a self-publication grant, or configuration throws.
-- **`restrict(restriction)`** — subject-level row restriction.
 
 ### Step 4 — 🔴 Create the database table
 

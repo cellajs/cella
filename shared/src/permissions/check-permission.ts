@@ -1,5 +1,5 @@
 import type { EntityActionType } from '../../types';
-import { accessPolicies, publicReadGrants, rowRestrictions } from '../../config/permissions-config';
+import { accessPolicies, publicReadGrants } from '../../config/permissions-config';
 import { getAllDecisions } from './permission-manager/check';
 import type {
   PermissionCheckOptions,
@@ -65,10 +65,9 @@ export function checkPermission<T extends PermissionMembership>(
 ): PermissionResult<T> | BatchPermissionResult<T> {
   const isSingle = !Array.isArray(entityOrEntities);
 
-  // Inject the configured grants/restrictions; explicit options (tests) take precedence.
+  // Inject the configured grants; explicit options (tests) take precedence.
   const optionsWithGrants: PermissionCheckOptions = {
     publicGrants: publicReadGrants,
-    restrictions: rowRestrictions,
     ...options,
   };
 

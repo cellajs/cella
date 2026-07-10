@@ -31,7 +31,7 @@ import { configurePermissions } from '../src/permissions/access-policies';
  * For the full end-to-end recipe — hierarchy declaration, config arrays, DB table + RLS, module
  * wiring, sync engine, and frontend registration — see `cella/ADD_ENTITY.md`.
  */
-export const { accessPolicies, publicReadGrants, rowRestrictions } = configurePermissions(
+export const { accessPolicies, publicReadGrants } = configurePermissions(
   appConfig.entityTypes,
   ({ subject, contexts }) => {
     switch (subject.name) {

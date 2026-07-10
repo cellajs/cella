@@ -1,6 +1,5 @@
 import type { ContextEntityType, EntityActionType, EntityIdColumns, EntityRole, ProductEntityType } from '../../../types';
 import type { PublicReadGrants, PublicReadMode } from '../public-read';
-import type { RowRestrictions } from '../row-restrictions';
 import type { PermissionTopology } from './topology';
 
 export type ContextEntityIdColumns = EntityIdColumns<ContextEntityType, string | null>;
@@ -95,11 +94,6 @@ export interface PermissionCheckOptions {
    * driving the engine with synthetic policies (tests).
    */
   publicGrants?: PublicReadGrants;
-  /**
-   * Subject-level row restrictions to evaluate (see `row-restrictions.ts`). Injected by
-   * the `checkPermission` wrapper like `publicGrants`.
-   */
-  restrictions?: RowRestrictions;
   /**
    * Override the hierarchy/action topology the engine reads (defaults to the app's config).
    * Tests use this to exercise a synthetic hierarchy; see `shared/src/testing/wide-fixture.ts`.

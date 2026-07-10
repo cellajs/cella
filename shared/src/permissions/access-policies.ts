@@ -1,7 +1,6 @@
 import type { ContextEntityType, EntityActionType, EntityType, ProductEntityType } from '../../types';
 import type { PublicReadGrants, PublicReadMode } from './public-read';
 import { own } from './row-conditions';
-import { normalizeRestriction, type RowRestrictionInput, type RowRestrictions } from './row-restrictions';
 import type {
   AccessPolicies,
   AccessPolicyCallback,
@@ -68,11 +67,10 @@ const createContextBuilders = (
   return contexts;
 };
 
-/** Result of `configurePermissions`: role×context policies + subject-level grants/restrictions. */
+/** Result of `configurePermissions`: role×context policies + subject-level grants. */
 export interface PermissionsConfigResult {
   accessPolicies: AccessPolicies;
   publicReadGrants: PublicReadGrants;
-  rowRestrictions: RowRestrictions;
 }
 
 /**
@@ -108,7 +106,6 @@ export const configurePermissions = (
 ): PermissionsConfigResult => {
   const policies: AccessPolicies = {};
   const publicReadGrants: PublicReadGrants = {};
-  const rowRestrictions: RowRestrictions = {};
 
   // Topology defaults to the app's real config; tests pass a synthetic one (wide-fixture.ts).
   const { entityActions, contextEntityTypes, getRoles, getParent } = resolveTopology(topology);
@@ -131,12 +128,6 @@ export const configurePermissions = (
         }
         publicReadGrants[entityType] = mode;
       },
-      restrict: (restriction: RowRestrictionInput) => {
-        if (rowRestrictions[entityType]) {
-          throw new Error(`[Permission] restrict() called twice for "${entityType}"`);
-        }
-        rowRestrictions[entityType] = normalizeRestriction(restriction);
-      },
     };
 
     callback(config);
@@ -151,7 +142,7 @@ export const configurePermissions = (
     validatePolicyCompleteness(policies, { contextEntityTypes, getRoles, getParent });
   }
 
-  return { accessPolicies: policies, publicReadGrants, rowRestrictions };
+  return { accessPolicies: policies, publicReadGrants };
 };
 
 /**
