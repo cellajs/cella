@@ -5,6 +5,8 @@ import type { TraceContext } from '../lib/tracing';
 import type { CdcRowData } from '../types';
 import { wsClient } from '../network/websocket-client';
 import { nanoid } from 'shared/utils/nanoid';
+import { resolveContextKey } from '../utils/compute-unified-deltas';
+import { pickPermissionRowData } from '../utils/permission-row-data';
 
 /** An individual entity cache-reservation token, sent with batch payloads. */
 export interface CdcBatchReservation {
@@ -13,16 +15,27 @@ export interface CdcBatchReservation {
   entityId: string;
 }
 
+/** Per-row payload for batch messages: permission-relevant fields only (see pickPermissionRowData). */
+export interface CdcBatchRow {
+  seq?: number;
+  rowData: CdcRowData;
+}
+
 /**
  * Outbound activity + row-data message the CDC worker sends to the API server.
  * This is the producing end of the wire contract; the backend independently validates
  * the same shape with `cdcMessageSchema` (see backend/src/lib/cdc-websocket.ts, `CdcMessage`).
  * Keep both in sync: a field added here needs a matching field there, or the backend
  * will reject the message at runtime.
+ *
+ * `batchRows` carries per-row permission fields (context ids, createdBy, publicAt) so
+ * mixed-visibility batches dispatch per subscriber per row instead of deciding on the
+ * first row alone.
  */
 export interface CdcOutboundMessage {
   activity: InsertActivityModel & { id?: string; seq?: number; batchUntilSeq?: number };
   rowData: CdcRowData;
+  batchRows?: CdcBatchRow[];
   cacheToken: string | null;
   batchReservations?: CdcBatchReservation[];
   _trace: TraceContext;
@@ -89,8 +102,23 @@ export interface BatchEventInfo {
 }
 
 /**
- * Send a single batch CDC message to the API server.
- * Uses the first event's activity as the representative, enriched with batch fields.
+ * The seq-context key of a batch event, mirroring seq allocation: seqs are counters per
+ * (contextKey, entityType) — see `computeBatchUnifiedDeltas`. Resource events (no
+ * entityType) never carry seqs; grouping them by org matches their dispatch channel.
+ */
+function batchContextKey({ activity, rowData }: BatchEventInfo): string {
+  if (!activity.entityType) return activity.organizationId ?? 'none';
+  return resolveContextKey(activity.entityType, rowData, activity);
+}
+
+/**
+ * Send batch CDC message(s) to the API server.
+ *
+ * Seqs are per-context counters, so one message can only describe one seq context: a
+ * transaction batch spanning contexts (e.g. one bulk create with mixed placements) is
+ * split into one message per seq context — the same contextKey seq allocation groups
+ * by — each with its own contiguous seq..batchUntilSeq range, batch cacheToken and
+ * reservations. Single-context batches send exactly one message, as before.
  */
 export function sendBatchMessageToApi(
   events: BatchEventInfo[],
@@ -98,6 +126,24 @@ export function sendBatchMessageToApi(
 ): void {
   if (events.length === 0) return;
 
+  const groups = new Map<string, BatchEventInfo[]>();
+  for (const event of events) {
+    const key = batchContextKey(event);
+    const group = groups.get(key);
+    if (group) group.push(event);
+    else groups.set(key, [event]);
+  }
+
+  for (const group of groups.values()) {
+    sendBatchGroupToApi(group, traceContext);
+  }
+}
+
+/** Send one per-context batch group as a single message, using the first event as representative. */
+function sendBatchGroupToApi(
+  events: BatchEventInfo[],
+  traceContext: TraceContext,
+): void {
   const first = events[0];
 
   // Collect seqs for min/max range (create/update batches)
@@ -105,8 +151,11 @@ export function sendBatchMessageToApi(
   const batchUntilSeq = seqs.length > 0 ? Math.max(...seqs) : undefined;
   const minSeq = seqs.length > 0 ? Math.min(...seqs) : undefined;
 
+  // Within one seq context the range is contiguous by construction (ranges are reserved
+  // per context, and the per-context split above matches that grouping) — if this fires,
+  // seq allocation itself is broken.
   if (minSeq !== undefined && batchUntilSeq !== undefined && batchUntilSeq - minSeq + 1 !== seqs.length) {
-    log.error('Non-contiguous seqs in batch — sync integrity at risk', {
+    log.error('Non-contiguous seqs within one seq context — sync integrity at risk', {
       minSeq, batchUntilSeq, seqCount: seqs.length, expected: batchUntilSeq - minSeq + 1,
     });
   }
@@ -126,13 +175,16 @@ export function sendBatchMessageToApi(
   const base = buildActivityPayload(first.activity, first.rowData, traceContext, minSeq);
   const activity = { ...base.activity, batchUntilSeq };
 
-  const payload: CdcOutboundMessage = { ...base, activity, cacheToken: batchToken, batchReservations };
+  // Per-row permission fields: dispatch decides per subscriber across ALL rows of the
+  // batch (the representative first row alone would mis-dispatch mixed-visibility batches)
+  const batchRows: CdcBatchRow[] = events.map((event) => ({
+    seq: event.seq,
+    rowData: pickPermissionRowData(event.rowData) as CdcRowData,
+  }));
+
+  const payload: CdcOutboundMessage = { ...base, activity, batchRows, cacheToken: batchToken, batchReservations };
 
   if (!wsClient.send(payload)) {
     log.warn('Failed to send batch message to API', { batchSize: events.length });
   }
 }
-
-
-
-
