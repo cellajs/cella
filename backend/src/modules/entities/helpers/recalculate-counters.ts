@@ -178,25 +178,6 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
-  // 4c: Hosted-row counters → context_counters, keyed by host id (hierarchy `host:`,
-  // e.g. e:attachment per owning task). Live rows only: the CDC deltas decrement on
-  // soft-delete transitions, so recalculation must exclude tombstones to agree.
-  for (const relation of hierarchy.getHostRelations()) {
-    const src = tbl(relation.hostedType as EntityType);
-    const key = `e:${relation.hostedType}`;
-    const hostFk = fkCol(relation.hostType);
-
-    await upsertContextCounters(
-      db,
-      `
-      SELECT h.${hostFk}, jsonb_build_object('${key}', COUNT(*)::int), NOW()
-      FROM ${src} h
-      WHERE h.${hostFk} IS NOT NULL AND h.deleted_at IS NULL
-      GROUP BY h.${hostFk}
-    `,
-    );
-  }
-
   // Return row counts
   const [{ contextRows }] = await db
     .select({ contextRows: sql<number>`count(*)`.mapWith(Number) })

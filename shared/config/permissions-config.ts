@@ -23,8 +23,6 @@ import { configurePermissions } from '../src/permissions/access-policies';
  * Beyond plain cells, the builder callback also exposes:
  * - `publicRead(mode)` — declare how the subject becomes publicly readable (requires a matching
  *   `publicRead` declaration in the hierarchy config)
- * - `delegateToHost(actions)` — delegate actions on a hosted product to its host row (requires a
- *   `host:` declaration in the hierarchy config)
  * - row conditions like `read: 'own'` — grant an action only on rows the user created
  *
  * ## Adding new entities
@@ -33,7 +31,7 @@ import { configurePermissions } from '../src/permissions/access-policies';
  * For the full end-to-end recipe — hierarchy declaration, config arrays, DB table + RLS, module
  * wiring, sync engine, and frontend registration — see `cella/ADD_ENTITY.md`.
  */
-export const { accessPolicies, publicReadGrants, rowRestrictions, hostDelegation } = configurePermissions(
+export const { accessPolicies, publicReadGrants, rowRestrictions } = configurePermissions(
   appConfig.entityTypes,
   ({ subject, contexts }) => {
     switch (subject.name) {

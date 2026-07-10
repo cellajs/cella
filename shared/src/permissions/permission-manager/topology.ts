@@ -6,8 +6,8 @@ import type { EntityActionType } from '../../../types';
  *
  * Both are optional overrides: with no `topology` the engine reads the `hierarchy`/`appConfig`
  * singletons exactly as before. Tests pass a synthetic hierarchy (see
- * `shared/src/testing/wide-fixture.ts`) to exercise deeper shapes — nested contexts, host
- * relations, guest roles — than a given fork's config ships, without module-mocking `shared`.
+ * `shared/src/testing/wide-fixture.ts`) to exercise deeper shapes — nested contexts, guest
+ * roles — than a given fork's config ships, without module-mocking `shared`.
  */
 
 /** Structural subset of the app's `EntityHierarchy` the engine reads; the real `hierarchy` satisfies it. */
@@ -15,7 +15,6 @@ export interface TopologyHierarchy {
   readonly contextTypes: readonly string[];
   getOrderedAncestors(entityType: string): readonly string[];
   getOrderedDescendants(entityType: string): readonly string[];
-  getHostType(entityType: string): string | null | undefined;
   getRoles(contextType: string): readonly string[];
   isContext(entityType: string): boolean;
   isProduct(entityType: string): boolean;

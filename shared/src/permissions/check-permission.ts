@@ -1,5 +1,5 @@
 import type { EntityActionType } from '../../types';
-import { accessPolicies, hostDelegation, publicReadGrants, rowRestrictions } from '../../config/permissions-config';
+import { accessPolicies, publicReadGrants, rowRestrictions } from '../../config/permissions-config';
 import { getAllDecisions } from './permission-manager/check';
 import type {
   PermissionCheckOptions,
@@ -69,7 +69,6 @@ export function checkPermission<T extends PermissionMembership>(
   const optionsWithGrants: PermissionCheckOptions = {
     publicGrants: publicReadGrants,
     restrictions: rowRestrictions,
-    hostDelegation,
     ...options,
   };
 

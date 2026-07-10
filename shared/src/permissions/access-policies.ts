@@ -9,7 +9,6 @@ import type {
   AccessPolicyEntry,
   ContextPolicyBuilder,
   EntityActionPermissions,
-  HostDelegation,
   NormalizedPermissionValue,
   PermissionValue,
   SubjectAccessPolicies,
@@ -74,7 +73,6 @@ export interface PermissionsConfigResult {
   accessPolicies: AccessPolicies;
   publicReadGrants: PublicReadGrants;
   rowRestrictions: RowRestrictions;
-  hostDelegation: HostDelegation;
 }
 
 /**
@@ -111,10 +109,9 @@ export const configurePermissions = (
   const policies: AccessPolicies = {};
   const publicReadGrants: PublicReadGrants = {};
   const rowRestrictions: RowRestrictions = {};
-  const hostDelegation: HostDelegation = {};
 
   // Topology defaults to the app's real config; tests pass a synthetic one (wide-fixture.ts).
-  const { entityActions, contextEntityTypes, getRoles, getHostType, getParent } = resolveTopology(topology);
+  const { entityActions, contextEntityTypes, getRoles, getParent } = resolveTopology(topology);
   const validateCompleteness = options?.validateCompleteness ?? true;
 
   const permissionableTypes = entityTypes.filter(
@@ -140,20 +137,6 @@ export const configurePermissions = (
         }
         rowRestrictions[entityType] = normalizeRestriction(restriction);
       },
-      delegateToHost: (actions: readonly EntityActionType[]) => {
-        if (hostDelegation[entityType]) {
-          throw new Error(`[Permission] delegateToHost() called twice for "${entityType}"`);
-        }
-        if (actions.length === 0) {
-          throw new Error(`[Permission] delegateToHost() for "${entityType}" needs at least one action`);
-        }
-        if (!getHostType(entityType)) {
-          throw new Error(
-            `[Permission] delegateToHost() for "${entityType}" requires a host declared in the hierarchy (host:)`,
-          );
-        }
-        hostDelegation[entityType] = actions;
-      },
     };
 
     callback(config);
@@ -168,7 +151,7 @@ export const configurePermissions = (
     validatePolicyCompleteness(policies, { contextEntityTypes, getRoles, getParent });
   }
 
-  return { accessPolicies: policies, publicReadGrants, rowRestrictions, hostDelegation };
+  return { accessPolicies: policies, publicReadGrants, rowRestrictions };
 };
 
 /**

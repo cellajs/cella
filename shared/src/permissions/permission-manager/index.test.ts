@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   configureWidePermissions,
   wideHierarchy,
-  wideHostDelegation,
   wideMembership,
   wideSubject,
   wideTopology,
@@ -14,8 +13,8 @@ import type { SubjectForPermission } from './types';
 /**
  * Engine decision tests. The policy-driven cases run against the wide fixture (a synthetic
  * hierarchy: organization → workspace/project → task/label/attachment, guest role on the nested
- * contexts, attachment hosted by task) via the `topology` seam, so this suite covers guest roles,
- * multi-level ancestor resolution and host delegation regardless of a fork's own config.
+ * contexts) via the `topology` seam, so this suite covers guest roles and multi-level ancestor
+ * resolution regardless of a fork's own config.
  */
 
 const organizationSubject = (id: string): SubjectForPermission =>
@@ -494,20 +493,19 @@ describe('own permission, batch subjects', () => {
 
 // ── Deep-hierarchy coverage the template's org-only config cannot express ─────
 
-describe('wide hierarchy, guest role, multi-level ancestors, host delegation', () => {
-  const { accessPolicies: policies, hostDelegation } = configureWidePermissions(
-    ({ subject, contexts, delegateToHost }) => {
+describe('wide hierarchy, guest role, multi-level ancestors', () => {
+  const { accessPolicies: policies } = configureWidePermissions(
+    ({ subject, contexts }) => {
       switch (subject.name) {
         case 'attachment':
-          // Read comes only from the host (task); guests can create at project level. Every
-          // context×role cell is declared (deny by default) so the engine's strict policy-coverage
-          // check is satisfied when memberships resolve at either level.
+          // Guests can create at project level. Every context×role cell is declared (deny by
+          // default) so the engine's strict policy-coverage check is satisfied when memberships
+          // resolve at either level.
           contexts.organization.admin({});
           contexts.organization.member({});
           contexts.project.admin({ create: 1, update: 1 });
           contexts.project.member({ create: 1, update: 1 });
           contexts.project.guest({ create: 1 });
-          delegateToHost(['read']);
           break;
         case 'task':
           contexts.organization.admin({ read: 1 });
@@ -543,21 +541,5 @@ describe('wide hierarchy, guest role, multi-level ancestors, host delegation', (
       topology: wideTopology,
     });
     expect(asOrgMember.can.update).toBe(false);
-  });
-
-  it('delegates read to the host task through getAllDecisions', () => {
-    const subject = attachmentSubject('att1', 'org1', { project: 'p1' });
-    subject.hostRow = { id: 'task1', createdBy: 'someone' };
-
-    // Attachment has no read cell of its own; a project member reads the host task, so read is
-    // delegated and attributed to the host.
-    const decision = getAllDecisions(policies, [wideMembership('project', 'p1', 'member')], subject, {
-      hostDelegation: wideHostDelegation({ attachment: ['read'] }),
-      topology: wideTopology,
-    });
-    expect(decision.can.read).toBe(true);
-    expect(decision.actions.read.grantedBy).toContainEqual({ type: 'host', hostType: 'task' });
-    // Confirm the config actually declared the delegation.
-    expect(hostDelegation).toEqual({ attachment: ['read'] });
   });
 });

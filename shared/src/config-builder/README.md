@@ -10,11 +10,6 @@ since without a home there is no context to derive access from.
 
 - `relatedContexts` declares non-ancestor context references (nullable id columns): cross-links,
   not homes.
-- `host` declares product-to-product ownership (e.g. attachment → task): the hosted product gets
-  a generated nullable `<host>Id` column (see `hostRelationColumns`), host deletes cascade to
-  hosted rows (API + CDC), and the CDC counter machinery maintains per-host `e:<hostedType>`
-  counts. The host must already be declared, share the same home context, and cannot itself be
-  hosted.
 - `nullableAncestors` declares ancestors whose id columns are nullable: rows may attach above the
   declared parent (variable-depth rows, e.g. a course-stream item with `projectId = null`). The
   chain root stays non-null, so a row always belongs to the root context. CDC attributes each row

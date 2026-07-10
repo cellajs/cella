@@ -13,9 +13,8 @@ import {
  * synthetic hierarchy (nested contexts + guest role) regardless of the app's real config.
  */
 describe('wide fixture kit', () => {
-  it('exposes a nested hierarchy with a host relation and guest role', () => {
+  it('exposes a nested hierarchy with a guest role', () => {
     expect(wideHierarchy.getOrderedAncestors('attachment')).toEqual(['project', 'organization']);
-    expect(wideHierarchy.getHostType('attachment')).toBe('task');
     expect([...wideHierarchy.getRoles('project')]).toContain('guest');
   });
 

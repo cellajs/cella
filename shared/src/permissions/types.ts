@@ -70,19 +70,7 @@ export interface AccessPolicyConfiguration {
   publicRead: (mode: PublicReadMode) => void;
   /** Declare the subject-level row restriction for this subject (see `row-restrictions.ts`). */
   restrict: (restriction: RowRestrictionInput) => void;
-  /**
-   * Delegate the listed actions to the host row's decision (hierarchy `host:`): a hosted
-   * row allows an action if the HOST row allows it, including the host's row conditions,
-   * public grants and restrictions. Additive (unions with the subject's own grants);
-   * strictly-inherited subjects (e.g. comments) simply declare no own grants for the
-   * delegated actions. Requires the caller to resolve `subject.hostRow` (load-at-check);
-   * without it, delegation contributes nothing.
-   */
-  delegateToHost: (actions: readonly EntityActionType[]) => void;
 }
-
-/** Per-subject host-delegated actions, keyed by hosted entity type. */
-export type HostDelegation = Partial<Record<ContextEntityType | ProductEntityType, readonly EntityActionType[]>>;
 
 /**
  * Callback function for configuring access policies.

@@ -9,7 +9,6 @@ export interface ResolvedTopology {
   entityActions: readonly EntityActionType[];
   contextEntityTypes: readonly ContextEntityType[];
   getRoles: (type: string) => readonly string[];
-  getHostType: (type: string) => string | null | undefined;
   getParent: (type: string) => string | null;
 }
 
@@ -30,7 +29,6 @@ export const resolveTopology = (topology?: PermissionTopology): ResolvedTopology
     entityActions: (topology?.entityActions ?? appConfig.entityActions) as readonly EntityActionType[],
     contextEntityTypes: (topology ? h.contextTypes : appConfig.contextEntityTypes) as readonly ContextEntityType[],
     getRoles: (type) => h.getRoles(type),
-    getHostType: (type) => h.getHostType(type),
     getParent: (type) => h.getParent(type),
   };
 };

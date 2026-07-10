@@ -1,4 +1,4 @@
-import { appConfig, type EntityActionType, hierarchy, hostDelegation, type ProductEntityType } from 'shared';
+import type { EntityActionType, ProductEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -6,29 +6,6 @@ import { tenantRead } from '#/db/tenant-context';
 import { type EntityModel, resolveEntity } from '#/modules/entities/entities-queries';
 import { checkPermission } from '#/permissions';
 import { buildSubject } from '#/permissions/build-subject';
-
-/**
- * Resolve the host row for a hosted entity when its type delegates actions to the host
- * (`delegateToHost`). Returns undefined for non-delegated types and unhosted rows.
- */
-const resolveHostRow = async (
-  ctx: AuthContext,
-  entityType: ProductEntityType,
-  entity: Record<string, unknown>,
-): Promise<Record<string, unknown> | undefined> => {
-  if (!hostDelegation[entityType]?.length) return undefined;
-  const hostType = hierarchy.getHostType(entityType);
-  if (!hostType) return undefined;
-
-  const hostId = entity[appConfig.entityIdColumnKeys[hostType]];
-  if (typeof hostId !== 'string') return undefined;
-
-  const hostRow =
-    ctx.var.db === baseDb && ctx.var.tenantId
-      ? await tenantRead(ctx, (readCtx) => resolveEntity(readCtx, hostType, hostId))
-      : await resolveEntity(ctx, hostType, hostId);
-  return hostRow ?? undefined;
-};
 
 /**
  * Result type for product entity validation including the can object.
@@ -71,16 +48,10 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
       : await resolveEntity(ctx, entityType, id);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
-  // Host delegation (hierarchy `host:` + delegateToHost): resolve the host row once so the
-  // engine can union the host's decision into this row's (load-at-check, the engine never
-  // loads rows itself). Only for hosted rows of delegated entity types.
-  const hostRow = await resolveHostRow(ctx, entityType, entity);
-
   // Step 2: Check permission for the requested action.
   const subject = buildSubject(entityType, entity, {
     id: entity.id,
     createdBy: 'createdBy' in entity ? (entity.createdBy as string | null) : undefined,
-    ...(hostRow && { hostRow }),
   });
   const { isAllowed } = checkPermission(memberships, action, subject, { isSystemAdmin, userId });
 

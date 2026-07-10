@@ -22,8 +22,6 @@ export const roles = createRoleRegistry(['admin', 'member'] as const);
  * Parents are defined before children. Order determines ancestor chain.
  *
  * Optional `relatedContexts` on products declare non-ancestor context references (nullable id columns).
- * Optional `host` on products declares product-to-product ownership (nullable <host>Id column):
- * hosted rows cascade with their host and feed the host's e:<hosted> counter.
  *
  * Public readability is NOT declared here — it is a permission concern, declared per
  * subject via `publicRead(mode)` in `permissions-config.ts`.
@@ -44,10 +42,7 @@ export const hierarchy = createEntityHierarchy(roles)
  *   .context('project', { parent: 'organization', roles: roles.all })
  *   .product('task', { parent: 'project' })
  *   .product('label', { parent: 'project' })
- *   // host: task-owned attachments (nullable taskId column) — deleting a task cascades
- *   // to them, and CDC maintains e:attachment counts per task. Unhosted attachments
- *   // (taskId null) live at project level.
- *   .product('attachment', { parent: 'project', host: 'task' })
+ *   .product('attachment', { parent: 'project' })
  *   .build();
  *
  * Public read grants for these entities (e.g. project 'publicSelf', task 'publicParent')

@@ -11,7 +11,6 @@ export type {
   EntityHierarchy,
   EntityKind,
   EntityView,
-  HostRelation,
   ProductEntityView,
   RoleFromRegistry,
   UserEntityView,
@@ -47,7 +46,6 @@ export type {
   EntityIdColumns,
   EntityRole,
   EntityType,
-  HostEntityType,
   Language,
   MenuSection,
   NullableAncestorType,
@@ -90,11 +88,11 @@ export type {
   SubjectAccessPolicies,
 } from './src/permissions';
 export { isRowCondition, membershipGrantQualifies, normalizeRestriction, own, publicReadMatches, qualifyingDepths } from './src/permissions';
-export type { ConditionActor, HostDelegation, PublicReadGrants, PublicReadMode, RowCondition, RowConditionSqlForm, RowForCondition, RowRestriction, RowRestrictionInput, RowRestrictions } from './src/permissions';
+export type { ConditionActor, PublicReadGrants, PublicReadMode, RowCondition, RowConditionSqlForm, RowForCondition, RowRestriction, RowRestrictionInput, RowRestrictions } from './src/permissions';
 export { configureAccessPolicies, configurePermissions, getPolicyPermissions, getSubjectPolicies } from './src/permissions';
 export type { PermissionsConfigResult } from './src/permissions';
 export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './src/permissions';
-export { accessPolicies, computeCan, hostDelegation, publicReadGrants, rowRestrictions } from './src/permissions';
+export { accessPolicies, computeCan, publicReadGrants, rowRestrictions } from './src/permissions';
 export type { ActionPermissionState, EntityCanMap } from './src/permissions';
 
 // Permission engine (tier-neutral decision logic, shared by backend + yjs)
