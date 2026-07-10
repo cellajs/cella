@@ -157,6 +157,7 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
       tokenId,
       role: faker.helpers.arrayElement(roles.all),
       rejectedAt: null,
+      remindedAt: null,
       createdAt,
       createdBy: mockUuid(),
       ...contextEntityColumns,

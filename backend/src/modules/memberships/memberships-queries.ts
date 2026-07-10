@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { ContextEntityType, EntityRole } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
@@ -73,6 +73,9 @@ export const findMembershipAwareRows = async (
       language: usersTable.language,
       membershipId: membershipsTable.id,
       inactiveMembershipId: inactiveMembershipsTable.id,
+      // Last dispatch timestamps for the reminder throttle (remindedAt ?? createdAt)
+      inactiveMembershipCreatedAt: inactiveMembershipsTable.createdAt,
+      inactiveMembershipRemindedAt: inactiveMembershipsTable.remindedAt,
       orgMembershipId: orgMemberships.id,
       tokenId: tokensTable.id,
     })
@@ -107,6 +110,38 @@ export const findMembershipAwareRows = async (
       ),
     )
     .where(and(inArray(emailsTable.email, emails)));
+};
+
+/** Pending (not rejected) inactive memberships for a set of contexts (deferred-invite dispatch). */
+export const findPendingInactiveMembershipsByContexts = async (
+  ctx: DbContext,
+  { contextIds }: { contextIds: string[] },
+) => {
+  const { db } = ctx.var;
+  if (!contextIds.length) return [];
+  return db
+    .select()
+    .from(inactiveMembershipsTable)
+    .where(and(inArray(inactiveMembershipsTable.contextId, contextIds), isNull(inactiveMembershipsTable.rejectedAt)));
+};
+
+/** Stamp remindedAt (last email dispatch) on inactive memberships. */
+export const stampInactiveMembershipsReminded = async (
+  ctx: DbContext,
+  { ids, remindedAt }: { ids: string[]; remindedAt: string },
+) => {
+  const { db } = ctx.var;
+  if (!ids.length) return;
+  return db.update(inactiveMembershipsTable).set({ remindedAt }).where(inArray(inactiveMembershipsTable.id, ids));
+};
+
+/** Point an inactive membership at a fresh invitation token (rotation at deferred dispatch). */
+export const updateInactiveMembershipToken = async (
+  ctx: DbContext,
+  { id, tokenId }: { id: string; tokenId: string },
+) => {
+  const { db } = ctx.var;
+  return db.update(inactiveMembershipsTable).set({ tokenId }).where(eq(inactiveMembershipsTable.id, id));
 };
 
 interface FindMembershipByIdInOrgOpts {

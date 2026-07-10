@@ -1,4 +1,4 @@
-import { and, eq, getColumns, inArray, isNull, sql } from 'drizzle-orm';
+import { and, eq, getColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
 import { sessionsTable } from '#/modules/auth/sessions-db';
@@ -142,6 +142,9 @@ export const findPendingInvitations = async (ctx: DbContext, { userId }: FindPen
             eq(inactiveMembershipsTable.contextType, entityType),
             eq(inactiveMembershipsTable.userId, userId),
             isNull(inactiveMembershipsTable.rejectedAt),
+            // Invites against an unpublished (draft) context are deferred: hidden from the
+            // invitee until the context is published and the invite is dispatched.
+            isNotNull(cols.publishedAt),
           ),
         );
     }),

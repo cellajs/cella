@@ -59,6 +59,7 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
     welcomeText: `Welcome to ${name}!`,
     authStrategies: ['passkey'] as AuthStrategy[],
     chatSupport: faker.datatype.boolean(),
+    publishedAt: createdAt,
     createdAt,
     createdBy: null,
     updatedAt: createdAt,
