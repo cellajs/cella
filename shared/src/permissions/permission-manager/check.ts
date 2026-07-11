@@ -2,7 +2,6 @@ import type { ContextEntityType, EntityActionType, ProductEntityType } from '../
 import { allActionsAllowed, createActionRecord } from '../action-helpers';
 import { type PublicReadGrants, publicReadMatches } from '../public-read';
 import { type ConditionActor, isRowCondition, type RowForCondition } from '../row-conditions';
-import { membershipGrantQualifies, type RowRestrictions } from '../row-restrictions';
 import type { AccessPolicies, EntityActionPermissions } from '../types';
 import { formatBatchPermissionSummary, formatPermissionDecision } from './format';
 import { resolveTopology } from './resolve-topology';
@@ -99,7 +98,7 @@ const checkWithIndices = <T extends PermissionMembership>(
   isSystemAdmin: boolean,
   userId?: string,
   publicGrants?: PublicReadGrants,
-  restrictions?: RowRestrictions,
+  elevatedRoles?: readonly string[],
   debug?: boolean,
 ): PermissionDecision<T> => {
   // Primary context is orderedContexts[0]; the hierarchy guarantees the array is never empty.
@@ -144,8 +143,13 @@ const checkWithIndices = <T extends PermissionMembership>(
   const conditionRow: RowForCondition = { ...subject.row, createdBy: subject.createdBy };
   const conditionActor: ConditionActor = { userId };
 
-  // Row restriction for this entity type (narrows membership grants; see row-restrictions.ts)
-  const restriction = restrictions?.[subject.entityType];
+  // Grant scoping (elevatedRoles): product subjects only — context subjects keep full
+  // elevation semantics (e.g. members of a parent context may still discover child
+  // contexts). The subject's HOME is the most specific context with an id; non-elevated
+  // roles speak only for rows homed at their own grant level.
+  const isProductSubject = (subject.entityType as string) !== primaryContext;
+  const homeContext =
+    elevatedRoles && isProductSubject ? orderedContexts.find((ct) => getSubjectContextId(subject, ct)) : undefined;
 
   // Walk through each context level (most specific first, then ancestors)
   for (const contextType of orderedContexts) {
@@ -181,11 +185,11 @@ const checkWithIndices = <T extends PermissionMembership>(
         );
       }
 
-      // Row restriction: does this membership grant qualify for this row? Narrows
-      // membership grants only; row-condition and public grants are never narrowed,
-      // and `create` is never restricted (no row exists yet). Fail-closed without row data.
-      const grantQualifies =
-        !restriction || membershipGrantQualifies(restriction, subject, orderedContexts, contextType, m.role);
+      // Grant scope: applies to EVERY action of the grant, including create (a target
+      // placement's home decides which grants may create there) and 'own' conditions.
+      if (elevatedRoles && isProductSubject && !elevatedRoles.includes(m.role) && contextType !== homeContext) {
+        continue;
+      }
 
       // Attribute each granted action to this membership
       for (const action of entityActions) {
@@ -193,7 +197,6 @@ const checkWithIndices = <T extends PermissionMembership>(
 
         // Unconditional grant
         if (policyValue === 1) {
-          if (!grantQualifies && action !== 'create') continue;
           actions[action].enabled = true;
           actions[action].grantedBy.push({
             type: 'membership',
@@ -264,8 +267,7 @@ export function getAllDecisions<T extends PermissionMembership>(
   const isSystemAdmin = options?.isSystemAdmin === true;
   const userId = options?.userId;
   const publicGrants = options?.publicGrants;
-  const restrictions = options?.restrictions;
-  const hostDelegation = options?.hostDelegation;
+  const elevatedRoles = options?.elevatedRoles;
   const debug = options?.debug === true;
   // Topology defaults to the app's real config; tests override it to drive the engine on a
   // synthetic hierarchy (see shared/src/testing/wide-fixture.ts). No override → unchanged behavior.
@@ -324,49 +326,9 @@ export function getAllDecisions<T extends PermissionMembership>(
       isSystemAdmin,
       userId,
       publicGrants,
-      restrictions,
+      elevatedRoles,
       debug,
     );
-
-    // Host delegation: a hosted row allows a delegated action if the HOST row allows it,
-    // including the host's row conditions, public grants and restrictions. Additive:
-    // unions with the subject's own decision, attributed as {type:'host'}. Requires the
-    // caller-resolved subject.hostRow (load-at-check); absent → contributes nothing.
-    const delegatedActions = hostDelegation?.[subject.entityType];
-    const hostType = delegatedActions?.length ? topoHierarchy.getHostType(subject.entityType) : undefined;
-    if (!isSystemAdmin && delegatedActions && hostType && subject.hostRow) {
-      const hostRow = subject.hostRow;
-      const hostSubject: SubjectForPermission = {
-        entityType: hostType as ProductEntityType,
-        ...(typeof hostRow.id === 'string' && { id: hostRow.id }),
-        ...(hostRow.createdBy !== undefined && { createdBy: hostRow.createdBy as string | null }),
-        // Host and hosted share the home context (enforced by the hierarchy builder)
-        contextIds: subject.contextIds,
-        row: hostRow,
-        ...(subject.parentRow !== undefined && { parentRow: subject.parentRow }),
-        // deliberately no hostRow: hosts cannot themselves be hosted (no chains)
-      };
-      const hostDecision = checkWithIndices(
-        membershipIndex,
-        getOrBuildPolicyIndex(policies, hostType as ProductEntityType, policyIndexCache),
-        hostSubject,
-        resolveOrderedContexts(hostType as ProductEntityType),
-        getRoles,
-        entityActions,
-        false,
-        userId,
-        publicGrants,
-        restrictions,
-        debug,
-      );
-      for (const action of delegatedActions) {
-        if (hostDecision.can[action]) {
-          decision.actions[action].enabled = true;
-          decision.actions[action].grantedBy.push({ type: 'host', hostType });
-          decision.can[action] = true;
-        }
-      }
-    }
 
     const key = subject.id ?? `_idx:${subjectArray.indexOf(subject)}`;
     results.set(key, decision);

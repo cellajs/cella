@@ -1,7 +1,6 @@
 import type { ContextEntityType, EntityActionType, EntityType, ProductEntityType } from '../../types';
 import type { PublicReadGrants, PublicReadMode } from './public-read';
 import { own } from './row-conditions';
-import { normalizeRestriction, type RowRestrictionInput, type RowRestrictions } from './row-restrictions';
 import type {
   AccessPolicies,
   AccessPolicyCallback,
@@ -9,7 +8,6 @@ import type {
   AccessPolicyEntry,
   ContextPolicyBuilder,
   EntityActionPermissions,
-  HostDelegation,
   NormalizedPermissionValue,
   PermissionValue,
   SubjectAccessPolicies,
@@ -69,12 +67,10 @@ const createContextBuilders = (
   return contexts;
 };
 
-/** Result of `configurePermissions`: role×context policies + subject-level grants/restrictions. */
+/** Result of `configurePermissions`: role×context policies + subject-level grants. */
 export interface PermissionsConfigResult {
   accessPolicies: AccessPolicies;
   publicReadGrants: PublicReadGrants;
-  rowRestrictions: RowRestrictions;
-  hostDelegation: HostDelegation;
 }
 
 /**
@@ -98,14 +94,22 @@ export const configurePermissions = (
   entityTypes: readonly EntityType[],
   callback: AccessPolicyCallback,
   topology?: PermissionTopology,
+  options?: {
+    /**
+     * Assert at config time that every subject with declared rows covers EVERY role of
+     * EVERY context in its ancestor chain (default true — see
+     * `validatePolicyCompleteness`). Test helpers with deliberately partial fixtures
+     * opt out.
+     */
+    validateCompleteness?: boolean;
+  },
 ): PermissionsConfigResult => {
   const policies: AccessPolicies = {};
   const publicReadGrants: PublicReadGrants = {};
-  const rowRestrictions: RowRestrictions = {};
-  const hostDelegation: HostDelegation = {};
 
   // Topology defaults to the app's real config; tests pass a synthetic one (wide-fixture.ts).
-  const { entityActions, contextEntityTypes, getRoles, getHostType, getParent } = resolveTopology(topology);
+  const { entityActions, contextEntityTypes, getRoles, getParent } = resolveTopology(topology);
+  const validateCompleteness = options?.validateCompleteness ?? true;
 
   const permissionableTypes = entityTypes.filter(
     (type): type is ContextEntityType | ProductEntityType => type !== 'user',
@@ -124,26 +128,6 @@ export const configurePermissions = (
         }
         publicReadGrants[entityType] = mode;
       },
-      restrict: (restriction: RowRestrictionInput) => {
-        if (rowRestrictions[entityType]) {
-          throw new Error(`[Permission] restrict() called twice for "${entityType}"`);
-        }
-        rowRestrictions[entityType] = normalizeRestriction(restriction);
-      },
-      delegateToHost: (actions: readonly EntityActionType[]) => {
-        if (hostDelegation[entityType]) {
-          throw new Error(`[Permission] delegateToHost() called twice for "${entityType}"`);
-        }
-        if (actions.length === 0) {
-          throw new Error(`[Permission] delegateToHost() for "${entityType}" needs at least one action`);
-        }
-        if (!getHostType(entityType)) {
-          throw new Error(
-            `[Permission] delegateToHost() for "${entityType}" requires a host declared in the hierarchy (host:)`,
-          );
-        }
-        hostDelegation[entityType] = actions;
-      },
     };
 
     callback(config);
@@ -154,8 +138,60 @@ export const configurePermissions = (
   }
 
   validatePublicReadGrants(publicReadGrants, getParent);
+  if (validateCompleteness) {
+    validatePolicyCompleteness(policies, { contextEntityTypes, getRoles, getParent });
+  }
 
-  return { accessPolicies: policies, publicReadGrants, rowRestrictions, hostDelegation };
+  return { accessPolicies: policies, publicReadGrants };
+};
+
+/**
+ * The engine is strict at runtime: the first membership whose (context, role) has no
+ * policy row for the checked subject THROWS — a request-time 500 that only surfaces
+ * when a real user with that role hits that subject. Enforce the same rule at config
+ * time instead: every subject that declares ANY rows must declare a row for every role
+ * of every context in its ancestor chain — an all-zero row (`contexts.x.role({})`)
+ * expresses "no access" explicitly. Subjects with no case at all are skipped (they
+ * fail fast with a clear engine error on their first check).
+ */
+const validatePolicyCompleteness = (
+  policies: AccessPolicies,
+  topology: {
+    contextEntityTypes: readonly ContextEntityType[];
+    getRoles: (contextType: string) => readonly string[];
+    getParent: (type: string) => string | null;
+  },
+): void => {
+  const { contextEntityTypes, getRoles, getParent } = topology;
+
+  /** The subject's context chain: self (for context entities) plus every ancestor. */
+  const chainOf = (subject: string): ContextEntityType[] => {
+    const chain: ContextEntityType[] = [];
+    let current: string | null = contextEntityTypes.includes(subject as ContextEntityType)
+      ? subject
+      : getParent(subject);
+    while (current) {
+      chain.push(current as ContextEntityType);
+      current = getParent(current);
+    }
+    return chain;
+  };
+
+  const missing: string[] = [];
+  for (const [subject, entries] of Object.entries(policies)) {
+    const declared = new Set(entries.map((entry) => `${entry.contextType}:${entry.role}`));
+    for (const contextType of chainOf(subject)) {
+      for (const role of getRoles(contextType)) {
+        if (!declared.has(`${contextType}:${role}`)) missing.push(`"${subject}": ${contextType}.${role}`);
+      }
+    }
+  }
+
+  if (missing.length > 0) {
+    throw new Error(
+      `[Permission] Incomplete policy: every subject with declared rows needs a row for every role of every context in its chain (all-zero rows express "no access"). Missing:\n  ${missing.join('\n  ')}`,
+    );
+  }
 };
 
 /**
@@ -189,7 +225,8 @@ export const configureAccessPolicies = (
   callback: AccessPolicyCallback,
   topology?: PermissionTopology,
 ): AccessPolicies => {
-  return configurePermissions(entityTypes, callback, topology).accessPolicies;
+  // Raw/test path: synthetic policy sets are deliberately partial, so no completeness check.
+  return configurePermissions(entityTypes, callback, topology, { validateCompleteness: false }).accessPolicies;
 };
 
 /**

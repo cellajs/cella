@@ -3,9 +3,9 @@
  * tests run against, instead of a given fork's real `shared/config`.
  *
  * The template (cella) ships a deliberately minimal hierarchy (organization → attachment), which
- * structurally cannot exercise the engine's deeper features: nested + sibling contexts, a host
- * relation, a guest role, multi-level ancestor resolution, all three public-read modes. This
- * fixture provides one hierarchy that does, so a single set of tests covers them in every fork.
+ * structurally cannot exercise the engine's deeper features: nested + sibling contexts, a guest
+ * role, multi-level ancestor resolution, all three public-read modes. This fixture provides one
+ * hierarchy that does, so a single set of tests covers them in every fork.
  *
  * It mirrors raak's real hierarchy (documented as the reference example in cella's
  * `hierarchy-config.ts`). It MUST stay a superset of every feature the hierarchy builder supports;
@@ -24,16 +24,12 @@ import {
   type ActionPermissionState,
   computeCan,
   configurePermissions,
-  type HostDelegation,
   type PermissionMembership,
   type PermissionsConfigResult,
   type PermissionTopology,
   type PermissionValue,
   type PublicReadGrants,
   type PublicReadMode,
-  type RowRestriction,
-  type RowRestrictionInput,
-  type RowRestrictions,
   type SubjectForPermission,
 } from '../permissions';
 
@@ -48,7 +44,7 @@ export const wideRoles = createRoleRegistry(['admin', 'member', 'guest'] as cons
 
 /**
  * The wide hierarchy. Two sibling nested contexts (workspace, project) under organization, three
- * products under project, `attachment` hosted by `task`, guest role on the nested contexts only.
+ * products under project, guest role on the nested contexts only.
  */
 export const wideHierarchy = createEntityHierarchy(wideRoles)
   .user()
@@ -57,7 +53,7 @@ export const wideHierarchy = createEntityHierarchy(wideRoles)
   .context('project', { parent: 'organization', roles: wideRoles.all })
   .product('task', { parent: 'project' })
   .product('label', { parent: 'project' })
-  .product('attachment', { parent: 'project', host: 'task' })
+  .product('attachment', { parent: 'project' })
   .build();
 
 export const wideEntityTypes: readonly WideEntityType[] = [
@@ -84,8 +80,6 @@ export interface WideAccessPolicyConfiguration {
   subject: { name: WideEntityType };
   contexts: Record<WideContextType, WideContextBuilder>;
   publicRead: (mode: PublicReadMode) => void;
-  restrict: (restriction: RowRestrictionInput) => void;
-  delegateToHost: (actions: readonly EntityActionType[]) => void;
 }
 
 export type WideAccessPolicyCallback = (config: WideAccessPolicyConfiguration) => void;
@@ -100,6 +94,8 @@ export const configureWidePermissions = (callback: WideAccessPolicyCallback): Pe
     wideEntityTypes as unknown as readonly EntityType[],
     callback as unknown as AccessPolicyCallback,
     wideTopology,
+    // Test fixtures are deliberately partial; completeness is the app config's contract
+    { validateCompleteness: false },
   );
 
 /** Build a membership over a wide context. */
@@ -117,25 +113,11 @@ export const wideSubject = (input: {
   contextIds: Partial<Record<WideContextType, string | null>>;
   row?: Record<string, unknown>;
   parentRow?: Record<string, unknown>;
-  hostRow?: Record<string, unknown>;
 }): SubjectForPermission => ({ ...input }) as unknown as SubjectForPermission;
 
 /** Wrap a wide-keyed public-read grant map for the engine's `publicGrants` option. */
 export const widePublicGrants = (grants: Partial<Record<WideEntityType, PublicReadMode>>): PublicReadGrants =>
   grants as PublicReadGrants;
-
-/**
- * Wrap a wide-keyed row-restriction map for the engine's `restrictions` option. Takes the
- * engine's normalized `RowRestriction` shape (depthColumn/rolesColumn/exemptRoles), matching what
- * the `restrictions` option expects — not the `restrict()` callback's `RowRestrictionInput`.
- */
-export const wideRestrictions = (restrictions: Partial<Record<WideEntityType, RowRestriction>>): RowRestrictions =>
-  restrictions as RowRestrictions;
-
-/** Wrap a wide-keyed host-delegation map for the engine's `hostDelegation` option. */
-export const wideHostDelegation = (
-  delegation: Partial<Record<WideProductType, readonly EntityActionType[]>>,
-): HostDelegation => delegation as HostDelegation;
 
 /** `computeCan`'s result keyed by the wide vocabulary, so tests read `.task` etc. cast-free. */
 export type WideCanMap = Partial<Record<WideEntityType, Record<EntityActionType, ActionPermissionState>>>;

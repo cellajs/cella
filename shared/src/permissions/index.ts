@@ -6,7 +6,6 @@ export type {
   ActionPermissionState,
   ContextPolicyBuilder,
   EntityActionPermissions,
-  HostDelegation,
   NormalizedPermissionValue,
   PermissionValue,
   SubjectAccessPolicies,
@@ -15,15 +14,13 @@ export { publicReadMatches } from './public-read';
 export type { PublicReadGrants, PublicReadMode } from './public-read';
 export { isRowCondition, own } from './row-conditions';
 export type { ConditionActor, RowCondition, RowConditionSqlForm, RowForCondition } from './row-conditions';
-export { membershipGrantQualifies, normalizeRestriction, qualifyingDepths } from './row-restrictions';
-export type { RowRestriction, RowRestrictionInput, RowRestrictions } from './row-restrictions';
 
 export { configureAccessPolicies, configurePermissions, getPolicyPermissions, getSubjectPolicies } from './access-policies';
 export type { PermissionsConfigResult } from './access-policies';
 export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './action-helpers';
 export { computeCan } from './compute-can';
 export type { EntityCanMap } from './compute-can';
-export { accessPolicies, hostDelegation, publicReadGrants, rowRestrictions } from '../../config/permissions-config';
+export { accessPolicies, publicReadGrants, elevatedRoles } from '../../config/permissions-config';
 
 // Permission engine (tier-neutral decision logic)
 export { getAllDecisions } from './permission-manager/check';

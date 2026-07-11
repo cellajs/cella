@@ -29,8 +29,12 @@ async function run() {
   });
   const membershipTableNames = [getTableName(membershipsTable), getTableName(inactiveMembershipsTable)];
 
-  // Pages have no RLS: parentless, always public, and protected by sysAdminGuard.
-  const noRlsProductEntityNames = ['pages'];
+  // Products excluded from RLS (parentless, always public, protected by sysAdminGuard).
+  // Filtered by the tables that actually exist: a fork without these modules must not
+  // emit grants for nonexistent tables — one failed statement rolls back the whole
+  // grant block (see the exception handler below).
+  const noRlsCandidates = ['pages'];
+  const noRlsProductEntityNames = noRlsCandidates.filter((name) => (entityTableNames as string[]).includes(name));
 
   // Only product entity tables + yjs_documents still use RLS (excluding pages)
   const additionalRlsTables = [getTableName(yjsDocumentsTable)];
@@ -101,7 +105,10 @@ ${readOnlyTables.map((t) => `    GRANT SELECT ON ${t} TO runtime_role;`).join('\
 
     RAISE NOTICE 'RLS setup complete.';
   EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'RLS setup failed: %. Skipping - RLS will not be enforced.', SQLERRM;
+    -- Fail LOUDLY: swallowing this rolled back ownership, FORCE RLS and every grant in
+    -- one silent NOTICE — the app then boots with no table grants (every request 403s)
+    -- or, worse, without enforced RLS.
+    RAISE EXCEPTION 'RLS setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
   END;
 END $$;
 `;

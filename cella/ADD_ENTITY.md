@@ -49,17 +49,16 @@ export const hierarchy = createEntityHierarchy(roles)
   .product('task', { parent: 'project' })
   .product('label', { parent: 'project' })
   .product('note', { parent: 'project' })            // ← new
-  .product('attachment', { parent: 'project', host: 'task' })
+  .product('attachment', { parent: 'project' })
   .build();
 ```
 
 `.product(name, options)` options:
 
 - **`parent`** (required) — the entity's **home context**. Becomes the non-null `<context>Id` column and the most-specific link in its ancestor chain. Products *must* have a home; the builder throws otherwise.
-- **`host`** (optional) — product-to-product ownership (e.g. `attachment` hosted by `task`). Generates a nullable `<host>Id` column; host deletes cascade to hosted rows; CDC maintains per-host `e:<hostedType>` counts. The host must be a previously-declared product sharing the **same home context**. See [§ Optional capabilities](#optional-capabilities).
 - **`relatedContexts`** (optional) — non-ancestor context references (nullable id columns).
 
-The builder ([`entity-hierarchy.ts`](../shared/src/config-builder/entity-hierarchy.ts)) validates at construction: parents/hosts must be declared **before** children, parents must be contexts, hosts must be products sharing the home context, roles must exist, `organization` + `user()` are mandatory. **Order matters** — declare parents and hosts earlier in the chain.
+The builder ([`entity-hierarchy.ts`](../shared/src/config-builder/entity-hierarchy.ts)) validates at construction: parents must be declared **before** children, parents must be contexts, roles must exist, `organization` + `user()` are mandatory. **Order matters** — declare parents earlier in the chain.
 
 > **Public readability is not declared here.** It is a permission concern — see Step 3.
 
@@ -88,7 +87,7 @@ You do **not** edit [`app-config.ts`](../shared/src/config-builder/app-config.ts
 
 ### Step 3 — 🔴 Declare access policies
 
-Add a `case` to the `switch` in [`shared/config/permissions-config.ts`](../shared/config/permissions-config.ts). The callback gives you `contexts` (CRUD cells per role×context), `publicRead`, `delegateToHost`, and `restrict`. Model it on `task`:
+Add a `case` to the `switch` in [`shared/config/permissions-config.ts`](../shared/config/permissions-config.ts). The callback gives you `contexts` (CRUD cells per role×context) and `publicRead`. Model it on `task`:
 
 ```ts
 case 'note':
@@ -106,8 +105,6 @@ Cell values: `1` allowed, `0`/omitted denied, `'own'` = built-in "actor is creat
 
 - **Product entities have no "self" rows** — their context rows are *home* rows where `create` is meaningful. (Context entities distinguish *elevation* rows on an ancestor, which carry `create`, from *self* rows on the same context, which omit it. See the header comment in `permissions-config.ts`.)
 - **`publicRead(mode)`** — `'publicSelf'` (row's own `publicAt`), `'publicParent'` (parent's `publicAt`), or `'publicParentOrSelf'`. A `publicParent` grant requires the parent to declare a self-publication grant, or configuration throws.
-- **`delegateToHost(actions)`** — hosted row inherits the action if its host row allows it; requires `host:` in the hierarchy (Step 1).
-- **`restrict(restriction)`** — subject-level row restriction.
 
 ### Step 4 — 🔴 Create the database table
 
@@ -146,7 +143,7 @@ Mandatory columns come from the spread helpers — **do not hand-write them**:
 | `productEntityColumns('<type>')` | `stx` (jsonb, sync metadata), `seq` (bigint, CDC delta cursor), `description`, `keywords`, `createdBy/updatedBy`, `deletedAt/deletedBy` (soft delete) |
 | ↳ `tenantEntityColumns` (nested) | `id` (uuid v7 PK via `generateId`), `entityType` (enum locked to the type), `tenantId` (FK → tenants), `name`, `createdAt`, `updatedAt` |
 
-Conventions: `snakeCase.table(...)` maps camelCase fields → snake_case columns automatically; table name is the pluralized type (`note` → `notes`); ids are plain **UUID v7** (time-ordered, no prefixes). You may replace the explicit `organizationId`/`projectId` columns with `...contextRelationColumns('note')` (emits NOT-NULL ancestor id columns from the hierarchy) and, for hosted entities, `...hostRelationColumns('note')` — see [`attachment-db.ts`](../backend/src/modules/attachment/attachment-db.ts).
+Conventions: `snakeCase.table(...)` maps camelCase fields → snake_case columns automatically; table name is the pluralized type (`note` → `notes`); ids are plain **UUID v7** (time-ordered, no prefixes). You may replace the explicit `organizationId`/`projectId` columns with `...contextRelationColumns('note')` (emits NOT-NULL ancestor id columns from the hierarchy) — see [`attachment-db.ts`](../backend/src/modules/attachment/attachment-db.ts).
 
 Which tables get RLS, immutability triggers, the CDC publication, and `REPLICA IDENTITY FULL` is derived from the registry in the next step — 🟢 no per-table wiring for any of those.
 
@@ -308,7 +305,6 @@ Context entities do **not** go through the CDC/SSE product pipeline or the wire-
 
 ## Optional capabilities
 
-- **Host (product-to-product ownership)** — declare `host: 'task'` in Step 1; the hosted table gets a nullable `<host>Id` column (`...hostRelationColumns`), host deletes cascade (API + CDC), CDC maintains per-host `e:<hostedType>` counts, and you can `delegateToHost([...])` in Step 3. Host and hosted must share the same home context. Reference: `attachment` hosted by `task`.
 - **Public read** — `publicRead(mode)` in Step 3 (see modes above). Product entities typically use `'publicParent'`; the parent must itself declare a self-publication grant.
 - **Unseen-count badges** — add the type to `seenTrackedEntityTypes` (Step 2); tracking in [`app-stream-handler.ts`](../frontend/src/query/realtime/app-stream-handler.ts) and the `seen` module then covers it automatically, grouping badges by the parent context.
 - **Embedded id-arrays** — if the entity is referenced as an id array on another entity (like `label` in `task.labels`), add an `entityEmbeddings` entry (Step 2) so CDC ref-counting, cache patching, and cascade suppression handle it.

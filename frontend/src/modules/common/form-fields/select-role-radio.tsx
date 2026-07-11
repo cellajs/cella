@@ -1,19 +1,23 @@
 import { useTranslation } from 'react-i18next';
-import { type EntityRole, roles } from 'shared';
+import { type ContextEntityType, type EntityRole, hierarchy, roles } from 'shared';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { cn } from '~/utils/cn';
 
 interface Props {
   onValueChange: (value?: string) => void;
   value?: EntityRole;
+  /** Restrict options to this context entity's role vocabulary (e.g. course → staff/student/guest). */
+  entityType?: ContextEntityType;
   className?: string;
 }
 
 /**
  * Radio group for selecting a single entity role.
  */
-export function SelectRoleRadio({ onValueChange, value, className }: Props) {
+export function SelectRoleRadio({ onValueChange, value, entityType, className }: Props) {
   const { t } = useTranslation();
+
+  const roleOptions = entityType ? hierarchy.getRoles(entityType) : roles.all;
 
   return (
     <RadioGroup
@@ -21,7 +25,7 @@ export function SelectRoleRadio({ onValueChange, value, className }: Props) {
       onValueChange={(v) => onValueChange(v as string)}
       className={cn('inline-flex items-center gap-4', className)}
     >
-      {roles.all.map((role) => (
+      {roleOptions.map((role) => (
         // biome-ignore lint/a11y/noLabelWithoutControl: label is for visual grouping only, no input needed
         <label key={role} className="inline-flex cursor-pointer items-center gap-2">
           <RadioGroupItem key={role} value={role} />

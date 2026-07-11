@@ -10,5 +10,8 @@ import type { EntityType } from '../../types';
  */
 export const toColumnName = (key: string): string => key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
 
-/** Physical table name for an entity/resource type (drizzle convention: `type + 's'`). e.g. `task` → `tasks`. */
-export const toTableName = (entityType: EntityType | string): string => `${entityType}s`;
+/**
+ * Physical table name for an entity/resource type (drizzle convention: snake_cased `type + 's'`).
+ * e.g. `task` → `tasks`, `courseSection` → `course_sections`.
+ */
+export const toTableName = (entityType: EntityType | string): string => `${toColumnName(entityType)}s`;

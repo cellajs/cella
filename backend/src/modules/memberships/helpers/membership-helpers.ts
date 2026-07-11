@@ -1,5 +1,6 @@
 import { inArray, max } from 'drizzle-orm';
 import { appConfig, type ContextEntityType, hierarchy } from 'shared';
+import type { MenuStructureItem } from 'shared/config-builder';
 import { defaultOrder, orderGap } from 'shared/utils/display-order';
 import type { DbContext } from '#/core/context';
 import type { EntityModel } from '#/modules/entities/entities-queries';
@@ -18,6 +19,23 @@ import { log } from '#/utils/logger';
  */
 const rootContextType = hierarchy.contextTypes.find((t) => hierarchy.getParent(t) === null)!;
 const rootIdColumnKey = appConfig.entityIdColumnKeys[rootContextType];
+
+/**
+ * Role for an auto-created parent/associated membership. Defaults to the least-privileged
+ * fitting role: `member` when the target vocabulary has it, else the vocabulary's last role
+ * (roles are declared most → least privileged). With `carryRole` (menuStructure), the invited
+ * role carries over when valid in the target vocabulary.
+ */
+export const resolveParentMembershipRole = (
+  contextType: ContextEntityType,
+  invitedRole: MembershipModel['role'],
+  carryRole = false,
+): MembershipModel['role'] => {
+  const contextRoles = hierarchy.getRoles(contextType) as readonly MembershipModel['role'][];
+  if (carryRole && contextRoles.includes(invitedRole)) return invitedRole;
+  if (contextRoles.includes('member' as MembershipModel['role'])) return 'member' as MembershipModel['role'];
+  return contextRoles[contextRoles.length - 1];
+};
 
 type BaseEntityModel = EntityModel<ContextEntityType> & {
   [key: string]: unknown;
@@ -142,7 +160,8 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       return {
         ...baseMembership,
         tenantId: entity.tenantId,
-        role: 'member', // parent membership is always 'member'
+        // parent membership defaults to the least-privileged fitting role ('member' in cella)
+        role: resolveParentMembershipRole(rootContextType, baseMembership.role),
         [rootIdColumnKey]: targetEntitiesIdColumnKeys[rootIdColumnKey],
         contextType: rootContextType,
         contextId: targetEntitiesIdColumnKeys[rootIdColumnKey],
@@ -170,7 +189,13 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       return {
         ...baseMembership,
         tenantId: entity.tenantId,
-        role: 'member', // parent/associated membership is always 'member'
+        // associated membership role: least-privileged fit, or carried over when carryRole is set
+        role: resolveParentMembershipRole(
+          associatedType as ContextEntityType,
+          baseMembership.role,
+          // Config literals only carry the property when a fork sets it
+          'carryRole' in relation ? (relation as MenuStructureItem).carryRole : undefined,
+        ),
         ...remainingIdColumnKeys,
         contextType: associatedType,
         contextId: associatedField,

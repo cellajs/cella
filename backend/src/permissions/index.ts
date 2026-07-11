@@ -6,11 +6,11 @@ export {
   type PermissionResult,
 } from './check-permission';
 export {
+  type AncestorScope,
   type CollectionReadFilter,
   type ConditionalScope,
+  type HomeScope,
   hasNoReadScope,
-  type RestrictedGrantScope,
-  type RestrictedScope,
   resolveCollectionReadFilter,
 } from './collection-scope';
 export { getValidContextEntity, type ValidContextEntityResult } from './get-context-entity';

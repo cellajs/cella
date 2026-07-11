@@ -1,6 +1,5 @@
 import type { PostAppCatchupResponse } from 'sdk';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
-import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
@@ -206,9 +205,19 @@ function hasAnyCachedList(keys: ReturnType<typeof getEntityQueryKeys>, organizat
 }
 
 /**
- * Verify cache integrity by comparing server-reported entity counts against
- * cached totals. Checks child-context counts (precise) first, then org-level
- * counts for entity types not covered by child contexts.
+ * Server counts last seen by THIS session, keyed by `${orgId}:${entityType}:${contextId ?? ''}`.
+ * Counts are compared server-to-server (change signal), never against the client's caches:
+ * cached lists are predicate-filtered per user, so equality with shared counts is
+ * meaningless (a member who can't see every row would mismatch forever).
+ */
+const lastSeenServerCounts = new Map<string, number>();
+
+/**
+ * Verify cache freshness from server-reported entity counts: a count that CHANGED since
+ * the last catchup means rows were created/deleted while this client wasn't watching —
+ * invalidate the affected lists. Checks child-context counts (precise) first, then
+ * org-level counts for entity types not covered by child contexts. In-session signal
+ * only; across reloads the entitySeqs screening remains the primary catchup mechanism.
  */
 function verifyCacheIntegrity(changes: PostAppCatchupResponse['changes']): void {
   for (const [organizationId, scope] of Object.entries(changes)) {
@@ -238,43 +247,20 @@ function verifyCacheIntegrity(changes: PostAppCatchupResponse['changes']): void 
       const entityType = key.split(':')[0];
       if (!hasEntityQueryKeys(entityType)) continue;
 
+      const countKey = `${organizationId}:${entityType}:${contextId ?? ''}`;
+      const previous = lastSeenServerCounts.get(countKey);
+      lastSeenServerCounts.set(countKey, serverCount);
+      // First sight (nothing to compare) or unchanged → no signal
+      if (previous === undefined || previous === serverCount) continue;
+
       const keys = getEntityQueryKeys(entityType);
-      const cachedTotal = getCachedListTotal(keys, organizationId, contextId);
-      if (cachedTotal === null || cachedTotal === serverCount) continue;
+      if (!hasAnyCachedList(keys, organizationId)) continue;
 
       cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
       const scope = contextId ? `context ${contextId}` : `org ${organizationId}`;
       console.debug(
-        `[CatchupProcessor] Integrity: ${entityType} in ${scope} count mismatch — cached=${cachedTotal}, server=${serverCount} → invalidated`,
+        `[CatchupProcessor] Integrity: ${entityType} in ${scope} count changed — ${previous} → ${serverCount} → invalidated`,
       );
     }
   }
-}
-
-/**
- * Get the total count from the first matching cached list query for an entity type.
- * When contextId is provided, scopes the lookup to that specific context (e.g., project).
- * Returns null if no cached data exists.
- */
-function getCachedListTotal(
-  keys: ReturnType<typeof getEntityQueryKeys>,
-  organizationId: string,
-  contextId?: string,
-): number | null {
-  const queryKey = contextId ? keys.list.scope(organizationId, contextId) : keys.list.org(organizationId);
-  const queries = queryClient.getQueriesData({ queryKey });
-
-  for (const [, data] of queries) {
-    if (!data) continue;
-
-    // Extract total from either infinite or standard query data
-    if (isInfiniteQueryData(data)) {
-      const firstPage = data.pages[0];
-      if (firstPage && 'total' in firstPage) return (firstPage as { total: number }).total;
-    } else if (isQueryData(data)) {
-      return (data as { total: number }).total;
-    }
-  }
-
-  return null;
 }

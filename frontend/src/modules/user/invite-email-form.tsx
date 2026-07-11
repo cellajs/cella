@@ -30,7 +30,7 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
 
   const { nextStep } = useStepper();
 
-  const form = useInviteFormDraft(contextEntity?.id);
+  const form = useInviteFormDraft(contextEntity?.id, contextEntity?.entityType);
 
   const onSuccess = (
     { invitesSentCount, rejectedIds }: { rejectedIds: string[]; invitesSentCount: number },
@@ -93,7 +93,7 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
             render={({ field: { value, onChange } }) => (
               <FormItem className="ml-3 flex-row items-center gap-4">
                 <FormLabel>{t('c:role')}</FormLabel>
-                <SelectRoleRadio value={value} onValueChange={onChange} />
+                <SelectRoleRadio value={value} onValueChange={onChange} entityType={contextEntity.entityType} />
                 <FormMessage />
               </FormItem>
             )}

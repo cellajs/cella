@@ -1,5 +1,5 @@
 import { appConfig, hierarchy, resolveNonNullAncestors } from 'shared';
-import type { ActivityAction, AncestorSource, HostRelation } from 'shared';
+import type { ActivityAction, AncestorSource } from 'shared';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
 import type { CdcRowData } from '../types';
@@ -16,7 +16,6 @@ export interface CountDelta {
 /** Hierarchy surface the counter machinery needs; injectable for synthetic-hierarchy tests. */
 export type CountsHierarchy = AncestorSource & {
   isProduct(entityType: string): boolean;
-  getHostRelations(): readonly HostRelation[];
 };
 
 /**
@@ -84,31 +83,6 @@ export function getCountDeltas(
         const removed = oldIds.filter((id) => !newIds.includes(id));
         for (const id of added) deltas.push({ contextKey: id, deltas: { [counterKey]: 1 } });
         for (const id of removed) deltas.push({ contextKey: id, deltas: { [counterKey]: -1 } });
-      }
-    }
-
-    // Host-relation counters: e:<hostedType> per host row (hierarchy `host:`, e.g. e:attachment
-    // per owning task). Live rows only, mirroring recalculation phase 4c; soft-delete/restore
-    // transitions arrive here remapped to delete/create via countAction.
-    for (const relation of h.getHostRelations()) {
-      if (relation.hostedType !== tableMeta.type) continue;
-      const counterKey = `e:${relation.hostedType}`;
-      const col = relation.hostIdColumn;
-
-      if (countAction === 'create') {
-        const hostId = getStringValue(newRow, col);
-        if (hostId) deltas.push({ contextKey: hostId, deltas: { [counterKey]: 1 } });
-      } else if (countAction === 'delete') {
-        const hostId = getStringValue(oldRow ?? newRow, col);
-        if (hostId) deltas.push({ contextKey: hostId, deltas: { [counterKey]: -1 } });
-      } else if (countAction === 'update' && oldRow && newRow.deletedAt == null && oldRow.deletedAt == null) {
-        // Re-host: -1 on the old host, +1 on the new one (live→live only)
-        const oldHostId = getStringValue(oldRow, col);
-        const newHostId = getStringValue(newRow, col);
-        if (oldHostId !== newHostId) {
-          if (oldHostId) deltas.push({ contextKey: oldHostId, deltas: { [counterKey]: -1 } });
-          if (newHostId) deltas.push({ contextKey: newHostId, deltas: { [counterKey]: 1 } });
-        }
       }
     }
 

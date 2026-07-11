@@ -58,15 +58,69 @@ describe('sendBatchMessageToApi', () => {
     expect(log.error).not.toHaveBeenCalled();
   });
 
-  it('logs error for non-contiguous seqs (gap detection invariant)', () => {
-    // seq 10, 12: gap at 11
+  it('logs error for non-contiguous seqs within one context (gap detection invariant)', () => {
+    // seq 10, 12 in the same seq context: gap at 11 — seq allocation itself broke
     const events = [mockBatchEvent(10), mockBatchEvent(12)];
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
 
     expect(log.error).toHaveBeenCalledWith(
-      'Non-contiguous seqs in batch — sync integrity at risk',
+      'Non-contiguous seqs within one seq context — sync integrity at risk',
       expect.objectContaining({ minSeq: 10, batchUntilSeq: 12, seqCount: 2, expected: 3 }),
     );
+  });
+
+  it('splits a cross-context batch into per-context messages with contiguous ranges', () => {
+    // Seqs are per-context counters: org-a holds 10-11, org-b holds 5-7. Pre-split this
+    // was ONE message with seq 5..11 — a non-contiguous, semantically wrong range.
+    const inOrg = (org: string, seq: number): ReturnType<typeof mockBatchEvent> => {
+      const event = mockBatchEvent(seq, `entity-${org}-${seq}`);
+      return { ...event, rowData: { ...event.rowData, organizationId: org } };
+    };
+    // Interleaved on purpose: grouping must not depend on input order
+    const events = [inOrg('org-a', 10), inOrg('org-b', 5), inOrg('org-a', 11), inOrg('org-b', 6), inOrg('org-b', 7)];
+    sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
+
+    expect(wsClient.send).toHaveBeenCalledTimes(2);
+    const payloads = vi.mocked(wsClient.send).mock.calls.map((call) => call[0] as never as {
+      activity: { seq?: number; batchUntilSeq?: number };
+      rowData: Record<string, unknown>;
+      batchRows: { seq?: number }[];
+      batchReservations?: unknown[];
+    });
+    const orgA = payloads.find((p) => p.rowData.organizationId === 'org-a');
+    const orgB = payloads.find((p) => p.rowData.organizationId === 'org-b');
+
+    expect(orgA?.activity.seq).toBe(10);
+    expect(orgA?.activity.batchUntilSeq).toBe(11);
+    expect(orgB?.activity.seq).toBe(5);
+    expect(orgB?.activity.batchUntilSeq).toBe(7);
+    // Each message speaks only for its own context's rows and reservations
+    expect(orgA?.batchRows.map((row) => row.seq)).toEqual([10, 11]);
+    expect(orgB?.batchRows.map((row) => row.seq)).toEqual([5, 6, 7]);
+    expect(orgA?.batchReservations).toHaveLength(2);
+    expect(orgB?.batchReservations).toHaveLength(3);
+    // Both ranges are contiguous: the integrity invariant holds per context
+    expect(log.error).not.toHaveBeenCalled();
+  });
+
+  it('slims batch rows to permission-relevant fields only', () => {
+    const event = mockBatchEvent(10);
+    const second = mockBatchEvent(11);
+    const events = [
+      { ...event, rowData: { ...event.rowData, organizationId: 'org-a', createdBy: 'u1', name: 'secret' } },
+      { ...second, rowData: { ...second.rowData, organizationId: 'org-a' } },
+    ];
+    sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
+
+    const payload = vi.mocked(wsClient.send).mock.calls[0][0] as never as {
+      batchRows: { seq?: number; rowData: Record<string, unknown> }[];
+    };
+    // Context ids + identity/audit fields stay; content fields (name) never hit the wire
+    expect(payload.batchRows[0].rowData).toEqual({
+      id: event.rowData.id,
+      organizationId: 'org-a',
+      createdBy: 'u1',
+    });
   });
 
   it('handles single-event batch without error', () => {

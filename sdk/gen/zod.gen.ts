@@ -274,6 +274,7 @@ export const zInactiveMembership = z.object({
   tokenId: z.uuid().nullable(),
   role: z.enum(['admin', 'member']),
   rejectedAt: z.string().nullable(),
+  remindedAt: z.string().nullable(),
   createdBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   organizationId: z.uuid(),
 });
@@ -345,6 +346,7 @@ export const zOrganization = z.object({
   bannerUrl: z.string().max(2048).nullable(),
   createdBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   updatedBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
+  publishedAt: z.string().nullable(),
   shortName: z.string().max(255).nullable(),
   country: z.string().max(255).nullable(),
   timezone: z.string().max(255).nullable(),

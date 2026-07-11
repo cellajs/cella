@@ -1,7 +1,9 @@
 import { appConfig } from 'shared';
-import { activityBus } from '#/lib/activity-bus';
-import { dispatchToAppStream } from '#/modules/entities/helpers/dispatch-to-stream';
+import { activityBus, getEventData } from '#/lib/activity-bus';
+import { type AppStreamSubscriber, dispatchToAppStream } from '#/modules/entities/helpers/dispatch-to-stream';
+import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
+import { streamSubscriberManager } from './stream';
 import type { AppStreamEvent } from './stream/types';
 
 /**
@@ -28,6 +30,22 @@ for (const entityType of appConfig.productEntityTypes) {
 for (const action of ['created', 'updated', 'deleted'] as const) {
   activityBus.on(`membership.${action}`, async (event) => {
     if (!event.organizationId) return;
+
+    // Keep connected subscribers' membership snapshots fresh BEFORE dispatch: the
+    // dispatch decision must mirror the API, which reads live memberships per request.
+    // (A membership in a NEW org still requires a reconnect — channel registration is
+    // connect-time — but grants within already-subscribed orgs update live.)
+    const membership = getEventData(event, 'membership');
+    if (membership?.userId) {
+      const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(`org:${event.organizationId}`);
+      for (const subscriber of subscribers) {
+        if (subscriber.userId !== membership.userId) continue;
+        const remaining = subscriber.memberships.filter((existing) => existing.id !== membership.id);
+        subscriber.memberships =
+          action === 'deleted' ? remaining : [...remaining, toMembershipBase(membership as Record<string, unknown>)];
+      }
+    }
+
     try {
       await dispatchToAppStream(event as AppStreamEvent);
     } catch (error) {

@@ -81,6 +81,10 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
+                  "publishedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "shortName": {
                     "type": ["string", "null"],
                     "required": true,
@@ -241,6 +245,7 @@
               "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
               "authStrategies": ["passkey"],
               "chatSupport": false,
+              "publishedAt": "2024-04-18T21:12:59.543Z",
               "createdAt": "2024-04-18T21:12:59.543Z",
               "createdBy": null,
               "updatedAt": "2024-04-18T21:12:59.543Z",
@@ -289,6 +294,7 @@
               "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
               "authStrategies": ["passkey"],
               "chatSupport": false,
+              "publishedAt": "2024-02-24T16:36:46.247Z",
               "createdAt": "2024-02-24T16:36:46.247Z",
               "createdBy": null,
               "updatedAt": "2024-02-24T16:36:46.247Z",
@@ -574,6 +580,10 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
+                  "publishedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "shortName": {
                     "type": ["string", "null"],
                     "required": true,
@@ -723,6 +733,7 @@
               "welcomeText": "Welcome to Anderson - Ferry!",
               "authStrategies": ["passkey"],
               "chatSupport": true,
+              "publishedAt": "2024-11-21T01:19:53.533Z",
               "createdAt": "2024-11-21T01:19:53.533Z",
               "createdBy": null,
               "updatedAt": "2024-11-21T01:19:53.533Z",
@@ -771,6 +782,7 @@
               "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
               "authStrategies": ["passkey"],
               "chatSupport": false,
+              "publishedAt": "2024-10-29T04:35:17.725Z",
               "createdAt": "2024-10-29T04:35:17.725Z",
               "createdBy": null,
               "updatedAt": "2024-10-29T04:35:17.725Z",
@@ -956,6 +968,10 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
+            "publishedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
             "shortName": {
               "type": ["string", "null"],
               "required": true,
@@ -1099,6 +1115,7 @@
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
           "authStrategies": ["passkey"],
           "chatSupport": true,
+          "publishedAt": "2024-12-25T15:04:42.969Z",
           "createdAt": "2024-12-25T15:04:42.969Z",
           "createdBy": null,
           "updatedAt": "2024-12-25T15:04:42.969Z",
@@ -1266,6 +1283,10 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
+            "publishedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
             "shortName": {
               "type": ["string", "null"],
               "required": true,
@@ -1409,6 +1430,7 @@
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
           "authStrategies": ["passkey"],
           "chatSupport": true,
+          "publishedAt": "2024-12-25T15:04:42.969Z",
           "createdAt": "2024-12-25T15:04:42.969Z",
           "createdBy": null,
           "updatedAt": "2024-12-25T15:04:42.969Z",

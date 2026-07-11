@@ -1,7 +1,15 @@
 {
+  "email_bulk": "Email (bulk)",
+  "emails_recognized_one": "{{count}} email address recognized",
+  "emails_recognized_other": "{{count}} email addresses recognized",
+  "explain.invite_bulk.text": "Paste any text containing email addresses: commas, new lines or address-book dumps all work. Invited members will receive an email to accept the invitation.",
+  "invite_bulk_link": "Click here if you want to invite students in bulk using copy-paste.",
   "onboarding_completed": "Great! Let's go.",
   "onboarding_completed.text": "Have a look around to explore the features of {{appName}}.",
   "onboarding_demo_ready.text": "Have a look around to explore what you can do with this template already.",
   "onboarding_welcome": "Welcome to {{appName}}",
-  "onboarding_welcome.text": "🚀 This is the Cella template itself (no content). What will you build?"
+  "onboarding_welcome.text": "🚀 This is the Cella template itself (no content). What will you build?",
+  "paste_emails": "Paste email addresses",
+  "paste_emails.placeholder": "Paste any text containing email addresses...",
+  "paste_emails.text": "Email addresses are extracted automatically; one role applies to the whole batch."
 }

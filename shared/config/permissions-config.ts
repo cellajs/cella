@@ -23,8 +23,6 @@ import { configurePermissions } from '../src/permissions/access-policies';
  * Beyond plain cells, the builder callback also exposes:
  * - `publicRead(mode)` — declare how the subject becomes publicly readable (requires a matching
  *   `publicRead` declaration in the hierarchy config)
- * - `delegateToHost(actions)` — delegate actions on a hosted product to its host row (requires a
- *   `host:` declaration in the hierarchy config)
  * - row conditions like `read: 'own'` — grant an action only on rows the user created
  *
  * ## Adding new entities
@@ -33,7 +31,29 @@ import { configurePermissions } from '../src/permissions/access-policies';
  * For the full end-to-end recipe — hierarchy declaration, config arrays, DB table + RLS, module
  * wiring, sync engine, and frontend registration — see `cella/ADD_ENTITY.md`.
  */
-export const { accessPolicies, publicReadGrants, rowRestrictions, hostDelegation } = configurePermissions(
+/**
+ * Grant scoping for PRODUCT entities (optional). When a role list is configured, a
+ * product membership grant of a role NOT in the list speaks only for rows HOMED at its
+ * own context level — e.g. in a fork with `organization > course > project` chains, a
+ * course `student` grant covers course-homed rows but not rows in the projects below,
+ * while listed roles (typically staff/admin) keep full subtree scope (moderation
+ * cascade, admin oversight). Context-entity subjects are exempt, so discovery of child
+ * contexts is unaffected. Applies to every action, including `create` and `'own'`
+ * conditions.
+ *
+ * This is a static, type-level visibility knob — one role set instead of per-row
+ * audience data — evaluated identically by the engine check
+ * (`getAllDecisions`) and the collection-scope SQL compiler
+ * (`resolveCollectionReadFilter`), so both stay mirror-consistent.
+ *
+ * `undefined` (the template default) keeps every grant subtree-scoped — the current
+ * behavior. A fork with nested contexts and elevated roles enables it like:
+ *
+ *   export const elevatedRoles = ['admin', 'staff'] as const;
+ */
+export const elevatedRoles: readonly string[] | undefined = undefined;
+
+export const { accessPolicies, publicReadGrants } = configurePermissions(
   appConfig.entityTypes,
   ({ subject, contexts }) => {
     switch (subject.name) {

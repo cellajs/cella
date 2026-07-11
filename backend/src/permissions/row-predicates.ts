@@ -1,7 +1,7 @@
 import { and, eq, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import { qualifyingDepths, type RowCondition, type RowConditionSqlForm } from 'shared';
-import type { CollectionReadFilter, RestrictedScope } from './collection-scope';
+import { appConfig, type ContextEntityType, type RowCondition, type RowConditionSqlForm } from 'shared';
+import type { CollectionReadFilter } from './collection-scope';
 
 /**
  * Compiles row-condition SQL forms (declared ORM-free in `shared`, see
@@ -50,44 +50,17 @@ export type CollectionReadWhere =
   | { kind: 'where'; where: SQL };
 
 /**
- * SQL-form of a row restriction for ONE membership grant (see
- * `shared/src/permissions/row-restrictions.ts` for semantics; this must agree with
- * `membershipGrantQualifies`, asserted by the parity property test):
- * - depth: row depth is NULL or among the depths this grant's context level qualifies for
- * - roles: row audience is NULL/empty or contains this grant's role
- */
-const restrictionPredicates = (
-  restricted: RestrictedScope,
-  grant: { contextType: (typeof restricted.orderedContexts)[number]; role: string },
-  table: AnyPgTable,
-): SQL[] => {
-  const predicates: SQL[] = [];
-  const { restriction, orderedContexts } = restricted;
-
-  if (restriction.depthColumn) {
-    const column = resolveColumn(table, restriction.depthColumn, 'visibilityDepth restriction');
-    const depths = qualifyingDepths(orderedContexts, grant.contextType);
-    const predicate = depths.length > 0 ? or(isNull(column), inArray(column, depths)) : isNull(column);
-    if (predicate) predicates.push(predicate);
-  }
-
-  if (restriction.rolesColumn) {
-    const column = resolveColumn(table, restriction.rolesColumn, 'audienceRoles restriction');
-    const predicate = or(isNull(column), sql`cardinality(${column}) = 0`, sql`${grant.role} = any(${column})`);
-    if (predicate) predicates.push(predicate);
-  }
-
-  return predicates;
-};
-
-/**
  * Build the row-scope WHERE clause for a collection read from a resolved filter:
- * `(subContext IN unconditional ids) OR (condition SQL AND subContext IN conditional ids)
- *  OR (restriction predicates for grant AND subContext IN grant ids) OR …`.
+ * `(subContext IN unconditional ids) OR (condition SQL AND subContext IN conditional ids) OR …`.
+ *
+ * Deep chains: entries tagged with an intermediate `contextType` (e.g. course grants on
+ * a project-homed entity) are scoped by THAT level's own id column, resolved via
+ * `appConfig.entityIdColumnKeys` — on tables with denormalized ancestor columns an
+ * intermediate id covers every row physically below it.
  *
  * @param filter - Resolved scope filter (`resolveCollectionReadFilter`).
  * @param table - The product table being queried.
- * @param subContextColumn - The table's sub-context id column (e.g. `tasks.projectId`).
+ * @param subContextColumn - The table's home sub-context id column (e.g. `tasks.projectId`).
  * @param userId - The acting user id; undefined for anonymous actors.
  */
 export const buildCollectionReadWhere = (
@@ -99,34 +72,55 @@ export const buildCollectionReadWhere = (
   // Org-wide unconditional read (conditional scopes are subsumed and already dropped).
   if (filter.subContextIds === undefined) return { kind: 'all' };
 
+  /**
+   * The id column a scope entry filters by: its own level's column, or the home column.
+   * Column keys come from `appConfig.entityIdColumnKeys`; a synthetic topology level
+   * (parity tests) is absent there and falls back to the `${contextType}Id` convention
+   * the config validator enforces for real entities.
+   */
+  const scopeColumn = (contextType: ContextEntityType | undefined): PgColumn =>
+    contextType
+      ? resolveColumn(
+          table,
+          (appConfig.entityIdColumnKeys as Partial<Record<string, string>>)[contextType] ?? `${contextType}Id`,
+          `${contextType} scope`,
+        )
+      : subContextColumn;
+
   const clauses: SQL[] = [];
 
   if (filter.subContextIds.length > 0) {
     clauses.push(inArray(subContextColumn, filter.subContextIds));
   }
 
-  for (const { condition, subContextIds } of filter.conditionalScopes) {
-    const conditionSql = compileRowConditionSql(condition, table, userId);
-    if (subContextIds === undefined) {
-      // Org-wide conditional grant: condition alone bounds the rows.
-      clauses.push(conditionSql);
-      continue;
-    }
+  for (const { contextType, subContextIds } of filter.ancestorScopes ?? []) {
     if (subContextIds.length === 0) continue;
-    const scoped = and(inArray(subContextColumn, subContextIds), conditionSql);
+    clauses.push(inArray(scopeColumn(contextType), subContextIds));
+  }
+
+  // HOME-scoped grants (elevatedRoles): the grant level's column matches AND every
+  // more-specific ancestor column is NULL — rows homed exactly at that level.
+  for (const { contextType, subContextIds, deeperContexts } of filter.homeScopes ?? []) {
+    if (subContextIds.length === 0) continue;
+    const scoped = and(
+      inArray(scopeColumn(contextType), subContextIds),
+      ...deeperContexts.map((deeper) => isNull(scopeColumn(deeper))),
+    );
     if (scoped) clauses.push(scoped);
   }
 
-  if (filter.restricted) {
-    for (const grant of filter.restricted.grants) {
-      const predicates = restrictionPredicates(filter.restricted, grant, table);
-      if (grant.subContextIds !== undefined) {
-        if (grant.subContextIds.length === 0) continue;
-        predicates.unshift(inArray(subContextColumn, grant.subContextIds));
-      }
-      const scoped = predicates.length === 1 ? predicates[0] : and(...predicates);
+  for (const { condition, subContextIds, contextType, deeperContexts } of filter.conditionalScopes) {
+    const conditionSql = compileRowConditionSql(condition, table, userId);
+    const homeNulls = (deeperContexts ?? []).map((deeper) => isNull(scopeColumn(deeper)));
+    if (subContextIds === undefined) {
+      // Org-wide conditional grant: condition (plus home NULLs, if home-scoped) bounds the rows.
+      const scoped = homeNulls.length > 0 ? and(conditionSql, ...homeNulls) : conditionSql;
       if (scoped) clauses.push(scoped);
+      continue;
     }
+    if (subContextIds.length === 0) continue;
+    const scoped = and(inArray(scopeColumn(contextType), subContextIds), conditionSql, ...homeNulls);
+    if (scoped) clauses.push(scoped);
   }
 
   if (clauses.length === 0) return { kind: 'none' };

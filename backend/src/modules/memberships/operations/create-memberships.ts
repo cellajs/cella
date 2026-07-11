@@ -12,6 +12,7 @@ import {
   findMembershipAwareRows,
   insertInactiveMemberships,
   insertTokens,
+  stampInactiveMembershipsReminded,
 } from '#/modules/memberships/memberships-queries';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { log } from '#/utils/logger';
@@ -40,9 +41,23 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
   const normalizedEmails = [...new Set(emails.map((e: string) => e.toLowerCase().trim()))];
   if (!normalizedEmails.length) throw new AppError(400, 'no_recipients', 'warn');
 
+  // The invited role must exist in the target context's vocabulary (e.g. no org 'member' on a course)
+  if (!hierarchy.getRoles(entityType).includes(role)) {
+    throw new AppError(400, 'invalid_role', 'warn', { entityType });
+  }
+
   const { entity } = await getValidContextEntity(ctx, entityId, entityType, 'update');
 
   const { slug: entitySlug, name: entityName } = entity;
+
+  /**
+   * Draft context (publishedAt null): invites are recorded (inactive memberships + tokens)
+   * but email dispatch is held and existing users are not added directly — everything is
+   * released when the context is published. The context's most-privileged role (first in
+   * its vocabulary, e.g. admin/staff/owner) stays live so staff can collaborate in drafts.
+   */
+  const contextIsDraft = entity.publishedAt === null;
+  const deferDispatch = contextIsDraft && role !== hierarchy.getRoles(entityType)[0];
 
   const currentOrgMemberships = await countMembershipsByContext(ctx, {
     contextType: rootContextType,
@@ -84,6 +99,10 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
   for (const e of normalizedEmails) rowsByEmail.set(e, []);
   for (const r of membershipAwareRows) rowsByEmail.get(r.email)?.push(r);
 
+  // Reminder throttle: a pending invite is re-emailed at most once per 7 days
+  const reminderThrottleBefore = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const remindedInactiveMembershipIds: string[] = [];
+
   for (const email of normalizedEmails) {
     const rows = rowsByEmail.get(email)!;
 
@@ -97,7 +116,15 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
     }
 
     if (hasUserInactiveMembership || hasTokenInvite) {
-      reminderEmails.push(email);
+      // No reminders against a draft context; otherwise throttle on last dispatch
+      const inactiveRow = rows.find((r) => r.inactiveMembershipId);
+      const lastDispatch = inactiveRow?.inactiveMembershipRemindedAt ?? inactiveRow?.inactiveMembershipCreatedAt;
+      const throttled = !!lastDispatch && new Date(lastDispatch) >= reminderThrottleBefore;
+
+      if (!deferDispatch && !throttled) {
+        reminderEmails.push(email);
+        if (inactiveRow?.inactiveMembershipId) remindedInactiveMembershipIds.push(inactiveRow.inactiveMembershipId);
+      }
       continue;
     }
 
@@ -110,7 +137,8 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
       } else {
         const hasActiveOrgMembership = entityType !== rootContextType && !!rows.find((r) => r.orgMembershipId);
 
-        if (hasActiveOrgMembership) {
+        // Draft context: existing users are deferred too — no membership, no nav entry, no email
+        if (hasActiveOrgMembership && !deferDispatch) {
           existingUsersToDirectAdd.push({ userId: userRow.userId, email });
         } else {
           existingUsersToActivate.push({ userId: userRow.userId, email });
@@ -230,7 +258,8 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
 
   const staticProps = { senderName, senderThumbnailUrl, role, entityName };
 
-  if (noTokenRecipients.length > 0) {
+  // Draft context: hold every email — deferred invites are dispatched at publish
+  if (!deferDispatch && noTokenRecipients.length > 0) {
     await mailer.prepareEmails(memberInviteEmail, staticProps, noTokenRecipients, user.email);
   }
 
@@ -242,12 +271,20 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
     entityLink,
   }));
 
-  if (directAdditionRecipients.length > 0) {
+  if (!deferDispatch && directAdditionRecipients.length > 0) {
     await mailer.prepareEmails(memberAddedEmail, staticProps, directAdditionRecipients, user.email);
   }
 
-  if (withTokenRecipients.length > 0) {
+  if (!deferDispatch && withTokenRecipients.length > 0) {
     await mailer.prepareEmails(memberInviteWithTokenEmail, staticProps, withTokenRecipients, user.email);
+  }
+
+  // Track reminder dispatch for the 7-day throttle
+  if (!deferDispatch && remindedInactiveMembershipIds.length > 0) {
+    await stampInactiveMembershipsReminded(ctx, {
+      ids: remindedInactiveMembershipIds,
+      remindedAt: new Date().toISOString(),
+    });
   }
 
   const invitesSentCount = insertedInactiveMemberships.length;
