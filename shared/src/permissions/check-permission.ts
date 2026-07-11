@@ -1,5 +1,5 @@
 import type { EntityActionType } from '../../types';
-import { accessPolicies, publicReadGrants, subtreeRoles } from '../../config/permissions-config';
+import { accessPolicies, publicReadGrants, elevatedRoles } from '../../config/permissions-config';
 import { getAllDecisions } from './permission-manager/check';
 import type {
   PermissionCheckOptions,
@@ -68,7 +68,7 @@ export function checkPermission<T extends PermissionMembership>(
   // Inject the configured grants; explicit options (tests) take precedence.
   const optionsWithGrants: PermissionCheckOptions = {
     publicGrants: publicReadGrants,
-    subtreeRoles,
+    elevatedRoles,
     ...options,
   };
 

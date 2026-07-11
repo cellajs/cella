@@ -2,7 +2,7 @@ import {
   type AccessPolicies,
   accessPolicies,
   type ContextEntityType,
-  subtreeRoles as configuredSubtreeRoles,
+  elevatedRoles as configuredElevatedRoles,
   getPolicyPermissions,
   getSubjectPolicies,
   hierarchy,
@@ -38,7 +38,7 @@ export interface ConditionalScope {
   condition: RowCondition;
   subContextIds: string[] | undefined;
   contextType?: ContextEntityType;
-  /** Home-scoped grant (subtreeRoles): these levels' columns must be NULL as well. */
+  /** Home-scoped grant (elevatedRoles): these levels' columns must be NULL as well. */
   deeperContexts?: ContextEntityType[];
 }
 
@@ -46,7 +46,7 @@ export interface ConditionalScope {
  * An unconditional grant at an intermediate ancestor level (deep chains only, e.g.
  * course/courseSection between organization and an item's home project): rows are
  * scoped by THAT level's own id column. Root grants stay org-wide and home grants
- * stay in `subContextIds`, so two-level forks never produce these. With `subtreeRoles`
+ * stay in `subContextIds`, so two-level forks never produce these. With `elevatedRoles`
  * configured, only subtree-scoped roles land here.
  */
 export interface AncestorScope {
@@ -55,9 +55,9 @@ export interface AncestorScope {
 }
 
 /**
- * A HOME-scoped unconditional grant (subtreeRoles): rows homed exactly at this level —
+ * A HOME-scoped unconditional grant (elevatedRoles): rows homed exactly at this level —
  * that level's id column matches AND every more-specific ancestor column is NULL.
- * Produced only when `subtreeRoles` is configured, for roles outside the list.
+ * Produced only when `elevatedRoles` is configured, for roles outside the list.
  */
 export interface HomeScope {
   contextType: ContextEntityType;
@@ -72,7 +72,7 @@ interface ScopeAccumulator {
   unconditionalIds: Set<string>;
   /** Unconditional grants at intermediate ancestor levels (deep chains), keyed by context type. */
   ancestorUnconditional: Map<ContextEntityType, Set<string>>;
-  /** HOME-scoped unconditional grants (subtreeRoles), keyed by context type. */
+  /** HOME-scoped unconditional grants (elevatedRoles), keyed by context type. */
   homeScoped: Map<ContextEntityType, Set<string>>;
   /** Keyed by `${condition name}:${level}:${homeOnly}`; conditions sharing a name must be the same rule. */
   conditional: Map<
@@ -101,17 +101,17 @@ const resolveScopes = (
   memberships: MembershipBaseModel[],
   entityType: ProductEntityType,
   organizationId: string,
-  subtreeRoles: readonly string[] | undefined,
+  elevatedRoles: readonly string[] | undefined,
   ancestors: readonly ContextEntityType[], // most-specific → root, e.g. [project, course, organization]
 ): ScopeAccumulator => {
   const rootContext = ancestors.at(-1) ?? null; // organization
   const subContextType = ancestors.find((context) => context !== rootContext) ?? null; // home context, e.g. project
 
-  // Grant scoping: with subtreeRoles configured, a non-subtree role's grant speaks only
+  // Grant scoping: with elevatedRoles configured, a non-elevated role's grant speaks only
   // for rows HOMED at its level. Grants at the deepest level are home-exact by
-  // construction; root/intermediate grants of non-subtree roles become home-scoped.
+  // construction; root/intermediate grants of non-elevated roles become home-scoped.
   const isHomeScopedGrant = (contextType: ContextEntityType, role: string): boolean =>
-    subtreeRoles !== undefined && !subtreeRoles.includes(role) && contextType !== subContextType;
+    elevatedRoles !== undefined && !elevatedRoles.includes(role) && contextType !== subContextType;
 
   const acc: ScopeAccumulator = {
     unconditionalOrgWide: false,
@@ -141,7 +141,7 @@ const resolveScopes = (
   };
 
   const addUnconditional = (contextType: ContextEntityType, role: string, contextId: string | null) => {
-    // Non-subtree roles above the deepest level scope to rows HOMED at their grant level
+    // Non-elevated roles above the deepest level scope to rows HOMED at their grant level
     if (isHomeScopedGrant(contextType, role)) {
       const ids = acc.homeScoped.get(contextType) ?? new Set<string>();
       ids.add(contextId ?? organizationId);
@@ -160,7 +160,7 @@ const resolveScopes = (
 
   for (const membership of memberships) {
     // Root-context (e.g. organization) grant → org-wide scope (or org-homed rows only,
-    // for non-subtree roles).
+    // for non-elevated roles).
     if (rootContext && membership.contextType === rootContext && membership.contextId === organizationId) {
       const value = roleReadValue(policies, entityType, rootContext, membership.role);
       if (value === 1) addUnconditional(rootContext, membership.role, null);
@@ -222,7 +222,7 @@ export interface CollectionReadFilter {
    */
   ancestorScopes?: AncestorScope[];
   /**
-   * HOME-scoped grants (subtreeRoles; aggregate reads only): rows homed exactly at
+   * HOME-scoped grants (elevatedRoles; aggregate reads only): rows homed exactly at
    * the grant's level. OR-ed with everything else.
    */
   homeScopes?: HomeScope[];
@@ -333,7 +333,7 @@ export const resolveCollectionReadFilter = (
     entityType,
     organizationId,
     requested,
-    configuredSubtreeRoles,
+    configuredElevatedRoles,
   );
 };
 
@@ -342,7 +342,7 @@ export const resolveCollectionReadFilter = (
  * mirroring `getAllDecisions(policies, …)`. Used by the check/SQL parity property test
  * to exercise synthetic policies; handlers use the bound wrapper above.
  *
- * @param subtreeRoles - Grant scoping role list (see `shared/config/permissions-config.ts`);
+ * @param elevatedRoles - Grant scoping role list (see `shared/config/permissions-config.ts`);
  *   the bound wrapper injects the configured value.
  * @param topology - Hierarchy override, the same seam `getAllDecisions(…, { topology })`
  *   exposes. Defaults to the app's real hierarchy; parity tests pass a synthetic one to
@@ -354,12 +354,12 @@ export const resolveCollectionReadFilterForPolicies = (
   entityType: ProductEntityType,
   organizationId: string,
   requested?: { subContextId?: string; subContextIds?: string[] },
-  subtreeRoles?: readonly string[],
+  elevatedRoles?: readonly string[],
   topology?: PermissionTopology,
 ): CollectionReadFilter => {
   const topoHierarchy = topology?.hierarchy ?? hierarchy;
   const orderedContexts = topoHierarchy.getOrderedAncestors(entityType) as ContextEntityType[];
-  const acc = resolveScopes(policies, memberships, entityType, organizationId, subtreeRoles, orderedContexts);
+  const acc = resolveScopes(policies, memberships, entityType, organizationId, elevatedRoles, orderedContexts);
   const conditionalScopes = toConditionalScopes(acc, orderedContexts);
   const rootContext = orderedContexts.at(-1) ?? null;
   const homeContext = orderedContexts.find((context) => context !== rootContext) ?? null;

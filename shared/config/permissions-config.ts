@@ -49,9 +49,9 @@ import { configurePermissions } from '../src/permissions/access-policies';
  * `undefined` (the template default) keeps every grant subtree-scoped — the current
  * behavior. A fork with nested contexts and elevated roles enables it like:
  *
- *   export const subtreeRoles = ['admin', 'staff'] as const;
+ *   export const elevatedRoles = ['admin', 'staff'] as const;
  */
-export const subtreeRoles: readonly string[] | undefined = undefined;
+export const elevatedRoles: readonly string[] | undefined = undefined;
 
 export const { accessPolicies, publicReadGrants } = configurePermissions(
   appConfig.entityTypes,

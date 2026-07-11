@@ -98,7 +98,7 @@ export const buildCollectionReadWhere = (
     clauses.push(inArray(scopeColumn(contextType), subContextIds));
   }
 
-  // HOME-scoped grants (subtreeRoles): the grant level's column matches AND every
+  // HOME-scoped grants (elevatedRoles): the grant level's column matches AND every
   // more-specific ancestor column is NULL — rows homed exactly at that level.
   for (const { contextType, subContextIds, deeperContexts } of filter.homeScopes ?? []) {
     if (subContextIds.length === 0) continue;

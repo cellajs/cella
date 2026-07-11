@@ -101,7 +101,7 @@ export interface PermissionCheckOptions {
    * — the template behavior. Injected by the `checkPermission` wrapper like
    * `publicGrants`; see `shared/config/permissions-config.ts`.
    */
-  subtreeRoles?: readonly string[];
+  elevatedRoles?: readonly string[];
   /**
    * Override the hierarchy/action topology the engine reads (defaults to the app's config).
    * Tests use this to exercise a synthetic hierarchy; see `shared/src/testing/wide-fixture.ts`.

@@ -92,7 +92,7 @@ export type { ConditionActor, PublicReadGrants, PublicReadMode, RowCondition, Ro
 export { configureAccessPolicies, configurePermissions, getPolicyPermissions, getSubjectPolicies } from './src/permissions';
 export type { PermissionsConfigResult } from './src/permissions';
 export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './src/permissions';
-export { accessPolicies, computeCan, publicReadGrants, subtreeRoles } from './src/permissions';
+export { accessPolicies, computeCan, publicReadGrants, elevatedRoles } from './src/permissions';
 export type { ActionPermissionState, EntityCanMap } from './src/permissions';
 
 // Permission engine (tier-neutral decision logic, shared by backend + yjs)

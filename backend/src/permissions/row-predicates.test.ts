@@ -441,13 +441,13 @@ const deepRowSubject = (row: DeepParityRow): SubjectForPermission =>
   }) as unknown as SubjectForPermission;
 
 /** Path 1: the engine's per-row read decision, over the synthetic topology. */
-const deepEngineReadableIds = (scenario: DeepScenario, subtreeRoles?: readonly string[]): Set<string> => {
+const deepEngineReadableIds = (scenario: DeepScenario, elevatedRoles?: readonly string[]): Set<string> => {
   const readable = new Set<string>();
   for (const row of DEEP_ROWS) {
     const { can } = getAllDecisions(scenario.policies, scenario.memberships, deepRowSubject(row), {
       userId: scenario.userId,
       topology: deepTopology,
-      ...(subtreeRoles && { subtreeRoles }),
+      ...(elevatedRoles && { elevatedRoles }),
     });
     if (can.read) readable.add(row.id);
   }
@@ -455,14 +455,14 @@ const deepEngineReadableIds = (scenario: DeepScenario, subtreeRoles?: readonly s
 };
 
 /** Path 2: the compiled SQL predicate executed against Postgres, same topology. */
-const deepSqlReadableIds = async (scenario: DeepScenario, subtreeRoles?: readonly string[]): Promise<Set<string>> => {
+const deepSqlReadableIds = async (scenario: DeepScenario, elevatedRoles?: readonly string[]): Promise<Set<string>> => {
   const filter = resolveCollectionReadFilterForPolicies(
     scenario.policies,
     scenario.memberships,
     DEEP_ITEM,
     ROOT_ID,
     undefined,
-    subtreeRoles,
+    elevatedRoles,
     deepTopology,
   );
   const where = buildCollectionReadWhere(filter, deepParityTable, deepParityTable.projectId, scenario.userId);
@@ -513,16 +513,16 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
 });
 
 /******************************************************************************
- * subtreeRoles parity (same synthetic topology): with `subtreeRoles` configured,
+ * elevatedRoles parity (same synthetic topology): with `elevatedRoles` configured,
  * a product grant of a non-listed role speaks only for rows HOMED at its own
  * context level, while listed roles (admin/staff) keep subtree scope. Engine
- * (`getAllDecisions(…, { subtreeRoles })`) ≍ compiled SQL, row for row.
+ * (`getAllDecisions(…, { elevatedRoles })`) ≍ compiled SQL, row for row.
  ******************************************************************************/
 
 const SUBTREE_ROLES = ['admin', 'staff'] as const;
 
-describe('subtreeRoles parity: home-scoped grants agree between engine and SQL', () => {
-  it('agrees on every row across random policies and memberships with subtreeRoles configured', async () => {
+describe('elevatedRoles parity: home-scoped grants agree between engine and SQL', () => {
+  it('agrees on every row across random policies and memberships with elevatedRoles configured', async () => {
     const random = mulberry32(0x50b7);
 
     for (let i = 0; i < 100; i++) {
@@ -535,7 +535,7 @@ describe('subtreeRoles parity: home-scoped grants agree between engine and SQL',
     }
   });
 
-  it('scopes a non-subtree course grant to course-HOMED rows only', async () => {
+  it('scopes a non-elevated course grant to course-HOMED rows only', async () => {
     const scenario: DeepScenario = {
       policies: deepPolicies((contextType, role) => (contextType === 'course' && role === 'student' ? 1 : 0)),
       memberships: [deepMembership('course', 'c1', 'student')],
@@ -592,7 +592,7 @@ describe('subtreeRoles parity: home-scoped grants agree between engine and SQL',
  * synthetic-topology blocks above, this block runs the real config (cella:
  * 2-level, unconditional org grants; a fork with a nested chain or `'own'` read
  * cells exercises those automatically via the CHAIN-derived scenario space).
- * Deep-chain and subtreeRoles decisions are asserted engine ≍ SQL above and reach
+ * Deep-chain and elevatedRoles decisions are asserted engine ≍ SQL above and reach
  * dispatch through the same `checkPermission` call. Rows carry no publicAt,
  * keeping public grants out of scope (collection SQL compiles no public clause).
  ******************************************************************************/
