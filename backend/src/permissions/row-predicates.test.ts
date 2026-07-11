@@ -59,10 +59,17 @@ const SUB_INSTANCES = SUB ? ['s1', 's2', 's3'] : []; // sub-context instance ids
 const subIdKey = SUB ? appConfig.entityIdColumnKeys[SUB] : null; // 'projectId' | null
 const subColumnName = subIdKey ? toColumnName(subIdKey) : null; // 'project_id' | null
 
+// Root id column ('organizationId'): forks that configure `elevatedRoles` compile
+// home-scoped grants against it, so the scratch table must carry it like real product
+// tables do (on the template config it is simply never referenced).
+const rootIdKey = appConfig.entityIdColumnKeys[ROOT];
+const rootColumnName = toColumnName(rootIdKey);
+
 /** Scratch table (real Postgres, admin connection): the minimal shape of a product table. */
 const baseColumns = {
   id: varchar('id').primaryKey(),
   createdBy: varchar('created_by'),
+  [rootIdKey]: varchar(rootColumnName).notNull(),
 };
 const parityTable = pgTable(
   'test_permission_parity_rows',
@@ -201,13 +208,15 @@ beforeAll(async () => {
     sql.raw(`
     create table test_permission_parity_rows (
       id varchar primary key,
-      created_by varchar${subColumnName ? `,\n      ${subColumnName} varchar not null` : ''}
+      created_by varchar,
+      ${rootColumnName} varchar not null${subColumnName ? `,\n      ${subColumnName} varchar not null` : ''}
     )
   `),
   );
   const values = ROWS.map((r) => ({
     id: r.id,
     createdBy: r.createdBy,
+    [rootIdKey]: ROOT_ID,
     ...(subIdKey && r.subContextId !== null ? { [subIdKey]: r.subContextId } : {}),
   }));
   await seedDb.insert(parityTable).values(values as (typeof parityTable.$inferInsert)[]);
