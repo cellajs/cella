@@ -66,12 +66,7 @@ const instance = new scaleway.databases.Instance('main-postgres', {
     sync_replication_slots: 'on',
   },
   loadBalancer: dbPublicEndpoint ? {} : undefined,
-}, {
-  aliases: [{ type: 'scaleway:index/databaseInstance:DatabaseInstance' }],
-  deleteBeforeReplace: true,
-  ignoreChanges: ['maintenances'],
-  protect: isProduction,
-})
+}, { aliases: [{ type: 'scaleway:index/databaseInstance:DatabaseInstance' }], deleteBeforeReplace: true, protect: isProduction })
 
 if (dbPublicEndpoint && dbPublicAcl) {
   new scaleway.databases.Acl('main-postgres-acl', {
