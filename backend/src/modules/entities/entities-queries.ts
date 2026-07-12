@@ -42,13 +42,18 @@ export const findContextCountersByKeys = async ({ var: { db } }: DbContext, keys
  * Reads pre-computed counts from JSONB instead of running COUNT(*) subqueries.
  *
  * JSONB key conventions:
- *   m:{role}   → membership count by role (e.g. m:admin, m:member)
- *   m:pending  → pending invitations count
- *   m:total    → total active members
- *   e:{type}   → child entity count (e.g. e:attachment)
+ *   m:{role}    → membership count by role (e.g. m:admin, m:member)
+ *   m:pending   → pending invitations count
+ *   m:total     → total active members
+ *   e:{type}    → child entity count (e.g. e:attachment)
+ *   last:{type} → epoch ms of the latest live row created in the context's OWN stream
+ *                 (product types only). Stamped at the home context (deepest non-null
+ *                 ancestor) — deliberately NOT propagated to higher ancestors like
+ *                 e: deltas are; it is a per-stream signal.
  */
 export const getEntityCountsSelect = (entityType: ContextEntityType) => {
   const children = hierarchy.getOrderedDescendants(entityType);
+  const productChildren = children.filter((child) => hierarchy.isProduct(child));
   const col = '"context_counters"."counts"';
 
   // Build membership JSON: { admin: N, member: N, ..., pending: N, total: N }
@@ -56,6 +61,11 @@ export const getEntityCountsSelect = (entityType: ContextEntityType) => {
 
   // Build entity JSON: { attachment: N, ... }
   const entityJsonPairs = children.map((entity) => `'${entity}', ${jsonbIntRaw(col, `e:${entity}`)}`).join(', ');
+
+  // Build activity JSON over product descendants only: { attachment: epochMs | null, ... }
+  const activityJsonPairs = productChildren
+    .map((entity) => `'${entity}', (${col}->>'last:${entity}')::bigint`)
+    .join(', ');
 
   const countsSelect = {
     membership: sql<z.infer<typeof membershipCountSchema>>`
@@ -65,6 +75,9 @@ export const getEntityCountsSelect = (entityType: ContextEntityType) => {
         'total', ${sql.raw(jsonbIntRaw(col, 'm:total'))}
       )`,
     entities: sql<Record<(typeof children)[number], number>>`json_build_object(${sql.raw(entityJsonPairs)})`,
+    activity: sql<
+      Record<(typeof productChildren)[number], number | null>
+    >`json_build_object(${sql.raw(activityJsonPairs)})`,
   };
 
   return { countsSelect };
@@ -82,13 +95,16 @@ export const getEntityCounts = async ({ var: { db } }: DbContext, entityType: Co
     .from(contextCountersTable)
     .where(eq(contextCountersTable.contextKey, entityId));
 
-  // If no row exists yet, return zeroed counts
+  // If no row exists yet, return zeroed counts (activity stamps are null until a first post)
   if (!counts) {
+    const descendants = hierarchy.getOrderedDescendants(entityType);
     const zeroMembership = Object.fromEntries([...roles.all.map((r) => [r, 0]), ['pending', 0], ['total', 0]]);
-    const zeroEntities = Object.fromEntries(hierarchy.getOrderedDescendants(entityType).map((e) => [e, 0]));
+    const zeroEntities = Object.fromEntries(descendants.map((e) => [e, 0]));
+    const nullActivity = Object.fromEntries(descendants.filter((e) => hierarchy.isProduct(e)).map((e) => [e, null]));
     return {
       membership: zeroMembership as z.infer<typeof membershipCountSchema>,
       entities: zeroEntities as Record<string, number>,
+      activity: nullActivity as Record<string, number | null>,
     };
   }
 

@@ -1198,6 +1198,16 @@
                   "properties": {
                     "attachment": { "type": "number", "required": true }
                   }
+                },
+                "activity": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "attachment": {
+                      "type": ["number", "null"],
+                      "required": true
+                    }
+                  }
                 }
               }
             },
@@ -1282,7 +1292,8 @@
             "pending": 13,
             "total": 93
           },
-          "entities": { "attachment": 178 }
+          "entities": { "attachment": 178 },
+          "activity": { "attachment": 1734107615547 }
         }
       }
     }

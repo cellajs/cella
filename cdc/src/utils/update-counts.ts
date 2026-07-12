@@ -1,4 +1,4 @@
-import { appConfig, hierarchy, resolveNonNullAncestors } from 'shared';
+import { appConfig, hierarchy, resolveDeepestAncestorId, resolveNonNullAncestors } from 'shared';
 import type { ActivityAction, AncestorSource } from 'shared';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
@@ -9,7 +9,10 @@ import { log } from '../lib/pino';
 export interface CountDelta {
   /** Context key (organizationId or sub-context id): the row to update */
   contextKey: string;
-  /** Key-value deltas: e.g. { 'm:admin': 1, 'm:total': 1 } or { 'e:attachment': -1 } */
+  /**
+   * Key-value deltas: e.g. { 'm:admin': 1, 'm:total': 1 } or { 'e:attachment': -1 }.
+   * `last:<type>` keys carry an epoch-ms activity stamp instead of a delta; they merge via max.
+   */
   deltas: Record<string, number>;
 }
 
@@ -25,7 +28,8 @@ export type CountsHierarchy = AncestorSource & {
  * `s:membership` seq bump used for catchup change screening. Inactive
  * memberships count as `m:pending` while rejectedAt is null. Entity rows yield
  * `e:<type>` deltas on the org and every non-null ancestor context; updates
- * that change ancestor ids re-credit the counters.
+ * that change ancestor ids re-credit the counters. New product rows also stamp
+ * `last:<type>` (epoch ms) at their home context only.
  */
 export function getCountDeltas(
   tableMeta: TableMeta,
@@ -59,6 +63,20 @@ export function getCountDeltas(
         ? 'create'
         : action;
     const deltas = getEntityDeltas(countAction, organizationId, tableMeta.type, newRow, oldRow, h);
+
+    // Activity stamp: a new product post moves `last:<type>` (epoch ms) forward at its home
+    // context only (deepest non-null ancestor, org fallback) — deliberately NOT propagated to
+    // higher ancestors like `e:` deltas; it is a per-stream signal. Only true INSERTs stamp:
+    // updates, deletes and restores leave the signal untouched, as do draft rows (author-only
+    // fork rows; the template has no draft column, so that condition is simply never met).
+    if (action === 'create' && h.isProduct(tableMeta.type) && newRow.draft !== true) {
+      const createdAt = getStringValue(newRow, 'createdAt');
+      const parsedMs = createdAt ? Date.parse(createdAt) : Number.NaN;
+      deltas.push({
+        contextKey: resolveDeepestAncestorId(h, tableMeta.type, newRow) ?? organizationId,
+        deltas: { [`last:${tableMeta.type}`]: Number.isNaN(parsedMs) ? Date.now() : parsedMs },
+      });
+    }
 
     // Embedding counters: track e:<hostEntity> counts per embedded entity ID
     for (const embedding of appConfig.entityEmbeddings) {

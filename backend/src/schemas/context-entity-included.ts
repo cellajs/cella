@@ -9,11 +9,17 @@ import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
  * Builds a strictly-typed included schema scoped to the entity's hierarchy children.
  */
 export const contextEntityIncludedSchema = (entityType: ContextEntityType) => {
-  const entityCountSchema = z.object(recordFromKeys(hierarchy.getOrderedDescendants(entityType), () => z.number()));
+  const descendants = hierarchy.getOrderedDescendants(entityType);
+  const entityCountSchema = z.object(recordFromKeys(descendants, () => z.number()));
+
+  // Per-stream activity stamps: epoch ms of the latest post per product descendant (null when never posted)
+  const productDescendants = descendants.filter((descendant) => hierarchy.isProduct(descendant));
+  const activitySchema = z.object(recordFromKeys(productDescendants, () => z.number().nullable()));
 
   const countsSchema = z.object({
     membership: membershipCountSchema,
     entities: entityCountSchema,
+    activity: activitySchema,
   });
 
   return z.object({

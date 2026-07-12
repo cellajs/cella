@@ -2,9 +2,10 @@
  * Parse the JSONB `counts` column from contextCountersTable into typed maps.
  *
  * JSONB key conventions (written by CDC worker):
- *   s:{entityType} → entity seq (monotonic update counter)
- *   e:{entityType} → entity count
- *   m:{role}       → membership count by role (handled elsewhere)
+ *   s:{entityType}    → entity seq (monotonic update counter)
+ *   e:{entityType}    → entity count
+ *   m:{role}          → membership count by role (handled elsewhere)
+ *   last:{entityType} → epoch ms of latest live post in the context's own stream (handled elsewhere)
  */
 export function parseCounterCounts(counts: Record<string, unknown> | null | undefined) {
   const entitySeqs: Record<string, number> = {};

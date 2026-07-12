@@ -6,15 +6,21 @@ import { type ContextEntityType, hierarchy, recordFromKeys, roles } from 'shared
  *
  * @param entityType - The context entity type (e.g. 'organization')
  * @param creatorRole - The role assigned to the creator (defaults to 'admin')
- * @returns Object matching contextEntityIncludedSchema counts: { membership: {...}, entities: {...} }
+ * @returns Object matching contextEntityIncludedSchema counts: { membership: {...}, entities: {...}, activity: {...} }
  */
 export const buildZeroCounts = (entityType: ContextEntityType, creatorRole = 'admin') => {
-  const entities = recordFromKeys(hierarchy.getOrderedDescendants(entityType), () => 0);
+  const descendants = hierarchy.getOrderedDescendants(entityType);
+  const entities = recordFromKeys(descendants, () => 0);
+  // Activity stamps stay null until the first post lands in the entity's stream
+  const activity = recordFromKeys(
+    descendants.filter((descendant) => hierarchy.isProduct(descendant)),
+    () => null as number | null,
+  );
   const membership = {
     ...recordFromKeys(roles.all, (role) => (role === creatorRole ? 1 : 0)),
     pending: 0,
     total: 1,
   };
 
-  return { membership, entities };
+  return { membership, entities, activity };
 };

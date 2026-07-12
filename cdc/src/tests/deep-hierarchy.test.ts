@@ -119,7 +119,7 @@ describe('seq groups per effective home (computeBatchUnifiedDeltas)', () => {
 // ── Counters ─────────────────────────────────────────────────────────────────
 
 describe('counter attribution: org + every non-null ancestor (getCountDeltas)', () => {
-  it('full-depth create bumps org, course, section AND project', () => {
+  it('full-depth create bumps org, course, section AND project; stamps the project only', () => {
     const deltas = getCountDeltas(itemMeta(), itemActivity('create'), fullDepthRow, null, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
@@ -127,20 +127,32 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
         { contextKey: 'p1', deltas: { 'e:item': 1 } },
         { contextKey: 's1', deltas: { 'e:item': 1 } },
         { contextKey: 'c1', deltas: { 'e:item': 1 } },
+        // Activity stamp at the home context only — never fanned out to higher ancestors
+        { contextKey: 'p1', deltas: { 'last:item': expect.any(Number) } },
       ]),
     );
-    expect(deltas).toHaveLength(4);
+    expect(deltas).toHaveLength(5);
   });
 
-  it('course-stream create bumps only org and course', () => {
+  it('course-stream create bumps only org and course; stamps the course', () => {
     const deltas = getCountDeltas(itemMeta(), itemActivity('create'), courseStreamRow, null, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
         { contextKey: 'o1', deltas: { 'e:item': 1 } },
         { contextKey: 'c1', deltas: { 'e:item': 1 } },
+        { contextKey: 'c1', deltas: { 'last:item': expect.any(Number) } },
       ]),
     );
-    expect(deltas).toHaveLength(2);
+    expect(deltas).toHaveLength(3);
+  });
+
+  it('the stamp carries the row createdAt as epoch ms at the home key', () => {
+    const createdAt = '2026-07-01T10:00:00.000Z';
+    const deltas = getCountDeltas(itemMeta(), itemActivity('create'), { ...fullDepthRow, createdAt }, null, h);
+    expect(deltas).toContainEqual({ contextKey: 'p1', deltas: { 'last:item': Date.parse(createdAt) } });
+    // No stamp anywhere else
+    const stamped = deltas.filter((d) => 'last:item' in d.deltas);
+    expect(stamped).toHaveLength(1);
   });
 
   it('hard delete decrements from the old row', () => {
@@ -160,10 +172,11 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
       [mockEvent('create', fullDepthRow), mockEvent('create', { ...courseStreamRow, id: 'i2' })],
       h,
     );
+    // Activity stamps land at each row's home context only; org and section stay stamp-free
     expect(plan.countDeltasByContextKey.get('o1')).toEqual({ 'e:item': 2 });
-    expect(plan.countDeltasByContextKey.get('c1')).toEqual({ 'e:item': 2 });
+    expect(plan.countDeltasByContextKey.get('c1')).toEqual({ 'e:item': 2, 'last:item': expect.any(Number) });
     expect(plan.countDeltasByContextKey.get('s1')).toEqual({ 'e:item': 1 });
-    expect(plan.countDeltasByContextKey.get('p1')).toEqual({ 'e:item': 1 });
+    expect(plan.countDeltasByContextKey.get('p1')).toEqual({ 'e:item': 1, 'last:item': expect.any(Number) });
   });
 });
 

@@ -73,6 +73,8 @@ const upsertContextCounters = (db: DbOrTx, selectSql: string) =>
  *   Phase 1 – Organization-level: m:{role}, m:total, m:pending, e:{type} (live rows only)
  *   Phase 2 – Sub-org contexts: same keys for every descendant carrying the FK (full attribution)
  *   Phase 3 – Seq counters: s:{type} via MAX(seq), grouped by deepest non-null ancestor
+ *   Phase 3b – Activity stamps: last:{type} via MAX(epoch ms of created_at), live rows only,
+ *              grouped by deepest non-null ancestor (home context, no ancestor fan-out)
  *
  * Product counters (Phase 4):
  *   Phase 4a – viewCount from seen_by (unique user views per entity)
@@ -142,6 +144,30 @@ export const recalculateCounters = async (db: DbOrTx) => {
       SELECT ${ctxExpr}, jsonb_build_object('${seqKey}', COALESCE(MAX(t.seq), 0)), NOW()
       FROM ${tableName} t
       WHERE ${ctxExpr} IS NOT NULL
+      GROUP BY ${ctxExpr}
+    `,
+    );
+  }
+
+  // ── Phase 3b: Activity stamps from MAX(created_at) ────────────────────
+  // last:{type} = epoch ms of the latest live row created in the context's own stream,
+  // grouped by the home context key (deepest non-null ancestor, org fallback via COALESCE).
+  // Unlike e: counts this is deliberately NOT fanned out to ancestor levels — it is a
+  // per-stream signal, matching CDC's stamp scope. Draft rows (fork-only column) never
+  // stamp, mirroring CDC.
+  for (const entityType of appConfig.productEntityTypes) {
+    const tableName = tbl(entityType);
+    const lastKey = `last:${entityType}`;
+    const ctxExpr = deepestAncestorExpr(entityType, 't');
+    if (!ctxExpr) continue;
+    const draftPredicate = 'draft' in getColumns(getEntityTable(entityType)) ? ' AND t.draft = false' : '';
+
+    await upsertContextCounters(
+      db,
+      `
+      SELECT ${ctxExpr}, jsonb_build_object('${lastKey}', FLOOR(EXTRACT(EPOCH FROM MAX(t.created_at)) * 1000)::bigint), NOW()
+      FROM ${tableName} t
+      WHERE ${ctxExpr} IS NOT NULL${livePredicate(entityType, 't')}${draftPredicate}
       GROUP BY ${ctxExpr}
     `,
     );

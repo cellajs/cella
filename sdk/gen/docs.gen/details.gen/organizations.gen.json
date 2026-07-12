@@ -199,6 +199,16 @@
                             "properties": {
                               "attachment": { "type": "number", "required": true }
                             }
+                          },
+                          "activity": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "attachment": {
+                                "type": ["number", "null"],
+                                "required": true
+                              }
+                            }
                           }
                         }
                       },
@@ -295,7 +305,8 @@
                     "pending": 47,
                     "total": 101
                   },
-                  "entities": { "attachment": 294 }
+                  "entities": { "attachment": 294 },
+                  "activity": { "attachment": 1734375421781 }
                 }
               }
             },
@@ -344,7 +355,8 @@
                     "pending": 44,
                     "total": 144
                   },
-                  "entities": { "attachment": 321 }
+                  "entities": { "attachment": 321 },
+                  "activity": { "attachment": 1733935270933 }
                 }
               }
             }
@@ -723,6 +735,16 @@
                             "properties": {
                               "attachment": { "type": "number", "required": true }
                             }
+                          },
+                          "activity": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "attachment": {
+                                "type": ["number", "null"],
+                                "required": true
+                              }
+                            }
                           }
                         }
                       },
@@ -808,7 +830,8 @@
                     "pending": 27,
                     "total": 50
                   },
-                  "entities": { "attachment": 188 }
+                  "entities": { "attachment": 188 },
+                  "activity": { "attachment": 1733370282291 }
                 }
               }
             },
@@ -857,7 +880,8 @@
                     "pending": 18,
                     "total": 157
                   },
-                  "entities": { "attachment": 1 }
+                  "entities": { "attachment": 1 },
+                  "activity": { "attachment": 1733726254960 }
                 }
               }
             }
@@ -1136,6 +1160,16 @@
                       "properties": {
                         "attachment": { "type": "number", "required": true }
                       }
+                    },
+                    "activity": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "attachment": {
+                          "type": ["number", "null"],
+                          "required": true
+                        }
+                      }
                     }
                   }
                 },
@@ -1215,7 +1249,8 @@
                 "pending": 13,
                 "total": 93
               },
-              "entities": { "attachment": 178 }
+              "entities": { "attachment": 178 },
+              "activity": { "attachment": 1734107615547 }
             }
           }
         }
@@ -1476,6 +1511,16 @@
                       "properties": {
                         "attachment": { "type": "number", "required": true }
                       }
+                    },
+                    "activity": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "attachment": {
+                          "type": ["number", "null"],
+                          "required": true
+                        }
+                      }
                     }
                   }
                 },
@@ -1555,7 +1600,8 @@
                 "pending": 13,
                 "total": 93
               },
-              "entities": { "attachment": 178 }
+              "entities": { "attachment": 178 },
+              "activity": { "attachment": 1734107615547 }
             }
           }
         }
