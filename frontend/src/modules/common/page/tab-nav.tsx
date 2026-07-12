@@ -55,9 +55,12 @@ function useNavTabs(parentRouteId: string, filterTabIds?: string[]): PageTab[] {
         id: navTab.id,
         label: navTab.label,
         path: route.fullPath as PageTab['path'],
+        order: navTab.order ?? 0,
       };
     })
-    .filter((tab): tab is PageTab => tab !== null);
+    .filter((tab): tab is PageTab & { order: number } => tab !== null)
+    // Stable sort on navTab.order (default 0, lower first; ties keep route registration order)
+    .sort((a, b) => a.order - b.order);
 
   if (filterTabIds) {
     return tabs.filter((tab) => filterTabIds.includes(tab.id));

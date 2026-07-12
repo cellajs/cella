@@ -15,6 +15,8 @@ declare module '@tanstack/react-router' {
     navTab?: {
       id: string;
       label: string;
+      /** Sort position among sibling tabs (default 0, lower first; ties keep route order) */
+      order?: number;
     };
   }
 }
