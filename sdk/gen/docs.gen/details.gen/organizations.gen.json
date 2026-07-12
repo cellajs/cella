@@ -201,6 +201,31 @@
                             }
                           }
                         }
+                      },
+                      "members": {
+                        "type": "array",
+                        "required": false,
+                        "itemType": "object",
+                        "ref": "#/components/schemas/UserMinimalBase",
+                        "items": {
+                          "type": "object",
+                          "description": "Minimal user data for references.",
+                          "properties": {
+                            "id": { "type": "string", "required": true },
+                            "name": { "type": "string", "required": true },
+                            "slug": { "type": "string", "required": true },
+                            "thumbnailUrl": {
+                              "type": ["string", "null"],
+                              "required": true
+                            },
+                            "entityType": {
+                              "type": "string",
+                              "required": true,
+                              "enum": ["user"]
+                            }
+                          },
+                          "ref": "#/components/schemas/UserMinimalBase"
+                        }
                       }
                     }
                   }
@@ -700,6 +725,31 @@
                             }
                           }
                         }
+                      },
+                      "members": {
+                        "type": "array",
+                        "required": false,
+                        "itemType": "object",
+                        "ref": "#/components/schemas/UserMinimalBase",
+                        "items": {
+                          "type": "object",
+                          "description": "Minimal user data for references.",
+                          "properties": {
+                            "id": { "type": "string", "required": true },
+                            "name": { "type": "string", "required": true },
+                            "slug": { "type": "string", "required": true },
+                            "thumbnailUrl": {
+                              "type": ["string", "null"],
+                              "required": true
+                            },
+                            "entityType": {
+                              "type": "string",
+                              "required": true,
+                              "enum": ["user"]
+                            }
+                          },
+                          "ref": "#/components/schemas/UserMinimalBase"
+                        }
                       }
                     }
                   }
@@ -1088,6 +1138,31 @@
                       }
                     }
                   }
+                },
+                "members": {
+                  "type": "array",
+                  "required": false,
+                  "itemType": "object",
+                  "ref": "#/components/schemas/UserMinimalBase",
+                  "items": {
+                    "type": "object",
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "ref": "#/components/schemas/UserMinimalBase"
+                  }
                 }
               }
             }
@@ -1402,6 +1477,31 @@
                         "attachment": { "type": "number", "required": true }
                       }
                     }
+                  }
+                },
+                "members": {
+                  "type": "array",
+                  "required": false,
+                  "itemType": "object",
+                  "ref": "#/components/schemas/UserMinimalBase",
+                  "items": {
+                    "type": "object",
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "ref": "#/components/schemas/UserMinimalBase"
                   }
                 }
               }

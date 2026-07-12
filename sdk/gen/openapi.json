@@ -1789,6 +1789,12 @@
                   }
                 },
                 "required": ["membership", "entities"]
+              },
+              "members": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/UserMinimalBase"
+                }
               }
             }
           }
@@ -7005,6 +7011,12 @@
                                       }
                                     },
                                     "required": ["membership", "entities"]
+                                  },
+                                  "members": {
+                                    "type": "array",
+                                    "items": {
+                                      "$ref": "#/components/schemas/UserMinimalBase"
+                                    }
                                   }
                                 },
                                 "required": ["membership"]

@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { type ContextEntityType, hierarchy, recordFromKeys } from 'shared';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { membershipCountSchema } from '#/schemas/count-schemas';
+import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 
 /**
  * Factory for context entity included schemas.
@@ -18,5 +19,6 @@ export const contextEntityIncludedSchema = (entityType: ContextEntityType) => {
   return z.object({
     membership: membershipBaseSchema.optional(),
     counts: countsSchema.optional(),
+    members: z.array(userMinimalBaseSchema).optional(),
   });
 };

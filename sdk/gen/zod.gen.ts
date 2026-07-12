@@ -374,6 +374,7 @@ export const zOrganization = z.object({
         }),
       })
       .optional(),
+    members: z.array(zUserMinimalBase).optional(),
   }),
 });
 
@@ -1250,6 +1251,7 @@ export const zCreateOrganizationsResponse = z.object({
                 }),
               })
               .optional(),
+            members: z.array(zUserMinimalBase).optional(),
           })
           .optional(),
       }),

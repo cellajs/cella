@@ -1,8 +1,10 @@
-import type { EntityRole } from 'shared';
+import { type EntityRole, hierarchy } from 'shared';
 import type { AuthContext } from '#/core/context';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
+import { findMemberPreviewsByContexts } from '#/modules/memberships/memberships-queries';
 import { getOrganizationsList } from '#/modules/organization/organization-queries';
+import type { UserMinimalBase } from '#/modules/user/helpers/audit-user';
 import { coalesceAuditUsers } from '#/modules/user/helpers/audit-user';
 
 interface GetOrganizationsInput {
@@ -31,17 +33,30 @@ export async function getOrganizationsOp(ctx: AuthContext, input: GetOrganizatio
   // Determine what to include
   const includeCounts = include.includes('counts');
   const includeMembership = include.includes('membership');
+  const includeMembers = include.includes('members');
 
   const opts = { isSystemAdmin, targetUserId, q, sort, order, offset, limit, excludeArchived, role, includeCounts };
   const organizations = await getOrganizationsList(ctx, opts);
 
   const total = organizations[0]?.total ?? 0;
 
+  // Member previews (avatar stacks): ONE batched query per page for the most-privileged role,
+  // capped at 3 per entity. Overflow counts come from the m:{role} counters, so no extra data
+  // is needed. Forks wire this same helper into their own context entity list ops.
+  const memberPreviews = includeMembers
+    ? await findMemberPreviewsByContexts(ctx, {
+        contextType: entityType,
+        contextIds: organizations.map((org) => org.id),
+        role: hierarchy.getRoles(entityType)[0],
+        limit: 3,
+      })
+    : null;
+
   // Build response with included wrapper for optional data
   const items = organizations.map((org) => {
     const { counts, total: _, ...orgData } = org;
 
-    const included: { membership?: MembershipBaseModel; counts?: typeof counts } = {};
+    const included: { membership?: MembershipBaseModel; counts?: typeof counts; members?: UserMinimalBase[] } = {};
 
     if (includeMembership) {
       const membership = memberships.find((m) => m.contextType === entityType && m.organizationId === org.id);
@@ -49,6 +64,8 @@ export async function getOrganizationsOp(ctx: AuthContext, input: GetOrganizatio
     }
 
     if (includeCounts && counts) included.counts = counts;
+
+    if (memberPreviews) included.members = memberPreviews.get(org.id) ?? [];
 
     return { ...orgData, included };
   });

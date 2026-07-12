@@ -436,6 +436,7 @@ export type Organization = {
         attachment: number;
       };
     };
+    members?: Array<UserMinimalBase>;
   };
 };
 
@@ -3578,6 +3579,7 @@ export type CreateOrganizationsResponses = {
               attachment: number;
             };
           };
+          members?: Array<UserMinimalBase>;
         };
       }
     >;
