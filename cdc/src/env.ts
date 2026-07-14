@@ -1,5 +1,4 @@
 import { env as dotenv } from '@dotenv-run/core';
-import { appConfig } from 'shared';
 import { z } from 'zod';
 
 // Load .env from backend directory (same .env file, shared across monorepo)
@@ -14,7 +13,9 @@ const envSchema = z.object({
   // Auto-provisioned by `pulumi up`; required in production.
   DATABASE_SSL_CA: z.string().optional(),
 
-  API_WS_URL: z.url().default(`ws://localhost:${new URL(appConfig.backendUrl).port}/internal/cdc`),
+  // Static default: backendUrl is the public URL (a path under the app origin, no
+  // port); the internal CDC socket always targets the backend's own listen port.
+  API_WS_URL: z.url().default('ws://localhost:4000/internal/cdc'),
   CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters'),
   CDC_HEALTH_PORT: z.coerce.number().default(4001),
   MAPLE_SECRET_INGEST_KEY: z.string().optional(),

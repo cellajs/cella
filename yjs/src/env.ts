@@ -1,5 +1,4 @@
 import { env as dotenv } from '@dotenv-run/core';
-import { appConfig } from 'shared';
 import { z } from 'zod';
 
 // Load .env from backend directory (same .env file, shared across monorepo)
@@ -18,7 +17,8 @@ const envSchema = z.object({
   DATABASE_SSL_CA: z.string().optional(),
 
   YJS_SECRET: z.string().min(16, 'YJS_SECRET must be at least 16 characters'),
-  YJS_PORT: z.coerce.number().default(Number(new URL(appConfig.yjsUrl).port) || 4002),
+  // Static default: yjsUrl is the public URL (a path under the app origin, no port).
+  YJS_PORT: z.coerce.number().default(4002),
   YJS_DB_POOL_MAX: z.coerce.number().default(20),
   MAPLE_SECRET_INGEST_KEY: z.string().optional(),
 

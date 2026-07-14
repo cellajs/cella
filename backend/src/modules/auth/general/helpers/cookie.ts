@@ -25,7 +25,7 @@ export const setAuthCookie = async (ctx: Context<Env>, name: CookieName, content
     path: '/',
     domain: isProduction ? appConfig.domain : undefined,
     httpOnly: true,
-    sameSite: appConfig.mode === 'tunnel' ? 'none' : 'lax', // ATTENTION: Strict is possible if you use a proxy for api
+    sameSite: 'lax', // Tunnel mode is same-origin (ngrok fronts Vite), so no SameSite=None branch needed
     maxAge: timeSpan.seconds(),
   } satisfies CookieOptions;
   isProduction

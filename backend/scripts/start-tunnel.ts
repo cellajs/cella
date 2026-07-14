@@ -1,21 +1,19 @@
-import type { AddressInfo } from 'node:net';
 import pc from 'picocolors';
+import { appConfig } from 'shared';
 import { env } from '../src/env';
 
 /**
- * Starts an tunnel to expose the local development server to the internet.
- * This function will only attempt to start a tunnel if the environment is set to 'development'
- * and the `TUNNEL_URL` and `TUNNEL_AUTH_TOKEN` environment variables are configured.
- *
- * @param info - An object containing information about the started server,
- * specifically its `port` property. This typically comes from the
- * callback of `@hono/node-server`'s `serve` function.
+ * Starts a tunnel that exposes the local app origin to the internet. The tunnel fronts
+ * the Vite dev server — which proxies /api, /yjs and /mcp to the service ports — so the
+ * whole stack shares one public origin: cookies stay first-party and OAuth provider
+ * callbacks (`<tunnel>/api/auth/...`) reach the backend through the proxy.
+ * Only attempts to start when `TUNNEL_URL` and `TUNNEL_AUTH_TOKEN` are configured.
  *
  * @returns A Promise that resolves to the public URL (string) if the tunnel
- * is successfully established, or `null` if the tunnel is not configured,
- * not in a development environment, or if the connection fails.
+ * is successfully established, or `null` if the tunnel is not configured
+ * or the connection fails.
  */
-const startTunnel = async (info: AddressInfo): Promise<string | null> => {
+const startTunnel = async (): Promise<string | null> => {
   // Check if tunnel is configured via environment variables
   if (!env.TUNNEL_URL || !env.TUNNEL_AUTH_TOKEN) return null;
 
@@ -23,7 +21,8 @@ const startTunnel = async (info: AddressInfo): Promise<string | null> => {
     const ngrok = (await import('@ngrok/ngrok')).default;
 
     const listener = await ngrok.connect({
-      addr: info.port,
+      // The Vite dev server is the app origin (frontendUrl is the public tunnel domain, no port).
+      addr: Number(new URL(appConfig.frontendUrl).port) || 3000,
       authtoken: env.TUNNEL_AUTH_TOKEN,
       domain: new URL(env.TUNNEL_URL).hostname, // Extract hostname from TUNNEL_URL
     });

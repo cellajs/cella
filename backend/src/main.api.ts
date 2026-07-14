@@ -69,7 +69,7 @@ const main = async () => {
       port,
       serverOptions: { keepAlive: true, keepAliveTimeout: 30_000 },
     },
-    async (info) => {
+    async () => {
       // Tune HTTP server for high-throughput scenarios
       if (server && 'headersTimeout' in server) {
         server.headersTimeout = 60_000;
@@ -100,7 +100,7 @@ const main = async () => {
           await (await import('#/modules/mcp/worker/mcp-worker-entry')).startMcpWorker();
       }
 
-      const tunnelUrl = await startTunnel(info);
+      const tunnelUrl = await startTunnel();
 
       renderAscii();
       console.info(' ');
@@ -109,7 +109,7 @@ const main = async () => {
 Frontend: ${pc.bold(pc.cyanBright(appConfig.frontendUrl))} 
 Backend: ${pc.bold(pc.cyanBright(appConfig.backendUrl))} 
 Tunnel: ${pc.bold(pc.magentaBright(tunnelUrl || '-'))}
-Storybook: ${pc.cyanBright(`http://localhost:${Number(new URL(appConfig.frontendUrl).port) + 3006}/`)}`);
+Storybook: ${pc.cyanBright(`http://localhost:${(Number(new URL(appConfig.frontendUrl).port) || 3000) + 3006}/`)}`);
 
       console.info(' ');
     },
