@@ -92,21 +92,24 @@ export const config = {
    * URLS & ENDPOINTS
    ******************************************************************************/
 
+  // Same-origin: every service is a path under the app origin, so cookies stay
+  // first-party (`__Host-`, SameSite=Strict), CORS disappears and CSP collapses
+  // to 'self'. The LB routes /api, /yjs and /mcp by path prefix (matchPathBegin).
   frontendUrl: 'https://www.cellajs.com',
-  backendUrl: 'https://api.cellajs.com',
-  backendAuthUrl: 'https://api.cellajs.com/auth',
-  yjsUrl: 'wss://yjs.cellajs.com',
-  mcpUrl: 'https://mcp.cellajs.com',
+  backendUrl: 'https://www.cellajs.com/api',
+  backendAuthUrl: 'https://www.cellajs.com/api/auth',
+  yjsUrl: 'wss://www.cellajs.com/yjs',
+  mcpUrl: 'https://www.cellajs.com/mcp',
   // Decommissioned service hosts kept as LB 301 redirects into the path-based
-  // URLs (same-origin migration). Empty until the URL flip; remove entries to
-  // drop the legacy DNS records, certs and redirects after a deprecation window.
-  legacyUrls: {} as Partial<Record<string, string>>,
+  // URLs (same-origin migration). Remove entries to drop the legacy DNS
+  // records, certs and redirects after a deprecation window.
+  legacyUrls: { backend: 'https://api.cellajs.com' } as Partial<Record<string, string>>,
   services: {
     frontend: { enabled: true as boolean, publicUrl: 'https://www.cellajs.com' },
-    backend: { enabled: true as boolean, publicUrl: 'https://api.cellajs.com' },
+    backend: { enabled: true as boolean, publicUrl: 'https://www.cellajs.com/api' },
     cdc: { enabled: true as boolean },
-    yjs: { enabled: false as boolean, publicUrl: 'wss://yjs.cellajs.com' },
-    mcp: { enabled: false as boolean, publicUrl: 'https://mcp.cellajs.com' },
+    yjs: { enabled: false as boolean, publicUrl: 'wss://www.cellajs.com/yjs' },
+    mcp: { enabled: false as boolean, publicUrl: 'https://www.cellajs.com/mcp' },
   },
 
   // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
