@@ -54,7 +54,8 @@ async function main() {
   }
   process.env.APP_MODE = process.env.APP_MODE ?? 'production'
   const { appConfig } = await import('shared')
-  const bucketName = `${appConfig.slug}-pulumi-state`
+  const { stateBucket } = await import('../lib/stack/control-store')
+  const bucketName = stateBucket(appConfig.slug)
   const region = appConfig.s3.region
   const s3 = new S3Client({
     region,

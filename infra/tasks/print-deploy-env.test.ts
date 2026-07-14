@@ -35,7 +35,7 @@ describe('buildDeployEnv', () => {
       region: 'nl-ams',
       registry_ns: 'cella',
       frontend_bucket: 'cella-frontend',
-      state_bucket: 'cella-pulumi-state',
+      state_bucket: 'cella-pulumi-state-v2',
       vm_reader_app: 'cella-vm-reader',
       enabled_services_json: JSON.stringify([
         {

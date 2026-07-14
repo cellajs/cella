@@ -114,9 +114,12 @@ export function emptyControlState(): ControlState {
   return { schemaVersion: 2, bootstrap: {}, rollout: {} }
 }
 
-/** Bucket holding both the Pulumi state and the control object. */
+/** Bucket holding both the Pulumi state and the control object. The `-v2`
+ *  suffix is a one-time rename: the original `<slug>-pulumi-state` bucket was
+ *  created under the operator key's preferred (default) project instead of the
+ *  app project, putting it out of reach of the project-scoped CI key. */
 export function stateBucket(slug: string): string {
-  return `${slug}-pulumi-state`
+  return `${slug}-pulumi-state-v2`
 }
 
 /** Control object key for a stack. Accepts a full Pulumi stack name
