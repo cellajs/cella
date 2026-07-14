@@ -252,6 +252,11 @@ jobs:
         env:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          # Enables the key-preferred-project preflight: the state bucket must
+          # live in the app project or the CI key cannot reach it (S3 access
+          # follows the key's preferred project, not IAM).
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          APP_MODE: ${{ needs.setup.outputs.environment }}
         run: pnpm --filter infra ensure-state-bucket
 
       - name: Login to S3 state backend

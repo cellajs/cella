@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { fakeConfig } from '../tests/helpers/fake-config'
 import { serviceEndpoints } from './services'
-import { deriveInfra } from './naming'
+import { deriveInfra, frontendApexIssue } from './naming'
 
 describe('deriveInfra', () => {
   it('derives stable naming for the canonical production config', () => {
@@ -86,5 +86,31 @@ describe('deriveInfra', () => {
     const d = deriveInfra(fakeConfig())
     expect(d.region).toBe('nl-ams')
     expect(d.zone).toBe('nl-ams-1')
+  })
+})
+
+describe('frontendApexIssue', () => {
+  const apexServices = {
+    frontend: { enabled: true, publicUrl: 'https://cellajs.com' },
+    backend: { enabled: true, publicUrl: 'https://api.cellajs.com' },
+    cdc: { enabled: true },
+    yjs: { enabled: false, publicUrl: 'https://yjs.cellajs.com' },
+    mcp: { enabled: false, publicUrl: 'https://mcp.cellajs.com' },
+  }
+
+  it('deriveInfra rejects an apex-hosted frontend with an actionable error', () => {
+    expect(() => deriveInfra(fakeConfig({ services: apexServices }))).toThrow(/zone apex/)
+    expect(() => deriveInfra(fakeConfig({ services: apexServices }))).toThrow(/www\.cellajs\.com/)
+  })
+
+  it('is silent for a subdomain frontend (the canonical config)', () => {
+    expect(frontendApexIssue(fakeConfig())).toBeUndefined()
+  })
+
+  it('is silent without a real domain (dev/test) and for a disabled frontend', () => {
+    expect(frontendApexIssue(fakeConfig({ domain: 'localhost', services: apexServices }))).toBeUndefined()
+    expect(
+      frontendApexIssue(fakeConfig({ services: { ...apexServices, frontend: { enabled: false, publicUrl: 'https://cellajs.com' } } })),
+    ).toBeUndefined()
   })
 })
