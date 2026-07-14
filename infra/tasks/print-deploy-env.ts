@@ -1,7 +1,7 @@
 import { isMain } from '../lib/utils/is-main'
 import type { appConfig as AppConfig } from '../../shared'
 import { deriveInfra } from '../lib/naming'
-import { enabledServices, serviceEndpoints } from '../lib/services'
+import { deployedServices, enabledServices, serviceEndpoints } from '../lib/services'
 import { getFlag } from './args'
 
 type Cfg = typeof AppConfig
@@ -55,8 +55,14 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     throw new Error(`At most one enabled service may set primaryRollout: true (${primaryServices.map((service) => service.slug).join(', ')})`)
   }
   const primaryService = primaryServices[0]
-  const primaryRollout = primaryService ? enabledServiceRows.filter((item) => item.service === primaryService.slug).map(({ service, health_url }) => ({ service, health_url })) : []
-  const restRollout = (primaryService ? enabledServiceRows.filter((item) => item.service !== primaryService.slug) : enabledServiceRows).map(({ service, health_url }) => ({ service, health_url }))
+  // Rollout matrices cover only services that own a VM generation: under
+  // `singleVM` the co-hosted workers (cdc/yjs) ride the primary VM's generation
+  // and have nothing to cut over (deploy-service would fail resolving their
+  // pending generation). Mirrors the deployedServices() set compute.ts uses.
+  const deployedSlugs = new Set(deployedServices(appConfig.services, appConfig.singleVM).map((service) => service.slug))
+  const rolloutRows = enabledServiceRows.filter((item) => deployedSlugs.has(item.service))
+  const primaryRollout = primaryService ? rolloutRows.filter((item) => item.service === primaryService.slug).map(({ service, health_url }) => ({ service, health_url })) : []
+  const restRollout = (primaryService ? rolloutRows.filter((item) => item.service !== primaryService.slug) : rolloutRows).map(({ service, health_url }) => ({ service, health_url }))
   const buildImages = enabled
     .filter((service) => !service.reusesImageOf)
     .map((service) => {
