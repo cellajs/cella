@@ -14,18 +14,34 @@ describe('loadbalancer module — registry-driven wiring', () => {
     expect(src).not.toMatch(/new scaleway\.loadbalancers\.Backend\('(backend|yjs|ai|frontend)-lb-backend'/)
   })
 
-  it('creates one DNS record per exposed service pointing at the LB IP', () => {
-    expect(src).toMatch(/new scaleway\.domain\.Record\(`\$\{baseName\(service\.slug\)\}-dns`/)
+  it('creates one DNS record per unique public host pointing at the LB IP', () => {
+    // Deduped by HOSTNAME, not per service: path-routed services share the app
+    // host, so a per-service loop would emit duplicate records post-migration.
+    expect(src).toMatch(/for \(const \{ host, base \} of publicHosts\)/)
+    expect(src).toMatch(/new scaleway\.domain\.Record\(`\$\{base\}-dns`/)
     expect(src).toMatch(/data:\s*lbPublicIp/)
   })
 
+  it('keeps legacy hosts (appConfig.legacyUrls) alive with DNS + cert + 301 redirect', () => {
+    // Config-driven: hosts come from appConfig.legacyUrls, the redirect prefix
+    // from the service's lbPathBegin — never hardcoded per service.
+    expect(src).toMatch(/Object\.entries\(appConfig\.legacyUrls\)/)
+    expect(src).toMatch(/redirectPrefix: service\.lbPathBegin/)
+    expect(src).toMatch(/new scaleway\.loadbalancers\.Acl\(`\$\{base\}-legacy-redirect`/)
+    // {{path}} lacks the leading slash and never carries the prefix, so the
+    // target writes the prefix literally (same contract as the apex redirect).
+    expect(src).toMatch(/target: `https:\/\/\$\{appHost\}\$\{redirectPrefix\}\/\{\{path\}\}\?\{\{query\}\}`/)
+    // A host still serving as a live endpoint must never be redirected away.
+    expect(src).toMatch(/if \(hostEntries\.has\(host\)\) continue/)
+  })
+
   it('issues a Lets Encrypt certificate per DNS record, gated on public propagation', () => {
-    expect(src).toMatch(/new scaleway\.loadbalancers\.Certificate\(`\$\{baseName\(slug\)\}-cert`/)
-    expect(src).toMatch(/commonName:\s*serviceHost\(slug\)/)
+    expect(src).toMatch(/new scaleway\.loadbalancers\.Certificate\(`\$\{base\}-cert`/)
+    expect(src).toMatch(/commonName:\s*host/)
     // Cert creation waits for the record to answer publicly (not merely exist),
     // and the frontend attach waits for the cert to be `ready` — both via the
     // create-only gates in resources/dns-cert-gates.ts.
-    expect(src).toMatch(/dependsOn:\s*\[dns,\s*dnsGates\.get\(slug\)!\]/)
+    expect(src).toMatch(/dependsOn:\s*\[dns,\s*dnsGates\.get\(host\)!\]/)
     expect(src).toMatch(/new DnsPropagationGate\(/)
     expect(src).toMatch(/new CertReadyGate\(/)
     expect(src).toMatch(/dependsOn:\s*certGates/)
@@ -77,6 +93,9 @@ describe('loadbalancer module — registry-driven wiring', () => {
     // backend→api and frontend→app produce the original URNs (api-dns,
     // api-cert, app-dns, app-cert, app-route) so no resource is replaced.
     expect(src).toMatch(/legacyBaseNames:\s*Partial<Record<ServiceName,\s*string>>\s*=\s*\{\s*backend:\s*'api',\s*frontend:\s*'app'\s*\}/)
+    // The default (app) service claims its host first, so the shared app host
+    // keeps the frontend's `app-*` URNs after every endpoint collapses onto it.
+    expect(src).toMatch(/\[defaultService, \.\.\.lbServices\.filter\(\(s\) => s !== defaultService\)\]/)
   })
 
   it('skips dns/cert/route for a service whose host is the zone apex', () => {

@@ -24,6 +24,10 @@ describe('lbPathBegin registry validation', () => {
     expect(() => defineServices({ a: { ...base, lbPathBegin: '/api' } })).toThrow(/without lbRoute/)
   })
 
+  it("rejects lbRoute 'path' without a prefix (nothing would route to it)", () => {
+    expect(() => defineServices({ a: { ...base, lbRoute: 'path' } })).toThrow(/no lbPathBegin/)
+  })
+
   it('rejects trailing slashes, nested segments, and uppercase', () => {
     for (const bad of ['/api/', '/api/v1', '/API', 'api']) {
       // @ts-expect-error — 'api' (no leading slash) is also a type error; the rest fail at runtime

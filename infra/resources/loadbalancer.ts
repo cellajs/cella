@@ -1,7 +1,7 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { appConfig } from '../../shared'
-import { naming, zone, tags, dnsZone, serviceHost, infra, endpoints } from '../pulumi-context'
+import { naming, zone, tags, dnsZone, serviceHost, serviceUrl, infra } from '../pulumi-context'
 import { enabledServices } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { privateNetworkId } from './network'
@@ -34,11 +34,46 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     throw new Error("loadbalancer: no enabled service declares lbRoute 'default' — the HTTPS frontend needs a fallback backend.")
   }
 
-  // Public scheme per service (https: / wss:) from the appConfig-derived registry endpoints.
-  const schemeBySlug = new Map(endpoints.map((e) => [e.slug, new URL(e.url).protocol]))
-
   const appHost = serviceHost('frontend')
   const appIsAtApex = appHost === dnsZone
+
+  // ---------------------------------------------------------------------------
+  // Public hosts: one DNS record + cert per unique HOSTNAME, not per service.
+  // Under the same-origin model every path-routed service shares the app host,
+  // and decommissioned service hosts (appConfig.legacyUrls) stay alive so their
+  // TLS-terminated 301 redirects can answer. `base` names the Pulumi resources;
+  // the ownership rules keep pre-migration URNs stable: the default (app)
+  // service claims its host first (www stays `app-*`), and a host that moved
+  // from endpoint to legacyUrls keeps its service's base name (api.example.com
+  // stays `api-*`), so no DNS record or cert is replaced by the migration.
+  // ---------------------------------------------------------------------------
+
+  interface PublicHost {
+    host: string
+    /** Resource base name of the first service carrying this host. */
+    base: string
+    /** Set for legacy hosts: 301 into the app origin under this path prefix. */
+    redirectPrefix?: string
+  }
+
+  const hostEntries = new Map<string, PublicHost>()
+  for (const service of [defaultService, ...lbServices.filter((s) => s !== defaultService)]) {
+    const host = serviceHost(service.slug)
+    if (!hostEntries.has(host)) hostEntries.set(host, { host, base: baseName(service.slug) })
+  }
+  for (const [slug, url] of Object.entries(appConfig.legacyUrls)) {
+    const service = lbServices.find((s) => s.slug === slug)
+    // A disabled/unknown service never had a live host — nothing to redirect.
+    if (!service || !url) continue
+    if (!service.lbPathBegin) {
+      throw new Error(`loadbalancer: legacyUrls['${slug}'] has no lbPathBegin on the service — no path to redirect its legacy host into.`)
+    }
+    const host = new URL(url).hostname
+    // Still the live endpoint host (fork not yet flipped): not a legacy host.
+    if (hostEntries.has(host)) continue
+    hostEntries.set(host, { host, base: baseName(service.slug), redirectPrefix: service.lbPathBegin })
+  }
+  const publicHosts = [...hostEntries.values()]
 
   // -------------------------------------------------------------------------
   // LB IP (static public IPv4)
@@ -71,25 +106,24 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
 
   const lbPublicIp = lb.ipAddress
 
-  const dnsRecords = new Map<ServiceName, scaleway.domain.Record>()
-  const dnsGates = new Map<ServiceName, DnsPropagationGate>()
-  for (const service of lbServices) {
-    const host = serviceHost(service.slug)
-    // A service whose host IS the zone apex (frontend at apex) gets no own
+  const dnsRecords = new Map<string, scaleway.domain.Record>()
+  const dnsGates = new Map<string, DnsPropagationGate>()
+  for (const { host, base } of publicHosts) {
+    // A host that IS the zone apex (frontend at apex) gets no own
     // record/cert/route. The default backend would have to serve it, which we
     // don't currently support; the apex handling below covers that hostname.
     if (host === dnsZone) continue
-    const record = new scaleway.domain.Record(`${baseName(service.slug)}-dns`, {
+    const record = new scaleway.domain.Record(`${base}-dns`, {
       dnsZone,
       name: host.replace(`.${dnsZone}`, ''),
       type: 'A',
       data: lbPublicIp,
       ttl: 300,
     })
-    dnsRecords.set(service.slug, record)
+    dnsRecords.set(host, record)
     // Hold the cert request until the record answers on public resolvers, so
     // the ACME validation never races propagation (see dns-cert-gates.ts).
-    dnsGates.set(service.slug, new DnsPropagationGate(`${baseName(service.slug)}-dns-gate`, {
+    dnsGates.set(host, new DnsPropagationGate(`${base}-dns-gate`, {
       fqdn: host,
       expectedIp: lbPublicIp,
     }, { dependsOn: [record] }))
@@ -119,18 +153,20 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   // cert with its ACME detail instead of at the frontend attach.
   // -------------------------------------------------------------------------
 
-  const certs = new Map<ServiceName, scaleway.loadbalancers.Certificate>()
+  const certs = new Map<string, scaleway.loadbalancers.Certificate>()
   const certGates: CertReadyGate[] = []
-  for (const [slug, dns] of dnsRecords) {
-    const cert = new scaleway.loadbalancers.Certificate(`${baseName(slug)}-cert`, {
+  for (const { host, base } of publicHosts) {
+    const dns = dnsRecords.get(host)
+    if (!dns) continue // apex-hosted: covered by the apex cert below
+    const cert = new scaleway.loadbalancers.Certificate(`${base}-cert`, {
       lbId: lb.id,
-      name: naming.resource(`${baseName(slug)}-cert`),
+      name: naming.resource(`${base}-cert`),
       letsencrypt: {
-        commonName: serviceHost(slug),
+        commonName: host,
       },
-    }, { dependsOn: [dns, dnsGates.get(slug)!] })
-    certs.set(slug, cert)
-    certGates.push(new CertReadyGate(`${baseName(slug)}-cert-ready`, { certificateId: cert.id }, { dependsOn: [cert] }))
+    }, { dependsOn: [dns, dnsGates.get(host)!] })
+    certs.set(host, cert)
+    certGates.push(new CertReadyGate(`${base}-cert-ready`, { certificateId: cert.id }, { dependsOn: [cert] }))
   }
 
   let apexCert: scaleway.loadbalancers.Certificate | undefined
@@ -201,8 +237,10 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   })
 
   // Host-header routes for every host-routed service with a DNS record.
+  // (No shipped service is host-routed after the same-origin migration; the
+  // loop stays for forks that still run — or add — host-routed services.)
   for (const service of lbServices) {
-    if (service.lbRoute !== 'host' || !dnsRecords.has(service.slug)) continue
+    if (service.lbRoute !== 'host' || !dnsRecords.has(serviceHost(service.slug))) continue
     new scaleway.loadbalancers.Route(`${baseName(service.slug)}-route`, {
       frontendId: httpsFrontend.id,
       backendId: backends.get(service.slug)!.id,
@@ -210,12 +248,12 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     })
   }
 
-  // Path-begin routes (same-origin migration): `https://<any host>/<prefix>...`
-  // reaches the service's backend so the app origin can serve `/api`, `/yjs`,
-  // `/mcp` while the host routes above keep the legacy subdomains working.
-  // Scaleway routes match on exactly ONE criterion (host or path) and do NOT
-  // strip the prefix — each service also serves itself under its `lbPathBegin`
-  // (registry-declared; validated in compose/infrastructure.ts).
+  // Path-begin routes (same-origin model): `https://<any host>/<prefix>...`
+  // reaches the service's backend; everything else falls through to the
+  // default backend (the app origin / SPA proxy). Scaleway routes match on
+  // exactly ONE criterion (host or path) and do NOT strip the prefix — each
+  // service also serves itself under its `lbPathBegin` (registry-declared;
+  // validated in compose/infrastructure.ts).
   for (const service of lbServices) {
     if (!service.lbPathBegin) continue
     new scaleway.loadbalancers.Route(`${baseName(service.slug)}-path-route`, {
@@ -248,6 +286,34 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
         httpFilter: 'http_header_match',
         httpFilterOption: 'host',
         httpFilterValues: [dnsZone],
+      },
+    })
+  }
+
+  // Legacy service hosts (appConfig.legacyUrls) 301 into the app origin under
+  // the service's path prefix. ACLs evaluate BEFORE routes, so these hosts
+  // never reach a backend; DNS + cert above keep them TLS-terminated for the
+  // deprecation window. {{path}} lacks the leading slash (see apex redirect),
+  // and never carries the prefix, so the prefix is written literally.
+  let redirectAclIndex = 1 // apex-redirect holds index 0
+  for (const { host, base, redirectPrefix } of publicHosts) {
+    if (!redirectPrefix) continue
+    new scaleway.loadbalancers.Acl(`${base}-legacy-redirect`, {
+      frontendId: httpsFrontend.id,
+      name: naming.resource(`${base}-legacy-redirect`),
+      index: redirectAclIndex++,
+      action: {
+        type: 'redirect',
+        redirects: [{
+          type: 'location',
+          target: `https://${appHost}${redirectPrefix}/{{path}}?{{query}}`,
+          code: 301,
+        }],
+      },
+      match: {
+        httpFilter: 'http_header_match',
+        httpFilterOption: 'host',
+        httpFilterValues: [host],
       },
     })
   }
@@ -287,11 +353,9 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
 
   const serviceUrls: Record<string, pulumi.Output<string>> = {}
   for (const service of lbServices) {
-    // lbServices ⊆ endpoints (both are gated on lbRoute), so the scheme lookup
-    // always hits; a miss would be a registry bug worth failing loudly on.
-    const scheme = schemeBySlug.get(service.slug)
-    if (!scheme) throw new Error(`loadbalancer: no endpoint scheme for LB service '${service.slug}'`)
-    serviceUrls[service.slug] = pulumi.output(`${scheme}//${serviceHost(service.slug)}`)
+    // The full public URL (path-routed services carry their prefix, e.g.
+    // https://www.example.com/api); lbServices ⊆ endpoints, so this always hits.
+    serviceUrls[service.slug] = pulumi.output(serviceUrl(service.slug))
   }
 
   return {

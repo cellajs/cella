@@ -9,10 +9,20 @@ const servicePublicUrl = (slug: string): string => {
   return url
 }
 
+// Same-origin services collapse into connect-src 'self': emit an origin only
+// when it differs from the app origin (a fork still on per-service subdomains).
+const appOrigin = new URL(appConfig.frontendUrl).origin
+const originUnlessSelf = (url: string): string => {
+  // ws(s):// normalizes to http(s) for the comparison; WebSocket URLs on the
+  // app origin are covered by 'self' too.
+  const origin = new URL(url.replace(/^ws/, 'http')).origin
+  return origin === appOrigin ? '' : new URL(url).origin
+}
+
 const cspOrigins = {
-  api: new URL(servicePublicUrl('backend')).origin,
-  yjs: enabledServiceSlugs.has('yjs') ? new URL(servicePublicUrl('yjs')).origin.replace(/^http/, 'ws') : '',
-  mcp: enabledServiceSlugs.has('mcp') ? new URL(servicePublicUrl('mcp')).origin : '',
+  api: originUnlessSelf(servicePublicUrl('backend')),
+  yjs: enabledServiceSlugs.has('yjs') ? originUnlessSelf(servicePublicUrl('yjs')).replace(/^http/, 'ws') : '',
+  mcp: enabledServiceSlugs.has('mcp') ? originUnlessSelf(servicePublicUrl('mcp')) : '',
   s3Host: appConfig.s3.host ? `https://${appConfig.s3.host}` : '',
   s3Buckets: appConfig.s3.host ? `https://*.${appConfig.s3.host}` : '',
   s3Public: appConfig.s3.publicCDNUrl,

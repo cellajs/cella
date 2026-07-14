@@ -97,6 +97,10 @@ export const config = {
   backendAuthUrl: 'https://api.cellajs.com/auth',
   yjsUrl: 'wss://yjs.cellajs.com',
   mcpUrl: 'https://mcp.cellajs.com',
+  // Decommissioned service hosts kept as LB 301 redirects into the path-based
+  // URLs (same-origin migration). Empty until the URL flip; remove entries to
+  // drop the legacy DNS records, certs and redirects after a deprecation window.
+  legacyUrls: {} as Partial<Record<string, string>>,
   services: {
     frontend: { enabled: true as boolean, publicUrl: 'https://www.cellajs.com' },
     backend: { enabled: true as boolean, publicUrl: 'https://api.cellajs.com' },
