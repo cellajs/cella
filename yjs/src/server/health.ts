@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { URL } from 'node:url';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { env } from '../env';
+import { stripYjsPrefix } from './path-prefix';
 import { getActiveClientCount, getActiveDocumentCount } from '../sync/session-manager';
 import { getConnectionCount } from './ws-server';
 
@@ -13,9 +14,11 @@ const SECURITY_HEADERS = {
 };
 
 export function handleHttpRequest(req: IncomingMessage, res: ServerResponse): void {
-  if (req.url?.startsWith('/health')) {
+  // Accept both '/health' and '/yjs/health' (same-origin migration).
+  const path = stripYjsPrefix(req.url ?? '');
+  if (path.startsWith('/health')) {
     const version = process.env.RELEASE_SHA ?? 'unknown';
-    const url = new URL(req.url, `http://localhost:${env.YJS_PORT}`);
+    const url = new URL(path, `http://localhost:${env.YJS_PORT}`);
     if (url.searchParams.get('depth') === 'full') {
       const eventLoopLagMs = getEventLoopLagMs();
       const status = eventLoopLagMs >= 1000 ? 'unhealthy' : eventLoopLagMs >= 100 ? 'degraded' : 'healthy';

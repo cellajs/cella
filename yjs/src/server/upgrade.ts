@@ -7,6 +7,7 @@ import type { DocContext } from '../constants';
 import { canEditEntity } from '../data/permissions';
 import { log } from '../lib/pino';
 import { verifyToken } from './auth';
+import { stripYjsPrefix } from './path-prefix';
 import { checkConnectionRate } from './rate-limiter';
 import { joinCollab, leaveCollab } from '../sync/session-manager';
 import { handleMessage, flushPendingBuffer, discardPendingBuffer } from '../sync/relay';
@@ -70,7 +71,10 @@ async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> 
  */
 export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {
   return async (req, socket, head) => {
-    const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
+    // Same-origin migration: accept both '/<entityId>' (legacy subdomain
+    // origin) and '/yjs/<entityId>' (path-routed app origin; the LB does not
+    // strip the prefix).
+    const url = new URL(stripYjsPrefix(req.url ?? '/'), `http://${req.headers.host}`);
     const token = url.searchParams.get('token');
     const rawEntityType = url.searchParams.get('entityType');
     const tenantId = url.searchParams.get('tenantId');

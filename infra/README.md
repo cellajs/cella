@@ -45,7 +45,7 @@ The key resources and how traffic flows between them:
                     └──────────────────────┘
 ```
 
-- **Load balancer** — single public entrypoint.
+- **Load balancer** — single public entrypoint. Routes by host header (one subdomain per service), plus registry-declared `lbPathBegin` path prefixes (`/api`, `/yjs`, `/mcp`) that expose the same services on the app origin — the same-origin migration path. The LB never rewrites paths, so each prefixed service also serves itself under its prefix.
 - **Private network (VPC)** — VMs and db connect over private IPs; only LB is publicly reachable (no SSH).
 - **Frontend** — a Caddy VM behind the LB that reverse-proxies the SPA static-file bucket (adds security headers + rewrites 404→index.html for SPA routes).
 - **Backend VM** — the critical API path; replaced one generation at a time with LB overlap.
