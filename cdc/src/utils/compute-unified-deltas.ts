@@ -38,8 +38,9 @@ export interface SeqGroup {
  * Resolve the context key for a product entity from its row data: the row's deepest non-null
  * ancestor (variable-depth rows scope to their effective home, e.g. a course-stream item with
  * `projectId = null` scopes to its course). Without nullable ancestors this equals the
- * declared parent. Falls back to the activity's org, then to `public:{type}` when the row
- * has no context at all.
+ * declared parent. Falls back to the activity's org for rows whose ancestor ids are all null.
+ * The hierarchy model guarantees every product entity at least an organization, so a row
+ * without one is a modeling error: fail the group loudly rather than invent a scope.
  */
 export function resolveContextKey(
   entityType: string,
@@ -49,7 +50,8 @@ export function resolveContextKey(
 ): string {
   const deepest = resolveDeepestAncestorId(h, entityType, rowData);
   if (deepest) return deepest;
-  return activity.organizationId ?? `public:${entityType}`;
+  if (activity.organizationId) return activity.organizationId;
+  throw new Error(`No context for ${entityType} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
 }
 
 /**

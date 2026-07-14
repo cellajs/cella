@@ -48,7 +48,7 @@ export const TotpStrategy = ({
           variant="plain"
           className="w-full gap-1.5 truncate"
         >
-          <SmartphoneIcon size={16} />
+          <SmartphoneIcon />
           <span className="truncate">
             {t('c:sign_in')} {t('c:with').toLowerCase()} {t('c:authenticator_app').toLowerCase()}
           </span>

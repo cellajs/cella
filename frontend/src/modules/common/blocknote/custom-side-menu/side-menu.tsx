@@ -93,7 +93,7 @@ function DragHandle({
       onDragEnd={handleDragEnd}
       onClick={handleClick}
     >
-      <GripVerticalIcon size={22} data-test="dragHandle" />
+      <GripVerticalIcon className="size-5.5" data-test="dragHandle" />
     </button>
   );
 

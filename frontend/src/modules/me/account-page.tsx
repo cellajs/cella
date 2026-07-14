@@ -198,7 +198,7 @@ function UserAccountPage() {
                                 className={`mr-2 size-4 ${provider.id === 'github' ? invertClass : ''}`}
                                 loading="lazy"
                               />
-                              <CheckIcon size={18} strokeWidth={3} className="text-success" />
+                              <CheckIcon strokeWidth={3} className="size-4.5 text-success" />
                               {`${t('c:already_connected_to')} ${provider.name}`}
                             </div>
                           );
@@ -243,7 +243,7 @@ function UserAccountPage() {
                 className="w-full sm:w-auto"
                 onClick={openDeleteDialog}
               >
-                <TrashIcon size={16} className="mr-2" />
+                <TrashIcon className="mr-2" />
                 {t('c:delete_account')}
               </Button>
             </CardContent>

@@ -1,6 +1,6 @@
 import { createCipheriv, pbkdf2Sync, randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { __testing, verifyStackPassphrase } from './pulumi-passphrase'
+import { __testing, generatePassphrase, supportsStdinPassphraseRotation, verifyStackPassphrase } from './pulumi-passphrase'
 
 const { PBKDF2_ITERATIONS, KEY_LEN, GCM_TAG_LEN, decryptV1, deriveKey } = __testing
 
@@ -105,6 +105,37 @@ describe('pulumi-passphrase round-trip', () => {
     // Encrypt with our helper, then decrypt back through the production decoder.
     const ct = encryptV1(key, 'PASSPHRASE-KAT-OK')
     expect(decryptV1(key, ct)).toBe('PASSPHRASE-KAT-OK')
+  })
+})
+
+describe('generatePassphrase', () => {
+  it('produces 24 bytes of entropy, base64-encoded (openssl rand -base64 24 equivalent)', () => {
+    const passphrase = generatePassphrase()
+    expect(Buffer.from(passphrase, 'base64')).toHaveLength(24)
+    expect(passphrase).toHaveLength(32)
+  })
+
+  it('produces a different value each call', () => {
+    expect(generatePassphrase()).not.toBe(generatePassphrase())
+  })
+})
+
+describe('supportsStdinPassphraseRotation', () => {
+  it('accepts v3.44.0 (the release that added stdin rotation) and newer', () => {
+    expect(supportsStdinPassphraseRotation('v3.44.0')).toBe(true)
+    expect(supportsStdinPassphraseRotation('v3.145.2')).toBe(true)
+    expect(supportsStdinPassphraseRotation('v4.0.0')).toBe(true)
+  })
+
+  it('rejects older CLIs, including pre-release builds of old versions', () => {
+    expect(supportsStdinPassphraseRotation('v3.43.1')).toBe(false)
+    expect(supportsStdinPassphraseRotation('v2.25.0')).toBe(false)
+    expect(supportsStdinPassphraseRotation('3.43.0-alpha.1657123456+abcdef')).toBe(false)
+  })
+
+  it('does not block on unparseable version output', () => {
+    expect(supportsStdinPassphraseRotation('')).toBe(true)
+    expect(supportsStdinPassphraseRotation('pulumi version unknown')).toBe(true)
   })
 })
 

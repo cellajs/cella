@@ -55,9 +55,8 @@ export const OnboardingCompleted = ({ createdOrganization, seeded }: OnboardingC
 
       {user.userFlags.finishedOnboarding && (
         <UndoIcon
-          size={400}
           strokeWidth={0.1}
-          className="-mt-52 -mb-12 rotate-30 scale-y-75 text-primary max-md:hidden md:-translate-x-24"
+          className="-mt-52 -mb-12 size-100 rotate-30 scale-y-75 text-primary max-md:hidden md:-translate-x-24"
         />
       )}
       <h1 className="font-bold text-3xl">{t('c:onboarding_completed')}</h1>

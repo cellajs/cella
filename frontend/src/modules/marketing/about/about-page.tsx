@@ -4,6 +4,7 @@ import { appConfig } from 'shared';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { GithubIcon } from '~/modules/common/icons/github';
 import { CallToAction } from '~/modules/marketing/about/call-to-action';
 // import { Counters } from '~/modules/marketing/about/counters';
 // import { FAQ } from '~/modules/marketing/about/faq';
@@ -12,7 +13,6 @@ import { InfoCards } from '~/modules/marketing/about/info-cards';
 // import { Pricing } from '~/modules/marketing/about/pricing';
 import { Showcase } from '~/modules/marketing/about/showcase';
 import '~/modules/marketing/about/glow-button.css';
-import { GithubIcon } from '~/modules/common/icons/github';
 import { AboutSection } from '~/modules/marketing/about/section';
 import { Why } from '~/modules/marketing/about/why';
 import { MarketingFooter } from '~/modules/marketing/footer';
@@ -74,7 +74,7 @@ export function AboutPage() {
                 variant="ghost"
                 className="absolute top-2 right-2 rounded-full"
               >
-                {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
+                {copied ? <CheckIcon /> : <CopyIcon />}
               </Button>
             </div>
           </div>
@@ -88,7 +88,7 @@ export function AboutPage() {
             <span className="font-normal text-base opacity-70 group-hover:opacity-100">
               {t('about:continue_below_fold')}
             </span>
-            <ArrowDownIcon size={16} className="ml-2 animate-bounce opacity-70 group-hover:opacity-100" />
+            <ArrowDownIcon className="ml-2 animate-bounce opacity-70 group-hover:opacity-100" />
           </Button>
         </Hero>
 

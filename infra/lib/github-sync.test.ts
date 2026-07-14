@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseGithubOriginRepo } from './github-sync'
+import { githubSecretEntries, parseGithubOriginRepo } from './github-sync'
 
 describe('parseGithubOriginRepo', () => {
   it('parses https URL with .git suffix', () => {
@@ -32,5 +32,27 @@ describe('parseGithubOriginRepo', () => {
 
   it('handles repo names with hyphens and digits', () => {
     expect(parseGithubOriginRepo('git@github.com:org-1/repo-2.git')).toBe('org-1/repo-2')
+  })
+})
+
+describe('githubSecretEntries', () => {
+  const ciKey = { accessKey: 'AK', secretKey: 'SK', projectId: 'PID', organizationId: 'OID' }
+
+  it('writes the four SCW secrets plus the passphrase when both are given', () => {
+    expect(githubSecretEntries({ ciKey, passphrase: 'PP' })).toEqual([
+      ['SCW_ACCESS_KEY', 'AK'],
+      ['SCW_SECRET_KEY', 'SK'],
+      ['SCW_PROJECT_ID', 'PID'],
+      ['SCW_ORGANIZATION_ID', 'OID'],
+      ['PULUMI_CONFIG_PASSPHRASE', 'PP'],
+    ])
+  })
+
+  it('writes only the passphrase when no CI key was minted (resume run)', () => {
+    expect(githubSecretEntries({ passphrase: 'PP' })).toEqual([['PULUMI_CONFIG_PASSPHRASE', 'PP']])
+  })
+
+  it('writes nothing when neither is given', () => {
+    expect(githubSecretEntries({})).toEqual([])
   })
 })

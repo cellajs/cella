@@ -37,7 +37,7 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
             <span className="text-sm max-sm:hidden">{passkey.deviceName || t('c:unknown_device')}</span>
             <TooltipButton toolTipContent={passkey.nameOnDevice} side="top">
               <Badge size="xs" variant="outline" className="max-w-48 truncate">
-                <KeyRoundIcon size={12} className="shrink-0" />
+                <KeyRoundIcon className="icon-xs shrink-0" />
                 <span className="truncate">{passkey.nameOnDevice}</span>
               </Badge>
             </TooltipButton>
@@ -69,7 +69,7 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
             >
               <div className="group-data-[expanded=true]/tile:hidden">More</div>
               <div className="group-data-[expanded=false]/tile:hidden">Less</div>
-              <ChevronDownIcon size="12" className={`ml-1 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+              <ChevronDownIcon className={`icon-xs ml-1 transition-transform ${expanded ? 'rotate-180' : ''}`} />
             </Button>
           </div>
         </div>
@@ -82,7 +82,7 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
           disabled={user.mfaRequired && onlyPasskeyLeft}
           onClick={() => handleUnlinkPasskey(passkey.id)}
         >
-          <UnlinkIcon size={16} />
+          <UnlinkIcon />
           <span className="ml-1 max-md:hidden">{t('c:unlink')}</span>
         </Button>
       </CardContent>

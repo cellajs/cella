@@ -144,9 +144,9 @@ export const useColumns = () => {
       renderCell: ({ row }: { row: EnrichedOrganization }) => (
         <>
           {role === 'admin' ? (
-            <ShieldIcon className="mr-2 opacity-50" size={16} />
+            <ShieldIcon className="mr-2 opacity-50" />
           ) : (
-            <UserRoundIcon className="mr-2 opacity-50" size={16} />
+            <UserRoundIcon className="mr-2 opacity-50" />
           )}
           {row.included.counts?.membership[role] ?? '-'}
         </>
@@ -170,7 +170,7 @@ export const useColumns = () => {
         maxWidth: 120,
         renderCell: ({ row }: { row: EnrichedOrganization }) => (
           <>
-            <BoxIcon className="mr-2 opacity-50" size={16} />
+            <BoxIcon className="mr-2 opacity-50" />
             {(row.included.counts?.entities as Record<string, number>)?.[type] ?? '-'}
           </>
         ),

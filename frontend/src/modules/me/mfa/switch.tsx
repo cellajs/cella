@@ -46,13 +46,13 @@ export const MfaSwitch = () => {
         />
         {user.mfaRequired && (
           <p className="flex items-center gap-2">
-            <CircleAlertIcon size={14} className="shrink-0 text-amber-500" />
+            <CircleAlertIcon className="icon-sm shrink-0 text-amber-500" />
             <span className="text-muted-foreground text-sm">{t('c:mfa_enabled.text')}</span>
           </p>
         )}
         {(!hasPasskey || !hasTotp) && (
           <p className="flex items-center gap-2">
-            <CircleAlertIcon size={14} className="shrink-0 text-amber-500" />
+            <CircleAlertIcon className="icon-sm shrink-0 text-amber-500" />
             <span className="text-muted-foreground text-sm">{t('c:mfa_disabled.text')}</span>
           </p>
         )}

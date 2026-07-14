@@ -116,7 +116,7 @@ export function InviteBulkEmailForm({ contextEntity, dialog: isDialog, children 
                 {emails.length}
               </Badge>
             )}{' '}
-            <SendIcon size={16} className="mr-2" />
+            <SendIcon className="mr-2" />
             {t('c:invite')}
           </SubmitButton>
           {children}

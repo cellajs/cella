@@ -92,7 +92,7 @@ export const CellaCustomBlockTypeSelect = ({
           mainTooltip="Select block type"
         >
           {selectedItem && <selectedItem.icon />}
-          <ChevronDownIcon size={16} />
+          <ChevronDownIcon />
         </Components.FormattingToolbar.Button>
       </Components.Generic.Menu.Trigger>
       <Components.Generic.Menu.Dropdown className="p-2">

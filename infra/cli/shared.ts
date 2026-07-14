@@ -6,13 +6,13 @@ import type { appConfig as AppConfig } from 'shared'
 import type { Environment, StackState } from '../lib/stack/bootstrap-stack-state'
 import { acquireLock, controlActor, lockKey, makeControlClient, releaseLock, stateBucket } from '../lib/stack/control-store'
 import { errorMessage } from '../lib/utils/errors'
-import { verifyStackPassphrase } from '../lib/stack/pulumi-passphrase'
+import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase'
 import { maskedSecret } from './prompts/masked-secret'
 
 type AppConfigType = typeof AppConfig
 
 /** Infra CLI operation modes */
-export type CliMode = 'resume' | 'rotate' | 'apply' | 'preview' | 'secrets' | 'unlock'
+export type CliMode = 'resume' | 'rotate' | 'rotate-passphrase' | 'apply' | 'preview' | 'secrets' | 'unlock'
 
 /**
  * Context for the infra CLI, including stack information and state. Passed to each service handler to provide necessary information about the current infra status and configuration.
@@ -75,6 +75,47 @@ export async function resolveVerifiedPassphrase(stackYaml: string | undefined): 
     if (verifyStackPassphrase(stackYaml, entered)) return entered
     console.warn(`${warningMark} Incorrect passphrase for this stack. Try again.`)
   }
+}
+
+/**
+ * Show a newly established passphrase exactly once and block until the operator
+ * confirms it is stored: it encrypts stack state, is unrecoverable if lost, and
+ * cannot be read back from GitHub later (Actions secrets are write-only).
+ */
+export async function confirmPassphraseStored(passphrase: string, heading: string, note?: string): Promise<void> {
+  console.info(`\n→ ${heading}`)
+  console.info(`\n    ${pc.cyanBright(passphrase)}\n`)
+  console.info(
+    `  ${pc.bold('Store it in your password manager now.')} It cannot be recovered if lost,\n` +
+      `  and once synced to GitHub it can never be viewed again (Actions secrets are write-only).` +
+      (note ? `\n  ${pc.dim(note)}` : ''),
+  )
+  while (!(await confirm({ message: 'Passphrase stored in your password manager?', default: false }))) {
+    console.warn(`${warningMark} Store it before continuing — this is the only time it is shown.`)
+  }
+}
+
+/**
+ * The bootstrap-time counterpart of `resolveVerifiedPassphrase`: when the stack
+ * already encrypts something (or `PULUMI_CONFIG_PASSPHRASE` is set), defer to
+ * the verify/prompt flow. Otherwise — a brand-new stack with nothing encrypted
+ * yet — generate the passphrase instead of asking the operator to invent one,
+ * showing it once via `confirmPassphraseStored`. `generated` tells the caller
+ * this is a newly established passphrase.
+ */
+export async function resolveOrCreatePassphrase(stackYaml: string | undefined): Promise<{ passphrase: string; generated: boolean }> {
+  const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml)
+  if (canVerify || process.env.PULUMI_CONFIG_PASSPHRASE) {
+    return { passphrase: await resolveVerifiedPassphrase(stackYaml), generated: false }
+  }
+
+  const passphrase = generatePassphrase()
+  await confirmPassphraseStored(
+    passphrase,
+    `Pulumi passphrase ${pc.dim('(encrypts stack secret state — generated for this new stack)')}`,
+    'To supply your own instead, abort and re-run with PULUMI_CONFIG_PASSPHRASE set.',
+  )
+  return { passphrase, generated: true }
 }
 
 /** The "Pulumi stack name" prompt every action shares. */

@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { ChevronRightIcon, HomeIcon } from 'lucide-react';
+import { ChevronRightIcon, HouseIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ContextEntityBase, MembershipBase, UserBase } from 'sdk';
 import { appConfig } from 'shared';
@@ -68,11 +68,11 @@ export function PageHeader({ entity, panel, parent, ...coverProps }: PageHeaderP
                     className="p-0.5 text-foreground/70"
                     render={<Link to={appConfig.defaultRedirectPath} />}
                   >
-                    <HomeIcon size={14} />
+                    <HouseIcon className="icon-sm" />
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="text-foreground/50">
-                  <ChevronRightIcon size={12} />
+                  <ChevronRightIcon className="icon-xs" />
                 </BreadcrumbSeparator>
                 {parent && parentRoute && (
                   <>
@@ -85,7 +85,7 @@ export function PageHeader({ entity, panel, parent, ...coverProps }: PageHeaderP
                       </BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator className="text-foreground/50">
-                      <ChevronRightIcon size={12} />
+                      <ChevronRightIcon className="icon-xs" />
                     </BreadcrumbSeparator>
                   </>
                 )}

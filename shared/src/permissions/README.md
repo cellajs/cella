@@ -3,7 +3,7 @@
 Background on the two subject-level mechanisms that sit alongside role×context access
 policies: public read grants and row conditions.
 
-## Public read grants (`public-read.ts`)
+## Public read grants — [`public-read.ts`](./public-read.ts)
 
 Subject-level grants that make rows readable by any actor, including anonymous, based on
 row data, independent of memberships.
@@ -22,7 +22,7 @@ once per request/event), the caller resolves the parent row and passes it as
 `parentRow` never matches: paths that don't resolve row data (e.g. stream dispatch today)
 are unaffected.
 
-## Row conditions (`row-conditions.ts`)
+## Row conditions — [`row-conditions.ts`](./row-conditions.ts)
 
 Per-row qualifications on access-policy grants. A policy cell value of `1` grants an action
 on every row the context scope reaches; a `RowCondition` cell value grants the action only

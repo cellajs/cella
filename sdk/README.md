@@ -2,7 +2,7 @@
 
 Auto-generated TypeScript SDK for the backend API.
 
-Uses [@hey-api/openapi-ts](https://heyapi.dev) to generate a fully typed SDK from the backend's OpenAPI specification (`backend/openapi.cache.json`). The generated output includes type-safe API functions, Zod v4 runtime validation schemas, and a fetch-based HTTP client (`@hey-api/client-fetch`) with automatic error throwing. Nothing in `gen/` should be edited manually — run `pnpm generate:sdk` to regenerate.
+Uses [@hey-api/openapi-ts](https://heyapi.dev) to generate a fully typed SDK from the backend's OpenAPI specification in `backend/openapi.cache.json`. The generated output includes type-safe API functions, Zod v4 runtime validation schemas, and a fetch-based HTTP client (`@hey-api/client-fetch`) with automatic error throwing. Nothing in `gen/` should be edited manually — run `pnpm generate:sdk` to regenerate.
 
 ## File structure
 

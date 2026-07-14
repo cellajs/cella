@@ -118,7 +118,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
               data-tooltip={outsideSeenWindow ? 'true' : undefined}
               data-tooltip-content={outsideSeenWindow ? t('c:views_retention_hint') : undefined}
             >
-              <UserIcon className="mr-2 opacity-50" size={16} />
+              <UserIcon className="mr-2 opacity-50" />
               <span className={cn(outsideSeenWindow && 'text-muted-foreground/60')}>{row.viewCount ?? 0}</span>
             </span>
           );

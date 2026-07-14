@@ -83,7 +83,7 @@ export function InviteSearchForm({ contextEntity, dialog: isDialog }: Props) {
                 {form.getValues('emails')?.length}
               </Badge>
             )}
-            <SendIcon size={16} className="mr-2" />
+            <SendIcon className="mr-2" />
             {t('c:invite')}
           </SubmitButton>
           {form.isDirty && (

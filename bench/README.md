@@ -23,7 +23,7 @@ Start these first — bench verifies they are reachable and exits with guidance 
 | `pnpm db:seed` | Seed test data (idempotent, cleans first) |
 | `pnpm db:teardown` | Remove all bench data (baselines are kept) |
 
-`--all` runs each scenario with a short cooldown between them and prints one combined summary; a single-scenario run stays verbose with a live comparison table. A Vitest smoke test (`src/tests/all-scenarios.test.ts`) runs `--all --short` to catch broken scenarios and auto-skips when the stack is down.
+`--all` runs each scenario with a short cooldown between them and prints one combined summary; a single-scenario run stays verbose with a live comparison table. A Vitest smoke test in `bench/src/tests/all-scenarios.test.ts` runs `--all --short` to catch broken scenarios and auto-skips when the stack is down.
 
 ## Interpreting results
 

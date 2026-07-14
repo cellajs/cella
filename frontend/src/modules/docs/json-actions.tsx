@@ -54,7 +54,6 @@ export const JsonActions = ({
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const iconSize = 16;
   const size = smallMode ? 'xs' : 'default';
 
   return (
@@ -85,14 +84,14 @@ export const JsonActions = ({
       {/* Open */}
       <TooltipButton toolTipContent={t('c:open')}>
         <Button variant="outline" size={size} className="flex-none gap-2" aria-label={t('c:open')} onClick={handleOpen}>
-          <ExternalLinkIcon size={iconSize} />
+          <ExternalLinkIcon />
           {!smallMode && <span className="max-lg:hidden">{t('c:open')}</span>}
         </Button>
       </TooltipButton>
       {/* Copy */}
       <TooltipButton toolTipContent={t('c:copy')}>
         <Button variant="outline" size={size} className="gap-2" aria-label={t('c:copy')} onClick={handleCopy}>
-          {copied ? <CopyCheckIcon size={iconSize} /> : <CopyIcon size={iconSize} />}
+          {copied ? <CopyCheckIcon /> : <CopyIcon />}
           {!smallMode && <span className="max-lg:hidden">{t('c:copy')}</span>}
         </Button>
       </TooltipButton>
@@ -106,7 +105,7 @@ export const JsonActions = ({
           disabled={isInProgress}
           onClick={handleDownload}
         >
-          {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon size={iconSize} />}
+          {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon />}
           {!smallMode && <span className="max-lg:hidden">{t('c:download')}</span>}
         </Button>
       </TooltipButton>

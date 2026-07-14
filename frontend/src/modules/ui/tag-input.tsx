@@ -335,7 +335,7 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
           className={cn('mt-2 flex items-center gap-1', styleClasses?.clearAllButton)}
         >
           {t('c:clear_all')}
-          <RefreshCwIcon size={16} />
+          <RefreshCwIcon />
         </Button>
       )}
     </div>

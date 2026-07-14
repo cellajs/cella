@@ -1,5 +1,5 @@
 import { useIsFetching } from '@tanstack/react-query';
-import { XCircleIcon } from 'lucide-react';
+import { CircleXIcon } from 'lucide-react';
 import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
@@ -62,8 +62,7 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, setQ
 
       {/* Clear Button */}
       <InputGroupAddon className="pr-2 max-sm:hidden" align="inline-end">
-        <XCircleIcon
-          size={16}
+        <CircleXIcon
           className={cn('cursor-pointer opacity-70 hover:opacity-100', inputValue.length ? 'visible' : 'invisible')}
           onClick={() => {
             setInputValue('');

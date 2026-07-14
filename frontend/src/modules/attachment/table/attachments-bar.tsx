@@ -1,4 +1,4 @@
-import { InfoIcon, TrashIcon, UploadIcon, XSquareIcon } from 'lucide-react';
+import { InfoIcon, SquareXIcon, TrashIcon, UploadIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
@@ -87,7 +87,7 @@ export const AttachmentsTableBar = ({
                   label="c:delete"
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="c:clear" />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={SquareXIcon} label="c:clear" />
               </>
             ) : (
               showUpload && <TableBarButton icon={UploadIcon} label="c:upload" onClick={() => open()} />

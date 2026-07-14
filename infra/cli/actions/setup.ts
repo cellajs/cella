@@ -27,7 +27,7 @@ import { setupCiKey } from '../../tasks/setup-ci-key'
 import { setupOperatorApp } from '../../tasks/setup-operator-app'
 import { setupVmKey } from '../../tasks/setup-vm-key'
 import type { CliMode, InfraContext } from '../shared'
-import { acquireStackLockOrExit, createStepRunner, envOr, promptRequiredInput, promptStackName, pulumiLoginUrl, resolveVerifiedPassphrase } from '../shared'
+import { acquireStackLockOrExit, createStepRunner, envOr, promptRequiredInput, promptStackName, pulumiLoginUrl, resolveOrCreatePassphrase } from '../shared'
 
 /** Everything the per-phase helpers below share. */
 interface SetupContext {
@@ -355,7 +355,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
  */
 export async function runSetup(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate'>): Promise<void> {
   const needsCiKey = mode === 'rotate' || !context.hasCiKey
-  const pulumiPassphrase = await resolveVerifiedPassphrase(context.stackYaml)
+  const { passphrase: pulumiPassphrase, generated: passphraseGenerated } = await resolveOrCreatePassphrase(context.stackYaml)
 
   // Provider authentication and all IAM / Secret-Manager work use an operator
   // bootstrap key supplied here. The provider reads it from SCW_* env
@@ -470,11 +470,21 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     await must('Mark bootstrap complete', 'pulumi', ['config', 'set', 'infra:bootstrapComplete', new Date().toISOString(), '--stack', stackName], spawnSync)
   }
 
-  await syncGithubEnvironment({
+  // The passphrase is synced on every run (idempotent): it is verified against
+  // the stack above, so this self-heals a missing or drifted
+  // PULUMI_CONFIG_PASSPHRASE environment secret.
+  const synced = await syncGithubEnvironment({
     repoRoot: new URL('..', `file://${infraDir}/`).pathname,
     environment: context.environment,
     ciKey: ciKey.accessKey ? { accessKey: ciKey.accessKey, secretKey: ciKey.secretKey, projectId: scwProjectId, organizationId: ciKey.organizationId } : undefined,
+    passphrase: pulumiPassphrase,
   })
+  if (!synced) {
+    console.warn(
+      `\n${warningMark} GitHub sync skipped (gh not authenticated or origin is not a GitHub remote).\n` +
+        `  Add the Environment secrets manually${passphraseGenerated ? ` — including the just-generated ${pc.bold('PULUMI_CONFIG_PASSPHRASE')}` : ''} (see the secrets table in infra/README.md).`,
+    )
+  }
 
   printSummary({ needsCiKey, ciAccessKey: ciKey.accessKey, vmAccessKey, operatorAppId, mode })
 

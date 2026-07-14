@@ -34,7 +34,7 @@ export function ImpersonateRow({ user, tabIndex }: Props) {
       data-tooltip-content={i18n.t('c:impersonate')}
       onClick={() => handleStartImpersonation(user.id)}
     >
-      <VenetianMaskIcon size={16} />
+      <VenetianMaskIcon />
     </Button>
   );
 }

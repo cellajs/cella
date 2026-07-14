@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { t } from 'i18next';
-import { Loader2Icon, TriangleAlertIcon } from 'lucide-react';
+import { LoaderCircleIcon, TriangleAlertIcon } from 'lucide-react';
 import * as React from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -125,9 +125,9 @@ export function SubmitButton({
   };
 
   const resolvedIcon = loading ? (
-    <Loader2Icon className="animate-spin" size={16} />
+    <LoaderCircleIcon className="animate-spin" />
   ) : showOfflineWarning ? (
-    <TriangleAlertIcon size={16} />
+    <TriangleAlertIcon />
   ) : (
     icon
   );
@@ -149,11 +149,11 @@ export function SubmitButton({
       ) : loading ? (
         <span className="relative inline-flex items-center">
           <span className="invisible">{children}</span>
-          <Loader2Icon className="absolute inset-0 m-auto animate-spin" size={16} />
+          <LoaderCircleIcon className="absolute inset-0 m-auto animate-spin" />
         </span>
       ) : (
         <>
-          {showOfflineWarning && <TriangleAlertIcon className="mr-2" size={16} />}
+          {showOfflineWarning && <TriangleAlertIcon className="mr-2" />}
           {children}
         </>
       )}

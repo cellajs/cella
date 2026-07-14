@@ -39,7 +39,7 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   return (
     <TooltipButton toolTipContent={t('c:focus_view')} disabled={!iconOnly} className="max-lg:hidden">
       <Button variant={'outline'} className={cn('flex max-lg:hidden', className)} onClick={toggleFocus}>
-        {focusView ? <ShrinkIcon size={16} /> : <ExpandIcon size={16} />}
+        {focusView ? <ShrinkIcon /> : <ExpandIcon />}
         {!iconOnly && <span className="ml-1">{focusView ? t('c:leave_focus_view') : t('c:focus_view')}</span>}
       </Button>
     </TooltipButton>

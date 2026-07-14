@@ -1,7 +1,7 @@
 import { createExtension, getBlockInfoFromTransaction } from '@blocknote/core';
 import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
-import { CheckSquareIcon } from 'lucide-react';
+import { SquareCheckBigIcon } from 'lucide-react';
 import { checklistItemConfig } from 'shared/utils/blocknote-schema-configs';
 import { nanoid } from 'shared/utils/nanoid';
 import { ChecklistItemRender } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-render';
@@ -100,12 +100,12 @@ export const getChecklistSlashItem = (editor: CustomBlockNoteEditor) => ({
   },
   aliases: ['checklist', 'checkbox', 'todo', 'task', 'check', 'todos'],
   group: 'Basic blocks',
-  icon: <CheckSquareIcon size={16} />,
+  icon: <SquareCheckBigIcon />,
 });
 
 // Side menu item for block type switching
 export const insertSideChecklistItem = (): BlockTypeSelectItem & { oneInstanceOnly?: boolean } => ({
   name: 'Todos',
   type: 'checklistItem' as const,
-  icon: CheckSquareIcon as unknown as IconType,
+  icon: SquareCheckBigIcon as unknown as IconType,
 });

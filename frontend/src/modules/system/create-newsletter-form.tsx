@@ -142,7 +142,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
         )}
 
         <div className="flex items-center gap-2 max-sm:flex-col max-sm:items-stretch">
-          <SubmitButton disabled={!canSend()} loading={isPending} icon={<SendIcon size={16} />}>
+          <SubmitButton disabled={!canSend()} loading={isPending} icon={<SendIcon />}>
             {testOnly ? t('c:send_test_email') : t('c:send')}
           </SubmitButton>
           <Button

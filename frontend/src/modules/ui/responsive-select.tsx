@@ -82,7 +82,7 @@ export function ResponsiveSelect({
                     {option.icon}
                     {option.label}
                   </span>
-                  {option.value === value && <CheckIcon size={16} strokeWidth={3} className="text-success" />}
+                  {option.value === value && <CheckIcon strokeWidth={3} className="text-success" />}
                 </button>
               ))}
             </div>

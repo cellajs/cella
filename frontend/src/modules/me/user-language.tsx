@@ -51,7 +51,7 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
             onSelect={() => changeLanguage(lang)}
           >
             <span>{t(`c:${lang}`)}</span>
-            <CheckIcon size={16} className={`text-success ${currentLang === lang ? 'visible' : 'invisible'}`} />
+            <CheckIcon className={`text-success ${currentLang === lang ? 'visible' : 'invisible'}`} />
           </DropdownActionItem>
         ))}
       </div>,

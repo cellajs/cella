@@ -137,12 +137,7 @@ export function AttachmentsCarousel({
           {currentItem.name ? (
             <DialogTitle className="ml-1 flex h-6 items-center gap-2 truncate text-base leading-6 tracking-tight max-sm:text-sm">
               {currentItem.contentType && (
-                <FilePlaceholder
-                  contentType={currentItem.contentType}
-                  iconSize={16}
-                  className="w-4 shrink-0"
-                  strokeWidth={2}
-                />
+                <FilePlaceholder contentType={currentItem.contentType} className="icon-md shrink-0" strokeWidth={2} />
               )}
               <span className="truncate">{currentItem.name}</span>
             </DialogTitle>

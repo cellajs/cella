@@ -60,7 +60,7 @@ export function SessionsList() {
           disabled={isPending}
           onClick={() => handleDeleteSessions(sessionsWithoutCurrent.map((session) => session.id))}
         >
-          <ZapOffIcon size={16} className="mr-2" />
+          <ZapOffIcon className="mr-2" />
           {t('c:terminate_all')}
         </Button>
       )}

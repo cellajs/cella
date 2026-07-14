@@ -153,10 +153,7 @@ function ChildPageCard({ page }: { page: DocPage }) {
         <h3 className="font-medium text-base underline-offset-2 group-hover:underline">{page.name}</h3>
         {page.description && <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">{page.description}</p>}
       </div>
-      <ChevronRightIcon
-        size={16}
-        className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-      />
+      <ChevronRightIcon className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
     </Link>
   );
 }

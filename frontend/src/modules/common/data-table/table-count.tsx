@@ -1,4 +1,4 @@
-import { FilterXIcon } from 'lucide-react';
+import { FunnelXIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
@@ -22,7 +22,7 @@ export function TableCount({ count, label, className, isFiltered, children, onRe
     <div className={cn('flex items-center gap-2 text-sm max-sm:hidden', className)}>
       {isFiltered && (
         <Button variant="ghost" onClick={onResetFilters} className="max-sm:hidden">
-          <FilterXIcon size={16} className="mr-2" />
+          <FunnelXIcon className="mr-2" />
           {t('c:clear')}
         </Button>
       )}

@@ -107,7 +107,7 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
                 {form.getValues('emails')?.length}
               </Badge>
             )}{' '}
-            <SendIcon size={16} className="mr-2" />
+            <SendIcon className="mr-2" />
             {t('c:invite')}
           </SubmitButton>
           {children}

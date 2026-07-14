@@ -58,11 +58,7 @@ export function ContactPage() {
                     rel="noreferrer"
                   >
                     {t(method.text)}
-                    <ArrowUpRightIcon
-                      size={16}
-                      strokeWidth={appConfig.theme.strokeWidth}
-                      className="-mt-2 ml-1 inline-block text-primary opacity-50 group-hover:opacity-100"
-                    />
+                    <ArrowUpRightIcon className="-mt-2 ml-1 inline-block text-primary opacity-50 group-hover:opacity-100" />
                   </a>
                 </p>
               </div>

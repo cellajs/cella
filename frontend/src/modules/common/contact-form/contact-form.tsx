@@ -68,7 +68,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             name="name"
             label={t('c:name')}
             placeholder={t('c:placeholder.your_input', { inputLabel: nameLabel })}
-            icon={<UserIcon size={16} />}
+            icon={<UserIcon />}
             required
           />
           <InputFormField
@@ -77,7 +77,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             label={t('c:email')}
             type="email"
             placeholder={t('c:placeholder.your_input', { inputLabel: emailLabel })}
-            icon={<MailIcon size={16} />}
+            icon={<MailIcon />}
             required
           />
           <InputFormField
@@ -86,10 +86,10 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             label={t('c:message')}
             type="textarea"
             placeholder={t('c:placeholder.your_input', { inputLabel: messageLabel })}
-            icon={<MessageSquareIcon size={16} />}
+            icon={<MessageSquareIcon />}
           />
           <div className="flex flex-col gap-2 sm:flex-row">
-            <SubmitButton loading={isPending} icon={<SendIcon size={16} />}>
+            <SubmitButton loading={isPending} icon={<SendIcon />}>
               {t('c:send')}
             </SubmitButton>
             <Button type="reset" variant="secondary" onClick={cancel} className={form.isDirty ? '' : 'invisible'}>

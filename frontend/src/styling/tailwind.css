@@ -103,6 +103,30 @@
   border-color: color-mix(in srgb, var(--intent-color) 20%, var(--background));
 }
 
+/* Semantic icon sizes. Icons are sized with classes only (never lucide's px-based
+   `size` prop — the base rule below overrides its width/height attributes), so they
+   scale with the mobile root-font-size bump like the rest of the UI. */
+@utility icon-xs {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+@utility icon-sm {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+@utility icon-md {
+  width: 1rem;
+  height: 1rem;
+}
+@utility icon-lg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+@utility icon-xl {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
 @layer components {
   .focus-effect {
     @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;
@@ -250,6 +274,15 @@
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
   html {
     @apply font-sans overscroll-none max-sm:text-[18px];
+  }
+
+  /* Icon default: 1rem (icon-md) instead of lucide's fixed 24px attributes, so icons
+     scale with the root font-size. Zero specificity via :where — any size class
+     (icon-*, size-*) or container rule ([&>svg]:size-*) wins, but CSS beats the svg
+     width/height attributes, which is why lucide's `size` prop must not be used. */
+  :where(svg.lucide) {
+    width: 1rem;
+    height: 1rem;
   }
 
   * {

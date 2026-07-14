@@ -2,15 +2,15 @@
 
 > **Status**: Implementation plan + code-verified checklist (audited 2026-07-06 on `cella/sync/20260706-1233`, upstream cella `4355336`). Supersedes the earlier cache-busting research doc (deleted with the `info/` folder; see git history).
 > Mechanism: version-tolerant API boundary + local cache migration, built on [doba](https://github.com/karol-broda/doba) (`dobajs`) as the transform/registry engine.
-> Related: [SYNC_ENGINE.md](./SYNC_ENGINE.md), [ARCHITECTURE.md](./ARCHITECTURE.md).
+> Related: [Sync engine](/docs/page/architecture/sync-engine), [Architecture](/docs/page/architecture).
 >
 > **Fork context (raak)**: raak is currently the maintained superset of upstream cella; schema-evolution work continues here and is contributed back upstream. Upstream wires its own product entities (`attachment`, `page`); the fork owns the seam wiring for `task`/`label` and any future fork entities — see the ❌ items in the checklist.
 >
-> **Doc housekeeping**: this file is currently **untracked** (it migrated `info/` → `.todos/` → `cella/`, which is why its old self-link claimed a separate "committed copy" — that copy never existed). The synced docs (AGENTS.md, SYNC_ENGINE.md, ARCHITECTURE.md) reference `cella/SCHEMA_EVOLUTION.md` for the shipping playbook, so: commit this file, and write the playbook section before lens #1.
+> **Doc housekeeping**: this file is committed and published on the docs site (Architecture → Schema evolution). The synced docs (AGENTS.md, SYNC_ENGINE.md, ARCHITECTURE.md) point here for the shipping playbook, so: write the playbook section before lens #1.
 
 ---
 
-## Active mechanism: cache-bust escape hatch (interim)
+## Cache-bust (interim)
 
 The full lens system below is **wired and live with an empty lens list** (every seam is a passthrough no-op — see Status audit). Until the first lens ships and proves itself, breaking schema changes are handled by a simpler, throwaway escape hatch:
 
@@ -23,9 +23,9 @@ The full lens system below is **wired and live with an empty lens list** (every 
 
 ---
 
-## Status audit — implementation checklist (code-verified 2026-07-06)
+## Status audit
 
-What exists vs. this plan, audited on the sync branch. Legend: `[x]` verified in code · `[ ]` not done — ❌ needs action before/at this merge, ⬜ deliberate deferral. Landscape research (Cambria, panproto, doba, local-first engines) summarized under [Prior art](#prior-art-and-references).
+What exists vs. this plan, code-verified 2026-07-06 on the sync branch. Legend: `[x]` verified in code · `[ ]` not done — ❌ needs action before/at this merge, ⬜ deliberate deferral. Landscape research (Cambria, panproto, doba, local-first engines) summarized under [Prior art](#prior-art).
 
 ### Done — wired and live (all passthrough while the lens list is empty)
 
@@ -42,14 +42,14 @@ What exists vs. this plan, audited on the sync branch. Legend: `[x]` verified in
 
 ### Fixed on this sync branch (2026-07-06) ✅
 
-- [x] **Unified evolution-contract factory built and all 7 entities wired** — `evolutionContract.product` / `evolutionContract.context` in [backend/src/core/schema-evolution/evolution-contract.ts](../backend/src/core/schema-evolution/evolution-contract.ts); see [Design revision](#design-revision-2026-07-unified-entity-body-schemas) for the as-built API. Subsumed the task/label regression fix (the sync had left them on pre-lens single-argument `createUpdateSchema({…})` calls, collapsing `zUpdateTaskBody.ops`/`zUpdateLabelBody.ops` to `z.record(z.string(), z.unknown())` and failing typecheck). The regenerated SDK is byte-identical to the pre-sync contract.
+- [x] **Unified evolution-contract factory built and all 7 entities wired** — `evolutionContract.product` / `evolutionContract.context` in [backend/src/core/schema-evolution/evolution-contract.ts](../backend/src/core/schema-evolution/evolution-contract.ts); see [Design revision](#design-revision) for the as-built API. Subsumed the task/label regression fix (the sync had left them on pre-lens single-argument `createUpdateSchema({…})` calls, collapsing `zUpdateTaskBody.ops`/`zUpdateLabelBody.ops` to `z.record(z.string(), z.unknown())` and failing typecheck). The regenerated SDK is byte-identical to the pre-sync contract.
 - [x] **1.10 context-entity coverage (Tier 2) implemented** — `LensDefinition.entityType` widened to `LensEntityType` (product | context); organization/workspace/project register via `evolutionContract.context` (widened create + partial-update bodies, `normalizeBody` at the top of each create/update operation); client `entityTypeOf` recognizes context types, so the existing `contextQueries` + mutation migration walk now actually migrates them.
 - [x] **`lens:check` runs in CI** — step added to the lint job (with `fetch-depth: 0` for the append-only guard), plus a new rule 4: **contract completeness** — every configured product/context entity type must call its contract factory in `backend/src/modules`, so a fork entity can never silently miss the seams again.
 
 ### Gaps — still open (❌)
 
 - [ ] ❌ **oasdiff gate lacks the "or a lens module was added" pass condition** — the only escape is a `clientCacheVersion` bump. (AGENTS.md already claims the lens escape exists — doc drift.) Needed before lens #1, or shipping a lens forces a pointless cache bust.
-- [ ] ❌ **The shipping playbook was never written** — see [Shipping a lens: playbook](#shipping-a-lens-playbook). The synced docs point at this file for it.
+- [ ] ❌ **The shipping playbook was never written** — see [Shipping a lens: playbook](#lens-playbook). The synced docs point at this file for it.
 
 ### Deferred — known and deliberate (⬜)
 
@@ -73,14 +73,14 @@ What exists vs. this plan, audited on the sync branch. Legend: `[x]` verified in
 1. ~~**Wire the free telemetry chain**~~ (1.0/1.9) — **done 2026-07**. Fleet-floor data collects from the next deploy.
 2. ~~**Build the two missing mechanical pieces**~~ (schema widening + boot-migration pass) — **done 2026-07**, see "Wired and live" above. `clientCacheVersion` kept as backstop.
 3. ~~**Multi-tab persist guard (1.7 core)**~~ — **done 2026-07**, see above.
-4. **Lens #1: decided 2026-07 — no permanent rehearsal lens.** Renaming a field purely as a rehearsal pollutes the API forever (lens modules are append-only), and the natural candidate `attachment.name` turned out to be a shared `productEntityColumns` base column — renaming it on one entity would diverge from the template convention. Instead: the machinery stays fully wired and passthrough; rehearse via a **branch-local lens** (see [playbook](#shipping-a-lens-playbook)) and ship lens #1 when a real breaking change needs it.
+4. **Lens #1: decided 2026-07 — no permanent rehearsal lens.** Renaming a field purely as a rehearsal pollutes the API forever (lens modules are append-only), and the natural candidate `attachment.name` turned out to be a shared `productEntityColumns` base column — renaming it on one entity would diverge from the template convention. Instead: the machinery stays fully wired and passthrough; rehearse via a **branch-local lens** (see [playbook](#lens-playbook)) and ship lens #1 when a real breaking change needs it.
 5. ~~**Fork completion (this sync branch)**~~ — **done 2026-07-06** except committing this doc: task/label unblocked via the factory, `lens:check` in CI.
-6. ~~**Unified evolution-contract factory**~~ ([Design revision](#design-revision-2026-07-unified-entity-body-schemas)) — **done 2026-07-06**; upstream contribution still open.
+6. ~~**Unified evolution-contract factory**~~ ([Design revision](#design-revision)) — **done 2026-07-06**; upstream contribution still open.
 7. ~~**1.10 context-entity coverage**~~ — **done 2026-07-06** via `evolutionContract.context` + client `entityTypeOf` extension.
 
 ---
 
-## Scope decision: product-only vs context entities vs whole API (2026-07)
+## Scope decision
 
 The lens system currently covers **product entities only** (`task`, `label`, `attachment`, `page`). This section records why, what context-entity coverage costs, and the target contract for Phase 2 — where the current asymmetry would look arbitrary to peers and 3rd-party consumers.
 
@@ -109,9 +109,9 @@ Two audit facts change the calculus vs. how this plan originally framed the scop
 
 ---
 
-## Design revision (2026-07): unified entity-body schemas
+## Design revision
 
-Triggered by two findings. (a) The task/label seam gap is an **active regression**: the old single-argument `createUpdateSchema({…})` calls put the shape object in the new `entityType` parameter, collapsing the derived ops schema to an empty object — the regenerated SDK shows `zUpdateTaskBody.ops` / `zUpdateLabelBody.ops` as `z.record(z.string(), z.unknown())`, typecheck fails, and at runtime the empty schema strips all ops keys so the ≥1-op refine rejects every update. (b) The Tier 2 decision means the widening/normalization layer must serve context entities anyway. Rather than bolting on a parallel context mechanism, restructure the seam layer once so **both entity classes share it**. The lens engine (`shared/schema-evolution`) is untouched — this revision is entirely about the Cella-side seams.
+Triggered by two findings. (a) The task/label seam gap is an **active regression**: the old single-argument `createUpdateSchema({…})` calls put the shape object in the new `entityType` parameter, collapsing the derived ops schema to an empty object — the regenerated SDK shows `zUpdateTaskBody.ops` / `zUpdateLabelBody.ops` as `z.record(z.string(), z.unknown())`, typecheck fails, and at runtime the empty schema strips all ops keys so the ≥1-op refine rejects every update. (b) The Tier 2 decision means the widening/normalization layer must serve context entities anyway. Rather than bolting on a parallel context mechanism, restructure the seam layer once so **both entity classes share it**. The lens engine in `shared/src/schema-evolution/` is untouched — this revision is entirely about the Cella-side seams.
 
 ### The problem: four patterns for one concept
 
@@ -179,7 +179,7 @@ Update *semantics* stay divergent by design: product updates merge per-field (HL
 
 ---
 
-## Shipping a lens: playbook
+## Lens playbook
 
 > ❌ **Not yet written.** Earlier revisions claimed the playbook had "moved to the committed docs" at `cella/SCHEMA_EVOLUTION.md` — but this file *is* that path (the plan was authored in `info/`, moved to gitignored `.todos/`, then dropped into the `cella/` slot where the committed playbook was supposed to live; the playbook itself never existed anywhere). AGENTS.md, SYNC_ENGINE.md, and ARCHITECTURE.md all point here for it, so writing it is a prerequisite for lens #1. Required content:
 >
@@ -219,7 +219,7 @@ doba provides the migration chain executor, bidirectional migrations, graph path
 
 ---
 
-## Where transformations happen
+## Transformation points
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -303,7 +303,7 @@ doba provides the migration chain executor, bidirectional migrations, graph path
 
 ---
 
-## Why doba (assessment summary)
+## Why doba
 
 Verified against doba source (`packages/doba`, v0.1.0):
 
@@ -323,7 +323,7 @@ Verified against doba source (`packages/doba`, v0.1.0):
 **Risk management for the dependency:**
 - Pin exact version in `pnpm-workspace.yaml` catalog; review diffs on every bump.
 - MIT, zero deps, ~10 source files → **vendoring into `shared/` is the documented escape hatch** if the project stalls.
-- Write our integration behind a thin facade (`shared/src/schema-evolution/engine.ts`) so doba is swappable: only the facade imports `dobajs`.
+- Write our integration behind a thin facade, `shared/src/schema-evolution/engine.ts`, so doba is swappable: only the facade imports `dobajs`.
 
 **What doba does NOT provide (we build):**
 - Lens module convention (frozen, append-only, date-ordered files)
@@ -376,7 +376,7 @@ We never snapshot full entity Zod schemas per version. The doba registry's older
 
 ---
 
-## Lens module anatomy
+## Lens anatomy
 
 ```text
 shared/src/schema-evolution/
@@ -421,7 +421,7 @@ The derived `fieldTimestamps` key map is applied wherever stx travels: server-si
 
 ---
 
-## Phase 1 — internal version tolerance
+## Phase 1 — internal
 
 ### 1.0 Version telemetry header
 
@@ -453,7 +453,7 @@ versionNodeFor(entityType, globalVersion): string            // D2 mapping
 
 ### 1.2 Widened schemas + ops normalization (backend, single seam)
 
-> **Partially superseded by the [Design revision](#design-revision-2026-07-unified-entity-body-schemas)**: the two derived pieces below stand, but the per-module call-site pattern (four separate calls) is replaced by the per-entity contract factory.
+> **Partially superseded by the [Design revision](#design-revision)**: the two derived pieces below stand, but the per-module call-site pattern (four separate calls) is replaced by the per-entity contract factory.
 
 No middleware, no body re-parsing, no Hono internals. Two derived pieces:
 
@@ -538,10 +538,10 @@ The unsolved race in the old plan: an old-bundle tab can persist old-shape rows 
 
 ### 1.10 Context-entity lens coverage (Tier 2) — implemented 2026-07-06
 
-See [Scope decision](#scope-decision-product-only-vs-context-entities-vs-whole-api-2026-07) and the as-built API in the [Design revision](#design-revision-2026-07-unified-entity-body-schemas). Extends lens modules to context entities (`organization`, `workspace`, `project`; `user` deliberately not included yet — same plain-REST path, add when first needed) with a **reduced derivation set**, since context writes are full-body PUTs with no ops/stx:
+See [Scope decision](#scope-decision) and the as-built API in the [Design revision](#design-revision). Extends lens modules to context entities (`organization`, `workspace`, `project`; `user` deliberately not included yet — same plain-REST path, add when first needed) with a **reduced derivation set**, since context writes are full-body PUTs with no ops/stx:
 
 - **Type surface**: `LensDefinition.entityType` widens from `ProductEntityType`; engine registries, `versionNodeFor`, `migrateCachedEntity`, `migrateQueuedMutation` follow. `lens:check` collision rules apply unchanged.
-- **Server side**: context modules register through `evolutionContract.context` (see [Design revision](#design-revision-2026-07-unified-entity-body-schemas)) — widened create + widened partial-update bodies, `normalizeBody` canonicalizing keys before the handler. No separate context mechanism.
+- **Server side**: context modules register through `evolutionContract.context` (see [Design revision](#design-revision)) — widened create + widened partial-update bodies, `normalizeBody` canonicalizing keys before the handler. No separate context mechanism.
 - **Cache migration**: `entityTypeOf` (cache-migration.ts) learns context types, so `migrateScopeToCurrent`'s existing `contextQueries` + mutation walk stops passing context rows/mutations through unmigrated — the iteration seams already exist, they just early-return today.
 - **Dual-emit reads**: same Drizzle expand-column convention. Enrichment output (`membership`, `can`, `ancestorSlugs`) is computed, not stored — untouched.
 - **Explicitly not needed**: key maps, `normalizeOps`, `fieldTimestamps` rewriting, mirror-write LWW logic — no per-field merge exists on this path.
@@ -556,13 +556,13 @@ See [Scope decision](#scope-decision-product-only-vs-context-entities-vs-whole-a
 
 ---
 
-## Phase 2 — fork mesh version tolerance
+## Phase 2 — fork mesh
 
 Builds on Phase 1's lens registry; adds negotiation between independently-deployed Cella forks whose entity models diverge.
 
 ### 2.1 Versioned OpenAPI spec artifact
 
-- Extend [generate-openapi.ts](../backend/scripts/generate-openapi.ts): after producing the latest spec, replay lens `delta`s newest→oldest to emit each historical spec (`backend/openapi/{ordinal}.json`). Pure JSON-schema rewrites driven by the same `delta` kinds (rename/add/drop/retype) — the lens's fourth artifact.
+- Extend [generate-openapi.ts](../backend/scripts/generate-openapi.ts): after producing the latest spec, replay lens `delta`s newest→oldest to emit each historical spec at `backend/openapi/{ordinal}.json`. Pure JSON-schema rewrites driven by the same `delta` kinds (rename/add/drop/retype) — the lens's fourth artifact.
 - Expand-phase specs show both field names; contract-phase specs show only the new one.
 - SDK generation ([sdk/openapi-ts.config.ts](../sdk/openapi-ts.config.ts)) stays single-spec (current version) — versioned specs are **for peers**, not for our own SDK.
 
@@ -607,7 +607,7 @@ Builds on Phase 1's lens registry; adds negotiation between independently-deploy
 | 8 | 1.5 mutation replay + 1.6 idempotent backstop | 1 | 6 |
 | 9 | 1.9 telemetry + client `failed_sync` | 1 | 3, 6 |
 | 10 | oasdiff gate (1.8.2) | 1 | 1 |
-| 10a | **Unified evolution-contract factory** ([Design revision](#design-revision-2026-07-unified-entity-body-schemas)) — subsumes the task/label seam fix; upstream candidate | 1 | 1 |
+| 10a | **Unified evolution-contract factory** ([Design revision](#design-revision)) — subsumes the task/label seam fix; upstream candidate | 1 | 1 |
 | 10b | **1.10 context-entity coverage (Tier 2)** — gates Phase 2 and the first breaking context change | 1 | 10a |
 | 11 | 2.1 versioned specs | 2 | 1, 10b |
 | 12 | 2.2 `/versions` + `Accept-Version` + `downgradeEntity` | 2 | 11 |
@@ -619,7 +619,7 @@ Items 1–5 ship value alone (expand-window tolerance covers the PWA-skew window
 
 ---
 
-## Known challenges (flagged for discussion)
+## Known challenges
 
 1. **Expand windows are long-lived state** — old+new columns coexist for days-to-weeks, and overlapping expand windows for the same entity must compose (key-map chains are order-sensitive). Covered by chain property tests; worth a "max concurrent expand lenses per entity" lint.
 2. **doba maturity**: v0.1.0, single maintainer. Mitigated by facade + pin + vendoring path, but worth a periodic health check; if we hit a bug, contributing upstream is cheaper than forking. Phase 1 exercises it only as a chain executor, so the blast radius is small.
@@ -630,7 +630,7 @@ Items 1–5 ship value alone (expand-window tolerance covers the PWA-skew window
 
 ---
 
-## Prior art and references
+## Prior art
 
 The lens approach here is not novel — it composes well-established ideas. Useful background for anyone extending the system:
 

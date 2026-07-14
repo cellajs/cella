@@ -1,6 +1,6 @@
 # shared/src/utils
 
-## BlockNote schema configs (`blocknote-schema-configs.ts`)
+## BlockNote schema configs — [`blocknote-schema-configs.ts`](./blocknote-schema-configs.ts)
 
 React-free BlockNote schema configs, shared between the frontend editor and the
 Yjs relay's server-side seeder. Both build their schema from these configs so
@@ -10,7 +10,7 @@ seeded Y.Doc must round-trip through the client editor without loss.
 Render implementations stay in the frontend; the relay pairs these configs
 with stub renders that are never invoked during block/Y.Doc conversion.
 
-## Display order (`display-order.ts`)
+## Display order — [`display-order.ts`](./display-order.ts)
 
 Fractional ordering: items are placed between neighbors by averaging their
 orders, allowing (in theory) infinite re-insertions without renumbering. In

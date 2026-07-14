@@ -63,7 +63,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
           className="relative top-3 mx-auto opacity-50 hover:bg-secondary hover:opacity-80"
           onClick={openUploadDialog}
         >
-          <UploadIcon size={16} className="mr-2" />
+          <UploadIcon className="mr-2" />
           <span>{t('c:upload_item', { item: t('c:cover').toLowerCase() })}</span>
         </Button>
       )}

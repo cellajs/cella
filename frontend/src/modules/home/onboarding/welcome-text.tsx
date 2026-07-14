@@ -26,7 +26,7 @@ export const WelcomeText = ({ onboardingToStepper }: WelcomeTextProps) => {
       <Button onClick={onboardingToStepper} className="max-sm:w-full">
         {t('c:get_started')}
         <div className="ml-4 -rotate-90">
-          <ArrowDownIcon size={16} className="animate-bounce" />
+          <ArrowDownIcon className="animate-bounce" />
         </div>
       </Button>
     </div>

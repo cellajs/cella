@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ChevronsUpDownIcon, SearchIcon, UserIcon, Users2Icon, XIcon } from 'lucide-react';
+import { ChevronsUpDownIcon, SearchIcon, UserIcon, UsersRoundIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -154,7 +154,7 @@ export const UserCombobox = ({ value, onValueChange, contextEntity }: Props) => 
                 ) : (
                   <ComboboxEmpty>
                     <ContentPlaceholder
-                      icon={Users2Icon}
+                      icon={UsersRoundIcon}
                       title="c:invite_members_search.text"
                       titleProps={{ appName: appConfig.name }}
                     />
@@ -202,7 +202,7 @@ export const UserCombobox = ({ value, onValueChange, contextEntity }: Props) => 
                               variant="plain"
                               className="hidden gap-1 group-data-[already-member=true]:flex"
                             >
-                              <UserIcon size={14} />
+                              <UserIcon />
                               <span className="max-sm:hidden">{t('c:already_member')}</span>
                             </Badge>
                             <span className="group-data-[already-member=true]:hidden group-data-[was-selected=true]:hidden max-sm:hidden">

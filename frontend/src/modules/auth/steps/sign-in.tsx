@@ -189,13 +189,13 @@ export function SignInStep() {
           <SubmitButton loading={isMagicLinkEnabled ? isSending : isPending} className="w-full gap-2">
             {isMagicLinkEnabled ? (
               <>
-                <MailIcon size={16} />
+                <MailIcon />
                 {t('c:magic_link_send')}
               </>
             ) : (
               <>
                 {t('c:sign_in')}
-                <ArrowRightIcon size={16} className="ml-2" />
+                <ArrowRightIcon className="ml-2" />
               </>
             )}
           </SubmitButton>

@@ -1,8 +1,8 @@
 # infra cli
 
-Push to `main` and a new VM generation is rolled out automatically. Fully using Infrastructure as Code. On fully European infra using mostly [Scaleway](https://www.scaleway.com/).
+Merge your automated release PR to `main` and a new deployment is rolled out automatically. Fully using Infrastructure as Code. On European infra using mostly [Scaleway](https://www.scaleway.com/).
 
-Similar to SST, this infra deployment flow uses [Pulumi](https://www.pulumi.com/) as its engine.
+Inspired by [SST](https://sst.dev), this infra deployment flow uses [Pulumi](https://www.pulumi.com/) as its engine.
 
 
 ## Overview
@@ -24,18 +24,18 @@ The key resources and how traffic flows between them:
               api.<domain>    │                              │   <domain>
                               ▼                              ▼
    ┌───────────────────────────────────────────────────────────┐
-   │                   Private network (VPC)                    │
-   │                                                            │
-   │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
-   │  │ backend  │  │ frontend │  │ optional │  │ optional │    │
-   │  │   VM     │  │ VM Caddy │  │ VM (cdc, │  │ VM (yjs, │    │
-   │  │          │  │          │  │  ai …)   │  │  …)      │    │
-   │  └────┬─────┘  └────┬─────┘  └──────────┘  └──────────┘    │
-   │       │             │ reverse-proxy → frontend bucket      │
-   │       ▼             ▼          (SPA static files)          │
-   │  ┌──────────────┐                                          │
-   │  │ PostgreSQL   │           (managed, private)             │
-   │  └──────────────┘                                          │
+   │                   Private network (VPC)                   │
+   │                                                           │
+   │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+   │  │ backend  │  │ frontend │  │ optional │  │ optional │   │
+   │  │   VM     │  │ VM Caddy │  │ VM (cdc, │  │ VM (yjs, │   │
+   │  │          │  │          │  │  ai …)   │  │  …)      │   │
+   │  └────┬─────┘  └────┬─────┘  └──────────┘  └──────────┘   │
+   │       │             │ reverse-proxy → frontend bucket     │
+   │       ▼             ▼          (SPA static files)         │
+   │  ┌──────────────┐                                         │
+   │  │ PostgreSQL   │           (managed, private)            │
+   │  └──────────────┘                                         │
    └───────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -45,16 +45,16 @@ The key resources and how traffic flows between them:
                     └──────────────────────┘
 ```
 
-- **Load balancer** — single public entrypoint.
-- **Private network (VPC)** — VMs and db connect over private IPs; only LB is publicly reachable (no SSH).
-- **Frontend** — a Caddy VM behind the LB that reverse-proxies the SPA static-file bucket (adds security headers + rewrites 404→index.html for SPA routes).
-- **Backend VM** — the critical API path; replaced one generation at a time with LB overlap.
-- **Optional VMs** — `cdc`, `yjs`, `ai` run on their own VM generations when enabled.
-- **Database** — managed PostgreSQL reachable only from inside private network.
-- **Buckets** — public and private object storage for uploads, plus frontend SPA bucket.
+- **Load balancer:** single public entrypoint.
+- **Private network (VPC):** VMs and db connect over private IPs; only LB is publicly reachable (no SSH).
+- **Frontend:** a Caddy VM behind the LB that reverse-proxies the SPA static-file bucket.
+- **Backend VM:** the critical API path; replaced one generation at a time with LB overlap.
+- **Optional VMs:** `cdc`, `yjs`, `ai` run on their own VM  when enabled and `singleVm` is disabled.
+- **Database:** managed PostgreSQL reachable only from inside private network.
+- **Buckets:** public and private object storage for uploads, plus frontend SPA bucket.
 
 
-## How a deploy works
+## Deploy flow
 
 The deployment lifecycle — what happens when you push to `main`:
 
@@ -84,7 +84,7 @@ The primary rollout service (the one that owns migrations) is verified first, th
 
 **Rollback:** the old generation is reaped once the new one is healthy — nothing is left running for two generations per service. To roll back, commit a revert and redeploy: it follows the exact same forward path and recreates **every** service (including cdc, which is replaced in place and never retained), reusing the cached generation because the `genId` is content-addressed.
 
-## The three credentials
+## Credentials
 
 The security model is defined by exactly three Scaleway API keys, in strictly descending privilege, each in a different store. Each key creates or provisions the next:
 
@@ -107,7 +107,9 @@ runtime secrets + images on VM
 | **CI deploy key** (`<slug>-ci-deploy`) | Write on compute / LB / edge / secrets / object storage / registry; **read-only** on VPC / private network / RDB (those are bootstrap-owned). Project-scoped, plus DNS at org scope. | Long-lived; rotate manually by re-running the CLI's **Rotate keys** action (see [Key rotation](#key-rotation)) | The `production` GitHub Environment secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` (environment-scoped, not repo-scoped). The Scaleway provider authenticates from those env vars, not from stack config. |
 | **VM reader key** (`<slug>-vm-reader`) | Read-only registry / Secret Manager (incl. `SecretManagerSecretAccess` for decrypt-read). Just enough for a VM to pull images and hydrate `/opt/app/.env.runtime`. | Long-lived; rotates with the CI key | Seeded into Scaleway Secret Manager at bootstrap (the `vm-reader-key` secret), read back at `pulumi up`, and baked into VM cloud-init. Not in stack config. |
 
-## Routine deploys (CI)
+A fourth secret sits outside this chain: the **Pulumi passphrase**, which encrypts the stack's secret outputs in the state bucket. It is not an IAM identity — the CLI generates it at bootstrap and syncs it to the GitHub Environment; your only job is storing it in your password manager when shown (see [Passphrase rotation](#passphrase-rotation)).
+
+## CI deploys
 
 The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) runs:
 
@@ -178,7 +180,7 @@ What stays in Pulumi config (not committed fork data): the encryption salt, the 
 
 Most config changes ship through a normal CI deploy. But **bootstrap-owned** resources — the database, VPC, and private network — can only be mutated with a temporary bootstrap key. 
 
-To apply a bootstrap-owned change (e.g. resize the database), re-run the CLI (`pnpm infra`) and choose **Apply infra change**. The action:
+To apply a bootstrap-owned change (e.g. resize the database), run the CLI (`pnpm infra`) and pick **Apply infra change**. The action:
 
 1. Prompts for the Pulumi passphrase and a fresh bootstrap key (broad permissions, see [Generate a bootstrap API key](#2-generate-a-bootstrap-api-key)).
 2. Supplies that key to the Scaleway provider via `SCW_*` env (it is never written to stack config).
@@ -211,11 +213,7 @@ This key is used *only* during bootstrap and is revoked immediately after. It ne
 
 Save the access key, secret key, project ID, and organization ID in your password manager for the duration of the bootstrap session only.
 
-### 3. Pick a Pulumi passphrase
-
-Generate a strong passphrase (e.g. `openssl rand -base64 24`). Save it in your password manager, losing it means rebuilding the stack from scratch.
-
-### 4. Run the infra CLI
+### 3. Run the infra CLI
 
 ```bash
 pnpm infra
@@ -223,6 +221,7 @@ pnpm infra
 
 The CLI:
 
+- Generates the Pulumi passphrase — **store it when shown**; it is shown only once and unrecoverable if lost (set `PULUMI_CONFIG_PASSPHRASE` before running to supply your own)
 - Creates state storage
 - Initializes Pulumi
 - Creates required credentials
@@ -230,13 +229,13 @@ The CLI:
 - Optionally runs the first pulumi up
 
 
-### 5. Compute base image
+### 4. Compute base image
 
 Service VMs boot from Scaleway's stock **`docker`** marketplace image (Docker Engine + the Compose plugin, preinstalled and current) — set as `compute.image` in [config/general.config.ts](config/general.config.ts) and passed straight to the instance. There is **no image bake**: the `cella-boot-agent` ships as a normal registry container ([agent/Dockerfile](agent/Dockerfile)) that CI builds and pushes per commit, and every VM `docker run`s it at first boot (mounting the host Docker socket) to bring its compose stack up. Cloud-init shrinks to a launcher that writes the boot plan, logs the host into the registry, and runs the agent container; the agent owns the boot state machine (compose/env files, runtime-secret hydration, image pull, migrate, app start).
 
 Set `compute.image` to a literal image UUID only to **pin** a specific base image for rollback.
 
-### 6. Commit and push
+### 5. Commit and push
 
 After the first local `pulumi up` finishes, commit the updated `infra/Pulumi.production.yaml` and push to `main`. CI will then build and push the Docker images, run `pulumi up` again, and bring the compute VMs up automatically.
 
@@ -248,11 +247,11 @@ If `gh` CLI was authenticated during bootstrap, it already set the GitHub Enviro
 |---|---|---|---|
 | `SCW_ACCESS_KEY` | CI deploy key access key | environment | ✓ if `gh` |
 | `SCW_SECRET_KEY` | CI deploy key secret key | environment | ✓ if `gh` |
-| `PULUMI_CONFIG_PASSPHRASE` | The passphrase | environment | manual |
+| `PULUMI_CONFIG_PASSPHRASE` | Pulumi passphrase (generated at bootstrap) | environment | ✓ if `gh` |
 | `SCW_PROJECT_ID` | Scaleway project ID | environment | ✓ if `gh` |
 | `SCW_ORGANIZATION_ID` | Scaleway organization ID | environment | ✓ if `gh` |
 
-### 7. Revoke the bootstrap key
+### 6. Revoke the bootstrap key
 
 > **Do this immediately after bootstrap completes.**
 
@@ -261,7 +260,7 @@ If `gh` CLI was authenticated during bootstrap, it already set the GitHub Enviro
 
 After bootstrap, only the long-lived deploy and VM keys should remain. From here on, **all routine deploys happen in CI**.
 
-### 8. Create the first admin
+### 7. Create the first admin
 
 A fresh production database has **no users**, so there is no way to sign in to the deployed app yet. CI deploys only run schema migrations (the one-shot `migrate` companion) — they do **not** seed. You must create the first admin once, by hand.
 
@@ -384,23 +383,18 @@ The VM base image itself is the stock `docker` marketplace label (`compute.image
 
 4. **Revoke the bootstrap key** in the Scaleway console.
 
-### Changing the Pulumi passphrase
+### Passphrase rotation
 
-The passphrase encrypts the stack's secret outputs (e.g. the DB connection string) in the state bucket. To change it, re-encrypt the stack with the old passphrase in hand, then update the GitHub Environment:
+The Pulumi passphrase encrypts the stack's secret outputs (e.g. the DB connection string) in the state bucket. To rotate it, run the CLI (`pnpm infra`) and pick **Rotate passphrase**. The action:
 
-1. Re-encrypt the stack secrets with a new passphrase:
+1. Verifies the current passphrase, then generates a new one — shown once; store it in your password manager before the rotation runs.
+2. Re-encrypts the stack (`pulumi stack change-secrets-provider passphrase` rewrites both the state object and `Pulumi.<stack>.yaml` with a fresh `encryptionsalt`), under the stack lock so a concurrent CI deploy cannot read state mid-rotation, and verifies the rewritten file decrypts with the new passphrase.
+3. Syncs the new `PULUMI_CONFIG_PASSPHRASE` to the GitHub Environment (when `gh` is authenticated).
+4. Reminds you to commit the updated `infra/Pulumi.<stack>.yaml`.
 
-   ```bash
-   cd infra
-   PULUMI_CONFIG_PASSPHRASE='<current passphrase>' pulumi stack change-secrets-provider passphrase
-   # prompts for the new passphrase, then re-encrypts state and Pulumi.<stack>.yaml
-   ```
+Unlike **Rotate keys**, no bootstrap key is needed: nothing changes on the Scaleway side, so any key with state-bucket access works (CI deploy key or an operator key). A drifted or missing `PULUMI_CONFIG_PASSPHRASE` Environment secret can also be repaired without rotating — every `pnpm infra` **Resume**/**Rotate keys** run re-syncs the verified passphrase when `gh` is authenticated.
 
-2. Update `PULUMI_CONFIG_PASSPHRASE` in the `production` GitHub Environment (Settings → Environments → production → Environment secrets) and in your password manager.
-
-3. Commit the updated `infra/Pulumi.<stack>.yaml` (the `encryptionsalt` changes).
-
-> Losing the current passphrase means you cannot decrypt existing secret outputs — there is no recovery, so you must hold it to perform this change.
+> Losing the current passphrase means you cannot decrypt existing secret outputs — there is no recovery. The GitHub Environment holds a copy, but Actions secrets are write-only: CI keeps working with it, yet it can never be viewed again, so keep your password-manager copy current.
 
 <a id="clean-slate"></a>
 ### Clean slate (start over from scratch)

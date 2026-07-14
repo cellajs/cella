@@ -1,5 +1,5 @@
 import { Combobox as ComboboxPrimitive } from '@base-ui/react/combobox';
-import { CheckIcon, ChevronDownIcon, SearchIcon, XCircleIcon, XIcon } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon, CircleXIcon, SearchIcon, XIcon } from 'lucide-react';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
@@ -37,7 +37,7 @@ function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
       className={cn(className)}
       {...props}
     >
-      <XIcon className="pointer-events-none" size={14} />
+      <XIcon className="icon-sm pointer-events-none" />
     </ComboboxPrimitive.Clear>
   );
 }
@@ -267,7 +267,7 @@ function ComboboxChipRemove({ className, ...props }: ComboboxPrimitive.ChipRemov
       )}
       {...props}
     >
-      <XIcon size={12} />
+      <XIcon className="icon-xs" />
     </ComboboxPrimitive.ChipRemove>
   );
 }
@@ -328,7 +328,7 @@ function ComboboxSearchInput({
             />
           }
         >
-          <XCircleIcon size={16} />
+          <CircleXIcon />
         </ComboboxPrimitive.Clear>
       )}
     </div>

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Settings } from 'lucide-react';
+import { SettingsIcon } from 'lucide-react';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 
@@ -18,7 +18,7 @@ export const Default: Story = {
     toolTipContent: 'Settings',
     children: (
       <Button variant="outline" size="icon">
-        <Settings size={16} />
+        <SettingsIcon />
       </Button>
     ),
   },

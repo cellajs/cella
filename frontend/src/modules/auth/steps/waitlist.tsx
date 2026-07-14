@@ -28,7 +28,7 @@ export function WaitlistStep() {
         buttonContent={
           <>
             <span className="text-base">{t('c:request_access')}</span>
-            <ArrowRightIcon size={16} className="ml-2" />
+            <ArrowRightIcon className="ml-2" />
           </>
         }
       />

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { AlertTriangleIcon, CheckCircleIcon, InfoIcon } from 'lucide-react';
+import { CircleCheckBigIcon, InfoIcon, TriangleAlertIcon } from 'lucide-react';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 
 const meta = {
@@ -40,7 +40,7 @@ export const Destructive: Story = {
   args: {
     id: 'story-destructive',
     variant: 'destructive',
-    icon: AlertTriangleIcon,
+    icon: TriangleAlertIcon,
     title: 'Error',
     children: 'Something went wrong. Please try again.',
   },
@@ -50,7 +50,7 @@ export const Success: Story = {
   args: {
     id: 'story-success',
     variant: 'success',
-    icon: CheckCircleIcon,
+    icon: CircleCheckBigIcon,
     title: 'Success',
     children: 'Your changes have been saved.',
   },
@@ -60,7 +60,7 @@ export const Warning: Story = {
   args: {
     id: 'story-warning',
     variant: 'warning',
-    icon: AlertTriangleIcon,
+    icon: TriangleAlertIcon,
     title: 'Warning',
     children: 'This action cannot be undone.',
   },

@@ -54,7 +54,7 @@ export const Export = <R extends Record<string, any>>({
     <DropdownMenu>
       <TooltipButton className={className} toolTipContent={t('c:export_pdf_csv')}>
         <DropdownMenuTrigger render={<Button variant="outline" className="flex max-xs:hidden" />}>
-          <DownloadIcon size={16} />
+          <DownloadIcon />
           <span className="ml-1 max-xl:hidden">{t('c:export')}</span>
         </DropdownMenuTrigger>
       </TooltipButton>

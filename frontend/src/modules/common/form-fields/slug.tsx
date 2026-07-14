@@ -141,7 +141,7 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
                   onClick={revertSlug}
                   className="h-full"
                 >
-                  <UndoIcon size={16} /> <span className="ml-1 max-sm:hidden">{t('c:revert')}</span>
+                  <UndoIcon /> <span className="ml-1 max-sm:hidden">{t('c:revert')}</span>
                 </Button>
               </InputGroupAddon>
             )}

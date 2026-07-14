@@ -73,7 +73,7 @@ export const LeaveEntityButton = ({
       className={cn('flex w-full items-center justify-start gap-2 rounded-md', buttonProps?.className)}
       aria-label="Leave"
     >
-      <UserRoundXIcon size={16} />
+      <UserRoundXIcon />
       <span className="ml-1">{t('c:leave')}</span>
     </Button>
   );

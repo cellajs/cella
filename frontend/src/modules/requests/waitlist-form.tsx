@@ -107,7 +107,7 @@ export const WaitlistForm = ({
           ) : (
             <>
               {t('c:join')}
-              <ArrowRightIcon size={16} className="ml-2" />
+              <ArrowRightIcon className="ml-2" />
             </>
           )}
         </SubmitButton>

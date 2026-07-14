@@ -41,7 +41,7 @@ export function usePagesTableColumns() {
             maxWidth: 32,
             cellClass: 'cursor-grab flex items-center justify-center',
             rowDragHandle: true,
-            renderCell: () => <GripVerticalIcon size={14} className="text-muted-foreground/50" />,
+            renderCell: () => <GripVerticalIcon className="icon-sm text-muted-foreground/50" />,
           } satisfies ColumnOrColumnGroup<PageTreeRow>,
         ]
       : []),

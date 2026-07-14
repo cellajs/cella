@@ -1,4 +1,4 @@
-import { AlertCircleIcon, CloudIcon, CloudOffIcon, LoaderIcon, UploadCloudIcon } from 'lucide-react';
+import { CircleAlertIcon, CloudIcon, CloudOffIcon, CloudUploadIcon, LoaderIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
 import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
@@ -25,7 +25,7 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
         data-tooltip="true"
         data-tooltip-content={t('c:synced')}
       >
-        <CloudIcon className="text-success" size={16} />
+        <CloudIcon className="text-success" />
       </div>
     );
   }
@@ -38,7 +38,7 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
         data-tooltip="true"
         data-tooltip-content={t('c:uploading')}
       >
-        <LoaderIcon className="animate-spin text-muted-foreground" size={16} />
+        <LoaderIcon className="animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -51,7 +51,7 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
         data-tooltip="true"
         data-tooltip-content={t('c:pending_sync')}
       >
-        <UploadCloudIcon className="text-muted-foreground" size={16} />
+        <CloudUploadIcon className="text-muted-foreground" />
       </div>
     );
   }
@@ -64,7 +64,7 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
         data-tooltip="true"
         data-tooltip-content={t('c:upload_failed')}
       >
-        <AlertCircleIcon className="text-destructive" size={16} />
+        <CircleAlertIcon className="text-destructive" />
       </div>
     );
   }
@@ -77,7 +77,7 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
         data-tooltip="true"
         data-tooltip-content={t('c:local_only')}
       >
-        <CloudOffIcon className="text-muted-foreground" size={16} />
+        <CloudOffIcon className="text-muted-foreground" />
       </div>
     );
   }
@@ -89,7 +89,7 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
       data-tooltip="true"
       data-tooltip-content={uploadStatus || t('c:unknown')}
     >
-      <CloudIcon className="text-muted-foreground" size={16} />
+      <CloudIcon className="text-muted-foreground" />
     </div>
   );
 };

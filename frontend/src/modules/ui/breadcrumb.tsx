@@ -1,4 +1,4 @@
-import { ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
+import { ChevronRightIcon, EllipsisIcon } from 'lucide-react';
 import React from 'react';
 import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';
@@ -82,7 +82,7 @@ export function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps
       className={cn('flex size-9 items-center justify-center', className)}
       {...props}
     >
-      <MoreHorizontalIcon className="size-4" />
+      <EllipsisIcon className="size-4" />
       <span className="sr-only">More</span>
     </span>
   );

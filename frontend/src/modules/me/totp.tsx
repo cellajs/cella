@@ -48,7 +48,7 @@ export function Totp() {
       {hasTotp && (
         <div className="flex items-center gap-2 px-3">
           <RotateCcwKeyIcon className="mr-2 size-4" />
-          <CheckIcon size={18} strokeWidth={3} className="text-success" />
+          <CheckIcon strokeWidth={3} className="size-4.5 text-success" />
           <span>{t('c:totp_activated')}</span>
         </div>
       )}
