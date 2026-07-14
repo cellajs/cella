@@ -11,6 +11,9 @@ import type { GenerateScript } from '../types';
  *
  * The function iterates over keys in a deltas JSONB object and applies
  * each increment with a floor of 0 to prevent negative counters.
+ * `li:` (last insert) / `lu:` (last update) keys are epoch-ms activity
+ * stamps, not deltas: they merge via GREATEST so the signal only moves
+ * forward.
  */
 async function run() {
   const migrationSql = `-- Counter Functions Setup
@@ -28,9 +31,16 @@ DECLARE
 BEGIN
   FOR k, v IN SELECT * FROM jsonb_each_text(deltas)
   LOOP
-    result := result || jsonb_build_object(
-      k, GREATEST(0, COALESCE((result->>k)::bigint, 0) + v::bigint)
-    );
+    IF k LIKE 'li:%' OR k LIKE 'lu:%' THEN
+      -- Activity stamps (epoch ms): keep the max, the signal only moves forward
+      result := result || jsonb_build_object(
+        k, GREATEST(COALESCE((result->>k)::bigint, 0), v::bigint)
+      );
+    ELSE
+      result := result || jsonb_build_object(
+        k, GREATEST(0, COALESCE((result->>k)::bigint, 0) + v::bigint)
+      );
+    END IF;
   END LOOP;
   RETURN result;
 END;

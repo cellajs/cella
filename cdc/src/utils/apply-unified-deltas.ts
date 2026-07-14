@@ -3,6 +3,7 @@ import format from 'pg-format';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { BatchUnifiedDeltaPlan } from './compute-unified-deltas';
+import { isActivityStampKey } from './update-counts';
 
 // ── Counter upsert ───────────────────────────────────────────────────────────
 
@@ -50,11 +51,19 @@ async function mergedUpsert(
 
 // ── Batch execution ──────────────────────────────────────────────────────────
 
-/** Add each source delta into `target` in place, summing on key collision. */
-function sumInto(target: Record<string, number>, source: Record<string, number> | undefined): Record<string, number> {
+/**
+ * Add each source delta into `target` in place, summing on key collision.
+ * `li:`/`lu:` keys are epoch-ms activity stamps, not deltas: collisions keep the max
+ * (summing two timestamps would jump far into the future and never heal, since
+ * apply_count_deltas only moves stamp keys forward). Exported for tests.
+ */
+export function sumInto(
+  target: Record<string, number>,
+  source: Record<string, number> | undefined,
+): Record<string, number> {
   if (source) {
     for (const [k, v] of Object.entries(source)) {
-      target[k] = (target[k] ?? 0) + v;
+      target[k] = isActivityStampKey(k) ? Math.max(target[k] ?? 0, v) : (target[k] ?? 0) + v;
     }
   }
   return target;

@@ -1,5 +1,6 @@
 import * as React from 'react';
 
+// TODO does base ui have its own solution for this or we still need this? please remove todo if we still need it, just a research request
 /**
  * Custom hook to automatically resize a textarea based on its content.
  *

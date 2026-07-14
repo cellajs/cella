@@ -73,6 +73,9 @@ const upsertContextCounters = (db: DbOrTx, selectSql: string) =>
  *   Phase 1 – Organization-level: m:{role}, m:total, m:pending, e:{type} (live rows only)
  *   Phase 2 – Sub-org contexts: same keys for every descendant carrying the FK (full attribution)
  *   Phase 3 – Seq counters: s:{type} via MAX(seq), grouped by deepest non-null ancestor
+ *   Phase 3b – Activity stamps: li:{type} via MAX(epoch ms of created_at) and lu:{type} via
+ *              MAX(epoch ms of updated_at), live rows only, grouped by deepest non-null
+ *              ancestor (home context, no ancestor fan-out)
  *
  * Product counters (Phase 4):
  *   Phase 4a – viewCount from seen_by (unique user views per entity)
@@ -142,6 +145,33 @@ export const recalculateCounters = async (db: DbOrTx) => {
       SELECT ${ctxExpr}, jsonb_build_object('${seqKey}', COALESCE(MAX(t.seq), 0)), NOW()
       FROM ${tableName} t
       WHERE ${ctxExpr} IS NOT NULL
+      GROUP BY ${ctxExpr}
+    `,
+    );
+  }
+
+  // ── Phase 3b: Activity stamps from MAX(created_at) / MAX(updated_at) ──
+  // li:{type} = epoch ms of the latest live row created in the context's own stream,
+  // lu:{type} = epoch ms of the latest live-row update, both grouped by the home context
+  // key (deepest non-null ancestor, org fallback via COALESCE). Unlike e: counts these are
+  // deliberately NOT fanned out to ancestor levels — they are per-stream signals, matching
+  // CDC's stamp scope. Draft rows (fork-only column) never stamp, mirroring CDC.
+  // jsonb_strip_nulls drops lu: when no live row was ever updated (updated_at all NULL).
+  for (const entityType of appConfig.productEntityTypes) {
+    const tableName = tbl(entityType);
+    const ctxExpr = deepestAncestorExpr(entityType, 't');
+    if (!ctxExpr) continue;
+    const draftPredicate = 'draft' in getColumns(getEntityTable(entityType)) ? ' AND t.draft = false' : '';
+
+    await upsertContextCounters(
+      db,
+      `
+      SELECT ${ctxExpr}, jsonb_strip_nulls(jsonb_build_object(
+        'li:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(t.created_at)) * 1000)::bigint,
+        'lu:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(t.updated_at)) * 1000)::bigint
+      )), NOW()
+      FROM ${tableName} t
+      WHERE ${ctxExpr} IS NOT NULL${livePredicate(entityType, 't')}${draftPredicate}
       GROUP BY ${ctxExpr}
     `,
     );

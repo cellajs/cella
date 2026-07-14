@@ -199,7 +199,52 @@
                             "properties": {
                               "attachment": { "type": "number", "required": true }
                             }
+                          },
+                          "activity": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "attachment": {
+                                "type": "object",
+                                "required": true,
+                                "properties": {
+                                  "created": {
+                                    "type": ["number", "null"],
+                                    "required": true
+                                  },
+                                  "updated": {
+                                    "type": ["number", "null"],
+                                    "required": true
+                                  }
+                                }
+                              }
+                            }
                           }
+                        }
+                      },
+                      "members": {
+                        "type": "array",
+                        "required": false,
+                        "itemType": "object",
+                        "ref": "#/components/schemas/UserMinimalBase",
+                        "items": {
+                          "type": "object",
+                          "description": "Minimal user data for references.",
+                          "properties": {
+                            "id": { "type": "string", "required": true },
+                            "name": { "type": "string", "required": true },
+                            "slug": { "type": "string", "required": true },
+                            "thumbnailUrl": {
+                              "type": ["string", "null"],
+                              "required": true
+                            },
+                            "entityType": {
+                              "type": "string",
+                              "required": true,
+                              "enum": ["user"]
+                            }
+                          },
+                          "ref": "#/components/schemas/UserMinimalBase"
                         }
                       }
                     }
@@ -270,7 +315,10 @@
                     "pending": 47,
                     "total": 101
                   },
-                  "entities": { "attachment": 294 }
+                  "entities": { "attachment": 294 },
+                  "activity": {
+                    "attachment": { "created": 1734375421781, "updated": 1734852237831 }
+                  }
                 }
               }
             },
@@ -319,7 +367,10 @@
                     "pending": 44,
                     "total": 144
                   },
-                  "entities": { "attachment": 321 }
+                  "entities": { "attachment": 321 },
+                  "activity": {
+                    "attachment": { "created": 1733935270933, "updated": null }
+                  }
                 }
               }
             }
@@ -698,7 +749,52 @@
                             "properties": {
                               "attachment": { "type": "number", "required": true }
                             }
+                          },
+                          "activity": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "attachment": {
+                                "type": "object",
+                                "required": true,
+                                "properties": {
+                                  "created": {
+                                    "type": ["number", "null"],
+                                    "required": true
+                                  },
+                                  "updated": {
+                                    "type": ["number", "null"],
+                                    "required": true
+                                  }
+                                }
+                              }
+                            }
                           }
+                        }
+                      },
+                      "members": {
+                        "type": "array",
+                        "required": false,
+                        "itemType": "object",
+                        "ref": "#/components/schemas/UserMinimalBase",
+                        "items": {
+                          "type": "object",
+                          "description": "Minimal user data for references.",
+                          "properties": {
+                            "id": { "type": "string", "required": true },
+                            "name": { "type": "string", "required": true },
+                            "slug": { "type": "string", "required": true },
+                            "thumbnailUrl": {
+                              "type": ["string", "null"],
+                              "required": true
+                            },
+                            "entityType": {
+                              "type": "string",
+                              "required": true,
+                              "enum": ["user"]
+                            }
+                          },
+                          "ref": "#/components/schemas/UserMinimalBase"
                         }
                       }
                     }
@@ -758,7 +854,10 @@
                     "pending": 27,
                     "total": 50
                   },
-                  "entities": { "attachment": 188 }
+                  "entities": { "attachment": 188 },
+                  "activity": {
+                    "attachment": { "created": 1733370282291, "updated": 1735128143248 }
+                  }
                 }
               }
             },
@@ -807,7 +906,10 @@
                     "pending": 18,
                     "total": 157
                   },
-                  "entities": { "attachment": 1 }
+                  "entities": { "attachment": 1 },
+                  "activity": {
+                    "attachment": { "created": 1733726254960, "updated": null }
+                  }
                 }
               }
             }
@@ -1086,7 +1188,52 @@
                       "properties": {
                         "attachment": { "type": "number", "required": true }
                       }
+                    },
+                    "activity": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "attachment": {
+                          "type": "object",
+                          "required": true,
+                          "properties": {
+                            "created": {
+                              "type": ["number", "null"],
+                              "required": true
+                            },
+                            "updated": {
+                              "type": ["number", "null"],
+                              "required": true
+                            }
+                          }
+                        }
+                      }
                     }
+                  }
+                },
+                "members": {
+                  "type": "array",
+                  "required": false,
+                  "itemType": "object",
+                  "ref": "#/components/schemas/UserMinimalBase",
+                  "items": {
+                    "type": "object",
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "ref": "#/components/schemas/UserMinimalBase"
                   }
                 }
               }
@@ -1140,7 +1287,10 @@
                 "pending": 13,
                 "total": 93
               },
-              "entities": { "attachment": 178 }
+              "entities": { "attachment": 178 },
+              "activity": {
+                "attachment": { "created": 1734107615547, "updated": 1734969019663 }
+              }
             }
           }
         }
@@ -1401,7 +1551,52 @@
                       "properties": {
                         "attachment": { "type": "number", "required": true }
                       }
+                    },
+                    "activity": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "attachment": {
+                          "type": "object",
+                          "required": true,
+                          "properties": {
+                            "created": {
+                              "type": ["number", "null"],
+                              "required": true
+                            },
+                            "updated": {
+                              "type": ["number", "null"],
+                              "required": true
+                            }
+                          }
+                        }
+                      }
                     }
+                  }
+                },
+                "members": {
+                  "type": "array",
+                  "required": false,
+                  "itemType": "object",
+                  "ref": "#/components/schemas/UserMinimalBase",
+                  "items": {
+                    "type": "object",
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "ref": "#/components/schemas/UserMinimalBase"
                   }
                 }
               }
@@ -1455,7 +1650,10 @@
                 "pending": 13,
                 "total": 93
               },
-              "entities": { "attachment": 178 }
+              "entities": { "attachment": 178 },
+              "activity": {
+                "attachment": { "created": 1734107615547, "updated": 1734969019663 }
+              }
             }
           }
         }

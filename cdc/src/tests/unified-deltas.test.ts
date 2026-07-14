@@ -139,8 +139,12 @@ describe('computeBatchUnifiedDeltas', () => {
     // ctx === org → no separate org signal
     expect(plan.seqGroups[0].orgSignal).toBeNull();
 
-    // Count deltas: accumulated across all 5 events on org
-    expect(plan.countDeltasByContextKey.get('org-1')).toEqual({ 'e:attachment': 5 });
+    // Count deltas: accumulated across all 5 events on org, plus one activity stamp
+    // (rows carry no createdAt here, so the stamp falls back to Date.now())
+    expect(plan.countDeltasByContextKey.get('org-1')).toEqual({
+      'e:attachment': 5,
+      'li:attachment': expect.any(Number),
+    });
   });
 
   it('batch with non-stampable events (deletes): no seq groups, count deltas accumulated', () => {
@@ -203,5 +207,139 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const seqContextKeys = plan.seqGroups.map((g) => g.contextKey);
     expect(new Set(seqContextKeys).size).toBe(seqContextKeys.length);
+  });
+});
+
+// ── Activity stamps (li:{type} / lu:{type}) ──────────────────────────────────
+// New product posts stamp `li:<type>` (epoch ms of created_at) and genuine content
+// updates stamp `lu:<type>` (epoch ms of updated_at), both at their home context
+// only. The signals only move forward: deletes, soft-deletes, restores and draft
+// rows never stamp.
+
+describe('activity stamps (li:{type} / lu:{type})', () => {
+  const createdAt = '2026-07-01T10:00:00.000Z';
+  const createdAtMs = Date.parse(createdAt);
+
+  it('attachment create stamps li:attachment with the row createdAt at the home key', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'create',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt },
+      }),
+    ]);
+
+    expect(plan.countDeltasByContextKey.get('org-1')).toEqual({
+      'e:attachment': 1,
+      'li:attachment': createdAtMs,
+    });
+  });
+
+  it('two creates in one batch max-merge the stamp (timestamps must not sum)', () => {
+    const laterCreatedAt = '2026-07-02T10:00:00.000Z';
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'create',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt: laterCreatedAt },
+      }),
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'create',
+        rowData: { id: 'att-2', organizationId: 'org-1', createdAt },
+      }),
+    ]);
+
+    expect(plan.countDeltasByContextKey.get('org-1')).toEqual({
+      'e:attachment': 2,
+      'li:attachment': Date.parse(laterCreatedAt),
+    });
+  });
+
+  it('missing createdAt falls back to Date.now()', () => {
+    const before = Date.now();
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'create',
+        rowData: { id: 'att-1', organizationId: 'org-1' },
+      }),
+    ]);
+    const after = Date.now();
+
+    const stamp = plan.countDeltasByContextKey.get('org-1')?.['li:attachment'];
+    expect(stamp).toBeGreaterThanOrEqual(before);
+    expect(stamp).toBeLessThanOrEqual(after);
+  });
+
+  it('draft rows never stamp (author-only fork rows)', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'create',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, draft: true },
+      }),
+    ]);
+
+    expect(plan.countDeltasByContextKey.get('org-1')).toEqual({ 'e:attachment': 1 });
+  });
+
+  it('genuine update stamps lu:attachment with the row updatedAt, not li:', () => {
+    const updatedAt = '2026-07-05T10:00:00.000Z';
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, updatedAt, deletedAt: null },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, deletedAt: null },
+      }),
+    ]);
+
+    expect(plan.countDeltasByContextKey.get('org-1')).toEqual({
+      'lu:attachment': Date.parse(updatedAt),
+    });
+  });
+
+  it('update with missing updatedAt falls back to Date.now()', () => {
+    const before = Date.now();
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, deletedAt: null },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, deletedAt: null },
+      }),
+    ]);
+    const after = Date.now();
+
+    const stamp = plan.countDeltasByContextKey.get('org-1')?.['lu:attachment'];
+    expect(stamp).toBeGreaterThanOrEqual(before);
+    expect(stamp).toBeLessThanOrEqual(after);
+  });
+
+  it('soft-deletes never stamp (remapped to a delete internally)', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-2', organizationId: 'org-1', createdAt, deletedAt: '2026-07-03T10:00:00.000Z' },
+        oldRowData: { id: 'att-2', organizationId: 'org-1', createdAt, deletedAt: null },
+      }),
+    ]);
+
+    expect(plan.countDeltasByContextKey.get('org-1')).toEqual({ 'e:attachment': -1 });
+  });
+
+  it('restore does not stamp either (remapped create is not a new post)', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, deletedAt: null },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, deletedAt: '2026-07-03T10:00:00.000Z' },
+      }),
+    ]);
+
+    expect(plan.countDeltasByContextKey.get('org-1')).toEqual({ 'e:attachment': 1 });
   });
 });

@@ -5,6 +5,7 @@ import slugify from 'slugify';
 import {
   generateMockFullCounts,
   MOCK_REF_DATE,
+  type MockActivityStamps,
   type MockEntityCounts,
   type MockMembershipCounts,
   mockBatchResponse,
@@ -89,6 +90,7 @@ export const mockOrganizationResponse = (
     counts: {
       membership: MockMembershipCounts;
       entities: MockEntityCounts;
+      activity: MockActivityStamps;
     };
   };
 } =>

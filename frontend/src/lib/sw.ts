@@ -34,7 +34,7 @@ precacheAndRoute(self.__WB_MANIFEST);
 
 // SPA navigations (e.g. a reload on /docs) don't match any precache URL; serve
 // the precached app shell so every route loads offline. generateSW does this
-// automatically — injectManifest workers must register it themselves.
+// automatically. InjectManifest workers must register it themselves.
 registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')));
 
 // Docs data JSON (openapi reference + search corpus) is fetched at runtime by

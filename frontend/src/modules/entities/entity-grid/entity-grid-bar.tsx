@@ -1,5 +1,5 @@
 import type { QueryKey } from '@tanstack/react-query';
-import { ArrowDownAZIcon, CalendarIcon } from 'lucide-react';
+import { ArrowDownAZIcon, CalendarIcon, type LucideIcon } from 'lucide-react';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import { TableCount } from '~/modules/common/data-table/table-count';
 import {
@@ -16,14 +16,21 @@ import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 
 type EntityGridBarSearch = {
   q?: string;
-  sort?: 'name' | 'createdAt';
+  sort?: string;
   role?: string;
 };
 
-const entityGridSortOptions = [
+/** Sort option for the entity grid bar. Forks pass their own set via the `sortOptions` prop. */
+export type EntityGridSortOption = {
+  name: string;
+  icon: LucideIcon;
+  value: string;
+};
+
+const entityGridSortOptions: readonly EntityGridSortOption[] = [
   { name: 'c:alphabetical', icon: ArrowDownAZIcon, value: 'name' },
   { name: 'c:created_at', icon: CalendarIcon, value: 'createdAt' },
-] as const;
+];
 
 type Props = {
   queryKey: QueryKey;
@@ -32,9 +39,19 @@ type Props = {
   setSearch: (search: EntityGridBarSearch) => void;
   isSheet?: boolean;
   focusView?: boolean;
+  /** Sort options shown in the bar; defaults to alphabetical + created date. */
+  sortOptions?: readonly EntityGridSortOption[];
 };
 
-export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, isSheet, focusView }: Props) => {
+export const EntityGridBar = ({
+  queryKey,
+  label,
+  searchVars,
+  setSearch,
+  isSheet,
+  focusView,
+  sortOptions = entityGridSortOptions,
+}: Props) => {
   const { q, sort, role } = searchVars;
 
   const total = useInfiniteQueryTotal(queryKey);
@@ -45,7 +62,7 @@ export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, isSheet,
   if (!isFiltered && (total ?? 0) <= 3) return null;
 
   const onSearch = (searchString: string) => setSearch({ q: searchString });
-  const onSortChange = (sort: (typeof entityGridSortOptions)[number]['value']) => setSearch({ sort });
+  const onSortChange = (sort: string) => setSearch({ sort });
   const onRoleChange = (role?: string) =>
     setSearch({ role: role === 'all' ? undefined : (role as EntityGridBarSearch['role']) });
 
@@ -64,10 +81,10 @@ export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, isSheet,
         </FilterBarSearch>
         <FilterBarFilters>
           <SelectSort
-            value={sort ?? 'name'}
+            value={sort ?? sortOptions[0].value}
             onChange={onSortChange}
             className="h-10"
-            sortOptions={entityGridSortOptions}
+            sortOptions={sortOptions}
           />
           <SelectRole
             entity

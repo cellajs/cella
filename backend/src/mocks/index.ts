@@ -1,4 +1,5 @@
 export { withFakerSeed } from './faker-seed';
+export { generateMockActivityStamps, type MockActivityStamps } from './mock-activity-stamps';
 export { type BatchResponse, mockBatchResponse } from './mock-batch-response';
 export {
   generateMockContextIdColumns,

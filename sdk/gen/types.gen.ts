@@ -435,7 +435,14 @@ export type Organization = {
       entities: {
         attachment: number;
       };
+      activity: {
+        attachment: {
+          created: number | null;
+          updated: number | null;
+        };
+      };
     };
+    members?: Array<UserMinimalBase>;
   };
 };
 
@@ -3577,7 +3584,14 @@ export type CreateOrganizationsResponses = {
             entities: {
               attachment: number;
             };
+            activity: {
+              attachment: {
+                created: number | null;
+                updated: number | null;
+              };
+            };
           };
+          members?: Array<UserMinimalBase>;
         };
       }
     >;

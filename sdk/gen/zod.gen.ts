@@ -372,8 +372,15 @@ export const zOrganization = z.object({
         entities: z.object({
           attachment: z.number(),
         }),
+        activity: z.object({
+          attachment: z.object({
+            created: z.number().nullable(),
+            updated: z.number().nullable(),
+          }),
+        }),
       })
       .optional(),
+    members: z.array(zUserMinimalBase).optional(),
   }),
 });
 
@@ -1248,8 +1255,15 @@ export const zCreateOrganizationsResponse = z.object({
                 entities: z.object({
                   attachment: z.number(),
                 }),
+                activity: z.object({
+                  attachment: z.object({
+                    created: z.number().nullable(),
+                    updated: z.number().nullable(),
+                  }),
+                }),
               })
               .optional(),
+            members: z.array(zUserMinimalBase).optional(),
           })
           .optional(),
       }),

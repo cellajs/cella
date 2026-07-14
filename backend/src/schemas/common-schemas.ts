@@ -152,7 +152,7 @@ export const fullResponseQuerySchema = z.object({
 });
 
 /** Valid options for include query param */
-export const includeOptions = ['counts', 'membership'] as const;
+export const includeOptions = ['counts', 'membership', 'members'] as const;
 export type IncludeOption = (typeof includeOptions)[number];
 
 /**

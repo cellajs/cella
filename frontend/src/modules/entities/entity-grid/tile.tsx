@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { UserIcon } from 'lucide-react';
-import type { Organization } from 'sdk';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
@@ -11,10 +10,19 @@ import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 /**
+ * Structural tile entity: any context entity whose optional `included.counts`
+ * carries a membership total fits, without coupling to a concrete entity type.
+ */
+type TileEntity = EnrichedContextEntity & {
+  included?: { counts?: { membership: { total: number } } };
+};
+
+/**
  * Tile component to display an entity in a grid layout.
  */
-export const EntityGridTile = ({ entity }: { entity: EnrichedContextEntity & Pick<Organization, 'included'> }) => {
+export const EntityGridTile = ({ entity }: { entity: TileEntity }) => {
   const { to, params, search } = getContextEntityRoute(entity);
+  const counts = entity.included?.counts;
   return (
     <Card className="overflow-hidden px-0 pt-0 shadow-xs transition sm:px-0 sm:pt-0 [&:has(.tile-link:active)]:translate-y-[.05rem] [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background [&:has(.tile-link:hover)]:shadow-sm">
       <CardContent className="p-0 sm:p-0">
@@ -51,12 +59,12 @@ export const EntityGridTile = ({ entity }: { entity: EnrichedContextEntity & Pic
           </div>
         </Link>
       </CardContent>
-      {entity.included.counts && (
+      {counts && (
         <CardFooter>
           <div className="flex w-full items-center justify-end gap-3 text-sm opacity-80">
             <div className="flex items-center gap-1">
               <UserIcon size={16} />
-              {entity.included.counts.membership.total}
+              {counts.membership.total}
             </div>
           </div>
         </CardFooter>

@@ -119,7 +119,7 @@ describe('seq groups per effective home (computeBatchUnifiedDeltas)', () => {
 // ── Counters ─────────────────────────────────────────────────────────────────
 
 describe('counter attribution: org + every non-null ancestor (getCountDeltas)', () => {
-  it('full-depth create bumps org, course, section AND project', () => {
+  it('full-depth create bumps org, course, section AND project; stamps the project only', () => {
     const deltas = getCountDeltas(itemMeta(), itemActivity('create'), fullDepthRow, null, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
@@ -127,20 +127,32 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
         { contextKey: 'p1', deltas: { 'e:item': 1 } },
         { contextKey: 's1', deltas: { 'e:item': 1 } },
         { contextKey: 'c1', deltas: { 'e:item': 1 } },
+        // Activity stamp at the home context only — never fanned out to higher ancestors
+        { contextKey: 'p1', deltas: { 'li:item': expect.any(Number) } },
       ]),
     );
-    expect(deltas).toHaveLength(4);
+    expect(deltas).toHaveLength(5);
   });
 
-  it('course-stream create bumps only org and course', () => {
+  it('course-stream create bumps only org and course; stamps the course', () => {
     const deltas = getCountDeltas(itemMeta(), itemActivity('create'), courseStreamRow, null, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
         { contextKey: 'o1', deltas: { 'e:item': 1 } },
         { contextKey: 'c1', deltas: { 'e:item': 1 } },
+        { contextKey: 'c1', deltas: { 'li:item': expect.any(Number) } },
       ]),
     );
-    expect(deltas).toHaveLength(2);
+    expect(deltas).toHaveLength(3);
+  });
+
+  it('the stamp carries the row createdAt as epoch ms at the home key', () => {
+    const createdAt = '2026-07-01T10:00:00.000Z';
+    const deltas = getCountDeltas(itemMeta(), itemActivity('create'), { ...fullDepthRow, createdAt }, null, h);
+    expect(deltas).toContainEqual({ contextKey: 'p1', deltas: { 'li:item': Date.parse(createdAt) } });
+    // No stamp anywhere else
+    const stamped = deltas.filter((d) => 'li:item' in d.deltas);
+    expect(stamped).toHaveLength(1);
   });
 
   it('hard delete decrements from the old row', () => {
@@ -160,28 +172,33 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
       [mockEvent('create', fullDepthRow), mockEvent('create', { ...courseStreamRow, id: 'i2' })],
       h,
     );
+    // Activity stamps land at each row's home context only; org and section stay stamp-free
     expect(plan.countDeltasByContextKey.get('o1')).toEqual({ 'e:item': 2 });
-    expect(plan.countDeltasByContextKey.get('c1')).toEqual({ 'e:item': 2 });
+    expect(plan.countDeltasByContextKey.get('c1')).toEqual({ 'e:item': 2, 'li:item': expect.any(Number) });
     expect(plan.countDeltasByContextKey.get('s1')).toEqual({ 'e:item': 1 });
-    expect(plan.countDeltasByContextKey.get('p1')).toEqual({ 'e:item': 1 });
+    expect(plan.countDeltasByContextKey.get('p1')).toEqual({ 'e:item': 1, 'li:item': expect.any(Number) });
   });
 });
 
 describe('reparent updates re-credit the ancestor diff', () => {
-  it('project→project move (same course): only the projects change', () => {
+  it('project→project move (same course): only the projects change, lu stamps the new home', () => {
     const deltas = getCountDeltas(itemMeta(), itemActivity('update'), { ...fullDepthRow, projectId: 'p2' }, fullDepthRow, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
         { contextKey: 'p2', deltas: { 'e:item': 1 } },
         { contextKey: 'p1', deltas: { 'e:item': -1 } },
+        { contextKey: 'p2', deltas: { 'lu:item': expect.any(Number) } },
       ]),
     );
-    expect(deltas).toHaveLength(2);
+    expect(deltas).toHaveLength(3);
   });
 
   it('re-attach deeper (section → project): only the project is credited', () => {
     const deltas = getCountDeltas(itemMeta(), itemActivity('update'), fullDepthRow, sectionRow, h);
-    expect(deltas).toEqual([{ contextKey: 'p1', deltas: { 'e:item': 1 } }]);
+    expect(deltas).toEqual([
+      { contextKey: 'p1', deltas: { 'e:item': 1 } },
+      { contextKey: 'p1', deltas: { 'lu:item': expect.any(Number) } },
+    ]);
   });
 
   it('cross-course move re-credits the whole differing chain, org untouched', () => {
@@ -195,14 +212,15 @@ describe('reparent updates re-credit the ancestor diff', () => {
         { contextKey: 'p1', deltas: { 'e:item': -1 } },
         { contextKey: 's1', deltas: { 'e:item': -1 } },
         { contextKey: 'c1', deltas: { 'e:item': -1 } },
+        { contextKey: 'p2', deltas: { 'lu:item': expect.any(Number) } },
       ]),
     );
-    expect(deltas).toHaveLength(6);
+    expect(deltas).toHaveLength(7);
   });
 
-  it('no ancestor change → no deltas', () => {
+  it('no ancestor change → only the lu stamp at the home context', () => {
     const deltas = getCountDeltas(itemMeta(), itemActivity('update'), fullDepthRow, fullDepthRow, h);
-    expect(deltas).toEqual([]);
+    expect(deltas).toEqual([{ contextKey: 'p1', deltas: { 'lu:item': expect.any(Number) } }]);
   });
 
   it('reparent while soft-deleted → no deltas (row is not counted anywhere)', () => {

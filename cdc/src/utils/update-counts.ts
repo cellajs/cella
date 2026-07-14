@@ -1,4 +1,4 @@
-import { appConfig, hierarchy, resolveNonNullAncestors } from 'shared';
+import { appConfig, hierarchy, resolveDeepestAncestorId, resolveNonNullAncestors } from 'shared';
 import type { ActivityAction, AncestorSource } from 'shared';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
@@ -9,7 +9,10 @@ import { log } from '../lib/pino';
 export interface CountDelta {
   /** Context key (organizationId or sub-context id): the row to update */
   contextKey: string;
-  /** Key-value deltas: e.g. { 'm:admin': 1, 'm:total': 1 } or { 'e:attachment': -1 } */
+  /**
+   * Key-value deltas: e.g. { 'm:admin': 1, 'm:total': 1 } or { 'e:attachment': -1 }.
+   * `li:<type>` / `lu:<type>` keys carry an epoch-ms activity stamp instead of a delta; they merge via max.
+   */
   deltas: Record<string, number>;
 }
 
@@ -19,13 +22,24 @@ export type CountsHierarchy = AncestorSource & {
 };
 
 /**
+ * `li:<type>` (last insert) / `lu:<type>` (last update) keys carry epoch-ms activity
+ * stamps instead of deltas: they merge via max, never sum. Mirrored by the
+ * apply_count_deltas PG function.
+ */
+export function isActivityStampKey(key: string): boolean {
+  return key.startsWith('li:') || key.startsWith('lu:');
+}
+
+/**
  * Determine count deltas from a CDC event.
  *
  * Membership rows yield `m:<role>` / `m:total` deltas plus an org-level
  * `s:membership` seq bump used for catchup change screening. Inactive
  * memberships count as `m:pending` while rejectedAt is null. Entity rows yield
  * `e:<type>` deltas on the org and every non-null ancestor context; updates
- * that change ancestor ids re-credit the counters.
+ * that change ancestor ids re-credit the counters. Product rows also stamp
+ * `li:<type>` (last insert) / `lu:<type>` (last update) epoch ms at their home
+ * context only.
  */
 export function getCountDeltas(
   tableMeta: TableMeta,
@@ -59,6 +73,29 @@ export function getCountDeltas(
         ? 'create'
         : action;
     const deltas = getEntityDeltas(countAction, organizationId, tableMeta.type, newRow, oldRow, h);
+
+    // Activity stamps (epoch ms) at the home context only (deepest non-null ancestor, org
+    // fallback) — deliberately NOT propagated to higher ancestors like `e:` deltas; they are
+    // per-stream signals. `li:<type>` moves forward on true INSERTs only; `lu:<type>` on
+    // genuine live-row content updates. Deletes, soft-deletes, restores and updates to
+    // trashed rows leave both untouched, as do draft rows (author-only fork rows; the
+    // template has no draft column, so that condition is simply never met).
+    if (h.isProduct(tableMeta.type) && newRow.draft !== true) {
+      const stampKey =
+        action === 'create'
+          ? `li:${tableMeta.type}`
+          : countAction === 'update' && newRow.deletedAt == null
+            ? `lu:${tableMeta.type}`
+            : null;
+      if (stampKey) {
+        const stampSource = getStringValue(newRow, action === 'create' ? 'createdAt' : 'updatedAt');
+        const parsedMs = stampSource ? Date.parse(stampSource) : Number.NaN;
+        deltas.push({
+          contextKey: resolveDeepestAncestorId(h, tableMeta.type, newRow) ?? organizationId,
+          deltas: { [stampKey]: Number.isNaN(parsedMs) ? Date.now() : parsedMs },
+        });
+      }
+    }
 
     // Embedding counters: track e:<hostEntity> counts per embedded entity ID
     for (const embedding of appConfig.entityEmbeddings) {

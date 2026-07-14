@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLatestRef } from './use-latest-ref';
 
+// TODO could we drop this as its an anti pattern anyways? What options do we have?
 /**
  * Hook to listen for window events.
  *

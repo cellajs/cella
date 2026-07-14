@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { ContextEntityType, EntityRole } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
@@ -7,6 +7,7 @@ import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
+import type { UserMinimalBase } from '#/modules/user/helpers/audit-user';
 import { memberSelect, userBaseSelect } from '#/modules/user/helpers/select';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -295,6 +296,74 @@ export const getMembersList = async (ctx: DbContext, opts: GetMembersListOpts) =
   const items = await membersQuery.orderBy(orderColumn).limit(limit).offset(offset);
 
   return { items, total };
+};
+
+interface FindMemberPreviewsByContextsOpts {
+  contextType: ContextEntityType;
+  contextIds: string[];
+  role: EntityRole;
+  limit: number;
+}
+
+/**
+ * Member previews for a set of contexts in ONE batched query: the first `limit` members
+ * per context with the given role, ordered by membership createdAt (oldest first).
+ * Powers `include=members` on context entity list endpoints; overflow counts come from
+ * the pre-computed `m:{role}` counters, so previews never need a second query.
+ */
+export const findMemberPreviewsByContexts = async (
+  ctx: DbContext,
+  { contextType, contextIds, role, limit }: FindMemberPreviewsByContextsOpts,
+) => {
+  const { db } = ctx.var;
+  const previews = new Map<string, UserMinimalBase[]>();
+  if (!contextIds.length) return previews;
+
+  // Rank members per context so a single query returns at most `limit` rows per context
+  const rowNumber = sql<number>`row_number() over (
+      partition by ${membershipsTable.contextId} order by ${membershipsTable.createdAt} asc
+    )`.as('row_number');
+
+  const rankedMembers = db
+    .select({
+      contextId: membershipsTable.contextId,
+      id: usersTable.id,
+      name: usersTable.name,
+      slug: usersTable.slug,
+      thumbnailUrl: usersTable.thumbnailUrl,
+      rowNumber,
+    })
+    .from(membershipsTable)
+    .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
+    .where(
+      and(
+        eq(membershipsTable.contextType, contextType),
+        inArray(membershipsTable.contextId, contextIds),
+        eq(membershipsTable.role, role),
+      ),
+    )
+    .as('ranked_members');
+
+  const rows = await db
+    .select({
+      contextId: rankedMembers.contextId,
+      id: rankedMembers.id,
+      name: rankedMembers.name,
+      slug: rankedMembers.slug,
+      thumbnailUrl: rankedMembers.thumbnailUrl,
+    })
+    .from(rankedMembers)
+    .where(lte(rankedMembers.rowNumber, limit))
+    .orderBy(rankedMembers.contextId, rankedMembers.rowNumber);
+
+  // Group per context, preserving the createdAt order from the window function
+  for (const { contextId, ...user } of rows) {
+    const list = previews.get(contextId) ?? [];
+    list.push({ ...user, entityType: 'user' });
+    previews.set(contextId, list);
+  }
+
+  return previews;
 };
 
 interface GetPendingMembershipsListOpts {

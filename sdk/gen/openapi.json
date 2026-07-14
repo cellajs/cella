@@ -1786,9 +1786,33 @@
                       }
                     },
                     "required": ["attachment"]
+                  },
+                  "activity": {
+                    "type": "object",
+                    "properties": {
+                      "attachment": {
+                        "type": "object",
+                        "properties": {
+                          "created": {
+                            "type": ["number", "null"]
+                          },
+                          "updated": {
+                            "type": ["number", "null"]
+                          }
+                        },
+                        "required": ["created", "updated"]
+                      }
+                    },
+                    "required": ["attachment"]
                   }
                 },
-                "required": ["membership", "entities"]
+                "required": ["membership", "entities", "activity"]
+              },
+              "members": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/UserMinimalBase"
+                }
               }
             }
           }
@@ -1868,6 +1892,12 @@
               },
               "entities": {
                 "attachment": 178
+              },
+              "activity": {
+                "attachment": {
+                  "created": 1734107615547,
+                  "updated": 1734969019663
+                }
               }
             }
           }
@@ -7002,9 +7032,33 @@
                                           }
                                         },
                                         "required": ["attachment"]
+                                      },
+                                      "activity": {
+                                        "type": "object",
+                                        "properties": {
+                                          "attachment": {
+                                            "type": "object",
+                                            "properties": {
+                                              "created": {
+                                                "type": ["number", "null"]
+                                              },
+                                              "updated": {
+                                                "type": ["number", "null"]
+                                              }
+                                            },
+                                            "required": ["created", "updated"]
+                                          }
+                                        },
+                                        "required": ["attachment"]
                                       }
                                     },
-                                    "required": ["membership", "entities"]
+                                    "required": ["membership", "entities", "activity"]
+                                  },
+                                  "members": {
+                                    "type": "array",
+                                    "items": {
+                                      "$ref": "#/components/schemas/UserMinimalBase"
+                                    }
                                   }
                                 },
                                 "required": ["membership"]
@@ -7060,6 +7114,12 @@
                               },
                               "entities": {
                                 "attachment": 178
+                              },
+                              "activity": {
+                                "attachment": {
+                                  "created": 1734107615547,
+                                  "updated": 1734969019663
+                                }
                               }
                             }
                           }
@@ -7136,6 +7196,12 @@
                           },
                           "entities": {
                             "attachment": 294
+                          },
+                          "activity": {
+                            "attachment": {
+                              "created": 1734375421781,
+                              "updated": 1734852237831
+                            }
                           }
                         }
                       }
@@ -7187,6 +7253,12 @@
                           },
                           "entities": {
                             "attachment": 321
+                          },
+                          "activity": {
+                            "attachment": {
+                              "created": 1733935270933,
+                              "updated": null
+                            }
                           }
                         }
                       }
@@ -7491,6 +7563,12 @@
                           },
                           "entities": {
                             "attachment": 188
+                          },
+                          "activity": {
+                            "attachment": {
+                              "created": 1733370282291,
+                              "updated": 1735128143248
+                            }
                           }
                         }
                       }
@@ -7542,6 +7620,12 @@
                           },
                           "entities": {
                             "attachment": 1
+                          },
+                          "activity": {
+                            "attachment": {
+                              "created": 1733726254960,
+                              "updated": null
+                            }
                           }
                         }
                       }
@@ -7686,6 +7770,12 @@
                       },
                       "entities": {
                         "attachment": 178
+                      },
+                      "activity": {
+                        "attachment": {
+                          "created": 1734107615547,
+                          "updated": 1734969019663
+                        }
                       }
                     }
                   }
@@ -7888,6 +7978,12 @@
                       },
                       "entities": {
                         "attachment": 178
+                      },
+                      "activity": {
+                        "attachment": {
+                          "created": 1734107615547,
+                          "updated": 1734969019663
+                        }
                       }
                     }
                   }

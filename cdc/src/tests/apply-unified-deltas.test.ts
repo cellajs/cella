@@ -38,7 +38,7 @@ vi.mock('../lib/db', () => {
 });
 
 // Import after mocks are set up
-const { applyBatchUnifiedDeltas } = await import('../utils/apply-unified-deltas');
+const { applyBatchUnifiedDeltas, sumInto } = await import('../utils/apply-unified-deltas');
 
 beforeEach(() => {
   dbOps.length = 0;
@@ -124,5 +124,31 @@ describe('applyBatchUnifiedDeltas', () => {
 
     await applyBatchUnifiedDeltas(plan);
     expect(dbOps).toHaveLength(0);
+  });
+});
+
+describe('sumInto', () => {
+  it('sums plain delta keys on collision', () => {
+    const target = { 's:task': 2, 'e:task': 1 };
+    sumInto(target, { 'e:task': 2, 'm:admin': 1 });
+    expect(target).toEqual({ 's:task': 2, 'e:task': 3, 'm:admin': 1 });
+  });
+
+  it('max-merges li:/lu: keys instead of summing (timestamps must not add up)', () => {
+    const target = { 'li:task': 1_751_000_000_000, 'lu:task': 1_751_000_000_000 };
+    // Older stamps lose
+    sumInto(target, { 'li:task': 1_750_000_000_000, 'lu:task': 1_750_000_000_000 });
+    expect(target['li:task']).toBe(1_751_000_000_000);
+    expect(target['lu:task']).toBe(1_751_000_000_000);
+    // Newer stamps win
+    sumInto(target, { 'li:task': 1_752_000_000_000, 'lu:task': 1_753_000_000_000 });
+    expect(target['li:task']).toBe(1_752_000_000_000);
+    expect(target['lu:task']).toBe(1_753_000_000_000);
+  });
+
+  it('li:/lu: keys pass through unchanged when absent from target', () => {
+    const target: Record<string, number> = { 's:task': 1 };
+    sumInto(target, { 'li:task': 1_751_000_000_000, 'lu:task': 1_751_500_000_000, 'e:task': 1 });
+    expect(target).toEqual({ 's:task': 1, 'li:task': 1_751_000_000_000, 'lu:task': 1_751_500_000_000, 'e:task': 1 });
   });
 });
