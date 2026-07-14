@@ -70,7 +70,7 @@ const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
   },
   aliases: ['notify', 'notification', 'emphasize', 'warning', 'error', 'info', 'success'],
   group: 'Custom',
-  icon: <MessageCircleIcon size={16} />,
+  icon: <MessageCircleIcon />,
 });
 
 // Side menu item to insert Notify block

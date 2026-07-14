@@ -28,7 +28,7 @@ export function MagicLinkStrategy({ email }: { email?: string }) {
 
   return (
     <Button type="button" variant="outline" onClick={() => send()} disabled={isPending} className="w-full gap-1.5">
-      <MailIcon size={16} />
+      <MailIcon />
       {t('c:magic_link_send')}
     </Button>
   );

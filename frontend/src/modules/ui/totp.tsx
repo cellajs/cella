@@ -59,7 +59,7 @@ export function InputOTPSeparator({ ...props }: React.ComponentProps<'div'>) {
     // biome-ignore lint/a11y/useSemanticElements: required for layout
     // biome-ignore lint/a11y/useAriaPropsForRole: required for layout
     <div data-slot="input-otp-separator" role="separator" {...props}>
-      <MinusIcon />
+      <MinusIcon className="icon-xl" />
     </div>
   );
 }

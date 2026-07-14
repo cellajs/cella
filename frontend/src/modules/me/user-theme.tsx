@@ -42,7 +42,7 @@ function ThemeDropdownContent({ items, isMobile }: { items: ThemeItem[]; isMobil
               </span>
               {item.label}
             </span>
-            <CheckIcon size={16} className={`text-success ${item.checked ? 'visible' : 'invisible'}`} />
+            <CheckIcon className={`text-success ${item.checked ? 'visible' : 'invisible'}`} />
           </DropdownActionItem>
         </div>
       ))}

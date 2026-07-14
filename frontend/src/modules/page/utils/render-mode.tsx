@@ -12,20 +12,14 @@ export const renderModeLabelKey = (mode: string) => `c:render_mode.${mode === 'n
 interface RenderModeLabelProps {
   mode: DocRenderMode;
   label: string;
-  iconSize?: number;
   className?: string;
 }
 
-export function RenderModeLabel({
-  mode,
-  label,
-  iconSize = 14,
-  className = 'flex items-center gap-1.5',
-}: RenderModeLabelProps) {
+export function RenderModeLabel({ mode, label, className = 'flex items-center gap-1.5' }: RenderModeLabelProps) {
   const Icon = renderModeIcons[mode] ?? FileTextIcon;
   return (
     <span className={className}>
-      <Icon size={iconSize} className="shrink-0 text-muted-foreground" />
+      <Icon className="icon-sm shrink-0 text-muted-foreground" />
       <span className="truncate">{label}</span>
     </span>
   );

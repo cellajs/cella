@@ -2,7 +2,6 @@ import { ArrowUpRightIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
-import { appConfig } from 'shared';
 import { Spinner } from '~/modules/common/spinner';
 import { useCountUp } from '~/modules/marketing/about/counters';
 import { showcaseItems } from '~/modules/marketing/marketing-config';
@@ -54,11 +53,7 @@ export function Showcase() {
                     <a href={item.url} target="_blank" rel="noreferrer" className="focus-effect mt-4 block rounded-md">
                       <h3 className="group mb-2 font-medium text-xl 2xl:text-[1.38rem]">
                         {t(title)}
-                        <ArrowUpRightIcon
-                          size={16}
-                          strokeWidth={appConfig.theme.strokeWidth}
-                          className="-mt-2 ml-1 inline-block text-primary opacity-50 group-hover:opacity-100"
-                        />
+                        <ArrowUpRightIcon className="-mt-2 ml-1 inline-block text-primary opacity-50 group-hover:opacity-100" />
                       </h3>
                     </a>
                     <p className="mb-6 leading-relaxed sm:mb-12">{t(text)}</p>

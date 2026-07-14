@@ -1,4 +1,4 @@
-import { ChevronUpIcon, HelpCircleIcon } from 'lucide-react';
+import { ChevronUpIcon, CircleQuestionMarkIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
@@ -28,7 +28,7 @@ export function HelpText({ content, children, className, type }: HelpTextProps) 
               />
             }
           >
-            <HelpCircleIcon size={16} />
+            <CircleQuestionMarkIcon />
           </PopoverTrigger>
           <PopoverContent className="w-80 text-muted-foreground text-sm" align="start" side="top">
             {content}
@@ -49,8 +49,8 @@ export function HelpText({ content, children, className, type }: HelpTextProps) 
           onClick={() => setCollapsed(!collapsed)}
           className="size-6 opacity-50 hover:opacity-100 active:translate-y-0!"
         >
-          {collapsed && <HelpCircleIcon size={16} />}
-          {!collapsed && <ChevronUpIcon size={16} />}
+          {collapsed && <CircleQuestionMarkIcon />}
+          {!collapsed && <ChevronUpIcon />}
         </Button>
       </div>
       <div className="text-muted-foreground text-sm">{!collapsed && <span>{content}</span>}</div>

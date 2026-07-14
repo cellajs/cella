@@ -1,4 +1,4 @@
-import { ChevronDown, PlusIcon, Settings2 } from 'lucide-react';
+import { ChevronDownIcon, PlusIcon, Settings2Icon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -70,10 +70,7 @@ export const MenuSectionButton = ({
               </motion.span>
             </div>
 
-            <ChevronDown
-              size={16}
-              className="opacity-50 transition-transform duration-200 group-data-[visible=true]/menuSection:rotate-180"
-            />
+            <ChevronDownIcon className="opacity-50 transition-transform duration-200 group-data-[visible=true]/menuSection:rotate-180" />
           </Button>
 
           {/* Settings button */}
@@ -94,7 +91,7 @@ export const MenuSectionButton = ({
                     size="icon"
                     onClick={() => toggleIsEditing()}
                   >
-                    <Settings2 size={16} />
+                    <Settings2Icon />
                   </Button>
                 </TooltipButton>
               </motion.div>
@@ -120,7 +117,7 @@ export const MenuSectionButton = ({
                     size="icon"
                     onClick={() => handleCreateAction(createButtonRef)}
                   >
-                    <PlusIcon size={16} />
+                    <PlusIcon />
                   </Button>
                 </TooltipButton>
               </motion.div>

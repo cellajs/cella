@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { FingerprintIcon } from 'lucide-react';
+import { FingerprintPatternIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from 'sdk';
 import { appConfig } from 'shared';
@@ -56,7 +56,7 @@ export function PasskeyStrategy({ email, type }: PasskeyStrategyProps) {
         onClick={() => passkeyAuth(email)}
         className="w-full gap-1.5 truncate"
       >
-        <FingerprintIcon size={16} />
+        <FingerprintPatternIcon />
         <span className="truncate">
           {t('c:sign_in')} {t('c:with').toLowerCase()} {t('c:passkey').toLowerCase()}
         </span>

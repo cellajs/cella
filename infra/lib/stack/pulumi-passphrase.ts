@@ -1,4 +1,4 @@
-import { createDecipheriv, pbkdf2Sync } from 'node:crypto'
+import { createDecipheriv, pbkdf2Sync, randomBytes } from 'node:crypto'
 import { escapeRegExp } from '../utils/escape-regexp'
 
 const PBKDF2_ITERATIONS = 1_000_000
@@ -35,6 +35,29 @@ function verify(key: Buffer, encryptionsalt: string): boolean {
   } catch {
     return false
   }
+}
+
+/**
+ * Generate a strong Pulumi passphrase (the equivalent of
+ * `openssl rand -base64 24`): 24 random bytes, base64-encoded.
+ */
+export function generatePassphrase(): string {
+  return randomBytes(24).toString('base64')
+}
+
+/**
+ * True when this `pulumi version` output supports non-interactive passphrase
+ * rotation — `stack change-secrets-provider passphrase` reading the NEW
+ * passphrase from stdin — added in v3.44.0 (pulumi/pulumi#11094). Older CLIs
+ * fail with "passphrase rotation requires an interactive terminal".
+ * Unparseable output (e.g. a dev build) is not blocked; pulumi itself errors
+ * if it is genuinely too old. Pure.
+ */
+export function supportsStdinPassphraseRotation(versionOutput: string): boolean {
+  const match = versionOutput.match(/v?(\d+)\.(\d+)\.\d+/)
+  if (!match) return true
+  const [major, minor] = [Number(match[1]), Number(match[2])]
+  return major > 3 || (major === 3 && minor >= 44)
 }
 
 /**

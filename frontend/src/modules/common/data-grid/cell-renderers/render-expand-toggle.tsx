@@ -244,7 +244,7 @@ export function RenderExpandToggle({
             }
           }}
         >
-          <ChevronRightIcon size={16} className={`opacity-70 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+          <ChevronRightIcon className={`opacity-70 transition-transform ${expanded ? 'rotate-90' : ''}`} />
         </Button>
       ) : depth > 0 ? (
         // Deepest leaf bullets ride the thin track (4px right of center) so

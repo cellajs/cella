@@ -70,7 +70,10 @@ export const InputFormField = <TFieldValues extends FieldValues>({
                 type="button"
                 tabIndex={-1}
                 onClick={iconClick}
-                className="absolute left-3 text-xs"
+                className={cn(
+                  'absolute left-3 flex size-4 items-center justify-center text-xs',
+                  type === 'textarea' ? 'top-3' : 'top-1/2 -translate-y-1/2',
+                )}
                 style={{ opacity: value || formFieldValue ? 1 : 0.5 }}
               >
                 {icon}

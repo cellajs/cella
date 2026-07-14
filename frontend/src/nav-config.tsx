@@ -1,4 +1,4 @@
-import { HomeIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
+import { HouseIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
 import type { FooterLinkProps } from '~/modules/common/app/app-footer';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { MenuSheet } from '~/modules/navigation/menu-sheet/menu-sheet';
@@ -9,7 +9,7 @@ import { startSearchAction } from '~/modules/navigation/start-search-action';
  */
 export const navItems = [
   { id: 'menu', type: 'base', icon: MenuIcon, sheet: <MenuSheet /> },
-  { id: 'home', type: 'base', icon: HomeIcon, href: '/home' },
+  { id: 'home', type: 'base', icon: HouseIcon, href: '/home' },
   { id: 'search', type: 'base', icon: SearchIcon, action: startSearchAction },
   { id: 'account', type: 'base', icon: UserIcon, sheet: <AccountSheet />, mirrorOnMobile: true },
 ] as const;

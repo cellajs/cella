@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { MailIcon, TrashIcon, XSquareIcon } from 'lucide-react';
+import { MailIcon, SquareXIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
@@ -152,7 +152,7 @@ export const MembersTableBar = ({
                   label={contextEntity.id ? 'c:remove' : 'c:delete'}
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="c:clear" />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={SquareXIcon} label="c:clear" />
               </>
             ) : (
               !isFiltered &&

@@ -1,4 +1,4 @@
-import { BirdIcon, BracesIcon, FileTypeIcon, TextIcon } from 'lucide-react';
+import { BirdIcon, BracesIcon, FileTypeIcon, TextAlignStartIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -41,14 +41,14 @@ export const ViewerGroup = ({
 
   const toggleItems: {
     value: SchemaViewMode;
-    icon: typeof TextIcon;
+    icon: typeof TextAlignStartIcon;
     label: string;
     ariaLabel: string;
     show: boolean;
   }[] = [
     {
       value: 'format',
-      icon: TextIcon,
+      icon: TextAlignStartIcon,
       label: t('c:docs.format'),
       ariaLabel: t('c:docs.view_format'),
       show: true,

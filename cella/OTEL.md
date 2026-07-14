@@ -43,11 +43,11 @@ The backend auto-instrumentation emits the **stable** OTel HTTP attributes (`htt
 
 Each service has a `tracing.ts` (or `otel.ts` for frontend) that calls the shared factory. Look at the CDC or YJS worker for the most complete examples.
 
-## How to add a new worker
+## Add a worker
 
 Every new Node.js worker needs four things: OTel setup, logging, graceful shutdown, and optionally a health endpoint. Follow these steps:
 
-### 1. OTel setup (`tracing.ts`)
+### 1. OTel setup — `tracing.ts`
 
 ```typescript
 import { appConfig } from 'shared';
@@ -63,7 +63,7 @@ export const otel: OtelSDK = createOtelSDK({
 
 To add local span debugging, pass a `SpanStoreProcessor` (see how CDC does it).
 
-### 2. Logging (`pino.ts`)
+### 2. Logging — `pino.ts`
 
 ```typescript
 import { appConfig } from 'shared';
@@ -83,7 +83,7 @@ Whenever `mapleSecretIngestKey` is set, Pino ships structured logs to Maple via 
 
 ### 3. Graceful shutdown
 
-In your entry point (`index.ts`), wire up lifecycle management:
+In your entry point `index.ts`, wire up lifecycle management:
 
 ```typescript
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
@@ -122,7 +122,7 @@ meter.createObservableGauge('myworker.connections.active', {
 });
 ```
 
-## How to add tracing to existing functionality
+## Add tracing
 
 ### Manual spans
 
@@ -165,7 +165,7 @@ The shared tracing module exports attribute builder functions (`cdcAttrs`, `acti
 
 Use the `MeterProvider` from your service's `otel` export. Observable gauges work well for runtime state; counters and histograms work for request-scoped measurements. See the backend sync-metrics module for counter/histogram examples.
 
-## Cross-service trace correlation
+## Trace correlation
 
 The trace flow across services:
 
@@ -176,7 +176,7 @@ The trace flow across services:
 
 This gives full end-to-end visibility from user action → API → database → CDC → SSE → client, all correlated under a single trace.
 
-## Tracing data model
+## Data model
 
 **SpanData** is the shared span representation — a plain object with `traceId`, `spanId`, `name`, `startTime`, `endTime`, `duration`, `attributes`, `status`, `events`, and optional `parentSpanId`.
 

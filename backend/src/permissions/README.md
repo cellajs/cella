@@ -17,7 +17,7 @@ Memberships are explicit relations (`user→context`), while ownership is an imp
 
 ## Configuration
 
-### 1. Define entity hierarchy (`config/default.ts`)
+### 1. Define entity hierarchy — `shared/config/hierarchy-config.ts`
 
 The entity hierarchy is defined in `appConfig.entityConfig`:
 
@@ -30,7 +30,7 @@ entityConfig: {
 } as const
 ```
 
-### 2. Configure policies (`permissions-config.ts`)
+### 2. Configure policies — `shared/config/permissions-config.ts`
 
 ```typescript
 export const accessPolicies = configureAccessPolicies(entityTypes, ({ subject, contexts }) => {
@@ -109,10 +109,10 @@ On the frontend, `computeCan()` produces a three-state map: `true | false | 'own
 
 ## Adding a new entity
 
-1. Add to `entityConfig` in `config/default.ts`
+1. Add the entity in `shared/config/hierarchy-config.ts`
 2. Add entity type to `appConfig.entityTypes`
 3. Define policies in the `configureAccessPolicies` switch (use `'own'` for ownership-scoped actions)
-4. Create DB schema in `backend/src/db/schema/`
+4. Create the module's `*-db.ts` Drizzle table and register it in `backend/src/tables.ts`
 5. Pass ancestor scope through `contextIds` on permission subjects, or use `buildSubject()` when starting from
   column-shaped data (`organizationId`, `projectId`, etc.)
 
@@ -120,8 +120,8 @@ On the frontend, `computeCan()` produces a three-state map: `true | false | 'own
 
 | File | Purpose |
 |------|---------|
-| `config/default.ts` | Entity hierarchy definition (entityConfig) |
-| `permissions-config.ts` | Access policy definitions |
+| `shared/config/hierarchy-config.ts` | Entity hierarchy definition |
+| `shared/config/permissions-config.ts` | Access policy definitions |
 | `shared/src/permissions/permission-manager/check.ts` | Core permission check logic (incl. owner relation) |
 | `shared/src/permissions/permission-manager/types.ts` | TypeScript interfaces (`SubjectForPermission`, `GrantSource`) |
 | `shared/src/permissions/action-helpers.ts` | `resolvePermission()` helper for frontend |

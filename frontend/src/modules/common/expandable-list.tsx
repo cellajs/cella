@@ -63,7 +63,7 @@ export const ExpandableList = <T,>({
             {items.length - initialDisplayCount}
           </Badge>
           {t(expandText)}
-          <ChevronDownIcon className="ml-2 opacity-50 transition-opacity group-hover:opacity-100" size={16} />
+          <ChevronDownIcon className="ml-2 opacity-50 transition-opacity group-hover:opacity-100" />
         </Button>
       )}
     </>

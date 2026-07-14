@@ -1,4 +1,4 @@
-import { GrabIcon, HandIcon, MinusIcon, PlusIcon, RefreshCwIcon, RotateCwSquareIcon } from 'lucide-react';
+import { HandGrabIcon, HandIcon, MinusIcon, PlusIcon, RefreshCwIcon, RotateCwSquareIcon } from 'lucide-react';
 import type React from 'react';
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { ImageViewer } from '~/modules/attachment/render/image-viewer';
@@ -89,19 +89,19 @@ function RenderImage(
           <ControlButton
             tooltipContent="Zoom in"
             onClick={zoomIn}
-            icon={<PlusIcon size={14} />}
+            icon={<PlusIcon className="icon-sm" />}
             className="rounded-l-md border-r-0"
           />
           <ControlButton
             tooltipContent="Zoom out"
             onClick={zoomOut}
-            icon={<MinusIcon size={14} />}
+            icon={<MinusIcon className="icon-sm" />}
             className="border-r-0"
           />
           <ControlButton
             tooltipContent="Rotate right"
             onClick={rotateRight}
-            icon={<RotateCwSquareIcon size={14} />}
+            icon={<RotateCwSquareIcon className="icon-sm" />}
             className="border-r-0"
           />
 
@@ -112,7 +112,7 @@ function RenderImage(
                 setPanState(!panState);
                 onPanStateToggle(panState);
               }}
-              icon={panState ? <GrabIcon size={14} /> : <HandIcon size={14} />}
+              icon={panState ? <HandGrabIcon className="icon-sm" /> : <HandIcon className="icon-sm" />}
               className="border-r-0"
             />
           )}
@@ -120,7 +120,7 @@ function RenderImage(
           <ControlButton
             tooltipContent="Reset"
             onClick={resetAll}
-            icon={<RefreshCwIcon size={14} />}
+            icon={<RefreshCwIcon className="icon-sm" />}
             className="rounded-r-md"
           />
         </div>

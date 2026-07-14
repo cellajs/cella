@@ -79,14 +79,14 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
               <div className="flex items-center gap-2">
                 {appConfig.has.uploadEnabled && (
                   <Button ref={uploadButtonRef} variant="plain" type="button" size="sm" onClick={openUploadDialog}>
-                    <UploadIcon size={16} className="mr-2" />
+                    <UploadIcon className="mr-2" />
                     <span>{t('c:upload')}</span>
                   </Button>
                 )}
 
                 {url && (
                   <Button variant="secondary" onClick={() => handleUpdateURL(null)} size="sm">
-                    <TrashIcon size={16} />
+                    <TrashIcon />
                   </Button>
                 )}
               </div>

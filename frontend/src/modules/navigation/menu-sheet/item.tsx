@@ -1,7 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import type { LucideIcon } from 'lucide-react';
-import { BellOffIcon } from 'lucide-react';
+import { BellOffIcon, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -74,7 +73,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className }: MenuSheetItemProp
         />
         {item.membership.muted && (
           <span className="absolute right-0 bottom-0 flex size-3.5 items-center justify-center rounded-tl-lg rounded-tr-none rounded-br-none rounded-bl-none bg-card opacity-80">
-            <BellOffIcon size={10} strokeWidth={2} />
+            <BellOffIcon className="size-2.5" strokeWidth={2} />
           </span>
         )}
       </span>

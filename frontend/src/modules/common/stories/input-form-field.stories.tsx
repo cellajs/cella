@@ -112,7 +112,14 @@ export const RequiredWithIcon: Story = {
     required: true,
   },
   render: function Render() {
-    return <InputFormFieldStory label="Search" placeholder="Search records" required icon={<SearchIcon size={14} />} />;
+    return (
+      <InputFormFieldStory
+        label="Search"
+        placeholder="Search records"
+        required
+        icon={<SearchIcon className="icon-sm" />}
+      />
+    );
   },
 };
 
@@ -145,7 +152,7 @@ export const Disabled: Story = {
     value: 'Raak',
   },
   render: function Render() {
-    return <InputFormFieldStory label="Project name" disabled value="Raak" icon={<MailIcon size={14} />} />;
+    return <InputFormFieldStory label="Project name" disabled value="Raak" icon={<MailIcon className="icon-sm" />} />;
   },
 };
 

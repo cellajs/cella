@@ -15,8 +15,8 @@ The canonical agent guidelines live in [cella/AGENTS.md](../cella/AGENTS.md) —
 - **Backend routes/handlers**: OpenAPI-first with `@hono/zod-openapi`. Routes in `backend/src/modules/<module>/<module>-routes.ts` via `createXRoute`; handlers in `<module>-handlers.ts` via `.openapi()`. Use `import { z } from '@hono/zod-openapi'` in backend (not plain zod).
 - **Frontend SDK**: Generated in `sdk/gen/`, consumed via the `sdk` package — never edit manually. Run `pnpm sdk` after backend route/schema changes.
 - **Routing**: File-based routes in `frontend/src/routes/` auto-registered into `routeTree.gen.ts` (committed, never hand-edited). Route files are thin shims; logic/components live in modules, wired via `getRouteApi('<route id>')`.
-- **State**: Server state → TanStack Query (`frontend/src/modules/<module>/query.ts`); client state → Zustand (`frontend/src/store/`).
-- **Entities**: `ContextEntityType` (has memberships, e.g. `organization`) and `ProductEntityType` (content, e.g. `attachment`). See `frontend/src/modules/attachments/` for reference.
+- **State**: Server state → TanStack Query, in `frontend/src/modules/<module>/query.ts`; client state → Zustand `*-store.ts` files inside their module.
+- **Entities**: `ContextEntityType` (has memberships, e.g. `organization`) and `ProductEntityType` (content, e.g. `attachment`). See `frontend/src/modules/attachment/` for reference.
 
 ## Code style
 - Formatter/Linter: Biome (`pnpm lint:fix`). 2 spaces, single quotes, trailing commas (ES5), line width 100.
@@ -30,7 +30,7 @@ The canonical agent guidelines live in [cella/AGENTS.md](../cella/AGENTS.md) —
 - `pnpm generate` — Drizzle migrations from schema changes.
 - `pnpm sdk` — regenerate OpenAPI spec + frontend SDK.
 - `pnpm seed` — seed test data.
-- `pnpm test` — full Vitest suite (`pnpm test:core` for narrower core mode).
+- `pnpm test` — full Vitest suite (`pnpm test:storybook` for Storybook component tests).
 - `pnpm cella` — sync changes from upstream cella to fork.
 
 ## Git safety

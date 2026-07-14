@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { ServerOff, TriangleAlert } from 'lucide-react';
+import { ServerOffIcon, TriangleAlertIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAuthHealth } from 'sdk';
@@ -101,7 +101,7 @@ export function AuthenticatePage() {
         <Spinner className="h-10 w-10" />
         {showSlowWarning && (
           <Alert variant="warning">
-            <TriangleAlert />
+            <TriangleAlertIcon />
             <AlertTitle>{t('c:server_unresponsive')}</AlertTitle>
             <AlertDescription>{t('c:server_unresponsive.text')}</AlertDescription>
           </Alert>
@@ -137,7 +137,7 @@ export function AuthenticatePage() {
       {/* Health probe failed (timeout or network error), surface that the backend is down */}
       {isHealthError && (
         <Alert variant="destructive">
-          <ServerOff />
+          <ServerOffIcon />
           <AlertTitle>{t('c:server_unreachable')}</AlertTitle>
           <AlertDescription>{t('c:server_unreachable.text')}</AlertDescription>
         </Alert>

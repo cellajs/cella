@@ -97,7 +97,7 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
             />
           )}
 
-          <SubmitButton loading={isPending} icon={<MailIcon size={16} />} className="w-full">
+          <SubmitButton loading={isPending} icon={<MailIcon />} className="w-full">
             {t('c:magic_link_send_signup')}
           </SubmitButton>
         </form>

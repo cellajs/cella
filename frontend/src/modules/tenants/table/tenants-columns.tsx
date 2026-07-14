@@ -101,7 +101,7 @@ export const useColumns = () => {
       width: 100,
       renderCell: ({ row }) => (
         <>
-          <GlobeIcon className="mr-2 opacity-50" size={16} />
+          <GlobeIcon className="mr-2 opacity-50" />
           {row.domainsCount ?? 0}
         </>
       ),

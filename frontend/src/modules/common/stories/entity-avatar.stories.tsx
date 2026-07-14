@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Building, ShieldCheck, User } from 'lucide-react';
+import { BuildingIcon, ShieldCheckIcon, UserIcon } from 'lucide-react';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 
 const meta = {
@@ -26,7 +26,7 @@ export const WithImage: Story = {
 };
 
 export const WithIcon: Story = {
-  args: { icon: ShieldCheck },
+  args: { icon: ShieldCheckIcon },
 };
 
 export const Organization: Story = {
@@ -58,9 +58,9 @@ export const DifferentInitials: Story = {
 export const IconVariants: Story = {
   render: () => (
     <div className="flex items-center gap-4">
-      <EntityAvatar icon={User} />
-      <EntityAvatar icon={Building} />
-      <EntityAvatar icon={ShieldCheck} />
+      <EntityAvatar icon={UserIcon} />
+      <EntityAvatar icon={BuildingIcon} />
+      <EntityAvatar icon={ShieldCheckIcon} />
     </div>
   ),
 };

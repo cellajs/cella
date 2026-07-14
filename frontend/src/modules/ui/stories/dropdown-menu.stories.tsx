@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MailIcon, PlusCircle, PlusIcon, SearchIcon, UserPlusIcon } from 'lucide-react';
+import { CirclePlusIcon, MailIcon, PlusIcon, SearchIcon, UserPlusIcon } from 'lucide-react';
 import { expect, userEvent, within } from 'storybook/test';
 import {
   DropdownMenu,
@@ -113,7 +113,7 @@ export const WithSubmenus: Story = {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <PlusCircle className="mr-2 size-4" />
+                  <CirclePlusIcon className="mr-2 size-4" />
                   <span>More...</span>
                 </DropdownMenuItem>
               </DropdownMenuSubContent>

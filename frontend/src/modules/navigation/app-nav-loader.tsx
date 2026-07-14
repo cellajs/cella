@@ -1,5 +1,5 @@
 import { useIsFetching } from '@tanstack/react-query';
-import { HomeIcon } from 'lucide-react';
+import { HouseIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useDebounce } from '~/hooks/use-debounce';
@@ -90,7 +90,7 @@ export function AppNavLoader({ className }: { className?: string }) {
               <Spinner className={cn('size-5', className)} noDelay />
             ) : (
               <div className="transition-transform group-hover:scale-110">
-                <HomeIcon strokeWidth={1.8} className={cn('size-5 min-h-5 min-w-5', className)} />
+                <HouseIcon strokeWidth={1.8} className={cn('size-5 min-h-5 min-w-5', className)} />
               </div>
             )}
           </motion.div>

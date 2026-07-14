@@ -1,4 +1,4 @@
-import { PartyPopperIcon, TrashIcon, XSquareIcon } from 'lucide-react';
+import { PartyPopperIcon, SquareXIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Request } from 'sdk';
@@ -136,7 +136,7 @@ export const RequestsTableBar = ({
                 className="relative"
                 onClick={openDeleteDialog}
               />
-              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="c:clear" />
+              <TableBarButton variant="ghost" onClick={clearSelection} icon={SquareXIcon} label="c:clear" />
             </>
           )}
           {selected.length === 0 && (

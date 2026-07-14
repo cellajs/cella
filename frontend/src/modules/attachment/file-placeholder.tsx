@@ -1,18 +1,18 @@
 import {
   FileArchiveIcon,
-  FileAudioIcon,
+  FileHeadphoneIcon,
   FileIcon,
   FileImageIcon,
+  FilePlayIcon,
   FileSpreadsheetIcon,
   FileTextIcon,
-  FileVideoIcon,
 } from 'lucide-react';
 
 const contentTypeMap = [
   { match: ['image'], icon: FileImageIcon },
-  { match: ['video'], icon: FileVideoIcon },
+  { match: ['video'], icon: FilePlayIcon },
   { match: ['pdf', 'msword', 'vnd', 'text'], icon: FileTextIcon },
-  { match: ['audio'], icon: FileAudioIcon },
+  { match: ['audio'], icon: FileHeadphoneIcon },
   { match: ['csv', 'xslx'], icon: FileSpreadsheetIcon },
   { match: ['zip', 'rar'], icon: FileArchiveIcon },
 ];
@@ -28,12 +28,12 @@ export function getFileIcon(contentType?: string) {
 
 interface Props {
   contentType?: string;
-  iconSize?: number;
   strokeWidth?: number;
+  /** Size the icon here (icon-* / size-*); defaults to icon-lg. */
   className?: string;
 }
 
-export function FilePlaceholder({ contentType, iconSize = 20, strokeWidth = 1.5, className }: Props) {
+export function FilePlaceholder({ contentType, strokeWidth, className = 'icon-lg' }: Props) {
   const FileIconComponent = getFileIcon(contentType);
-  return <FileIconComponent size={iconSize} strokeWidth={strokeWidth} className={className} />;
+  return <FileIconComponent strokeWidth={strokeWidth} className={className} />;
 }

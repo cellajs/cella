@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ArrowRightSquareIcon } from 'lucide-react';
+import { SquareArrowRightIcon } from 'lucide-react';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -60,13 +60,13 @@ export const WithCustomSeparator: Story = {
           <BreadcrumbLink>Home</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator>
-          <ArrowRightSquareIcon />
+          <SquareArrowRightIcon />
         </BreadcrumbSeparator>
         <BreadcrumbItem>
           <BreadcrumbLink>Components</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator>
-          <ArrowRightSquareIcon />
+          <SquareArrowRightIcon />
         </BreadcrumbSeparator>
         <BreadcrumbItem>
           <BreadcrumbPage>Breadcrumb</BreadcrumbPage>

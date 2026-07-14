@@ -63,7 +63,7 @@ export const EntityGridTile = ({ entity }: { entity: TileEntity }) => {
         <CardFooter>
           <div className="flex w-full items-center justify-end gap-3 text-sm opacity-80">
             <div className="flex items-center gap-1">
-              <UserIcon size={16} />
+              <UserIcon />
               {counts.membership.total}
             </div>
           </div>

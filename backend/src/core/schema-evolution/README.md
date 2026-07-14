@@ -21,4 +21,4 @@ merely calls the seam here. The dependency is strictly one-way:
 **`schema-evolution` → `stx` → `shared`**.
 
 Full design, decisions, and shipping playbook:
-[cella/SCHEMA_EVOLUTION.md](../../../../cella/SCHEMA_EVOLUTION.md).
+[Schema evolution](../../../../cella/SCHEMA_EVOLUTION.md).

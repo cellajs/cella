@@ -64,7 +64,7 @@ export const SearchResultBlock = ({ results, entityType, hideSeparator = false }
 
               <div className="flex items-center">
                 <Badge size="sm" variant="plain" className="hidden gap-1 group-data-[already-member=true]:flex">
-                  <UserIcon size={14} />
+                  <UserIcon />
                   <span className="max-sm:hidden">{t('c:member')}</span>
                 </Badge>
               </div>

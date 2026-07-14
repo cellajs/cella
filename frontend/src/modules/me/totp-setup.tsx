@@ -87,7 +87,7 @@ export const SetupTotp = () => {
   return (
     <div className="group flex flex-col space-y-2">
       <div className="flex items-center justify-center gap-2">
-        <CircleAlertIcon size={14} className="shrink-0 text-amber-500" />
+        <CircleAlertIcon className="icon-sm shrink-0 text-amber-500" />
         <div className="text-muted-foreground text-sm">
           <span>{t('c:totp_manual.footer_description')}</span>
           <Button
@@ -106,7 +106,7 @@ export const SetupTotp = () => {
         <div className="flex flex-col items-center gap-3 py-2">
           <p className="text-muted-foreground text-sm">{t('c:totp_qr.expired')}</p>
           <Button variant="plain" onClick={regenerate}>
-            <RefreshCwIcon size={14} />
+            <RefreshCwIcon className="icon-sm" />
             {t('c:refresh')}
           </Button>
         </div>
@@ -142,7 +142,7 @@ function TotpManualKey({ manualKey }: { manualKey: string }) {
         data-tooltip-content={copied ? t('c:copied') : t('c:copy')}
         onClick={() => copyToClipboard(manualKey)}
       >
-        {copied ? <CopyCheckIcon size={16} /> : <CopyIcon size={16} />}
+        {copied ? <CopyCheckIcon /> : <CopyIcon />}
       </Button>
     </div>
   );

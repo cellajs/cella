@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import i18n from 'i18next';
-import { AlertCircleIcon, CloudOffIcon, DownloadIcon, LoaderIcon, TrashIcon, UploadCloudIcon } from 'lucide-react';
+import { CircleAlertIcon, CloudOffIcon, CloudUploadIcon, DownloadIcon, LoaderIcon, TrashIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
@@ -73,16 +73,16 @@ const SyncStatusBadge = ({ attachmentId }: { attachmentId: string }) => {
   let tooltip: string;
 
   if (isUploading) {
-    icon = <LoaderIcon className="animate-spin text-background" size={10} />;
+    icon = <LoaderIcon className="size-2.5 animate-spin text-background" />;
     tooltip = t('c:uploading');
   } else if (isPending) {
-    icon = <UploadCloudIcon className="text-background" size={10} />;
+    icon = <CloudUploadIcon className="size-2.5 text-background" />;
     tooltip = t('c:pending_sync');
   } else if (isFailed) {
-    icon = <AlertCircleIcon className="text-background" size={10} />;
+    icon = <CircleAlertIcon className="size-2.5 text-background" />;
     tooltip = t('c:upload_failed');
   } else if (isLocalOnly) {
-    icon = <CloudOffIcon className="text-background" size={10} />;
+    icon = <CloudOffIcon className="size-2.5 text-background" />;
     tooltip = t('c:local_only');
   } else {
     return null;
@@ -135,7 +135,7 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
           .catch(() => toaster(t('error:download_failed'), 'error'))
       }
     >
-      {isInProgress ? <Spinner className="size-4 text-foreground/80" noDelay /> : <DownloadIcon size={16} />}
+      {isInProgress ? <Spinner className="size-4 text-foreground/80" noDelay /> : <DownloadIcon />}
     </Button>
   );
 };

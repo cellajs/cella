@@ -79,7 +79,7 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
                 exit={{ opacity: 0 }}
                 transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               >
-                <ChevronRightIcon className="opacity-50" size={16} />
+                <ChevronRightIcon className="opacity-50" />
                 <UnsavedBadge
                   title={mode[0] === 'search' ? t('c:search') : mode[0] === 'bulk' ? t('app:email_bulk') : t('c:email')}
                 />
@@ -108,7 +108,7 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
                 aria-label="Add by email"
                 className="w-auto grow py-6 sm:py-10"
               >
-                <AtSignIcon size={48} strokeWidth={1} />
+                <AtSignIcon className="size-12" strokeWidth={1} />
                 <div className="flex flex-col truncate pl-3">
                   <p>{t('c:invite_by_email')}</p>
                   <div className="mt-1 flex flex-row items-center truncate opacity-50 transition-opacity group-hover:opacity-100">
@@ -124,7 +124,7 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
                 aria-label="Search users"
                 className="w-auto grow py-6 sm:py-10"
               >
-                <SearchIcon size={48} strokeWidth={1} />
+                <SearchIcon className="size-12" strokeWidth={1} />
                 <div className="flex flex-col truncate pl-3">
                   <div>{t('c:invite_by_name')}</div>
                   <div className="mt-1 flex flex-row items-center truncate opacity-50 transition-opacity group-hover:opacity-100">

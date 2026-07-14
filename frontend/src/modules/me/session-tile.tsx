@@ -43,7 +43,7 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
             <div className="flex items-center gap-2 empty:hidden">
               {session.type === 'mfa' && (
                 <Badge size="xs" variant="outline" className="border-green-600 text-green-600">
-                  <ShieldCheckIcon size={12} />
+                  <ShieldCheckIcon className="icon-xs" />
                   {t('c:mfa_short')}
                 </Badge>
               )}
@@ -96,7 +96,7 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
             >
               <div className="group-data-[expanded=true]/tile:hidden">More</div>
               <div className="group-data-[expanded=false]/tile:hidden">Less</div>
-              <ChevronDownIcon size="12" className={`ml-1 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+              <ChevronDownIcon className={`icon-xs ml-1 transition-transform ${expanded ? 'rotate-180' : ''}`} />
             </Button>
           </div>
         </div>
@@ -109,7 +109,7 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
             disabled={isPending}
             onClick={() => handleDeleteSessions([session.id])}
           >
-            <ZapOffIcon size={16} />
+            <ZapOffIcon />
             <span className="ml-1 max-md:hidden">{t('c:terminate')}</span>
           </Button>
         )}

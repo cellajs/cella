@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDownIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, ChevronUpIcon, XCircleIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, ChevronUpIcon, CircleXIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -179,7 +179,7 @@ export function OpenApiSpecViewer() {
                   className="rounded p-1 hover:bg-muted disabled:opacity-30"
                   title={t('c:previous')}
                 >
-                  <ChevronUpIcon size={14} />
+                  <ChevronUpIcon className="icon-sm" />
                 </button>
                 <button
                   type="button"
@@ -188,14 +188,13 @@ export function OpenApiSpecViewer() {
                   className="mr-2 rounded p-1 hover:bg-muted disabled:opacity-30"
                   title={t('c:next')}
                 >
-                  <ChevronDownIcon size={14} />
+                  <ChevronDownIcon className="icon-sm" />
                 </button>
               </motion.div>
             ) : null}
           </AnimatePresence>
           <InputGroupAddon align="inline-end">
-            <XCircleIcon
-              size={16}
+            <CircleXIcon
               className={cn('cursor-pointer opacity-70 hover:opacity-100', searchText.length ? 'visible' : 'invisible')}
               onClick={() => handleSearchChange('')}
             />
@@ -214,7 +213,7 @@ export function OpenApiSpecViewer() {
             setIsExpanded(!isExpanded);
           }}
         >
-          {isExpanded ? <ChevronsDownUpIcon size={16} /> : <ChevronsUpDownIcon size={16} />}
+          {isExpanded ? <ChevronsDownUpIcon /> : <ChevronsUpDownIcon />}
           <span>{isExpanded ? t('c:reset') : t('c:expand')}</span>
         </Button>
 

@@ -16,7 +16,7 @@ export function LegalContact({ addressOnly = false, className }: { addressOnly?:
   return (
     <div className={cn('flex', className)}>
       <span className="mr-6 flex flex-col items-center">
-        <BuildingIcon size={16} className="mt-1 shrink-0" />
+        <BuildingIcon className="mt-1 shrink-0" />
         <span className="mt-1 w-px grow bg-border" />
       </span>
       <ul className="m-0! list-none pl-0">

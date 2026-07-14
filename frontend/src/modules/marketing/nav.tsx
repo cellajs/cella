@@ -1,15 +1,18 @@
 import { Link } from '@tanstack/react-router';
+import { ArrowUpIcon, MenuIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import { HamburgerButton } from '~/modules/common/hamburger';
+import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 import { GithubIcon } from '~/modules/common/icons/github';
 import { Logo } from '~/modules/common/logo';
 import type { AboutSectionId } from '~/modules/marketing/about/about-page';
 import { marketingNavConfig } from '~/modules/marketing/marketing-config';
 // import { UserLanguage } from '~/modules/me/user-language';
 import { UserTheme } from '~/modules/me/user-theme';
+import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { Button } from '~/modules/ui/button';
 import { Drawer, DrawerContent, DrawerTitle } from '~/modules/ui/drawer';
 
@@ -17,6 +20,11 @@ export const MarketingNav = () => {
   const { t } = useTranslation();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const isMobile = useBreakpointBelow('sm');
+
+  // Track scroll position for scroll-to-top button visibility (mobile floating nav)
+  const { scrollTop } = useScrollVisibility(isMobile);
+  const showScrollTop = scrollTop > 300;
 
   const closeDrawer = () => setDrawerOpen(false);
 
@@ -61,24 +69,43 @@ export const MarketingNav = () => {
     window.open(url, '_blank', 'noreferrer');
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Floating nav items for mobile
+  const floatingNavItems: FloatingNavItem[] = [
+    {
+      id: 'marketing-menu',
+      icon: MenuIcon,
+      onClick: () => setDrawerOpen((prev) => !prev),
+      ariaLabel: 'Toggle menu',
+      direction: 'left',
+    },
+    {
+      id: 'marketing-scroll-top',
+      icon: ArrowUpIcon,
+      onClick: scrollToTop,
+      ariaLabel: 'Scroll to top',
+      visible: showScrollTop,
+      direction: 'right',
+    },
+  ];
+
   return (
     <>
-      <header className="absolute top-2 z-121 h-16 w-full px-2 sm:top-4 lg:top-8 lg:px-4">
-        <div className="mx-auto flex h-full max-w-336 items-center justify-between gap-2 transition-colors duration-300">
-          <div className="flex h-full items-center gap-2 md:gap-6">
-            <div className="pointer-events-auto! md:hidden">
-              <HamburgerButton
-                isOpen={drawerOpen}
-                toggle={() => setDrawerOpen((prev) => !prev)}
-                className="data-[open=true]:pointer-events-auto!"
-              />
-            </div>
+      {isMobile && (
+        <FloatingNav items={floatingNavItems} bodyClass="marketing-floating-nav" resetTrigger={drawerOpen} />
+      )}
 
+      <header className="absolute top-2 z-20 h-16 w-full px-2 sm:top-4 lg:top-8 lg:px-4">
+        <div className="mx-auto flex h-full max-w-336 items-center justify-between gap-2">
+          <div className="flex h-full items-center gap-2 md:gap-6">
             <Link
               to="/about"
               hash=""
               replace={location.pathname === '/about'}
-              className="focus-effect pointer-events-auto! relative rounded-md p-0.5 transition-transform sm:mr-1 sm:active:scale-100 sm:hover:scale-105 md:mr-2 md:ml-1 md:pr-4"
+              className="focus-effect relative rounded-md p-0.5 transition-transform sm:active:scale-100 sm:hover:scale-105 md:pr-4"
               aria-label="Go to about page"
             >
               <Logo height={36} />
@@ -104,13 +131,11 @@ export const MarketingNav = () => {
             </Link>
 
             {marketingNavConfig?.length && (
-              <nav className="hidden h-full items-center gap-4 md:flex">{renderNavItems()}</nav>
+              <nav className="hidden h-full items-center gap-1 sm:flex md:gap-4">{renderNavItems()}</nav>
             )}
           </div>
 
-          <div
-            className={`flex items-center gap-2 px-2 transition-opacity duration-300 ease-in-out ${drawerOpen ? 'opacity-0' : ''}`}
-          >
+          <div className="flex items-center gap-2 px-2">
             {/* <UserLanguage /> */}
 
             <UserTheme buttonClassName="max-xs:hidden mr-2" />
@@ -123,7 +148,7 @@ export const MarketingNav = () => {
                 size="icon"
                 onClick={() => openInNewTab(appConfig.company.githubUrl)}
               >
-                <GithubIcon strokeWidth={appConfig.theme.strokeWidth} />
+                <GithubIcon className="icon-xl" />
               </Button>
             )}
 
@@ -135,7 +160,7 @@ export const MarketingNav = () => {
       </header>
 
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent className="pb-8 md:hidden">
+        <DrawerContent className="pb-8 sm:hidden">
           <span className="sr-only">
             <DrawerTitle>Navigation</DrawerTitle>
           </span>
@@ -145,13 +170,12 @@ export const MarketingNav = () => {
             {appConfig.company.githubUrl && (
               <Button
                 size="lg"
-                className="sm:hidden"
                 onClick={() => {
                   closeDrawer();
                   openInNewTab(appConfig.company.githubUrl);
                 }}
               >
-                <GithubIcon className="mr-2" strokeWidth={appConfig.theme.strokeWidth} />
+                <GithubIcon className="icon-xl mr-2" />
                 Github
               </Button>
             )}

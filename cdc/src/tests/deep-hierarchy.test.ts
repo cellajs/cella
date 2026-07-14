@@ -82,8 +82,8 @@ describe('seq scope: deepest non-null ancestor (resolveContextKey)', () => {
     expect(resolveContextKey('item', { id: 'i1' }, activity(), h)).toBe('o1');
   });
 
-  it('falls back to public:{type} when there is no context at all', () => {
-    expect(resolveContextKey('item', { id: 'i1' }, activity(null), h)).toBe('public:item');
+  it('throws when there is no context at all (hierarchy requires an organization)', () => {
+    expect(() => resolveContextKey('item', { id: 'i1' }, activity(null), h)).toThrow(/organization ancestor/);
   });
 });
 
@@ -109,10 +109,8 @@ describe('seq groups per effective home (computeBatchUnifiedDeltas)', () => {
     expect(plan.seqGroups[0]).toMatchObject({ contextKey: 'p1', count: 2 });
   });
 
-  it('a contextless row lands in the public:{type} scope with no org signal', () => {
-    const plan = computeBatchUnifiedDeltas([mockEvent('create', { id: 'i1' }, null, null)], h);
-    expect(plan.seqGroups).toHaveLength(1);
-    expect(plan.seqGroups[0]).toMatchObject({ contextKey: 'public:item', orgSignal: null });
+  it('a contextless row fails the batch loudly instead of inventing a scope', () => {
+    expect(() => computeBatchUnifiedDeltas([mockEvent('create', { id: 'i1' }, null, null)], h)).toThrow(/organization ancestor/);
   });
 });
 

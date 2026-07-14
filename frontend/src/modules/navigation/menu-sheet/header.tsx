@@ -41,7 +41,7 @@ export const MenuSheetHeader = () => {
           draggable={false}
           className="focus-effect block rounded-md transition-transform hover:scale-105 active:translate-y-[.05rem]"
         >
-          <Logo height={34} className="mx-1" />
+          <Logo className="mx-1 h-8" />
         </Link>
 
         <div className="group/actions flex items-center gap-2">

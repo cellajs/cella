@@ -1,5 +1,5 @@
 import { t } from 'i18next';
-import { AlertTriangleIcon, ClockAlertIcon, CloudOffIcon, ConstructionIcon } from 'lucide-react';
+import { ClockAlertIcon, CloudOffIcon, ConstructionIcon, TriangleAlertIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Trans } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -53,7 +53,7 @@ const downAlertConfig = {
     variant: 'destructive',
   },
   auth_unavailable: {
-    icon: AlertTriangleIcon,
+    icon: TriangleAlertIcon,
     getTitle: () => <Trans t={t} className="font-bold" i18nKey="c:auth_unavailable" />,
     getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="c:auth_unavailable.text" />,
     variant: 'plain',

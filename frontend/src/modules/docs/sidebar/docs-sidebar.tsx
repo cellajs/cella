@@ -62,20 +62,20 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
           className="focus-effect flex h-8 items-center rounded-md px-1 font-medium transition-opacity hover:opacity-70"
           onClick={closeSheet}
         >
-          {docsConfig.title}
+          Docs
         </Link>
         <div className="ml-auto flex items-center gap-1">
           <Button
             ref={searchTriggerRef}
             variant="ghost"
             size="icon"
-            className="size-8"
+            className="size-9"
             aria-label={t('c:search')}
             onClick={() => openDocsSearch(searchTriggerRef)}
           >
-            <SearchIcon size={20} strokeWidth={appConfig.theme.strokeWidth} />
+            <SearchIcon className="icon-lg" />
           </Button>
-          <UserTheme buttonClassName="size-8" />
+          <UserTheme buttonClassName="size-9" />
         </div>
       </div>
 

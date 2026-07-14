@@ -6,7 +6,7 @@ This document explains how to add a new **entity type** to the app. It is the co
 - [`shared/config/config.default.ts`](../shared/config/config.default.ts) — the derived entity metadata arrays
 - [`shared/config/permissions-config.ts`](../shared/config/permissions-config.ts) — access policies per entity
 
-Read [ARCHITECTURE.md](./ARCHITECTURE.md) first for the big picture. This guide is worked around the **`task`** entity — the most complete product entity in the codebase — and uses a hypothetical new product entity, **`note`** (parented to `project`), as the running example.
+Read [Architecture](./ARCHITECTURE.md) first for the big picture. This guide is worked around the **`task`** entity — the most complete product entity in the codebase — and uses a hypothetical new product entity, **`note`** (parented to `project`), as the running example.
 
 ## The core idea: config-driven, not switch-driven
 
@@ -17,7 +17,7 @@ So adding an entity is mostly: **declare it in config, write its table + module,
 - 🟢 **Automatic** — derived from config/hierarchy or resolved from a registry. You add nothing; it "just works" once the entity is declared.
 - 🔴 **Manual** — you write or edit this.
 
-Two entity kinds exist (see [ARCHITECTURE.md](./ARCHITECTURE.md) § Data modeling):
+Two entity kinds exist (see [Architecture](./ARCHITECTURE.md) § Data modeling):
 
 - **Context entity** (`organization`, `workspace`, `project`) — has memberships and roles; access via app-layer guards; **no RLS, no `seq`/`stx`**.
 - **Product entity** (`task`, `label`, `attachment`) — user-generated content, no memberships; **RLS-protected**, participates in the sync engine (`seq`/`stx`).
@@ -175,11 +175,11 @@ export const noteUpdateStxBodySchema = noteContract.updateBodySchema;
 export const noteCreateManyStxBodySchema = noteContract.createItemSchema.array().min(1).max(50);
 ```
 
-This is the single registration point for the schema-evolution lens seams (`normalizeCreateItem`, `resolveUpdateOps` — HLC/AWSet merge). **It is enforced by CI** (`lens:check`, "contract completeness"): every configured product/context entity must call its contract factory, or the build fails. See [SCHEMA_EVOLUTION.md](./SCHEMA_EVOLUTION.md) and the lens-seam note in [AGENTS.md](./AGENTS.md).
+This is the single registration point for the schema-evolution lens seams (`normalizeCreateItem`, `resolveUpdateOps` — HLC/AWSet merge). **It is enforced by CI** (`lens:check`, "contract completeness"): every configured product/context entity must call its contract factory, or the build fails. See [Schema evolution](./SCHEMA_EVOLUTION.md) and the lens-seam note in [Agent guidelines](./AGENTS.md).
 
 ### Step 7 — 🔴 Write the module (routes, handlers, operations)
 
-The canonical file set for a product entity module (`backend/src/modules/note/`), following `task`:
+The canonical file set for a product entity module at `backend/src/modules/note/`, following `task`:
 
 | File | Role |
 |---|---|
@@ -226,7 +226,7 @@ Order matters: param-segment mounts (`/:tenantId/...`) must come after static mo
 
 ### Step 9 — 🔴 Support `seqCursor` delta sync in the list operation
 
-For the entity to participate in catch-up sync, its list operation (`operations/get-notes.ts`) must, when `seqCursor` is present:
+For the entity to participate in catch-up sync, its list operation `get-notes.ts` must, when `seqCursor` is present:
 
 1. Extend `paginationQuerySchema` so `seqCursor` is accepted (in `note-schema.ts`).
 2. Order by `asc(<table>.seq)` with an `asc(id)` tiebreak.
@@ -244,7 +244,7 @@ Once the table is in `entityTables` (Step 5) and the type is in `productEntityTy
 - **SSE dispatch** — [`entities-listeners.ts`](../backend/src/modules/entities/entities-listeners.ts) loops `appConfig.productEntityTypes` to register `activityBus` listeners; there is one generic `/entities/app/stream`, no per-entity endpoint.
 - **Permission-filtered fan-out** — the dispatcher derives ancestor context ids from the hierarchy and runs `checkPermission('read', ...)` per subscriber.
 
-See [SYNC_ENGINE.md](./SYNC_ENGINE.md) for the full pipeline.
+See [Sync engine](./SYNC_ENGINE.md) for the full pipeline.
 
 ### Step 10 — 🔴 Generate & apply migrations
 
@@ -255,7 +255,7 @@ pnpm generate                      # drizzle-kit diffs *-db.ts → backend/drizz
 pnpm --filter backend migrate      # apply
 ```
 
-`pnpm generate` runs an ordered set of migration scripts (`backend/scripts/migrations/*.migration.ts`): `00-drizzle` (table diff) plus `10-cdc`, `10-rls`, `10-immutability`, etc. — the latter regenerate their SQL from `entityTables`/`appConfig`, which is why Steps 4–5 are all it takes to get RLS, CDC, and immutability. Optionally add a seed at `backend/scripts/seeds/NN-note.seed.ts` (a product insert must set `stx: createServerStx()` — `stx` is `NOT NULL`).
+`pnpm generate` runs an ordered set of migration scripts in `backend/scripts/migrations/`: `00-drizzle` (table diff) plus `10-cdc`, `10-rls`, `10-immutability`, etc. — the latter regenerate their SQL from `entityTables`/`appConfig`, which is why Steps 4–5 are all it takes to get RLS, CDC, and immutability. Optionally add a seed at `backend/scripts/seeds/NN-note.seed.ts` (a product insert must set `stx: createServerStx()` — `stx` is `NOT NULL`).
 
 ### Step 11 — 🔴 Frontend module & self-registration
 
@@ -299,7 +299,7 @@ A context entity (has memberships + roles) differs from the product recipe:
 - **Step 4**: use `...contextEntityColumns('name')` (adds `slug`, thumbnails, etc.). Add a `unique(tenantId, id)` compound constraint so the table can be a composite-FK target. **No `tenantSelectPolicy`/`writeThroughPolicies`, no `seq`/`stx`** — context entities have no RLS and no sync layer (offline read only; access is guard-enforced).
 - **Frontend**: register in `contextEntityListQueriesByType` and add a `menu-config.tsx` section (+ `menuStructure` in `config.default.ts`) rather than `buildEntitySyncQueries`.
 
-Context entities do **not** go through the CDC/SSE product pipeline or the wire-schema factory in the same way — see [ARCHITECTURE.md](./ARCHITECTURE.md) for how context entities sync.
+Context entities do **not** go through the CDC/SSE product pipeline or the wire-schema factory in the same way — see [Architecture](./ARCHITECTURE.md) for how context entities sync.
 
 ---
 
@@ -330,19 +330,19 @@ Context entities do **not** go through the CDC/SSE product pipeline or the wire-
 
 **🟢 Automatic — derived from config/registries, no code:**
 
-- Derived TS unions (`shared/types.ts`) & config-consistency checks (`config-validation.ts`)
+- Derived TS unions in `shared/types.ts` & config-consistency checks
 - RLS grants, CDC publication + `REPLICA IDENTITY FULL`, immutability triggers, `seq` stamping (all iterate `entityTables`/`appConfig`)
 - Backend SSE listener registration + permission-filtered fan-out
 - SDK types/client/Zod (regenerated from OpenAPI)
 - Frontend query-key scopes, SSE dispatch, offline persistence, cache migration, sync priority, catch-up, unseen counts (once opted in)
 
-**Verify** with `pnpm check` (types + OpenAPI/SDK regen + lint) and `pnpm test`. See [QUICKSTART.md](./QUICKSTART.md) for the dev loop and [TESTING.md](./TESTING.md) for tests.
+**Verify** with `pnpm check` (types + OpenAPI/SDK regen + lint) and `pnpm test`. See [Quickstart](./QUICKSTART.md) for the dev loop and [Testing](./TESTING.md) for tests.
 
 ---
 
 ## Related docs
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — entity kinds, hierarchy builder, guard chain, data modeling
-- [SYNC_ENGINE.md](./SYNC_ENGINE.md) — the CDC → SSE pipeline product entities plug into
-- [SCHEMA_EVOLUTION.md](./SCHEMA_EVOLUTION.md) — the wire/lens system (Step 6) and evolving an entity's shape later
-- [AGENTS.md](./AGENTS.md) — routing, guards, permissions, and coding conventions
+- [Architecture](./ARCHITECTURE.md) — entity kinds, hierarchy builder, guard chain, data modeling
+- [Sync engine](./SYNC_ENGINE.md) — the CDC → SSE pipeline product entities plug into
+- [Schema evolution](./SCHEMA_EVOLUTION.md) — the wire/lens system (Step 6) and evolving an entity's shape later
+- [Agent guidelines](./AGENTS.md) — routing, guards, permissions, and coding conventions
