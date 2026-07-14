@@ -161,7 +161,9 @@ export const config = {
    ******************************************************************************/
 
   apiVersion: 'v1',
-  cookieVersion: 'v1',
+  // v2: same-origin migration — clean break from the Domain-scoped v1 cookies
+  // (now __Host- prefixed, host-locked). Stale v1 cookies age out unread.
+  cookieVersion: 'v2',
   clientCacheVersion: 'v1',
 
   /******************************************************************************

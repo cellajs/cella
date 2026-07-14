@@ -55,13 +55,16 @@ export const handleOAuthInitiation = async (
   nonce?: string,
 ) => {
   const { type, redirectAfter } = ctx.req.valid('query');
-  const cookieContent = { codeVerifier, nonce, type, redirectAfter };
+  const cookieContent: OAuthCookiePayload = { codeVerifier, nonce, type, redirectAfter };
 
   if (type === 'connect') {
     try {
       const { sessionToken } = await getParsedSessionCookie(ctx);
       const { user } = await validateSession(sessionToken);
       if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
+      // Pin the connecting user in the signed state payload: the session cookie
+      // (SameSite=Strict) is absent on the provider's cross-site callback.
+      cookieContent.connectUserId = user.id;
     } catch (err) {
       if (err instanceof AppError) {
         throw new AppError(err.status, err.type as ErrorKey, err.severity, {

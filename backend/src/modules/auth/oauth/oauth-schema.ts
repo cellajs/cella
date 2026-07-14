@@ -13,6 +13,10 @@ export const oauthCookiePayloadSchema = z.object({
   redirectAfter: z.string().optional(),
   codeVerifier: z.string().optional(),
   nonce: z.string().optional(),
+  // Connect flow: the connecting user, pinned at initiation. The callback can't
+  // read the session cookie (SameSite=Strict is not sent on the provider's
+  // cross-site callback navigation), so it trusts this signed state payload.
+  connectUserId: z.string().optional(),
 });
 
 export type OAuthCookiePayload = z.infer<typeof oauthCookiePayloadSchema>;

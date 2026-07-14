@@ -6,6 +6,7 @@ import { buildExtensionEntries } from '#/core/openapi-extensions';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
 import { normalizeOpenApiDocument, validateOpenApiDocument } from '#/core/openapi-validation';
 import { getExtensionValueMetadata } from '#/core/x-middleware';
+import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { errorResponses, productEntityBaseSchema, registerAllErrorResponses } from '#/schemas';
 import { contextEntityBaseSchema } from '#/schemas/entity-base';
@@ -47,7 +48,7 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   registry.registerComponent('securitySchemes', 'cookieAuth', {
     type: 'apiKey',
     in: 'cookie',
-    name: `${appConfig.slug}-session-${appConfig.cookieVersion}`,
+    name: authCookieName('session'),
     description:
       "Authentication cookie. Copy cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
