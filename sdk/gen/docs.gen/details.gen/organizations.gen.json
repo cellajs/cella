@@ -205,8 +205,18 @@
                             "required": true,
                             "properties": {
                               "attachment": {
-                                "type": ["number", "null"],
-                                "required": true
+                                "type": "object",
+                                "required": true,
+                                "properties": {
+                                  "created": {
+                                    "type": ["number", "null"],
+                                    "required": true
+                                  },
+                                  "updated": {
+                                    "type": ["number", "null"],
+                                    "required": true
+                                  }
+                                }
                               }
                             }
                           }
@@ -306,7 +316,9 @@
                     "total": 101
                   },
                   "entities": { "attachment": 294 },
-                  "activity": { "attachment": 1734375421781 }
+                  "activity": {
+                    "attachment": { "created": 1734375421781, "updated": 1734852237831 }
+                  }
                 }
               }
             },
@@ -356,7 +368,9 @@
                     "total": 144
                   },
                   "entities": { "attachment": 321 },
-                  "activity": { "attachment": 1733935270933 }
+                  "activity": {
+                    "attachment": { "created": 1733935270933, "updated": null }
+                  }
                 }
               }
             }
@@ -741,8 +755,18 @@
                             "required": true,
                             "properties": {
                               "attachment": {
-                                "type": ["number", "null"],
-                                "required": true
+                                "type": "object",
+                                "required": true,
+                                "properties": {
+                                  "created": {
+                                    "type": ["number", "null"],
+                                    "required": true
+                                  },
+                                  "updated": {
+                                    "type": ["number", "null"],
+                                    "required": true
+                                  }
+                                }
                               }
                             }
                           }
@@ -831,7 +855,9 @@
                     "total": 50
                   },
                   "entities": { "attachment": 188 },
-                  "activity": { "attachment": 1733370282291 }
+                  "activity": {
+                    "attachment": { "created": 1733370282291, "updated": 1735128143248 }
+                  }
                 }
               }
             },
@@ -881,7 +907,9 @@
                     "total": 157
                   },
                   "entities": { "attachment": 1 },
-                  "activity": { "attachment": 1733726254960 }
+                  "activity": {
+                    "attachment": { "created": 1733726254960, "updated": null }
+                  }
                 }
               }
             }
@@ -1166,8 +1194,18 @@
                       "required": true,
                       "properties": {
                         "attachment": {
-                          "type": ["number", "null"],
-                          "required": true
+                          "type": "object",
+                          "required": true,
+                          "properties": {
+                            "created": {
+                              "type": ["number", "null"],
+                              "required": true
+                            },
+                            "updated": {
+                              "type": ["number", "null"],
+                              "required": true
+                            }
+                          }
                         }
                       }
                     }
@@ -1250,7 +1288,9 @@
                 "total": 93
               },
               "entities": { "attachment": 178 },
-              "activity": { "attachment": 1734107615547 }
+              "activity": {
+                "attachment": { "created": 1734107615547, "updated": 1734969019663 }
+              }
             }
           }
         }
@@ -1517,8 +1557,18 @@
                       "required": true,
                       "properties": {
                         "attachment": {
-                          "type": ["number", "null"],
-                          "required": true
+                          "type": "object",
+                          "required": true,
+                          "properties": {
+                            "created": {
+                              "type": ["number", "null"],
+                              "required": true
+                            },
+                            "updated": {
+                              "type": ["number", "null"],
+                              "required": true
+                            }
+                          }
                         }
                       }
                     }
@@ -1601,7 +1651,9 @@
                 "total": 93
               },
               "entities": { "attachment": 178 },
-              "activity": { "attachment": 1734107615547 }
+              "activity": {
+                "attachment": { "created": 1734107615547, "updated": 1734969019663 }
+              }
             }
           }
         }

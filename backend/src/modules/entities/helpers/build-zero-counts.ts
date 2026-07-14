@@ -11,10 +11,10 @@ import { type ContextEntityType, hierarchy, recordFromKeys, roles } from 'shared
 export const buildZeroCounts = (entityType: ContextEntityType, creatorRole = 'admin') => {
   const descendants = hierarchy.getOrderedDescendants(entityType);
   const entities = recordFromKeys(descendants, () => 0);
-  // Activity stamps stay null until the first post lands in the entity's stream
+  // Activity stamps stay null until the first post (created) / first content update (updated)
   const activity = recordFromKeys(
     descendants.filter((descendant) => hierarchy.isProduct(descendant)),
-    () => null as number | null,
+    () => ({ created: null, updated: null }) as { created: number | null; updated: number | null },
   );
   const membership = {
     ...recordFromKeys(roles.all, (role) => (role === creatorRole ? 1 : 0)),

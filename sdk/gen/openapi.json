@@ -1791,7 +1791,16 @@
                     "type": "object",
                     "properties": {
                       "attachment": {
-                        "type": ["number", "null"]
+                        "type": "object",
+                        "properties": {
+                          "created": {
+                            "type": ["number", "null"]
+                          },
+                          "updated": {
+                            "type": ["number", "null"]
+                          }
+                        },
+                        "required": ["created", "updated"]
                       }
                     },
                     "required": ["attachment"]
@@ -1885,7 +1894,10 @@
                 "attachment": 178
               },
               "activity": {
-                "attachment": 1734107615547
+                "attachment": {
+                  "created": 1734107615547,
+                  "updated": 1734969019663
+                }
               }
             }
           }
@@ -7025,7 +7037,16 @@
                                         "type": "object",
                                         "properties": {
                                           "attachment": {
-                                            "type": ["number", "null"]
+                                            "type": "object",
+                                            "properties": {
+                                              "created": {
+                                                "type": ["number", "null"]
+                                              },
+                                              "updated": {
+                                                "type": ["number", "null"]
+                                              }
+                                            },
+                                            "required": ["created", "updated"]
                                           }
                                         },
                                         "required": ["attachment"]
@@ -7095,7 +7116,10 @@
                                 "attachment": 178
                               },
                               "activity": {
-                                "attachment": 1734107615547
+                                "attachment": {
+                                  "created": 1734107615547,
+                                  "updated": 1734969019663
+                                }
                               }
                             }
                           }
@@ -7174,7 +7198,10 @@
                             "attachment": 294
                           },
                           "activity": {
-                            "attachment": 1734375421781
+                            "attachment": {
+                              "created": 1734375421781,
+                              "updated": 1734852237831
+                            }
                           }
                         }
                       }
@@ -7228,7 +7255,10 @@
                             "attachment": 321
                           },
                           "activity": {
-                            "attachment": 1733935270933
+                            "attachment": {
+                              "created": 1733935270933,
+                              "updated": null
+                            }
                           }
                         }
                       }
@@ -7535,7 +7565,10 @@
                             "attachment": 188
                           },
                           "activity": {
-                            "attachment": 1733370282291
+                            "attachment": {
+                              "created": 1733370282291,
+                              "updated": 1735128143248
+                            }
                           }
                         }
                       }
@@ -7589,7 +7622,10 @@
                             "attachment": 1
                           },
                           "activity": {
-                            "attachment": 1733726254960
+                            "attachment": {
+                              "created": 1733726254960,
+                              "updated": null
+                            }
                           }
                         }
                       }
@@ -7736,7 +7772,10 @@
                         "attachment": 178
                       },
                       "activity": {
-                        "attachment": 1734107615547
+                        "attachment": {
+                          "created": 1734107615547,
+                          "updated": 1734969019663
+                        }
                       }
                     }
                   }
@@ -7941,7 +7980,10 @@
                         "attachment": 178
                       },
                       "activity": {
-                        "attachment": 1734107615547
+                        "attachment": {
+                          "created": 1734107615547,
+                          "updated": 1734969019663
+                        }
                       }
                     }
                   }

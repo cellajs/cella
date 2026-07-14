@@ -1204,8 +1204,18 @@
                   "required": true,
                   "properties": {
                     "attachment": {
-                      "type": ["number", "null"],
-                      "required": true
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "created": {
+                          "type": ["number", "null"],
+                          "required": true
+                        },
+                        "updated": {
+                          "type": ["number", "null"],
+                          "required": true
+                        }
+                      }
                     }
                   }
                 }
@@ -1293,7 +1303,9 @@
             "total": 93
           },
           "entities": { "attachment": 178 },
-          "activity": { "attachment": 1734107615547 }
+          "activity": {
+            "attachment": { "created": 1734107615547, "updated": 1734969019663 }
+          }
         }
       }
     }

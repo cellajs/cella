@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
+// THis is only used once? We have aother patterns to replace the last use case or perhaps we can look at Base UI for inspiration how they handle this in their code or maybe we should simply use base ui in a better way? pleae research options
 /**
  * Hook to measure the size of an element.
  *

@@ -5,11 +5,12 @@ import { MOCK_REF_DATE } from './mock-timestamps';
 
 /**
  * Type for dynamically generated per-stream activity stamps in mocks.
- * One epoch-ms timestamp (or null when never posted) per product entity type,
- * matching the `activity` object in contextEntityIncludedSchema counts.
+ * Epoch-ms timestamps per product entity type: latest post (created, null when never
+ * posted) and latest content update (updated, null when never updated), matching the
+ * `activity` object in contextEntityIncludedSchema counts.
  */
 export type MockActivityStamps = {
-  [K in ProductEntityType]: number | null;
+  [K in ProductEntityType]: { created: number | null; updated: number | null };
 };
 
 /**
@@ -19,10 +20,14 @@ export type MockActivityStamps = {
 export const generateMockActivityStamps = (key: string): MockActivityStamps => {
   const generator = (): MockActivityStamps =>
     Object.fromEntries(
-      appConfig.productEntityTypes.map((entityType) => [
-        entityType,
-        faker.date.recent({ days: 30, refDate: MOCK_REF_DATE }).getTime(),
-      ]),
+      appConfig.productEntityTypes.map((entityType) => {
+        const created = faker.date.recent({ days: 30, refDate: MOCK_REF_DATE });
+        // Roughly a third of streams were never updated after the last post
+        const updated = faker.datatype.boolean({ probability: 2 / 3 })
+          ? faker.date.between({ from: created, to: MOCK_REF_DATE }).getTime()
+          : null;
+        return [entityType, { created: created.getTime(), updated }];
+      }),
     ) as MockActivityStamps;
 
   return withFakerSeed(key, generator);

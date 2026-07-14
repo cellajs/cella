@@ -5,9 +5,6 @@ import { Themer } from '~/modules/common/themer';
 import './styling/tailwind.css';
 import '~/lib/dayjs';
 import '~/lib/i18n';
-// Observability: eager init so early-load errors are traced/captured.
-// Exactly one tracer provider registers per env: the Maple SDK (staging/prod,
-// via ~/lib/maple below) or the dev-only local tracer in ~/lib/otel.
 import '~/lib/otel';
 import { client } from 'sdk/client.gen';
 import { appConfig } from 'shared';
@@ -21,10 +18,6 @@ import { initFaviconBadge } from '~/utils/init-favicon-badge';
 // Configure the SDK client with runtime settings (credentials, error handling, etc.)
 client.setConfig(createClientConfig());
 
-/**
- * Check if debug mode is enabled via VITE_DEBUG_MODE environment variable.
- * Use this for conditional debug UI, logging, and devtools.
- */
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
 

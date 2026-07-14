@@ -115,7 +115,7 @@ export interface AttachmentBlob {
 }
 
 /**
- * Download queue - tracks which attachments to fetch for offline.
+ * Download queue that tracks which attachments to fetch for offline.
  * Separate from blob storage for clean queue management.
  */
 export interface DownloadQueueEntry {

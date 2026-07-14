@@ -143,7 +143,7 @@ describe('computeBatchUnifiedDeltas', () => {
     // (rows carry no createdAt here, so the stamp falls back to Date.now())
     expect(plan.countDeltasByContextKey.get('org-1')).toEqual({
       'e:attachment': 5,
-      'last:attachment': expect.any(Number),
+      'li:attachment': expect.any(Number),
     });
   });
 
@@ -210,16 +210,17 @@ describe('computeBatchUnifiedDeltas', () => {
   });
 });
 
-// ── Activity stamps (last:{type}) ────────────────────────────────────────────
-// New product posts stamp `last:<type>` (epoch ms of created_at) at their home
-// context only. The signal only moves forward on true INSERTs: updates, deletes,
-// restores and draft rows never stamp.
+// ── Activity stamps (li:{type} / lu:{type}) ──────────────────────────────────
+// New product posts stamp `li:<type>` (epoch ms of created_at) and genuine content
+// updates stamp `lu:<type>` (epoch ms of updated_at), both at their home context
+// only. The signals only move forward: deletes, soft-deletes, restores and draft
+// rows never stamp.
 
-describe('activity stamps (last:{type})', () => {
+describe('activity stamps (li:{type} / lu:{type})', () => {
   const createdAt = '2026-07-01T10:00:00.000Z';
   const createdAtMs = Date.parse(createdAt);
 
-  it('attachment create stamps last:attachment with the row createdAt at the home key', () => {
+  it('attachment create stamps li:attachment with the row createdAt at the home key', () => {
     const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),
@@ -230,7 +231,7 @@ describe('activity stamps (last:{type})', () => {
 
     expect(plan.countDeltasByContextKey.get('org-1')).toEqual({
       'e:attachment': 1,
-      'last:attachment': createdAtMs,
+      'li:attachment': createdAtMs,
     });
   });
 
@@ -251,7 +252,7 @@ describe('activity stamps (last:{type})', () => {
 
     expect(plan.countDeltasByContextKey.get('org-1')).toEqual({
       'e:attachment': 2,
-      'last:attachment': Date.parse(laterCreatedAt),
+      'li:attachment': Date.parse(laterCreatedAt),
     });
   });
 
@@ -266,7 +267,7 @@ describe('activity stamps (last:{type})', () => {
     ]);
     const after = Date.now();
 
-    const stamp = plan.countDeltasByContextKey.get('org-1')?.['last:attachment'];
+    const stamp = plan.countDeltasByContextKey.get('org-1')?.['li:attachment'];
     expect(stamp).toBeGreaterThanOrEqual(before);
     expect(stamp).toBeLessThanOrEqual(after);
   });
@@ -283,16 +284,41 @@ describe('activity stamps (last:{type})', () => {
     expect(plan.countDeltasByContextKey.get('org-1')).toEqual({ 'e:attachment': 1 });
   });
 
-  it('updates and soft-deletes never stamp (signal only moves forward on new posts)', () => {
+  it('genuine update stamps lu:attachment with the row updatedAt, not li:', () => {
+    const updatedAt = '2026-07-05T10:00:00.000Z';
     const plan = computeBatchUnifiedDeltas([
-      // Plain update (no ancestor change)
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, updatedAt, deletedAt: null },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, deletedAt: null },
+      }),
+    ]);
+
+    expect(plan.countDeltasByContextKey.get('org-1')).toEqual({
+      'lu:attachment': Date.parse(updatedAt),
+    });
+  });
+
+  it('update with missing updatedAt falls back to Date.now()', () => {
+    const before = Date.now();
+    const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),
         action: 'update',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, deletedAt: null },
         oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, deletedAt: null },
       }),
-      // Soft-delete transition (remapped to a delete internally)
+    ]);
+    const after = Date.now();
+
+    const stamp = plan.countDeltasByContextKey.get('org-1')?.['lu:attachment'];
+    expect(stamp).toBeGreaterThanOrEqual(before);
+    expect(stamp).toBeLessThanOrEqual(after);
+  });
+
+  it('soft-deletes never stamp (remapped to a delete internally)', () => {
+    const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),
         action: 'update',

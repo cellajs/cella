@@ -4,7 +4,7 @@ import type { ActivityAction, AncestorSource } from 'shared';
 import type { PendingEvent, TableMeta } from '../types';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData } from '../types';
-import { type CountsHierarchy, getCountDeltas } from './update-counts';
+import { type CountsHierarchy, getCountDeltas, isActivityStampKey } from './update-counts';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,14 +54,14 @@ export function resolveContextKey(
 
 /**
  * Merge deltas into an existing map entry, summing values for matching keys.
- * `last:` keys are epoch-ms activity stamps, not deltas: collisions keep the max
+ * `li:`/`lu:` keys are epoch-ms activity stamps, not deltas: collisions keep the max
  * (two posts in one batch must not sum their timestamps).
  */
 function mergeDelta(map: Map<string, Record<string, number>>, contextKey: string, deltas: Record<string, number>): void {
   const existing = map.get(contextKey);
   if (existing) {
     for (const [k, v] of Object.entries(deltas)) {
-      existing[k] = k.startsWith('last:') ? Math.max(existing[k] ?? 0, v) : (existing[k] ?? 0) + v;
+      existing[k] = isActivityStampKey(k) ? Math.max(existing[k] ?? 0, v) : (existing[k] ?? 0) + v;
     }
   } else {
     map.set(contextKey, { ...deltas });

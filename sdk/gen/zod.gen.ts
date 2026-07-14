@@ -373,7 +373,10 @@ export const zOrganization = z.object({
           attachment: z.number(),
         }),
         activity: z.object({
-          attachment: z.number().nullable(),
+          attachment: z.object({
+            created: z.number().nullable(),
+            updated: z.number().nullable(),
+          }),
         }),
       })
       .optional(),
@@ -1253,7 +1256,10 @@ export const zCreateOrganizationsResponse = z.object({
                   attachment: z.number(),
                 }),
                 activity: z.object({
-                  attachment: z.number().nullable(),
+                  attachment: z.object({
+                    created: z.number().nullable(),
+                    updated: z.number().nullable(),
+                  }),
                 }),
               })
               .optional(),

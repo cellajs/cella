@@ -6,11 +6,6 @@ import type { BuildEntitySyncQueriesParams, ContextEntityListQueryMap, EntitySyn
 
 /**
  * Maps context entity types to their list query options (used for menu generation).
- *
- * NOTE: Factories are wrapped in arrow functions instead of referenced directly. This defers
- * reading the (ESM live) binding until call time, avoiding a "Cannot access X before initialization"
- * TDZ error when this module is evaluated mid-cycle (e.g. during Vite HMR) before the entity query
- * module has finished initializing. See the circular import chain via `~/query/realtime`.
  */
 export const contextEntityListQueriesByType = {
   organization: (params) => organizationsListQueryOptions(params),

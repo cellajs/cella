@@ -134,19 +134,21 @@ describe('sumInto', () => {
     expect(target).toEqual({ 's:task': 2, 'e:task': 3, 'm:admin': 1 });
   });
 
-  it('max-merges last: keys instead of summing (timestamps must not add up)', () => {
-    const target = { 'last:task': 1_751_000_000_000 };
-    // Older stamp loses
-    sumInto(target, { 'last:task': 1_750_000_000_000 });
-    expect(target['last:task']).toBe(1_751_000_000_000);
-    // Newer stamp wins
-    sumInto(target, { 'last:task': 1_752_000_000_000 });
-    expect(target['last:task']).toBe(1_752_000_000_000);
+  it('max-merges li:/lu: keys instead of summing (timestamps must not add up)', () => {
+    const target = { 'li:task': 1_751_000_000_000, 'lu:task': 1_751_000_000_000 };
+    // Older stamps lose
+    sumInto(target, { 'li:task': 1_750_000_000_000, 'lu:task': 1_750_000_000_000 });
+    expect(target['li:task']).toBe(1_751_000_000_000);
+    expect(target['lu:task']).toBe(1_751_000_000_000);
+    // Newer stamps win
+    sumInto(target, { 'li:task': 1_752_000_000_000, 'lu:task': 1_753_000_000_000 });
+    expect(target['li:task']).toBe(1_752_000_000_000);
+    expect(target['lu:task']).toBe(1_753_000_000_000);
   });
 
-  it('last: keys pass through unchanged when absent from target', () => {
+  it('li:/lu: keys pass through unchanged when absent from target', () => {
     const target: Record<string, number> = { 's:task': 1 };
-    sumInto(target, { 'last:task': 1_751_000_000_000, 'e:task': 1 });
-    expect(target).toEqual({ 's:task': 1, 'last:task': 1_751_000_000_000, 'e:task': 1 });
+    sumInto(target, { 'li:task': 1_751_000_000_000, 'lu:task': 1_751_500_000_000, 'e:task': 1 });
+    expect(target).toEqual({ 's:task': 1, 'li:task': 1_751_000_000_000, 'lu:task': 1_751_500_000_000, 'e:task': 1 });
   });
 });

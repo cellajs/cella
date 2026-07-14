@@ -12,9 +12,14 @@ export const contextEntityIncludedSchema = (entityType: ContextEntityType) => {
   const descendants = hierarchy.getOrderedDescendants(entityType);
   const entityCountSchema = z.object(recordFromKeys(descendants, () => z.number()));
 
-  // Per-stream activity stamps: epoch ms of the latest post per product descendant (null when never posted)
+  // Per-stream activity stamps per product descendant: epoch ms of the latest post
+  // (created, null when never posted) and latest content update (updated, null when never updated)
   const productDescendants = descendants.filter((descendant) => hierarchy.isProduct(descendant));
-  const activitySchema = z.object(recordFromKeys(productDescendants, () => z.number().nullable()));
+  const activitySchema = z.object(
+    recordFromKeys(productDescendants, () =>
+      z.object({ created: z.number().nullable(), updated: z.number().nullable() }),
+    ),
+  );
 
   const countsSchema = z.object({
     membership: membershipCountSchema,
