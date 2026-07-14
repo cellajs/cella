@@ -94,6 +94,33 @@ export async function ensureReplicationSlot(): Promise<void> {
   }
 }
 
+/** Postgres `object_in_use`: subscribe() lost the race for an actively held slot. */
+const PG_OBJECT_IN_USE = '55006';
+
+/**
+ * Best-effort lookup of the connection currently holding the replication slot.
+ *
+ * "replication slot is active for PID N" alone is hard to act on: the PID is a
+ * Postgres walsender, not a host process. The holder's application_name and
+ * backend_start usually identify the competing worker at a glance — the old
+ * worker of a rolling deploy, or a stray local process that never shut down.
+ * Returns null when the slot is free or the lookup fails; diagnostics must
+ * never break the retry loop.
+ */
+async function describeSlotHolder(): Promise<Record<string, unknown> | null> {
+  try {
+    const result = await cdcDb.execute(sql`
+      SELECT a.pid, a.application_name, a.client_addr::text AS client_addr, a.backend_start::text AS backend_start
+      FROM pg_replication_slots s
+      JOIN pg_stat_activity a ON a.pid = s.active_pid
+      WHERE s.slot_name = ${CDC_SLOT_NAME}
+    `);
+    return result.rows[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // ================================
 // Backpressure
 // ================================
@@ -148,7 +175,11 @@ export async function subscribeWithReconnect(service: LogicalReplicationService,
       const inHandoffWindow = attempt <= slotTakeover.maxAttempts;
       const retryDelayMs = inHandoffWindow ? slotTakeover.retryDelayMs : reconnection.retryDelayMs;
       const takeover = inHandoffWindow ? ` (slot-takeover ${attempt}/${slotTakeover.maxAttempts})` : '';
-      log.warn(`Subscription error, retrying in ${retryDelayMs / 1000}s${takeover}...`, { err: error });
+      const slotHolder = (error as { code?: string } | null)?.code === PG_OBJECT_IN_USE ? await describeSlotHolder() : null;
+      log.warn(`Subscription error, retrying in ${retryDelayMs / 1000}s${takeover}...`, {
+        err: error,
+        ...(slotHolder && { slotHolder }),
+      });
       replicationState.markStopped();
       await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
     }
