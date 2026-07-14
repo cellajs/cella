@@ -75,6 +75,18 @@ if (spawnSync('pulumi', ['version'], { stdio: 'ignore' }).status !== 0) {
 
 const context = await loadContext()
 
+// Fail on an apex-hosted frontend before any prompt or provisioning step: the
+// LB module cannot serve the app at the zone apex (deriveInfra throws the same
+// error deep inside `pulumi up`, but by then half a deploy has run).
+{
+  const { frontendApexIssue } = await import('../lib/naming')
+  const apexIssue = frontendApexIssue(context.appConfig)
+  if (apexIssue) {
+    console.error(`\u2717 ${apexIssue}`)
+    process.exit(1)
+  }
+}
+
 console.info(`State: ${context.state}${context.state === 'fresh' ? '' : ` (Pulumi.${context.environment}.yaml)`}\n`)
 
 const deferredSince = detectComputeDeferred(context.stackYaml)

@@ -252,6 +252,11 @@ jobs:
         env:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          # Enables the key-preferred-project preflight: the state bucket must
+          # live in the app project or the CI key cannot reach it (S3 access
+          # follows the key's preferred project, not IAM).
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          APP_MODE: ${{ needs.setup.outputs.environment }}
         run: pnpm --filter infra ensure-state-bucket
 
       - name: Login to S3 state backend
@@ -306,6 +311,22 @@ jobs:
           REGISTRY="rg.$REGION.scw.cloud"
           echo "$SCW_SECRET_KEY" | docker login "$REGISTRY" -u nologin --password-stdin >/dev/null
           pnpm --filter infra wait-for-images --registry "$REGISTRY" --ns "$REGISTRY_NS" --tag "$TAG" --build-images-json "$BUILD_IMAGES_MATRIX"
+
+      # Level-triggered cert repair: Scaleway never retries a Let's Encrypt
+      # cert whose issuance errored (e.g. ACME validation raced DNS propagation),
+      # and it wedges every later deploy at the frontend attach. Delete such
+      # certs (state + live) so the `pulumi up` below recreates them behind the
+      # DNS-propagation gate (resources/dns-cert-gates.ts). No-op when healthy.
+      - name: Repair errored LB certificates
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          STACK: ${{ needs.setup.outputs.pulumi_stack }}
+          APP_MODE: ${{ needs.setup.outputs.environment }}
+        run: pnpm --filter infra repair-certs --stack "$STACK"
 
       - name: Pulumi up (base infra)
         working-directory: infra

@@ -16,6 +16,7 @@ export default defineConfig({
   // Top-down interaction with forks.
   forks: [
     { name: 'raak', localPath: '../raak', remoteUrl: 'git@github.com:cellajs/raak.git', pullBranch: 'main' },
+    { name: 'projectcampus', localPath: '../projectcampus', remoteUrl: 'git@github.com:cellajs/projectcampus.git', pullBranch: 'main' },
   ],
 
   // File overrides

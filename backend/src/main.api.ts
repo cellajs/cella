@@ -86,7 +86,14 @@ const main = async () => {
           console.warn(
             `${timestamp()} [startup] singleVM + cdc: API holds the replication slot — deploy must be exclusive (no blue-green)`,
           );
-          await (await import('cdc-worker')).runCdcWorker();
+          // Detached on purpose: runCdcWorker never resolves — its tail IS the
+          // infinite replication/reconnect loop (its standalone entrypoint is a
+          // process whose lifetime is that loop). Awaiting it here would block
+          // every worker below forever. Failures must log loudly, not vanish
+          // into an unhandled rejection.
+          void (await import('cdc-worker')).runCdcWorker().catch((error) => {
+            console.error(`${timestamp()} [startup] in-process cdc worker crashed:`, error);
+          });
         }
         if (appConfig.services.yjs.enabled) await (await import('yjs-worker')).startYjsWorker();
         if (appConfig.services.mcp.enabled)

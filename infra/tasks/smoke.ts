@@ -97,9 +97,12 @@ export interface SmokeService {
   health_url: string
 }
 
-/** Default GET using global fetch with no-cache headers and a timeout. */
+/** Default GET using global fetch with no-cache headers and a timeout.
+ *  ws(s):// URLs are probed over plain HTTP on the same host (a WebSocket
+ *  worker's /health speaks HTTP; fetch rejects the ws scheme outright). */
 export function createFetchGet(timeoutMs: number): HttpGet {
-  return async (url) => {
+  return async (rawUrl) => {
+    const url = rawUrl.replace(/^ws(s?):/, 'http$1:')
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
     try {

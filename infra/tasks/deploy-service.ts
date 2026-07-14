@@ -1,5 +1,6 @@
 import { isMain } from '../lib/utils/is-main'
-import { servicesByName } from '../lib/services'
+import { appConfig } from '../../shared'
+import { coHostedServices, servicesByName } from '../lib/services'
 import {
   type ControlContext,
   controlContextForStack,
@@ -144,6 +145,25 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
     healthGate: () => waitForPublicVersion(healthUrl, sha),
   })
   if (!cutover.ok) throw new Error(`Cutover failed for ${service}: ${cutover.aborted}`)
+
+  // Under singleVM the co-hosted lb-routed workers (e.g. yjs) ride this host
+  // VM in-process, but their LB backends are separate Scaleway objects nothing
+  // else reconciles (Pulumi sets serverIps at create, then ignoreChanges — the
+  // cutover task owns the live list). Drive each one to the promoted
+  // generation's IP with the same idempotent corrective call, or the worker's
+  // public route keeps pointing at a reaped generation forever.
+  if (definition.primaryRollout && appConfig.singleVM) {
+    for (const worker of coHostedServices(appConfig.services, appConfig.singleVM)) {
+      if (!worker.lbRoute) continue
+      const workerBackendId = backendIds[worker.slug]
+      if (!workerBackendId) {
+        console.warn(`[deploy ${service}] co-hosted '${worker.slug}' declares lbRoute but has no LB backend id — skipping repoint`)
+        continue
+      }
+      console.info(`[deploy ${service}] repointing co-hosted ${worker.slug} LB backend -> [${target.privateIp}]`)
+      await createLbSetServers({ secretKey, zone, backendId: workerBackendId })([target.privateIp])
+    }
+  }
 
   console.info(`[deploy ${service}] promoting generation ${target.genId}`)
   await updateStore(stack, service, (cur) => promote(cur, { id: target.genId, sha }))

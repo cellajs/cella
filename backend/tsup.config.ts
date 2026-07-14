@@ -23,5 +23,10 @@ export default defineConfig({
     options.conditions = ['module']; // Enforce use of ESM
     options.jsx = 'automatic'; // Use modern JSX transform for email templates
   },
-  external: ['papaparse', '@ngrok/ngrok', /^@opentelemetry/],
+  // pg-format is CJS doing `require(__dirname + '/reserved.js')` — neither the
+  // __dirname reference nor the dynamic data-file require survives bundling
+  // into an ESM output, and it detonated the in-process cdc worker at import
+  // (singleVM). Loaded from node_modules instead (a cdc-worker prod dep, so it
+  // ships in the image).
+  external: ['papaparse', '@ngrok/ngrok', 'pg-format', /^@opentelemetry/],
 });

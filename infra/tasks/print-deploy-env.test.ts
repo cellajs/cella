@@ -6,12 +6,12 @@ const fakeAppConfig = {
   mode: 'production',
   s3: { region: 'nl-ams', publicBucket: 'cella-public', privateBucket: 'cella-private', host: 's3.nl-ams.scw.cloud' },
   domain: 'cella.example',
-  frontendUrl: 'https://cella.example',
+  frontendUrl: 'https://www.cella.example',
   backendUrl: 'https://api.cella.example',
   yjsUrl: 'https://yjs.cella.example',
   mcpUrl: 'https://mcp.cella.example',
   services: {
-    frontend: { enabled: true, publicUrl: 'https://cella.example' },
+    frontend: { enabled: true, publicUrl: 'https://www.cella.example' },
     backend: { enabled: true, publicUrl: 'https://api.cella.example' },
     cdc: { enabled: true },
     yjs: { enabled: false, publicUrl: 'https://yjs.cella.example' },
@@ -58,8 +58,8 @@ describe('buildDeployEnv', () => {
         },
         {
           service: 'frontend',
-          public_url: 'https://cella.example',
-          health_url: 'https://cella.example',
+          public_url: 'https://www.cella.example',
+          health_url: 'https://www.cella.example',
           lb_route: 'host',
           dockerfile: 'infra/caddy/Dockerfile',
           reuses_image_of: '',
@@ -74,7 +74,7 @@ describe('buildDeployEnv', () => {
       primary_rollout_matrix: JSON.stringify([{ service: 'backend', health_url: 'https://api.cella.example' }]),
       roll_rest_matrix: JSON.stringify([
         { service: 'cdc', health_url: '' },
-        { service: 'frontend', health_url: 'https://cella.example' },
+        { service: 'frontend', health_url: 'https://www.cella.example' },
       ]),
     })
   })

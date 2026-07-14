@@ -39,7 +39,16 @@ export function secretConsumersFor(svc: ServiceDefinition): RuntimeSecretConsume
 /** The replacement strategy a service's VM actually uses. Under singleVM a host
  *  co-hosting an `exclusive` worker (cdc holds the single replication slot) must
  *  itself cut over exclusively: two overlapping host generations would double-
- *  consume the slot. */
+ *  consume the slot.
+ *
+ *  Intentional asymmetry with the rollout tasks: deploy-service still runs the
+ *  LB-overlap reconciler for the host (its registry strategy) even when the
+ *  program materialises it exclusively here. That composes correctly because
+ *  the reconciler is level-triggered — the old generation is already replaced
+ *  by `pulumi up`, so the expand phase is naturally empty and the reconciler
+ *  simply repairs the LB onto the replacement generation and health-gates it.
+ *  The trade-off is inherent to singleVM+cdc: the host cutover has a bounded
+ *  downtime window instead of blue-green overlap. */
 export function effectiveStrategy(svc: ServiceDefinition): ServiceDefinition['replacementStrategy'] {
   if (appConfig.singleVM && svc.slug === hostSlug && coHosted.some((s) => s.replacementStrategy === 'exclusive')) {
     return 'exclusive'

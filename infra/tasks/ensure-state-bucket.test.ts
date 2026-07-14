@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ensureStateBucket } from './ensure-state-bucket'
+import { assertBucketProject, ensureStateBucket, keyProjectMismatch } from './ensure-state-bucket'
 
 /**
  * Builds a mock S3Client that responds to HEAD/CREATE commands using the
@@ -74,5 +74,36 @@ describe('ensureStateBucket', () => {
     const s3 = makeS3({ head: [{ status: 404 }, true], create: [true] })
     await expect(ensureStateBucket(s3, 'cella-pulumi-state')).resolves.toBe('created')
     await expect(ensureStateBucket(s3, 'cella-pulumi-state')).resolves.toBe('exists')
+  })
+})
+
+describe('keyProjectMismatch', () => {
+  it('is silent when the key points at the app project', () => {
+    expect(keyProjectMismatch('proj-a', 'proj-a', 'SCWKEY')).toBeUndefined()
+  })
+
+  it('names the key, both projects, and the remedy on mismatch', () => {
+    const message = keyProjectMismatch('org-default', 'proj-a', 'SCWKEY')
+    expect(message).toContain('SCWKEY')
+    expect(message).toContain('org-default')
+    expect(message).toContain('proj-a')
+    expect(message).toMatch(/preferred project/)
+  })
+})
+
+describe('assertBucketProject', () => {
+  const listClient = (ownerId: string, buckets: string[]) =>
+    ({ send: async () => ({ Owner: { ID: ownerId }, Buckets: buckets.map((Name) => ({ Name })) }) }) as never
+
+  it('passes when the bucket is visible in the expected project', async () => {
+    await expect(assertBucketProject(listClient('proj-a:proj-a', ['cella-pulumi-state']), 'cella-pulumi-state', 'proj-a')).resolves.toBeUndefined()
+  })
+
+  it('fails when the key operates in another project', async () => {
+    await expect(assertBucketProject(listClient('org-default:org-default', ['cella-pulumi-state']), 'cella-pulumi-state', 'proj-a')).rejects.toThrow(/preferred project/)
+  })
+
+  it('fails when the bucket is not visible from the expected project', async () => {
+    await expect(assertBucketProject(listClient('proj-a:proj-a', ['other-bucket']), 'cella-pulumi-state', 'proj-a')).rejects.toThrow(/not visible/)
   })
 })

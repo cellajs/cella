@@ -19,10 +19,16 @@ describe('loadbalancer module — registry-driven wiring', () => {
     expect(src).toMatch(/data:\s*lbPublicIp/)
   })
 
-  it('issues a Lets Encrypt certificate per DNS record, depending on it', () => {
+  it('issues a Lets Encrypt certificate per DNS record, gated on public propagation', () => {
     expect(src).toMatch(/new scaleway\.loadbalancers\.Certificate\(`\$\{baseName\(slug\)\}-cert`/)
     expect(src).toMatch(/commonName:\s*serviceHost\(slug\)/)
-    expect(src).toMatch(/dependsOn:\s*\[dns\]/)
+    // Cert creation waits for the record to answer publicly (not merely exist),
+    // and the frontend attach waits for the cert to be `ready` — both via the
+    // create-only gates in resources/dns-cert-gates.ts.
+    expect(src).toMatch(/dependsOn:\s*\[dns,\s*dnsGates\.get\(slug\)!\]/)
+    expect(src).toMatch(/new DnsPropagationGate\(/)
+    expect(src).toMatch(/new CertReadyGate\(/)
+    expect(src).toMatch(/dependsOn:\s*certGates/)
   })
 
   it('creates one LB backend per exposed service on its declared port', () => {

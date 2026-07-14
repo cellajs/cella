@@ -132,7 +132,7 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
 // only piece compute owns (it depends on VM planning state below).
 // ---------------------------------------------------------------------------
 
-const buildComposeEnv = createComposeEnvBuilder(currentGenBindingIp)
+const buildComposeEnv = createComposeEnvBuilder(currentGenBindingIp, { hostSlug, coHosted })
 
 // ---------------------------------------------------------------------------
 // Create VMs: the service set (`enabled`, `coHosted`, `hostSlug`) and the

@@ -114,7 +114,10 @@ export function emptyControlState(): ControlState {
   return { schemaVersion: 2, bootstrap: {}, rollout: {} }
 }
 
-/** Bucket holding both the Pulumi state and the control object. */
+/** Bucket holding both the Pulumi state and the control object. Must live in
+ *  the app project — Scaleway Object Storage pins API keys to their preferred
+ *  project, so a bucket elsewhere is out of reach of the project-scoped CI key
+ *  (see ensure-state-bucket's preflight). */
 export function stateBucket(slug: string): string {
   return `${slug}-pulumi-state`
 }
