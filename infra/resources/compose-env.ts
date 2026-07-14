@@ -59,17 +59,31 @@ function tagVar(slug: string): string {
   return `${slug.toUpperCase()}_TAG`
 }
 
+/** Co-hosting context for the singleVM env fold (see publishCoHostedEnv in
+ *  compose/infrastructure.ts): the host VM must also resolve the folded
+ *  workers' registry `bindings`, with the host's own privateIp collapsed to
+ *  loopback. Injected by compute.ts (which owns the generation state) so this
+ *  module stays import-cycle-free and unit-testable. */
+export interface CoHostingContext {
+  hostSlug: ServiceName | undefined
+  coHosted: readonly ServiceDefinition[]
+}
+
 /**
  * Build the per-service compose-env builder from registry placeholders,
  * registry `bindings`, and the shared env pool.
  */
-export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp) {
-  function bindingPart(selfSlug: ServiceName, target: string, prop: string): pulumi.Input<string> {
+export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp, coHosting?: CoHostingContext) {
+  function bindingPart(selfSlug: ServiceName, target: string, prop: string, loopbackSlug?: ServiceName): pulumi.Input<string> {
     const slug = (target === 'self' ? selfSlug : target) as ServiceName
     const definition = servicesByName.get(slug)
     if (!definition) throw new Error(`compute: binding @{${target}.${prop}} on '${selfSlug}' references unknown service '${slug}'.`)
     switch (prop) {
       case 'privateIp':
+        // A folded worker dialing its own host resolves to loopback: worker and
+        // host share one process, and the VM's private NIC may not be attached
+        // yet when the in-process worker starts dialing at boot.
+        if (slug === loopbackSlug) return '127.0.0.1'
         return currentGenBindingIp(slug)
       case 'port':
         return String(definition.healthPort)
@@ -84,16 +98,65 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
   }
 
   /** Resolve a binding template such as `ws://@{backend.privateIp}:@{backend.port}/...` to a Pulumi value. */
-  function resolveBinding(selfSlug: ServiceName, template: string): pulumi.Input<string> {
+  function resolveBinding(selfSlug: ServiceName, template: string, loopbackSlug?: ServiceName): pulumi.Input<string> {
     const parts: pulumi.Input<string>[] = []
     let last = 0
     for (const match of template.matchAll(BINDING_RE)) {
       parts.push(template.slice(last, match.index))
-      parts.push(bindingPart(selfSlug, match[1]!, match[2]!))
+      parts.push(bindingPart(selfSlug, match[1]!, match[2]!, loopbackSlug))
       last = match.index + match[0].length
     }
     parts.push(template.slice(last))
     return pulumi.all(parts).apply((vals) => vals.join(''))
+  }
+
+  /** A binding owned by the service itself or folded in from a co-hosted worker.
+   *  `self` in a folded template still means the WORKER (e.g. mcp's
+   *  `@{self.url}`), and `loopback` collapses the host's privateIp to 127.0.0.1. */
+  interface EffectiveBinding {
+    template: string
+    owner: ServiceName
+    loopbackSlug?: ServiceName
+  }
+
+  /** The service's own bindings, unioned — on the singleVM host — with every
+   *  folded worker's bindings (their env now lives on the host block, see
+   *  publishCoHostedEnv). Conflicting templates for one var fail loudly. */
+  function effectiveBindings(svc: ServiceDefinition): Record<string, EffectiveBinding> {
+    const bindings: Record<string, EffectiveBinding> = {}
+    for (const [name, template] of Object.entries(svc.bindings ?? {})) {
+      bindings[name] = { template, owner: svc.slug }
+    }
+    if (!coHosting || svc.slug !== coHosting.hostSlug) return bindings
+    for (const worker of coHosting.coHosted) {
+      for (const [name, template] of Object.entries(worker.bindings ?? {})) {
+        const existing = bindings[name]
+        if (existing && existing.template !== template) {
+          throw new Error(
+            `compute: co-hosted binding '${name}' on '${worker.slug}' (${template}) conflicts with '${existing.owner}' (${existing.template}) — folded workers must not overload a host binding.`,
+          )
+        }
+        bindings[name] = { template, owner: worker.slug, loopbackSlug: svc.slug }
+      }
+    }
+    return bindings
+  }
+
+  /** Placeholder names sourced from registry services that are coHosted-flagged
+   *  but NOT active in this deploy (e.g. a disabled mcp). publishCoHostedEnv
+   *  folds co-hosted env into the host block unconditionally (the compose file
+   *  is shared across deploy modes), so the host's placeholder scan sees their
+   *  `${VAR}`s — but no in-process worker will ever read them, so one that is
+   *  otherwise unresolvable is skipped rather than fatal. */
+  function inactiveCoHostedVars(): Set<string> {
+    const active = new Set((coHosting?.coHosted ?? []).map((s) => s.slug))
+    const vars = new Set<string>()
+    for (const svc of servicesByName.values()) {
+      if (!svc.coHosted || active.has(svc.slug)) continue
+      for (const name of composePlaceholders(svc.slug)) vars.add(name)
+      for (const name of Object.keys(svc.bindings ?? {})) vars.add(name)
+    }
+    return vars
   }
 
   /** Compose env for one service: universal vars + the baked image tag + binding/pool values. */
@@ -105,15 +168,18 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
       // The generation's pinned image tag: the VM pulls exactly this SHA at boot.
       [tagVar(slug)]: () => releaseSha,
     }
+    const bindings = effectiveBindings(svc)
+    const skippable = coHosting && slug === coHosting.hostSlug ? inactiveCoHostedVars() : new Set<string>()
     for (const name of composePlaceholders(slug)) {
       if (INJECTED_VARS.has(name) || name.endsWith('_TAG')) continue
-      const template = svc.bindings?.[name]
-      if (template) {
-        env[name] = () => resolveBinding(slug, template)
+      const binding = bindings[name]
+      if (binding) {
+        env[name] = () => resolveBinding(binding.owner, binding.template, binding.loopbackSlug)
         continue
       }
       const supply = envPool[name]
       if (!supply) {
+        if (skippable.has(name)) continue
         throw new Error(
           `compute: service '${slug}' references \${${name}} in its compose blocks but no binding or envPool supplier defines a value for it — add a binding in config/services.config.ts or a supplier in resources/compose-env.ts.`,
         )

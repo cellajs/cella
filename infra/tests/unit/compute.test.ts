@@ -84,10 +84,15 @@ describe('compute module source invariants', () => {
     expect(source).toMatch(/const envPool:/)
     expect(source).toMatch(/composePlaceholders\(/)
     expect(source).toMatch(/block\.profiles\.includes\(/)
-    expect(source).toMatch(/svc\.bindings\?\.\[name\]/)
+    // Registry bindings resolve first (unioned with folded co-hosted bindings
+    // on the singleVM host), the shared envPool second.
+    expect(source).toMatch(/effectiveBindings\(/)
     expect(source).toMatch(/resolveBinding\(/)
-    // Unknown placeholders must fail fast rather than booting a broken VM.
+    // Unknown placeholders must fail fast rather than booting a broken VM —
+    // except placeholders folded in from an inactive co-hosted worker, which
+    // nothing in-process reads.
     expect(source).toMatch(/defines a value for it/)
+    expect(source).toMatch(/inactiveCoHostedVars\(/)
     // The old hand-maintained per-service map must not come back.
     expect(source).not.toMatch(/composeEnvFor/)
   })

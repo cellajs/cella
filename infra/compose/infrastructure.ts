@@ -124,7 +124,51 @@ export function assembleCompose(appServices: AppServices): ComposeFile {
     if (cfg.runMigrate) services.migrate = migrateBlock(slug, cfg)
   }
   publishCoHostedPorts(appServices, services)
+  publishCoHostedEnv(appServices, services)
   return { services }
+}
+
+/**
+ * Env keys NEVER folded from a co-hosted service into the host block: they
+ * configure the container's process identity (which entrypoint mode to boot,
+ * which port the main process binds), and under `singleVM` that identity is
+ * the host's — the folded workers are booted in-process by the host's own
+ * startup (`main.api.ts`) and read only their service-specific vars
+ * (`CDC_HEALTH_PORT`, `YJS_PORT`, `API_WS_URL`, …).
+ */
+const PROCESS_IDENTITY_ENV = new Set(['MODE', 'PORT'])
+
+/**
+ * singleVM support, part 2 of 2 (ports above): fold every co-hosted service's
+ * `env` into the host block. The workers run in-process on the host container,
+ * so their wiring (`API_WS_URL`, `YJS_PORT`, …) must reach the HOST's
+ * environment — their own blocks never start under the host's compose profile.
+ * Placeholders (`${VAR}`) folded here are collected for the host VM by the
+ * profile-driven scan in resources/compose-env.ts, which also unions the
+ * co-hosted registry `bindings` that supply them. Same-value collisions are
+ * fine (e.g. `BACKEND_URL` on host and worker); conflicting values fail synth
+ * loudly rather than silently breaking one of the folded workers.
+ */
+function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, ComposeService>): void {
+  const hostSlug = Object.entries(appServices).find(([, cfg]) => cfg.primaryRollout)?.[0]
+  if (!hostSlug) return
+  const hostBlock = blocks[hostSlug]
+  if (!hostBlock) return
+  const merged: Record<string, string> = { ...(hostBlock.environment ?? {}) }
+  for (const [slug, cfg] of Object.entries(appServices)) {
+    if (!cfg.coHosted || !cfg.env) continue
+    for (const [key, value] of Object.entries(cfg.env)) {
+      if (PROCESS_IDENTITY_ENV.has(key)) continue
+      const existing = merged[key]
+      if (existing !== undefined && existing !== value) {
+        throw new Error(
+          `compose synth: co-hosted service '${slug}' env '${key}=${value}' conflicts with '${existing}' already on host '${hostSlug}' — rename the worker's variable in services.config.ts (folded env must not overload host keys).`,
+        )
+      }
+      merged[key] = value
+    }
+  }
+  hostBlock.environment = merged
 }
 
 /**

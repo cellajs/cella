@@ -25,4 +25,31 @@ describe('compose synth', () => {
       expect(svc.ports.some((port) => port.includes(String(meta.healthPort)))).toBe(true)
     }
   })
+
+  it('folds every co-hosted service env onto the host block (singleVM in-process wiring)', () => {
+    const host = Object.values(composeConfig.services).find((s) => s['x-service']?.primaryRollout)
+    expect(host).toBeDefined()
+    for (const svc of Object.values(composeConfig.services)) {
+      const meta = svc['x-service']
+      if (!meta?.coHosted) continue
+      for (const [key, value] of Object.entries(svc.environment ?? {})) {
+        // Process-identity keys stay off the host: MODE/PORT configure which
+        // entrypoint a *container* boots; the folded workers boot in-process.
+        if (key === 'MODE' || key === 'PORT') {
+          expect(host?.environment?.[key]).not.toBe(value)
+          continue
+        }
+        expect(host?.environment?.[key], `host env should carry co-hosted ${meta.slug}'s ${key}`).toBe(value)
+      }
+    }
+  })
+
+  it('the host block carries the in-process worker wiring vars', () => {
+    const host = Object.values(composeConfig.services).find((s) => s['x-service']?.primaryRollout)
+    expect(host?.environment).toMatchObject({
+      API_WS_URL: '${API_WS_URL}',
+      CDC_HEALTH_PORT: '4001',
+      YJS_PORT: '4002',
+    })
+  })
 })
