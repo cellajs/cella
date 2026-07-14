@@ -18,7 +18,13 @@ export const contextEntityColumns = <T extends ContextEntityType>(entityType: T)
    * When the context went live for its members: null = draft (invites against it are
    * deferred, see membership dispatch). Defaults to creation time, so forks without
    * draft flows never see null and the mechanism stays dormant. Distinct from
-   * `publicAt` (public readability).
+   * `publicAt` below: `publishedAt` gates MEMBERS, `publicAt` grants NON-members.
    */
   publishedAt: timestamp({ mode: 'string' }).defaultNow(),
+  /**
+   * Public readability: non-null = readable by ANY actor, anonymous included, regardless of
+   * membership. Only has effect when the entity declares `publicRead()` in
+   * `shared/config/permissions-config.ts`; null (the default) keeps the mechanism dormant.
+   */
+  publicAt: timestamp('public_at', { mode: 'string' }),
 });

@@ -53,8 +53,8 @@ export function canReceiveEntityEvent(subscriber: SubscriberAccess, event: AppSt
     });
 
     return checkPermission(subscriber.memberships, 'read', subject, {
-      isSystemAdmin: subscriber.isSystemAdmin,
       userId: subscriber.userId,
+      isSystemAdmin: subscriber.isSystemAdmin,
     }).isAllowed;
   } catch {
     log.error('Malformed stream event: missing ancestor scope', {

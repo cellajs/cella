@@ -100,6 +100,10 @@
           "required": true,
           "format": "uuid"
         },
+        "publicAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
         "seq": {
           "type": "integer",
           "required": true,
@@ -166,6 +170,7 @@
       "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
       "deletedAt": null,
       "deletedBy": null,
+      "publicAt": null,
       "seq": 123,
       "stx": {
         "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
@@ -1084,6 +1089,10 @@
           "type": ["string", "null"],
           "required": true
         },
+        "publicAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
         "shortName": {
           "type": ["string", "null"],
           "required": true,
@@ -1278,6 +1287,7 @@
       "authStrategies": ["passkey"],
       "chatSupport": true,
       "publishedAt": "2024-12-25T15:04:42.969Z",
+      "publicAt": null,
       "createdAt": "2024-12-25T15:04:42.969Z",
       "createdBy": null,
       "updatedAt": "2024-12-25T15:04:42.969Z",

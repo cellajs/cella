@@ -1,6 +1,6 @@
-import { and, eq, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import { appConfig, type ContextEntityType, type RowCondition, type RowConditionSqlForm } from 'shared';
+import { type Actor, appConfig, type ContextEntityType, type RowCondition, type RowConditionSqlForm } from 'shared';
 import type { CollectionReadFilter } from './collection-scope';
 
 /**
@@ -27,15 +27,21 @@ const resolveColumn = (table: AnyPgTable, columnName: string, conditionName: str
 
 /**
  * Compile a single row condition to a predicate over `table`'s rows for the acting user.
- * Anonymous actors (`userId` undefined) never match actor-bound forms, mirroring the check-form.
+ * Anonymous actors never match actor-bound forms, mirroring the check-form.
  */
-export const compileRowConditionSql = (condition: RowCondition, table: AnyPgTable, userId: string | undefined): SQL => {
+export const compileRowConditionSql = (condition: RowCondition, table: AnyPgTable, actor: Actor): SQL => {
   const form: RowConditionSqlForm = condition.sqlForm;
+  const column = resolveColumn(table, form.column, condition.name);
+
   switch (form.kind) {
     case 'columnEqualsActor': {
+      const userId = 'anonymous' in actor ? undefined : actor.userId;
       if (!userId) return NEVER;
-      return eq(resolveColumn(table, form.column, condition.name), userId);
+      return eq(column, userId);
     }
+    // Actor-independent (public read): matches for anonymous actors too.
+    case 'columnIsNotNull':
+      return isNotNull(column);
   }
 };
 
@@ -61,13 +67,13 @@ export type CollectionReadWhere =
  * @param filter - Resolved scope filter (`resolveCollectionReadFilter`).
  * @param table - The product table being queried.
  * @param subContextColumn - The table's home sub-context id column (e.g. `tasks.projectId`).
- * @param userId - The acting user id; undefined for anonymous actors.
+ * @param actor - Who is asking; row conditions compile against it.
  */
 export const buildCollectionReadWhere = (
   filter: CollectionReadFilter,
   table: AnyPgTable,
   subContextColumn: PgColumn,
-  userId: string | undefined,
+  actor: Actor,
 ): CollectionReadWhere => {
   // Org-wide unconditional read (conditional scopes are subsumed and already dropped).
   if (filter.subContextIds === undefined) return { kind: 'all' };
@@ -110,7 +116,7 @@ export const buildCollectionReadWhere = (
   }
 
   for (const { condition, subContextIds, contextType, deeperContexts } of filter.conditionalScopes) {
-    const conditionSql = compileRowConditionSql(condition, table, userId);
+    const conditionSql = compileRowConditionSql(condition, table, actor);
     const homeNulls = (deeperContexts ?? []).map((deeper) => isNull(scopeColumn(deeper)));
     if (subContextIds === undefined) {
       // Org-wide conditional grant: condition (plus home NULLs, if home-scoped) bounds the rows.

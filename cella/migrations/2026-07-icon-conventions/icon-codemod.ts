@@ -76,6 +76,10 @@ interface Edit {
 
 const manualReview: string[] = [];
 const bareReport: string[] = [];
+// numeric size={N} on tags the codemod can't identify as icons (prop-aliased
+// icons like <Icon>, <item.icon>). The prop is inert post-migration — every
+// entry needs a human decision (usually: intended-size class, or delete).
+const sizePropReport: string[] = [];
 let filesTouched = 0;
 
 const iconsModuleDir = path.join(srcDir, 'modules/common/icons');
@@ -143,6 +147,26 @@ for (const file of files) {
     if (ts.isJsxSelfClosingElement(node) || ts.isJsxOpeningElement(node)) {
       const tag = node.tagName;
       const tagIsIcon = ts.isIdentifier(tag) && iconLocalNames.has(tag.text);
+      const tagMaybeIcon =
+        !tagIsIcon &&
+        (ts.isPropertyAccessExpression(tag) || (ts.isIdentifier(tag) && /^[A-Z]/.test(tag.text)));
+      if (tagMaybeIcon) {
+        for (const attr of node.attributes.properties) {
+          if (
+            ts.isJsxAttribute(attr) &&
+            ts.isIdentifier(attr.name) &&
+            attr.name.text === 'size' &&
+            attr.initializer &&
+            ts.isJsxExpression(attr.initializer) &&
+            attr.initializer.expression &&
+            ts.isNumericLiteral(attr.initializer.expression)
+          ) {
+            sizePropReport.push(
+              `${file}:${line(sf, node)}: <${tag.getText(sf)} size={${attr.initializer.expression.text}}> — inert if this renders an icon; move to a class`,
+            );
+          }
+        }
+      }
       if (tagIsIcon) {
         let sizeAttr: ts.JsxAttribute | undefined;
         let sizeClass: string | null | undefined;
@@ -303,9 +327,11 @@ function line(sf: ts.SourceFile, node: ts.Node): number {
   return sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
 }
 
-const report = { filesTouched, manualReview, bareUsages: bareReport };
+const report = { filesTouched, manualReview, numericSizeProps: sizePropReport, bareUsages: bareReport };
 fs.writeFileSync(
   path.join(path.dirname(new URL(import.meta.url).pathname), `icon-report-${mode}.json`),
   JSON.stringify(report, null, 2),
 );
-console.log(`${mode} done: ${filesTouched} files written, ${manualReview.length} manual-review items, ${bareReport.length} bare usages`);
+console.log(
+  `${mode} done: ${filesTouched} files written, ${manualReview.length} manual-review items, ${sizePropReport.length} numeric size props on unidentified tags, ${bareReport.length} bare usages`,
+);

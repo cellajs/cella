@@ -1,5 +1,5 @@
 import type { QueryKey } from '@tanstack/react-query';
-import { ArrowDownAZIcon, CalendarIcon, type LucideIcon } from 'lucide-react';
+import { ArrowDownAZIcon, CalendarIcon } from 'lucide-react';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import { TableCount } from '~/modules/common/data-table/table-count';
 import {
@@ -12,6 +12,7 @@ import { TableSearch } from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { SelectSort } from '~/modules/common/form-fields/select-sort';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 
 type EntityGridBarSearch = {
@@ -23,7 +24,7 @@ type EntityGridBarSearch = {
 /** Sort option for the entity grid bar. Forks pass their own set via the `sortOptions` prop. */
 export type EntityGridSortOption = {
   name: string;
-  icon: LucideIcon;
+  icon: IconComponent;
   value: string;
 };
 

@@ -1,12 +1,13 @@
-import { EllipsisVerticalIcon, type LucideIcon } from 'lucide-react';
+import { EllipsisVerticalIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 
 export type EllipsisOption<T> = {
   label: string;
-  icon: LucideIcon;
+  icon: IconComponent;
   onSelect: (row: T, triggerRef: RefObject<HTMLButtonElement | null>) => void;
 };
 

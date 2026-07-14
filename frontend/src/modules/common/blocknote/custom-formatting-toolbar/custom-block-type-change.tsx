@@ -65,7 +65,7 @@ export const CellaCustomBlockTypeSelect = ({
     const { icon: Icon, name, type } = item;
     return {
       title: name,
-      icon: <Icon size={16} />,
+      icon: <Icon />,
       onClick: () => handleItemClick(item),
       isSelected: block.type === 'heading' ? isHeadingMenuItemActive(block, name) : block.type === type,
     };

@@ -1,14 +1,14 @@
-import type { LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { forwardRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
 import type { TKey } from '~/lib/i18n-locales';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 
 type Props = {
-  icon: LucideIcon;
+  icon: IconComponent;
   label: TKey;
   badge?: ReactNode;
 } & ButtonProps;
@@ -33,7 +33,7 @@ export const TableBarButton = forwardRef<HTMLButtonElement, Props>(
           />
         }
       >
-        {Icon && <motion.span className="mr-2 flex items-center">{<Icon size={16} />}</motion.span>}
+        {Icon && <motion.span className="mr-2 flex items-center">{<Icon />}</motion.span>}
         {label && <span>{t(label)}</span>}
 
         {badge && <Badge context="button">{badge}</Badge>}

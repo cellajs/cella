@@ -4,6 +4,7 @@ import { AppError } from '#/core/error';
 import { type EntityModel, resolveEntity } from '#/modules/entities/entities-queries';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions';
+import { actorFrom } from '#/permissions/actor';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 /**
@@ -40,8 +41,6 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   action: Exclude<EntityActionType, 'create'>,
   bySlug = false,
 ): Promise<ValidContextEntityResult<T>> => {
-  // Get current user role and memberships from request context
-  const isSystemAdmin = ctx.var.isSystemAdmin;
   const memberships = ctx.var.memberships;
 
   // Step 1: Resolve target entity by ID (or slug when bySlug is true)
@@ -50,7 +49,7 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)
   const subject = buildSubjectFromEntity(entityType, entity);
-  const { isAllowed, membership } = checkPermission(memberships, action, subject, { isSystemAdmin });
+  const { isAllowed, membership } = checkPermission(memberships, action, subject, actorFrom(ctx));
 
   if (!isAllowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });

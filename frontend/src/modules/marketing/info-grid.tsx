@@ -1,7 +1,7 @@
-import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { ExpandableList } from '~/modules/common/expandable-list';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { Badge } from '~/modules/ui/badge';
 import { useUIStore } from '~/modules/ui/ui-store';
 
@@ -65,7 +65,7 @@ interface InfoGridProps<C extends string> {
   /** Translation namespace, e.g. `about:<namespace>.<id>`. */
   namespace?: string;
   /** Icon per category. When set, items are grouped by category with a header. */
-  categoryIcons?: Record<C, LucideIcon>;
+  categoryIcons?: Record<C, IconComponent>;
   /** Hide the per-category icon + title headers (e.g. when a parent section already provides one). */
   hideCategoryHeader?: boolean;
   /** Render an SVG image icon per tile (from `/static/marketing/features/<id>.svg`). */
@@ -115,7 +115,7 @@ export function InfoGrid<C extends string>({
     return (
       <div className="space-y-16">
         {categories.map((category) => {
-          const CategoryIcon: LucideIcon = categoryIcons[category];
+          const CategoryIcon: IconComponent = categoryIcons[category];
           return (
             <div key={category}>
               {!hideCategoryHeader && (

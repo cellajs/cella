@@ -1,8 +1,10 @@
 import {
   type AccessPolicies,
+  type Actor,
   accessPolicies,
   type ContextEntityType,
   elevatedRoles as configuredElevatedRoles,
+  publicReadGrants as configuredPublicReadGrants,
   getPolicyPermissions,
   getSubjectPolicies,
   hierarchy,
@@ -10,6 +12,8 @@ import {
   type NormalizedPermissionValue,
   type PermissionTopology,
   type ProductEntityType,
+  type PublicReadGrants,
+  publicRow,
   type RowCondition,
 } from 'shared';
 import { AppError } from '#/core/error';
@@ -103,6 +107,7 @@ const resolveScopes = (
   organizationId: string,
   elevatedRoles: readonly string[] | undefined,
   ancestors: readonly ContextEntityType[], // most-specific → root, e.g. [project, course, organization]
+  publicGrants: PublicReadGrants | undefined,
 ): ScopeAccumulator => {
   const rootContext = ancestors.at(-1) ?? null; // organization
   const subContextType = ancestors.find((context) => context !== rootContext) ?? null; // home context, e.g. project
@@ -192,6 +197,12 @@ const resolveScopes = (
         );
     }
   }
+
+  // Public read grant: membership-INDEPENDENT, so it is added outside the membership walk —
+  // a caller with no membership scope at all can still read public rows. Modelled as an
+  // org-wide conditional slice (`publicAt IS NOT NULL`), which means it rides the exact same
+  // compile path as policy row conditions and needs no special case downstream.
+  if (publicGrants?.[entityType]) addConditional(publicRow, null);
 
   return acc;
 };
@@ -307,17 +318,41 @@ const toHomeScopes = (acc: ScopeAccumulator, orderedContexts: readonly ContextEn
   return scopes;
 };
 
+/** Everything a collection-read scope resolution depends on. */
+export interface CollectionReadScopeInput {
+  /** Policy set. The bound wrapper injects the app's; parity tests pass synthetic ones. */
+  policies: AccessPolicies;
+  memberships: MembershipBaseModel[];
+  /** The product entity being listed. */
+  entityType: ProductEntityType;
+  /** The organization the request is scoped to. */
+  organizationId: string;
+  /** Who is asking. Carries the system-admin bypass; required so no call site can forget it. */
+  actor: Actor;
+  /**
+   * Explicit sub-context narrowing already resolved from the request:
+   * - `subContextId`: a single explicit id (e.g. `projectId` query param).
+   * - `subContextIds`: a pre-resolved set (e.g. all project ids of a requested workspace).
+   * When neither is provided the read is an aggregate over the caller's readable scope.
+   */
+  requested?: { subContextId?: string; subContextIds?: string[] };
+  /** Grant scoping role list (see `shared/config/permissions-config.ts`). */
+  elevatedRoles?: readonly string[];
+  /** Subject-level public read grants (see `shared/src/permissions/public-read.ts`). */
+  publicGrants?: PublicReadGrants;
+  /**
+   * Hierarchy override, the same seam `getAllDecisions(…, { topology })` exposes. Defaults to
+   * the app's real hierarchy; parity tests pass a synthetic one to exercise deep chains a
+   * 2-level config structurally cannot reach.
+   */
+  topology?: PermissionTopology;
+}
+
 /**
- * Resolve the effective scope filter for a product collection read, scoping the result to
- * the caller's membership-derived access.
+ * Resolve the effective scope filter for a product collection read, scoping the result to the
+ * caller's access. Binds the app's policies, `elevatedRoles` and public read grants, so
+ * handlers supply only the caller and the request.
  *
- * @param memberships - The caller's memberships.
- * @param entityType - The product entity being listed.
- * @param organizationId - The organization the request is scoped to.
- * @param requested - Optional explicit sub-context narrowing already resolved from the request:
- *   - `subContextId`: a single explicit id (e.g. `projectId` query param).
- *   - `subContextIds`: a pre-resolved set (e.g. all project ids of a requested workspace).
- *   When neither is provided the read is an aggregate over the caller's readable scope.
  * @throws AppError 403 `forbidden` when an explicitly requested id is outside the caller's
  *   readable scope entirely (neither unconditional nor covered by any conditional scope).
  */
@@ -325,41 +360,55 @@ export const resolveCollectionReadFilter = (
   memberships: MembershipBaseModel[],
   entityType: ProductEntityType,
   organizationId: string,
+  actor: Actor,
   requested?: { subContextId?: string; subContextIds?: string[] },
-): CollectionReadFilter => {
-  return resolveCollectionReadFilterForPolicies(
-    accessPolicies,
+): CollectionReadFilter =>
+  resolveCollectionReadFilterForPolicies({
+    policies: accessPolicies,
     memberships,
     entityType,
     organizationId,
+    actor,
     requested,
-    configuredElevatedRoles,
-  );
-};
+    elevatedRoles: configuredElevatedRoles,
+    publicGrants: configuredPublicReadGrants,
+  });
 
 /**
- * Same as {@link resolveCollectionReadFilter} but against an explicit policy set,
- * mirroring `getAllDecisions(policies, …)`. Used by the check/SQL parity property test
- * to exercise synthetic policies; handlers use the bound wrapper above.
- *
- * @param elevatedRoles - Grant scoping role list (see `shared/config/permissions-config.ts`);
- *   the bound wrapper injects the configured value.
- * @param topology - Hierarchy override, the same seam `getAllDecisions(…, { topology })`
- *   exposes. Defaults to the app's real hierarchy; parity tests pass a synthetic one to
- *   exercise deep chains a 2-level config structurally cannot reach.
+ * Same as {@link resolveCollectionReadFilter} but against an explicit policy set, mirroring
+ * `getAllDecisions(policies, …)`. Used by the check/SQL parity property test to exercise
+ * synthetic policies; handlers use the bound wrapper above.
  */
-export const resolveCollectionReadFilterForPolicies = (
-  policies: AccessPolicies,
-  memberships: MembershipBaseModel[],
-  entityType: ProductEntityType,
-  organizationId: string,
-  requested?: { subContextId?: string; subContextIds?: string[] },
-  elevatedRoles?: readonly string[],
-  topology?: PermissionTopology,
-): CollectionReadFilter => {
+export const resolveCollectionReadFilterForPolicies = ({
+  policies,
+  memberships,
+  entityType,
+  organizationId,
+  actor,
+  requested,
+  elevatedRoles,
+  publicGrants,
+  topology,
+}: CollectionReadScopeInput): CollectionReadFilter => {
+  // System admins read every row the organization contains. This mirrors the engine's own
+  // short-circuit (`getAllDecisions` grants all actions before consulting memberships): a
+  // sysadmin passes `orgGuard` with NO membership, so without this they would resolve to an
+  // empty scope and get an empty list — while single-row reads of the same rows succeed.
+  if (!('anonymous' in actor) && actor.isSystemAdmin) {
+    return { subContextIds: undefined, conditionalScopes: [] };
+  }
+
   const topoHierarchy = topology?.hierarchy ?? hierarchy;
   const orderedContexts = topoHierarchy.getOrderedAncestors(entityType) as ContextEntityType[];
-  const acc = resolveScopes(policies, memberships, entityType, organizationId, elevatedRoles, orderedContexts);
+  const acc = resolveScopes(
+    policies,
+    memberships,
+    entityType,
+    organizationId,
+    elevatedRoles,
+    orderedContexts,
+    publicGrants,
+  );
   const conditionalScopes = toConditionalScopes(acc, orderedContexts);
   const rootContext = orderedContexts.at(-1) ?? null;
   const homeContext = orderedContexts.find((context) => context !== rootContext) ?? null;

@@ -137,7 +137,6 @@ export const configurePermissions = (
     }
   }
 
-  validatePublicReadGrants(publicReadGrants, getParent);
   if (validateCompleteness) {
     validatePolicyCompleteness(policies, { contextEntityTypes, getRoles, getParent });
   }
@@ -191,27 +190,6 @@ const validatePolicyCompleteness = (
     throw new Error(
       `[Permission] Incomplete policy: every subject with declared rows needs a row for every role of every context in its chain (all-zero rows express "no access"). Missing:\n  ${missing.join('\n  ')}`,
     );
-  }
-};
-
-/**
- * A parent-dependent public grant only works if the parent itself can become public:
- * its own grant must include self-publication.
- */
-const validatePublicReadGrants = (
-  grants: PublicReadGrants,
-  getParent: (type: string) => string | null,
-): void => {
-  for (const [entityType, mode] of Object.entries(grants) as [ContextEntityType | ProductEntityType, PublicReadMode][]) {
-    if (mode !== 'publicParent' && mode !== 'publicParentOrSelf') continue;
-
-    const parent = getParent(entityType);
-    const parentMode = parent ? grants[parent as ContextEntityType | ProductEntityType] : undefined;
-    if (parentMode !== 'publicSelf' && parentMode !== 'publicParentOrSelf') {
-      throw new Error(
-        `[Permission] "${entityType}" declares publicRead '${mode}' but its parent "${parent}" has no self-publication grant (publicRead 'publicSelf').`,
-      );
-    }
   }
 };
 

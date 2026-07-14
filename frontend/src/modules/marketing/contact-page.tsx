@@ -46,7 +46,7 @@ export function ContactPage() {
           {methods.map((method) => (
             <div key={t(method.title)} className="mb-10 h-48 w-40 text-center sm:w-48">
               <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-accent/50 text-primary sm:h-32 sm:w-32">
-                <method.icon size={48} strokeWidth={1} />
+                <method.icon className="size-12" strokeWidth={1} />
               </div>
               <div className="text-center">
                 <h4 className="mb-3 font-semibold text-lg">{t(method.title)}</h4>

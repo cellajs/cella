@@ -1,7 +1,7 @@
 # Migrations
 
 When an upstream cella change rewrites a pattern across the codebase (a
-codemod sweep), upstream code arrives already migrated — but fork-specific
+codemod sweep), upstream code arrives already migrated, but fork-specific
 code still uses the old pattern. Each folder here ships the tooling to run
 the same sweep on a fork after pulling the change.
 
@@ -16,12 +16,16 @@ target directory as an argument, so forks can point them at their own code.
 
 After pulling an upstream change that references a migration, run it per the
 folder's README, then run the repo gates (`pnpm ts`, biome). Migrations are
-idempotent where possible — running one against already-migrated code should
+idempotent where possible: running one against already-migrated code should
 be a no-op.
 
 ## Migrations
 
-- [2026-07-icon-conventions](./2026-07-icon-conventions/) — icons to the
-  runtime-only convention: class-based rem sizing (`icon-*` utilities, never
+- [2026-07-icon-conventions](./2026-07-icon-conventions/): icons to the
+  runtime-only convention with class-based rem sizing (`icon-*` utilities, never
   lucide's px `size` prop), modern `*Icon` names, strokeWidth via
   `LucideProvider`.
+- [2026-07-permission-actor](./2026-07-permission-actor/): required `Actor` on every
+  permission check, system-admin + public-read parity in collection reads, and public
+  read collapsed to a single row-local `publicAt` mode. **Widens access** — audit
+  `'own'` cells on context-entity and `create` rows *before* pulling.

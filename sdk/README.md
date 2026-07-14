@@ -2,7 +2,7 @@
 
 Auto-generated TypeScript SDK for the backend API.
 
-Uses [@hey-api/openapi-ts](https://heyapi.dev) to generate a fully typed SDK from the backend's OpenAPI specification in `backend/openapi.cache.json`. The generated output includes type-safe API functions, Zod v4 runtime validation schemas, and a fetch-based HTTP client (`@hey-api/client-fetch`) with automatic error throwing. Nothing in `gen/` should be edited manually — run `pnpm generate:sdk` to regenerate.
+Uses [@hey-api/openapi-ts](https://heyapi.dev) to generate a fully typed SDK from the backend's OpenAPI specification in `backend/openapi.cache.json`. The generated output includes type-safe API functions, Zod v4 runtime validation schemas, and a fetch-based HTTP client (`@hey-api/client-fetch`) with automatic error throwing. Nothing in `gen/` should be edited manually. Run `pnpm generate:sdk` to regenerate.
 
 ## File structure
 
@@ -31,7 +31,7 @@ sdk
 1. The backend produces `backend/openapi.cache.json` via its OpenAPI spec
 2. `generate-sdk.ts` runs `@hey-api/openapi-ts` with the config in `openapi-ts.config.ts`
 3. Output is generated to a temp folder first, then diffed against `sdk/gen/`
-4. Only files with actual changes are copied over — this prevents unnecessary HMR triggers
+4. Only files with actual changes are copied over, which prevents unnecessary HMR triggers
 5. A lock file prevents concurrent generation runs
 6. The spec hash is cached in `src/.spec-hash` so the watcher skips redundant runs on restart
 7. The `openapi.json` source spec is also output to `frontend/public/static/`
@@ -42,7 +42,7 @@ sdk
 |-------------|-------------|
 | `sdk` | All generated SDK functions |
 | `sdk/client` | HTTP client, `createClient`, config utilities |
-| `sdk/*` | Wildcard — e.g. `sdk/types.gen`, `sdk/zod.gen` |
+| `sdk/*` | Wildcard, e.g. `sdk/types.gen`, `sdk/zod.gen` |
 
 ## Scripts
 

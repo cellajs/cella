@@ -39,14 +39,12 @@ export type SubjectForPermission = {
    * Additional row fields for row-condition evaluation (see `row-conditions.ts`) and
    * public read grants (see `public-read.ts`). Only needed when a policy uses a rule
    * that reads columns beyond `createdBy`.
+   *
+   * Every rule reads THIS row only. The engine never loads rows, and no rule may depend on
+   * another row — that is what keeps the check-form, the compiled SQL, and stream dispatch
+   * able to reach the same verdict from the same data.
    */
   row?: Record<string, unknown>;
-  /**
-   * The parent context row's fields, for rules that depend on another row (e.g.
-   * `publicRead: 'publicParent'`). Resolved by the caller once per request/event:
-   * the engine never loads rows itself.
-   */
-  parentRow?: Record<string, unknown>;
 };
 
 /**

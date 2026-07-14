@@ -57,10 +57,7 @@ function DocsTileCard({ tile }: { tile: DocsTile }) {
         <h3 className="font-medium text-base underline-offset-2 group-hover:underline">{tile.label}</h3>
         {tile.description && <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">{tile.description}</p>}
       </div>
-      <TrailingIcon
-        size={16}
-        className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-      />
+      <TrailingIcon className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
     </>
   );
 

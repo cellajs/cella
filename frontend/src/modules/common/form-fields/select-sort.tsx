@@ -1,6 +1,6 @@
-import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { cn } from '~/utils/cn';
 
@@ -8,7 +8,7 @@ import { cn } from '~/utils/cn';
 type SortOptionBase = {
   name: string;
   value: string;
-  icon: LucideIcon;
+  icon: IconComponent;
 };
 
 // Inferred from sortOptions passed in

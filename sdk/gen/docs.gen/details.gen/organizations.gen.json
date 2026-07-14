@@ -85,6 +85,10 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "publicAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "shortName": {
                     "type": ["string", "null"],
                     "required": true,
@@ -291,6 +295,7 @@
               "authStrategies": ["passkey"],
               "chatSupport": false,
               "publishedAt": "2024-04-18T21:12:59.543Z",
+              "publicAt": null,
               "createdAt": "2024-04-18T21:12:59.543Z",
               "createdBy": null,
               "updatedAt": "2024-04-18T21:12:59.543Z",
@@ -343,6 +348,7 @@
               "authStrategies": ["passkey"],
               "chatSupport": false,
               "publishedAt": "2024-02-24T16:36:46.247Z",
+              "publicAt": null,
               "createdAt": "2024-02-24T16:36:46.247Z",
               "createdBy": null,
               "updatedAt": "2024-02-24T16:36:46.247Z",
@@ -635,6 +641,10 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "publicAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "shortName": {
                     "type": ["string", "null"],
                     "required": true,
@@ -830,6 +840,7 @@
               "authStrategies": ["passkey"],
               "chatSupport": true,
               "publishedAt": "2024-11-21T01:19:53.533Z",
+              "publicAt": null,
               "createdAt": "2024-11-21T01:19:53.533Z",
               "createdBy": null,
               "updatedAt": "2024-11-21T01:19:53.533Z",
@@ -882,6 +893,7 @@
               "authStrategies": ["passkey"],
               "chatSupport": false,
               "publishedAt": "2024-10-29T04:35:17.725Z",
+              "publicAt": null,
               "createdAt": "2024-10-29T04:35:17.725Z",
               "createdBy": null,
               "updatedAt": "2024-10-29T04:35:17.725Z",
@@ -1074,6 +1086,10 @@
               "type": ["string", "null"],
               "required": true
             },
+            "publicAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
             "shortName": {
               "type": ["string", "null"],
               "required": true,
@@ -1263,6 +1279,7 @@
           "authStrategies": ["passkey"],
           "chatSupport": true,
           "publishedAt": "2024-12-25T15:04:42.969Z",
+          "publicAt": null,
           "createdAt": "2024-12-25T15:04:42.969Z",
           "createdBy": null,
           "updatedAt": "2024-12-25T15:04:42.969Z",
@@ -1437,6 +1454,10 @@
               "type": ["string", "null"],
               "required": true
             },
+            "publicAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
             "shortName": {
               "type": ["string", "null"],
               "required": true,
@@ -1626,6 +1647,7 @@
           "authStrategies": ["passkey"],
           "chatSupport": true,
           "publishedAt": "2024-12-25T15:04:42.969Z",
+          "publicAt": null,
           "createdAt": "2024-12-25T15:04:42.969Z",
           "createdBy": null,
           "updatedAt": "2024-12-25T15:04:42.969Z",

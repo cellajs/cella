@@ -1,9 +1,9 @@
 import type { VariantProps } from 'class-variance-authority';
-import type { LucideProps } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
+import type { IconComponent } from '~/modules/common/icons/types';
 import type { alertVariants } from '~/modules/ui/alert';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { useUIStore } from '~/modules/ui/ui-store';
@@ -15,7 +15,7 @@ export type AlertBanner = {
   className?: string;
   id: string;
   modes?: AlertContextMode[];
-  icon?: React.ElementType<LucideProps>;
+  icon?: IconComponent;
   children: React.ReactNode;
   title?: string;
   variant?: VariantProps<typeof alertVariants>['variant'];
@@ -47,7 +47,7 @@ export const AlertBanner = ({
 
   const alertContent = (
     <Alert variant={variant} onClose={setAsSeen} className={cn('relative', !animate && className)}>
-      {Icon && <Icon size={16} />}
+      {Icon && <Icon />}
       {title && <AlertTitle className="pr-8">{t(title)}</AlertTitle>}
       {children && <AlertDescription className="pr-8">{children}</AlertDescription>}
     </Alert>

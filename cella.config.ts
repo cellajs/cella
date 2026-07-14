@@ -33,8 +33,9 @@ export default defineConfig({
       'shared/config',
       'backend/drizzle',
       'frontend/public/static/common',
-      'frontend/src/modules/common/bg-animation',
+      'frontend/src/content',
       'frontend/src/routes/routeTree.gen.ts',
+      'frontend/src/modules/common/bg-animation',
       '.github/release-please-manifest.json',
     ],
     // Paths pinned to fork; prefer fork version during merge conflicts

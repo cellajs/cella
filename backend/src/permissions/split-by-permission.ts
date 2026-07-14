@@ -5,7 +5,8 @@ import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
 import { resolveEntities } from '#/modules/entities/entities-queries';
 import { checkPermission } from '#/permissions';
-import { buildSubject } from '#/permissions/build-subject';
+import { actorFrom } from '#/permissions/actor';
+import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 /**
  * Splits entity IDs into allowed and disallowed based on the user's permissions.
@@ -26,8 +27,6 @@ export const splitByPermission = async (
   entityType: ContextEntityType | ProductEntityType,
   ids: string[],
 ) => {
-  const isSystemAdmin = ctx.var.isSystemAdmin;
-  const userId = ctx.var.user.id;
   const memberships = ctx.var.memberships;
 
   // Resolve entities (includes createdBy for implicit owner relation)
@@ -37,17 +36,15 @@ export const splitByPermission = async (
       ? await tenantRead(ctx, (readCtx) => resolveEntities(readCtx, entityType, ids))
       : await resolveEntities(ctx, entityType, ids);
 
-  // Check permissions for all entities in a single batch operation.
-  // userId enables 'own' policy evaluation per entity; the entity doubles as `row` so
-  // row conditions and public read grants evaluate from real row data.
+  // Check permissions for all entities in a single batch operation. Each entity doubles as
+  // `row`, so row conditions and public read grants evaluate from real row data.
   const subjects = entities.map((entity) =>
-    buildSubject(entityType, entity as Partial<ContextEntityIdColumns>, {
-      id: entity.id,
-      createdBy: 'createdBy' in entity ? (entity.createdBy as string | null) : undefined,
-      row: entity as Record<string, unknown>,
-    }),
+    buildSubjectFromEntity(
+      entityType,
+      entity as { id: string; createdBy?: string | null } & Partial<ContextEntityIdColumns>,
+    ),
   );
-  const { results } = checkPermission(memberships, action, subjects, { isSystemAdmin, userId });
+  const { results } = checkPermission(memberships, action, subjects, actorFrom(ctx));
 
   // Partition into allowed and disallowed
   const allowedIds: string[] = [];

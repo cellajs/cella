@@ -4,8 +4,12 @@
  *
  * - `columnEqualsActor`: `row[column] = <acting user id>`. Never matches without an
  *   acting user (anonymous), mirroring the check-form.
+ * - `columnIsNotNull`: `row[column] IS NOT NULL`. Actor-independent, so it matches for
+ *   anonymous actors too — this is what public read compiles to (see `public-read.ts`).
  */
-export type RowConditionSqlForm = { kind: 'columnEqualsActor'; column: string };
+export type RowConditionSqlForm =
+  | { kind: 'columnEqualsActor'; column: string }
+  | { kind: 'columnIsNotNull'; column: string };
 
 /** The acting user for condition evaluation. `userId` is absent for anonymous actors. */
 export type ConditionActor = { userId?: string };
@@ -19,7 +23,7 @@ export type RowForCondition = { createdBy?: string | null } & Record<string, unk
 /**
  * Per-row qualification on an access-policy grant: a `RowCondition` cell value grants an
  * action only on rows that satisfy `matches`, which must agree with `sqlForm`. See
- * `README.md` for the check-form/SQL-form design.
+ * `cella/PERMISSIONS.md` for the check-form/SQL-form design.
  */
 export interface RowCondition {
   /**

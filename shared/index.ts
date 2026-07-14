@@ -87,16 +87,17 @@ export type {
   PermissionValue,
   SubjectAccessPolicies,
 } from './src/permissions';
-export { isRowCondition, own, publicReadMatches } from './src/permissions';
+export { isRowCondition, own, publicRow } from './src/permissions';
 export type { ConditionActor, PublicReadGrants, PublicReadMode, RowCondition, RowConditionSqlForm, RowForCondition } from './src/permissions';
 export { configureAccessPolicies, configurePermissions, getPolicyPermissions, getSubjectPolicies } from './src/permissions';
 export type { PermissionsConfigResult } from './src/permissions';
-export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './src/permissions';
+export { allActionsAllowed, allActionsDenied, createActionRecord, resolvePermission } from './src/permissions';
 export { accessPolicies, computeCan, publicReadGrants, elevatedRoles } from './src/permissions';
 export type { ActionPermissionState, EntityCanMap } from './src/permissions';
 
 // Permission engine (tier-neutral decision logic, shared by backend + yjs)
 export {
+  type Actor,
   buildSubject,
   buildSubjectFromEntity,
   type BatchPermissionResult,

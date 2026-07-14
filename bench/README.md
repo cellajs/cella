@@ -6,7 +6,7 @@ Runs against your dev stack with idempotent, deterministic seed data. Auth is pr
 
 ## Prerequisites
 
-Start these first — bench verifies they are reachable and exits with guidance if not:
+Start these first (bench verifies they are reachable and exits with guidance if not):
 
 - **Postgres** seeded with app data (`pnpm docker` + `pnpm seed`)
 - **Services** running via `pnpm dev` (backend, cdc, yjs). CDC throughput is only measured with `DEV_MODE=full` (default).

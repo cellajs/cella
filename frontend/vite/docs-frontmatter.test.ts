@@ -72,7 +72,7 @@ describe('extractHeadings', () => {
     const headings = extractHeadings(source, { stripLeadingH1: true });
     const ids = headings.map((h) => h.id);
     expect(ids).toContain('spy-running-tests');
-    expect(ids).toContain('spy-storybook-component-tests');
+    expect(ids).toContain('spy-storybook');
     expect(ids).not.toContain('spy-testing-guide'); // leading h1 stripped
     // Fenced blocks in the doc contain `# comment` lines; none may leak as headings.
     expect(headings.every((h) => h.depth <= 3)).toBe(true);

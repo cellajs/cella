@@ -1697,6 +1697,9 @@
           "publishedAt": {
             "type": ["string", "null"]
           },
+          "publicAt": {
+            "type": ["string", "null"]
+          },
           "shortName": {
             "type": ["string", "null"],
             "maxLength": 255
@@ -1830,6 +1833,7 @@
           "createdBy",
           "updatedBy",
           "publishedAt",
+          "publicAt",
           "shortName",
           "country",
           "timezone",
@@ -1866,6 +1870,7 @@
           "authStrategies": ["passkey"],
           "chatSupport": true,
           "publishedAt": "2024-12-25T15:04:42.969Z",
+          "publicAt": null,
           "createdAt": "2024-12-25T15:04:42.969Z",
           "createdBy": null,
           "updatedAt": "2024-12-25T15:04:42.969Z",
@@ -1967,6 +1972,9 @@
             "type": ["string", "null"],
             "format": "uuid"
           },
+          "publicAt": {
+            "type": ["string", "null"]
+          },
           "seq": {
             "type": "integer",
             "minimum": -9007199254740991,
@@ -2034,6 +2042,7 @@
           "updatedBy",
           "deletedAt",
           "deletedBy",
+          "publicAt",
           "seq",
           "public",
           "bucketName",
@@ -2071,6 +2080,7 @@
           "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
           "deletedAt": null,
           "deletedBy": null,
+          "publicAt": null,
           "seq": 123,
           "stx": {
             "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
@@ -7088,6 +7098,7 @@
                           "authStrategies": ["passkey"],
                           "chatSupport": true,
                           "publishedAt": "2024-12-25T15:04:42.969Z",
+                          "publicAt": null,
                           "createdAt": "2024-12-25T15:04:42.969Z",
                           "createdBy": null,
                           "updatedAt": "2024-12-25T15:04:42.969Z",
@@ -7170,6 +7181,7 @@
                       "authStrategies": ["passkey"],
                       "chatSupport": false,
                       "publishedAt": "2024-04-18T21:12:59.543Z",
+                      "publicAt": null,
                       "createdAt": "2024-04-18T21:12:59.543Z",
                       "createdBy": null,
                       "updatedAt": "2024-04-18T21:12:59.543Z",
@@ -7227,6 +7239,7 @@
                       "authStrategies": ["passkey"],
                       "chatSupport": false,
                       "publishedAt": "2024-02-24T16:36:46.247Z",
+                      "publicAt": null,
                       "createdAt": "2024-02-24T16:36:46.247Z",
                       "createdBy": null,
                       "updatedAt": "2024-02-24T16:36:46.247Z",
@@ -7537,6 +7550,7 @@
                       "authStrategies": ["passkey"],
                       "chatSupport": true,
                       "publishedAt": "2024-11-21T01:19:53.533Z",
+                      "publicAt": null,
                       "createdAt": "2024-11-21T01:19:53.533Z",
                       "createdBy": null,
                       "updatedAt": "2024-11-21T01:19:53.533Z",
@@ -7594,6 +7608,7 @@
                       "authStrategies": ["passkey"],
                       "chatSupport": false,
                       "publishedAt": "2024-10-29T04:35:17.725Z",
+                      "publicAt": null,
                       "createdAt": "2024-10-29T04:35:17.725Z",
                       "createdBy": null,
                       "updatedAt": "2024-10-29T04:35:17.725Z",
@@ -7744,6 +7759,7 @@
                   "authStrategies": ["passkey"],
                   "chatSupport": true,
                   "publishedAt": "2024-12-25T15:04:42.969Z",
+                  "publicAt": null,
                   "createdAt": "2024-12-25T15:04:42.969Z",
                   "createdBy": null,
                   "updatedAt": "2024-12-25T15:04:42.969Z",
@@ -7952,6 +7968,7 @@
                   "authStrategies": ["passkey"],
                   "chatSupport": true,
                   "publishedAt": "2024-12-25T15:04:42.969Z",
+                  "publicAt": null,
                   "createdAt": "2024-12-25T15:04:42.969Z",
                   "createdBy": null,
                   "updatedAt": "2024-12-25T15:04:42.969Z",
@@ -8217,6 +8234,7 @@
                       "updatedBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                       "deletedAt": null,
                       "deletedBy": null,
+                      "publicAt": null,
                       "seq": 318,
                       "stx": {
                         "mutationId": "897a617f-1449-4760-95cc-9f521e3f100f",
@@ -8248,6 +8266,7 @@
                       "updatedBy": "772a771f-c150-465e-9635-46594859fc3d",
                       "deletedAt": null,
                       "deletedBy": null,
+                      "publicAt": null,
                       "seq": 447,
                       "stx": {
                         "mutationId": "de8ccfef-453b-4f07-b4c2-ef77d580cc1e",
@@ -8442,6 +8461,7 @@
                       "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                       "deletedAt": null,
                       "deletedBy": null,
+                      "publicAt": null,
                       "seq": 348,
                       "stx": {
                         "mutationId": "efa0a617-2297-4810-b621-a44be44424dd",
@@ -8473,6 +8493,7 @@
                       "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                       "deletedAt": null,
                       "deletedBy": null,
+                      "publicAt": null,
                       "seq": 276,
                       "stx": {
                         "mutationId": "41ffc3e0-8db5-44ef-8dd4-5f10b01ab309",
@@ -8545,6 +8566,7 @@
                       "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                       "deletedAt": null,
                       "deletedBy": null,
+                      "publicAt": null,
                       "seq": 348,
                       "stx": {
                         "mutationId": "efa0a617-2297-4810-b621-a44be44424dd",
@@ -8576,6 +8598,7 @@
                       "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                       "deletedAt": null,
                       "deletedBy": null,
+                      "publicAt": null,
                       "seq": 276,
                       "stx": {
                         "mutationId": "41ffc3e0-8db5-44ef-8dd4-5f10b01ab309",
@@ -8881,6 +8904,7 @@
                   "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
                   "deletedAt": null,
                   "deletedBy": null,
+                  "publicAt": null,
                   "seq": 123,
                   "stx": {
                     "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
@@ -9029,6 +9053,7 @@
                   "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
                   "deletedAt": null,
                   "deletedBy": null,
+                  "publicAt": null,
                   "seq": 123,
                   "stx": {
                     "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",

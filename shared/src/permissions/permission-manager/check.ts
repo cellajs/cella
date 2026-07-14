@@ -1,6 +1,6 @@
 import type { ContextEntityType, EntityActionType, ProductEntityType } from '../../../types';
 import { allActionsAllowed, createActionRecord } from '../action-helpers';
-import { type PublicReadGrants, publicReadMatches } from '../public-read';
+import { type PublicReadGrants, publicRow } from '../public-read';
 import { type ConditionActor, isRowCondition, type RowForCondition } from '../row-conditions';
 import type { AccessPolicies, EntityActionPermissions } from '../types';
 import { formatBatchPermissionSummary, formatPermissionDecision } from './format';
@@ -217,10 +217,11 @@ const checkWithIndices = <T extends PermissionMembership>(
     }
   }
 
-  // Subject-level public read grant: rows can be readable by any actor (anonymous
-  // included), based on row data (see `public-read.ts`). Membership-independent.
+  // Subject-level public read grant: rows readable by any actor (anonymous included) when
+  // the row's own `publicAt` is set. Membership-independent, so it is evaluated outside the
+  // policy walk — but through the same row-predicate the SQL compiler uses (`public-read.ts`).
   const publicMode = publicGrants?.[subject.entityType];
-  if (publicMode && publicReadMatches(publicMode, subject)) {
+  if (publicMode && publicRow.matches(conditionRow, conditionActor)) {
     actions.read.enabled = true;
     actions.read.grantedBy.push({ type: 'public', mode: publicMode });
   }

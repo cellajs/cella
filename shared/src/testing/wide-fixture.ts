@@ -112,7 +112,6 @@ export const wideSubject = (input: {
   createdBy?: string | null;
   contextIds: Partial<Record<WideContextType, string | null>>;
   row?: Record<string, unknown>;
-  parentRow?: Record<string, unknown>;
 }): SubjectForPermission => ({ ...input }) as unknown as SubjectForPermission;
 
 /** Wrap a wide-keyed public-read grant map for the engine's `publicGrants` option. */

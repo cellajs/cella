@@ -1,7 +1,8 @@
-import { FileTextIcon, LayoutListIcon, type LucideIcon, WorkflowIcon } from 'lucide-react';
+import { FileTextIcon, LayoutListIcon, WorkflowIcon } from 'lucide-react';
+import type { IconComponent } from '~/modules/common/icons/types';
 import type { DocRenderMode } from '~/modules/page/content';
 
-export const renderModeIcons: Record<DocRenderMode, LucideIcon> = {
+export const renderModeIcons: Record<DocRenderMode, IconComponent> = {
   default: FileTextIcon,
   overview: LayoutListIcon,
   nodeOnly: WorkflowIcon,

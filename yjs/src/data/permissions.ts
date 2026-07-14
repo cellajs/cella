@@ -131,8 +131,19 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
     if (typeof entity.tenantId === 'string' && entity.tenantId !== ctx.tenantId) return false;
 
     const createdBy = typeof entity.createdBy === 'string' || entity.createdBy === null ? entity.createdBy : undefined;
-    const subject = buildSubject(entityType, entity, { id: entity.id, createdBy });
-    const { isAllowed } = checkPermission(memberships, 'update', subject);
+    const subject = buildSubject(entityType, entity, {
+      id: entity.id,
+      createdBy,
+      // The row itself: without it, every row-derived grant ('own', public read) fails closed.
+      row: entity as unknown as Record<string, unknown>,
+    });
+
+    // Collaborative editing confers no system-admin bypass — the same stance the backend's
+    // materialize endpoint takes, so the relay and the write it triggers agree.
+    const { isAllowed } = checkPermission(memberships, 'update', subject, {
+      userId: ctx.userId,
+      isSystemAdmin: false,
+    });
     return isAllowed;
   });
 }

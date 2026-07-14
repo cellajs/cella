@@ -47,7 +47,7 @@ Each service has a `tracing.ts` (or `otel.ts` for frontend) that calls the share
 
 Every new Node.js worker needs four things: OTel setup, logging, graceful shutdown, and optionally a health endpoint. Follow these steps:
 
-### 1. OTel setup — `tracing.ts`
+### 1. OTel setup: `tracing.ts`
 
 ```typescript
 import { appConfig } from 'shared';
@@ -63,7 +63,7 @@ export const otel: OtelSDK = createOtelSDK({
 
 To add local span debugging, pass a `SpanStoreProcessor` (see how CDC does it).
 
-### 2. Logging — `pino.ts`
+### 2. Logging: `pino.ts`
 
 ```typescript
 import { appConfig } from 'shared';
@@ -79,7 +79,7 @@ export const log = createLogger({
 });
 ```
 
-Whenever `mapleSecretIngestKey` is set, Pino ships structured logs to Maple via `pino-opentelemetry-transport` — in **dev and production alike** (the transport runs in a worker thread and is handed the Maple endpoint + key explicitly). The console keeps its own format in parallel: `pino-pretty` in dev, raw JSON on stdout in production. Without a key, logs stay on the console only.
+Whenever `mapleSecretIngestKey` is set, Pino ships structured logs to Maple via `pino-opentelemetry-transport`, in **dev and production alike** (the transport runs in a worker thread and is handed the Maple endpoint + key explicitly). The console keeps its own format in parallel: `pino-pretty` in dev, raw JSON on stdout in production. Without a key, logs stay on the console only.
 
 ### 3. Graceful shutdown
 
@@ -151,7 +151,7 @@ async function doWork() {
 }
 ```
 
-For services that need trace context propagation (like CDC), wrap this pattern in a `withSpan()` helper that returns `{ traceId, spanId }` — see the CDC worker's implementation.
+For services that need trace context propagation (like CDC), wrap this pattern in a `withSpan()` helper that returns `{ traceId, spanId }`. See the CDC worker's implementation.
 
 ### Span naming conventions
 
@@ -178,7 +178,7 @@ This gives full end-to-end visibility from user action → API → database → 
 
 ## Data model
 
-**SpanData** is the shared span representation — a plain object with `traceId`, `spanId`, `name`, `startTime`, `endTime`, `duration`, `attributes`, `status`, `events`, and optional `parentSpanId`.
+**SpanData** is the shared span representation: a plain object with `traceId`, `spanId`, `name`, `startTime`, `endTime`, `duration`, `attributes`, `status`, `events`, and optional `parentSpanId`.
 
 **SpanStore** is an in-memory ring buffer (default 500 spans) with pub/sub, filtering by prefix, and statistics. Used by the frontend devtools and CDC debug logging.
 
@@ -192,6 +192,6 @@ This gives full end-to-end visibility from user action → API → database → 
 | CDC | `GET /health` | Status, uptime, replication state, WebSocket connection, circuit breakers |
 | YJS | `GET /health` | Status, uptime, connection/document/client counts |
 
-All health endpoints default to **shallow** (204 No Content) — safe for load balancers, container orchestrators, and liveness probes without extra configuration. Use `?depth=full` to get JSON diagnostics.
+All health endpoints default to **shallow** (204 No Content), safe for load balancers, container orchestrators, and liveness probes without extra configuration. Use `?depth=full` to get JSON diagnostics.
 
 Backend health degrades to `degraded` if CDC reports stale connections, and to `unhealthy` if the database probe fails. CDC health degrades if replication is paused or the WebSocket is disconnected, and becomes `unhealthy` if replication is stopped.

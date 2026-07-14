@@ -1,10 +1,11 @@
-import { InfoIcon, type LucideIcon } from 'lucide-react';
+import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ContextEntityType } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
 import { collectContextIds } from '~/modules/navigation/menu-sheet/helpers/collect-context-ids';
@@ -18,7 +19,7 @@ export type MenuSectionOptions = {
   label: string;
   entityType: ContextEntityType;
   createAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
-  icon?: LucideIcon;
+  icon?: IconComponent;
 };
 
 interface MenuSheetSectionProps {

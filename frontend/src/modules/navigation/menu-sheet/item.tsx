@@ -1,8 +1,9 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { BellOffIcon, type LucideIcon } from 'lucide-react';
+import { BellOffIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
@@ -14,7 +15,7 @@ import { getContextEntityRoute, pageTopHashNav } from '~/utils/context-entity-ro
 
 interface MenuSheetItemProps {
   item: UserMenuItem;
-  icon?: LucideIcon;
+  icon?: IconComponent;
   className?: string;
 }
 

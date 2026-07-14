@@ -6,8 +6,8 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 
 1. Land work on `main` with Conventional Commit messages (a lefthook `commit-msg` hook runs commitlint locally).
 2. release-please keeps an open **release PR per package**, continuously updating the proposed version bump and generated [Changelog](/docs/page/changelog).
-3. Merge the release PR when ready — it bumps the version, updates the changelog, tags, and publishes the GitHub Release.
-4. On merge, the `release-gate` job (security audit + full e2e) runs before the GitHub Release is finalized — see below.
+3. Merge the release PR when ready: it bumps the version, updates the changelog, tags, and publishes the GitHub Release.
+4. On merge, the `release-gate` job (security audit + full e2e) runs before the GitHub Release is finalized (see below).
 
 ## Deploy timing
 
@@ -20,7 +20,7 @@ Heavy checks run **only at release time** in [release.yml](../.github/workflows/
 - On release-PR merge, the `release-gate` job runs the security audit (`pnpm audit --audit-level=high`) and the full test/e2e suite.
 - The GitHub Release is finalized only if the gate passes, so a failed gate ships nothing.
 
-This keeps day-to-day PRs fast and gates only the irreversible publish. Add release-only checks as steps in `release-gate` — no ruleset changes needed.
+This keeps day-to-day PRs fast and gates only the irreversible publish. Add release-only checks as steps in `release-gate`; no ruleset changes needed.
 
 ## Packages
 
@@ -30,7 +30,7 @@ Versioning is per package via [release-please-config.json](../.github/release-pl
 | --- | --- | --- | --- |
 | `cella` (the template) | `.` | `v*` | GitHub Release only |
 
-The scaffolder (`@cellajs/create-cella`) lives in its own repo, [cellajs/create-cella](https://github.com/cellajs/create-cella), with its own release automation. **Add another releasable package by adding one entry to both files — no workflow changes.**
+The scaffolder (`@cellajs/create-cella`) lives in its own repo, [cellajs/create-cella](https://github.com/cellajs/create-cella), with its own release automation. **Add another releasable package by adding one entry to both files; no workflow changes.**
 
 ## Commit types
 
@@ -47,21 +47,21 @@ A `!` (e.g. `feat!:`) or a `BREAKING CHANGE:` footer forces a breaking-change se
 
 ## Pre-1.0 versioning
 
-While on `0.x` (`bump-minor-pre-major`), breaking changes bump the minor and features bump the patch — keeping versions meaningful for forks consuming upstream via `pnpm cella`.
+While on `0.x` (`bump-minor-pre-major`), breaking changes bump the minor and features bump the patch, keeping versions meaningful for forks consuming upstream via `pnpm cella`.
 
 ## Automation setup
 
 [release.yml](../.github/workflows/release.yml) needs a few secrets/settings. An org-wide Github App is ideal because it can be set up once and cover all repos.
 
-**GitHub App token** — release-please opens the release PR with a dedicated GitHub App token so the PR *triggers* the required CI/`pr-title` checks.
+**GitHub App token**: release-please opens the release PR with a dedicated GitHub App token so the PR *triggers* the required CI/`pr-title` checks.
 
 1. Create a GitHub App (org/account → Developer settings → GitHub Apps → New), disable the webhook, grant repo permissions `Contents: Read and write` and `Pull requests: Read and write`.
 2. Generate a private key (`.pem`) and note the numeric **Client ID**.
 3. Install the App on each repo that releases.
-4. Add `RELEASE_APP_ID` (Client ID) and `RELEASE_APP_PRIVATE_KEY` (full `.pem`) as **repo** or **org** secrets — org secrets let every repo reuse one App.
+4. Add `RELEASE_APP_ID` (Client ID) and `RELEASE_APP_PRIVATE_KEY` (full `.pem`) as **repo** or **org** secrets; org secrets let every repo reuse one App.
 
-**npm publishing** — the `cella` template is GitHub-Release-only and needs no npm auth. The scaffolder `@cellajs/create-cella` is published from its own repo ([cellajs/create-cella](https://github.com/cellajs/create-cella)); its npm Trusted Publisher / `NPM_TOKEN` setup lives there.
+**npm publishing**: the `cella` template is GitHub-Release-only and needs no npm auth. The scaffolder `@cellajs/create-cella` is published from its own repo ([cellajs/create-cella](https://github.com/cellajs/create-cella)); its npm Trusted Publisher / `NPM_TOKEN` setup lives there.
 
 **Repo settings:**
 - `main` ruleset: squash-merge only, linear history, require `pr-title`, `lint`, `test`, `test-cella-cli`. Do **not** require `release-gate` (it runs at release time, not on PRs).
-- "Allow GitHub Actions to create and approve pull requests" can stay **disabled** — the App, not Actions, creates the release PR.
+- "Allow GitHub Actions to create and approve pull requests" can stay **disabled**: the App, not Actions, creates the release PR.

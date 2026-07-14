@@ -84,7 +84,7 @@ The pipeline flows: **Postgres WAL → CDC worker → WebSocket → ActivityBus 
 
 - **App stream** (`/entities/app/stream`): authenticated, carries permitted product-entity notifications and membership changes. Product and membership payloads share `event: change` and are distinguished by `kind: 'entity' | 'membership'`. One leader tab holds SSE; followers receive notifications through BroadcastChannel.
 
-Sequence numbers are hierarchy-aware: the CDC worker stamps product creates and updates—including soft deletes and restores—and scopes counters to the row's deepest non-null ancestor. 
+Sequence numbers are hierarchy-aware: the CDC worker stamps product creates and updates (including soft deletes and restores) and scopes counters to the row's deepest non-null ancestor. 
 
 ### Merge and client lifecycle
 
@@ -94,7 +94,7 @@ Before opening SSE, the client performs catchup to establish or reconcile per-sc
 
 ### Schema evolution (WIP)
 
-Offline clients don't update in lockstep with deploys, so breaking schema changes to context and product entities can ship as **append-only lens modules** in `shared/src/schema-evolution/` (global schema version = lens count). Each lens declares one change (`rename`, `add`, `drop`, `retype`, `setRename`); from that declaration the system derives widened wire schemas for the expand window, product ops/context body normalization, and a boot-time client cache migration that rewrites cached rows and queued mutations locally — no refetch. Tabs broadcast their schema version so a stale bundle stops persisting before it can downgrade a migrated store. With an empty lens list (current state) everything is a passthrough; the interim mechanism for breaking changes is a `clientCacheVersion` bump (cache wipe, mutations kept), CI-enforced by `schema-bust-gate`. Version telemetry and contraction policy exist, but fleet-floor/minimum-window contraction is not automatically enforced yet. See [Schema evolution](/docs/page/architecture/schema-evolution) for the shipping playbook.
+Offline clients don't update in lockstep with deploys, so breaking schema changes to context and product entities can ship as **append-only lens modules** in `shared/src/schema-evolution/` (global schema version = lens count). Each lens declares one change (`rename`, `add`, `drop`, `retype`, `setRename`); from that declaration the system derives widened wire schemas for the expand window, product ops/context body normalization, and a boot-time client cache migration that rewrites cached rows and queued mutations locally (no refetch). Tabs broadcast their schema version so a stale bundle stops persisting before it can downgrade a migrated store. With an empty lens list (current state) everything is a passthrough; the interim mechanism for breaking changes is a `clientCacheVersion` bump (cache wipe, mutations kept), CI-enforced by `schema-bust-gate`. Version telemetry and contraction policy exist, but fleet-floor/minimum-window contraction is not automatically enforced yet. See [Schema evolution](/docs/page/architecture/schema-evolution) for the shipping playbook.
 
 ## Query layer
 
@@ -119,7 +119,7 @@ The React Query cache is persisted into `appdb` via Dexie with two modes control
 - **Offline mode** (`offlineAccess=true`): scope `rq`, survives browser restart and eagerly fills read caches for all orgs. It does not by itself make failed writes durable.
 - **Session mode** (`offlineAccess=false`): per-tab scope `s-<uuid>`, survives refresh but cleaned up on tab close (orphans swept on next startup). Sync service only resolves staleness for the current org.
 
-While signed out the persister simply does nothing and the cache stays in memory, so the provider can stay mounted at the app root and persistence follows the user automatically. Within each mode the persister uses a **hybrid storage layout**: product entity queries are stored as individual records in the `queries` table for incremental diffing — only changed queries are written — while context queries are bundled into the `meta` record, since they are few, small, and all needed at startup.
+While signed out the persister simply does nothing and the cache stays in memory, so the provider can stay mounted at the app root and persistence follows the user automatically. Within each mode the persister uses a **hybrid storage layout**: product entity queries are stored as individual records in the `queries` table for incremental diffing (only changed queries are written), while context queries are bundled into the `meta` record, since they are few, small, and all needed at startup.
 
 On app routes, only the leader tab's paused mutations pass `shouldDehydrateMutation`; all tabs can still persist query changes. In the shared offline `rq` scope, context queries and mutations occupy the same meta record, so a follower query write can still replace the leader's dehydrated mutation array. Leader-only dehydration therefore reduces duplication but is not a complete cross-tab single-writer guarantee. Since `mutationFn` cannot be serialized, entity modules register replay defaults through `addMutationRegistrar()` before restoration; serialized variables must include every ID the default needs after reload.
 
@@ -150,11 +150,11 @@ Cookie-based sessions (hashed, typed as `regular`/`impersonation`/`mfa`) with si
 
 ## Multi-tenancy
 
-A `tenant` is not an entity — but a `resource` that acts as top-level isolation unit.
+A `tenant` is not an entity, but a `resource` that acts as top-level isolation unit.
 
 Tenant-scoped routes use `/:tenantId/` in the path. Organization-scoped product routes use the `authGuard` → `tenantGuard` → `orgGuard` chain; the guards load the authorized context and initially set `ctx.var.db` to `baseDb`. Product entity handlers then wrap their DB operations in `tenantRead()` (read-only) or `tenantContext()` (read-write) to get an RLS-scoped transaction. Context entity handlers use `baseDb` directly (no RLS), with the guard set appropriate to their route. See AGENTS.md for the full guard matrix.
 
-## Security
+## Permissions
 
 Cella tries to apply a defense-in-depth strategy. The permission manager and guard chain are the primary authorization mechanisms; tenant RLS, composite FKs, and immutability triggers are safety nets that catch application bugs.
 
@@ -181,8 +181,8 @@ Tenant SELECT policies are fail-closed: missing or empty `app.tenant_id` returns
 
 Product entity handlers use helpers from `backend/src/db/tenant-context.ts`:
 
-- **`tenantRead(ctx, fn)`** — Opens a read-only transaction with RLS session variables set. `tenantReadIncludingDeleted()` additionally sets `app.include_deleted=true` for delta/tombstone reads.
-- **`tenantContext(ctx, fn)`** — Opens a read-write transaction and sets the same variables, so SELECT policies pass for reads/`RETURNING` inside the write. Because tables use `FORCE ROW LEVEL SECURITY`, the schema installs unconditional write-through policies; write isolation is enforced by guards, permissions, composite FKs, and immutability triggers rather than restrictive RLS write predicates. `tenantContextIncludingDeleted()` can see tombstones.
+- **`tenantRead(ctx, fn)`**: opens a read-only transaction with RLS session variables set. `tenantReadIncludingDeleted()` additionally sets `app.include_deleted=true` for delta/tombstone reads.
+- **`tenantContext(ctx, fn)`**: opens a read-write transaction and sets the same variables, so SELECT policies pass for reads/`RETURNING` inside the write. Because tables use `FORCE ROW LEVEL SECURITY`, the schema installs unconditional write-through policies; write isolation is enforced by guards, permissions, composite FKs, and immutability triggers rather than restrictive RLS write predicates. `tenantContextIncludingDeleted()` can see tombstones.
 
 The `tenantRead` callback receives a `readCtx` with `{ var: { ...ctx.var, db: tx } }` so query functions can use the RLS-scoped transaction.
 
@@ -191,7 +191,7 @@ The `tenantRead` callback receives a `readCtx` with `{ var: { ...ctx.var, db: tx
 | Category | SELECT | Write | Builder | Use case |
 |----------|--------|-------|---------|----------|
 | Tenant-scoped | Fail-closed tenant match; tombstones hidden unless requested | Unconditional write-through policy; app-layer authorization | `tenantSelectPolicy()`, `writeThroughPolicies()` | `attachments`, `yjs_documents`; fork-added tenant-scoped products |
-| No RLS | — | — | — | Context entities, memberships, and ordinary resources |
+| No RLS | - | - | - | Context entities, memberships, and ordinary resources |
 
 ### Database roles
 
@@ -207,6 +207,8 @@ Identity columns (`tenant_id`, `organization_id`, `user_id` on memberships, etc.
 ### Permission manager
 
 `getAllDecisions()` resolves permissions by walking the entity hierarchy (most-specific context → root), matching memberships against policies defined with `configurePermissions()` in `shared/config/permissions-config.ts`. Policies support `1` (allowed), `0` (denied), and `'own'` (allowed only when `entity.createdBy === userId`). Grant attribution records membership, relation, public, or system-admin sources. System admins bypass ordinary checks.
+
+See [Permissions](/docs/page/architecture/permissions) for the full permission model, including row conditions, public read grants, the per-tier enforcement paths, and their constraints.
 
 ### Fork contract
 
@@ -235,9 +237,9 @@ At startup the backend builds the full spec (including `info.x-extensions`), val
 
 Mock generators live beside the backend source in `backend/src/mocks/` (plus module-specific mock files) and serve three purposes:
 
-- **OpenAPI examples** — Deterministic, seeded response mocks provide `example:` values on Zod schemas and route responses.
-- **Database seeding** — Insert mocks return Drizzle `Insert*Model` types; generators use `UniqueEnforcer` where seeded values must be unique.
-- **Tests and load tests** — Reusable mock data generators.
+- **OpenAPI examples**: deterministic, seeded response mocks provide `example:` values on Zod schemas and route responses.
+- **Database seeding**: insert mocks return Drizzle `Insert*Model` types; generators use `UniqueEnforcer` where seeded values must be unique.
+- **Tests and load tests**: reusable mock data generators.
 
 
 ## Testing

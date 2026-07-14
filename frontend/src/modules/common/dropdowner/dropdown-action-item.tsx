@@ -1,13 +1,13 @@
 import { Menu } from '@base-ui/react/menu';
-import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 interface Props {
   isMobile: boolean;
   onSelect?: () => void;
-  icon?: LucideIcon;
+  icon?: IconComponent;
   children: ReactNode;
   variant?: ButtonProps['variant'];
   className?: ButtonProps['className'];
@@ -35,7 +35,7 @@ export function DropdownActionItem({
     return (
       <div className="sm:p-1">
         <Button onClick={onSelect} variant={variant} className={cn('flex w-full items-center', className)}>
-          {Icon && <Icon size={16} className="mr-2" />}
+          {Icon && <Icon className="mr-2" />}
           {children}
         </Button>
       </div>
@@ -53,7 +53,7 @@ export function DropdownActionItem({
         className,
       )}
     >
-      {Icon && <Icon size={16} />}
+      {Icon && <Icon />}
       {children}
     </Menu.Item>
   );

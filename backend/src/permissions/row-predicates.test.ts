@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import { type PgColumn, pgTable, varchar } from 'drizzle-orm/pg-core';
 import {
   type AccessPolicies,
+  type Actor,
   appConfig,
   type ContextEntityType,
   computeCan,
@@ -15,6 +16,7 @@ import {
   type PermissionTopology,
   type PermissionValue,
   type ProductEntityType,
+  type PublicReadGrants,
   resolvePermission,
   type SubjectForPermission,
   toColumnName,
@@ -41,6 +43,14 @@ import { buildCollectionReadWhere } from './row-predicates';
  * the engine leaks data; the reverse silently hides rows. This test generates random
  * policy sets (including row-conditional `'own'` grants), memberships and actors, and
  * asserts the three paths agree row-for-row.
+ *
+ * The scenario space deliberately varies BOTH axes that previously went unexercised, each of
+ * which hid a real divergence:
+ * - `isSystemAdmin` — the collection path took no admin flag at all, so a sysadmin (who passes
+ *   `orgGuard` with no membership) got an empty list while single-row reads of the same rows
+ *   succeeded.
+ * - public read grants — the collection path never compiled a public clause, so a row published
+ *   via `publicAt` was readable single-row and over SSE, but silently absent from every list.
  *
  * Config-adaptive: the scenario space is derived from `attachment`'s real ancestor chain, so it
  * runs on any fork. A fork with a nested context (raak: `project → organization`) exercises the
@@ -69,6 +79,8 @@ const rootColumnName = toColumnName(rootIdKey);
 const baseColumns = {
   id: varchar('id').primaryKey(),
   createdBy: varchar('created_by'),
+  // Public readability, denormalized onto the row exactly as `productEntityColumns` carries it.
+  publicAt: varchar('public_at'),
   [rootIdKey]: varchar(rootColumnName).notNull(),
 };
 const parityTable = pgTable(
@@ -83,20 +95,26 @@ const subContextColumn = (
 
 const USERS = ['u1', 'u2'] as const;
 
+const PUBLIC_AT = '2026-07-06T12:00:00Z';
+
 interface ParityRow {
   id: string;
   subContextId: string | null;
   createdBy: string | null;
+  publicAt: string | null;
 }
 
-/** Fixed row set: every sub-context (or the single org) × creator. */
+/** Fixed row set: every sub-context (or the single org) × creator × published-or-not. */
 const SUB_SLOTS: (string | null)[] = SUB ? SUB_INSTANCES : [null];
 const ROWS: ParityRow[] = SUB_SLOTS.flatMap((subContextId) =>
-  [...USERS, null].map((createdBy) => ({
-    id: `${subContextId ?? 'root'}:${createdBy ?? 'nobody'}`,
-    subContextId,
-    createdBy,
-  })),
+  [...USERS, null].flatMap((createdBy) =>
+    [null, PUBLIC_AT].map((publicAt) => ({
+      id: `${subContextId ?? 'root'}:${createdBy ?? 'nobody'}:${publicAt ? 'public' : 'private'}`,
+      subContextId,
+      createdBy,
+      publicAt,
+    })),
+  ),
 );
 
 /** Deterministic PRNG (mulberry32) so failures reproduce exactly. */
@@ -136,7 +154,16 @@ interface Scenario {
   policies: AccessPolicies;
   memberships: MembershipBaseModel[];
   userId: string | undefined;
+  isSystemAdmin: boolean;
+  /** Public read grant for `attachment`, or none. */
+  publicGrants: PublicReadGrants;
 }
+
+/** The scenario's actor, in the shape every enforcement path now demands. */
+const scenarioActor = (scenario: Scenario): Actor =>
+  scenario.userId === undefined
+    ? { anonymous: true }
+    : { userId: scenario.userId, isSystemAdmin: scenario.isSystemAdmin };
 
 const membership = (contextType: ContextEntityType, contextId: string, role: string): MembershipBaseModel =>
   ({
@@ -148,6 +175,10 @@ const membership = (contextType: ContextEntityType, contextId: string, role: str
     role,
   }) as unknown as MembershipBaseModel;
 
+/** A public read grant on `attachment`, in ~30% of scenarios. */
+const randomPublicGrants = (random: () => number): PublicReadGrants =>
+  random() < 0.3 ? { attachment: 'publicSelf' } : {};
+
 const randomScenario = (random: () => number): Scenario => {
   const anonymous = random() < 0.1;
   if (anonymous) {
@@ -155,6 +186,9 @@ const randomScenario = (random: () => number): Scenario => {
       policies: randomPolicies(random),
       memberships: [],
       userId: undefined,
+      // An anonymous actor is never a system admin — the union makes that unrepresentable.
+      isSystemAdmin: false,
+      publicGrants: randomPublicGrants(random),
     };
   }
 
@@ -169,6 +203,9 @@ const randomScenario = (random: () => number): Scenario => {
     policies: randomPolicies(random),
     memberships,
     userId: pick(random, USERS),
+    // Sysadmins frequently hold NO membership — the exact shape that produced the empty-list bug.
+    isSystemAdmin: random() < 0.15,
+    publicGrants: randomPublicGrants(random),
   };
 };
 
@@ -177,6 +214,8 @@ const rowSubject = (row: ParityRow): SubjectForPermission => ({
   id: row.id,
   createdBy: row.createdBy,
   contextIds: { [ROOT]: ROOT_ID, ...(SUB && row.subContextId !== null ? { [SUB]: row.subContextId } : {}) },
+  // Row data every row-derived rule reads: `'own'` via createdBy, public read via publicAt.
+  row: { createdBy: row.createdBy, publicAt: row.publicAt },
 });
 
 /** Path 1: the engine's per-row read decision. */
@@ -185,6 +224,8 @@ const engineReadableIds = (scenario: Scenario): Set<string> => {
   for (const row of ROWS) {
     const { can } = getAllDecisions(scenario.policies, scenario.memberships, rowSubject(row), {
       userId: scenario.userId,
+      isSystemAdmin: scenario.isSystemAdmin,
+      publicGrants: scenario.publicGrants,
     });
     if (can.read) readable.add(row.id);
   }
@@ -193,8 +234,15 @@ const engineReadableIds = (scenario: Scenario): Set<string> => {
 
 /** Path 2: the compiled SQL predicate executed against Postgres. */
 const sqlReadableIds = async (scenario: Scenario): Promise<Set<string>> => {
-  const filter = resolveCollectionReadFilterForPolicies(scenario.policies, scenario.memberships, 'attachment', ROOT_ID);
-  const where = buildCollectionReadWhere(filter, parityTable, subContextColumn, scenario.userId);
+  const filter = resolveCollectionReadFilterForPolicies({
+    policies: scenario.policies,
+    memberships: scenario.memberships,
+    entityType: 'attachment',
+    organizationId: ROOT_ID,
+    actor: scenarioActor(scenario),
+    publicGrants: scenario.publicGrants,
+  });
+  const where = buildCollectionReadWhere(filter, parityTable, subContextColumn, scenarioActor(scenario));
 
   if (where.kind === 'none') return new Set();
   const query = seedDb.select({ id: parityTable.id }).from(parityTable);
@@ -209,6 +257,7 @@ beforeAll(async () => {
     create table test_permission_parity_rows (
       id varchar primary key,
       created_by varchar,
+      public_at varchar,
       ${rootColumnName} varchar not null${subColumnName ? `,\n      ${subColumnName} varchar not null` : ''}
     )
   `),
@@ -216,6 +265,7 @@ beforeAll(async () => {
   const values = ROWS.map((r) => ({
     id: r.id,
     createdBy: r.createdBy,
+    publicAt: r.publicAt,
     [rootIdKey]: ROOT_ID,
     ...(subIdKey && r.subContextId !== null ? { [subIdKey]: r.subContextId } : {}),
   }));
@@ -234,7 +284,9 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
       const scenario = randomScenario(random);
       const label = `seed 0xa11ce scenario ${i} (memberships: ${scenario.memberships
         .map((m) => `${m.contextType}:${m.contextId}:${m.role}`)
-        .join(', ')}; user: ${scenario.userId ?? 'anonymous'})`;
+        .join(', ')}; user: ${scenario.userId ?? 'anonymous'}; sysadmin: ${scenario.isSystemAdmin}; public: ${
+        scenario.publicGrants.attachment ?? 'none'
+      })`;
 
       // Engine ⊆⊇ SQL: identical readable row sets.
       const fromEngine = engineReadableIds(scenario);
@@ -243,6 +295,12 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
 
       // Engine ⊆⊇ compute-can: per single membership, the frontend-resolved state must
       // match the engine's decision for every row in that membership's scope.
+      //
+      // This leg is membership-only by construction: `computeCan` derives a can-map from ONE
+      // membership's policy row, so it models neither the system-admin bypass (the frontend has
+      // `computeSystemAdminCan` for that) nor membership-independent public grants. Both sides
+      // are therefore evaluated with neither, which keeps the comparison meaningful instead of
+      // trivially true.
       for (const m of scenario.memberships) {
         const canMap = computeCan(m.contextType as ContextEntityType, m, scenario.policies);
         const state = canMap.attachment?.read ?? false;
@@ -271,15 +329,15 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
 
         let filter: ReturnType<typeof resolveCollectionReadFilterForPolicies>;
         try {
-          filter = resolveCollectionReadFilterForPolicies(
-            scenario.policies,
-            scenario.memberships,
-            'attachment',
-            ROOT_ID,
-            {
-              subContextId: requestedSubContext,
-            },
-          );
+          filter = resolveCollectionReadFilterForPolicies({
+            policies: scenario.policies,
+            memberships: scenario.memberships,
+            entityType: 'attachment',
+            organizationId: ROOT_ID,
+            actor: scenarioActor(scenario),
+            publicGrants: scenario.publicGrants,
+            requested: { subContextId: requestedSubContext },
+          });
         } catch {
           // 403: no scope at all for the requested sub-context. The engine must agree that
           // no row of it is readable.
@@ -290,7 +348,7 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
           continue;
         }
 
-        const where = buildCollectionReadWhere(filter, parityTable, subContextColumn, scenario.userId);
+        const where = buildCollectionReadWhere(filter, parityTable, subContextColumn, scenarioActor(scenario));
         const fromSqlAll =
           where.kind === 'none'
             ? new Set<string>()
@@ -463,18 +521,22 @@ const deepEngineReadableIds = (scenario: DeepScenario, elevatedRoles?: readonly 
   return readable;
 };
 
+/** The deep scenario's actor. Deep chains exercise scope, not the admin bypass. */
+const deepActor = (scenario: DeepScenario): Actor =>
+  scenario.userId === undefined ? { anonymous: true } : { userId: scenario.userId, isSystemAdmin: false };
+
 /** Path 2: the compiled SQL predicate executed against Postgres, same topology. */
 const deepSqlReadableIds = async (scenario: DeepScenario, elevatedRoles?: readonly string[]): Promise<Set<string>> => {
-  const filter = resolveCollectionReadFilterForPolicies(
-    scenario.policies,
-    scenario.memberships,
-    DEEP_ITEM,
-    ROOT_ID,
-    undefined,
+  const filter = resolveCollectionReadFilterForPolicies({
+    policies: scenario.policies,
+    memberships: scenario.memberships,
+    entityType: DEEP_ITEM,
+    organizationId: ROOT_ID,
+    actor: deepActor(scenario),
     elevatedRoles,
-    deepTopology,
-  );
-  const where = buildCollectionReadWhere(filter, deepParityTable, deepParityTable.projectId, scenario.userId);
+    topology: deepTopology,
+  });
+  const where = buildCollectionReadWhere(filter, deepParityTable, deepParityTable.projectId, deepActor(scenario));
 
   if (where.kind === 'none') return new Set();
   const query = seedDb.select({ id: deepParityTable.id }).from(deepParityTable);
@@ -602,8 +664,12 @@ describe('elevatedRoles parity: home-scoped grants agree between engine and SQL'
  * 2-level, unconditional org grants; a fork with a nested chain or `'own'` read
  * cells exercises those automatically via the CHAIN-derived scenario space).
  * Deep-chain and elevatedRoles decisions are asserted engine ≍ SQL above and reach
- * dispatch through the same `checkPermission` call. Rows carry no publicAt,
- * keeping public grants out of scope (collection SQL compiles no public clause).
+ * dispatch through the same `checkPermission` call.
+ *
+ * `isSystemAdmin` IS varied here: the bypass has to agree across all three paths, and the
+ * collection path used to have no admin flag at all. Public grants ride the real config
+ * (which declares none), so their parity is asserted in the synthetic block above, where the
+ * grants can actually be injected.
  ******************************************************************************/
 
 const realMembership = (
@@ -621,7 +687,9 @@ const realMembership = (
     role,
   }) as unknown as MembershipBaseModel;
 
-const randomRealScenario = (random: () => number): { memberships: MembershipBaseModel[]; userId: string } => {
+const randomRealScenario = (
+  random: () => number,
+): { memberships: MembershipBaseModel[]; userId: string; isSystemAdmin: boolean } => {
   const memberships: MembershipBaseModel[] = [];
   if (random() < 0.5) memberships.push(realMembership(ROOT, ROOT_ID, pick(random, getContextRoles(ROOT)), ROOT_ID));
   // A grant in a DIFFERENT org must contribute nothing to this org's collection
@@ -633,7 +701,11 @@ const randomRealScenario = (random: () => number): { memberships: MembershipBase
     }
   }
   // SSE subscribers are always authenticated; 'outsider' stands in for a user with no rows
-  return { memberships, userId: random() < 0.85 ? pick(random, USERS) : 'outsider' };
+  return {
+    memberships,
+    userId: random() < 0.85 ? pick(random, USERS) : 'outsider',
+    isSystemAdmin: random() < 0.15,
+  };
 };
 
 /** Context id columns as they appear on an activity event (and its row). */
@@ -647,7 +719,7 @@ const dispatchEvent = (row: ParityRow): AppStreamProductEvent =>
     entityType: 'attachment',
     subjectId: row.id,
     ...rowContextColumns(row),
-    rowData: { id: row.id, createdBy: row.createdBy, ...rowContextColumns(row) },
+    rowData: { id: row.id, createdBy: row.createdBy, publicAt: row.publicAt, ...rowContextColumns(row) },
   }) as unknown as AppStreamProductEvent;
 
 describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real app config', () => {
@@ -655,13 +727,15 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
     const random = mulberry32(0x3a11);
 
     for (let i = 0; i < 100; i++) {
-      const { memberships, userId } = randomRealScenario(random);
+      const { memberships, userId, isSystemAdmin } = randomRealScenario(random);
       const label = `seed 0x3a11 scenario ${i} (memberships: ${memberships
         .map((m) => `${m.contextType}:${m.contextId}:${m.role}`)
-        .join(', ')}; user: ${userId})`;
+        .join(', ')}; user: ${userId}; sysadmin: ${isSystemAdmin})`;
 
-      const filter = resolveCollectionReadFilter(memberships, 'attachment', ROOT_ID);
-      const where = buildCollectionReadWhere(filter, parityTable, subContextColumn, userId);
+      const actor: Actor = { userId, isSystemAdmin };
+
+      const filter = resolveCollectionReadFilter(memberships, 'attachment', ROOT_ID, actor);
+      const where = buildCollectionReadWhere(filter, parityTable, subContextColumn, actor);
       const query = seedDb.select({ id: parityTable.id }).from(parityTable);
       const fromSql = new Set(
         where.kind === 'none'
@@ -670,16 +744,10 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
       );
 
       for (const row of ROWS) {
-        // Same subject shape dispatch builds: ancestor scope + createdBy + the row itself
-        const subject = { ...rowSubject(row), row: { createdBy: row.createdBy } };
-        const engineAllowed = checkPermission(memberships, 'read', subject, {
-          isSystemAdmin: false,
-          userId,
-        }).isAllowed;
-        const dispatchAllowed = canReceiveEntityEvent(
-          { userId, isSystemAdmin: false, memberships },
-          dispatchEvent(row),
-        );
+        // Same subject shape dispatch builds: ancestor scope + the row itself
+        const subject = rowSubject(row);
+        const engineAllowed = checkPermission(memberships, 'read', subject, actor).isAllowed;
+        const dispatchAllowed = canReceiveEntityEvent({ userId, isSystemAdmin, memberships }, dispatchEvent(row));
 
         expect(dispatchAllowed, `${label} → row ${row.id} dispatch-vs-engine`).toBe(engineAllowed);
         expect(fromSql.has(row.id), `${label} → row ${row.id} sql-vs-engine`).toBe(engineAllowed);

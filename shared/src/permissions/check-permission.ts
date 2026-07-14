@@ -1,5 +1,5 @@
+import { accessPolicies, elevatedRoles, publicReadGrants } from '../../config/permissions-config';
 import type { EntityActionType } from '../../types';
-import { accessPolicies, publicReadGrants, elevatedRoles } from '../../config/permissions-config';
 import { getAllDecisions } from './permission-manager/check';
 import type {
   PermissionCheckOptions,
@@ -7,6 +7,22 @@ import type {
   PermissionMembership,
   SubjectForPermission,
 } from './permission-manager/types';
+
+/**
+ * Who is acting.
+ *
+ * Deliberately a discriminated union rather than an optional `userId`. An optional actor is
+ * how permission bugs get in: a caller that simply forgets it still compiles, and every rule
+ * that reads the actor (`'own'`, and any fork condition) then silently fails closed — a
+ * denial nobody notices. Anonymity has to be *stated*, not achieved by omission.
+ *
+ * `{ anonymous: true }` cannot be produced by accident and is greppable in review.
+ */
+export type Actor = { userId: string; isSystemAdmin?: boolean } | { anonymous: true };
+
+/** Actor → engine options. System admins bypass every check; anonymous actors carry no id. */
+const actorOptions = (actor: Actor): PermissionCheckOptions =>
+  'anonymous' in actor ? {} : { userId: actor.userId, isSystemAdmin: actor.isSystemAdmin === true };
 
 /**
  * Permission result containing membership and whether the action is allowed.
@@ -33,51 +49,50 @@ export interface BatchPermissionResult<T extends PermissionMembership = Permissi
  * Accepts a single entity or array of entities.
  *
  * This is the shared entry point used by every tier (backend handlers, yjs relay) so the
- * authorization decision is computed by exactly one engine.
+ * authorization decision is computed by exactly one engine. The configured public read
+ * grants and `elevatedRoles` are injected here, so callers only supply the actor.
  *
  * @param memberships - User's memberships to check against
  * @param action - The action to check (create, read, update, delete)
  * @param entityOrEntities - Single entity or array of entities to check
- * @param options - Optional settings (e.g., isSystemAdmin for admin bypass, userId for `'own'`)
+ * @param actor - Who is acting. Required: see {@link Actor}
  * @returns Single entity: `PermissionResult` with `{ isAllowed, membership }`
  * @returns Array: `BatchPermissionResult` with `{ results: Map<id, PermissionResult>, decisions }`
  *
  * Permission is allowed if the entity OR an ancestor matches a membership grant.
- * System admins (options.isSystemAdmin === true) get all permissions.
  */
 export function checkPermission<T extends PermissionMembership>(
   memberships: T[],
   action: EntityActionType,
   entity: SubjectForPermission,
-  options?: PermissionCheckOptions,
+  actor: Actor,
 ): PermissionResult<T>;
 export function checkPermission<T extends PermissionMembership>(
   memberships: T[],
   action: EntityActionType,
   entities: SubjectForPermission[],
-  options?: PermissionCheckOptions,
+  actor: Actor,
 ): BatchPermissionResult<T>;
 export function checkPermission<T extends PermissionMembership>(
   memberships: T[],
   action: EntityActionType,
   entityOrEntities: SubjectForPermission | SubjectForPermission[],
-  options?: PermissionCheckOptions,
+  actor: Actor,
 ): PermissionResult<T> | BatchPermissionResult<T> {
   const isSingle = !Array.isArray(entityOrEntities);
 
-  // Inject the configured grants; explicit options (tests) take precedence.
-  const optionsWithGrants: PermissionCheckOptions = {
+  const options: PermissionCheckOptions = {
     publicGrants: publicReadGrants,
     elevatedRoles,
-    ...options,
+    ...actorOptions(actor),
   };
 
   if (isSingle) {
-    const { can, membership } = getAllDecisions(accessPolicies, memberships, entityOrEntities, optionsWithGrants);
+    const { can, membership } = getAllDecisions(accessPolicies, memberships, entityOrEntities, options);
     return { isAllowed: can[action], membership };
   }
 
-  const decisions = getAllDecisions(accessPolicies, memberships, entityOrEntities, optionsWithGrants);
+  const decisions = getAllDecisions(accessPolicies, memberships, entityOrEntities, options);
   const results = new Map<string, PermissionResult<T>>();
 
   for (const [id, decision] of decisions) {

@@ -36,7 +36,6 @@ export const buildSubject = (
     id?: string;
     createdBy?: string | null;
     row?: Record<string, unknown>;
-    parentRow?: Record<string, unknown>;
   },
 ): SubjectForPermission => {
   try {

@@ -85,7 +85,7 @@ export const DownAlert = () => {
   return (
     <div className="pointer-events-auto fixed right-4 left-4 z-2000 justify-center max-sm:top-4 sm:bottom-4">
       <Alert variant={variant} onClose={dismissAlert} className="w-auto">
-        <Icon size={16} />
+        <Icon />
         <AlertDescription className="pr-8">
           {getTitle()}
           <span className="mx-2">&#183;</span>

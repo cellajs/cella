@@ -2,9 +2,9 @@
 
 Here we document how you can get started building your own web app with cella.
 
-## Scaffold
+## Create
 
-Cella is a template, not a framework. Create your own copy with the `create-cella` CLI — it lets you pick optional modules, ports and a seed admin, then initializes a fresh git repo with the cella upstream remote wired up for future syncs:
+Cella is a template, not a framework. Create your own copy with the `create-cella` CLI. It lets you pick optional modules, ports and a seed admin, then initializes a fresh git repo with the cella upstream remote wired up for future syncs:
 
 ```bash
 pnpm create @cellajs/cella my-app
@@ -39,7 +39,7 @@ pnpm story # Start storybook
 
 ## Customize & contribute
 
-1. Set your app identity in `shared/config/config.default.ts` — name, urls, enabled modules and third-party keys.
+1. Set your app identity in `shared/config/config.default.ts`: name, urls, enabled modules and third-party keys.
 2. Model your entities in `shared/config/hierarchy-config.ts` and access rules in `shared/config/permissions-config.ts`.
 3. Add your own metadata to `package.json`, and read `.env` to see which secrets are required (e.g. to send emails).
 4. Explore the `*-config.ts` files and each package's README to learn the moving parts.
@@ -48,7 +48,7 @@ pnpm story # Start storybook
 7. Read the [architecture](/docs/page/architecture) and other info in your own repo or in cella docs.
 8. The [MDX files](../frontend/src/content/docs) mention cella documentation, you might want to change or remove it.
 
-Contributions are welcome — [open an issue or PR](https://github.com/cellajs/cella) to get involved.
+Contributions are welcome: [open an issue or PR](https://github.com/cellajs/cella) to get involved.
 
 ## Cella CLI
 

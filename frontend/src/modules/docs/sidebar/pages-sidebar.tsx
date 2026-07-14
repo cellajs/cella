@@ -23,31 +23,41 @@ export function PagesSidebar({ onClose }: PagesSidebarProps) {
   // Tree of pages for nested rendering
   const pageTree = buildPageNodeTree(pages);
 
-  // Expanded subtree state is additive: ancestors of the active page are seeded on route change,
-  // but the user remains free to collapse them afterwards without them snapping back open.
+  // Ancestor chain of the active page: seeds expansion on route change and lets rows
+  // know whether the user is viewing one of their subpages.
+  const activeAncestorIds = useMemo(() => computeAncestorIds(pages, activePageId), [pages, activePageId]);
+
+  // Effective parent per page id for sibling lookup (orphans count as roots, like buildPageNodeTree)
+  const parentById = useMemo(() => {
+    const validIds = new Set(pages.map((p) => p.id));
+    return new Map(pages.map((p) => [p.id, p.parentId && validIds.has(p.parentId) ? p.parentId : null]));
+  }, [pages]);
+
+  // Accordion: expanding an id evicts its siblings (same effective parent) from the set
+  const expandExclusive = (next: Set<string>, id: string) => {
+    const parent = parentById.get(id) ?? null;
+    for (const other of [...next]) if (parentById.get(other) === parent) next.delete(other);
+    next.add(id);
+  };
+
+  // Ancestors of the active page are seeded on route change (accordion-pruned per level);
+  // the user remains free to collapse them afterwards without them snapping back open.
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   useEffect(() => {
-    if (!activePageId) return;
-    const ancestors = computeAncestorIds(pages, activePageId);
-    if (ancestors.size === 0) return;
+    if (activeAncestorIds.size === 0) return;
     setExpandedIds((prev) => {
-      let changed = false;
       const next = new Set(prev);
-      for (const id of ancestors) {
-        if (!next.has(id)) {
-          next.add(id);
-          changed = true;
-        }
-      }
+      for (const id of activeAncestorIds) expandExclusive(next, id);
+      const changed = next.size !== prev.size || [...next].some((id) => !prev.has(id));
       return changed ? next : prev;
     });
-  }, [activePageId, pages]);
+  }, [activeAncestorIds]);
 
   const togglePageExpanded = (id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
-      else next.add(id);
+      else expandExclusive(next, id);
       return next;
     });
   };
@@ -61,6 +71,7 @@ export function PagesSidebar({ onClose }: PagesSidebarProps) {
             node={node}
             variant="root"
             activePageId={activePageId}
+            activeAncestorIds={activeAncestorIds}
             expandedIds={expandedIds}
             onToggle={togglePageExpanded}
             onClose={onClose}

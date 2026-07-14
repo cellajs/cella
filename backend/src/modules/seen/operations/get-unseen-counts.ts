@@ -5,6 +5,7 @@ import type { AuthContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
 import { groupingContextTypes, seenWindowMs, trackedEntityTypes } from '#/modules/seen/operations/mark-seen';
 import { findUnseenCountsByUser } from '#/modules/seen/seen-queries';
+import { actorFrom } from '#/permissions/actor';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
@@ -25,8 +26,12 @@ const subContextColumn = (entityType: SeenTrackedEntityType): PgColumn => {
 export async function getUnseenCountsOp(ctx: AuthContext) {
   const user = ctx.var.user;
   const memberships = ctx.var.memberships;
+  const actor = actorFrom(ctx);
 
   // Set() widens the fixed-length config tuple so an empty fork config is a real runtime check.
+  // Counts are grouped by the caller's org memberships, so no memberships means nothing to
+  // count — including for system admins, whose bypass widens rows WITHIN an org, not the set
+  // of orgs they are counted against.
   if (memberships.length === 0 || new Set(trackedEntityTypes).size === 0) {
     return {};
   }
@@ -60,12 +65,12 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
     const readableTypes: SeenTrackedEntityType[] = [];
 
     for (const entityType of trackedEntityTypes) {
-      const readFilter = resolveCollectionReadFilter(memberships, entityType, organizationId);
+      const readFilter = resolveCollectionReadFilter(memberships, entityType, organizationId, actor);
       const scopeWhere = buildCollectionReadWhere(
         readFilter,
         getEntityTable(entityType),
         subContextColumn(entityType),
-        user.id,
+        actor,
       );
       if (scopeWhere.kind === 'none') continue;
       readableTypes.push(entityType);

@@ -44,13 +44,3 @@ export const resolvePermission = (
   return false;
 };
 
-/**
- * Checks whether a permission is unconditionally granted (`true`),
- * as opposed to entity-dependent (`'own'`) or denied (`false`).
- *
- * Use this to decide if a user qualifies for context-scoped features
- * (e.g. collaborative editing) where per-entity ownership can't be checked upfront.
- */
-export const isUnconditionalPermission = (permission: ActionPermissionState | undefined): boolean => {
-  return permission === true;
-};

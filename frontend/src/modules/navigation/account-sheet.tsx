@@ -1,13 +1,13 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { LogOutIcon, type LucideProps, SettingsIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
+import { LogOutIcon, SettingsIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
 import { motion } from 'motion/react';
-import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
@@ -18,7 +18,7 @@ import { useUserStore } from '~/modules/user/user-store';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 type AccountButtonProps = {
-  icon: React.ElementType<LucideProps>;
+  icon: IconComponent;
   label: string;
   id: string;
   action: string;

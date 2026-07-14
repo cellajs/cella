@@ -56,7 +56,7 @@ The key resources and how traffic flows between them:
 
 ## Deploy flow
 
-The deployment lifecycle — what happens when you push to `main`:
+The deployment lifecycle when you push to `main`:
 
 ```
 Developer pushes to main
@@ -74,7 +74,7 @@ Retires old generation(s) through Pulumi-managed replacement
 Load balancer keeps serving traffic
 ```
 
-At runtime, the load balancer targets the host port published by the service's compose profile directly. There is no background polling agent and no separate proxy sidecar. The `frontend` service is itself a Caddy proxy image that serves the SPA bucket through the same VM/LB path as other services.
+At runtime, the load balancer targets the host port published by the service's compose profile directly. The `frontend` service is itself a Caddy proxy image that serves the SPA bucket through the same VM/LB path as other services.
 
 ```
 Scaleway LB ──▶ service VM host port ──▶ service container
@@ -82,7 +82,7 @@ Scaleway LB ──▶ service VM host port ──▶ service container
 
 The primary rollout service (the one that owns migrations) is verified first, then the rest in parallel. `cdc` has no public health endpoint; its replacement is confirmed indirectly by the primary public service coming up healthy.
 
-**Rollback:** the old generation is reaped once the new one is healthy — nothing is left running for two generations per service. To roll back, commit a revert and redeploy: it follows the exact same forward path and recreates **every** service (including cdc, which is replaced in place and never retained), reusing the cached generation because the `genId` is content-addressed.
+**Rollback:** the old generation is reaped once the new one is healthy; nothing is left running for two generations per service. To roll back, commit a revert and redeploy: it follows the exact same forward path and recreates **every** service (including cdc, which is replaced in place and never retained), reusing the cached generation because the `genId` is content-addressed.
 
 ## Credentials
 
@@ -103,70 +103,56 @@ runtime secrets + images on VM
 
 | Key | Permissions | Lifetime | Where stored |
 |-----|-------------|----------|-------------|
-| **Bootstrap key** | Owner (via Personal API Key) **or** ProjectManager + IAMManager on a dedicated IAM application | Minutes — revoked immediately after each use (initial bootstrap or manual rotation). Also required for any `pulumi up` that touches bootstrap-owned modules (DB, VPC, private network). | Password manager only, never on disk |
-| **CI deploy key** (`<slug>-ci-deploy`) | Write on compute / LB / edge / secrets / object storage / registry; **read-only** on VPC / private network / RDB (those are bootstrap-owned). Project-scoped, plus DNS at org scope. | Long-lived; rotate manually by re-running the CLI's **Rotate keys** action (see [Key rotation](#key-rotation)) | The `production` GitHub Environment secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` (environment-scoped, not repo-scoped). The Scaleway provider authenticates from those env vars, not from stack config. |
+| **Bootstrap key** | Owner (via Personal API Key) **or** ProjectManager + IAMManager on a dedicated IAM application | Minutes: revoked immediately after each use (initial bootstrap or manual rotation). Also required for any `pulumi up` that touches bootstrap-owned modules (DB, VPC, private network). | Password manager only, never on disk |
+| **CI deploy key** (`<slug>-ci-deploy`) | Write on compute / LB / edge / secrets / object storage / registry; **read-only** on VPC / private network / RDB (those are bootstrap-owned). Project-scoped, plus DNS at org scope. | Long-lived; rotate manually by re-running the CLI's **Rotate keys** action (see [Key rotation](#key-rotation)) | The `production` GitHub Environment secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` (environment-scoped, not repo-scoped). The Scaleway provider authenticates from those env vars.
 | **VM reader key** (`<slug>-vm-reader`) | Read-only registry / Secret Manager (incl. `SecretManagerSecretAccess` for decrypt-read). Just enough for a VM to pull images and hydrate `/opt/app/.env.runtime`. | Long-lived; rotates with the CI key | Seeded into Scaleway Secret Manager at bootstrap (the `vm-reader-key` secret), read back at `pulumi up`, and baked into VM cloud-init. Not in stack config. |
 
-A fourth secret sits outside this chain: the **Pulumi passphrase**, which encrypts the stack's secret outputs in the state bucket. It is not an IAM identity — the CLI generates it at bootstrap and syncs it to the GitHub Environment; your only job is storing it in your password manager when shown (see [Passphrase rotation](#passphrase-rotation)).
+A fourth secret sits outside this chain: the **Pulumi passphrase**, which encrypts the stack's secret outputs in the state bucket. It is not an IAM identity: the CLI generates it at bootstrap and syncs it to the GitHub Environment; your only job is storing it in your password manager when shown (see [Passphrase rotation](#passphrase-rotation)).
 
 ## CI deploys
 
 The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) runs:
 
-- **On push to `main`** — builds images, uploads frontend, runs `pulumi up`, verifies deployment.
-- **On manual dispatch** — same, against chosen environment (`staging` or `production`).
+- **On push to `main`**: builds images, uploads frontend, runs `pulumi up`, verifies deployment.
+- **On manual dispatch**: same, against chosen environment (`staging` or `production`).
 
 
-CI builds the image, records the release SHA as the rollout INTENT in the S3 control object, and [tasks/deploy-service.ts](tasks/deploy-service.ts) drives a **new VM generation** (`vm-<svc>-<genId>`) with that SHA baked into its cloud-init. The `genId` is **content-addressed** — a hash of the release SHA plus the generation's static config — so re-running a deploy reuses the same generation (a true no-op) and a manual `pulumi up` can never fork identity. For LB-backed services the reconciler expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, then contracts to `[new]`; the promoted new generation serves and the old one is reaped once it is healthy (rollback = revert commit + redeploy). See [rollout strategies](#rollout-strategies) for the model.
+CI builds the image, records the release SHA as the rollout INTENT in the S3 control object, and [tasks/deploy-service.ts](tasks/deploy-service.ts) drives a **new VM generation** (`vm-<svc>-<genId>`) with that SHA baked into its cloud-init. The `genId` is **content-addressed** (a hash of the release SHA plus the generation's static config), so re-running a deploy reuses the same generation (a true no-op) and a manual `pulumi up` can never fork identity. For LB-backed services the reconciler expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, then contracts to `[new]`; the promoted new generation serves and the old one is reaped once it is healthy (rollback = revert commit + redeploy). See [rollout strategies](#rollout-strategies) for the model.
 
 To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
-To gate production behind manual approval, configure a [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) named `production` with required reviewers — the workflow already targets it.
+To gate production behind manual approval, configure a [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) named `production` with required reviewers. The workflow already targets it.
 
 
 ## Rollout strategies
 
-Every deploy is a **create-then-replace**: the image SHA is baked into a new VM generation's cloud-init, so a release and an infra change flow through one path (there is no background polling agent and no in-VM blue/green). Each service declares its replacement strategy in the fork-owned registry ([config/services.config.ts](config/services.config.ts)).
+Every deploy is a **create-then-replace**: the image SHA is baked into a new VM generation's cloud-init, so a release and an infra change flow through one path. Each service declares its replacement strategy in the fork-owned registry ([config/services.config.ts](config/services.config.ts)).
 
 | `replacementStrategy` | Services | How |
 |----------|----------|-----|
-| **lb-overlap** | backend, frontend, ai, yjs | Record the SHA as `pendingSha`; the Pulumi program materialises the content-addressed pending generation alongside the active one. [tasks/cutover.ts](tasks/cutover.ts) then runs a **level-triggered reconciler**: it reads the live LB server list and drives it toward the desired state with idempotent Scaleway `SetBackendServers` calls — expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It never silently skips the corrective call, so an empty/stale pool (or a same-generation redeploy) is repaired rather than assumed correct. The new generation is promoted to `active` and the old one is reaped by the deploy-service's own final `pulumi up` once the cutover is healthy — no generation is retained, so a deploy never runs two VMs per service. |
-| **exclusive** | cdc | No LB overlap: cdc holds one Postgres replication slot. The Pulumi program materialises only the new generation (the old one is replaced in the same `up`); the new worker contends for the slot the old one releases on drain (handoff is lossless — the slot retains the WAL position). |
+| **lb-overlap** | backend, frontend, ai, yjs | Record the SHA as `pendingSha`; the Pulumi program materialises the content-addressed pending generation alongside the active one. [tasks/cutover.ts](tasks/cutover.ts) then runs a **level-triggered reconciler**: it reads the live LB server list and drives it toward the desired state with idempotent Scaleway `SetBackendServers` calls: expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It never silently skips the corrective call, so an empty/stale pool (or a same-generation redeploy) is repaired rather than assumed correct. The new generation is promoted to `active` and the old one is reaped by the deploy-service's own final `pulumi up` once the cutover is healthy. No generation is retained, so a deploy never runs two VMs per service. |
+| **exclusive** | cdc | No LB overlap: cdc holds one Postgres replication slot. The Pulumi program materialises only the new generation (the old one is replaced in the same `up`); the new worker contends for the slot the old one releases on drain (handoff is lossless: the slot retains the WAL position). |
 
-**`drainPolicy`** tunes how the old generation leaves the LB: `requests` (HTTP — `onMarkedDownAction: none`, in-flight requests finish) for backend/frontend/ai, or `reconnect` (WebSocket — sessions shed, clients re-dial and resync from durable state) for yjs.
+**`drainPolicy`** tunes how the old generation leaves the LB: `requests` (HTTP; `onMarkedDownAction: none`, in-flight requests finish) for backend/frontend/ai, or `reconnect` (WebSocket; sessions shed, clients re-dial and resync from durable state) for yjs.
 
-[tasks/cutover.ts](tasks/cutover.ts) contains the pure, unit-tested **level-triggered** reconciler core for the explicit LB-overlap path: it reads the live server list and drives it toward the desired state (expand→health→contract→drain) with idempotent `SetBackendServers` calls, never silently skipping the corrective call. [tasks/deploy-service.ts](tasks/deploy-service.ts) wraps it with Pulumi bookends: record the SHA as `pendingSha` in the **S3 control object** (`control/<stack>.json` in the state bucket — the source of truth the Pulumi program reads), `pulumi up` to materialise the content-addressed generation, run the reconciler, then `promote` it to `active` (the old generation is reaped once the new one is healthy). Internal consumers reach a service over the private network with `@{<svc>.privateIp}`, which resolves to that service's current generation IP baked in at deploy time — the rollout order (the stable service first, e.g. backend before cdc) means a consumer redeployed afterwards always binds the freshly promoted generation. A frontend **content** release is just an S3 upload (no VM cutover); only a Caddy/CSP/cloud-init change replaces the frontend VM.
-
-### One-time migration: control object schema v1 → v2
-
-The rollout state moved from a numeric `gen` counter (schemaVersion 1) to a content-addressed deploy ledger (schemaVersion 2), and VM resources are renamed `vm-<svc>-<gen>` → `vm-<svc>-<genId>`. The Pulumi program rejects a v1 control object, and the first deploy replaces every generation VM (a one-time, bounded downtime per service — backend first). Run the migration **once per stack, before the first deploy on the new code**, with an operator key in env:
-
-```bash
-# Preview the rewrite without touching the object:
-SCW_ACCESS_KEY=… SCW_SECRET_KEY=… pnpm --filter infra migrate-control-store --stack production --dry-run
-
-# Apply it (carries each service's current SHA forward as `pendingSha`):
-SCW_ACCESS_KEY=… SCW_SECRET_KEY=… pnpm --filter infra migrate-control-store --stack production
-```
-
-The task is idempotent: it no-ops when the object is already v2 or absent. Carrying the live SHA as `pendingSha` makes the replacement land on the current image (not the `latest` placeholder), then the normal rollout reconciler points the LB at the new generation and promotes it. Do the same for `staging` first to rehearse.
+[tasks/cutover.ts](tasks/cutover.ts) contains the pure, unit-tested **level-triggered** reconciler core for the explicit LB-overlap path: it reads the live server list and drives it toward the desired state (expand→health→contract→drain) with idempotent `SetBackendServers` calls, never silently skipping the corrective call. [tasks/deploy-service.ts](tasks/deploy-service.ts) wraps it with Pulumi bookends: record the SHA as `pendingSha` in the **S3 control object** (`control/<stack>.json` in the state bucket, the source of truth the Pulumi program reads), `pulumi up` to materialise the content-addressed generation, run the reconciler, then `promote` it to `active` (the old generation is reaped once the new one is healthy). Internal consumers reach a service over the private network with `@{<svc>.privateIp}`, which resolves to that service's current generation IP baked in at deploy time. The rollout order (the stable service first, e.g. backend before cdc) means a consumer redeployed afterwards always binds the freshly promoted generation. A frontend **content** release is just an S3 upload (no VM cutover); only a Caddy/CSP/cloud-init change replaces the frontend VM.
 
 ### Runtime secret delivery
 
-Runtime secrets reach a VM through `/opt/app/.env.runtime`, a docker-compose `env_file` that the on-VM boot agent writes from Secret Manager at boot. Because an `env_file` is line-based, **every secret value must be a single line**. Multi-line values (e.g. a PEM certificate) must be stored **base64-encoded** and decoded by the consuming service — this is what `DATABASE_SSL_CA` does (encoded in [resources/secrets.ts](resources/secrets.ts), decoded in the db clients). A `required` secret that can't be delivered fails the sync, which by design blocks the service from booting rather than letting it crash-loop behind a 502.
+Runtime secrets reach a VM through `/opt/app/.env.runtime`, a docker-compose `env_file` that the on-VM boot agent writes from Secret Manager at boot. Because an `env_file` is line-based, **every secret value must be a single line**. Multi-line values (e.g. a PEM certificate) must be stored **base64-encoded** and decoded by the consuming service. This is what `DATABASE_SSL_CA` does (encoded in [resources/secrets.ts](resources/secrets.ts), decoded in the db clients). A `required` secret that can't be delivered fails the sync, which by design blocks the service from booting rather than letting it crash-loop behind a 502.
 
 Two safeguards keep a runtime-secret change from causing the kind of full outage a mis-delivered secret would otherwise trigger. They were added after a multi-line secret (`DATABASE_SSL_CA`) bricked a backend rollout, and they sit alongside the single-line/base64 contract above:
 
-1. **The secret *manifest* is baked into the new generation's cloud-init.** The per-service manifest (the list of which secrets a VM hydrates — metadata only, never values) is built by Pulumi ([resources/compute.ts](resources/compute.ts)) and written into cloud-init. Because every deploy already replaces the VM, there is no out-of-band channel to maintain; the first-boot agent reads the manifest and hydrates `/opt/app/.env.runtime` before the app starts.
-2. **Deliverability is preflighted in CI before rolling.** Right after `pulumi up` — and before any VM is rolled or replaced — the deploy asserts that every `required` secret can actually be hydrated the way a VM will (fetched from Secret Manager and single-line / decodable), failing loudly with the offending env vars instead of bricking the fleet ([tasks/assert-secrets-deliverable.ts](tasks/assert-secrets-deliverable.ts), wired into the `pulumi` job as **Verify runtime secrets are deliverable**, mirroring the existing **Verify VM reader IAM grant** preflight). The single-line rule itself lives in one place, [lib/env-file.ts](lib/env-file.ts), shared by the preflight and the on-VM boot agent that performs the hydration.
+1. **The secret *manifest* is baked into the new generation's cloud-init.** The per-service manifest (the list of which secrets a VM hydrates; metadata only, never values) is built by Pulumi ([resources/compute.ts](resources/compute.ts)) and written into cloud-init. Because every deploy already replaces the VM, there is no out-of-band channel to maintain; the first-boot agent reads the manifest and hydrates `/opt/app/.env.runtime` before the app starts.
+2. **Deliverability is preflighted in CI before rolling.** Right after `pulumi up`, and before any VM is rolled or replaced, the deploy asserts that every `required` secret can actually be hydrated the way a VM will (fetched from Secret Manager and single-line / decodable), failing loudly with the offending env vars instead of bricking the fleet ([tasks/assert-secrets-deliverable.ts](tasks/assert-secrets-deliverable.ts), wired into the `pulumi` job as **Verify runtime secrets are deliverable**, mirroring the existing **Verify VM reader IAM grant** preflight). The single-line rule itself lives in one place, [lib/env-file.ts](lib/env-file.ts), shared by the preflight and the on-VM boot agent that performs the hydration.
 
 ## Configuration
 
-All tunable infra config lives in committed, type-checked files under [config/](config) — edit a value there and deploy. Each field is either a single value or a per-mode map (`{ production: …, staging: … }`).
+All tunable infra config lives in committed, type-checked files under [config/](config). Edit a value there and deploy. Each field is either a single value or a per-mode map (`{ production: …, staging: … }`).
 
 **Common questions:**
 - *Where do I change a VM size?* → `instanceType` in [config/services.config.ts](config/services.config.ts) (applied by the next CI deploy).
-- *Where do I change the database size?* → DB node type & volume in [config/general.config.ts](config/general.config.ts) (bootstrap-owned RDB — apply via [Changing infrastructure](#changing-infrastructure)).
+- *Where do I change the database size?* → DB node type & volume in [config/general.config.ts](config/general.config.ts) (bootstrap-owned RDB; apply via [Changing infrastructure](#changing-infrastructure)).
 
 | File | Owns | Applied by |
 |------|------|------------|
@@ -174,17 +160,17 @@ All tunable infra config lives in committed, type-checked files under [config/](
 | [config/general.config.ts](config/general.config.ts) | DB node type & volume, asset retention | DB fields via CLI **Apply infra change** (bootstrap-owned RDB); the rest via routine CI deploy |
 | [config/runtime-secrets.config.ts](config/runtime-secrets.config.ts) | Which services receive each runtime secret | routine CI deploy |
 
-What stays in Pulumi config (not committed fork data): the encryption salt, the transient DB public-endpoint break-glass toggle (`infra:dbPublicEndpoint` / `infra:dbPublicAcl`), and the bootstrap `computeDeferred` lifecycle marker. Per-service rollout state (generation + image SHA) lives in the **S3 control object** (`control/<stack>.json` in the state bucket), not in committed config — written by the deploy around each cutover and read by the Pulumi program at plan time. A conditional-write lock (`control/<stack>.lock.json`) prevents a CI deploy and an operator `apply` from mutating the same stack concurrently; clear a stale lock with the CLI **Unlock** action.
+What stays in Pulumi config (not committed fork data): the encryption salt, the transient DB public-endpoint break-glass toggle (`infra:dbPublicEndpoint` / `infra:dbPublicAcl`), and the bootstrap `computeDeferred` lifecycle marker. Per-service rollout state (generation + image SHA) lives in the **S3 control object** (`control/<stack>.json` in the state bucket), not in committed config: written by the deploy around each cutover and read by the Pulumi program at plan time. A conditional-write lock (`control/<stack>.lock.json`) prevents a CI deploy and an operator `apply` from mutating the same stack concurrently; clear a stale lock with the CLI **Unlock** action.
 
 ## Changing infrastructure
 
-Most config changes ship through a normal CI deploy. But **bootstrap-owned** resources — the database, VPC, and private network — can only be mutated with a temporary bootstrap key. 
+Most config changes ship through a normal CI deploy. But **bootstrap-owned** resources (the database, VPC, and private network) can only be mutated with a temporary bootstrap key. 
 
 To apply a bootstrap-owned change (e.g. resize the database), run the CLI (`pnpm infra`) and pick **Apply infra change**. The action:
 
 1. Prompts for the Pulumi passphrase and a fresh bootstrap key (broad permissions, see [Generate a bootstrap API key](#2-generate-a-bootstrap-api-key)).
 2. Supplies that key to the Scaleway provider via `SCW_*` env (it is never written to stack config).
-3. Runs `pulumi up` against the already-bootstrapped stack. Compute stays up — unlike the fresh-provision flow, Apply infra change does **not** set the `bootstrap:computeDeferred` marker, so the running VMs/LB are left in place.
+3. Runs `pulumi up` against the already-bootstrapped stack. Compute stays up: unlike the fresh-provision flow, Apply infra change does **not** set the `bootstrap:computeDeferred` marker, so the running VMs/LB are left in place.
 4. Reminds you to revoke the bootstrap key.
 
 
@@ -207,9 +193,9 @@ The interactive CLI ([cli/infra-cli.ts](cli/infra-cli.ts)) is launched with `pnp
 
 This key is used *only* during bootstrap and is revoked immediately after. It needs to create IAM applications and policies (i.e. `IAMManager` plus enough to read your project).
 
-**Easiest path — Personal API Key.** If you're an Owner on the organization, just generate a [Personal API Key](https://console.scaleway.com/iam/users) (User menu → API keys → Generate). It inherits your Owner permissions, which is everything bootstrap needs. Delete it the moment bootstrap finishes.
+**Easiest path: Personal API Key.** If you're an Owner on the organization, just generate a [Personal API Key](https://console.scaleway.com/iam/users) (User menu → API keys → Generate). It inherits your Owner permissions, which is everything bootstrap needs. Delete it the moment bootstrap finishes.
 
-**Stricter alternative — dedicated bootstrap application.** If you'd rather not use a personal key, create an Application in [IAM → Applications](https://console.scaleway.com/iam/applications) (e.g. `bootstrap`) with a policy granting **ProjectManager + IAMManager** on the organization, and generate an API key for it. More setup, same outcome.
+**Stricter alternative: dedicated bootstrap application.** If you'd rather not use a personal key, create an Application in [IAM → Applications](https://console.scaleway.com/iam/applications) (e.g. `bootstrap`) with a policy granting **ProjectManager + IAMManager** on the organization, and generate an API key for it. More setup, same outcome.
 
 Save the access key, secret key, project ID, and organization ID in your password manager for the duration of the bootstrap session only.
 
@@ -221,7 +207,7 @@ pnpm infra
 
 The CLI:
 
-- Generates the Pulumi passphrase — **store it when shown**; it is shown only once and unrecoverable if lost (set `PULUMI_CONFIG_PASSPHRASE` before running to supply your own)
+- Generates the Pulumi passphrase. **Store it when shown**; it is shown only once and unrecoverable if lost (set `PULUMI_CONFIG_PASSPHRASE` before running to supply your own)
 - Creates state storage
 - Initializes Pulumi
 - Creates required credentials
@@ -231,7 +217,7 @@ The CLI:
 
 ### 4. Compute base image
 
-Service VMs boot from Scaleway's stock **`docker`** marketplace image (Docker Engine + the Compose plugin, preinstalled and current) — set as `compute.image` in [config/general.config.ts](config/general.config.ts) and passed straight to the instance. There is **no image bake**: the `cella-boot-agent` ships as a normal registry container ([agent/Dockerfile](agent/Dockerfile)) that CI builds and pushes per commit, and every VM `docker run`s it at first boot (mounting the host Docker socket) to bring its compose stack up. Cloud-init shrinks to a launcher that writes the boot plan, logs the host into the registry, and runs the agent container; the agent owns the boot state machine (compose/env files, runtime-secret hydration, image pull, migrate, app start).
+Service VMs boot from Scaleway's stock **`docker`** marketplace image (Docker Engine + the Compose plugin, preinstalled and current), set as `compute.image` in [config/general.config.ts](config/general.config.ts) and passed straight to the instance. There is **no image bake**: the `cella-boot-agent` ships as a normal registry container ([agent/Dockerfile](agent/Dockerfile)) that CI builds and pushes per commit, and every VM `docker run`s it at first boot (mounting the host Docker socket) to bring its compose stack up. Cloud-init shrinks to a launcher that writes the boot plan, logs the host into the registry, and runs the agent container; the agent owns the boot state machine (compose/env files, runtime-secret hydration, image pull, migrate, app start).
 
 Set `compute.image` to a literal image UUID only to **pin** a specific base image for rollback.
 
@@ -239,9 +225,9 @@ Set `compute.image` to a literal image UUID only to **pin** a specific base imag
 
 After the first local `pulumi up` finishes, commit the updated `infra/Pulumi.production.yaml` and push to `main`. CI will then build and push the Docker images, run `pulumi up` again, and bring the compute VMs up automatically.
 
-The first local `pulumi up` does **not** depend on GitHub secrets — but the CI run after you push does. If they're missing, the CI step fails and the VMs will not come up.
+The first local `pulumi up` does **not** depend on GitHub secrets, but the CI run after you push does. If they're missing, the CI step fails and the VMs will not come up.
 
-If `gh` CLI was authenticated during bootstrap, it already set the GitHub Environment secrets it manages on `production`. Otherwise add them manually under **Settings → Environments → `production` → Environment secrets** (preferred — environment-scoped) rather than repo-level secrets:
+If `gh` CLI was authenticated during bootstrap, it already set the GitHub Environment secrets it manages on `production`. Otherwise add them manually under **Settings → Environments → `production` → Environment secrets** (preferred, environment-scoped) rather than repo-level secrets:
 
 | Secret | Value | Scope | Set by bootstrap? |
 |---|---|---|---|
@@ -262,11 +248,11 @@ After bootstrap, only the long-lived deploy and VM keys should remain. From here
 
 ### 7. Create the first admin
 
-A fresh production database has **no users**, so there is no way to sign in to the deployed app yet. CI deploys only run schema migrations (the one-shot `migrate` companion) — they do **not** seed. You must create the first admin once, by hand.
+A fresh production database has **no users**, so there is no way to sign in to the deployed app yet. CI deploys only run schema migrations (the one-shot `migrate` companion); they do **not** seed. You must create the first admin once, by hand.
 
-The backend image ships a bundled, production-safe seed runner ([backend/scripts/seeds-bundle.ts](../backend/scripts/seeds-bundle.ts), the `seed:production` script). It applies migrations + DB roles and then inserts a single admin user (idempotent — it skips if the users table is already non-empty). The admin signs in via a magic link sent to `ADMIN_EMAIL`, so working outbound email and a mailbox you control are required.
+The backend image ships a bundled, production-safe seed runner ([backend/scripts/seeds-bundle.ts](../backend/scripts/seeds-bundle.ts), the `seed:production` script). It applies migrations + DB roles and then inserts a single admin user (idempotent: it skips if the users table is already non-empty). The admin signs in via a magic link sent to `ADMIN_EMAIL`, so working outbound email and a mailbox you control are required.
 
-**Recommended — run it on a VM via the serial console** (no DB exposure, uses the image already on the box):
+**Recommended: run it on a VM via the serial console** (no DB exposure, uses the image already on the box):
 
 1. After the first CI deploy has brought the compute VMs up, open a backend instance in the [Scaleway console](https://console.scaleway.com/instance/servers) → **Console** (serial console) and log in with the root password shown on the instance page.
 2. Run the seed once, supplying the admin email:
@@ -279,7 +265,7 @@ The backend image ships a bundled, production-safe seed runner ([backend/scripts
    This reuses the `migrate` companion's image and `.env`/`.env.runtime` (which carry `DATABASE_ADMIN_URL`), overriding only the command to run the seed bundle.
 3. Open the app, request a magic link for `you@example.com`, and sign in.
 
-**Alternative — break-glass from your laptop.** If you'd rather not use the serial console, temporarily expose the database, run the seed locally against `DATABASE_ADMIN_URL`, then close the endpoint again. This is heavier (two bootstrap-key `pulumi up` runs to open and re-close the RDB public endpoint) and briefly exposes the DB, so prefer the serial-console path:
+**Alternative: break-glass from your laptop.** If you'd rather not use the serial console, temporarily expose the database, run the seed locally against `DATABASE_ADMIN_URL`, then close the endpoint again. This is heavier (two bootstrap-key `pulumi up` runs to open and re-close the RDB public endpoint) and briefly exposes the DB, so prefer the serial-console path:
 
 1. Open the DB public endpoint locked to your IP (bootstrap-owned RDB, see [Changing infrastructure](#changing-infrastructure)):
 
@@ -294,7 +280,7 @@ The backend image ships a bundled, production-safe seed runner ([backend/scripts
    ```bash
    ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<admin connection string>' pnpm --filter backend seed:production init
    ```
-3. **Close the endpoint again** — unset `infra:dbPublicEndpoint`/`infra:dbPublicAcl` and re-run Apply infra change, then revoke the bootstrap key.
+3. **Close the endpoint again**: unset `infra:dbPublicEndpoint`/`infra:dbPublicAcl` and re-run Apply infra change, then revoke the bootstrap key.
 
 ## Architecture reference
 
@@ -327,7 +313,7 @@ infra/resources/*.ts              → uses naming + `infra` (resolved config) + 
 Pulumi.<stack>.yaml               → encryption salt + transient operator toggles only
 ```
 
-No resource names, domains, bucket names, or sizing are hardcoded in the Pulumi modules — everything flows from `appConfig` and the `config/` files.
+No resource names, domains, bucket names, or sizing are hardcoded in the Pulumi modules. Everything flows from `appConfig` and the `config/` files.
 
 ### Stacks
 
@@ -379,7 +365,7 @@ The VM base image itself is the stock `docker` marketplace label (`compute.image
 
    This mints a fresh `<slug>-ci-deploy` key and (if `gh` is authenticated) pushes it to the `production` GitHub Environment as `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`. It also mints a fresh `<slug>-vm-reader` key and writes it to Secret Manager. Neither key is written to stack config.
 
-3. The next CI deploy authenticates with the new CI key from the GitHub Environment — no commit needed. The new VM reader key is baked into VM cloud-init on the next `pulumi up`; because that changes the boot script, the VMs are replaced (the LB health checks bridge the transition).
+3. The next CI deploy authenticates with the new CI key from the GitHub Environment; no commit needed. The new VM reader key is baked into VM cloud-init on the next `pulumi up`; because that changes the boot script, the VMs are replaced (the LB health checks bridge the transition).
 
 4. **Revoke the bootstrap key** in the Scaleway console.
 
@@ -387,14 +373,14 @@ The VM base image itself is the stock `docker` marketplace label (`compute.image
 
 The Pulumi passphrase encrypts the stack's secret outputs (e.g. the DB connection string) in the state bucket. To rotate it, run the CLI (`pnpm infra`) and pick **Rotate passphrase**. The action:
 
-1. Verifies the current passphrase, then generates a new one — shown once; store it in your password manager before the rotation runs.
+1. Verifies the current passphrase, then generates a new one, shown once; store it in your password manager before the rotation runs.
 2. Re-encrypts the stack (`pulumi stack change-secrets-provider passphrase` rewrites both the state object and `Pulumi.<stack>.yaml` with a fresh `encryptionsalt`), under the stack lock so a concurrent CI deploy cannot read state mid-rotation, and verifies the rewritten file decrypts with the new passphrase.
 3. Syncs the new `PULUMI_CONFIG_PASSPHRASE` to the GitHub Environment (when `gh` is authenticated).
 4. Reminds you to commit the updated `infra/Pulumi.<stack>.yaml`.
 
-Unlike **Rotate keys**, no bootstrap key is needed: nothing changes on the Scaleway side, so any key with state-bucket access works (CI deploy key or an operator key). A drifted or missing `PULUMI_CONFIG_PASSPHRASE` Environment secret can also be repaired without rotating — every `pnpm infra` **Resume**/**Rotate keys** run re-syncs the verified passphrase when `gh` is authenticated.
+Unlike **Rotate keys**, no bootstrap key is needed: nothing changes on the Scaleway side, so any key with state-bucket access works (CI deploy key or an operator key). A drifted or missing `PULUMI_CONFIG_PASSPHRASE` Environment secret can also be repaired without rotating: every `pnpm infra` **Resume**/**Rotate keys** run re-syncs the verified passphrase when `gh` is authenticated.
 
-> Losing the current passphrase means you cannot decrypt existing secret outputs — there is no recovery. The GitHub Environment holds a copy, but Actions secrets are write-only: CI keeps working with it, yet it can never be viewed again, so keep your password-manager copy current.
+> Losing the current passphrase means you cannot decrypt existing secret outputs; there is no recovery. The GitHub Environment holds a copy, but Actions secrets are write-only: CI keeps working with it, yet it can never be viewed again, so keep your password-manager copy current.
 
 <a id="clean-slate"></a>
 ### Clean slate (start over from scratch)
