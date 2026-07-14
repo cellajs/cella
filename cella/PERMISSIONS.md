@@ -153,39 +153,32 @@ Boundary code that starts from DB rows, route params, or CDC events uses `buildS
 
 ## Widening: row conditions and public read
 
-Both mechanisms only ever **widen** access relative to the policy matrix, and both derive from the row's own columns.
+Two mechanisms widen access beyond the policy matrix, and both read the row's own columns. There are exactly two rules — `own` and `public` — and that set is **closed**: it is not a fork extension point. The reasoning is in Constraints; the mechanism is here.
 
-**Row conditions** (`shared/src/permissions/row-conditions.ts`) qualify a grant per row. A cell of `1` grants the action on every row the context scope reaches; a `RowCondition` cell grants it only on rows that satisfy the condition. Each condition carries two forms that must agree:
+A **row condition** (`shared/src/permissions/row-conditions.ts`) qualifies a grant per row. A cell of `1` grants the action on every row the context scope reaches; a condition cell grants it only on rows the condition matches. A condition is pure data — a name and a `RowPredicate` from a closed vocabulary:
 
 ```ts
+export type RowPredicate =
+  | { kind: 'columnEqualsActor'; column: string }   // row[column] === acting user id (anonymous never matches)
+  | { kind: 'columnIsNotNull'; column: string };    // row[column] is set (actor-independent)
+
 export interface RowCondition {
   name: string;
-  matches: (row: RowForCondition, actor: ConditionActor) => boolean;  // check-form
-  sqlForm: RowConditionSqlForm;                                       // { kind: 'columnEqualsActor'; column: string }
+  predicate: RowPredicate;
 }
 
-export const own: RowCondition = {
-  name: 'own',
-  matches: (row, actor) => !!actor.userId && !!row.createdBy && row.createdBy === actor.userId,
-  sqlForm: { kind: 'columnEqualsActor', column: 'createdBy' },
-};
+export const own = { name: 'own', predicate: { kind: 'columnEqualsActor', column: 'createdBy' } };
 ```
 
-The SQL form is a **declarative descriptor, not a query-building closure**. That is deliberate: it keeps `shared/` ORM-free, and it makes check-form/SQL-form parity something a property test can actually assert. `own` is the only shipped condition.
+The predicate is the single source of truth. Two shared interpreters read it — `rowPredicateMatches` (JS, in `shared/`) and `compileRowConditionSql` (Drizzle, in `backend/`) — so a condition's check-form and SQL-form **cannot drift from each other**: there are no per-condition implementations to keep in sync, only the two interpreters, which the parity property test proves equal. The `shared/`→`backend/` split is why the predicate is a declarative descriptor rather than an inline query builder: `shared/` is ORM-free, so it emits the predicate and the backend compiles it.
 
-**Public read grants** (`shared/src/permissions/public-read.ts`) make rows readable by *any* actor, anonymous included, independent of memberships. There is exactly one rule: the row's own `publicAt` is set. Declared per subject with `publicRead()`, it widens `read` and nothing else.
-
-Public read is *not* a policy cell — it grants with no membership at all — but it is expressed as the same `RowCondition` shape, so it rides the same compile path and the same parity test:
+**Public read** (`shared/src/permissions/public-read.ts`) makes rows readable by *any* actor, anonymous included, independent of memberships. One rule: the row's own `publicAt` is set. Declared per subject with `publicRead('publicSelf')`, it widens `read` and nothing else. It is *not* a policy cell — it grants with no membership — but it is the same `RowCondition` shape, so it rides the same interpreters and the same parity test:
 
 ```ts
-export const publicRow: RowCondition = {
-  name: 'public',
-  matches: (row) => !!row.publicAt,
-  sqlForm: { kind: 'columnIsNotNull', column: 'publicAt' },   // actor-independent: anonymous matches
-};
+export const publicRow = { name: 'public', predicate: { kind: 'columnIsNotNull', column: 'publicAt' } };
 ```
 
-**Publication does not cascade.** A public parent does not publish its children, and that is a deliberate constraint rather than a missing feature. A cross-row rule is unenforceable in the two paths that must agree with the engine: the collection-read SQL compiler would need a join, and CDC stream dispatch only ever ships the row itself. So cascading publication is a **data** concern — a fork that wants it propagates `publicAt` down to descendant rows (trigger or app logic), and every path keeps reading one self-describing column.
+**Publication does not cascade.** A public parent does not publish its children, and that is a deliberate constraint, not a missing feature. A cross-row rule is unenforceable in the two paths that must agree with the engine: the collection-read SQL compiler would need a join, and CDC stream dispatch only ever ships the row itself. So cascading publication is a **data** concern — propagate `publicAt` down to descendant rows (trigger or app logic), and every path keeps reading one self-describing column.
 
 ## The actor
 
@@ -253,7 +246,6 @@ The rest of the suite covers grant attribution, `'own'` denial when the actor or
 | Required ancestor scope omitted from `contextIds` | Throws `MissingScopeError` → 400 `missing_scope` / WS `4400`. Never silently unscoped |
 | Actor loses access mid-Yjs-session | The relay's materialization re-checks `update` on the backend before persisting |
 | System admin joins a Yjs collab session | No bypass. Collaborative editing is authorized as the acting user, matching materialization |
-| Fork adds a row condition on a new column | Dispatch fails **closed** until the column is added to CDC's `permissionRowKeys` |
 
 ## Constraints
 
@@ -262,7 +254,7 @@ The rest of the suite covers grant attribution, `'own'` denial when the actor or
 - **No per-row narrowing.** Row conditions and public read only ever widen. Visibility variance belongs at the *type* level — give the entity its own policy matrix — so read visibility stays a function of the context chain, memberships × the static matrix, and the row's own data.
 - **No explicit relation tuples.** Ownership is implicit, derived from `createdBy`. This keeps the model small while leaving a path to real tuples if a fork needs them.
 - **Every rule reads one row: its own.** The engine never loads rows, and no rule may depend on another row. This is the constraint the whole design rests on — it is what lets the check-form, the compiled SQL, and CDC dispatch reach the same verdict from the same data. A rule that needed a *second* row would be evaluable by the engine, need a join in SQL, and be flatly impossible in dispatch (which only ever ships the row itself). Three paths, three answers. So cross-row semantics are pushed into the data instead: denormalize the column, and every path can see it.
-- **Two SQL descriptor kinds.** `columnEqualsActor` (row conditions) and `columnIsNotNull` (public read). A rule that cannot be expressed as a predicate over the row's own columns cannot be compiled into a collection read, and therefore has no place in the model.
+- **Row conditions are a closed set, not an extension point.** There are two — `own` and `public` — and the `RowPredicate` vocabulary has two kinds — `columnEqualsActor` and `columnIsNotNull`. A rule that can't be expressed as a predicate over the row's own columns can't be compiled into a collection read, so it has no place in the model; and the vocabulary is deliberately *not* open, so nothing can express one. Adding a kind is a compile-enforced edit to both interpreters plus a parity scenario — a considered change to the engine, not a fork knob. This is what keeps the reader's model finite: deny / allow / owner-only, plus a public flag.
 - **Fail-loud config.** A missing policy row throws rather than denying, so an incomplete matrix cannot quietly lock users out.
 - **System admins get no Yjs bypass.** Collaborative editing is authorized as the acting user. The relay and the backend's materialize endpoint take the same stance, so the WS check and the write it eventually triggers agree.
 
@@ -271,7 +263,7 @@ The rest of the suite covers grant attribution, `'own'` denial when the actor or
 - **`elevatedRoles` is `undefined`.** When set, a *non-listed* role's product grant speaks only for rows homed at its own context level, while listed roles keep full subtree scope. Only meaningful in forks with nested context chains.
 - **No entity declares `publicRead()`.** Every context and product row carries a nullable `publicAt` column, but nothing sets it and no subject declares the grant, so the mechanism costs nothing until a fork wants it.
 
-**Fork contract.** CDC slims each change row to the permission-relevant columns (`permissionRowKeys` in `cdc/src/utils/permission-row-data.ts`) so SSE dispatch can evaluate later. A fork that adds a row condition on a new column **must** add that column there, or dispatch silently fails closed.
+**CDC carries the columns the two rules read.** SSE dispatch runs the engine per event, so the change row must carry the columns the conditions read — `createdBy` (for `own`) and `publicAt` (for `public`). CDC slims each row to exactly the permission-relevant set (`permissionRowKeys` in `cdc/src/utils/permission-row-data.ts`); both columns already ship. Because the condition set is closed, this list is fixed — there is no fork column to add.
 
 ## Key files
 
@@ -282,7 +274,7 @@ The rest of the suite covers grant attribution, `'own'` denial when the actor or
 | `shared/src/permissions/check-permission.ts` | `checkPermission` + `Actor` — the entry point every tier calls |
 | `shared/src/permissions/permission-manager/check.ts` | `getAllDecisions` — the engine |
 | `shared/src/permissions/access-policies.ts` | `configurePermissions` + `validatePolicyCompleteness` |
-| `shared/src/permissions/row-conditions.ts` | `RowCondition`, the built-in `own` |
+| `shared/src/permissions/row-conditions.ts` | `RowPredicate` vocabulary, `rowPredicateMatches`, `own` |
 | `shared/src/permissions/public-read.ts` | `publicRow` — the public read predicate |
 | `shared/src/permissions/build-subject.ts` | Column-shaped input → domain subject (carries the row) |
 | `shared/src/permissions/compute-can.ts` | Frontend three-state `can` map |

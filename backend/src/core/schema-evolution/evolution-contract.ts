@@ -33,7 +33,7 @@ import { createUpdateSchema } from './update-schema';
  * entity-bound runtime normalizers, so the entityType is declared exactly once
  * per module and operations cannot pass a mismatched one. The `lens:check`
  * contract-completeness rule asserts every configured entity type registers
- * here. See cella/SCHEMA_EVOLUTION.md (Design revision).
+ * here. See cella/SCHEMA_EVOLUTION.md (Evolution contract).
  */
 
 type AnyRecord = Record<string, unknown>;

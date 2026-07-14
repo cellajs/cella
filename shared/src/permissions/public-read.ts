@@ -23,16 +23,15 @@ export type PublicReadGrants = Partial<Record<ContextEntityType | ProductEntityT
 /**
  * The row predicate a public read grant evaluates to.
  *
- * Shares the `RowCondition` shape with policy row conditions so that every enforcement path
- * — the engine's check-form, the backend's compiled SQL, and stream dispatch — evaluates it
- * through one implementation, and the check/SQL parity property test covers it for free.
+ * Shares the `RowCondition` shape with policy row conditions so that every enforcement path —
+ * the engine's check-form, the backend's compiled SQL, and stream dispatch — evaluates it
+ * through the one shared interpreter, and the check/SQL parity property test covers it for free.
  *
- * Unlike a policy row condition, this grant is membership-INDEPENDENT: it is not a policy
- * cell, it widens `read` on its own. Hence the actor-independent `columnIsNotNull` form —
+ * Unlike a policy row condition, this grant is membership-INDEPENDENT: it is not a policy cell,
+ * it widens `read` on its own. Hence the actor-independent `columnIsNotNull` predicate —
  * anonymous actors match.
  */
 export const publicRow: RowCondition = {
   name: 'public',
-  matches: (row) => !!row.publicAt,
-  sqlForm: { kind: 'columnIsNotNull', column: 'publicAt' },
+  predicate: { kind: 'columnIsNotNull', column: 'publicAt' },
 };

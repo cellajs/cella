@@ -1,4 +1,13 @@
-import { appConfig, buildSubject, buildSubjectFromEntity, hierarchy, MissingScopeError, own, publicRow } from 'shared';
+import {
+  appConfig,
+  buildSubject,
+  buildSubjectFromEntity,
+  hierarchy,
+  MissingScopeError,
+  own,
+  publicRow,
+  rowPredicateMatches,
+} from 'shared';
 import { describe, expect, it } from 'vitest';
 
 describe('shared buildSubject', () => {
@@ -77,12 +86,12 @@ describe('buildSubjectFromEntity — carries the row', () => {
     const row = { ...subject.row, createdBy: subject.createdBy };
 
     // `own`: the actor created it. Public read: the row carries publicAt.
-    expect(own.matches(row, { userId: 'u1' })).toBe(true);
-    expect(own.matches(row, { userId: 'u2' })).toBe(false);
-    expect(publicRow.matches(row, {})).toBe(true);
+    expect(rowPredicateMatches(own.predicate, row, { userId: 'u1' })).toBe(true);
+    expect(rowPredicateMatches(own.predicate, row, { userId: 'u2' })).toBe(false);
+    expect(rowPredicateMatches(publicRow.predicate, row, {})).toBe(true);
 
     // ...and an unpublished row is not public.
     const unpublished = buildSubjectFromEntity(product, { ...entity, publicAt: null });
-    expect(publicRow.matches({ ...unpublished.row }, {})).toBe(false);
+    expect(rowPredicateMatches(publicRow.predicate, { ...unpublished.row }, {})).toBe(false);
   });
 });

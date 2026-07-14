@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import { type Actor, appConfig, type ContextEntityType, type RowCondition, type RowConditionSqlForm } from 'shared';
+import { type Actor, appConfig, type ContextEntityType, type RowCondition, type RowPredicate } from 'shared';
 import type { CollectionReadFilter } from './collection-scope';
 
 /**
@@ -30,10 +30,10 @@ const resolveColumn = (table: AnyPgTable, columnName: string, conditionName: str
  * Anonymous actors never match actor-bound forms, mirroring the check-form.
  */
 export const compileRowConditionSql = (condition: RowCondition, table: AnyPgTable, actor: Actor): SQL => {
-  const form: RowConditionSqlForm = condition.sqlForm;
-  const column = resolveColumn(table, form.column, condition.name);
+  const predicate: RowPredicate = condition.predicate;
+  const column = resolveColumn(table, predicate.column, condition.name);
 
-  switch (form.kind) {
+  switch (predicate.kind) {
     case 'columnEqualsActor': {
       const userId = 'anonymous' in actor ? undefined : actor.userId;
       if (!userId) return NEVER;

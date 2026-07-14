@@ -7,11 +7,13 @@ import type { RowCondition } from './row-conditions';
  *
  * - `1` = allowed for all entities of this type (unconditional)
  * - `0` = denied
- * - `RowCondition` = allowed only for rows satisfying the condition (see `row-conditions.ts`)
- * - `'own'` = sugar for the built-in `own` condition (actor is the entity's creator);
- *   normalized to the condition object when policies are configured.
+ * - `'own'` = the built-in owner condition (actor is the entity's creator); normalized to the
+ *   `own` `RowCondition` when policies are configured.
+ *
+ * Row conditions are a closed set (`own`, and the public read grant), not a fork extension
+ * point — see `row-conditions.ts`. So a config cell is one of exactly these three literals.
  */
-export type PermissionValue = 0 | 1 | 'own' | RowCondition;
+export type PermissionValue = 0 | 1 | 'own';
 
 /**
  * Permission value after configuration-time normalization (`'own'` sugar resolved).

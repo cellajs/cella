@@ -3,6 +3,7 @@ import { configureWidePermissions, widePublicGrants, wideSubject, wideTopology }
 import { getAllDecisions } from './permission-manager/check';
 import type { SubjectForPermission } from './permission-manager/types';
 import { publicRow } from './public-read';
+import { rowPredicateMatches } from './row-conditions';
 
 /**
  * Public read grants (`publicRead`): subject-level, membership-independent read access derived
@@ -107,15 +108,15 @@ describe('public read grants — anonymous actor', () => {
 
 describe('publicRow — the shared predicate', () => {
   it('is actor-independent: it matches for anonymous actors', () => {
-    expect(publicRow.matches({ publicAt: NOW }, {})).toBe(true);
-    expect(publicRow.matches({ publicAt: null }, {})).toBe(false);
-    expect(publicRow.matches({}, {})).toBe(false);
+    expect(rowPredicateMatches(publicRow.predicate, { publicAt: NOW }, {})).toBe(true);
+    expect(rowPredicateMatches(publicRow.predicate, { publicAt: null }, {})).toBe(false);
+    expect(rowPredicateMatches(publicRow.predicate, {}, {})).toBe(false);
   });
 
-  it('compiles to a column-is-not-null form, so collection SQL can enforce it', () => {
+  it('is a column-is-not-null predicate, so collection SQL can enforce it', () => {
     // This is what makes public read enforceable in list endpoints. An actor-bound or
-    // cross-row form could not be compiled, and public rows would silently vanish from lists.
-    expect(publicRow.sqlForm).toEqual({ kind: 'columnIsNotNull', column: 'publicAt' });
+    // cross-row predicate could not be compiled, and public rows would silently vanish from lists.
+    expect(publicRow.predicate).toEqual({ kind: 'columnIsNotNull', column: 'publicAt' });
   });
 });
 

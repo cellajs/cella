@@ -1,7 +1,7 @@
 import type { ContextEntityType, EntityActionType, ProductEntityType } from '../../../types';
 import { allActionsAllowed, createActionRecord } from '../action-helpers';
 import { type PublicReadGrants, publicRow } from '../public-read';
-import { type ConditionActor, isRowCondition, type RowForCondition } from '../row-conditions';
+import { type ConditionActor, isRowCondition, rowPredicateMatches, type RowForCondition } from '../row-conditions';
 import type { AccessPolicies, EntityActionPermissions } from '../types';
 import { formatBatchPermissionSummary, formatPermissionDecision } from './format';
 import { resolveTopology } from './resolve-topology';
@@ -209,7 +209,7 @@ const checkWithIndices = <T extends PermissionMembership>(
 
         // Row-conditional grant: allowed only when the row satisfies the condition for this
         // actor (e.g. built-in `own`: actor created the row). Attributed by condition name.
-        if (isRowCondition(policyValue) && policyValue.matches(conditionRow, conditionActor)) {
+        if (isRowCondition(policyValue) && rowPredicateMatches(policyValue.predicate, conditionRow, conditionActor)) {
           actions[action].enabled = true;
           actions[action].grantedBy.push({ type: 'relation', relation: policyValue.name });
         }
@@ -221,7 +221,7 @@ const checkWithIndices = <T extends PermissionMembership>(
   // the row's own `publicAt` is set. Membership-independent, so it is evaluated outside the
   // policy walk — but through the same row-predicate the SQL compiler uses (`public-read.ts`).
   const publicMode = publicGrants?.[subject.entityType];
-  if (publicMode && publicRow.matches(conditionRow, conditionActor)) {
+  if (publicMode && rowPredicateMatches(publicRow.predicate, conditionRow, conditionActor)) {
     actions.read.enabled = true;
     actions.read.grantedBy.push({ type: 'public', mode: publicMode });
   }

@@ -98,7 +98,7 @@ case 'note':
   break;
 ```
 
-Cell values: `1` allowed, `0`/omitted denied, `'own'` = built-in "actor is creator" row condition, or a `RowCondition` object.
+Cell values: `1` allowed, `0`/omitted denied, `'own'` = the built-in "actor is creator" row condition. That is the whole set — row conditions are closed (`own` + public read), not a fork extension point.
 
 - **Product entities have no "self" rows**: their context rows are *home* rows where `create` is meaningful. (Context entities distinguish *elevation* rows on an ancestor, which carry `create`, from *self* rows on the same context, which omit it. See the header comment in `permissions-config.ts`.)
 - **`publicRead('publicSelf')`**: the row is readable by anyone — anonymous included — once its own `publicAt` is set. Every context and product row already carries the column. Publication does **not** cascade: a public parent does not publish its children, because a cross-row rule cannot be evaluated by the collection-read SQL compiler or by CDC dispatch (which only ships the row itself). If you want cascade, propagate `publicAt` down to descendant rows — it is a data concern, not a permission rule. See [Permissions](/docs/page/architecture/permissions).

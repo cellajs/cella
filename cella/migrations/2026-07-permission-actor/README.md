@@ -5,8 +5,10 @@ same verdict from the same inputs**. Four paths did not, and each divergence was
 invisible to cella's own tests (they need config cella doesn't ship), so a fork is
 where they actually bite.
 
-Two things change for forks: a **required `Actor`** on every permission check, and a
-**single-mode public read** backed by a denormalized `publicAt` column.
+Three things change for forks: a **required `Actor`** on every permission check, a
+**single-mode public read** backed by a denormalized `publicAt` column, and a **closed
+row-condition set** (`own` + public read — no fork extension point). Each has its own section
+below; the widening warning next is the one to read before you pull.
 
 ---
 
@@ -122,25 +124,32 @@ the table even on large forks.
 next divergence — and it was green through *both* of the bugs above, because its scenario space
 pinned `isSystemAdmin: false` and generated no public rows.
 
-**A parity test only pins the axes it actually varies.** If your fork adds a row condition, a
-policy dimension, or a new enforcement path, extend the scenario generator in the same commit —
-then confirm the test goes **red** when you remove the fix. If it stays green, it isn't covering you.
+**A parity test only pins the axes it actually varies.** If you add a policy dimension or a new
+enforcement path, extend the scenario generator in the same commit — then confirm the test goes
+**red** when you remove the fix. If it stays green, it isn't covering you.
 
-## 5. Custom row conditions: CDC must ship the column
+## 5. Row conditions are now a closed set
 
-If you add a `RowCondition` reading a new column, add that column to `permissionRowKeys` in
-`cdc/src/utils/permission-row-data.ts`. Otherwise SSE dispatch never sees it and **fails closed** —
-subscribers silently stop receiving rows they can read.
+The same change froze row conditions to exactly two — `own` and public read — defined only in
+`shared/`. A condition is now pure data (`{ name, predicate }`) with a two-kind `RowPredicate`
+vocabulary; the JS and SQL forms derive from one descriptor, so they can't drift.
+
+This is deliberately **not** a fork extension point. There is no supported way to add a condition
+from fork code — doing so means editing the shared engine and both interpreters, a considered
+change, not a config knob. If you had layered a custom `RowCondition`, `PermissionValue` (now
+`0 | 1 | 'own'`) will reject it at compile time; fold the logic into the engine or reconsider
+whether it belongs in the permission model at all. Because the set is closed, CDC's
+`permissionRowKeys` is fixed (`createdBy` + `publicAt`, both already shipped) — nothing to add.
 
 ---
 
 ## Checklist
 
-- [ ] Audited every `'own'` / custom-condition cell on **context-entity** and **create** rows (§ widening)
+- [ ] Audited every `'own'` cell on **context-entity** and **create** rows (§ widening)
 - [ ] `checkPermission` call sites pass `actorFrom(ctx)` (compiler-enforced)
 - [ ] Collection-read call sites pass the actor (compiler-enforced)
 - [ ] `publicRead('publicParent'|'publicParentOrSelf')` rewritten to `'publicSelf'` (compiler-enforced)
+- [ ] Any custom `RowCondition` reconciled with the now-closed set (compiler-enforced via `PermissionValue`)
 - [ ] `pnpm --filter backend generate` run; `public_at` migration reviewed
-- [ ] Fork-specific row conditions added to CDC `permissionRowKeys`
 - [ ] Parity test scenario space extended for any fork-specific dimension
 - [ ] `pnpm ts`, `pnpm lint`, and the permission suites pass

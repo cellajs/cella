@@ -12,8 +12,8 @@ export type {
 } from './types';
 export { publicRow } from './public-read';
 export type { PublicReadGrants, PublicReadMode } from './public-read';
-export { isRowCondition, own } from './row-conditions';
-export type { ConditionActor, RowCondition, RowConditionSqlForm, RowForCondition } from './row-conditions';
+export { isRowCondition, own, rowPredicateMatches } from './row-conditions';
+export type { ConditionActor, RowCondition, RowForCondition, RowPredicate } from './row-conditions';
 
 export { configureAccessPolicies, configurePermissions, getPolicyPermissions, getSubjectPolicies } from './access-policies';
 export type { PermissionsConfigResult } from './access-policies';
