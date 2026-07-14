@@ -23,6 +23,10 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
       RUN_MIGRATIONS_ON_BOOT: 'false'
+      API_WS_URL: ${API_WS_URL}
+      CDC_HEALTH_PORT: '4001'
+      YJS_PORT: '4002'
+      MCP_API_URL: ${MCP_API_URL}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/health']
       interval: '30s'
