@@ -96,14 +96,14 @@ describe('assertBucketProject', () => {
     ({ send: async () => ({ Owner: { ID: ownerId }, Buckets: buckets.map((Name) => ({ Name })) }) }) as never
 
   it('passes when the bucket is visible in the expected project', async () => {
-    await expect(assertBucketProject(listClient('proj-a:proj-a', ['cella-pulumi-state-v2']), 'cella-pulumi-state-v2', 'proj-a')).resolves.toBeUndefined()
+    await expect(assertBucketProject(listClient('proj-a:proj-a', ['cella-pulumi-state']), 'cella-pulumi-state', 'proj-a')).resolves.toBeUndefined()
   })
 
   it('fails when the key operates in another project', async () => {
-    await expect(assertBucketProject(listClient('org-default:org-default', ['cella-pulumi-state-v2']), 'cella-pulumi-state-v2', 'proj-a')).rejects.toThrow(/preferred project/)
+    await expect(assertBucketProject(listClient('org-default:org-default', ['cella-pulumi-state']), 'cella-pulumi-state', 'proj-a')).rejects.toThrow(/preferred project/)
   })
 
   it('fails when the bucket is not visible from the expected project', async () => {
-    await expect(assertBucketProject(listClient('proj-a:proj-a', ['other-bucket']), 'cella-pulumi-state-v2', 'proj-a')).rejects.toThrow(/not visible/)
+    await expect(assertBucketProject(listClient('proj-a:proj-a', ['other-bucket']), 'cella-pulumi-state', 'proj-a')).rejects.toThrow(/not visible/)
   })
 })

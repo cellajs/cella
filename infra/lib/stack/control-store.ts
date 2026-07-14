@@ -114,12 +114,12 @@ export function emptyControlState(): ControlState {
   return { schemaVersion: 2, bootstrap: {}, rollout: {} }
 }
 
-/** Bucket holding both the Pulumi state and the control object. The `-v2`
- *  suffix is a one-time rename: the original `<slug>-pulumi-state` bucket was
- *  created under the operator key's preferred (default) project instead of the
- *  app project, putting it out of reach of the project-scoped CI key. */
+/** Bucket holding both the Pulumi state and the control object. Must live in
+ *  the app project — Scaleway Object Storage pins API keys to their preferred
+ *  project, so a bucket elsewhere is out of reach of the project-scoped CI key
+ *  (see ensure-state-bucket's preflight). */
 export function stateBucket(slug: string): string {
-  return `${slug}-pulumi-state-v2`
+  return `${slug}-pulumi-state`
 }
 
 /** Control object key for a stack. Accepts a full Pulumi stack name

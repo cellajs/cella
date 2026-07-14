@@ -47,7 +47,7 @@ function makeS3(opts: {
 
 describe('control-store keys', () => {
   it('derives the state bucket from the slug', () => {
-    expect(stateBucket('cella')).toBe('cella-pulumi-state-v2')
+    expect(stateBucket('cella')).toBe('cella-pulumi-state')
   })
 
   it('derives the control key from a full or bare stack name', () => {
