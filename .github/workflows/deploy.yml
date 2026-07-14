@@ -307,6 +307,22 @@ jobs:
           echo "$SCW_SECRET_KEY" | docker login "$REGISTRY" -u nologin --password-stdin >/dev/null
           pnpm --filter infra wait-for-images --registry "$REGISTRY" --ns "$REGISTRY_NS" --tag "$TAG" --build-images-json "$BUILD_IMAGES_MATRIX"
 
+      # Level-triggered cert repair: Scaleway never retries a Let's Encrypt
+      # cert whose issuance errored (e.g. ACME validation raced DNS propagation),
+      # and it wedges every later deploy at the frontend attach. Delete such
+      # certs (state + live) so the `pulumi up` below recreates them behind the
+      # DNS-propagation gate (resources/dns-cert-gates.ts). No-op when healthy.
+      - name: Repair errored LB certificates
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          STACK: ${{ needs.setup.outputs.pulumi_stack }}
+          APP_MODE: ${{ needs.setup.outputs.environment }}
+        run: pnpm --filter infra repair-certs --stack "$STACK"
+
       - name: Pulumi up (base infra)
         working-directory: infra
         env:

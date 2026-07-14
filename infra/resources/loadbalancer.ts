@@ -6,6 +6,7 @@ import { enabledServices } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { privateNetworkId } from './network'
 import { serviceGenerationIps } from './compute'
+import { CertReadyGate, DnsPropagationGate } from './dns-cert-gates'
 
 /**
  * Resource base names for resources whose shipped Pulumi URNs and Scaleway
@@ -71,23 +72,32 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   const lbPublicIp = lb.ipAddress
 
   const dnsRecords = new Map<ServiceName, scaleway.domain.Record>()
+  const dnsGates = new Map<ServiceName, DnsPropagationGate>()
   for (const service of lbServices) {
     const host = serviceHost(service.slug)
     // A service whose host IS the zone apex (frontend at apex) gets no own
     // record/cert/route. The default backend would have to serve it, which we
     // don't currently support; the apex handling below covers that hostname.
     if (host === dnsZone) continue
-    dnsRecords.set(service.slug, new scaleway.domain.Record(`${baseName(service.slug)}-dns`, {
+    const record = new scaleway.domain.Record(`${baseName(service.slug)}-dns`, {
       dnsZone,
       name: host.replace(`.${dnsZone}`, ''),
       type: 'A',
       data: lbPublicIp,
       ttl: 300,
-    }))
+    })
+    dnsRecords.set(service.slug, record)
+    // Hold the cert request until the record answers on public resolvers, so
+    // the ACME validation never races propagation (see dns-cert-gates.ts).
+    dnsGates.set(service.slug, new DnsPropagationGate(`${baseName(service.slug)}-dns-gate`, {
+      fqdn: host,
+      expectedIp: lbPublicIp,
+    }, { dependsOn: [record] }))
   }
 
   // Apex → points at the LB so the apex→www redirect ACL below can answer.
   let apexDns: scaleway.domain.Record | undefined
+  let apexDnsGate: DnsPropagationGate | undefined
   if (!appIsAtApex) {
     apexDns = new scaleway.domain.Record('apex-dns', {
       dnsZone,
@@ -96,33 +106,43 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
       data: lbPublicIp,
       ttl: 300,
     })
+    apexDnsGate = new DnsPropagationGate('apex-dns-gate', {
+      fqdn: dnsZone,
+      expectedIp: lbPublicIp,
+    }, { dependsOn: [apexDns] })
   }
 
   // -------------------------------------------------------------------------
-  // Let's Encrypt certificates: depend on DNS records so the FQDN
-  // resolves to the LB IP before Scaleway runs the ACME validation.
+  // Let's Encrypt certificates: gated on the DNS record being publicly
+  // resolvable (not merely created) before Scaleway runs the ACME validation,
+  // and gated after on `ready` status so an issuance failure surfaces AT the
+  // cert with its ACME detail instead of at the frontend attach.
   // -------------------------------------------------------------------------
 
   const certs = new Map<ServiceName, scaleway.loadbalancers.Certificate>()
+  const certGates: CertReadyGate[] = []
   for (const [slug, dns] of dnsRecords) {
-    certs.set(slug, new scaleway.loadbalancers.Certificate(`${baseName(slug)}-cert`, {
+    const cert = new scaleway.loadbalancers.Certificate(`${baseName(slug)}-cert`, {
       lbId: lb.id,
       name: naming.resource(`${baseName(slug)}-cert`),
       letsencrypt: {
         commonName: serviceHost(slug),
       },
-    }, { dependsOn: [dns] }))
+    }, { dependsOn: [dns, dnsGates.get(slug)!] })
+    certs.set(slug, cert)
+    certGates.push(new CertReadyGate(`${baseName(slug)}-cert-ready`, { certificateId: cert.id }, { dependsOn: [cert] }))
   }
 
   let apexCert: scaleway.loadbalancers.Certificate | undefined
-  if (!appIsAtApex && apexDns) {
+  if (!appIsAtApex && apexDns && apexDnsGate) {
     apexCert = new scaleway.loadbalancers.Certificate('apex-cert', {
       lbId: lb.id,
       name: naming.resource('apex-cert'),
       letsencrypt: {
         commonName: dnsZone,
       },
-    }, { dependsOn: [apexDns] })
+    }, { dependsOn: [apexDns, apexDnsGate] })
+    certGates.push(new CertReadyGate('apex-cert-ready', { certificateId: apexCert.id }, { dependsOn: [apexCert] }))
   }
 
   // -------------------------------------------------------------------------
@@ -174,6 +194,10 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     backendId: defaultBackend.id, // Default backend (the lbRoute 'default' service)
     inboundPort: 443,
     certificateIds: allCertIds,
+  }, {
+    // Attach only certs proven `ready` — a pending/errored cert fails its own
+    // gate first, with the ACME detail (see dns-cert-gates.ts).
+    dependsOn: certGates,
   })
 
   // Host-header routes for every host-routed service with a DNS record.
