@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.5](https://github.com/cellajs/cella/compare/0.3.4...0.3.5) (2026-07-14)
+
+
+### 🎉 New features
+
+* **cdc:** identify the slot holder in slot-contention retry warnings ([#878](https://github.com/cellajs/cella/issues/878)) ([1690c77](https://github.com/cellajs/cella/commit/1690c77f3d4389304b5eb585efe3fbbbe5f2f5f6))
+* entity grid enrichment — member previews, activity stamps, grid polish ([#877](https://github.com/cellajs/cella/issues/877)) ([9b36fe0](https://github.com/cellajs/cella/commit/9b36fe01db9e04acab6986944f636ddbb1a670e0))
+* **infra:** projectcampus go-live upstreams - singleVM hardening, cert gates, state-bucket guardrails ([#879](https://github.com/cellajs/cella/issues/879)) ([518f6fe](https://github.com/cellajs/cella/commit/518f6fe2983028b5d7c7c6318d1f3528d294b439))
+* permission feature additions for projectcampus ([#873](https://github.com/cellajs/cella/issues/873)) ([2bd01e7](https://github.com/cellajs/cella/commit/2bd01e7899945f9563539853712f7f0a41f26bfb))
+
+
+### 🐞 Bug fixes
+
+* mock iso date determinism ([6f5cde0](https://github.com/cellajs/cella/commit/6f5cde01a48f3e287351b7a29a2ce633591040fb))
+
+
+### ⏪ Reverts
+
+* ignore maintenances change (no-op ignoreChanges) ([#874](https://github.com/cellajs/cella/issues/874)) ([259d80c](https://github.com/cellajs/cella/commit/259d80cb6e761349a619e9dbce9a0a24375cc446))
+
 ## [0.3.4](https://github.com/cellajs/cella/compare/0.3.3...0.3.4) (2026-07-09)
 
 
