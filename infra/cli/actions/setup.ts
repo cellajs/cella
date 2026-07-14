@@ -13,6 +13,7 @@ import { deriveInfra } from '../../lib/naming'
 import { infraDir } from '../../lib/utils/paths'
 import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../../lib/scaleway/permissions'
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up'
+import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam'
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets'
 import { managedKeys, type ManagedKeyId } from '../../lib/managed-keys'
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager'
@@ -402,6 +403,15 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     stateAccessKey: scwAccessKey,
     stateSecretKey: scwSecretKey,
   })
+
+  // The Pulumi program requires SCW_DEFAULT_ORGANIZATION_ID (pulumi-context.ts
+  // requireEnv); CI injects it from its secrets and "Apply infra change"
+  // resolves it the same way, so resolve it here too for the provisioning `up`.
+  try {
+    childEnv.SCW_DEFAULT_ORGANIZATION_ID = await resolveOrganizationId(scwSecretKey, scwProjectId)
+  } catch (error) {
+    console.warn(`${warningMark} Could not resolve organization id (${errorMessage(error)}); \`pulumi up\` will fail without SCW_DEFAULT_ORGANIZATION_ID in the environment.`)
+  }
 
   const stateBucketEnv: NodeJS.ProcessEnv = {
     ...childEnv,
