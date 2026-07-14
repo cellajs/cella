@@ -11,7 +11,7 @@ import { OrganizationModel, organizationsTable } from '#/modules/organization/or
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { UserModel, usersTable } from '#/modules/user/user-db';
-import { getMembershipOrderOffset, mockContextMembership } from '#/modules/memberships/memberships-mocks';
+import { getMembershipOrderOffset, mockChannelMembership } from '#/modules/memberships/memberships-mocks';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { mockEmail, mockUnsubscribeToken, mockUser } from '#/modules/user/user-mocks';
 import { mockMany, setMockContext } from '#/mocks';
@@ -117,7 +117,7 @@ export const organizationsSeed = async () => {
       .values(emailRecords)
       .onConflictDoNothing();
 
-    const membershipRecords = users.map(user => mockContextMembership('organization', organization, user));
+    const membershipRecords = users.map(user => mockChannelMembership('organization', organization, user));
 
     // Insert memberships into the database
     await db
@@ -168,7 +168,7 @@ const addAdminMembership = (
   if (adminMemberships.length >= SYSTEM_ADMIN_MEMBERSHIP_COUNT) return;
 
   // Make admin membership
-  const membership = mockContextMembership('organization', organization, adminUser);
+  const membership = mockChannelMembership('organization', organization, adminUser);
 
   // Adjust the admin membership
   membership.archived = faker.datatype.boolean(0.5);

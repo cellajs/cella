@@ -1,5 +1,5 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import { getEntityQueryKeys } from './entity-query-registry';
 
 /**
@@ -78,7 +78,7 @@ export function invalidateIfLastMutation(queryClient: QueryClient, mutationKey: 
  */
 export function invalidateOnMembershipChange(
   queryClient: QueryClient,
-  entityType: ContextEntityType,
+  entityType: ChannelEntityType,
   entityId: string,
   organizationId?: string,
 ): void {

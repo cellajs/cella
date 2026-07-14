@@ -1,4 +1,4 @@
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -10,7 +10,7 @@ interface Props {
   tenantId: string;
   organizationId: string;
   members: Member[];
-  entityType: ContextEntityType;
+  entityType: ChannelEntityType;
   dialog?: boolean;
   callback?: (args: CallbackArgs<Member[]>) => void;
 }

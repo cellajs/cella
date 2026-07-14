@@ -25,9 +25,9 @@ export async function runPostCatchupRecovery(): Promise<void> {
 
   // Phase 1: Recalculate all counters from source-of-truth tables
   try {
-    const { contextRows, productRows } = await recalculateCounters(cdcDb as unknown as DbOrTx);
+    const { channelRows, productRows } = await recalculateCounters(cdcDb as unknown as DbOrTx);
     log.info('Post-catchup counter recalculation complete', {
-      contextRows,
+      channelRows,
       productRows,
       durationMs: Math.round(performance.now() - startMs),
     });

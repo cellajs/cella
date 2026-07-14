@@ -3,7 +3,7 @@ import { AppError } from '#/core/error';
 import { getEntityCounts } from '#/modules/entities/helpers/get-entity-counts';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { withAuditUser } from '#/modules/user/helpers/audit-user';
-import { getValidContextEntity } from '#/permissions';
+import { getValidChannelEntity } from '#/permissions';
 
 export async function getOrganizationOp(
   ctx: AuthContext,
@@ -14,7 +14,7 @@ export async function getOrganizationOp(
   const user = ctx.var.user;
   const { bySlug, include } = opts;
 
-  const { entity: organization, membership } = await getValidContextEntity(ctx, id, 'organization', 'read', bySlug);
+  const { entity: organization, membership } = await getValidChannelEntity(ctx, id, 'organization', 'read', bySlug);
 
   // Validate organization belongs to the specified tenant, in org itself we do not have orgGuard
   if (organization.tenantId !== tenantId) {

@@ -66,8 +66,8 @@ describe('Attachment seq reads', async () => {
 
     plan = buildTestEntityHierarchyPlan({
       entityType: 'attachment',
-      rootContextId: tenant.organization.id,
-      makeContextId: () => generateId(),
+      rootChannelId: tenant.organization.id,
+      makeChannelId: () => generateId(),
     });
     await seedEntityHierarchy(db, plan, {
       tenantId: tenant.tenantId,
@@ -79,7 +79,7 @@ describe('Attachment seq reads', async () => {
     // B1 would pass accidentally if the endpoint sorted by createdAt.
     const baseAttachment = {
       tenantId: tenant.tenantId,
-      ...plan.contextIdColumns,
+      ...plan.channelIdColumns,
       bucketName: 'attachments',
       contentType: 'image/png',
       size: '1000',
@@ -130,7 +130,7 @@ describe('Attachment seq reads', async () => {
       },
     ];
     for (const row of rows) {
-      // Cast: `...plan.contextIdColumns` is a config-derived Record<string,string>, which widens
+      // Cast: `...plan.channelIdColumns` is a config-derived Record<string,string>, which widens
       // the row type; the runtime shape matches the attachment insert (organization/project ids).
       await db.insert(attachmentsTable).values(row as typeof attachmentsTable.$inferInsert);
     }

@@ -4,7 +4,7 @@ import { deepestAncestorExpr } from './recalculate-counters';
 
 /**
  * Recalculation must group seq counters by the same deepest-non-null-ancestor rule CDC
- * stamps them with (`resolveContextKey`), or recovery fights live CDC. The full pipeline
+ * stamps them with (`resolveChannelKey`), or recovery fights live CDC. The full pipeline
  * runs against real fork tables; the grouping SQL shape is asserted here on synthetic
  * hierarchies built inline (plus one architectural invariant — organization is always the
  * root context and has no ancestors — true in every fork), so the assertions are fork-independent.
@@ -14,8 +14,8 @@ describe('deepestAncestorExpr', () => {
     const roles = createRoleRegistry(['admin', 'member'] as const);
     const h = createEntityHierarchy(roles)
       .user()
-      .context('organization', { parent: null, roles: roles.all })
-      .context('project', { parent: 'organization', roles: roles.all })
+      .channel('organization', { parent: null, roles: roles.all })
+      .channel('project', { parent: 'organization', roles: roles.all })
       .product('task', { parent: 'project' })
       .build();
 
@@ -30,10 +30,10 @@ describe('deepestAncestorExpr', () => {
     const roles = createRoleRegistry(['admin', 'member'] as const);
     const h = createEntityHierarchy(roles)
       .user()
-      .context('organization', { parent: null, roles: roles.all })
-      .context('course', { parent: 'organization', roles: roles.all })
-      .context('courseSection', { parent: 'course', roles: roles.all })
-      .context('project', { parent: 'courseSection', roles: roles.all })
+      .channel('organization', { parent: null, roles: roles.all })
+      .channel('course', { parent: 'organization', roles: roles.all })
+      .channel('courseSection', { parent: 'course', roles: roles.all })
+      .channel('project', { parent: 'courseSection', roles: roles.all })
       .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection'] })
       .build();
 

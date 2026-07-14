@@ -28,7 +28,7 @@ describe('wide fixture kit', () => {
     const decision = getAllDecisions(
       accessPolicies,
       [wideMembership('project', 'p1', 'guest')],
-      wideSubject({ entityType: 'attachment', id: 'a1', contextIds: { organization: 'o1', project: 'p1' } }),
+      wideSubject({ entityType: 'attachment', id: 'a1', channelIds: { organization: 'o1', project: 'p1' } }),
       { topology: wideTopology },
     );
 

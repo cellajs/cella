@@ -25,14 +25,14 @@ import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 
 type Entity = { Icon: LucideIcon; label: string };
 
-type AppConfig = { label: string; context: Entity[]; product: Entity[] };
+type AppConfig = { label: string; channel: Entity[]; product: Entity[] };
 
-// Each config keeps a structural "Context entities" bucket (users/org + a context entity) and a
+// Each config keeps a structural "Channel entities" bucket (users/org + a channel entity) and a
 // synced "Product entities" bucket of high-frequency collaborative content typical for that app.
 const configs: Record<string, AppConfig> = {
   todo: {
     label: 'about:entity_buckets.config_todo',
-    context: [
+    channel: [
       { Icon: UserIcon, label: 'about:entity_buckets.users' },
       { Icon: Building2Icon, label: 'about:entity_buckets.organizations' },
       { Icon: FolderKanbanIcon, label: 'about:entity_buckets.projects' },
@@ -45,7 +45,7 @@ const configs: Record<string, AppConfig> = {
   },
   docs: {
     label: 'about:entity_buckets.config_docs',
-    context: [
+    channel: [
       { Icon: UserIcon, label: 'about:entity_buckets.users' },
       { Icon: Building2Icon, label: 'about:entity_buckets.organizations' },
       { Icon: LayoutGridIcon, label: 'about:entity_buckets.spaces' },
@@ -58,7 +58,7 @@ const configs: Record<string, AppConfig> = {
   },
   chat: {
     label: 'about:entity_buckets.config_chat',
-    context: [
+    channel: [
       { Icon: UserIcon, label: 'about:entity_buckets.users' },
       { Icon: Building2Icon, label: 'about:entity_buckets.organizations' },
       { Icon: HashIcon, label: 'about:entity_buckets.channels' },
@@ -233,7 +233,7 @@ export const EntityBuckets = () => {
       {/* Open-top "U": only side and bottom walls — a conceptual, not closed, boundary */}
       <div className="w-full rounded-b-3xl border-primary border-x border-b px-2 pt-6 pb-4 sm:px-6 sm:pt-6 sm:pb-8">
         <div className="grid grid-cols-2 gap-2 sm:gap-6">
-          <Bucket title="about:entity_buckets.context_entities" entities={active.context} />
+          <Bucket title="about:entity_buckets.channel_entities" entities={active.channel} />
           {/* Context bucket always swaps exactly one tile, so this bucket's reveal starts one slot later */}
           <Bucket
             title="about:entity_buckets.product_entities"

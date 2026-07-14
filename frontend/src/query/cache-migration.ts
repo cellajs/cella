@@ -12,7 +12,7 @@ import { type LensEntityType, migrateCachedEntity, migrateQueuedMutation } from 
 
 type AnyRecord = Record<string, unknown>;
 
-const lensEntitySet = new Set<string>([...appConfig.productEntityTypes, ...appConfig.contextEntityTypes]);
+const lensEntitySet = new Set<string>([...appConfig.productEntityTypes, ...appConfig.channelEntityTypes]);
 
 /** Returns the lens-capable entity type (product or context) encoded in a query/mutation key, or null. */
 export function entityTypeOf(key: unknown): LensEntityType | null {

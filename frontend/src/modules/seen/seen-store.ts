@@ -14,7 +14,7 @@ interface SeenBatch {
   tenantId: string;
   organizationId: string;
   /** Context entity ID for badge grouping (e.g., projectId). Defaults to organizationId. */
-  contextId: string;
+  channelId: string;
   entityType: ProductEntityType;
   entityIds: Set<string>;
 }
@@ -31,7 +31,7 @@ interface SeenStoreState {
   markEntitySeen: (
     tenantId: string,
     organizationId: string,
-    contextId: string,
+    channelId: string,
     entityType: ProductEntityType,
     entityId: string,
   ) => void;
@@ -62,7 +62,7 @@ const batchKey = (organizationId: string, entityType: string) => `${organization
  * Decrements are accumulated and applied in a single `setQueryData` call via
  * microtask, so one scroll batch produces at most one cache event.
  */
-const pendingDecrements: { contextId: string; entityType: string }[] = [];
+const pendingDecrements: { channelId: string; entityType: string }[] = [];
 let decrementScheduled = false;
 
 /** Max delay before forcing a flush even if the browser never goes idle */
@@ -73,8 +73,8 @@ const scheduleIdleCallback =
     ? (cb: () => void) => requestIdleCallback(cb, { timeout: UNSEEN_DECREMENT_MAX_DELAY_MS })
     : (cb: () => void) => setTimeout(cb, 1000);
 
-function scheduleUnseenDecrement(contextId: string, entityType: string) {
-  pendingDecrements.push({ contextId, entityType });
+function scheduleUnseenDecrement(channelId: string, entityType: string) {
+  pendingDecrements.push({ channelId, entityType });
 
   if (!decrementScheduled) {
     decrementScheduled = true;
@@ -92,15 +92,15 @@ function flushUnseenDecrements() {
     if (!old) return old;
     const updated = { ...old };
 
-    for (const { contextId, entityType } of batch) {
-      const current = updated[contextId]?.[entityType];
+    for (const { channelId, entityType } of batch) {
+      const current = updated[channelId]?.[entityType];
       if (!current) continue;
 
       if (current <= 1) {
-        const { [entityType]: _, ...rest } = updated[contextId];
-        updated[contextId] = rest;
+        const { [entityType]: _, ...rest } = updated[channelId];
+        updated[channelId] = rest;
       } else {
-        updated[contextId] = { ...updated[contextId], [entityType]: current - 1 };
+        updated[channelId] = { ...updated[channelId], [entityType]: current - 1 };
       }
     }
 
@@ -131,7 +131,7 @@ export const useSeenStore = create<SeenStoreState>()(
         flushedIds: new Set(),
         flushIntervalId: null,
 
-        markEntitySeen: (tenantId, organizationId, contextId, entityType, entityId) => {
+        markEntitySeen: (tenantId, organizationId, channelId, entityType, entityId) => {
           // Skip entity types not configured for seen tracking
           if (!(appConfig.seenTrackedEntityTypes as readonly string[]).includes(entityType)) return;
 
@@ -150,12 +150,12 @@ export const useSeenStore = create<SeenStoreState>()(
           newSet.add(entityId);
 
           const newMap = new Map(pending);
-          newMap.set(key, { tenantId, organizationId, contextId, entityType, entityIds: newSet });
+          newMap.set(key, { tenantId, organizationId, channelId, entityType, entityIds: newSet });
           set({ pending: newMap });
 
           // Batch optimistic unseen count decrement, applied via microtask to
           // avoid per-entity cache events during rapid scroll
-          scheduleUnseenDecrement(contextId, entityType);
+          scheduleUnseenDecrement(channelId, entityType);
 
           const total = Array.from(get().pending.values()).reduce((sum, b) => sum + b.entityIds.size, 0);
           console.debug('[SeenStore] queued:', entityType, entityId.slice(0, 8), `(${total} pending)`);
@@ -189,7 +189,7 @@ export const useSeenStore = create<SeenStoreState>()(
             key,
             tenantId: batch.tenantId,
             organizationId: batch.organizationId,
-            contextId: batch.contextId,
+            channelId: batch.channelId,
             entityType: batch.entityType,
             entityIds: Array.from(batch.entityIds),
           }));
@@ -236,7 +236,7 @@ export const useSeenStore = create<SeenStoreState>()(
               newMap.set(key, {
                 tenantId: batch.tenantId,
                 organizationId: batch.organizationId,
-                contextId: batch.contextId,
+                channelId: batch.channelId,
                 entityType: batch.entityType,
                 entityIds: merged,
               });

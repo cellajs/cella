@@ -4,7 +4,7 @@ import { appConfig } from 'shared';
 import { downloadService } from '~/modules/attachment/download-service';
 import { uploadService } from '~/modules/attachment/upload-service';
 import { useUIStore } from '~/modules/ui/ui-store';
-import { initContextEntityEnrichment } from '~/query/enrichment/init-enrichment';
+import { initChannelEntityEnrichment } from '~/query/enrichment/init-enrichment';
 // Side-effect import: starts the auth-driven appdb lifecycle + eager kv hydration at root,
 // before any route beforeLoad runs.
 import '~/query/app-storage';
@@ -24,7 +24,7 @@ initMutationDefaults(queryClient);
 /**
  * Init context entity enrichment, guarded to prevent duplicate subscribers during HMR.
  */
-const unsubscribeEnrichment = initContextEntityEnrichment();
+const unsubscribeEnrichment = initChannelEntityEnrichment();
 
 /**
  * HMR cleanup: unsubscribe enrichment to prevent duplicates on re-evaluation.

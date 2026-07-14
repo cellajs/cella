@@ -3,7 +3,7 @@ import { ChevronsUpDownIcon, SearchIcon, UserIcon, UsersRoundIcon, XIcon } from 
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ContextEntityBase } from 'sdk';
+import type { ChannelEntityBase } from 'sdk';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
@@ -26,10 +26,10 @@ import { usersListQueryOptions } from '~/modules/user/query';
 interface Props {
   value: string[];
   onValueChange: (items: string[]) => void;
-  contextEntity: ContextEntityBase & { organizationId?: string };
+  channelEntity: ChannelEntityBase & { organizationId?: string };
 }
 
-export const UserCombobox = ({ value, onValueChange, contextEntity }: Props) => {
+export const UserCombobox = ({ value, onValueChange, channelEntity }: Props) => {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
   const nameLabel = t('c:name').toLowerCase();
@@ -52,10 +52,10 @@ export const UserCombobox = ({ value, onValueChange, contextEntity }: Props) => 
   // Fetch membership status only for users in search results
   const { data: membersData } = useInfiniteQuery({
     ...membersListQueryOptions({
-      entityId: contextEntity.id,
-      entityType: contextEntity.entityType,
-      tenantId: contextEntity.tenantId,
-      organizationId: contextEntity.organizationId || contextEntity.id,
+      entityId: channelEntity.id,
+      entityType: channelEntity.entityType,
+      tenantId: channelEntity.tenantId,
+      organizationId: channelEntity.organizationId || channelEntity.id,
       userIds,
     }),
     enabled: items.length > 0,

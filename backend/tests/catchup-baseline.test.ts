@@ -3,7 +3,7 @@ import { postAppCatchup } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { activitiesTable } from '#/modules/activities/activities-db';
-import { contextCountersTable } from '#/modules/entities/context-counters-db';
+import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import type { AppCatchupResponse } from '#/schemas';
 import { defaultHeaders } from './fixtures';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
@@ -23,15 +23,15 @@ describe('Catchup baseline', async () => {
     mockFetchRequest();
     tenant = await createTestTenant(call, 'catchup-baseline');
 
-    // Seed context_counters with known seq and count values for the org
+    // Seed channel_counters with known seq and count values for the org
     await db
-      .insert(contextCountersTable)
+      .insert(channelCountersTable)
       .values({
-        contextKey: tenant.organization.id,
+        channelKey: tenant.organization.id,
         counts: { 's:task': 42, 's:attachment': 7, 'e:task': 100, 'e:attachment': 15, 'm:admin': 1 },
       })
       .onConflictDoUpdate({
-        target: contextCountersTable.contextKey,
+        target: channelCountersTable.channelKey,
         set: { counts: { 's:task': 42, 's:attachment': 7, 'e:task': 100, 'e:attachment': 15, 'm:admin': 1 } },
       });
 
@@ -51,7 +51,7 @@ describe('Catchup baseline', async () => {
 
   afterAll(async () => {
     await db.delete(activitiesTable).where(sql`id = ${legacyProductDeleteActivityId}`);
-    await db.delete(contextCountersTable).where(sql`context_key = ${tenant.organization.id}`);
+    await db.delete(channelCountersTable).where(sql`channel_key = ${tenant.organization.id}`);
     await clearSecurityTestData();
   });
 
@@ -70,12 +70,12 @@ describe('Catchup baseline', async () => {
     const orgChanges = changes[tenant.organization.id];
     expect(orgChanges).toBeDefined();
 
-    // Should include entitySeqs (s: keys from context_counters)
+    // Should include entitySeqs (s: keys from channel_counters)
     expect(orgChanges.entitySeqs).toBeDefined();
     expect(orgChanges.entitySeqs!.task).toBe(42);
     expect(orgChanges.entitySeqs!.attachment).toBe(7);
 
-    // Should include entityCounts (e: keys from context_counters)
+    // Should include entityCounts (e: keys from channel_counters)
     expect(orgChanges.entityCounts).toBeDefined();
     expect(orgChanges.entityCounts!.task).toBe(100);
     expect(orgChanges.entityCounts!.attachment).toBe(15);

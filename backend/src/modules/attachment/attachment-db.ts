@@ -1,7 +1,7 @@
 import { boolean, foreignKey, index, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
+import { channelRelationColumns } from '#/db/utils/channel-relation-columns';
 import { maxLength } from '#/db/utils/constraints';
-import { contextRelationColumns } from '#/db/utils/context-relation-columns';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
 import { organizationsTable } from '#/modules/organization/organization-db';
 
@@ -24,7 +24,7 @@ export const attachmentsTable = snakeCase.table(
     originalKey: varchar({ length: maxLength.url }).notNull(),
     convertedKey: varchar({ length: maxLength.url }),
     thumbnailKey: varchar({ length: maxLength.url }),
-    ...contextRelationColumns('attachment'),
+    ...channelRelationColumns('attachment'),
   },
   (table) => [
     index('attachments_organization_id_index').on(table.organizationId),

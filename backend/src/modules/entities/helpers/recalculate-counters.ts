@@ -1,7 +1,7 @@
 import { getColumns, getTableName, sql } from 'drizzle-orm';
 import { type AncestorSource, appConfig, type EntityType, hierarchy, roles } from 'shared';
 import type { DbOrTx } from '#/db/db';
-import { contextCountersTable } from '#/modules/entities/context-counters-db';
+import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { getEntityTable } from '#/tables';
 
@@ -23,7 +23,7 @@ const livePredicate = (et: EntityType, alias: string) =>
 
 /**
  * Deepest-non-null-ancestor grouping expression (e.g. task → COALESCE(t.project_id, t.organization_id)).
- * Matches CDC's `resolveContextKey`: variable-depth rows scope to their effective home.
+ * Matches CDC's `resolveChannelKey`: variable-depth rows scope to their effective home.
  * Exported for tests; the hierarchy parameter exists to prove the SQL shape on synthetic hierarchies.
  */
 export const deepestAncestorExpr = (et: string, alias: string, h: AncestorSource = hierarchy) => {
@@ -42,31 +42,31 @@ const membershipPairs = (alias: string, fk: string, ctxType: string, ctxRoles: r
     countPair(
       `m:${r}`,
       'memberships cm',
-      `cm.${fk} = ${alias}.id AND cm.context_type = '${ctxType}' AND cm.role = '${r}'`,
+      `cm.${fk} = ${alias}.id AND cm.channel_type = '${ctxType}' AND cm.role = '${r}'`,
     ),
   ),
-  countPair('m:total', 'memberships cm', `cm.${fk} = ${alias}.id AND cm.context_type = '${ctxType}'`),
+  countPair('m:total', 'memberships cm', `cm.${fk} = ${alias}.id AND cm.channel_type = '${ctxType}'`),
   countPair(
     'm:pending',
     'inactive_memberships im',
-    `im.${fk} = ${alias}.id AND im.context_type = '${ctxType}' AND im.rejected_at IS NULL`,
+    `im.${fk} = ${alias}.id AND im.channel_type = '${ctxType}' AND im.rejected_at IS NULL`,
   ),
 ];
 
-/** Upsert a SELECT into context_counters with JSONB || merge */
-const upsertContextCounters = (db: DbOrTx, selectSql: string) =>
+/** Upsert a SELECT into channel_counters with JSONB || merge */
+const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
   db.execute(
     sql.raw(`
-    INSERT INTO context_counters (context_key, counts, updated_at)
+    INSERT INTO channel_counters (channel_key, counts, updated_at)
     ${selectSql}
-    ON CONFLICT (context_key) DO UPDATE SET
-      counts = context_counters.counts || EXCLUDED.counts,
+    ON CONFLICT (channel_key) DO UPDATE SET
+      counts = channel_counters.counts || EXCLUDED.counts,
       updated_at = NOW()
   `),
   );
 
 /**
- * Recalculate all context_counters and product_counters from actual database state.
+ * Recalculate all channel_counters and product_counters from actual database state.
  * Safe to run at any time (seed, admin repair, production incident recovery).
  *
  * Context counters (Phases 1–3):
@@ -96,7 +96,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
       ),
   ].join(', ');
 
-  await upsertContextCounters(
+  await upsertChannelCounters(
     db,
     `
     SELECT o.id, jsonb_build_object(${orgPairs}), NOW()
@@ -107,7 +107,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   // ── Phase 2: Sub-org context counters (e.g. project-level) ────────────
   // Full attribution: every descendant type counts on every ancestor level it carries a
   // non-null FK for (matches CDC's getEntityDeltas), not just direct product children.
-  for (const ctxType of hierarchy.contextTypes.filter((ct) => ct !== 'organization')) {
+  for (const ctxType of hierarchy.channelTypes.filter((ct) => ct !== 'organization')) {
     const fk = fkCol(ctxType);
     const descendants = hierarchy.getOrderedDescendants(ctxType);
     const allPairs = [
@@ -121,7 +121,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
       ),
     ].join(', ');
 
-    await upsertContextCounters(
+    await upsertChannelCounters(
       db,
       `
       SELECT ctx.id, jsonb_build_object(${allPairs}), NOW()
@@ -139,7 +139,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
     const ctxExpr = deepestAncestorExpr(entityType, 't');
     if (!ctxExpr) continue;
 
-    await upsertContextCounters(
+    await upsertChannelCounters(
       db,
       `
       SELECT ${ctxExpr}, jsonb_build_object('${seqKey}', COALESCE(MAX(t.seq), 0)), NOW()
@@ -163,7 +163,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
     if (!ctxExpr) continue;
     const draftPredicate = 'draft' in getColumns(getEntityTable(entityType)) ? ' AND t.draft = false' : '';
 
-    await upsertContextCounters(
+    await upsertChannelCounters(
       db,
       `
       SELECT ${ctxExpr}, jsonb_strip_nulls(jsonb_build_object(
@@ -193,12 +193,12 @@ export const recalculateCounters = async (db: DbOrTx) => {
   `),
   );
 
-  // 4b: Array-ref counters → context_counters (e.g. label usage from tasks.labels[])
+  // 4b: Array-ref counters → channel_counters (e.g. label usage from tasks.labels[])
   for (const ref of appConfig.entityEmbeddings) {
     const src = tbl(ref.hostEntity as EntityType);
     const key = `e:${ref.hostEntity}`;
 
-    await upsertContextCounters(
+    await upsertChannelCounters(
       db,
       `
       SELECT target_id, jsonb_build_object('${key}', COUNT(*)::int), NOW()
@@ -209,12 +209,12 @@ export const recalculateCounters = async (db: DbOrTx) => {
   }
 
   // Return row counts
-  const [{ contextRows }] = await db
-    .select({ contextRows: sql<number>`count(*)`.mapWith(Number) })
-    .from(contextCountersTable);
+  const [{ channelRows }] = await db
+    .select({ channelRows: sql<number>`count(*)`.mapWith(Number) })
+    .from(channelCountersTable);
   const [{ productRows }] = await db
     .select({ productRows: sql<number>`count(*)`.mapWith(Number) })
     .from(productCountersTable);
 
-  return { contextRows, productRows };
+  return { channelRows, productRows };
 };

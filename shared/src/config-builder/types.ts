@@ -140,7 +140,7 @@ export interface MenuStructureItem {
 
 export interface ConfigStringArrays {
   entityTypes: readonly string[];
-  contextEntityTypes: readonly string[];
+  channelEntityTypes: readonly string[];
   productEntityTypes: readonly string[];
   seenTrackedEntityTypes: readonly string[];
   entityActions: readonly string[];
@@ -164,7 +164,7 @@ export interface ConfigStringArrays {
 export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArrays> {
   // Entity data model - use T['key'] to preserve literal types
   entityTypes: T['entityTypes'];
-  contextEntityTypes: T['contextEntityTypes'];
+  channelEntityTypes: T['channelEntityTypes'];
   productEntityTypes: T['productEntityTypes'];
   seenTrackedEntityTypes: T['seenTrackedEntityTypes'];
   entityIdColumnKeys: { readonly [K in T['entityTypes'][number] & string]: `${K}Id` };

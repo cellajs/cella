@@ -20,13 +20,13 @@ describe('EntityHierarchyBuilder', () => {
   describe('builder validation', () => {
     it('throws if user() not called before build()', () => {
       expect(() => {
-        createEntityHierarchy(roles).context('organization', { parent: null, roles: roles.all }).build();
+        createEntityHierarchy(roles).channel('organization', { parent: null, roles: roles.all }).build();
       }).toThrow('user() must be called before build()');
     });
 
     it('throws if organization context is missing', () => {
       expect(() => {
-        createEntityHierarchy(roles).user().context('workspace', { parent: null, roles: roles.all }).build();
+        createEntityHierarchy(roles).user().channel('workspace', { parent: null, roles: roles.all }).build();
       }).toThrow('organization context is required');
     });
 
@@ -34,8 +34,8 @@ describe('EntityHierarchyBuilder', () => {
       expect(() => {
         createEntityHierarchy(roles)
           .user()
-          .context('organization', { parent: null, roles: roles.all })
-          .context('organization', { parent: null, roles: roles.all });
+          .channel('organization', { parent: null, roles: roles.all })
+          .channel('organization', { parent: null, roles: roles.all });
       }).toThrow('entity "organization" already defined');
     });
 
@@ -43,7 +43,7 @@ describe('EntityHierarchyBuilder', () => {
       expect(() => {
         createEntityHierarchy(roles)
           .user()
-          .context('organization', { parent: null, roles: roles.all })
+          .channel('organization', { parent: null, roles: roles.all })
           // @ts-expect-error - Testing runtime validation
           .product('task', { parent: 'project' });
       }).toThrow('references unknown parent "project"');
@@ -53,7 +53,7 @@ describe('EntityHierarchyBuilder', () => {
       expect(() => {
         createEntityHierarchy(roles)
           .user()
-          .context('organization', { parent: null, roles: roles.all })
+          .channel('organization', { parent: null, roles: roles.all })
           .product('attachment', { parent: 'organization' })
           // @ts-expect-error - Testing runtime validation
           .product('file', { parent: 'attachment' });
@@ -65,13 +65,13 @@ describe('EntityHierarchyBuilder', () => {
         createEntityHierarchy(roles)
           .user()
           // @ts-expect-error - Testing runtime validation
-          .context('organization', { parent: null, roles: ['admin', 'superuser'] });
+          .channel('organization', { parent: null, roles: ['admin', 'superuser'] });
       }).toThrow('invalid role "superuser"');
     });
 
     it('throws on empty roles array', () => {
       expect(() => {
-        createEntityHierarchy(roles).user().context('organization', { parent: null, roles: [] });
+        createEntityHierarchy(roles).user().channel('organization', { parent: null, roles: [] });
       }).toThrow('must have at least one role');
     });
 
@@ -79,7 +79,7 @@ describe('EntityHierarchyBuilder', () => {
       expect(() => {
         createEntityHierarchy(roles)
           .user()
-          .context('organization', { parent: null, roles: roles.all })
+          .channel('organization', { parent: null, roles: roles.all })
           // @ts-expect-error - Testing runtime validation (parent is required at the type level)
           .product('page', { parent: null });
       }).toThrow('has no parent');
@@ -94,9 +94,9 @@ describe('EntityHierarchyBuilder', () => {
     // - task, label, attachment: products scoped to project (inherit org permissions)
     const hierarchy = createEntityHierarchy(roles)
       .user()
-      .context('organization', { parent: null, roles: [roles.admin, roles.member] })
-      .context('workspace', { parent: 'organization', roles: roles.all })
-      .context('project', { parent: 'organization', roles: roles.all })
+      .channel('organization', { parent: null, roles: [roles.admin, roles.member] })
+      .channel('workspace', { parent: 'organization', roles: roles.all })
+      .channel('project', { parent: 'organization', roles: roles.all })
       .product('task', { parent: 'project' })
       .product('label', { parent: 'project' })
       .product('attachment', { parent: 'project' }) // Scoped to project, inherits org
@@ -104,16 +104,16 @@ describe('EntityHierarchyBuilder', () => {
 
     it('getKind returns correct kind', () => {
       expect(hierarchy.getKind('user')).toBe('user');
-      expect(hierarchy.getKind('organization')).toBe('context');
+      expect(hierarchy.getKind('organization')).toBe('channel');
       expect(hierarchy.getKind('task')).toBe('product');
       expect(hierarchy.getKind('unknown')).toBeUndefined();
     });
 
-    it('isContext returns true only for context entities', () => {
-      expect(hierarchy.isContext('organization')).toBe(true);
-      expect(hierarchy.isContext('project')).toBe(true);
-      expect(hierarchy.isContext('task')).toBe(false);
-      expect(hierarchy.isContext('user')).toBe(false);
+    it('isChannel returns true only for context entities', () => {
+      expect(hierarchy.isChannel('organization')).toBe(true);
+      expect(hierarchy.isChannel('project')).toBe(true);
+      expect(hierarchy.isChannel('task')).toBe(false);
+      expect(hierarchy.isChannel('user')).toBe(false);
     });
 
     it('isProduct returns true only for product entities', () => {
@@ -157,22 +157,22 @@ describe('EntityHierarchyBuilder', () => {
       expect(hierarchy.hasAncestor('attachment', 'organization')).toBe(true);
     });
 
-    it('contextTypes and productTypes are correct', () => {
-      expect(hierarchy.contextTypes).toContain('organization');
-      expect(hierarchy.contextTypes).toContain('workspace');
-      expect(hierarchy.contextTypes).toContain('project');
+    it('channelTypes and productTypes are correct', () => {
+      expect(hierarchy.channelTypes).toContain('organization');
+      expect(hierarchy.channelTypes).toContain('workspace');
+      expect(hierarchy.channelTypes).toContain('project');
       expect(hierarchy.productTypes).toContain('task');
       expect(hierarchy.productTypes).toContain('label');
       expect(hierarchy.productTypes).toContain('attachment');
     });
 
-    it('relatableContextTypes contains only context parents of products', () => {
+    it('relatableChannelTypes contains only context parents of products', () => {
       // project is parent of task, label, attachment
-      expect(hierarchy.relatableContextTypes).toContain('project');
+      expect(hierarchy.relatableChannelTypes).toContain('project');
       // organization and workspace are NOT direct parents of any product
-      expect(hierarchy.relatableContextTypes).not.toContain('organization');
-      expect(hierarchy.relatableContextTypes).not.toContain('workspace');
-      expect(hierarchy.relatableContextTypes).toHaveLength(1);
+      expect(hierarchy.relatableChannelTypes).not.toContain('organization');
+      expect(hierarchy.relatableChannelTypes).not.toContain('workspace');
+      expect(hierarchy.relatableChannelTypes).toHaveLength(1);
     });
 
     it('allTypes includes all entities', () => {
@@ -187,10 +187,10 @@ describe('EntityHierarchyBuilder', () => {
     const deep = () =>
       createEntityHierarchy(roles)
         .user()
-        .context('organization', { parent: null, roles: roles.all })
-        .context('course', { parent: 'organization', roles: roles.all })
-        .context('courseSection', { parent: 'course', roles: roles.all })
-        .context('project', { parent: 'courseSection', roles: roles.all });
+        .channel('organization', { parent: null, roles: roles.all })
+        .channel('course', { parent: 'organization', roles: roles.all })
+        .channel('courseSection', { parent: 'course', roles: roles.all })
+        .channel('project', { parent: 'courseSection', roles: roles.all });
 
     it('exposes declared nullable ancestors via accessor and product view', () => {
       const h = deep().product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection'] }).build();
@@ -208,9 +208,9 @@ describe('EntityHierarchyBuilder', () => {
       expect(() =>
         createEntityHierarchy(roles)
           .user()
-          .context('organization', { parent: null, roles: roles.all })
-          .context('workspace', { parent: 'organization', roles: roles.all })
-          .context('project', { parent: 'organization', roles: roles.all })
+          .channel('organization', { parent: null, roles: roles.all })
+          .channel('workspace', { parent: 'organization', roles: roles.all })
+          .channel('project', { parent: 'organization', roles: roles.all })
           .product('task', { parent: 'project', nullableAncestors: ['workspace'] }),
       ).toThrow('is not an ancestor');
     });

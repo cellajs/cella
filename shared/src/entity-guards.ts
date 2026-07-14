@@ -1,14 +1,14 @@
 import { hierarchy } from '../config/config.default';
-import type { ContextEntityType, ProductEntityType } from '../types';
+import type { ChannelEntityType, ProductEntityType } from '../types';
 
 /** Get roles for a context entity. */
-export function getContextRoles(contextType: string): readonly string[] {
-  return hierarchy.getRoles(contextType);
+export function getChannelRoles(channelType: string): readonly string[] {
+  return hierarchy.getRoles(channelType);
 }
 
 /** Check if entity type is a context entity (type guard). */
-export function isContextEntity(entityType: string): entityType is ContextEntityType {
-  return hierarchy.isContext(entityType);
+export function isChannelEntity(entityType: string): entityType is ChannelEntityType {
+  return hierarchy.isChannel(entityType);
 }
 
 /** Check if entity type is a product entity (type guard). */

@@ -4,7 +4,7 @@ export type {
   AccessPolicyConfiguration,
   AccessPolicyEntry,
   ActionPermissionState,
-  ContextPolicyBuilder,
+  ChannelPolicyBuilder,
   EntityActionPermissions,
   NormalizedPermissionValue,
   PermissionValue,
@@ -28,13 +28,13 @@ export { formatBatchPermissionSummary, formatPermissionDecision } from './permis
 export { validateMembership, validateSubject } from './permission-manager/validation';
 export type {
   ActionAttribution,
-  ContextEntityIdColumns,
-  ContextScope,
+  ChannelEntityIdColumns,
+  ChannelScope,
   GrantSource,
   PermissionCheckOptions,
   PermissionDecision,
   PermissionMembership,
-  ResolvedContextIds,
+  ResolvedChannelIds,
   SubjectForPermission,
 } from './permission-manager/types';
 export type { PermissionTopology, TopologyHierarchy } from './permission-manager/topology';

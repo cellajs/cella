@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 import type { RefObject } from 'react';
 import type { Organization } from 'sdk';
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
@@ -38,6 +38,6 @@ function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null
 /**
  * Configuration to set menu sections with options for different context entities.
  */
-export const menuSectionsSchema: Partial<Record<ContextEntityType, MenuSectionOptions>> = {
+export const menuSectionsSchema: Partial<Record<ChannelEntityType, MenuSectionOptions>> = {
   organization: { createAction: createOrganizationAction, label: 'c:organization_other', entityType: 'organization' },
 };

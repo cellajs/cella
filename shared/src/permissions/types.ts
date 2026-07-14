@@ -1,4 +1,4 @@
-import type { ContextEntityType, EntityActionType, EntityRole, EntityType, ProductEntityType } from '../../types';
+import type { ChannelEntityType, EntityActionType, EntityRole, EntityType, ProductEntityType } from '../../types';
 import type { PublicReadMode } from './public-read';
 import type { RowCondition } from './row-conditions';
 
@@ -33,7 +33,7 @@ export type EntityActionPermissions = Record<EntityActionType, NormalizedPermiss
  * and are only ever equality-compared / index-keyed here, never narrowed to `EntityRole`.
  */
 export interface AccessPolicyEntry {
-  contextType: ContextEntityType;
+  channelType: ChannelEntityType;
   role: string;
   permissions: EntityActionPermissions;
 }
@@ -47,7 +47,7 @@ export type SubjectAccessPolicies = AccessPolicyEntry[];
  * Full access policy configuration mapping subjects to their policies.
  * Only context and product entities have access policies: user access uses separate logic.
  */
-export type AccessPolicies = Partial<Record<ContextEntityType | ProductEntityType, SubjectAccessPolicies>>;
+export type AccessPolicies = Partial<Record<ChannelEntityType | ProductEntityType, SubjectAccessPolicies>>;
 
 /**
  * Context builder for fluent access policy configuration.
@@ -57,7 +57,7 @@ export type AccessPolicies = Partial<Record<ContextEntityType | ProductEntityTyp
  * only the actions it grants (e.g. a context entity's own ("self") rows can omit `create`, since
  * an entity can never be created from inside itself: creation is granted on ancestor rows).
  */
-export type ContextPolicyBuilder = {
+export type ChannelPolicyBuilder = {
   [R in EntityRole]: (permissions: Partial<Record<EntityActionType, PermissionValue>>) => void;
 };
 
@@ -66,7 +66,7 @@ export type ContextPolicyBuilder = {
  */
 export interface AccessPolicyConfiguration {
   subject: { name: EntityType };
-  contexts: Record<ContextEntityType, ContextPolicyBuilder>;
+  contexts: Record<ChannelEntityType, ChannelPolicyBuilder>;
   /** Declare the subject-level public read grant for this subject (see `public-read.ts`). */
   publicRead: (mode: PublicReadMode) => void;
 }

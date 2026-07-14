@@ -28,4 +28,4 @@ be a no-op.
 - [2026-07-permission-actor](./2026-07-permission-actor/): required `Actor` on every
   permission check, system-admin + public-read parity in collection reads, and public
   read collapsed to a single row-local `publicAt` mode. **Widens access** — audit
-  `'own'` cells on context-entity and `create` rows *before* pulling.
+  `'own'` cells on channel-entity and `create` rows *before* pulling.

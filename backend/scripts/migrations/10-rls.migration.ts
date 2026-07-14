@@ -22,7 +22,7 @@ async function run() {
     .map(([, table]) => getTableName(table));
 
   // Context entity and membership tables use application-layer guards for access control.
-  const contextEntityTableNames = appConfig.contextEntityTypes.map((entityType) => {
+  const channelEntityTableNames = appConfig.channelEntityTypes.map((entityType) => {
     const table = entityTables[entityType as keyof typeof entityTables];
     if (!table) throw new Error(`No table found for context entity type: ${entityType}`);
     return getTableName(table);
@@ -39,13 +39,13 @@ async function run() {
   // Only product entity tables + yjs_documents still use RLS (excluding pages)
   const additionalRlsTables = [getTableName(yjsDocumentsTable)];
   const rlsTables = [
-    ...entityTableNames.filter((t) => !contextEntityTableNames.includes(t) && !noRlsProductEntityNames.includes(t)),
+    ...entityTableNames.filter((t) => !channelEntityTableNames.includes(t) && !noRlsProductEntityNames.includes(t)),
     ...additionalRlsTables,
   ];
 
   // Tables without RLS but needing grants (auth, system, context entities, memberships, pages, etc.)
   const fullCrudTables = [
-    ...contextEntityTableNames,
+    ...channelEntityTableNames,
     ...membershipTableNames,
     ...noRlsProductEntityNames,
     'users',
@@ -59,7 +59,7 @@ async function run() {
     'unsubscribe_tokens',
     'emails',
     'rate_limits',
-    'context_counters',
+    'channel_counters',
     'seen_by',
     'product_counters',
     'domains',

@@ -87,8 +87,8 @@
                 {
                   "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
                   "tenantId": "u87zf2",
-                  "contextType": "organization",
-                  "contextId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
+                  "channelType": "organization",
+                  "channelId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
                   "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
                   "organizationId": "ab6c6ea4-cec4-470a-acfc-5636298aa0f2",
                   "role": "admin",
@@ -123,8 +123,8 @@
                 {
                   "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
                   "tenantId": "lwj64z",
-                  "contextType": "organization",
-                  "contextId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
+                  "channelType": "organization",
+                  "channelId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
                   "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
                   "organizationId": "661de358-c94b-4156-816b-769bf63c907e",
                   "role": "member",

@@ -129,7 +129,7 @@ export const featuresPageItems: FeaturesPageItem[] = [
   // Data modelling
   { id: 'explicit_routes', category: 'data' },
   { id: 'entity_hierarchy', category: 'data' },
-  { id: 'context_entities', category: 'data' },
+  { id: 'channel_entities', category: 'data' },
   { id: 'product_entities', category: 'data' },
   { id: 'schema_evolution', category: 'data' },
   { id: 'user', category: 'data' },

@@ -29,11 +29,11 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
           syncStore.setOrgSeq(organizationId, entityType, seq);
         }
       }
-      if (scope.childContextChanges) {
-        for (const [contextId, contextData] of Object.entries(scope.childContextChanges)) {
-          if (!contextData.entitySeqs) continue;
-          for (const [entityType, seq] of Object.entries(contextData.entitySeqs)) {
-            syncStore.setContextSeq(organizationId, contextId, entityType, seq);
+      if (scope.childChannelChanges) {
+        for (const [channelId, channelData] of Object.entries(scope.childChannelChanges)) {
+          if (!channelData.entitySeqs) continue;
+          for (const [entityType, seq] of Object.entries(channelData.entitySeqs)) {
+            syncStore.setChannelSeq(organizationId, channelId, entityType, seq);
           }
         }
       }
@@ -45,7 +45,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   console.debug(`[CatchupProcessor] App catchup: ${scopes.length} orgs`);
 
   for (const organizationId of scopes) {
-    const { entitySeqs, childContextChanges } = changes[organizationId];
+    const { entitySeqs, childChannelChanges } = changes[organizationId];
     // Resolve tenantId: prefer sync store (persisted, no cache dependency), fall back to query cache
     const tenantId = syncStore.getOrgTenantId(organizationId) ?? getTenantIdForOrg(organizationId);
 
@@ -59,7 +59,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
     // entity types this pipeline does not ingest (no registered query keys, e.g. membership:
     // handled via Step 5/6 invalidation). Ingestable types advance their cursor after Step 2/3
     // resolves, so a failed delta fetch never silently skips its seq window (advance-after-ingest).
-    const entityTypesWithChildContextData = new Set<string>();
+    const entityTypesWithChildChannelData = new Set<string>();
     const clientOrgSeqs = new Map<string, number>();
 
     if (entitySeqs) {
@@ -70,33 +70,33 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
     }
 
     // Step 2: Child-context delta processing (precise, per-child-context)
-    if (childContextChanges) {
-      for (const [contextId, contextData] of Object.entries(childContextChanges)) {
-        if (!contextData.entitySeqs) continue;
+    if (childChannelChanges) {
+      for (const [channelId, channelData] of Object.entries(childChannelChanges)) {
+        if (!channelData.entitySeqs) continue;
 
-        for (const [entityType, serverContextSeq] of Object.entries(contextData.entitySeqs)) {
+        for (const [entityType, serverChannelSeq] of Object.entries(channelData.entitySeqs)) {
           if (!hasEntityQueryKeys(entityType)) continue;
-          entityTypesWithChildContextData.add(entityType);
+          entityTypesWithChildChannelData.add(entityType);
 
-          const clientContextSeq = syncStore.getContextSeq(organizationId, contextId, entityType);
-          if (serverContextSeq === clientContextSeq) continue; // Skip unchanged context/entityType
+          const clientChannelSeq = syncStore.getChannelSeq(organizationId, channelId, entityType);
+          if (serverChannelSeq === clientChannelSeq) continue; // Skip unchanged context/entityType
 
           const keys = getEntityQueryKeys(entityType);
 
-          if (clientContextSeq === 0) {
+          if (clientChannelSeq === 0) {
             // First session for this child context -> full refetch for org's entity type
             cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-            console.debug(`[CatchupProcessor] Context ${contextId}: ${entityType} first session → full refetch`);
+            console.debug(`[CatchupProcessor] Context ${channelId}: ${entityType} first session → full refetch`);
           } else {
-            const contextDelta = serverContextSeq - clientContextSeq;
-            if (contextDelta > 0) {
+            const channelDelta = serverChannelSeq - clientChannelSeq;
+            if (channelDelta > 0) {
               // Scope-symmetry guard: a cursor is only authoritative for scopes with a cached
               // list; with nothing cached there is nothing to patch. Mount hydration fetches
               // fresh and resets the cursor (see e.g. tasksCanonicalOptions).
               if (!hasAnyCachedList(keys, organizationId)) {
-                console.debug(`[CatchupProcessor] Context ${contextId}: ${entityType} no cached list → skip delta`);
+                console.debug(`[CatchupProcessor] Context ${channelId}: ${entityType} no cached list → skip delta`);
               } else {
-                const seqCursor = String(clientContextSeq + 1);
+                const seqCursor = String(clientChannelSeq + 1);
                 const patched = await cacheOps.fetchRangeAndPatch(
                   entityType,
                   organizationId,
@@ -108,7 +108,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
                   cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
                 }
                 console.debug(
-                  `[CatchupProcessor] Context ${contextId}: ${entityType} delta=${contextDelta} → ${patched ? 'delta patched' : 'invalidated'}`,
+                  `[CatchupProcessor] Context ${channelId}: ${entityType} delta=${channelDelta} → ${patched ? 'delta patched' : 'invalidated'}`,
                 );
               }
             }
@@ -117,19 +117,19 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
           // Store child-context seq after ingest/invalidate/skip: a fetchRangeAndPatch
           // success means the range fully drained; invalidation hands recovery to react-query;
           // a skipped uncached scope is re-established by hydration itself.
-          syncStore.setContextSeq(organizationId, contextId, entityType, serverContextSeq);
+          syncStore.setChannelSeq(organizationId, channelId, entityType, serverChannelSeq);
         }
       }
     }
 
     // Step 3: Org-level fallback for entity types WITHOUT child-context data
-    // (e.g., org-scoped attachments where context_key = organization_id).
+    // (e.g., org-scoped attachments where channel_key = organization_id).
     // Org seqs for ingestable types are stored here after the delta fetch resolves,
     // never before, so a failed fetch retries the same window on the next catchup.
     if (entitySeqs) {
       for (const [entityType, serverEntitySeq] of Object.entries(entitySeqs)) {
         if (!hasEntityQueryKeys(entityType)) continue; // Stored in Step 1
-        if (entityTypesWithChildContextData.has(entityType)) {
+        if (entityTypesWithChildChannelData.has(entityType)) {
           // Fully handled at child-context level, advance the org-level screening seq.
           syncStore.setOrgSeq(organizationId, entityType, serverEntitySeq);
           continue;
@@ -184,7 +184,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   // Step 6: Refresh memberships. Fetch getMyMemberships, invalidate context entity lists,
   // and refreshes the current user. Uses fetchQuery so React Query deduplicates with
   // the ensureQueryData call in getMenuData (sync service), preventing double fetches on app init.
-  membershipOps.invalidateContextList(null);
+  membershipOps.invalidateChannelList(null);
   membershipOps.fetchMemberships();
   membershipOps.refreshMe();
 
@@ -205,7 +205,7 @@ function hasAnyCachedList(keys: ReturnType<typeof getEntityQueryKeys>, organizat
 }
 
 /**
- * Server counts last seen by THIS session, keyed by `${orgId}:${entityType}:${contextId ?? ''}`.
+ * Server counts last seen by THIS session, keyed by `${orgId}:${entityType}:${channelId ?? ''}`.
  * Counts are compared server-to-server (change signal), never against the client's caches:
  * cached lists are predicate-filtered per user, so equality with shared counts is
  * meaningless (a member who can't see every row would mismatch forever).
@@ -222,14 +222,14 @@ const lastSeenServerCounts = new Map<string, number>();
 function verifyCacheIntegrity(changes: PostAppCatchupResponse['changes']): void {
   for (const [organizationId, scope] of Object.entries(changes)) {
     // Collect all count checks: child-context scoped entries take priority over org-level
-    const checks = new Map<string, { serverCount: number; contextId?: string }>();
+    const checks = new Map<string, { serverCount: number; channelId?: string }>();
 
     // Child-context counts (precise, per-project), added first so they win.
-    if (scope.childContextChanges) {
-      for (const [contextId, contextData] of Object.entries(scope.childContextChanges)) {
-        if (!contextData.entityCounts) continue;
-        for (const [entityType, serverCount] of Object.entries(contextData.entityCounts)) {
-          checks.set(`${entityType}:${contextId}`, { serverCount, contextId });
+    if (scope.childChannelChanges) {
+      for (const [channelId, channelData] of Object.entries(scope.childChannelChanges)) {
+        if (!channelData.entityCounts) continue;
+        for (const [entityType, serverCount] of Object.entries(channelData.entityCounts)) {
+          checks.set(`${entityType}:${channelId}`, { serverCount, channelId });
         }
       }
     }
@@ -243,11 +243,11 @@ function verifyCacheIntegrity(changes: PostAppCatchupResponse['changes']): void 
       }
     }
 
-    for (const [key, { serverCount, contextId }] of checks) {
+    for (const [key, { serverCount, channelId }] of checks) {
       const entityType = key.split(':')[0];
       if (!hasEntityQueryKeys(entityType)) continue;
 
-      const countKey = `${organizationId}:${entityType}:${contextId ?? ''}`;
+      const countKey = `${organizationId}:${entityType}:${channelId ?? ''}`;
       const previous = lastSeenServerCounts.get(countKey);
       lastSeenServerCounts.set(countKey, serverCount);
       // First sight (nothing to compare) or unchanged → no signal
@@ -257,7 +257,7 @@ function verifyCacheIntegrity(changes: PostAppCatchupResponse['changes']): void 
       if (!hasAnyCachedList(keys, organizationId)) continue;
 
       cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-      const scope = contextId ? `context ${contextId}` : `org ${organizationId}`;
+      const scope = channelId ? `context ${channelId}` : `org ${organizationId}`;
       console.debug(
         `[CatchupProcessor] Integrity: ${entityType} in ${scope} count changed — ${previous} → ${serverCount} → invalidated`,
       );

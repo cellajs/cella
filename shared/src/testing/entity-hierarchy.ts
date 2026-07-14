@@ -1,103 +1,103 @@
 import { hierarchy } from '../../config/config.default';
 import { appConfig } from '../config-builder/app-config';
-import type { ContextEntityType, EntityIdColumnKey, EntityType } from '../../types';
+import type { ChannelEntityType, EntityIdColumnKey, EntityType } from '../../types';
 import { toColumnName, toTableName } from '../permissions';
 
-export interface TestEntityContextColumn {
-  contextType: ContextEntityType;
+export interface TestEntityChannelColumn {
+  channelType: ChannelEntityType;
   id: string;
-  idKey: EntityIdColumnKey<ContextEntityType>;
+  idKey: EntityIdColumnKey<ChannelEntityType>;
   columnName: string;
 }
 
-export interface TestEntityContextRow {
-  contextType: ContextEntityType;
+export interface TestEntityChannelRow {
+  channelType: ChannelEntityType;
   id: string;
   tableName: string;
-  parentContextType: ContextEntityType;
+  parentChannelType: ChannelEntityType;
   parentId: string;
-  parentIdKey: EntityIdColumnKey<ContextEntityType>;
+  parentIdKey: EntityIdColumnKey<ChannelEntityType>;
   parentColumnName: string;
 }
 
 export interface TestEntityHierarchyPlan {
   entityType: EntityType;
-  contextIdsByType: Partial<Record<ContextEntityType, string>>;
-  contextIdColumns: Record<string, string>;
-  sqlContextColumns: TestEntityContextColumn[];
-  seedContextRows: TestEntityContextRow[];
+  channelIdsByType: Partial<Record<ChannelEntityType, string>>;
+  channelIdColumns: Record<string, string>;
+  sqlChannelColumns: TestEntityChannelColumn[];
+  seedChannelRows: TestEntityChannelRow[];
 }
 
 export interface BuildTestEntityHierarchyPlanOptions {
   entityType: EntityType;
-  rootContextId: string;
-  rootContextType?: ContextEntityType;
-  makeContextId?: (contextType: ContextEntityType, index: number) => string;
+  rootChannelId: string;
+  rootChannelType?: ChannelEntityType;
+  makeChannelId?: (channelType: ChannelEntityType, index: number) => string;
 }
 
-const rootContextTypes = hierarchy.contextTypes.filter((type) => hierarchy.getParent(type) === null);
+const rootChannelTypes = hierarchy.channelTypes.filter((type) => hierarchy.getParent(type) === null);
 
 export const buildTestEntityHierarchyPlan = ({
   entityType,
-  rootContextId,
-  rootContextType = rootContextTypes[0],
-  makeContextId,
+  rootChannelId,
+  rootChannelType = rootChannelTypes[0],
+  makeChannelId,
 }: BuildTestEntityHierarchyPlanOptions): TestEntityHierarchyPlan => {
-  if (!rootContextType) {
+  if (!rootChannelType) {
     throw new Error('Entity hierarchy has no root context type');
   }
 
-  const ancestors = hierarchy.getOrderedAncestors(entityType) as ContextEntityType[];
-  const contextIdsByType: Partial<Record<ContextEntityType, string>> = {};
-  const setContextId = (contextType: ContextEntityType, id: string) => {
-    contextIdsByType[contextType] = id;
+  const ancestors = hierarchy.getOrderedAncestors(entityType) as ChannelEntityType[];
+  const channelIdsByType: Partial<Record<ChannelEntityType, string>> = {};
+  const setChannelId = (channelType: ChannelEntityType, id: string) => {
+    channelIdsByType[channelType] = id;
   };
-  const seedContextRows: TestEntityContextRow[] = [];
+  const seedChannelRows: TestEntityChannelRow[] = [];
   let generatedIndex = 0;
 
-  for (const contextType of [...ancestors].reverse()) {
-    if (contextType === rootContextType) {
-      setContextId(contextType, rootContextId);
+  for (const channelType of [...ancestors].reverse()) {
+    if (channelType === rootChannelType) {
+      setChannelId(channelType, rootChannelId);
       continue;
     }
 
-    const parentContextType = hierarchy.getParent(contextType) as ContextEntityType | null;
-    if (!parentContextType) {
+    const parentChannelType = hierarchy.getParent(channelType) as ChannelEntityType | null;
+    if (!parentChannelType) {
       continue;
     }
 
-    const parentId = contextIdsByType[parentContextType];
+    const parentId = channelIdsByType[parentChannelType];
     if (!parentId) {
-      throw new Error(`Cannot seed ${contextType}: missing parent context id for ${parentContextType}`);
+      throw new Error(`Cannot seed ${channelType}: missing parent context id for ${parentChannelType}`);
     }
-    if (!makeContextId) {
-      throw new Error(`Cannot seed ${contextType}: makeContextId is required for non-root ancestors`);
+    if (!makeChannelId) {
+      throw new Error(`Cannot seed ${channelType}: makeChannelId is required for non-root ancestors`);
     }
 
-    const id = makeContextId(contextType, generatedIndex++);
-    setContextId(contextType, id);
+    const id = makeChannelId(channelType, generatedIndex++);
+    setChannelId(channelType, id);
 
-    const parentIdKey = appConfig.entityIdColumnKeys[parentContextType];
-    seedContextRows.push({
-      contextType,
+    const parentIdKey = appConfig.entityIdColumnKeys[parentChannelType];
+    seedChannelRows.push({
+      channelType,
       id,
-      tableName: toTableName(contextType),
-      parentContextType,
+      tableName: toTableName(channelType),
+      parentChannelType,
       parentId,
       parentIdKey,
       parentColumnName: toColumnName(parentIdKey),
     });
   }
 
-  const sqlContextColumns = ancestors.map((contextType) => {
-    const id = contextIdsByType[contextType];
+  const sqlChannelColumns = ancestors.map((channelType) => {
+    const id = channelIdsByType[channelType];
     if (!id) {
-      throw new Error(`Missing context id for ${contextType}`);
+      throw new Error(`Missing context id for ${channelType}`);
     }
 
-    const idKey = appConfig.entityIdColumnKeys[contextType];
+    const idKey = appConfig.entityIdColumnKeys[channelType];
     return {
-      contextType,
+      channelType,
       id,
       idKey,
       columnName: toColumnName(idKey),
@@ -106,9 +106,9 @@ export const buildTestEntityHierarchyPlan = ({
 
   return {
     entityType,
-    contextIdsByType,
-    contextIdColumns: Object.fromEntries(sqlContextColumns.map(({ idKey, id }) => [idKey, id])),
-    sqlContextColumns,
-    seedContextRows,
+    channelIdsByType,
+    channelIdColumns: Object.fromEntries(sqlChannelColumns.map(({ idKey, id }) => [idKey, id])),
+    sqlChannelColumns,
+    seedChannelRows,
   };
 };

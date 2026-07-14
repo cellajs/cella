@@ -1,7 +1,7 @@
 export { apiErrorSchema } from './api-error-schemas';
 export {
   booleanTransformSchema,
-  contextEntityTypeSchema,
+  channelEntityTypeSchema,
   cookieSchema,
   emailOrTokenIdQuerySchema,
   entityIdParamSchema,
@@ -43,7 +43,7 @@ export {
   validUuidSchema,
 } from './common-schemas';
 export { membershipCountSchema } from './count-schemas';
-export { contextEntityBaseSchema, productEntityBaseSchema } from './entity-base';
+export { channelEntityBaseSchema, productEntityBaseSchema } from './entity-base';
 export {
   type ErrorCode,
   errorResponseRefs,

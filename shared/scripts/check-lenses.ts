@@ -154,10 +154,10 @@ function checkContractCompleteness() {
       );
     }
   }
-  for (const type of appConfig.contextEntityTypes) {
-    if (!combined.includes(`evolutionContract.context('${type}'`)) {
+  for (const type of appConfig.channelEntityTypes) {
+    if (!combined.includes(`evolutionContract.channel('${type}'`)) {
       failures.push(
-        `Contract completeness: context entity "${type}" never calls evolutionContract.context('${type}', …) in backend/src/modules — its create/update body schemas bypass the lens seams.`,
+        `Contract completeness: context entity "${type}" never calls evolutionContract.channel('${type}', …) in backend/src/modules — its create/update body schemas bypass the lens seams.`,
       );
     }
   }

@@ -1,8 +1,8 @@
-import type { ContextEntityBase, MembershipBase } from 'sdk';
-import type { ContextEntityType, EntityCanMap } from 'shared';
+import type { ChannelEntityBase, MembershipBase } from 'sdk';
+import type { ChannelEntityType, EntityCanMap } from 'shared';
 
 /** Ancestor context entity slugs for URL building, populated via cache enrichment. */
-export type AncestorSlugs = Partial<Record<ContextEntityType, string>>;
+export type AncestorSlugs = Partial<Record<ChannelEntityType, string>>;
 
 /**
  * Entity-type-keyed permission map, computed on the frontend from membership + access policies.
@@ -31,6 +31,6 @@ export type EntityEnrichment = {
 /**
  * Frontend-enriched context entity type.
  * Extends the API base with client-side data populated via cache enrichment.
- * Use `ContextEntityBase` from `sdk` when you only need the base fields.
+ * Use `ChannelEntityBase` from `sdk` when you only need the base fields.
  */
-export type EnrichedContextEntity = ContextEntityBase & EntityEnrichment;
+export type EnrichedChannelEntity = ChannelEntityBase & EntityEnrichment;

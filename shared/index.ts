@@ -7,7 +7,7 @@ export { hierarchy, roles } from './config/config.default';
 
 // Entity hierarchy types and builder functions
 export type {
-  ContextEntityView,
+  ChannelEntityView,
   EntityHierarchy,
   EntityKind,
   EntityView,
@@ -21,12 +21,12 @@ export {
 } from './src/config-builder/entity-hierarchy';
 
 // Row-to-context attribution (shared rule for CDC seq/counters, notifications, recalculation)
-export type { AncestorSource, ResolvedAncestor } from './src/config-builder/resolve-row-context';
+export type { AncestorSource, ResolvedAncestor } from './src/config-builder/resolve-row-channel';
 export {
-  possibleHomeContexts,
+  possibleHomeChannels,
   resolveDeepestAncestorId,
   resolveNonNullAncestors,
-} from './src/config-builder/resolve-row-context';
+} from './src/config-builder/resolve-row-channel';
 
 // Config builder types
 export type { AppServiceEndpointConfig, RequestLimitsConfig, RequiredConfig, S3Config, S3ConfigInput } from './src/config-builder/types';
@@ -36,8 +36,8 @@ export type {
   ActivityAction,
   ActivityEventType,
   ActivityVerb,
-  AncestorContextType,
-  ContextEntityType,
+  AncestorChannelType,
+  ChannelEntityType,
   EnabledOAuthProvider,
   EntityActionType,
   EntityIdColumnKey,
@@ -50,10 +50,10 @@ export type {
   MenuSection,
   NullableAncestorType,
   ProductEntityType,
-  RootContextType,
+  RootChannelType,
   SeenTrackedEntityType,
-  RelatableContextEntityType,
-  RelatedContextType,
+  RelatableChannelEntityType,
+  RelatedChannelType,
   ResourceType,
   Severity,
   SystemRole,
@@ -68,8 +68,8 @@ export type {
 export { activityActions, activityEventTypes, activityVerbs, actionToVerb, isValidEventType } from './types';
 
 export {
-  getContextRoles,
-  isContextEntity,
+  getChannelRoles,
+  isChannelEntity,
   isProductEntity,
 } from './src/entity-guards';
 
@@ -81,7 +81,7 @@ export type {
   AccessPolicyCallback,
   AccessPolicyConfiguration,
   AccessPolicyEntry,
-  ContextPolicyBuilder,
+  ChannelPolicyBuilder,
   EntityActionPermissions,
   NormalizedPermissionValue,
   PermissionValue,
@@ -115,14 +115,14 @@ export {
 } from './src/permissions';
 export type {
   ActionAttribution,
-  ContextEntityIdColumns,
-  ContextScope,
+  ChannelEntityIdColumns,
+  ChannelScope,
   GrantSource,
   PermissionCheckOptions,
   PermissionDecision,
   PermissionMembership,
   PermissionTopology,
-  ResolvedContextIds,
+  ResolvedChannelIds,
   SubjectForPermission,
 } from './src/permissions';
 

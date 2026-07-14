@@ -1,4 +1,4 @@
-import type { ContextEntityType, ProductEntityType } from '../../types';
+import type { ChannelEntityType, ProductEntityType } from '../../types';
 import type { RowCondition } from './row-conditions';
 
 /**
@@ -18,7 +18,7 @@ import type { RowCondition } from './row-conditions';
 export type PublicReadMode = 'publicSelf';
 
 /** Per-subject public read grants, keyed by entity type. */
-export type PublicReadGrants = Partial<Record<ContextEntityType | ProductEntityType, PublicReadMode>>;
+export type PublicReadGrants = Partial<Record<ChannelEntityType | ProductEntityType, PublicReadMode>>;
 
 /**
  * The row predicate a public read grant evaluates to.

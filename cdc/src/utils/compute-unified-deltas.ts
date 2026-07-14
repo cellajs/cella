@@ -15,14 +15,14 @@ import { type CountsHierarchy, getCountDeltas, isActivityStampKey } from './upda
 export interface BatchUnifiedDeltaPlan {
   /** Seq groups: each needs a sequential UPSERT with RETURNING to reserve a seq range. */
   seqGroups: SeqGroup[];
-  /** All count deltas merged by contextKey (across all events, excluding seq deltas). */
-  countDeltasByContextKey: Map<string, Record<string, number>>;
+  /** All count deltas merged by channelKey (across all events, excluding seq deltas). */
+  countDeltasByChannelKey: Map<string, Record<string, number>>;
   /** Entity rows to stamp with assigned seq values (bulk UPDATE ... FROM VALUES). */
   entityStamps: Array<{ tableName: string; id: string; seq: number }>;
 }
 
 export interface SeqGroup {
-  contextKey: string;
+  channelKey: string;
   seqKey: string;
   count: number;
   /** Org key for signaling (null if ctx === org or no org). */
@@ -42,7 +42,7 @@ export interface SeqGroup {
  * The hierarchy model guarantees every product entity at least an organization, so a row
  * without one is a modeling error: fail the group loudly rather than invent a scope.
  */
-export function resolveContextKey(
+export function resolveChannelKey(
   entityType: string,
   rowData: CdcRowData,
   activity: ActivityWithoutId,
@@ -59,14 +59,14 @@ export function resolveContextKey(
  * `li:`/`lu:` keys are epoch-ms activity stamps, not deltas: collisions keep the max
  * (two posts in one batch must not sum their timestamps).
  */
-function mergeDelta(map: Map<string, Record<string, number>>, contextKey: string, deltas: Record<string, number>): void {
-  const existing = map.get(contextKey);
+function mergeDelta(map: Map<string, Record<string, number>>, channelKey: string, deltas: Record<string, number>): void {
+  const existing = map.get(channelKey);
   if (existing) {
     for (const [k, v] of Object.entries(deltas)) {
       existing[k] = isActivityStampKey(k) ? Math.max(existing[k] ?? 0, v) : (existing[k] ?? 0) + v;
     }
   } else {
-    map.set(contextKey, { ...deltas });
+    map.set(channelKey, { ...deltas });
   }
 }
 
@@ -79,10 +79,10 @@ function isStampable(tableMeta: TableMeta, action: ActivityAction, h: CountsHier
 
 /**
  * Compute a unified delta plan for a batch of CDC events.
- * Reserves seq ranges per (contextKey, entityType), accumulates all count deltas.
+ * Reserves seq ranges per (channelKey, entityType), accumulates all count deltas.
  */
 export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHierarchy = hierarchy): BatchUnifiedDeltaPlan {
-  const countDeltasByContextKey = new Map<string, Record<string, number>>();
+  const countDeltasByChannelKey = new Map<string, Record<string, number>>();
   const seqGroupMap = new Map<string, SeqGroup>();
   const entityStamps: BatchUnifiedDeltaPlan['entityStamps'] = [];
 
@@ -93,7 +93,7 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHiera
     // Seq grouping (product entity create/update only)
     if (isStampable(tableMeta, action, h)) {
       const entityType = tableMeta.type;
-      const ctxKey = resolveContextKey(entityType, rowData, activity, h);
+      const ctxKey = resolveChannelKey(entityType, rowData, activity, h);
       const groupKey = `${ctxKey}\0${entityType}`;
 
       const existing = seqGroupMap.get(groupKey);
@@ -103,7 +103,7 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHiera
       } else {
         const sKey = `s:${entityType}`;
         seqGroupMap.set(groupKey, {
-          contextKey: ctxKey,
+          channelKey: ctxKey,
           seqKey: sKey,
           count: 1,
           orgSignal: activity.organizationId && ctxKey !== activity.organizationId
@@ -117,8 +117,8 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHiera
 
     // Count deltas
     const countDeltas = getCountDeltas(tableMeta, activity, rowData, event.result.oldRowData, h);
-    for (const { contextKey, deltas } of countDeltas) {
-      mergeDelta(countDeltasByContextKey, contextKey, deltas);
+    for (const { channelKey, deltas } of countDeltas) {
+      mergeDelta(countDeltasByChannelKey, channelKey, deltas);
     }
   }
 
@@ -130,5 +130,5 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHiera
     }
   }
 
-  return { seqGroups, countDeltasByContextKey, entityStamps };
+  return { seqGroups, countDeltasByChannelKey, entityStamps };
 }

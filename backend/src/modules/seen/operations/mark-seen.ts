@@ -1,7 +1,7 @@
 import { and, eq, getColumns, gt, inArray, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { SeenTrackedEntityType } from 'shared';
-import { appConfig, hierarchy, possibleHomeContexts } from 'shared';
+import { appConfig, hierarchy, possibleHomeChannels } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { AuthContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
@@ -27,7 +27,7 @@ export function isTrackedEntityType(entityType: string): entityType is SeenTrack
 }
 
 /** Context types that group unseen counts: every context a tracked row can have as its effective home */
-export const groupingContextTypes = new Set(trackedEntityTypes.flatMap((t) => possibleHomeContexts(hierarchy, t)));
+export const groupingChannelTypes = new Set(trackedEntityTypes.flatMap((t) => possibleHomeChannels(hierarchy, t)));
 
 export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityType: string) {
   const user = ctx.var.user;
@@ -52,12 +52,12 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
 
   // Derive the row's home context id: deepest non-null ancestor (e.g. task → projectId; a
   // variable-depth row with a null parent column falls through to the next ancestor). Must
-  // match the notification contextId (build-message) or unseen badges land under the wrong key.
+  // match the notification channelId (build-message) or unseen badges land under the wrong key.
   const ancestorColumns = hierarchy
     .getOrderedAncestors(entityType)
     .map((ancestor) => (columns as Record<string, PgColumn | undefined>)[appConfig.entityIdColumnKeys[ancestor]])
     .filter((column): column is PgColumn => Boolean(column));
-  const contextIdColumn = ancestorColumns.length
+  const channelIdColumn = ancestorColumns.length
     ? sql<string>`COALESCE(${sql.join(ancestorColumns, sql`, `)})`
     : orgTable.organizationId;
 
@@ -67,8 +67,8 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
   // Use tenantContext to set RLS session vars; entity tables have FORCE ROW LEVEL SECURITY.
   const { validIds, newCount } = await tenantContext(ctx, async (txCtx) => {
     const db = txCtx.var.db;
-    const validEntities: { id: string; contextId: string }[] = await db
-      .select({ id: orgTable.id, contextId: contextIdColumn })
+    const validEntities: { id: string; channelId: string }[] = await db
+      .select({ id: orgTable.id, channelId: channelIdColumn })
       .from(entityTable)
       .where(
         and(
@@ -79,10 +79,10 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
       );
 
     const vIds = validEntities.map((e) => e.id);
-    const ctxIdMap = new Map(validEntities.map((e) => [e.id, e.contextId]));
+    const ctxIdMap = new Map(validEntities.map((e) => [e.id, e.channelId]));
 
     if (vIds.length === 0) {
-      return { validIds: vIds, entityContextIdMap: ctxIdMap, newCount: 0 };
+      return { validIds: vIds, entityChannelIdMap: ctxIdMap, newCount: 0 };
     }
 
     log.debug(`markSeen: ${vIds.length}/${entityIds.length} valid entities`);
@@ -101,7 +101,7 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
 
     const result = await db.execute(sql`
       WITH inserted AS (
-        INSERT INTO seen_by (id, user_id, entity_id, entity_type, context_id, organization_id, tenant_id, created_at)
+        INSERT INTO seen_by (id, user_id, entity_id, entity_type, channel_id, organization_id, tenant_id, created_at)
         VALUES ${values}
         ON CONFLICT (user_id, entity_id) DO NOTHING
         RETURNING entity_id
@@ -118,7 +118,7 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
     `);
 
     const nc = Number((result as unknown as { rows: { new_count: number }[] }).rows[0]?.new_count ?? 0);
-    return { validIds: vIds, entityContextIdMap: ctxIdMap, newCount: nc };
+    return { validIds: vIds, entityChannelIdMap: ctxIdMap, newCount: nc };
   });
 
   if (validIds.length === 0) {

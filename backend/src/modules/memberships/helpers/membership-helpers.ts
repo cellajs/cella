@@ -1,5 +1,5 @@
 import { inArray, max } from 'drizzle-orm';
-import { appConfig, type ContextEntityType, hierarchy } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import type { MenuStructureItem } from 'shared/config-builder';
 import { defaultOrder, orderGap } from 'shared/utils/display-order';
 import type { DbContext } from '#/core/context';
@@ -17,8 +17,8 @@ import { log } from '#/utils/logger';
  * Derived from the hierarchy so forks that change the root entity type
  * don't need to update membership helper code.
  */
-const rootContextType = hierarchy.contextTypes.find((t) => hierarchy.getParent(t) === null)!;
-const rootIdColumnKey = appConfig.entityIdColumnKeys[rootContextType];
+const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t) === null)!;
+const rootIdColumnKey = appConfig.entityIdColumnKeys[rootChannelType];
 
 /**
  * Role for an auto-created parent/associated membership. Defaults to the least-privileged
@@ -27,17 +27,17 @@ const rootIdColumnKey = appConfig.entityIdColumnKeys[rootContextType];
  * role carries over when valid in the target vocabulary.
  */
 export const resolveParentMembershipRole = (
-  contextType: ContextEntityType,
+  channelType: ChannelEntityType,
   invitedRole: MembershipModel['role'],
   carryRole = false,
 ): MembershipModel['role'] => {
-  const contextRoles = hierarchy.getRoles(contextType) as readonly MembershipModel['role'][];
-  if (carryRole && contextRoles.includes(invitedRole)) return invitedRole;
-  if (contextRoles.includes('member' as MembershipModel['role'])) return 'member' as MembershipModel['role'];
-  return contextRoles[contextRoles.length - 1];
+  const channelRoles = hierarchy.getRoles(channelType) as readonly MembershipModel['role'][];
+  if (carryRole && channelRoles.includes(invitedRole)) return invitedRole;
+  if (channelRoles.includes('member' as MembershipModel['role'])) return 'member' as MembershipModel['role'];
+  return channelRoles[channelRoles.length - 1];
 };
 
-type BaseEntityModel = EntityModel<ContextEntityType> & {
+type BaseEntityModel = EntityModel<ChannelEntityType> & {
   [key: string]: unknown;
   tenantId: string; // Required for RLS
 };
@@ -54,7 +54,7 @@ interface InsertMultipleProps<T> {
 /**
  * Returns an object mapping base membership entity IDs for the given entity.
  *
- * Each mapping corresponds to a context entity type defined in `appConfig.contextEntityTypes`.
+ * Each mapping corresponds to a context entity type defined in `appConfig.channelEntityTypes`.
  * The key of each mapping is derived from the values of `appConfig.entityIdColumnKeys`
  * (e.g. `"organizationId"`, `"projectId"`), and the value is the corresponding string ID.
  *
@@ -63,13 +63,13 @@ interface InsertMultipleProps<T> {
  * @param entity - The entity object to extract membership ID information from.
  * @returns An object mapping base membership entity IDs for the given entity.
  */
-export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: EntityModel<T>) => {
-  return appConfig.contextEntityTypes.reduce(
-    (acc, contextEntityType) => {
-      const entityFieldIdName = appConfig.entityIdColumnKeys[contextEntityType];
+export const getBaseMembershipEntityId = <T extends ChannelEntityType>(entity: EntityModel<T>) => {
+  return appConfig.channelEntityTypes.reduce(
+    (acc, channelEntityType) => {
+      const entityFieldIdName = appConfig.entityIdColumnKeys[channelEntityType];
       if (!entityFieldIdName) return acc;
 
-      if (entity.entityType === contextEntityType) {
+      if (entity.entityType === channelEntityType) {
         acc[entityFieldIdName] = entity.id;
       }
       if (entityFieldIdName in entity) {
@@ -78,7 +78,7 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: E
 
       return acc;
     },
-    {} as Record<(typeof appConfig.entityIdColumnKeys)[ContextEntityType], string>,
+    {} as Record<(typeof appConfig.entityIdColumnKeys)[ChannelEntityType], string>,
   );
 };
 
@@ -155,16 +155,16 @@ export const insertMemberships = async <T extends BaseEntityModel>(
    * Creation is effectively "only if not existing" thanks to unique constraint + onConflictDoNothing.
    */
   const rootRows: InsertMembershipModel[] = prepared
-    .filter(({ entity }) => entity.entityType !== rootContextType)
+    .filter(({ entity }) => entity.entityType !== rootChannelType)
     .map(({ baseMembership, targetEntitiesIdColumnKeys, entity }) => {
       return {
         ...baseMembership,
         tenantId: entity.tenantId,
         // parent membership defaults to the least-privileged fitting role ('member' in cella)
-        role: resolveParentMembershipRole(rootContextType, baseMembership.role),
+        role: resolveParentMembershipRole(rootChannelType, baseMembership.role),
         [rootIdColumnKey]: targetEntitiesIdColumnKeys[rootIdColumnKey],
-        contextType: rootContextType,
-        contextId: targetEntitiesIdColumnKeys[rootIdColumnKey],
+        channelType: rootChannelType,
+        channelId: targetEntitiesIdColumnKeys[rootIdColumnKey],
       } as InsertMembershipModel;
     });
 
@@ -191,14 +191,14 @@ export const insertMemberships = async <T extends BaseEntityModel>(
         tenantId: entity.tenantId,
         // associated membership role: least-privileged fit, or carried over when carryRole is set
         role: resolveParentMembershipRole(
-          associatedType as ContextEntityType,
+          associatedType as ChannelEntityType,
           baseMembership.role,
           // Config literals only carry the property when a fork sets it
           'carryRole' in relation ? (relation as MenuStructureItem).carryRole : undefined,
         ),
         ...remainingIdColumnKeys,
-        contextType: associatedType,
-        contextId: associatedField,
+        channelType: associatedType,
+        channelId: associatedField,
       } as InsertMembershipModel;
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
@@ -208,8 +208,8 @@ export const insertMemberships = async <T extends BaseEntityModel>(
     ({ baseMembership, targetEntitiesIdColumnKeys, entity, extraFields }) => ({
       ...baseMembership,
       tenantId: entity.tenantId,
-      contextType: entity.entityType,
-      contextId: entity.id,
+      channelType: entity.entityType,
+      channelId: entity.id,
       ...targetEntitiesIdColumnKeys,
       ...extraFields,
     }),

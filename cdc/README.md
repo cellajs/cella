@@ -1,6 +1,6 @@
 # cdc: change data capture worker
 
-PostgreSQL logical-replication worker that turns committed WAL into the sync engine's server-side outputs: **activity rows** (append-only audit log and SSE cursor history), **counter and sequence stamps** (`context_counters` plus per-row `seq` for client gap detection), and **realtime messages** pushed to the API server for SSE fan-out.
+PostgreSQL logical-replication worker that turns committed WAL into the sync engine's server-side outputs: **activity rows** (append-only audit log and SSE cursor history), **counter and sequence stamps** (`channel_counters` plus per-row `seq` for client gap detection), and **realtime messages** pushed to the API server for SSE fan-out.
 
 This document covers the worker itself. For what its outputs mean to clients (notification shapes, catchup, HLC merge), see [Sync engine](/docs/page/architecture/sync-engine).
 
@@ -49,7 +49,7 @@ The `insert`, `update`, and `delete` handlers are **pure transforms** (no databa
 
 Events are buffered between BEGIN and COMMIT so each transaction can be filtered as a unit (events outside a transaction pass through immediately):
 
-- A context-entity DELETE (e.g. an organization) registers its id; child deletes referencing it are dropped **inline while streaming**, so memory stays bounded no matter how large the cascade.
+- A channel-entity DELETE (e.g. an organization) registers its id; child deletes referencing it are dropped **inline while streaming**, so memory stays bounded no matter how large the cascade.
 - On commit, a second pass catches children that appeared in WAL before their parent, and soft-cascade suppression drops embedding-propagation updates paired with a source delete in the same transaction. Clients get one parent-delete notification instead of thousands of child echoes.
 - Safety valves: a transaction with no COMMIT after 30 s is force-flushed unfiltered, and a BEGIN while another transaction is active flushes the previous one.
 
@@ -69,17 +69,17 @@ Each group runs three steps in a fixed order, so a failure cannot leave partial 
 
 One pure computation plans everything a group needs; one applier executes the plan in two phases:
 
-- **Phase 1 (sequential):** for every context + entity-type group of product creates/updates, reserve a **contiguous seq range** by upserting `context_counters.counts['s:{entityType}']` with `RETURNING`, then assign `baseSeq + i + 1` to each row in WAL order. The context key is the row's **deepest non-null ancestor**, falling back to the organization when nearer ancestor ids are all null. A product row without even an organization violates the hierarchy model: its group fails loudly (logged, LSN still acknowledged) instead of getting an invented scope.
+- **Phase 1 (sequential):** for every context + entity-type group of product creates/updates, reserve a **contiguous seq range** by upserting `channel_counters.counts['s:{entityType}']` with `RETURNING`, then assign `baseSeq + i + 1` to each row in WAL order. The context key is the row's **deepest non-null ancestor**, falling back to the organization when nearer ancestor ids are all null. A product row without even an organization violates the hierarchy model: its group fails loudly (logged, LSN still acknowledged) instead of getting an invented scope.
 - **Phase 2 (parallel):** apply the remaining count deltas and stamp assigned `seq` values back onto the rows with one bulk `UPDATE ... FROM VALUES` per table (also clearing `stx.changedFields`).
 
-Counter keys in `context_counters`: `e:{type}` entity counts (credited to the organization and every non-null ancestor; reparent diffs re-credit), `m:{role}` / `m:total` / `m:pending` membership counts plus an org-level `s:membership` bump for catchup screening, and `li:` / `lu:` last-insert/last-update epoch stamps (merged with max, not sum). All land through the `apply_count_deltas` SQL function, which floors counts at zero. Soft-delete and restore transitions are remapped to delete/create so counts stay truthful.
+Counter keys in `channel_counters`: `e:{type}` entity counts (credited to the organization and every non-null ancestor; reparent diffs re-credit), `m:{role}` / `m:total` / `m:pending` membership counts plus an org-level `s:membership` bump for catchup screening, and `li:` / `lu:` last-insert/last-update epoch stamps (merged with max, not sum). All land through the `apply_count_deltas` SQL function, which floors counts at zero. Soft-delete and restore transitions are remapped to delete/create so counts stay truthful.
 
 ## Delivery semantics
 
 **At-least-once.** The slot only advances on acknowledgement, and acknowledgement happens after processing: a crash in between redelivers the events. The consequences:
 
 - **Activities are replay-safe.** The activity id is derived deterministically from the LSN, and inserts are `onConflictDoNothing`: replaying an unacknowledged range produces the same rows exactly once.
-- **Counters and seq stamps are not.** Replaying an *already-acknowledged* range would double-count `context_counters`. That can't happen in normal operation (the slot gates replay to unacknowledged ranges); it takes a manual slot reset or LSN rewind. The repair path is catchup recovery's full counter recalculation.
+- **Counters and seq stamps are not.** Replaying an *already-acknowledged* range would double-count `channel_counters`. That can't happen in normal operation (the slot gates replay to unacknowledged ranges); it takes a manual slot reset or LSN rewind. The repair path is catchup recovery's full counter recalculation.
 - **Ordering.** Within a transaction, WAL order is preserved and seq values are assigned in it. Across transactions the FlushBuffer regroups by `(type, action)`, so delivery to the API is not globally ordered. Client-visible ordering comes from `seq`, not from message arrival.
 - Downstream consumers see duplicate messages after a redelivery; they dedupe on activity id.
 

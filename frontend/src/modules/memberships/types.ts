@@ -5,11 +5,11 @@ import type {
   MembershipInviteData,
   UpdateMembershipData,
 } from 'sdk';
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import type z from 'zod';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import type { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
-import type { ContextQueryProp, InfiniteQueryData, MutationData, QueryData } from '~/query/types';
+import type { ChannelQueryProp, InfiniteQueryData, MutationData, QueryData } from '~/query/types';
 
 export type MembersRouteSearchParams = z.infer<typeof membersRouteSearchParamsSchema>;
 
@@ -18,19 +18,19 @@ export type PendingMembership = GetPendingMembershipsResponse['items'][number];
 
 export type MemberQueryData = QueryData<Member>;
 export type InfiniteMemberQueryData = InfiniteQueryData<Member>;
-export type MemberContextProp = ContextQueryProp<Member, string | null>;
+export type MemberChannelProp = ChannelQueryProp<Member, string | null>;
 
-export type EntityMembershipContextProp = {
-  queryContext: MemberContextProp[];
+export type EntityMembershipChannelProp = {
+  queryChannel: MemberChannelProp[];
   toastMessage: string;
-  entityType?: ContextEntityType;
+  entityType?: ChannelEntityType;
 };
 
-export type InviteMember = MutationData<MembershipInviteData> & { contextEntity: EnrichedContextEntity };
+export type InviteMember = MutationData<MembershipInviteData> & { channelEntity: EnrichedChannelEntity };
 
 export type MutationUpdateMembership = MutationData<UpdateMembershipData> & {
   entityId: string;
-  entityType: ContextEntityType;
+  entityType: ChannelEntityType;
 };
 
 export type DeleteMembership = MutationData<DeleteMembershipsData> & {

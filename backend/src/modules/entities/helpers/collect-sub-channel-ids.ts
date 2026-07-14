@@ -6,15 +6,15 @@
 import { appConfig, hierarchy } from 'shared';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
-export function collectSubContextIds(memberships: MembershipBaseModel[]) {
-  const rootContextType = hierarchy.contextTypes.find((t) => hierarchy.getParent(t) === null)!;
+export function collectSubChannelIds(memberships: MembershipBaseModel[]) {
+  const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t) === null)!;
   const byOrg = new Map<string, Set<string>>();
   const all = new Set<string>();
 
   for (const m of memberships) {
-    for (const contextType of appConfig.contextEntityTypes) {
-      if (contextType === rootContextType) continue;
-      const idKey = appConfig.entityIdColumnKeys[contextType];
+    for (const channelType of appConfig.channelEntityTypes) {
+      if (channelType === rootChannelType) continue;
+      const idKey = appConfig.entityIdColumnKeys[channelType];
       const value = (m as Record<string, unknown>)[idKey];
       if (typeof value === 'string') {
         let set = byOrg.get(m.organizationId);

@@ -1,4 +1,4 @@
-import type { ContextEntityType, EntityActionType } from 'shared';
+import type { ChannelEntityType, EntityActionType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { type EntityModel, resolveEntity } from '#/modules/entities/entities-queries';
@@ -10,7 +10,7 @@ import { buildSubjectFromEntity } from '#/permissions/build-subject';
 /**
  * Result type for context entity validation including the can object.
  */
-export interface ValidContextEntityResult<T extends ContextEntityType> {
+export interface ValidChannelEntityResult<T extends ChannelEntityType> {
   entity: EntityModel<T>;
   membership: MembershipBaseModel | null;
 }
@@ -34,13 +34,13 @@ export interface ValidContextEntityResult<T extends ContextEntityType> {
  * @param bySlug - If true, resolve by slug instead of ID.
  * @returns An object containing resolved entity, associated membership (or `null`), and can object.
  */
-export const getValidContextEntity = async <T extends ContextEntityType>(
+export const getValidChannelEntity = async <T extends ChannelEntityType>(
   ctx: AuthContext,
   entityId: string,
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
   bySlug = false,
-): Promise<ValidContextEntityResult<T>> => {
+): Promise<ValidChannelEntityResult<T>> => {
   const memberships = ctx.var.memberships;
 
   // Step 1: Resolve target entity by ID (or slug when bySlug is true)

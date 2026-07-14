@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { createEntityHierarchy, createRoleRegistry } from '../entity-hierarchy';
-import { possibleHomeContexts, resolveDeepestAncestorId, resolveNonNullAncestors } from '../resolve-row-context';
+import { possibleHomeChannels, resolveDeepestAncestorId, resolveNonNullAncestors } from '../resolve-row-channel';
 
 /**
  * Synthetic deep hierarchy (projectcampus-shaped): 4 context levels with an `item` product
  * whose rows attach at any depth. raak/cella configs cannot exhibit variable-depth rows
  * (no nullable ancestors), so the rule is proven here.
  */
-describe('resolve-row-context (deepest non-null ancestor rule)', () => {
+describe('resolve-row-channel (deepest non-null ancestor rule)', () => {
   const roles = createRoleRegistry(['admin', 'member'] as const);
   const h = createEntityHierarchy(roles)
     .user()
-    .context('organization', { parent: null, roles: roles.all })
-    .context('course', { parent: 'organization', roles: roles.all })
-    .context('courseSection', { parent: 'course', roles: roles.all })
-    .context('project', { parent: 'courseSection', roles: roles.all })
+    .channel('organization', { parent: null, roles: roles.all })
+    .channel('course', { parent: 'organization', roles: roles.all })
+    .channel('courseSection', { parent: 'course', roles: roles.all })
+    .channel('project', { parent: 'courseSection', roles: roles.all })
     .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection'] })
     .product('task', { parent: 'project' })
     .build();
@@ -73,13 +73,13 @@ describe('resolve-row-context (deepest non-null ancestor rule)', () => {
     });
   });
 
-  describe('possibleHomeContexts', () => {
+  describe('possibleHomeChannels', () => {
     it('is the ancestor prefix up to the first non-nullable level', () => {
-      expect(possibleHomeContexts(h, 'item')).toEqual(['project', 'courseSection', 'course']);
+      expect(possibleHomeChannels(h, 'item')).toEqual(['project', 'courseSection', 'course']);
     });
 
     it('is just the declared parent without nullable ancestors', () => {
-      expect(possibleHomeContexts(h, 'task')).toEqual(['project']);
+      expect(possibleHomeChannels(h, 'task')).toEqual(['project']);
     });
   });
 });

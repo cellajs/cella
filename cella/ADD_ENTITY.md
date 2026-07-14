@@ -19,16 +19,16 @@ So adding an entity is mostly: **declare it in config, write its table + module,
 
 Two entity kinds exist (see [Architecture](./ARCHITECTURE.md) § Data modeling):
 
-- **Context entity** (`organization`, `workspace`, `project`): has memberships and roles; access via app-layer guards; **no RLS, no `seq`/`stx`**.
+- **Channel entity** (`organization`, `workspace`, `project`): has memberships and roles; access via app-layer guards; **no RLS, no `seq`/`stx`**.
 - **Product entity** (`task`, `label`, `attachment`): user-generated content, no memberships; **RLS-protected**, participates in the sync engine (`seq`/`stx`).
 
-The bulk of this guide covers **product entities**. Context-entity differences are in [§ Context entities](#context-entities).
+The bulk of this guide covers **product entities**. Channel-entity differences are in [§ Channel entities](#channel-entities).
 
 ---
 
 ## Guardrail: the compiler keeps config in sync
 
-Before diving in, know your safety net. The three "declare it" edits (hierarchy, `config.default.ts` arrays, `entityIdColumnKeys`) are cross-checked **at compile time** by [`shared/src/config-builder/config-validation.ts`](../shared/src/config-builder/config-validation.ts). It bidirectionally asserts that `entityTypes ≡ hierarchy.allTypes`, `contextEntityTypes ≡ hierarchy.contextTypes`, `productEntityTypes ≡ hierarchy.productTypes`, and that `entityIdColumnKeys` has a `` `${K}Id` `` entry for every type. If you add to the hierarchy but forget an array (or vice versa), **the build fails**. Separately, the CI job `lens:check` fails if a product/context entity does not register its evolution contract (Step 6).
+Before diving in, know your safety net. The three "declare it" edits (hierarchy, `config.default.ts` arrays, `entityIdColumnKeys`) are cross-checked **at compile time** by [`shared/src/config-builder/config-validation.ts`](../shared/src/config-builder/config-validation.ts). It bidirectionally asserts that `entityTypes ≡ hierarchy.allTypes`, `channelEntityTypes ≡ hierarchy.channelTypes`, `productEntityTypes ≡ hierarchy.productTypes`, and that `entityIdColumnKeys` has a `` `${K}Id` `` entry for every type. If you add to the hierarchy but forget an array (or vice versa), **the build fails**. Separately, the CI job `lens:check` fails if a product/channel entity does not register its evolution contract (Step 6).
 
 ---
 
@@ -43,9 +43,9 @@ We add a `note` product entity living inside a `project`.
 ```ts
 export const hierarchy = createEntityHierarchy(roles)
   .user()
-  .context('organization', { parent: null, roles: ['admin', 'member'] })
-  .context('workspace', { parent: 'organization', roles: roles.all })
-  .context('project', { parent: 'organization', roles: roles.all })
+  .channel('organization', { parent: null, roles: ['admin', 'member'] })
+  .channel('workspace', { parent: 'organization', roles: roles.all })
+  .channel('project', { parent: 'organization', roles: roles.all })
   .product('task', { parent: 'project' })
   .product('label', { parent: 'project' })
   .product('note', { parent: 'project' })            // ← new
@@ -56,7 +56,7 @@ export const hierarchy = createEntityHierarchy(roles)
 `.product(name, options)` options:
 
 - **`parent`** (required): the entity's **home context**. Becomes the non-null `<context>Id` column and the most-specific link in its ancestor chain. Products *must* have a home; the builder throws otherwise.
-- **`relatedContexts`** (optional): non-ancestor context references (nullable id columns).
+- **`relatedChannels`** (optional): non-ancestor context references (nullable id columns).
 
 The builder ([`entity-hierarchy.ts`](../shared/src/config-builder/entity-hierarchy.ts)) validates at construction: parents must be declared **before** children, parents must be contexts, roles must exist, `organization` + `user()` are mandatory. **Order matters**: declare parents earlier in the chain.
 
@@ -66,7 +66,7 @@ Add the type to the string-literal arrays in [`shared/config/config.default.ts`]
 
 ```ts
 entityTypes:        ['user', 'organization', 'workspace', 'project', 'task', 'label', 'note', 'attachment'] as const,
-productEntityTypes: ['task', 'label', 'note', 'attachment'] as const,   // (contextEntityTypes if a context)
+productEntityTypes: ['task', 'label', 'note', 'attachment'] as const,   // (channelEntityTypes if a context)
 entityIdColumnKeys: {
   // ...existing...
   note: 'noteId',        // must be exactly `${type}Id`
@@ -77,7 +77,7 @@ Optional arrays, add only if relevant:
 
 - `seenTrackedEntityTypes`: opt in to unseen-count badges (grouped by parent context).
 - `entityEmbeddings`: only if the entity is embedded as an id-array inside another entity (like `label` inside `task.labels`).
-- `menuStructure`: for context entities that appear in the user menu.
+- `menuStructure`: for channel entities that appear in the user menu.
 - `defaultRestrictions.quotas`: per-tenant quota.
 - `requestLimits`: default list page size.
 
@@ -100,7 +100,7 @@ case 'note':
 
 Cell values: `1` allowed, `0`/omitted denied, `'own'` = the built-in "actor is creator" row condition. That is the whole set — row conditions are closed (`own` + public read), not a fork extension point.
 
-- **Product entities have no "self" rows**: their context rows are *home* rows where `create` is meaningful. (Context entities distinguish *elevation* rows on an ancestor, which carry `create`, from *self* rows on the same context, which omit it. See the header comment in `permissions-config.ts`.)
+- **Product entities have no "self" rows**: their context rows are *home* rows where `create` is meaningful. (Channel entities distinguish *elevation* rows on an ancestor, which carry `create`, from *self* rows on the same context, which omit it. See the header comment in `permissions-config.ts`.)
 - **`publicRead('publicSelf')`**: the row is readable by anyone — anonymous included — once its own `publicAt` is set. Every context and product row already carries the column. Publication does **not** cascade: a public parent does not publish its children, because a cross-row rule cannot be evaluated by the collection-read SQL compiler or by CDC dispatch (which only ships the row itself). If you want cascade, propagate `publicAt` down to descendant rows — it is a data concern, not a permission rule. See [Permissions](/docs/page/architecture/permissions).
 
 ### Step 4: 🔴 Create the database table
@@ -140,7 +140,7 @@ Mandatory columns come from the spread helpers; **do not hand-write them**:
 | `productEntityColumns('<type>')` | `stx` (jsonb, sync metadata), `seq` (bigint, CDC delta cursor), `description`, `keywords`, `createdBy/updatedBy`, `deletedAt/deletedBy` (soft delete) |
 | ↳ `tenantEntityColumns` (nested) | `id` (uuid v7 PK via `generateId`), `entityType` (enum locked to the type), `tenantId` (FK → tenants), `name`, `createdAt`, `updatedAt` |
 
-Conventions: `snakeCase.table(...)` maps camelCase fields → snake_case columns automatically; table name is the pluralized type (`note` → `notes`); ids are plain **UUID v7** (time-ordered, no prefixes). You may replace the explicit `organizationId`/`projectId` columns with `...contextRelationColumns('note')` (emits NOT-NULL ancestor id columns from the hierarchy); see [`attachment-db.ts`](../backend/src/modules/attachment/attachment-db.ts).
+Conventions: `snakeCase.table(...)` maps camelCase fields → snake_case columns automatically; table name is the pluralized type (`note` → `notes`); ids are plain **UUID v7** (time-ordered, no prefixes). You may replace the explicit `organizationId`/`projectId` columns with `...channelRelationColumns('note')` (emits NOT-NULL ancestor id columns from the hierarchy); see [`attachment-db.ts`](../backend/src/modules/attachment/attachment-db.ts).
 
 Which tables get RLS, immutability triggers, the CDC publication, and `REPLICA IDENTITY FULL` is derived from the registry in the next step: 🟢 no per-table wiring for any of those.
 
@@ -172,7 +172,7 @@ export const noteUpdateStxBodySchema = noteContract.updateBodySchema;
 export const noteCreateManyStxBodySchema = noteContract.createItemSchema.array().min(1).max(50);
 ```
 
-This is the single registration point for the schema-evolution lens seams (`normalizeCreateItem`, `resolveUpdateOps`; HLC/AWSet merge). **It is enforced by CI** (`lens:check`, "contract completeness"): every configured product/context entity must call its contract factory, or the build fails. See [Schema evolution](./SCHEMA_EVOLUTION.md) and the lens-seam note in [Agent guidelines](./AGENTS.md).
+This is the single registration point for the schema-evolution lens seams (`normalizeCreateItem`, `resolveUpdateOps`; HLC/AWSet merge). **It is enforced by CI** (`lens:check`, "contract completeness"): every configured product/channel entity must call its contract factory, or the build fails. See [Schema evolution](./SCHEMA_EVOLUTION.md) and the lens-seam note in [Agent guidelines](./AGENTS.md).
 
 ### Step 7: 🔴 Write the module (routes, handlers, operations)
 
@@ -286,17 +286,17 @@ Once `registerEntityQueryKeys` + `addMutationRegistrar` run (via the eager impor
 
 ---
 
-## Context entities
+## Channel entities
 
-A context entity (has memberships + roles) differs from the product recipe:
+A channel entity (has memberships + roles) differs from the product recipe:
 
-- **Step 1**: use `.context('name', { parent, roles, relatedContexts? })`. `roles` must be non-empty and from the role registry.
-- **Step 2**: register under `contextEntityTypes` (not `productEntityTypes`).
+- **Step 1**: use `.channel('name', { parent, roles, relatedChannels? })`. `roles` must be non-empty and from the role registry.
+- **Step 2**: register under `channelEntityTypes` (not `productEntityTypes`).
 - **Step 3**: policies distinguish **elevation** rows (on an ancestor context, carrying `create`) from **self** rows (on the same context, omitting `create`). See the `project`/`workspace` cases and the header comment in [`permissions-config.ts`](../shared/config/permissions-config.ts).
-- **Step 4**: use `...contextEntityColumns('name')` (adds `slug`, thumbnails, etc.). Add a `unique(tenantId, id)` compound constraint so the table can be a composite-FK target. **No `tenantSelectPolicy`/`writeThroughPolicies`, no `seq`/`stx`**: context entities have no RLS and no sync layer (offline read only; access is guard-enforced).
-- **Frontend**: register in `contextEntityListQueriesByType` and add a `menu-config.tsx` section (+ `menuStructure` in `config.default.ts`) rather than `buildEntitySyncQueries`.
+- **Step 4**: use `...channelEntityColumns('name')` (adds `slug`, thumbnails, etc.). Add a `unique(tenantId, id)` compound constraint so the table can be a composite-FK target. **No `tenantSelectPolicy`/`writeThroughPolicies`, no `seq`/`stx`**: channel entities have no RLS and no sync layer (offline read only; access is guard-enforced).
+- **Frontend**: register in `channelEntityListQueriesByType` and add a `menu-config.tsx` section (+ `menuStructure` in `config.default.ts`) rather than `buildEntitySyncQueries`.
 
-Context entities do **not** go through the CDC/SSE product pipeline or the wire-schema factory in the same way. See [Architecture](./ARCHITECTURE.md) for how context entities sync.
+Channel entities do **not** go through the CDC/SSE product pipeline or the wire-schema factory in the same way. See [Architecture](./ARCHITECTURE.md) for how channel entities sync.
 
 ---
 
@@ -312,8 +312,8 @@ Context entities do **not** go through the CDC/SSE product pipeline or the wire-
 
 **🔴 Manual (you edit these):**
 
-1. [`shared/config/hierarchy-config.ts`](../shared/config/hierarchy-config.ts): `.product(...)` / `.context(...)`
-2. [`shared/config/config.default.ts`](../shared/config/config.default.ts): `entityTypes`, `productEntityTypes`/`contextEntityTypes`, `entityIdColumnKeys` (+ optional arrays)
+1. [`shared/config/hierarchy-config.ts`](../shared/config/hierarchy-config.ts): `.product(...)` / `.channel(...)`
+2. [`shared/config/config.default.ts`](../shared/config/config.default.ts): `entityTypes`, `productEntityTypes`/`channelEntityTypes`, `entityIdColumnKeys` (+ optional arrays)
 3. [`shared/config/permissions-config.ts`](../shared/config/permissions-config.ts): a `case` in the policy switch
 4. `backend/src/modules/<name>/<name>-db.ts`: the Drizzle table
 5. [`backend/src/tables.ts`](../backend/src/tables.ts): add to `entityTables`

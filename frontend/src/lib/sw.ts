@@ -71,8 +71,8 @@ async function updateBadge() {
 
     // Sum all unseen counts across all contexts and entity types
     let total = 0;
-    for (const contextCounts of Object.values(data)) {
-      for (const count of Object.values(contextCounts)) {
+    for (const channelCounts of Object.values(data)) {
+      for (const count of Object.values(channelCounts)) {
         total += count;
       }
     }

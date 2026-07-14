@@ -4,7 +4,7 @@ import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
-import { getValidContextEntity } from '#/permissions/get-context-entity';
+import { getValidChannelEntity } from '#/permissions/get-channel-entity';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
@@ -29,18 +29,18 @@ export async function updateMembershipOp(ctx: AuthContext, membershipId: string,
     throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { membership: membershipId } });
   }
 
-  const updatedType = membershipToUpdate.contextType;
+  const updatedType = membershipToUpdate.channelType;
 
   // The new role must exist in the context's vocabulary (e.g. no org 'member' on a course)
   if (role !== undefined && !hierarchy.getRoles(updatedType).includes(role)) {
     throw new AppError(400, 'invalid_role', 'warn', { entityType: updatedType });
   }
 
-  await getValidContextEntity(ctx, membershipToUpdate.contextId, updatedType, role ? 'update' : 'read');
+  await getValidChannelEntity(ctx, membershipToUpdate.channelId, updatedType, role ? 'update' : 'read');
 
   if (archived !== undefined && archived !== membershipToUpdate.archived) {
     const relevantOrders = memberships
-      .filter((m) => m.contextType === updatedType && m.archived === archived)
+      .filter((m) => m.channelType === updatedType && m.archived === archived)
       // Use ceil so a fractional displayOrder doesn't squeeze a future insert.
       .map((m) => Math.ceil(m.displayOrder));
 

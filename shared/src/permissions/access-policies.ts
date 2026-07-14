@@ -1,4 +1,4 @@
-import type { ContextEntityType, EntityActionType, EntityType, ProductEntityType } from '../../types';
+import type { ChannelEntityType, EntityActionType, EntityType, ProductEntityType } from '../../types';
 import type { PublicReadGrants, PublicReadMode } from './public-read';
 import { own } from './row-conditions';
 import type {
@@ -6,7 +6,7 @@ import type {
   AccessPolicyCallback,
   AccessPolicyConfiguration,
   AccessPolicyEntry,
-  ContextPolicyBuilder,
+  ChannelPolicyBuilder,
   EntityActionPermissions,
   NormalizedPermissionValue,
   PermissionValue,
@@ -23,12 +23,12 @@ const normalizePermissionValue = (value: PermissionValue): NormalizedPermissionV
 /**
  * Creates a context policy builder for fluent role-permission configuration.
  */
-const createContextPolicyBuilder = (
-  contextType: ContextEntityType,
+const createChannelPolicyBuilder = (
+  channelType: ChannelEntityType,
   roles: readonly string[],
   entries: AccessPolicyEntry[],
   entityActions: readonly EntityActionType[],
-): ContextPolicyBuilder => {
+): ChannelPolicyBuilder => {
 
   const builder: Record<string, (permissions: Partial<Record<EntityActionType, PermissionValue>>) => void> = {};
 
@@ -41,27 +41,27 @@ const createContextPolicyBuilder = (
       for (const action of entityActions) {
         fullPermissions[action] = normalizePermissionValue(permissions[action] ?? 0);
       }
-      entries.push({ contextType, role, permissions: fullPermissions });
+      entries.push({ channelType, role, permissions: fullPermissions });
     };
   }
 
-  return builder as ContextPolicyBuilder;
+  return builder as ChannelPolicyBuilder;
 };
 
 /**
  * Creates a contexts object with builders for all context types.
  */
-const createContextBuilders = (
+const createChannelBuilders = (
   entries: AccessPolicyEntry[],
-  contextEntityTypes: readonly ContextEntityType[],
-  getRoles: (contextType: string) => readonly string[],
+  channelEntityTypes: readonly ChannelEntityType[],
+  getRoles: (channelType: string) => readonly string[],
   entityActions: readonly EntityActionType[],
-): Record<ContextEntityType, ContextPolicyBuilder> => {
-  const contexts = {} as Record<ContextEntityType, ContextPolicyBuilder>;
+): Record<ChannelEntityType, ChannelPolicyBuilder> => {
+  const contexts = {} as Record<ChannelEntityType, ChannelPolicyBuilder>;
 
-  for (const contextType of contextEntityTypes) {
-    const roles = getRoles(contextType);
-    contexts[contextType] = createContextPolicyBuilder(contextType, roles, entries, entityActions);
+  for (const channelType of channelEntityTypes) {
+    const roles = getRoles(channelType);
+    contexts[channelType] = createChannelPolicyBuilder(channelType, roles, entries, entityActions);
   }
 
   return contexts;
@@ -108,16 +108,16 @@ export const configurePermissions = (
   const publicReadGrants: PublicReadGrants = {};
 
   // Topology defaults to the app's real config; tests pass a synthetic one (wide-fixture.ts).
-  const { entityActions, contextEntityTypes, getRoles, getParent } = resolveTopology(topology);
+  const { entityActions, channelEntityTypes, getRoles, getParent } = resolveTopology(topology);
   const validateCompleteness = options?.validateCompleteness ?? true;
 
   const permissionableTypes = entityTypes.filter(
-    (type): type is ContextEntityType | ProductEntityType => type !== 'user',
+    (type): type is ChannelEntityType | ProductEntityType => type !== 'user',
   );
 
   for (const entityType of permissionableTypes) {
     const entries: AccessPolicyEntry[] = [];
-    const contexts = createContextBuilders(entries, contextEntityTypes, getRoles, entityActions);
+    const contexts = createChannelBuilders(entries, channelEntityTypes, getRoles, entityActions);
 
     const config: AccessPolicyConfiguration = {
       subject: { name: entityType },
@@ -138,7 +138,7 @@ export const configurePermissions = (
   }
 
   if (validateCompleteness) {
-    validatePolicyCompleteness(policies, { contextEntityTypes, getRoles, getParent });
+    validatePolicyCompleteness(policies, { channelEntityTypes, getRoles, getParent });
   }
 
   return { accessPolicies: policies, publicReadGrants };
@@ -156,21 +156,21 @@ export const configurePermissions = (
 const validatePolicyCompleteness = (
   policies: AccessPolicies,
   topology: {
-    contextEntityTypes: readonly ContextEntityType[];
-    getRoles: (contextType: string) => readonly string[];
+    channelEntityTypes: readonly ChannelEntityType[];
+    getRoles: (channelType: string) => readonly string[];
     getParent: (type: string) => string | null;
   },
 ): void => {
-  const { contextEntityTypes, getRoles, getParent } = topology;
+  const { channelEntityTypes, getRoles, getParent } = topology;
 
   /** The subject's context chain: self (for context entities) plus every ancestor. */
-  const chainOf = (subject: string): ContextEntityType[] => {
-    const chain: ContextEntityType[] = [];
-    let current: string | null = contextEntityTypes.includes(subject as ContextEntityType)
+  const chainOf = (subject: string): ChannelEntityType[] => {
+    const chain: ChannelEntityType[] = [];
+    let current: string | null = channelEntityTypes.includes(subject as ChannelEntityType)
       ? subject
       : getParent(subject);
     while (current) {
-      chain.push(current as ContextEntityType);
+      chain.push(current as ChannelEntityType);
       current = getParent(current);
     }
     return chain;
@@ -178,10 +178,10 @@ const validatePolicyCompleteness = (
 
   const missing: string[] = [];
   for (const [subject, entries] of Object.entries(policies)) {
-    const declared = new Set(entries.map((entry) => `${entry.contextType}:${entry.role}`));
-    for (const contextType of chainOf(subject)) {
-      for (const role of getRoles(contextType)) {
-        if (!declared.has(`${contextType}:${role}`)) missing.push(`"${subject}": ${contextType}.${role}`);
+    const declared = new Set(entries.map((entry) => `${entry.channelType}:${entry.role}`));
+    for (const channelType of chainOf(subject)) {
+      for (const role of getRoles(channelType)) {
+        if (!declared.has(`${channelType}:${role}`)) missing.push(`"${subject}": ${channelType}.${role}`);
       }
     }
   }
@@ -211,7 +211,7 @@ export const configureAccessPolicies = (
  * Gets the access policies for a specific subject (entity type).
  */
 export const getSubjectPolicies = (
-  subject: ContextEntityType | ProductEntityType,
+  subject: ChannelEntityType | ProductEntityType,
   policies: AccessPolicies,
 ): SubjectAccessPolicies => {
   return policies[subject] ?? [];
@@ -222,9 +222,9 @@ export const getSubjectPolicies = (
  */
 export const getPolicyPermissions = (
   policies: SubjectAccessPolicies,
-  contextType: ContextEntityType,
+  channelType: ChannelEntityType,
   role: string,
 ): EntityActionPermissions | undefined => {
-  const entry = policies.find((p) => p.contextType === contextType && p.role === role);
+  const entry = policies.find((p) => p.channelType === channelType && p.role === role);
   return entry?.permissions;
 };

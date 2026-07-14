@@ -1,4 +1,4 @@
-import { appConfig, type ContextEntityType, configureAccessPolicies, type EntityRole } from 'shared';
+import { appConfig, type ChannelEntityType, configureAccessPolicies, type EntityRole } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { getAllDecisions } from './check';
 import type { SubjectForPermission } from './types';
@@ -7,8 +7,8 @@ import type { SubjectForPermission } from './types';
 type TestMembership = {
   id: string;
   tenantId: string;
-  contextType: ContextEntityType;
-  contextId: string;
+  channelType: ChannelEntityType;
+  channelId: string;
   userId: string;
   role: EntityRole;
   displayOrder: number;
@@ -36,8 +36,8 @@ const createMemberships = (count: number): TestMembership[] =>
   Array.from({ length: count }, (_, i) => ({
     id: `mem${i}`,
     tenantId: 'test01',
-    contextType: 'organization' as const,
-    contextId: `org${i}`,
+    channelType: 'organization' as const,
+    channelId: `org${i}`,
     userId: `user${i}`,
     organizationId: `org${i}`,
     role: i % 3 === 0 ? ('admin' as const) : ('member' as const),
@@ -52,7 +52,7 @@ const createSubjects = (count: number): SubjectForPermission[] =>
   Array.from({ length: count }, (_, i) => ({
     entityType: 'attachment' as const,
     id: `attachment${i}`,
-    contextIds: { organization: `org${i % 20}` },
+    channelIds: { organization: `org${i % 20}` },
   }));
 
 /** Run function multiple times and return average execution time in ms */

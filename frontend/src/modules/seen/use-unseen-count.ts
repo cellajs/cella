@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import type { MembershipBase } from 'sdk';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
-import { seenGroupingContextTypes } from '~/modules/seen/helpers';
+import { seenGroupingChannelTypes } from '~/modules/seen/helpers';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
 
 /** Get the context entity ID from a membership */
-const getMembershipContextId = (m: MembershipBase) => m.contextId;
+const getMembershipChannelId = (m: MembershipBase) => m.channelId;
 
 /** Sum all product entity type counts for a single context entity */
 const sumCounts = (counts: Record<string, number> | undefined) => {
@@ -19,8 +19,8 @@ const sumCounts = (counts: Record<string, number> | undefined) => {
  * Hook to get unseen count for one or more context entity IDs.
  * Uses `select` so the component only re-renders when its derived count actually changes.
  */
-export function useUnseenCount(contextEntityIds: string | string[] | undefined) {
-  const ids = !contextEntityIds ? [] : Array.isArray(contextEntityIds) ? contextEntityIds : [contextEntityIds];
+export function useUnseenCount(channelEntityIds: string | string[] | undefined) {
+  const ids = !channelEntityIds ? [] : Array.isArray(channelEntityIds) ? channelEntityIds : [channelEntityIds];
 
   const { data } = useQuery({
     ...unseenCountsQueryOptions(),
@@ -48,8 +48,8 @@ export function useTotalUnseenCount() {
   // Collect IDs of active memberships whose context type groups seen counts
   const activeIds = new Set<string>();
   for (const m of membershipsData.items) {
-    if (!seenGroupingContextTypes.has(m.contextType) || m.muted || m.archived) continue;
-    const id = getMembershipContextId(m);
+    if (!seenGroupingChannelTypes.has(m.channelType) || m.muted || m.archived) continue;
+    const id = getMembershipChannelId(m);
     if (id) activeIds.add(id);
   }
 

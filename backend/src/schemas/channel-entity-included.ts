@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { type ContextEntityType, hierarchy, recordFromKeys } from 'shared';
+import { type ChannelEntityType, hierarchy, recordFromKeys } from 'shared';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { membershipCountSchema } from '#/schemas/count-schemas';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
@@ -8,7 +8,7 @@ import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
  * Factory for context entity included schemas.
  * Builds a strictly-typed included schema scoped to the entity's hierarchy children.
  */
-export const contextEntityIncludedSchema = (entityType: ContextEntityType) => {
+export const channelEntityIncludedSchema = (entityType: ChannelEntityType) => {
   const descendants = hierarchy.getOrderedDescendants(entityType);
   const entityCountSchema = z.object(recordFromKeys(descendants, () => z.number()));
 

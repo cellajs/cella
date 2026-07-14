@@ -6,7 +6,7 @@ import type { GenerateScript } from '../types';
  * Counter Functions Migration
  *
  * Creates a PL/pgSQL function for merging JSONB count deltas into
- * context_counters rows. This enables fixed-shape SQL for counter
+ * channel_counters rows. This enables fixed-shape SQL for counter
  * upserts, which can then use prepared statements in the CDC worker.
  *
  * The function iterates over keys in a deltas JSONB object and applies

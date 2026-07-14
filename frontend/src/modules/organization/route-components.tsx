@@ -33,7 +33,7 @@ export const OrganizationMembersComponent = () => {
   const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
   return (
     <Suspense>
-      <MembersTable key={data.id} contextEntity={data} />
+      <MembersTable key={data.id} channelEntity={data} />
     </Suspense>
   );
 };
@@ -43,7 +43,7 @@ export const OrganizationAttachmentsComponent = () => {
   const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
   return (
     <Suspense>
-      <AttachmentsTable canUpload={true} key={data.id} contextEntity={data} />
+      <AttachmentsTable canUpload={true} key={data.id} channelEntity={data} />
     </Suspense>
   );
 };

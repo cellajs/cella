@@ -1,4 +1,4 @@
-import type { ContextEntityIdColumns, ContextEntityType, ProductEntityType, SubjectForPermission } from 'shared';
+import type { ChannelEntityIdColumns, ChannelEntityType, ProductEntityType, SubjectForPermission } from 'shared';
 import {
   MissingScopeError,
   buildSubject as sharedBuildSubject,
@@ -15,7 +15,7 @@ const translateMissingScope = (e: unknown): never => {
   if (e instanceof MissingScopeError) {
     throw new AppError(400, 'missing_scope', 'error', {
       entityType: e.entityType,
-      meta: { missingContext: e.missingContext, missingKey: e.missingKey },
+      meta: { missingChannel: e.missingChannel, missingKey: e.missingKey },
     });
   }
   throw e;
@@ -30,8 +30,8 @@ const translateMissingScope = (e: unknown): never => {
  * @throws AppError 400 if any required ancestor context ID is missing (undefined)
  */
 export const buildSubject = (
-  entityType: ContextEntityType | ProductEntityType,
-  ancestorContextIds: Partial<ContextEntityIdColumns>,
+  entityType: ChannelEntityType | ProductEntityType,
+  ancestorChannelIds: Partial<ChannelEntityIdColumns>,
   options?: {
     id?: string;
     createdBy?: string | null;
@@ -39,15 +39,15 @@ export const buildSubject = (
   },
 ): SubjectForPermission => {
   try {
-    return sharedBuildSubject(entityType, ancestorContextIds, options);
+    return sharedBuildSubject(entityType, ancestorChannelIds, options);
   } catch (e) {
     return translateMissingScope(e);
   }
 };
 
 export const buildSubjectFromEntity = (
-  entityType: ContextEntityType | ProductEntityType,
-  entity: { id: string; createdBy?: string | null } & Partial<ContextEntityIdColumns>,
+  entityType: ChannelEntityType | ProductEntityType,
+  entity: { id: string; createdBy?: string | null } & Partial<ChannelEntityIdColumns>,
 ): SubjectForPermission => {
   try {
     return sharedBuildSubjectFromEntity(entityType, entity);

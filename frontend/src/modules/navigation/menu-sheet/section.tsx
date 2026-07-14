@@ -2,13 +2,13 @@ import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
-import { collectContextIds } from '~/modules/navigation/menu-sheet/helpers/collect-context-ids';
+import { collectChannelIds } from '~/modules/navigation/menu-sheet/helpers/collect-channel-ids';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
 import { MenuSheetItems } from '~/modules/navigation/menu-sheet/items-list';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
@@ -17,7 +17,7 @@ import { navigationStore, useNavigationStore } from '~/modules/navigation/naviga
 
 export type MenuSectionOptions = {
   label: string;
-  entityType: ContextEntityType;
+  entityType: ChannelEntityType;
   createAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
   icon?: IconComponent;
 };
@@ -40,8 +40,8 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
   const isSectionVisible = activeSections?.[options.entityType] ?? true;
   const archivedItems = data.filter((i) => i.membership?.archived);
   const archivedCount = archivedItems.length;
-  const activeContextIds = collectContextIds(data, { archived: false });
-  const archivedContextIds = collectContextIds(data, { archived: true });
+  const activeChannelIds = collectChannelIds(data, { archived: false });
+  const archivedChannelIds = collectChannelIds(data, { archived: true });
 
   const handleCreateAction = (ref: RefObject<HTMLButtonElement | null>) => {
     if (isMobile) {
@@ -61,7 +61,7 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
     <div className="group/menuSection px-3" data-visible={isSectionVisible}>
       <MenuSectionButton
         data={data}
-        contextIds={activeContextIds}
+        channelIds={activeChannelIds}
         options={options}
         isEditing={isEditing}
         isSectionVisible={isSectionVisible}
@@ -113,7 +113,7 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
                   <SectionArchiveButton
                     archiveToggleClick={archiveToggleClick}
                     archivedCount={archivedCount}
-                    archivedContextIds={archivedContextIds}
+                    archivedChannelIds={archivedChannelIds}
                   />
                 )}
                 <AnimatePresence initial={false}>

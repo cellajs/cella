@@ -4,7 +4,7 @@ import { appConfig, hierarchy } from 'shared';
 import type { TableMeta } from '../types';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import { actionToVerb, extractStxData } from '../utils';
-import { contextIdColumnKeys } from '../utils/context-columns';
+import { channelIdColumnKeys } from '../utils/channel-columns';
 import { getRowValue } from '../utils/get-row-value';
 import { log } from '../lib/pino';
 
@@ -24,7 +24,7 @@ export function createActivity(
 
   // Derive context entity IDs from hierarchy ancestors. Declared-nullable ancestors may
   // legitimately be null (variable-depth rows, e.g. a course-stream item): no warning.
-  const contextEntityIds: Record<string, string | null> = {};
+  const channelEntityIds: Record<string, string | null> = {};
   if (subjectType) {
     const nullableAncestors = hierarchy.getNullableAncestors(subjectType);
     for (const ancestor of hierarchy.getOrderedAncestors(subjectType)) {
@@ -33,7 +33,7 @@ export function createActivity(
       if (!value && !nullableAncestors.includes(ancestor)) {
         log.warn(`Missing ancestor "${colKey}" for ${subjectType}`, { id: getRowValue(row, 'id') });
       }
-      contextEntityIds[colKey] = value ?? null;
+      channelEntityIds[colKey] = value ?? null;
     }
   }
 
@@ -44,9 +44,9 @@ export function createActivity(
   const tenantId = getRowValue(row, 'tenantId') ?? (resourceType === 'tenant' ? rawSubjectId : null);
 
   // Build default nulls for all context entity ID columns, driven by config
-  const defaultContextIds: Record<string, null> = {};
-  for (const idKey of contextIdColumnKeys) {
-    defaultContextIds[idKey] = null;
+  const defaultChannelIds: Record<string, null> = {};
+  for (const idKey of channelIdColumnKeys) {
+    defaultChannelIds[idKey] = null;
   }
 
   return {
@@ -58,10 +58,10 @@ export function createActivity(
     tableName: getTableName(tableMeta.table),
     type: `${subjectType}.${actionToVerb(action)}`,
     subjectId: rawSubjectId,
-    // Default context IDs to null, overridden by contextEntityIds for entities with hierarchy ancestors
-    ...defaultContextIds,
+    // Default context IDs to null, overridden by channelEntityIds for entities with hierarchy ancestors
+    ...defaultChannelIds,
     createdAt: new Date().toISOString(),
-    ...contextEntityIds,
+    ...channelEntityIds,
     changedFields: null,
     stx: extractStxData(row),
     ...activityPatch,

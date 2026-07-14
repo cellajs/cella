@@ -12,11 +12,11 @@ import { maxLength } from '#/db/utils/constraints';
  * The CDC worker increments counts['s:{entityType}'] and stamps entity.seq after processing WAL events.
  * Backend reads counts for catchup gap detection and entity count display.
  */
-export const contextCountersTable = snakeCase.table('context_counters', {
-  contextKey: varchar('context_key', { length: maxLength.id }).primaryKey(),
+export const channelCountersTable = snakeCase.table('channel_counters', {
+  channelKey: varchar('channel_key', { length: maxLength.id }).primaryKey(),
   counts: jsonb().$type<Record<string, number>>().notNull().default({}),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-export type ContextCounterModel = typeof contextCountersTable.$inferSelect;
-export type InsertContextCounterModel = typeof contextCountersTable.$inferInsert;
+export type ChannelCounterModel = typeof channelCountersTable.$inferSelect;
+export type InsertChannelCounterModel = typeof channelCountersTable.$inferInsert;

@@ -1,4 +1,4 @@
-import type { ContextEntityType, EntityActionType, EntityRole, EntityType } from '../../types';
+import type { ChannelEntityType, EntityActionType, EntityRole, EntityType } from '../../types';
 import { recordFromKeys } from '../config-builder/utils';
 import { getPolicyPermissions, getSubjectPolicies } from './access-policies';
 import { allActionsDenied } from './action-helpers';
@@ -29,14 +29,14 @@ export type EntityCanMap = Partial<Record<EntityType, ActionStates>>;
  * Returns allActionsDenied when no policy is found.
  */
 function computeEntityPermissions(
-  entityType: ContextEntityType | EntityType,
-  contextType: ContextEntityType,
+  entityType: ChannelEntityType | EntityType,
+  channelType: ChannelEntityType,
   role: EntityRole,
   policies: AccessPolicies,
   entityActions: readonly EntityActionType[],
 ): ActionStates {
-  const subjectPolicies = getSubjectPolicies(entityType as ContextEntityType, policies);
-  const permissions = getPolicyPermissions(subjectPolicies, contextType, role);
+  const subjectPolicies = getSubjectPolicies(entityType as ChannelEntityType, policies);
+  const permissions = getPolicyPermissions(subjectPolicies, channelType, role);
 
   if (!permissions) return allActionsDenied;
 
@@ -72,8 +72,8 @@ function computeEntityPermissions(
  * ```
  */
 export const computeCan = (
-  contextType: ContextEntityType,
-  membership: { contextType: ContextEntityType; role: EntityRole } | undefined | null,
+  channelType: ChannelEntityType,
+  membership: { channelType: ChannelEntityType; role: EntityRole } | undefined | null,
   policies: AccessPolicies,
   topology?: PermissionTopology,
 ): EntityCanMap => {
@@ -84,11 +84,11 @@ export const computeCan = (
   const map: EntityCanMap = {};
 
   // Permissions for the context entity itself
-  map[contextType] = computeEntityPermissions(contextType, membership.contextType, membership.role, policies, entityActions);
+  map[channelType] = computeEntityPermissions(channelType, membership.channelType, membership.role, policies, entityActions);
 
   // Permissions for all descendant entity types (children + their children)
-  for (const descendant of h.getOrderedDescendants(contextType) as EntityType[]) {
-    map[descendant] = computeEntityPermissions(descendant, membership.contextType, membership.role, policies, entityActions);
+  for (const descendant of h.getOrderedDescendants(channelType) as EntityType[]) {
+    map[descendant] = computeEntityPermissions(descendant, membership.channelType, membership.role, policies, entityActions);
   }
 
   return map;

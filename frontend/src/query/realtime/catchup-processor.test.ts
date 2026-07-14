@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('shared', () => ({
   appConfig: {
     slug: 'test',
-    contextEntityTypes: ['organization', 'project'],
+    channelEntityTypes: ['organization', 'project'],
     entityIdColumnKeys: { organization: 'organizationId', project: 'projectId' },
   },
   hierarchy: {
@@ -25,7 +25,7 @@ vi.mock('~/query/offline', () => ({
 }));
 
 vi.mock('./membership-ops', () => ({
-  invalidateContextList: vi.fn(),
+  invalidateChannelList: vi.fn(),
   invalidateMemberQueries: vi.fn(),
   fetchMemberships: vi.fn(),
   refreshMe: vi.fn(),
@@ -152,7 +152,7 @@ describe('catchup processor', () => {
     registerEntityQueryKeys('attachment', keys, deltaFetch);
 
     useSyncStore.getState().setOrgTenantId('org-1', 'tenant-1');
-    useSyncStore.getState().setContextSeq('org-1', 'project-1', 'attachment', 5);
+    useSyncStore.getState().setChannelSeq('org-1', 'project-1', 'attachment', 5);
     queryClient.setQueryData(keys.list.scope('org-1', 'project-1'), {
       items: [{ id: 'attachment-1', organizationId: 'org-1', projectId: 'project-1', seq: 5, name: 'stale' }],
       total: 1,
@@ -163,13 +163,13 @@ describe('catchup processor', () => {
       changes: {
         'org-1': {
           entitySeqs: { attachment: 8 },
-          childContextChanges: { 'project-1': { entitySeqs: { attachment: 8 } } },
+          childChannelChanges: { 'project-1': { entitySeqs: { attachment: 8 } } },
         },
       },
     } as unknown as PostAppCatchupResponse);
 
     expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '6', undefined);
-    expect(useSyncStore.getState().getContextSeq('org-1', 'project-1', 'attachment')).toBe(8);
+    expect(useSyncStore.getState().getChannelSeq('org-1', 'project-1', 'attachment')).toBe(8);
     // Org-level screening seq also advances for context-handled types
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(8);
     expect(queryClient.getQueryData(keys.list.scope('org-1', 'project-1'))).toMatchObject({
@@ -197,7 +197,7 @@ describe('catchup processor', () => {
         cursor: 'cursor-1',
         changes: {
           'org-1': {
-            childContextChanges: {
+            childChannelChanges: {
               'project-1': {
                 entityCounts: { attachment: count },
               },

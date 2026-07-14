@@ -13,43 +13,43 @@ export function createRoleRegistry<const T extends readonly string[]>(
 
 export type RoleFromRegistry<R extends { all: readonly string[] }> = R['all'][number];
 
-export type EntityKind = 'user' | 'context' | 'product';
+export type EntityKind = 'user' | 'channel' | 'product';
 
 interface UserEntry { kind: 'user' }
-interface ContextEntry<R extends string = string> {
-  kind: 'context';
+interface ChannelEntry<R extends string = string> {
+  kind: 'channel';
   parent: string | null;
   roles: readonly R[];
-  /** Non-ancestor context entities referenced as optional denormalized columns. */
-  relatedContexts?: readonly string[];
+  /** Non-ancestor channel entities referenced as optional denormalized columns. */
+  relatedChannels?: readonly string[];
 }
 interface ProductEntry {
   kind: 'product';
   parent: string;
-  /** Non-ancestor context entities referenced as optional denormalized columns. */
-  relatedContexts?: readonly string[];
+  /** Non-ancestor channel entities referenced as optional denormalized columns. */
+  relatedChannels?: readonly string[];
   /** Ancestors whose id columns are nullable: rows may attach above the declared parent. */
   nullableAncestors?: readonly string[];
 }
-type EntityEntry = UserEntry | ContextEntry | ProductEntry;
+type EntityEntry = UserEntry | ChannelEntry | ProductEntry;
 
-export interface ContextEntityView<R extends string = string> {
-  readonly kind: 'context';
+export interface ChannelEntityView<R extends string = string> {
+  readonly kind: 'channel';
   readonly parent: string | null;
   readonly roles: readonly R[];
-  readonly relatedContexts?: readonly string[];
+  readonly relatedChannels?: readonly string[];
 }
 
 export interface ProductEntityView {
   readonly kind: 'product';
   readonly parent: string;
-  readonly relatedContexts?: readonly string[];
+  readonly relatedChannels?: readonly string[];
   readonly nullableAncestors?: readonly string[];
 }
 
 export interface UserEntityView { readonly kind: 'user' }
 
-export type EntityView = UserEntityView | ContextEntityView | ProductEntityView;
+export type EntityView = UserEntityView | ChannelEntityView | ProductEntityView;
 
 // Hierarchy Builder
 
@@ -60,7 +60,7 @@ export type EntityView = UserEntityView | ContextEntityView | ProductEntityView;
  */
 class EntityHierarchyBuilder<
   TRoles extends { all: readonly string[] },
-  TContexts extends string = never,
+  TChannels extends string = never,
   TProducts extends string = never,
   TParentMap extends Record<string, string | null> = Record<never, never>,
   TRelatedMap extends Record<string, string> = Record<never, never>,
@@ -82,33 +82,33 @@ class EntityHierarchyBuilder<
   }
 
   /** Add user entity (required, once). */
-  user(): EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentMap, TRelatedMap, TNullableMap> {
+  user(): EntityHierarchyBuilder<TRoles, TChannels, TProducts, TParentMap, TRelatedMap, TNullableMap> {
     if (this.entities.has('user')) throw new Error('EntityHierarchy: user() can only be called once');
-    return new EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentMap, TRelatedMap, TNullableMap>(
+    return new EntityHierarchyBuilder<TRoles, TChannels, TProducts, TParentMap, TRelatedMap, TNullableMap>(
       this.roles,
       this.withEntity('user', { kind: 'user' }),
     );
   }
 
-  /** Add a context entity with parent reference and roles. */
-  context<N extends string, P extends TContexts | null, const RC extends readonly TContexts[] = []>(
+  /** Add a channel entity with parent reference and roles. */
+  channel<N extends string, P extends TChannels | null, const RC extends readonly TChannels[] = []>(
     name: N,
-    options: { parent: P; roles: readonly RoleFromRegistry<TRoles>[]; relatedContexts?: RC },
+    options: { parent: P; roles: readonly RoleFromRegistry<TRoles>[]; relatedChannels?: RC },
   ): EntityHierarchyBuilder<
     TRoles,
-    TContexts | N,
+    TChannels | N,
     TProducts,
     TParentMap & { [K in N]: P },
     TRelatedMap & { [K in N]: RC[number] },
     TNullableMap
   > {
     this.validateName(name);
-    this.validateParent(name, options.parent, 'context');
+    this.validateParent(name, options.parent, 'channel');
     this.validateRoles(name, options.roles);
-    this.validateRelatedContexts(name, options.parent, options.relatedContexts);
+    this.validateRelatedChannels(name, options.parent, options.relatedChannels);
     return new EntityHierarchyBuilder<
       TRoles,
-      TContexts | N,
+      TChannels | N,
       TProducts,
       TParentMap & { [K in N]: P },
       TRelatedMap & { [K in N]: RC[number] },
@@ -116,31 +116,31 @@ class EntityHierarchyBuilder<
     >(
       this.roles,
       this.withEntity(name, {
-        kind: 'context',
+        kind: 'channel',
         parent: options.parent,
         roles: options.roles,
-        relatedContexts: options.relatedContexts,
+        relatedChannels: options.relatedChannels,
       }),
     );
   }
 
   /**
-   * Add a product entity. Every product has exactly one home context (`parent`): a non-null
-   * `<context>Id` column and the most-specific link used for permissions and public-read
-   * inheritance. Optional `relatedContexts` and `nullableAncestors` add further
+   * Add a product entity. Every product has exactly one home channel (`parent`): a non-null
+   * `<channel>Id` column and the most-specific link used for permissions and public-read
+   * inheritance. Optional `relatedChannels` and `nullableAncestors` add further
    * non-home links; see README.md in this directory for the full model.
    */
   product<
     N extends string,
-    P extends TContexts,
-    const RC extends readonly TContexts[] = [],
-    const NA extends readonly TContexts[] = [],
+    P extends TChannels,
+    const RC extends readonly TChannels[] = [],
+    const NA extends readonly TChannels[] = [],
   >(
     name: N,
-    options: { parent: P; relatedContexts?: RC; nullableAncestors?: NA },
+    options: { parent: P; relatedChannels?: RC; nullableAncestors?: NA },
   ): EntityHierarchyBuilder<
     TRoles,
-    TContexts,
+    TChannels,
     TProducts | N,
     TParentMap & { [K in N]: P },
     TRelatedMap & { [K in N]: RC[number] },
@@ -148,11 +148,11 @@ class EntityHierarchyBuilder<
   > {
     this.validateName(name);
     this.validateParent(name, options.parent, 'product');
-    this.validateRelatedContexts(name, options.parent, options.relatedContexts);
+    this.validateRelatedChannels(name, options.parent, options.relatedChannels);
     this.validateNullableAncestors(name, options.parent, options.nullableAncestors);
     return new EntityHierarchyBuilder<
       TRoles,
-      TContexts,
+      TChannels,
       TProducts | N,
       TParentMap & { [K in N]: P },
       TRelatedMap & { [K in N]: RC[number] },
@@ -162,16 +162,16 @@ class EntityHierarchyBuilder<
       this.withEntity(name, {
         kind: 'product',
         parent: options.parent,
-        relatedContexts: options.relatedContexts,
+        relatedChannels: options.relatedChannels,
         nullableAncestors: options.nullableAncestors,
       }),
     );
   }
 
   /** Build and freeze the hierarchy. */
-  build(): EntityHierarchy<TRoles, TContexts, TProducts, TParentMap, TRelatedMap, TNullableMap> {
+  build(): EntityHierarchy<TRoles, TChannels, TProducts, TParentMap, TRelatedMap, TNullableMap> {
     if (!this.entities.has('user')) throw new Error('EntityHierarchy: user() must be called before build()');
-    if (!this.entities.has('organization')) throw new Error('EntityHierarchy: organization context is required');
+    if (!this.entities.has('organization')) throw new Error('EntityHierarchy: organization channel is required');
     return new EntityHierarchy(this.roles, this.entities);
   }
 
@@ -184,13 +184,13 @@ class EntityHierarchyBuilder<
     }
   }
 
-  private validateParent(name: string, parent: string | null, kind: 'context' | 'product'): void {
+  private validateParent(name: string, parent: string | null, kind: 'channel' | 'product'): void {
     if (parent === null) {
-      // Products always need a home context (also enforced at the type level)
+      // Products always need a home channel (also enforced at the type level)
       if (kind === 'product') {
         throw new Error(
           `EntityHierarchy: product "${name}" has no parent. ` +
-            'Every product needs a context parent (its home) to derive permissions from.',
+            'Every product needs a channel parent (its home) to derive permissions from.',
         );
       }
       return;
@@ -203,9 +203,9 @@ class EntityHierarchyBuilder<
           'Parents must be defined before children.',
       );
     }
-    if (parentEntry.kind !== 'context') {
+    if (parentEntry.kind !== 'channel') {
       throw new Error(
-        `EntityHierarchy: ${kind} "${name}" parent "${parent}" must be a context entity, ` +
+        `EntityHierarchy: ${kind} "${name}" parent "${parent}" must be a channel entity, ` +
           `but it is a ${parentEntry.kind} entity.`,
       );
     }
@@ -213,14 +213,14 @@ class EntityHierarchyBuilder<
 
   private validateRoles(name: string, roles: readonly string[]): void {
     if (roles.length === 0) {
-      throw new Error(`EntityHierarchy: context "${name}" must have at least one role`);
+      throw new Error(`EntityHierarchy: channel "${name}" must have at least one role`);
     }
 
     const validRoles = new Set(this.roles.all);
     for (const role of roles) {
       if (!validRoles.has(role)) {
         throw new Error(
-          `EntityHierarchy: context "${name}" has invalid role "${role}". ` +
+          `EntityHierarchy: channel "${name}" has invalid role "${role}". ` +
             `Valid roles: ${[...validRoles].join(', ')}`,
         );
       }
@@ -228,12 +228,12 @@ class EntityHierarchyBuilder<
   }
 
   /**
-   * Validate optional denormalized context references. Each must be an already-defined
-   * context entity that is NOT part of the strict ancestor chain (which already produces
+   * Validate optional denormalized channel references. Each must be an already-defined
+   * channel entity that is NOT part of the strict ancestor chain (which already produces
    * its own non-null id column) and not the entity itself.
    */
-  private validateRelatedContexts(name: string, parent: string | null, relatedContexts?: readonly string[]): void {
-    if (!relatedContexts?.length) return;
+  private validateRelatedChannels(name: string, parent: string | null, relatedChannels?: readonly string[]): void {
+    if (!relatedChannels?.length) return;
 
     const ancestors = new Set<string>();
     let current = parent;
@@ -244,32 +244,32 @@ class EntityHierarchyBuilder<
     }
 
     const seen = new Set<string>();
-    for (const related of relatedContexts) {
+    for (const related of relatedChannels) {
       if (related === name) {
-        throw new Error(`EntityHierarchy: entity "${name}" cannot reference itself in relatedContexts`);
+        throw new Error(`EntityHierarchy: entity "${name}" cannot reference itself in relatedChannels`);
       }
       if (seen.has(related)) {
-        throw new Error(`EntityHierarchy: entity "${name}" has duplicate relatedContext "${related}"`);
+        throw new Error(`EntityHierarchy: entity "${name}" has duplicate relatedChannel "${related}"`);
       }
       seen.add(related);
 
       const entry = this.entities.get(related);
       if (!entry) {
         throw new Error(
-          `EntityHierarchy: entity "${name}" references unknown relatedContext "${related}". ` +
-            'Related contexts must be defined before they are referenced.',
+          `EntityHierarchy: entity "${name}" references unknown relatedChannel "${related}". ` +
+            'Related channels must be defined before they are referenced.',
         );
       }
-      if (entry.kind !== 'context') {
+      if (entry.kind !== 'channel') {
         throw new Error(
-          `EntityHierarchy: entity "${name}" relatedContext "${related}" must be a context entity, ` +
+          `EntityHierarchy: entity "${name}" relatedChannel "${related}" must be a channel entity, ` +
             `but it is a ${entry.kind} entity.`,
         );
       }
       if (ancestors.has(related)) {
         throw new Error(
-          `EntityHierarchy: entity "${name}" relatedContext "${related}" is already an ancestor. ` +
-            'Ancestors are referenced via the strict parent chain, not relatedContexts.',
+          `EntityHierarchy: entity "${name}" relatedChannel "${related}" is already an ancestor. ` +
+            'Ancestors are referenced via the strict parent chain, not relatedChannels.',
         );
       }
     }
@@ -278,7 +278,7 @@ class EntityHierarchyBuilder<
   /**
    * Validate nullable-ancestor declarations. Each must be part of the strict ancestor chain,
    * and the chain root must stay non-null: a row with every ancestor id null would belong to
-   * no context at all (counters, seq scoping and permissions all need at least the root).
+   * no channel at all (counters, seq scoping and permissions all need at least the root).
    */
   private validateNullableAncestors(name: string, parent: string, nullableAncestors?: readonly string[]): void {
     if (!nullableAncestors?.length) return;
@@ -320,7 +320,7 @@ class EntityHierarchyBuilder<
 /** Frozen entity hierarchy with query methods. Created by EntityHierarchyBuilder.build(). */
 export class EntityHierarchy<
   TRoles extends { all: readonly string[] },
-  TContexts extends string = string,
+  TChannels extends string = string,
   TProducts extends string = string,
   TParentMap extends Record<string, string | null> = Record<string, string | null>,
   TRelatedMap extends Record<string, string> = Record<string, string>,
@@ -328,7 +328,7 @@ export class EntityHierarchy<
 > {
   /** Phantom type carrier: maps each entity to its strict parent (null = root). Type-only, no runtime value. */
   declare readonly _parentMap: TParentMap;
-  /** Phantom type carrier: maps each entity to its related (non-ancestor) context union. Type-only, no runtime value. */
+  /** Phantom type carrier: maps each entity to its related (non-ancestor) channel union. Type-only, no runtime value. */
   declare readonly _relatedMap: TRelatedMap;
   /** Phantom type carrier: maps each product to its nullable-ancestor union. Type-only, no runtime value. */
   declare readonly _nullableMap: TNullableMap;
@@ -336,39 +336,39 @@ export class EntityHierarchy<
   private readonly entities: ReadonlyMap<string, EntityEntry>;
   private readonly roleRegistry: TRoles;
   private readonly ancestorCache = new Map<string, readonly string[]>();
-  private readonly childrenCache = new Map<string, readonly (TContexts | TProducts)[]>();
-  private readonly descendantsCache = new Map<string, readonly (TContexts | TProducts)[]>();
+  private readonly childrenCache = new Map<string, readonly (TChannels | TProducts)[]>();
+  private readonly descendantsCache = new Map<string, readonly (TChannels | TProducts)[]>();
 
-  readonly contextTypes: readonly TContexts[];
+  readonly channelTypes: readonly TChannels[];
   readonly productTypes: readonly TProducts[];
-  readonly allTypes: readonly ('user' | TContexts | TProducts)[];
-  readonly relatableContextTypes: readonly TContexts[];
+  readonly allTypes: readonly ('user' | TChannels | TProducts)[];
+  readonly relatableChannelTypes: readonly TChannels[];
 
   constructor(roles: TRoles, entities: Map<string, EntityEntry>) {
     this.roleRegistry = roles;
     this.entities = new Map(entities);
 
     // Single-pass computation of all type arrays
-    const contexts: TContexts[] = [];
+    const channels: TChannels[] = [];
     const products: TProducts[] = [];
-    const all: ('user' | TContexts | TProducts)[] = [];
-    const relatableContexts = new Set<TContexts>();
+    const all: ('user' | TChannels | TProducts)[] = [];
+    const relatableChannels = new Set<TChannels>();
 
     for (const [name, entry] of entities) {
-      all.push(name as 'user' | TContexts | TProducts);
+      all.push(name as 'user' | TChannels | TProducts);
 
-      if (entry.kind === 'context') {
-        contexts.push(name as TContexts);
+      if (entry.kind === 'channel') {
+        channels.push(name as TChannels);
       } else if (entry.kind === 'product') {
         products.push(name as TProducts);
-        relatableContexts.add(entry.parent as TContexts);
+        relatableChannels.add(entry.parent as TChannels);
       }
     }
 
-    this.contextTypes = Object.freeze(contexts);
+    this.channelTypes = Object.freeze(channels);
     this.productTypes = Object.freeze(products);
     this.allTypes = Object.freeze(all);
-    this.relatableContextTypes = Object.freeze([...relatableContexts]);
+    this.relatableChannelTypes = Object.freeze([...relatableChannels]);
     Object.freeze(this);
   }
 
@@ -376,38 +376,38 @@ export class EntityHierarchy<
     return this.entities.get(entityType)?.kind;
   }
 
-  isContext(entityType: string): entityType is TContexts {
-    return this.getKind(entityType) === 'context';
+  isChannel(entityType: string): entityType is TChannels {
+    return this.getKind(entityType) === 'channel';
   }
 
   isProduct(entityType: string): entityType is TProducts {
     return this.getKind(entityType) === 'product';
   }
 
-  /** Get roles for a context entity. Returns empty array for non-context. */
-  getRoles(contextType: string): readonly RoleFromRegistry<TRoles>[] {
-    const entry = this.entities.get(contextType);
-    return entry?.kind === 'context' ? (entry.roles as readonly RoleFromRegistry<TRoles>[]) : [];
+  /** Get roles for a channel entity. Returns empty array for non-channel. */
+  getRoles(channelType: string): readonly RoleFromRegistry<TRoles>[] {
+    const entry = this.entities.get(channelType);
+    return entry?.kind === 'channel' ? (entry.roles as readonly RoleFromRegistry<TRoles>[]) : [];
   }
 
-  /** Get the direct parent (always a context entity). Returns null for root entities or user. */
-  getParent(entityType: string): TContexts | null {
+  /** Get the direct parent (always a channel entity). Returns null for root entities or user. */
+  getParent(entityType: string): TChannels | null {
     const entry = this.entities.get(entityType);
-    return entry && entry.kind !== 'user' ? (entry.parent as TContexts | null) : null;
+    return entry && entry.kind !== 'user' ? (entry.parent as TChannels | null) : null;
   }
 
   /** Get ordered ancestors (most-specific → root). Example: task → ['project', 'organization'] */
-  getOrderedAncestors(entityType: string): readonly TContexts[] {
+  getOrderedAncestors(entityType: string): readonly TChannels[] {
     const cached = this.ancestorCache.get(entityType);
-    if (cached) return cached as readonly TContexts[];
+    if (cached) return cached as readonly TChannels[];
 
-    const ancestors: TContexts[] = [];
+    const ancestors: TChannels[] = [];
     let current = this.getParent(entityType);
     while (current !== null) {
       const entry = this.entities.get(current);
       if (!entry) break;
-      if (entry.kind === 'context') ancestors.push(current as TContexts);
-      current = entry.kind === 'user' ? null : (entry.parent as TContexts | null);
+      if (entry.kind === 'channel') ancestors.push(current as TChannels);
+      current = entry.kind === 'user' ? null : (entry.parent as TChannels | null);
     }
 
     const frozen = Object.freeze(ancestors);
@@ -416,37 +416,37 @@ export class EntityHierarchy<
   }
 
   /**
-   * Get optional denormalized related context types for an entity (non-ancestor contexts
-   * declared via `relatedContexts`). These map to NULLABLE id columns. Returns [] if none.
+   * Get optional denormalized related channel types for an entity (non-ancestor channels
+   * declared via `relatedChannels`). These map to NULLABLE id columns. Returns [] if none.
    */
-  getRelatedContexts(entityType: string): readonly TContexts[] {
+  getRelatedChannels(entityType: string): readonly TChannels[] {
     const entry = this.entities.get(entityType);
     if (!entry || entry.kind === 'user') return [];
-    return (entry.relatedContexts ?? []) as readonly TContexts[];
+    return (entry.relatedChannels ?? []) as readonly TChannels[];
   }
 
   /**
    * Ancestors declared nullable for a product (rows may attach above the declared parent).
    * These map to NULLABLE id columns; all other ancestor id columns are non-null. Returns [] if none.
    */
-  getNullableAncestors(entityType: string): readonly TContexts[] {
+  getNullableAncestors(entityType: string): readonly TChannels[] {
     const entry = this.entities.get(entityType);
     if (entry?.kind !== 'product') return [];
-    return (entry.nullableAncestors ?? []) as readonly TContexts[];
+    return (entry.nullableAncestors ?? []) as readonly TChannels[];
   }
 
-  /** Get entity view (kind + parent + roles if context). */
+  /** Get entity view (kind + parent + roles if channel). */
   getConfig(entityType: string): EntityView | undefined {
     const entry = this.entities.get(entityType);
     if (!entry) return undefined;
     if (entry.kind === 'user') return { kind: 'user' };
-    if (entry.kind === 'context') {
-      return { kind: 'context', parent: entry.parent, roles: entry.roles, relatedContexts: entry.relatedContexts };
+    if (entry.kind === 'channel') {
+      return { kind: 'channel', parent: entry.parent, roles: entry.roles, relatedChannels: entry.relatedChannels };
     }
     return {
       kind: 'product',
       parent: entry.parent,
-      relatedContexts: entry.relatedContexts,
+      relatedChannels: entry.relatedChannels,
       nullableAncestors: entry.nullableAncestors,
     };
   }
@@ -457,50 +457,50 @@ export class EntityHierarchy<
     return config?.kind === 'product' ? config : undefined;
   }
 
-  /** Get context entity view. */
-  getContextConfig(entityType: string): ContextEntityView<RoleFromRegistry<TRoles>> | undefined {
+  /** Get channel entity view. */
+  getChannelConfig(entityType: string): ChannelEntityView<RoleFromRegistry<TRoles>> | undefined {
     const config = this.getConfig(entityType);
-    return config?.kind === 'context' ? (config as ContextEntityView<RoleFromRegistry<TRoles>>) : undefined;
+    return config?.kind === 'channel' ? (config as ChannelEntityView<RoleFromRegistry<TRoles>>) : undefined;
   }
 
   hasAncestor(entityType: string, ancestor: string): boolean {
-    return this.getOrderedAncestors(entityType).includes(ancestor as TContexts);
+    return this.getOrderedAncestors(entityType).includes(ancestor as TChannels);
   }
 
   /** Get direct children. Cached. */
-  getChildren(contextType: string): readonly (TContexts | TProducts)[] {
-    const cached = this.childrenCache.get(contextType);
+  getChildren(channelType: string): readonly (TChannels | TProducts)[] {
+    const cached = this.childrenCache.get(channelType);
     if (cached) return cached;
 
-    const children: (TContexts | TProducts)[] = [];
+    const children: (TChannels | TProducts)[] = [];
     for (const [name, entry] of this.entities) {
-      if (entry.kind !== 'user' && entry.parent === contextType) {
-        children.push(name as TContexts | TProducts);
+      if (entry.kind !== 'user' && entry.parent === channelType) {
+        children.push(name as TChannels | TProducts);
       }
     }
 
     const frozen = Object.freeze(children);
-    this.childrenCache.set(contextType, frozen);
+    this.childrenCache.set(channelType, frozen);
     return frozen;
   }
 
   /** Get all descendants (breadth-first). Cached. */
-  getOrderedDescendants(contextType: string): readonly (TContexts | TProducts)[] {
-    const cached = this.descendantsCache.get(contextType);
+  getOrderedDescendants(channelType: string): readonly (TChannels | TProducts)[] {
+    const cached = this.descendantsCache.get(channelType);
     if (cached) return cached;
 
-    const descendants: (TContexts | TProducts)[] = [];
-    const queue = [...this.getChildren(contextType)];
+    const descendants: (TChannels | TProducts)[] = [];
+    const queue = [...this.getChildren(channelType)];
     let i = 0;
     while (i < queue.length) {
       const current = queue[i++];
       if (current === undefined) continue;
       descendants.push(current);
-      if (this.isContext(current)) queue.push(...this.getChildren(current));
+      if (this.isChannel(current)) queue.push(...this.getChildren(current));
     }
 
     const frozen = Object.freeze(descendants);
-    this.descendantsCache.set(contextType, frozen);
+    this.descendantsCache.set(channelType, frozen);
     return frozen;
   }
 

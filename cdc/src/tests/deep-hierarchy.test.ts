@@ -3,17 +3,17 @@ import { createEntityHierarchy, createRoleRegistry } from 'shared';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { EntityTableMeta } from '../types';
-import { computeBatchUnifiedDeltas, resolveContextKey } from '../utils/compute-unified-deltas';
+import { computeBatchUnifiedDeltas, resolveChannelKey } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/update-counts';
 import { log } from '../lib/pino';
 
 const roles = createRoleRegistry(['admin', 'member'] as const);
 const h = createEntityHierarchy(roles)
   .user()
-  .context('organization', { parent: null, roles: roles.all })
-  .context('course', { parent: 'organization', roles: roles.all })
-  .context('courseSection', { parent: 'course', roles: roles.all })
-  .context('project', { parent: 'courseSection', roles: roles.all })
+  .channel('organization', { parent: null, roles: roles.all })
+  .channel('course', { parent: 'organization', roles: roles.all })
+  .channel('courseSection', { parent: 'course', roles: roles.all })
+  .channel('project', { parent: 'courseSection', roles: roles.all })
   .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection'] })
   .build();
 
@@ -62,28 +62,28 @@ beforeEach(() => {
 
 // ── Seq scope ────────────────────────────────────────────────────────────────
 
-describe('seq scope: deepest non-null ancestor (resolveContextKey)', () => {
+describe('seq scope: deepest non-null ancestor (resolveChannelKey)', () => {
   const activity = (organizationId: string | null = 'o1') =>
     ({ organizationId }) as unknown as ActivityWithoutId;
 
   it('full-depth row scopes to its project', () => {
-    expect(resolveContextKey('item', fullDepthRow, activity(), h)).toBe('p1');
+    expect(resolveChannelKey('item', fullDepthRow, activity(), h)).toBe('p1');
   });
 
   it('section-level row falls through the null project to its section', () => {
-    expect(resolveContextKey('item', sectionRow, activity(), h)).toBe('s1');
+    expect(resolveChannelKey('item', sectionRow, activity(), h)).toBe('s1');
   });
 
   it('course-stream row scopes to its course', () => {
-    expect(resolveContextKey('item', courseStreamRow, activity(), h)).toBe('c1');
+    expect(resolveChannelKey('item', courseStreamRow, activity(), h)).toBe('c1');
   });
 
   it('falls back to the activity org when the row has no ancestor ids', () => {
-    expect(resolveContextKey('item', { id: 'i1' }, activity(), h)).toBe('o1');
+    expect(resolveChannelKey('item', { id: 'i1' }, activity(), h)).toBe('o1');
   });
 
   it('throws when there is no context at all (hierarchy requires an organization)', () => {
-    expect(() => resolveContextKey('item', { id: 'i1' }, activity(null), h)).toThrow(/organization ancestor/);
+    expect(() => resolveChannelKey('item', { id: 'i1' }, activity(null), h)).toThrow(/organization ancestor/);
   });
 });
 
@@ -95,7 +95,7 @@ describe('seq groups per effective home (computeBatchUnifiedDeltas)', () => {
     );
 
     expect(plan.seqGroups).toHaveLength(2);
-    const byCtx = new Map(plan.seqGroups.map((g) => [g.contextKey, g]));
+    const byCtx = new Map(plan.seqGroups.map((g) => [g.channelKey, g]));
     expect(byCtx.get('p1')).toMatchObject({ seqKey: 's:item', count: 1, orgSignal: { orgKey: 'o1' } });
     expect(byCtx.get('c1')).toMatchObject({ seqKey: 's:item', count: 1, orgSignal: { orgKey: 'o1' } });
   });
@@ -106,7 +106,7 @@ describe('seq groups per effective home (computeBatchUnifiedDeltas)', () => {
       h,
     );
     expect(plan.seqGroups).toHaveLength(1);
-    expect(plan.seqGroups[0]).toMatchObject({ contextKey: 'p1', count: 2 });
+    expect(plan.seqGroups[0]).toMatchObject({ channelKey: 'p1', count: 2 });
   });
 
   it('a contextless row fails the batch loudly instead of inventing a scope', () => {
@@ -121,12 +121,12 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
     const deltas = getCountDeltas(itemMeta(), itemActivity('create'), fullDepthRow, null, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
-        { contextKey: 'o1', deltas: { 'e:item': 1 } },
-        { contextKey: 'p1', deltas: { 'e:item': 1 } },
-        { contextKey: 's1', deltas: { 'e:item': 1 } },
-        { contextKey: 'c1', deltas: { 'e:item': 1 } },
+        { channelKey: 'o1', deltas: { 'e:item': 1 } },
+        { channelKey: 'p1', deltas: { 'e:item': 1 } },
+        { channelKey: 's1', deltas: { 'e:item': 1 } },
+        { channelKey: 'c1', deltas: { 'e:item': 1 } },
         // Activity stamp at the home context only — never fanned out to higher ancestors
-        { contextKey: 'p1', deltas: { 'li:item': expect.any(Number) } },
+        { channelKey: 'p1', deltas: { 'li:item': expect.any(Number) } },
       ]),
     );
     expect(deltas).toHaveLength(5);
@@ -136,9 +136,9 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
     const deltas = getCountDeltas(itemMeta(), itemActivity('create'), courseStreamRow, null, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
-        { contextKey: 'o1', deltas: { 'e:item': 1 } },
-        { contextKey: 'c1', deltas: { 'e:item': 1 } },
-        { contextKey: 'c1', deltas: { 'li:item': expect.any(Number) } },
+        { channelKey: 'o1', deltas: { 'e:item': 1 } },
+        { channelKey: 'c1', deltas: { 'e:item': 1 } },
+        { channelKey: 'c1', deltas: { 'li:item': expect.any(Number) } },
       ]),
     );
     expect(deltas).toHaveLength(3);
@@ -147,7 +147,7 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
   it('the stamp carries the row createdAt as epoch ms at the home key', () => {
     const createdAt = '2026-07-01T10:00:00.000Z';
     const deltas = getCountDeltas(itemMeta(), itemActivity('create'), { ...fullDepthRow, createdAt }, null, h);
-    expect(deltas).toContainEqual({ contextKey: 'p1', deltas: { 'li:item': Date.parse(createdAt) } });
+    expect(deltas).toContainEqual({ channelKey: 'p1', deltas: { 'li:item': Date.parse(createdAt) } });
     // No stamp anywhere else
     const stamped = deltas.filter((d) => 'li:item' in d.deltas);
     expect(stamped).toHaveLength(1);
@@ -157,9 +157,9 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
     const deltas = getCountDeltas(itemMeta(), itemActivity('delete'), { id: 'i1' }, sectionRow, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
-        { contextKey: 'o1', deltas: { 'e:item': -1 } },
-        { contextKey: 's1', deltas: { 'e:item': -1 } },
-        { contextKey: 'c1', deltas: { 'e:item': -1 } },
+        { channelKey: 'o1', deltas: { 'e:item': -1 } },
+        { channelKey: 's1', deltas: { 'e:item': -1 } },
+        { channelKey: 'c1', deltas: { 'e:item': -1 } },
       ]),
     );
     expect(deltas).toHaveLength(3);
@@ -171,10 +171,10 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
       h,
     );
     // Activity stamps land at each row's home context only; org and section stay stamp-free
-    expect(plan.countDeltasByContextKey.get('o1')).toEqual({ 'e:item': 2 });
-    expect(plan.countDeltasByContextKey.get('c1')).toEqual({ 'e:item': 2, 'li:item': expect.any(Number) });
-    expect(plan.countDeltasByContextKey.get('s1')).toEqual({ 'e:item': 1 });
-    expect(plan.countDeltasByContextKey.get('p1')).toEqual({ 'e:item': 1, 'li:item': expect.any(Number) });
+    expect(plan.countDeltasByChannelKey.get('o1')).toEqual({ 'e:item': 2 });
+    expect(plan.countDeltasByChannelKey.get('c1')).toEqual({ 'e:item': 2, 'li:item': expect.any(Number) });
+    expect(plan.countDeltasByChannelKey.get('s1')).toEqual({ 'e:item': 1 });
+    expect(plan.countDeltasByChannelKey.get('p1')).toEqual({ 'e:item': 1, 'li:item': expect.any(Number) });
   });
 });
 
@@ -183,9 +183,9 @@ describe('reparent updates re-credit the ancestor diff', () => {
     const deltas = getCountDeltas(itemMeta(), itemActivity('update'), { ...fullDepthRow, projectId: 'p2' }, fullDepthRow, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
-        { contextKey: 'p2', deltas: { 'e:item': 1 } },
-        { contextKey: 'p1', deltas: { 'e:item': -1 } },
-        { contextKey: 'p2', deltas: { 'lu:item': expect.any(Number) } },
+        { channelKey: 'p2', deltas: { 'e:item': 1 } },
+        { channelKey: 'p1', deltas: { 'e:item': -1 } },
+        { channelKey: 'p2', deltas: { 'lu:item': expect.any(Number) } },
       ]),
     );
     expect(deltas).toHaveLength(3);
@@ -194,8 +194,8 @@ describe('reparent updates re-credit the ancestor diff', () => {
   it('re-attach deeper (section → project): only the project is credited', () => {
     const deltas = getCountDeltas(itemMeta(), itemActivity('update'), fullDepthRow, sectionRow, h);
     expect(deltas).toEqual([
-      { contextKey: 'p1', deltas: { 'e:item': 1 } },
-      { contextKey: 'p1', deltas: { 'lu:item': expect.any(Number) } },
+      { channelKey: 'p1', deltas: { 'e:item': 1 } },
+      { channelKey: 'p1', deltas: { 'lu:item': expect.any(Number) } },
     ]);
   });
 
@@ -204,13 +204,13 @@ describe('reparent updates re-credit the ancestor diff', () => {
     const deltas = getCountDeltas(itemMeta(), itemActivity('update'), moved, fullDepthRow, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
-        { contextKey: 'p2', deltas: { 'e:item': 1 } },
-        { contextKey: 's2', deltas: { 'e:item': 1 } },
-        { contextKey: 'c2', deltas: { 'e:item': 1 } },
-        { contextKey: 'p1', deltas: { 'e:item': -1 } },
-        { contextKey: 's1', deltas: { 'e:item': -1 } },
-        { contextKey: 'c1', deltas: { 'e:item': -1 } },
-        { contextKey: 'p2', deltas: { 'lu:item': expect.any(Number) } },
+        { channelKey: 'p2', deltas: { 'e:item': 1 } },
+        { channelKey: 's2', deltas: { 'e:item': 1 } },
+        { channelKey: 'c2', deltas: { 'e:item': 1 } },
+        { channelKey: 'p1', deltas: { 'e:item': -1 } },
+        { channelKey: 's1', deltas: { 'e:item': -1 } },
+        { channelKey: 'c1', deltas: { 'e:item': -1 } },
+        { channelKey: 'p2', deltas: { 'lu:item': expect.any(Number) } },
       ]),
     );
     expect(deltas).toHaveLength(7);
@@ -218,7 +218,7 @@ describe('reparent updates re-credit the ancestor diff', () => {
 
   it('no ancestor change → only the lu stamp at the home context', () => {
     const deltas = getCountDeltas(itemMeta(), itemActivity('update'), fullDepthRow, fullDepthRow, h);
-    expect(deltas).toEqual([{ contextKey: 'p1', deltas: { 'lu:item': expect.any(Number) } }]);
+    expect(deltas).toEqual([{ channelKey: 'p1', deltas: { 'lu:item': expect.any(Number) } }]);
   });
 
   it('reparent while soft-deleted → no deltas (row is not counted anywhere)', () => {
@@ -239,8 +239,8 @@ describe('soft-delete / restore transitions on variable-depth rows', () => {
     );
     expect(deltas).toEqual(
       expect.arrayContaining([
-        { contextKey: 'o1', deltas: { 'e:item': -1 } },
-        { contextKey: 'c1', deltas: { 'e:item': -1 } },
+        { channelKey: 'o1', deltas: { 'e:item': -1 } },
+        { channelKey: 'c1', deltas: { 'e:item': -1 } },
       ]),
     );
     expect(deltas).toHaveLength(2);
@@ -256,8 +256,8 @@ describe('soft-delete / restore transitions on variable-depth rows', () => {
     );
     expect(deltas).toEqual(
       expect.arrayContaining([
-        { contextKey: 'o1', deltas: { 'e:item': 1 } },
-        { contextKey: 'c1', deltas: { 'e:item': 1 } },
+        { channelKey: 'o1', deltas: { 'e:item': 1 } },
+        { channelKey: 'c1', deltas: { 'e:item': 1 } },
       ]),
     );
     expect(deltas).toHaveLength(2);

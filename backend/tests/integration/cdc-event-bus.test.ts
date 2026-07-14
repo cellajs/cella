@@ -24,8 +24,8 @@ const mockEventWithData = (key: string): ActivityEvent =>
 import { eq, sql } from 'drizzle-orm';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { mockAttachment } from '#/modules/attachment/attachment-mocks';
-import { contextCountersTable } from '#/modules/entities/context-counters-db';
-import { mockContextMembership } from '#/modules/memberships/memberships-mocks';
+import { channelCountersTable } from '#/modules/entities/channel-counters-db';
+import { mockChannelMembership } from '#/modules/memberships/memberships-mocks';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { mockUser } from '#/modules/user/user-mocks';
 import { clearDatabase, ensureCdcSetup, startInProcessCdcWorker, waitFor, waitForEvent } from './test-utils';
@@ -116,7 +116,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     const eventPromise = waitForEvent('membership.created', 15000);
 
     // Use entity-agnostic mock that handles dynamic context entity columns
-    const membershipData = mockContextMembership('organization', testOrg, testUser);
+    const membershipData = mockChannelMembership('organization', testOrg, testUser);
     await db.insert(membershipsTable).values(membershipData);
 
     // Wait for: INSERT → CDC → activities INSERT → trigger → NOTIFY → activityBus
@@ -126,13 +126,13 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     expect(event.resourceType).toBe('membership');
     expect(event.subjectId).toBe(membershipData.id);
     expect(event.rowData).toMatchObject({
-      contextType: 'organization',
-      contextId: testOrg.id,
+      channelType: 'organization',
+      channelId: testOrg.id,
       organizationId: testOrg.id,
     });
   });
 
-  it('should stamp attachments.seq and bump context_counters.s:attachment on UPDATE', async () => {
+  it('should stamp attachments.seq and bump channel_counters.s:attachment on UPDATE', async () => {
     const attachment = {
       ...mockAttachment('cdc-seq-test-attachment'),
       tenantId: testOrg.tenantId,
@@ -146,9 +146,9 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     const counterKey = sql`${testOrg.id}::varchar`;
     const readCounter = async () => {
       const [row] = await db
-        .select({ s: sql<number>`(${contextCountersTable.counts}->>'s:attachment')::int` })
-        .from(contextCountersTable)
-        .where(eq(contextCountersTable.contextKey, counterKey));
+        .select({ s: sql<number>`(${channelCountersTable.counts}->>'s:attachment')::int` })
+        .from(channelCountersTable)
+        .where(eq(channelCountersTable.channelKey, counterKey));
       return row?.s ?? 0;
     };
     const readAttachment = async () => {

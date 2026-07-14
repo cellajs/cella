@@ -56,11 +56,13 @@ This diagram shows the normal production topology of a Cella app. Your own setup
 
 Tables can be split into `entity`, `resource`, and other tables. Entities are split into categories:
 
-- `ContextEntityType`: has memberships (`organization`)
-- `ProductEntityType`: content-related and inherits access from context membership (`attachment`)
-- `EntityType`: the union of `user`, context entities, and product entities
+- `ChannelEntityType`: has memberships (`organization`)
+- `ProductEntityType`: content-related and inherits access from channel membership (`attachment`)
+- `EntityType`: the union of `user`, channel entities, and product entities
 
-The template config has one context entity, `organization`, and one product entity, `attachment`, whose parent is `organization`. Forks commonly add deeper contexts and products; examples in comments use `project`, `task`, and `label`, but those are not part of the default hierarchy.
+The template config has one channel entity, `organization`, and one product entity, `attachment`, whose parent is `organization`. Forks commonly add deeper channels and products; examples in comments use `project`, `task`, and `label`, but those are not part of the default hierarchy.
+
+> **Glossary — "channel".** A **channel entity** is a membership-scoped entity that hosts products (e.g. `organization`, `project`): it carries roles and memberships, and its `channelType`/`channelId` scope permissions and counters. This is distinct from two other uses of "channel": a **stream channel** — the sync dispatcher's routing key `type:id` (e.g. `org:abc`), which at runtime is always a root channel-entity id — and the browser's **tab broadcast channel** (`BroadcastChannel`). The three align by design (a stream channel *is* a root channel entity's routing key); where a doc means the routing key or the browser API specifically, it says "stream channel" or "tab broadcast channel".
 
 Both frontend and backend have business logic split in modules. Most of them are in both backend and frontend, such as `authentication`, `user` and `organization`. The benefit of modularity is twofold: better code (readability, portability etc) and to pull upstream cella changes with less friction.
 
@@ -69,16 +71,16 @@ Both frontend and backend have business logic split in modules. Most of them are
 The entity taxonomy is defined using `createEntityHierarchy()`. Forks customize their entity setup in `shared/config/hierarchy-config.ts`.
 
 ```
-createEntityHierarchy(roles).user().context('organization', ...).product('attachment', ...).build()
+createEntityHierarchy(roles).user().channel('organization', ...).product('attachment', ...).build()
 ```
 
-The builder validates that parents exist before children, products have a context parent, context roles are valid, and optional `relatedContexts`/`nullableAncestors` are structurally valid. Public readability is declared and validated separately by `configurePermissions()` in `shared/config/permissions-config.ts`. The resulting frozen `EntityHierarchy` drives schema helpers, permission traversal, count/seq scoping, menu construction, and stream dispatch.
+The builder validates that parents exist before children, products have a context parent, context roles are valid, and optional `relatedChannels`/`nullableAncestors` are structurally valid. Public readability is declared and validated separately by `configurePermissions()` in `shared/config/permissions-config.ts`. The resulting frozen `EntityHierarchy` drives schema helpers, permission traversal, count/seq scoping, menu construction, and stream dispatch.
 
-Key methods: `getParent()`, `getOrderedAncestors()`, `getRelatedContexts()`, `getNullableAncestors()`, `getChildren()`, and `getOrderedDescendants()`.
+Key methods: `getParent()`, `getOrderedAncestors()`, `getRelatedChannels()`, `getNullableAncestors()`, `getChildren()`, and `getOrderedDescendants()`.
 
 ## Sync engine
 
-Cella has a selective approach to sync and offline. Context entities such as organizations use standard CRUD OpenAPI endpoints. Product entities such as attachments add `stx`, seq-based catchup, offline mutation plumbing, and a notify-then-fetch realtime path. TanStack Query is the client-side merge point for both context and product entities as well as other resources.
+Cella has a selective approach to sync and offline. Channel entities such as organizations use standard CRUD OpenAPI endpoints. Product entities such as attachments add `stx`, seq-based catchup, offline mutation plumbing, and a notify-then-fetch realtime path. TanStack Query is the client-side merge point for both context and product entities as well as other resources.
 
 The pipeline flows: **Postgres WAL → CDC worker → WebSocket → ActivityBus → SSE → client**. There is one realtime endpoint:
 
@@ -127,13 +129,13 @@ The meta record also carries a `schemaVersion` ordinal (see [Schema evolution](/
 
 ### Enrichment pipeline
 
-A QueryCache subscriber in `frontend/src/query/enrichment/` auto-enriches context entity list data whenever cache entries change. Three enrichers run in sequence on each item:
+A QueryCache subscriber in `frontend/src/query/enrichment/` auto-enriches channel entity list data whenever cache entries change. Three enrichers run in sequence on each item:
 
 1. **Membership**: attaches the user's cached membership to the entity.
 2. **Permissions**: computes a `can` map (action → `true | false | 'own'`, keyed by entity type + descendants) from the membership role and `accessPolicies`. The `'own'` value indicates the action is allowed only for entities created by the current user (implicit owner relation). Use `resolvePermission(permission, entity.createdBy?.id, userId)` to resolve per-entity. System admins get full permissions.
 3. **Ancestor slugs**: walks the entity hierarchy to build URL-friendly slug paths from cached data.
 
-This is how `item.membership`, `item.can`, and `item.ancestorSlugs` are populated on context entities without extra API calls.
+This is how `item.membership`, `item.can`, and `item.ancestorSlugs` are populated on channel entities without extra API calls.
 
 ## Authentication
 
@@ -152,7 +154,7 @@ Cookie-based sessions (hashed, typed as `regular`/`impersonation`/`mfa`) with si
 
 A `tenant` is not an entity, but a `resource` that acts as top-level isolation unit.
 
-Tenant-scoped routes use `/:tenantId/` in the path. Organization-scoped product routes use the `authGuard` → `tenantGuard` → `orgGuard` chain; the guards load the authorized context and initially set `ctx.var.db` to `baseDb`. Product entity handlers then wrap their DB operations in `tenantRead()` (read-only) or `tenantContext()` (read-write) to get an RLS-scoped transaction. Context entity handlers use `baseDb` directly (no RLS), with the guard set appropriate to their route. See AGENTS.md for the full guard matrix.
+Tenant-scoped routes use `/:tenantId/` in the path. Organization-scoped product routes use the `authGuard` → `tenantGuard` → `orgGuard` chain; the guards load the authorized context and initially set `ctx.var.db` to `baseDb`. Product entity handlers then wrap their DB operations in `tenantRead()` (read-only) or `tenantContext()` (read-write) to get an RLS-scoped transaction. Channel entity handlers use `baseDb` directly (no RLS), with the guard set appropriate to their route. See AGENTS.md for the full guard matrix.
 
 ## Permissions
 
@@ -171,7 +173,7 @@ The permission decision engine (`checkPermission` / `getAllDecisions`) lives in 
 
 RLS session variables (`app.tenant_id`, `app.user_id`, `app.include_deleted`) are set per transaction by the helpers in `backend/src/db/tenant-context.ts`. `tenant_id` is the hard DB-enforced SELECT boundary for product tables and tenant-scoped support tables such as `yjs_documents`.
 
-**Context entities** (organizations in the template) and **memberships** do not use RLS. Access control for these tables is enforced at the application layer by the relevant guard/permission path.
+**Channel entities** (organizations in the template) and **memberships** do not use RLS. Access control for these tables is enforced at the application layer by the relevant guard/permission path.
 
 Organization isolation is enforced at the **application layer** by the guard/permission path, not at the RLS level. This avoids expensive `EXISTS` membership subqueries on every row access. On organization-scoped product routes, `orgGuard` validates membership before the handler runs. Cross-org API tests in `backend/tests/security/cross-org.test.ts` verify this boundary.
 
@@ -191,7 +193,7 @@ The `tenantRead` callback receives a `readCtx` with `{ var: { ...ctx.var, db: tx
 | Category | SELECT | Write | Builder | Use case |
 |----------|--------|-------|---------|----------|
 | Tenant-scoped | Fail-closed tenant match; tombstones hidden unless requested | Unconditional write-through policy; app-layer authorization | `tenantSelectPolicy()`, `writeThroughPolicies()` | `attachments`, `yjs_documents`; fork-added tenant-scoped products |
-| No RLS | - | - | - | Context entities, memberships, and ordinary resources |
+| No RLS | - | - | - | Channel entities, memberships, and ordinary resources |
 
 ### Database roles
 

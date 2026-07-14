@@ -52,7 +52,7 @@ export function resolveDeepestAncestorId(
  * (rows can never attach above a non-nullable ancestor). Without nullable ancestors this
  * is just the declared parent.
  */
-export function possibleHomeContexts(hierarchy: AncestorSource, entityType: string): string[] {
+export function possibleHomeChannels(hierarchy: AncestorSource, entityType: string): string[] {
   const nullable = new Set(hierarchy.getNullableAncestors(entityType));
   const homes: string[] = [];
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {

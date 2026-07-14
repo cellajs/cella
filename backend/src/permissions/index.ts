@@ -13,7 +13,7 @@ export {
   hasNoReadScope,
   resolveCollectionReadFilter,
 } from './collection-scope';
-export { getValidContextEntity, type ValidContextEntityResult } from './get-context-entity';
+export { getValidChannelEntity, type ValidChannelEntityResult } from './get-channel-entity';
 export { getValidProductEntity, type ValidProductEntityResult } from './get-product-entity';
 export { buildCollectionReadWhere, type CollectionReadWhere, compileRowConditionSql } from './row-predicates';
 export { splitByPermission } from './split-by-permission';

@@ -8,7 +8,7 @@ import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import { PendingMembershipsTableBar } from '~/modules/memberships/pending-table/pending-bar';
 import { useColumns } from '~/modules/memberships/pending-table/pending-columns';
 import { pendingMembershipsQueryOptions } from '~/modules/memberships/query';
@@ -26,13 +26,13 @@ const pendingMembershipsSearchSchema = zGetPendingMembershipsQuery.pick({ sort: 
 type PendingMembershipsSearch = z.infer<typeof pendingMembershipsSearchSchema>;
 
 export interface PendingMembershipsTableProps {
-  contextEntity: EnrichedContextEntity;
+  channelEntity: EnrichedChannelEntity;
 }
 
 /**
  * Displays a table of pending memberships for a context entity.
  */
-export function PendingMembershipsTable({ contextEntity }: PendingMembershipsTableProps) {
+export function PendingMembershipsTable({ channelEntity }: PendingMembershipsTableProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<PendingMembershipsSearch>({ saveDataInSearch: false });
 
@@ -45,10 +45,10 @@ export function PendingMembershipsTable({ contextEntity }: PendingMembershipsTab
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = pendingMembershipsQueryOptions({
-    entityId: contextEntity.id,
-    entityType: contextEntity.entityType,
-    tenantId: contextEntity.tenantId,
-    organizationId: contextEntity.organizationId || contextEntity.id,
+    entityId: channelEntity.id,
+    entityType: channelEntity.entityType,
+    tenantId: channelEntity.tenantId,
+    organizationId: channelEntity.organizationId || channelEntity.id,
     ...search,
     limit,
   });

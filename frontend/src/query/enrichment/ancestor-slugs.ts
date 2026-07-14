@@ -1,5 +1,5 @@
 import type { MembershipBase } from 'sdk';
-import { appConfig, type ContextEntityType } from 'shared';
+import { appConfig, type ChannelEntityType } from 'shared';
 import type { AncestorSlugs } from '~/modules/entities/types';
 import type { EnrichableEntity } from '~/query/enrichment/types';
 import { getField } from '~/utils/get-field';
@@ -11,7 +11,7 @@ export type SlugIndex = Map<string, Map<string, string>>;
 function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | null): boolean {
   if (!a && !b) return false;
   if (!a || !b) return true;
-  const aKeys = Object.keys(a) as ContextEntityType[];
+  const aKeys = Object.keys(a) as ChannelEntityType[];
   if (aKeys.length !== Object.keys(b).length) return true;
   return aKeys.some((k) => a[k] !== b[k]);
 }
@@ -23,7 +23,7 @@ function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | nul
  */
 export function enrichWithAncestorSlugs(
   item: EnrichableEntity,
-  ancestors: readonly ContextEntityType[],
+  ancestors: readonly ChannelEntityType[],
   slugIndex: SlugIndex,
 ): EnrichableEntity {
   if (ancestors.length === 0) return item;

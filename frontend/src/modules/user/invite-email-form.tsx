@@ -8,7 +8,7 @@ import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import type { InviteMember } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
@@ -17,7 +17,7 @@ import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/
 import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
 
 interface Props {
-  contextEntity?: EnrichedContextEntity;
+  channelEntity?: EnrichedChannelEntity;
   dialog?: boolean;
   children?: React.ReactNode;
 }
@@ -25,12 +25,12 @@ interface Props {
 /**
  * Form for inviting users by email.
  */
-export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: Props) {
+export function InviteEmailForm({ channelEntity, dialog: isDialog, children }: Props) {
   const { t } = useTranslation();
 
   const { nextStep } = useStepper();
 
-  const form = useInviteFormDraft(contextEntity?.id, contextEntity?.entityType);
+  const form = useInviteFormDraft(channelEntity?.id, channelEntity?.entityType);
 
   const onSuccess = (
     { invitesSentCount, rejectedIds }: { rejectedIds: string[]; invitesSentCount: number },
@@ -59,13 +59,13 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
 
   const onSubmit = (body: InviteFormValues) => {
     // With no context, this is a system invite; otherwise it is a membership invite.
-    if (!contextEntity) return systemInvite(body);
+    if (!channelEntity) return systemInvite(body);
 
-    const organizationId = contextEntity.organizationId || contextEntity.id;
-    const path = { tenantId: contextEntity.tenantId, organizationId: organizationId };
-    const query = { entityId: contextEntity.id, entityType: contextEntity.entityType };
+    const organizationId = channelEntity.organizationId || channelEntity.id;
+    const path = { tenantId: channelEntity.tenantId, organizationId: organizationId };
+    const query = { entityId: channelEntity.id, entityType: channelEntity.entityType };
 
-    membershipInvite({ body, path, query, contextEntity }, { onSuccess });
+    membershipInvite({ body, path, query, channelEntity }, { onSuccess });
   };
 
   return (
@@ -86,14 +86,14 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
             </FormItem>
           )}
         />
-        {contextEntity && (
+        {channelEntity && (
           <FormField
             control={form.control}
             name="role"
             render={({ field: { value, onChange } }) => (
               <FormItem className="ml-3 flex-row items-center gap-4">
                 <FormLabel>{t('c:role')}</FormLabel>
-                <SelectRoleRadio value={value} onValueChange={onChange} entityType={contextEntity.entityType} />
+                <SelectRoleRadio value={value} onValueChange={onChange} entityType={channelEntity.entityType} />
                 <FormMessage />
               </FormItem>
             )}

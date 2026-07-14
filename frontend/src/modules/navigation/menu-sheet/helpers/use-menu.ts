@@ -1,6 +1,6 @@
 import { useQueries } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { contextEntityListQueriesByType } from '~/list-queries-config';
+import { channelEntityListQueriesByType } from '~/list-queries-config';
 import { buildMenuFromCache, menuEntityTypes } from './build-menu-from-cache';
 
 /**
@@ -17,7 +17,7 @@ export function useMenu(userId: string | undefined) {
   const results = useQueries({
     // @ts-expect-error useQueries types don't support infinite query options, but it works at runtime
     queries: menuEntityTypes.map((t) => ({
-      ...contextEntityListQueriesByType[t]?.({ relatableUserId: userId ?? '' }),
+      ...channelEntityListQueriesByType[t]?.({ relatableUserId: userId ?? '' }),
       enabled: !!userId,
     })),
   });

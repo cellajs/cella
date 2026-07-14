@@ -8,7 +8,7 @@ import { log } from '../lib/pino';
 
 export interface CountDelta {
   /** Context key (organizationId or sub-context id): the row to update */
-  contextKey: string;
+  channelKey: string;
   /**
    * Key-value deltas: e.g. { 'm:admin': 1, 'm:total': 1 } or { 'e:attachment': -1 }.
    * `li:<type>` / `lu:<type>` keys carry an epoch-ms activity stamp instead of a delta; they merge via max.
@@ -60,7 +60,7 @@ export function getCountDeltas(
     // Bump the org-level membership seq on every membership / inactive-membership activity so
     // catchup can detect membership changes via O(1) counter screening (no activity scan needed).
     // Pending invitations appear in member lists too, so inactive memberships bump it as well.
-    if (organizationId) deltas.push({ contextKey: organizationId, deltas: { 's:membership': 1 } });
+    if (organizationId) deltas.push({ channelKey: organizationId, deltas: { 's:membership': 1 } });
     return deltas;
   }
 
@@ -91,7 +91,7 @@ export function getCountDeltas(
         const stampSource = getStringValue(newRow, action === 'create' ? 'createdAt' : 'updatedAt');
         const parsedMs = stampSource ? Date.parse(stampSource) : Number.NaN;
         deltas.push({
-          contextKey: resolveDeepestAncestorId(h, tableMeta.type, newRow) ?? organizationId,
+          channelKey: resolveDeepestAncestorId(h, tableMeta.type, newRow) ?? organizationId,
           deltas: { [stampKey]: Number.isNaN(parsedMs) ? Date.now() : parsedMs },
         });
       }
@@ -106,20 +106,20 @@ export function getCountDeltas(
       if (action === 'delete') {
         const ids = getArrayValue(oldRow ?? newRow, col);
         for (const id of ids) {
-          deltas.push({ contextKey: id, deltas: { [counterKey]: -1 } });
+          deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
         }
       } else if (action === 'create') {
         const ids = getArrayValue(newRow, col);
         for (const id of ids) {
-          deltas.push({ contextKey: id, deltas: { [counterKey]: 1 } });
+          deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
         }
       } else if (action === 'update' && oldRow) {
         const oldIds = getArrayValue(oldRow, col);
         const newIds = getArrayValue(newRow, col);
         const added = newIds.filter((id) => !oldIds.includes(id));
         const removed = oldIds.filter((id) => !newIds.includes(id));
-        for (const id of added) deltas.push({ contextKey: id, deltas: { [counterKey]: 1 } });
-        for (const id of removed) deltas.push({ contextKey: id, deltas: { [counterKey]: -1 } });
+        for (const id of added) deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
+        for (const id of removed) deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
       }
     }
 
@@ -145,7 +145,7 @@ function getArrayValue(row: CdcRowData | undefined, key: string): string[] {
 
 /**
  * Membership count delta for create/update/delete and role changes. Reads only
- * contextId and role off the WAL row; both are NOT NULL columns, so a missing
+ * channelId and role off the WAL row; both are NOT NULL columns, so a missing
  * value means a malformed row and yields no delta.
  */
 function getMembershipDelta(
@@ -153,24 +153,24 @@ function getMembershipDelta(
   newRow: CdcRowData,
   oldRow: CdcRowData | null,
 ): CountDelta | null {
-  const contextId = getStringValue(newRow, 'contextId');
-  if (!contextId) return null;
+  const channelId = getStringValue(newRow, 'channelId');
+  if (!channelId) return null;
 
   if (action === 'create') {
     const role = getStringValue(newRow, 'role');
-    return role ? { contextKey: contextId, deltas: { [`m:${role}`]: 1, 'm:total': 1 } } : null;
+    return role ? { channelKey: channelId, deltas: { [`m:${role}`]: 1, 'm:total': 1 } } : null;
   }
 
   if (action === 'delete') {
     const role = getStringValue(newRow, 'role');
-    return role ? { contextKey: contextId, deltas: { [`m:${role}`]: -1, 'm:total': -1 } } : null;
+    return role ? { channelKey: channelId, deltas: { [`m:${role}`]: -1, 'm:total': -1 } } : null;
   }
 
   if (action === 'update' && oldRow) {
     const oldRole = getStringValue(oldRow, 'role');
     const newRole = getStringValue(newRow, 'role');
     if (oldRole && newRole && oldRole !== newRole) {
-      return { contextKey: contextId, deltas: { [`m:${oldRole}`]: -1, [`m:${newRole}`]: 1 } };
+      return { channelKey: channelId, deltas: { [`m:${oldRole}`]: -1, [`m:${newRole}`]: 1 } };
     }
   }
 
@@ -182,28 +182,28 @@ function getInactiveMembershipDelta(
   newRow: CdcRowData,
   oldRow: CdcRowData | null,
 ): CountDelta | null {
-  const contextId = getStringValue(newRow, 'contextId');
-  if (!contextId) return null;
+  const channelId = getStringValue(newRow, 'channelId');
+  if (!channelId) return null;
 
   if (action === 'create') {
     if (newRow.rejectedAt != null) return null;
-    return { contextKey: contextId, deltas: { 'm:pending': 1 } };
+    return { channelKey: channelId, deltas: { 'm:pending': 1 } };
   }
 
   if (action === 'delete') {
     const rejectedAt = newRow.rejectedAt ?? oldRow?.rejectedAt;
     if (rejectedAt != null) return null;
-    return { contextKey: contextId, deltas: { 'm:pending': -1 } };
+    return { channelKey: channelId, deltas: { 'm:pending': -1 } };
   }
 
   if (action === 'update' && oldRow) {
     const wasNull = oldRow.rejectedAt == null;
     const isNull = newRow.rejectedAt == null;
     if (wasNull && !isNull) {
-      return { contextKey: contextId, deltas: { 'm:pending': -1 } };
+      return { channelKey: channelId, deltas: { 'm:pending': -1 } };
     }
     if (!wasNull && isNull) {
-      return { contextKey: contextId, deltas: { 'm:pending': 1 } };
+      return { channelKey: channelId, deltas: { 'm:pending': 1 } };
     }
   }
 
@@ -234,10 +234,10 @@ function getEntityDeltas(
   if (action === 'create' || action === 'delete') {
     const value = action === 'create' ? 1 : -1;
     const row = action === 'delete' ? (oldRow ?? newRow) : newRow;
-    const deltas: CountDelta[] = [{ contextKey: organizationId, deltas: { [counterKey]: value } }];
+    const deltas: CountDelta[] = [{ channelKey: organizationId, deltas: { [counterKey]: value } }];
     for (const ancestor of resolveNonNullAncestors(h, entityType, row)) {
       if (ancestor.id === organizationId) continue; // org already counted above
-      deltas.push({ contextKey: ancestor.id, deltas: { [counterKey]: value } });
+      deltas.push({ channelKey: ancestor.id, deltas: { [counterKey]: value } });
     }
     warnMissingAncestors(h, entityType, row);
     return deltas;
@@ -252,10 +252,10 @@ function getEntityDeltas(
     const newIds = new Set(resolveNonNullAncestors(h, entityType, newRow).map((a) => a.id));
     const deltas: CountDelta[] = [];
     for (const id of newIds) {
-      if (!oldIds.has(id)) deltas.push({ contextKey: id, deltas: { [counterKey]: 1 } });
+      if (!oldIds.has(id)) deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
     }
     for (const id of oldIds) {
-      if (!newIds.has(id)) deltas.push({ contextKey: id, deltas: { [counterKey]: -1 } });
+      if (!newIds.has(id)) deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
     }
     return deltas;
   }

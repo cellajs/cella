@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('shared', () => ({
   appConfig: {
-    contextEntityTypes: ['organization'],
+    channelEntityTypes: ['organization'],
     entityIdColumnKeys: { organization: 'organizationId' },
   },
   hierarchy: {

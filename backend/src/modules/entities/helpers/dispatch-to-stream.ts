@@ -73,8 +73,8 @@ export function canReceiveEntityEvent(subscriber: SubscriberAccess, event: AppSt
 const rowScopedEvent = (event: AppStreamProductEvent, rowData: Record<string, unknown>): AppStreamProductEvent => {
   const overrides: Record<string, unknown> = { rowData };
   if (typeof rowData.id === 'string') overrides.subjectId = rowData.id;
-  for (const contextType of appConfig.contextEntityTypes) {
-    const columnKey = appConfig.entityIdColumnKeys[contextType];
+  for (const channelType of appConfig.channelEntityTypes) {
+    const columnKey = appConfig.entityIdColumnKeys[channelType];
     if (columnKey in rowData) overrides[columnKey] = rowData[columnKey];
   }
   return { ...event, ...overrides } as AppStreamProductEvent;

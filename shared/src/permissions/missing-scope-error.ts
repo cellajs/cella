@@ -1,4 +1,4 @@
-import type { ContextEntityType, ProductEntityType } from '../../types';
+import type { ChannelEntityType, ProductEntityType } from '../../types';
 
 /**
  * Thrown by `validateAncestorScope` when a required ancestor context ID is missing (`undefined`).
@@ -8,15 +8,15 @@ import type { ContextEntityType, ProductEntityType } from '../../types';
  * it to a WebSocket close (`4400`).
  */
 export class MissingScopeError extends Error {
-  readonly entityType: ContextEntityType | ProductEntityType;
-  readonly missingContext: ContextEntityType;
+  readonly entityType: ChannelEntityType | ProductEntityType;
+  readonly missingChannel: ChannelEntityType;
   readonly missingKey: string;
 
-  constructor(entityType: ContextEntityType | ProductEntityType, missingContext: ContextEntityType, missingKey: string) {
-    super(`[Permission] ${entityType} missing required ancestor scope for ${missingContext} (${missingKey})`);
+  constructor(entityType: ChannelEntityType | ProductEntityType, missingChannel: ChannelEntityType, missingKey: string) {
+    super(`[Permission] ${entityType} missing required ancestor scope for ${missingChannel} (${missingKey})`);
     this.name = 'MissingScopeError';
     this.entityType = entityType;
-    this.missingContext = missingContext;
+    this.missingChannel = missingChannel;
     this.missingKey = missingKey;
   }
 }

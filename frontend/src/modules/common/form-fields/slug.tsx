@@ -6,7 +6,7 @@ import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hoo
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation; single-use validator hook scoped to this form field.
 import { type CheckSlugData, type CheckSlugResponse, checkSlug } from 'sdk';
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import slugify from 'slugify';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { ApiError } from '~/lib/api';
@@ -17,7 +17,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '~/
 import { cn } from '~/utils/cn';
 
 type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<TFieldValues>, 'name'> & {
-  entityType: ContextEntityType | 'user';
+  entityType: ChannelEntityType | 'user';
   tenantId?: string;
   nameValue?: string;
   description?: string;

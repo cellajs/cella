@@ -5,7 +5,7 @@ import type { GrantSource, PermissionDecision, PermissionMembership } from './ty
 
 /** Format a grant source for debug output. */
 const formatGrant = (g: GrantSource): string => {
-  if (g.type === 'membership') return `${g.contextType}:${g.contextId}/${g.role}`;
+  if (g.type === 'membership') return `${g.channelType}:${g.channelId}/${g.role}`;
   if (g.type === 'public') return `public:${g.mode}`;
   if (g.type === 'systemAdmin') return 'systemAdmin';
   return `relation:${g.relation}`;
@@ -18,9 +18,9 @@ const formatGrant = (g: GrantSource): string => {
 export const formatPermissionDecision = <T extends PermissionMembership>(decision: PermissionDecision<T>): string => {
   const lines = [
     `[Permission Check] entity=${decision.subject.entityType} id=${decision.subject.id}`,
-    `├─ Context IDs: ${JSON.stringify(decision.subject.contextIds)}`,
-    `├─ Ordered Contexts: [${decision.orderedContexts.join(', ')}]`,
-    `├─ Primary Context: ${decision.primaryContext}`,
+    `├─ Context IDs: ${JSON.stringify(decision.subject.channelIds)}`,
+    `├─ Ordered Channels: [${decision.orderedChannels.join(', ')}]`,
+    `├─ Primary Context: ${decision.primaryChannel}`,
     '│',
     '├─ Action Attribution:',
   ];

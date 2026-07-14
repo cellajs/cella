@@ -7,7 +7,7 @@ import { systemInvite as baseSystemInvite } from 'sdk';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { toaster } from '~/modules/common/toaster/toaster';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -22,7 +22,7 @@ export const extractEmails = (text: string): string[] => {
 };
 
 interface Props {
-  contextEntity?: EnrichedContextEntity;
+  channelEntity?: EnrichedChannelEntity;
   dialog?: boolean;
   children?: React.ReactNode;
 }
@@ -31,11 +31,11 @@ interface Props {
  * Bulk variant of the email invite form: emails are extracted from freely pasted text.
  * Operates the same invite flow in the background, only the input differs.
  */
-export function InviteBulkEmailForm({ contextEntity, dialog: isDialog, children }: Props) {
+export function InviteBulkEmailForm({ channelEntity, dialog: isDialog, children }: Props) {
   const { t } = useTranslation();
 
   const [rawText, setRawText] = useState('');
-  const form = useInviteFormDraft(contextEntity?.id, contextEntity?.entityType);
+  const form = useInviteFormDraft(channelEntity?.id, channelEntity?.entityType);
 
   const onTextChange = (text: string) => {
     setRawText(text);
@@ -68,13 +68,13 @@ export function InviteBulkEmailForm({ contextEntity, dialog: isDialog, children 
 
   const onSubmit = (body: InviteFormValues) => {
     // With no context, this is a system invite; otherwise it is a membership invite.
-    if (!contextEntity) return systemInvite(body);
+    if (!channelEntity) return systemInvite(body);
 
-    const organizationId = contextEntity.organizationId || contextEntity.id;
-    const path = { tenantId: contextEntity.tenantId, organizationId: organizationId };
-    const query = { entityId: contextEntity.id, entityType: contextEntity.entityType };
+    const organizationId = channelEntity.organizationId || channelEntity.id;
+    const path = { tenantId: channelEntity.tenantId, organizationId: organizationId };
+    const query = { entityId: channelEntity.id, entityType: channelEntity.entityType };
 
-    membershipInvite({ body, path, query, contextEntity }, { onSuccess: (result) => onSuccess(result, body.emails) });
+    membershipInvite({ body, path, query, channelEntity }, { onSuccess: (result) => onSuccess(result, body.emails) });
   };
 
   return (
@@ -95,14 +95,14 @@ export function InviteBulkEmailForm({ contextEntity, dialog: isDialog, children 
           <FormField control={form.control} name="emails" render={() => <FormMessage />} />
         </FormItem>
 
-        {contextEntity && (
+        {channelEntity && (
           <FormField
             control={form.control}
             name="role"
             render={({ field: { value, onChange } }) => (
               <FormItem className="ml-3 flex-row items-center gap-4">
                 <FormLabel>{t('c:role')}</FormLabel>
-                <SelectRoleRadio value={value} onValueChange={onChange} entityType={contextEntity.entityType} />
+                <SelectRoleRadio value={value} onValueChange={onChange} entityType={channelEntity.entityType} />
                 <FormMessage />
               </FormItem>
             )}

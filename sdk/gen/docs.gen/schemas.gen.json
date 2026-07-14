@@ -181,8 +181,8 @@
     }
   },
   {
-    "name": "ContextEntityBase",
-    "ref": "#/components/schemas/ContextEntityBase",
+    "name": "ChannelEntityBase",
+    "ref": "#/components/schemas/ChannelEntityBase",
     "type": "object",
     "schema": {
       "type": "object",
@@ -367,7 +367,7 @@
           "type": ["string", "null"],
           "required": true
         },
-        "contextType": {
+        "channelType": {
           "type": ["string", "null"],
           "required": true,
           "description": "Context entity type for membership events (e.g. organization, project)",
@@ -378,7 +378,7 @@
           "required": true,
           "description": "Per-entityType sequence number used for gap detection in sync"
         },
-        "contextId": {
+        "channelId": {
           "type": ["string", "null"],
           "required": true,
           "description": "Context entity ID for grouping (e.g. projectId for tasks in unseen counts)"
@@ -470,8 +470,8 @@
       "subjectId": "e781e15e-ec97-4ad0-aa42-418ee4c50d02",
       "organizationId": "3a9fc6f0-5cf3-491b-a437-8e8c3a3796f6",
       "tenantId": "14qv8uf107q9zmdjan1ygz1e",
-      "contextType": null,
-      "contextId": "967b4d7e-cf6a-480d-8005-cee1180d3e4a",
+      "channelType": null,
+      "channelId": "967b4d7e-cf6a-480d-8005-cee1180d3e4a",
       "seq": 218,
       "cacheToken": "gV9Umhb9C4l3EKNwaUqHHn49KRYOFMDb",
       "stx": {
@@ -819,12 +819,12 @@
         "createdAt": { "type": "string", "required": true },
         "id": { "type": "string", "required": true, "format": "uuid" },
         "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-        "contextType": {
+        "channelType": {
           "type": "string",
           "required": true,
           "enum": ["organization"]
         },
-        "contextId": { "type": "string", "required": true, "format": "uuid" },
+        "channelId": { "type": "string", "required": true, "format": "uuid" },
         "email": { "type": "string", "required": true, "maxLength": 255 },
         "userId": {
           "type": ["string", "null"],
@@ -881,8 +881,8 @@
     "description": "A membership record for a user who has not yet accepted an invitation.",
     "example": {
       "id": "cf791004-1364-4e1a-b066-c72c120aaea2",
-      "contextType": "organization",
-      "contextId": "5440aeff-3fb0-400b-98b1-ebefcdf13a71",
+      "channelType": "organization",
+      "channelId": "5440aeff-3fb0-400b-98b1-ebefcdf13a71",
       "email": "luther34@gmail.com",
       "userId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
       "tokenId": "1ea0bf25-06d9-4e65-9415-68a14ed89fa2",
@@ -905,12 +905,12 @@
         "createdAt": { "type": "string", "required": true },
         "id": { "type": "string", "required": true, "format": "uuid" },
         "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-        "contextType": {
+        "channelType": {
           "type": "string",
           "required": true,
           "enum": ["organization"]
         },
-        "contextId": { "type": "string", "required": true, "format": "uuid" },
+        "channelId": { "type": "string", "required": true, "format": "uuid" },
         "userId": { "type": "string", "required": true, "format": "uuid" },
         "role": {
           "type": "string",
@@ -947,8 +947,8 @@
     "description": "A user's membership in a context entity, including role and activity data.",
     "example": {
       "id": "92f342dd-6e67-4956-ab1c-f91b3ce934d7",
-      "contextType": "organization",
-      "contextId": "0b5344ae-d952-4047-b5e1-309a11b66764",
+      "channelType": "organization",
+      "channelId": "0b5344ae-d952-4047-b5e1-309a11b66764",
       "userId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
       "organizationId": "14e27393-e22a-45d1-8c22-3250dc6fc109",
       "role": "member",
@@ -971,12 +971,12 @@
       "properties": {
         "id": { "type": "string", "required": true, "format": "uuid" },
         "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-        "contextType": {
+        "channelType": {
           "type": "string",
           "required": true,
           "enum": ["organization"]
         },
-        "contextId": { "type": "string", "required": true, "format": "uuid" },
+        "channelId": { "type": "string", "required": true, "format": "uuid" },
         "userId": { "type": "string", "required": true, "format": "uuid" },
         "role": {
           "type": "string",
@@ -1004,8 +1004,8 @@
     "example": {
       "id": "da336271-583f-4567-913c-f17c567ab81d",
       "tenantId": "vw3f7p",
-      "contextType": "organization",
-      "contextId": "993dce90-023a-4125-a6a3-03215e93aa04",
+      "channelType": "organization",
+      "channelId": "993dce90-023a-4125-a6a3-03215e93aa04",
       "userId": "154db176-be65-484a-bb34-246b1f99f492",
       "organizationId": "45a11f6e-5760-4a44-96c4-3c1b43d10162",
       "role": "member",
@@ -1163,12 +1163,12 @@
               "properties": {
                 "id": { "type": "string", "required": true, "format": "uuid" },
                 "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-                "contextType": {
+                "channelType": {
                   "type": "string",
                   "required": true,
                   "enum": ["organization"]
                 },
-                "contextId": { "type": "string", "required": true, "format": "uuid" },
+                "channelId": { "type": "string", "required": true, "format": "uuid" },
                 "userId": { "type": "string", "required": true, "format": "uuid" },
                 "role": {
                   "type": "string",
@@ -1296,8 +1296,8 @@
         "membership": {
           "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
           "tenantId": "6vxzq0",
-          "contextType": "organization",
-          "contextId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
+          "channelType": "organization",
+          "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
           "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
           "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "role": "admin",

@@ -1,10 +1,10 @@
-import { appConfig, type ContextEntityType } from 'shared';
+import { appConfig, type ChannelEntityType } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import type { AuthContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import {
-  findPendingInactiveMembershipsByContexts,
+  findPendingInactiveMembershipsByChannels,
   insertTokens,
   stampInactiveMembershipsReminded,
   updateInactiveMembershipToken,
@@ -17,7 +17,7 @@ import { memberInviteEmail, memberInviteWithTokenEmail } from '../../../../email
 
 interface DispatchDeferredInvitesOpts {
   /** Context entity ids whose pending invites should be dispatched (e.g. a published course + descendants). */
-  contextIds: string[];
+  channelIds: string[];
 }
 
 /**
@@ -27,10 +27,10 @@ interface DispatchDeferredInvitesOpts {
  * while the context was a draft. Rows emailed within the last 7 days are skipped (legacy
  * re-invite throttle).
  */
-export async function dispatchDeferredInvites(ctx: AuthContext, { contextIds }: DispatchDeferredInvitesOpts) {
+export async function dispatchDeferredInvites(ctx: AuthContext, { channelIds }: DispatchDeferredInvitesOpts) {
   const user = ctx.var.user;
 
-  const pendingRows = await findPendingInactiveMembershipsByContexts(ctx, { contextIds });
+  const pendingRows = await findPendingInactiveMembershipsByChannels(ctx, { channelIds });
 
   // 7-day throttle on last dispatch; deferred rows have remindedAt null → always due
   const throttleBefore = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -44,7 +44,7 @@ export async function dispatchDeferredInvites(ctx: AuthContext, { contextIds }: 
   // Group per context+role: each email batch shares entityName + role static props
   const groups = new Map<string, typeof dueRows>();
   for (const row of dueRows) {
-    const key = `${row.contextType}:${row.contextId}:${row.role}`;
+    const key = `${row.channelType}:${row.channelId}:${row.role}`;
     const group = groups.get(key) ?? [];
     group.push(row);
     groups.set(key, group);
@@ -53,12 +53,12 @@ export async function dispatchDeferredInvites(ctx: AuthContext, { contextIds }: 
   const dispatchedIds: string[] = [];
 
   for (const group of groups.values()) {
-    const { contextType, contextId, role } = group[0];
-    const entity = await resolveEntity(ctx, contextType as ContextEntityType, contextId);
+    const { channelType, channelId, role } = group[0];
+    const entity = await resolveEntity(ctx, channelType as ChannelEntityType, channelId);
     if (!entity) continue;
 
     const staticProps = { senderName, senderThumbnailUrl, role, entityName: entity.name };
-    const entityLink = `${appConfig.frontendUrl}/${contextType}/${entity.slug}`;
+    const entityLink = `${appConfig.frontendUrl}/${channelType}/${entity.slug}`;
 
     const withTokenRecipients: Array<{ email: string; lng: string; name: string; inviteLink: string }> = [];
     const noTokenRecipients: Array<{ email: string; lng: string; name: string; memberInviteLink: string }> = [];
@@ -108,7 +108,7 @@ export async function dispatchDeferredInvites(ctx: AuthContext, { contextIds }: 
 
   await stampInactiveMembershipsReminded(ctx, { ids: dispatchedIds, remindedAt: new Date().toISOString() });
 
-  log.info('Deferred invites dispatched', { count: dispatchedIds.length, contexts: contextIds.length });
+  log.info('Deferred invites dispatched', { count: dispatchedIds.length, contexts: channelIds.length });
 
   return { dispatched: dispatchedIds.length };
 }

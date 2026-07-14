@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { contextEntityTypeSchema, productEntityTypeSchema } from '#/schemas';
+import { channelEntityTypeSchema, productEntityTypeSchema } from '#/schemas';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
-import { mockContextEntityBase, mockProductEntityBase } from './entity-base-mocks';
+import { mockChannelEntityBase, mockProductEntityBase } from './entity-base-mocks';
 
 /**
  * Core fields shared by all entities (id, name, timestamps).
@@ -26,22 +26,22 @@ const auditShape = {
  * Base schema for context entities, including common fields. Exported separately to avoid circular dependencies.
  *
  * `included` is not part of the base schema to avoid circular dependencies.
- * Context entity response schemas add `included: contextEntityIncludedSchema` explicitly.
- * Import `contextEntityIncludedSchema` directly from its context entity included schema module.
+ * Context entity response schemas add `included: channelEntityIncludedSchema` explicitly.
+ * Import `channelEntityIncludedSchema` directly from its context entity included schema module.
  * See organizationSchema for reference.
  */
-export const contextEntityBaseSchema = z
+export const channelEntityBaseSchema = z
   .object({
     ...entityCoreShape,
     tenantId: z.string(),
-    entityType: contextEntityTypeSchema,
+    entityType: channelEntityTypeSchema,
     slug: z.string(),
     thumbnailUrl: z.string().nullable(),
     bannerUrl: z.string().nullable(),
   })
-  .openapi('ContextEntityBase', {
+  .openapi('ChannelEntityBase', {
     description: 'Base schema for entities with memberships (e.g. organization).',
-    example: mockContextEntityBase(),
+    example: mockChannelEntityBase(),
     'x-tags': schemaTags('base', 'entities', 'cella'),
   });
 

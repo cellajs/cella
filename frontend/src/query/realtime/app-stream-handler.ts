@@ -1,5 +1,5 @@
 import type { GetUnseenCountsResponse } from 'sdk';
-import { appConfig, type ContextEntityType, isProductEntity, type ProductEntityType } from 'shared';
+import { appConfig, type ChannelEntityType, isProductEntity, type ProductEntityType } from 'shared';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { seenKeys } from '~/modules/seen/query';
 import { useSeenStore } from '~/modules/seen/seen-store';
@@ -21,7 +21,7 @@ import type { AppStreamNotification } from './types';
  * to trigger refetch, or use cacheToken for efficient fetches.
  */
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
-  const { subjectId, action, stx, organizationId, tenantId, contextType, seq, cacheToken, _trace } = notification;
+  const { subjectId, action, stx, organizationId, tenantId, channelType, seq, cacheToken, _trace } = notification;
 
   withSpanSync(
     syncSpanNames.messageProcess,
@@ -39,7 +39,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
 
       // Membership changes use targeted query invalidation, not the seq/cacheToken sync path.
       if (notification.kind === 'membership') {
-        handleMembershipNotification(action, organizationId, contextType);
+        handleMembershipNotification(action, organizationId, channelType);
         return;
       }
 
@@ -57,11 +57,11 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
           .fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys, cacheToken ?? undefined)
           .then((success) => {
             if (success && notification.batchUntilSeq) {
-              // Store project-scoped seq when contextId (projectId) is available, else org-scoped
-              if (notification.contextId) {
+              // Store project-scoped seq when channelId (projectId) is available, else org-scoped
+              if (notification.channelId) {
                 useSyncStore
                   .getState()
-                  .setContextSeq(organizationId, notification.contextId, entityType, notification.batchUntilSeq);
+                  .setChannelSeq(organizationId, notification.channelId, entityType, notification.batchUntilSeq);
               } else {
                 useSyncStore.getState().setOrgSeq(organizationId, entityType, notification.batchUntilSeq);
               }
@@ -92,7 +92,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
         organizationId,
         tenantId,
         seq ?? null,
-        notification.contextId ?? null,
+        notification.channelId ?? null,
         keys,
         notification.propagation,
       );
@@ -102,7 +102,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
 
 /**
  * Handle membership events (created, updated, deleted).
- * Uses contextType for targeted query invalidation instead of broad invalidation.
+ * Uses channelType for targeted query invalidation instead of broad invalidation.
  *
  * Strategy:
  * - create: Invalidate the specific context entity list (e.g., organizations), then refresh menu
@@ -112,11 +112,11 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
 function handleMembershipNotification(
   action: AppStreamNotification['action'],
   organizationId: string | null,
-  contextType: ContextEntityType | null,
+  channelType: ChannelEntityType | null,
 ): void {
   switch (action) {
     case 'create':
-      membershipOps.invalidateContextList(contextType);
+      membershipOps.invalidateChannelList(channelType);
       membershipOps.invalidateMemberships();
       break;
 
@@ -126,12 +126,12 @@ function handleMembershipNotification(
       break;
 
     case 'delete':
-      membershipOps.invalidateContextList(contextType);
+      membershipOps.invalidateChannelList(channelType);
       membershipOps.invalidateMemberships();
       break;
   }
 
-  console.debug(`[handleMembershipNotification] ${action} contextType=${contextType} organizationId=${organizationId}`);
+  console.debug(`[handleMembershipNotification] ${action} channelType=${channelType} organizationId=${organizationId}`);
 }
 
 /**
@@ -147,7 +147,7 @@ function handleEntityNotification(
   organizationId: string,
   tenantId: string | null,
   seq: number | null,
-  contextId: string | null,
+  channelId: string | null,
   keys: EntityQueryKeys,
   propagation?: AppStreamNotification['propagation'],
 ): void {
@@ -163,12 +163,12 @@ function handleEntityNotification(
   }
 
   // Track project-scoped seq watermark (from CDC worker)
-  // Use contextId (projectId) for project-scoped entities, org fallback for org-scoped
+  // Use channelId (projectId) for project-scoped entities, org fallback for org-scoped
   if (seq !== null) {
     const store = useSyncStore.getState();
-    if (contextId) {
-      const current = store.getContextSeq(organizationId, contextId, entityType);
-      if (seq > current) store.setContextSeq(organizationId, contextId, entityType, seq);
+    if (channelId) {
+      const current = store.getChannelSeq(organizationId, channelId, entityType);
+      if (seq > current) store.setChannelSeq(organizationId, channelId, entityType, seq);
     } else {
       const current = store.getOrgSeq(organizationId, entityType);
       if (seq > current) store.setOrgSeq(organizationId, entityType, seq);
@@ -213,7 +213,7 @@ function handleEntityNotification(
 
       // Optimistically increment unseen count for new entities from other users
       if (action === 'create') {
-        adjustUnseenCount(entityType, contextId, 1);
+        adjustUnseenCount(entityType, channelId, 1);
       }
       break;
 
@@ -224,7 +224,7 @@ function handleEntityNotification(
       // with the catchup count-integrity invalidation flow. Covers single and batch deletes.
       cacheOps.invalidateEntityDetail(entityId, keys, 'none');
       cacheOps.invalidateEntityListForOrg(keys, organizationId, priority === 'low' ? 'none' : 'active');
-      handleDeleteUnseenCount(entityType, entityId, contextId);
+      handleDeleteUnseenCount(entityType, entityId, channelId);
       if (propagation) propagateEmbeddings(propagation);
       break;
   }
@@ -241,35 +241,35 @@ function invalidateUnseenCounts(entityType: string): void {
 
 /**
  * Adjust unseen count optimistically when a tracked entity is created or deleted via SSE.
- * Uses contextId to patch the query cache directly, avoiding a full refetch.
- * Falls back to query invalidation if contextId is unavailable.
+ * Uses channelId to patch the query cache directly, avoiding a full refetch.
+ * Falls back to query invalidation if channelId is unavailable.
  */
-function adjustUnseenCount(entityType: string, contextId: string | null, delta: number): void {
+function adjustUnseenCount(entityType: string, channelId: string | null, delta: number): void {
   const trackedTypes = appConfig.seenTrackedEntityTypes as readonly string[];
   if (!trackedTypes.includes(entityType)) return;
 
-  if (!contextId) {
+  if (!channelId) {
     queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
     return;
   }
 
   queryClient.setQueryData<GetUnseenCountsResponse>(seenKeys.unseenCounts, (old) => {
     if (!old) return old;
-    const current = old[contextId]?.[entityType] ?? 0;
+    const current = old[channelId]?.[entityType] ?? 0;
     const updated = Math.max(0, current + delta);
 
     if (updated === 0) {
       // Remove zero entries to keep cache clean
-      if (!old[contextId]) return old;
-      const { [entityType]: _, ...rest } = old[contextId];
+      if (!old[channelId]) return old;
+      const { [entityType]: _, ...rest } = old[channelId];
       if (Object.keys(rest).length === 0) {
-        const { [contextId]: __, ...withoutContext } = old;
-        return withoutContext;
+        const { [channelId]: __, ...withoutChannel } = old;
+        return withoutChannel;
       }
-      return { ...old, [contextId]: rest };
+      return { ...old, [channelId]: rest };
     }
 
-    return { ...old, [contextId]: { ...old[contextId], [entityType]: updated } };
+    return { ...old, [channelId]: { ...old[channelId], [entityType]: updated } };
   });
 }
 
@@ -277,9 +277,9 @@ function adjustUnseenCount(entityType: string, contextId: string | null, delta: 
  * Handle unseen count adjustment when a tracked entity is deleted.
  * If the entity was already seen (in flushedIds or pending), the unseen count
  * doesn't change (total−1 and seen−1 cancel out). If it was unseen, decrement.
- * Falls back to query invalidation when contextId is unavailable.
+ * Falls back to query invalidation when channelId is unavailable.
  */
-function handleDeleteUnseenCount(entityType: string, entityId: string, contextId: string | null): void {
+function handleDeleteUnseenCount(entityType: string, entityId: string, channelId: string | null): void {
   const trackedTypes = appConfig.seenTrackedEntityTypes as readonly string[];
   if (!trackedTypes.includes(entityType)) return;
 
@@ -296,7 +296,7 @@ function handleDeleteUnseenCount(entityType: string, entityId: string, contextId
     }
   } else {
     // Entity was unseen from this client's perspective, decrement.
-    adjustUnseenCount(entityType, contextId, -1);
+    adjustUnseenCount(entityType, channelId, -1);
   }
 }
 

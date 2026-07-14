@@ -1,7 +1,7 @@
 import { PlusIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
@@ -10,7 +10,7 @@ import { Button } from '~/modules/ui/button';
 
 interface MenuSheetItemsProps {
   data: UserMenuItem[];
-  type: ContextEntityType;
+  type: ChannelEntityType;
   isArchived: boolean;
   options?: MenuSectionOptions;
   className?: string;

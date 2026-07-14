@@ -19,7 +19,7 @@ export const seenBatchResponseSchema = z.object({
 
 /**
  * Response for GET /unseen/counts.
- * Shape: { [contextEntityId]: { [productEntityType]: unseenCount } }
+ * Shape: { [channelEntityId]: { [productEntityType]: unseenCount } }
  * Entity-agnostic: keys are dynamic IDs and type strings, not hardcoded field names.
  */
 export const unseenCountsResponseSchema = z.record(z.string(), z.record(z.string(), z.number().int().min(0)));

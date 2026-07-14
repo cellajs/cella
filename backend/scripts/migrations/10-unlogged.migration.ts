@@ -8,12 +8,12 @@ import type { GenerateScript } from '../types';
  * Converts ephemeral/regenerable tables to UNLOGGED to skip WAL writes.
  * These tables tolerate being truncated on unclean shutdown:
  * - rate_limits: clients get a fresh window
- * - user_counters, context_counters, product_counters: rebuilt from source data on startup
+ * - user_counters, channel_counters, product_counters: rebuilt from source data on startup
  *
  * Idempotent: checks pg_class.relpersistence before altering.
  */
 
-const unloggedTables = ['rate_limits', 'user_counters', 'context_counters', 'product_counters'];
+const unloggedTables = ['rate_limits', 'user_counters', 'channel_counters', 'product_counters'];
 
 async function run() {
   const alterStatements = unloggedTables

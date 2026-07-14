@@ -1,5 +1,5 @@
-import type { ContextEntityType } from 'shared';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { ChannelEntityType } from 'shared';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import type { EntityRoute } from '~/modules/navigation/types';
 import { type EntityRouteEntry, entityRouteConfig } from '~/routes-config';
 
@@ -16,7 +16,7 @@ export const pageTopHashNav: { hash: string; hashScrollIntoView: ScrollIntoViewO
  * Resolve an entity to its route via `entityRouteConfig`. On cache miss, `beforeLoad` +
  * `rewriteUrlToSlug` redirect to the slug URL after load.
  */
-export const getContextEntityRoute = (item: EnrichedContextEntity, isSubitem?: boolean): EntityRoute => {
+export const getChannelEntityRoute = (item: EnrichedChannelEntity, isSubitem?: boolean): EntityRoute => {
   const { entityType, slug, tenantId, ancestorSlugs = {} } = item;
 
   // Narrow config keeps `path` a literal route type (for `to`); the widened view exposes the
@@ -27,7 +27,7 @@ export const getContextEntityRoute = (item: EnrichedContextEntity, isSubitem?: b
   // `ancestorSlugs` is this entity's exact ancestor set; map each to its route param.
   const params: Record<string, string> = { tenantId };
   for (const [type, ancestorSlug] of Object.entries(ancestorSlugs)) {
-    if (ancestorSlug) params[entityRouteConfig[type as ContextEntityType].paramName] = ancestorSlug;
+    if (ancestorSlug) params[entityRouteConfig[type as ChannelEntityType].paramName] = ancestorSlug;
   }
 
   // Subitem: render on the parent's page (param already set above) with this entity as search.

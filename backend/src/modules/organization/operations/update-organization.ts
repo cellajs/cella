@@ -7,7 +7,7 @@ import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { updateOrganization } from '#/modules/organization/organization-queries';
 import { organizationContract } from '#/modules/organization/organization-schema';
 import { withAuditUser } from '#/modules/user/helpers/audit-user';
-import { getValidContextEntity } from '#/permissions';
+import { getValidChannelEntity } from '#/permissions';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { assertBlockMediaUrls } from '#/utils/validate-block-urls';
@@ -22,7 +22,7 @@ export async function updateOrganizationOp(
   const input = organizationContract.normalizeBody(rawInput);
   const user = ctx.var.user;
 
-  const { entity: organization, membership } = await getValidContextEntity(ctx, id, 'organization', 'update');
+  const { entity: organization, membership } = await getValidChannelEntity(ctx, id, 'organization', 'update');
 
   // Validate organization belongs to the specified tenant, in org itself we do not have orgGuard
   if (organization.tenantId !== tenantId) {

@@ -5,10 +5,10 @@ import { entityTables } from '#/tables';
 // --- Immutable column sets --------------------------------------------------
 
 const BASE_ENTITY_COLUMNS = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'] as const;
-const MEMBERSHIP_CONTEXT_ID_COLUMNS = appConfig.contextEntityTypes.map((type) =>
+const MEMBERSHIP_CHANNEL_ID_COLUMNS = appConfig.channelEntityTypes.map((type) =>
   toColumnName(appConfig.entityIdColumnKeys[type]),
 );
-const BASE_MEMBERSHIP_COLUMNS = ['tenant_id', 'context_id', 'context_type', ...MEMBERSHIP_CONTEXT_ID_COLUMNS] as const;
+const BASE_MEMBERSHIP_COLUMNS = ['tenant_id', 'channel_id', 'channel_type', ...MEMBERSHIP_CHANNEL_ID_COLUMNS] as const;
 
 /** Product entities with a parent org (tasks, labels, attachments). */
 export const productEntityImmutableColumns = [...BASE_ENTITY_COLUMNS, 'organization_id'] as const;
@@ -85,7 +85,7 @@ $$ LANGUAGE plpgsql;`;
 
 // --- Table to function mapping ---------------------------------------------
 
-const contextEntityConfigs: TableImmutabilityConfig[] = appConfig.contextEntityTypes.map((t) => ({
+const channelEntityConfigs: TableImmutabilityConfig[] = appConfig.channelEntityTypes.map((t) => ({
   tableName: getTableName(entityTables[t]),
   functionName: 'base_entity_immutable_keys',
 }));
@@ -106,7 +106,7 @@ const appendOnlyConfigs: TableImmutabilityConfig[] = [
 
 /** Every table that has an immutability trigger. */
 export const allImmutabilityTables: TableImmutabilityConfig[] = [
-  ...contextEntityConfigs,
+  ...channelEntityConfigs,
   ...productWithParentConfigs,
   ...membershipConfigs,
   ...appendOnlyConfigs,
@@ -114,7 +114,7 @@ export const allImmutabilityTables: TableImmutabilityConfig[] = [
 
 // --- Combined SQL output ----------------------------------------------------
 
-const baseEntityTables = contextEntityConfigs;
+const baseEntityTables = channelEntityConfigs;
 const names = (configs: TableImmutabilityConfig[]) => configs.map((c) => c.tableName).join(', ');
 
 /**

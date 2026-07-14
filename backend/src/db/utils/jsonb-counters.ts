@@ -2,7 +2,7 @@ import { type Column, sql } from 'drizzle-orm';
 
 /**
  * JSONB counter utilities for reading/writing integer keys in JSONB columns.
- * Shared across contextCountersTable reads (get-entity-counts, CDC) and any
+ * Shared across channelCountersTable reads (get-entity-counts, CDC) and any
  * future JSONB counter patterns.
  */
 

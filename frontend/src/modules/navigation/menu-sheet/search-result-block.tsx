@@ -2,26 +2,26 @@ import { ChevronDownIcon, UserIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase } from 'sdk';
-import { appConfig, type ContextEntityType } from 'shared';
+import { appConfig, type ChannelEntityType } from 'shared';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { ComboboxGroup, ComboboxItem, ComboboxSeparator } from '~/modules/ui/combobox';
 
-type SearchBlockResult = EnrichedContextEntity | UserBase;
+type SearchBlockResult = EnrichedChannelEntity | UserBase;
 
 type SearchBlockProps = {
   results: SearchBlockResult[];
-  entityType: ContextEntityType | 'user';
+  entityType: ChannelEntityType | 'user';
   /** Hide the leading separator (used for the first visible group). */
   hideSeparator?: boolean;
 };
 
-const contextEntities: readonly string[] = appConfig.contextEntityTypes;
+const channelEntities: readonly string[] = appConfig.channelEntityTypes;
 
 export const SearchResultBlock = ({ results, entityType, hideSeparator = false }: SearchBlockProps) => {
   const { t } = useTranslation();
-  const isContext = contextEntities.includes(entityType);
+  const isChannel = channelEntities.includes(entityType);
   const [collapsed, setCollapsed] = useState(false);
 
   if (!results.length) return null;
@@ -45,8 +45,8 @@ export const SearchResultBlock = ({ results, entityType, hideSeparator = false }
             <ComboboxItem
               key={item.id}
               value={item}
-              disabled={isContext && 'membership' in item && item.membership === null}
-              data-already-member={isContext && 'membership' in item && item.membership !== null}
+              disabled={isChannel && 'membership' in item && item.membership === null}
+              data-already-member={isChannel && 'membership' in item && item.membership !== null}
               className={`group w-full justify-between ${collapsed && 'hidden'}`}
             >
               <div className="group flex items-center space-x-2 outline-0 ring-0">

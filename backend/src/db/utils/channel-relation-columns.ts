@@ -1,13 +1,13 @@
 import { uuid } from 'drizzle-orm/pg-core';
 import {
-  type AncestorContextType,
+  type AncestorChannelType,
   appConfig,
   type EntityIdColumns,
   type EntityType,
   hierarchy,
   type NullableAncestorType,
   type ProductEntityType,
-  type RelatedContextType,
+  type RelatedChannelType,
 } from 'shared';
 
 /** Column builder type for a non-null uuid context id column. */
@@ -21,21 +21,21 @@ type NullableUuid = ReturnType<typeof uuid>;
  *   `nullableAncestors` (variable-depth rows, e.g. a project-scoped entity that may also exist
  *   at a higher level), those stay in the chain for permission/public-read inheritance but
  *   become nullable columns
- * - related contexts (`relatedContexts`) → nullable id columns
+ * - related contexts (`relatedChannels`) → nullable id columns
  */
-export type ContextRelationColumns<E extends string> = EntityIdColumns<
-  Exclude<AncestorContextType<E>, NullableAncestorType<E>> & EntityType,
+export type ChannelRelationColumns<E extends string> = EntityIdColumns<
+  Exclude<AncestorChannelType<E>, NullableAncestorType<E>> & EntityType,
   NotNullUuid
 > &
-  EntityIdColumns<Extract<AncestorContextType<E>, NullableAncestorType<E>> & EntityType, NullableUuid> &
-  EntityIdColumns<RelatedContextType<E> & EntityType, NullableUuid>;
+  EntityIdColumns<Extract<AncestorChannelType<E>, NullableAncestorType<E>> & EntityType, NullableUuid> &
+  EntityIdColumns<RelatedChannelType<E> & EntityType, NullableUuid>;
 
 /**
  * Nullable ancestor-context id columns spanning all product entities. Intended for shared
  * cross-entity tables (e.g. `activities`) that store rows for many entity types at once.
  * Every column is nullable because a given row may not belong to every context.
  */
-export type ActivityContextColumns = EntityIdColumns<AncestorContextType<ProductEntityType> & EntityType, NullableUuid>;
+export type ActivityChannelColumns = EntityIdColumns<AncestorChannelType<ProductEntityType> & EntityType, NullableUuid>;
 
 /**
  * Generates context-entity id columns for a product entity based on the hierarchy config.
@@ -47,18 +47,18 @@ export type ActivityContextColumns = EntityIdColumns<AncestorContextType<Product
  * Indexes and foreign keys still live in the table definition (they reference fork-specific
  * parent tables), but the columns and their inferred insert/select types come from here.
  */
-export const contextRelationColumns = <E extends ProductEntityType>(entityType: E): ContextRelationColumns<E> => {
+export const channelRelationColumns = <E extends ProductEntityType>(entityType: E): ChannelRelationColumns<E> => {
   const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(entityType));
   const columns = {} as Record<string, NotNullUuid | NullableUuid>;
 
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
     columns[appConfig.entityIdColumnKeys[ancestor]] = nullableAncestors.has(ancestor) ? uuid() : uuid().notNull();
   }
-  for (const related of hierarchy.getRelatedContexts(entityType)) {
+  for (const related of hierarchy.getRelatedChannels(entityType)) {
     columns[appConfig.entityIdColumnKeys[related]] = uuid();
   }
 
-  return columns as ContextRelationColumns<E>;
+  return columns as ChannelRelationColumns<E>;
 };
 
 /**
@@ -66,7 +66,7 @@ export const contextRelationColumns = <E extends ProductEntityType>(entityType: 
  * Intended for shared tables that persist rows for multiple entity types (e.g. `activities`).
  * Forks only adjust the hierarchy; the column set follows automatically.
  */
-export const activityContextColumns = (): ActivityContextColumns => {
+export const activityChannelColumns = (): ActivityChannelColumns => {
   const columns = {} as Record<string, NullableUuid>;
 
   for (const ctx of new Set(
@@ -75,5 +75,5 @@ export const activityContextColumns = (): ActivityContextColumns => {
     columns[appConfig.entityIdColumnKeys[ctx]] = uuid();
   }
 
-  return columns as ActivityContextColumns;
+  return columns as ActivityChannelColumns;
 };

@@ -7,11 +7,11 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { seenGroupingContextTypes } from '~/modules/seen/helpers';
+import { seenGroupingChannelTypes } from '~/modules/seen/helpers';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { useUIStore } from '~/modules/ui/ui-store';
+import { getChannelEntityRoute, pageTopHashNav } from '~/utils/channel-entity-route';
 import { cn } from '~/utils/cn';
-import { getContextEntityRoute, pageTopHashNav } from '~/utils/context-entity-route';
 
 interface MenuSheetItemProps {
   item: UserMenuItem;
@@ -31,14 +31,14 @@ export const MenuSheetItem = ({ item, icon: Icon, className }: MenuSheetItemProp
 
   // Unseen count for grouping contexts and their parents.
   // When detailedMenu is on, sub-items show their own badges so skip parent-level aggregation.
-  let contextIds: string | string[] | undefined;
-  if (seenGroupingContextTypes.has(item.entityType)) contextIds = item.id;
-  else if (!detailedMenu && item.submenu?.length) contextIds = item.submenu.map((sub) => sub.id);
-  const unseenCount = useUnseenCount(contextIds);
+  let channelIds: string | string[] | undefined;
+  if (seenGroupingChannelTypes.has(item.entityType)) channelIds = item.id;
+  else if (!detailedMenu && item.submenu?.length) channelIds = item.submenu.map((sub) => sub.id);
+  const unseenCount = useUnseenCount(channelIds);
   const showBadge = unseenCount > 0 && !item.membership.muted;
 
   // Build route path for the entity
-  const { to, params, search } = getContextEntityRoute(item, isSubitem);
+  const { to, params, search } = getChannelEntityRoute(item, isSubitem);
 
   return (
     <Link

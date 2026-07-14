@@ -1,4 +1,4 @@
-import { appConfig, type ContextEntityType, hierarchy, isProductEntity, resolveDeepestAncestorId } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy, isProductEntity, resolveDeepestAncestorId } from 'shared';
 import { type ActivityEvent, getEventData } from '#/lib/activity-bus';
 import type { StreamNotification } from '#/schemas';
 import type { AppStreamEvent, AppStreamMembershipEvent } from './types';
@@ -35,16 +35,16 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   // Use cache token from CDC (all users share the same token)
   const cacheToken = isProduct ? (event.cacheToken ?? null) : null;
 
-  // Extract contextType for membership events
+  // Extract channelType for membership events
   const membership = event.resourceType === 'membership' ? getEventData(event, 'membership') : null;
-  const contextType: ContextEntityType | null = (membership?.contextType as ContextEntityType | undefined) ?? null;
+  const channelType: ChannelEntityType | null = (membership?.channelType as ChannelEntityType | undefined) ?? null;
 
   // Resolve context ID for seq-cursor and unseen-count grouping: the row's deepest non-null
   // ancestor. Variable-depth rows group under their effective home. The client buckets
   // by this id, which must match CDC's seq scope.
-  let contextId: string | null = null;
+  let channelId: string | null = null;
   if (isProduct && entityType) {
-    contextId = resolveDeepestAncestorId(hierarchy, entityType, event as unknown as Record<string, unknown>);
+    channelId = resolveDeepestAncestorId(hierarchy, entityType, event as unknown as Record<string, unknown>);
   }
 
   const stx = (isProduct && event.stx) || null;
@@ -77,8 +77,8 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     subjectId: event.subjectId,
     organizationId: event.organizationId,
     tenantId: event.tenantId ?? null,
-    contextType,
-    contextId,
+    channelType,
+    channelId,
     seq: isProduct ? (event.seq ?? null) : null,
     stx,
     cacheToken,

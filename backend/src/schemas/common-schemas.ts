@@ -21,7 +21,7 @@ export const booleanTransformSchema = z
 export const entityTypeSchema = z.enum(appConfig.entityTypes);
 
 /** Enum schema for context entity types */
-export const contextEntityTypeSchema = z.enum(appConfig.contextEntityTypes);
+export const channelEntityTypeSchema = z.enum(appConfig.channelEntityTypes);
 
 /** Enum schema for product entity types */
 export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
@@ -113,7 +113,7 @@ export const relatableUserIdParamSchema = z.object({
  ************************************************************************************************/
 
 /** Schema for id that must be a specific entity type */
-export const entityWithTypeQuerySchema = z.object({ entityId: validIdSchema, entityType: contextEntityTypeSchema });
+export const entityWithTypeQuerySchema = z.object({ entityId: validIdSchema, entityType: channelEntityTypeSchema });
 
 const offsetRefine = (value: number) => value >= 0;
 const limitMax = 1000;

@@ -91,7 +91,7 @@ describe('FlushBuffer', () => {
 
       await vi.advanceTimersByTimeAsync(10);
 
-      // Both events in same group (same type:action:contextId)
+      // Both events in same group (same type:action:channelId)
       expect(processedBatches).toHaveLength(1);
       expect(processedBatches[0]).toHaveLength(2);
       expect(acknowledgedLsns).toEqual(['0/2']);

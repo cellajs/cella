@@ -1,26 +1,26 @@
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { deleteMembershipsByIds, findMembershipsByUserIdsAndContext } from '#/modules/memberships/memberships-queries';
-import { getValidContextEntity } from '#/permissions/get-context-entity';
+import { deleteMembershipsByIds, findMembershipsByUserIdsAndChannel } from '#/modules/memberships/memberships-queries';
+import { getValidChannelEntity } from '#/permissions/get-channel-entity';
 import { log } from '#/utils/logger';
 
 interface DeleteMembershipsInput {
   ids: string[];
   entityId: string;
-  entityType: ContextEntityType;
+  entityType: ChannelEntityType;
 }
 
 export async function deleteMembershipsOp(ctx: AuthContext, input: DeleteMembershipsInput) {
   const { ids, entityId, entityType } = input;
 
-  const { entity } = await getValidContextEntity(ctx, entityId, entityType, 'delete');
+  const { entity } = await getValidChannelEntity(ctx, entityId, entityType, 'delete');
 
   const membershipIds = Array.isArray(ids) ? ids : [ids];
 
-  const targets = await findMembershipsByUserIdsAndContext(ctx, {
+  const targets = await findMembershipsByUserIdsAndChannel(ctx, {
     userIds: membershipIds,
-    contextId: entity.id,
+    channelId: entity.id,
   });
 
   const rejectedIds: string[] = [];

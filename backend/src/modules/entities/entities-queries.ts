@@ -1,10 +1,10 @@
 import { and, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
-import { type ContextEntityType, hierarchy, roles, type EntityType as SharedEntityType } from 'shared';
+import { type ChannelEntityType, hierarchy, roles, type EntityType as SharedEntityType } from 'shared';
 import type z from 'zod';
 import type { DbContext } from '#/core/context';
 import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
 import { activitiesTable } from '#/modules/activities/activities-db';
-import { contextCountersTable } from '#/modules/entities/context-counters-db';
+import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import type { membershipCountSchema } from '#/schemas';
 import type { ResolvableTable, TableWithIdAndSlug } from '#/tables';
 import { type entityTables, getEntityTable } from '#/tables';
@@ -27,18 +27,18 @@ function hasDeletedAt(table: ResolvableTable): table is ResolvableTable & { dele
 // Context counter queries
 
 /** Fetch context counter rows by keys (org IDs, project IDs, etc.). */
-export const findContextCountersByKeys = async ({ var: { db } }: DbContext, keys: string[]) => {
+export const findChannelCountersByKeys = async ({ var: { db } }: DbContext, keys: string[]) => {
   return db
     .select({
-      contextKey: contextCountersTable.contextKey,
-      counts: contextCountersTable.counts,
+      channelKey: channelCountersTable.channelKey,
+      counts: channelCountersTable.counts,
     })
-    .from(contextCountersTable)
-    .where(inArray(contextCountersTable.contextKey, keys));
+    .from(channelCountersTable)
+    .where(inArray(channelCountersTable.channelKey, keys));
 };
 
 /**
- * Returns the SQL select shape for entity counts from contextCountersTable.
+ * Returns the SQL select shape for entity counts from channelCountersTable.
  * Reads pre-computed counts from JSONB instead of running COUNT(*) subqueries.
  *
  * JSONB key conventions:
@@ -52,10 +52,10 @@ export const findContextCountersByKeys = async ({ var: { db } }: DbContext, keys
  *               ancestor) — deliberately NOT propagated to higher ancestors like
  *               e: deltas are; they are per-stream signals.
  */
-export const getEntityCountsSelect = (entityType: ContextEntityType) => {
+export const getEntityCountsSelect = (entityType: ChannelEntityType) => {
   const children = hierarchy.getOrderedDescendants(entityType);
   const productChildren = children.filter((child) => hierarchy.isProduct(child));
-  const col = '"context_counters"."counts"';
+  const col = '"channel_counters"."counts"';
 
   // Build membership JSON: { admin: N, member: N, ..., pending: N, total: N }
   const roleJsonPairs = roles.all.map((role) => `'${role}', ${jsonbIntRaw(col, `m:${role}`)}`).join(', ');
@@ -88,16 +88,16 @@ export const getEntityCountsSelect = (entityType: ContextEntityType) => {
 };
 
 /**
- * Fetches aggregated counts for a specific entity from contextCountersTable.
+ * Fetches aggregated counts for a specific entity from channelCountersTable.
  * Single LEFT JOIN on pre-computed JSONB, no COUNT(*) subqueries.
  */
-export const getEntityCounts = async ({ var: { db } }: DbContext, entityType: ContextEntityType, entityId: string) => {
+export const getEntityCounts = async ({ var: { db } }: DbContext, entityType: ChannelEntityType, entityId: string) => {
   const { countsSelect } = getEntityCountsSelect(entityType);
 
   const [counts] = await db
     .select(countsSelect)
-    .from(contextCountersTable)
-    .where(eq(contextCountersTable.contextKey, entityId));
+    .from(channelCountersTable)
+    .where(eq(channelCountersTable.channelKey, entityId));
 
   // If no row exists yet, return zeroed counts (activity stamps are null until a first post)
   if (!counts) {
@@ -118,15 +118,15 @@ export const getEntityCounts = async ({ var: { db } }: DbContext, entityType: Co
 };
 
 /**
- * Reads a single pre-computed entity count from contextCountersTable.
+ * Reads a single pre-computed entity count from channelCountersTable.
  * Used for quota checks: reads `e:{entityType}` from the org's counter row.
  */
 export const getOrgEntityCount = async ({ var: { db } }: DbContext, orgId: string, entityType: string) => {
   const key = `e:${entityType}`;
   const [row] = await db
-    .select({ count: sql<number>`coalesce((${contextCountersTable.counts}->>${key})::int, 0)` })
-    .from(contextCountersTable)
-    .where(eq(contextCountersTable.contextKey, orgId));
+    .select({ count: sql<number>`coalesce((${channelCountersTable.counts}->>${key})::int, 0)` })
+    .from(channelCountersTable)
+    .where(eq(channelCountersTable.channelKey, orgId));
   return row?.count ?? 0;
 };
 
@@ -201,7 +201,7 @@ export const findLatestUserActivityId = async (
  * @internal Resolves an entity by ID or slug from its table.
  *
  * **Do not use directly in route handlers.** Use the permission-checking wrappers instead:
- * - `getValidContextEntity` for context entities (e.g., organization)
+ * - `getValidChannelEntity` for context entities (e.g., organization)
  * - `getValidProductEntity` for product entities (e.g., attachment, page)
  *
  * Direct usage is only appropriate in internal utilities (e.g., slug availability checks)

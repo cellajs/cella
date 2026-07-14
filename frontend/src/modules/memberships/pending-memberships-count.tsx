@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -13,15 +13,15 @@ const PendingMembershipsTable = lazyNamed(
   'PendingMembershipsTable',
 );
 
-type EntityWithIncluded = EnrichedContextEntity & Pick<Organization, 'included'>;
-const hasIncluded = (contextEntity: EnrichedContextEntity): contextEntity is EntityWithIncluded =>
-  'included' in contextEntity;
+type EntityWithIncluded = EnrichedChannelEntity & Pick<Organization, 'included'>;
+const hasIncluded = (channelEntity: EnrichedChannelEntity): channelEntity is EntityWithIncluded =>
+  'included' in channelEntity;
 
 /**
  * Component to display pending memberships count.
  * Users can click to open them in a table in a sheet.
  */
-export const PendingMembershipsCount = ({ contextEntity }: { contextEntity: EnrichedContextEntity }) => {
+export const PendingMembershipsCount = ({ channelEntity }: { channelEntity: EnrichedChannelEntity }) => {
   const { t } = useTranslation();
   const buttonRef = useRef(null);
 
@@ -34,7 +34,7 @@ export const PendingMembershipsCount = ({ contextEntity }: { contextEntity: Enri
     createSheet(
       <div className="container">
         <Suspense>
-          <PendingMembershipsTable contextEntity={contextEntity} />
+          <PendingMembershipsTable channelEntity={channelEntity} />
         </Suspense>
       </div>,
       {
@@ -44,24 +44,24 @@ export const PendingMembershipsCount = ({ contextEntity }: { contextEntity: Enri
         className: 'max-w-full lg:max-w-4xl',
         title: t('c:pending_invitations'),
         description: t('c:pending_invitations.text', {
-          entityType: t(`c:${contextEntity.entityType}`).toLowerCase(),
+          entityType: t(`c:${channelEntity.entityType}`).toLowerCase(),
         }),
       },
     );
   };
 
-  if (!hasIncluded(contextEntity) || !contextEntity.included.counts) return null;
+  if (!hasIncluded(channelEntity) || !channelEntity.included.counts) return null;
 
   return (
     <Button
       ref={buttonRef}
-      disabled={contextEntity.included.counts.membership.pending < 1}
+      disabled={channelEntity.included.counts.membership.pending < 1}
       variant="ghost"
       size="xs"
       className=""
       onClick={openSheet}
     >
-      {new Intl.NumberFormat('de-DE').format(contextEntity.included.counts.membership.pending)}{' '}
+      {new Intl.NumberFormat('de-DE').format(channelEntity.included.counts.membership.pending)}{' '}
       {t('c:pending').toLowerCase()}
     </Button>
   );

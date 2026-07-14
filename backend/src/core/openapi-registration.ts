@@ -8,7 +8,7 @@ import { normalizeOpenApiDocument, validateOpenApiDocument } from '#/core/openap
 import { getExtensionValueMetadata } from '#/core/x-middleware';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { errorResponses, productEntityBaseSchema, registerAllErrorResponses } from '#/schemas';
-import { contextEntityBaseSchema } from '#/schemas/entity-base';
+import { channelEntityBaseSchema } from '#/schemas/entity-base';
 import { streamNotificationSchema } from '#/schemas/stream-schemas';
 import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
@@ -55,7 +55,7 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   // Register base schemas (not auto-registered as they're only used for extending other schemas)
   registry.register('UserMinimalBase', userMinimalBaseSchema);
   registry.register('UserBase', userBaseSchema);
-  registry.register('ContextEntityBase', contextEntityBaseSchema);
+  registry.register('ChannelEntityBase', channelEntityBaseSchema);
   registry.register('ProductEntityBase', productEntityBaseSchema);
   registry.register('MembershipBase', membershipBaseSchema);
   registry.register('StxBase', stxBaseSchema);

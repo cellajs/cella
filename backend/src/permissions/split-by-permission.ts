@@ -1,4 +1,4 @@
-import type { ContextEntityIdColumns, ContextEntityType, EntityActionType, ProductEntityType } from 'shared';
+import type { ChannelEntityIdColumns, ChannelEntityType, EntityActionType, ProductEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -24,7 +24,7 @@ import { buildSubjectFromEntity } from '#/permissions/build-subject';
 export const splitByPermission = async (
   ctx: AuthContext,
   action: EntityActionType,
-  entityType: ContextEntityType | ProductEntityType,
+  entityType: ChannelEntityType | ProductEntityType,
   ids: string[],
 ) => {
   const memberships = ctx.var.memberships;
@@ -41,7 +41,7 @@ export const splitByPermission = async (
   const subjects = entities.map((entity) =>
     buildSubjectFromEntity(
       entityType,
-      entity as { id: string; createdBy?: string | null } & Partial<ContextEntityIdColumns>,
+      entity as { id: string; createdBy?: string | null } & Partial<ChannelEntityIdColumns>,
     ),
   );
   const { results } = checkPermission(memberships, action, subjects, actorFrom(ctx));

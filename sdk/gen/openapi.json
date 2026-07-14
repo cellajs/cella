@@ -153,7 +153,7 @@
       "kind": "schema"
     },
     {
-      "name": "context",
+      "name": "channel",
       "description": "Operations on context entities (entities that have memberships, e.g. organizations, projects).",
       "kind": "entity"
     },
@@ -413,7 +413,7 @@
         },
         "x-tags": ["base", "users", "cella"]
       },
-      "ContextEntityBase": {
+      "ChannelEntityBase": {
         "type": "object",
         "properties": {
           "id": {
@@ -564,11 +564,11 @@
             "type": "string",
             "maxLength": 24
           },
-          "contextType": {
+          "channelType": {
             "type": "string",
             "enum": ["organization"]
           },
-          "contextId": {
+          "channelId": {
             "type": "string",
             "format": "uuid"
           },
@@ -599,8 +599,8 @@
         "required": [
           "id",
           "tenantId",
-          "contextType",
-          "contextId",
+          "channelType",
+          "channelId",
           "userId",
           "role",
           "archived",
@@ -612,8 +612,8 @@
         "example": {
           "id": "da336271-583f-4567-913c-f17c567ab81d",
           "tenantId": "vw3f7p",
-          "contextType": "organization",
-          "contextId": "993dce90-023a-4125-a6a3-03215e93aa04",
+          "channelType": "organization",
+          "channelId": "993dce90-023a-4125-a6a3-03215e93aa04",
           "userId": "154db176-be65-484a-bb34-246b1f99f492",
           "organizationId": "45a11f6e-5760-4a44-96c4-3c1b43d10162",
           "role": "member",
@@ -682,7 +682,7 @@
           "tenantId": {
             "type": ["string", "null"]
           },
-          "contextType": {
+          "channelType": {
             "type": ["string", "null"],
             "enum": ["organization", null],
             "description": "Context entity type for membership events (e.g. organization, project)"
@@ -691,7 +691,7 @@
             "type": ["integer", "null"],
             "description": "Per-entityType sequence number used for gap detection in sync"
           },
-          "contextId": {
+          "channelId": {
             "type": ["string", "null"],
             "description": "Context entity ID for grouping (e.g. projectId for tasks in unseen counts)"
           },
@@ -756,9 +756,9 @@
           "subjectId",
           "organizationId",
           "tenantId",
-          "contextType",
+          "channelType",
           "seq",
-          "contextId",
+          "channelId",
           "stx",
           "cacheToken",
           "batchUntilSeq",
@@ -773,8 +773,8 @@
           "subjectId": "e781e15e-ec97-4ad0-aa42-418ee4c50d02",
           "organizationId": "3a9fc6f0-5cf3-491b-a437-8e8c3a3796f6",
           "tenantId": "14qv8uf107q9zmdjan1ygz1e",
-          "contextType": null,
-          "contextId": "967b4d7e-cf6a-480d-8005-cee1180d3e4a",
+          "channelType": null,
+          "channelId": "967b4d7e-cf6a-480d-8005-cee1180d3e4a",
           "seq": 218,
           "cacheToken": "gV9Umhb9C4l3EKNwaUqHHn49KRYOFMDb",
           "stx": {
@@ -1380,11 +1380,11 @@
             "type": "string",
             "maxLength": 24
           },
-          "contextType": {
+          "channelType": {
             "type": "string",
             "enum": ["organization"]
           },
-          "contextId": {
+          "channelId": {
             "type": "string",
             "format": "uuid"
           },
@@ -1429,8 +1429,8 @@
           "createdAt",
           "id",
           "tenantId",
-          "contextType",
-          "contextId",
+          "channelType",
+          "channelId",
           "email",
           "userId",
           "tokenId",
@@ -1443,8 +1443,8 @@
         "description": "A membership record for a user who has not yet accepted an invitation.",
         "example": {
           "id": "cf791004-1364-4e1a-b066-c72c120aaea2",
-          "contextType": "organization",
-          "contextId": "5440aeff-3fb0-400b-98b1-ebefcdf13a71",
+          "channelType": "organization",
+          "channelId": "5440aeff-3fb0-400b-98b1-ebefcdf13a71",
           "email": "luther34@gmail.com",
           "userId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
           "tokenId": "1ea0bf25-06d9-4e65-9415-68a14ed89fa2",
@@ -1879,8 +1879,8 @@
             "membership": {
               "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
               "tenantId": "6vxzq0",
-              "contextType": "organization",
-              "contextId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
+              "channelType": "organization",
+              "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
               "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
               "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
               "role": "admin",
@@ -2105,11 +2105,11 @@
             "type": "string",
             "maxLength": 24
           },
-          "contextType": {
+          "channelType": {
             "type": "string",
             "enum": ["organization"]
           },
-          "contextId": {
+          "channelId": {
             "type": "string",
             "format": "uuid"
           },
@@ -2152,8 +2152,8 @@
           "createdAt",
           "id",
           "tenantId",
-          "contextType",
-          "contextId",
+          "channelType",
+          "channelId",
           "userId",
           "role",
           "createdBy",
@@ -2167,8 +2167,8 @@
         "description": "A user's membership in a context entity, including role and activity data.",
         "example": {
           "id": "92f342dd-6e67-4956-ab1c-f91b3ce934d7",
-          "contextType": "organization",
-          "contextId": "0b5344ae-d952-4047-b5e1-309a11b66764",
+          "channelType": "organization",
+          "channelId": "0b5344ae-d952-4047-b5e1-309a11b66764",
           "userId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
           "organizationId": "14e27393-e22a-45d1-8c22-3250dc6fc109",
           "role": "member",
@@ -4051,7 +4051,7 @@
                         "type": "object",
                         "properties": {
                           "entity": {
-                            "$ref": "#/components/schemas/ContextEntityBase"
+                            "$ref": "#/components/schemas/ChannelEntityBase"
                           },
                           "inactiveMembership": {
                             "$ref": "#/components/schemas/InactiveMembership"
@@ -4082,8 +4082,8 @@
                       },
                       "inactiveMembership": {
                         "id": "3f5e59d4-e502-4132-8e0d-915e1951a439",
-                        "contextType": "organization",
-                        "contextId": "dc3036bd-bd6a-4ea8-8385-228db2dcc869",
+                        "channelType": "organization",
+                        "channelId": "dc3036bd-bd6a-4ea8-8385-228db2dcc869",
                         "email": "preston36@gmail.com",
                         "userId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
                         "tokenId": "825afcfd-ad27-4c12-81b8-610c7358603f",
@@ -4110,8 +4110,8 @@
                       },
                       "inactiveMembership": {
                         "id": "40302515-5a0c-4427-9dd4-7dee4eb2c5eb",
-                        "contextType": "organization",
-                        "contextId": "221aad91-1de2-4e38-93b7-dcc8a33619bf",
+                        "channelType": "organization",
+                        "channelId": "221aad91-1de2-4e38-93b7-dcc8a33619bf",
                         "email": "mitchell.cummerata29@gmail.com",
                         "userId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
                         "tokenId": "7ef9bfca-0c17-4be8-8d73-0a05e99f5949",
@@ -4735,7 +4735,7 @@
                               "type": "integer"
                             }
                           },
-                          "childContextChanges": {
+                          "childChannelChanges": {
                             "type": "object",
                             "additionalProperties": {
                               "type": "object",
@@ -6651,8 +6651,8 @@
                         {
                           "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
                           "tenantId": "u87zf2",
-                          "contextType": "organization",
-                          "contextId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
+                          "channelType": "organization",
+                          "channelId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
                           "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
                           "organizationId": "ab6c6ea4-cec4-470a-acfc-5636298aa0f2",
                           "role": "admin",
@@ -6687,8 +6687,8 @@
                         {
                           "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
                           "tenantId": "lwj64z",
-                          "contextType": "organization",
-                          "contextId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
+                          "channelType": "organization",
+                          "channelId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
                           "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
                           "organizationId": "661de358-c94b-4156-816b-769bf63c907e",
                           "role": "member",
@@ -6937,7 +6937,7 @@
           }
         ],
         "operationId": "createOrganizations",
-        "tags": ["organizations", "cella", "context"],
+        "tags": ["organizations", "cella", "channel"],
         "summary": "Create organizations",
         "description": "Creates one or more new organizations within a tenant.",
         "x-guard": ["authGuard", "tenantGuard"],
@@ -7107,8 +7107,8 @@
                             "membership": {
                               "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
                               "tenantId": "6vxzq0",
-                              "contextType": "organization",
-                              "contextId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
+                              "channelType": "organization",
+                              "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
                               "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
                               "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                               "role": "admin",
@@ -7190,8 +7190,8 @@
                         "membership": {
                           "id": "1f366272-953c-486d-81dc-ee61f43478a1",
                           "tenantId": "t4n7co",
-                          "contextType": "organization",
-                          "contextId": "b5c28e6f-552e-42e4-940d-66f5ab0174ab",
+                          "channelType": "organization",
+                          "channelId": "b5c28e6f-552e-42e4-940d-66f5ab0174ab",
                           "userId": "8ed7182a-e09f-41c6-9302-0e59a26ff7ac",
                           "organizationId": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                           "role": "admin",
@@ -7248,8 +7248,8 @@
                         "membership": {
                           "id": "cf273cfa-8287-4b04-b641-897816829f30",
                           "tenantId": "4oy2u1",
-                          "contextType": "organization",
-                          "contextId": "a22457ca-c90f-46f6-aa80-2cd0efd36e4f",
+                          "channelType": "organization",
+                          "channelId": "a22457ca-c90f-46f6-aa80-2cd0efd36e4f",
                           "userId": "ddfd40e3-e143-4676-8a93-314d23d2d92f",
                           "organizationId": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                           "role": "admin",
@@ -7309,7 +7309,7 @@
           }
         ],
         "operationId": "deleteOrganizations",
-        "tags": ["organizations", "cella", "context"],
+        "tags": ["organizations", "cella", "channel"],
         "summary": "Delete organizations",
         "description": "Deletes one or more organizations by ID within a tenant.",
         "x-guard": ["authGuard", "tenantGuard"],
@@ -7411,7 +7411,7 @@
           }
         ],
         "operationId": "getOrganizations",
-        "tags": ["organizations", "cella", "context"],
+        "tags": ["organizations", "cella", "channel"],
         "summary": "Get list of organizations",
         "description": "Returns a list of organizations.",
         "x-guard": ["authGuard", "crossTenantGuard", "relatableGuard"],
@@ -7559,8 +7559,8 @@
                         "membership": {
                           "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
                           "tenantId": "u87zf2",
-                          "contextType": "organization",
-                          "contextId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
+                          "channelType": "organization",
+                          "channelId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
                           "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
                           "organizationId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                           "role": "admin",
@@ -7617,8 +7617,8 @@
                         "membership": {
                           "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
                           "tenantId": "lwj64z",
-                          "contextType": "organization",
-                          "contextId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
+                          "channelType": "organization",
+                          "channelId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
                           "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
                           "organizationId": "772a771f-c150-465e-9635-46594859fc3d",
                           "role": "member",
@@ -7680,7 +7680,7 @@
           }
         ],
         "operationId": "getOrganization",
-        "tags": ["organizations", "cella", "context"],
+        "tags": ["organizations", "cella", "channel"],
         "summary": "Get organization",
         "description": "Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.",
         "x-guard": ["authGuard", "tenantGuard"],
@@ -7768,8 +7768,8 @@
                     "membership": {
                       "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
                       "tenantId": "6vxzq0",
-                      "contextType": "organization",
-                      "contextId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
+                      "channelType": "organization",
+                      "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
                       "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
                       "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                       "role": "admin",
@@ -7826,7 +7826,7 @@
           }
         ],
         "operationId": "updateOrganization",
-        "tags": ["organizations", "cella", "context"],
+        "tags": ["organizations", "cella", "channel"],
         "summary": "Update organization",
         "description": "Updates an organization within a tenant.",
         "x-guard": ["authGuard", "tenantGuard"],
@@ -7977,8 +7977,8 @@
                     "membership": {
                       "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
                       "tenantId": "6vxzq0",
-                      "contextType": "organization",
-                      "contextId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
+                      "channelType": "organization",
+                      "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
                       "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
                       "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                       "role": "admin",
@@ -9208,8 +9208,8 @@
                     {
                       "id": "da336271-583f-4567-913c-f17c567ab81d",
                       "tenantId": "vw3f7p",
-                      "contextType": "organization",
-                      "contextId": "993dce90-023a-4125-a6a3-03215e93aa04",
+                      "channelType": "organization",
+                      "channelId": "993dce90-023a-4125-a6a3-03215e93aa04",
                       "userId": "154db176-be65-484a-bb34-246b1f99f492",
                       "organizationId": "45a11f6e-5760-4a44-96c4-3c1b43d10162",
                       "role": "member",
@@ -9449,8 +9449,8 @@
                 },
                 "example": {
                   "id": "92f342dd-6e67-4956-ab1c-f91b3ce934d7",
-                  "contextType": "organization",
-                  "contextId": "0b5344ae-d952-4047-b5e1-309a11b66764",
+                  "channelType": "organization",
+                  "channelId": "0b5344ae-d952-4047-b5e1-309a11b66764",
                   "userId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
                   "organizationId": "14e27393-e22a-45d1-8c22-3250dc6fc109",
                   "role": "member",
@@ -9527,7 +9527,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContextEntityBase"
+                  "$ref": "#/components/schemas/ChannelEntityBase"
                 },
                 "example": {
                   "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",
@@ -9760,8 +9760,8 @@
                       "membership": {
                         "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
                         "tenantId": "u87zf2",
-                        "contextType": "organization",
-                        "contextId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
+                        "channelType": "organization",
+                        "channelId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
                         "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
                         "organizationId": "ab6c6ea4-cec4-470a-acfc-5636298aa0f2",
                         "role": "admin",
@@ -9792,8 +9792,8 @@
                       "membership": {
                         "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
                         "tenantId": "lwj64z",
-                        "contextType": "organization",
-                        "contextId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
+                        "channelType": "organization",
+                        "channelId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
                         "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
                         "organizationId": "661de358-c94b-4156-816b-769bf63c907e",
                         "role": "member",
@@ -9988,8 +9988,8 @@
                   "items": [
                     {
                       "id": "e456f6f2-9b74-47a8-b97a-617f14497605",
-                      "contextType": "organization",
-                      "contextId": "c9f521e3-f100-4f6d-8b23-8d10af2a4b70",
+                      "channelType": "organization",
+                      "channelId": "c9f521e3-f100-4f6d-8b23-8d10af2a4b70",
                       "email": "vanessa_rau@yahoo.com",
                       "userId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                       "tokenId": "fe212f50-796f-4e85-b592-b8e671b17b41",
@@ -10003,8 +10003,8 @@
                     },
                     {
                       "id": "d82be193-5e9d-4906-a125-ba7cf4de5ede",
-                      "contextType": "organization",
-                      "contextId": "ccfef453-bf07-44c2-8ef7-7d580cc1edd9",
+                      "channelType": "organization",
+                      "channelId": "ccfef453-bf07-44c2-8ef7-7d580cc1edd9",
                       "email": "fanny_mccullough70@gmail.com",
                       "userId": "772a771f-c150-465e-9635-46594859fc3d",
                       "tokenId": "b422db63-39b8-413c-9f84-d7523c2ac382",

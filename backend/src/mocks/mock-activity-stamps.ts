@@ -7,7 +7,7 @@ import { MOCK_REF_DATE } from './mock-timestamps';
  * Type for dynamically generated per-stream activity stamps in mocks.
  * Epoch-ms timestamps per product entity type: latest post (created, null when never
  * posted) and latest content update (updated, null when never updated), matching the
- * `activity` object in contextEntityIncludedSchema counts.
+ * `activity` object in channelEntityIncludedSchema counts.
  */
 export type MockActivityStamps = {
   [K in ProductEntityType]: { created: number | null; updated: number | null };

@@ -24,18 +24,18 @@ const attachmentC = randomUUID(); // tenantB / orgC
 
 const hierarchyA = buildTestEntityHierarchyPlan({
   entityType: 'attachment',
-  rootContextId: orgA,
-  makeContextId: () => randomUUID(),
+  rootChannelId: orgA,
+  makeChannelId: () => randomUUID(),
 });
 const hierarchyB = buildTestEntityHierarchyPlan({
   entityType: 'attachment',
-  rootContextId: orgB,
-  makeContextId: () => randomUUID(),
+  rootChannelId: orgB,
+  makeChannelId: () => randomUUID(),
 });
 const hierarchyC = buildTestEntityHierarchyPlan({
   entityType: 'attachment',
-  rootContextId: orgC,
-  makeContextId: () => randomUUID(),
+  rootChannelId: orgC,
+  makeChannelId: () => randomUUID(),
 });
 
 function ctx(overrides: Partial<DocContext>): DocContext {
@@ -61,14 +61,14 @@ async function seedEntityHierarchy(
   createdBy: string,
   slugPrefix: string,
 ) {
-  for (const row of plan.seedContextRows) {
+  for (const row of plan.seedChannelRows) {
     const columns = ['id', 'tenant_id', 'entity_type', 'name', 'slug', 'created_by', row.parentColumnName];
     const values = [
       row.id,
       tenantId,
-      row.contextType,
-      `Authz ${row.contextType}`,
-      `${slugPrefix}-${row.contextType}-${row.id.slice(0, 8)}`,
+      row.channelType,
+      `Authz ${row.channelType}`,
+      `${slugPrefix}-${row.channelType}-${row.id.slice(0, 8)}`,
       createdBy,
       row.parentId,
     ];
@@ -82,7 +82,7 @@ async function seedEntityHierarchy(
 }
 
 async function cleanupEntityHierarchy(client: pg.Client, plans: TestEntityHierarchyPlan[]) {
-  for (const row of plans.flatMap((plan) => plan.seedContextRows).reverse()) {
+  for (const row of plans.flatMap((plan) => plan.seedChannelRows).reverse()) {
     await client.query(`DELETE FROM ${quoteIdent(row.tableName)} WHERE id = $1`, [row.id]);
   }
 }
@@ -109,9 +109,9 @@ async function seedOrg(client: pg.Client, tenantId: string, orgId: string, slug:
 
 async function seedMembership(client: pg.Client, tenantId: string, orgId: string, userId: string) {
   await client.query(
-    `INSERT INTO memberships (id, tenant_id, context_type, context_id, organization_id, user_id, role, created_by, display_order)
+    `INSERT INTO memberships (id, tenant_id, channel_type, channel_id, organization_id, user_id, role, created_by, display_order)
      VALUES ($1, $2, 'organization', $3, $3, $4, 'admin', $4, 1)
-     ON CONFLICT (tenant_id, user_id, context_id) DO NOTHING`,
+     ON CONFLICT (tenant_id, user_id, channel_id) DO NOTHING`,
     [randomUUID(), tenantId, orgId, userId],
   );
 }
@@ -127,7 +127,7 @@ async function seedAttachment(
     'id',
     'tenant_id',
     'created_by',
-    ...plan.sqlContextColumns.map(({ columnName }) => columnName),
+    ...plan.sqlChannelColumns.map(({ columnName }) => columnName),
     'bucket_name',
     'filename',
     'content_type',
@@ -139,7 +139,7 @@ async function seedAttachment(
     id,
     tenantId,
     createdBy,
-    ...plan.sqlContextColumns.map(({ id: contextId }) => contextId),
+    ...plan.sqlChannelColumns.map(({ id: channelId }) => channelId),
     'authz-bucket',
     'authz.pdf',
     'application/pdf',

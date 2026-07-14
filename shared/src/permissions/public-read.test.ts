@@ -25,7 +25,7 @@ const projectSubject = (publicAt: string | null): SubjectForPermission =>
   wideSubject({
     entityType: 'project',
     id: 'p1',
-    contextIds: { organization: 'org1' },
+    channelIds: { organization: 'org1' },
     row: { publicAt },
   });
 
@@ -47,7 +47,7 @@ describe('public read grants — anonymous actor', () => {
       getAllDecisions(noPolicies, [], projectSubject(null), { publicGrants: grants, topology: wideTopology }).can.read,
     ).toBe(false);
 
-    const noRow = wideSubject({ entityType: 'project', id: 'p1', contextIds: { organization: 'org1' } });
+    const noRow = wideSubject({ entityType: 'project', id: 'p1', channelIds: { organization: 'org1' } });
     expect(getAllDecisions(noPolicies, [], noRow, { publicGrants: grants, topology: wideTopology }).can.read).toBe(
       false,
     );
@@ -59,7 +59,7 @@ describe('public read grants — anonymous actor', () => {
     const task = wideSubject({
       entityType: 'task',
       id: 't1',
-      contextIds: { organization: 'org1', project: 'p1' },
+      channelIds: { organization: 'org1', project: 'p1' },
       row: { publicAt: null },
     });
     expect(getAllDecisions(noPolicies, [], task, { publicGrants: grants, topology: wideTopology }).can.read).toBe(
@@ -70,7 +70,7 @@ describe('public read grants — anonymous actor', () => {
     const publishedTask = wideSubject({
       entityType: 'task',
       id: 't1',
-      contextIds: { organization: 'org1', project: 'p1' },
+      channelIds: { organization: 'org1', project: 'p1' },
       row: { publicAt: NOW },
     });
     expect(
@@ -93,7 +93,7 @@ describe('public read grants — anonymous actor', () => {
     const orgSubject = wideSubject({
       entityType: 'organization',
       id: 'org1',
-      contextIds: {},
+      channelIds: {},
       row: { publicAt: NOW },
     });
     expect(getAllDecisions(noPolicies, [], orgSubject, { publicGrants: grants, topology: wideTopology }).can.read).toBe(

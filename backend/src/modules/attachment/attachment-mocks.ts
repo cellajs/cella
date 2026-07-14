@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import {
-  generateMockEntityContextIdColumns,
+  generateMockEntityChannelIdColumns,
   MOCK_REF_DATE,
   mockBatchResponse,
   mockNanoid,
@@ -50,7 +50,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       publicAt: null,
       seq: faker.number.int({ min: 1, max: 500 }),
       stx: mockStx(),
-      ...generateMockEntityContextIdColumns('attachment'),
+      ...generateMockEntityChannelIdColumns('attachment'),
     };
   });
 

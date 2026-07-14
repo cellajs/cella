@@ -14,7 +14,7 @@ interface MenuSectionButtonProps {
   isEditing: boolean;
   isSectionVisible: boolean;
   data: UserMenuItem[];
-  contextIds: string[];
+  channelIds: string[];
   toggleIsEditing: () => void;
   handleCreateAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
 }
@@ -24,7 +24,7 @@ interface MenuSectionButtonProps {
  */
 export const MenuSectionButton = ({
   data,
-  contextIds,
+  channelIds,
   options,
   isEditing,
   isSectionVisible,
@@ -35,7 +35,7 @@ export const MenuSectionButton = ({
   const toggleSection = useNavigationStore((state) => state.toggleSection);
 
   // Cumulative unseen count for non-archived, non-muted items in this section
-  const sectionUnseenCount = useUnseenCount(contextIds);
+  const sectionUnseenCount = useUnseenCount(channelIds);
 
   const createButtonRef = useRef(null);
 

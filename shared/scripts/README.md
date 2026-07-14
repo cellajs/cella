@@ -13,7 +13,7 @@ Checks:
    counter fields, or declared entity-embedding host columns.
 3. **Lens purity lint**: dated lens modules must be pure (no `await`, no dynamic `import()`,
    no value-dependent dynamic key access).
-4. **Contract completeness**: every configured product/context entity type must register
+4. **Contract completeness**: every configured product/channel entity type must register
    through the `evolutionContract` factory in `backend/src/modules/`, so an entity can never
    silently miss the lens seams (widening + normalize).
 

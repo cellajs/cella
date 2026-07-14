@@ -1,5 +1,5 @@
 import { getMyMemberships } from 'sdk';
-import { appConfig, type ContextEntityType } from 'shared';
+import { appConfig, type ChannelEntityType } from 'shared';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
@@ -7,29 +7,29 @@ import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-que
 import { queryClient } from '~/query/query-client';
 
 /**
- * Invalidate all context entity detail queries (fallback when contextType unknown)
+ * Invalidate all context entity detail queries (fallback when channelType unknown)
  */
-function invalidateAllContextDetails(): void {
-  for (const contextType of appConfig.contextEntityTypes) {
+function invalidateAllChannelDetails(): void {
+  for (const channelType of appConfig.channelEntityTypes) {
     queryClient.invalidateQueries({
-      predicate: (query) => query.queryKey[0] === contextType && query.queryKey[1] === 'detail',
+      predicate: (query) => query.queryKey[0] === channelType && query.queryKey[1] === 'detail',
       refetchType: 'none',
     });
   }
 }
 
 /**
- * Invalidate context entity list for a specific contextType.
- * Falls back to invalidating all context details if contextType is unknown.
+ * Invalidate context entity list for a specific channelType.
+ * Falls back to invalidating all context details if channelType is unknown.
  *
- * @param contextType - The context entity type (e.g., 'organization'), or null for fallback
+ * @param channelType - The context entity type (e.g., 'organization'), or null for fallback
  */
-export function invalidateContextList(contextType: ContextEntityType | null): void {
-  if (contextType && hasEntityQueryKeys(contextType)) {
+export function invalidateChannelList(channelType: ChannelEntityType | null): void {
+  if (channelType && hasEntityQueryKeys(channelType)) {
     // Invalidate by the `list` prefix key; covers all filtered list variants for this context type.
-    queryClient.invalidateQueries({ queryKey: getEntityQueryKeys(contextType).list.base, refetchType: 'active' });
+    queryClient.invalidateQueries({ queryKey: getEntityQueryKeys(channelType).list.base, refetchType: 'active' });
   } else {
-    invalidateAllContextDetails();
+    invalidateAllChannelDetails();
   }
 }
 

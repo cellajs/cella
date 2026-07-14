@@ -1,4 +1,4 @@
-import type { ContextEntityType, EntityActionType, ProductEntityType } from '../../../types';
+import type { ChannelEntityType, EntityActionType, ProductEntityType } from '../../../types';
 import { allActionsAllowed, createActionRecord } from '../action-helpers';
 import { type PublicReadGrants, publicRow } from '../public-read';
 import { type ConditionActor, isRowCondition, rowPredicateMatches, type RowForCondition } from '../row-conditions';
@@ -10,25 +10,25 @@ import type {
   PermissionCheckOptions,
   PermissionDecision,
   PermissionMembership,
-  ResolvedContextIds,
+  ResolvedChannelIds,
   SubjectForPermission,
 } from './types';
 import { validateMembership, validateSubject } from './validation';
 
-/** Membership index: Map from `${contextType}:${contextId}` to memberships */
+/** Membership index: Map from `${channelType}:${channelId}` to memberships */
 type MembershipIndex<T extends PermissionMembership> = Map<string, T[]>;
 
-/** Policy index: Map from `${contextType}:${role}` to permissions */
+/** Policy index: Map from `${channelType}:${role}` to permissions */
 type PolicyIndex = Map<string, EntityActionPermissions>;
 
-/** Builds a Map indexing memberships by `${contextType}:${contextId}` for O(1) lookup. */
+/** Builds a Map indexing memberships by `${channelType}:${channelId}` for O(1) lookup. */
 const buildMembershipIndex = <T extends PermissionMembership>(memberships: T[]): MembershipIndex<T> => {
   const index: MembershipIndex<T> = new Map();
   for (const m of memberships) {
-    if (!m.contextId) {
-      throw new Error(`[Permission] Membership missing context ID for ${m.contextType}`);
+    if (!m.channelId) {
+      throw new Error(`[Permission] Membership missing context ID for ${m.channelType}`);
     }
-    const key = `${m.contextType}:${m.contextId}`;
+    const key = `${m.channelType}:${m.channelId}`;
     const list = index.get(key) ?? [];
     list.push(m);
     index.set(key, list);
@@ -37,14 +37,14 @@ const buildMembershipIndex = <T extends PermissionMembership>(memberships: T[]):
 };
 
 /**
- * Builds a Map indexing policies by `${contextType}:${role}` for O(1) lookup.
+ * Builds a Map indexing policies by `${channelType}:${role}` for O(1) lookup.
  * Uses policies for a specific entityType (subject.entityType).
  */
-const buildPolicyIndex = (policies: AccessPolicies, entityType: ContextEntityType | ProductEntityType): PolicyIndex => {
+const buildPolicyIndex = (policies: AccessPolicies, entityType: ChannelEntityType | ProductEntityType): PolicyIndex => {
   const index: PolicyIndex = new Map();
   const subjectPolicies = policies[entityType] ?? [];
   for (const p of subjectPolicies) {
-    index.set(`${p.contextType}:${p.role}`, p.permissions);
+    index.set(`${p.channelType}:${p.role}`, p.permissions);
   }
   return index;
 };
@@ -54,8 +54,8 @@ const buildPolicyIndex = (policies: AccessPolicies, entityType: ContextEntityTyp
  */
 const getOrBuildPolicyIndex = (
   policies: AccessPolicies,
-  entityType: ContextEntityType | ProductEntityType,
-  cache: Map<ContextEntityType | ProductEntityType, PolicyIndex>,
+  entityType: ChannelEntityType | ProductEntityType,
+  cache: Map<ChannelEntityType | ProductEntityType, PolicyIndex>,
 ): PolicyIndex => {
   const cached = cache.get(entityType);
   if (cached) return cached;
@@ -66,18 +66,18 @@ const getOrBuildPolicyIndex = (
 };
 
 /**
- * Extracts the context ID from subject for a given contextType:
- * - If `subject.entityType === contextType` and subject has `id`: returns `subject.id`
- * - Otherwise: returns `subject.contextIds[contextType]` (e.g., subject.contextIds.organization)
+ * Extracts the context ID from subject for a given channelType:
+ * - If `subject.entityType === channelType` and subject has `id`: returns `subject.id`
+ * - Otherwise: returns `subject.channelIds[channelType]` (e.g., subject.channelIds.organization)
  */
-const getSubjectContextId = (
+const getSubjectChannelId = (
   subject: SubjectForPermission,
-  contextType: ContextEntityType,
+  channelType: ChannelEntityType,
 ): string | null | undefined => {
-  if (subject.entityType === contextType && subject.id) {
+  if (subject.entityType === channelType && subject.id) {
     return subject.id;
   }
-  return subject.contextIds[contextType];
+  return subject.channelIds[channelType];
 };
 
 /**
@@ -92,8 +92,8 @@ const checkWithIndices = <T extends PermissionMembership>(
   membershipIndex: MembershipIndex<T>,
   policyIndex: PolicyIndex,
   subject: SubjectForPermission,
-  orderedContexts: ContextEntityType[],
-  getRoles: (contextType: ContextEntityType) => readonly string[],
+  orderedChannels: ChannelEntityType[],
+  getRoles: (channelType: ChannelEntityType) => readonly string[],
   entityActions: readonly EntityActionType[],
   isSystemAdmin: boolean,
   userId?: string,
@@ -101,14 +101,14 @@ const checkWithIndices = <T extends PermissionMembership>(
   elevatedRoles?: readonly string[],
   debug?: boolean,
 ): PermissionDecision<T> => {
-  // Primary context is orderedContexts[0]; the hierarchy guarantees the array is never empty.
-  const primaryContext = orderedContexts[0];
-  if (primaryContext === undefined) throw new Error('checkSubject: orderedContexts must not be empty');
+  // Primary context is orderedChannels[0]; the hierarchy guarantees the array is never empty.
+  const primaryChannel = orderedChannels[0];
+  if (primaryChannel === undefined) throw new Error('checkSubject: orderedChannels must not be empty');
 
   // Resolve primary context membership (used by both system admin and normal flow)
-  const primaryContextId = getSubjectContextId(subject, primaryContext);
-  const primaryMemberships = primaryContextId
-    ? (membershipIndex.get(`${primaryContext}:${primaryContextId}`) ?? [])
+  const primaryChannelId = getSubjectChannelId(subject, primaryChannel);
+  const primaryMemberships = primaryChannelId
+    ? (membershipIndex.get(`${primaryChannel}:${primaryChannelId}`) ?? [])
     : [];
   const resolvedMembership = primaryMemberships[0] ?? null;
 
@@ -122,12 +122,12 @@ const checkWithIndices = <T extends PermissionMembership>(
     );
 
     const can = { ...allActionsAllowed };
-    const contextIds: ResolvedContextIds = primaryContextId ? { [primaryContext]: primaryContextId } : {};
+    const channelIds: ResolvedChannelIds = primaryChannelId ? { [primaryChannel]: primaryChannelId } : {};
 
     return {
-      subject: { entityType: subject.entityType, id: subject.id, contextIds },
-      orderedContexts,
-      primaryContext,
+      subject: { entityType: subject.entityType, id: subject.id, channelIds },
+      orderedChannels,
+      primaryChannel,
       actions: allGranted,
       can,
       membership: resolvedMembership,
@@ -137,7 +137,7 @@ const checkWithIndices = <T extends PermissionMembership>(
   const actions = createActionRecord((): ActionAttribution => ({ enabled: false, grantedBy: [] }));
 
   // Collect resolved context IDs for debugging
-  const contextIds: ResolvedContextIds = {};
+  const channelIds: ResolvedChannelIds = {};
 
   // Row fields + actor for row-condition evaluation, built once per subject
   const conditionRow: RowForCondition = { ...subject.row, createdBy: subject.createdBy };
@@ -147,47 +147,47 @@ const checkWithIndices = <T extends PermissionMembership>(
   // elevation semantics (e.g. members of a parent context may still discover child
   // contexts). The subject's HOME is the most specific context with an id; non-elevated
   // roles speak only for rows homed at their own grant level.
-  const isProductSubject = (subject.entityType as string) !== primaryContext;
-  const homeContext =
-    elevatedRoles && isProductSubject ? orderedContexts.find((ct) => getSubjectContextId(subject, ct)) : undefined;
+  const isProductSubject = (subject.entityType as string) !== primaryChannel;
+  const homeChannel =
+    elevatedRoles && isProductSubject ? orderedChannels.find((ct) => getSubjectChannelId(subject, ct)) : undefined;
 
   // Walk through each context level (most specific first, then ancestors)
-  for (const contextType of orderedContexts) {
+  for (const channelType of orderedChannels) {
     // Strict: context in hierarchy must have roles defined
-    const contextRoles = getRoles(contextType);
-    if (contextRoles.length === 0) {
+    const channelRoles = getRoles(channelType);
+    if (channelRoles.length === 0) {
       throw new Error(
-        `[Permission] Context "${contextType}" has no roles defined but is in hierarchy for ${subject.entityType}`,
+        `[Permission] Context "${channelType}" has no roles defined but is in hierarchy for ${subject.entityType}`,
       );
     }
 
-    const subjectContextId = getSubjectContextId(subject, contextType);
-    if (!subjectContextId) {
+    const subjectChannelId = getSubjectChannelId(subject, channelType);
+    if (!subjectChannelId) {
       // This can be valid for optional context levels - log warning in debug mode
       if (debug) {
-        console.warn(`[Permission] ${subject.entityType}:${subject.id} missing context ID for ${contextType}`);
+        console.warn(`[Permission] ${subject.entityType}:${subject.id} missing context ID for ${channelType}`);
       }
       continue;
     }
 
     // Track resolved context ID for debugging
-    contextIds[contextType] = subjectContextId;
+    channelIds[channelType] = subjectChannelId;
 
     // Find all memberships the user has in this specific context instance
-    const matchingMemberships = membershipIndex.get(`${contextType}:${subjectContextId}`) ?? [];
+    const matchingMemberships = membershipIndex.get(`${channelType}:${subjectChannelId}`) ?? [];
 
     for (const m of matchingMemberships) {
-      const permissions = policyIndex.get(`${contextType}:${m.role}`);
+      const permissions = policyIndex.get(`${channelType}:${m.role}`);
       if (!permissions) {
         // Strict: role exists in membership but has no policy - likely config/data issue
         throw new Error(
-          `[Permission] Role "${m.role}" in context ${contextType} has no policy for ${subject.entityType}`,
+          `[Permission] Role "${m.role}" in context ${channelType} has no policy for ${subject.entityType}`,
         );
       }
 
       // Grant scope: applies to EVERY action of the grant, including create (a target
       // placement's home decides which grants may create there) and 'own' conditions.
-      if (elevatedRoles && isProductSubject && !elevatedRoles.includes(m.role) && contextType !== homeContext) {
+      if (elevatedRoles && isProductSubject && !elevatedRoles.includes(m.role) && channelType !== homeChannel) {
         continue;
       }
 
@@ -200,8 +200,8 @@ const checkWithIndices = <T extends PermissionMembership>(
           actions[action].enabled = true;
           actions[action].grantedBy.push({
             type: 'membership',
-            contextType,
-            contextId: subjectContextId,
+            channelType,
+            channelId: subjectChannelId,
             role: m.role,
           });
           continue;
@@ -230,9 +230,9 @@ const checkWithIndices = <T extends PermissionMembership>(
   const can = createActionRecord((action) => actions[action].enabled);
 
   return {
-    subject: { entityType: subject.entityType, id: subject.id, contextIds },
-    orderedContexts,
-    primaryContext,
+    subject: { entityType: subject.entityType, id: subject.id, channelIds },
+    orderedChannels,
+    primaryChannel,
     actions,
     can,
     membership: resolvedMembership,
@@ -288,31 +288,31 @@ export function getAllDecisions<T extends PermissionMembership>(
   const membershipIndex = buildMembershipIndex(memberships);
 
   // Cache for policy indices by entity type
-  const policyIndexCache = new Map<ContextEntityType | ProductEntityType, PolicyIndex>();
+  const policyIndexCache = new Map<ChannelEntityType | ProductEntityType, PolicyIndex>();
 
   // Cache for relevant contexts by entity type
-  const contextCache = new Map<ContextEntityType | ProductEntityType, ContextEntityType[]>();
+  const channelCache = new Map<ChannelEntityType | ProductEntityType, ChannelEntityType[]>();
 
   // Ordered contexts for an entity type (most specific → root), cached.
   // For context entities (e.g., project): [project, organization] (includes self and ancestors)
   // For product entities (e.g., attachment): [organization] (just ancestors)
   // The first element [0] is always the primary context used for membership capture.
-  const resolveOrderedContexts = (entityType: ContextEntityType | ProductEntityType): ContextEntityType[] => {
-    let orderedContexts = contextCache.get(entityType);
-    if (!orderedContexts) {
-      const ancestors = topoHierarchy.getOrderedAncestors(entityType) as ContextEntityType[];
-      // isContext (unlike the entity-guards type guard) returns plain boolean, so cast the
-      // context-branch result: a true isContext means entityType is a context by construction.
-      orderedContexts = (
-        topoHierarchy.isContext(entityType) ? [entityType, ...ancestors] : [...ancestors]
-      ) as ContextEntityType[];
-      contextCache.set(entityType, orderedContexts);
+  const resolveOrderedChannels = (entityType: ChannelEntityType | ProductEntityType): ChannelEntityType[] => {
+    let orderedChannels = channelCache.get(entityType);
+    if (!orderedChannels) {
+      const ancestors = topoHierarchy.getOrderedAncestors(entityType) as ChannelEntityType[];
+      // isChannel (unlike the entity-guards type guard) returns plain boolean, so cast the
+      // context-branch result: a true isChannel means entityType is a context by construction.
+      orderedChannels = (
+        topoHierarchy.isChannel(entityType) ? [entityType, ...ancestors] : [...ancestors]
+      ) as ChannelEntityType[];
+      channelCache.set(entityType, orderedChannels);
     }
-    return orderedContexts;
+    return orderedChannels;
   };
 
   for (const subject of subjectArray) {
-    const orderedContexts = resolveOrderedContexts(subject.entityType);
+    const orderedChannels = resolveOrderedChannels(subject.entityType);
     // Get or build policy index for this entity type
     const policyIndex = getOrBuildPolicyIndex(policies, subject.entityType, policyIndexCache);
 
@@ -321,7 +321,7 @@ export function getAllDecisions<T extends PermissionMembership>(
       membershipIndex,
       policyIndex,
       subject,
-      orderedContexts,
+      orderedChannels,
       getRoles,
       entityActions,
       isSystemAdmin,

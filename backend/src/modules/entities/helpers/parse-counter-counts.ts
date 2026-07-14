@@ -1,5 +1,5 @@
 /**
- * Parse the JSONB `counts` column from contextCountersTable into typed maps.
+ * Parse the JSONB `counts` column from channelCountersTable into typed maps.
  *
  * JSONB key conventions (written by CDC worker):
  *   s:{entityType}  → entity seq (monotonic update counter)

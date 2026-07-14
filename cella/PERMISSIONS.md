@@ -2,7 +2,7 @@
 
 Cella answers one question everywhere: **may this actor perform this action on this subject?** The answer comes from a single decision engine in `shared/src/permissions/`, computed from the actor's memberships, a static role × context policy matrix, and the subject's own row data. The engine is tier-neutral and ORM-free, so the backend, the frontend, and the standalone Yjs relay all reach the same verdict from the same code — the relay authorizes without a backend round-trip.
 
-Roles are **scoped to context entities**, never global. Product entities own no roles at all: they inherit their permissions from ancestor contexts. Ownership is an *implicit* relation derived from the row's `createdBy` column rather than a stored tuple.
+Roles are **scoped to channel entities**, never global. Product entities own no roles at all: they inherit their permissions from ancestor contexts. Ownership is an *implicit* relation derived from the row's `createdBy` column rather than a stored tuple.
 
 Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and knows nothing about roles, policies, or actions. See [Architecture](/docs/page/architecture) for how the two combine into defense in depth.
 
@@ -19,7 +19,7 @@ Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and 
 │  │                               │  │                                     │  │
 │  │ createEntityHierarchy(roles)  │  │ configurePermissions(types, cb)     │  │
 │  │   .user()                     │  │   subject × context × role → cell   │  │
-│  │   .context(name, {parent,     │  │   cell = 0 | 1 | RowCondition       │  │
+│  │   .channel(name, {parent,     │  │   cell = 0 | 1 | RowCondition       │  │
 │  │             roles})           │  │   publicRead(mode)                  │  │
 │  │   .product(name, {parent})    │  │   elevatedRoles                     │  │
 │  │                               │  │                                     │  │
@@ -34,10 +34,10 @@ Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and 
 │      │  getAllDecisions(policies, memberships, subject, opts)   │            │
 │      │                                                          │            │
 │      │  1. order contexts   most-specific → root                │            │
-│      │       context entity → [self, ...ancestors]              │            │
+│      │       channel entity → [self, ...ancestors]              │            │
 │      │       product entity → [...ancestors]                    │            │
 │      │  2. system admin?    allow every action, short-circuit   │            │
-│      │  3. memberships      policy cell per (contextType, role) │            │
+│      │  3. memberships      policy cell per (channelType, role) │            │
 │      │       1           → grant            grantedBy membership│            │
 │      │       RowCondition→ grant iff matches(row, actor)        │            │
 │      │                                      grantedBy relation  │            │
@@ -67,11 +67,11 @@ The engine **never loads rows**. Callers resolve whatever row data a decision ne
 
 | Term | Meaning |
 |------|---------|
-| **Context entity** | Owns roles and memberships (`organization` in the template). Orders as `[self, ...ancestors]`. |
+| **Channel entity** | Owns roles and memberships (`organization` in the template). Orders as `[self, ...ancestors]`. |
 | **Product entity** | Owns no roles; inherits from ancestor contexts (`attachment`). Orders as `[...ancestors]`. Must have a context parent. |
 | **User entity** | Carries no policies at all; `configurePermissions` filters it out. |
-| **Membership** | The engine reads only `{ contextType, contextId, role }`. Explicit `user → context` relation. |
-| **Subject** | What is being acted on: entity type, optional id, `contextIds` scope, and optionally `row` / `parentRow`. |
+| **Membership** | The engine reads only `{ channelType, channelId, role }`. Explicit `user → context` relation. |
+| **Subject** | What is being acted on: entity type, optional id, `channelIds` scope, and optionally `row` / `parentRow`. |
 | **Policy cell** | `0` (deny), `1` (allow), or a `RowCondition` (allow on qualifying rows). |
 | **Action** | `create`, `read`, `update`, `delete` (`appConfig.entityActions`). |
 | **Grant source** | Why an action was allowed: `membership`, `relation`, `public`, or `systemAdmin`. |
@@ -87,7 +87,7 @@ export const roles = createRoleRegistry(['admin', 'member'] as const);
 
 export const hierarchy = createEntityHierarchy(roles)
   .user()
-  .context('organization', { parent: null, roles: roles.all })
+  .channel('organization', { parent: null, roles: roles.all })
   .product('attachment', { parent: 'organization' })
   .build();
 ```
@@ -119,7 +119,7 @@ Two validators run at boot, both fail-loud by design:
 - **`validatePolicyCompleteness`** — every subject that declares any row must declare a row for *every role of every context in its ancestor chain*. An all-zero row (`contexts.x.role({})`) is the explicit way to say "no access". This exists because a missing policy row makes the engine **throw at request time**, and a 500 at request time is a far worse failure than a 500 at boot.
 - **`validatePublicReadGrants`** — a `publicParent` grant requires the parent subject to actually be publicly readable.
 
-For context entities, note the two row kinds: **elevation** rows sit on an *ancestor* context and say what a parent's member may do to the child (this is where `create` lives); **self** rows sit on the same context and say what the entity's own members may do to it (`create` is meaningless there). Product entities have only *home* rows, where `create` grants making the product inside that context.
+For channel entities, note the two row kinds: **elevation** rows sit on an *ancestor* context and say what a parent's member may do to the child (this is where `create` lives); **self** rows sit on the same context and say what the entity's own members may do to it (`create` is meaningless there). Product entities have only *home* rows, where `create` grants making the product inside that context.
 
 ## The decision
 
@@ -127,18 +127,18 @@ For context entities, note the two row kinds: **elevation** rows sit on an *ance
 
 ```ts
 export type SubjectForPermission = {
-  entityType: ContextEntityType | ProductEntityType;
+  entityType: ChannelEntityType | ProductEntityType;
   id?: string;
   createdBy?: string | null;
-  contextIds: ContextScope;              // Partial<Record<ContextEntityType, string | null>>
+  channelIds: ChannelScope;              // Partial<Record<ChannelEntityType, string | null>>
   row?: Record<string, unknown>;         // for row conditions + publicSelf
   parentRow?: Record<string, unknown>;   // for publicParent
 };
 
 export interface PermissionDecision<T extends PermissionMembership = PermissionMembership> {
-  subject: { entityType; id?; contextIds };
-  orderedContexts: ContextEntityType[];  // most-specific → root
-  primaryContext: ContextEntityType;     // orderedContexts[0]
+  subject: { entityType; id?; channelIds };
+  orderedChannels: ChannelEntityType[];  // most-specific → root
+  primaryChannel: ChannelEntityType;     // orderedChannels[0]
   actions: Record<EntityActionType, { enabled: boolean; grantedBy: GrantSource[] }>;
   can: Record<EntityActionType, boolean>;
   membership: T | null;
@@ -147,7 +147,7 @@ export interface PermissionDecision<T extends PermissionMembership = PermissionM
 
 Ancestor scope is **explicitly tri-state**, and the distinction is load-bearing: `undefined` means a required scope was omitted and throws `MissingScopeError`; `null` means deliberately not scoped to that ancestor; a string means scoped to a concrete context id. Silently treating a missing scope as "unscoped" would be a permission bypass, so it is a hard error — surfaced as HTTP 400 `missing_scope` on the backend and WS close `4400` in the relay.
 
-Boundary code that starts from DB rows, route params, or CDC events uses `buildSubject()` to turn column-shaped input (`{ organizationId: 'org_x' }`) into this domain shape. Internals read `subject.contextIds.organization`, never a DB column name.
+Boundary code that starts from DB rows, route params, or CDC events uses `buildSubject()` to turn column-shaped input (`{ organizationId: 'org_x' }`) into this domain shape. Internals read `subject.channelIds.organization`, never a DB column name.
 
 `grantedBy` is not decoration. It records *why* an action was allowed, which is what makes "why can this user delete?" answerable, and it is what the audit path reads.
 
@@ -199,7 +199,7 @@ The engine produces a verdict. Each tier is responsible for *asking* — and eve
 | Path | Entry point | What it checks |
 |------|-------------|----------------|
 | **Guard chain** | `authGuard` → `tenantGuard` → `orgGuard` | Coarse gate only: authenticated, in-tenant, and a member of the org *or* a system admin. It does **not** consult `accessPolicies`. |
-| **Single row** | `getValidProductEntity`, `getValidContextEntity`, `canCreateEntity`, `splitByPermission` | Loads the row, passes it as `subject.row` via `buildSubjectFromEntity`, runs the engine. `splitByPermission` powers bulk ops and 403s only when *nothing* is allowed. |
+| **Single row** | `getValidProductEntity`, `getValidChannelEntity`, `canCreateEntity`, `splitByPermission` | Loads the row, passes it as `subject.row` via `buildSubjectFromEntity`, runs the engine. `splitByPermission` powers bulk ops and 403s only when *nothing* is allowed. |
 | **Collection read** | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Turns the actor's access into a readable scope, then compiles it — unconditional grants, row conditions, and the public grant — into one Drizzle `SQL` predicate. Set-based, so it never materializes rows to reject them. |
 | **SSE dispatch** | `canReceiveEntityEvent` | Runs the engine per event row. Doubles as cacheToken issuance, so over-notifying is a data leak, not just noise. |
 | **Yjs relay** | `canEditEntity` on WS upgrade | Reads the entity row and memberships over raw `pg` (table/column names derived via `toTableName`/`toColumnName`), then runs the same engine. |
@@ -243,7 +243,7 @@ The rest of the suite covers grant attribution, `'own'` denial when the actor or
 | System admin acts on any single row | Allowed, `grantedBy: systemAdmin`, short-circuited before membership lookup |
 | System admin without an org membership lists a collection | Every row in the org. The bypass applies to the collection path too |
 | Membership role has no policy row for the subject | **Throws** at request time. Prevented at boot by `validatePolicyCompleteness` |
-| Required ancestor scope omitted from `contextIds` | Throws `MissingScopeError` → 400 `missing_scope` / WS `4400`. Never silently unscoped |
+| Required ancestor scope omitted from `channelIds` | Throws `MissingScopeError` → 400 `missing_scope` / WS `4400`. Never silently unscoped |
 | Actor loses access mid-Yjs-session | The relay's materialization re-checks `update` on the backend before persisting |
 | System admin joins a Yjs collab session | No bypass. Collaborative editing is authorized as the acting user, matching materialization |
 

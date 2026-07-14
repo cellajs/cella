@@ -15,7 +15,7 @@ const roleEnum = roles.all;
  * forks add e.g. `workspaceId`/`projectId` here (with their foreign keys). Returns fresh
  * column builders on each call so the two tables don't share builder instances.
  */
-export const membershipContextColumns = () => ({});
+export const membershipChannelColumns = () => ({});
 
 /**
  * Memberships table to track active memberships of users in organizations and other context entities.
@@ -29,8 +29,8 @@ export const membershipsTable = snakeCase.table(
     tenantId: varchar('tenant_id', { length: tenantIdLength })
       .notNull()
       .references(() => tenantsTable.id),
-    contextType: varchar({ enum: appConfig.contextEntityTypes }).notNull(),
-    contextId: uuid('context_id').notNull(),
+    channelType: varchar({ enum: appConfig.channelEntityTypes }).notNull(),
+    channelId: uuid('channel_id').notNull(),
     userId: uuid()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
@@ -44,18 +44,18 @@ export const membershipsTable = snakeCase.table(
     muted: boolean().default(false).notNull(),
     displayOrder: doublePrecision().notNull(),
     organizationId: uuid().notNull(),
-    ...membershipContextColumns(),
+    ...membershipChannelColumns(),
   },
   (table) => [
     index('memberships_user_id_idx').on(table.userId),
     index('memberships_created_by_idx').on(table.createdBy),
     index('memberships_updated_by_idx').on(table.updatedBy),
     index('memberships_tenant_id_idx').on(table.tenantId),
-    index('memberships_context_org_role_idx').on(table.contextType, table.organizationId, table.role),
+    index('memberships_channel_org_role_idx').on(table.channelType, table.organizationId, table.role),
     // Composite index for application-layer membership lookups (orgGuard, permission checks)
     index('memberships_org_user_tenant_idx').on(table.organizationId, table.userId, table.tenantId),
     // One membership per user per entity
-    unique('memberships_unique_context').on(table.tenantId, table.userId, table.contextId),
+    unique('memberships_unique_channel').on(table.tenantId, table.userId, table.channelId),
     foreignKey({
       columns: [table.tenantId, table.organizationId],
       foreignColumns: [organizationsTable.tenantId, organizationsTable.id],

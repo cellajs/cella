@@ -8,7 +8,7 @@ import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
 import { inactiveMembershipSchema } from '#/modules/memberships/memberships-schema';
 import { enabledOAuthProvidersEnum, userSchema } from '#/modules/user/user-schema';
 import { booleanTransformSchema } from '#/schemas';
-import { contextEntityBaseSchema } from '#/schemas/entity-base';
+import { channelEntityBaseSchema } from '#/schemas/entity-base';
 import { mockMeAuthDataResponse, mockMeResponse, mockUploadTokenResponse } from './me-mocks';
 
 export const sessionSchema = createSelectSchema(sessionsTable)
@@ -80,6 +80,6 @@ export const toggleMfaBodySchema = z.object({
 });
 
 export const mePendingInvitationSchema = z.object({
-  entity: contextEntityBaseSchema,
+  entity: channelEntityBaseSchema,
   inactiveMembership: inactiveMembershipSchema,
 });

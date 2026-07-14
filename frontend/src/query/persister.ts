@@ -58,13 +58,13 @@ function createIDBPersister(scope = 'rq') {
   /** In-memory change tracker: queryHash → last persisted dataUpdatedAt (product queries only) */
   const lastPersistedAt = new Map<string, number>();
   /** In-memory snapshot of last persisted context queries for diffing */
-  let lastContextSnapshot = '';
+  let lastChannelSnapshot = '';
   let pendingClient: PersistedClient | null = null;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   function resetTracker() {
     lastPersistedAt.clear();
-    lastContextSnapshot = '';
+    lastChannelSnapshot = '';
   }
   trackerResets.push(resetTracker);
 
@@ -90,7 +90,7 @@ function createIDBPersister(scope = 'rq') {
       await db.queries.bulkDelete(ids);
       const existing = await db.meta.get(scope);
       if (existing) {
-        await db.meta.put({ ...existing, contextQueries: [], clientCacheVersion: appConfig.clientCacheVersion });
+        await db.meta.put({ ...existing, channelQueries: [], clientCacheVersion: appConfig.clientCacheVersion });
       }
     });
     resetTracker();
@@ -123,14 +123,14 @@ function createIDBPersister(scope = 'rq') {
 
     const meta = await db.meta.get(scope);
     if (!meta) return;
-    const contextQueries: typeof meta.contextQueries = [];
-    for (const q of meta.contextQueries ?? []) {
+    const channelQueries: typeof meta.channelQueries = [];
+    for (const q of meta.channelQueries ?? []) {
       const entityType = entityTypeOf(q.queryKey);
-      contextQueries.push(entityType ? { ...q, state: await migrateQueryState(entityType, q.state, fromVersion) } : q);
+      channelQueries.push(entityType ? { ...q, state: await migrateQueryState(entityType, q.state, fromVersion) } : q);
     }
     const mutations = migrateMutations(meta.mutations ?? [], fromVersion);
     // Final write advances the pointer atomically with the last rewritten data.
-    await db.meta.put({ ...meta, contextQueries, mutations, schemaVersion: currentSchemaVersion });
+    await db.meta.put({ ...meta, channelQueries, mutations, schemaVersion: currentSchemaVersion });
     console.debug(`[QueryPersister] Lens migration v${fromVersion} → v${currentSchemaVersion} complete (${scope})`);
   }
 
@@ -167,10 +167,10 @@ function createIDBPersister(scope = 'rq') {
       const { queries, mutations } = client.clientState;
 
       const productQueries: DehydratedQuery[] = [];
-      const contextQueries: DehydratedQuery[] = [];
+      const channelQueries: DehydratedQuery[] = [];
       for (const q of queries) {
         if (isProductQuery(q.queryKey)) productQueries.push(q);
-        else contextQueries.push(q);
+        else channelQueries.push(q);
       }
 
       const upserts: PersistedQueryRecord[] = [];
@@ -201,11 +201,11 @@ function createIDBPersister(scope = 'rq') {
       }
 
       // Diff context queries by a lightweight snapshot
-      const contextSnapshot = JSON.stringify(contextQueries.map((q) => [q.queryHash, q.state.dataUpdatedAt]));
-      const contextChanged = contextSnapshot !== lastContextSnapshot;
+      const channelSnapshot = JSON.stringify(channelQueries.map((q) => [q.queryHash, q.state.dataUpdatedAt]));
+      const channelChanged = channelSnapshot !== lastChannelSnapshot;
 
       const hasProductChanges = upserts.length > 0 || removals.length > 0;
-      if (hasProductChanges || contextChanged) {
+      if (hasProductChanges || channelChanged) {
         await db.transaction('rw', db.queries, db.meta, async () => {
           if (upserts.length > 0) await db.queries.bulkPut(upserts);
           if (removals.length > 0) await db.queries.bulkDelete(removals);
@@ -216,14 +216,14 @@ function createIDBPersister(scope = 'rq') {
             clientCacheVersion: appConfig.clientCacheVersion,
             schemaVersion: currentSchemaVersion,
             mutations,
-            contextQueries,
+            channelQueries,
           });
         });
-        lastContextSnapshot = contextSnapshot;
+        lastChannelSnapshot = channelSnapshot;
 
         console.debug(
           `[QueryPersister] Wrote ${upserts.length} product changed, removed ${removals.length}, ` +
-            `${contextChanged ? `${contextQueries.length} context bundled` : 'context unchanged'} (${scope})`,
+            `${channelChanged ? `${channelQueries.length} context bundled` : 'context unchanged'} (${scope})`,
         );
       }
     } catch (error) {
@@ -308,12 +308,12 @@ function createIDBPersister(scope = 'rq') {
             queryKey: q.queryKey,
             state: q.state,
           })),
-          ...(meta.contextQueries ?? []),
+          ...(meta.channelQueries ?? []),
         ];
 
         // Seed the context snapshot for diffing on next write
-        lastContextSnapshot = JSON.stringify(
-          (meta.contextQueries ?? []).map((q) => [q.queryHash, q.state.dataUpdatedAt]),
+        lastChannelSnapshot = JSON.stringify(
+          (meta.channelQueries ?? []).map((q) => [q.queryHash, q.state.dataUpdatedAt]),
         );
 
         return {

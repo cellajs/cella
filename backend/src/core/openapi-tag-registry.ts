@@ -75,11 +75,11 @@ registerTag({
 
 /**
  * Default entity-kind tags declare an operation's entity scope. Routes opt in
- * by adding `'context'` or `'product'` to their `tags` array, the same way they
+ * by adding `'channel'` or `'product'` to their `tags` array, the same way they
  * declare ownership (`'cella'` / `'app'`).
  */
 registerTag({
-  tag: 'context',
+  tag: 'channel',
   kind: 'entity',
   description: 'Operations on context entities (entities that have memberships, e.g. organizations, projects).',
 });

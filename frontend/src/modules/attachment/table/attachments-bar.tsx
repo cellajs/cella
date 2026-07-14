@@ -21,7 +21,7 @@ import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 type AttachmentsTableBarProps = AttachmentsTableProps & BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>;
 
 export const AttachmentsTableBar = ({
-  contextEntity,
+  channelEntity,
   selected,
   searchVars,
   setSearch,
@@ -34,7 +34,7 @@ export const AttachmentsTableBar = ({
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
-  const { open } = useAttachmentsUploadDialog(contextEntity.tenantId, contextEntity.id);
+  const { open } = useAttachmentsUploadDialog(channelEntity.tenantId, channelEntity.id);
 
   const deleteButtonRef = useRef(null);
 

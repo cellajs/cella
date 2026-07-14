@@ -1,4 +1,4 @@
-import { appConfig, type ContextScope, hierarchy, type SubjectForPermission } from 'shared';
+import { appConfig, type ChannelScope, hierarchy, type SubjectForPermission } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { AppError } from '#/core/error';
 import { validateAncestorScope } from '#/permissions/validate-ancestor-scope';
@@ -17,17 +17,17 @@ const expectAppError = (fn: () => void, type: string) => {
 /** Build a raw subject (without validation) for testing validateAncestorScope itself */
 const buildRawSubject = (
   entityType: string,
-  overrides?: Partial<Record<keyof ContextScope, string | null | undefined>>,
+  overrides?: Partial<Record<keyof ChannelScope, string | null | undefined>>,
 ): SubjectForPermission => {
   const ancestors = hierarchy.getOrderedAncestors(entityType);
-  const contextIds: Partial<Record<keyof ContextScope, string | null | undefined>> = {};
+  const channelIds: Partial<Record<keyof ChannelScope, string | null | undefined>> = {};
   for (const ancestor of ancestors) {
-    contextIds[ancestor] = `test-${ancestor}-id`;
+    channelIds[ancestor] = `test-${ancestor}-id`;
   }
-  if (overrides) Object.assign(contextIds, overrides);
+  if (overrides) Object.assign(channelIds, overrides);
   const subject: SubjectForPermission = {
     entityType: entityType as SubjectForPermission['entityType'],
-    contextIds: contextIds as ContextScope,
+    channelIds: channelIds as ChannelScope,
   };
   return subject;
 };
@@ -66,7 +66,7 @@ describe('validateAncestorScope', () => {
   }
 
   // Test every context entity type that has ancestors (e.g., project → organization)
-  for (const entityType of hierarchy.contextTypes) {
+  for (const entityType of hierarchy.channelTypes) {
     const ancestors = hierarchy.getOrderedAncestors(entityType);
     if (ancestors.length === 0) continue; // root contexts (organization) are tested above
 

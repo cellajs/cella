@@ -22,7 +22,7 @@ not match, and the path **failed closed**. It denied. Silently. The affected pat
 
 | Path | Was |
 |------|-----|
-| `getValidContextEntity` | no actor → `'own'` on a **context entity** never matched |
+| `getValidChannelEntity` | no actor → `'own'` on a **channel entity** never matched |
 | `canCreateEntity` | no actor → `'own'` on a **create** row never matched |
 | `getPresignedUrlOp` | no actor → `'own'` never matched |
 | Yjs relay (`canEditEntity`) | no actor → `'own'` **update** grants never matched, so collab was denied |
@@ -30,7 +30,7 @@ not match, and the path **failed closed**. It denied. Silently. The affected pat
 **Audit your `permissions-config.ts` before pulling.** Grep for `'own'` (and any custom
 row condition) in:
 
-- rows on a **context-entity subject** (`case 'project': contexts.project.member({ update: 'own' })`)
+- rows on a **channel-entity subject** (`case 'project': contexts.project.member({ update: 'own' })`)
 - the **`create`** cell of any row
 
 Those cells were dead. After this change they come alive and grant. That is the intended
@@ -94,7 +94,7 @@ three different answers.
 ```
 
 Public readability is now a property of the row: `publicAt IS NOT NULL`. Every context and
-product row carries the column (`contextEntityColumns` / `productEntityColumns`), nullable
+product row carries the column (`channelEntityColumns` / `productEntityColumns`), nullable
 and dormant. `publicSelf` compiles identically in the check-form, in collection SQL, and in
 dispatch — so a public row now actually **appears in list endpoints**, which it previously
 did not.
@@ -145,7 +145,7 @@ whether it belongs in the permission model at all. Because the set is closed, CD
 
 ## Checklist
 
-- [ ] Audited every `'own'` cell on **context-entity** and **create** rows (§ widening)
+- [ ] Audited every `'own'` cell on **channel-entity** and **create** rows (§ widening)
 - [ ] `checkPermission` call sites pass `actorFrom(ctx)` (compiler-enforced)
 - [ ] Collection-read call sites pass the actor (compiler-enforced)
 - [ ] `publicRead('publicParent'|'publicParentOrSelf')` rewritten to `'publicSelf'` (compiler-enforced)

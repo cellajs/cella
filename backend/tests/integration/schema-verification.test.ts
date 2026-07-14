@@ -12,7 +12,7 @@ const orgScopedProductTables = appConfig.productEntityTypes.map((t) =>
 );
 
 /** Context entity tables (organizations, workspaces, projects) */
-const contextEntityTables = appConfig.contextEntityTypes.map((t) =>
+const channelEntityTables = appConfig.channelEntityTypes.map((t) =>
   getTableName(entityTables[t as keyof typeof entityTables]),
 );
 
@@ -37,7 +37,7 @@ describe('Schema verification', () => {
   // Immutability triggers
 
   describe('Immutability triggers', () => {
-    const allImutableTables = [...allProductTables, ...contextEntityTables];
+    const allImutableTables = [...allProductTables, ...channelEntityTables];
 
     it.each(allImutableTables)('should have immutability trigger on %s', async (tableName) => {
       const rows = getRows<{ trigger_name: string }>(
@@ -127,7 +127,7 @@ describe('Schema verification', () => {
         expect(rows[0].relforcerowsecurity, `FORCE RLS not enabled on ${tableName}`).toBe(true);
       });
 
-      it.each(contextEntityTables)('should NOT have FORCE RLS on %s (app-layer isolation)', async (tableName) => {
+      it.each(channelEntityTables)('should NOT have FORCE RLS on %s (app-layer isolation)', async (tableName) => {
         const rows = getRows<{ relforcerowsecurity: boolean }>(
           await adminDb.execute(sql`
               SELECT relforcerowsecurity
@@ -187,7 +187,7 @@ describe('Schema verification', () => {
       expect(rows.length, `Missing write-through policies on ${tableName}`).toBeGreaterThanOrEqual(3);
     });
 
-    it.each(contextEntityTables)('should NOT have RLS policies on %s', async (tableName) => {
+    it.each(channelEntityTables)('should NOT have RLS policies on %s', async (tableName) => {
       const rows = getRows<{ polname: string }>(
         await adminDb.execute(sql`
             SELECT pol.polname

@@ -32,7 +32,7 @@ Postgres + OpenAPI + React Query are the foundational primitives. Standard OpenA
 
 | Entity type | Features | Example |
 |------|--------------|---------|
-| `ContextEntityType` | Standard REST CRUD, server-generated IDs | `organization` |
+| `ChannelEntityType` | Standard REST CRUD, server-generated IDs | `organization` |
 | `ProductEntityType` | HLC scalar merge, set-like array deltas, paused-mutation persistence infrastructure, app SSE, live cache updates, multi-tab leader election; optional Yjs integration | `attachment` |
 
 ---
@@ -145,7 +145,7 @@ Batch notifications carry a `cacheToken` and the backend reserves its entity key
 
 
 ## Notification format
-Synced entity tables have an `stx` JSONB column for transaction metadata. It is sent on product-entity notifications. A later mutation overwrites the envelope, but the merged `fieldTimestamps` inside it remain part of conflict resolution. Entity `seq` values and `context_counters` are the current gap-detection state; `activitiesTable` is the append-only audit/cursor history.
+Synced entity tables have an `stx` JSONB column for transaction metadata. It is sent on product-entity notifications. A later mutation overwrites the envelope, but the merged `fieldTimestamps` inside it remain part of conflict resolution. Entity `seq` values and `channel_counters` are the current gap-detection state; `activitiesTable` is the append-only audit/cursor history.
 
 
 ```typescript
@@ -157,8 +157,8 @@ interface StreamNotification {
   subjectId: string | null;
   organizationId: string | null;
   tenantId: string | null;
-  contextType: string | null;                   // Context entity type for membership (e.g., 'project')
-  contextId: string | null;                     // Parent entity ID for unseen count grouping
+  channelType: string | null;                   // Channel entity type for membership (e.g., 'project')
+  channelId: string | null;                     // Parent entity ID for unseen count grouping
   seq: number | null;                           // Per-entityType sequence stamped by CDC worker (entities only)
   stx: StxBase | null;                          // Sync transaction metadata (entities only)
   cacheToken: string | null;                    // Session-signed app entity-cache token (entities only)
@@ -202,7 +202,7 @@ Before opening SSE, the client POSTs its cursor and flattened seq watermarks to 
 interface CatchupChangeSummary {
   entitySeqs?: Record<string, number>;
   entityCounts?: Record<string, number>;
-  childContextChanges?: Record<string, {
+  childChannelChanges?: Record<string, {
     entitySeqs?: Record<string, number>;
     entityCounts?: Record<string, number>;
   }>;
@@ -300,7 +300,7 @@ Idempotency is operation-specific, not a global mutation guarantee. The default 
 Uses entity-type sequence numbers (`seq`) for **create/update/soft-delete/restore detection**. A soft delete sets `deleted_at`; a restore clears it. Both are updates, so CDC stamps them and delta reads can reconcile the cached row.
 
 **Sequence architecture:**
-- **`seq`**: Per-row sequence stamped by the CDC worker after each product-entity create/update. The worker reserves a range in `context_counters.counts['s:{entityType}']` and writes assigned values back to the rows. New rows have their schema default until CDC stamps them.
+- **`seq`**: Per-row sequence stamped by the CDC worker after each product-entity create/update. The worker reserves a range in `channel_counters.counts['s:{entityType}']` and writes assigned values back to the rows. New rows have their schema default until CDC stamps them.
 - **Hierarchy-aware scoping**: The CDC worker uses the row's deepest non-null ancestor ID as the context key. This equals the declared parent for ordinary hierarchies and supports variable-depth entities whose nearer ancestor can be null.
 - **Membership detection**: Membership changes are detected via the org-level `s:membership` counter and standard membership invalidation.
 - **Delete detection**: Soft deletes are seq-stamped tombstone rows (`deletedAt != null`) returned by `seqCursor` reads. A physical hard delete has no row to fetch; the live handler invalidates the list, while the in-session server-count signal may detect a missed create/delete. No automatic hard-purge horizon is implemented in this repository.
@@ -308,7 +308,7 @@ Uses entity-type sequence numbers (`seq`) for **create/update/soft-delete/restor
 
 **Two modes of gap detection:**
 
-1. **Catchup (offline/reconnect):** Client compares stored org/child-context `clientEntitySeq` values with `serverEntitySeq` values from `context_counters`. For a cached changed scope it reads from `clientEntitySeq + 1` without an upper bound. Tombstones remove entities from cache. The first connection only records a baseline.
+1. **Catchup (offline/reconnect):** Client compares stored org/child-context `clientEntitySeq` values with `serverEntitySeq` values from `channel_counters`. For a cached changed scope it reads from `clientEntitySeq + 1` without an upper bound. Tombstones remove entities from cache. The first connection only records a baseline.
 
 2. **Live (SSE):** Product create/update notifications include `seq`, scoped to entity type + effective context (e.g., tasks within a project in a fork). The single-notification path advances its watermark before starting the range fetch; the batch path advances to `batchUntilSeq` only after a successful range fetch. An own create/update echo returns before either update after patching cached `stx`, so catchup may safely see that seq again.
 
@@ -356,7 +356,7 @@ Registered product entity queries can opt into `syncStaleTime`, which returns **
 | 5 min (`syncStaleTime`) | Product entity queries, stream disconnected | Fallback so queries refresh on navigation |
 | Infinity (global default) | `offlineAccess` enabled and device offline, for queries without their own `staleTime` | Serve those cached queries without time-based staleness until back online |
 
-Only product entity queries opt in to `syncStaleTime`: they are the only entities covered by the CDC → catchup pipeline. Context entities (organizations, memberships) and non-synced queries normally use the global 30s default; with `offlineAccess` enabled, that global default becomes Infinity while the browser is offline. A query-level `syncStaleTime` still takes precedence and returns 5 minutes whenever the stream is disconnected, including offline.
+Only product entity queries opt in to `syncStaleTime`: they are the only entities covered by the CDC → catchup pipeline. Channel entities (organizations, memberships) and non-synced queries normally use the global 30s default; with `offlineAccess` enabled, that global default becomes Infinity while the browser is offline. A query-level `syncStaleTime` still takes precedence and returns 5 minutes whenever the stream is disconnected, including offline.
 
 ### Cache integrity check (entityCounts)
 

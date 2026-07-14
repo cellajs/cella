@@ -1,4 +1,4 @@
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 
 export type EntityRouteEntry = {
   /** Route path template for this entity */
@@ -6,7 +6,7 @@ export type EntityRouteEntry = {
   /** Route param name this entity's slug fills (both as self and as ancestor) */
   paramName: string;
   /** When shown as subitem, navigate to a parent entity's route instead */
-  subitemOf?: { entityType: ContextEntityType; searchParam: string };
+  subitemOf?: { entityType: ChannelEntityType; searchParam: string };
 };
 
 /**
@@ -21,4 +21,4 @@ export const entityRouteConfig = {
     path: '/$tenantId/$organizationSlug/organization/attachments',
     paramName: 'organizationSlug',
   },
-} as const satisfies Record<ContextEntityType, EntityRouteEntry>;
+} as const satisfies Record<ChannelEntityType, EntityRouteEntry>;

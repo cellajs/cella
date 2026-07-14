@@ -12,7 +12,7 @@ vi.mock('shared', () => ({
   appConfig: {
     slug: 'test-app',
     productEntityTypes: ['task', 'label', 'attachment'],
-    contextEntityTypes: ['organization', 'workspace', 'project'],
+    channelEntityTypes: ['organization', 'workspace', 'project'],
     clientCacheVersion: 'v1',
   },
 }));
@@ -78,7 +78,7 @@ async function seedScope(scope: string, schemaVersion: number) {
     clientCacheVersion: 'v1',
     schemaVersion,
     mutations: [queuedMutation({ name: 'offline edit' })] as never,
-    contextQueries: [],
+    channelQueries: [],
   });
   await db.queries.put({
     id: `${scope}:["attachment","list"]`,

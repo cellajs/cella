@@ -1,5 +1,5 @@
 import type { InfiniteData, QueryKey } from '@tanstack/react-query';
-import type { ContextEntityType, EntityType } from 'shared';
+import type { ChannelEntityType, EntityType } from 'shared';
 
 /** Extract usable mutation variables from a generated *Data type (strips `url` and `path`). */
 export type MutationData<T> = Omit<T, 'url'>;
@@ -21,7 +21,7 @@ export type BaseQueryResponse<TItem, TPageParam = PageParams> = [
   BaseQueryItem<TItem, TPageParam> | undefined,
 ];
 
-export type ContextQueryProp<TItem, TOptimisticId = undefined, TPageParam = PageParams> = TOptimisticId extends
+export type ChannelQueryProp<TItem, TOptimisticId = undefined, TPageParam = PageParams> = TOptimisticId extends
   | undefined
   | null
   ? BaseQueryResponse<TItem, TPageParam>
@@ -34,8 +34,8 @@ export type QueryOrgContext = { tenantId: string; organizationId: string };
 export type QueryOptionsWithKey = { queryKey: readonly unknown[] };
 
 // biome-ignore lint/suspicious/noExplicitAny: Query factories have different parameter shapes per entity type.
-export type ContextEntityListQueryFactory = (...args: any[]) => QueryOptionsWithKey;
-export type ContextEntityListQueryMap = Partial<Record<ContextEntityType, ContextEntityListQueryFactory>>;
+export type ChannelEntityListQueryFactory = (...args: any[]) => QueryOptionsWithKey;
+export type ChannelEntityListQueryMap = Partial<Record<ChannelEntityType, ChannelEntityListQueryFactory>>;
 
 /** Structural query shape used by the sync service for both standard and infinite queries. */
 export type EntitySyncQueryOptions = QueryOptionsWithKey & { getNextPageParam?: unknown };

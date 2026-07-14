@@ -21,33 +21,33 @@ describe('shared buildSubject', () => {
   const ancestorIdKeys = ancestors.map((a) => appConfig.entityIdColumnKeys[a]);
 
   /** Build ancestor context ID columns with all ancestors set to test values */
-  const fullAncestorContextIds = () => Object.fromEntries(ancestorIdKeys.map((key) => [key, `test-${key}`]));
+  const fullAncestorChannelIds = () => Object.fromEntries(ancestorIdKeys.map((key) => [key, `test-${key}`]));
 
   it('returns a subject with entityType and generated id', () => {
-    const subject = buildSubject(productWithAncestors, fullAncestorContextIds());
+    const subject = buildSubject(productWithAncestors, fullAncestorChannelIds());
     expect(subject.entityType).toBe(productWithAncestors);
     expect(typeof subject.id).toBe('string');
   });
 
   it('extracts ancestor context IDs from the input columns', () => {
-    const subject = buildSubject(productWithAncestors, fullAncestorContextIds());
+    const subject = buildSubject(productWithAncestors, fullAncestorChannelIds());
     for (const key of ancestorIdKeys) {
       const ancestor = ancestors[ancestorIdKeys.indexOf(key)];
-      expect(subject.contextIds[ancestor]).toBe(`test-${key}`);
+      expect(subject.channelIds[ancestor]).toBe(`test-${key}`);
     }
   });
 
   it('allows null ancestor IDs (explicit unscoped)', () => {
-    const ancestorContextIds: Record<string, string | null> = fullAncestorContextIds();
-    for (const key of ancestorIdKeys) ancestorContextIds[key] = null;
-    expect(() => buildSubject(productWithAncestors, ancestorContextIds)).not.toThrow();
+    const ancestorChannelIds: Record<string, string | null> = fullAncestorChannelIds();
+    for (const key of ancestorIdKeys) ancestorChannelIds[key] = null;
+    expect(() => buildSubject(productWithAncestors, ancestorChannelIds)).not.toThrow();
   });
 
   it('throws MissingScopeError when a required ancestor ID is missing (undefined)', () => {
-    const ancestorContextIds = fullAncestorContextIds();
-    delete ancestorContextIds[ancestorIdKeys[0]];
+    const ancestorChannelIds = fullAncestorChannelIds();
+    delete ancestorChannelIds[ancestorIdKeys[0]];
     try {
-      buildSubject(productWithAncestors, ancestorContextIds);
+      buildSubject(productWithAncestors, ancestorChannelIds);
       expect.unreachable('Expected MissingScopeError to be thrown');
     } catch (e) {
       expect(e).toBeInstanceOf(MissingScopeError);
@@ -57,7 +57,7 @@ describe('shared buildSubject', () => {
 });
 
 /**
- * Single-row enforcement paths (`getValidProductEntity`, `getValidContextEntity`,
+ * Single-row enforcement paths (`getValidProductEntity`, `getValidChannelEntity`,
  * `splitByPermission`, the Yjs relay) all build their subject from a resolved DB row. If that
  * row is not carried onto the subject, every row-derived grant evaluates against nothing and
  * fails CLOSED — a silent denial, not an error. That regression is what this pins.
