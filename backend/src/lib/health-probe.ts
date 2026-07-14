@@ -30,7 +30,11 @@ async function runProbe(baseUrl: string): Promise<ProbeResult> {
   const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
   const startedAt = Date.now();
   try {
-    const res = await fetch(`${baseUrl}/health?depth=full`, {
+    // WebSocket workers advertise ws(s):// public URLs (e.g. yjs), but their
+    // /health endpoint speaks plain HTTP on the same host — and fetch() rejects
+    // the ws scheme outright, which used to read as `unreachable`.
+    const httpBase = baseUrl.replace(/^ws(s?):/, 'http$1:');
+    const res = await fetch(`${httpBase}/health?depth=full`, {
       signal: controller.signal,
       headers: { accept: 'application/json' },
     });
