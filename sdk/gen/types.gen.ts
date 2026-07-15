@@ -3416,7 +3416,7 @@ export type GetYjsTokenData = {
   body?: never;
   path?: never;
   query: {
-    entityType: string;
+    entityType: 'attachment';
     tenantId: string;
     organizationId: string;
   };

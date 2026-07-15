@@ -9,15 +9,16 @@
  * shared/src/schema-evolution/tests.
  */
 import { z } from '@hono/zod-openapi';
+import type { LensEntityType } from 'shared/schema-evolution';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('shared/schema-evolution', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared/schema-evolution')>();
   return {
     ...actual,
-    widenedOpsKeyMap: (entityType: string) => (entityType === 'attachment' ? { name: 'title' } : {}),
+    widenedOpsKeyMap: (entityType: LensEntityType) => (entityType === 'attachment' ? { name: 'title' } : {}),
     normalizeOps: (
-      entityType: string,
+      entityType: LensEntityType,
       ops: Record<string, unknown>,
       stx: { fieldTimestamps?: Record<string, unknown> },
     ) => {

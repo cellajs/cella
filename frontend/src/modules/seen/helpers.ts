@@ -1,4 +1,4 @@
-import { appConfig, hierarchy } from 'shared';
+import { appConfig, hierarchy, type ProductEntityType } from 'shared';
 
 /** Context types that group seen counts, derived from hierarchy parents of tracked entity types */
 export const seenGroupingChannelTypes = new Set(
@@ -9,7 +9,7 @@ export const seenGroupingChannelTypes = new Set(
  * Derive the channel entity ID for seen-tracking grouping from any entity row.
  * Uses hierarchy to find the parent context type, then reads the matching ID column from the entity.
  */
-export function getSeenChannelId(entityType: string, entity: Record<string, unknown>): string {
+export function getSeenChannelId(entityType: ProductEntityType, entity: Record<string, unknown>): string {
   const parent = hierarchy.getParent(entityType);
   const key = parent ? appConfig.entityIdColumnKeys[parent] : 'organizationId';
   return String(entity[key] ?? entity.organizationId);

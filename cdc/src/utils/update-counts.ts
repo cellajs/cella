@@ -1,5 +1,5 @@
 import { appConfig, hierarchy, resolveDeepestAncestorId, resolveNonNullAncestors } from 'shared';
-import type { ActivityAction, AncestorSource } from 'shared';
+import type { ActivityAction, AncestorSource, EntityType } from 'shared';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
 import type { CdcRowData } from '../types';
@@ -217,7 +217,7 @@ function getInactiveMembershipDelta(
 function getEntityDeltas(
   action: ActivityAction,
   organizationId: string,
-  entityType: string,
+  entityType: EntityType,
   newRow: CdcRowData,
   oldRow: CdcRowData | null,
   h: AncestorSource,
@@ -264,7 +264,7 @@ function getEntityDeltas(
 /**
  * Warn for missing ancestor ids, except ancestors declared nullable (variable-depth rows).
  */
-function warnMissingAncestors(h: AncestorSource, entityType: string, row: CdcRowData): void {
+function warnMissingAncestors(h: AncestorSource, entityType: EntityType, row: CdcRowData): void {
   const nullable = h.getNullableAncestors(entityType);
   for (const ancestor of h.getOrderedAncestors(entityType)) {
     if (typeof row[`${ancestor}Id`] === 'string') continue;

@@ -106,7 +106,7 @@ function matchesCanonicalScope(queryKey: readonly unknown[], entity: ItemData, s
  * stx is conflict-resolution metadata never rendered in the UI.
  */
 export function patchEntityStxInCache(
-  entityType: string,
+  entityType: ProductEntityType,
   entityId: string,
   stx: { fieldTimestamps?: Record<string, string> },
   organizationId?: string,
@@ -143,7 +143,7 @@ export function patchEntityStxInCache(
 }
 
 /** Store cache token for entity (live notifications only) */
-export function storeEntityCacheToken(entityType: string, entityId: string, token: string): void {
+export function storeEntityCacheToken(entityType: ProductEntityType, entityId: string, token: string): void {
   storeCacheToken(entityType, entityId, token);
 }
 
@@ -231,7 +231,7 @@ export async function fetchEntityAndUpdateList(
   action: 'create' | 'update',
   organizationId?: string,
   tenantId?: string,
-  entityType?: string,
+  entityType?: ProductEntityType,
 ): Promise<void> {
   // Skip remote writes for entities with pending mutations to preserve optimistic state.
   // The mutation's onSuccess will reconcile the cache when it settles.

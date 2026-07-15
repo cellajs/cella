@@ -52,7 +52,7 @@ const { useUserStore, yjsTokenKey } = await import('~/modules/user/user-store');
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-const TEST_TOKEN_KEY = yjsTokenKey('task', 'tenant-1');
+const TEST_TOKEN_KEY = yjsTokenKey('attachment', 'tenant-1');
 
 /** Create a provider and wire the store→params subscription (mirrors acquireConnection). */
 function createProviderWithTokenSync(token: string) {
@@ -63,7 +63,7 @@ function createProviderWithTokenSync(token: string) {
     'test-session',
     {},
     {
-      params: { token, entityType: 'task', tenantId: 'tenant-1' },
+      params: { token, entityType: 'attachment', tenantId: 'tenant-1' },
     },
   );
 

@@ -4,7 +4,7 @@ import type { ChannelScope, SubjectForPermission } from 'shared';
 
 /** Build a raw subject (without validation) for testing validateAncestorScope itself */
 const buildRawSubject = (
-  entityType: string,
+  entityType: SubjectForPermission['entityType'],
   overrides?: Partial<Record<keyof ChannelScope, string | null | undefined>>,
 ): SubjectForPermission => {
   const ancestors = hierarchy.getOrderedAncestors(entityType);
@@ -14,7 +14,7 @@ const buildRawSubject = (
   }
   if (overrides) Object.assign(channelIds, overrides);
   return {
-    entityType: entityType as SubjectForPermission['entityType'],
+    entityType,
     id: 'test-id',
     channelIds: channelIds as ChannelScope,
   };

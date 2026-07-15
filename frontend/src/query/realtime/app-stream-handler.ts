@@ -223,7 +223,7 @@ function handleEntityNotification(
 }
 
 /** Refetch the server's predicate-exact unseen counts for a tracked entity type. */
-function invalidateUnseenCounts(entityType: string): void {
+function invalidateUnseenCounts(entityType: ProductEntityType): void {
   const trackedTypes = appConfig.seenTrackedEntityTypes as readonly string[];
   if (!trackedTypes.includes(entityType)) return;
   queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
@@ -233,7 +233,7 @@ function invalidateUnseenCounts(entityType: string): void {
  * Optimistically adjust the unseen count for a tracked entity created/deleted via SSE: patch the
  * cache directly by channelId to avoid a full refetch, falling back to invalidation if none.
  */
-function adjustUnseenCount(entityType: string, channelId: string | null, delta: number): void {
+function adjustUnseenCount(entityType: ProductEntityType, channelId: string | null, delta: number): void {
   const trackedTypes = appConfig.seenTrackedEntityTypes as readonly string[];
   if (!trackedTypes.includes(entityType)) return;
 
@@ -267,7 +267,7 @@ function adjustUnseenCount(entityType: string, channelId: string | null, delta: 
  * pending), the count is unchanged (total−1 and seen−1 cancel); if unseen, decrement. Falls back to
  * invalidation when channelId is unavailable.
  */
-function handleDeleteUnseenCount(entityType: string, entityId: string, channelId: string | null): void {
+function handleDeleteUnseenCount(entityType: ProductEntityType, entityId: string, channelId: string | null): void {
   const trackedTypes = appConfig.seenTrackedEntityTypes as readonly string[];
   if (!trackedTypes.includes(entityType)) return;
 

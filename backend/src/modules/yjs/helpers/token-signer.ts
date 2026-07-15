@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto';
+import type { ProductEntityType } from 'shared';
 import { env } from '#/env';
 
 const DELIMITER = '.';
@@ -9,7 +10,7 @@ const TOKEN_TTL_MS = 30 * 60 * 1000;
 
 export interface YjsTokenPayload {
   userId: string;
-  entityType: string;
+  entityType: ProductEntityType;
   tenantId: string;
   organizationId: string | null;
   exp: number;

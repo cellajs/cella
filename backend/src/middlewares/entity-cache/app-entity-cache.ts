@@ -1,3 +1,4 @@
+import type { EntityType } from 'shared';
 import { TTLCache } from '#/lib/ttl-cache';
 import { log } from '#/utils/logger';
 import { coalesce, isInFlight } from '#/utils/request-coalescing';
@@ -37,7 +38,7 @@ const tokenIndex = new TTLCache<string>({
 });
 
 /** Build entity key. */
-function entityKey(entityType: string, entityId: string): string {
+function entityKey(entityType: EntityType, entityId: string): string {
   return `${entityType}:${entityId}`;
 }
 
@@ -55,7 +56,7 @@ export const entityCache = {
    *
    * @param token - Cache token (nanoid from CDC)
    */
-  reserve(token: string, entityType: string, entityId: string, ttlMs?: number): void {
+  reserve(token: string, entityType: EntityType, entityId: string, ttlMs?: number): void {
     const key = entityKey(entityType, entityId);
     const ttl = ttlMs ?? cacheConfig.defaultTtl;
 
@@ -119,7 +120,7 @@ export const entityCache = {
    * Invalidate cache entry by entity type and ID.
    * Removes entity data from cache. Token index entries expire naturally.
    */
-  invalidateByEntity(entityType: string, entityId: string): boolean {
+  invalidateByEntity(entityType: EntityType, entityId: string): boolean {
     const key = entityKey(entityType, entityId);
     const existed = cache.has(key);
 

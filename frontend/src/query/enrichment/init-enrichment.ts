@@ -92,7 +92,7 @@ function enrichListData(
 }
 
 /** Build slug index from list queries for a given entity type */
-function buildSlugIndex(entityType: string): Map<string, string> {
+function buildSlugIndex(entityType: ChannelEntityType): Map<string, string> {
   const slugMap = new Map<string, string>();
   for (const query of queryClient.getQueryCache().findAll({ queryKey: [entityType, 'list'] })) {
     const data = query.state.data as InfiniteData | undefined;

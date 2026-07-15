@@ -1183,7 +1183,7 @@ export const zGetUserResponse = zUserBase.and(
 );
 
 export const zGetYjsTokenQuery = z.object({
-  entityType: z.string().max(50),
+  entityType: z.enum(['attachment']),
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
 });

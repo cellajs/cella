@@ -121,7 +121,7 @@ export const getEntityCounts = async ({ var: { db } }: DbContext, entityType: Ch
  * Reads a single pre-computed entity count from channelCountersTable.
  * Used for quota checks: reads `e:{entityType}` from the org's counter row.
  */
-export const getOrgEntityCount = async ({ var: { db } }: DbContext, orgId: string, entityType: string) => {
+export const getOrgEntityCount = async ({ var: { db } }: DbContext, orgId: string, entityType: EntityType) => {
   const key = `e:${entityType}`;
   const [row] = await db
     .select({ count: sql<number>`coalesce((${channelCountersTable.counts}->>${key})::int, 0)` })

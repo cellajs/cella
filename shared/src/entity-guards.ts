@@ -2,7 +2,7 @@ import { hierarchy } from '../config/config.default';
 import type { ChannelEntityType, ProductEntityType } from '../types';
 
 /** Get roles for a channel entity. */
-export function getChannelRoles(channelType: string): readonly string[] {
+export function getChannelRoles(channelType: ChannelEntityType): readonly string[] {
   return hierarchy.getRoles(channelType);
 }
 

@@ -41,7 +41,7 @@ export function findMembership(memberships: MembershipBase[], entityId: string):
  * Channel entity types that host this entity as a menu subentity, even if not hierarchy ancestors
  * (e.g. workspace hosts project). From menuStructure config.
  */
-export function getMenuParentTypes(entityType: string): ChannelEntityType[] {
+export function getMenuParentTypes(entityType: ChannelEntityType): ChannelEntityType[] {
   return appConfig.menuStructure.filter((s) => s.subentityType === entityType).map((s) => s.entityType);
 }
 

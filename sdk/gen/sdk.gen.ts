@@ -2495,7 +2495,7 @@ export const getUser = <ThrowOnError extends boolean = true>(
  * **GET /yjs/token** ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/GET/yjs/token) ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/yjs/token) ·· _yjs_cella_
  *
  * @param {getYjsTokenData} options
- * @param {string} options.query.entitytype - `string`
+ * @param {enum} options.query.entitytype - `enum`
  * @param {string} options.query.tenantid - `string`
  * @param {string} options.query.organizationid - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429

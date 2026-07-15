@@ -2,10 +2,10 @@ import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
 import { authGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
-import { errorResponseRefs, maxLength } from '#/schemas';
+import { errorResponseRefs, maxLength, productEntityTypeSchema } from '#/schemas';
 
 const yjsTokenQuerySchema = z.object({
-  entityType: z.string().max(50),
+  entityType: productEntityTypeSchema,
   tenantId: z.string().max(maxLength.id),
   organizationId: z.string().max(maxLength.id),
 });

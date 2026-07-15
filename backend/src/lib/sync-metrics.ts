@@ -1,4 +1,5 @@
 import { type Span, SpanStatusCode, trace } from '@opentelemetry/api';
+import type { EntityType } from 'shared';
 import { backendSpanNames, eventAttrs, type TraceContext } from 'shared/tracing';
 import { otel } from '#/lib/tracing';
 
@@ -97,6 +98,6 @@ export function startSyncSpan(
 // Metric recording
 
 /** Record a CDC message received from CDC Worker. */
-export function recordMessageReceived(entityType: string): void {
+export function recordMessageReceived(entityType: EntityType | 'unknown'): void {
   cdcMessagesReceived.add(1, { entityType });
 }

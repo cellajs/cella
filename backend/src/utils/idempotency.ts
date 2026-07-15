@@ -1,3 +1,4 @@
+import type { EntityType } from 'shared';
 import { findActivityByMutationId, findActivityRefByMutationId } from '#/db/prepared';
 
 /**
@@ -22,7 +23,7 @@ export async function checkIdempotency<T>(stxId: string, findExisting: () => Pro
 }
 
 interface EntityReference {
-  entityType: string;
+  entityType: EntityType;
   subjectId: string;
 }
 
