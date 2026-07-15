@@ -71,7 +71,7 @@ The engine **never loads rows**. Callers resolve whatever row data a decision ne
 | **Product entity** | Owns no roles; inherits from ancestor contexts (`attachment`). Orders as `[...ancestors]`. Must have a context parent. |
 | **User entity** | Carries no policies at all; `configurePermissions` filters it out. |
 | **Membership** | The engine reads only `{ channelType, channelId, role }`. Explicit `user → context` relation. |
-| **Subject** | What is being acted on: entity type, optional id, `channelIds` scope, and optionally `row` / `parentRow`. |
+| **Subject** | What is being acted on: entity type, optional id, `channelIds` scope, and optionally `row`. |
 | **Policy cell** | `0` (deny), `1` (allow), or a `RowCondition` (allow on qualifying rows). |
 | **Action** | `create`, `read`, `update`, `delete` (`appConfig.entityActions`). |
 | **Grant source** | Why an action was allowed: `membership`, `relation`, `public`, or `systemAdmin`. |
@@ -130,13 +130,10 @@ export type SubjectForPermission = {
   createdBy?: string | null;
   channelIds: ChannelScope;              // Partial<Record<ChannelEntityType, string | null>>
   row?: Record<string, unknown>;         // for row conditions + publicSelf
-  parentRow?: Record<string, unknown>;   // for publicParent
 };
 
 export interface PermissionDecision<T extends PermissionMembership = PermissionMembership> {
   subject: { entityType; id?; channelIds };
-  orderedChannels: ChannelEntityType[];  // most-specific → root
-  primaryChannel: ChannelEntityType;     // orderedChannels[0]
   actions: Record<EntityActionType, { enabled: boolean; grantedBy: GrantSource[] }>;
   can: Record<EntityActionType, boolean>;
   membership: T | null;

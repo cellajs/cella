@@ -126,8 +126,6 @@ const checkWithIndices = <T extends PermissionMembership>(
 
     return {
       subject: { entityType: subject.entityType, id: subject.id, channelIds },
-      orderedChannels,
-      primaryChannel,
       actions: allGranted,
       can,
       membership: resolvedMembership,
@@ -228,8 +226,6 @@ const checkWithIndices = <T extends PermissionMembership>(
 
   return {
     subject: { entityType: subject.entityType, id: subject.id, channelIds },
-    orderedChannels,
-    primaryChannel,
     actions,
     can,
     membership: resolvedMembership,

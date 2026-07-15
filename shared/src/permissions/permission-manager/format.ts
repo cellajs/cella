@@ -19,8 +19,6 @@ export const formatPermissionDecision = <T extends PermissionMembership>(decisio
   const lines = [
     `[Permission Check] entity=${decision.subject.entityType} id=${decision.subject.id}`,
     `├─ Context IDs: ${JSON.stringify(decision.subject.channelIds)}`,
-    `├─ Ordered Channels: [${decision.orderedChannels.join(', ')}]`,
-    `├─ Primary Context: ${decision.primaryChannel}`,
     '│',
     '├─ Action Attribution:',
   ];

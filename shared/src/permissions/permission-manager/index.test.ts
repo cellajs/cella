@@ -1,12 +1,6 @@
 import { getChannelRoles, hierarchy, isChannelEntity, isProductEntity } from 'shared';
 import { describe, expect, it } from 'vitest';
-import {
-  configureWidePermissions,
-  wideHierarchy,
-  wideMembership,
-  wideSubject,
-  wideTopology,
-} from '../../testing/wide-fixture';
+import { configureWidePermissions, wideMembership, wideSubject, wideTopology } from '../../testing/wide-fixture';
 import { getAllDecisions } from './check';
 import type { SubjectForPermission } from './types';
 
@@ -229,17 +223,6 @@ describe('PermissionDecision action attribution', () => {
     expect(decision.subject.entityType).toBe('attachment');
     expect(decision.subject.id).toBe('att1');
     expect(decision.subject.channelIds).toEqual({ organization: 'org1' });
-  });
-
-  it('returns orderedChannels and primaryChannel', () => {
-    const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1');
-    const decision = getAllDecisions(policies, memberships, subject, { topology: wideTopology });
-
-    // Derive expected contexts from the wide hierarchy (attachment → project → organization)
-    const ancestors = wideHierarchy.getOrderedAncestors('attachment');
-    expect(decision.orderedChannels).toEqual(ancestors);
-    expect(decision.primaryChannel).toBe(ancestors[0]);
   });
 
   it('accumulates multiple grants for same action from different roles', () => {

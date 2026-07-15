@@ -69,8 +69,6 @@ export interface PermissionDecision<T extends PermissionMembership = PermissionM
     id?: string;
     channelIds: ResolvedChannelIds;
   };
-  orderedChannels: ChannelEntityType[];
-  primaryChannel: ChannelEntityType;
   actions: Record<EntityActionType, ActionAttribution>;
   can: Record<EntityActionType, boolean>;
   membership: T | null;
