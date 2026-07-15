@@ -34,7 +34,6 @@ export type DeltaFetchFn = (
   organizationId: string | null,
   tenantId: string | null,
   seqCursor: string,
-  options?: { cacheToken?: string },
 ) => Promise<{ items: ItemData[]; total: number }>;
 
 /**

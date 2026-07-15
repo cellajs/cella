@@ -593,7 +593,7 @@ Cache lifecycle follows CDC/ActivityBus events:
 - **Create/update (including soft delete):** the CDC WebSocket handler calls `reserve(token, entityType, subjectId)`, mapping the token and replacing any cached value with a reserved marker.
 - **Physical delete:** the ActivityBus cache hook calls `invalidateByEntity(entityType, subjectId)`.
 
-The normal live create/update path fetches the notified seq range from the list endpoint and patches React Query. Detail cache reuse occurs when a consumer subsequently requests that entity with `X-Cache-Token`. Batch tokens and reservations exist, but the `batchCache()` middleware is currently unused, so list-range fan-out is not coalesced by this cache.
+The normal live create/update path fetches the notified seq range from the list endpoint and patches React Query. Detail cache reuse occurs when a consumer subsequently requests that entity with `X-Cache-Token`. Batch create/update messages carry no cache token: the CDC handler invalidates each affected entity's detail-cache entry from `batchRows` (by row id) so a later detail fetch re-enriches. List-range fan-out is intentionally not coalesced server-side today — see *Optimization posture* below.
 
 ### Endpoint-first caching
 
@@ -619,9 +619,14 @@ Subsequent requests → Cache hit → Return cached enriched data
 |---------|-------|-------|
 | App entity cache max size | 5000 entries | ~25-50MB RAM |
 | Token index max size | 10000 entries | Lightweight string→string mappings |
-| Batch token index max size | 1000 entries | Reserved infrastructure; no route currently consumes it |
 | App cache TTL | 10 min | Entity data + token index auto-expire |
 | Token signing | Session-signed HMAC | Base token from CDC, signed per subscriber |
+
+### Optimization posture
+
+Live fan-out is kept lean. The single-entity detail cache (`appCache`, forward-only tokens, entity-key coalescing) plus client-side granular patch/invalidation are the current optimization surface; the batch-list cache (`batchCache` middleware + per-row reservations + batch token index) was prototyped, never wired to a route, and removed as unused.
+
+The measured fan-out constraints in a very active org (single-process dispatch CPU, an 80-connection pool with no replica, unindexed seq reads, a discarded `COUNT(*)` on delta fetches, and a parallel unseen-counts stampede) and the ranked options to address them — per-product `seq` index, skip-count-on-delta, a short-TTL response-coalesce successor to `batchCache`, client jitter, and (the fork frontier) channel-scoped dispatch — are tracked in [.todos/SYNC_FANOUT_OPTIMIZATION.md](../.todos/SYNC_FANOUT_OPTIMIZATION.md).
 
 ---
 

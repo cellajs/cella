@@ -92,7 +92,7 @@ describe('catchup processor', () => {
       },
     } as unknown as PostAppCatchupResponse);
 
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5', undefined);
+    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5');
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
     expect(queryClient.getQueryData(keys.detail.byId('attachment-1'))).toMatchObject({ name: 'fresh' });
     expect(queryClient.getQueryData(keys.list.org('org-1'))).toEqual({
@@ -168,7 +168,7 @@ describe('catchup processor', () => {
       },
     } as unknown as PostAppCatchupResponse);
 
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '6', undefined);
+    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '6');
     expect(useSyncStore.getState().getChannelSeq('org-1', 'project-1', 'attachment')).toBe(8);
     // Org-level screening seq also advances for context-handled types
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(8);

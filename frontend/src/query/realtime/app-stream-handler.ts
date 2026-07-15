@@ -25,8 +25,8 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
     syncSpanNames.messageProcess,
     { entityType: notification.entityType, action, entityId: subjectId, _trace },
     () => {
-      // Store cache token if present (for product entities)
-      if (cacheToken && notification.entityType && subjectId) {
+      // Store the single-entity detail cache token (present only on non-batch product messages)
+      if (cacheToken && !notification.batchUntilSeq && notification.entityType && subjectId) {
         cacheOps.storeEntityCacheToken(notification.entityType, subjectId, cacheToken);
       }
 
@@ -52,7 +52,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
         const seqCursor = `${seq},${notification.batchUntilSeq}`;
 
         cacheOps
-          .fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys, cacheToken ?? undefined)
+          .fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys)
           .then((success) => {
             if (success && notification.batchUntilSeq) {
               // Store project-scoped seq when channelId (projectId) is available, else org-scoped

@@ -36,12 +36,6 @@ const tokenIndex = new TTLCache<string>({
   defaultTtl: cacheConfig.defaultTtl,
 });
 
-/** Batch token index: batchToken to entityKey[]. */
-const batchTokenIndex = new TTLCache<string[]>({
-  maxSize: 1000,
-  defaultTtl: cacheConfig.defaultTtl,
-});
-
 /** Build entity key. */
 function entityKey(entityType: string, entityId: string): string {
   return `${entityType}:${entityId}`;
@@ -139,28 +133,11 @@ export const entityCache = {
   },
 
   /**
-   * Reserve a batch token mapping to N entity keys.
-   * Each individual entity should also be reserved via reserve().
-   */
-  reserveBatch(batchToken: string, entityKeys: string[], ttlMs?: number): void {
-    batchTokenIndex.set(batchToken, entityKeys, ttlMs ?? cacheConfig.defaultTtl);
-  },
-
-  /**
-   * Resolve a batch token to its entity keys.
-   * Returns undefined if token unknown/expired.
-   */
-  resolveBatchToken(batchToken: string): string[] | undefined {
-    return batchTokenIndex.get(batchToken);
-  },
-
-  /**
    * Clear all cache entries and token index.
    */
   clear(): void {
     cache.clear();
     tokenIndex.clear();
-    batchTokenIndex.clear();
   },
 
   /**

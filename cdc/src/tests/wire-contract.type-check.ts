@@ -12,7 +12,7 @@ type Assert<T extends true> = T;
 /**
  * Compile-time drift guard for the CDC → API-server wire contract (see
  * .info/wire-contract-and-stream-split-options.md, Part A, option A1).
- * Envelope fields (rowData, cacheToken, batchReservations, _trace) are checked strictly.
+ * Envelope fields (rowData, cacheToken, batchRows, _trace) are checked strictly.
  * The activity sub-shape is checked with tolerance for insert-optionality (nullable
  * columns are `T?`), since both sides co-derive it from `activitiesTable` and
  * `createActivity` fills those at runtime. Type-only: compiled by `pnpm ts`, not run by vitest.

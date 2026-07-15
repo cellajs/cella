@@ -85,7 +85,6 @@ describe('sendBatchMessageToApi', () => {
       activity: { seq?: number; batchUntilSeq?: number };
       rowData: Record<string, unknown>;
       batchRows: { seq?: number }[];
-      batchReservations?: unknown[];
     });
     const orgA = payloads.find((p) => p.rowData.organizationId === 'org-a');
     const orgB = payloads.find((p) => p.rowData.organizationId === 'org-b');
@@ -94,11 +93,9 @@ describe('sendBatchMessageToApi', () => {
     expect(orgA?.activity.batchUntilSeq).toBe(11);
     expect(orgB?.activity.seq).toBe(5);
     expect(orgB?.activity.batchUntilSeq).toBe(7);
-    // Each message speaks only for its own context's rows and reservations
+    // Each message speaks only for its own context's rows
     expect(orgA?.batchRows.map((row) => row.seq)).toEqual([10, 11]);
     expect(orgB?.batchRows.map((row) => row.seq)).toEqual([5, 6, 7]);
-    expect(orgA?.batchReservations).toHaveLength(2);
-    expect(orgB?.batchReservations).toHaveLength(3);
     // Both ranges are contiguous: the integrity invariant holds per context
     expect(log.error).not.toHaveBeenCalled();
   });

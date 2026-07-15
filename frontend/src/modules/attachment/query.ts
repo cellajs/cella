@@ -48,11 +48,10 @@ const keys = {
       ['attachment', 'list', organizationId, filters] as const,
   },
 };
-registerEntityQueryKeys('attachment', keys, (organizationId, tenantId, seqCursor, options) => {
+registerEntityQueryKeys('attachment', keys, (organizationId, tenantId, seqCursor) => {
   return getAttachments({
     path: { tenantId: tenantId!, organizationId: organizationId! },
     query: { seqCursor, limit: String(SYNC_CHUNK_SIZE) },
-    headers: options?.cacheToken ? { 'x-cache-token': options.cacheToken } : undefined,
   });
 });
 export const attachmentQueryKeys = keys;

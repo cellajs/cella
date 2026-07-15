@@ -1,5 +1,4 @@
 export { entityCache } from './app-entity-cache';
-export { batchCache } from './batch-resolve';
 export { appCache } from './presets';
 
 declare module 'hono' {

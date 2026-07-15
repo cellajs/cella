@@ -349,7 +349,6 @@ function patchFetchedEntity(
  * one response — callers then fall back to full list invalidation and react-query owns recovery.
  *
  * seqCursor: "51" (open-ended, catchup) or "51,150" (bounded range, batch notifications).
- * A cacheToken (batch notifications) is passed as the X-Cache-Token header for backend cache fan-out.
  */
 export async function fetchRangeAndPatch(
   entityType: string,
@@ -357,7 +356,6 @@ export async function fetchRangeAndPatch(
   tenantId: string | null,
   seqCursor: string,
   keys: EntityQueryKeys,
-  cacheToken?: string,
 ): Promise<boolean> {
   if (!tenantId && organizationId) {
     console.debug(`[CacheOps] No tenantId for ${entityType} delta fetch, falling back to invalidation`);
@@ -368,7 +366,7 @@ export async function fetchRangeAndPatch(
   if (!deltaFetch) return false;
 
   try {
-    const { items } = await deltaFetch(organizationId, tenantId, seqCursor, cacheToken ? { cacheToken } : undefined);
+    const { items } = await deltaFetch(organizationId, tenantId, seqCursor);
 
     // Overflow guard: registrars request SYNC_CHUNK_SIZE, so a full response means the seq
     // window may exceed what one fetch returns. Patching a truncated window would silently
