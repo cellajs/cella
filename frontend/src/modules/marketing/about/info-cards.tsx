@@ -48,10 +48,7 @@ export function InfoCards() {
                 <div className="font-semibold underline-offset-4 group-hover:underline">
                   <CountryFlag countryCode={country} className="mr-2" />
                   {url}
-                  <ArrowUpRightIcon
-                    size={12}
-                    className="-mt-2 ml-1 inline-block text-primary opacity-50 group-hover:opacity-100"
-                  />
+                  <ArrowUpRightIcon className="icon-xs -mt-2 ml-1 inline-block text-primary opacity-50 group-hover:opacity-100" />
                 </div>
               </div>
             </a>

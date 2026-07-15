@@ -1,5 +1,5 @@
-import { appConfig, type ContextEntityType } from 'shared';
-import { contextEntityListQueriesByType } from '~/list-queries-config';
+import { appConfig, type ChannelEntityType } from 'shared';
+import { channelEntityListQueriesByType } from '~/list-queries-config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { queryClient } from '~/query/query-client';
@@ -8,18 +8,18 @@ import { buildMenu } from './build-menu';
 /** Entity types referenced by the menu structure (entity + subentity) */
 const menuEntityTypes = Array.from(
   new Set(appConfig.menuStructure.flatMap((s) => [s.entityType, s.subentityType].filter(Boolean))),
-) as ContextEntityType[];
+) as ChannelEntityType[];
 
 /**
  * Reads enriched entity data from the query cache and builds the user menu.
  * Assumes entity lists have already been enriched with memberships by
- * the cache subscriber (initContextEntityEnrichment).
+ * the cache subscriber (initChannelEntityEnrichment).
  *
  * Used by both useMenu (reactive) and getMenuData (imperative).
  */
 export function buildMenuFromCache(userId: string): UserMenu {
-  const registry = contextEntityListQueriesByType;
-  const byType = new Map<ContextEntityType, UserMenuItem[]>();
+  const registry = channelEntityListQueriesByType;
+  const byType = new Map<ChannelEntityType, UserMenuItem[]>();
 
   for (const entityType of menuEntityTypes) {
     const factory = registry[entityType];

@@ -17,7 +17,7 @@ describe('yjs schema-naming conventions match the drizzle schema', () => {
   it('memberships table and the columns the engine reads', () => {
     const cols = getColumns(membershipsTable) as Record<string, { name: string }>;
     expect(toTableName('membership')).toBe(getTableName(membershipsTable));
-    for (const key of ['contextType', 'contextId', 'role', 'userId']) {
+    for (const key of ['channelType', 'channelId', 'role', 'userId']) {
       expect(cols[key]?.name, `memberships.${key}`).toBe(toColumnName(key));
     }
   });

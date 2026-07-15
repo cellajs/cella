@@ -27,9 +27,8 @@ export const notifyBlock = createReactBlockSpec(notifyConfig, {
           <DropdownMenuTrigger disabled={!editor.isEditable}>
             <div className={'notify-icon-wrapper'} contentEditable={false}>
               <Icon
-                className={`notify-icon ${!editor.isEditable && 'cursor-default'}`}
+                className={`notify-icon size-8 ${!editor.isEditable && 'cursor-default'}`}
                 data-notify-icon-type={block.props.type}
-                size={32}
               />
             </div>
           </DropdownMenuTrigger>
@@ -44,7 +43,7 @@ export const notifyBlock = createReactBlockSpec(notifyConfig, {
                   className="flex min-h-8 flex-row gap-2 p-1"
                   onClick={() => editor.updateBlock(block, { type: 'notify', props: { type: value } })}
                 >
-                  {<Icon className={'notify-icon'} size={16} data-notify-icon-type={value} />}
+                  {<Icon className={'notify-icon'} data-notify-icon-type={value} />}
                   <span className="text-sm">{title}</span>
                 </DropdownMenuItem>
               );
@@ -70,7 +69,7 @@ const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
   },
   aliases: ['notify', 'notification', 'emphasize', 'warning', 'error', 'info', 'success'],
   group: 'Custom',
-  icon: <MessageCircleIcon size={16} />,
+  icon: <MessageCircleIcon />,
 });
 
 // Side menu item to insert Notify block

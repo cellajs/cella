@@ -3,12 +3,12 @@
 ## Entity hierarchy
 
 Each product entity has exactly one home context: its declared `parent`. The home is where a
-row physically lives, becomes a non-null `<context>Id` column (see `contextRelationColumns`),
+row physically lives, becomes a non-null `<context>Id` column (see `channelRelationColumns`),
 and is the most-specific link in the entity's ancestor chain used for permissions and
 public-read inheritance. A product can never have more than one home; `parent` is required,
 since without a home there is no context to derive access from.
 
-- `relatedContexts` declares non-ancestor context references (nullable id columns): cross-links,
+- `relatedChannels` declares non-ancestor context references (nullable id columns): cross-links,
   not homes.
 - `nullableAncestors` declares ancestors whose id columns are nullable: rows may attach above the
   declared parent (variable-depth rows, e.g. a course-stream item with `projectId = null`). The
@@ -30,5 +30,5 @@ parent; the deepest non-null ancestor is then the row's effective home. Without 
 ancestors this is just the declared parent.
 
 Every site that answers "which context owns this row" shares this rule: CDC seq scoping and
-counter deltas, wire-notification `contextId`, seen-by grouping, and counter recalculation.
-See `resolve-row-context.ts`, covered by `shared/src/config-builder/tests/resolve-row-context.test.ts`.
+counter deltas, wire-notification `channelId`, seen-by grouping, and counter recalculation.
+See `resolve-row-channel.ts`, covered by `shared/src/config-builder/tests/resolve-row-channel.test.ts`.

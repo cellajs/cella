@@ -21,7 +21,7 @@ export default defineConfig({
 
   // File overrides
   overrides: {
-    // Paths the fork fully owns — never synced (existing or new)
+    // Paths the fork fully owns, never synced (existing or new)
     // NOTE: package.jsons, lockfiles, this file are always ignored
     // NOTE: Modules with `app` owner are also ignored, including their public static asset folder
     ignored: [
@@ -33,11 +33,10 @@ export default defineConfig({
       'shared/config',
       'backend/drizzle',
       'frontend/public/static/common',
-      'frontend/src/modules/common/bg-animation',
+      'frontend/src/content',
       'frontend/src/routes/routeTree.gen.ts',
-      'sdk/src/plugins/openapi-parser/tests/__snapshots__/parse-spec.test.ts.snap',
+      'frontend/src/modules/common/bg-animation',
       '.github/release-please-manifest.json',
-      '.github/release-please-config.json',
     ],
     // Paths pinned to fork; prefer fork version during merge conflicts
     pinned: [

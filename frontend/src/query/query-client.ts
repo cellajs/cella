@@ -106,7 +106,10 @@ export const queryClient: QueryClient =
         retry: false,
       },
       mutations: {
-        networkMode: 'offlineFirst', // Mutations fire once, then pause if offline and resume when back online
+        // TODO: Make connectivity failures enter the persisted paused-mutation queue.
+        // `offlineFirst` permits the initial attempt, while `retry: 0` settles a
+        // network error before TanStack Query can mark the mutation as paused.
+        networkMode: 'offlineFirst',
         retry: 0,
       },
     },

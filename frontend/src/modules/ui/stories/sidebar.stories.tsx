@@ -1,5 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { CalendarIcon, ChevronUpIcon, HomeIcon, InboxIcon, SearchIcon, SettingsIcon, User2Icon } from 'lucide-react';
+import {
+  CalendarIcon,
+  ChevronUpIcon,
+  HouseIcon,
+  InboxIcon,
+  SearchIcon,
+  SettingsIcon,
+  UserRoundIcon,
+} from 'lucide-react';
 import { userEvent } from 'storybook/test';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import {
@@ -68,7 +76,7 @@ const items = [
   {
     title: 'HomeIcon',
     url: '#',
-    icon: HomeIcon,
+    icon: HouseIcon,
   },
   {
     title: 'InboxIcon',
@@ -134,7 +142,7 @@ export const Footer: Story = {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger render={<SidebarMenuButton />}>
-                <User2Icon /> Username
+                <UserRoundIcon /> Username
                 <ChevronUpIcon className="ml-auto" />
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" className="w-(--anchor-width)">

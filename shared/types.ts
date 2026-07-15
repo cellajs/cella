@@ -9,13 +9,13 @@ import { appConfig } from './src/config-builder/app-config';
 export type EntityType = (typeof appConfig.entityTypes)[number];
 
 /** Context entities (entities with memberships only) */
-export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];
+export type ChannelEntityType = (typeof appConfig.channelEntityTypes)[number];
 
 /** Product entities: user-generated content (no memberships assigned) */
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
 /** Relatable context entities - context entities that appear as parents of product entities. Used for activities table columns and CDC context extraction. */
-export type RelatableContextEntityType = (typeof hierarchy.relatableContextTypes)[number];
+export type RelatableChannelEntityType = (typeof hierarchy.relatableChannelTypes)[number];
 
 /** Resource types that are not entities but have activities logged */
 export type ResourceType = (typeof appConfig.resourceTypes)[number];
@@ -131,12 +131,12 @@ type HierarchyRelatedMap = typeof hierarchy._relatedMap;
 
 /**
  * Strict ancestor context chain for an entity, resolved recursively via the parent map.
- * Example: `AncestorContextType<'task'>` → `'project' | 'organization'`.
+ * Example: `AncestorChannelType<'task'>` → `'project' | 'organization'`.
  */
-export type AncestorContextType<E extends string> = E extends keyof HierarchyParentMap
+export type AncestorChannelType<E extends string> = E extends keyof HierarchyParentMap
   ? HierarchyParentMap[E] extends infer P
     ? P extends string
-      ? P | AncestorContextType<P>
+      ? P | AncestorChannelType<P>
       : never
     : never
   : never;
@@ -144,17 +144,17 @@ export type AncestorContextType<E extends string> = E extends keyof HierarchyPar
 /**
  * The root context entity type: the parentless context (no ancestors), e.g. `'organization'`.
  * Derived from the hierarchy so forks that rename/restructure the root don't need code changes.
- * Use `EntityIdColumnKey<RootContextType>` instead of hardcoding `'organizationId'`.
+ * Use `EntityIdColumnKey<RootChannelType>` instead of hardcoding `'organizationId'`.
  */
-export type RootContextType = {
-  [K in ContextEntityType]: [AncestorContextType<K>] extends [never] ? K : never;
-}[ContextEntityType];
+export type RootChannelType = {
+  [K in ChannelEntityType]: [AncestorChannelType<K>] extends [never] ? K : never;
+}[ChannelEntityType];
 
 /**
- * Related (non-ancestor) context types declared for an entity via `relatedContexts`.
- * Example (Raak): `RelatedContextType<'chat'>` → `'workspace' | 'project'`.
+ * Related (non-ancestor) context types declared for an entity via `relatedChannels`.
+ * Example (Raak): `RelatedChannelType<'chat'>` → `'workspace' | 'project'`.
  */
-export type RelatedContextType<E extends string> = E extends keyof HierarchyRelatedMap
+export type RelatedChannelType<E extends string> = E extends keyof HierarchyRelatedMap
   ? HierarchyRelatedMap[E]
   : never;
 

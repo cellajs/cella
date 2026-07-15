@@ -1,4 +1,4 @@
-import { ChevronDown, PlusIcon, Settings2 } from 'lucide-react';
+import { ChevronDownIcon, PlusIcon, Settings2Icon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,7 @@ interface MenuSectionButtonProps {
   isEditing: boolean;
   isSectionVisible: boolean;
   data: UserMenuItem[];
-  contextIds: string[];
+  channelIds: string[];
   toggleIsEditing: () => void;
   handleCreateAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
 }
@@ -24,7 +24,7 @@ interface MenuSectionButtonProps {
  */
 export const MenuSectionButton = ({
   data,
-  contextIds,
+  channelIds,
   options,
   isEditing,
   isSectionVisible,
@@ -35,7 +35,7 @@ export const MenuSectionButton = ({
   const toggleSection = useNavigationStore((state) => state.toggleSection);
 
   // Cumulative unseen count for non-archived, non-muted items in this section
-  const sectionUnseenCount = useUnseenCount(contextIds);
+  const sectionUnseenCount = useUnseenCount(channelIds);
 
   const createButtonRef = useRef(null);
 
@@ -70,10 +70,7 @@ export const MenuSectionButton = ({
               </motion.span>
             </div>
 
-            <ChevronDown
-              size={16}
-              className="opacity-50 transition-transform duration-200 group-data-[visible=true]/menuSection:rotate-180"
-            />
+            <ChevronDownIcon className="opacity-50 transition-transform duration-200 group-data-[visible=true]/menuSection:rotate-180" />
           </Button>
 
           {/* Settings button */}
@@ -94,7 +91,7 @@ export const MenuSectionButton = ({
                     size="icon"
                     onClick={() => toggleIsEditing()}
                   >
-                    <Settings2 size={16} />
+                    <Settings2Icon />
                   </Button>
                 </TooltipButton>
               </motion.div>
@@ -120,7 +117,7 @@ export const MenuSectionButton = ({
                     size="icon"
                     onClick={() => handleCreateAction(createButtonRef)}
                   >
-                    <PlusIcon size={16} />
+                    <PlusIcon />
                   </Button>
                 </TooltipButton>
               </motion.div>

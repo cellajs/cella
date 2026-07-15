@@ -1,4 +1,4 @@
-import { InfoIcon, TrashIcon, UploadIcon, XSquareIcon } from 'lucide-react';
+import { InfoIcon, SquareXIcon, TrashIcon, UploadIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
@@ -21,7 +21,7 @@ import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 type AttachmentsTableBarProps = AttachmentsTableProps & BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>;
 
 export const AttachmentsTableBar = ({
-  contextEntity,
+  channelEntity,
   selected,
   searchVars,
   setSearch,
@@ -34,7 +34,7 @@ export const AttachmentsTableBar = ({
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
-  const { open } = useAttachmentsUploadDialog(contextEntity.tenantId, contextEntity.id);
+  const { open } = useAttachmentsUploadDialog(channelEntity.tenantId, channelEntity.id);
 
   const deleteButtonRef = useRef(null);
 
@@ -87,7 +87,7 @@ export const AttachmentsTableBar = ({
                   label="c:delete"
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="c:clear" />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={SquareXIcon} label="c:clear" />
               </>
             ) : (
               showUpload && <TableBarButton icon={UploadIcon} label="c:upload" onClick={() => open()} />

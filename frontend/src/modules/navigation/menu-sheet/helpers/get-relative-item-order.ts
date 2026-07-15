@@ -1,5 +1,5 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import { getRelativeOrder } from 'shared/utils/display-order';
 import type { UserMenu } from '~/modules/me/types';
 import { sortAndFilterMenu } from './sort-and-filter-menu';
@@ -17,7 +17,7 @@ import { sortAndFilterMenu } from './sort-and-filter-menu';
  */
 export const getRelativeItemOrder = (
   data: UserMenu,
-  entityType: ContextEntityType,
+  entityType: ChannelEntityType,
   archived: boolean,
   itemId: string,
   targetOrder: number,

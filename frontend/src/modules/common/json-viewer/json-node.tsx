@@ -404,7 +404,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
             <span
               className={`inline-flex h-4 w-4 shrink-0 items-center justify-center ${isExpandable ? 'opacity-60' : '-ml-3.5 opacity-0'}`}
             >
-              <ChevronRightIcon size={14} className={`transition-transform ${isExpanded ? 'rotate-90' : 'rotate-0'}`} />
+              <ChevronRightIcon className={`icon-sm transition-transform ${isExpanded ? 'rotate-90' : 'rotate-0'}`} />
             </span>
             <KeyRenderer {...keyProps} />
             {keyName !== false && <span className="mr-1 opacity-70">:</span>}

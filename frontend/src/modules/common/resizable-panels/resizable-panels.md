@@ -1,4 +1,4 @@
-# Resizable panels — rules & visual examples
+# Resizable panels: rules & visual examples
 
 Diagram conventions:
 
@@ -30,14 +30,14 @@ swipe reverses the entire layout change automatically, no special undo logic.
 ### LAYOUT
 Panels use pixel widths (`style.width`) inside a flex container.
 No CSS grid, no fr tracks. Stored widths always equal rendered widths.
-No max-width cap on the grower — it absorbs all freed pixels to keep
+No max-width cap on the grower: it absorbs all freed pixels to keep
 the total panel sum constant during drag. The viewport clamp in
 `redistributePanels` prevents any panel from exceeding the visible
 area after drag ends.
 
 ---
 
-## G1 — Direction determines roles
+## G1: Direction determines roles
 
 The panel on the shrinking side of the separator is the victim.
 The panel on the growing side is the grower.
@@ -64,7 +64,7 @@ Drag left -> right panel is the grower, left panel is the victim.
 
 ---
 
-## G2 — Collapse snap
+## G2: Collapse snap
 
 Snap point at `(collapsedWidth + minWidth) / 2.2`. When a panel
 is dragged beyond the snap point it snaps to `collapsedWidth`.
@@ -96,7 +96,7 @@ Once collapsed, B stays collapsed for the rest of this drag.
 
 ---
 
-## G3 — Expand gate
+## G3: Expand gate
 
 When a collapsed panel is the grower, the user must drag the
 full `(minWidth - collapsedWidth)` distance before the panel snaps
@@ -136,7 +136,7 @@ the full expand gap (250px) before B snaps to minWidth.
 
 ---
 
-## G4 — Resize hints
+## G4: Resize hints
 
 A visual hint (arrow + radial glow) appears during collapse or
 expand zones. Mode `collapse` -> inward arrow. Mode `expand` ->
@@ -144,7 +144,7 @@ outward arrow. Progress 0->1.
 
 ---
 
-## G5 — Keyboard
+## G5: Keyboard
 
 Arrow keys: single-step, no cascade. Direct victim shrinks,
 grower grows. Expand-on-reverse: if grower is collapsed and the
@@ -153,7 +153,7 @@ collapse on the left panel of the separator.
 
 ---
 
-## G6 — Mode detection
+## G6: Mode detection
 
 Collapsed panels contribute `collapsedWidth`, non-collapsed panels
 contribute `minWidth * 1.25`. If ideal sum + separator space <=
@@ -164,10 +164,10 @@ room to grow without collapsing others.
 
 ---
 
-## G8 — Zero-sum resize (no max-width cap)
+## G8: Zero-sum resize (no max-width cap)
 
 Every pixel freed by victims goes to the grower. The grower has
-no upper cap in either mode — it absorbs all freed pixels to keep
+no upper cap in either mode: it absorbs all freed pixels to keep
 the total panel sum constant during drag. This eliminates trailing
 gaps and removes the need for mid-drag container width adjustments
 or scroll compensation.
@@ -196,7 +196,7 @@ exceeds the scroll parent's visible width.
 
 ---
 
-## G9 — Two-phase cascade
+## G9: Two-phase cascade
 
 Phase 1 -- shrink toward `minWidth` in victim order away from
 separator. Phase 2 -- collapse (only after all victims at min).
@@ -252,13 +252,13 @@ Collapse freed pixels fund the grower (G8).
 
 ---
 
-## G10 — No swap: expand blocks direct victim collapse
+## G10: No swap (expand blocks direct victim collapse)
 
 When a panel is expanding via the expand snap, the direct
 victim cannot collapse **while the expand is still being
 funded by shrinking**. Once the total freed pixels from
 Phase 1 (shrinking) meet or exceed the expand cost, the
-expand is fully funded and G10 no longer blocks — any
+expand is fully funded and G10 no longer blocks: any
 further collapse is normal cascading, not a swap.
 
 B is collapsed (grower side). A is the direct victim.
@@ -287,7 +287,7 @@ While `totalFreed < expandCost`, A cannot collapse.
 Panels fit the container. Grower absorbs all freed pixels (no cap).
 Collapse freed pixels go to grower (A2).
 
-### A2 — Collapse funds the grower (autoFill)
+### A2: Collapse funds the grower (autoFill)
 
 In autoFill mode, freed collapse pixels go to the grower.
 The grower has no upper cap (G8), so it absorbs all freed
@@ -316,16 +316,16 @@ pixels. `redistributePanels` will rebalance on drop.
 ## OVERFLOW MODE
 
 Panels exceed container, horizontal scroll.
-Grower absorbs all freed pixels (no cap) — total panel sum stays
+Grower absorbs all freed pixels (no cap). Total panel sum stays
 constant during drag, so the container width is static mid-drag.
 Expand is free: expand cost is subtracted from remaining
 delta before victims are shrunk (O2).
 
-### O1 — Collapse freed pixels fund grower (overflow)
+### O1: Collapse freed pixels fund grower (overflow)
 
 In overflow mode, collapse freed pixels go to the grower just like
 in autoFill. The grower has no cap (G8), so it absorbs all freed
-pixels. Total panel sum stays constant — no trailing gap, no
+pixels. Total panel sum stays constant: no trailing gap, no
 mid-drag container width changes needed.
 
 ```
@@ -348,7 +348,7 @@ mid-drag container width changes needed.
   Total panel sum unchanged. Container width static.
 ```
 
-### O2 — Expand is free in overflow mode
+### O2: Expand is free in overflow mode
 
 In overflow mode, the expand cost (`minWidth - collapsedWidth`) is
 subtracted from the remaining delta before victims are shrunk. This
@@ -443,17 +443,17 @@ Phase 1 and Phase 2 cascade.
 
 ---
 
-## G11 — Per-panel cascade (last victim off-screen)
+## G11: Per-panel cascade (last victim off-screen)
 
 When the last victim panel is not visible in the scroll
 container viewport at drag start (overflow mode only),
 the two-phase cascade (G9) is replaced by a per-panel
 two-pass cascade:
 
-**Phase 1** — shrink all victims to `minWidth`, nearest first
+**Phase 1**: shrink all victims to `minWidth`, nearest first
 (identical to G9 Phase 1).
 
-**Phase 2** — per-panel collapse, nearest first. Each victim
+**Phase 2**: per-panel collapse, nearest first. Each victim
 enters the collapse zone and collapses before the next is
 touched. This ensures nearest-first collapse order.
 

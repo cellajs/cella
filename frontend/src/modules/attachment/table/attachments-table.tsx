@@ -14,7 +14,7 @@ import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
@@ -24,16 +24,16 @@ function rowKeyGetter(row: Attachment) {
 }
 
 export interface AttachmentsTableProps {
-  contextEntity: EnrichedContextEntity;
+  channelEntity: EnrichedChannelEntity;
   isSheet?: boolean;
   canUpload?: boolean;
 }
 
-function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: AttachmentsTableProps) {
+function AttachmentsTable({ channelEntity, canUpload = true, isSheet = false }: AttachmentsTableProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  const updateAttachment = useAttachmentUpdateMutation(contextEntity.tenantId, contextEntity.id);
+  const updateAttachment = useAttachmentUpdateMutation(channelEntity.tenantId, channelEntity.id);
 
   // Table state
   const { q, sort, order } = search;
@@ -41,7 +41,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
 
   // Build columns
   const [selected, setSelected] = useState<Attachment[]>([]);
-  const columnsFromHook = useColumns(contextEntity, isSheet);
+  const columnsFromHook = useColumns(channelEntity, isSheet);
   const [hiddenOverrides, setHiddenOverrides] = useState<Record<string, boolean>>({});
   const columns = useMemo(
     () =>
@@ -64,8 +64,8 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = attachmentsListQueryOptions({
-    tenantId: contextEntity.tenantId,
-    organizationId: contextEntity.id,
+    tenantId: channelEntity.tenantId,
+    organizationId: channelEntity.id,
     q,
     sort,
     order,
@@ -120,7 +120,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
   return (
     <>
       <AttachmentsTableBar
-        contextEntity={contextEntity}
+        channelEntity={channelEntity}
         selected={selected}
         searchVars={{ ...search, limit }}
         setSearch={setSearch}

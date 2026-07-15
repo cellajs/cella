@@ -1,44 +1,39 @@
 import { describe, expect, it } from 'vitest';
+import { configureWidePermissions, widePublicGrants, wideSubject, wideTopology } from '../testing/wide-fixture';
 import { getAllDecisions } from './permission-manager/check';
 import type { SubjectForPermission } from './permission-manager/types';
-import { configureWidePermissions, widePublicGrants, wideSubject, wideTopology } from '../testing/wide-fixture';
+import { publicRow } from './public-read';
+import { rowPredicateMatches } from './row-conditions';
 
 /**
- * Public read grants (`publicRead`): subject-level, membership-independent read access based on
- * row data, evaluated for anonymous actors (no memberships, no userId) and members alike.
+ * Public read grants (`publicRead`): subject-level, membership-independent read access derived
+ * from the row's own `publicAt`, evaluated for anonymous actors (no memberships, no userId) and
+ * members alike.
+ *
+ * There is exactly one mode. A grant derived from ANOTHER row would be unenforceable in the two
+ * paths that must agree with the engine — the collection-read SQL compiler and CDC stream
+ * dispatch, which only ever ships the row itself. Cascading publication is a data concern.
  *
  * Runs against the wide fixture (organization → workspace/project, project → task/label/attachment),
  * not a fork's app config.
  */
 const NOW = '2026-07-06T12:00:00Z';
 
-const grants = widePublicGrants({
-  project: 'publicSelf',
-  task: 'publicParent',
-  attachment: 'publicParentOrSelf',
-});
+const grants = widePublicGrants({ project: 'publicSelf', task: 'publicSelf' });
 
 const projectSubject = (publicAt: string | null): SubjectForPermission =>
   wideSubject({
     entityType: 'project',
     id: 'p1',
-    contextIds: { organization: 'org1' },
+    channelIds: { organization: 'org1' },
     row: { publicAt },
-  });
-
-const taskSubject = (parentPublicAt: string | null): SubjectForPermission =>
-  wideSubject({
-    entityType: 'task',
-    id: 't1',
-    contextIds: { organization: 'org1', project: 'p1' },
-    parentRow: { publicAt: parentPublicAt },
   });
 
 // No policies at all: everything below must come from public grants alone.
 const noPolicies = {};
 
 describe('public read grants — anonymous actor', () => {
-  it('publicSelf grants read when the row publicAt is set', () => {
+  it('grants read when the row publicAt is set', () => {
     const { can, actions } = getAllDecisions(noPolicies, [], projectSubject(NOW), {
       publicGrants: grants,
       topology: wideTopology,
@@ -47,57 +42,40 @@ describe('public read grants — anonymous actor', () => {
     expect(actions.read.grantedBy).toEqual([{ type: 'public', mode: 'publicSelf' }]);
   });
 
-  it('publicSelf denies when publicAt is null or row data is absent', () => {
+  it('denies when publicAt is null or row data is absent', () => {
     expect(
-      getAllDecisions(noPolicies, [], projectSubject(null), { publicGrants: grants, topology: wideTopology }).can
-        .read,
+      getAllDecisions(noPolicies, [], projectSubject(null), { publicGrants: grants, topology: wideTopology }).can.read,
     ).toBe(false);
 
-    const noRow = wideSubject({ entityType: 'project', id: 'p1', contextIds: { organization: 'org1' } });
-    expect(
-      getAllDecisions(noPolicies, [], noRow, { publicGrants: grants, topology: wideTopology }).can.read,
-    ).toBe(false);
+    const noRow = wideSubject({ entityType: 'project', id: 'p1', channelIds: { organization: 'org1' } });
+    expect(getAllDecisions(noPolicies, [], noRow, { publicGrants: grants, topology: wideTopology }).can.read).toBe(
+      false,
+    );
   });
 
-  it('publicParent grants read from the resolved parent row only', () => {
-    expect(
-      getAllDecisions(noPolicies, [], taskSubject(NOW), { publicGrants: grants, topology: wideTopology }).can.read,
-    ).toBe(true);
-    expect(
-      getAllDecisions(noPolicies, [], taskSubject(null), { publicGrants: grants, topology: wideTopology }).can.read,
-    ).toBe(false);
-
-    // Own row publicAt must NOT satisfy publicParent
-    const ownPublicOnly = wideSubject({
+  it('reads the row itself, never an ancestor: a public parent does NOT publish its children', () => {
+    // The project (parent) is public; the task is not. Publication does not cascade through the
+    // permission engine — a fork that wants it propagates `publicAt` to the child row.
+    const task = wideSubject({
       entityType: 'task',
       id: 't1',
-      contextIds: { organization: 'org1', project: 'p1' },
+      channelIds: { organization: 'org1', project: 'p1' },
+      row: { publicAt: null },
+    });
+    expect(getAllDecisions(noPolicies, [], task, { publicGrants: grants, topology: wideTopology }).can.read).toBe(
+      false,
+    );
+
+    // ...and once the child row itself carries publicAt, it is readable.
+    const publishedTask = wideSubject({
+      entityType: 'task',
+      id: 't1',
+      channelIds: { organization: 'org1', project: 'p1' },
       row: { publicAt: NOW },
     });
     expect(
-      getAllDecisions(noPolicies, [], ownPublicOnly, { publicGrants: grants, topology: wideTopology }).can.read,
-    ).toBe(false);
-  });
-
-  it('publicParentOrSelf grants from either row', () => {
-    const self = wideSubject({
-      entityType: 'attachment',
-      id: 'a1',
-      contextIds: { organization: 'org1', project: 'p1' },
-      row: { publicAt: NOW },
-    });
-    const parent: SubjectForPermission = { ...self, row: {}, parentRow: { publicAt: NOW } };
-    const neither: SubjectForPermission = { ...self, row: {}, parentRow: {} };
-
-    expect(
-      getAllDecisions(noPolicies, [], self, { publicGrants: grants, topology: wideTopology }).can.read,
+      getAllDecisions(noPolicies, [], publishedTask, { publicGrants: grants, topology: wideTopology }).can.read,
     ).toBe(true);
-    expect(
-      getAllDecisions(noPolicies, [], parent, { publicGrants: grants, topology: wideTopology }).can.read,
-    ).toBe(true);
-    expect(
-      getAllDecisions(noPolicies, [], neither, { publicGrants: grants, topology: wideTopology }).can.read,
-    ).toBe(false);
   });
 
   it('grants read only — other actions stay denied', () => {
@@ -115,12 +93,12 @@ describe('public read grants — anonymous actor', () => {
     const orgSubject = wideSubject({
       entityType: 'organization',
       id: 'org1',
-      contextIds: {},
+      channelIds: {},
       row: { publicAt: NOW },
     });
-    expect(
-      getAllDecisions(noPolicies, [], orgSubject, { publicGrants: grants, topology: wideTopology }).can.read,
-    ).toBe(false);
+    expect(getAllDecisions(noPolicies, [], orgSubject, { publicGrants: grants, topology: wideTopology }).can.read).toBe(
+      false,
+    );
   });
 
   it('no publicGrants passed → engine behaves exactly as before', () => {
@@ -128,13 +106,27 @@ describe('public read grants — anonymous actor', () => {
   });
 });
 
+describe('publicRow — the shared predicate', () => {
+  it('is actor-independent: it matches for anonymous actors', () => {
+    expect(rowPredicateMatches(publicRow.predicate, { publicAt: NOW }, {})).toBe(true);
+    expect(rowPredicateMatches(publicRow.predicate, { publicAt: null }, {})).toBe(false);
+    expect(rowPredicateMatches(publicRow.predicate, {}, {})).toBe(false);
+  });
+
+  it('is a column-is-not-null predicate, so collection SQL can enforce it', () => {
+    // This is what makes public read enforceable in list endpoints. An actor-bound or
+    // cross-row predicate could not be compiled, and public rows would silently vanish from lists.
+    expect(publicRow.predicate).toEqual({ kind: 'columnIsNotNull', column: 'publicAt' });
+  });
+});
+
 describe('configurePermissions — publicRead declaration', () => {
   it('collects grants per subject and returns them alongside policies', () => {
     const { publicReadGrants } = configureWidePermissions(({ subject, publicRead }) => {
       if (subject.name === 'project') publicRead('publicSelf');
-      if (subject.name === 'task') publicRead('publicParent');
+      if (subject.name === 'task') publicRead('publicSelf');
     });
-    expect(publicReadGrants).toEqual({ project: 'publicSelf', task: 'publicParent' });
+    expect(publicReadGrants).toEqual({ project: 'publicSelf', task: 'publicSelf' });
   });
 
   it('throws when publicRead is declared twice for a subject', () => {
@@ -146,19 +138,5 @@ describe('configurePermissions — publicRead declaration', () => {
         }
       }),
     ).toThrow('publicRead() called twice');
-  });
-
-  it("throws when a parent-dependent grant's parent has no self-publication grant", () => {
-    expect(() =>
-      configureWidePermissions(({ subject, publicRead }) => {
-        if (subject.name === 'task') publicRead('publicParent');
-      }),
-    ).toThrow('no self-publication grant');
-
-    expect(() =>
-      configureWidePermissions(({ subject, publicRead }) => {
-        if (subject.name === 'attachment') publicRead('publicParentOrSelf');
-      }),
-    ).toThrow('no self-publication grant');
   });
 });

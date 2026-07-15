@@ -37,7 +37,7 @@ export interface PersistedMetaRecord {
   schemaVersion?: number;
   mutations: DehydratedState['mutations'];
   /** Context queries bundled directly in meta. */
-  contextQueries: DehydratedQuery[];
+  channelQueries: DehydratedQuery[];
 }
 
 /**

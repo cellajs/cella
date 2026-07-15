@@ -1,6 +1,6 @@
-import { and, eq, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import { appConfig, type ContextEntityType, type RowCondition, type RowConditionSqlForm } from 'shared';
+import { type Actor, appConfig, type ChannelEntityType, type RowCondition, type RowPredicate } from 'shared';
 import type { CollectionReadFilter } from './collection-scope';
 
 /**
@@ -27,15 +27,21 @@ const resolveColumn = (table: AnyPgTable, columnName: string, conditionName: str
 
 /**
  * Compile a single row condition to a predicate over `table`'s rows for the acting user.
- * Anonymous actors (`userId` undefined) never match actor-bound forms, mirroring the check-form.
+ * Anonymous actors never match actor-bound forms, mirroring the check-form.
  */
-export const compileRowConditionSql = (condition: RowCondition, table: AnyPgTable, userId: string | undefined): SQL => {
-  const form: RowConditionSqlForm = condition.sqlForm;
-  switch (form.kind) {
+export const compileRowConditionSql = (condition: RowCondition, table: AnyPgTable, actor: Actor): SQL => {
+  const predicate: RowPredicate = condition.predicate;
+  const column = resolveColumn(table, predicate.column, condition.name);
+
+  switch (predicate.kind) {
     case 'columnEqualsActor': {
+      const userId = 'anonymous' in actor ? undefined : actor.userId;
       if (!userId) return NEVER;
-      return eq(resolveColumn(table, form.column, condition.name), userId);
+      return eq(column, userId);
     }
+    // Actor-independent (public read): matches for anonymous actors too.
+    case 'columnIsNotNull':
+      return isNotNull(column);
   }
 };
 
@@ -51,75 +57,75 @@ export type CollectionReadWhere =
 
 /**
  * Build the row-scope WHERE clause for a collection read from a resolved filter:
- * `(subContext IN unconditional ids) OR (condition SQL AND subContext IN conditional ids) OR …`.
+ * `(subChannel IN unconditional ids) OR (condition SQL AND subChannel IN conditional ids) OR …`.
  *
- * Deep chains: entries tagged with an intermediate `contextType` (e.g. course grants on
+ * Deep chains: entries tagged with an intermediate `channelType` (e.g. course grants on
  * a project-homed entity) are scoped by THAT level's own id column, resolved via
  * `appConfig.entityIdColumnKeys` — on tables with denormalized ancestor columns an
  * intermediate id covers every row physically below it.
  *
  * @param filter - Resolved scope filter (`resolveCollectionReadFilter`).
  * @param table - The product table being queried.
- * @param subContextColumn - The table's home sub-context id column (e.g. `tasks.projectId`).
- * @param userId - The acting user id; undefined for anonymous actors.
+ * @param subChannelColumn - The table's home sub-context id column (e.g. `tasks.projectId`).
+ * @param actor - Who is asking; row conditions compile against it.
  */
 export const buildCollectionReadWhere = (
   filter: CollectionReadFilter,
   table: AnyPgTable,
-  subContextColumn: PgColumn,
-  userId: string | undefined,
+  subChannelColumn: PgColumn,
+  actor: Actor,
 ): CollectionReadWhere => {
   // Org-wide unconditional read (conditional scopes are subsumed and already dropped).
-  if (filter.subContextIds === undefined) return { kind: 'all' };
+  if (filter.subChannelIds === undefined) return { kind: 'all' };
 
   /**
    * The id column a scope entry filters by: its own level's column, or the home column.
    * Column keys come from `appConfig.entityIdColumnKeys`; a synthetic topology level
-   * (parity tests) is absent there and falls back to the `${contextType}Id` convention
+   * (parity tests) is absent there and falls back to the `${channelType}Id` convention
    * the config validator enforces for real entities.
    */
-  const scopeColumn = (contextType: ContextEntityType | undefined): PgColumn =>
-    contextType
+  const scopeColumn = (channelType: ChannelEntityType | undefined): PgColumn =>
+    channelType
       ? resolveColumn(
           table,
-          (appConfig.entityIdColumnKeys as Partial<Record<string, string>>)[contextType] ?? `${contextType}Id`,
-          `${contextType} scope`,
+          (appConfig.entityIdColumnKeys as Partial<Record<string, string>>)[channelType] ?? `${channelType}Id`,
+          `${channelType} scope`,
         )
-      : subContextColumn;
+      : subChannelColumn;
 
   const clauses: SQL[] = [];
 
-  if (filter.subContextIds.length > 0) {
-    clauses.push(inArray(subContextColumn, filter.subContextIds));
+  if (filter.subChannelIds.length > 0) {
+    clauses.push(inArray(subChannelColumn, filter.subChannelIds));
   }
 
-  for (const { contextType, subContextIds } of filter.ancestorScopes ?? []) {
-    if (subContextIds.length === 0) continue;
-    clauses.push(inArray(scopeColumn(contextType), subContextIds));
+  for (const { channelType, subChannelIds } of filter.ancestorScopes ?? []) {
+    if (subChannelIds.length === 0) continue;
+    clauses.push(inArray(scopeColumn(channelType), subChannelIds));
   }
 
   // HOME-scoped grants (elevatedRoles): the grant level's column matches AND every
   // more-specific ancestor column is NULL — rows homed exactly at that level.
-  for (const { contextType, subContextIds, deeperContexts } of filter.homeScopes ?? []) {
-    if (subContextIds.length === 0) continue;
+  for (const { channelType, subChannelIds, deeperChannels } of filter.homeScopes ?? []) {
+    if (subChannelIds.length === 0) continue;
     const scoped = and(
-      inArray(scopeColumn(contextType), subContextIds),
-      ...deeperContexts.map((deeper) => isNull(scopeColumn(deeper))),
+      inArray(scopeColumn(channelType), subChannelIds),
+      ...deeperChannels.map((deeper) => isNull(scopeColumn(deeper))),
     );
     if (scoped) clauses.push(scoped);
   }
 
-  for (const { condition, subContextIds, contextType, deeperContexts } of filter.conditionalScopes) {
-    const conditionSql = compileRowConditionSql(condition, table, userId);
-    const homeNulls = (deeperContexts ?? []).map((deeper) => isNull(scopeColumn(deeper)));
-    if (subContextIds === undefined) {
+  for (const { condition, subChannelIds, channelType, deeperChannels } of filter.conditionalScopes) {
+    const conditionSql = compileRowConditionSql(condition, table, actor);
+    const homeNulls = (deeperChannels ?? []).map((deeper) => isNull(scopeColumn(deeper)));
+    if (subChannelIds === undefined) {
       // Org-wide conditional grant: condition (plus home NULLs, if home-scoped) bounds the rows.
       const scoped = homeNulls.length > 0 ? and(conditionSql, ...homeNulls) : conditionSql;
       if (scoped) clauses.push(scoped);
       continue;
     }
-    if (subContextIds.length === 0) continue;
-    const scoped = and(inArray(scopeColumn(contextType), subContextIds), conditionSql, ...homeNulls);
+    if (subChannelIds.length === 0) continue;
+    const scoped = and(inArray(scopeColumn(channelType), subChannelIds), conditionSql, ...homeNulls);
     if (scoped) clauses.push(scoped);
   }
 

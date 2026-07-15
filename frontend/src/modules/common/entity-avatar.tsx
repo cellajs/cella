@@ -1,6 +1,6 @@
-import type { LucideIcon } from 'lucide-react';
 import { memo } from 'react';
 import type { EntityType } from 'shared';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { Avatar, AvatarFallback, AvatarImage, type AvatarProps } from '~/modules/ui/avatar';
 import { cn } from '~/utils/cn';
 import { numberToColorClass } from '~/utils/number-to-color-class';
@@ -11,7 +11,7 @@ export interface EntityAvatarProps extends AvatarProps {
   name?: string | null;
   url?: string | null;
   className?: string;
-  icon?: LucideIcon;
+  icon?: IconComponent;
 }
 
 function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props }: EntityAvatarProps) {

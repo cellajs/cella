@@ -2,12 +2,11 @@ import {
   Building2Icon,
   CheckCheckIcon,
   CloudIcon,
-  Code2Icon,
+  CodeXmlIcon,
   DatabaseIcon,
   GaugeIcon,
   HeartPulseIcon,
   KeyRoundIcon,
-  type LucideIcon,
   RadioTowerIcon,
   RocketIcon,
   ShieldCheckIcon,
@@ -19,6 +18,7 @@ import { appConfig, type EntityType } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { ElementIcon } from '~/modules/common/icons/element';
 import { GithubIcon } from '~/modules/common/icons/github';
+import type { IconComponent } from '~/modules/common/icons/types';
 import type { InfoCard } from '~/modules/marketing/about/info-cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import type { ShowcaseItem } from '~/modules/marketing/about/showcase';
@@ -114,11 +114,11 @@ export const featureCategoryIcons = {
   security: ShieldCheckIcon,
   auth: KeyRoundIcon,
   ux: SparklesIcon,
-  dx: Code2Icon,
+  dx: CodeXmlIcon,
   deploy: RocketIcon,
   performance: GaugeIcon,
   data: DatabaseIcon,
-} as const satisfies Record<FeatureCategory, LucideIcon>;
+} as const satisfies Record<FeatureCategory, IconComponent>;
 
 export type FeaturesPageItem = {
   id: string;
@@ -129,7 +129,7 @@ export const featuresPageItems: FeaturesPageItem[] = [
   // Data modelling
   { id: 'explicit_routes', category: 'data' },
   { id: 'entity_hierarchy', category: 'data' },
-  { id: 'context_entities', category: 'data' },
+  { id: 'channel_entities', category: 'data' },
   { id: 'product_entities', category: 'data' },
   { id: 'schema_evolution', category: 'data' },
   { id: 'user', category: 'data' },
@@ -211,7 +211,7 @@ export const syncCategoryIcons = {
   offline: WifiOffIcon,
   consistency: CheckCheckIcon,
   resilience: HeartPulseIcon,
-} as const satisfies Record<SyncCategory, LucideIcon>;
+} as const satisfies Record<SyncCategory, IconComponent>;
 
 export type SyncLayer = 'client' | 'api' | 'cdc' | 'yjs';
 
@@ -307,7 +307,7 @@ export const faqsData = [
 export const counts = [
   { id: 'user', title: 'c:users', icon: UsersIcon },
   { id: 'organization', title: 'c:organization_other', icon: Building2Icon },
-] as const satisfies readonly { id: EntityType; title: string; icon: LucideIcon }[];
+] as const satisfies readonly { id: EntityType; title: string; icon: IconComponent }[];
 
 /*************************************************************************************************
  * About - Why

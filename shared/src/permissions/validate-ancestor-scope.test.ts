@@ -1,22 +1,22 @@
 import { hierarchy, MissingScopeError, validateAncestorScope } from 'shared';
 import { describe, expect, it } from 'vitest';
-import type { ContextScope, SubjectForPermission } from 'shared';
+import type { ChannelScope, SubjectForPermission } from 'shared';
 
 /** Build a raw subject (without validation) for testing validateAncestorScope itself */
 const buildRawSubject = (
   entityType: string,
-  overrides?: Partial<Record<keyof ContextScope, string | null | undefined>>,
+  overrides?: Partial<Record<keyof ChannelScope, string | null | undefined>>,
 ): SubjectForPermission => {
   const ancestors = hierarchy.getOrderedAncestors(entityType);
-  const contextIds: Partial<Record<keyof ContextScope, string | null | undefined>> = {};
+  const channelIds: Partial<Record<keyof ChannelScope, string | null | undefined>> = {};
   for (const ancestor of ancestors) {
-    contextIds[ancestor] = `test-${ancestor}-id`;
+    channelIds[ancestor] = `test-${ancestor}-id`;
   }
-  if (overrides) Object.assign(contextIds, overrides);
+  if (overrides) Object.assign(channelIds, overrides);
   return {
     entityType: entityType as SubjectForPermission['entityType'],
     id: 'test-id',
-    contextIds: contextIds as ContextScope,
+    channelIds: channelIds as ChannelScope,
   };
 };
 
@@ -42,7 +42,7 @@ describe('shared validateAncestorScope', () => {
       expect.unreachable('Expected MissingScopeError to be thrown');
     } catch (e) {
       expect(e).toBeInstanceOf(MissingScopeError);
-      expect((e as MissingScopeError).missingContext).toBe(firstAncestor);
+      expect((e as MissingScopeError).missingChannel).toBe(firstAncestor);
     }
   });
 });

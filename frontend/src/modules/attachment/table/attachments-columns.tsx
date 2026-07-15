@@ -7,7 +7,7 @@ import { formatBytes } from '~/modules/attachment/table/helpers';
 import { EditCellInput } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import { SeenMark } from '~/modules/seen/seen-mark';
 import { UserCell } from '~/modules/user/user-cell';
 import { cn } from '~/utils/cn';
@@ -24,12 +24,12 @@ const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
   return Date.now() - createdTime > seenWindowMs;
 };
 
-export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolean) => {
+export const useColumns = (channelEntity: EnrichedChannelEntity, isSheet: boolean) => {
   const { t } = useTranslation();
 
   // Enable inline edit when user has update permission (`true` admin, or `'own'` owner-scoped).
   // For `'own'`, the backend enforces the final owner check on save.
-  const canUpdate = !!contextEntity.can?.attachment?.update;
+  const canUpdate = !!channelEntity.can?.attachment?.update;
 
   const columns: ColumnOrColumnGroup<Attachment>[] = useMemo(
     () => [
@@ -51,8 +51,8 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
           <>
             <SeenMark
               entityId={row.id}
-              tenantId={contextEntity.tenantId}
-              organizationId={contextEntity.id}
+              tenantId={channelEntity.tenantId}
+              organizationId={channelEntity.id}
               entityType="attachment"
             />
             <span className="truncate font-medium">{row.name || '-'}</span>
@@ -118,7 +118,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
               data-tooltip={outsideSeenWindow ? 'true' : undefined}
               data-tooltip-content={outsideSeenWindow ? t('c:views_retention_hint') : undefined}
             >
-              <UserIcon className="mr-2 opacity-50" size={16} />
+              <UserIcon className="mr-2 opacity-50" />
               <span className={cn(outsideSeenWindow && 'text-muted-foreground/60')}>{row.viewCount ?? 0}</span>
             </span>
           );

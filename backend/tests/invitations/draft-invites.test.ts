@@ -64,8 +64,8 @@ describe('Draft context invite deferral', async () => {
     });
   };
 
-  const getInactiveRows = async (contextId: string) => {
-    return await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.contextId, contextId));
+  const getInactiveRows = async (channelId: string) => {
+    return await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.channelId, channelId));
   };
 
   it('defers member invites against a draft context (row created, no dispatch, no membership)', async () => {
@@ -80,7 +80,7 @@ describe('Draft context invite deferral', async () => {
     expect(row.tokenId).toBeTruthy(); // token minted for the new user
     expect(row.remindedAt).toBeNull(); // but email dispatch was held
 
-    const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.contextId, organization.id));
+    const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.channelId, organization.id));
     expect(memberships).toHaveLength(1); // only the inviting admin
   });
 
@@ -115,7 +115,7 @@ describe('Draft context invite deferral', async () => {
       .set({ publishedAt: new Date().toISOString() })
       .where(eq(organizationsTable.id, organization.id));
     await dispatchDeferredInvites({ var: { db, user: admin } } as unknown as AuthContext, {
-      contextIds: [organization.id],
+      channelIds: [organization.id],
     });
 
     const after = await myInvitations();
@@ -131,7 +131,7 @@ describe('Draft context invite deferral', async () => {
     expect(beforeRow.remindedAt).toBeNull();
 
     const ctx = { var: { db, user: admin } } as unknown as AuthContext;
-    const first = await dispatchDeferredInvites(ctx, { contextIds: [organization.id] });
+    const first = await dispatchDeferredInvites(ctx, { channelIds: [organization.id] });
     expect(first.dispatched).toBe(1);
 
     const [afterRow] = await getInactiveRows(organization.id);
@@ -140,7 +140,7 @@ describe('Draft context invite deferral', async () => {
     expect(afterRow.tokenId).not.toBe(originalTokenId); // raw secrets are unrecoverable → rotate
 
     // Second dispatch inside the throttle window: no re-send, no token churn
-    const second = await dispatchDeferredInvites(ctx, { contextIds: [organization.id] });
+    const second = await dispatchDeferredInvites(ctx, { channelIds: [organization.id] });
     expect(second.dispatched).toBe(0);
     const [afterSecond] = await getInactiveRows(organization.id);
     expect(afterSecond.remindedAt).toBe(afterRow.remindedAt);

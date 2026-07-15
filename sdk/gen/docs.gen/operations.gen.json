@@ -1333,7 +1333,7 @@
     "tagsByKind": {
       "module": ["organizations"],
       "owner": ["cella"],
-      "entity": ["context"]
+      "entity": ["channel"]
     },
     "entityType": "organization"
   },
@@ -1358,7 +1358,7 @@
     "tagsByKind": {
       "module": ["organizations"],
       "owner": ["cella"],
-      "entity": ["context"]
+      "entity": ["channel"]
     },
     "entityType": "organization"
   },
@@ -1383,7 +1383,7 @@
     "tagsByKind": {
       "module": ["organizations"],
       "owner": ["cella"],
-      "entity": ["context"]
+      "entity": ["channel"]
     },
     "entityType": "organization"
   },
@@ -1408,7 +1408,7 @@
     "tagsByKind": {
       "module": ["organizations"],
       "owner": ["cella"],
-      "entity": ["context"]
+      "entity": ["channel"]
     },
     "entityType": "organization"
   },
@@ -1433,7 +1433,7 @@
     "tagsByKind": {
       "module": ["organizations"],
       "owner": ["cella"],
-      "entity": ["context"]
+      "entity": ["channel"]
     },
     "entityType": "organization"
   },

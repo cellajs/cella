@@ -172,6 +172,17 @@
                     "importNamePattern": "[A-Z].*",
                     "invertImportNamePattern": true,
                     "message": "Don't call SDK operations directly. Wrap them in a React Query hook in `query.ts` and consume the hook here."
+                  },
+                  {
+                    "group": ["lucide-react"],
+                    "importNamePattern": "([A-Za-z0-9]+Icon|LucideProps|LucideProvider)",
+                    "invertImportNamePattern": true,
+                    "message": "Use the *Icon-suffixed lucide name (BellIcon, not Bell). Size icons with classes (icon-xs…icon-xl / size-*), never the `size` prop — the global svg.lucide rule overrides its px attributes."
+                  },
+                  {
+                    "group": ["lucide-react"],
+                    "importNamePattern": "(AlertCircle|AlertTriangle|ArrowRightSquare|CheckCircle|CheckSquare|Code2|FileAudio|FileVideo|FilterX|Fingerprint|Grab|HelpCircle|Home|Loader2|MessageCircleQuestion|MoreHorizontal|PlusCircle|Text|UploadCloud|User2|Users2|XCircle|XSquare)Icon",
+                    "message": "Deprecated lucide alias — import the modern name (e.g. LoaderCircleIcon, not Loader2Icon). Mapping: cella/migrations/2026-07-icon-conventions/deprecated-renames.json."
                   }
                 ]
               }
@@ -206,7 +217,20 @@
                   "backend": "Frontend cannot import backend code. Use the SDK or move shared types to `shared/`.",
                   "cdc-worker": "Frontend cannot import CDC worker code.",
                   "infra": "Frontend cannot import infra code."
-                }
+                },
+                "patterns": [
+                  {
+                    "group": ["lucide-react"],
+                    "importNamePattern": "([A-Za-z0-9]+Icon|LucideProps|LucideProvider)",
+                    "invertImportNamePattern": true,
+                    "message": "Use the *Icon-suffixed lucide name (BellIcon, not Bell). Size icons with classes (icon-xs…icon-xl / size-*), never the `size` prop — the global svg.lucide rule overrides its px attributes."
+                  },
+                  {
+                    "group": ["lucide-react"],
+                    "importNamePattern": "(AlertCircle|AlertTriangle|ArrowRightSquare|CheckCircle|CheckSquare|Code2|FileAudio|FileVideo|FilterX|Fingerprint|Grab|HelpCircle|Home|Loader2|MessageCircleQuestion|MoreHorizontal|PlusCircle|Text|UploadCloud|User2|Users2|XCircle|XSquare)Icon",
+                    "message": "Deprecated lucide alias — import the modern name (e.g. LoaderCircleIcon, not Loader2Icon). Mapping: cella/migrations/2026-07-icon-conventions/deprecated-renames.json."
+                  }
+                ]
               }
             }
           }

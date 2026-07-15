@@ -38,6 +38,18 @@ describe('remarkLinkRepoPaths', () => {
     expect(runOn('index.ts').type).toBe('inlineCode'); // ambiguous bare name, no root file
   });
 
+  it('links a trailing-slash directory reference to the tree URL', () => {
+    const node = runOn('frontend/vite/');
+    expect(node.type).toBe('link');
+    expect(node.url).toBe(`${repoUrl}/tree/main/frontend/vite`);
+  });
+
+  it('leaves trailing-slash references that are not real directories as plain code', () => {
+    expect(runOn('frontend/does-not-exist/').type).toBe('inlineCode');
+    expect(runOn('frontend/vite.config.ts/').type).toBe('inlineCode'); // file, not a directory
+    expect(runOn('../frontend/').type).toBe('inlineCode');
+  });
+
   it('ignores inline code that is not a file path', () => {
     expect(runOn('pnpm test').type).toBe('inlineCode');
     expect(runOn('TEST_MODE').type).toBe('inlineCode');

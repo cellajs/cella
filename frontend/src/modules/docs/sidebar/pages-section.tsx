@@ -30,7 +30,7 @@ export function PagesSection({ label, onClose }: PagesSectionProps) {
               className="h-7 w-8 p-0"
               render={<Link to="/docs/pages" onClick={onClose} aria-label={t('c:manage_pages')} />}
             >
-              <PencilIcon size={14} />
+              <PencilIcon className="icon-sm" />
             </Button>
           </TooltipButton>
         )}

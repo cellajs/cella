@@ -1,4 +1,4 @@
-import { type ContextEntityType, hierarchy, recordFromKeys, roles } from 'shared';
+import { type ChannelEntityType, hierarchy, recordFromKeys, roles } from 'shared';
 
 /**
  * Build a zero-initialized counts response object for a new context entity.
@@ -6,9 +6,9 @@ import { type ContextEntityType, hierarchy, recordFromKeys, roles } from 'shared
  *
  * @param entityType - The context entity type (e.g. 'organization')
  * @param creatorRole - The role assigned to the creator (defaults to 'admin')
- * @returns Object matching contextEntityIncludedSchema counts: { membership: {...}, entities: {...}, activity: {...} }
+ * @returns Object matching channelEntityIncludedSchema counts: { membership: {...}, entities: {...}, activity: {...} }
  */
-export const buildZeroCounts = (entityType: ContextEntityType, creatorRole = 'admin') => {
+export const buildZeroCounts = (entityType: ChannelEntityType, creatorRole = 'admin') => {
   const descendants = hierarchy.getOrderedDescendants(entityType);
   const entities = recordFromKeys(descendants, () => 0);
   // Activity stamps stay null until the first post (created) / first content update (updated)

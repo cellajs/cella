@@ -4,5 +4,5 @@ import { validSlugSchema } from '#/schemas';
 
 export const checkSlugBodySchema = z.object({
   slug: validSlugSchema,
-  entityType: z.enum(appConfig.contextEntityTypes),
+  entityType: z.enum(appConfig.channelEntityTypes),
 });

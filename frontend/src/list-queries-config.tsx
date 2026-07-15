@@ -1,15 +1,15 @@
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import { attachmentsCanonicalOptions } from '~/modules/attachment/query';
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
-import type { BuildEntitySyncQueriesParams, ContextEntityListQueryMap, EntitySyncQueryOptions } from '~/query/types';
+import type { BuildEntitySyncQueriesParams, ChannelEntityListQueryMap, EntitySyncQueryOptions } from '~/query/types';
 
 /**
  * Maps context entity types to their list query options (used for menu generation).
  */
-export const contextEntityListQueriesByType = {
+export const channelEntityListQueriesByType = {
   organization: (params) => organizationsListQueryOptions(params),
-} satisfies ContextEntityListQueryMap;
+} satisfies ChannelEntityListQueryMap;
 
 /** Returns query options to sync for a given entity. Pure mapping — staleness is handled by React Query. */
 export const buildEntitySyncQueries = ({
@@ -24,14 +24,14 @@ export const buildEntitySyncQueries = ({
   const memberListLimit = 200;
   const queryOrganizationId = targetEntityType === 'organization' ? targetEntityId : currentOrganizationId;
 
-  const addMembersQuery = (contextEntityType: ContextEntityType) => {
+  const addMembersQuery = (channelEntityType: ChannelEntityType) => {
     if (includeMemberQueries) {
       syncQueries.push(
         membersListQueryOptions({
           entityId: targetEntityId,
           tenantId,
           organizationId: queryOrganizationId,
-          entityType: contextEntityType,
+          entityType: channelEntityType,
           limit: memberListLimit,
         }),
       );

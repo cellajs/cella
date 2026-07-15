@@ -13,7 +13,7 @@ import { entityRouteConfig } from '~/routes-config';
 export const usePageEntityKey = (): string | undefined => {
   const params = useParams({ strict: false }) as Record<string, string | undefined>;
 
-  const parts = appConfig.contextEntityTypes
+  const parts = appConfig.channelEntityTypes
     .map((type) => params[entityRouteConfig[type]?.paramName ?? ''])
     .filter((value): value is string => !!value);
 

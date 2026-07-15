@@ -1,8 +1,8 @@
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import type { DbContext } from '#/core/context';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 
-type EntityTypeWithSlug = ContextEntityType | 'user';
+type EntityTypeWithSlug = ChannelEntityType | 'user';
 
 /**
  * Checks if a slug is available for a specific entity type.

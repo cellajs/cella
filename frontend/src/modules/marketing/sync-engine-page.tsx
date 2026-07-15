@@ -39,23 +39,15 @@ export function SyncEnginePage() {
           />
         </p>
 
-        <ul className="mx-auto mb-12 max-w-3xl space-y-2 pl-4 font-semibold text-foreground marker:text-foreground sm:list-disc sm:pl-12 sm:text-lg sm:leading-6">
-          <li>
-            <Trans
-              t={t}
-              i18nKey="about:cella_approach_point_1"
-              components={{
-                strong: <strong className="font-semibold text-foreground" />,
-              }}
-            />
-          </li>
-          <li>
-            <Trans t={t} i18nKey="about:cella_approach_point_2" />
-          </li>
-          <li>
-            <Trans t={t} i18nKey="about:cella_approach_point_3" />
-          </li>
-        </ul>
+        <p className="mx-auto mb-2 max-w-3xl font-semibold text-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
+          <Trans t={t} i18nKey="about:cella_approach_point_1" />
+        </p>
+        <p className="mx-auto mb-2 max-w-3xl font-semibold text-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
+          <Trans t={t} i18nKey="about:cella_approach_point_2" />
+        </p>
+        <p className="mx-auto mb-8 max-w-3xl font-semibold text-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
+          <Trans t={t} i18nKey="about:cella_approach_point_3" />
+        </p>
 
         <EntityBuckets />
       </AboutSection>

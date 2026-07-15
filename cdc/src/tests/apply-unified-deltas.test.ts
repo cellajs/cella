@@ -19,7 +19,7 @@ vi.mock('../lib/db', () => {
     // Detect query type from the SQL template chunks
     const chunks = query?.queryChunks ?? [];
     const sqlParts = chunks.map((c: any) => c?.value?.[0] ?? String(c ?? '')).join('');
-    const isCounterUpsert = sqlParts.includes('context_counters');
+    const isCounterUpsert = sqlParts.includes('channel_counters');
 
     if (isCounterUpsert) {
       dbOps.push({ type: 'upsert' });
@@ -65,14 +65,14 @@ describe('applyBatchUnifiedDeltas', () => {
 
     const plan: BatchUnifiedDeltaPlan = {
       seqGroups: [{
-        contextKey: 'proj-1',
+        channelKey: 'proj-1',
         seqKey: 's:task',
         count: 3,
         orgSignal: { orgKey: 'org-1', seqKey: 's:task', count: 3 },
         events,
         tableName: 'tasks',
       }],
-      countDeltasByContextKey: new Map([
+      countDeltasByChannelKey: new Map([
         ['org-1', { 'e:task': 3 }],
         ['proj-1', { 'e:task': 3 }],
       ]),
@@ -87,21 +87,21 @@ describe('applyBatchUnifiedDeltas', () => {
     expect(events[2].result.rowData.seq).toBe(5);
   });
 
-  it('merges seq and count deltas for the same contextKey', async () => {
+  it('merges seq and count deltas for the same channelKey', async () => {
     upsertReturnValue = { 's:task': 2, 'e:task': 2 };
 
     const events = [mockEvent('t1'), mockEvent('t2')];
 
     const plan: BatchUnifiedDeltaPlan = {
       seqGroups: [{
-        contextKey: 'proj-1',
+        channelKey: 'proj-1',
         seqKey: 's:task',
         count: 2,
         orgSignal: null,
         events,
         tableName: 'tasks',
       }],
-      countDeltasByContextKey: new Map([
+      countDeltasByChannelKey: new Map([
         // proj-1 has both seq (from seqGroup) AND entity count deltas
         ['proj-1', { 'e:task': 2 }],
       ]),
@@ -118,7 +118,7 @@ describe('applyBatchUnifiedDeltas', () => {
   it('handles empty plan', async () => {
     const plan: BatchUnifiedDeltaPlan = {
       seqGroups: [],
-      countDeltasByContextKey: new Map(),
+      countDeltasByChannelKey: new Map(),
       entityStamps: [],
     };
 

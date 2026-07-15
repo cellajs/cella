@@ -15,7 +15,7 @@ export const validateAncestorScope = (entity: SubjectForPermission) => {
   const ancestors = hierarchy.getOrderedAncestors(entity.entityType);
 
   for (const ancestor of ancestors) {
-    const value = entity.contextIds[ancestor];
+    const value = entity.channelIds[ancestor];
 
     if (value === undefined) {
       throw new MissingScopeError(entity.entityType, ancestor, appConfig.entityIdColumnKeys[ancestor]);

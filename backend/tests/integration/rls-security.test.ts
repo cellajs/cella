@@ -73,26 +73,26 @@ let seenByAvailable = false;
 
 const attachmentHierarchyA = buildTestEntityHierarchyPlan({
   entityType: 'attachment',
-  rootContextId: TEST_ORG_A,
-  makeContextId: () => randomUUID(),
+  rootChannelId: TEST_ORG_A,
+  makeChannelId: () => randomUUID(),
 });
 const attachmentHierarchyC = buildTestEntityHierarchyPlan({
   entityType: 'attachment',
-  rootContextId: TEST_ORG_C,
-  makeContextId: () => randomUUID(),
+  rootChannelId: TEST_ORG_C,
+  makeChannelId: () => randomUUID(),
 });
 
 const quoteIdent = (identifier: string) => `"${identifier.replaceAll('"', '""')}"`;
 
 const hierarchyForOrg = (orgId: string) => (orgId === TEST_ORG_C ? attachmentHierarchyC : attachmentHierarchyA);
 
-const contextColumnList = (plan: TestEntityHierarchyPlan) =>
-  sql.raw(plan.sqlContextColumns.map(({ columnName }) => `, ${quoteIdent(columnName)}`).join(''));
+const channelColumnList = (plan: TestEntityHierarchyPlan) =>
+  sql.raw(plan.sqlChannelColumns.map(({ columnName }) => `, ${quoteIdent(columnName)}`).join(''));
 
 const contextValueList = (plan: TestEntityHierarchyPlan) =>
-  plan.sqlContextColumns.length > 0
+  plan.sqlChannelColumns.length > 0
     ? sql`, ${sql.join(
-        plan.sqlContextColumns.map(({ id }) => sql`${id}`),
+        plan.sqlChannelColumns.map(({ id }) => sql`${id}`),
         sql`, `,
       )}`
     : sql``;
@@ -103,19 +103,19 @@ async function seedEntityHierarchy(
   createdBy: string,
   slugPrefix: string,
 ) {
-  for (const row of plan.seedContextRows) {
+  for (const row of plan.seedChannelRows) {
     await adminDb.execute(sql`
       INSERT INTO ${sql.raw(quoteIdent(row.tableName))}
         (id, tenant_id, entity_type, name, slug, created_by, ${sql.raw(quoteIdent(row.parentColumnName))})
       VALUES
-        (${row.id}, ${tenantId}, ${row.contextType}, ${`RLS ${row.contextType}`}, ${`${slugPrefix}-${row.contextType}-${row.id.slice(0, 8)}`}, ${createdBy}, ${row.parentId})
+        (${row.id}, ${tenantId}, ${row.channelType}, ${`RLS ${row.channelType}`}, ${`${slugPrefix}-${row.channelType}-${row.id.slice(0, 8)}`}, ${createdBy}, ${row.parentId})
       ON CONFLICT (id) DO NOTHING
     `);
   }
 }
 
 async function cleanupEntityHierarchy(...plans: TestEntityHierarchyPlan[]) {
-  for (const row of plans.flatMap((plan) => plan.seedContextRows).reverse()) {
+  for (const row of plans.flatMap((plan) => plan.seedChannelRows).reverse()) {
     await adminDb.execute(sql`DELETE FROM ${sql.raw(quoteIdent(row.tableName))} WHERE id = ${row.id}`);
   }
 }
@@ -159,14 +159,14 @@ const rlsProductFixtures: Record<string, RlsProductFixture> = {
     insert: ({ id, tenantId, orgId, createdBy }) => {
       const plan = hierarchyForOrg(orgId);
       return sql`
-        INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by${contextColumnList(plan)}, bucket_name, filename, content_type, size, original_key)
+        INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by${channelColumnList(plan)}, bucket_name, filename, content_type, size, original_key)
         VALUES (${id}, 'attachment', ${tenantId}, 'WT File', '{}', '', ${createdBy}${contextValueList(plan)}, 'test-bucket', 'wt.txt', 'text/plain', '100', 'attachments/wt.txt')
       `;
     },
     seed: async () => {
       // Two attachments: one in Org A (User A has membership), one in Org C (User A has NO membership)
       await adminDb.execute(sql`
-        INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by${contextColumnList(attachmentHierarchyA)}, bucket_name, filename, content_type, size, original_key)
+        INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by${channelColumnList(attachmentHierarchyA)}, bucket_name, filename, content_type, size, original_key)
         VALUES
           (${TEST_ATTACHMENT_A}, 'attachment', ${TEST_TENANT_A}, 'Test File', '{}', '', ${TEST_USER_A}${contextValueList(attachmentHierarchyA)}, 'test-bucket', 'test.txt', 'text/plain', '1024', 'attachments/test.txt'),
           (${TEST_ATTACHMENT_C}, 'attachment', ${TEST_TENANT_A}, 'Org C File', '{}', '', ${TEST_USER_B}${contextValueList(attachmentHierarchyC)}, 'test-bucket', 'orgc.txt', 'text/plain', '512', 'attachments/orgc.txt')
@@ -314,7 +314,7 @@ async function setupTestData() {
   // Create memberships: User A in Org A (Tenant A), User B in Org B (Tenant B)
   // Note: User A has NO membership in Org C, cross-org isolation tested at app layer
   await adminDb.execute(sql`
-    INSERT INTO memberships (id, tenant_id, context_type, context_id, user_id, role, created_by, display_order, organization_id)
+    INSERT INTO memberships (id, tenant_id, channel_type, channel_id, user_id, role, created_by, display_order, organization_id)
     VALUES
       (${TEST_MEMBERSHIP_A}, ${TEST_TENANT_A}, 'organization', ${TEST_ORG_A}, ${TEST_USER_A}, 'admin', ${TEST_USER_A}, 1, ${TEST_ORG_A}),
       (${TEST_MEMBERSHIP_B}, ${TEST_TENANT_B}, 'organization', ${TEST_ORG_B}, ${TEST_USER_B}, 'admin', ${TEST_USER_B}, 1, ${TEST_ORG_B})
@@ -394,7 +394,7 @@ async function queryAsRuntimeRole<T = Record<string, unknown>>(
  * Helper: Execute a query as runtime_role WITHOUT any session context.
  * Verifies fail-closed behavior (no context yields zero rows).
  */
-async function queryWithoutContext<T = Record<string, unknown>>(
+async function queryWithoutChannel<T = Record<string, unknown>>(
   queryFn: (tx: NodePgTx) => Promise<unknown>,
 ): Promise<T[]> {
   return runtimeDb.transaction(async (tx) => {
@@ -579,7 +579,7 @@ const rlsSuiteReady = await (async () => {
 
   describe('Fail-closed (no context)', () => {
     it('should allow reading organizations without tenant context (no RLS on context entities)', async () => {
-      const rows = await queryWithoutContext(async (tx) =>
+      const rows = await queryWithoutChannel(async (tx) =>
         tx.execute(sql`SELECT id FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B})`),
       );
       // Context entities rely on app-layer guards, so runtime_role can read all rows.
@@ -587,7 +587,7 @@ const rlsSuiteReady = await (async () => {
     });
 
     it('should return zero attachments without tenant context', async () => {
-      const rows = await queryWithoutContext(async (tx) =>
+      const rows = await queryWithoutChannel(async (tx) =>
         tx.execute(sql`SELECT id FROM attachments WHERE id = ${TEST_ATTACHMENT_A}`),
       );
       expect(rows).toHaveLength(0);
@@ -595,7 +595,7 @@ const rlsSuiteReady = await (async () => {
 
     it('should allow reading memberships without context (no RLS on memberships)', async () => {
       // Memberships rely on app-layer guards, so runtime_role can read all rows.
-      const rows = await queryWithoutContext(async (tx) =>
+      const rows = await queryWithoutChannel(async (tx) =>
         tx.execute(sql`SELECT id FROM memberships WHERE id IN (${TEST_MEMBERSHIP_A}, ${TEST_MEMBERSHIP_B})`),
       );
       expect(rows.length).toBeGreaterThanOrEqual(2);
@@ -654,7 +654,7 @@ const rlsSuiteReady = await (async () => {
       // No RLS on memberships, insert succeeds (guard middleware prevents this at API layer)
       await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
         tx.execute(sql`
-            INSERT INTO memberships (id, tenant_id, context_type, context_id, user_id, role, created_by, display_order, organization_id)
+            INSERT INTO memberships (id, tenant_id, channel_type, channel_id, user_id, role, created_by, display_order, organization_id)
             VALUES ('00000000-0000-4000-a000-000000000303', ${TEST_TENANT_B}, 'organization', ${TEST_ORG_B}, ${TEST_USER_A}, 'member', ${TEST_USER_A}, 99, ${TEST_ORG_B})
           `),
       );
@@ -703,7 +703,7 @@ const rlsSuiteReady = await (async () => {
     });
 
     it('should deny access to attachments without tenant context', async () => {
-      const rows = await queryWithoutContext(async (tx) =>
+      const rows = await queryWithoutChannel(async (tx) =>
         tx.execute(sql`SELECT id FROM attachments WHERE id IN (${TEST_ATTACHMENT_A}, ${TEST_ATTACHMENT_C})`),
       );
       expect(rows).toHaveLength(0);
@@ -718,12 +718,12 @@ const rlsSuiteReady = await (async () => {
     // (tenantRead sets app.tenant_id); a context-less baseDb read silently returns zero and the
     // unseen badge breaks. These lock that behaviour in. Org A holds exactly one in-window
     // attachment (TEST_ATTACHMENT_A) and User A has no seen_by rows initially.
-    type UnseenRow = { contextId: string; entityType: string; unseenCount: number };
+    type UnseenRow = { channelId: string; entityType: string; unseenCount: number };
     const cutoff = () => new Date(Date.now() - seenWindowMs).toISOString();
     const countUnseen = (tx: NodePgTx) =>
       findUnseenCountsByUser({ var: { db: tx } } as Parameters<typeof findUnseenCountsByUser>[0], {
         userId: TEST_USER_A,
-        contextIds: [TEST_ORG_A],
+        channelIds: [TEST_ORG_A],
         entityTypes: trackedEntityTypes,
         cutoff: cutoff(),
       });
@@ -731,7 +731,7 @@ const rlsSuiteReady = await (async () => {
     it('counts in-window unseen entities under tenant context', async () => {
       if (!rolesAvailable || !requiredTablesAvailable || !seenByAvailable) return;
       const rows = await queryAsRuntimeRole<UnseenRow>(TEST_TENANT_A, TEST_USER_A, countUnseen);
-      const orgA = rows.find((r) => r.contextId === TEST_ORG_A);
+      const orgA = rows.find((r) => r.channelId === TEST_ORG_A);
       expect(orgA).toBeDefined();
       expect(orgA?.entityType).toBe('attachment');
       expect(orgA?.unseenCount).toBe(1);
@@ -741,7 +741,7 @@ const rlsSuiteReady = await (async () => {
       if (!rolesAvailable || !requiredTablesAvailable || !seenByAvailable) return;
       // Entity rows are invisible without app.tenant_id → no unseen counts. If getUnseenCounts
       // ever reverts to a context-less baseDb read, this fails.
-      const rows = await queryWithoutContext<UnseenRow>(countUnseen);
+      const rows = await queryWithoutChannel<UnseenRow>(countUnseen);
       expect(rows).toHaveLength(0);
     });
 
@@ -749,14 +749,14 @@ const rlsSuiteReady = await (async () => {
       if (!rolesAvailable || !requiredTablesAvailable || !seenByAvailable) return;
       const seenId = '00000000-0000-4000-a000-0000000000a1';
       await adminDb.execute(sql`
-        INSERT INTO seen_by (id, user_id, entity_id, entity_type, context_id, organization_id, tenant_id, created_at)
+        INSERT INTO seen_by (id, user_id, entity_id, entity_type, channel_id, organization_id, tenant_id, created_at)
         VALUES (${seenId}, ${TEST_USER_A}, ${TEST_ATTACHMENT_A}, 'attachment', ${TEST_ORG_A}, ${TEST_ORG_A}, ${TEST_TENANT_A}, NOW())
         ON CONFLICT (user_id, entity_id) DO NOTHING
       `);
       try {
         const rows = await queryAsRuntimeRole<UnseenRow>(TEST_TENANT_A, TEST_USER_A, countUnseen);
         // Org A's only in-window attachment is now seen → no unseen row for that context.
-        expect(rows.find((r) => r.contextId === TEST_ORG_A)).toBeUndefined();
+        expect(rows.find((r) => r.channelId === TEST_ORG_A)).toBeUndefined();
       } finally {
         await adminDb.execute(sql`DELETE FROM seen_by WHERE id = ${seenId}`);
       }
@@ -768,10 +768,10 @@ const rlsSuiteReady = await (async () => {
   describe('Unauthenticated write denial', () => {
     it('should allow membership insert without authentication (no RLS on memberships)', async () => {
       // No RLS on memberships, insert succeeds. Guard middleware prevents this at API layer.
-      // Use TEST_USER_B + TEST_ORG_A to avoid duplicate (tenant_id, user_id, context_id) with setup data.
+      // Use TEST_USER_B + TEST_ORG_A to avoid duplicate (tenant_id, user_id, channel_id) with setup data.
       await queryAsRuntimeRole(TEST_TENANT_A, '', async (tx) =>
         tx.execute(sql`
-            INSERT INTO memberships (id, tenant_id, context_type, context_id, user_id, role, created_by, display_order, organization_id)
+            INSERT INTO memberships (id, tenant_id, channel_type, channel_id, user_id, role, created_by, display_order, organization_id)
             VALUES ('00000000-0000-4000-a000-000000000306', ${TEST_TENANT_A}, 'organization', ${TEST_ORG_A}, ${TEST_USER_B}, 'member', ${TEST_USER_B}, 99, ${TEST_ORG_A})
           `),
       );
@@ -837,11 +837,11 @@ const rlsSuiteReady = await (async () => {
         const [, fixture] = iterableRlsProducts[0];
         const id = randomUUID();
         // Write without any session context, write-through policy uses sql`true`
-        await queryWithoutContext(async (tx) =>
+        await queryWithoutChannel(async (tx) =>
           tx.execute(fixture.insert({ id, tenantId: TEST_TENANT_A, orgId: TEST_ORG_A, createdBy: TEST_USER_A })),
         );
         // SELECT without context should still be denied (fail-closed read)
-        const rows = await queryWithoutContext(async (tx) =>
+        const rows = await queryWithoutChannel(async (tx) =>
           tx.execute(sql.raw(`SELECT id FROM ${fixture.table} WHERE id = '${id}'`)),
         );
         expect(rows).toHaveLength(0);
@@ -886,15 +886,15 @@ const rlsSuiteReady = await (async () => {
     // Base entity columns (shared by context + product entities)
     const baseImmutableColumns = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'];
 
-    const seededContextRowIdsByTable = new Map<string, string>([
+    const seededChannelRowIdsByTable = new Map<string, string>([
       ['organizations', TEST_ORG_A],
-      ...attachmentHierarchyA.seedContextRows.map((row) => [row.tableName, row.id] as const),
+      ...attachmentHierarchyA.seedChannelRows.map((row) => [row.tableName, row.id] as const),
     ]);
 
     // Context entities: use base columns. Only target rows this suite owns.
-    const contextCases: ImmutableEntityCase[] = appConfig.contextEntityTypes.flatMap((entityType) => {
+    const channelCases: ImmutableEntityCase[] = appConfig.channelEntityTypes.flatMap((entityType) => {
       const tableName = getTableName(entityTables[entityType as keyof typeof entityTables]);
-      const rowId = seededContextRowIdsByTable.get(tableName);
+      const rowId = seededChannelRowIdsByTable.get(tableName);
       if (!rowId) return [];
       return baseImmutableColumns.map((col): ImmutableEntityCase => [tableName, col, entityType, rowId]);
     });
@@ -915,7 +915,7 @@ const rlsSuiteReady = await (async () => {
 
     const membershipCases: [string, string][] = membershipImmutableColumns.map((col) => ['memberships', col]);
 
-    const allEntityCases = [...contextCases, ...orgProductCases];
+    const allEntityCases = [...channelCases, ...orgProductCases];
 
     // Type-appropriate fake values per column type so Postgres doesn't reject the type cast before the trigger fires
     const fakeValueForColumn = (column: string): string => {
@@ -939,7 +939,7 @@ const rlsSuiteReady = await (async () => {
     });
 
     it.each(membershipCases)('should reject %s.%s mutation', async (tableName, column) => {
-      const fakeValue = ['tenant_id', 'context_type'].includes(column)
+      const fakeValue = ['tenant_id', 'channel_type'].includes(column)
         ? "'hacked'"
         : "'00000000-0000-4000-a000-ffffffffffff'";
       await expect(

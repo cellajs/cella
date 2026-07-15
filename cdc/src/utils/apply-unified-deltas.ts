@@ -8,19 +8,19 @@ import { isActivityStampKey } from './update-counts';
 // ── Counter upsert ───────────────────────────────────────────────────────────
 
 /**
- * UPSERT a single context_counters row using the apply_count_deltas PG function.
+ * UPSERT a single channel_counters row using the apply_count_deltas PG function.
  * The function merges JSONB deltas with GREATEST(0, existing + delta) per key.
  *
  * Fixed SQL shape enables PostgreSQL plan caching across repeated executions.
  */
 async function mergedUpsert(
-  contextKey: string,
+  channelKey: string,
   deltas: Record<string, number>,
   returning: true,
 ): Promise<Record<string, number>>;
-async function mergedUpsert(contextKey: string, deltas: Record<string, number>, returning?: false): Promise<void>;
+async function mergedUpsert(channelKey: string, deltas: Record<string, number>, returning?: false): Promise<void>;
 async function mergedUpsert(
-  contextKey: string,
+  channelKey: string,
   deltas: Record<string, number>,
   returning?: boolean,
 ): Promise<Record<string, number> | void> {
@@ -30,10 +30,10 @@ async function mergedUpsert(
 
   if (returning) {
     const result = await cdcDb.execute<{ counts: Record<string, number> }>(sql`
-      INSERT INTO context_counters (context_key, counts, updated_at)
-      VALUES (${contextKey}, apply_count_deltas('{}'::jsonb, ${deltasJson}::jsonb), NOW())
-      ON CONFLICT (context_key) DO UPDATE SET
-        counts = apply_count_deltas(context_counters.counts, ${deltasJson}::jsonb),
+      INSERT INTO channel_counters (channel_key, counts, updated_at)
+      VALUES (${channelKey}, apply_count_deltas('{}'::jsonb, ${deltasJson}::jsonb), NOW())
+      ON CONFLICT (channel_key) DO UPDATE SET
+        counts = apply_count_deltas(channel_counters.counts, ${deltasJson}::jsonb),
         updated_at = NOW()
       RETURNING counts
     `);
@@ -41,10 +41,10 @@ async function mergedUpsert(
   }
 
   await cdcDb.execute(sql`
-    INSERT INTO context_counters (context_key, counts, updated_at)
-    VALUES (${contextKey}, apply_count_deltas('{}'::jsonb, ${deltasJson}::jsonb), NOW())
-    ON CONFLICT (context_key) DO UPDATE SET
-      counts = apply_count_deltas(context_counters.counts, ${deltasJson}::jsonb),
+    INSERT INTO channel_counters (channel_key, counts, updated_at)
+    VALUES (${channelKey}, apply_count_deltas('{}'::jsonb, ${deltasJson}::jsonb), NOW())
+    ON CONFLICT (channel_key) DO UPDATE SET
+      counts = apply_count_deltas(channel_counters.counts, ${deltasJson}::jsonb),
       updated_at = NOW()
   `);
 }
@@ -74,18 +74,18 @@ export function sumInto(
  * `event.result.rowData.seq` for each stampable event.
  */
 export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan): Promise<void> {
-  const { seqGroups, countDeltasByContextKey, entityStamps: _stamps } = plan;
+  const { seqGroups, countDeltasByChannelKey, entityStamps: _stamps } = plan;
 
-  const handledContextKeys = new Set<string>();
+  const handledChannelKeys = new Set<string>();
   const allEntityStamps: Array<{ tableName: string; id: string; seq: number }> = [];
 
   // Phase 1: Sequential UPSERT per seq group (need RETURNING for each)
   for (const group of seqGroups) {
-    // Merge seq deltas with any count deltas for this contextKey
-    const mergedDeltas = sumInto({ [group.seqKey]: group.count }, countDeltasByContextKey.get(group.contextKey));
-    handledContextKeys.add(group.contextKey);
+    // Merge seq deltas with any count deltas for this channelKey
+    const mergedDeltas = sumInto({ [group.seqKey]: group.count }, countDeltasByChannelKey.get(group.channelKey));
+    handledChannelKeys.add(group.channelKey);
 
-    const counts = await mergedUpsert(group.contextKey, mergedDeltas, true);
+    const counts = await mergedUpsert(group.channelKey, mergedDeltas, true);
     const highSeq = counts[group.seqKey] ?? group.count;
     const baseSeq = highSeq - group.count;
 
@@ -98,8 +98,8 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan): Prom
 
     // Org signal: merge with any count deltas for the org
     if (group.orgSignal) {
-      const orgMerged = sumInto({ [group.orgSignal.seqKey]: group.orgSignal.count }, countDeltasByContextKey.get(group.orgSignal.orgKey));
-      handledContextKeys.add(group.orgSignal.orgKey);
+      const orgMerged = sumInto({ [group.orgSignal.seqKey]: group.orgSignal.count }, countDeltasByChannelKey.get(group.orgSignal.orgKey));
+      handledChannelKeys.add(group.orgSignal.orgKey);
       await mergedUpsert(group.orgSignal.orgKey, orgMerged);
     }
 
@@ -114,9 +114,9 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan): Prom
   // Phase 2: Remaining count UPSERTs + bulk entity stamp, all in parallel
   const phase2: Promise<void>[] = [];
 
-  for (const [contextKey, deltas] of countDeltasByContextKey) {
-    if (handledContextKeys.has(contextKey)) continue;
-    phase2.push(mergedUpsert(contextKey, deltas));
+  for (const [channelKey, deltas] of countDeltasByChannelKey) {
+    if (handledChannelKeys.has(channelKey)) continue;
+    phase2.push(mergedUpsert(channelKey, deltas));
   }
 
   // Bulk entity seq stamp: one UPDATE ... FROM VALUES per table

@@ -2,8 +2,8 @@ import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { OperationResult } from '#/core/operation-result';
 import { baseDb as db } from '#/db/db';
-import { findContextCountersByKeys, findLatestUserActivityId } from '#/modules/entities/entities-queries';
-import { collectSubContextIds } from '#/modules/entities/helpers/collect-sub-context-ids';
+import { findChannelCountersByKeys, findLatestUserActivityId } from '#/modules/entities/entities-queries';
+import { collectSubChannelIds } from '#/modules/entities/helpers/collect-sub-channel-ids';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
 import { buildPropagationHints } from '#/modules/entities/helpers/propagation-hints';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -28,12 +28,12 @@ export async function appCatchupOp(
   const organizationIdArray = Array.from(organizationIds);
 
   // Collect sub-context IDs (e.g., projectId) from memberships for all orgs upfront
-  const { byOrg: subContextIdsByOrg, all: allSubContextIdSet } = collectSubContextIds(memberships);
-  const allSubContextIds = [...allSubContextIdSet];
+  const { byOrg: subChannelIdsByOrg, all: allSubChannelIdSet } = collectSubChannelIds(memberships);
+  const allSubChannelIds = [...allSubChannelIdSet];
 
   // Step 1: single query for all org + sub-context counters.
-  const allCounterRows = await findContextCountersByKeys(dbCtx, [...organizationIdArray, ...allSubContextIds]);
-  const allCounters = new Map(allCounterRows.map((r) => [r.contextKey, r.counts]));
+  const allCounterRows = await findChannelCountersByKeys(dbCtx, [...organizationIdArray, ...allSubChannelIds]);
+  const allCounters = new Map(allCounterRows.map((r) => [r.channelKey, r.counts]));
 
   // Step 2: build changes entries for all orgs; empty entries are pruned later.
   const changes: AppCatchupResponse['changes'] = {};
@@ -47,25 +47,25 @@ export async function appCatchupOp(
     };
 
     // Attach sub-context data
-    const contextIds = subContextIdsByOrg.get(organizationId);
-    if (contextIds) {
-      const childContextChanges: Record<
+    const channelIds = subChannelIdsByOrg.get(organizationId);
+    if (channelIds) {
+      const childChannelChanges: Record<
         string,
         { entitySeqs?: Record<string, number>; entityCounts?: Record<string, number> }
       > = {};
 
-      for (const contextId of contextIds) {
-        const { entitySeqs: ctxSeqs, entityCounts: ctxCounts } = parseCounterCounts(allCounters.get(contextId));
+      for (const channelId of channelIds) {
+        const { entitySeqs: ctxSeqs, entityCounts: ctxCounts } = parseCounterCounts(allCounters.get(channelId));
         if (Object.keys(ctxSeqs).length > 0 || Object.keys(ctxCounts).length > 0) {
-          childContextChanges[contextId] = {
+          childChannelChanges[channelId] = {
             entitySeqs: Object.keys(ctxSeqs).length > 0 ? ctxSeqs : undefined,
             entityCounts: Object.keys(ctxCounts).length > 0 ? ctxCounts : undefined,
           };
         }
       }
 
-      if (Object.keys(childContextChanges).length > 0) {
-        changes[organizationId].childContextChanges = childContextChanges;
+      if (Object.keys(childChannelChanges).length > 0) {
+        changes[organizationId].childChannelChanges = childChannelChanges;
       }
     }
   }
@@ -96,7 +96,7 @@ export async function appCatchupOp(
     newCursor =
       (await findLatestUserActivityId(dbCtx, Array.from(organizationIds), [
         ...appConfig.productEntityTypes,
-        ...appConfig.contextEntityTypes,
+        ...appConfig.channelEntityTypes,
       ])) ??
       cursor ??
       null;
@@ -115,6 +115,6 @@ export async function getLatestUserActivityId(organizationIds: Set<string>): Pro
 
   return findLatestUserActivityId(dbCtx, Array.from(organizationIds), [
     ...appConfig.productEntityTypes,
-    ...appConfig.contextEntityTypes,
+    ...appConfig.channelEntityTypes,
   ]);
 }

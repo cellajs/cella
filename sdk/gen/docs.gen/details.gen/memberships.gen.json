@@ -20,12 +20,12 @@
                 "properties": {
                   "id": { "type": "string", "required": true, "format": "uuid" },
                   "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-                  "contextType": {
+                  "channelType": {
                     "type": "string",
                     "required": true,
                     "enum": ["organization"]
                   },
-                  "contextId": { "type": "string", "required": true, "format": "uuid" },
+                  "channelId": { "type": "string", "required": true, "format": "uuid" },
                   "userId": { "type": "string", "required": true, "format": "uuid" },
                   "role": {
                     "type": "string",
@@ -66,8 +66,8 @@
             {
               "id": "da336271-583f-4567-913c-f17c567ab81d",
               "tenantId": "vw3f7p",
-              "contextType": "organization",
-              "contextId": "993dce90-023a-4125-a6a3-03215e93aa04",
+              "channelType": "organization",
+              "channelId": "993dce90-023a-4125-a6a3-03215e93aa04",
               "userId": "154db176-be65-484a-bb34-246b1f99f492",
               "organizationId": "45a11f6e-5760-4a44-96c4-3c1b43d10162",
               "role": "member",
@@ -283,12 +283,12 @@
             "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },
             "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-            "contextType": {
+            "channelType": {
               "type": "string",
               "required": true,
               "enum": ["organization"]
             },
-            "contextId": { "type": "string", "required": true, "format": "uuid" },
+            "channelId": { "type": "string", "required": true, "format": "uuid" },
             "userId": { "type": "string", "required": true, "format": "uuid" },
             "role": {
               "type": "string",
@@ -320,8 +320,8 @@
         },
         "example": {
           "id": "92f342dd-6e67-4956-ab1c-f91b3ce934d7",
-          "contextType": "organization",
-          "contextId": "0b5344ae-d952-4047-b5e1-309a11b66764",
+          "channelType": "organization",
+          "channelId": "0b5344ae-d952-4047-b5e1-309a11b66764",
           "userId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
           "organizationId": "14e27393-e22a-45d1-8c22-3250dc6fc109",
           "role": "member",
@@ -409,8 +409,8 @@
       {
         "status": 200,
         "description": "Invitation was accepted",
-        "name": "ContextEntityBase",
-        "ref": "#/components/schemas/ContextEntityBase",
+        "name": "ChannelEntityBase",
+        "ref": "#/components/schemas/ChannelEntityBase",
         "contentType": "application/json",
         "schema": {
           "type": "object",
@@ -439,7 +439,7 @@
               "required": true
             }
           },
-          "ref": "#/components/schemas/ContextEntityBase",
+          "ref": "#/components/schemas/ChannelEntityBase",
           "contentType": "application/json"
         },
         "example": {
@@ -565,12 +565,12 @@
                     "properties": {
                       "id": { "type": "string", "required": true, "format": "uuid" },
                       "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-                      "contextType": {
+                      "channelType": {
                         "type": "string",
                         "required": true,
                         "enum": ["organization"]
                       },
-                      "contextId": { "type": "string", "required": true, "format": "uuid" },
+                      "channelId": { "type": "string", "required": true, "format": "uuid" },
                       "userId": { "type": "string", "required": true, "format": "uuid" },
                       "role": {
                         "type": "string",
@@ -621,8 +621,8 @@
               "membership": {
                 "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
                 "tenantId": "u87zf2",
-                "contextType": "organization",
-                "contextId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
+                "channelType": "organization",
+                "channelId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
                 "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
                 "organizationId": "ab6c6ea4-cec4-470a-acfc-5636298aa0f2",
                 "role": "admin",
@@ -653,8 +653,8 @@
               "membership": {
                 "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
                 "tenantId": "lwj64z",
-                "contextType": "organization",
-                "contextId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
+                "channelType": "organization",
+                "channelId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
                 "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
                 "organizationId": "661de358-c94b-4156-816b-769bf63c907e",
                 "role": "member",
@@ -809,8 +809,8 @@
           "items": [
             {
               "id": "e456f6f2-9b74-47a8-b97a-617f14497605",
-              "contextType": "organization",
-              "contextId": "c9f521e3-f100-4f6d-8b23-8d10af2a4b70",
+              "channelType": "organization",
+              "channelId": "c9f521e3-f100-4f6d-8b23-8d10af2a4b70",
               "email": "vanessa_rau@yahoo.com",
               "userId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
               "tokenId": "fe212f50-796f-4e85-b592-b8e671b17b41",
@@ -824,8 +824,8 @@
             },
             {
               "id": "d82be193-5e9d-4906-a125-ba7cf4de5ede",
-              "contextType": "organization",
-              "contextId": "ccfef453-bf07-44c2-8ef7-7d580cc1edd9",
+              "channelType": "organization",
+              "channelId": "ccfef453-bf07-44c2-8ef7-7d580cc1edd9",
               "email": "fanny_mccullough70@gmail.com",
               "userId": "772a771f-c150-465e-9635-46594859fc3d",
               "tokenId": "b422db63-39b8-413c-9f84-d7523c2ac382",

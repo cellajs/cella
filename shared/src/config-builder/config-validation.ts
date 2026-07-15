@@ -1,5 +1,5 @@
 import type {
-  ContextEntityType,
+  ChannelEntityType,
   EntityIdColumnKeysShape,
   EntityType,
   ProductEntityType,
@@ -25,12 +25,12 @@ const _entityTypesMatch2: HierarchyEntityType extends EntityType ? true : false 
 void _entityTypesMatch1;
 void _entityTypesMatch2;
 
-// Validate contextEntityTypes matches hierarchy.contextTypes
-type HierarchyContextType = (typeof hierarchy.contextTypes)[number];
-const _contextTypesMatch1: ContextEntityType extends HierarchyContextType ? true : false = true;
-const _contextTypesMatch2: HierarchyContextType extends ContextEntityType ? true : false = true;
-void _contextTypesMatch1;
-void _contextTypesMatch2;
+// Validate channelEntityTypes matches hierarchy.channelTypes
+type HierarchyChannelType = (typeof hierarchy.channelTypes)[number];
+const _channelTypesMatch1: ChannelEntityType extends HierarchyChannelType ? true : false = true;
+const _channelTypesMatch2: HierarchyChannelType extends ChannelEntityType ? true : false = true;
+void _channelTypesMatch1;
+void _channelTypesMatch2;
 
 // Validate productEntityTypes matches hierarchy.productTypes
 type HierarchyProductType = (typeof hierarchy.productTypes)[number];

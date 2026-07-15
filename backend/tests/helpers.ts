@@ -179,10 +179,10 @@ export async function createOrganizationAdminUser(
   const membership = {
     id: generateId(),
     userId: user.id,
-    contextId: organizationId || '',
+    channelId: organizationId || '',
     organizationId: organizationId || '',
     tenantId,
-    contextType: 'organization' as const,
+    channelType: 'organization' as const,
     role,
     displayOrder: 1,
     createdAt: mockPastIsoDate(),

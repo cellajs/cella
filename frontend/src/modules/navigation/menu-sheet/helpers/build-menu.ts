@@ -1,8 +1,8 @@
-import { appConfig, type ContextEntityType, type MenuSection } from 'shared';
+import { appConfig, type ChannelEntityType, type MenuSection } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
 
 // Build initial menu state based on the provided menu structure.
-function buildInitialMenu<const T extends readonly { entityType: ContextEntityType }[]>(
+function buildInitialMenu<const T extends readonly { entityType: ChannelEntityType }[]>(
   structure: T,
 ): { [K in T[number]['entityType']]: UserMenuItem[] } {
   type Key = T[number]['entityType'];

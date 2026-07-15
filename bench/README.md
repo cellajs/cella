@@ -6,7 +6,7 @@ Runs against your dev stack with idempotent, deterministic seed data. Auth is pr
 
 ## Prerequisites
 
-Start these first — bench verifies they are reachable and exits with guidance if not:
+Start these first (bench verifies they are reachable and exits with guidance if not):
 
 - **Postgres** seeded with app data (`pnpm docker` + `pnpm seed`)
 - **Services** running via `pnpm dev` (backend, cdc, yjs). CDC throughput is only measured with `DEV_MODE=full` (default).
@@ -23,7 +23,7 @@ Start these first — bench verifies they are reachable and exits with guidance 
 | `pnpm db:seed` | Seed test data (idempotent, cleans first) |
 | `pnpm db:teardown` | Remove all bench data (baselines are kept) |
 
-`--all` runs each scenario with a short cooldown between them and prints one combined summary; a single-scenario run stays verbose with a live comparison table. A Vitest smoke test (`src/tests/all-scenarios.test.ts`) runs `--all --short` to catch broken scenarios and auto-skips when the stack is down.
+`--all` runs each scenario with a short cooldown between them and prints one combined summary; a single-scenario run stays verbose with a live comparison table. A Vitest smoke test in `bench/src/tests/all-scenarios.test.ts` runs `--all --short` to catch broken scenarios and auto-skips when the stack is down.
 
 ## Interpreting results
 

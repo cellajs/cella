@@ -1,4 +1,4 @@
-import type { ContextEntityIdColumns, EntityType } from 'shared';
+import type { ChannelEntityIdColumns, EntityType } from 'shared';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
 
 export interface ItemData {
@@ -7,7 +7,7 @@ export interface ItemData {
 }
 
 /** Entity data with optional context columns */
-export type ItemDataWithContext = ItemData & Partial<ContextEntityIdColumns>;
+export type ItemDataWithChannel = ItemData & Partial<ChannelEntityIdColumns>;
 
 export type EntityIdAndType = { id: string; entityType: EntityType };
 export type QueryDataActions = 'create' | 'update' | 'remove';

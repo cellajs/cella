@@ -1,15 +1,20 @@
-import type * as React from 'react';
+import type { LucideProps } from 'lucide-react';
 import { cn } from '~/utils/cn';
 
-export const ElementIcon = ({ className, ...props }: React.SVGProps<SVGSVGElement>) => (
+// The `lucide` class opts into the global icon defaults (rem-based size); see tailwind.css.
+export const ElementIcon = ({
+  className,
+  size: _,
+  strokeWidth: __,
+  absoluteStrokeWidth: ___,
+  ...props
+}: LucideProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
     viewBox="0 0 24 24"
-    className={cn('size-6', className)}
     role="img"
     aria-label="Element"
+    className={cn('lucide', className)}
     {...props}
   >
     <path

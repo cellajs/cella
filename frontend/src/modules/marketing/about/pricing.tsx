@@ -78,9 +78,7 @@ export function Pricing() {
             <div className="mt-4">
               <h3 className="flex w-full justify-center text-center font-bold text-2xl">
                 {t(title)}
-                {popular && (
-                  <SparklesIcon className="ml-1 w-5 text-primary" strokeWidth={appConfig.theme.strokeWidth} />
-                )}
+                {popular && <SparklesIcon className="ml-1 w-5 text-primary" />}
               </h3>
               <div className="mt-4 flex items-center justify-center text-gray-600 dark:text-gray-400">
                 {discount && (
@@ -100,7 +98,7 @@ export function Pricing() {
                 {Array.from({ length: featureCount }).map((_, featureIndex) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
                   <li key={`${id}-${featureIndex}`} className="flex items-center text-sm">
-                    <CheckIcon className="mr-2 p-1 text-sm text-success" />
+                    <CheckIcon className="icon-xl mr-2 p-1 text-sm text-success" />
                     {t(`about:pricing.plan_${planIndex + 1}.${featureIndex + 1}`)}
                   </li>
                 ))}

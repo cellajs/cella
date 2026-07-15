@@ -1,4 +1,4 @@
-import { MailboxIcon, PlusIcon, XSquareIcon } from 'lucide-react';
+import { MailboxIcon, PlusIcon, SquareXIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
@@ -109,7 +109,7 @@ export const OrganizationsTableBar = ({
                 badge={selected.length}
                 className="relative"
               />
-              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="c:clear" />
+              <TableBarButton variant="ghost" onClick={clearSelection} icon={SquareXIcon} label="c:clear" />
             </>
           ) : (
             !isFiltered && (

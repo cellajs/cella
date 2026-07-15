@@ -30,7 +30,7 @@ export const FileOpenPreviewButton = () => {
       onClick={() => openAttachment(editor, ref, blockUrl)}
       mainTooltip={'Open attachment preview'}
       label={'Open attachment preview'}
-      icon={<ScalingIcon size={14} />}
+      icon={<ScalingIcon className="icon-sm" />}
     />
   );
 };

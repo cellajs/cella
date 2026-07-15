@@ -34,7 +34,7 @@ export type UserBase = {
 /**
  * Base schema for entities with memberships (e.g. organization).
  */
-export type ContextEntityBase = {
+export type ChannelEntityBase = {
   id: string;
   name: string;
   createdAt: string;
@@ -73,8 +73,8 @@ export type ProductEntityBase = {
 export type MembershipBase = {
   id: string;
   tenantId: string;
-  contextType: 'organization';
-  contextId: string;
+  channelType: 'organization';
+  channelId: string;
   userId: string;
   role: 'admin' | 'member';
   archived: boolean;
@@ -120,7 +120,7 @@ export type StreamNotification = {
   /**
    * Context entity type for membership events (e.g. organization, project)
    */
-  contextType: 'organization' | null;
+  channelType: 'organization' | null;
   /**
    * Per-entityType sequence number used for gap detection in sync
    */
@@ -128,7 +128,7 @@ export type StreamNotification = {
   /**
    * Context entity ID for grouping (e.g. projectId for tasks in unseen counts)
    */
-  contextId: string | null;
+  channelId: string | null;
   stx: StxBase &
     ({
       [key: string]: unknown;
@@ -312,8 +312,8 @@ export type InactiveMembership = {
   createdAt: string;
   id: string;
   tenantId: string;
-  contextType: 'organization';
-  contextId: string;
+  channelType: 'organization';
+  channelId: string;
   email: string;
   userId: string | null;
   tokenId: string | null;
@@ -411,6 +411,7 @@ export type Organization = {
       [key: string]: unknown;
     } | null);
   publishedAt: string | null;
+  publicAt: string | null;
   shortName: string | null;
   country: string | null;
   timezone: string | null;
@@ -469,6 +470,7 @@ export type Attachment = {
     } | null);
   deletedAt: string | null;
   deletedBy: string | null;
+  publicAt: string | null;
   seq: number;
   public: boolean;
   bucketName: string;
@@ -491,8 +493,8 @@ export type Membership = {
   createdAt: string;
   id: string;
   tenantId: string;
-  contextType: 'organization';
-  contextId: string;
+  channelType: 'organization';
+  channelId: string;
   userId: string;
   role: 'admin' | 'member';
   createdBy: string;
@@ -1846,7 +1848,7 @@ export type GetMyInvitationsResponses = {
    */
   200: {
     items: Array<{
-      entity: ContextEntityBase;
+      entity: ChannelEntityBase;
       inactiveMembership: InactiveMembership;
     }>;
     total: number;
@@ -2301,7 +2303,7 @@ export type PostAppCatchupResponses = {
         entityCounts?: {
           [key: string]: number;
         };
-        childContextChanges?: {
+        childChannelChanges?: {
           [key: string]: {
             entitySeqs?: {
               [key: string]: number;
@@ -4430,7 +4432,7 @@ export type HandleMembershipInvitationResponses = {
   /**
    * Invitation was accepted
    */
-  200: ContextEntityBase;
+  200: ChannelEntityBase;
 };
 
 export type HandleMembershipInvitationResponse =

@@ -1,7 +1,7 @@
 import { and, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import type { EntityRole } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
-import { contextCountersTable } from '#/modules/entities/context-counters-db';
+import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { getEntityCountsSelect } from '#/modules/entities/helpers/get-entity-counts';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
@@ -79,7 +79,7 @@ export const getOrganizationsList = async ({ var: { db } }: DbContext, opts: Get
   const membershipKeyOn = and(
     eq(membershipsTable.organizationId, organizationsTable.id),
     eq(membershipsTable.userId, targetUserId),
-    eq(membershipsTable.contextType, entityType),
+    eq(membershipsTable.channelType, entityType),
   );
 
   // Membership filters (role/archived) in JOIN ON so they only control whether the membership row is present.
@@ -120,8 +120,8 @@ export const getOrganizationsList = async ({ var: { db } }: DbContext, opts: Get
 
   if (countData) {
     query = query.leftJoin(
-      contextCountersTable,
-      sql`${organizationsTable.id}::text = ${contextCountersTable.contextKey}`,
+      channelCountersTable,
+      sql`${organizationsTable.id}::text = ${channelCountersTable.channelKey}`,
     ) as typeof query;
   }
 

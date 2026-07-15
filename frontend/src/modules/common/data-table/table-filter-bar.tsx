@@ -1,4 +1,4 @@
-import { FilterXIcon, SearchIcon, XIcon } from 'lucide-react';
+import { FunnelXIcon, SearchIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { createContext, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -157,7 +157,7 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
               exit={{ opacity: 0, rotate: 90 }}
               transition={{ duration: 0.15 }}
             >
-              {isFiltered ? <FilterXIcon size={16} /> : <XIcon size={16} />}
+              {isFiltered ? <FunnelXIcon /> : <XIcon />}
             </motion.span>
           ) : (
             <motion.span
@@ -167,7 +167,7 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
               exit={{ opacity: 0, scale: 0.5 }}
               transition={{ duration: 0.15 }}
             >
-              <SearchIcon size={16} />
+              <SearchIcon />
             </motion.span>
           )}
         </AnimatePresence>

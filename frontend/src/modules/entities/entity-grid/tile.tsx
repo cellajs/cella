@@ -2,10 +2,10 @@ import { Link } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { UserIcon } from 'lucide-react';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardFooter } from '~/modules/ui/card';
-import { getContextEntityRoute, pageTopHashNav } from '~/utils/context-entity-route';
+import { getChannelEntityRoute, pageTopHashNav } from '~/utils/channel-entity-route';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
@@ -13,7 +13,7 @@ import { numberToColorClass } from '~/utils/number-to-color-class';
  * Structural tile entity: any context entity whose optional `included.counts`
  * carries a membership total fits, without coupling to a concrete entity type.
  */
-type TileEntity = EnrichedContextEntity & {
+type TileEntity = EnrichedChannelEntity & {
   included?: { counts?: { membership: { total: number } } };
 };
 
@@ -21,7 +21,7 @@ type TileEntity = EnrichedContextEntity & {
  * Tile component to display an entity in a grid layout.
  */
 export const EntityGridTile = ({ entity }: { entity: TileEntity }) => {
-  const { to, params, search } = getContextEntityRoute(entity);
+  const { to, params, search } = getChannelEntityRoute(entity);
   const counts = entity.included?.counts;
   return (
     <Card className="overflow-hidden px-0 pt-0 shadow-xs transition sm:px-0 sm:pt-0 [&:has(.tile-link:active)]:translate-y-[.05rem] [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background [&:has(.tile-link:hover)]:shadow-sm">
@@ -63,7 +63,7 @@ export const EntityGridTile = ({ entity }: { entity: TileEntity }) => {
         <CardFooter>
           <div className="flex w-full items-center justify-end gap-3 text-sm opacity-80">
             <div className="flex items-center gap-1">
-              <UserIcon size={16} />
+              <UserIcon />
               {counts.membership.total}
             </div>
           </div>

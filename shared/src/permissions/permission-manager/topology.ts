@@ -12,11 +12,11 @@ import type { EntityActionType } from '../../../types';
 
 /** Structural subset of the app's `EntityHierarchy` the engine reads; the real `hierarchy` satisfies it. */
 export interface TopologyHierarchy {
-  readonly contextTypes: readonly string[];
+  readonly channelTypes: readonly string[];
   getOrderedAncestors(entityType: string): readonly string[];
   getOrderedDescendants(entityType: string): readonly string[];
-  getRoles(contextType: string): readonly string[];
-  isContext(entityType: string): boolean;
+  getRoles(channelType: string): readonly string[];
+  isChannel(entityType: string): boolean;
   isProduct(entityType: string): boolean;
   getParent(entityType: string): string | null;
 }

@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { actionToVerb, activityActions, appConfig } from 'shared';
 import {
-  generateMockContextIdColumns,
+  generateMockChannelIdColumns,
   MOCK_REF_DATE,
   mockPaginated,
   mockTenantId,
@@ -44,7 +44,7 @@ export const mockActivity = (key = 'activity:default', overrides?: Partial<Activ
           ? faker.helpers.arrayElements(['name', 'email', 'slug', 'description'], { min: 2, max: 4 })
           : null,
       stx: null,
-      ...generateMockContextIdColumns('relatable'),
+      ...generateMockChannelIdColumns('relatable'),
       ...overrides,
     };
   });

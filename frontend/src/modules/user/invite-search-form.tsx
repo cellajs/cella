@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { toaster } from '~/modules/common/toaster/toaster';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -12,28 +12,28 @@ import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite
 import { UserCombobox } from '~/modules/user/user-combobox';
 
 interface Props {
-  contextEntity?: EnrichedContextEntity;
+  channelEntity?: EnrichedChannelEntity;
   dialog?: boolean;
 }
 
 /**
  * Invite members by searching for users which are already in the system
  */
-export function InviteSearchForm({ contextEntity, dialog: isDialog }: Props) {
+export function InviteSearchForm({ channelEntity, dialog: isDialog }: Props) {
   const { t } = useTranslation();
 
-  const form = useInviteFormDraft(contextEntity?.id);
+  const form = useInviteFormDraft(channelEntity?.id);
   const { mutate: invite, isPending } = useInviteMemberMutation();
 
-  if (!contextEntity) return null;
+  if (!channelEntity) return null;
 
   const onSubmit = (values: InviteFormValues) => {
     invite(
       {
         body: values,
-        path: { tenantId: contextEntity.tenantId, organizationId: contextEntity.organizationId || contextEntity.id },
-        query: { entityId: contextEntity.id, entityType: contextEntity.entityType },
-        contextEntity,
+        path: { tenantId: channelEntity.tenantId, organizationId: channelEntity.organizationId || channelEntity.id },
+        query: { entityId: channelEntity.id, entityType: channelEntity.entityType },
+        channelEntity,
       },
       {
         onSuccess: ({ invitesSentCount, rejectedIds }, { body: { emails } }) => {
@@ -60,7 +60,7 @@ export function InviteSearchForm({ contextEntity, dialog: isDialog }: Props) {
           name="emails"
           render={({ field: { onChange, value } }) => (
             <FormItem>
-              <UserCombobox value={value} onValueChange={onChange} contextEntity={contextEntity} />
+              <UserCombobox value={value} onValueChange={onChange} channelEntity={channelEntity} />
               <FormMessage />
             </FormItem>
           )}
@@ -83,7 +83,7 @@ export function InviteSearchForm({ contextEntity, dialog: isDialog }: Props) {
                 {form.getValues('emails')?.length}
               </Badge>
             )}
-            <SendIcon size={16} className="mr-2" />
+            <SendIcon className="mr-2" />
             {t('c:invite')}
           </SubmitButton>
           {form.isDirty && (

@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
-import { appConfig, type ContextEntityType, type EntityRole, hierarchy, roles } from 'shared';
+import { appConfig, type ChannelEntityType, type EntityRole, hierarchy, roles } from 'shared';
 import {
-  generateMockContextIdColumns,
+  generateMockChannelIdColumns,
   MOCK_REF_DATE,
-  type MockContextIdColumns,
+  type MockChannelIdColumns,
   mockPaginated,
   mockPastIsoDate,
   mockTenantId,
@@ -18,14 +18,14 @@ import type { UserModel } from '#/modules/user/user-db';
 type MembershipBase = {
   id: string;
   tenantId: string;
-  contextType: ContextEntityType;
-  contextId: string;
+  channelType: ChannelEntityType;
+  channelId: string;
   userId: string;
   role: EntityRole;
   displayOrder: number;
   muted: boolean;
   archived: boolean;
-} & MockContextIdColumns;
+} & MockChannelIdColumns;
 
 // Tracks the current order offset for memberships per context (e.g., organization)
 const membershipOrderMap: Map<string, number> = new Map();
@@ -34,18 +34,18 @@ const membershipOrderMap: Map<string, number> = new Map();
  * Returns a unique order offset for a given context (e.g., organization ID).
  * Ensures incremental order values for memberships within the same context.
  */
-export const getMembershipOrderOffset = (contextId: string): number => {
-  if (!membershipOrderMap.has(contextId)) {
-    membershipOrderMap.set(contextId, membershipOrderMap.size + 1);
+export const getMembershipOrderOffset = (channelId: string): number => {
+  if (!membershipOrderMap.has(channelId)) {
+    membershipOrderMap.set(channelId, membershipOrderMap.size + 1);
   }
-  return membershipOrderMap.get(contextId)!;
+  return membershipOrderMap.get(channelId)!;
 };
 
 /** Minimal context entity interface for membership creation */
-type ContextEntity = { id: string; tenantId: string };
+type ChannelEntity = { id: string; tenantId: string };
 
 /** Override IDs for context entity columns (organizationId, workspaceId, etc.) */
-type ContextEntityIdOverrides = Partial<MockContextIdColumns>;
+type ChannelEntityIdOverrides = Partial<MockChannelIdColumns>;
 
 /**
  * Generates a mock membership linking a user to a context entity.
@@ -54,31 +54,31 @@ type ContextEntityIdOverrides = Partial<MockContextIdColumns>;
  * Additional ancestor IDs can be provided via overrideIds.
  * Ensures consistent ordering via the `getMembershipOrderOffset` function.
  */
-export const mockContextMembership = <T extends ContextEntityType>(
-  contextType: T,
-  contextEntity: ContextEntity,
+export const mockChannelMembership = <T extends ChannelEntityType>(
+  channelType: T,
+  channelEntity: ChannelEntity,
   user: UserModel | { id: string },
-  overrideIds?: ContextEntityIdOverrides,
+  overrideIds?: ChannelEntityIdOverrides,
 ): InsertMembershipModel => {
   const userId = user.id;
 
   // Initialize all context entity ID columns to null (nullable FK columns)
-  const contextEntityColumns = Object.fromEntries(
-    appConfig.contextEntityTypes.map((type) => [appConfig.entityIdColumnKeys[type], null]),
+  const channelEntityColumns = Object.fromEntries(
+    appConfig.channelEntityTypes.map((type) => [appConfig.entityIdColumnKeys[type], null]),
   );
 
   return {
     id: mockUuid(),
     userId,
-    tenantId: contextEntity.tenantId, // Use context entity's tenant for RLS isolation
-    contextType,
-    contextId: contextEntity.id, // Denormalized primary context entity ID
-    ...contextEntityColumns,
-    [appConfig.entityIdColumnKeys[contextType]]: contextEntity.id, // Set the correct context entity ID
+    tenantId: channelEntity.tenantId, // Use context entity's tenant for RLS isolation
+    channelType,
+    channelId: channelEntity.id, // Denormalized primary context entity ID
+    ...channelEntityColumns,
+    [appConfig.entityIdColumnKeys[channelType]]: channelEntity.id, // Set the correct context entity ID
     ...overrideIds,
     // Pick from the context's own role vocabulary (e.g. course → staff/student/guest)
-    role: faker.helpers.arrayElement(hierarchy.getRoles(contextType)),
-    displayOrder: getMembershipOrderOffset(contextEntity.id) * 10,
+    role: faker.helpers.arrayElement(hierarchy.getRoles(channelType)),
+    displayOrder: getMembershipOrderOffset(channelEntity.id) * 10,
     createdAt: mockPastIsoDate(),
     createdBy: userId,
   } as InsertMembershipModel;
@@ -87,16 +87,16 @@ export const mockContextMembership = <T extends ContextEntityType>(
 /**
  * Generates a mock membership base for API responses.
  * Uses deterministic seeding - same key produces same data.
- * Context entity ID columns are generated dynamically based on appConfig.contextEntityTypes.
+ * Context entity ID columns are generated dynamically based on appConfig.channelEntityTypes.
  */
 export const mockMembershipBase = (key = 'membership-base:default'): MembershipBase =>
   withFakerSeed(key, () => ({
     id: mockUuid(),
     tenantId: mockTenantId(),
-    contextType: 'organization' as const,
-    contextId: mockUuid(),
+    channelType: 'organization' as const,
+    channelId: mockUuid(),
     userId: mockUuid(),
-    ...generateMockContextIdColumns(),
+    ...generateMockChannelIdColumns(),
     role: faker.helpers.arrayElement(roles.all),
     displayOrder: faker.number.int({ min: 1, max: 100 }),
     muted: false,
@@ -106,21 +106,21 @@ export const mockMembershipBase = (key = 'membership-base:default'): MembershipB
 /**
  * Generates a mock full membership for API responses.
  * Uses deterministic seeding - same key produces same data.
- * Context entity ID columns are generated dynamically based on appConfig.contextEntityTypes.
+ * Context entity ID columns are generated dynamically based on appConfig.channelEntityTypes.
  */
 export const mockMembership = (key = 'membership:default'): MembershipModel =>
   withFakerSeed(key, () => {
     const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockUuid();
-    const contextEntityColumns = generateMockContextIdColumns();
+    const channelEntityColumns = generateMockChannelIdColumns();
 
     return {
       id: mockUuid(),
-      contextType: 'organization' as const,
-      contextId: mockUuid(),
+      channelType: 'organization' as const,
+      channelId: mockUuid(),
       userId,
-      ...contextEntityColumns,
+      ...channelEntityColumns,
       role: faker.helpers.arrayElement(roles.all),
       displayOrder: faker.number.int({ min: 1, max: 100 }),
       muted: false,
@@ -139,20 +139,20 @@ export const mockMembershipResponse = mockMembership;
 /**
  * Generates a mock inactive membership for API responses.
  * Uses deterministic seeding - same key produces same data.
- * Context entity ID columns are generated dynamically based on appConfig.contextEntityTypes.
+ * Context entity ID columns are generated dynamically based on appConfig.channelEntityTypes.
  */
 export const mockInactiveMembership = (key = 'inactive-membership:default'): InactiveMembershipModel =>
   withFakerSeed(key, () => {
     const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockUuid();
-    const contextEntityColumns = generateMockContextIdColumns();
+    const channelEntityColumns = generateMockChannelIdColumns();
     const tokenId = mockUuid();
 
     return {
       id: mockUuid(),
-      contextType: 'organization' as const,
-      contextId: mockUuid(),
+      channelType: 'organization' as const,
+      channelId: mockUuid(),
       email: faker.internet.email().toLowerCase(),
       userId,
       tokenId,
@@ -161,7 +161,7 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
       remindedAt: null,
       createdAt,
       createdBy: mockUuid(),
-      ...contextEntityColumns,
+      ...channelEntityColumns,
       tenantId: 'test01', // Default test tenant
     };
   });

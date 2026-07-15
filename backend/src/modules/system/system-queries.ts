@@ -132,7 +132,7 @@ export const findNewsletterRecipients = async (
     .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
     .where(
       and(
-        eq(membershipsTable.contextType, 'organization'),
+        eq(membershipsTable.channelType, 'organization'),
         inArray(membershipsTable.organizationId, organizationIds),
         inArray(membershipsTable.role, roles),
         eq(usersTable.newsletter, true),

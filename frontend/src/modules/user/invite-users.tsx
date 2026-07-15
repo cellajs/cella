@@ -4,14 +4,14 @@ import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { zMembershipInviteBody } from 'sdk/zod.gen';
-import { type ContextEntityType, hierarchy } from 'shared';
+import { type ChannelEntityType, hierarchy } from 'shared';
 import type z from 'zod';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { AnimatedArrow } from '~/modules/common/animated-arrow';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { InviteBulkEmailForm } from '~/modules/user/invite-bulk-email-form';
 import { InviteEmailForm } from '~/modules/user/invite-email-form';
@@ -21,16 +21,16 @@ const InviteFormSchema = zMembershipInviteBody;
 export type InviteFormValues = z.infer<typeof InviteFormSchema>;
 
 /** Default invite role for a context: 'member' when the vocabulary has it, else the least-privileged role. */
-const defaultInviteRole = (entityType?: ContextEntityType): InviteFormValues['role'] => {
-  const contextRoles = entityType ? hierarchy.getRoles(entityType) : [];
-  if (!contextRoles.length || contextRoles.includes('member')) return 'member';
-  return contextRoles[contextRoles.length - 1] as InviteFormValues['role'];
+const defaultInviteRole = (entityType?: ChannelEntityType): InviteFormValues['role'] => {
+  const channelRoles = entityType ? hierarchy.getRoles(entityType) : [];
+  if (!channelRoles.length || channelRoles.includes('member')) return 'member';
+  return channelRoles[channelRoles.length - 1] as InviteFormValues['role'];
 };
 
 /**
  * Creates a draft-backed invite form for the given entity.
  */
-export function useInviteFormDraft(entityId?: string, entityType?: ContextEntityType) {
+export function useInviteFormDraft(entityId?: string, entityType?: ChannelEntityType) {
   return useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {
     formContainerId: 'invite-users',
     formOptions: {
@@ -41,14 +41,14 @@ export function useInviteFormDraft(entityId?: string, entityType?: ContextEntity
 }
 
 interface InviteUsersProps {
-  contextEntity?: EnrichedContextEntity;
+  channelEntity?: EnrichedChannelEntity;
   dialog?: boolean;
   mode?: 'search' | 'email' | 'bulk' | null;
   children?: React.ReactNode;
 }
 
 // When no entity type, it's a system invite
-export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) {
+export function InviteUsers({ channelEntity, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) {
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(baseMode);
@@ -79,7 +79,7 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
                 exit={{ opacity: 0 }}
                 transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               >
-                <ChevronRightIcon className="opacity-50" size={16} />
+                <ChevronRightIcon className="opacity-50" />
                 <UnsavedBadge
                   title={mode[0] === 'search' ? t('c:search') : mode[0] === 'bulk' ? t('app:email_bulk') : t('c:email')}
                 />
@@ -108,7 +108,7 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
                 aria-label="Add by email"
                 className="w-auto grow py-6 sm:py-10"
               >
-                <AtSignIcon size={48} strokeWidth={1} />
+                <AtSignIcon className="size-12" strokeWidth={1} />
                 <div className="flex flex-col truncate pl-3">
                   <p>{t('c:invite_by_email')}</p>
                   <div className="mt-1 flex flex-row items-center truncate opacity-50 transition-opacity group-hover:opacity-100">
@@ -124,7 +124,7 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
                 aria-label="Search users"
                 className="w-auto grow py-6 sm:py-10"
               >
-                <SearchIcon size={48} strokeWidth={1} />
+                <SearchIcon className="size-12" strokeWidth={1} />
                 <div className="flex flex-col truncate pl-3">
                   <div>{t('c:invite_by_name')}</div>
                   <div className="mt-1 flex flex-row items-center truncate opacity-50 transition-opacity group-hover:opacity-100">
@@ -158,15 +158,15 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
               )}
             </AlertBanner>
             {inviteMode === 'email' ? (
-              <InviteEmailForm contextEntity={contextEntity} dialog={isDialog}>
+              <InviteEmailForm channelEntity={channelEntity} dialog={isDialog}>
                 {children}
               </InviteEmailForm>
             ) : inviteMode === 'bulk' ? (
-              <InviteBulkEmailForm contextEntity={contextEntity} dialog={isDialog}>
+              <InviteBulkEmailForm channelEntity={channelEntity} dialog={isDialog}>
                 {children}
               </InviteBulkEmailForm>
             ) : (
-              <InviteSearchForm contextEntity={contextEntity} dialog={isDialog} />
+              <InviteSearchForm channelEntity={channelEntity} dialog={isDialog} />
             )}
           </motion.div>
         )}

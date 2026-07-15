@@ -9,19 +9,19 @@ import {
   type Organization,
   updateMembership,
 } from 'sdk';
-import { appConfig, type ContextEntityType } from 'shared';
+import { appConfig, type ChannelEntityType } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import type {
   DeleteMembership,
-  EntityMembershipContextProp,
+  EntityMembershipChannelProp,
   InfiniteMemberQueryData,
   InviteMember,
   Member,
-  MemberContextProp,
+  MemberChannelProp,
   MemberQueryData,
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
@@ -40,9 +40,9 @@ import { queryClient } from '~/query/query-client';
 
 const limit = appConfig.requestLimits.members;
 
-const getMembershipContextKey = (
-  membership: Pick<MembershipBase, 'tenantId' | 'userId' | 'contextType' | 'contextId'>,
-) => [membership.tenantId, membership.userId, membership.contextType, membership.contextId].join(':');
+const getMembershipChannelKey = (
+  membership: Pick<MembershipBase, 'tenantId' | 'userId' | 'channelType' | 'channelId'>,
+) => [membership.tenantId, membership.userId, membership.channelType, membership.channelId].join(':');
 
 type ApiResponseWithIncludedMembership = {
   included?: {
@@ -83,15 +83,15 @@ export const addMyMembershipCache = (newMembership: MembershipBase) => {
  * Replaces existing membership by context identity, or appends when missing.
  */
 export const upsertMyMembershipCache = (membership: MembershipBase) => {
-  const contextKey = getMembershipContextKey(membership);
+  const channelKey = getMembershipChannelKey(membership);
   queryClient.setQueryData<{ items: MembershipBase[] }>(meKeys.memberships, (oldData) => {
     if (!oldData) return { items: [membership] };
-    const exists = oldData.items.some((m) => getMembershipContextKey(m) === contextKey);
+    const exists = oldData.items.some((m) => getMembershipChannelKey(m) === channelKey);
 
     return {
       ...oldData,
       items: exists
-        ? oldData.items.map((m) => (getMembershipContextKey(m) === contextKey ? membership : m))
+        ? oldData.items.map((m) => (getMembershipChannelKey(m) === channelKey ? membership : m))
         : [...oldData.items, membership],
     };
   });
@@ -101,7 +101,7 @@ export const upsertMyMembershipCache = (membership: MembershipBase) => {
  * Update an entity's data in all matching list cache queries.
  * Uses the entity query registry to resolve query keys dynamically.
  */
-const updateEntityInListCache = (entityType: ContextEntityType, updatedItems: { id: string }[]) => {
+const updateEntityInListCache = (entityType: ChannelEntityType, updatedItems: { id: string }[]) => {
   const keys = getEntityQueryKeys(entityType);
 
   const queries = queryClient.getQueriesData({ queryKey: keys.list.base });
@@ -115,7 +115,7 @@ const updateEntityInListCache = (entityType: ContextEntityType, updatedItems: { 
 const onError = (
   _: ApiError,
   __: InviteMember | MutationUpdateMembership | DeleteMembership,
-  context?: MemberContextProp[],
+  context?: MemberChannelProp[],
 ) => {
   if (context?.length) {
     for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
@@ -126,8 +126,8 @@ export const useInviteMemberMutation = () =>
   useMutation<MembershipInviteResponse, ApiError, InviteMember, undefined>({
     mutationKey: memberQueryKeys.update(),
     mutationFn: ({ body, path, query }) => membershipInvite({ body, path, query }),
-    onSuccess: ({ invitesSentCount }, { contextEntity }) => {
-      const { id: entityId, entityType, organizationId } = contextEntity;
+    onSuccess: ({ invitesSentCount }, { channelEntity }) => {
+      const { id: entityId, entityType, organizationId } = channelEntity;
 
       if (invitesSentCount) {
         // If the entity is not an organization but belongs to one, update its cache too
@@ -160,7 +160,7 @@ export const useInviteMemberMutation = () =>
   });
 
 export const useMemberUpdateMutation = () =>
-  useMutation<Membership, ApiError, MutationUpdateMembership, EntityMembershipContextProp>({
+  useMutation<Membership, ApiError, MutationUpdateMembership, EntityMembershipChannelProp>({
     mutationKey: memberQueryKeys.update(),
     mutationFn: async ({ path, body }) => {
       return await updateMembership({ body, path });
@@ -172,7 +172,7 @@ export const useMemberUpdateMutation = () =>
 
       // Store previous query data for rollback if an Apierror occurs
       const context = {
-        queryContext: [] as MemberContextProp[],
+        queryChannel: [] as MemberChannelProp[],
         toastMessage: t('c:success.update_item', { item: t('c:membership') }),
         entityType,
       };
@@ -213,7 +213,7 @@ export const useMemberUpdateMutation = () =>
           return formatUpdatedCacheData(oldData, updatedData, limit);
         });
 
-        context.queryContext.push([queryKey, previousData, membershipInfo.id]); // Store previous data for rollback if needed
+        context.queryChannel.push([queryKey, previousData, membershipInfo.id]); // Store previous data for rollback if needed
       }
 
       return context;
@@ -258,12 +258,12 @@ export const useMemberUpdateMutation = () =>
     onError: (_, __, context) => {
       // Invalidate memberships to undo the optimistic update; the enrichment subscriber syncs entity lists.
       queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
-      onError(_, __, context?.queryContext);
+      onError(_, __, context?.queryChannel);
     },
   });
 
 export const useMembershipsDeleteMutation = () =>
-  useMutation<void, ApiError, DeleteMembership, MemberContextProp[]>({
+  useMutation<void, ApiError, DeleteMembership, MemberChannelProp[]>({
     mutationKey: memberQueryKeys.delete(),
     mutationFn: async ({ path, body, query }) => {
       await deleteMemberships({ path, body, query });
@@ -276,7 +276,7 @@ export const useMembershipsDeleteMutation = () =>
       } = variables;
       const ids = members.map(({ id }) => id);
 
-      const context: MemberContextProp[] = []; // previous query data for rollback if an Apierror occurs
+      const context: MemberChannelProp[] = []; // previous query data for rollback if an Apierror occurs
 
       // Get affected queries
       const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, organizationId });
@@ -352,12 +352,12 @@ const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount
 
 /** Variables for changing a user's role on a context entity from an entity table */
 type ChangeEntityRoleVariables = {
-  entity: EnrichedContextEntity;
+  entity: EnrichedChannelEntity;
   role: MembershipBase['role'];
 };
 
 type ChangeEntityRoleResult = {
-  entity: EnrichedContextEntity;
+  entity: EnrichedChannelEntity;
   membership: MembershipBase;
   wasNew: boolean;
 };

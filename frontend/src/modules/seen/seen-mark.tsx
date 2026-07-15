@@ -5,7 +5,7 @@ import { useSeenStore } from '~/modules/seen/seen-store';
 type SeenMeta = {
   tenantId: string;
   organizationId: string;
-  contextId: string;
+  channelId: string;
   entityType: ProductEntityType;
   entityId: string;
 };
@@ -39,7 +39,7 @@ function getSharedObserver(): IntersectionObserver {
           console.debug('[SeenMark] intersected:', meta.entityType, meta.entityId.slice(0, 8));
 
           try {
-            markEntitySeen(meta.tenantId, meta.organizationId, meta.contextId, meta.entityType, meta.entityId);
+            markEntitySeen(meta.tenantId, meta.organizationId, meta.channelId, meta.entityType, meta.entityId);
           } catch (err) {
             console.error('[SeenMark] markEntitySeen threw:', err);
           }
@@ -73,7 +73,7 @@ interface SeenMarkProps {
   /** Organization ID for the POST API route. */
   organizationId: string;
   /** Parent context entity ID for badge grouping (e.g., projectId for tasks). Defaults to organizationId. */
-  contextId?: string;
+  channelId?: string;
   entityType: ProductEntityType;
 }
 
@@ -90,12 +90,12 @@ interface SeenMarkProps {
  * // In a column's renderCell (attachment: organizationId is the badge context):
  * <SeenMark entityId={row.id} tenantId={tenantId} organizationId={organizationId} entityType="attachment" />
  *
- * // Task badge groups by project, so pass contextId:
- * <SeenMark entityId={task.id} tenantId={task.tenantId} organizationId={task.organizationId} contextId={task.projectId} entityType="task" />
+ * // Task badge groups by project, so pass channelId:
+ * <SeenMark entityId={task.id} tenantId={task.tenantId} organizationId={task.organizationId} channelId={task.projectId} entityType="task" />
  * ```
  */
-export function SeenMark({ entityId, tenantId, organizationId, contextId, entityType }: SeenMarkProps) {
-  const resolvedContextId = contextId ?? organizationId;
+export function SeenMark({ entityId, tenantId, organizationId, channelId, entityType }: SeenMarkProps) {
+  const resolvedChannelId = channelId ?? organizationId;
   const elementRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -113,11 +113,11 @@ export function SeenMark({ entityId, tenantId, organizationId, contextId, entity
       elementRef.current = node;
 
       if (node && !markedIds.has(entityId)) {
-        elementMeta.set(node, { tenantId, organizationId, contextId: resolvedContextId, entityType, entityId });
+        elementMeta.set(node, { tenantId, organizationId, channelId: resolvedChannelId, entityType, entityId });
         getSharedObserver().observe(node);
       }
     },
-    [entityId, tenantId, organizationId, resolvedContextId, entityType],
+    [entityId, tenantId, organizationId, resolvedChannelId, entityType],
   );
 
   // Already seen this session.

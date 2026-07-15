@@ -282,7 +282,7 @@ export const SyncDiagram = () => {
               animate={{ x: [0, 4, 0] }}
               transition={{ repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut', duration: 1 }}
             >
-              <ArrowRightIcon size={16} />
+              <ArrowRightIcon />
             </motion.span>
           </div>
         )}

@@ -12,7 +12,7 @@ import { activitiesTable } from '#/modules/activities/activities-db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
-import { contextCountersTable } from '#/modules/entities/context-counters-db';
+import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { emailsTable } from '#/modules/user/emails-db';
@@ -37,7 +37,7 @@ export async function clearDatabase() {
   await db.delete(tokensTable);
   await db.delete(membershipsTable);
   await db.delete(attachmentsTable);
-  await db.delete(contextCountersTable);
+  await db.delete(channelCountersTable);
   await db.delete(emailsTable);
   await db.delete(usersTable);
   await db.delete(organizationsTable);

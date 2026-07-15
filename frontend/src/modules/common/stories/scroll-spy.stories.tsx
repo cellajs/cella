@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { createRootRoute, createRoute, createRouter, Link, Outlet, RouterProvider } from '@tanstack/react-router';
-import { Bookmark, Info, Settings, Shield, Trash2 } from 'lucide-react';
+import { BookmarkIcon, InfoIcon, SettingsIcon, ShieldIcon, Trash2Icon } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { getSection, scrollToSectionById } from '~/hooks/use-scroll-spy-store';
@@ -23,11 +23,11 @@ interface SidebarTab {
 }
 
 const tabs: SidebarTab[] = [
-  { id: 'general', label: 'General', icon: Settings },
-  { id: 'details', label: 'Details', icon: Info },
-  { id: 'permissions', label: 'Permissions', icon: Shield },
-  { id: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
-  { id: 'delete-section', label: 'Delete', icon: Trash2 },
+  { id: 'general', label: 'General', icon: SettingsIcon },
+  { id: 'details', label: 'Details', icon: InfoIcon },
+  { id: 'permissions', label: 'Permissions', icon: ShieldIcon },
+  { id: 'bookmarks', label: 'Bookmarks', icon: BookmarkIcon },
+  { id: 'delete-section', label: 'Delete', icon: Trash2Icon },
 ];
 
 // ─── AsideAnchor (mirrors ~/modules/common/aside-anchor.tsx) ─────────────────

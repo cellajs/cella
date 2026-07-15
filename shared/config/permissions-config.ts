@@ -21,8 +21,9 @@ import { configurePermissions } from '../src/permissions/access-policies';
  * meaningful (it grants creating the product inside that context).
  *
  * Beyond plain cells, the builder callback also exposes:
- * - `publicRead(mode)` — declare how the subject becomes publicly readable (requires a matching
- *   `publicRead` declaration in the hierarchy config)
+ * - `publicRead(mode)` — declare how the subject becomes publicly readable. Public readability is
+ *   purely a permission concern; it is NOT declared in the hierarchy config. A `publicParent` mode
+ *   does require the parent subject to be publicly readable itself (validated at boot).
  * - row conditions like `read: 'own'` — grant an action only on rows the user created
  *
  * ## Adding new entities

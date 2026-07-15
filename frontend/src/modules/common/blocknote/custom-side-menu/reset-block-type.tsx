@@ -69,7 +69,7 @@ export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels }: Rese
     return {
       type: type,
       title: name,
-      icon: <Icon size={16} />,
+      icon: <Icon />,
       onClick: () => handleItemClick(item),
     };
   });

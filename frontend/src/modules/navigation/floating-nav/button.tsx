@@ -1,11 +1,10 @@
-import type { LucideProps } from 'lucide-react';
-import type React from 'react';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 export interface FloatingNavItem {
   id: string;
-  icon: React.ElementType<LucideProps>;
+  icon: IconComponent;
   onClick: () => void;
   ariaLabel?: string;
   /** Whether this item should be visible (defaults to true) */
@@ -16,7 +15,7 @@ export interface FloatingNavItem {
 
 interface FloatingNavButtonProps {
   id: string;
-  icon: React.ElementType<LucideProps>;
+  icon: IconComponent;
   onClick: () => void;
   ariaLabel?: string;
   className?: string;
@@ -47,7 +46,7 @@ export const FloatingNavButton = ({
       )}
       aria-label={ariaLabel ?? 'Navigate'}
     >
-      <Icon size={24} strokeWidth={1.5} />
+      <Icon className="icon-xl" />
     </Button>
   );
 };

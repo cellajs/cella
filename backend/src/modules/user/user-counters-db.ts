@@ -2,7 +2,7 @@ import { snakeCase, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 /**
  * Per-user counters and timestamps, separated from users table to avoid triggering CDC on frequent updates.
- * Symmetric to productCountersTable and contextCountersTable.
+ * Symmetric to productCountersTable and channelCountersTable.
  */
 export const userCountersTable = snakeCase.table('user_counters', {
   userId: uuid().primaryKey(),

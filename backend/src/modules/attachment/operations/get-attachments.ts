@@ -7,6 +7,7 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { auditUserSelect, coalesceAuditUsers, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
+import { actorFrom } from '#/permissions/actor';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getOrderColumn } from '#/utils/order-column';
@@ -23,13 +24,9 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   // e.g. `read: 'own'`) and compile it to a single row predicate. Attachments live
   // directly under the organization, so there is no sub-context to narrow by; the
   // organization id column stands in as the (never-hit) sub-context column.
-  const readFilter = resolveCollectionReadFilter(ctx.var.memberships, 'attachment', organizationId);
-  const scopeWhere = buildCollectionReadWhere(
-    readFilter,
-    attachmentsTable,
-    attachmentsTable.organizationId,
-    ctx.var.user.id,
-  );
+  const actor = actorFrom(ctx);
+  const readFilter = resolveCollectionReadFilter(ctx.var.memberships, 'attachment', organizationId, actor);
+  const scopeWhere = buildCollectionReadWhere(readFilter, attachmentsTable, attachmentsTable.organizationId, actor);
 
   if (scopeWhere.kind === 'none') {
     const data = { items: [], total: 0 };

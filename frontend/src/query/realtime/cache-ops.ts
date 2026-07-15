@@ -44,10 +44,10 @@ export function hasPendingMutationForEntity(entityType: string, entityId: string
  * Check if an entity was moved to a different parent context (e.g. different project/workspace).
  * Returns true when any context ID column differs between cached and incoming versions.
  */
-function hasParentContextChanged(cached: ItemData, incoming: ItemData): boolean {
+function hasParentChannelChanged(cached: ItemData, incoming: ItemData): boolean {
   const c = cached as unknown as Record<string, unknown>;
   const i = incoming as unknown as Record<string, unknown>;
-  for (const entityType of appConfig.contextEntityTypes) {
+  for (const entityType of appConfig.channelEntityTypes) {
     const key = appConfig.entityIdColumnKeys[entityType];
     if (typeof c[key] === 'string' && typeof i[key] === 'string' && c[key] !== i[key]) return true;
   }
@@ -275,14 +275,14 @@ export async function fetchEntityAndUpdateList(
         if (isInfiniteQueryData<ItemData>(queryData)) {
           // Remove from caches where the entity does not belong (e.g. parent context changed).
           const cachedItem = queryData.pages.flatMap((p) => p.items).find((item) => item.id === entityId);
-          if (cachedItem && hasParentContextChanged(cachedItem, filtered)) {
+          if (cachedItem && hasParentChannelChanged(cachedItem, filtered)) {
             changeInfiniteQueryData(queryKey, [filtered], 'remove');
             continue;
           }
           changeInfiniteQueryData(queryKey, [filtered], effectiveAction);
         } else if (isQueryData<ItemData>(queryData)) {
           const cachedItem = queryData.items.find((item) => item.id === entityId);
-          if (cachedItem && hasParentContextChanged(cachedItem, filtered)) {
+          if (cachedItem && hasParentChannelChanged(cachedItem, filtered)) {
             changeQueryData(queryKey, [filtered], 'remove');
             continue;
           }
@@ -334,14 +334,14 @@ function patchFetchedEntity(
     if (isInfiniteQueryData<ItemData>(queryData)) {
       // Remove from caches where the entity does not belong (e.g. parent context changed).
       const cachedItem = queryData.pages.flatMap((p) => p.items).find((item) => item.id === entity.id);
-      if (cachedItem && hasParentContextChanged(cachedItem, filtered)) {
+      if (cachedItem && hasParentChannelChanged(cachedItem, filtered)) {
         changeInfiniteQueryData(queryKey, [filtered], 'remove');
         continue;
       }
       changeInfiniteQueryData(queryKey, [filtered], 'update');
     } else if (isQueryData<ItemData>(queryData)) {
       const cachedItem = queryData.items.find((item) => item.id === entity.id);
-      if (cachedItem && hasParentContextChanged(cachedItem, filtered)) {
+      if (cachedItem && hasParentChannelChanged(cachedItem, filtered)) {
         changeQueryData(queryKey, [filtered], 'remove');
         continue;
       }

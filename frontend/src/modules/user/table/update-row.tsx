@@ -53,7 +53,7 @@ export function UpdateRow({ user, tabIndex }: Props) {
       data-tooltip-content={i18n.t('c:edit')}
       onClick={() => openUpdateUserSheet(user, buttonRef)}
     >
-      <PencilIcon size={16} />
+      <PencilIcon />
     </Button>
   );
 }

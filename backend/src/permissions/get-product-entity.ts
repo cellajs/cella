@@ -5,7 +5,8 @@ import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
 import { type EntityModel, resolveEntity } from '#/modules/entities/entities-queries';
 import { checkPermission } from '#/permissions';
-import { buildSubject } from '#/permissions/build-subject';
+import { actorFrom } from '#/permissions/actor';
+import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 /**
  * Result type for product entity validation including the can object.
@@ -36,9 +37,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   entityType: K,
   action: Exclude<EntityActionType, 'create'>,
 ): Promise<ValidProductEntityResult<K>> => {
-  const isSystemAdmin = ctx.var.isSystemAdmin;
   const memberships = ctx.var.memberships;
-  const userId = ctx.var.userId;
 
   // Auto-wrap in tenantRead when called outside an RLS context (bare baseDb)
   // Skip tenantRead for tenant-less entities (e.g. pages) where tenantId is not set
@@ -48,15 +47,10 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
       : await resolveEntity(ctx, entityType, id);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
-  // Step 2: Check permission for the requested action. The entity doubles as `row` so
-  // 'own' row conditions and public read grants (e.g. `publicSelf`) evaluate from real
-  // row data — without it, row-dependent grants fail closed on every single-row check.
-  const subject = buildSubject(entityType, entity, {
-    id: entity.id,
-    createdBy: 'createdBy' in entity ? (entity.createdBy as string | null) : undefined,
-    row: entity as Record<string, unknown>,
-  });
-  const { isAllowed } = checkPermission(memberships, action, subject, { isSystemAdmin, userId });
+  // Step 2: Check permission for the requested action. The entity doubles as `row`, so
+  // 'own' row conditions and public read grants evaluate from real row data.
+  const subject = buildSubjectFromEntity(entityType, entity);
+  const { isAllowed } = checkPermission(memberships, action, subject, actorFrom(ctx));
 
   if (!isAllowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });

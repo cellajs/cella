@@ -2,7 +2,7 @@ import type { EntityCanMap } from 'shared';
 import {
   accessPolicies,
   allActionsAllowed,
-  type ContextEntityType,
+  type ChannelEntityType,
   computeCan,
   type EntityActionType,
   type EntityType,
@@ -33,9 +33,9 @@ function hasCanChanged(a: EntityCanMap | undefined, b: EntityCanMap | undefined)
  * Build an all-actions-allowed permission map for system admins.
  * Mirrors the structure of computeCan (context type + descendants) but with full permissions.
  */
-function computeSystemAdminCan(contextType: ContextEntityType): EntityCanMap {
-  const map: EntityCanMap = { [contextType]: { ...allActionsAllowed } };
-  for (const descendant of hierarchy.getOrderedDescendants(contextType)) {
+function computeSystemAdminCan(channelType: ChannelEntityType): EntityCanMap {
+  const map: EntityCanMap = { [channelType]: { ...allActionsAllowed } };
+  for (const descendant of hierarchy.getOrderedDescendants(channelType)) {
     map[descendant] = { ...allActionsAllowed };
   }
   return map;
@@ -47,15 +47,15 @@ function computeSystemAdminCan(contextType: ContextEntityType): EntityCanMap {
  * System admins without a membership get full permissions, mirroring backend behavior.
  * Returns the original reference when nothing changed.
  */
-export function enrichWithPermissions(item: EnrichableEntity, contextType: ContextEntityType): EnrichableEntity {
+export function enrichWithPermissions(item: EnrichableEntity, channelType: ChannelEntityType): EnrichableEntity {
   const membership = item.membership ?? null;
   const existing = item.can;
 
   const isSystemAdmin = useUserStore.getState().isSystemAdmin;
   const computed = membership
-    ? computeCan(contextType, membership, accessPolicies)
+    ? computeCan(channelType, membership, accessPolicies)
     : isSystemAdmin
-      ? computeSystemAdminCan(contextType)
+      ? computeSystemAdminCan(channelType)
       : {};
 
   if (!hasCanChanged(existing, computed)) return item;

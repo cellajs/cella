@@ -2,7 +2,7 @@ import { type EntityRole, hierarchy } from 'shared';
 import type { AuthContext } from '#/core/context';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
-import { findMemberPreviewsByContexts } from '#/modules/memberships/memberships-queries';
+import { findMemberPreviewsByChannels } from '#/modules/memberships/memberships-queries';
 import { getOrganizationsList } from '#/modules/organization/organization-queries';
 import type { UserMinimalBase } from '#/modules/user/helpers/audit-user';
 import { coalesceAuditUsers } from '#/modules/user/helpers/audit-user';
@@ -44,9 +44,9 @@ export async function getOrganizationsOp(ctx: AuthContext, input: GetOrganizatio
   // capped at 3 per entity. Overflow counts come from the m:{role} counters, so no extra data
   // is needed. Forks wire this same helper into their own context entity list ops.
   const memberPreviews = includeMembers
-    ? await findMemberPreviewsByContexts(ctx, {
-        contextType: entityType,
-        contextIds: organizations.map((org) => org.id),
+    ? await findMemberPreviewsByChannels(ctx, {
+        channelType: entityType,
+        channelIds: organizations.map((org) => org.id),
         role: hierarchy.getRoles(entityType)[0],
         limit: 3,
       })
@@ -59,7 +59,7 @@ export async function getOrganizationsOp(ctx: AuthContext, input: GetOrganizatio
     const included: { membership?: MembershipBaseModel; counts?: typeof counts; members?: UserMinimalBase[] } = {};
 
     if (includeMembership) {
-      const membership = memberships.find((m) => m.contextType === entityType && m.organizationId === org.id);
+      const membership = memberships.find((m) => m.channelType === entityType && m.organizationId === org.id);
       if (membership) included.membership = toMembershipBase(membership);
     }
 

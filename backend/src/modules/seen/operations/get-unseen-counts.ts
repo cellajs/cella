@@ -3,14 +3,15 @@ import type { PgColumn } from 'drizzle-orm/pg-core';
 import { appConfig, hierarchy, type SeenTrackedEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
-import { groupingContextTypes, seenWindowMs, trackedEntityTypes } from '#/modules/seen/operations/mark-seen';
+import { groupingChannelTypes, seenWindowMs, trackedEntityTypes } from '#/modules/seen/operations/mark-seen';
 import { findUnseenCountsByUser } from '#/modules/seen/seen-queries';
+import { actorFrom } from '#/permissions/actor';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
 
 /** Sub-context column for the read predicate: the parent-level id column, org fallback. */
-const subContextColumn = (entityType: SeenTrackedEntityType): PgColumn => {
+const subChannelColumn = (entityType: SeenTrackedEntityType): PgColumn => {
   const table = getEntityTable(entityType);
   const columns = getColumns(table) as Record<string, PgColumn | undefined>;
   const parent = hierarchy.getParent(entityType);
@@ -25,8 +26,12 @@ const subContextColumn = (entityType: SeenTrackedEntityType): PgColumn => {
 export async function getUnseenCountsOp(ctx: AuthContext) {
   const user = ctx.var.user;
   const memberships = ctx.var.memberships;
+  const actor = actorFrom(ctx);
 
   // Set() widens the fixed-length config tuple so an empty fork config is a real runtime check.
+  // Counts are grouped by the caller's org memberships, so no memberships means nothing to
+  // count — including for system admins, whose bypass widens rows WITHIN an org, not the set
+  // of orgs they are counted against.
   if (memberships.length === 0 || new Set(trackedEntityTypes).size === 0) {
     return {};
   }
@@ -37,11 +42,11 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
   // Group the user's context ids by ORG (mirror rule: read scopes are org-scoped, so the
   // count runs per org with that org's predicate). Entity tables have FORCE ROW LEVEL
   // SECURITY with a tenant-scoped policy, so each count runs inside tenantRead.
-  const orgGroups = new Map<string, { tenantId: string; contextIds: Set<string> }>();
+  const orgGroups = new Map<string, { tenantId: string; channelIds: Set<string> }>();
   for (const m of memberships) {
-    const group = orgGroups.get(m.organizationId) ?? { tenantId: m.tenantId, contextIds: new Set<string>() };
-    if (groupingContextTypes.has(m.contextType)) group.contextIds.add(m.contextId);
-    if (needsOrgFallback) group.contextIds.add(m.organizationId);
+    const group = orgGroups.get(m.organizationId) ?? { tenantId: m.tenantId, channelIds: new Set<string>() };
+    if (groupingChannelTypes.has(m.channelType)) group.channelIds.add(m.channelId);
+    if (needsOrgFallback) group.channelIds.add(m.organizationId);
     orgGroups.set(m.organizationId, group);
   }
 
@@ -55,17 +60,17 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
   // Per org: compose each tracked type's collection read predicate (same compiler as
   // list endpoints) so badges only count rows this user can actually fetch — the seen
   // counter is a change signal that must mirror the feed, never a wider number.
-  for (const [organizationId, { tenantId, contextIds }] of orgGroups) {
+  for (const [organizationId, { tenantId, channelIds }] of orgGroups) {
     const scopeWhereByType: Partial<Record<SeenTrackedEntityType, SQL | undefined>> = {};
     const readableTypes: SeenTrackedEntityType[] = [];
 
     for (const entityType of trackedEntityTypes) {
-      const readFilter = resolveCollectionReadFilter(memberships, entityType, organizationId);
+      const readFilter = resolveCollectionReadFilter(memberships, entityType, organizationId, actor);
       const scopeWhere = buildCollectionReadWhere(
         readFilter,
         getEntityTable(entityType),
-        subContextColumn(entityType),
-        user.id,
+        subChannelColumn(entityType),
+        actor,
       );
       if (scopeWhere.kind === 'none') continue;
       readableTypes.push(entityType);
@@ -76,7 +81,7 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
     const unseenRows = await tenantRead({ var: { ...ctx.var, tenantId } } as AuthContext, (readCtx) =>
       findUnseenCountsByUser(readCtx, {
         userId: user.id,
-        contextIds: [...contextIds],
+        channelIds: [...channelIds],
         entityTypes: readableTypes,
         cutoff: windowCutoff,
         scopeWhereByType,
@@ -85,8 +90,8 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
 
     for (const row of unseenRows) {
       if (row.unseenCount <= 0) continue;
-      if (!results[row.contextId]) results[row.contextId] = {};
-      results[row.contextId][row.entityType] = row.unseenCount;
+      if (!results[row.channelId]) results[row.channelId] = {};
+      results[row.channelId][row.entityType] = row.unseenCount;
     }
   }
 

@@ -1,22 +1,19 @@
-import { BanIcon, CheckIcon, CircleIcon, type LucideIcon, MoonIcon, SunIcon } from 'lucide-react';
+import { BanIcon, CheckIcon, CircleIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 import { objectEntries } from '~/utils/object-entries';
 
-function Icon({ icon: IconEl, size = 20 }: { icon: LucideIcon; size?: number }) {
-  return <IconEl size={size} strokeWidth={appConfig.theme.strokeWidth} />;
-}
-
 interface ThemeItem {
   key: string;
   label: string;
-  icon: LucideIcon;
+  icon: IconComponent;
   iconStyle?: React.CSSProperties;
   iconClass?: string;
   checked: boolean;
@@ -38,11 +35,11 @@ function ThemeDropdownContent({ items, isMobile }: { items: ThemeItem[]; isMobil
           >
             <span className="flex items-center gap-2">
               <span className={item.iconClass} style={item.iconStyle}>
-                <Icon size={16} icon={item.icon} />
+                <item.icon />
               </span>
               {item.label}
             </span>
-            <CheckIcon size={16} className={`text-success ${item.checked ? 'visible' : 'invisible'}`} />
+            <CheckIcon className={`text-success ${item.checked ? 'visible' : 'invisible'}`} />
           </DropdownActionItem>
         </div>
       ))}
@@ -51,7 +48,6 @@ function ThemeDropdownContent({ items, isMobile }: { items: ThemeItem[]; isMobil
 }
 
 interface UserThemeProps {
-  size?: number;
   buttonClassName?: string;
 }
 
@@ -81,7 +77,7 @@ export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
         aria-label="changeTheme"
         onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
       >
-        <Icon icon={mode === 'light' ? SunIcon : MoonIcon} />
+        {mode === 'light' ? <SunIcon className="icon-lg" /> : <MoonIcon className="icon-lg" />}
       </Button>
     );
   }
@@ -144,7 +140,7 @@ export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
       aria-label="Change theme"
       onClick={openDropdown}
     >
-      <Icon icon={mode === 'light' ? SunIcon : MoonIcon} />
+      {mode === 'light' ? <SunIcon className="icon-lg" /> : <MoonIcon className="icon-lg" />}
     </Button>
   );
 }

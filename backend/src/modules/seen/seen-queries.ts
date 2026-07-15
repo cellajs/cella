@@ -14,7 +14,7 @@ type OrgScopedEntityTable = AnyPgTable & {
 
 interface FindUnseenCountsByUserOpts {
   userId: string;
-  contextIds: string[];
+  channelIds: string[];
   entityTypes: readonly SeenTrackedEntityType[];
   cutoff: string;
   /**
@@ -42,10 +42,10 @@ interface FindUnseenCountsByUserOpts {
  */
 export const findUnseenCountsByUser = async (
   ctx: DbContext,
-  { userId, contextIds, entityTypes, cutoff, scopeWhereByType }: FindUnseenCountsByUserOpts,
+  { userId, channelIds, entityTypes, cutoff, scopeWhereByType }: FindUnseenCountsByUserOpts,
 ) => {
   const { db } = ctx.var;
-  const rows: { contextId: string; entityType: string; unseenCount: number }[] = [];
+  const rows: { channelId: string; entityType: string; unseenCount: number }[] = [];
 
   for (const entityType of entityTypes) {
     const entityTable = getEntityTable(entityType);
@@ -57,12 +57,12 @@ export const findUnseenCountsByUser = async (
       .getOrderedAncestors(entityType)
       .map((ancestor) => columns[appConfig.entityIdColumnKeys[ancestor]])
       .filter((column): column is PgColumn => Boolean(column));
-    const contextIdColumn: SQL<string> = ancestorColumns.length
+    const channelIdColumn: SQL<string> = ancestorColumns.length
       ? sql<string>`COALESCE(${sql.join(ancestorColumns, sql`, `)})`
       : sql<string>`${orgTable.organizationId}`;
 
     const filters: SQL[] = [
-      inArray(contextIdColumn, contextIds),
+      inArray(channelIdColumn, channelIds),
       gt(orgTable.createdAt, cutoff),
       sql`NOT EXISTS (SELECT 1 FROM ${seenByTable} WHERE ${seenByTable.userId} = ${userId} AND ${seenByTable.entityId} = ${orgTable.id})`,
     ];
@@ -73,13 +73,13 @@ export const findUnseenCountsByUser = async (
 
     const entityRows = await db
       .select({
-        contextId: contextIdColumn,
+        channelId: channelIdColumn,
         entityType: sql<string>`${entityType}`,
         unseenCount: count(),
       })
       .from(entityTable)
       .where(and(...filters))
-      .groupBy(contextIdColumn);
+      .groupBy(channelIdColumn);
 
     rows.push(...entityRows.map((row) => ({ ...row, unseenCount: Number(row.unseenCount) })));
   }

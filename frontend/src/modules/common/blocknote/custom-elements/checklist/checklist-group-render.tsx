@@ -1,5 +1,5 @@
 import type { ReactCustomBlockRenderProps } from '@blocknote/react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 import type { checklistGroupConfig } from '~/modules/common/blocknote/custom-elements/checklist/checklist-group-block';
 
 type ChecklistGroupRenderProps = ReactCustomBlockRenderProps<typeof checklistGroupConfig>;
@@ -29,7 +29,7 @@ export function ChecklistGroupRender({ block, editor }: ChecklistGroupRenderProp
     <div className="checklist-group" data-collapsed={block.props.collapsed}>
       <div className="checklist-group-header" contentEditable={false}>
         <button type="button" className="checklist-group-toggle" onClick={toggleCollapsed}>
-          {block.props.collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+          {block.props.collapsed ? <ChevronRightIcon className="icon-sm" /> : <ChevronDownIcon className="icon-sm" />}
         </button>
         <span
           className="checklist-group-title"

@@ -1,6 +1,6 @@
 import { and, count, eq, ilike, inArray, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import type { ContextEntityType, EntityRole } from 'shared';
+import type { ChannelEntityType, EntityRole } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
@@ -14,47 +14,47 @@ import { usersTable } from '#/modules/user/user-db';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
-interface CountMembershipsByContextOpts {
-  contextType: ContextEntityType;
-  contextId: string;
+interface CountMembershipsByChannelOpts {
+  channelType: ChannelEntityType;
+  channelId: string;
 }
 
 /** Count active memberships for a context entity. */
-export const countMembershipsByContext = async (
+export const countMembershipsByChannel = async (
   ctx: DbContext,
-  { contextType, contextId }: CountMembershipsByContextOpts,
+  { channelType, channelId }: CountMembershipsByChannelOpts,
 ) => {
   const { db } = ctx.var;
   const [{ currentOrgMemberships }] = await db
     .select({ currentOrgMemberships: count() })
     .from(membershipsTable)
-    .where(and(eq(membershipsTable.contextType, contextType), eq(membershipsTable.contextId, contextId)));
+    .where(and(eq(membershipsTable.channelType, channelType), eq(membershipsTable.channelId, channelId)));
   return currentOrgMemberships;
 };
 
-interface CountPendingInvitesByContextOpts {
-  contextType: ContextEntityType;
-  contextId: string;
+interface CountPendingInvitesByChannelOpts {
+  channelType: ChannelEntityType;
+  channelId: string;
 }
 
 /** Count pending invitations for a context entity. */
-export const countPendingInvitesByContext = async (
+export const countPendingInvitesByChannel = async (
   ctx: DbContext,
-  { contextType, contextId }: CountPendingInvitesByContextOpts,
+  { channelType, channelId }: CountPendingInvitesByChannelOpts,
 ) => {
   const { db } = ctx.var;
   const [{ pendingInvites }] = await db
     .select({ pendingInvites: count() })
     .from(inactiveMembershipsTable)
     .where(
-      and(eq(inactiveMembershipsTable.contextType, contextType), eq(inactiveMembershipsTable.contextId, contextId)),
+      and(eq(inactiveMembershipsTable.channelType, channelType), eq(inactiveMembershipsTable.channelId, channelId)),
     );
   return pendingInvites;
 };
 
 interface FindMembershipAwareRowsOpts {
   emails: string[];
-  entityType: ContextEntityType;
+  entityType: ChannelEntityType;
   entityId: string;
 }
 
@@ -65,7 +65,7 @@ export const findMembershipAwareRows = async (
 ) => {
   const { db, organizationId } = ctx.var;
   const orgMemberships = alias(membershipsTable, 'org_memberships');
-  const rootContextType = 'organization' as const;
+  const rootChannelType = 'organization' as const;
 
   return db
     .select({
@@ -86,15 +86,15 @@ export const findMembershipAwareRows = async (
       membershipsTable,
       and(
         eq(membershipsTable.userId, usersTable.id),
-        eq(membershipsTable.contextType, entityType),
-        eq(membershipsTable.contextId, entityId),
+        eq(membershipsTable.channelType, entityType),
+        eq(membershipsTable.channelId, entityId),
       ),
     )
     .leftJoin(
       inactiveMembershipsTable,
       and(
-        eq(inactiveMembershipsTable.contextType, entityType),
-        eq(inactiveMembershipsTable.contextId, entityId),
+        eq(inactiveMembershipsTable.channelType, entityType),
+        eq(inactiveMembershipsTable.channelId, entityId),
         or(eq(inactiveMembershipsTable.userId, usersTable.id), eq(inactiveMembershipsTable.email, emailsTable.email)),
       ),
     )
@@ -106,24 +106,24 @@ export const findMembershipAwareRows = async (
       orgMemberships,
       and(
         eq(orgMemberships.userId, usersTable.id),
-        eq(orgMemberships.contextType, rootContextType),
-        eq(orgMemberships.contextId, organizationId),
+        eq(orgMemberships.channelType, rootChannelType),
+        eq(orgMemberships.channelId, organizationId),
       ),
     )
     .where(and(inArray(emailsTable.email, emails)));
 };
 
 /** Pending (not rejected) inactive memberships for a set of contexts (deferred-invite dispatch). */
-export const findPendingInactiveMembershipsByContexts = async (
+export const findPendingInactiveMembershipsByChannels = async (
   ctx: DbContext,
-  { contextIds }: { contextIds: string[] },
+  { channelIds }: { channelIds: string[] },
 ) => {
   const { db } = ctx.var;
-  if (!contextIds.length) return [];
+  if (!channelIds.length) return [];
   return db
     .select()
     .from(inactiveMembershipsTable)
-    .where(and(inArray(inactiveMembershipsTable.contextId, contextIds), isNull(inactiveMembershipsTable.rejectedAt)));
+    .where(and(inArray(inactiveMembershipsTable.channelId, channelIds), isNull(inactiveMembershipsTable.rejectedAt)));
 };
 
 /** Stamp remindedAt (last email dispatch) on inactive memberships. */
@@ -160,21 +160,21 @@ export const findMembershipByIdInOrg = async (ctx: AuthContext, { membershipId }
   return membership;
 };
 
-interface FindMembershipsByUserIdsAndContextOpts {
+interface FindMembershipsByUserIdsAndChannelOpts {
   userIds: string[];
-  contextId: string;
+  channelId: string;
 }
 
 /** Find memberships for deletion targets (by user IDs and context). */
-export const findMembershipsByUserIdsAndContext = async (
+export const findMembershipsByUserIdsAndChannel = async (
   ctx: DbContext,
-  { userIds, contextId }: FindMembershipsByUserIdsAndContextOpts,
+  { userIds, channelId }: FindMembershipsByUserIdsAndChannelOpts,
 ) => {
   const { db } = ctx.var;
   return db
     .select(membershipBaseSelect)
     .from(membershipsTable)
-    .where(and(inArray(membershipsTable.userId, userIds), eq(membershipsTable.contextId, contextId)));
+    .where(and(inArray(membershipsTable.userId, userIds), eq(membershipsTable.channelId, channelId)));
 };
 
 interface DeleteMembershipsByIdsOpts {
@@ -246,7 +246,7 @@ export const findInactiveMembershipForUser = async (ctx: AuthContext, { id }: Fi
 interface GetMembersListOpts {
   organizationId: string;
   entityId: string;
-  entityType: ContextEntityType;
+  entityType: ChannelEntityType;
   q?: string;
   sort?: 'id' | 'name' | 'email' | 'createdAt' | 'lastSeenAt' | 'role';
   order?: 'asc' | 'desc';
@@ -267,8 +267,8 @@ export const getMembersList = async (ctx: DbContext, opts: GetMembersListOpts) =
 
   const membersFilters: SQL[] = [
     eq(membershipsTable.organizationId, organizationId),
-    eq(membershipsTable.contextId, entityId),
-    eq(membershipsTable.contextType, entityType),
+    eq(membershipsTable.channelId, entityId),
+    eq(membershipsTable.channelType, entityType),
   ];
 
   if (role) membersFilters.push(eq(membershipsTable.role, role));
@@ -298,9 +298,9 @@ export const getMembersList = async (ctx: DbContext, opts: GetMembersListOpts) =
   return { items, total };
 };
 
-interface FindMemberPreviewsByContextsOpts {
-  contextType: ContextEntityType;
-  contextIds: string[];
+interface FindMemberPreviewsByChannelsOpts {
+  channelType: ChannelEntityType;
+  channelIds: string[];
   role: EntityRole;
   limit: number;
 }
@@ -311,22 +311,22 @@ interface FindMemberPreviewsByContextsOpts {
  * Powers `include=members` on context entity list endpoints; overflow counts come from
  * the pre-computed `m:{role}` counters, so previews never need a second query.
  */
-export const findMemberPreviewsByContexts = async (
+export const findMemberPreviewsByChannels = async (
   ctx: DbContext,
-  { contextType, contextIds, role, limit }: FindMemberPreviewsByContextsOpts,
+  { channelType, channelIds, role, limit }: FindMemberPreviewsByChannelsOpts,
 ) => {
   const { db } = ctx.var;
   const previews = new Map<string, UserMinimalBase[]>();
-  if (!contextIds.length) return previews;
+  if (!channelIds.length) return previews;
 
   // Rank members per context so a single query returns at most `limit` rows per context
   const rowNumber = sql<number>`row_number() over (
-      partition by ${membershipsTable.contextId} order by ${membershipsTable.createdAt} asc
+      partition by ${membershipsTable.channelId} order by ${membershipsTable.createdAt} asc
     )`.as('row_number');
 
   const rankedMembers = db
     .select({
-      contextId: membershipsTable.contextId,
+      channelId: membershipsTable.channelId,
       id: usersTable.id,
       name: usersTable.name,
       slug: usersTable.slug,
@@ -337,8 +337,8 @@ export const findMemberPreviewsByContexts = async (
     .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
     .where(
       and(
-        eq(membershipsTable.contextType, contextType),
-        inArray(membershipsTable.contextId, contextIds),
+        eq(membershipsTable.channelType, channelType),
+        inArray(membershipsTable.channelId, channelIds),
         eq(membershipsTable.role, role),
       ),
     )
@@ -346,7 +346,7 @@ export const findMemberPreviewsByContexts = async (
 
   const rows = await db
     .select({
-      contextId: rankedMembers.contextId,
+      channelId: rankedMembers.channelId,
       id: rankedMembers.id,
       name: rankedMembers.name,
       slug: rankedMembers.slug,
@@ -354,13 +354,13 @@ export const findMemberPreviewsByContexts = async (
     })
     .from(rankedMembers)
     .where(lte(rankedMembers.rowNumber, limit))
-    .orderBy(rankedMembers.contextId, rankedMembers.rowNumber);
+    .orderBy(rankedMembers.channelId, rankedMembers.rowNumber);
 
   // Group per context, preserving the createdAt order from the window function
-  for (const { contextId, ...user } of rows) {
-    const list = previews.get(contextId) ?? [];
+  for (const { channelId, ...user } of rows) {
+    const list = previews.get(channelId) ?? [];
     list.push({ ...user, entityType: 'user' });
-    previews.set(contextId, list);
+    previews.set(channelId, list);
   }
 
   return previews;
@@ -399,7 +399,7 @@ export const getPendingMembershipsList = async (ctx: DbContext, opts: GetPending
     .from(table)
     .leftJoin(usersTable, eq(usersTable.id, table.userId))
     .leftJoin(tokensTable, and(eq(tokensTable.inactiveMembershipId, table.id), eq(tokensTable.type, 'invitation')))
-    .where(and(eq(table.contextId, entityId), eq(table.organizationId, organizationId)))
+    .where(and(eq(table.channelId, entityId), eq(table.organizationId, organizationId)))
     .orderBy(orderColumn);
 
   const [{ total }] = await db.select({ total: count() }).from(pendingMembershipsQuery.as('pendingMemberships'));

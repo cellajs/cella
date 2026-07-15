@@ -1,6 +1,6 @@
 import { Field } from '@base-ui/react/field';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { ChevronUpIcon, HelpCircleIcon } from 'lucide-react';
+import { ChevronUpIcon, CircleQuestionMarkIcon } from 'lucide-react';
 import * as React from 'react';
 import {
   Controller,
@@ -161,8 +161,8 @@ export function FieldDescription({ className, ...props }: React.ComponentProps<'
           onClick={toggleCollapsed}
           className="absolute -top-6 right-1 h-auto p-2 text-regular opacity-50 ring-inset hover:opacity-100"
         >
-          {collapsed && <HelpCircleIcon size={16} />}
-          {!collapsed && <ChevronUpIcon size={16} />}
+          {collapsed && <CircleQuestionMarkIcon />}
+          {!collapsed && <ChevronUpIcon />}
         </Button>
         {!collapsed && <span className="py-1">{props.children}</span>}
       </div>
@@ -385,8 +385,8 @@ export function FormDescription({ className, children, ...props }: React.Compone
           onClick={toggleCollapsed}
           className="absolute -top-6 right-1 h-auto p-2 text-regular opacity-50 ring-inset hover:opacity-100"
         >
-          {collapsed && <HelpCircleIcon size={16} />}
-          {!collapsed && <ChevronUpIcon size={16} />}
+          {collapsed && <CircleQuestionMarkIcon />}
+          {!collapsed && <ChevronUpIcon />}
         </Button>
         {!collapsed && <span className="py-1">{children}</span>}
       </div>

@@ -1,5 +1,5 @@
 import { Link, type LinkProps } from '@tanstack/react-router';
-import { ChevronDown, Loader2 } from 'lucide-react';
+import { ChevronDownIcon, LoaderCircleIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { buttonVariants } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
@@ -34,9 +34,9 @@ export const TagExpandLink = ({ isOpen, loading, to, search, hash, onMouseEnter,
       >
         {isOpen ? t('c:docs.hide_details') : t('c:docs.show_details')}
         {loading ? (
-          <Loader2 className="ml-2 h-4 w-4 animate-spin opacity-50" />
+          <LoaderCircleIcon className="ml-2 h-4 w-4 animate-spin opacity-50" />
         ) : (
-          <ChevronDown
+          <ChevronDownIcon
             className={cn('ml-2 h-4 w-4 opacity-50 transition-transform duration-200', isOpen && 'rotate-180')}
           />
         )}

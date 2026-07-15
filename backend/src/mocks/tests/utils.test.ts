@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import {
-  generateMockContextIdColumns,
+  generateMockChannelIdColumns,
   mockNanoid,
   mockTenantId,
   mockUuid,
@@ -12,34 +12,34 @@ import {
   withMockContext,
 } from '#/mocks';
 
-describe('generateMockContextIdColumns', () => {
+describe('generateMockChannelIdColumns', () => {
   it('returns correct column names for default config', () => {
-    const columns = generateMockContextIdColumns();
+    const columns = generateMockChannelIdColumns();
 
     // Should have a key for each context entity type
-    for (const entityType of appConfig.contextEntityTypes) {
+    for (const entityType of appConfig.channelEntityTypes) {
       const columnName = appConfig.entityIdColumnKeys[entityType];
       expect(columns).toHaveProperty(columnName);
       expect(typeof columns[columnName as keyof typeof columns]).toBe('string');
     }
 
     // Column count should match context entity types count
-    expect(Object.keys(columns).length).toBe(appConfig.contextEntityTypes.length);
+    expect(Object.keys(columns).length).toBe(appConfig.channelEntityTypes.length);
   });
 
   it('generates deterministic values when wrapped in withFakerSeed', () => {
     const key = 'test-seed-key';
 
-    const columns1 = withFakerSeed(key, generateMockContextIdColumns);
-    const columns2 = withFakerSeed(key, generateMockContextIdColumns);
+    const columns1 = withFakerSeed(key, generateMockChannelIdColumns);
+    const columns2 = withFakerSeed(key, generateMockChannelIdColumns);
 
     // Same seed should produce same values
     expect(columns1).toEqual(columns2);
   });
 
   it('generates different values with different seeds', () => {
-    const columns1 = withFakerSeed('seed-a', generateMockContextIdColumns);
-    const columns2 = withFakerSeed('seed-b', generateMockContextIdColumns);
+    const columns1 = withFakerSeed('seed-a', generateMockChannelIdColumns);
+    const columns2 = withFakerSeed('seed-b', generateMockChannelIdColumns);
 
     // Different seeds should produce different values
     expect(columns1.organizationId).not.toBe(columns2.organizationId);

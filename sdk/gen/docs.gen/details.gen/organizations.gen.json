@@ -85,6 +85,10 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "publicAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "shortName": {
                     "type": ["string", "null"],
                     "required": true,
@@ -155,12 +159,12 @@
                         "properties": {
                           "id": { "type": "string", "required": true, "format": "uuid" },
                           "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-                          "contextType": {
+                          "channelType": {
                             "type": "string",
                             "required": true,
                             "enum": ["organization"]
                           },
-                          "contextId": { "type": "string", "required": true, "format": "uuid" },
+                          "channelId": { "type": "string", "required": true, "format": "uuid" },
                           "userId": { "type": "string", "required": true, "format": "uuid" },
                           "role": {
                             "type": "string",
@@ -291,6 +295,7 @@
               "authStrategies": ["passkey"],
               "chatSupport": false,
               "publishedAt": "2024-04-18T21:12:59.543Z",
+              "publicAt": null,
               "createdAt": "2024-04-18T21:12:59.543Z",
               "createdBy": null,
               "updatedAt": "2024-04-18T21:12:59.543Z",
@@ -299,8 +304,8 @@
                 "membership": {
                   "id": "1f366272-953c-486d-81dc-ee61f43478a1",
                   "tenantId": "t4n7co",
-                  "contextType": "organization",
-                  "contextId": "b5c28e6f-552e-42e4-940d-66f5ab0174ab",
+                  "channelType": "organization",
+                  "channelId": "b5c28e6f-552e-42e4-940d-66f5ab0174ab",
                   "userId": "8ed7182a-e09f-41c6-9302-0e59a26ff7ac",
                   "organizationId": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                   "role": "admin",
@@ -343,6 +348,7 @@
               "authStrategies": ["passkey"],
               "chatSupport": false,
               "publishedAt": "2024-02-24T16:36:46.247Z",
+              "publicAt": null,
               "createdAt": "2024-02-24T16:36:46.247Z",
               "createdBy": null,
               "updatedAt": "2024-02-24T16:36:46.247Z",
@@ -351,8 +357,8 @@
                 "membership": {
                   "id": "cf273cfa-8287-4b04-b641-897816829f30",
                   "tenantId": "4oy2u1",
-                  "contextType": "organization",
-                  "contextId": "a22457ca-c90f-46f6-aa80-2cd0efd36e4f",
+                  "channelType": "organization",
+                  "channelId": "a22457ca-c90f-46f6-aa80-2cd0efd36e4f",
                   "userId": "ddfd40e3-e143-4676-8a93-314d23d2d92f",
                   "organizationId": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                   "role": "admin",
@@ -635,6 +641,10 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "publicAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "shortName": {
                     "type": ["string", "null"],
                     "required": true,
@@ -705,12 +715,12 @@
                         "properties": {
                           "id": { "type": "string", "required": true, "format": "uuid" },
                           "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-                          "contextType": {
+                          "channelType": {
                             "type": "string",
                             "required": true,
                             "enum": ["organization"]
                           },
-                          "contextId": { "type": "string", "required": true, "format": "uuid" },
+                          "channelId": { "type": "string", "required": true, "format": "uuid" },
                           "userId": { "type": "string", "required": true, "format": "uuid" },
                           "role": {
                             "type": "string",
@@ -830,6 +840,7 @@
               "authStrategies": ["passkey"],
               "chatSupport": true,
               "publishedAt": "2024-11-21T01:19:53.533Z",
+              "publicAt": null,
               "createdAt": "2024-11-21T01:19:53.533Z",
               "createdBy": null,
               "updatedAt": "2024-11-21T01:19:53.533Z",
@@ -838,8 +849,8 @@
                 "membership": {
                   "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
                   "tenantId": "u87zf2",
-                  "contextType": "organization",
-                  "contextId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
+                  "channelType": "organization",
+                  "channelId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
                   "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
                   "organizationId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                   "role": "admin",
@@ -882,6 +893,7 @@
               "authStrategies": ["passkey"],
               "chatSupport": false,
               "publishedAt": "2024-10-29T04:35:17.725Z",
+              "publicAt": null,
               "createdAt": "2024-10-29T04:35:17.725Z",
               "createdBy": null,
               "updatedAt": "2024-10-29T04:35:17.725Z",
@@ -890,8 +902,8 @@
                 "membership": {
                   "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
                   "tenantId": "lwj64z",
-                  "contextType": "organization",
-                  "contextId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
+                  "channelType": "organization",
+                  "channelId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
                   "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
                   "organizationId": "772a771f-c150-465e-9635-46594859fc3d",
                   "role": "member",
@@ -1074,6 +1086,10 @@
               "type": ["string", "null"],
               "required": true
             },
+            "publicAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
             "shortName": {
               "type": ["string", "null"],
               "required": true,
@@ -1144,12 +1160,12 @@
                   "properties": {
                     "id": { "type": "string", "required": true, "format": "uuid" },
                     "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-                    "contextType": {
+                    "channelType": {
                       "type": "string",
                       "required": true,
                       "enum": ["organization"]
                     },
-                    "contextId": { "type": "string", "required": true, "format": "uuid" },
+                    "channelId": { "type": "string", "required": true, "format": "uuid" },
                     "userId": { "type": "string", "required": true, "format": "uuid" },
                     "role": {
                       "type": "string",
@@ -1263,6 +1279,7 @@
           "authStrategies": ["passkey"],
           "chatSupport": true,
           "publishedAt": "2024-12-25T15:04:42.969Z",
+          "publicAt": null,
           "createdAt": "2024-12-25T15:04:42.969Z",
           "createdBy": null,
           "updatedAt": "2024-12-25T15:04:42.969Z",
@@ -1271,8 +1288,8 @@
             "membership": {
               "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
               "tenantId": "6vxzq0",
-              "contextType": "organization",
-              "contextId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
+              "channelType": "organization",
+              "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
               "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
               "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
               "role": "admin",
@@ -1437,6 +1454,10 @@
               "type": ["string", "null"],
               "required": true
             },
+            "publicAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
             "shortName": {
               "type": ["string", "null"],
               "required": true,
@@ -1507,12 +1528,12 @@
                   "properties": {
                     "id": { "type": "string", "required": true, "format": "uuid" },
                     "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-                    "contextType": {
+                    "channelType": {
                       "type": "string",
                       "required": true,
                       "enum": ["organization"]
                     },
-                    "contextId": { "type": "string", "required": true, "format": "uuid" },
+                    "channelId": { "type": "string", "required": true, "format": "uuid" },
                     "userId": { "type": "string", "required": true, "format": "uuid" },
                     "role": {
                       "type": "string",
@@ -1626,6 +1647,7 @@
           "authStrategies": ["passkey"],
           "chatSupport": true,
           "publishedAt": "2024-12-25T15:04:42.969Z",
+          "publicAt": null,
           "createdAt": "2024-12-25T15:04:42.969Z",
           "createdBy": null,
           "updatedAt": "2024-12-25T15:04:42.969Z",
@@ -1634,8 +1656,8 @@
             "membership": {
               "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
               "tenantId": "6vxzq0",
-              "contextType": "organization",
-              "contextId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
+              "channelType": "organization",
+              "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
               "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
               "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
               "role": "admin",

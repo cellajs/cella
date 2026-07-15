@@ -16,8 +16,8 @@ export const config = {
   /** All entity types in the app - must match hierarchy.allTypes. */
   entityTypes,
 
-  /** Context entities with memberships - must match hierarchy.contextTypes. */
-  contextEntityTypes: ['organization'] as const,
+  /** Context entities with memberships - must match hierarchy.channelTypes. */
+  channelEntityTypes: ['organization'] as const,
 
   /** Product/content entities - must match hierarchy.productTypes. */
   productEntityTypes,

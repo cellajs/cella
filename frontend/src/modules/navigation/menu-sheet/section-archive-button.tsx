@@ -7,18 +7,18 @@ import { Button } from '~/modules/ui/button';
 interface SectionArchiveButtonProps {
   archiveToggleClick: () => void;
   archivedCount: number;
-  archivedContextIds?: string[];
+  archivedChannelIds?: string[];
 }
 
-const EMPTY_CONTEXT_IDS: string[] = [];
+const EMPTY_CHANNEL_IDS: string[] = [];
 
 export const SectionArchiveButton = ({
   archiveToggleClick,
   archivedCount,
-  archivedContextIds = EMPTY_CONTEXT_IDS,
+  archivedChannelIds = EMPTY_CHANNEL_IDS,
 }: SectionArchiveButtonProps) => {
   const { t } = useTranslation();
-  const archivedUnseenCount = useUnseenCount(archivedContextIds);
+  const archivedUnseenCount = useUnseenCount(archivedChannelIds);
 
   return (
     <motion.div layout>
@@ -29,7 +29,7 @@ export const SectionArchiveButton = ({
         className="group focus-effect w-full bg-transparent p-0 shadow-none ring-inset ring-offset-0 transition duration-300 hover:bg-accent/50 hover:text-accent-foreground group-data-[submenu=true]/archived:h-8"
       >
         <div className="flex w-12 items-center justify-center py-2">
-          <ArchiveIcon size={16} className="ml-2 items-center opacity-75" />
+          <ArchiveIcon className="ml-2 items-center opacity-75" />
         </div>
         <div className="grow truncate p-2 pl-2 text-left opacity-75">
           <span className="text-sm group-data-[submenu=true]/archived:text-xs">{t('c:archived')}</span>
@@ -44,10 +44,7 @@ export const SectionArchiveButton = ({
           </span>
         </div>
         <div className="px-3">
-          <ChevronDownIcon
-            size={16}
-            className="opacity-50 transition-transform group-data-[has-inactive=false]/archived:hidden group-data-[archived-visible=true]/archived:rotate-180"
-          />
+          <ChevronDownIcon className="opacity-50 transition-transform group-data-[has-inactive=false]/archived:hidden group-data-[archived-visible=true]/archived:rotate-180" />
         </div>
       </Button>
     </motion.div>

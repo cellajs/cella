@@ -2529,7 +2529,7 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more organizations by ID within a tenant.
  *
- * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/DELETE/{tenantId}/organizations) ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/{tenantId}/organizations) ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/DELETE/{tenantId}/organizations) ·· _organizations_cella_context_
+ * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/DELETE/{tenantId}/organizations) ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/{tenantId}/organizations) ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=channel#tag/channel/DELETE/{tenantId}/organizations) ·· _organizations_cella_channel_
  *
  * @param {deleteOrganizationsData} options
  * @param {string} options.path.tenantid - `string`
@@ -2570,7 +2570,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(
  *
  * Creates one or more new organizations within a tenant.
  *
- * **POST /{tenantId}/organizations** ·· [createOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/POST/{tenantId}/organizations) ·· [createOrganizations](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/organizations) ·· [createOrganizations](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/POST/{tenantId}/organizations) ·· _organizations_cella_context_
+ * **POST /{tenantId}/organizations** ·· [createOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/POST/{tenantId}/organizations) ·· [createOrganizations](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/organizations) ·· [createOrganizations](https://www.cellajs.com/docs/operations?operationTag=channel#tag/channel/POST/{tenantId}/organizations) ·· _organizations_cella_channel_
  *
  * @param {createOrganizationsData} options
  * @param {string} options.path.tenantid - `string`
@@ -2610,7 +2610,7 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
  *
  * Returns a list of organizations.
  *
- * **GET /organizations** ·· [getOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/organizations) ·· [getOrganizations](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/organizations) ·· [getOrganizations](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/GET/organizations) ·· _organizations_cella_context_
+ * **GET /organizations** ·· [getOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/organizations) ·· [getOrganizations](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/organizations) ·· [getOrganizations](https://www.cellajs.com/docs/operations?operationTag=channel#tag/channel/GET/organizations) ·· _organizations_cella_channel_
  *
  * @param {getOrganizationsData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -2655,7 +2655,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
  *
  * Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.
  *
- * **GET /{tenantId}/organizations/{id}** ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/{tenantId}/organizations/{id}) ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/organizations/{id}) ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/GET/{tenantId}/organizations/{id}) ·· _organizations_cella_context_
+ * **GET /{tenantId}/organizations/{id}** ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/{tenantId}/organizations/{id}) ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/organizations/{id}) ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=channel#tag/channel/GET/{tenantId}/organizations/{id}) ·· _organizations_cella_channel_
  *
  * @param {getOrganizationData} options
  * @param {string} options.path.tenantid - `string`
@@ -2694,7 +2694,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
  *
  * Updates an organization within a tenant.
  *
- * **PUT /{tenantId}/organizations/{id}** ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/PUT/{tenantId}/organizations/{id}) ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/organizations/{id}) ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/PUT/{tenantId}/organizations/{id}) ·· _organizations_cella_context_
+ * **PUT /{tenantId}/organizations/{id}** ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/PUT/{tenantId}/organizations/{id}) ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/organizations/{id}) ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=channel#tag/channel/PUT/{tenantId}/organizations/{id}) ·· _organizations_cella_channel_
  *
  * @param {updateOrganizationData} options
  * @param {string} options.path.tenantid - `string`

@@ -5,6 +5,7 @@ import { tenantRead } from '#/db/tenant-context';
 import { findAttachmentByKey } from '#/modules/attachment/attachment-queries';
 import { getSignedUrlFromKey } from '#/modules/attachment/helpers/signed-url';
 import { checkPermission } from '#/permissions';
+import { actorFrom } from '#/permissions/actor';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 export async function getPresignedUrlOp(ctx: AuthContext, key: string): Promise<OperationResult<string>> {
@@ -15,15 +16,11 @@ export async function getPresignedUrlOp(ctx: AuthContext, key: string): Promise<
   const bucketName = attachment?.bucketName ?? appConfig.s3.privateBucket;
 
   if (attachment) {
-    const isSystemAdmin = ctx.var.isSystemAdmin;
-    const memberships = ctx.var.memberships;
-
+    // The actor carries the system-admin bypass, so `isAllowed` is already the final verdict.
     const subject = buildSubjectFromEntity('attachment', attachment);
-    const { isAllowed } = checkPermission(memberships, 'read', subject, { isSystemAdmin });
+    const { isAllowed } = checkPermission(ctx.var.memberships, 'read', subject, actorFrom(ctx));
 
-    if (!isSystemAdmin && !isAllowed) {
-      return { success: false, error: 'forbidden', status: 403 };
-    }
+    if (!isAllowed) return { success: false, error: 'forbidden', status: 403 };
   }
 
   const url = await getSignedUrlFromKey(key, { bucketName, isPublic: false });

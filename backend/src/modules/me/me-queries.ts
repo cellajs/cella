@@ -8,7 +8,7 @@ import { userSelect } from '#/modules/user/helpers/select';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
-import { contextEntityBaseSchema } from '#/schemas/entity-base';
+import { channelEntityBaseSchema } from '#/schemas/entity-base';
 import { getEntityTable } from '#/tables';
 import { pick } from '#/utils/pick';
 
@@ -89,15 +89,15 @@ export const deleteUser = async (ctx: AuthContext) => {
 };
 
 interface DeleteMyMembershipOpts {
-  contextId: string;
+  channelId: string;
 }
 
-/** Delete the current user's membership by contextId. */
-export const deleteMyMembership = async (ctx: AuthContext, { contextId }: DeleteMyMembershipOpts) => {
+/** Delete the current user's membership by channelId. */
+export const deleteMyMembership = async (ctx: AuthContext, { channelId }: DeleteMyMembershipOpts) => {
   const { db, userId } = ctx.var;
   return db
     .delete(membershipsTable)
-    .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.contextId, contextId)));
+    .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.channelId, channelId)));
 };
 
 interface FindUserByUnsubscribeTokenOpts {
@@ -124,22 +124,22 @@ interface FindPendingInvitationsOpts {
 export const findPendingInvitations = async (ctx: DbContext, { userId }: FindPendingInvitationsOpts) => {
   const { db } = ctx.var;
   const results = await Promise.all(
-    appConfig.contextEntityTypes.map((entityType) => {
+    appConfig.channelEntityTypes.map((entityType) => {
       const entityTable = getEntityTable(entityType);
       const cols = getColumns(entityTable);
-      const keys = Object.keys(contextEntityBaseSchema.shape) as (keyof typeof contextEntityBaseSchema.shape)[];
-      const contextEntityBaseSelect = pick(cols, keys);
+      const keys = Object.keys(channelEntityBaseSchema.shape) as (keyof typeof channelEntityBaseSchema.shape)[];
+      const channelEntityBaseSelect = pick(cols, keys);
 
       return db
         .select({
-          entity: contextEntityBaseSelect,
+          entity: channelEntityBaseSelect,
           inactiveMembership: inactiveMembershipsTable,
         })
         .from(inactiveMembershipsTable)
-        .innerJoin(entityTable, eq(entityTable.id, inactiveMembershipsTable.contextId))
+        .innerJoin(entityTable, eq(entityTable.id, inactiveMembershipsTable.channelId))
         .where(
           and(
-            eq(inactiveMembershipsTable.contextType, entityType),
+            eq(inactiveMembershipsTable.channelType, entityType),
             eq(inactiveMembershipsTable.userId, userId),
             isNull(inactiveMembershipsTable.rejectedAt),
             // Invites against an unpublished (draft) context are deferred: hidden from the

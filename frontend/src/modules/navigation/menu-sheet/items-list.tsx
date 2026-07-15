@@ -1,7 +1,7 @@
 import { PlusIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
@@ -10,7 +10,7 @@ import { Button } from '~/modules/ui/button';
 
 interface MenuSheetItemsProps {
   data: UserMenuItem[];
-  type: ContextEntityType;
+  type: ChannelEntityType;
   isArchived: boolean;
   options?: MenuSectionOptions;
   className?: string;
@@ -26,7 +26,7 @@ export const MenuSheetItems = ({ data, type, isArchived, options, className }: M
     options?.createAction ? (
       <div className="flex items-center">
         <Button ref={buttonRef} className="w-full" variant="ghost" onClick={() => options.createAction?.(buttonRef)}>
-          <PlusIcon size={14} />
+          <PlusIcon className="icon-sm" />
           <span className="ml-1 text-light text-sm">
             {t('c:create_your_first')} {t(type).toLowerCase()}
           </span>

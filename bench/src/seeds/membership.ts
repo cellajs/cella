@@ -1,5 +1,5 @@
 import type { InsertMembershipModel } from '#/modules/memberships/memberships-db';
-import { mockContextMembership } from '#/modules/memberships/memberships-mocks';
+import { mockChannelMembership } from '#/modules/memberships/memberships-mocks';
 import { ORG_ID, TENANT_ID, userId } from './ids';
 
 /**
@@ -8,7 +8,7 @@ import { ORG_ID, TENANT_ID, userId } from './ids';
  * scenarios.
  */
 export const loadtestOrgMembership = (userIndex: number): InsertMembershipModel => {
-  const membership = mockContextMembership(
+  const membership = mockChannelMembership(
     'organization',
     { id: ORG_ID, tenantId: TENANT_ID },
     { id: userId(userIndex) },

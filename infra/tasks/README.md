@@ -1,6 +1,6 @@
 # infra/tasks
 
-## Cutover (`cutover.ts`)
+## Cutover: [`cutover.ts`](./cutover.ts)
 
 `sequenceCutover` re-points traffic to a newly provisioned VM generation. Every
 side effect (health probe, LB server-list writes) is passed in as a function

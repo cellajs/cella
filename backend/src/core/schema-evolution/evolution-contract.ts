@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import type { ContextEntityType, ProductEntityType } from 'shared';
+import type { ChannelEntityType, ProductEntityType } from 'shared';
 import { stxBaseSchema } from '#/schemas';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 import { resolveUpdateOps } from '../stx/resolve-update';
@@ -33,7 +33,7 @@ import { createUpdateSchema } from './update-schema';
  * entity-bound runtime normalizers, so the entityType is declared exactly once
  * per module and operations cannot pass a mismatched one. The `lens:check`
  * contract-completeness rule asserts every configured entity type registers
- * here. See cella/SCHEMA_EVOLUTION.md (Design revision).
+ * here. See cella/SCHEMA_EVOLUTION.md (Evolution contract).
  */
 
 type AnyRecord = Record<string, unknown>;
@@ -81,8 +81,8 @@ export const evolutionContract = {
    *   modules `.array()` it to form the batch create body. Widened during expand.
    * @param options.updateBody - Module-assembled partial update body. Widened during expand.
    */
-  context<CS extends z.ZodRawShape, US extends z.ZodRawShape>(
-    entityType: ContextEntityType,
+  channel<CS extends z.ZodRawShape, US extends z.ZodRawShape>(
+    entityType: ChannelEntityType,
     options: { createItem: z.ZodObject<CS>; updateBody: z.ZodObject<US> },
   ) {
     return {

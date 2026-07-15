@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isUnconditionalPermission, resolvePermission } from './action-helpers';
+import { resolvePermission } from './action-helpers';
 
 describe('resolvePermission', () => {
   // --- Pass cases: permission should be granted ---
@@ -63,20 +63,3 @@ describe('resolvePermission', () => {
   });
 });
 
-describe('isUnconditionalPermission', () => {
-  it('returns true for unconditional true', () => {
-    expect(isUnconditionalPermission(true)).toBe(true);
-  });
-
-  it('returns false for own (entity-dependent)', () => {
-    expect(isUnconditionalPermission('own')).toBe(false);
-  });
-
-  it('returns false for denied', () => {
-    expect(isUnconditionalPermission(false)).toBe(false);
-  });
-
-  it('returns false for undefined', () => {
-    expect(isUnconditionalPermission(undefined)).toBe(false);
-  });
-});

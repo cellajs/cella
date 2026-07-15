@@ -14,8 +14,8 @@ import type { CdcRowData } from '../types';
  */
 const permissionRowKeys: Set<string> = (() => {
   const keys = new Set<string>(['id', 'createdBy', 'deletedAt', 'publicAt']);
-  for (const contextType of appConfig.contextEntityTypes) {
-    keys.add(appConfig.entityIdColumnKeys[contextType]);
+  for (const channelType of appConfig.channelEntityTypes) {
+    keys.add(appConfig.entityIdColumnKeys[channelType]);
   }
   return keys;
 })();

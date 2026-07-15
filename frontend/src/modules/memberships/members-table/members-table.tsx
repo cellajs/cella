@@ -9,7 +9,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import { MembersTableBar } from '~/modules/memberships/members-table/members-bar';
 import { useColumns } from '~/modules/memberships/members-table/members-columns';
 import { membersListQueryOptions } from '~/modules/memberships/query';
@@ -24,12 +24,12 @@ function rowKeyGetter(row: Member) {
 }
 
 export interface MembersTableWrapperProps {
-  contextEntity: EnrichedContextEntity;
+  channelEntity: EnrichedChannelEntity;
   isSheet?: boolean;
   children?: React.ReactNode;
 }
 
-function MembersTable({ contextEntity, isSheet = false, children }: MembersTableWrapperProps) {
+function MembersTable({ channelEntity, isSheet = false, children }: MembersTableWrapperProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet });
 
@@ -38,13 +38,13 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
 
   const updateMemberMembership = useMemberUpdateMutation();
 
-  const entityId = contextEntity.id;
-  const entityType = contextEntity.entityType;
+  const entityId = channelEntity.id;
+  const entityType = channelEntity.entityType;
   const tenantId = organization.tenantId;
   const organizationId = organization.id;
 
   // Check if user can update this context entity (and thus manage its members)
-  const canUpdate = contextEntity.can?.[contextEntity.entityType]?.update === true;
+  const canUpdate = channelEntity.can?.[channelEntity.entityType]?.update === true;
 
   // Table state
   const { q, role, sort, order } = search;
@@ -105,7 +105,7 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
   return (
     <>
       <MembersTableBar
-        contextEntity={contextEntity}
+        channelEntity={channelEntity}
         selected={selected}
         searchVars={{ q, role, sort, order, limit }}
         setSearch={setSearch}

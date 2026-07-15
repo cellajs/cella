@@ -5,7 +5,7 @@ import type { TraceContext } from '../lib/tracing';
 import type { CdcRowData } from '../types';
 import { wsClient } from '../network/websocket-client';
 import { nanoid } from 'shared/utils/nanoid';
-import { resolveContextKey } from '../utils/compute-unified-deltas';
+import { resolveChannelKey } from '../utils/compute-unified-deltas';
 import { pickPermissionRowData } from '../utils/permission-row-data';
 
 /** An individual entity cache-reservation token, sent with batch payloads. */
@@ -103,12 +103,12 @@ export interface BatchEventInfo {
 
 /**
  * The seq-context key of a batch event, mirroring seq allocation: seqs are counters per
- * (contextKey, entityType) — see `computeBatchUnifiedDeltas`. Resource events (no
+ * (channelKey, entityType) — see `computeBatchUnifiedDeltas`. Resource events (no
  * entityType) never carry seqs; grouping them by org matches their dispatch channel.
  */
-function batchContextKey({ activity, rowData }: BatchEventInfo): string {
+function batchChannelKey({ activity, rowData }: BatchEventInfo): string {
   if (!activity.entityType) return activity.organizationId ?? 'none';
-  return resolveContextKey(activity.entityType, rowData, activity);
+  return resolveChannelKey(activity.entityType, rowData, activity);
 }
 
 /**
@@ -116,7 +116,7 @@ function batchContextKey({ activity, rowData }: BatchEventInfo): string {
  *
  * Seqs are per-context counters, so one message can only describe one seq context: a
  * transaction batch spanning contexts (e.g. one bulk create with mixed placements) is
- * split into one message per seq context — the same contextKey seq allocation groups
+ * split into one message per seq context — the same channelKey seq allocation groups
  * by — each with its own contiguous seq..batchUntilSeq range, batch cacheToken and
  * reservations. Single-context batches send exactly one message, as before.
  */
@@ -128,7 +128,7 @@ export function sendBatchMessageToApi(
 
   const groups = new Map<string, BatchEventInfo[]>();
   for (const event of events) {
-    const key = batchContextKey(event);
+    const key = batchChannelKey(event);
     const group = groups.get(key);
     if (group) group.push(event);
     else groups.set(key, [event]);

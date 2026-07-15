@@ -1,13 +1,13 @@
-import type { LucideIcon } from 'lucide-react';
 import { EllipsisVerticalIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 
 export type EllipsisOption<T> = {
   label: string;
-  icon: LucideIcon;
+  icon: IconComponent;
   onSelect: (row: T, triggerRef: RefObject<HTMLButtonElement | null>) => void;
 };
 
@@ -54,7 +54,7 @@ export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options
       className="justify-center data-dropdowner-active:bg-accent/50"
       onClick={openDropdown}
     >
-      <EllipsisVerticalIcon size={16} />
+      <EllipsisVerticalIcon />
     </Button>
   );
 }

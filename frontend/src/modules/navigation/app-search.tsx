@@ -8,10 +8,10 @@ import { appConfig } from 'shared';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { useMountedState } from '~/hooks/use-mounted-state';
-import { contextEntityListQueriesByType } from '~/list-queries-config';
+import { channelEntityListQueriesByType } from '~/list-queries-config';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import type { EnrichedContextEntity } from '~/modules/entities/types';
+import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import { SearchResultBlock } from '~/modules/navigation/menu-sheet/search-result-block';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
@@ -26,11 +26,11 @@ import {
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { usersListQueryOptions } from '~/modules/user/query';
-import { getContextEntityRoute, pageTopHashNav } from '~/utils/context-entity-route';
+import { getChannelEntityRoute, pageTopHashNav } from '~/utils/channel-entity-route';
 import { addRecentSearch } from '~/utils/recent-searches';
 
 // Define searchable entity types
-const searchableEntityTypes = ['user', ...appConfig.contextEntityTypes] as const;
+const searchableEntityTypes = ['user', ...appConfig.channelEntityTypes] as const;
 
 const SearchResultsSkeleton = () => {
   // Stay hidden for a short while, then fade in slowly to avoid flashing on fast responses.
@@ -52,7 +52,7 @@ const SearchResultsSkeleton = () => {
 };
 
 type HistoryEntry = { kind: 'history'; value: string };
-type SearchSelection = EnrichedContextEntity | UserBase | HistoryEntry;
+type SearchSelection = EnrichedChannelEntity | UserBase | HistoryEntry;
 
 /**
  * Application search component.
@@ -94,8 +94,8 @@ export const AppSearch = () => {
   });
 
   // Get context entity queries from offline config
-  const contextEntityResults = Object.fromEntries(
-    Object.entries(contextEntityListQueriesByType).map(([entityType, queryOptions]) => [
+  const channelEntityResults = Object.fromEntries(
+    Object.entries(channelEntityListQueriesByType).map(([entityType, queryOptions]) => [
       entityType,
       useInfiniteQuery({
         // biome-ignore lint/suspicious/noExplicitAny: queryOptions union covers heterogeneous entity types.
@@ -106,26 +106,26 @@ export const AppSearch = () => {
   );
 
   const users = debouncedSearchValue.length > 0 ? (userQ.data?.pages.flatMap((p) => p.items) ?? []) : [];
-  const contextEntityData = Object.fromEntries(
-    Object.entries(contextEntityResults).map(([entityType, query]) => [
+  const channelEntityData = Object.fromEntries(
+    Object.entries(channelEntityResults).map(([entityType, query]) => [
       entityType,
       // biome-ignore lint/suspicious/noExplicitAny: query data types vary per entity
       debouncedSearchValue.length > 0 ? ((query.data as any)?.pages.flatMap((p: any) => p.items) ?? []) : [],
     ]),
   );
 
-  const data: Record<string, (EnrichedContextEntity | UserBase)[]> = { user: users, ...contextEntityData };
-  const notFound = users.length === 0 && Object.values(contextEntityData).every((items) => items.length === 0);
+  const data: Record<string, (EnrichedChannelEntity | UserBase)[]> = { user: users, ...channelEntityData };
+  const notFound = users.length === 0 && Object.values(channelEntityData).every((items) => items.length === 0);
   // Treat the debounce gap (typed value not yet applied) as loading so we show the skeleton, not the empty state.
   const isDebouncePending = searchValue.length > 0 && searchValue !== debouncedSearchValue;
   // Include the debounce gap so the search-input spinner stays visible while typing, not just during the request.
   const isFetching =
-    isDebouncePending || userQ.isFetching || Object.values(contextEntityResults).some((q) => q.isFetching);
+    isDebouncePending || userQ.isFetching || Object.values(channelEntityResults).some((q) => q.isFetching);
   const isLoading =
     searchValue.length > 0 &&
-    (isDebouncePending || userQ.isLoading || Object.values(contextEntityResults).some((q) => q.isLoading));
+    (isDebouncePending || userQ.isLoading || Object.values(channelEntityResults).some((q) => q.isLoading));
 
-  const onSelectItem = (item: EnrichedContextEntity | UserBase) => {
+  const onSelectItem = (item: EnrichedChannelEntity | UserBase) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
@@ -133,7 +133,7 @@ export const AppSearch = () => {
     if (item.entityType === 'user') {
       navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: item.id }), resetScroll: false });
     } else {
-      const { to, params, search } = getContextEntityRoute(item);
+      const { to, params, search } = getChannelEntityRoute(item);
       navigate({ to, params, search, ...pageTopHashNav, resetScroll: false });
     }
 
@@ -151,7 +151,7 @@ export const AppSearch = () => {
           setSearchValue(selection.value);
           return;
         }
-        onSelectItem(selection as EnrichedContextEntity | UserBase);
+        onSelectItem(selection as EnrichedChannelEntity | UserBase);
       }}
       inputValue={searchValue}
       onInputValueChange={(value) => {

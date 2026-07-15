@@ -1,19 +1,21 @@
 import { onlineManager } from '@tanstack/react-query';
-import { ArchiveIcon, ArchiveRestoreIcon, BellIcon, BellOffIcon, type LucideIcon } from 'lucide-react';
+import { ArchiveIcon, ArchiveRestoreIcon, BellIcon, BellOffIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { env } from '~/env';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { MutationUpdateMembership } from '~/modules/memberships/types';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 interface MenuItemEditProps {
   item: UserMenuItem;
-  icon?: LucideIcon;
+  icon?: IconComponent;
 }
 
 export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
@@ -101,7 +103,7 @@ function MenuItemEditButton({ icon: Icon, title, onClick, subitem = false }: Men
       aria-label={`Click ${title}`}
       onClick={onClick}
     >
-      <Icon size={subitem ? 12 : 13} strokeWidth={1.5} className="mr-1.5" />
+      <Icon className={cn('mr-1.5', subitem ? 'icon-xs' : 'size-[0.8125rem]')} />
       {title}
     </Button>
   );

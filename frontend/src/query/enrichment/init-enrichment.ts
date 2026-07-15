@@ -1,12 +1,12 @@
 import type { Query } from '@tanstack/react-query';
 import type { MembershipBase } from 'sdk';
-import { type ContextEntityType, hierarchy } from 'shared';
+import { type ChannelEntityType, hierarchy } from 'shared';
 import { enrichWithAncestorSlugs, type SlugIndex } from '~/query/enrichment/ancestor-slugs';
 import {
   getCachedMemberships,
-  getContextEntityKeys,
+  getChannelEntityKeys,
   getMenuParentTypes,
-  getRegisteredContextEntities,
+  getRegisteredChannelEntities,
   isMenuParentOf,
 } from '~/query/enrichment/helpers';
 import { enrichWithMembership } from '~/query/enrichment/membership';
@@ -18,14 +18,14 @@ import { queryClient } from '~/query/query-client';
 let isEnriching = false;
 
 /** Cache of extended ancestors (hierarchy + menu parents) per entity type */
-const extendedAncestorsCache = new Map<ContextEntityType, readonly ContextEntityType[]>();
+const extendedAncestorsCache = new Map<ChannelEntityType, readonly ChannelEntityType[]>();
 
 /**
  * Get ancestors including menu parent types for URL building.
  * Hierarchy ancestors come first, then menu parents not already in the list.
  * E.g. for project: ['organization'] (hierarchy) + ['workspace'] (menu parent).
  */
-function getExtendedAncestors(entityType: ContextEntityType): readonly ContextEntityType[] {
+function getExtendedAncestors(entityType: ChannelEntityType): readonly ChannelEntityType[] {
   const cached = extendedAncestorsCache.get(entityType);
   if (cached) return cached;
 
@@ -55,8 +55,8 @@ function getExtendedAncestors(entityType: ContextEntityType): readonly ContextEn
 function enrichItem(
   item: EnrichableEntity,
   memberships: MembershipBase[],
-  entityType: ContextEntityType,
-  ancestors: readonly ContextEntityType[],
+  entityType: ChannelEntityType,
+  ancestors: readonly ChannelEntityType[],
   slugIndex: SlugIndex,
 ): EnrichableEntity {
   let result = enrichWithMembership(item, memberships);
@@ -71,7 +71,7 @@ function enrichItem(
 function enrichListData(
   data: InfiniteData,
   memberships: MembershipBase[],
-  entityType: ContextEntityType,
+  entityType: ChannelEntityType,
   slugIndex: SlugIndex,
 ): InfiniteData {
   const ancestors = getExtendedAncestors(entityType);
@@ -123,7 +123,7 @@ function setCacheData(queryKey: Query['queryKey'], data: unknown) {
 }
 
 /** Enrich all list and detail queries for a single entity type */
-function enrichEntityType(entityType: ContextEntityType, memberships: MembershipBase[], slugIndex: SlugIndex) {
+function enrichEntityType(entityType: ChannelEntityType, memberships: MembershipBase[], slugIndex: SlugIndex) {
   const cache = queryClient.getQueryCache();
 
   for (const query of cache.findAll({ queryKey: [entityType, 'list'] })) {
@@ -147,7 +147,7 @@ function enrichEntityType(entityType: ContextEntityType, memberships: Membership
  * This is needed so enrichWithAncestorSlugs can resolve ancestor slugs from the index
  * regardless of which entity type triggered the enrichment.
  */
-function ensureAncestorSlugs(entityType: ContextEntityType, slugIndex: SlugIndex) {
+function ensureAncestorSlugs(entityType: ChannelEntityType, slugIndex: SlugIndex) {
   for (const ancestor of getExtendedAncestors(entityType)) {
     if (!slugIndex.has(ancestor)) slugIndex.set(ancestor, buildSlugIndex(ancestor));
   }
@@ -158,7 +158,7 @@ function ensureAncestorSlugs(entityType: ContextEntityType, slugIndex: SlugIndex
  * Builds a slug index on demand from the type's own list data,
  * then enriches lists + details and any child types that depend on it for ancestor slugs.
  */
-function runEnrichment(entityType: ContextEntityType) {
+function runEnrichment(entityType: ChannelEntityType) {
   const memberships = getCachedMemberships();
   if (!memberships?.length) return;
 
@@ -170,7 +170,7 @@ function runEnrichment(entityType: ContextEntityType) {
   enrichEntityType(entityType, memberships, slugIndex);
 
   // Re-enrich child types that depend on this type for ancestor slugs
-  for (const { type: childType } of getRegisteredContextEntities()) {
+  for (const { type: childType } of getRegisteredChannelEntities()) {
     if (childType === entityType) continue;
     if (hierarchy.hasAncestor(childType, entityType) || isMenuParentOf(entityType, childType)) {
       if (!slugIndex.has(childType)) slugIndex.set(childType, buildSlugIndex(childType));
@@ -180,7 +180,7 @@ function runEnrichment(entityType: ContextEntityType) {
   }
 }
 
-export function initContextEntityEnrichment(): () => void {
+export function initChannelEntityEnrichment(): () => void {
   return queryClient.getQueryCache().subscribe((event) => {
     if (event.type !== 'updated' || isEnriching) return;
 
@@ -188,7 +188,7 @@ export function initContextEntityEnrichment(): () => void {
 
     // Memberships updated, re-enrich all context entities.
     if (queryKey[0] === 'me' && queryKey[1] === 'memberships') {
-      for (const { type } of getRegisteredContextEntities()) {
+      for (const { type } of getRegisteredChannelEntities()) {
         runEnrichment(type);
       }
       return;
@@ -198,7 +198,7 @@ export function initContextEntityEnrichment(): () => void {
     const entityType = typeof queryKey[0] === 'string' ? queryKey[0] : null;
     if (!entityType) return;
 
-    const entry = getContextEntityKeys(entityType);
+    const entry = getChannelEntityKeys(entityType);
     if (!entry) return;
 
     // Only enrich on list or detail updates

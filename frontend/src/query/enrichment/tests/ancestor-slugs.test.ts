@@ -16,7 +16,7 @@ import {
 vi.mock('shared', () => ({
   appConfig: mockAppConfig,
   hierarchy: mockHierarchy,
-  isContextEntity: (type: string) => mockAppConfig.contextEntityTypes.includes(type),
+  isChannelEntity: (type: string) => mockAppConfig.channelEntityTypes.includes(type),
   computeCan: mockComputeCan,
   accessPolicies: mockAccessPolicies,
 }));
@@ -29,7 +29,7 @@ vi.mock('~/query/basic/entity-query-registry', () => ({
   registerEntityQueryKeys: mockRegisterEntityQueryKeys,
 }));
 
-const { initContextEntityEnrichment } = await import('~/query/enrichment/init-enrichment');
+const { initChannelEntityEnrichment } = await import('~/query/enrichment/init-enrichment');
 
 describe('ancestor slug enrichment', () => {
   let unsubscribe: (() => void) | undefined;
@@ -44,14 +44,14 @@ describe('ancestor slug enrichment', () => {
   });
 
   it('enriches child entity with ancestor slug when parent is in cache', () => {
-    unsubscribe = initContextEntityEnrichment();
+    unsubscribe = initChannelEntityEnrichment();
 
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [
         makeMembership('org-1'),
-        makeMembership('proj-1', { contextType: 'project', organizationId: 'org-1', projectId: 'proj-1' }),
+        makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1' }),
       ],
     });
 
@@ -67,7 +67,7 @@ describe('ancestor slug enrichment', () => {
   });
 
   it('does not set ancestorSlugs for root context entities', () => {
-    unsubscribe = initContextEntityEnrichment();
+    unsubscribe = initChannelEntityEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [makeMembership('org-1')],
@@ -81,12 +81,12 @@ describe('ancestor slug enrichment', () => {
   });
 
   it('falls back to ancestor ID when parent slug is not in cache, then updates when parent loads', () => {
-    unsubscribe = initContextEntityEnrichment();
+    unsubscribe = initChannelEntityEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [
         makeMembership('org-1'),
-        makeMembership('proj-1', { contextType: 'project', organizationId: 'org-1', projectId: 'proj-1' }),
+        makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1' }),
       ],
     });
 
@@ -105,7 +105,7 @@ describe('ancestor slug enrichment', () => {
   });
 
   it('enriches project with workspace slug from menu parent via membership.workspaceId', () => {
-    unsubscribe = initContextEntityEnrichment();
+    unsubscribe = initChannelEntityEnrichment();
 
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
     queryClient.setQueryData(['workspace', 'list'], makeInfiniteData([{ id: 'ws-1', slug: 'my-workspace' } as any]));
@@ -113,9 +113,9 @@ describe('ancestor slug enrichment', () => {
     queryClient.setQueryData(['me', 'memberships'], {
       items: [
         makeMembership('org-1'),
-        makeMembership('ws-1', { contextType: 'workspace', organizationId: 'org-1', workspaceId: 'ws-1' }),
+        makeMembership('ws-1', { channelType: 'workspace', organizationId: 'org-1', workspaceId: 'ws-1' }),
         makeMembership('proj-1', {
-          contextType: 'project',
+          channelType: 'project',
           organizationId: 'org-1',
           projectId: 'proj-1',
           workspaceId: 'ws-1',
@@ -135,13 +135,13 @@ describe('ancestor slug enrichment', () => {
   });
 
   it('updates project workspace slug when workspace list cache loads later', () => {
-    unsubscribe = initContextEntityEnrichment();
+    unsubscribe = initChannelEntityEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [
         makeMembership('org-1'),
         makeMembership('proj-1', {
-          contextType: 'project',
+          channelType: 'project',
           organizationId: 'org-1',
           projectId: 'proj-1',
           workspaceId: 'ws-1',
@@ -166,14 +166,14 @@ describe('ancestor slug enrichment', () => {
   });
 
   it('preserves reference when ancestor slugs have not changed', () => {
-    unsubscribe = initContextEntityEnrichment();
+    unsubscribe = initChannelEntityEnrichment();
 
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [
         makeMembership('org-1'),
-        makeMembership('proj-1', { contextType: 'project', organizationId: 'org-1', projectId: 'proj-1' }),
+        makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1' }),
       ],
     });
 

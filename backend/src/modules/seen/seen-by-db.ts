@@ -26,7 +26,7 @@ export const seenByTable = snakeCase.table(
     entityId: uuid().notNull(),
     entityType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
     /** Parent context entity ID for grouping (e.g., projectId for tasks). Falls back to organizationId. */
-    contextId: uuid().notNull(),
+    channelId: uuid().notNull(),
     organizationId: uuid().notNull(),
     tenantId: varchar('tenant_id', { length: tenantIdLength }).notNull(),
     createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
@@ -36,8 +36,8 @@ export const seenByTable = snakeCase.table(
     primaryKey({ columns: [table.id, table.createdAt] }),
     // Deduplication: one row per user per entity
     unique('seen_by_user_entity_unique').on(table.userId, table.entityId),
-    // Index for unseen count query: COUNT(*) WHERE userId AND contextId AND entityType
-    index('seen_by_user_context_type_index').on(table.userId, table.contextId, table.entityType),
+    // Index for unseen count query: COUNT(*) WHERE userId AND channelId AND entityType
+    index('seen_by_user_channel_type_index').on(table.userId, table.channelId, table.entityType),
     // Index for entity-level queries
     index('seen_by_entity_id_index').on(table.entityId),
     index('seen_by_tenant_id_index').on(table.tenantId),

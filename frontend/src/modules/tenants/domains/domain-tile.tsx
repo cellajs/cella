@@ -4,7 +4,7 @@ import {
   ChevronDownIcon,
   CopyIcon,
   GlobeIcon,
-  Loader2Icon,
+  LoaderCircleIcon,
   SearchCheckIcon,
   Trash2Icon,
 } from 'lucide-react';
@@ -61,7 +61,7 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
             <div className="flex items-center gap-2">
               <span className="truncate font-medium text-sm">{domain.domain}</span>
               <Badge size="xs" variant={domain.verified ? 'success' : 'secondary'}>
-                {domain.verified && <BadgeCheckIcon size={12} className="shrink-0" />}
+                {domain.verified && <BadgeCheckIcon className="icon-xs shrink-0" />}
                 {domain.verified ? t('c:verified') : t('c:unverified')}
               </Badge>
             </div>
@@ -77,11 +77,7 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
                 disabled={verifyMutation.isPending}
                 onClick={handleVerify}
               >
-                {verifyMutation.isPending ? (
-                  <Loader2Icon size={16} className="animate-spin" />
-                ) : (
-                  <SearchCheckIcon size={16} />
-                )}
+                {verifyMutation.isPending ? <LoaderCircleIcon className="animate-spin" /> : <SearchCheckIcon />}
                 <span className="ml-1 max-sm:hidden">{t('c:verify')}</span>
               </Button>
             )}
@@ -101,7 +97,7 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
                 );
               }}
             >
-              {deleteMutation.isPending ? <Loader2Icon size={16} className="animate-spin" /> : <Trash2Icon size={16} />}
+              {deleteMutation.isPending ? <LoaderCircleIcon className="animate-spin" /> : <Trash2Icon />}
               <span className="ml-1 max-sm:hidden">{t('c:remove')}</span>
             </Button>
           </div>
@@ -115,7 +111,7 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
                 <span className="flex cursor-pointer items-center gap-1 text-muted-foreground text-xs hover:text-foreground" />
               }
             >
-              <ChevronDownIcon size={14} className="in-data-panel-open:rotate-180 transition-transform" />
+              <ChevronDownIcon className="icon-sm in-data-panel-open:rotate-180 transition-transform" />
               {t('c:dns_instructions')}
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -130,14 +126,14 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
                     <span className="min-w-14 font-medium text-muted-foreground">{t('c:host')}</span>
                     <code className="flex-1 truncate rounded bg-background px-1.5 py-0.5">{txtHost}</code>
                     <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => copyHost(txtHost)}>
-                      {hostCopied ? <CheckIcon size={12} /> : <CopyIcon size={12} />}
+                      {hostCopied ? <CheckIcon className="icon-xs" /> : <CopyIcon className="icon-xs" />}
                     </Button>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="min-w-14 font-medium text-muted-foreground">{t('c:value')}</span>
                     <code className="flex-1 truncate rounded bg-background px-1.5 py-0.5">{txtValue}</code>
                     <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => copyValue(txtValue)}>
-                      {valueCopied ? <CheckIcon size={12} /> : <CopyIcon size={12} />}
+                      {valueCopied ? <CheckIcon className="icon-xs" /> : <CopyIcon className="icon-xs" />}
                     </Button>
                   </div>
                 </div>

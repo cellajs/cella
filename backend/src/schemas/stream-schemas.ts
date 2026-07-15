@@ -36,12 +36,12 @@ export const streamNotificationSchema = z
     subjectId: z.string().nullable(),
     organizationId: z.string().nullable(),
     tenantId: z.string().nullable(),
-    contextType: z
-      .enum(appConfig.contextEntityTypes)
+    channelType: z
+      .enum(appConfig.channelEntityTypes)
       .nullable()
       .describe('Context entity type for membership events (e.g. organization, project)'),
     seq: z.number().int().nullable().describe('Per-entityType sequence number used for gap detection in sync'),
-    contextId: z
+    channelId: z
       .string()
       .nullable()
       .describe('Context entity ID for grouping (e.g. projectId for tasks in unseen counts)'),
@@ -83,7 +83,7 @@ export const streamCatchupBodySchema = z.object({
 });
 
 /** Per-child-context change summary for sub-context seq drill-down. */
-const childContextChangeSummarySchema = z.object({
+const childChannelChangeSummarySchema = z.object({
   entitySeqs: z.record(z.string(), z.number().int()).optional(),
   entityCounts: z.record(z.string(), z.number().int()).optional(),
 });
@@ -94,22 +94,22 @@ const childContextChangeSummarySchema = z.object({
  *
  * Dual-level design:
  * - entitySeqs (org-level): quick screening for changes by entity type within the org.
- * - childContextChanges: precision drill-down with per-child-context entitySeqs for delta fetch.
+ * - childChannelChanges: precision drill-down with per-child-context entitySeqs for delta fetch.
  *
  * Client logic:
  * 1. Compare org-level entitySeqs for quick skip (unchanged → skip entirely)
- * 2. For changed orgs, iterate childContextChanges to find which child contexts changed
- * 3. Delta fetch only for changed (childContext, entityType) pairs
+ * 2. For changed orgs, iterate childChannelChanges to find which child contexts changed
+ * 3. Delta fetch only for changed (childChannel, entityType) pairs
  * - product soft deletes are seq-stamped updates; seqCursor delta fetch returns tombstones
  * - On catchup: always invalidate membership queries (lightweight, deduplicated by React Query)
  */
 export const catchupChangeSummarySchema = z.object({
   /** Org-level entity seqs (change signal for quick screening). Managed by CDC worker. */
   entitySeqs: z.record(z.string(), z.number().int()).optional(),
-  /** Org-level per-entityType total counts from context_counters (e:{type} keys). Used for cache integrity checks. */
+  /** Org-level per-entityType total counts from channel_counters (e:{type} keys). Used for cache integrity checks. */
   entityCounts: z.record(z.string(), z.number().int()).optional(),
   /** Per-child-context entity seqs and counts for sub-context delta fetch precision. */
-  childContextChanges: z.record(z.string(), childContextChangeSummarySchema).optional(),
+  childChannelChanges: z.record(z.string(), childChannelChangeSummarySchema).optional(),
   /** Embedded entity propagation hints (source entity changes that require target cache patching) */
   propagation: z.array(propagationHintSchema).optional(),
 });

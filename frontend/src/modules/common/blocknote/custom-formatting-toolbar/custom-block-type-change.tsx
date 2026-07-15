@@ -65,7 +65,7 @@ export const CellaCustomBlockTypeSelect = ({
     const { icon: Icon, name, type } = item;
     return {
       title: name,
-      icon: <Icon size={16} />,
+      icon: <Icon />,
       onClick: () => handleItemClick(item),
       isSelected: block.type === 'heading' ? isHeadingMenuItemActive(block, name) : block.type === type,
     };
@@ -92,7 +92,7 @@ export const CellaCustomBlockTypeSelect = ({
           mainTooltip="Select block type"
         >
           {selectedItem && <selectedItem.icon />}
-          <ChevronDownIcon size={16} />
+          <ChevronDownIcon />
         </Components.FormattingToolbar.Button>
       </Components.Generic.Menu.Trigger>
       <Components.Generic.Menu.Dropdown className="p-2">

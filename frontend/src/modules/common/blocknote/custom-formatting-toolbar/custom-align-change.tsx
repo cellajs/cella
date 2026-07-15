@@ -17,8 +17,8 @@ export const CustomTextAlignSelect = () => {
           label="Text align select"
           mainTooltip="Select text align"
         >
-          <MoveHorizontalIcon size={20} />
-          <ChevronDownIcon size={14} />
+          <MoveHorizontalIcon className="icon-lg" />
+          <ChevronDownIcon className="icon-sm" />
         </Components.FormattingToolbar.Button>
       </Components.Generic.Menu.Trigger>
       <Components.Generic.Menu.Dropdown>

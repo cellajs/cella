@@ -19,13 +19,13 @@ export async function seedEntityHierarchy(
   plan: TestEntityHierarchyPlan,
   opts: { tenantId: string; createdBy: string; slugPrefix: string },
 ): Promise<void> {
-  for (const row of plan.seedContextRows) {
+  for (const row of plan.seedChannelRows) {
     await db.execute(sql`
       INSERT INTO ${sql.raw(quoteIdent(row.tableName))}
         (id, tenant_id, entity_type, name, slug, created_by, ${sql.raw(quoteIdent(row.parentColumnName))})
       VALUES (
-        ${row.id}, ${opts.tenantId}, ${row.contextType}, ${`${opts.slugPrefix} ${row.contextType}`},
-        ${`${opts.slugPrefix}-${row.contextType}-${row.id.slice(0, 8)}`}, ${opts.createdBy}, ${row.parentId}
+        ${row.id}, ${opts.tenantId}, ${row.channelType}, ${`${opts.slugPrefix} ${row.channelType}`},
+        ${`${opts.slugPrefix}-${row.channelType}-${row.id.slice(0, 8)}`}, ${opts.createdBy}, ${row.parentId}
       )
       ON CONFLICT (id) DO NOTHING
     `);
@@ -34,7 +34,7 @@ export async function seedEntityHierarchy(
 
 /** Delete seeded context rows, children before parents. */
 export async function cleanupEntityHierarchy(db: ExecutableDb, ...plans: TestEntityHierarchyPlan[]): Promise<void> {
-  for (const row of plans.flatMap((plan) => plan.seedContextRows).reverse()) {
+  for (const row of plans.flatMap((plan) => plan.seedChannelRows).reverse()) {
     await db.execute(sql`DELETE FROM ${sql.raw(quoteIdent(row.tableName))} WHERE id = ${row.id}`);
   }
 }

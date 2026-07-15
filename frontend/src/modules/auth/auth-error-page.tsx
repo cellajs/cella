@@ -25,7 +25,7 @@ export function AuthErrorPage() {
       {showResendButton && resendData && <ResendInvitationButton resendData={resendData} />}
 
       <Button variant={showResendButton ? 'plain' : 'default'} render={<Link to="/auth/authenticate" replace />}>
-        <LogInIcon size={16} className="mr-2" />
+        <LogInIcon className="mr-2" />
         {t('c:sign_in')}
       </Button>
     </ErrorNotice>

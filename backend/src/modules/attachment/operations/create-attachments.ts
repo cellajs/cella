@@ -54,7 +54,7 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
 
     canCreateEntity(ctx, {
       entityType: 'attachment',
-      contextIds: { organization: organization.id },
+      channelIds: { organization: organization.id },
     });
     return attachment;
   });

@@ -1,6 +1,6 @@
 import type { LinkComponentProps } from '@tanstack/react-router';
-import type { LucideProps } from 'lucide-react';
 import type { RefObject } from 'react';
+import type { IconComponent } from '~/modules/common/icons/types';
 import type { UserMenuItem } from '~/modules/me/types';
 import type { navItems } from '~/nav-config';
 import type { DraggableItemData } from '~/utils/get-draggable-item-data';
@@ -24,7 +24,7 @@ export type TriggerNavItemFn = (
 
 export type NavItem = {
   id: NavItemId;
-  icon: React.ElementType<LucideProps>;
+  icon: IconComponent;
   type: 'base' | 'floating' | 'footer' | 'hidden';
   sheet?: React.ReactNode;
   action?: (ref: RefObject<HTMLButtonElement | null>) => void;

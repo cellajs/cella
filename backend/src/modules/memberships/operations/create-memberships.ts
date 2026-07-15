@@ -1,4 +1,4 @@
-import { appConfig, type ContextEntityType, type EntityRole, hierarchy } from 'shared';
+import { appConfig, type ChannelEntityType, type EntityRole, hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import type { AuthContext } from '#/core/context';
@@ -7,27 +7,27 @@ import { mailer } from '#/lib/mailer';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
 import {
-  countMembershipsByContext,
-  countPendingInvitesByContext,
+  countMembershipsByChannel,
+  countPendingInvitesByChannel,
   findMembershipAwareRows,
   insertInactiveMemberships,
   insertTokens,
   stampInactiveMembershipsReminded,
 } from '#/modules/memberships/memberships-queries';
-import { getValidContextEntity } from '#/permissions/get-context-entity';
+import { getValidChannelEntity } from '#/permissions/get-channel-entity';
 import { log } from '#/utils/logger';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail } from '../../../../emails';
 
-const rootContextType = hierarchy.contextTypes.find((t) => hierarchy.getParent(t) === null)!;
+const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t) === null)!;
 
 interface CreateMembershipsInput {
   emails: string[];
   role: EntityRole;
   entityId: string;
-  entityType: ContextEntityType;
+  entityType: ChannelEntityType;
 }
 
 export async function createMembershipsOp(ctx: AuthContext, input: CreateMembershipsInput) {
@@ -46,7 +46,7 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
     throw new AppError(400, 'invalid_role', 'warn', { entityType });
   }
 
-  const { entity } = await getValidContextEntity(ctx, entityId, entityType, 'update');
+  const { entity } = await getValidChannelEntity(ctx, entityId, entityType, 'update');
 
   const { slug: entitySlug, name: entityName } = entity;
 
@@ -56,16 +56,16 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
    * released when the context is published. The context's most-privileged role (first in
    * its vocabulary, e.g. admin/staff/owner) stays live so staff can collaborate in drafts.
    */
-  const contextIsDraft = entity.publishedAt === null;
-  const deferDispatch = contextIsDraft && role !== hierarchy.getRoles(entityType)[0];
+  const channelIsDraft = entity.publishedAt === null;
+  const deferDispatch = channelIsDraft && role !== hierarchy.getRoles(entityType)[0];
 
-  const currentOrgMemberships = await countMembershipsByContext(ctx, {
-    contextType: rootContextType,
-    contextId: organization.id,
+  const currentOrgMemberships = await countMembershipsByChannel(ctx, {
+    channelType: rootChannelType,
+    channelId: organization.id,
   });
-  const pendingInvites = await countPendingInvitesByContext(ctx, {
-    contextType: rootContextType,
-    contextId: organization.id,
+  const pendingInvites = await countPendingInvitesByChannel(ctx, {
+    channelType: rootChannelType,
+    channelId: organization.id,
   });
 
   const membersRestrictions = ctx.var.tenant.restrictions.quotas.user;
@@ -135,7 +135,7 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
       if (isAdminInvitingSelf) {
         existingUsersToDirectAdd.push({ userId: userRow.userId, email });
       } else {
-        const hasActiveOrgMembership = entityType !== rootContextType && !!rows.find((r) => r.orgMembershipId);
+        const hasActiveOrgMembership = entityType !== rootChannelType && !!rows.find((r) => r.orgMembershipId);
 
         // Draft context: existing users are deferred too — no membership, no nav entry, no email
         if (hasActiveOrgMembership && !deferDispatch) {
@@ -157,10 +157,10 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
       role,
       entity,
       createdBy: user.id,
-      contextType: entityType,
+      channelType: entityType,
       tenantId: ctx.var.tenantId,
       ...getBaseMembershipEntityId(entity),
-      contextId: entity.id,
+      channelId: entity.id,
     }));
 
     inactiveMembershipsToInsert.push(...inactiveMembershipsForExistingUsers);
@@ -209,7 +209,7 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
       entityType,
       inactiveMembershipId: newUserInactiveMembershipIdsByEmail.get(email)!,
       ...getBaseMembershipEntityId(entity),
-      contextId: entity.id,
+      channelId: entity.id,
     };
   });
 
@@ -229,11 +229,11 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
       role,
       entity,
       createdBy: user.id,
-      contextType: entityType,
+      channelType: entityType,
       tokenId: tokensByEmail.get(email)!,
       tenantId: ctx.var.tenantId,
       ...getBaseMembershipEntityId(entity),
-      contextId: entity.id,
+      channelId: entity.id,
     }));
 
     inactiveMembershipsToInsert.push(...newUserInactiveMemberships);

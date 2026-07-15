@@ -54,7 +54,7 @@ async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> 
     discardPendingBuffer(ws);
     if (err instanceof MissingScopeError) {
       log.warn(`Entity missing required scope for ${ctx.entityType}:${ctx.entityId}`, {
-        missingContext: err.missingContext,
+        missingChannel: err.missingChannel,
         missingKey: err.missingKey,
       });
       ws.close(4400, 'Missing entity scope');

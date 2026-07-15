@@ -3,10 +3,10 @@ import {
   appConfig,
   buildSubject,
   checkPermission,
-  type ContextEntityIdColumns,
-  type ContextEntityType,
+  type ChannelEntityIdColumns,
+  type ChannelEntityType,
   hierarchy,
-  isContextEntity,
+  isChannelEntity,
   isProductEntity,
   type PermissionMembership,
   type ProductEntityType,
@@ -51,11 +51,11 @@ export function getTableColumnNames(client: pg.PoolClient, table: string): Promi
  */
 export async function loadMemberships(client: pg.PoolClient, userId: string): Promise<PermissionMembership[]> {
   const table = toTableName('membership');
-  const contextType = toColumnName('contextType');
-  const contextId = toColumnName('contextId');
+  const channelType = toColumnName('channelType');
+  const channelId = toColumnName('channelId');
   const role = toColumnName('role');
   const userIdColumn = toColumnName('userId');
-  const projection = `"${contextType}" AS "contextType", "${contextId}" AS "contextId", "${role}" AS "role"`;
+  const projection = `"${channelType}" AS "channelType", "${channelId}" AS "channelId", "${role}" AS "role"`;
   const { rows } = await client.query<PermissionMembership>(
     `SELECT ${projection} FROM "${table}" WHERE "${userIdColumn}" = $1`,
     [userId],
@@ -64,7 +64,7 @@ export async function loadMemberships(client: pg.PoolClient, userId: string): Pr
 }
 
 /** Entity row carrying just the ancestor scope and ownership columns the permission engine needs. */
-export interface EntityScopeRow extends Partial<ContextEntityIdColumns> {
+export interface EntityScopeRow extends Partial<ChannelEntityIdColumns> {
   id: string;
   createdBy?: string | null;
   tenantId?: string | null;
@@ -81,7 +81,7 @@ export interface EntityScopeRow extends Partial<ContextEntityIdColumns> {
  */
 export async function resolveEntityScope(
   client: pg.PoolClient,
-  entityType: ContextEntityType | ProductEntityType,
+  entityType: ChannelEntityType | ProductEntityType,
   entityId: string,
 ): Promise<EntityScopeRow | null> {
   // Only entity types this app declares are resolvable.
@@ -117,7 +117,7 @@ export async function resolveEntityScope(
  */
 export async function canEditEntity(ctx: DocContext): Promise<boolean> {
   const { entityType } = ctx;
-  if (!isContextEntity(entityType) && !isProductEntity(entityType)) return false;
+  if (!isChannelEntity(entityType) && !isProductEntity(entityType)) return false;
 
   return withClient(ctx.tenantId, ctx.userId, async (client) => {
     const [entity, memberships] = await Promise.all([
@@ -131,8 +131,19 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
     if (typeof entity.tenantId === 'string' && entity.tenantId !== ctx.tenantId) return false;
 
     const createdBy = typeof entity.createdBy === 'string' || entity.createdBy === null ? entity.createdBy : undefined;
-    const subject = buildSubject(entityType, entity, { id: entity.id, createdBy });
-    const { isAllowed } = checkPermission(memberships, 'update', subject);
+    const subject = buildSubject(entityType, entity, {
+      id: entity.id,
+      createdBy,
+      // The row itself: without it, every row-derived grant ('own', public read) fails closed.
+      row: entity as unknown as Record<string, unknown>,
+    });
+
+    // Collaborative editing confers no system-admin bypass — the same stance the backend's
+    // materialize endpoint takes, so the relay and the write it triggers agree.
+    const { isAllowed } = checkPermission(memberships, 'update', subject, {
+      userId: ctx.userId,
+      isSystemAdmin: false,
+    });
     return isAllowed;
   });
 }

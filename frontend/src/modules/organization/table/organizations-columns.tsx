@@ -144,9 +144,9 @@ export const useColumns = () => {
       renderCell: ({ row }: { row: EnrichedOrganization }) => (
         <>
           {role === 'admin' ? (
-            <ShieldIcon className="mr-2 opacity-50" size={16} />
+            <ShieldIcon className="mr-2 opacity-50" />
           ) : (
-            <UserRoundIcon className="mr-2 opacity-50" size={16} />
+            <UserRoundIcon className="mr-2 opacity-50" />
           )}
           {row.included.counts?.membership[role] ?? '-'}
         </>
@@ -155,22 +155,22 @@ export const useColumns = () => {
     // Dynamic entity count columns for org-scoped descendant entities
     ...(() => {
       const descendants = hierarchy.getOrderedDescendants('organization');
-      const contextDescendants = descendants.filter((t) => hierarchy.isContext(t));
-      const productDescendants = descendants.filter((t) => !hierarchy.isContext(t));
+      const channelDescendants = descendants.filter((t) => hierarchy.isChannel(t));
+      const productDescendants = descendants.filter((t) => !hierarchy.isChannel(t));
       // Context: last visible, Product: first visible
-      const lastContext = contextDescendants[contextDescendants.length - 1];
+      const lastChannel = channelDescendants[channelDescendants.length - 1];
       const firstProduct = productDescendants[0];
 
       return descendants.map((type) => ({
         key: `${type}Count`,
         name: t(`c:${type}`, { count: 2 }),
-        hidden: type !== lastContext && type !== firstProduct,
+        hidden: type !== lastChannel && type !== firstProduct,
         minBreakpoint: 'md' as const,
         minWidth: 60,
         maxWidth: 120,
         renderCell: ({ row }: { row: EnrichedOrganization }) => (
           <>
-            <BoxIcon className="mr-2 opacity-50" size={16} />
+            <BoxIcon className="mr-2 opacity-50" />
             {(row.included.counts?.entities as Record<string, number>)?.[type] ?? '-'}
           </>
         ),

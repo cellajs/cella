@@ -7,7 +7,7 @@ import { startSpinner, succeedSpinner } from '#/utils/console';
 const db = seedDb;
 
 /**
- * Recalculate context_counters and product_counters from current database state.
+ * Recalculate channel_counters and product_counters from current database state.
  *
  * Delegates to recalculateCounters() which uses ON CONFLICT with || merge,
  * so it's safe to run even when rows already exist (e.g. pre-populated by triggers).
@@ -16,9 +16,9 @@ const db = seedDb;
 export const countersSeed = async () => {
   startSpinner('Recalculating counters...');
 
-  const { contextRows, productRows } = await recalculateCounters(db);
+  const { channelRows, productRows } = await recalculateCounters(db);
 
-  succeedSpinner(`Recalculated counters for ${contextRows} context entities, ${productRows} product entities`);
+  succeedSpinner(`Recalculated counters for ${channelRows} context entities, ${productRows} product entities`);
 };
 
 export const seedConfig: SeedScript = { name: 'counters', run: countersSeed, allowProduction: true };

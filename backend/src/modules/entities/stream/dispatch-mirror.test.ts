@@ -22,8 +22,8 @@ const membership = (organizationId: string, role: string, userId: string): Membe
   ({
     id: `mem-organization-${organizationId}-${role}-${userId}`,
     userId,
-    contextType: 'organization',
-    contextId: organizationId,
+    channelType: 'organization',
+    channelId: organizationId,
     organizationId,
     role,
   }) as unknown as MembershipBaseModel;

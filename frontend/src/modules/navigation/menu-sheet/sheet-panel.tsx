@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDownIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,7 +39,7 @@ const MenuSheetPanel = ({ id, label, children, onPrefetch }: MenuSheetPanelProps
         variant={isOpen ? 'secondary' : 'ghost'}
       >
         <span>{t(label)}</span>
-        <ChevronDown size={16} className={cn('opacity-50 transition-transform duration-200', isOpen && 'rotate-180')} />
+        <ChevronDownIcon className={cn('opacity-50 transition-transform duration-200', isOpen && 'rotate-180')} />
       </Button>
 
       <AnimatePresence initial={false}>

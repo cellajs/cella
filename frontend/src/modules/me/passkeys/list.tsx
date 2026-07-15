@@ -1,5 +1,5 @@
 import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
-import { Fingerprint, PlusIcon } from 'lucide-react';
+import { FingerprintPatternIcon, PlusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -31,7 +31,7 @@ export function PasskeysList() {
     <div className="mb-6">
       <div className="flex flex-row max-sm:flex-col">
         <Button key="createPasskey" type="button" variant="plain" onClick={() => createPasskey()}>
-          {hasPasskey ? <PlusIcon className="mr-2 size-4" /> : <Fingerprint className="mr-2 size-4" />}
+          {hasPasskey ? <PlusIcon className="mr-2 size-4" /> : <FingerprintPatternIcon className="mr-2 size-4" />}
           {hasPasskey
             ? t('c:add_resource', { resource: t('c:passkey').toLowerCase() })
             : t('c:create_resource', { resource: t('c:passkey').toLowerCase() })}

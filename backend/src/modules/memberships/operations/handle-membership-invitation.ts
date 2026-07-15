@@ -10,7 +10,7 @@ import { findInactiveMembershipForUser } from '#/modules/memberships/memberships
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
-const rootContextType = hierarchy.contextTypes.find((t) => hierarchy.getParent(t) === null)!;
+const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t) === null)!;
 
 export async function handleMembershipInvitationOp(
   ctx: AuthContext,
@@ -22,12 +22,12 @@ export async function handleMembershipInvitationOp(
   if (!inactiveMembership)
     throw new AppError(404, 'inactive_membership_not_found', 'error', { meta: { id: inactiveMembershipId } });
 
-  const entityFieldId = inactiveMembership.contextId;
+  const entityFieldId = inactiveMembership.channelId;
 
   await baseDb.transaction(async (tx) => {
     if (acceptOrReject === 'accept') {
-      const entity = await resolveEntity({ var: { db: tx } }, inactiveMembership.contextType, entityFieldId);
-      if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.contextType });
+      const entity = await resolveEntity({ var: { db: tx } }, inactiveMembership.channelType, entityFieldId);
+      if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.channelType });
 
       const activatedMemberships = await insertMemberships(
         { var: { db: tx } },
@@ -52,10 +52,10 @@ export async function handleMembershipInvitationOp(
   });
 
   const rootEntityId = inactiveMembership.organizationId;
-  if (!rootEntityId) throw new AppError(500, 'server_error', 'error', { entityType: rootContextType });
+  if (!rootEntityId) throw new AppError(500, 'server_error', 'error', { entityType: rootChannelType });
 
-  const entity = await resolveEntity({ var: { db: baseDb } }, rootContextType, rootEntityId);
-  if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: rootContextType });
+  const entity = await resolveEntity({ var: { db: baseDb } }, rootChannelType, rootEntityId);
+  if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: rootChannelType });
 
   return entity;
 }

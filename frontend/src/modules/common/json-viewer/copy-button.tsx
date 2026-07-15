@@ -25,7 +25,7 @@ export const CopyButton: FC<CopyButtonProps> = ({ value }) => {
       onClick={handleCopy}
       title="Copy to clipboard"
     >
-      {copied ? <CheckIcon size={12} /> : <CopyIcon size={12} />}
+      {copied ? <CheckIcon className="icon-xs" /> : <CopyIcon className="icon-xs" />}
     </button>
   );
 };

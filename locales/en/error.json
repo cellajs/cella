@@ -92,7 +92,7 @@
   "invalid_role": "Not allowed",
   "invalid_role.text": "Your permissions are insufficient or invalid.",
   "missing_scope": "Missing scope",
-  "missing_scope.text": "Request is missing a required context scope parameter.",
+  "missing_scope.text": "Request is missing a required channel scope parameter.",
   "invalid_session": "Not authenticated",
   "invalid_session.text": "Your session has expired or is invalid. Please sign in again.",
   "invalid_slug": "Slug may only contain alphanumeric characters or up to three hyphens, and cannot begin or end with a hyphen.",

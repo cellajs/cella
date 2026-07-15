@@ -21,8 +21,8 @@ interface SyncStoreState {
   getOrgTenantId: (orgId: string) => string | null;
   setOrgSeq: (orgId: string, entityType: string, seq: number) => void;
   getOrgSeq: (orgId: string, entityType: string) => number;
-  setContextSeq: (orgId: string, contextId: string, entityType: string, seq: number) => void;
-  getContextSeq: (orgId: string, contextId: string, entityType: string) => number;
+  setChannelSeq: (orgId: string, channelId: string, entityType: string, seq: number) => void;
+  getChannelSeq: (orgId: string, channelId: string, entityType: string) => number;
   /** Build flat seqs map for the catchup API body (backward-compatible with backend) */
   getFlatSeqs: () => Record<string, number>;
   reset: () => void;
@@ -80,13 +80,13 @@ export const useSyncStore = create<SyncStoreState>()(
           }),
         getOrgSeq: (orgId, entityType) => get().orgs[orgId]?.seqs[entityType] ?? 0,
 
-        setContextSeq: (orgId, contextId, entityType, seq) =>
+        setChannelSeq: (orgId, channelId, entityType, seq) =>
           set((s) => {
             const org = ensureOrg(s.orgs, orgId);
-            org.contexts[contextId] ??= {};
-            org.contexts[contextId][entityType] = seq;
+            org.contexts[channelId] ??= {};
+            org.contexts[channelId][entityType] = seq;
           }),
-        getContextSeq: (orgId, contextId, entityType) => get().orgs[orgId]?.contexts[contextId]?.[entityType] ?? 0,
+        getChannelSeq: (orgId, channelId, entityType) => get().orgs[orgId]?.contexts[channelId]?.[entityType] ?? 0,
 
         getFlatSeqs: () => {
           const { orgs } = get();

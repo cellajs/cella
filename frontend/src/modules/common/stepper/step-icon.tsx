@@ -1,5 +1,5 @@
 import { cva } from 'class-variance-authority';
-import { CheckIcon, Loader2Icon, XIcon } from 'lucide-react';
+import { CheckIcon, LoaderCircleIcon, XIcon } from 'lucide-react';
 import * as React from 'react';
 import type { IconType } from '~/modules/common/stepper/types';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
@@ -82,7 +82,7 @@ function StepIconBase(props: StepIconProps, ref: React.ForwardedRef<HTMLDivEleme
         );
       }
       if (isLoading) {
-        return <Loader2Icon className={cn(iconVariants({ size }), 'animate-spin')} />;
+        return <LoaderCircleIcon className={cn(iconVariants({ size }), 'animate-spin')} />;
       }
     }
     if (Icon) {

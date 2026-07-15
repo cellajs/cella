@@ -21,7 +21,7 @@ export const validateAncestorScope = (entity: SubjectForPermission) => {
     if (e instanceof MissingScopeError) {
       throw new AppError(400, 'missing_scope', 'error', {
         entityType: e.entityType,
-        meta: { missingContext: e.missingContext, missingKey: e.missingKey },
+        meta: { missingChannel: e.missingChannel, missingKey: e.missingKey },
       });
     }
     throw e;

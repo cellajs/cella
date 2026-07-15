@@ -16,7 +16,7 @@ export const DeleteForm = ({ onDelete, onCancel, pending, allowOfflineDelete = f
     <div className="flex flex-col gap-2 sm:flex-row">
       <SubmitButton
         variant="destructive"
-        icon={<TrashIcon size={16} />}
+        icon={<TrashIcon />}
         allowOfflineDelete={allowOfflineDelete}
         onClick={onDelete}
         aria-label="Delete"

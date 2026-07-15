@@ -61,7 +61,7 @@ export const orgGuard = xMiddleware(
 
     // Check if user has access to organization (or is a system admin)
     const orgMembership =
-      memberships.find((m) => m.organizationId === organization.id && m.contextType === 'organization') || null;
+      memberships.find((m) => m.organizationId === organization.id && m.channelType === 'organization') || null;
     if (!isSystemAdmin && !orgMembership) {
       throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
     }

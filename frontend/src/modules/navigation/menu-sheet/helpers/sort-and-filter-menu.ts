@@ -1,4 +1,4 @@
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
 
 /**
@@ -12,7 +12,7 @@ import type { UserMenuItem } from '~/modules/me/types';
  */
 export const sortAndFilterMenu = (
   data: UserMenuItem[],
-  entityType: ContextEntityType,
+  entityType: ChannelEntityType,
   archived: boolean,
   reverse = false,
 ): UserMenuItem[] => {

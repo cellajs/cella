@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { contextEntityBaseSchema } from '#/schemas/entity-base';
+import { channelEntityBaseSchema } from '#/schemas/entity-base';
 import { mockUserBase } from './entity-base-mocks';
 
 // Re-export from dedicated file to avoid circular dependencies
@@ -10,7 +10,7 @@ export { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
  * Base schema for user, including common fields. Exported separately to avoid circular dependencies.
  * Users do not have the permissions field (only context entities do).
  */
-export const userBaseSchema = contextEntityBaseSchema
+export const userBaseSchema = channelEntityBaseSchema
   .omit({ entityType: true, tenantId: true })
   .extend({
     description: z.string().nullable(),

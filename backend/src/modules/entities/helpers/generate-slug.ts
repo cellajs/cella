@@ -1,9 +1,9 @@
-import type { ContextEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 
-type EntityTypeWithSlug = ContextEntityType | 'user';
+type EntityTypeWithSlug = ChannelEntityType | 'user';
 
 /**
  * Generate a unique slug by trying candidates in order.

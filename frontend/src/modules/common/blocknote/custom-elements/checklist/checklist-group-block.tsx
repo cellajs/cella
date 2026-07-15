@@ -1,6 +1,6 @@
 import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
-import { CheckSquareIcon } from 'lucide-react';
+import { SquareCheckBigIcon } from 'lucide-react';
 import { checklistGroupConfig } from 'shared/utils/blocknote-schema-configs';
 import { ChecklistGroupRender } from '~/modules/common/blocknote/custom-elements/checklist/checklist-group-render';
 import type { CustomBlockNoteEditor, IconType } from '~/modules/common/blocknote/types';
@@ -32,7 +32,7 @@ export const getChecklistItemSlashItem = (editor: CustomBlockNoteEditor) => ({
   },
   aliases: ['checklist', 'checkbox', 'todo', 'task', 'check'],
   group: 'Basic blocks',
-  icon: <CheckSquareIcon size={16} />,
+  icon: <SquareCheckBigIcon />,
 });
 
 // Slash menu item to insert a checklistGroup
@@ -47,12 +47,12 @@ export const getChecklistGroupSlashItem = (editor: CustomBlockNoteEditor) => ({
   },
   aliases: ['checklist group', 'task group', 'checkbox group'],
   group: 'Basic blocks',
-  icon: <CheckSquareIcon size={16} />,
+  icon: <SquareCheckBigIcon />,
 });
 
 // Side menu item for checklist item
 export const insertSideChecklistItem = (): BlockTypeSelectItem & { oneInstanceOnly?: boolean } => ({
   name: 'Checklist Item',
   type: 'checklistItem' as const,
-  icon: CheckSquareIcon as unknown as IconType,
+  icon: SquareCheckBigIcon as unknown as IconType,
 });

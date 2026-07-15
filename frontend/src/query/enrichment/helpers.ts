@@ -1,5 +1,5 @@
 import type { MembershipBase } from 'sdk';
-import { appConfig, type ContextEntityType, hierarchy } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import { meKeys } from '~/modules/me/query';
 import {
   type EntityQueryKeys,
@@ -9,17 +9,17 @@ import {
 import { queryClient } from '~/query/query-client';
 
 /** Get all registered context entity types with their query keys */
-export function getRegisteredContextEntities(): { type: ContextEntityType; keys: EntityQueryKeys }[] {
+export function getRegisteredChannelEntities(): { type: ChannelEntityType; keys: EntityQueryKeys }[] {
   return getRegisteredEntityTypes()
-    .filter((t) => hierarchy.isContext(t))
-    .map((t) => ({ type: t as ContextEntityType, keys: getEntityQueryKeys(t) }));
+    .filter((t) => hierarchy.isChannel(t))
+    .map((t) => ({ type: t as ChannelEntityType, keys: getEntityQueryKeys(t) }));
 }
 
 /** Get registered query keys for a context entity type, or null if not registered */
-export function getContextEntityKeys(entityType: string): { type: ContextEntityType; keys: EntityQueryKeys } | null {
-  if (!hierarchy.isContext(entityType)) return null;
+export function getChannelEntityKeys(entityType: string): { type: ChannelEntityType; keys: EntityQueryKeys } | null {
+  if (!hierarchy.isChannel(entityType)) return null;
   const keys = getEntityQueryKeys(entityType);
-  return { type: entityType as ContextEntityType, keys };
+  return { type: entityType as ChannelEntityType, keys };
 }
 
 /** Get cached memberships array, or null if not loaded */
@@ -29,7 +29,7 @@ export function getCachedMemberships(): MembershipBase[] | null {
 
 /** Get the entity ID a membership belongs to */
 function getMembershipEntityId(m: MembershipBase): string | null {
-  return m.contextId;
+  return m.channelId;
 }
 
 /** Find the membership for a given entity ID */
@@ -42,7 +42,7 @@ export function findMembership(memberships: MembershipBase[], entityId: string):
  * These are context entity types that host this entity as a subentity in the menu,
  * even if they aren't hierarchy ancestors (e.g. workspace hosts project).
  */
-export function getMenuParentTypes(entityType: string): ContextEntityType[] {
+export function getMenuParentTypes(entityType: string): ChannelEntityType[] {
   return appConfig.menuStructure.filter((s) => s.subentityType === entityType).map((s) => s.entityType);
 }
 

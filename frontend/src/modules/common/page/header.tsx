@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
-import { ChevronRightIcon, HomeIcon } from 'lucide-react';
+import { ChevronRightIcon, HouseIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { ContextEntityBase, MembershipBase, UserBase } from 'sdk';
+import type { ChannelEntityBase, MembershipBase, UserBase } from 'sdk';
 import { appConfig } from 'shared';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
@@ -13,12 +13,12 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from '~/modules/ui/breadcrumb';
-import { getContextEntityRoute, pageTopHashNav } from '~/utils/context-entity-route';
+import { getChannelEntityRoute, pageTopHashNav } from '~/utils/channel-entity-route';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
-  entity: (ContextEntityBase | UserBase) & { membership?: MembershipBase | null };
+  entity: (ChannelEntityBase | UserBase) & { membership?: MembershipBase | null };
   panel?: React.ReactNode;
-  parent?: ContextEntityBase;
+  parent?: ChannelEntityBase;
 };
 
 export function PageHeader({ entity, panel, parent, ...coverProps }: PageHeaderProps) {
@@ -28,7 +28,7 @@ export function PageHeader({ entity, panel, parent, ...coverProps }: PageHeaderP
   const membership = entity.entityType !== 'user' ? (entity.membership ?? null) : null;
 
   // Get parent route using app-specific resolver (handles hierarchy differences per fork)
-  const parentRoute = parent ? getContextEntityRoute(parent) : null;
+  const parentRoute = parent ? getChannelEntityRoute(parent) : null;
 
   return (
     <div className="relative w-full">
@@ -68,11 +68,11 @@ export function PageHeader({ entity, panel, parent, ...coverProps }: PageHeaderP
                     className="p-0.5 text-foreground/70"
                     render={<Link to={appConfig.defaultRedirectPath} />}
                   >
-                    <HomeIcon size={14} />
+                    <HouseIcon className="icon-sm" />
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="text-foreground/50">
-                  <ChevronRightIcon size={12} />
+                  <ChevronRightIcon className="icon-xs" />
                 </BreadcrumbSeparator>
                 {parent && parentRoute && (
                   <>
@@ -85,7 +85,7 @@ export function PageHeader({ entity, panel, parent, ...coverProps }: PageHeaderP
                       </BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator className="text-foreground/50">
-                      <ChevronRightIcon size={12} />
+                      <ChevronRightIcon className="icon-xs" />
                     </BreadcrumbSeparator>
                   </>
                 )}

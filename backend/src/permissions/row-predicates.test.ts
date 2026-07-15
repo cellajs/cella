@@ -2,19 +2,21 @@ import { sql } from 'drizzle-orm';
 import { type PgColumn, pgTable, varchar } from 'drizzle-orm/pg-core';
 import {
   type AccessPolicies,
+  type Actor,
   appConfig,
-  type ContextEntityType,
+  type ChannelEntityType,
   computeCan,
   configureAccessPolicies,
   createEntityHierarchy,
   createRoleRegistry,
   type EntityType,
   getAllDecisions,
-  getContextRoles,
+  getChannelRoles,
   hierarchy,
   type PermissionTopology,
   type PermissionValue,
   type ProductEntityType,
+  type PublicReadGrants,
   resolvePermission,
   type SubjectForPermission,
   toColumnName,
@@ -42,13 +44,21 @@ import { buildCollectionReadWhere } from './row-predicates';
  * policy sets (including row-conditional `'own'` grants), memberships and actors, and
  * asserts the three paths agree row-for-row.
  *
+ * The scenario space deliberately varies BOTH axes that previously went unexercised, each of
+ * which hid a real divergence:
+ * - `isSystemAdmin` — the collection path took no admin flag at all, so a sysadmin (who passes
+ *   `orgGuard` with no membership) got an empty list while single-row reads of the same rows
+ *   succeeded.
+ * - public read grants — the collection path never compiled a public clause, so a row published
+ *   via `publicAt` was readable single-row and over SSE, but silently absent from every list.
+ *
  * Config-adaptive: the scenario space is derived from `attachment`'s real ancestor chain, so it
  * runs on any fork. A fork with a nested context (raak: `project → organization`) exercises the
  * sub-context narrowing; an org-only fork (cella: `organization`) skips it (`runIf`).
  */
 
 // attachment's ancestor chain, most-specific → root. raak: [project, organization]; cella: [organization].
-const CHAIN = hierarchy.getOrderedAncestors('attachment') as ContextEntityType[];
+const CHAIN = hierarchy.getOrderedAncestors('attachment') as ChannelEntityType[];
 const ROOT = CHAIN[CHAIN.length - 1]; // organization (the collection is scoped to one root instance)
 const SUB = CHAIN.length > 1 ? CHAIN[0] : null; // the narrowable sub-context (project) — null on an org-only fork
 const ROOT_ID = 'org1';
@@ -69,6 +79,8 @@ const rootColumnName = toColumnName(rootIdKey);
 const baseColumns = {
   id: varchar('id').primaryKey(),
   createdBy: varchar('created_by'),
+  // Public readability, denormalized onto the row exactly as `productEntityColumns` carries it.
+  publicAt: varchar('public_at'),
   [rootIdKey]: varchar(rootColumnName).notNull(),
 };
 const parityTable = pgTable(
@@ -76,27 +88,33 @@ const parityTable = pgTable(
   subIdKey && subColumnName ? { ...baseColumns, [subIdKey]: varchar(subColumnName).notNull() } : baseColumns,
 );
 // The sub-context column passed to `buildCollectionReadWhere`. On an org-only fork the read is
-// org-wide (subContextIds always undefined/[]), so this column is never referenced — `id` stands in.
-const subContextColumn = (
+// org-wide (subChannelIds always undefined/[]), so this column is never referenced — `id` stands in.
+const subChannelColumn = (
   subIdKey ? (parityTable as unknown as Record<string, PgColumn>)[subIdKey] : parityTable.id
 ) as PgColumn;
 
 const USERS = ['u1', 'u2'] as const;
 
+const PUBLIC_AT = '2026-07-06T12:00:00Z';
+
 interface ParityRow {
   id: string;
-  subContextId: string | null;
+  subChannelId: string | null;
   createdBy: string | null;
+  publicAt: string | null;
 }
 
-/** Fixed row set: every sub-context (or the single org) × creator. */
+/** Fixed row set: every sub-context (or the single org) × creator × published-or-not. */
 const SUB_SLOTS: (string | null)[] = SUB ? SUB_INSTANCES : [null];
-const ROWS: ParityRow[] = SUB_SLOTS.flatMap((subContextId) =>
-  [...USERS, null].map((createdBy) => ({
-    id: `${subContextId ?? 'root'}:${createdBy ?? 'nobody'}`,
-    subContextId,
-    createdBy,
-  })),
+const ROWS: ParityRow[] = SUB_SLOTS.flatMap((subChannelId) =>
+  [...USERS, null].flatMap((createdBy) =>
+    [null, PUBLIC_AT].map((publicAt) => ({
+      id: `${subChannelId ?? 'root'}:${createdBy ?? 'nobody'}:${publicAt ? 'public' : 'private'}`,
+      subChannelId,
+      createdBy,
+      publicAt,
+    })),
+  ),
 );
 
 /** Deterministic PRNG (mulberry32) so failures reproduce exactly. */
@@ -126,7 +144,7 @@ const randomPolicies = (random: () => number): AccessPolicies =>
     if (subject.name !== 'attachment') return;
     const builders = contexts as unknown as Record<string, Record<string, (perms: { read: PermissionValue }) => void>>;
     for (const ctx of CHAIN) {
-      for (const role of getContextRoles(ctx)) {
+      for (const role of getChannelRoles(ctx)) {
         builders[ctx][role]({ read: randomReadValue(random) });
       }
     }
@@ -136,17 +154,30 @@ interface Scenario {
   policies: AccessPolicies;
   memberships: MembershipBaseModel[];
   userId: string | undefined;
+  isSystemAdmin: boolean;
+  /** Public read grant for `attachment`, or none. */
+  publicGrants: PublicReadGrants;
 }
 
-const membership = (contextType: ContextEntityType, contextId: string, role: string): MembershipBaseModel =>
+/** The scenario's actor, in the shape every enforcement path now demands. */
+const scenarioActor = (scenario: Scenario): Actor =>
+  scenario.userId === undefined
+    ? { anonymous: true }
+    : { userId: scenario.userId, isSystemAdmin: scenario.isSystemAdmin };
+
+const membership = (channelType: ChannelEntityType, channelId: string, role: string): MembershipBaseModel =>
   ({
-    id: `mem-${contextType}-${contextId}-${role}`,
+    id: `mem-${channelType}-${channelId}-${role}`,
     userId: 'actor',
-    contextType,
-    contextId,
+    channelType,
+    channelId,
     organizationId: ROOT_ID,
     role,
   }) as unknown as MembershipBaseModel;
+
+/** A public read grant on `attachment`, in ~30% of scenarios. */
+const randomPublicGrants = (random: () => number): PublicReadGrants =>
+  random() < 0.3 ? { attachment: 'publicSelf' } : {};
 
 const randomScenario = (random: () => number): Scenario => {
   const anonymous = random() < 0.1;
@@ -155,20 +186,26 @@ const randomScenario = (random: () => number): Scenario => {
       policies: randomPolicies(random),
       memberships: [],
       userId: undefined,
+      // An anonymous actor is never a system admin — the union makes that unrepresentable.
+      isSystemAdmin: false,
+      publicGrants: randomPublicGrants(random),
     };
   }
 
   const memberships: MembershipBaseModel[] = [];
-  if (random() < 0.4) memberships.push(membership(ROOT, ROOT_ID, pick(random, getContextRoles(ROOT))));
+  if (random() < 0.4) memberships.push(membership(ROOT, ROOT_ID, pick(random, getChannelRoles(ROOT))));
   if (SUB) {
     for (const subId of SUB_INSTANCES) {
-      if (random() < 0.4) memberships.push(membership(SUB, subId, pick(random, getContextRoles(SUB))));
+      if (random() < 0.4) memberships.push(membership(SUB, subId, pick(random, getChannelRoles(SUB))));
     }
   }
   return {
     policies: randomPolicies(random),
     memberships,
     userId: pick(random, USERS),
+    // Sysadmins frequently hold NO membership — the exact shape that produced the empty-list bug.
+    isSystemAdmin: random() < 0.15,
+    publicGrants: randomPublicGrants(random),
   };
 };
 
@@ -176,7 +213,9 @@ const rowSubject = (row: ParityRow): SubjectForPermission => ({
   entityType: 'attachment',
   id: row.id,
   createdBy: row.createdBy,
-  contextIds: { [ROOT]: ROOT_ID, ...(SUB && row.subContextId !== null ? { [SUB]: row.subContextId } : {}) },
+  channelIds: { [ROOT]: ROOT_ID, ...(SUB && row.subChannelId !== null ? { [SUB]: row.subChannelId } : {}) },
+  // Row data every row-derived rule reads: `'own'` via createdBy, public read via publicAt.
+  row: { createdBy: row.createdBy, publicAt: row.publicAt },
 });
 
 /** Path 1: the engine's per-row read decision. */
@@ -185,6 +224,8 @@ const engineReadableIds = (scenario: Scenario): Set<string> => {
   for (const row of ROWS) {
     const { can } = getAllDecisions(scenario.policies, scenario.memberships, rowSubject(row), {
       userId: scenario.userId,
+      isSystemAdmin: scenario.isSystemAdmin,
+      publicGrants: scenario.publicGrants,
     });
     if (can.read) readable.add(row.id);
   }
@@ -193,8 +234,15 @@ const engineReadableIds = (scenario: Scenario): Set<string> => {
 
 /** Path 2: the compiled SQL predicate executed against Postgres. */
 const sqlReadableIds = async (scenario: Scenario): Promise<Set<string>> => {
-  const filter = resolveCollectionReadFilterForPolicies(scenario.policies, scenario.memberships, 'attachment', ROOT_ID);
-  const where = buildCollectionReadWhere(filter, parityTable, subContextColumn, scenario.userId);
+  const filter = resolveCollectionReadFilterForPolicies({
+    policies: scenario.policies,
+    memberships: scenario.memberships,
+    entityType: 'attachment',
+    organizationId: ROOT_ID,
+    actor: scenarioActor(scenario),
+    publicGrants: scenario.publicGrants,
+  });
+  const where = buildCollectionReadWhere(filter, parityTable, subChannelColumn, scenarioActor(scenario));
 
   if (where.kind === 'none') return new Set();
   const query = seedDb.select({ id: parityTable.id }).from(parityTable);
@@ -209,6 +257,7 @@ beforeAll(async () => {
     create table test_permission_parity_rows (
       id varchar primary key,
       created_by varchar,
+      public_at varchar,
       ${rootColumnName} varchar not null${subColumnName ? `,\n      ${subColumnName} varchar not null` : ''}
     )
   `),
@@ -216,8 +265,9 @@ beforeAll(async () => {
   const values = ROWS.map((r) => ({
     id: r.id,
     createdBy: r.createdBy,
+    publicAt: r.publicAt,
     [rootIdKey]: ROOT_ID,
-    ...(subIdKey && r.subContextId !== null ? { [subIdKey]: r.subContextId } : {}),
+    ...(subIdKey && r.subChannelId !== null ? { [subIdKey]: r.subChannelId } : {}),
   }));
   await seedDb.insert(parityTable).values(values as (typeof parityTable.$inferInsert)[]);
 });
@@ -233,8 +283,10 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
     for (let i = 0; i < 250; i++) {
       const scenario = randomScenario(random);
       const label = `seed 0xa11ce scenario ${i} (memberships: ${scenario.memberships
-        .map((m) => `${m.contextType}:${m.contextId}:${m.role}`)
-        .join(', ')}; user: ${scenario.userId ?? 'anonymous'})`;
+        .map((m) => `${m.channelType}:${m.channelId}:${m.role}`)
+        .join(', ')}; user: ${scenario.userId ?? 'anonymous'}; sysadmin: ${scenario.isSystemAdmin}; public: ${
+        scenario.publicGrants.attachment ?? 'none'
+      })`;
 
       // Engine ⊆⊇ SQL: identical readable row sets.
       const fromEngine = engineReadableIds(scenario);
@@ -243,15 +295,21 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
 
       // Engine ⊆⊇ compute-can: per single membership, the frontend-resolved state must
       // match the engine's decision for every row in that membership's scope.
+      //
+      // This leg is membership-only by construction: `computeCan` derives a can-map from ONE
+      // membership's policy row, so it models neither the system-admin bypass (the frontend has
+      // `computeSystemAdminCan` for that) nor membership-independent public grants. Both sides
+      // are therefore evaluated with neither, which keeps the comparison meaningful instead of
+      // trivially true.
       for (const m of scenario.memberships) {
-        const canMap = computeCan(m.contextType as ContextEntityType, m, scenario.policies);
+        const canMap = computeCan(m.channelType as ChannelEntityType, m, scenario.policies);
         const state = canMap.attachment?.read ?? false;
-        const rowsInScope = m.contextType === ROOT ? ROWS : ROWS.filter((r) => r.subContextId === m.contextId);
+        const rowsInScope = m.channelType === ROOT ? ROWS : ROWS.filter((r) => r.subChannelId === m.channelId);
 
         for (const row of rowsInScope) {
           const resolved = resolvePermission(state, row.createdBy, scenario.userId);
           const { can } = getAllDecisions(scenario.policies, [m], rowSubject(row), { userId: scenario.userId });
-          expect(resolved, `${label}; membership ${m.contextType}:${m.contextId}:${m.role}; row ${row.id}`).toBe(
+          expect(resolved, `${label}; membership ${m.channelType}:${m.channelId}:${m.role}; row ${row.id}`).toBe(
             can.read,
           );
         }
@@ -267,30 +325,30 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
 
       for (let i = 0; i < 100; i++) {
         const scenario = randomScenario(random);
-        const requestedSubContext = pick(random, SUB_INSTANCES);
+        const requestedSubChannel = pick(random, SUB_INSTANCES);
 
         let filter: ReturnType<typeof resolveCollectionReadFilterForPolicies>;
         try {
-          filter = resolveCollectionReadFilterForPolicies(
-            scenario.policies,
-            scenario.memberships,
-            'attachment',
-            ROOT_ID,
-            {
-              subContextId: requestedSubContext,
-            },
-          );
+          filter = resolveCollectionReadFilterForPolicies({
+            policies: scenario.policies,
+            memberships: scenario.memberships,
+            entityType: 'attachment',
+            organizationId: ROOT_ID,
+            actor: scenarioActor(scenario),
+            publicGrants: scenario.publicGrants,
+            requested: { subChannelId: requestedSubChannel },
+          });
         } catch {
           // 403: no scope at all for the requested sub-context. The engine must agree that
           // no row of it is readable.
           const fromEngine = engineReadableIds(scenario);
-          for (const row of ROWS.filter((r) => r.subContextId === requestedSubContext)) {
+          for (const row of ROWS.filter((r) => r.subChannelId === requestedSubChannel)) {
             expect(fromEngine.has(row.id), `seed 0xbee5 scenario ${i} row ${row.id}`).toBe(false);
           }
           continue;
         }
 
-        const where = buildCollectionReadWhere(filter, parityTable, subContextColumn, scenario.userId);
+        const where = buildCollectionReadWhere(filter, parityTable, subChannelColumn, scenarioActor(scenario));
         const fromSqlAll =
           where.kind === 'none'
             ? new Set<string>()
@@ -304,9 +362,9 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
         // Narrowed SQL result == engine-readable rows of the requested sub-context.
         const fromEngine = engineReadableIds(scenario);
         const expected = new Set(
-          ROWS.filter((r) => r.subContextId === requestedSubContext && fromEngine.has(r.id)).map((r) => r.id),
+          ROWS.filter((r) => r.subChannelId === requestedSubChannel && fromEngine.has(r.id)).map((r) => r.id),
         );
-        expect(fromSqlAll, `seed 0xbee5 scenario ${i} sub-context ${requestedSubContext}`).toEqual(expected);
+        expect(fromSqlAll, `seed 0xbee5 scenario ${i} sub-context ${requestedSubChannel}`).toEqual(expected);
       }
     });
   });
@@ -326,25 +384,25 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
 const deepRoles = createRoleRegistry(['admin', 'member', 'staff', 'student', 'owner', 'follower'] as const);
 const deepHierarchy = createEntityHierarchy(deepRoles)
   .user()
-  .context('organization', { parent: null, roles: ['admin', 'member'] })
-  .context('course', { parent: 'organization', roles: ['staff', 'student'] })
-  .context('courseSection', { parent: 'course', roles: ['staff', 'student'] })
-  .context('project', { parent: 'courseSection', roles: ['owner', 'follower'] })
+  .channel('organization', { parent: null, roles: ['admin', 'member'] })
+  .channel('course', { parent: 'organization', roles: ['staff', 'student'] })
+  .channel('courseSection', { parent: 'course', roles: ['staff', 'student'] })
+  .channel('project', { parent: 'courseSection', roles: ['owner', 'follower'] })
   .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection', 'course'] })
   .build();
 const deepTopology: PermissionTopology = { hierarchy: deepHierarchy };
 
-type DeepContextType = 'organization' | 'course' | 'courseSection' | 'project';
+type DeepChannelType = 'organization' | 'course' | 'courseSection' | 'project';
 const DEEP_ENTITY_TYPES = ['user', 'organization', 'course', 'courseSection', 'project', 'item'] as const;
-const DEEP_CONTEXT_ROLES = {
+const DEEP_CHANNEL_ROLES = {
   organization: ['admin', 'member'],
   course: ['staff', 'student'],
   courseSection: ['staff', 'student'],
   project: ['owner', 'follower'],
-} as const satisfies Record<DeepContextType, readonly string[]>;
+} as const satisfies Record<DeepChannelType, readonly string[]>;
 const DEEP_ITEM = 'item' as unknown as ProductEntityType;
 
-// Column keys follow the `${contextType}Id` convention `buildCollectionReadWhere` falls
+// Column keys follow the `${channelType}Id` convention `buildCollectionReadWhere` falls
 // back to for topology levels absent from `appConfig.entityIdColumnKeys`.
 const deepParityTable = pgTable('test_permission_parity_deep_rows', {
   id: varchar('id').primaryKey(),
@@ -387,28 +445,28 @@ const DEEP_ROWS: DeepParityRow[] = [...USERS, null].flatMap((createdBy) =>
 );
 
 /** Policies for `item` over the synthetic topology, one read cell per context × role. */
-const deepPolicies = (readValue: (contextType: DeepContextType, role: string) => PermissionValue): AccessPolicies =>
+const deepPolicies = (readValue: (channelType: DeepChannelType, role: string) => PermissionValue): AccessPolicies =>
   configureAccessPolicies(
     DEEP_ENTITY_TYPES as unknown as readonly EntityType[],
     ({ subject, contexts }) => {
       if ((subject.name as string) !== 'item') return;
       const builders = contexts as unknown as Record<
-        DeepContextType,
+        DeepChannelType,
         Record<string, (perms: { read: PermissionValue }) => void>
       >;
-      for (const [contextType, roles] of Object.entries(DEEP_CONTEXT_ROLES) as [DeepContextType, readonly string[]][]) {
-        for (const role of roles) builders[contextType][role]({ read: readValue(contextType, role) });
+      for (const [channelType, roles] of Object.entries(DEEP_CHANNEL_ROLES) as [DeepChannelType, readonly string[]][]) {
+        for (const role of roles) builders[channelType][role]({ read: readValue(channelType, role) });
       }
     },
     deepTopology,
   );
 
-const deepMembership = (contextType: DeepContextType, contextId: string, role: string): MembershipBaseModel =>
+const deepMembership = (channelType: DeepChannelType, channelId: string, role: string): MembershipBaseModel =>
   ({
-    id: `mem-${contextType}-${contextId}-${role}`,
+    id: `mem-${channelType}-${channelId}-${role}`,
     userId: 'actor',
-    contextType,
-    contextId,
+    channelType,
+    channelId,
     organizationId: ROOT_ID,
     role,
   }) as unknown as MembershipBaseModel;
@@ -422,13 +480,13 @@ interface DeepScenario {
 const randomDeepScenario = (random: () => number): DeepScenario => {
   const memberships: MembershipBaseModel[] = [];
   if (random() < 0.5)
-    memberships.push(deepMembership('organization', ROOT_ID, pick(random, DEEP_CONTEXT_ROLES.organization)));
-  if (random() < 0.5) memberships.push(deepMembership('course', 'c1', pick(random, DEEP_CONTEXT_ROLES.course)));
-  if (random() < 0.3) memberships.push(deepMembership('course', 'c2', pick(random, DEEP_CONTEXT_ROLES.course)));
+    memberships.push(deepMembership('organization', ROOT_ID, pick(random, DEEP_CHANNEL_ROLES.organization)));
+  if (random() < 0.5) memberships.push(deepMembership('course', 'c1', pick(random, DEEP_CHANNEL_ROLES.course)));
+  if (random() < 0.3) memberships.push(deepMembership('course', 'c2', pick(random, DEEP_CHANNEL_ROLES.course)));
   if (random() < 0.5)
-    memberships.push(deepMembership('courseSection', 's1', pick(random, DEEP_CONTEXT_ROLES.courseSection)));
-  if (random() < 0.5) memberships.push(deepMembership('project', 'p1', pick(random, DEEP_CONTEXT_ROLES.project)));
-  if (random() < 0.3) memberships.push(deepMembership('project', 'p3', pick(random, DEEP_CONTEXT_ROLES.project)));
+    memberships.push(deepMembership('courseSection', 's1', pick(random, DEEP_CHANNEL_ROLES.courseSection)));
+  if (random() < 0.5) memberships.push(deepMembership('project', 'p1', pick(random, DEEP_CHANNEL_ROLES.project)));
+  if (random() < 0.3) memberships.push(deepMembership('project', 'p3', pick(random, DEEP_CHANNEL_ROLES.project)));
   return {
     policies: deepPolicies(() => randomReadValue(random)),
     memberships,
@@ -441,7 +499,7 @@ const deepRowSubject = (row: DeepParityRow): SubjectForPermission =>
     entityType: 'item',
     id: row.id,
     createdBy: row.createdBy,
-    contextIds: {
+    channelIds: {
       organization: ROOT_ID,
       course: row.courseId,
       courseSection: row.courseSectionId,
@@ -463,18 +521,22 @@ const deepEngineReadableIds = (scenario: DeepScenario, elevatedRoles?: readonly 
   return readable;
 };
 
+/** The deep scenario's actor. Deep chains exercise scope, not the admin bypass. */
+const deepActor = (scenario: DeepScenario): Actor =>
+  scenario.userId === undefined ? { anonymous: true } : { userId: scenario.userId, isSystemAdmin: false };
+
 /** Path 2: the compiled SQL predicate executed against Postgres, same topology. */
 const deepSqlReadableIds = async (scenario: DeepScenario, elevatedRoles?: readonly string[]): Promise<Set<string>> => {
-  const filter = resolveCollectionReadFilterForPolicies(
-    scenario.policies,
-    scenario.memberships,
-    DEEP_ITEM,
-    ROOT_ID,
-    undefined,
+  const filter = resolveCollectionReadFilterForPolicies({
+    policies: scenario.policies,
+    memberships: scenario.memberships,
+    entityType: DEEP_ITEM,
+    organizationId: ROOT_ID,
+    actor: deepActor(scenario),
     elevatedRoles,
-    deepTopology,
-  );
-  const where = buildCollectionReadWhere(filter, deepParityTable, deepParityTable.projectId, scenario.userId);
+    topology: deepTopology,
+  });
+  const where = buildCollectionReadWhere(filter, deepParityTable, deepParityTable.projectId, deepActor(scenario));
 
   if (where.kind === 'none') return new Set();
   const query = seedDb.select({ id: deepParityTable.id }).from(deepParityTable);
@@ -484,7 +546,7 @@ const deepSqlReadableIds = async (scenario: DeepScenario, elevatedRoles?: readon
 
 const deepScenarioLabel = (seed: string, i: number, scenario: DeepScenario): string =>
   `seed ${seed} scenario ${i} (memberships: ${scenario.memberships
-    .map((m) => `${m.contextType}:${m.contextId}:${m.role}`)
+    .map((m) => `${m.channelType}:${m.channelId}:${m.role}`)
     .join(', ')}; user: ${scenario.userId ?? 'anonymous'})`;
 
 beforeAll(async () => {
@@ -546,7 +608,7 @@ describe('elevatedRoles parity: home-scoped grants agree between engine and SQL'
 
   it('scopes a non-elevated course grant to course-HOMED rows only', async () => {
     const scenario: DeepScenario = {
-      policies: deepPolicies((contextType, role) => (contextType === 'course' && role === 'student' ? 1 : 0)),
+      policies: deepPolicies((channelType, role) => (channelType === 'course' && role === 'student' ? 1 : 0)),
       memberships: [deepMembership('course', 'c1', 'student')],
       userId: 'u1',
     };
@@ -562,7 +624,7 @@ describe('elevatedRoles parity: home-scoped grants agree between engine and SQL'
 
   it('keeps subtree scope for a listed (staff) course grant', async () => {
     const scenario: DeepScenario = {
-      policies: deepPolicies((contextType, role) => (contextType === 'course' && role === 'staff' ? 1 : 0)),
+      policies: deepPolicies((channelType, role) => (channelType === 'course' && role === 'staff' ? 1 : 0)),
       memberships: [deepMembership('course', 'c1', 'staff')],
       userId: 'u1',
     };
@@ -574,7 +636,7 @@ describe('elevatedRoles parity: home-scoped grants agree between engine and SQL'
 
   it("matches a home-scoped 'own' grant only on the author's home-level rows", async () => {
     const scenario: DeepScenario = {
-      policies: deepPolicies((contextType, role) => (contextType === 'course' && role === 'student' ? 'own' : 0)),
+      policies: deepPolicies((channelType, role) => (channelType === 'course' && role === 'student' ? 'own' : 0)),
       memberships: [deepMembership('course', 'c1', 'student')],
       userId: 'u1',
     };
@@ -602,52 +664,62 @@ describe('elevatedRoles parity: home-scoped grants agree between engine and SQL'
  * 2-level, unconditional org grants; a fork with a nested chain or `'own'` read
  * cells exercises those automatically via the CHAIN-derived scenario space).
  * Deep-chain and elevatedRoles decisions are asserted engine ≍ SQL above and reach
- * dispatch through the same `checkPermission` call. Rows carry no publicAt,
- * keeping public grants out of scope (collection SQL compiles no public clause).
+ * dispatch through the same `checkPermission` call.
+ *
+ * `isSystemAdmin` IS varied here: the bypass has to agree across all three paths, and the
+ * collection path used to have no admin flag at all. Public grants ride the real config
+ * (which declares none), so their parity is asserted in the synthetic block above, where the
+ * grants can actually be injected.
  ******************************************************************************/
 
 const realMembership = (
-  contextType: ContextEntityType,
-  contextId: string,
+  channelType: ChannelEntityType,
+  channelId: string,
   role: string,
   organizationId: string,
 ): MembershipBaseModel =>
   ({
-    id: `mem-${contextType}-${contextId}-${role}`,
+    id: `mem-${channelType}-${channelId}-${role}`,
     userId: 'actor',
-    contextType,
-    contextId,
+    channelType,
+    channelId,
     organizationId,
     role,
   }) as unknown as MembershipBaseModel;
 
-const randomRealScenario = (random: () => number): { memberships: MembershipBaseModel[]; userId: string } => {
+const randomRealScenario = (
+  random: () => number,
+): { memberships: MembershipBaseModel[]; userId: string; isSystemAdmin: boolean } => {
   const memberships: MembershipBaseModel[] = [];
-  if (random() < 0.5) memberships.push(realMembership(ROOT, ROOT_ID, pick(random, getContextRoles(ROOT)), ROOT_ID));
+  if (random() < 0.5) memberships.push(realMembership(ROOT, ROOT_ID, pick(random, getChannelRoles(ROOT)), ROOT_ID));
   // A grant in a DIFFERENT org must contribute nothing to this org's collection
   if (random() < 0.3)
-    memberships.push(realMembership(ROOT, 'org-other', pick(random, getContextRoles(ROOT)), 'org-other'));
+    memberships.push(realMembership(ROOT, 'org-other', pick(random, getChannelRoles(ROOT)), 'org-other'));
   if (SUB) {
     for (const subId of SUB_INSTANCES) {
-      if (random() < 0.4) memberships.push(realMembership(SUB, subId, pick(random, getContextRoles(SUB)), ROOT_ID));
+      if (random() < 0.4) memberships.push(realMembership(SUB, subId, pick(random, getChannelRoles(SUB)), ROOT_ID));
     }
   }
   // SSE subscribers are always authenticated; 'outsider' stands in for a user with no rows
-  return { memberships, userId: random() < 0.85 ? pick(random, USERS) : 'outsider' };
+  return {
+    memberships,
+    userId: random() < 0.85 ? pick(random, USERS) : 'outsider',
+    isSystemAdmin: random() < 0.15,
+  };
 };
 
 /** Context id columns as they appear on an activity event (and its row). */
-const rowContextColumns = (row: ParityRow): Record<string, unknown> => ({
+const rowChannelColumns = (row: ParityRow): Record<string, unknown> => ({
   [appConfig.entityIdColumnKeys[ROOT]]: ROOT_ID,
-  ...(subIdKey ? { [subIdKey]: row.subContextId } : {}),
+  ...(subIdKey ? { [subIdKey]: row.subChannelId } : {}),
 });
 
 const dispatchEvent = (row: ParityRow): AppStreamProductEvent =>
   ({
     entityType: 'attachment',
     subjectId: row.id,
-    ...rowContextColumns(row),
-    rowData: { id: row.id, createdBy: row.createdBy, ...rowContextColumns(row) },
+    ...rowChannelColumns(row),
+    rowData: { id: row.id, createdBy: row.createdBy, publicAt: row.publicAt, ...rowChannelColumns(row) },
   }) as unknown as AppStreamProductEvent;
 
 describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real app config', () => {
@@ -655,13 +727,15 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
     const random = mulberry32(0x3a11);
 
     for (let i = 0; i < 100; i++) {
-      const { memberships, userId } = randomRealScenario(random);
+      const { memberships, userId, isSystemAdmin } = randomRealScenario(random);
       const label = `seed 0x3a11 scenario ${i} (memberships: ${memberships
-        .map((m) => `${m.contextType}:${m.contextId}:${m.role}`)
-        .join(', ')}; user: ${userId})`;
+        .map((m) => `${m.channelType}:${m.channelId}:${m.role}`)
+        .join(', ')}; user: ${userId}; sysadmin: ${isSystemAdmin})`;
 
-      const filter = resolveCollectionReadFilter(memberships, 'attachment', ROOT_ID);
-      const where = buildCollectionReadWhere(filter, parityTable, subContextColumn, userId);
+      const actor: Actor = { userId, isSystemAdmin };
+
+      const filter = resolveCollectionReadFilter(memberships, 'attachment', ROOT_ID, actor);
+      const where = buildCollectionReadWhere(filter, parityTable, subChannelColumn, actor);
       const query = seedDb.select({ id: parityTable.id }).from(parityTable);
       const fromSql = new Set(
         where.kind === 'none'
@@ -670,16 +744,10 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
       );
 
       for (const row of ROWS) {
-        // Same subject shape dispatch builds: ancestor scope + createdBy + the row itself
-        const subject = { ...rowSubject(row), row: { createdBy: row.createdBy } };
-        const engineAllowed = checkPermission(memberships, 'read', subject, {
-          isSystemAdmin: false,
-          userId,
-        }).isAllowed;
-        const dispatchAllowed = canReceiveEntityEvent(
-          { userId, isSystemAdmin: false, memberships },
-          dispatchEvent(row),
-        );
+        // Same subject shape dispatch builds: ancestor scope + the row itself
+        const subject = rowSubject(row);
+        const engineAllowed = checkPermission(memberships, 'read', subject, actor).isAllowed;
+        const dispatchAllowed = canReceiveEntityEvent({ userId, isSystemAdmin, memberships }, dispatchEvent(row));
 
         expect(dispatchAllowed, `${label} → row ${row.id} dispatch-vs-engine`).toBe(engineAllowed);
         expect(fromSql.has(row.id), `${label} → row ${row.id} sql-vs-engine`).toBe(engineAllowed);

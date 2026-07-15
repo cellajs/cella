@@ -2,6 +2,7 @@ import type { SubjectForPermission } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { checkPermission } from '#/permissions';
+import { actorFrom } from '#/permissions/actor';
 import { validateAncestorScope } from '#/permissions/validate-ancestor-scope';
 
 /**
@@ -14,7 +15,6 @@ import { validateAncestorScope } from '#/permissions/validate-ancestor-scope';
  * Omitting a required ancestor (undefined) throws a 400 error to prevent silent fallback to a broader scope.
  */
 export const canCreateEntity = (ctx: AuthContext, entity: SubjectForPermission) => {
-  const isSystemAdmin = ctx.var.isSystemAdmin;
   const memberships = ctx.var.memberships;
 
   const { entityType } = entity;
@@ -23,7 +23,7 @@ export const canCreateEntity = (ctx: AuthContext, entity: SubjectForPermission) 
   validateAncestorScope(entity);
 
   // Permission check (system admin bypass is handled inside)
-  const { isAllowed } = checkPermission(memberships, 'create', entity, { isSystemAdmin });
+  const { isAllowed } = checkPermission(memberships, 'create', entity, actorFrom(ctx));
 
   // Deny if not allowed
   if (!isAllowed) {
@@ -33,7 +33,7 @@ export const canCreateEntity = (ctx: AuthContext, entity: SubjectForPermission) 
   const org = ctx.var.organization;
 
   // Defense in depth check: if entity has an organization scope, it must match context organization
-  const organizationId = entity.contextIds.organization;
+  const organizationId = entity.channelIds.organization;
   if (org && organizationId && organizationId !== org.id) {
     throw new AppError(409, 'organization_mismatch', 'error', { entityType });
   }

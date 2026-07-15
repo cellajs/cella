@@ -1,4 +1,5 @@
 import '~/lib/history-bind'; // Must run before otel/maple/router: they all patch history
+import { LucideProvider } from 'lucide-react';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Themer } from '~/modules/common/themer';
@@ -44,8 +45,10 @@ ReactDOM.createRoot(root, {
 }).render(
   <StrictMode>
     <Themer />
-    <QueryClientProvider>
-      <AppRouter />
-    </QueryClientProvider>
+    <LucideProvider strokeWidth={appConfig.theme.strokeWidth}>
+      <QueryClientProvider>
+        <AppRouter />
+      </QueryClientProvider>
+    </LucideProvider>
   </StrictMode>,
 );

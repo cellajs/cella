@@ -54,10 +54,10 @@ describe('Organization member previews (include=members)', async () => {
     await db.insert(membershipsTable).values({
       id: generateId(),
       userId,
-      contextId: orgId,
+      channelId: orgId,
       organizationId: orgId,
       tenantId: tenant.tenantId,
-      contextType: 'organization',
+      channelType: 'organization',
       role,
       displayOrder: 1,
       createdAt,

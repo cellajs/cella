@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Loader2Icon, PlusIcon } from 'lucide-react';
+import { LoaderCircleIcon, PlusIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Tenant } from 'sdk';
@@ -36,7 +36,7 @@ export function ManageDomainsContent({ tenant }: ManageDomainsContentProps) {
   return (
     <div className="relative space-y-4 pt-2">
       <Button ref={createButtonRef} onClick={openCreateDialog} className="flex gap-2">
-        <PlusIcon size={16} />
+        <PlusIcon />
         {t('c:create')}
       </Button>
 
@@ -45,7 +45,7 @@ export function ManageDomainsContent({ tenant }: ManageDomainsContentProps) {
 
       {isLoading && (
         <div className="flex justify-center py-4">
-          <Loader2Icon className="animate-spin text-muted-foreground" size={20} />
+          <LoaderCircleIcon className="icon-lg animate-spin text-muted-foreground" />
         </div>
       )}
 

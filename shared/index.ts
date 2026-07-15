@@ -7,7 +7,7 @@ export { hierarchy, roles } from './config/config.default';
 
 // Entity hierarchy types and builder functions
 export type {
-  ContextEntityView,
+  ChannelEntityView,
   EntityHierarchy,
   EntityKind,
   EntityView,
@@ -21,12 +21,12 @@ export {
 } from './src/config-builder/entity-hierarchy';
 
 // Row-to-context attribution (shared rule for CDC seq/counters, notifications, recalculation)
-export type { AncestorSource, ResolvedAncestor } from './src/config-builder/resolve-row-context';
+export type { AncestorSource, ResolvedAncestor } from './src/config-builder/resolve-row-channel';
 export {
-  possibleHomeContexts,
+  possibleHomeChannels,
   resolveDeepestAncestorId,
   resolveNonNullAncestors,
-} from './src/config-builder/resolve-row-context';
+} from './src/config-builder/resolve-row-channel';
 
 // Config builder types
 export type { AppServiceEndpointConfig, RequestLimitsConfig, RequiredConfig, S3Config, S3ConfigInput } from './src/config-builder/types';
@@ -36,8 +36,8 @@ export type {
   ActivityAction,
   ActivityEventType,
   ActivityVerb,
-  AncestorContextType,
-  ContextEntityType,
+  AncestorChannelType,
+  ChannelEntityType,
   EnabledOAuthProvider,
   EntityActionType,
   EntityIdColumnKey,
@@ -50,10 +50,10 @@ export type {
   MenuSection,
   NullableAncestorType,
   ProductEntityType,
-  RootContextType,
+  RootChannelType,
   SeenTrackedEntityType,
-  RelatableContextEntityType,
-  RelatedContextType,
+  RelatableChannelEntityType,
+  RelatedChannelType,
   ResourceType,
   Severity,
   SystemRole,
@@ -68,8 +68,8 @@ export type {
 export { activityActions, activityEventTypes, activityVerbs, actionToVerb, isValidEventType } from './types';
 
 export {
-  getContextRoles,
-  isContextEntity,
+  getChannelRoles,
+  isChannelEntity,
   isProductEntity,
 } from './src/entity-guards';
 
@@ -81,22 +81,23 @@ export type {
   AccessPolicyCallback,
   AccessPolicyConfiguration,
   AccessPolicyEntry,
-  ContextPolicyBuilder,
+  ChannelPolicyBuilder,
   EntityActionPermissions,
   NormalizedPermissionValue,
   PermissionValue,
   SubjectAccessPolicies,
 } from './src/permissions';
-export { isRowCondition, own, publicReadMatches } from './src/permissions';
-export type { ConditionActor, PublicReadGrants, PublicReadMode, RowCondition, RowConditionSqlForm, RowForCondition } from './src/permissions';
+export { isRowCondition, own, publicRow, rowPredicateMatches } from './src/permissions';
+export type { ConditionActor, PublicReadGrants, PublicReadMode, RowCondition, RowForCondition, RowPredicate } from './src/permissions';
 export { configureAccessPolicies, configurePermissions, getPolicyPermissions, getSubjectPolicies } from './src/permissions';
 export type { PermissionsConfigResult } from './src/permissions';
-export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './src/permissions';
+export { allActionsAllowed, allActionsDenied, createActionRecord, resolvePermission } from './src/permissions';
 export { accessPolicies, computeCan, publicReadGrants, elevatedRoles } from './src/permissions';
 export type { ActionPermissionState, EntityCanMap } from './src/permissions';
 
 // Permission engine (tier-neutral decision logic, shared by backend + yjs)
 export {
+  type Actor,
   buildSubject,
   buildSubjectFromEntity,
   type BatchPermissionResult,
@@ -114,14 +115,14 @@ export {
 } from './src/permissions';
 export type {
   ActionAttribution,
-  ContextEntityIdColumns,
-  ContextScope,
+  ChannelEntityIdColumns,
+  ChannelScope,
   GrantSource,
   PermissionCheckOptions,
   PermissionDecision,
   PermissionMembership,
   PermissionTopology,
-  ResolvedContextIds,
+  ResolvedChannelIds,
   SubjectForPermission,
 } from './src/permissions';
 

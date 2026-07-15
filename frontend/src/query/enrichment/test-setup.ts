@@ -51,8 +51,8 @@ export function mockRegisterEntityQueryKeys(entityType: string, keys: ReturnType
 
 interface TestMembership {
   organizationId: string;
-  contextType: string;
-  contextId: string;
+  channelType: string;
+  channelId: string;
   archived: boolean;
   muted: boolean;
   displayOrder: number;
@@ -63,8 +63,8 @@ interface TestMembership {
 export function makeMembership(entityId: string, overrides?: Partial<TestMembership>): TestMembership {
   return {
     organizationId: entityId,
-    contextType: 'organization',
-    contextId: entityId,
+    channelType: 'organization',
+    channelId: entityId,
     archived: false,
     muted: false,
     displayOrder: 0,
@@ -78,7 +78,7 @@ export function makeInfiniteData(items: { id: string; membership?: TestMembershi
 }
 
 export const mockAppConfig = {
-  contextEntityTypes: ['organization', 'workspace', 'project'] as string[],
+  channelEntityTypes: ['organization', 'workspace', 'project'] as string[],
   entityIdColumnKeys: { organization: 'organizationId', workspace: 'workspaceId', project: 'projectId' } as Record<
     string,
     string
@@ -103,8 +103,8 @@ const childrenMap: Record<string, string[]> = {
 };
 
 export const mockHierarchy = {
-  isContext(entityType: string): boolean {
-    return mockAppConfig.contextEntityTypes.includes(entityType);
+  isChannel(entityType: string): boolean {
+    return mockAppConfig.channelEntityTypes.includes(entityType);
   },
   getOrderedAncestors(entityType: string): string[] {
     const ancestors: string[] = [];
@@ -118,9 +118,9 @@ export const mockHierarchy = {
   hasAncestor(entityType: string, ancestor: string): boolean {
     return this.getOrderedAncestors(entityType).includes(ancestor);
   },
-  getOrderedDescendants(contextType: string): string[] {
+  getOrderedDescendants(channelType: string): string[] {
     const descendants: string[] = [];
-    const queue = [...(childrenMap[contextType] ?? [])];
+    const queue = [...(childrenMap[channelType] ?? [])];
     let i = 0;
     while (i < queue.length) {
       const current = queue[i++];
@@ -132,10 +132,10 @@ export const mockHierarchy = {
 };
 
 /** Stub computeCan, returns all-false for each entity type (self + descendants). */
-export function mockComputeCan(contextType: string): Record<string, Record<string, boolean>> {
+export function mockComputeCan(channelType: string): Record<string, Record<string, boolean>> {
   const denied = Object.fromEntries(mockAppConfig.entityActions.map((a) => [a, false]));
-  const map: Record<string, Record<string, boolean>> = { [contextType]: { ...denied } };
-  for (const d of mockHierarchy.getOrderedDescendants(contextType)) {
+  const map: Record<string, Record<string, boolean>> = { [channelType]: { ...denied } };
+  for (const d of mockHierarchy.getOrderedDescendants(channelType)) {
     map[d] = { ...denied };
   }
   return map;
