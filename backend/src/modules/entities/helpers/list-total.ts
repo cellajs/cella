@@ -1,6 +1,6 @@
 import type { EntityType } from 'shared';
 import type { DbContext } from '#/core/context';
-import { getOrgEntityCount } from '#/modules/entities/entities-queries';
+import { type EntityType, getOrgEntityCount } from '#/modules/entities/entities-queries';
 
 /**
  * Where a product list's `total` comes from — the caller picks one:
