@@ -3,6 +3,7 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { appStreamManager } from '~/query/realtime/stream-store';
+import { createNotFoundComponent } from '~/routes/route-utils';
 import { routeTree } from '~/routes/routeTree.gen';
 import type { BoundaryType } from '~/routes/types';
 import { setSkipPageEnter } from '~/utils/nav-transition';
@@ -20,6 +21,10 @@ const router = createRouter({
   defaultPreload: false,
   context: {},
   defaultPendingMinMs: 0,
+  // Fallback for not-found errors scoped to an intermediate route (e.g. an unmatched path under
+  // /_public/auth). Without this, TanStack renders its generic `<p>Not Found</p>` since the root
+  // route's notFoundComponent only handles not-founds attached to the root match.
+  defaultNotFoundComponent: createNotFoundComponent('public'),
 });
 
 /** Get the deepest boundary from a route match array (e.g. 'app' or 'public') */
