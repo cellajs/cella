@@ -5,6 +5,7 @@ import type { OperationResult } from '#/core/operation-result';
 import { tenantRead, tenantReadIncludingDeleted } from '#/db/tenant-context';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
+import { resolveListTotal } from '#/modules/entities/helpers/list-total';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { auditUserSelect, coalesceAuditUsers, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 import { actorFrom } from '#/permissions/actor';
@@ -71,29 +72,44 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   // Delta sync (seqCursor) must see tombstones so the client can remove soft-deleted attachments
   const read = seqCursor ? tenantReadIncludingDeleted : tenantRead;
 
+  // Where `total` comes from: delta reads discard it; an org-wide read with no search maps
+  // to the pre-computed `e:attachment` channel counter; anything narrower needs COUNT(*).
+  const isDelta = !!seqCursor;
+  const counterEligible = !isDelta && scopeWhere.kind === 'all' && !q?.trim();
+
   const { rawItems, total } = await read(ctx, async (readCtx) => {
     const { db } = readCtx.var;
     const { createdBy: _cb, updatedBy: _mb, ...attachmentCols } = getColumns(attachmentsTable);
 
     const whereClause = and(...filters);
 
-    const [rawItems, [{ total }]] = await Promise.all([
-      db
-        .select({
-          ...attachmentCols,
-          ...auditUserSelect,
-          viewCount: sql<number>`coalesce(${productCountersTable.viewCount}, 0)`.as('view_count'),
-        })
-        .from(attachmentsTable)
-        .leftJoin(productCountersTable, eq(productCountersTable.entityId, attachmentsTable.id))
-        .leftJoin(createdByUser, eq(createdByUser.id, attachmentsTable.createdBy))
-        .leftJoin(updatedByUser, eq(updatedByUser.id, attachmentsTable.updatedBy))
-        .where(whereClause)
-        .orderBy(...orderBy)
-        .limit(limit)
-        .offset(offset),
-      db.select({ total: count() }).from(attachmentsTable).where(whereClause),
-    ]);
+    const itemsQuery = db
+      .select({
+        ...attachmentCols,
+        ...auditUserSelect,
+        viewCount: sql<number>`coalesce(${productCountersTable.viewCount}, 0)`.as('view_count'),
+      })
+      .from(attachmentsTable)
+      .leftJoin(productCountersTable, eq(productCountersTable.entityId, attachmentsTable.id))
+      .leftJoin(createdByUser, eq(createdByUser.id, attachmentsTable.createdBy))
+      .leftJoin(updatedByUser, eq(updatedByUser.id, attachmentsTable.updatedBy))
+      .where(whereClause)
+      .orderBy(...orderBy)
+      .limit(limit)
+      .offset(offset);
+
+    const { items: rawItems, total } = await resolveListTotal({
+      ctx: readCtx,
+      itemsQuery,
+      isDelta,
+      counterEligible,
+      channelKey: organizationId,
+      entityType: 'attachment',
+      exactCount: async () => {
+        const [{ total }] = await db.select({ total: count() }).from(attachmentsTable).where(whereClause);
+        return total;
+      },
+    });
 
     return { rawItems, total };
   });
