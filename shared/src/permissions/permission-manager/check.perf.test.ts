@@ -1,5 +1,6 @@
-import { appConfig, type ChannelEntityType, configureAccessPolicies, type EntityRole } from 'shared';
+import { appConfig, type ChannelEntityType, type EntityRole } from 'shared';
 import { describe, expect, it } from 'vitest';
+import { configureAccessPolicies } from '../../testing/policies';
 import { getAllDecisions } from './check';
 import type { SubjectForPermission } from './types';
 

@@ -89,9 +89,9 @@ export type {
 } from './src/permissions';
 export { isRowCondition, own, publicRow, rowPredicateMatches } from './src/permissions';
 export type { ConditionActor, PublicReadGrants, PublicReadMode, RowCondition, RowForCondition, RowPredicate } from './src/permissions';
-export { configureAccessPolicies, configurePermissions, getPolicyPermissions, getSubjectPolicies } from './src/permissions';
+export { configurePermissions, getPolicyPermissions, getSubjectPolicies } from './src/permissions';
 export type { PermissionsConfigResult } from './src/permissions';
-export { allActionsAllowed, allActionsDenied, createActionRecord, resolvePermission } from './src/permissions';
+export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './src/permissions';
 export { accessPolicies, computeCan, publicReadGrants, elevatedRoles } from './src/permissions';
 export type { ActionPermissionState, EntityCanMap } from './src/permissions';
 

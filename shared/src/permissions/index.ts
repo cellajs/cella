@@ -15,9 +15,10 @@ export type { PublicReadGrants, PublicReadMode } from './public-read';
 export { isRowCondition, own, rowPredicateMatches } from './row-conditions';
 export type { ConditionActor, RowCondition, RowForCondition, RowPredicate } from './row-conditions';
 
-export { configureAccessPolicies, configurePermissions, getPolicyPermissions, getSubjectPolicies } from './access-policies';
+// `configureAccessPolicies` is test-only; it lives at `shared/testing/policies`, not on this barrel.
+export { configurePermissions, getPolicyPermissions, getSubjectPolicies } from './access-policies';
 export type { PermissionsConfigResult } from './access-policies';
-export { allActionsAllowed, allActionsDenied, createActionRecord, resolvePermission } from './action-helpers';
+export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './action-helpers';
 export { computeCan } from './compute-can';
 export type { EntityCanMap } from './compute-can';
 export { accessPolicies, publicReadGrants, elevatedRoles } from '../../config/permissions-config';

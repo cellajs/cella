@@ -6,7 +6,6 @@ import {
   appConfig,
   type ChannelEntityType,
   computeCan,
-  configureAccessPolicies,
   createEntityHierarchy,
   createRoleRegistry,
   type EntityType,
@@ -21,6 +20,7 @@ import {
   type SubjectForPermission,
   toColumnName,
 } from 'shared';
+import { configureAccessPolicies } from 'shared/testing/policies';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { seedDb } from '#/db/db';
 import { canReceiveEntityEvent } from '#/modules/entities/helpers/dispatch-to-stream';
@@ -588,6 +588,13 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
  * a product grant of a non-listed role speaks only for rows HOMED at its own
  * context level, while listed roles (admin/staff) keep subtree scope. Engine
  * (`getAllDecisions(…, { elevatedRoles })`) ≍ compiled SQL, row for row.
+ *
+ * FORK WATCH: cella ships `elevatedRoles: undefined` and a single channel level, so this
+ * behaviour is exercised ONLY by the synthetic deep topology below — never by cella's real
+ * config. The fork that actually turns it on (projectcampus: `['admin','staff']` over
+ * organization→course→courseSection→project, with `submission read:'own'` home-scoped) is
+ * covered by its own fork parity test. If this synthetic fixture and that real chain ever drift
+ * in shape, both suites stay green while the fork breaks — keep them shaped alike.
  ******************************************************************************/
 
 const SUBTREE_ROLES = ['admin', 'staff'] as const;

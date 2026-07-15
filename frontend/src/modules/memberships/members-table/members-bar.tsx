@@ -2,6 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { MailIcon, SquareXIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { isUnconditionalPermission } from 'shared';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { Export } from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -53,8 +54,9 @@ export const MembersTableBar = ({
   const { q, role, order, sort } = searchVars;
 
   const isFiltered = role !== undefined || !!q;
-  // Check if user can update this context entity (and thus manage its members)
-  const canUpdate = channelEntity.can?.[channelEntity.entityType]?.update ?? false;
+  // Managing members is a channel-scoped affordance (not a per-row question), and the enriched
+  // entity carries no `createdBy` to resolve `'own'` against — so gate on an unconditional grant.
+  const canUpdate = isUnconditionalPermission(channelEntity.can?.[channelEntity.entityType]?.update);
   const entityType = channelEntity.entityType;
 
   // Clear selected rows on search
