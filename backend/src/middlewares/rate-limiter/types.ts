@@ -4,6 +4,13 @@ import type { Env } from '#/core/context';
 
 export type RateLimitMode = 'limit' | 'success' | 'fail' | 'failseries';
 export type RateLimitIdentifier = 'ip' | 'email' | 'userId' | 'tenantId';
+/**
+ * One segment of a rate limit key: a single identifier, or a fallback chain where
+ * the first available identifier wins (e.g. `['userId', 'ip']` keys authenticated
+ * traffic per user and anonymous traffic per IP). A chain must resolve; a request
+ * matching none of its identifiers is rejected.
+ */
+export type RateLimitKeyPart = RateLimitIdentifier | RateLimitIdentifier[];
 export type Identifiers = Record<RateLimitIdentifier, string | null>;
 
 type LimiterStatusLists = {

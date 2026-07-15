@@ -42,7 +42,10 @@
       "required": false,
       "kind": "middleware",
       "values": {
-        "spamLimiter": { "name": "spam", "description": "Max 10 requests/hour per IP for email-sending endpoints" },
+        "spamLimiter": {
+          "name": "spam",
+          "description": "Max 10 requests/hour per user (per IP when anonymous) for email-sending endpoints"
+        },
         "emailEnumLimiter": { "name": "emailEnum", "description": "Blocks IP for 30 min after 5 consecutive failures" },
         "presignedUrlLimiter": {
           "name": "presignedUrl",
