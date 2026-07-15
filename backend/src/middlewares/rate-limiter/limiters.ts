@@ -5,12 +5,14 @@ import { bulkBodyLength } from '#/middlewares/rate-limiter/helpers';
 import { sendLockoutEmail } from '#/middlewares/rate-limiter/helpers/send-lockout-email';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 
-// TODO [#04] spam limiter might block legitimate users behind a shared IP. Can it use user id and fallback to IP?
 /**
- * Email spam limit for endpoints where emails are sent to others. Identifier: IP. Max 10 requests per hour. For sign up, public requests etc.
+ * Email spam limit for endpoints where emails are sent to others. Max 10 requests per hour.
+ * Keyed per user when authenticated, so invite flows behind a shared office/NAT IP get their
+ * own budget (and rotating IPs does not mint fresh buckets); falls back to IP for anonymous
+ * requests (sign up, public requests etc.).
  */
-export const spamLimiter = rateLimiter('success', 'spam', ['ip'], {
-  description: 'Max 10 requests/hour per IP for email-sending endpoints',
+export const spamLimiter = rateLimiter('success', 'spam', [['userId', 'ip']], {
+  description: 'Max 10 requests/hour per user (per IP when anonymous) for email-sending endpoints',
 });
 
 /**
@@ -34,7 +36,7 @@ export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
 /**
  * Presigned URL rate limiter to prevent abuse, falls back to IP address for anonymous requests
  */
-export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', ['userId'], {
+export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', [['userId', 'ip']], {
   limits: { points: 2000, duration: 60 * 60, blockDuration: 60 * 15 },
   description: 'Max 2000 requests/hour per user for presigned URLs',
 });

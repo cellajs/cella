@@ -6,7 +6,7 @@ import { syncFromDb, tryFastConsume } from '#/middlewares/rate-limiter/points-ca
 import type {
   RateLimiterHandler,
   RateLimiterOpts,
-  RateLimitIdentifier,
+  RateLimitKeyPart,
   RateLimitMode,
 } from '#/middlewares/rate-limiter/types';
 import { toRateLimitIp } from '#/utils/ip-subnet';
@@ -46,7 +46,8 @@ export const slowOptions = {
  *
  * @param mode - Rate limit mode that dictates how rate limiting is applied.
  * @param key - The key to identify the user or entity being rate-limited (e.g., user ID, email).
- * @param identifiers - `("ip" | "email")[]` A list of identifiers to consider when generating rate limit key.
+ * @param identifiers - Key parts concatenated into the rate limit key. Each part is a single
+ *   identifier or a fallback chain (see {@link RateLimitKeyPart}).
  * @param opts - Optional configuration: limits, name, and description.
  * @returns Middleware handler for rate limiting.
  * @link https://github.com/animir/node-rate-limiter-flexible#readme
@@ -54,7 +55,7 @@ export const slowOptions = {
 export const rateLimiter = (
   mode: RateLimitMode,
   key: string,
-  identifiers: RateLimitIdentifier[],
+  identifiers: RateLimitKeyPart[],
   opts?: RateLimiterOpts,
 ): RateLimiterHandler => {
   const { limits, functionName, name, description, onBlock, getConsumePoints, getPointsBudget } = opts ?? {};
@@ -66,45 +67,37 @@ export const rateLimiter = (
   const handler = xMiddleware(
     { functionName: functionName ?? `${key}Limiter`, type: 'x-rate-limiter', name: name ?? key, description },
     async (ctx, next) => {
-      // Extract identifiers from multiple sources
-      const extractedIdentifiers = await extractIdentifiers(ctx, identifiers);
+      // Extract every identifier any key part (or chain member) can use
+      const extractedIdentifiers = await extractIdentifiers(ctx, identifiers.flat());
 
-      // Stop if required identifiers are not available
-      if (identifiers.includes('ip') && !extractedIdentifiers.ip) {
-        throw new AppError(400, 'invalid_request', 'warn');
-      }
-      if (identifiers.includes('email') && !extractedIdentifiers.email) {
-        throw new AppError(400, 'invalid_request', 'warn');
-      }
-
-      // Generate rate limit key with fallback logic
+      // Generate rate limit key. Each part contributes one segment; a chain part
+      // uses its first available identifier (e.g. ['userId', 'ip'] keys signed-in
+      // traffic per user so shared-IP offices are not collectively throttled, and
+      // falls back to IP for anonymous requests).
       let rateLimitKey = '';
 
-      for (const identifier of identifiers) {
-        const value = extractedIdentifiers[identifier];
-        if (!value) continue;
+      for (const part of identifiers) {
+        const chain = Array.isArray(part) ? part : [part];
+        const identifier = chain.find((id) => extractedIdentifiers[id]);
 
-        switch (identifier) {
-          case 'ip': {
-            // Normalize so IPv6 clients cannot rotate addresses within their
-            // allocated /64 to evade auth rate limits.
-            rateLimitKey += `ip:${toRateLimitIp(value)}`;
-            break;
+        if (!identifier) {
+          // Chains and bare ip/email must resolve. Bare userId/tenantId keep their
+          // silent skip: pointsLimiter budgets fall back when tenant context is absent.
+          if (Array.isArray(part) || part === 'ip' || part === 'email') {
+            throw new AppError(400, 'invalid_request', 'warn');
           }
-          case 'email': {
-            rateLimitKey += `email:${value}`;
-            break;
-          }
-          case 'userId': {
-            rateLimitKey += `userId:${value}`;
-            break;
-          }
-          case 'tenantId': {
-            rateLimitKey += `tenantId:${value}`;
-            break;
-          }
+          continue;
         }
+
+        const value = extractedIdentifiers[identifier] as string;
+        // Normalize IPs so IPv6 clients cannot rotate addresses within their
+        // allocated /64 to evade auth rate limits.
+        rateLimitKey += `${identifier}:${identifier === 'ip' ? toRateLimitIp(value) : value}`;
       }
+
+      // An empty key would silently share one bucket across all traffic (e.g. a
+      // userId-keyed limiter on a public route) — treat it as a misconfiguration.
+      if (!rateLimitKey) throw new AppError(400, 'invalid_request', 'warn');
 
       // ── Fast path for `limit` mode (pointsLimiter) ──
       // Uses an in-process LRU counter to skip DB when the key is well under budget.
