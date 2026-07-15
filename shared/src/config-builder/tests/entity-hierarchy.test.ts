@@ -24,10 +24,10 @@ describe('EntityHierarchyBuilder', () => {
       }).toThrow('user() must be called before build()');
     });
 
-    it('throws if organization context is missing', () => {
+    it('throws if organization channel is missing', () => {
       expect(() => {
         createEntityHierarchy(roles).user().channel('workspace', { parent: null, roles: roles.all }).build();
-      }).toThrow('organization context is required');
+      }).toThrow('organization channel is required');
     });
 
     it('throws on duplicate entity name', () => {
@@ -49,7 +49,7 @@ describe('EntityHierarchyBuilder', () => {
       }).toThrow('references unknown parent "project"');
     });
 
-    it('throws if parent is not a context entity', () => {
+    it('throws if parent is not a channel entity', () => {
       expect(() => {
         createEntityHierarchy(roles)
           .user()
@@ -57,7 +57,7 @@ describe('EntityHierarchyBuilder', () => {
           .product('attachment', { parent: 'organization' })
           // @ts-expect-error - Testing runtime validation
           .product('file', { parent: 'attachment' });
-      }).toThrow('must be a context entity');
+      }).toThrow('must be a channel entity');
     });
 
     it('throws on invalid role', () => {
@@ -109,7 +109,7 @@ describe('EntityHierarchyBuilder', () => {
       expect(hierarchy.getKind('unknown')).toBeUndefined();
     });
 
-    it('isChannel returns true only for context entities', () => {
+    it('isChannel returns true only for channel entities', () => {
       expect(hierarchy.isChannel('organization')).toBe(true);
       expect(hierarchy.isChannel('project')).toBe(true);
       expect(hierarchy.isChannel('task')).toBe(false);
@@ -122,7 +122,7 @@ describe('EntityHierarchyBuilder', () => {
       expect(hierarchy.isProduct('organization')).toBe(false);
     });
 
-    it('getRoles returns roles for context entities', () => {
+    it('getRoles returns roles for channel entities', () => {
       expect(hierarchy.getRoles('organization')).toEqual(['admin', 'member']);
       expect(hierarchy.getRoles('project')).toEqual(['admin', 'member', 'guest']);
       expect(hierarchy.getRoles('task')).toEqual([]);
@@ -166,7 +166,7 @@ describe('EntityHierarchyBuilder', () => {
       expect(hierarchy.productTypes).toContain('attachment');
     });
 
-    it('relatableChannelTypes contains only context parents of products', () => {
+    it('relatableChannelTypes contains only channel parents of products', () => {
       // project is parent of task, label, attachment
       expect(hierarchy.relatableChannelTypes).toContain('project');
       // organization and workspace are NOT direct parents of any product
