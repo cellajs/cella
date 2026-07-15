@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.4.0](https://github.com/cellajs/cella/compare/0.3.5...0.4.0) (2026-07-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* large permission refactor ([#883](https://github.com/cellajs/cella/issues/883))
+
+### 🎉 New features
+
+* **docs:** derive page updatedAt from git (page + imported docs) ([#887](https://github.com/cellajs/cella/issues/887)) ([7064e0e](https://github.com/cellajs/cella/commit/7064e0ea577581c2d2e6285eab54159ff3119c60))
+* **infra:** LB path-begin routes for same-origin migration (option A, phase 0+1) ([#880](https://github.com/cellajs/cella/issues/880)) ([7c5b2fd](https://github.com/cellajs/cella/commit/7c5b2fd47ef73f19a8ba38c4063eb50d1b2c1485))
+* **permissions:** fork-safe hazard fixes + public-read migration tooling ([#885](https://github.com/cellajs/cella/issues/885)) ([88161b7](https://github.com/cellajs/cella/commit/88161b7b58c3ea6195e8f72a7ba01cace5fbc9b3))
+* same-origin phases 2+3 — url flip, cookie hardening, legacy-host redirects ([#881](https://github.com/cellajs/cella/issues/881)) ([5af3e56](https://github.com/cellajs/cella/commit/5af3e5606eb0a933f37ec677f3d8470c8d4e9ac1))
+
+
+### 🐞 Bug fixes
+
+* **auth:** preserve /api prefix in token links & add router not-found fallback ([#889](https://github.com/cellajs/cella/issues/889)) ([d64cc6a](https://github.com/cellajs/cella/commit/d64cc6a9cd61ec83c05874c2c6668faee9e642c0))
+* fix sync engine diagram ([92a2db3](https://github.com/cellajs/cella/commit/92a2db347b396aabef347749880e1e7eb7868bdb))
+* permission part one ([338a06c](https://github.com/cellajs/cella/commit/338a06c708ae73c1210e8e6f9e34fc59ebca0f83))
+
+
+### 🔧 Small improvements
+
+* code (comments) cleanup ([37c7d4f](https://github.com/cellajs/cella/commit/37c7d4fb2d9579d875a38243481185436af40bdc))
+* densify comment blocks, drop decorative banners ([#888](https://github.com/cellajs/cella/issues/888)) ([625a32e](https://github.com/cellajs/cella/commit/625a32e44513cdb14f773aaf0dd1377a18c414fd))
+* large permission refactor ([#883](https://github.com/cellajs/cella/issues/883)) ([6539f4f](https://github.com/cellajs/cella/commit/6539f4fd93203d29bdf6d627a23782b082970b5e))
+* narrow over-wide `| undefined` types ([#886](https://github.com/cellajs/cella/issues/886)) ([240f003](https://github.com/cellajs/cella/commit/240f003df2766fcdcd36290f7c77e3ce0d7e032b))
+* permissions ([cd99688](https://github.com/cellajs/cella/commit/cd9968813db042ac4c9c52e9cbce40436c11eb27))
+* permissions ([55276a1](https://github.com/cellajs/cella/commit/55276a182086013b0770b8227194cb6279bcae10))
+* remove parentRow and reduce footprint PermissionDecision ([b6dc3a0](https://github.com/cellajs/cella/commit/b6dc3a07e58d218150262574a243087b47910c74))
+* rename ContextEntity → ChannelEntity ([26b539a](https://github.com/cellajs/cella/commit/26b539a37ea4fb13d7d9d029816c19dadfea559b))
+* use [@see](https://github.com/see) / {[@link](https://github.com/link)} JSDoc tags for code references ([#890](https://github.com/cellajs/cella/issues/890)) ([31ae1b1](https://github.com/cellajs/cella/commit/31ae1b15e7c0968c4807f39750cb4302fce70f21))
+
 ## [0.3.5](https://github.com/cellajs/cella/compare/0.3.4...0.3.5) (2026-07-14)
 
 
