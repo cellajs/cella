@@ -14,12 +14,19 @@
  * import paths. It deliberately does NOT touch unrelated "context" (React context,
  * AuthContext, DbContext, TraceContext, ContextMenu, canvas getContext, tenant context, …).
  *
- * DB migration, i18n prose/values and doc prose are handled outside this codemod.
+ * DB migration, i18n prose/values, doc prose and the file renames (see README.md) are
+ * handled outside this codemod.
  *
- * Usage:  tsx shared/scripts/codemods/context-to-channel.ts [--dry] [root ...]
+ * Modes:
+ *   inventory — report only (no writes)
+ *   rewrite   — apply
+ *
+ * Usage (repo root):
+ *   pnpm exec tsx cella/migrations/2026-07-channel-entity-rename/context-to-channel.ts inventory <srcDir ...>
+ *   pnpm exec tsx cella/migrations/2026-07-channel-entity-rename/context-to-channel.ts rewrite  <srcDir ...>
  */
-import { existsSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 /** Whole-identifier allow-list: every "context"/"Context"/"CONTEXT" in these maps to channel. */
 export const IDENTIFIERS: readonly string[] = [
@@ -285,14 +292,15 @@ function walk(dir: string, files: string[]): void {
 }
 
 function main(): void {
-  const args = process.argv.slice(2);
-  const dry = args.includes('--dry');
-  const roots = args.filter((a) => !a.startsWith('--'));
-  const targets = roots.length ? roots : ['backend', 'cdc', 'frontend', 'shared', 'mcp', 'bench', 'yjs', 'studio'];
+  const mode = process.argv[2];
+  const roots = process.argv.slice(3);
+  if ((mode !== 'inventory' && mode !== 'rewrite') || roots.length === 0) {
+    throw new Error('usage: context-to-channel.ts <inventory|rewrite> <srcDir ...>');
+  }
+  const dry = mode === 'inventory';
 
-  const self = 'shared/scripts/codemods/context-to-channel.ts';
   const files: string[] = [];
-  for (const root of targets) {
+  for (const root of roots) {
     if (!existsSync(root)) continue;
     const st = statSync(root);
     if (st.isDirectory()) walk(root, files);
@@ -301,7 +309,7 @@ function main(): void {
 
   let changed = 0;
   for (const file of files) {
-    if (file.endsWith(self)) continue;
+    if (file.endsWith('context-to-channel.ts')) continue; // never rewrite this codemod
     const src = readFileSync(file, 'utf8');
     const next = transform(src);
     if (next !== src) {
@@ -311,30 +319,6 @@ function main(): void {
     }
   }
   console.info(`\n${changed} file(s) ${dry ? 'would change' : 'changed'} of ${files.length} scanned.`);
-}
-
-// Rename files on disk (import paths are rewritten by transform()).
-export function renameFiles(dryRun: boolean): void {
-  const renames: Array<[string, string]> = [
-    ['shared/src/config-builder/resolve-row-context.ts', 'shared/src/config-builder/resolve-row-channel.ts'],
-    ['shared/src/config-builder/tests/resolve-row-context.test.ts', 'shared/src/config-builder/tests/resolve-row-channel.test.ts'],
-    ['cdc/src/utils/context-columns.ts', 'cdc/src/utils/channel-columns.ts'],
-    ['backend/src/modules/entities/helpers/collect-sub-context-ids.ts', 'backend/src/modules/entities/helpers/collect-sub-channel-ids.ts'],
-    ['backend/src/modules/entities/context-counters-db.ts', 'backend/src/modules/entities/channel-counters-db.ts'],
-    ['backend/src/permissions/get-context-entity.ts', 'backend/src/permissions/get-channel-entity.ts'],
-    ['backend/src/schemas/context-entity-included.ts', 'backend/src/schemas/channel-entity-included.ts'],
-    ['backend/src/mocks/mock-context-entity-id-columns.ts', 'backend/src/mocks/mock-channel-entity-id-columns.ts'],
-    ['backend/src/db/utils/context-relation-columns.ts', 'backend/src/db/utils/channel-relation-columns.ts'],
-    ['backend/src/db/utils/context-relation-schema.ts', 'backend/src/db/utils/channel-relation-schema.ts'],
-    ['backend/src/db/utils/context-entity-columns.ts', 'backend/src/db/utils/channel-entity-columns.ts'],
-    ['frontend/src/utils/context-entity-route.ts', 'frontend/src/utils/channel-entity-route.ts'],
-    ['frontend/src/modules/navigation/menu-sheet/helpers/collect-context-ids.ts', 'frontend/src/modules/navigation/menu-sheet/helpers/collect-channel-ids.ts'],
-  ];
-  for (const [from, to] of renames) {
-    if (basename(from) === basename(to)) continue;
-    console.info(`${dryRun ? '[dry] ' : ''}rename ${from} -> ${to}`);
-    if (!dryRun) renameSync(from, to);
-  }
 }
 
 // Only run when invoked directly (not when imported for its exported helpers/tests).
