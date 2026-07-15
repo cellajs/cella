@@ -32,8 +32,7 @@ const DEVICE_ID_LIFESPAN = new TimeSpan(400, 'd');
 
 /**
  * Get or mint the opaque per-browser device id. Set only on successful sign-in (never for anonymous
- * visitors) and refreshed each sign-in so active devices never expire. The raw id lives only in this
- * signed, httpOnly cookie; the DB stores only a per-user HMAC of it (see {@link hashDeviceIdForUser}).
+ * visitors) and refreshed each sign-in so active devices never expire.
  */
 const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
   const existing = await getAuthCookie(ctx, 'device-id');
@@ -148,8 +147,7 @@ export const setUserSession = async (
   };
 
   if (type === 'regular') {
-    // A3 — a browser holds at most one live session: replace this device's previous one, so repeated
-    // sign-ins from the same browser don't stack up as unrelated rows.
+    // A3 — a browser holds at most one live session: repeated sign-ins from the same browser don't stack up as unrelated rows.
     if (session.deviceIdHash) {
       await db
         .delete(sessionsTable)
