@@ -1,5 +1,5 @@
 /**
- * D4 — 1 tenant = 1 organization. The unique constraint on organizations.tenant_id is the hard
+ * 1 tenant = 1 organization. The unique constraint on organizations.tenant_id is the hard
  * backstop for the create-organizations guard; this pins it at the DB level.
  *
  * Requires: PostgreSQL (core mode or higher)
@@ -14,7 +14,7 @@ import { clearDatabase } from './test-utils';
 
 afterEach(async () => await clearDatabase());
 
-describe('one organization per tenant (D4)', () => {
+describe('one organization per tenant', () => {
   it('rejects a second organization in the same tenant', async () => {
     // createTestOrganization provisions a fresh tenant with exactly one organization.
     const org = await createTestOrganization();

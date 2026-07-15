@@ -23,7 +23,7 @@ setMockContext('script');
 // Seed scripts use admin connection for privileged operations
 const db = seedDb;
 
-// D4 — 1 tenant = 1 organization. One org per tenant; keep ~100 orgs by using 100 tenants.
+// 1 tenant = 1 organization. One org per tenant; keep ~100 orgs by using 100 tenants.
 const TENANTS_COUNT = 100;
 const ORGANIZATIONS_PER_TENANT = 1;
 const MEMBERS_COUNT = 100;

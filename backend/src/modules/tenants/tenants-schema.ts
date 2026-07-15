@@ -77,7 +77,7 @@ export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
   status: tenantStatusSchema,
   subscriptionStatus: subscriptionStatusSchema,
   // Allowed sign-in strategies for the tenant's members (empty = all enabled). Settable now;
-  // enforcement (tenantGuard) is deferred to the SSO build (D6).
+  // enforcement (tenantGuard) is deferred to the SSO build.
   authStrategies: z.array(z.enum(authStrategiesEnum)),
 })
   .pick({

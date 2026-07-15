@@ -40,7 +40,7 @@ export async function startMcpWorker(): Promise<void> {
     await getPgBoss();
     baseLog.info('pg-boss started, queues ready');
 
-    // Phase 5: active job handlers will be registered here
+    // Active job handlers will be registered here (deferred)
     // boss.work('ai-yjs', { teamSize: 3, teamConcurrency: 3 }, yjsJobHandler);
     // boss.work('chat-retry', { teamSize: 2 }, chatRetryHandler);
   }

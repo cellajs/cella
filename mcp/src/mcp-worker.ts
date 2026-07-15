@@ -1,5 +1,3 @@
-// Thin entrypoint — delegates to backend/src/main.ts with MODE=mcp-worker.
-// All MCP worker code lives in backend/src/modules/mcp/worker/.
 import { config } from 'dotenv';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

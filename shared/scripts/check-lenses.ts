@@ -20,7 +20,7 @@ const DATED_LENS = /^\d{4}-\d{2}-\d{2}-.+\.ts$/;
 
 /** Frozen-envelope + reserved field names a lens delta must never rename to/from or add/drop. */
 const RESERVED_FIELDS = new Set<string>([
-  // Core / frozen envelope (D4)
+  // Core / frozen envelope (SCHEMA_EVOLUTION.md D4)
   'id',
   'stx',
   'seq',

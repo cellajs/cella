@@ -25,7 +25,7 @@ export async function createOrganizationsOp(ctx: AuthContext, rawItems: CreateOr
   // Count existing organizations in tenant
   const existingOrgsCount = await countOrgsInTenant(ctx, tenantId);
 
-  // D4 — 1 tenant = 1 organization. A hard structural invariant (unique index on
+  // 1 tenant = 1 organization. A hard structural invariant (unique index on
   // organizations.tenant_id is the backstop), so it binds system admins too, unlike the soft
   // per-tenant org quota below: a tenant holds at most one org, and a batch creates at most one.
   const tenantOrgSlots = Math.max(0, 1 - existingOrgsCount);

@@ -77,7 +77,7 @@ export const tenantGuard = xMiddleware(
       throw new AppError(403, 'forbidden', 'warn', { message: `Tenant is ${tenant.status}` });
     }
 
-    // TODO(sso): enforce tenant.authStrategies here (D6 / SURFCONEXT_OIDC §5.6). When the SSO build
+    // TODO(sso): enforce tenant.authStrategies here. When the SSO build
     // lands, reject a session whose authStrategy is not in the tenant's allowed set (empty = all) with
     // `403 sso_required` + a redirect hint to the tenant entry URL; system admins exempt (break-glass).
     // The policy column already exists on the tenant; nothing reads it yet, so this is inert for now.

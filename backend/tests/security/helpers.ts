@@ -39,7 +39,7 @@ export async function createTestTenant(_call: Call, label: string): Promise<Test
 
 /**
  * Creates a second, independent organization for cross-org tests. Under the 1 tenant = 1 organization
- * invariant (D4) each org lives in its own tenant, so this provisions a fresh tenant + org; the
+ * invariant each org lives in its own tenant, so this provisions a fresh tenant + org; the
  * returned organization carries its own `tenantId` (distinct from any existing tenant).
  */
 export async function createSecondOrg() {

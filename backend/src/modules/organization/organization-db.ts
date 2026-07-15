@@ -28,7 +28,7 @@ export const organizationsTable = snakeCase.table(
   (table) => [
     index('organizations_name_index').on(table.name.desc()),
     index('organizations_created_at_index').on(table.createdAt.desc()),
-    // D4 — 1 tenant = 1 organization: a tenant holds at most one org. This unique constraint is the
+    // 1 tenant = 1 organization: a tenant holds at most one org. This unique constraint is the
     // hard backstop for the guard in create-organizations; it also serves tenant_id lookups (so the
     // former non-unique organizations_tenant_id_index is dropped as redundant).
     unique('organizations_tenant_id_key').on(table.tenantId),
