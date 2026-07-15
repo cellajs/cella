@@ -1,26 +1,19 @@
 /**
- * Create (or reuse) a scoped IAM application `<slug>-vm-reader` and mint a fresh
+ * Create (or reuse) the scoped IAM application `<slug>-vm-reader` and mint a fresh
  * API key (deleting any orphans). The application's IAM **policy** is NOT created
- * here: it is declared as a Pulumi-managed `iam.Policy` resource
- * (`infra/resources/vm-iam.ts`) so `pulumi up` reconciles the permission sets on
- * every deploy and the VM's grant can never silently drift.
+ * here: it is a Pulumi-managed `iam.Policy` (`infra/resources/vm-iam.ts`) so
+ * `pulumi up` reconciles the permission sets (VM_PROJECT_PERMISSION_SETS in
+ * lib/scaleway/permissions.ts, the canonical manifest) on every deploy and the
+ * VM's grant can never silently drift.
  *
- * The VM reader identity is granted exactly these capabilities (by Pulumi):
- *   - ContainerRegistryReadOnly: docker pull from the project registry
- *   - SecretManagerReadOnly: list/describe runtime secrets by ID
- *   - SecretManagerSecretAccess: decrypt + read the runtime secret VALUES
+ * The VM reader is intentionally read-only (registry pull + Secret Manager
+ * read/decrypt) with NO write access to instances, the LB, or IAM: a compromised
+ * container can exfiltrate its own secrets but cannot provision infrastructure or
+ * escalate privileges.
  *
- * It intentionally has NO write access to anything: not instances, not the LB,
- * not IAM. A compromised container can exfiltrate its own secrets but cannot
- * provision infrastructure or escalate privileges.
- *
- * Used by the bootstrap command inside the "Rotate keys" path so both the CI key
- * and the VM key are provisioned atomically with a single IAM bootstrap credential.
- * Standalone usage: SCW_SECRET_KEY + SCW_DEFAULT_PROJECT_ID required.
- *
- * The shared provisioning flow lives in `lib/scaleway-iam.ts`; the VM-specific
- * permission sets live in `lib/permissions.ts` (the canonical IAM manifest),
- * which Pulumi consumes via `VM_PROJECT_PERMISSION_SETS`.
+ * Used by bootstrap's "Rotate keys" path so the CI key and VM key are provisioned
+ * atomically from one IAM bootstrap credential. Standalone: SCW_SECRET_KEY +
+ * SCW_DEFAULT_PROJECT_ID required.
  */
 
 import { pc } from 'shared/cli-utils/colors';

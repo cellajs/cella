@@ -1,10 +1,6 @@
 /**
- * Tenant route definitions for system admin operations.
- *
- * Tenants are system-level resources managed exclusively by admins.
- * These routes provide CRUD operations for tenant management.
- *
- * @see cella/ARCHITECTURE.md for architecture documentation
+ * Tenant CRUD routes — system-admin only (see `sysAdminGuard`).
+ * @see cella/ARCHITECTURE.md
  */
 
 import { createXRoute } from '#/core/x-routes';

@@ -19,19 +19,15 @@ export type GetServersFn = () => Promise<string[]>
 /** Resolve true once the new generation is serving the expected release (app /health gate). */
 export type HealthGateFn = () => Promise<boolean>
 
-// ---------------------------------------------------------------------------
 // Pure LB operations: one atomic `SetBackendServers` call each.
-// ---------------------------------------------------------------------------
 
 /** Contract the backend to serve ONLY the new generation (old removed, drains). */
 export async function contractBackend(setServers: SetServersFn, newIps: string[]): Promise<void> {
   await setServers(newIps)
 }
 
-// ---------------------------------------------------------------------------
 // The sequencer: orders the rollout steps over injected effects. Never touches
 // the network or a subprocess itself; that is the entrypoint's job.
-// ---------------------------------------------------------------------------
 
 export interface CutoverPlan {
   service: string
@@ -45,7 +41,7 @@ export interface CutoverPlan {
   /** Seconds to let the old generation drain after it is de-registered. */
   drainSeconds: number
 
-  // --- injected effects ---
+  // Injected effects
   /** Gate: resolves true once the new generation serves the expected SHA. Required. */
   healthGate: HealthGateFn
   /** lb-overlap: replace the LB backend server list atomically. Required for lb-overlap. */
@@ -151,14 +147,11 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
   return { ok: true, steps }
 }
 
-// ---------------------------------------------------------------------------
 // Impure edge: the real Scaleway `SetBackendServers` REST call.
-//
 // PUT /lb/v1/zones/{zone}/backends/{backendId}/servers   body: { server_ip: [...] }
 // replaces the whole server list in one atomic server-side operation (Scaleway
 // Load Balancer zoned API v1). Preview-gated: exercised only in a live deploy,
 // never by the unit tests (which inject `setServers`).
-// ---------------------------------------------------------------------------
 
 const LB_BASE = 'https://api.scaleway.com/lb/v1'
 
@@ -233,11 +226,9 @@ export function createLbGetServers(opts: LbSetServersOptions): GetServersFn {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Standalone entry point: wires the live effects and runs the cutover. The
 // `pulumi up` create/destroy bookends are CI-orchestrated around this call
 // (see .github/workflows/deploy.yml), keeping subprocess calls out of the core.
-// ---------------------------------------------------------------------------
 
 function parseIps(raw: string | undefined): string[] {
   return (raw ?? '')

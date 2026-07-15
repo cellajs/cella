@@ -11,9 +11,7 @@ import { requestRoutes } from '#/modules/requests/requests-routes';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 
-// ============================================
 // ActivityBus: link waitlist requests to invitation tokens
-// ============================================
 activityBus.on('inactive_membership.created', async (event: ActivityEvent) => {
   const membership = getEventData(event, 'inactive_membership');
   if (!membership?.tokenId || !membership.email) return;

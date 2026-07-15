@@ -39,14 +39,12 @@ function composePlaceholders(slug: string): string[] {
   return [...vars]
 }
 
-// ---------------------------------------------------------------------------
 // Registry bindings: resolve `@{<slug>.<prop>}` templates from the registry's
 // `bindings` field. Supported properties:
 //   @{<slug>.url}: the service's public URL from the endpoint registry
 //   @{<slug>.privateIp}: the service's current-generation private-network IP
 //   @{<slug>.port}: the service's health/app port
 //   @{self.<prop>}: the consuming service's own values
-// ---------------------------------------------------------------------------
 
 const BINDING_RE = /@\{([a-z]+)\.([a-zA-Z]+)\}/g
 const endpointBySlug = new Map(endpoints.map((e) => [e.slug, e]))

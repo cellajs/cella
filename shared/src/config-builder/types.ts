@@ -1,30 +1,12 @@
-/******************************************************************************
- * CONFIG BUILDER TYPES
- * Types for building and validating configuration.
- * Includes both external config interface and hierarchy-derived types.
- ******************************************************************************/
-
-/******************************************************************************
- * DEEP PARTIAL UTILITY
- ******************************************************************************/
-
 export type DeepPartial<T> = T extends object
   ? {
       [P in keyof T]?: DeepPartial<T[P]>;
     }
   : T;
 
-/******************************************************************************
- * CONFIG MODE & BASE TYPES
- ******************************************************************************/
-
 export type ConfigMode = 'development' | 'tunnel' | 'staging' | 'production' | 'test';
 export type BaseAuthStrategies = 'passkey' | 'oauth' | 'totp' | 'magic';
 export type BaseOAuthProviders = 'github' | 'google' | 'microsoft';
-
-/******************************************************************************
- * CONFIG SUB-TYPES
- ******************************************************************************/
 
 /** Input S3 config: only host and region are required, rest derived from slug in app-config */
 export interface S3ConfigInput {
@@ -132,12 +114,7 @@ export interface MenuStructureItem {
   carryRole?: boolean;
 }
 
-/******************************************************************************
- * CONFIG STRING ARRAYS
- * Type for all readonly string array properties in config.
- * Used as a single generic parameter to preserve literal types.
- ******************************************************************************/
-
+/** All readonly string-array config properties, grouped as one generic parameter so literal types survive. */
 export interface ConfigStringArrays {
   entityTypes: readonly string[];
   channelEntityTypes: readonly string[];
@@ -151,16 +128,10 @@ export interface ConfigStringArrays {
   uploadTemplateIds: readonly string[];
 }
 
-/******************************************************************************
- * REQUIRED CONFIG
- * Complete config type that forks must satisfy.
- * Use `satisfies RequiredConfig` in fork's default.ts for type enforcement.
- *
- * Generic parameter preserves literal types for Drizzle v1 strict enum typing.
- * When accessed via appConfig, arrays remain as literal tuples like ['organization']
- * instead of being widened to readonly string[].
- ******************************************************************************/
-
+/**
+ * The config a fork must satisfy (`satisfies RequiredConfig` in its default.ts). The generic keeps
+ * arrays as literal tuples (`['organization']`, not `readonly string[]`) so Drizzle v1 gets strict enums.
+ */
 export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArrays> {
   // Entity data model - use T['key'] to preserve literal types
   entityTypes: T['entityTypes'];

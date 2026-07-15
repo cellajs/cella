@@ -2,9 +2,7 @@ import pc from 'picocolors';
 import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 import type { GenerateScript } from '../types';
 
-// =============================================================================
-// PARTITION CONFIGURATION
-// =============================================================================
+// Partition configuration
 
 interface PartitionConfig {
   name: string;

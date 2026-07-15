@@ -50,12 +50,9 @@ export type SubjectAccessPolicies = AccessPolicyEntry[];
 export type AccessPolicies = Partial<Record<ChannelEntityType | ProductEntityType, SubjectAccessPolicies>>;
 
 /**
- * Context builder for fluent access policy configuration.
- * Maps entity roles to their permission setters.
- *
- * Permissions are partial: any action you omit defaults to `0` (denied). This lets a policy list
- * only the actions it grants (e.g. a channel entity's own ("self") rows can omit `create`, since
- * an entity can never be created from inside itself: creation is granted on ancestor rows).
+ * Fluent per-role permission setters for a context. Permissions are partial: any omitted action
+ * defaults to `0` (denied), so a policy lists only what it grants (e.g. a channel entity's own
+ * "self" rows omit `create` — creation is granted on ancestor rows, not from inside the entity).
  */
 export type ChannelPolicyBuilder = {
   [R in EntityRole]: (permissions: Partial<Record<EntityActionType, PermissionValue>>) => void;

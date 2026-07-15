@@ -18,10 +18,8 @@ import { getFlag, sleep } from './args'
 import { createLbGetServers, createLbSetServers, sequenceCutover } from './cutover'
 import { createFetchProbe, pollForVersion } from './wait-for-version'
 
-// ---------------------------------------------------------------------------
 // Control object (S3): the source of truth for rollout state. Lazily resolved;
 // null when no S3 credentials are present (the deploy then cannot record state).
-// ---------------------------------------------------------------------------
 let controlCtxPromise: Promise<ControlContext | null> | undefined
 
 function controlCtx(stack: string): Promise<ControlContext | null> {

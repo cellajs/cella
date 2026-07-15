@@ -37,7 +37,6 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   const appHost = serviceHost('frontend')
   const appIsAtApex = appHost === dnsZone
 
-  // ---------------------------------------------------------------------------
   // Public hosts: one DNS record + cert per unique HOSTNAME, not per service.
   // Under the same-origin model every path-routed service shares the app host,
   // and decommissioned service hosts (appConfig.legacyUrls) stay alive so their
@@ -46,7 +45,6 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   // service claims its host first (www stays `app-*`), and a host that moved
   // from endpoint to legacyUrls keeps its service's base name (api.example.com
   // stays `api-*`), so no DNS record or cert is replaced by the migration.
-  // ---------------------------------------------------------------------------
 
   interface PublicHost {
     host: string
@@ -75,17 +73,13 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   }
   const publicHosts = [...hostEntries.values()]
 
-  // -------------------------------------------------------------------------
   // LB IP (static public IPv4)
-  // -------------------------------------------------------------------------
 
   const lbIp = new scaleway.loadbalancers.Ip('lb-ip', {
     zone,
   })
 
-  // -------------------------------------------------------------------------
   // Load Balancer
-  // -------------------------------------------------------------------------
 
   const lb = new scaleway.loadbalancers.LoadBalancer('main-lb', {
     name: naming.resource('lb'),
@@ -98,11 +92,9 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     }],
   })
 
-  // -------------------------------------------------------------------------
   // DNS A Records: all point to the LB public IP.
   // Must exist BEFORE Let's Encrypt certificates, since Scaleway validates
   // the cert by resolving the FQDN to the LB IP at creation time.
-  // -------------------------------------------------------------------------
 
   const lbPublicIp = lb.ipAddress
 
@@ -146,12 +138,10 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     }, { dependsOn: [apexDns] })
   }
 
-  // -------------------------------------------------------------------------
   // Let's Encrypt certificates: gated on the DNS record being publicly
   // resolvable (not merely created) before Scaleway runs the ACME validation,
   // and gated after on `ready` status so an issuance failure surfaces AT the
   // cert with its ACME detail instead of at the frontend attach.
-  // -------------------------------------------------------------------------
 
   const certs = new Map<string, scaleway.loadbalancers.Certificate>()
   const certGates: CertReadyGate[] = []
@@ -181,7 +171,6 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     certGates.push(new CertReadyGate('apex-cert-ready', { certificateId: apexCert.id }, { dependsOn: [apexCert] }))
   }
 
-  // -------------------------------------------------------------------------
   // LB Backends: each targets the private IPs of its service's active VM
   // generation(s). Pulumi sets the initial list, then ignores live changes so
   // tasks/cutover.ts can perform explicit expand→health→contract handoff via
@@ -191,7 +180,6 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   // `onMarkedDownAction` follows the service's drainPolicy: HTTP services let
   // in-flight requests finish ('none'); WebSocket services shed sessions so
   // clients reconnect to the new generation ('shutdown_sessions').
-  // -------------------------------------------------------------------------
 
   const backends = new Map<ServiceName, scaleway.loadbalancers.Backend>()
   for (const service of lbServices) {
@@ -217,9 +205,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
 
   const defaultBackend = backends.get(defaultService.slug)!
 
-  // -------------------------------------------------------------------------
   // HTTPS Frontend (port 443): TLS termination + host-header routes
-  // -------------------------------------------------------------------------
 
   const allCertIds: pulumi.Input<string>[] = [...certs.values()].map((cert) => cert.id)
   if (apexCert) allCertIds.push(apexCert.id)
@@ -318,9 +304,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     })
   }
 
-  // -------------------------------------------------------------------------
   // HTTP Frontend (port 80): redirect all to HTTPS
-  // -------------------------------------------------------------------------
 
   const httpFrontend = new scaleway.loadbalancers.Frontend('http-frontend', {
     lbId: lb.id,
@@ -347,9 +331,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     },
   })
 
-  // -------------------------------------------------------------------------
   // Outputs: public URL per LB-exposed service (scheme from appConfig)
-  // -------------------------------------------------------------------------
 
   const serviceUrls: Record<string, pulumi.Output<string>> = {}
   for (const service of lbServices) {

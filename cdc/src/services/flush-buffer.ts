@@ -4,17 +4,11 @@ import { RESOURCE_LIMITS } from '../constants';
 import { cdcMetrics } from './cdc-metrics';
 
 /**
- * Cross-transaction micro-batching buffer.
- *
- * Accumulates surviving events (post-cascade-analysis) from multiple committed
- * transactions, then flushes them as merged groups after a configurable window.
- *
- * When windowMs is 0, events are processed immediately.
- * When windowMs > 0, events accumulate for up to windowMs before flushing,
- * amortizing DB roundtrips across independent single-row commits.
- *
- * Grouping uses tableMeta.type (works for both entities and resources)
- * combined with action.
+ * Cross-transaction micro-batching buffer. Accumulates surviving events
+ * (post-cascade-analysis) from multiple committed transactions and flushes them as merged
+ * groups. windowMs 0 flushes immediately; windowMs > 0 accumulates up to that window,
+ * amortizing DB roundtrips across independent single-row commits. Groups by tableMeta.type
+ * (works for both entities and resources) combined with action.
  */
 export class FlushBuffer {
   private pending: PendingEvent[] = [];

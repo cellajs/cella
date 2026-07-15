@@ -4,13 +4,7 @@ import type { TokenType } from 'shared';
 import type { ApiError } from '~/lib/api';
 import type { TokenData } from '~/modules/auth/types';
 
-/**
- *  Get token data by ID.
- *
- * @param type Type of the token
- * @param tokenId Token ID to check
- * @param enabled (Default true) Enable the query
- */
+/** Query token data by ID. */
 export const useGetTokenData = (
   type: TokenType,
   tokenId?: string,

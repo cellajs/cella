@@ -9,9 +9,7 @@ export type { Span };
 export { backendSpanNames as syncSpanNames, eventAttrs };
 export type SyncTraceContext = TraceContext;
 
-// ================================
-// OTel Metrics
-// ================================
+// OTel metrics
 
 const meter = meterProvider.getMeter('app-sync');
 
@@ -35,15 +33,11 @@ export const pgNotifyFallback = meter.createCounter('sync.pg_notify.fallback', {
   description: 'Times pg_notify was used as fallback (no CDC Worker)',
 });
 
-// ================================
-// OTel Tracer
-// ================================
+// OTel tracer
 
 const tracer = trace.getTracer('app-sync');
 
-// ================================
 // withSpan + startSyncSpan
-// ================================
 
 interface SpanAttrs {
   [key: string]: string | number | boolean | null | undefined;
@@ -100,9 +94,7 @@ export function startSyncSpan(
   return span;
 }
 
-// ================================
-// Metric Recording
-// ================================
+// Metric recording
 
 /** Record a CDC message received from CDC Worker. */
 export function recordMessageReceived(entityType: string): void {

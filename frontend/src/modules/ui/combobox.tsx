@@ -10,9 +10,7 @@ import { Button } from '~/modules/ui/button';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
-// ============================================================================
 // Styled base-ui Combobox primitives
-// ============================================================================
 
 const Combobox = ComboboxPrimitive.Root;
 
@@ -335,9 +333,7 @@ function ComboboxSearchInput({
   );
 }
 
-// ============================================================================
 // High-level ComboboxSelect: drop-in for form fields
-// ============================================================================
 
 interface ComboBoxOption {
   value: string;

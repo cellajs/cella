@@ -1,9 +1,7 @@
 export type TimeSpanUnit = 'ms' | 's' | 'm' | 'h' | 'd' | 'w';
 
 /**
- * Time span to represent a duration of time.
- * @param value - The value of the time span.
- * @param unit - The unit of the time span. Can be 'ms', 's', 'm', 'h', 'd', or 'w'.
+ * A duration of time, convertible between units.
  * @example
  * const timeSpan = new TimeSpan(1, 'h');
  * console.info(timeSpan.milliseconds()); // 3600000

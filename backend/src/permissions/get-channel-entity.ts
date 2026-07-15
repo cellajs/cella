@@ -16,23 +16,14 @@ export interface ValidChannelEntityResult<T extends ChannelEntityType> {
 }
 
 /**
- * Checks if current user has permission to perform a given action on a channel entity.
+ * Checks whether the current user may perform `action` on a channel entity, resolving it by ID (or
+ * slug when `bySlug`). Returns the entity plus the user's membership; throws 404 if not found, 403
+ * if not allowed.
  *
- * Resolves channel entity based on provided type and ID/slug, verifies user permissions
- * (including system admin), and retrieves user's membership for entity if applicable.
+ * `membership` may be `null` even when allowed — the user is a system admin, or an admin of a
+ * higher-level entity as defined in `permissions-config`.
  *
- * Returns resolved entity along with user's membership and a `can` object with all action permissions.
- * The membership may be `null` if action is allowed because user is a system admin or an admin
- * of a higher-level entity as defined in `permissions-config`.
- * Throws an error if entity cannot be found or user lacks required permissions.
- *
- *
- * @param ctx - Context with db, memberships, and isSystemAdmin set by guard middleware.
- * @param entityId - Entity's unique ID (or slug when bySlug is true).
- * @param entityType - Type of channel entity (e.g., organization, project).
- * @param action - Action to check (e.g., `"read" | "update" | "delete"`).
- * @param bySlug - If true, resolve by slug instead of ID.
- * @returns An object containing resolved entity, associated membership (or `null`), and can object.
+ * @param ctx - Context with memberships and isSystemAdmin set by the guard chain.
  */
 export const getValidChannelEntity = async <T extends ChannelEntityType>(
   ctx: AuthContext,

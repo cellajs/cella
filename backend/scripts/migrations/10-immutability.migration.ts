@@ -10,13 +10,9 @@ import {
 import type { GenerateScript } from '../types';
 
 /**
- * Immutability Triggers Migration
- *
- * Creates database triggers that prevent modification of identity columns
- * (id, tenant_id, organization_id, etc.) after row creation.
- *
- * This provides defense-in-depth protection against accidental or malicious
- * column modifications, even if someone uses admin bypass.
+ * Creates triggers that prevent modification of identity columns (id, tenant_id,
+ * organization_id, etc.) after row creation — defense-in-depth that holds even under
+ * admin bypass.
  */
 async function run() {
   const functionsSql = [

@@ -8,11 +8,9 @@ import { queryClient } from '~/query/query-client';
 import { buildMenuFromCache } from './build-menu-from-cache';
 
 /**
- * Ensures entity data is in the cache and returns the user menu.
- * Fetches memberships first so the cache subscriber (initChannelEntityEnrichment)
- * can enrich entity lists automatically, then delegates to buildMenuFromCache.
- *
- * @returns The menu data.
+ * Ensures entity data is in the cache and returns the user menu. Fetches memberships first so the
+ * cache subscriber (initChannelEntityEnrichment) can enrich entity lists, then delegates to
+ * buildMenuFromCache.
  */
 export async function getMenuData() {
   const userId = useUserStore.getState().user.id;

@@ -50,10 +50,7 @@ type RetryResult<T> =
 
 /**
  * Execute an async function with exponential backoff retry for transient errors.
- *
- * @param fn - The async function to execute
- * @param context - Context string for logging (e.g., "insert activity")
- * @returns RetryResult indicating success or failure with metadata
+ * @param context - label for logging (e.g., "insert activity")
  */
 export async function withRetry<T>(fn: () => Promise<T>, context: string): Promise<RetryResult<T>> {
   let lastError: Error = new Error('No attempts made');

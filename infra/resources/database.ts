@@ -10,9 +10,7 @@ const dbVolumeSize = infra.dbVolumeSize
 /** Database name derived from slug (e.g. 'cella') */
 const dbSlug = naming.slug.replace(/-/g, '_') // PostgreSQL identifiers can't have hyphens
 
-// ---------------------------------------------------------------------------
 // Passwords: one per role, each from stack config secret or generated.
-// ---------------------------------------------------------------------------
 
 // Resource names (`<role>-password`) are load-bearing: they are the shipped
 // Pulumi identities of the live credentials.
@@ -38,9 +36,7 @@ if (dbPublicEndpoint && !dbPublicAcl) {
   )
 }
 
-// ---------------------------------------------------------------------------
 // PostgreSQL Instance
-// ---------------------------------------------------------------------------
 
 const instance = new scaleway.databases.Instance('main-postgres', {
   name: naming.resource('postgres'),
@@ -79,9 +75,7 @@ if (dbPublicEndpoint && dbPublicAcl) {
   })
 }
 
-// ---------------------------------------------------------------------------
 // Database
-// ---------------------------------------------------------------------------
 
 const database = new scaleway.databases.Database('main-database', {
   instanceId: instance.id,
@@ -89,11 +83,9 @@ const database = new scaleway.databases.Database('main-database', {
   region,
 }, { aliases: [{ type: 'scaleway:index/database:Database' }] })
 
-// ---------------------------------------------------------------------------
 // Users: one per role, matching the PostgreSQL roles used by the application.
 // admin_role: migrations, seeds, system jobs, CDC worker (isAdmin gives BYPASSRLS + REPLICATION)
 // runtime_role: authenticated app requests, subject to RLS
-// ---------------------------------------------------------------------------
 
 const adminUser = new scaleway.databases.User('admin-user', {
   instanceId: instance.id,
@@ -111,10 +103,8 @@ const runtimeUser = new scaleway.databases.User('runtime-user', {
   region,
 })
 
-// ---------------------------------------------------------------------------
 // Privileges: each role gets 'all' on the database (fine-grained table
 // permissions are enforced by the RLS migration, not Scaleway-level grants)
-// ---------------------------------------------------------------------------
 
 new scaleway.databases.Privilege('admin-privilege', {
   instanceId: instance.id,
@@ -132,9 +122,7 @@ new scaleway.databases.Privilege('runtime-privilege', {
   region,
 })
 
-// ---------------------------------------------------------------------------
 // Exports
-// ---------------------------------------------------------------------------
 
 /** Database instance ID */
 export const instanceId = instance.id

@@ -145,16 +145,8 @@ export const organizationsSeed = async () => {
 };
 
 /**
- * Adds an admin membership to `adminMemberships`.
- * Conditions for adding:
- * - The organization must be in an even position.
- * - The number of existing admin memberships must be less than the system-defined limit.
- *
- * The function mutates the `adminMemberships` array by pushing a new, adjusted membership.
- *
- * @param adminUser - The admin user to assign the membership to.
- * @param organization - The organization the admin should be added to.
- * @param adminMemberships - An array tracking admin memberships already created.
+ * Push an admin membership onto `adminMemberships` (mutates it), but only when the organization
+ * is in an even position AND the existing admin-membership count is below the system limit.
  */
 const addAdminMembership = (
   adminUser: UserModel,

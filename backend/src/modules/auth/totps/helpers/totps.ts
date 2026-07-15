@@ -9,28 +9,14 @@ import { totpsTable } from '#/modules/auth/totps/totps-db';
 
 const { intervalInSeconds, digits, gracePeriodInSeconds } = appConfig.totpConfig;
 
-/**
- * Verifies a Time-based One-Time Password (TOTP) code.
- *
- * Decodes the secret from Base32 format.
- * Checks provided OTP against secret using configured interval, number of digits, and grace period.
- *
- * @param {string} otp - The TOTP code provided by the user.
- * @param {string} secret - The Base32-encoded shared secret.
- * @returns {boolean} - Returns `true` if the OTP is valid within the grace period, otherwise `false`.
- */
+/** Verifies a TOTP `otp` against a Base32 `secret` using the configured interval, digits, and grace period. */
 export const signInWithTotp = (otp: string, secret: string): boolean => {
   const secretBytes = decodeBase32(secret);
 
   return verifyTOTPWithGracePeriod(secretBytes, intervalInSeconds, digits, otp, gracePeriodInSeconds);
 };
 
-/**
- * Verifies a user's TOTP code.
- * - Decodes the Base32 secret.
- * - Checks the OTP against the secret using interval, digits, and grace period.
- * - Throws errors if user credentials are missing or the OTP is invalid.
- */
+/** Loads the user's stored TOTP secret and verifies `code`; throws if no credentials or the code is invalid. */
 export const validateTOTP = async ({ code, userId }: { code: string; userId: string }) => {
   // Get totp credentials
   const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, userId)).limit(1);

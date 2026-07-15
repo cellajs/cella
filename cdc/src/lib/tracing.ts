@@ -14,9 +14,7 @@ import { log } from './pino';
 export { activityAttrs, cdcAttrs, cdcSpanNames };
 export type { TraceContext };
 
-// ================================
 // OTel SDK
-// ================================
 
 const debugProcessor = createSpanStoreProcessor({
   onSpanEnd: (span) => {
@@ -37,9 +35,7 @@ export const otel: OtelSDK = createOtelSDK({
   spanProcessors: [debugProcessor],
 });
 
-// ================================
-// OTel Health Metrics
-// ================================
+// OTel health metrics
 
 const meter = otel.meterProvider.getMeter('cdc-health');
 
@@ -74,9 +70,7 @@ meter.createObservableGauge('cdc.replication.status', {
   result.observe(statusMap[replicationState.status]);
 });
 
-// ================================
-// OTel Tracer + withSpan
-// ================================
+// OTel tracer + withSpan
 
 const tracer = trace.getTracer(`${appConfig.name}-cdc`);
 

@@ -1,12 +1,8 @@
 import { type AnyColumn, asc, desc, type SQLWrapper } from 'drizzle-orm';
 
 /**
- * Get a Drizzle order column for use in `.orderBy()`.
- * @param sort - The sort key from query params
- * @param def - Default column to sort by if sort is undefined
- * @param order - Sort direction ('asc' or 'desc'), defaults to 'asc'
- * @param sortOptions - Object mapping sort keys to Drizzle columns
- * @returns A Drizzle `asc` or `desc` wrapped column
+ * Get a Drizzle `asc`/`desc` order column for `.orderBy()`, resolving `sort` against
+ * `sortOptions` (a map of query-param sort keys → columns) and falling back to `def`.
  */
 export const getOrderColumn = <T extends Record<string, AnyColumn | SQLWrapper>, U extends keyof T>(
   sort: U | undefined,

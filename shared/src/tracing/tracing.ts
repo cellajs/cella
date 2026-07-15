@@ -1,10 +1,7 @@
 export * from './span-names';
 export { createSpanStoreProcessor, type SpanStoreProcessorOptions } from './span-store-processor';
 
-// ================================
 // Types
-// ================================
-
 /** Span status aligned with OTel conventions. */
 export type SpanStatus = 'ok' | 'error' | 'unset';
 

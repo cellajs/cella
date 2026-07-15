@@ -9,9 +9,7 @@ export const otel: OtelSDK = createOtelSDK({
   autoInstrumentations: false,
 });
 
-// ================================
-// OTel Health Metrics
-// ================================
+// OTel health metrics
 
 const meter = otel.meterProvider.getMeter('yjs-health');
 

@@ -19,11 +19,9 @@ import { mockUuid } from './mock-nanoid';
 export type MockChannelIdColumns = EntityIdColumns<ChannelEntityType, string>;
 
 /**
- * Generates mock ID columns dynamically based on channel entity types from appConfig.
- *
- * @param mode - 'all' includes all channel entity types, 'relatable' only includes
- *   those in the hierarchy's relatableChannelTypes. Defaults to 'all'.
- * @returns An object with mock ID values for each channel entity ID column.
+ * Generates mock ID columns for channel entity types from appConfig.
+ * @param mode - 'all' (default) covers all channel entity types; 'relatable' only those in the
+ *   hierarchy's relatableChannelTypes.
  */
 export const generateMockChannelIdColumns = (mode: 'all' | 'relatable' = 'all'): MockChannelIdColumns => {
   const entityTypes = mode === 'all' ? appConfig.channelEntityTypes : hierarchy.relatableChannelTypes;

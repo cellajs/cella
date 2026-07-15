@@ -18,14 +18,10 @@ type BaseProps = {
   invokeToken?: boolean;
 };
 /**
- * Validates a token by its value, ensuring it matches the required type and is neither expired nor invoked.
- * By default, it invokes the token upon successful validation.
+ * Validates a token by value, ensuring it matches the required type and is neither expired nor invoked.
+ * Invokes (consumes) the token on success by default.
  *
- * @param ctx - Hono context.
- * @param token The token string to validate.
- * @param invokeToken (optional) Whether to create a single-use token after invoking/consuming the primary `token`.
- * @param tokenType The required type of the token (e.g., 'email-verification').
- * @returns The valid token row from the database.
+ * @param invokeToken When true, mints a fresh single-use token after consuming the primary `token`.
  * @throws AppError if the token is not found, expired, or of an invalid type.
  */
 export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true }: BaseProps): Promise<TokenModel> => {

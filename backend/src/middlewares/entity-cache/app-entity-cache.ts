@@ -60,9 +60,6 @@ export const entityCache = {
    * Old tokens for the same entity remain valid (forward-only).
    *
    * @param token - Cache token (nanoid from CDC)
-   * @param entityType - Entity type for key
-   * @param entityId - Entity ID for key
-   * @param ttlMs - Optional TTL in ms (defaults to cacheTtl)
    */
   reserve(token: string, entityType: string, entityId: string, ttlMs?: number): void {
     const key = entityKey(entityType, entityId);
@@ -77,9 +74,7 @@ export const entityCache = {
   /**
    * Resolve a token to its entity key.
    * Works for both current and old tokens (forward-only).
-   *
-   * @param token - Cache token
-   * @returns Entity key or undefined if token unknown/expired
+   * Returns undefined if the token is unknown or expired.
    */
   resolveToken(token: string): string | undefined {
     return tokenIndex.get(token);
@@ -88,10 +83,6 @@ export const entityCache = {
   /**
    * Set enriched entity data in cache.
    * Called by handler after fetching and enriching from DB.
-   *
-   * @param key - Entity key (entityType:entityId)
-   * @param data - Enriched entity data
-   * @param ttlMs - Optional TTL in ms
    */
   set(key: string, data: Record<string, unknown>, ttlMs?: number): void {
     cache.set(key, data, ttlMs ?? cacheConfig.defaultTtl);
@@ -102,9 +93,6 @@ export const entityCache = {
    * Returns undefined if not found.
    * Returns null if reserved but not enriched.
    * Returns data if enriched.
-   *
-   * @param key - Entity key (entityType:entityId)
-   * @returns Entity data, null (reserved), or undefined (not found)
    */
   get(key: string): Record<string, unknown> | null | undefined {
     const data = cache.get(key);
@@ -127,9 +115,6 @@ export const entityCache = {
   /**
    * Check if cache entry is enriched (has actual data, not just reserved).
    * Uses presence of 'id' field as enrichment indicator.
-   *
-   * @param key - Entity key (entityType:entityId)
-   * @returns true if enriched, false if reserved/missing
    */
   isEnriched(key: string): boolean {
     const data = cache.get(key);
@@ -139,10 +124,6 @@ export const entityCache = {
   /**
    * Invalidate cache entry by entity type and ID.
    * Removes entity data from cache. Token index entries expire naturally.
-   *
-   * @param entityType - Entity type
-   * @param entityId - Entity ID
-   * @returns true if entry was found and removed
    */
   invalidateByEntity(entityType: string, entityId: string): boolean {
     const key = entityKey(entityType, entityId);
@@ -186,10 +167,6 @@ export const entityCache = {
    * Fetch with coalescing: prevents thundering herd on cache miss.
    * Coalesces by entity key, so different tokens for the same entity
    * share a single in-flight fetch.
-   *
-   * @param key - Entity key (entityType:entityId)
-   * @param fetcher - Async function to fetch and enrich data
-   * @returns The fetched/cached data or null
    */
   async fetchWithCoalescing(
     key: string,

@@ -9,10 +9,6 @@ import { getTenantCache, setTenantCache } from './tenant-cache';
  * Guard middleware for authenticated tenant-scoped routes.
  * Validates tenant access and sets baseDb + tenant context for downstream handlers.
  * Organization resolution is handled by orgGuard middleware.
- *
- * @param ctx - Request/response context with tenantId URL parameter
- * @param next - The next middleware or route handler
- * @returns Error response or continues to next handler with tenant context set
  */
 export const tenantGuard = xMiddleware(
   {

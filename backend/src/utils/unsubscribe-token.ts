@@ -25,12 +25,8 @@ export const generateUnsubscribeToken = (email: string) => {
 };
 
 /**
- * Verifies if a given unsubscribe token matches the generated token for a specific email.
- * Uses timing-safe comparison to prevent timing attacks.
- *
- * @param email - Email address associated with unsubscribe request.
- * @param token - Token to verify against generated token.
- * @returns Boolean(if provided token matches, generated token).
+ * Verifies an unsubscribe token against the one derived from `email`, using a
+ * timing-safe comparison to prevent timing attacks.
  */
 export const verifyUnsubscribeToken = (email: string, token: string) => {
   const expected = new TextEncoder().encode(generateUnsubscribeToken(email));

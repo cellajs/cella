@@ -10,18 +10,7 @@ dayjs.extend(localizedFormat);
 type Row = Record<string, any>;
 type Column = ColumnOrColumnGroup<Row>;
 
-/**
- * Exports table data to a CSV file.
- *
- * Filters columns, formats rows, serializes cell values, and creates a CSV file.CSV content is then
- * downloaded with provided file name.
- *
- * @param columns - Column definitions (key and name) for table.
- * @param rows - Data rows to be displayed in table.
- * @param fileName - Name of generated CSV file.
- *
- * @returns A promise that resolves when CSV is downloaded.
- */
+/** Exports visible table columns/rows to a downloadable CSV file. */
 export async function exportToCsv<R extends Row>(
   columns: { key: string; name: ReactElement | string }[],
   rows: R[],
@@ -38,19 +27,8 @@ export async function exportToCsv<R extends Row>(
 }
 
 /**
- * Generates and exports tabular data to a PDF file, applying styling based on dark or light mode.
- *
- * Filters the columns, formats the rows into a table, and dynamically imports `jsPDF` and `jspdf-autotable`
- * to create and style PDF. Export includes metadata like the page name and export date. PDF is
- * saved with the provided filename.
- *
- * @param columns - Column definitions (key and name) for table.
- * @param rows - Data rows to be displayed in table.
- * @param fileName - Name of generated PDF file.
- * @param pageName - Name of page from which data is exported.
- * @param mode - Mode `"dark" | "light"` to determine color scheme.
- *
- * @returns A promise that resolves when PDF is saved.
+ * Exports table data to a PDF, styled for dark/light `mode`, with a page-name + export-date header.
+ * Lazy-imports `jsPDF`/`jspdf-autotable` to keep them out of the main bundle.
  */
 export async function exportToPdf<R extends Row>(
   columns: { key: string; name: ReactElement | string }[],

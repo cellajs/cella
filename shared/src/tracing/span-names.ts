@@ -1,7 +1,4 @@
-// ================================
-// CDC Span Names
-// ================================
-
+// CDC span names
 export const cdcSpanNames = {
   processWal: 'cdc.wal.process',
   createActivity: 'cdc.activity.create',
@@ -12,10 +9,7 @@ export const cdcSpanNames = {
 
 export type CdcSpanName = (typeof cdcSpanNames)[keyof typeof cdcSpanNames];
 
-// ================================
-// Backend Span Names
-// ================================
-
+// Backend span names
 export const backendSpanNames = {
   // ActivityBus
   activityBusReceive: 'sync.activitybus.receive',
@@ -31,10 +25,7 @@ export const backendSpanNames = {
 
 export type BackendSpanName = (typeof backendSpanNames)[keyof typeof backendSpanNames];
 
-// ================================
-// Frontend Span Names
-// ================================
-
+// Frontend span names
 export const frontendSpanNames = {
   // SSE connection
   sseConnect: 'sync.sse.connect',
@@ -59,10 +50,7 @@ export const frontendSpanNames = {
 
 export type FrontendSpanName = (typeof frontendSpanNames)[keyof typeof frontendSpanNames];
 
-// ================================
-// Combined Span Names
-// ================================
-
+// Combined span names
 /** All span names organized by layer; each name follows the convention `layer.domain.action`. */
 export const spanNames = {
   cdc: cdcSpanNames,

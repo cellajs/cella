@@ -12,9 +12,7 @@ import { spanStore, tracer } from './otel';
 export type { SpanData };
 export { frontendSpanNames as syncSpanNames };
 
-// ================================
 // Public API for devtools
-// ================================
 
 export function getSpans(): SpanData[] {
   return spanStore.getSpans();
@@ -36,9 +34,7 @@ export function getSpanStats(): SpanStats {
   return spanStore.getStats();
 }
 
-// ================================
 // Span attribute helpers
-// ================================
 
 interface SpanAttrs {
   [key: string]: string | number | boolean | null | undefined | IncomingTraceContext;
@@ -58,9 +54,7 @@ function applyAttrs(span: Span, attrs: SpanAttrs): void {
   }
 }
 
-// ================================
 // withSpan helpers
-// ================================
 
 export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
   return tracer.startActiveSpan(name, async (span) => {

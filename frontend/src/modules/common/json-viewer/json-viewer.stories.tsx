@@ -447,9 +447,7 @@ export const AllFeatures: Story = {
   },
 };
 
-// ============================================================================
-// Interaction Tests
-// ============================================================================
+// Interaction tests
 
 /**
  * Tests that clicking a collapsed node expands it to show children.

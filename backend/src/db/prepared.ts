@@ -5,7 +5,7 @@ import { baseDb } from './db';
 
 const hasDb = typeof baseDb.select === 'function';
 
-// --- Tenant guard -----------------------------------------------------------
+// Tenant guard
 
 /** Prepared tenant lookup by tenant id, omitted when baseDb is a stub. */
 export const findTenantById = hasDb
@@ -17,7 +17,7 @@ export const findTenantById = hasDb
       .prepare('find_tenant_by_id')
   : (undefined as never);
 
-// --- Idempotency (sync engine) ---------------------------------------------
+// Idempotency (sync engine)
 
 /** Prepared activity lookup by sync transaction mutation id. */
 export const findActivityByMutationId = hasDb

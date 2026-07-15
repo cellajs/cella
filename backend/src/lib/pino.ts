@@ -27,10 +27,9 @@ const isProduction = appConfig.mode === 'production' || env.NODE_ENV === 'produc
 const isTest = appConfig.mode === 'test';
 
 /**
- * Logger for all requests.
- * This logger is used in logger middleware to log incoming and outgoing requests.
- * In development, pino-pretty handles formatting with the messageFormat template; in production
- * it emits JSON to stdout. When a Maple ingest key is set, request logs are also shipped to Maple.
+ * Logger for incoming/outgoing requests (used by the logger middleware). Dev: pino-pretty formats
+ * via the messageFormat template; production: JSON to stdout. Also ships to Maple when a Maple ingest
+ * key is set.
  */
 export const requestLogger = createLogger({
   level: env.PINO_LOG_LEVEL,

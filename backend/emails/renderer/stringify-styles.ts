@@ -44,11 +44,8 @@ function hyphenateString(prop: string) {
 }
 
 /**
- * Converts a React style object to a string.
- * This is based on Hyperon's
- * [`stringifyStyles`](https://github.com/i-like-robots/hyperons/blob/main/src/stringify-styles.js).
- * @param styles The styles to stringify.
- * @returns A string representation of the styles, suitable for use in a `style` attribute.
+ * Converts a React style object to a string suitable for a `style` attribute.
+ * Based on Hyperon's [`stringifyStyles`](https://github.com/i-like-robots/hyperons/blob/main/src/stringify-styles.js).
  */
 export function stringifyStyles(styles: CSSProperties) {
   const parts = [];

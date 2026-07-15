@@ -36,9 +36,7 @@ const deployAccess = (bucketName: pulumi.Input<string>) => ({
 // outside this prefix, so they are not touched by this rule.
 const assetRetentionDays = infra.assetRetentionDays
 
-// ---------------------------------------------------------------------------
 // Frontend static files bucket (website hosting)
-// ---------------------------------------------------------------------------
 
 const frontendBucket = new scaleway.object.Bucket('frontend-bucket', {
   name: naming.frontendBucket,
@@ -103,9 +101,7 @@ new scaleway.object.BucketPolicy('frontend-policy', {
   }),
 }, { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }], dependsOn: [frontendWebsite] })
 
-// ---------------------------------------------------------------------------
 // Public uploads bucket (user-uploaded public assets)
-// ---------------------------------------------------------------------------
 
 const publicUploadsBucket = new scaleway.object.Bucket('public-uploads-bucket', {
   name: naming.publicBucket,
@@ -143,9 +139,7 @@ new scaleway.object.BucketPolicy('public-uploads-policy', {
   }),
 }, { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }] })
 
-// ---------------------------------------------------------------------------
 // Private uploads bucket (user-uploaded private assets, signed URL access)
-// ---------------------------------------------------------------------------
 
 const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket', {
   name: naming.privateBucket,
@@ -165,9 +159,7 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
 
 // No public policy: access via signed URLs only.
 
-// ---------------------------------------------------------------------------
 // Boot diagnostics bucket (VM write-only diagnostics channel)
-// ---------------------------------------------------------------------------
 
 const bootDiagBucket = new scaleway.object.Bucket('boot-diag-bucket', {
   name: naming.bootDiagBucket,
@@ -204,9 +196,7 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
   }),
 })
 
-// ---------------------------------------------------------------------------
 // Exports
-// ---------------------------------------------------------------------------
 
 /** Frontend bucket name */
 export const frontendBucketName = frontendBucket.name

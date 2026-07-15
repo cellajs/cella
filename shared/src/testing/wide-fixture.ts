@@ -1,20 +1,15 @@
 /**
- * Wide synthetic permission fixture — the canonical "rich hierarchy" that upstream-owned engine
- * tests run against, instead of a given fork's real `shared/config`.
+ * Wide synthetic permission fixture — the canonical "rich hierarchy" upstream engine tests run
+ * against instead of a fork's real `shared/config`. The template ships a minimal hierarchy
+ * (organization → attachment) that structurally can't exercise the engine's deeper features (nested +
+ * sibling contexts, guest role, multi-level ancestors, all three public-read modes); this one can, so
+ * one test set covers them in every fork. It mirrors raak's real hierarchy (the reference example in
+ * `hierarchy-config.ts`) and MUST stay a superset of every builder feature — variable-depth /
+ * nullable-ancestor coverage lives in `config-builder/tests/resolve-row-channel.test.ts`.
  *
- * The template (cella) ships a deliberately minimal hierarchy (organization → attachment), which
- * structurally cannot exercise the engine's deeper features: nested + sibling contexts, a guest
- * role, multi-level ancestor resolution, all three public-read modes. This fixture provides one
- * hierarchy that does, so a single set of tests covers them in every fork.
- *
- * It mirrors raak's real hierarchy (documented as the reference example in cella's
- * `hierarchy-config.ts`). It MUST stay a superset of every feature the hierarchy builder supports;
- * variable-depth / nullable-ancestor coverage lives separately in
- * `config-builder/tests/resolve-row-channel.test.ts`.
- *
- * The engine reads this via the `topology` seam (`PermissionTopology`) — no module mocks. All the
- * casts needed to name entities the app config doesn't know about are contained here, so the test
- * files that consume the kit stay cast-free and byte-identical across forks.
+ * The engine reads it via the `topology` seam (`PermissionTopology`) — no module mocks. All casts for
+ * entities the app config doesn't know about are contained here, so consumer test files stay
+ * cast-free and byte-identical across forks.
  */
 import { createEntityHierarchy, createRoleRegistry } from '../config-builder/entity-hierarchy';
 import type { EntityActionType, EntityType } from '../../types';

@@ -32,17 +32,7 @@ export const requestsKeys = {
   delete: () => ['requests', 'delete'],
 };
 
-/**
- * Query options to get a paginated list of requests.
- *
- * This function returns infinite query options to fetch a list of requests with support for pagination.
- *
- * @param param.q - Search query for filtering requests(default is an empty string).
- * @param param.sort - Field to sort by (default is 'createdAt').
- * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default: `appConfig.requestLimits.requests`).
- * @returns Infinite query options.
- */
+/** Infinite query options for a paginated list of requests. */
 export const requestsListQueryOptions = ({
   q = '',
   sort = 'createdAt',

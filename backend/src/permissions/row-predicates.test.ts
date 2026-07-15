@@ -370,7 +370,7 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
   });
 });
 
-/******************************************************************************
+/*
  * Deep-chain parity: 4-level SYNTHETIC hierarchy (organization > course >
  * courseSection > project, product `item` parented to project with nullable
  * ancestors) — exercises intermediate ancestor-level grants (course /
@@ -379,7 +379,7 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
  * the scope compiler via `resolveCollectionReadFilterForPolicies(…, topology)`.
  * The casts naming synthetic entities are contained in the fixtures below,
  * mirroring `shared/src/testing/wide-fixture.ts`.
- ******************************************************************************/
+ */
 
 const deepRoles = createRoleRegistry(['admin', 'member', 'staff', 'student', 'owner', 'follower'] as const);
 const deepHierarchy = createEntityHierarchy(deepRoles)
@@ -583,7 +583,7 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
   });
 });
 
-/******************************************************************************
+/*
  * elevatedRoles parity (same synthetic topology): with `elevatedRoles` configured,
  * a product grant of a non-listed role speaks only for rows HOMED at its own
  * context level, while listed roles (admin/staff) keep subtree scope. Engine
@@ -595,7 +595,7 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
  * organization→course→courseSection→project, with `submission read:'own'` home-scoped) is
  * covered by its own fork parity test. If this synthetic fixture and that real chain ever drift
  * in shape, both suites stay green while the fork breaks — keep them shaped alike.
- ******************************************************************************/
+ */
 
 const SUBTREE_ROLES = ['admin', 'staff'] as const;
 
@@ -657,7 +657,7 @@ describe('elevatedRoles parity: home-scoped grants agree between engine and SQL'
   });
 });
 
-/******************************************************************************
+/*
  * Three-way mirror parity under the REAL app config: collection SQL ≍ single-row
  * engine check ≍ SSE dispatch predicate (`canReceiveEntityEvent`). The dispatch
  * decision doubles as cacheToken issuance (a signed cache token is a read
@@ -677,7 +677,7 @@ describe('elevatedRoles parity: home-scoped grants agree between engine and SQL'
  * collection path used to have no admin flag at all. Public grants ride the real config
  * (which declares none), so their parity is asserted in the synthetic block above, where the
  * grants can actually be injected.
- ******************************************************************************/
+ */
 
 const realMembership = (
   channelType: ChannelEntityType,

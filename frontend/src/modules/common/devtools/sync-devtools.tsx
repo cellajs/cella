@@ -1,19 +1,13 @@
 /**
- * Sync Devtools Panel
- *
- * A floating panel for debugging the sync flow in development.
- * Shows real-time spans, latencies, and connection state.
- *
- * Only renders when VITE_DEBUG_MODE=true.
+ * Floating dev-only panel for debugging the sync flow: real-time spans, latencies, and
+ * connection state. Renders only when `VITE_DEBUG_MODE=true`.
  */
 
 import { useEffect, useState } from 'react';
 import { isDebugMode } from '~/env';
 import { clearSpans, getSpanStats, type SpanData, subscribeToSpans } from '~/lib/tracing';
 
-// ================================
 // Types
-// ================================
 
 interface SyncDevtoolsState {
   isOpen: boolean;
@@ -21,9 +15,7 @@ interface SyncDevtoolsState {
   filter: string;
 }
 
-// ================================
 // Helpers
-// ================================
 
 /** Format duration in ms. */
 function formatDuration(ms: number | null): string {
@@ -63,9 +55,7 @@ function getCategoryColor(name: string): string {
   return '#6b7280';
 }
 
-// ================================
 // Styles (inline for zero deps)
-// ================================
 
 const styles = {
   container: {
@@ -220,9 +210,7 @@ const styles = {
   },
 };
 
-// ================================
 // Components
-// ================================
 
 /** Span list view. */
 function SpanList({ spans, filter }: { spans: SpanData[]; filter: string }) {
@@ -402,9 +390,7 @@ function TimelineView({ spans }: { spans: SpanData[] }) {
   );
 }
 
-// ================================
-// Main Component
-// ================================
+// Main component
 
 interface SyncDevtoolsProps {
   isOpen: boolean;

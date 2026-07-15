@@ -13,7 +13,7 @@ const SESSION_KEY_PREFIX = 's-';
 const SESSION_ID_STORAGE_KEY = `${appConfig.slug}-tab-session-id`;
 const ORPHAN_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
 
-// -- Query classification ----------------------------------------------------
+// Query classification
 
 const productEntitySet = new Set<string>(appConfig.productEntityTypes);
 
@@ -23,7 +23,7 @@ function isProductQuery(queryKey: unknown): boolean {
   return typeof entity === 'string' && productEntitySet.has(entity);
 }
 
-// -- Session ID management ---------------------------------------------------
+// Session ID management
 
 function getTabSessionId(): string {
   let id = sessionStorage.getItem(SESSION_ID_STORAGE_KEY);
@@ -34,7 +34,7 @@ function getTabSessionId(): string {
   return id;
 }
 
-// -- Persister factory -------------------------------------------------------
+// Persister factory
 
 /**
  * Throttle interval for IDB writes. PersistQueryClientProvider fires on every

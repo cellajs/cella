@@ -27,8 +27,7 @@ export interface RenderExpandToggleProps {
   onToggle: () => void;
 }
 
-// ─── Connector geometry ──────────────────────────────────────────────────────
-// All values are in SVG user units == cell pixels (the SVG has no scaling).
+// Connector geometry. All values are in SVG user units == cell pixels (the SVG has no scaling).
 
 /** Column width in px. Must match the column factory's `width`. */
 const COL = 36;

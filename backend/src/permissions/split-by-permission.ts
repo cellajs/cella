@@ -9,16 +9,10 @@ import { actorFrom } from '#/permissions/actor';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 /**
- * Splits entity IDs into allowed and disallowed based on the user's permissions.
+ * Resolves `ids` and splits them into `allowedIds` / `rejectedIds` by whether the user may perform
+ * `action`.
  *
- * Resolves the entities and checks whether the user can perform the specified action.
- * The result is split into `allowedIds` and `rejectedIds`.
- * Throws 403 if none of the requested IDs are allowed.
- *
- * @param action - Action to check `"create" | "read" | "update" | "delete"`.
  * @param entityType - The type of entity (context or product, not user).
- * @param ids - The entity IDs to check.
- * @returns An object with `allowedIds` and `rejectedIds` arrays.
  * @throws {AppError} 403 if no entities are allowed.
  */
 export const splitByPermission = async (

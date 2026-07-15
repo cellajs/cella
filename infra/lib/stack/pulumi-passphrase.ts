@@ -91,7 +91,5 @@ function decryptStackSecretsFromText(text: string, passphrase: string, keys: str
   return out
 }
 
-// ---------------------------------------------------------------------------
 // Internals exposed for testing (do not import from production code).
-// ---------------------------------------------------------------------------
 export const __testing = { decryptV1, deriveKey, verify, decryptStackSecretsFromText, PBKDF2_ITERATIONS, KEY_LEN, GCM_TAG_LEN }

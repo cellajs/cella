@@ -40,14 +40,7 @@ const isLaxCookie = (name: CookieName) =>
 export const authCookieName = (name: CookieName) =>
   `${prefix === 'host' ? '__Host-' : ''}${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
 
-/**
- * Sets an authentication cookie.
- *
- * @param ctx - Request/response context.
- * @param name - Cookie name.
- * @param content - Content to store in the cookie.
- * @param timeSpan - Duration for which the cookie is valid.
- */
+/** Sets an auth cookie — signed in production, plain otherwise; SameSite per `isLaxCookie`. */
 export const setAuthCookie = async (ctx: Context<Env>, name: CookieName, content: string, timeSpan: TimeSpan) => {
   const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
   const options = {
@@ -63,13 +56,7 @@ export const setAuthCookie = async (ctx: Context<Env>, name: CookieName, content
     : setCookie(ctx, versionedName, content, options);
 };
 
-/**
- * Retrieves content from an authentication cookie.
- *
- * @param ctx - Request/response context.
- * @param name - Cookie name.
- * @returns The content stored in the cookie.
- */
+/** Reads (and, in production, unsigns) an auth cookie's content. */
 export const getAuthCookie = async (ctx: Context<Env>, name: CookieName) => {
   const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
 
@@ -79,13 +66,7 @@ export const getAuthCookie = async (ctx: Context<Env>, name: CookieName) => {
   return content;
 };
 
-/**
- * Deletes an authentication cookie.
- *
- * @param ctx - Request/response context.
- * @param name - Cookie name.
- * @returns Deleted value
- */
+/** Deletes an auth cookie. */
 export const deleteAuthCookie = (ctx: Context<Env>, name: CookieName) => {
   const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
 

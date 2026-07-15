@@ -12,15 +12,10 @@ type SearchParams<T> = {
 };
 
 /**
- * Hook to manage and synchronize search parameters (query string) with the URL.
- *
- * @template T - The type of search parameters (query string).
- * @param from - The route identifier (optional). If provided, the hook is scoped to that route.
- * @param defaultValues - Default values for search parameters (optional).
- * @param saveDataInSearch - Whether changes should be persisted to URL (default: `true`). Also controls whether existing URL params are read on mount.
- * @returns An object with:
- *   - `search`: The current search parameters (query string).
- *   - `setSearch`: A function to update the search parameters and sync with the URL.
+ * Manages search parameters (query string) and optionally syncs them to the URL.
+ * @param from - Route id to scope the hook to (optional).
+ * @param saveDataInSearch - Persist changes to the URL; also gates whether existing URL params are read on mount (default: `true`).
+ * @returns `{ search, setSearch }`.
  */
 export function useSearchParams<T extends Record<string, string | string[] | undefined>>(
   searchParams?: SearchParams<T>,

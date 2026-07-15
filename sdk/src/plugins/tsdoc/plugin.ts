@@ -23,8 +23,6 @@ export function buildOperationDocsUrl(method: string, path: string, tag: string)
  * Enriches each generated operation's description with a TSDoc-style summary: a
  * method/path heading, links to the hosted docs, and `@param`/`@returns` tags derived
  * from the operation's path, query, and body parameters and its response codes.
- *
- * @param plugin - The TSDoc Plugin instance
  */
 export const handler: TsdocPlugin['Handler'] = ({ plugin }) => {
   plugin.forEach('operation', (op) => {

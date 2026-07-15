@@ -12,15 +12,8 @@ import { drainBuffers } from './handle-message';
 import { createReplicationService, ensureReplicationSlot, setupBackpressure, subscribeWithReconnect } from './replication';
 
 /**
- * CDC Worker orchestrator.
- *
- * Pipeline stages (reflected in file structure):
- *   1. table-registry: what tables are tracked
- *   2. parse-message: parse a raw WAL change into activity + row data
- *   3. handle-message: receive, route through tx boundaries, buffer
- *   4. process-events: persist activities, compute deltas, WS dispatch
- *   5. replication: PG logical replication lifecycle
- *   6. worker (this): orchestration, start & stop
+ * CDC Worker orchestrator: start & stop. Pipeline stages and their file layout are
+ * documented in cdc/README.md ("Pipeline stages").
  */
 export async function startCdcWorker(): Promise<void> {
   log.info(`CDC worker starting...`, {

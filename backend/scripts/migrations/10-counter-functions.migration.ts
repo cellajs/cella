@@ -3,17 +3,12 @@ import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 import type { GenerateScript } from '../types';
 
 /**
- * Counter Functions Migration
+ * PL/pgSQL function merging JSONB count deltas into channel_counters rows. Fixed-shape SQL
+ * lets the CDC worker use prepared statements for counter upserts.
  *
- * Creates a PL/pgSQL function for merging JSONB count deltas into
- * channel_counters rows. This enables fixed-shape SQL for counter
- * upserts, which can then use prepared statements in the CDC worker.
- *
- * The function iterates over keys in a deltas JSONB object and applies
- * each increment with a floor of 0 to prevent negative counters.
- * `li:` (last insert) / `lu:` (last update) keys are epoch-ms activity
- * stamps, not deltas: they merge via GREATEST so the signal only moves
- * forward.
+ * Increments apply with a floor of 0 (no negative counters). `li:` (last insert) / `lu:`
+ * (last update) keys are epoch-ms activity stamps, not deltas: they merge via GREATEST so
+ * the signal only moves forward.
  */
 async function run() {
   const migrationSql = `-- Counter Functions Setup

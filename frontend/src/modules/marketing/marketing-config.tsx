@@ -23,9 +23,7 @@ import type { InfoCard } from '~/modules/marketing/about/info-cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import type { ShowcaseItem } from '~/modules/marketing/about/showcase';
 
-/*************************************************************************************************
- * Nav
- ************************************************************************************************/
+// Nav
 
 export const marketingNavConfig = [
   { id: 'features', url: '/features', hash: '' },
@@ -34,9 +32,7 @@ export const marketingNavConfig = [
   { id: 'docs', url: '/docs', hash: '' },
 ];
 
-/*************************************************************************************************
- * Footer
- ************************************************************************************************/
+// Footer
 
 export const socials = [
   { title: 'Social', href: appConfig.company.socialUrl, icon: CloudIcon },
@@ -66,18 +62,14 @@ export const footerSections = [
   },
 ];
 
-/*************************************************************************************************
- * Legal
- ************************************************************************************************/
+// Legal
 
 export const legalLinks = [
   { title: 'c:legal', href: '/legal' },
   { title: 'c:accessibility', href: '/accessibility' },
 ];
 
-/*************************************************************************************************
- * About - Stack (tech-stack tile grid on /about)
- ************************************************************************************************/
+// About - Stack (tech-stack tile grid on /about)
 
 export const stackItems = [
   { id: 'hono' },
@@ -91,22 +83,8 @@ export const stackItems = [
   { id: 'artillery' },
 ];
 
-/*************************************************************************************************
- * Features page — categorised capability list (/features)
- *
- * Categories (suggested):
- *   sync        Sync, realtime & offline
- *   security    Security & multi-tenancy
- *   auth        Authentication
- *   dx          Developer experience
- *   deploy      Deployment & infrastructure
- *   performance Performance & observability
- *   data        Data modelling
- *
- * Each item maps to translation keys:
- *   about:features.<id>
- *   about:features.<id>.text
- ************************************************************************************************/
+// Features page — categorised capability list (/features).
+// Each item maps to translation keys `about:features.<id>` and `about:features.<id>.text`.
 
 export type FeatureCategory = 'security' | 'auth' | 'ux' | 'dx' | 'deploy' | 'performance' | 'data';
 
@@ -187,22 +165,10 @@ export const featuresPageItems: FeaturesPageItem[] = [
   { id: 'load_testing', category: 'performance' },
 ];
 
-/*************************************************************************************************
- * Sync engine — categorised capability list (/sync-engine)
- *
- * Kept separate from featuresPageItems so the sync engine page can group its
- * many capabilities into readable sub-categories.
- *
- * Each item maps to translation keys:
- *   about:features.<id>
- *   about:features.<id>.text
- * Each category maps to:
- *   about:features.category_<category>
- *
- * `layers` tags which part of the stack a capability lives in (client, api,
- * cdc, yjs), rendered as badges after the title so it's clear where each
- * feature runs. Multiple layers means the capability spans them.
- ************************************************************************************************/
+// Sync engine — categorised capability list (/sync-engine). Kept separate from featuresPageItems so
+// this page can group its many capabilities into sub-categories.
+// Translation keys: item → `about:features.<id>` / `.text`; category → `about:features.category_<category>`.
+// `layers` tags which part of the stack a capability runs in; rendered as badges, multiple means it spans them.
 
 export type SyncCategory = 'realtime' | 'offline' | 'consistency' | 'resilience';
 
@@ -258,9 +224,7 @@ export const syncPageItems: SyncPageItem[] = [
   { id: 'catchup_recovery', category: 'resilience', layers: ['cdc', 'api'] },
 ];
 
-/*************************************************************************************************
- * About - Cards
- ************************************************************************************************/
+// About - Cards
 
 export const cards: InfoCard[] = [
   { name: 'Transloadit', country: 'DE', url: 'transloadit.com', id: 'transloadit' },
@@ -272,9 +236,7 @@ export const cards: InfoCard[] = [
   { name: 'Gleap', country: 'AT', url: 'gleap.io', id: 'gleap' },
 ];
 
-/*************************************************************************************************
- * About - Pricing plan
- ************************************************************************************************/
+// About - Pricing plan
 
 export const pricingPlans: PricingPlan[] = [
   { id: 'donate', action: 'contact_us', priceId: null, featureCount: 5, borderColor: '' },
@@ -289,9 +251,7 @@ export const pricingPlans: PricingPlan[] = [
   { id: 'partner', action: 'contact_us', priceId: null, featureCount: 3, borderColor: '' },
 ];
 
-/*************************************************************************************************
- * About - FAQ
- ************************************************************************************************/
+// About - FAQ
 
 export const faqsData = [
   { id: 'production-ready', link: appConfig.company.githubUrl },
@@ -300,18 +260,14 @@ export const faqsData = [
   { id: 'cella-made-in-europe' },
 ];
 
-/*************************************************************************************************
- * About - Counters
- ************************************************************************************************/
+// About - Counters
 
 export const counts = [
   { id: 'user', title: 'c:users', icon: UsersIcon },
   { id: 'organization', title: 'c:organization_other', icon: Building2Icon },
 ] as const satisfies readonly { id: EntityType; title: string; icon: IconComponent }[];
 
-/*************************************************************************************************
- * About - Why
- ************************************************************************************************/
+// About - Why
 
 export const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, { id: 'dedicated-community' }];
 
@@ -362,9 +318,7 @@ export const whyDarkSlides = [
   },
 ];
 
-/*************************************************************************************************
- * About - Showcase
- ************************************************************************************************/
+// About - Showcase
 
 export const showcaseItems: ShowcaseItem[] = [
   {

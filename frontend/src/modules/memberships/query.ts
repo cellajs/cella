@@ -29,22 +29,7 @@ const keys = {
 
 export const memberQueryKeys = keys;
 
-/**
- * Infinite query options to fetch a paginated list of members.
- *
- * This function returns the configuration needed to query a list of members from target entity with pagination.
- *
- * @param param.entityId - ID or slug of entity.
- * @param param.entityType - Type of entity.
- * @param param.tenantId - Tenant ID.
- * @param param.organizationId - ID or slug of organization.
- * @param param.q - Optional search query to filter members by (default is an empty string).
- * @param param.role - Role of the members to filter by.
- * @param param.sort - Field to sort by (default is 'createdAt').
- * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default is configured in `appConfig.requestLimits.members`).
- * @returns Infinite query options.
- */
+/** Infinite query options for a paginated list of members of the target entity. */
 export const membersListQueryOptions = ({
   entityId,
   tenantId,
@@ -77,21 +62,7 @@ export const membersListQueryOptions = ({
   });
 };
 
-/**
- * Infinite query options to fetch a paginated list of invited members.
- *
- * This function returns the configuration needed to query a list of members from target entity with pagination.
- *
- * @param param.entityId - ID or slug of entity.
- * @param param.entityType - Type of entity.
- * @param param.tenantId - Tenant ID.
- * @param param.organizationId - ID or slug of organization.
- * @param param.q - Optional search query to filter invited members by (default is an empty string).
- * @param param.sort - Field to sort by (default is 'createdAt').
- * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default is configured in `appConfig.requestLimits.pendingMemberships`).
- * @returns Infinite query options.
- */
+/** Infinite query options for a paginated list of invited (pending) members of the target entity. */
 export const pendingMembershipsQueryOptions = ({
   entityId,
   tenantId,

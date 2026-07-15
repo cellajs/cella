@@ -2,19 +2,9 @@ import type { GetNextPageParamFunction } from '@tanstack/react-query';
 import type { PageParams, QueryData } from '~/query/types';
 
 /**
- *  A reusable base options for `infiniteQueryOptions`.
- *
- *  Includes:
- *  - `initialPageParam`: default page parameters `{ page: 0, offset: 0 }`.
- *  - `getNextPageParam`: generic pagination logic that works with
- *    API responses shaped like `{ items: T[]; total: number }`.
- *
- *  Pagination logic:
- *  - Counts how many items are fetched across all pages.
- *  - If fetched count >= `total` -> returns `undefined` (no more pages).
- *  - Otherwise -> returns next page params `{ page, offset }`.
- *
- *  staleTime uses global default from query-client.ts (1 min online, infinite offline).
+ * Reusable base for `infiniteQueryOptions`: `initialPageParam` plus a `getNextPageParam` that pages
+ * any `{ items: T[]; total: number }` response until all items are fetched.
+ * staleTime is intentionally omitted so it inherits the global default from query-client.ts (1 min online, infinite offline).
  */
 export const baseInfiniteQueryOptions = {
   initialPageParam: { page: 0, offset: 0 },
