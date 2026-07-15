@@ -5,7 +5,7 @@ import type { OperationResult } from '#/core/operation-result';
 import { tenantRead, tenantReadIncludingDeleted } from '#/db/tenant-context';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
-import { resolveListTotal } from '#/modules/entities/helpers/list-total';
+import { type ListTotalSource, resolveListTotal } from '#/modules/entities/helpers/list-total';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { auditUserSelect, coalesceAuditUsers, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 import { actorFrom } from '#/permissions/actor';
@@ -98,18 +98,19 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
       .limit(limit)
       .offset(offset);
 
-    const { items: rawItems, total } = await resolveListTotal({
-      ctx: readCtx,
-      itemsQuery,
-      isDelta,
-      counterEligible,
-      channelKey: organizationId,
-      entityType: 'attachment',
-      exactCount: async () => {
-        const [{ total }] = await db.select({ total: count() }).from(attachmentsTable).where(whereClause);
-        return total;
-      },
-    });
+    const totalSource: ListTotalSource = isDelta
+      ? { kind: 'pageLength' }
+      : counterEligible
+        ? { kind: 'counter', ctx: readCtx, channelKey: organizationId, entityType: 'attachment' }
+        : {
+            kind: 'exact',
+            count: async () => {
+              const [{ total }] = await db.select({ total: count() }).from(attachmentsTable).where(whereClause);
+              return total;
+            },
+          };
+
+    const { items: rawItems, total } = await resolveListTotal(itemsQuery, totalSource);
 
     return { rawItems, total };
   });

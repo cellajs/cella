@@ -16,57 +16,34 @@ describe('resolveListTotal', () => {
     getOrgEntityCount.mockReset();
   });
 
-  it('delta reads report the page length and run neither count', async () => {
-    const exactCount = vi.fn();
-    const result = await resolveListTotal({
-      ctx,
-      itemsQuery: Promise.resolve(items),
-      isDelta: true,
-      counterEligible: false,
-      channelKey: 'org-1',
-      entityType: 'attachment',
-      exactCount,
-    });
+  it('pageLength reads report the page length and query no count', async () => {
+    const result = await resolveListTotal(Promise.resolve(items), { kind: 'pageLength' });
 
     expect(result).toEqual({ items, total: items.length });
-    expect(exactCount).not.toHaveBeenCalled();
     expect(getOrgEntityCount).not.toHaveBeenCalled();
   });
 
-  it('org-wide unfiltered reads use the channel counter, not COUNT(*)', async () => {
+  it('counter reads use the channel counter, not COUNT(*)', async () => {
     getOrgEntityCount.mockResolvedValue(42);
-    const exactCount = vi.fn();
 
-    const result = await resolveListTotal({
+    const result = await resolveListTotal(Promise.resolve(items), {
+      kind: 'counter',
       ctx,
-      itemsQuery: Promise.resolve(items),
-      isDelta: false,
-      counterEligible: true,
       channelKey: 'org-1',
       entityType: 'attachment',
-      exactCount,
     });
 
     expect(result).toEqual({ items, total: 42 });
     expect(getOrgEntityCount).toHaveBeenCalledWith(ctx, 'org-1', 'attachment');
-    expect(exactCount).not.toHaveBeenCalled();
   });
 
-  it('filtered/scoped reads fall back to the exact COUNT(*)', async () => {
-    const exactCount = vi.fn().mockResolvedValue(7);
+  it('exact reads run the provided COUNT(*) thunk', async () => {
+    const count = vi.fn().mockResolvedValue(7);
 
-    const result = await resolveListTotal({
-      ctx,
-      itemsQuery: Promise.resolve(items),
-      isDelta: false,
-      counterEligible: false,
-      channelKey: 'org-1',
-      entityType: 'attachment',
-      exactCount,
-    });
+    const result = await resolveListTotal(Promise.resolve(items), { kind: 'exact', count });
 
     expect(result).toEqual({ items, total: 7 });
-    expect(exactCount).toHaveBeenCalledOnce();
+    expect(count).toHaveBeenCalledOnce();
     expect(getOrgEntityCount).not.toHaveBeenCalled();
   });
 });
