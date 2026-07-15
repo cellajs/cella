@@ -29,3 +29,8 @@ be a no-op.
   permission check, system-admin + public-read parity in collection reads, and public
   read collapsed to a single row-local `publicAt` mode. **Widens access** — audit
   `'own'` cells on channel-entity and `create` rows *before* pulling.
+- [2026-07-channel-entity-rename](./2026-07-channel-entity-rename/): renames the
+  "context entity" concept to "channel entity" (`ContextEntityType→ChannelEntityType`,
+  builder `.context()→.channel()`, `context_type/context_id→channel_type/channel_id`,
+  `context_counters→channel_counters`, …). Allow-list codemod; also needs file renames,
+  i18n keys, SDK regen, and a DB rename migration — see the folder README.
