@@ -82,11 +82,6 @@ function parentOf(slug: string): string | null {
  * Move a page under a new parent (or to the root when `newParentId` is null),
  * returning the moved page's new file path. Promotes a leaf target parent to a
  * directory page first so children can live beside its `index` file.
- *
- * TODO [#16]: reparenting changes the moved page's slug (its URL), but inbound
- * internal links still point at the old slug and are left untouched, so they 404
- * until fixed by hand. Auto-rewrite links to the old slug across the docs
- * content (and imported repo docs) as part of the move.
  */
 function reparent(contentDir: string, slug: string, newParentId: string | null): string {
   const srcPath = resolveSlugPath(contentDir, slug);

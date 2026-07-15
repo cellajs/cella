@@ -141,9 +141,6 @@ Clients first branch on `kind`. Membership notifications invalidate membership/c
 | **Create/update batch** | `batchUntilSeq` set | Range fetch via `seqCursor=seq,batchUntilSeq`; live rows upsert, tombstones remove |
 | **Hard delete** | `action: 'delete'` | Physical delete (rare, e.g. DB admin); invalidate the scoped list to reconcile; soft deletes arrive as `update` tombstones instead |
 
-Batch notifications carry a `cacheToken` and the backend reserves its entity keys. The batch-resolve middleware is currently marked TODO and is not attached to a list route, so current range fetches still execute the list endpoint normally.
-
-
 ## Notification format
 Synced entity tables have an `stx` JSONB column for transaction metadata. It is sent on product-entity notifications. A later mutation overwrites the envelope, but the merged `fieldTimestamps` inside it remain part of conflict resolution. Entity `seq` values and `channel_counters` are the current gap-detection state; `activitiesTable` is the append-only audit/cursor history.
 

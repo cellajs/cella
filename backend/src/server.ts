@@ -10,7 +10,6 @@ import { app as middlewares } from '#/middlewares/app';
 
 const baseApp = new OpenAPIHono<Env>();
 
-// TODO review
 /**
  * Same-origin migration: the LB routes `/api/*` and `/mcp/*` on the app host
  * to the backend/mcp service (registry `lbPathBegin`) but does NOT strip the

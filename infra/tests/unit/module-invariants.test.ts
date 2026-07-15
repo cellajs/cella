@@ -51,8 +51,6 @@ describe('dns resource', () => {
   })
 
   // Known gap: DMARC TXT record is not currently provisioned.
-  // Tracking it as a TODO [#18] surfaces the gap in test output without
-  // hard-failing the suite.
   it.todo('publishes a DMARC TXT record (p=quarantine or p=reject)')
 })
 

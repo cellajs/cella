@@ -37,6 +37,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   const appHost = serviceHost('frontend')
   const appIsAtApex = appHost === dnsZone
 
+  // TODO get rid of legacyUrls asap
   // Public hosts: one DNS record + cert per unique HOSTNAME, not per service.
   // Under the same-origin model every path-routed service shares the app host,
   // and decommissioned service hosts (appConfig.legacyUrls) stay alive so their
