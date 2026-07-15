@@ -15,7 +15,7 @@
               "itemType": "object",
               "items": {
                 "type": "object",
-                "description": "The main context entity is an organization.",
+                "description": "The main channel entity is an organization.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": { "type": "string", "required": true, "format": "uuid" },
@@ -571,7 +571,7 @@
               "ref": "#/components/schemas/Organization",
               "items": {
                 "type": "object",
-                "description": "The main context entity is an organization.",
+                "description": "The main channel entity is an organization.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": { "type": "string", "required": true, "format": "uuid" },
@@ -1016,7 +1016,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "The main context entity is an organization.",
+          "description": "The main channel entity is an organization.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },
@@ -1384,7 +1384,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "The main context entity is an organization.",
+          "description": "The main channel entity is an organization.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },

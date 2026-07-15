@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import type { Attachment } from 'sdk';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
-import { getFileUrl } from '~/modules/attachment/file-url';
+import { getPrivateFileUrlById, getPublicFileUrl } from '~/modules/attachment/file-url';
 import { useAttachmentUrl } from '~/modules/attachment/hooks/use-attachment-url';
 import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
 import type { EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
@@ -130,7 +130,10 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
       data-tooltip="true"
       data-tooltip-content={t('c:download')}
       onClick={() =>
-        getFileUrl(row.originalKey, row.public, row.tenantId, row.organizationId)
+        (row.public
+          ? Promise.resolve(getPublicFileUrl(row.originalKey))
+          : getPrivateFileUrlById(row.id, 'original', row.tenantId, row.organizationId)
+        )
           .then((url) => download(url, row.filename))
           .catch(() => toaster(t('error:download_failed'), 'error'))
       }

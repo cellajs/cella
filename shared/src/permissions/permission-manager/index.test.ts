@@ -57,7 +57,7 @@ describe('hierarchy guards (real app config)', () => {
   });
 
   describe('isChannelEntity / isProductEntity', () => {
-    it('correctly identifies context entities', () => {
+    it('correctly identifies channel entities', () => {
       expect(isChannelEntity('organization')).toBe(true);
       expect(isChannelEntity('attachment')).toBe(false);
       expect(isChannelEntity('user')).toBe(false);

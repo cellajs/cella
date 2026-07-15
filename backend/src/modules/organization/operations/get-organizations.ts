@@ -42,7 +42,7 @@ export async function getOrganizationsOp(ctx: AuthContext, input: GetOrganizatio
 
   // Member previews (avatar stacks): ONE batched query per page for the most-privileged role,
   // capped at 3 per entity. Overflow counts come from the m:{role} counters, so no extra data
-  // is needed. Forks wire this same helper into their own context entity list ops.
+  // is needed. Forks wire this same helper into their own channel entity list ops.
   const memberPreviews = includeMembers
     ? await findMemberPreviewsByChannels(ctx, {
         channelType: entityType,

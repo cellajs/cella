@@ -67,7 +67,17 @@ export const attachmentListQuerySchema = paginationQuerySchema.extend({
   sort: attachmentSortKeys.default('createdAt').optional(),
 });
 
-/** Query schema for presigned URL endpoint - requires the file key to sign */
-export const presignedUrlKeySchema = z.object({
-  key: z.string().max(maxLength.url),
+/** Selectable stored-file variants. Mirrors the frontend `BlobVariant`. */
+export const attachmentVariantSchema = z.enum(['original', 'thumbnail', 'converted']);
+
+/**
+ * Query schema for the presigned URL endpoint. Callers reference a private
+ * attachment by `attachmentId` + `variant` — clients never submit storage keys.
+ * The server resolves the owning row (RLS + permission) and fails closed before
+ * signing, so an unknown/cross-tenant id can never be signed. Public media is
+ * served directly from the CDN and never reaches this endpoint.
+ */
+export const presignedUrlQuerySchema = z.object({
+  attachmentId: validUuidSchema,
+  variant: attachmentVariantSchema.default('original'),
 });

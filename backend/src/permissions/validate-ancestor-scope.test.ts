@@ -65,7 +65,7 @@ describe('validateAncestorScope', () => {
     });
   }
 
-  // Test every context entity type that has ancestors (e.g., project → organization)
+  // Test every channel entity type that has ancestors (e.g., project → organization)
   for (const entityType of hierarchy.channelTypes) {
     const ancestors = hierarchy.getOrderedAncestors(entityType);
     if (ancestors.length === 0) continue; // root contexts (organization) are tested above

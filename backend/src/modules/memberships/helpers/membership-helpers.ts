@@ -13,7 +13,7 @@ import {
 import { log } from '#/utils/logger';
 
 /**
- * The root context entity type: the parentless context entity (e.g. 'organization').
+ * The root channel entity type: the parentless channel entity (e.g. 'organization').
  * Derived from the hierarchy so forks that change the root entity type
  * don't need to update membership helper code.
  */
@@ -54,12 +54,12 @@ interface InsertMultipleProps<T> {
 /**
  * Returns an object mapping base membership entity IDs for the given entity.
  *
- * Each mapping corresponds to a context entity type defined in `appConfig.channelEntityTypes`.
+ * Each mapping corresponds to a channel entity type defined in `appConfig.channelEntityTypes`.
  * The key of each mapping is derived from the values of `appConfig.entityIdColumnKeys`
  * (e.g. `"organizationId"`, `"projectId"`), and the value is the corresponding string ID.
  *
  *
- * @template T - The specific context entity type.
+ * @template T - The specific channel entity type.
  * @param entity - The entity object to extract membership ID information from.
  * @returns An object mapping base membership entity IDs for the given entity.
  */

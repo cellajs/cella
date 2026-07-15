@@ -1,10 +1,10 @@
 import { type ChannelEntityType, hierarchy, recordFromKeys, roles } from 'shared';
 
 /**
- * Build a zero-initialized counts response object for a new context entity.
+ * Build a zero-initialized counts response object for a new channel entity.
  * Used in create responses where the entity has no prior data.
  *
- * @param entityType - The context entity type (e.g. 'organization')
+ * @param entityType - The channel entity type (e.g. 'organization')
  * @param creatorRole - The role assigned to the creator (defaults to 'admin')
  * @returns Object matching channelEntityIncludedSchema counts: { membership: {...}, entities: {...}, activity: {...} }
  */

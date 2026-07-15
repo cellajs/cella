@@ -115,7 +115,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
   it('should emit membership.created when membership is inserted', async () => {
     const eventPromise = waitForEvent('membership.created', 15000);
 
-    // Use entity-agnostic mock that handles dynamic context entity columns
+    // Use entity-agnostic mock that handles dynamic channel entity columns
     const membershipData = mockChannelMembership('organization', testOrg, testUser);
     await db.insert(membershipsTable).values(membershipData);
 

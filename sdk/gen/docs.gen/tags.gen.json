@@ -43,7 +43,7 @@
   },
   {
     "name": "organizations",
-    "description": "Endpoints for managing organizations, which are core context entities and the highest ancestor\n    in the entity hierarchy. Organizations define access boundaries and are typically the primary scope for\n    permissions and resource management.",
+    "description": "Endpoints for managing organizations, which are core channel entities and the highest ancestor\n    in the entity hierarchy. Organizations define access boundaries and are typically the primary scope for\n    permissions and resource management.",
     "count": 5,
     "kind": "module"
   },
@@ -73,7 +73,7 @@
   },
   {
     "name": "users",
-    "description": "Endpoints for managing users at the system level. Unlike context entities such as\n    organizations, a user is a global entity that is not scoped to a specific context. These endpoints are\n    intended for administrative operations on any user in the system.",
+    "description": "Endpoints for managing users at the system level. Unlike channel entities such as\n    organizations, a user is a global entity that is not scoped to a specific context. These endpoints are\n    intended for administrative operations on any user in the system.",
     "count": 2,
     "kind": "module"
   },

@@ -1,6 +1,6 @@
 # ChannelEntity rename migration
 
-Renames the **context entity** concept (membership-scoped entities that host
+Renames the **channel entity** concept (membership-scoped entities that host
 products — `organization`, `project`, …) to **channel entity**, unifying
 vocabulary with the sync engine's stream channels (routing keys like `org:abc`
 are already root channel-entity ids). Upstream cella arrives already migrated;

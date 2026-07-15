@@ -278,7 +278,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A user's membership in a context entity, including role and activity data.",
+          "description": "A user's membership in a channel entity, including role and activity data.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },

@@ -44,7 +44,7 @@ const membershipRoutes = {
     tags: ['memberships', 'cella'],
     summary: 'Create memberships',
     description:
-      'Creates one or more memberships, inviting users (existing or new) to a context entity such as an organization.',
+      'Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization.',
     request: {
       params: tenantOrgParamSchema,
       query: entityWithTypeQuerySchema,
@@ -158,7 +158,7 @@ const membershipRoutes = {
     xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['memberships', 'cella'],
     summary: 'Get list of members',
-    description: 'Retrieves members (users) of a context entity by ID, including their associated membership data.',
+    description: 'Retrieves members (users) of a channel entity by ID, including their associated membership data.',
     request: {
       params: tenantOrgParamSchema,
       query: memberListQuerySchema,
@@ -187,7 +187,7 @@ const membershipRoutes = {
     tags: ['memberships', 'cella'],
     summary: 'Get list of pending memberships',
     description:
-      'Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.',
+      'Returns pending memberships for a channel entity, identified by ID. This does not include pending invitations for non-existing users.',
     request: {
       params: tenantOrgParamSchema,
       query: pendingMembershipListQuerySchema,

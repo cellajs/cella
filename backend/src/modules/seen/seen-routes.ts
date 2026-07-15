@@ -35,7 +35,7 @@ const seenRoutes = {
     },
   }),
   /**
-   * Get unseen counts per parent context entity per entity type
+   * Get unseen counts per parent channel entity per entity type
    */
   getUnseenCounts: createXRoute({
     operationId: 'getUnseenCounts',
@@ -45,11 +45,11 @@ const seenRoutes = {
     tags: ['seen', 'cella'],
     summary: 'Get unseen counts',
     description:
-      'Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the current user. ' +
+      'Returns the number of unseen product entities per parent channel entity (e.g., project) and entity type for the current user. ' +
       'Computed within the rolling seen window so entities older than seen_by retention do not participate.',
     responses: {
       200: {
-        description: 'Unseen counts per parent context entity per entity type',
+        description: 'Unseen counts per parent channel entity per entity type',
         content: { 'application/json': { schema: unseenCountsResponseSchema } },
       },
       ...errorResponseRefs,

@@ -5,7 +5,7 @@ import { membershipCountSchema } from '#/schemas/count-schemas';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 
 /**
- * Factory for context entity included schemas.
+ * Factory for channel entity included schemas.
  * Builds a strictly-typed included schema scoped to the entity's hierarchy children.
  */
 export const channelEntityIncludedSchema = (entityType: ChannelEntityType) => {

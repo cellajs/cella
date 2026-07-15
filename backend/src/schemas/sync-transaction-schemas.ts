@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { mockStxBase, mockStxResponse } from './sync-transaction-mocks';
+import { isValidHLC } from '#/core/stx/hlc';
+import { mockStxBase } from './sync-transaction-mocks';
 
 /**
  * Zod schema for StxBase (sync transaction base).
@@ -13,7 +14,7 @@ export const stxBaseSchema = z
     mutationId: z.string().max(36).describe('Unique mutation ID'),
     sourceId: z.string().max(64).describe('Tab/instance identifier for echo prevention'),
     fieldTimestamps: z
-      .record(z.string(), z.string())
+      .record(z.string(), z.string().refine(isValidHLC, 'Invalid HLC timestamp'))
       .describe('Per-field HLC timestamps for scalar fields being changed'),
   })
   .openapi('StxBase', {
@@ -24,19 +25,3 @@ export const stxBaseSchema = z
   });
 
 export type StxBase = z.infer<typeof stxBaseSchema>;
-
-/**
- * Sync transaction metadata returned in mutation responses.
- * Reflects the new entity state after mutation.
- */
-export const stxResponseSchema = z
-  .object({
-    mutationId: z.string().describe('Echoes the request mutation ID'),
-    droppedFields: z.array(z.string()).default([]).describe('Fields whose HLC lost and were silently dropped'),
-  })
-  .openapi('StxResponseBase', {
-    description: 'Sync transaction acknowledgment returned after a mutation.',
-    example: mockStxResponse(),
-  });
-
-export type StxResponse = z.infer<typeof stxResponseSchema>;

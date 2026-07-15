@@ -19,7 +19,7 @@ export const membershipSchema = z
     channelType: channelEntityTypeSchema,
   })
   .openapi('Membership', {
-    description: "A user's membership in a context entity, including role and activity data.",
+    description: "A user's membership in a channel entity, including role and activity data.",
     example: mockMembershipResponse(),
     'x-tags': schemaTags('data', 'memberships', 'cella'),
   });

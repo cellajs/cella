@@ -41,16 +41,16 @@ export const getMembershipOrderOffset = (channelId: string): number => {
   return membershipOrderMap.get(channelId)!;
 };
 
-/** Minimal context entity interface for membership creation */
+/** Minimal channel entity interface for membership creation */
 type ChannelEntity = { id: string; tenantId: string };
 
-/** Override IDs for context entity columns (organizationId, workspaceId, etc.) */
+/** Override IDs for channel entity columns (organizationId, workspaceId, etc.) */
 type ChannelEntityIdOverrides = Partial<MockChannelIdColumns>;
 
 /**
- * Generates a mock membership linking a user to a context entity.
- * Works with any context entity type (organization, project, etc.).
- * Initializes all context entity ID columns to null, then sets the specific context entity ID.
+ * Generates a mock membership linking a user to a channel entity.
+ * Works with any channel entity type (organization, project, etc.).
+ * Initializes all channel entity ID columns to null, then sets the specific channel entity ID.
  * Additional ancestor IDs can be provided via overrideIds.
  * Ensures consistent ordering via the `getMembershipOrderOffset` function.
  */
@@ -62,7 +62,7 @@ export const mockChannelMembership = <T extends ChannelEntityType>(
 ): InsertMembershipModel => {
   const userId = user.id;
 
-  // Initialize all context entity ID columns to null (nullable FK columns)
+  // Initialize all channel entity ID columns to null (nullable FK columns)
   const channelEntityColumns = Object.fromEntries(
     appConfig.channelEntityTypes.map((type) => [appConfig.entityIdColumnKeys[type], null]),
   );
@@ -70,11 +70,11 @@ export const mockChannelMembership = <T extends ChannelEntityType>(
   return {
     id: mockUuid(),
     userId,
-    tenantId: channelEntity.tenantId, // Use context entity's tenant for RLS isolation
+    tenantId: channelEntity.tenantId, // Use channel entity's tenant for RLS isolation
     channelType,
-    channelId: channelEntity.id, // Denormalized primary context entity ID
+    channelId: channelEntity.id, // Denormalized primary channel entity ID
     ...channelEntityColumns,
-    [appConfig.entityIdColumnKeys[channelType]]: channelEntity.id, // Set the correct context entity ID
+    [appConfig.entityIdColumnKeys[channelType]]: channelEntity.id, // Set the correct channel entity ID
     ...overrideIds,
     // Pick from the context's own role vocabulary (e.g. course → staff/student/guest)
     role: faker.helpers.arrayElement(hierarchy.getRoles(channelType)),
@@ -87,7 +87,7 @@ export const mockChannelMembership = <T extends ChannelEntityType>(
 /**
  * Generates a mock membership base for API responses.
  * Uses deterministic seeding - same key produces same data.
- * Context entity ID columns are generated dynamically based on appConfig.channelEntityTypes.
+ * Channel entity ID columns are generated dynamically based on appConfig.channelEntityTypes.
  */
 export const mockMembershipBase = (key = 'membership-base:default'): MembershipBase =>
   withFakerSeed(key, () => ({
@@ -106,7 +106,7 @@ export const mockMembershipBase = (key = 'membership-base:default'): MembershipB
 /**
  * Generates a mock full membership for API responses.
  * Uses deterministic seeding - same key produces same data.
- * Context entity ID columns are generated dynamically based on appConfig.channelEntityTypes.
+ * Channel entity ID columns are generated dynamically based on appConfig.channelEntityTypes.
  */
 export const mockMembership = (key = 'membership:default'): MembershipModel =>
   withFakerSeed(key, () => {
@@ -139,7 +139,7 @@ export const mockMembershipResponse = mockMembership;
 /**
  * Generates a mock inactive membership for API responses.
  * Uses deterministic seeding - same key produces same data.
- * Context entity ID columns are generated dynamically based on appConfig.channelEntityTypes.
+ * Channel entity ID columns are generated dynamically based on appConfig.channelEntityTypes.
  */
 export const mockInactiveMembership = (key = 'inactive-membership:default'): InactiveMembershipModel =>
   withFakerSeed(key, () => {

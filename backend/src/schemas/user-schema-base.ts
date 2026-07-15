@@ -8,7 +8,7 @@ export { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 
 /**
  * Base schema for user, including common fields. Exported separately to avoid circular dependencies.
- * Users do not have the permissions field (only context entities do).
+ * Users do not have the permissions field (only channel entities do).
  */
 export const userBaseSchema = channelEntityBaseSchema
   .omit({ entityType: true, tenantId: true })

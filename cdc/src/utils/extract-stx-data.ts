@@ -3,7 +3,7 @@ import type { RowData } from '../types';
 
 /**
  * Extract stx (sync transaction metadata) from a row if present.
- * Product entities have a stx JSONB column, context entities do not.
+ * Product entities have a stx JSONB column, channel entities do not.
  * Returns null if stx is not present or is not a valid object.
  */
 export function extractStxData(row: RowData): StxBase | null {

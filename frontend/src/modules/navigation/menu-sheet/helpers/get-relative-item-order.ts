@@ -8,7 +8,7 @@ import { sortAndFilterMenu } from './sort-and-filter-menu';
  * Calculates the relative order position for a dragged item based on its drop location.
  *
  * @param data - The user menu data containing all menu items and submenus
- * @param entityType - The type of context entity (organization, workspace, etc.)
+ * @param entityType - The type of channel entity (organization, workspace, etc.)
  * @param archived - Whether to filter for archived items
  * @param itemId - The ID of the item being dragged
  * @param targetOrder - The displayOrder of the drop target

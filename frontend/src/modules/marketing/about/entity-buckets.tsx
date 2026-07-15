@@ -17,7 +17,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 
-// A conceptual illustration of Cella's selective sync: context entities (structural, no sync)
+// A conceptual illustration of Cella's selective sync: channel entities (structural, no sync)
 // and product entities (opt-in sync) both live in the same REST/Postgres/React Query foundation.
 // The wrapper is an open-top "U" to signal this is conceptual, not a closed system. A toggle
 // swaps between example app configs to show the same split holds for different entity setups.

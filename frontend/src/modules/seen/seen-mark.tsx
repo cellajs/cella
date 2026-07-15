@@ -72,7 +72,7 @@ interface SeenMarkProps {
   tenantId: string;
   /** Organization ID for the POST API route. */
   organizationId: string;
-  /** Parent context entity ID for badge grouping (e.g., projectId for tasks). Defaults to organizationId. */
+  /** Parent channel entity ID for badge grouping (e.g., projectId for tasks). Defaults to organizationId. */
   channelId?: string;
   entityType: ProductEntityType;
 }

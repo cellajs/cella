@@ -201,7 +201,7 @@ export const findLatestUserActivityId = async (
  * @internal Resolves an entity by ID or slug from its table.
  *
  * **Do not use directly in route handlers.** Use the permission-checking wrappers instead:
- * - `getValidChannelEntity` for context entities (e.g., organization)
+ * - `getValidChannelEntity` for channel entities (e.g., organization)
  * - `getValidProductEntity` for product entities (e.g., attachment, page)
  *
  * Direct usage is only appropriate in internal utilities (e.g., slug availability checks)

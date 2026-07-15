@@ -8,7 +8,7 @@ import { actorFrom } from '#/permissions/actor';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 /**
- * Result type for context entity validation including the can object.
+ * Result type for channel entity validation including the can object.
  */
 export interface ValidChannelEntityResult<T extends ChannelEntityType> {
   entity: EntityModel<T>;
@@ -16,9 +16,9 @@ export interface ValidChannelEntityResult<T extends ChannelEntityType> {
 }
 
 /**
- * Checks if current user has permission to perform a given action on a context entity.
+ * Checks if current user has permission to perform a given action on a channel entity.
  *
- * Resolves context entity based on provided type and ID/slug, verifies user permissions
+ * Resolves channel entity based on provided type and ID/slug, verifies user permissions
  * (including system admin), and retrieves user's membership for entity if applicable.
  *
  * Returns resolved entity along with user's membership and a `can` object with all action permissions.
@@ -29,7 +29,7 @@ export interface ValidChannelEntityResult<T extends ChannelEntityType> {
  *
  * @param ctx - Context with db, memberships, and isSystemAdmin set by guard middleware.
  * @param entityId - Entity's unique ID (or slug when bySlug is true).
- * @param entityType - Type of context entity (e.g., organization, project).
+ * @param entityType - Type of channel entity (e.g., organization, project).
  * @param action - Action to check (e.g., `"read" | "update" | "delete"`).
  * @param bySlug - If true, resolve by slug instead of ID.
  * @returns An object containing resolved entity, associated membership (or `null`), and can object.

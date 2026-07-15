@@ -10,7 +10,7 @@ export type EntityRouteEntry = {
 };
 
 /**
- * Unified route config for context entities.
+ * Unified route config for channel entities.
  *
  * Each entity declares its route path, its param name, and optional subitem behavior.
  * The param name is used both when the entity is the target AND when it appears as an

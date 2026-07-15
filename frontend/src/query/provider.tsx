@@ -22,7 +22,7 @@ import { useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 initMutationDefaults(queryClient);
 
 /**
- * Init context entity enrichment, guarded to prevent duplicate subscribers during HMR.
+ * Init channel entity enrichment, guarded to prevent duplicate subscribers during HMR.
  */
 const unsubscribeEnrichment = initChannelEntityEnrichment();
 

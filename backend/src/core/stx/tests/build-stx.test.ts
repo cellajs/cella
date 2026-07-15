@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { buildStx } from '#/core/stx/build-stx';
-import { _resetHLC } from '#/core/stx/hlc';
 
 // Covers server-side STX metadata construction for creates and updates.
 describe('buildStx', () => {
@@ -19,9 +18,13 @@ describe('buildStx', () => {
   describe('update (with entity + acceptedFieldNames)', () => {
     it('preserves mutationId and sourceId', () => {
       const entity = {
-        stx: { mutationId: 'old', sourceId: 'old', fieldTimestamps: { name: '100:0001:aaa', status: '200:0001:bbb' } },
+        stx: {
+          mutationId: 'old',
+          sourceId: 'old',
+          fieldTimestamps: { name: '100:0001:aaaaa', status: '200:0001:bbbbb' },
+        },
       };
-      const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { name: '300:0001:ccc' } };
+      const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { name: '300:0001:ccccc' } };
       const result = buildStx(stx, entity, ['name']);
 
       expect(result.mutationId).toBe('mut-1');
@@ -30,22 +33,25 @@ describe('buildStx', () => {
 
     it('merges incoming HLC timestamps for accepted fields', () => {
       const entity = {
-        stx: { mutationId: 'old', sourceId: 'old', fieldTimestamps: { name: '100:0001:aaa', status: '200:0001:bbb' } },
+        stx: {
+          mutationId: 'old',
+          sourceId: 'old',
+          fieldTimestamps: { name: '100:0001:aaaaa', status: '200:0001:bbbbb' },
+        },
       };
-      const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { name: '300:0001:ccc' } };
+      const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { name: '300:0001:ccccc' } };
       const result = buildStx(stx, entity, ['name']);
 
       // Accepted fields use incoming HLC values; unchanged fields preserve stored HLCs.
-      expect(result.fieldTimestamps.name).toBe('300:0001:ccc');
-      expect(result.fieldTimestamps.status).toBe('200:0001:bbb');
+      expect(result.fieldTimestamps.name).toBe('300:0001:ccccc');
+      expect(result.fieldTimestamps.status).toBe('200:0001:bbbbb');
     });
 
     it('handles entity without stx (first tracked update)', () => {
-      _resetHLC();
-      const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { name: '100:0001:aaa' } };
+      const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { name: '100:0001:aaaaa' } };
       const result = buildStx(stx, undefined, ['name']);
 
-      expect(result.fieldTimestamps.name).toBe('100:0001:aaa');
+      expect(result.fieldTimestamps.name).toBe('100:0001:aaaaa');
     });
 
     it('handles multiple accepted fields', () => {
@@ -53,34 +59,34 @@ describe('buildStx', () => {
         stx: {
           mutationId: 'old',
           sourceId: 'old',
-          fieldTimestamps: { name: '100:0001:aaa', status: '200:0001:bbb', description: '150:0001:aaa' },
+          fieldTimestamps: {
+            name: '100:0001:aaaaa',
+            status: '200:0001:bbbbb',
+            description: '150:0001:aaaaa',
+          },
         },
       };
       const stx = {
         mutationId: 'mut-1',
         sourceId: 'src-1',
-        fieldTimestamps: { name: '300:0001:ccc', description: '350:0001:ccc' },
+        fieldTimestamps: { name: '300:0001:ccccc', description: '350:0001:ccccc' },
       };
       const result = buildStx(stx, entity, ['name', 'description']);
 
-      expect(result.fieldTimestamps.name).toBe('300:0001:ccc');
-      expect(result.fieldTimestamps.description).toBe('350:0001:ccc');
-      expect(result.fieldTimestamps.status).toBe('200:0001:bbb');
+      expect(result.fieldTimestamps.name).toBe('300:0001:ccccc');
+      expect(result.fieldTimestamps.description).toBe('350:0001:ccccc');
+      expect(result.fieldTimestamps.status).toBe('200:0001:bbbbb');
     });
 
-    it('generates server HLC for accepted fields without incoming timestamp', () => {
-      _resetHLC();
+    it('does not timestamp accepted fields without an incoming timestamp', () => {
       const entity = {
-        stx: { mutationId: 'old', sourceId: 'old', fieldTimestamps: { name: '100:0001:aaa' } },
+        stx: { mutationId: 'old', sourceId: 'old', fieldTimestamps: { name: '100:0001:aaaaa' } },
       };
       const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: {} };
       const result = buildStx(stx, entity, ['status']);
 
-      // status has no incoming HLC and no existing → server generates one
-      expect(result.fieldTimestamps.status).toBeDefined();
-      expect(typeof result.fieldTimestamps.status).toBe('string');
-      // name preserved from existing
-      expect(result.fieldTimestamps.name).toBe('100:0001:aaa');
+      expect(result.fieldTimestamps.status).toBeUndefined();
+      expect(result.fieldTimestamps.name).toBe('100:0001:aaaaa');
     });
   });
 });

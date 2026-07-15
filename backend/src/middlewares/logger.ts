@@ -3,6 +3,7 @@ import { requestId } from 'hono/request-id';
 import { appConfig } from 'shared';
 import { requestLogger } from '#/lib/pino';
 import { isBenchTraffic } from '#/utils/logger';
+import { scrubUrl } from '#/utils/scrub-url';
 
 // Instantiate the requestId middleware once at module scope rather than per request.
 const requestIdMiddleware = requestId();
@@ -19,7 +20,7 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
 
   const start = Date.now();
   const { url, method } = ctx.req;
-  const cleanUrl = url.replace(appConfig.backendUrl, '');
+  const cleanUrl = scrubUrl(url.replace(appConfig.backendUrl, ''));
   const reqId = ctx.get('requestId');
 
   await next();

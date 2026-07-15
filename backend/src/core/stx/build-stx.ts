@@ -1,5 +1,5 @@
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
-import { advanceClock, generateServerHLC } from './hlc';
+import { advanceClock } from './hlc';
 
 /** StxBase with optional changedFields for CDC consumption (stored in jsonb, not part of API schema). */
 export type StxStored = StxBase & { changedFields?: string[] };
@@ -23,9 +23,6 @@ export function buildStx(stx: StxBase, entity?: { stx: StxBase }, acceptedFieldN
     for (const field of acceptedFieldNames) {
       if (incomingTimestamps[field]) {
         mergedTimestamps[field] = incomingTimestamps[field];
-      } else if (!mergedTimestamps[field]) {
-        // Server-initiated field change with no client HLC gets a server HLC.
-        mergedTimestamps[field] = generateServerHLC();
       }
     }
   }

@@ -174,7 +174,7 @@ const validatePolicyCompleteness = (
 ): void => {
   const { channelEntityTypes, getRoles, getParent } = topology;
 
-  /** The subject's context chain: self (for context entities) plus every ancestor. */
+  /** The subject's context chain: self (for channel entities) plus every ancestor. */
   const chainOf = (subject: string): ChannelEntityType[] => {
     const chain: ChannelEntityType[] = [];
     let current: string | null = channelEntityTypes.includes(subject as ChannelEntityType)

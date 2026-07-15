@@ -18,7 +18,7 @@ export const countersSeed = async () => {
 
   const { channelRows, productRows } = await recalculateCounters(db);
 
-  succeedSpinner(`Recalculated counters for ${channelRows} context entities, ${productRows} product entities`);
+  succeedSpinner(`Recalculated counters for ${channelRows} channel entities, ${productRows} product entities`);
 };
 
 export const seedConfig: SeedScript = { name: 'counters', run: countersSeed, allowProduction: true };

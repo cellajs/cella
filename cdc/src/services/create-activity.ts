@@ -22,7 +22,7 @@ export function createActivity(
   const resourceType = tableMeta.kind === 'resource' ? tableMeta.type : null;
   const subjectType = tableMeta.type;
 
-  // Derive context entity IDs from hierarchy ancestors. Declared-nullable ancestors may
+  // Derive channel entity IDs from hierarchy ancestors. Declared-nullable ancestors may
   // legitimately be null (variable-depth rows, e.g. a course-stream item): no warning.
   const channelEntityIds: Record<string, string | null> = {};
   if (subjectType) {
@@ -43,7 +43,7 @@ export function createActivity(
   // For the tenant resource itself, the row has no tenantId column: its own id IS the tenantId.
   const tenantId = getRowValue(row, 'tenantId') ?? (resourceType === 'tenant' ? rawSubjectId : null);
 
-  // Build default nulls for all context entity ID columns, driven by config
+  // Build default nulls for all channel entity ID columns, driven by config
   const defaultChannelIds: Record<string, null> = {};
   for (const idKey of channelIdColumnKeys) {
     defaultChannelIds[idKey] = null;

@@ -1,7 +1,7 @@
 /**
  * Codemod: ContextEntity -> ChannelEntity rename.
  *
- * Renames the "context entity" concept (membership-scoped entities that host products)
+ * Renames the "channel entity" concept (membership-scoped entities that host products)
  * to "channel entity", unifying vocabulary with the sync engine's stream channels.
  *
  * This is both the implementation tool (run once against cella) and the fork-migration

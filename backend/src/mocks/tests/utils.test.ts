@@ -16,14 +16,14 @@ describe('generateMockChannelIdColumns', () => {
   it('returns correct column names for default config', () => {
     const columns = generateMockChannelIdColumns();
 
-    // Should have a key for each context entity type
+    // Should have a key for each channel entity type
     for (const entityType of appConfig.channelEntityTypes) {
       const columnName = appConfig.entityIdColumnKeys[entityType];
       expect(columns).toHaveProperty(columnName);
       expect(typeof columns[columnName as keyof typeof columns]).toBe('string');
     }
 
-    // Column count should match context entity types count
+    // Column count should match channel entity types count
     expect(Object.keys(columns).length).toBe(appConfig.channelEntityTypes.length);
   });
 

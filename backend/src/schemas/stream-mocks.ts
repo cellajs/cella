@@ -8,7 +8,7 @@ import { mockStxBase } from './sync-transaction-mocks';
  * For product entities (e.g. attachment):
  * - entityType is set, resourceType is null
  * - Includes stx, seq, cacheToken for sync engine
- * - channelType is null (not a context entity event)
+ * - channelType is null (not a channel entity event)
  */
 export const mockStreamNotification = (key = 'stream-notification:default') =>
   withFakerSeed(key, () => ({

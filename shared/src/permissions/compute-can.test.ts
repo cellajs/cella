@@ -3,7 +3,7 @@ import { computeCan } from './compute-can';
 import { computeWideCan, configureWidePermissions, wideMembership, wideTopology } from '../testing/wide-fixture';
 
 /**
- * `computeCan` derives an entity-type-keyed `can` map (context entity + descendants) from a
+ * `computeCan` derives an entity-type-keyed `can` map (channel entity + descendants) from a
  * membership + policies over a hierarchy topology, preserving three-state ('own') semantics.
  *
  * Runs against the wide fixture (organization → workspace/project → task/label/attachment, with a

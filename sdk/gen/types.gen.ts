@@ -118,7 +118,7 @@ export type StreamNotification = {
   organizationId: string | null;
   tenantId: string | null;
   /**
-   * Context entity type for membership events (e.g. organization, project)
+   * Channel entity type for membership events (e.g. organization, project)
    */
   channelType: 'organization' | null;
   /**
@@ -126,7 +126,7 @@ export type StreamNotification = {
    */
   seq: number | null;
   /**
-   * Context entity ID for grouping (e.g. projectId for tasks in unseen counts)
+   * Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)
    */
   channelId: string | null;
   stx: StxBase &
@@ -390,7 +390,7 @@ export type Request = {
 };
 
 /**
- * The main context entity is an organization.
+ * The main channel entity is an organization.
  */
 export type Organization = {
   createdAt: string;
@@ -487,7 +487,7 @@ export type Attachment = {
 };
 
 /**
- * A user's membership in a context entity, including role and activity data.
+ * A user's membership in a channel entity, including role and activity data.
  */
 export type Membership = {
   createdAt: string;
@@ -2136,7 +2136,7 @@ export type GetUnseenCountsError = GetUnseenCountsErrors[keyof GetUnseenCountsEr
 
 export type GetUnseenCountsResponses = {
   /**
-   * Unseen counts per parent context entity per entity type
+   * Unseen counts per parent channel entity per entity type
    */
   200: {
     [key: string]: {
@@ -3570,7 +3570,7 @@ export type CreateOrganizationsResponses = {
    */
   201: {
     /**
-     * The main context entity is an organization.
+     * The main channel entity is an organization.
      */
     data: Array<
       Organization & {
@@ -4054,7 +4054,8 @@ export type GetPresignedUrlData = {
     organizationId: string;
   };
   query: {
-    key: string;
+    attachmentId: string;
+    variant?: 'original' | 'thumbnail' | 'converted';
   };
   url: '/{tenantId}/{organizationId}/attachments/presigned-url';
 };

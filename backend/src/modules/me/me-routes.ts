@@ -269,7 +269,7 @@ const meRoutes = {
     xGuard: [authGuard],
     tags: ['me', 'cella'],
     summary: 'Get my memberships',
-    description: 'Returns all memberships for the current user across all context entities.',
+    description: 'Returns all memberships for the current user across all channel entities.',
     responses: {
       200: {
         description: 'User memberships',

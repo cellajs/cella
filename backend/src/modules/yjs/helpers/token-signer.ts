@@ -22,7 +22,7 @@ function computeSignature(encodedPayload: string): string {
 /**
  * Sign a context-scoped Yjs auth token.
  * Uses the same HMAC-SHA256 signing algorithm as the Yjs relay. The token
- * embeds the context entity and product entity type the user may edit, so the
+ * embeds the channel entity and product entity type the user may edit, so the
  * relay can verify access locally without calling back to the backend.
  */
 export function signYjsToken(params: Omit<YjsTokenPayload, 'exp'>): string {

@@ -7,6 +7,7 @@ import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
+import { scrubPath } from '#/utils/scrub-url';
 
 const isProduction = appConfig.mode === 'production';
 const severitiesRequiringDetails = new Set(['warn', 'error', 'fatal']);
@@ -62,16 +63,21 @@ function isPoolTimeoutError(err: unknown): boolean {
  * Global error handler for Hono API routes.
  */
 export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
+  // Redact secret path segments (e.g. the invoke-token bearer) before this path
+  // is logged or returned in the client error payload. Pino's key-based redaction
+  // cannot reach a secret embedded inside the `path` string value.
+  const safePath = scrubPath(ctx.req.path);
+
   // Handle pool exhaustion as 503 Service Unavailable
   if (isPoolTimeoutError(err)) {
-    log.error('Database pool exhausted', { err, path: ctx.req.path, method: ctx.req.method });
+    log.error('Database pool exhausted', { err, path: safePath, method: ctx.req.method });
     return ctx.json(
       {
         message: 'Service temporarily unavailable, please retry',
         status: 503,
         type: 'server_error' as const,
         severity: 'error' as const,
-        path: ctx.req.path,
+        path: safePath,
         method: ctx.req.method,
         timestamp: getIsoDate(),
       },
@@ -82,14 +88,14 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   // Handle Hono's built-in HTTPException (e.g. from CSRF middleware)
   if (err instanceof HTTPException) {
     const status = err.status as ContentfulStatusCode;
-    log.warn(`HTTPException ${status}`, { err, path: ctx.req.path, method: ctx.req.method });
+    log.warn(`HTTPException ${status}`, { err, path: safePath, method: ctx.req.method });
     return ctx.json(
       {
         message: err.message || 'Request rejected',
         status,
         type: status === 403 ? 'forbidden' : 'server_error',
         severity: 'warn',
-        path: ctx.req.path,
+        path: safePath,
         method: ctx.req.method,
         timestamp: getIsoDate(),
       },
@@ -138,7 +144,7 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
           status,
           type,
           entityType,
-          path: ctx.req.path,
+          path: safePath,
           method: ctx.req.method,
           ...(user && { userId: user.id }),
           ...(organization && { organizationId: organization.id }),
@@ -164,7 +170,7 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
     severity,
     entityType,
     logId,
-    path: ctx.req.path,
+    path: safePath,
     method: ctx.req.method,
     timestamp,
     meta,

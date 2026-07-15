@@ -7,7 +7,7 @@ import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
-import { getFileUrl } from '~/modules/attachment/file-url';
+import { getPrivateFileUrlById, getPublicFileUrl } from '~/modules/attachment/file-url';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 import {
   findClickedMedia,
@@ -23,7 +23,7 @@ interface BlockNoteFullHtmlProps {
   className?: string;
   dense?: boolean;
   clickOpensPreview?: boolean;
-  publicFiles?: boolean;
+  /** Needed to resolve private (id-referenced) inline media via presigned URLs. */
   tenantId?: string;
   organizationId?: string;
 }
@@ -75,7 +75,6 @@ function BlockNoteFullHtml({
   className = '',
   dense = false,
   clickOpensPreview = false,
-  publicFiles = false,
   tenantId: propTenantId,
   organizationId: propOrganizationId,
 }: BlockNoteFullHtmlProps) {
@@ -108,21 +107,22 @@ function BlockNoteFullHtml({
 
     // Then resolve file URLs asynchronously for the final render
     async function resolveUrls(blocks: CustomBlock[]) {
-      const resolveUrl = async (key: string): Promise<string> => {
-        if (!key.length) return '';
+      const resolveUrl = async (ref: string): Promise<string> => {
+        if (!ref.length) return '';
 
-        const isAttachmentId = !key.includes('/');
-        if (isAttachmentId) {
-          const localResult = await attachmentStorage.createBlobUrlWithVariant(key, 'converted', true);
-          if (localResult) return localResult.url;
-        }
+        // Slashed cloud key → public CDN; UUID id → local blob, else presigned by id.
+        const isAttachmentId = !ref.includes('/');
+        if (!isAttachmentId) return getPublicFileUrl(ref);
 
-        const cachedAttachment = isAttachmentId ? findAttachmentInCache(key) : null;
+        const localResult = await attachmentStorage.createBlobUrlWithVariant(ref, 'converted', true);
+        if (localResult) return localResult.url;
+
+        const cachedAttachment = findAttachmentInCache(ref);
         const tenantId = cachedAttachment?.tenantId ?? propTenantId;
         const organizationId = cachedAttachment?.organizationId ?? propOrganizationId;
 
-        if (!tenantId || !organizationId) return key;
-        return getFileUrl(key, publicFiles, tenantId, organizationId);
+        if (!tenantId || !organizationId) return ref;
+        return getPrivateFileUrlById(ref, 'converted', tenantId, organizationId);
       };
 
       const { resolved, media } = await processBlocks(blocks, resolveUrl);
@@ -135,7 +135,7 @@ function BlockNoteFullHtml({
     return () => {
       cancelled = true;
     };
-  }, [defaultValue, publicFiles]);
+  }, [defaultValue, propTenantId, propOrganizationId]);
 
   const handleClick: MouseEventHandler = (event) => {
     if (!clickOpensPreview || renderState.mediaItems.length === 0) return;

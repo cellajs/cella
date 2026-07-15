@@ -71,7 +71,7 @@ function buildActivityPayload(
 ): CdcOutboundMessage {
   const cacheToken = baseActivity.entityType && isProductEntity(baseActivity.entityType) ? nanoid() : null;
 
-  // Context entity IDs are already populated on the activity by createActivity;
+  // Channel entity IDs are already populated on the activity by createActivity;
   // rowData is already compacted by the handlers (compactRowData).
   const activity = { ...baseActivity, seq };
 

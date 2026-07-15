@@ -39,12 +39,12 @@ export const streamNotificationSchema = z
     channelType: z
       .enum(appConfig.channelEntityTypes)
       .nullable()
-      .describe('Context entity type for membership events (e.g. organization, project)'),
+      .describe('Channel entity type for membership events (e.g. organization, project)'),
     seq: z.number().int().nullable().describe('Per-entityType sequence number used for gap detection in sync'),
     channelId: z
       .string()
       .nullable()
-      .describe('Context entity ID for grouping (e.g. projectId for tasks in unseen counts)'),
+      .describe('Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)'),
     stx: stxBaseSchema.nullable().describe('Sync transaction metadata for HLC conflict resolution'),
     cacheToken: z.string().nullable().describe('HMAC-signed token for single-entity LRU cache access'),
     batchUntilSeq: z
@@ -94,7 +94,7 @@ const childChannelChangeSummarySchema = z.object({
  *
  * Dual-level design:
  * - entitySeqs (org-level): quick screening for changes by entity type within the org.
- * - childChannelChanges: precision drill-down with per-child-context entitySeqs for delta fetch.
+ * - childChannelChanges: precision drill-down with per-child-channel entitySeqs for delta fetch.
  *
  * Client logic:
  * 1. Compare org-level entitySeqs for quick skip (unchanged → skip entirely)
@@ -108,7 +108,7 @@ export const catchupChangeSummarySchema = z.object({
   entitySeqs: z.record(z.string(), z.number().int()).optional(),
   /** Org-level per-entityType total counts from channel_counters (e:{type} keys). Used for cache integrity checks. */
   entityCounts: z.record(z.string(), z.number().int()).optional(),
-  /** Per-child-context entity seqs and counts for sub-context delta fetch precision. */
+  /** Per-child-channel entity seqs and counts for sub-context delta fetch precision. */
   childChannelChanges: z.record(z.string(), childChannelChangeSummarySchema).optional(),
   /** Embedded entity propagation hints (source entity changes that require target cache patching) */
   propagation: z.array(propagationHintSchema).optional(),

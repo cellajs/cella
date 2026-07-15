@@ -20,7 +20,7 @@ export const booleanTransformSchema = z
 /** Enum schema for entity types */
 export const entityTypeSchema = z.enum(appConfig.entityTypes);
 
-/** Enum schema for context entity types */
+/** Enum schema for channel entity types */
 export const channelEntityTypeSchema = z.enum(appConfig.channelEntityTypes);
 
 /** Enum schema for product entity types */
@@ -166,7 +166,7 @@ export const includeQuerySchema = z
   .transform((val) => (val ? val.split(',').map((s) => s.trim()) : []))
   .pipe(z.array(z.enum(includeOptions)));
 
-/** Schema for slug + include query params used by single-get context entity routes. */
+/** Schema for slug + include query params used by single-get channel entity routes. */
 export const slugIncludeQuerySchema = z.object({
   slug: booleanTransformSchema.optional(),
   include: includeQuerySchema,

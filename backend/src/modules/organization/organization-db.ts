@@ -7,7 +7,7 @@ import type { AuthStrategy } from '#/modules/auth/sessions-db';
 const languagesEnum = appConfig.languages;
 
 /**
- * Organizations table is a primary context entity table.
+ * Organizations table is a primary channel entity table.
  * Each organization belongs to exactly one tenant (RLS isolation boundary).
  */
 export const organizationsTable = snakeCase.table(

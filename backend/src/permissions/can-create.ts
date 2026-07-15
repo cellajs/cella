@@ -6,7 +6,7 @@ import { actorFrom } from '#/permissions/actor';
 import { validateAncestorScope } from '#/permissions/validate-ancestor-scope';
 
 /**
- * Checks if user has permission to create product or context entity.
+ * Checks if user has permission to create product or channel entity.
  * This is separate from read/update/delete checks, since the entity doesn't exist yet.
  * Uses SubjectForPermission directly, since id is optional for create checks.
  *

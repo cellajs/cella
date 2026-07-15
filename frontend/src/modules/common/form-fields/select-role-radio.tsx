@@ -6,7 +6,7 @@ import { cn } from '~/utils/cn';
 interface Props {
   onValueChange: (value?: string) => void;
   value?: EntityRole;
-  /** Restrict options to this context entity's role vocabulary (e.g. course → staff/student/guest). */
+  /** Restrict options to this channel entity's role vocabulary (e.g. course → staff/student/guest). */
   entityType?: ChannelEntityType;
   className?: string;
 }

@@ -1549,7 +1549,7 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(
 /**
  * Get my memberships
  *
- * Returns all memberships for the current user across all context entities.
+ * Returns all memberships for the current user across all channel entities.
  *
  * **GET /me/memberships** ·· [getMyMemberships](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/memberships) ·· [getMyMemberships](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/memberships) ·· _me_cella_
  *
@@ -1584,7 +1584,7 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Get unseen counts
  *
- * Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.
+ * Returns the number of unseen product entities per parent channel entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.
  *
  * **GET /unseen/counts** ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=seen#tag/seen/GET/unseen/counts) ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/unseen/counts) ·· _seen_cella_
  *
@@ -2923,7 +2923,8 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
  * @param {getPresignedUrlData} options
  * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.organizationid - `string`
- * @param {string} options.query.key - `string`
+ * @param {string} options.query.attachmentid - `string`
+ * @param {enum=} options.query.variant - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const getPresignedUrl = <ThrowOnError extends boolean = true>(
@@ -3081,7 +3082,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Create memberships
  *
- * Creates one or more memberships, inviting users (existing or new) to a context entity such as an organization.
+ * Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization.
  *
  * **POST /{tenantId}/{organizationId}/memberships** ·· [membershipInvite](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships) ·· [membershipInvite](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/memberships) ·· _memberships_cella_
  *
@@ -3214,7 +3215,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
 /**
  * Get list of members
  *
- * Retrieves members (users) of a context entity by ID, including their associated membership data.
+ * Retrieves members (users) of a channel entity by ID, including their associated membership data.
  *
  * **GET /{tenantId}/{organizationId}/memberships/members** ·· [getMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/{tenantId}/{organizationId}/memberships/members) ·· [getMembers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/memberships/members) ·· _memberships_cella_
  *
@@ -3261,7 +3262,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(
 /**
  * Get list of pending memberships
  *
- * Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.
+ * Returns pending memberships for a channel entity, identified by ID. This does not include pending invitations for non-existing users.
  *
  * **GET /{tenantId}/{organizationId}/memberships/pending** ·· [getPendingMemberships](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/{tenantId}/{organizationId}/memberships/pending) ·· [getPendingMemberships](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/memberships/pending) ·· _memberships_cella_
  *

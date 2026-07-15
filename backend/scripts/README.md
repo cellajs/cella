@@ -1,7 +1,7 @@
 # Backend Scripts
 
 Development and build scripts for the backend.
-<!-- TODO update and add to docs through mdx/frontmatter, consier adding recalculate counters -->
+
 ## Root Scripts
 
 - **generate.ts** - Runs all generation scripts defined in `appConfig.generateScripts` (migrations, CDC setup, etc.)

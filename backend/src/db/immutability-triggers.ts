@@ -56,7 +56,7 @@ CREATE TRIGGER ${triggerName}
 
 // --- Pre-built trigger functions -------------------------------------------
 
-/** Shared by context entities with tenant_id. */
+/** Shared by channel entities with tenant_id. */
 export const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', BASE_ENTITY_COLUMNS);
 
 /** Product entities with a parent include organization_id. */

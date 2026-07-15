@@ -23,7 +23,7 @@ export const membershipBaseSelect: MembershipBaseSelect = (() => {
 
 /**
  * Pick only the base membership fields from a full membership object.
- * This is schema-driven so forks with extra context entity ID columns
+ * This is schema-driven so forks with extra channel entity ID columns
  * (e.g. workspaceId, projectId) are handled automatically.
  */
 export const toMembershipBase = (membership: Record<string, unknown>): MembershipBaseModel => {

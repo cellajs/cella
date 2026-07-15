@@ -21,10 +21,10 @@ async function run() {
     .filter(([entityType]) => entityType !== 'user')
     .map(([, table]) => getTableName(table));
 
-  // Context entity and membership tables use application-layer guards for access control.
+  // Channel entity and membership tables use application-layer guards for access control.
   const channelEntityTableNames = appConfig.channelEntityTypes.map((entityType) => {
     const table = entityTables[entityType as keyof typeof entityTables];
-    if (!table) throw new Error(`No table found for context entity type: ${entityType}`);
+    if (!table) throw new Error(`No table found for channel entity type: ${entityType}`);
     return getTableName(table);
   });
   const membershipTableNames = [getTableName(membershipsTable), getTableName(inactiveMembershipsTable)];
@@ -43,7 +43,7 @@ async function run() {
     ...additionalRlsTables,
   ];
 
-  // Tables without RLS but needing grants (auth, system, context entities, memberships, pages, etc.)
+  // Tables without RLS but needing grants (auth, system, channel entities, memberships, pages, etc.)
   const fullCrudTables = [
     ...channelEntityTableNames,
     ...membershipTableNames,

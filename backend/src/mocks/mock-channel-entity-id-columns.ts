@@ -13,17 +13,17 @@ import {
 import { mockUuid } from './mock-nanoid';
 
 /**
- * Type for dynamically generated context entity ID columns in mocks.
- * Maps each context entity type to its corresponding ID column (e.g., organization -> organizationId).
+ * Type for dynamically generated channel entity ID columns in mocks.
+ * Maps each channel entity type to its corresponding ID column (e.g., organization -> organizationId).
  */
 export type MockChannelIdColumns = EntityIdColumns<ChannelEntityType, string>;
 
 /**
- * Generates mock ID columns dynamically based on context entity types from appConfig.
+ * Generates mock ID columns dynamically based on channel entity types from appConfig.
  *
- * @param mode - 'all' includes all context entity types, 'relatable' only includes
+ * @param mode - 'all' includes all channel entity types, 'relatable' only includes
  *   those in the hierarchy's relatableChannelTypes. Defaults to 'all'.
- * @returns An object with mock ID values for each context entity ID column.
+ * @returns An object with mock ID values for each channel entity ID column.
  */
 export const generateMockChannelIdColumns = (mode: 'all' | 'relatable' = 'all'): MockChannelIdColumns => {
   const entityTypes = mode === 'all' ? appConfig.channelEntityTypes : hierarchy.relatableChannelTypes;
@@ -38,7 +38,7 @@ export const generateMockChannelIdColumns = (mode: 'all' | 'relatable' = 'all'):
 };
 
 /**
- * Mock context entity id columns for a specific product entity, mirroring its DB schema:
+ * Mock channel entity id columns for a specific product entity, mirroring its DB schema:
  * strict ancestors and declared related contexts (see `channelRelationColumns`).
  */
 export type MockEntityChannelIdColumns<E extends string> = EntityIdColumns<
@@ -47,7 +47,7 @@ export type MockEntityChannelIdColumns<E extends string> = EntityIdColumns<
 >;
 
 /**
- * Generates the exact set of context entity id columns a product entity carries, derived from
+ * Generates the exact set of channel entity id columns a product entity carries, derived from
  * the hierarchy (ancestors + relatedChannels). Keeps mocks fork-agnostic and in sync with schema.
  */
 export const generateMockEntityChannelIdColumns = <E extends ProductEntityType>(
@@ -65,11 +65,11 @@ export const generateMockEntityChannelIdColumns = <E extends ProductEntityType>(
   return columns as MockEntityChannelIdColumns<E>;
 };
 
-/** The root context entity type (parentless context, e.g. 'organization'), supplied by the route path. */
+/** The root channel entity type (parentless context, e.g. 'organization'), supplied by the route path. */
 const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t) === null) as ChannelEntityType;
 
 /**
- * Generates the context entity id columns a product entity carries in a create-request body, derived
+ * Generates the channel entity id columns a product entity carries in a create-request body, derived
  * from the hierarchy but excluding the root context (e.g. 'organization'), which is supplied by the
  * route path rather than the body. In cella's default hierarchy this yields an empty object, so
  * cella-origin request-body mocks are unchanged; forks that add deeper context relations (e.g. a

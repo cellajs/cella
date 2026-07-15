@@ -7,7 +7,7 @@ import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-que
 import { queryClient } from '~/query/query-client';
 
 /**
- * Invalidate all context entity detail queries (fallback when channelType unknown)
+ * Invalidate all channel entity detail queries (fallback when channelType unknown)
  */
 function invalidateAllChannelDetails(): void {
   for (const channelType of appConfig.channelEntityTypes) {
@@ -19,10 +19,10 @@ function invalidateAllChannelDetails(): void {
 }
 
 /**
- * Invalidate context entity list for a specific channelType.
+ * Invalidate channel entity list for a specific channelType.
  * Falls back to invalidating all context details if channelType is unknown.
  *
- * @param channelType - The context entity type (e.g., 'organization'), or null for fallback
+ * @param channelType - The channel entity type (e.g., 'organization'), or null for fallback
  */
 export function invalidateChannelList(channelType: ChannelEntityType | null): void {
   if (channelType && hasEntityQueryKeys(channelType)) {

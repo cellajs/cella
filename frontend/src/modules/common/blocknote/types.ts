@@ -2,8 +2,8 @@ import type { ExtensionFactoryInstance, HeadingOptions } from '@blocknote/core';
 import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import type { FilePanelProps } from '@blocknote/react';
 import type React from 'react';
+import type { Attachment } from 'sdk';
 import type { customSchema } from '~/modules/common/blocknote/blocknote-config';
-import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import type { Member } from '~/modules/memberships/types';
 
 // Extendable Blocknote types interface
@@ -53,13 +53,34 @@ export type IconType = (
   },
 ) => React.ReactElement;
 
+/**
+ * How a BlockNote file upload is stored and later resolved. The context picks one
+ * cleanly; the read path never needs it (a slashed cloud key resolves via CDN, a
+ * UUID attachment id via presigning):
+ * - `public-no-attachment`: public bucket, no entity, block stores the key → CDN.
+ * - `public-attachment`: public bucket, persists an attachment entity, block stores the key → CDN.
+ * - `private-attachment`: private bucket, persists an attachment entity, block stores the id → presigned.
+ *
+ * There is deliberately no `private-no-attachment`: private media must be a real
+ * attachment so permission can be scoped to it.
+ */
+export type BlockNoteMediaMode = 'public-no-attachment' | 'public-attachment' | 'private-attachment';
+
+/**
+ * File-panel context. The `-attachment` modes require `tenantId` (for the create
+ * mutation and, when private, for presigned reads) and an `onComplete` that
+ * persists the parsed attachments with host linkage. `onComplete` receives the
+ * already-parsed attachments (with their stable client ids) so the persisted row
+ * keeps the same id the block references.
+ */
 export type BaseUppyFilePanelProps = {
-  tenantId?: string;
   organizationId: string;
-  isPublic?: boolean;
-  onComplete?: (result: UploadedUppyFile<'attachment'>) => void;
+  onComplete?: (attachments: Attachment[]) => void | Promise<void>;
   onError?: (error: Error) => void;
-};
+} & (
+  | { mediaMode: 'public-no-attachment'; tenantId?: string }
+  | { mediaMode: 'public-attachment' | 'private-attachment'; tenantId: string }
+);
 
 export type CommonBlockNoteProps = {
   id: string;
@@ -78,8 +99,6 @@ export type CommonBlockNoteProps = {
   excludeFileBlockTypes?: CustomBlockFileTypes[];
   extensions?: ExtensionFactoryInstance[];
   members?: Member[]; // for mentions
-  /** Whether embedded files are public (no auth needed). Affects URL resolution in all modes. */
-  publicFiles?: boolean;
   onFocus?: () => void;
   onEscapeClick?: () => void;
   onEnterClick?: () => void;

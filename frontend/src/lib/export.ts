@@ -22,7 +22,6 @@ type Column = ColumnOrColumnGroup<Row>;
  *
  * @returns A promise that resolves when CSV is downloaded.
  */
-// TODO [#11] remove this in favor of a backend solution
 export async function exportToCsv<R extends Row>(
   columns: { key: string; name: ReactElement | string }[],
   rows: R[],

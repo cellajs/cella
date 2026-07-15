@@ -50,8 +50,11 @@ export function UppyFilePanel({
   onError,
   organizationId,
   blockId,
-  isPublic = false,
+  mediaMode,
 }: BaseUppyFilePanelProps & FilePanelProps) {
+  // Private media lives in the private bucket and is referenced by attachment id;
+  // both public modes use the public bucket and are referenced by cloud key.
+  const isPublic = mediaMode !== 'private-attachment';
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const isOnline = useOnlineManager();
@@ -117,18 +120,20 @@ export function UppyFilePanel({
 
             setOpen(false);
             const result = assembly.results as UploadedUppyFile<'attachment'>;
+            // Parse once so the block reference and the persisted entity share the same id.
             const attachments = parseUploadedAttachments(result, organizationId);
             const currentBlock = editor.getBlock(latestBlockIdRef.current);
             if (!currentBlock) return;
 
-            // Map all attachments to promises of getting presigned URLs
-            for (let index = 0; index < attachments.length; index++) {
-              const attachment = attachments[index];
-              const updateData = { props: { name: attachment.filename, url: attachment.originalKey } };
-              editor.updateBlock(currentBlock, updateData);
+            for (const attachment of attachments) {
+              // Private → reference by attachment id (presigned); public → reference by cloud key (CDN).
+              const url = mediaMode === 'private-attachment' ? attachment.id : attachment.originalKey;
+              editor.updateBlock(currentBlock, { props: { name: attachment.filename, url } });
             }
 
-            latestOnCompleteRef.current?.(result);
+            // Hand the parsed attachments (stable client ids) to the host so it can add
+            // host linkage and persist them — the block already references these ids/keys.
+            latestOnCompleteRef.current?.(attachments);
           });
 
         // Plugin Options

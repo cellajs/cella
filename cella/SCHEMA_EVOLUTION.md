@@ -51,7 +51,6 @@ The `apiVersion` backstop (session-cookie name bump, idle-gated re-auth, jitter/
 
 ### Deferred (deliberate) ⬜
 
-- `droppedFields` old-alias emission (see [read path](#read-path)).
 - Staleness deadline: the `staleBundleMaxDays` knob exists in [config.ts](../shared/src/schema-evolution/config.ts) but has zero consumers; the forced idle-gated reload is unbuilt. Nice-to-have: the persist guard already blocks stale writes.
 - Versioned OpenAPI specs (2.1): no replay logic in generate-openapi.ts yet.
 - `GET /versions`, `Accept-Version`, `downgradeEntity` call sites (2.2) — the engine function exists with zero callers.
@@ -317,6 +316,7 @@ export const attachmentContract = evolutionContract.product('attachment', {
 // attachmentContract.updateBodySchema  - { ops: partial(updateOps) widened, stx }, ≥1 op required
 // attachmentContract.normalizeCreateItem(item)          - entity-bound runtime seam (create)
 // attachmentContract.resolveUpdateOps(entity, ops, stx) - entity-bound runtime seam (update)
+// attachmentContract.resolveServerUpdateOps(entity, ops) - trusted-server update seam
 
 // Context (plain) entity: organization-schema.ts
 export const organizationContract = evolutionContract.channel('organization', {
@@ -380,7 +380,6 @@ HLC/LWW resolution and AWSet application then operate on canonical keys only. Th
 Phase 1 deliberately has **no response-side transform**:
 
 - During expand, the entity row carries both columns (Drizzle migration adds + backfills the new column; mirror writes keep both fresh). Responses, TTL-cache entries, and seq-cursor delta fetches all dual-emit both field names with zero per-request work.
-- `droppedFields` after LWW should list canonical names plus the old alias (derived from the same key map) so old bundles can match it — not yet emitted (deferred ⬜).
 - **Contract is the enforcement point**: the old column/field is removed only when the `X-Client-Version` fleet floor has passed the expand ordinal for `expandWindowMinDays`. Automation of this check is Phase 2 (2.5); until then it is a manual step in the contract PR (playbook).
 - SSE notifications and catchup summaries are untouched either way (frozen envelope: IDs and seqs only).
 - Tradeoff (accepted): expand windows live for days-to-weeks; old+new columns coexist in DB and payloads. Standard parallel-change practice: costs bytes, not transforms.

@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { AuthContext, DbContext } from '#/core/context';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
@@ -73,23 +73,21 @@ export const deleteAttachmentsByIds = async (
     );
 };
 
-interface FindAttachmentByKeyOpts {
-  key: string;
+interface FindAttachmentByIdOpts {
+  id: string;
 }
 
-/** Find an attachment by any of its S3 keys (original, thumbnail, converted). Already tenant-scoped via RLS. */
-export const findAttachmentByKey = async (ctx: DbContext, { key }: FindAttachmentByKeyOpts) => {
+/**
+ * Find a live (non-deleted) attachment by its id. Tenant-scoped via RLS from
+ * `tenantRead`; used by the presigned-url flow to resolve a caller-referenced
+ * attachment before authorizing and signing one of its keys.
+ */
+export const findAttachmentById = async (ctx: DbContext, { id }: FindAttachmentByIdOpts) => {
   const { db } = ctx.var;
   const [att] = await db
     .select()
     .from(attachmentsTable)
-    .where(
-      or(
-        eq(attachmentsTable.originalKey, key),
-        eq(attachmentsTable.thumbnailKey, key),
-        eq(attachmentsTable.convertedKey, key),
-      ),
-    )
+    .where(and(eq(attachmentsTable.id, id), isNull(attachmentsTable.deletedAt)))
     .limit(1);
   return att;
 };

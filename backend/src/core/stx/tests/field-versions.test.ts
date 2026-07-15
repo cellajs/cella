@@ -5,68 +5,67 @@ import { filterNoOpFields, resolveFieldConflicts } from '#/core/stx/field-versio
 describe('resolveFieldConflicts', () => {
   it('accepts all fields when no stored timestamps exist', () => {
     const incoming = { name: 'New', status: 'done' };
-    const incomingTs = { name: '300:0001:aaa', status: '300:0002:aaa' };
+    const incomingTs = { name: '300:0001:aaaaa', status: '300:0002:aaaaa' };
     const result = resolveFieldConflicts(incoming, incomingTs, {});
 
-    expect(result.acceptedFields).toEqual({ name: 'New', status: 'done' });
-    expect(result.dropped).toEqual([]);
+    expect(result).toEqual({ name: 'New', status: 'done' });
   });
 
   it('accepts fields with newer HLC than stored', () => {
     const incoming = { name: 'New', status: 'done' };
-    const incomingTs = { name: '300:0001:aaa', status: '300:0002:aaa' };
-    const storedTs = { name: '200:0001:bbb', status: '200:0001:bbb' };
+    const incomingTs = { name: '300:0001:aaaaa', status: '300:0002:aaaaa' };
+    const storedTs = { name: '200:0001:bbbbb', status: '200:0001:bbbbb' };
     const result = resolveFieldConflicts(incoming, incomingTs, storedTs);
 
-    expect(result.acceptedFields).toEqual({ name: 'New', status: 'done' });
-    expect(result.dropped).toEqual([]);
+    expect(result).toEqual({ name: 'New', status: 'done' });
   });
 
   it('drops fields with older HLC than stored', () => {
     const incoming = { name: 'Old', status: 'done' };
-    const incomingTs = { name: '100:0001:aaa', status: '300:0002:aaa' };
-    const storedTs = { name: '200:0001:bbb', status: '200:0001:bbb' };
+    const incomingTs = { name: '100:0001:aaaaa', status: '300:0002:aaaaa' };
+    const storedTs = { name: '200:0001:bbbbb', status: '200:0001:bbbbb' };
     const result = resolveFieldConflicts(incoming, incomingTs, storedTs);
 
-    expect(result.acceptedFields).toEqual({ status: 'done' });
-    expect(result.dropped).toEqual(['name']);
+    expect(result).toEqual({ status: 'done' });
   });
 
   it('drops fields with equal HLC (tie goes to stored)', () => {
     const incoming = { name: 'Tied' };
-    const incomingTs = { name: '200:0001:aaa' };
-    const storedTs = { name: '200:0001:aaa' };
+    const incomingTs = { name: '200:0001:aaaaa' };
+    const storedTs = { name: '200:0001:aaaaa' };
     const result = resolveFieldConflicts(incoming, incomingTs, storedTs);
 
-    expect(result.acceptedFields).toEqual({});
-    expect(result.dropped).toEqual(['name']);
+    expect(result).toEqual({});
   });
 
-  it('accepts fields with no incoming HLC (untracked)', () => {
+  it('rejects scalar fields with no incoming HLC', () => {
     const incoming = { name: 'New' };
-    const incomingTs = {}; // no HLC for name
-    const storedTs = { name: '200:0001:bbb' };
-    const result = resolveFieldConflicts(incoming, incomingTs, storedTs);
+    const storedTs = { name: '200:0001:bbbbb' };
 
-    expect(result.acceptedFields).toEqual({ name: 'New' });
-    expect(result.dropped).toEqual([]);
+    expect(() => resolveFieldConflicts(incoming, {}, storedTs)).toThrow(/Missing HLC.*name/);
   });
 
   it('handles empty incoming fields', () => {
-    const result = resolveFieldConflicts({}, {}, { name: '200:0001:bbb' });
+    const result = resolveFieldConflicts({}, {}, { name: '200:0001:bbbbb' });
 
-    expect(result.acceptedFields).toEqual({});
-    expect(result.dropped).toEqual([]);
+    expect(result).toEqual({});
   });
 
   it('handles multiple fields with mixed results', () => {
     const incoming = { name: 'A', status: 'B', description: 'C' };
-    const incomingTs = { name: '300:0001:aaa', status: '100:0001:aaa', description: '250:0001:aaa' };
-    const storedTs = { name: '200:0001:bbb', status: '200:0001:bbb', description: '200:0001:bbb' };
+    const incomingTs = {
+      name: '300:0001:aaaaa',
+      status: '100:0001:aaaaa',
+      description: '250:0001:aaaaa',
+    };
+    const storedTs = {
+      name: '200:0001:bbbbb',
+      status: '200:0001:bbbbb',
+      description: '200:0001:bbbbb',
+    };
     const result = resolveFieldConflicts(incoming, incomingTs, storedTs);
 
-    expect(result.acceptedFields).toEqual({ name: 'A', description: 'C' });
-    expect(result.dropped).toEqual(['status']);
+    expect(result).toEqual({ name: 'A', description: 'C' });
   });
 });
 

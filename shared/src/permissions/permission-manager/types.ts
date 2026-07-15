@@ -33,7 +33,7 @@ export type SubjectForPermission = {
   id?: string;
   /** The user who created this entity. Enables the built-in `own` row condition. */
   createdBy?: string | null;
-  /** Ancestor context IDs keyed by context entity type. `null` means explicitly not scoped to that context. */
+  /** Ancestor context IDs keyed by channel entity type. `null` means explicitly not scoped to that context. */
   channelIds: ChannelScope;
   /**
    * Additional row fields for row-condition evaluation (see `row-conditions.ts`) and

@@ -5,7 +5,7 @@ import type { UserMenuItem } from '~/modules/me/types';
  * Filters and sorts menu items by entity type and archive state.
  *
  * @param data - The array of menu items to filter and sort
- * @param entityType - The type of context entity to filter by
+ * @param entityType - The type of channel entity to filter by
  * @param archived - Whether to filter for archived or non-archived items
  * @param reverse - Whether to reverse the sort order (default: false)
  * @returns The filtered and sorted array of menu items

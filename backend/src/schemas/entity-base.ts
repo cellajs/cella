@@ -23,11 +23,11 @@ const auditShape = {
 };
 
 /**
- * Base schema for context entities, including common fields. Exported separately to avoid circular dependencies.
+ * Base schema for channel entities, including common fields. Exported separately to avoid circular dependencies.
  *
  * `included` is not part of the base schema to avoid circular dependencies.
- * Context entity response schemas add `included: channelEntityIncludedSchema` explicitly.
- * Import `channelEntityIncludedSchema` directly from its context entity included schema module.
+ * Channel entity response schemas add `included: channelEntityIncludedSchema` explicitly.
+ * Import `channelEntityIncludedSchema` directly from its channel entity included schema module.
  * See organizationSchema for reference.
  */
 export const channelEntityBaseSchema = z

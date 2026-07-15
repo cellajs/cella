@@ -5,7 +5,7 @@ import { organizationsListQueryOptions } from '~/modules/organization/query';
 import type { BuildEntitySyncQueriesParams, ChannelEntityListQueryMap, EntitySyncQueryOptions } from '~/query/types';
 
 /**
- * Maps context entity types to their list query options (used for menu generation).
+ * Maps channel entity types to their list query options (used for menu generation).
  */
 export const channelEntityListQueriesByType = {
   organization: (params) => organizationsListQueryOptions(params),

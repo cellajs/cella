@@ -82,7 +82,6 @@ function BlockNote({
   excludeFileBlockTypes,
   extensions,
   members, // for mentions
-  publicFiles,
   filePanel,
   baseFilePanelProps,
   commitOnEveryChange = false,
@@ -126,7 +125,7 @@ function BlockNote({
       : undefined,
 
     extensions: [checkedExtension(), ...(extensions ?? [])],
-    resolveFileUrl: createResolveFileUrl({ publicFiles, baseFilePanelProps }),
+    resolveFileUrl: createResolveFileUrl({ baseFilePanelProps }),
   });
 
   // Re-subscribe Yjs UndoManager after TipTap mount cycles so CMD+Z keeps working.

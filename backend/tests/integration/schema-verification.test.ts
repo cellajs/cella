@@ -11,7 +11,7 @@ const orgScopedProductTables = appConfig.productEntityTypes.map((t) =>
   getTableName(entityTables[t as keyof typeof entityTables]),
 );
 
-/** Context entity tables (organizations, workspaces, projects) */
+/** Channel entity tables (organizations, workspaces, projects) */
 const channelEntityTables = appConfig.channelEntityTypes.map((t) =>
   getTableName(entityTables[t as keyof typeof entityTables]),
 );

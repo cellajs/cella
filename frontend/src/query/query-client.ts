@@ -2,6 +2,7 @@ import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { resetConnectivityCache } from '~/query/offline/connectivity';
+import { mutationRetry } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
 
 const productEntitySet = new Set<string>(appConfig.productEntityTypes);
@@ -106,11 +107,15 @@ export const queryClient: QueryClient =
         retry: false,
       },
       mutations: {
-        // TODO: Make connectivity failures enter the persisted paused-mutation queue.
-        // `offlineFirst` permits the initial attempt, while `retry: 0` settles a
-        // network error before TanStack Query can mark the mutation as paused.
+        // Connectivity failures must enter the persisted paused-mutation queue, not be lost.
+        // `offlineFirst` still fires the first attempt (the connectivity probe may be mid-flight,
+        // so a stale offline flag shouldn't block a real request), and `mutationRetry` keeps
+        // retrying *network* errors until the retryer hits a boundary while offline — the point at
+        // which TanStack pauses the mutation and dehydrates it for replay on reconnect (see
+        // `shouldDehydrateMutation` in provider.tsx). Server errors (ApiError) are not retried, so
+        // they settle fast and their handlers (4xx quarantine, 5xx toast) run immediately.
         networkMode: 'offlineFirst',
-        retry: 0,
+        retry: mutationRetry,
       },
     },
   });

@@ -6,7 +6,7 @@ export const seenGroupingChannelTypes = new Set(
 );
 
 /**
- * Derive the context entity ID for seen-tracking grouping from any entity row.
+ * Derive the channel entity ID for seen-tracking grouping from any entity row.
  * Uses hierarchy to find the parent context type, then reads the matching ID column from the entity.
  */
 export function getSeenChannelId(entityType: string, entity: Record<string, unknown>): string {

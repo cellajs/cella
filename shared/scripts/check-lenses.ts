@@ -157,7 +157,7 @@ function checkContractCompleteness() {
   for (const type of appConfig.channelEntityTypes) {
     if (!combined.includes(`evolutionContract.channel('${type}'`)) {
       failures.push(
-        `Contract completeness: context entity "${type}" never calls evolutionContract.channel('${type}', …) in backend/src/modules — its create/update body schemas bypass the lens seams.`,
+        `Contract completeness: channel entity "${type}" never calls evolutionContract.channel('${type}', …) in backend/src/modules — its create/update body schemas bypass the lens seams.`,
       );
     }
   }

@@ -105,9 +105,9 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
  * Uses channelType for targeted query invalidation instead of broad invalidation.
  *
  * Strategy:
- * - create: Invalidate the specific context entity list (e.g., organizations), then refresh menu
+ * - create: Invalidate the specific channel entity list (e.g., organizations), then refresh menu
  * - update: Invalidate member queries for the org, refresh user data for role changes
- * - delete: Invalidate the specific context entity list, then refresh menu
+ * - delete: Invalidate the specific channel entity list, then refresh menu
  */
 function handleMembershipNotification(
   action: AppStreamNotification['action'],

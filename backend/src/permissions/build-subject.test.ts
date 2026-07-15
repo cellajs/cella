@@ -92,7 +92,7 @@ describe('buildSubject', () => {
     const rootChannel = hierarchy.channelTypes.find((t) => hierarchy.getOrderedAncestors(t).length === 0);
 
     if (rootChannel) {
-      it(`builds subject for root context type "${rootChannel}" without any ancestor IDs`, () => {
+      it(`builds subject for root channel type "${rootChannel}" without any ancestor IDs`, () => {
         const subject = buildSubject(rootChannel, {});
         expect(subject.entityType).toBe(rootChannel);
         expect(subject.id).toBeDefined();
@@ -118,12 +118,12 @@ describe('buildSubject', () => {
     });
   }
 
-  // Test every context entity type with ancestors
+  // Test every channel entity type with ancestors
   for (const entityType of hierarchy.channelTypes) {
     const typeAncestors = hierarchy.getOrderedAncestors(entityType);
     if (typeAncestors.length === 0) continue;
 
-    it(`builds a valid subject for context type "${entityType}" (ancestors: ${typeAncestors.join(' → ')})`, () => {
+    it(`builds a valid subject for channel type "${entityType}" (ancestors: ${typeAncestors.join(' → ')})`, () => {
       const ancestorChannelIds: Record<string, string> = {};
       for (const ancestor of typeAncestors) {
         ancestorChannelIds[appConfig.entityIdColumnKeys[ancestor]] = `test-${ancestor}-id`;

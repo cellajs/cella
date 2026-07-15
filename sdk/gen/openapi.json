@@ -154,7 +154,7 @@
     },
     {
       "name": "channel",
-      "description": "Operations on context entities (entities that have memberships, e.g. organizations, projects).",
+      "description": "Operations on channel entities (entities that have memberships, e.g. organizations, projects).",
       "kind": "entity"
     },
     {
@@ -206,7 +206,7 @@
     },
     {
       "name": "organizations",
-      "description": "Endpoints for managing organizations, which are core context entities and the highest ancestor\n    in the entity hierarchy. Organizations define access boundaries and are typically the primary scope for\n    permissions and resource management.",
+      "description": "Endpoints for managing organizations, which are core channel entities and the highest ancestor\n    in the entity hierarchy. Organizations define access boundaries and are typically the primary scope for\n    permissions and resource management.",
       "parent": "cella",
       "kind": "module"
     },
@@ -236,7 +236,7 @@
     },
     {
       "name": "users",
-      "description": "Endpoints for managing users at the system level. Unlike context entities such as\n    organizations, a user is a global entity that is not scoped to a specific context. These endpoints are\n    intended for administrative operations on any user in the system.",
+      "description": "Endpoints for managing users at the system level. Unlike channel entities such as\n    organizations, a user is a global entity that is not scoped to a specific context. These endpoints are\n    intended for administrative operations on any user in the system.",
       "parent": "cella",
       "kind": "module"
     },
@@ -685,7 +685,7 @@
           "channelType": {
             "type": ["string", "null"],
             "enum": ["organization", null],
-            "description": "Context entity type for membership events (e.g. organization, project)"
+            "description": "Channel entity type for membership events (e.g. organization, project)"
           },
           "seq": {
             "type": ["integer", "null"],
@@ -693,7 +693,7 @@
           },
           "channelId": {
             "type": ["string", "null"],
-            "description": "Context entity ID for grouping (e.g. projectId for tasks in unseen counts)"
+            "description": "Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)"
           },
           "stx": {
             "allOf": [
@@ -1848,7 +1848,7 @@
           "chatSupport",
           "included"
         ],
-        "description": "The main context entity is an organization.",
+        "description": "The main channel entity is an organization.",
         "example": {
           "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "tenantId": "d1lgzb",
@@ -2164,7 +2164,7 @@
           "displayOrder",
           "organizationId"
         ],
-        "description": "A user's membership in a context entity, including role and activity data.",
+        "description": "A user's membership in a channel entity, including role and activity data.",
         "example": {
           "id": "92f342dd-6e67-4956-ab1c-f91b3ce934d7",
           "channelType": "organization",
@@ -4456,7 +4456,7 @@
         "operationId": "getMyMemberships",
         "tags": ["me", "cella"],
         "summary": "Get my memberships",
-        "description": "Returns all memberships for the current user across all context entities.",
+        "description": "Returns all memberships for the current user across all channel entities.",
         "x-guard": ["authGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -4511,13 +4511,13 @@
         "operationId": "getUnseenCounts",
         "tags": ["seen", "cella"],
         "summary": "Get unseen counts",
-        "description": "Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.",
+        "description": "Returns the number of unseen product entities per parent channel entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.",
         "x-guard": ["authGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
           "200": {
-            "description": "Unseen counts per parent context entity per entity type",
+            "description": "Unseen counts per parent channel entity per entity type",
             "content": {
               "application/json": {
                 "schema": {
@@ -7076,7 +7076,7 @@
                             }
                           }
                         ],
-                        "description": "The main context entity is an organization.",
+                        "description": "The main channel entity is an organization.",
                         "example": {
                           "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                           "tenantId": "d1lgzb",
@@ -8791,10 +8791,20 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 2048
+              "format": "uuid"
             },
             "required": true,
-            "name": "key",
+            "name": "attachmentId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["original", "thumbnail", "converted"],
+              "default": "original"
+            },
+            "required": false,
+            "name": "variant",
             "in": "query"
           }
         ],
@@ -9096,7 +9106,7 @@
         "operationId": "membershipInvite",
         "tags": ["memberships", "cella"],
         "summary": "Create memberships",
-        "description": "Creates one or more memberships, inviting users (existing or new) to a context entity such as an organization.",
+        "description": "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization.",
         "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
@@ -9574,7 +9584,7 @@
         "operationId": "getMembers",
         "tags": ["memberships", "cella"],
         "summary": "Get list of members",
-        "description": "Retrieves members (users) of a context entity by ID, including their associated membership data.",
+        "description": "Retrieves members (users) of a channel entity by ID, including their associated membership data.",
         "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -9839,7 +9849,7 @@
         "operationId": "getPendingMemberships",
         "tags": ["memberships", "cella"],
         "summary": "Get list of pending memberships",
-        "description": "Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.",
+        "description": "Returns pending memberships for a channel entity, identified by ID. This does not include pending invitations for non-existing users.",
         "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],

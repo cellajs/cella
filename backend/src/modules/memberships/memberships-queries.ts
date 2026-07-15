@@ -19,7 +19,7 @@ interface CountMembershipsByChannelOpts {
   channelId: string;
 }
 
-/** Count active memberships for a context entity. */
+/** Count active memberships for a channel entity. */
 export const countMembershipsByChannel = async (
   ctx: DbContext,
   { channelType, channelId }: CountMembershipsByChannelOpts,
@@ -37,7 +37,7 @@ interface CountPendingInvitesByChannelOpts {
   channelId: string;
 }
 
-/** Count pending invitations for a context entity. */
+/** Count pending invitations for a channel entity. */
 export const countPendingInvitesByChannel = async (
   ctx: DbContext,
   { channelType, channelId }: CountPendingInvitesByChannelOpts,
@@ -308,7 +308,7 @@ interface FindMemberPreviewsByChannelsOpts {
 /**
  * Member previews for a set of contexts in ONE batched query: the first `limit` members
  * per context with the given role, ordered by membership createdAt (oldest first).
- * Powers `include=members` on context entity list endpoints; overflow counts come from
+ * Powers `include=members` on channel entity list endpoints; overflow counts come from
  * the pre-computed `m:{role}` counters, so previews never need a second query.
  */
 export const findMemberPreviewsByChannels = async (

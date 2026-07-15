@@ -30,7 +30,8 @@ vi.mock('../dexie/download-queue', async () => {
 });
 
 vi.mock('../file-url', () => ({
-  getFileUrl: vi.fn().mockResolvedValue('https://example.com/file.png'),
+  getPrivateFileUrlById: vi.fn().mockResolvedValue('https://example.com/file.png'),
+  getPublicFileUrl: vi.fn().mockReturnValue('https://cdn.example.com/file.png'),
 }));
 
 vi.mock('../query', () => ({

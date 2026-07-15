@@ -46,7 +46,7 @@ describe('TransactionBuffer', () => {
     expect(processedEvents).toHaveLength(2);
   });
 
-  it('suppresses cascaded child deletes when the parent context entity is deleted', async () => {
+  it('suppresses cascaded child deletes when the parent channel entity is deleted', async () => {
     buffer.onBegin({ tag: 'begin', xid: 42, commitLsn: null, commitTime: BigInt(0) });
 
     // 3 attachment deletes cascading from the organization
@@ -57,7 +57,7 @@ describe('TransactionBuffer', () => {
     // Membership cascaded delete
     const m1 = mockParseResult({ action: 'delete', resourceType: 'membership', entityType: null, subjectId: 'mem-1', organizationId: 'org-1' });
 
-    // The organization (context entity) delete itself
+    // The organization (channel entity) delete itself
     const proj = mockParseResult({ action: 'delete', entityType: 'organization', subjectId: 'org-1', organizationId: 'org-1' });
 
     await buffer.onEvent('0/1', t1);
@@ -77,7 +77,7 @@ describe('TransactionBuffer', () => {
     expect(survivors).toContainEqual({ entityType: 'organization', subjectId: 'org-1' });
   });
 
-  it('does not suppress deletes from different context entities', async () => {
+  it('does not suppress deletes from different channel entities', async () => {
     buffer.onBegin({ tag: 'begin', xid: 43, commitLsn: null, commitTime: BigInt(0) });
 
     // Delete project-1
@@ -164,7 +164,7 @@ describe('TransactionBuffer', () => {
     expect((onSurvivingEvents as ReturnType<typeof vi.fn>).mock.calls[0][0]).toHaveLength(1);
   }, 30_000); // Processes 50k events; the default 10s timeout is too tight on loaded CI runners
 
-  it('suppresses child deletes that arrive before parent context entity delete', async () => {
+  it('suppresses child deletes that arrive before parent channel entity delete', async () => {
     buffer.onBegin({ tag: 'begin', xid: 101, commitLsn: null, commitTime: BigInt(0) });
 
     // Children arrive before parent (edge case: non-standard WAL order)
@@ -199,7 +199,7 @@ describe('TransactionBuffer', () => {
 
     await buffer.onCommit();
 
-    // Both context entity deletes survive (context entity deletes are never suppressed);
+    // Both channel entity deletes survive (channel entity deletes are never suppressed);
     // only the attachment, matched via organizationId, is suppressed as a cascade.
     expect(processedEvents).toHaveLength(2); // org + project
     const types = processedEvents.map((e) => e.result.activity.entityType);

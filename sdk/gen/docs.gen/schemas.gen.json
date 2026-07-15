@@ -370,7 +370,7 @@
         "channelType": {
           "type": ["string", "null"],
           "required": true,
-          "description": "Context entity type for membership events (e.g. organization, project)",
+          "description": "Channel entity type for membership events (e.g. organization, project)",
           "enum": ["organization", null]
         },
         "seq": {
@@ -381,7 +381,7 @@
         "channelId": {
           "type": ["string", "null"],
           "required": true,
-          "description": "Context entity ID for grouping (e.g. projectId for tasks in unseen counts)"
+          "description": "Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)"
         },
         "stx": {
           "type": ["object", "null"],
@@ -944,7 +944,7 @@
       "module": ["memberships"],
       "owner": ["cella"]
     },
-    "description": "A user's membership in a context entity, including role and activity data.",
+    "description": "A user's membership in a channel entity, including role and activity data.",
     "example": {
       "id": "92f342dd-6e67-4956-ab1c-f91b3ce934d7",
       "channelType": "organization",
@@ -1265,7 +1265,7 @@
       "module": ["organizations"],
       "owner": ["cella"]
     },
-    "description": "The main context entity is an organization.",
+    "description": "The main channel entity is an organization.",
     "example": {
       "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
       "tenantId": "d1lgzb",

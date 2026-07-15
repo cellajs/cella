@@ -21,7 +21,7 @@ import type { PermissionTopology } from './permission-manager/topology';
  */
 type ActionStates = Record<EntityActionType, ActionPermissionState>;
 
-/** Entity-type-keyed permission map: context entity + its descendant types */
+/** Entity-type-keyed permission map: channel entity + its descendant types */
 export type EntityCanMap = Partial<Record<EntityType, ActionStates>>;
 
 /**
@@ -51,11 +51,11 @@ function computeEntityPermissions(
 }
 
 /**
- * Computes a permission map keyed by entity type for a context entity and its descendants.
- * Used on the frontend to derive `can` from the membership baked onto a context entity.
+ * Computes a permission map keyed by entity type for a channel entity and its descendants.
+ * Used on the frontend to derive `can` from the membership baked onto a channel entity.
  *
  * The map includes permissions for:
- * - The context entity itself (e.g., `organization`)
+ * - The channel entity itself (e.g., `organization`)
  * - All descendant entity types per the hierarchy (e.g., `attachment`)
  *
  * Actions with `'own'` permission are preserved as `'own'` in the map.
@@ -83,7 +83,7 @@ export const computeCan = (
   const { hierarchy: h, entityActions } = resolveTopology(topology);
   const map: EntityCanMap = {};
 
-  // Permissions for the context entity itself
+  // Permissions for the channel entity itself
   map[channelType] = computeEntityPermissions(channelType, membership.channelType, membership.role, policies, entityActions);
 
   // Permissions for all descendant entity types (children + their children)

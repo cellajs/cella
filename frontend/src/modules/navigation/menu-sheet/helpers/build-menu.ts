@@ -15,7 +15,7 @@ function buildInitialMenu<const T extends readonly { entityType: ChannelEntityTy
 const baseMenu = buildInitialMenu(appConfig.menuStructure);
 
 /**
- * Builds a user menu from a mapping of context entity types to their corresponding items.
+ * Builds a user menu from a mapping of channel entity types to their corresponding items.
  *
  * @param byType - A map of entity types to their menu items
  * @param menuStructure - The menu structure configuration

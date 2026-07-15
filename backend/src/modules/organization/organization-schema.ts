@@ -37,7 +37,7 @@ export const organizationSchema = z
     included: organizationIncludedSchema,
   })
   .openapi('Organization', {
-    description: 'The main context entity is an organization.',
+    description: 'The main channel entity is an organization.',
     example: mockOrganizationResponse(),
     'x-tags': schemaTags('data', 'organizations', 'cella'),
   });

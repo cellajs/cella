@@ -20,8 +20,7 @@ app.openapi(attachmentRoutes.getAttachments, async (ctx) => {
 });
 
 app.openapi(attachmentRoutes.getPresignedUrl, async (ctx) => {
-  const { key } = ctx.req.valid('query');
-  const result = await getPresignedUrlOp(ctx, key);
+  const result = await getPresignedUrlOp(ctx, ctx.req.valid('query'));
   assertSuccess(result, 'attachment');
   return ctx.json(result.data, 200);
 });

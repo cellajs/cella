@@ -20,11 +20,11 @@ const { transactionTimeoutMs } = RESOURCE_LIMITS.buffers;
 /**
  * Transaction-aware buffer for CDC WAL events.
  *
- * Uses streaming cascade suppression: as DELETE events arrive, context entity
+ * Uses streaming cascade suppression: as DELETE events arrive, channel entity
  * IDs (organization, project, workspace) are tracked in a Set. Child deletes
  * referencing a tracked context ID are dropped inline, never buffered.
  *
- * This keeps memory bounded to surviving events only (context entity deletes +
+ * This keeps memory bounded to surviving events only (channel entity deletes +
  * non-delete mutations), regardless of cascade size. A 100k-task org delete
  * buffers ~8 events instead of ~116k.
  *
@@ -35,7 +35,7 @@ export class TransactionBuffer {
   private pendingEvents: PendingEvent[] = [];
   private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
-  /** Context entity IDs deleted in the current transaction (streaming suppression). */
+  /** Channel entity IDs deleted in the current transaction (streaming suppression). */
   private deletedChannelIds = new Set<string>();
 
   /** Count of events suppressed in the current transaction. */
@@ -74,7 +74,7 @@ export class TransactionBuffer {
   /**
    * Buffer a processed DML event. If no transaction is active, process immediately.
    * Cascaded child deletes are dropped inline via streaming suppression when the
-   * parent context entity delete has already been seen.
+   * parent channel entity delete has already been seen.
    */
   async onEvent(lsn: string, result: ParseMessageResult): Promise<void> {
     // No active transaction: emit immediately (passthrough)
@@ -85,7 +85,7 @@ export class TransactionBuffer {
 
     const { activity } = result;
 
-    // Track context entity deletes for streaming suppression
+    // Track channel entity deletes for streaming suppression
     if (activity.action === 'delete' && activity.entityType && isChannelEntity(activity.entityType) && activity.subjectId) {
       this.deletedChannelIds.add(activity.subjectId);
     }
@@ -102,7 +102,7 @@ export class TransactionBuffer {
   /**
    * Handle a COMMIT message: process surviving buffered events.
    * Most cascade suppression happens inline in onEvent(). A second pass catches
-   * any child deletes that arrived before their parent context entity delete.
+   * any child deletes that arrived before their parent channel entity delete.
    */
   async onCommit(): Promise<void> {
     this.clearTimeout();
@@ -116,10 +116,10 @@ export class TransactionBuffer {
     this.deletedChannelIds.clear();
     this.suppressedCount = 0;
 
-    // Second pass: catch child deletes that arrived before their parent context entity
+    // Second pass: catch child deletes that arrived before their parent channel entity
     // delete. Most children are dropped inline in onEvent(), but WAL order isn't always
     // parent-first (e.g., application-level batch deletes). This pass is cheap since only
-    // surviving events remain (typically context entity deletes + non-delete mutations).
+    // surviving events remain (typically channel entity deletes + non-delete mutations).
     if (deletedChannelIds && events.length > 1) {
       const deletedChannelSet = new Set(deletedChannelIds);
       const filtered: PendingEvent[] = [];
@@ -191,17 +191,17 @@ export class TransactionBuffer {
   }
 
   /**
-   * Check if an event is a cascaded delete from a deleted context entity, matched via the
-   * activity's context entity ID columns.
+   * Check if an event is a cascaded delete from a deleted channel entity, matched via the
+   * activity's channel entity ID columns.
    */
   private isCascadedDeleteByIds(result: ParseMessageResult, deletedChannelIds: Set<string>): boolean {
     const { activity } = result;
     if (activity.action !== 'delete') return false;
 
-    // Don't suppress the context entity delete itself
+    // Don't suppress the channel entity delete itself
     if (activity.entityType && isChannelEntity(activity.entityType)) return false;
 
-    // Check all context entity ID columns on this activity
+    // Check all channel entity ID columns on this activity
     for (const idColumn of channelIdColumnKeys) {
       const value = (activity as Partial<ChannelEntityIdColumns>)[idColumn];
       if (typeof value === 'string' && deletedChannelIds.has(value)) {

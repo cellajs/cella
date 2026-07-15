@@ -8,14 +8,14 @@ import {
 } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 
-/** Get all registered context entity types with their query keys */
+/** Get all registered channel entity types with their query keys */
 export function getRegisteredChannelEntities(): { type: ChannelEntityType; keys: EntityQueryKeys }[] {
   return getRegisteredEntityTypes()
     .filter((t) => hierarchy.isChannel(t))
     .map((t) => ({ type: t as ChannelEntityType, keys: getEntityQueryKeys(t) }));
 }
 
-/** Get registered query keys for a context entity type, or null if not registered */
+/** Get registered query keys for a channel entity type, or null if not registered */
 export function getChannelEntityKeys(entityType: string): { type: ChannelEntityType; keys: EntityQueryKeys } | null {
   if (!hierarchy.isChannel(entityType)) return null;
   const keys = getEntityQueryKeys(entityType);
@@ -39,7 +39,7 @@ export function findMembership(memberships: MembershipBase[], entityId: string):
 
 /**
  * Get menu parent types for a given entity type from menuStructure config.
- * These are context entity types that host this entity as a subentity in the menu,
+ * These are channel entity types that host this entity as a subentity in the menu,
  * even if they aren't hierarchy ancestors (e.g. workspace hosts project).
  */
 export function getMenuParentTypes(entityType: string): ChannelEntityType[] {
@@ -47,7 +47,7 @@ export function getMenuParentTypes(entityType: string): ChannelEntityType[] {
 }
 
 /**
- * Check if a context entity type is a menu parent of another.
+ * Check if a channel entity type is a menu parent of another.
  * Propagates ancestor slug re-enrichment when a menu parent's cache updates.
  */
 export function isMenuParentOf(parentType: string, childType: string): boolean {

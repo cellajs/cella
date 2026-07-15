@@ -16,7 +16,7 @@ import { entityTableNames } from '#/tables';
  * with entityType values but true schema also includes resourceType values.
  * It should always be oneOf: entityType or resourceType populated with their respective values.
  * Uses deterministic seeding - same key produces same data.
- * Context entity ID columns are generated dynamically based on relatable context entity types.
+ * Channel entity ID columns are generated dynamically based on relatable channel entity types.
  * Used for DB seeding, tests, and API response examples.
  */
 export const mockActivity = (key = 'activity:default', overrides?: Partial<ActivityModel>): ActivityModel =>

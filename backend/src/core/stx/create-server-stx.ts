@@ -2,9 +2,8 @@ import { uuidv7 } from 'uuidv7';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
 /**
- * Create sync transaction metadata for server-side entity creation.
- * Use this for system-generated entities (seeds, imports, background jobs)
- * that bypass the normal client mutation flow.
+ * Create base metadata for a trusted server mutation. Creates use it directly;
+ * `resolveServerUpdateOps` adds timestamps for changed scalar fields.
  */
 export function createServerStx(): StxBase {
   return {

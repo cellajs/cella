@@ -93,7 +93,7 @@ export const AppSearch = () => {
     enabled: debouncedSearchValue.length > 0,
   });
 
-  // Get context entity queries from offline config
+  // Get channel entity queries from offline config
   const channelEntityResults = Object.fromEntries(
     Object.entries(channelEntityListQueriesByType).map(([entityType, queryOptions]) => [
       entityType,

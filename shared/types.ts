@@ -8,13 +8,13 @@ import { appConfig } from './src/config-builder/app-config';
 /** All entities in this app */
 export type EntityType = (typeof appConfig.entityTypes)[number];
 
-/** Context entities (entities with memberships only) */
+/** Channel entities (entities with memberships only) */
 export type ChannelEntityType = (typeof appConfig.channelEntityTypes)[number];
 
 /** Product entities: user-generated content (no memberships assigned) */
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
-/** Relatable context entities - context entities that appear as parents of product entities. Used for activities table columns and CDC context extraction. */
+/** Relatable channel entities - channel entities that appear as parents of product entities. Used for activities table columns and CDC context extraction. */
 export type RelatableChannelEntityType = (typeof hierarchy.relatableChannelTypes)[number];
 
 /** Resource types that are not entities but have activities logged */
@@ -142,7 +142,7 @@ export type AncestorChannelType<E extends string> = E extends keyof HierarchyPar
   : never;
 
 /**
- * The root context entity type: the parentless context (no ancestors), e.g. `'organization'`.
+ * The root channel entity type: the parentless context (no ancestors), e.g. `'organization'`.
  * Derived from the hierarchy so forks that rename/restructure the root don't need code changes.
  * Use `EntityIdColumnKey<RootChannelType>` instead of hardcoding `'organizationId'`.
  */

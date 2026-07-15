@@ -1,7 +1,5 @@
-import { useEffect } from 'react';
-import { useLatestRef } from './use-latest-ref';
+import { useEffect, useEffectEvent } from 'react';
 
-// TODO could we drop this as its an anti pattern anyways? What options do we have?
 /**
  * Hook to listen for window events.
  *
@@ -17,13 +15,12 @@ export function useEventListener<K extends keyof WindowEventMap>(
   options?: { enabled?: boolean; passive?: boolean },
 ): void {
   const { enabled = true, passive } = options ?? {};
-  const handlerRef = useLatestRef(handler);
+  const onEvent = useEffectEvent(handler);
 
   useEffect(() => {
     if (!enabled) return;
 
-    const listener = (e: WindowEventMap[K]) => handlerRef.current(e);
-    window.addEventListener(eventName, listener, { passive });
-    return () => window.removeEventListener(eventName, listener);
+    window.addEventListener(eventName, onEvent, { passive });
+    return () => window.removeEventListener(eventName, onEvent);
   }, [eventName, enabled, passive]);
 }

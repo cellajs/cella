@@ -5,7 +5,7 @@ import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
 import { usersTable } from '#/modules/user/user-db';
 
 /**
- * Creates base columns shared by all context entities.
+ * Creates base columns shared by all channel entities.
  */
 export const channelEntityColumns = <T extends ChannelEntityType>(entityType: T) => ({
   ...tenantEntityColumns(entityType),

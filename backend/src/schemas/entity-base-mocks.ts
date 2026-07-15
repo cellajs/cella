@@ -12,7 +12,7 @@ const mockEntityCore = () => ({
 
 /**
  * Generates a mock ChannelEntityBase response.
- * Context entities have memberships (e.g., organization).
+ * Channel entities have memberships (e.g., organization).
  */
 export const mockChannelEntityBase = (key = 'context-entity:default') =>
   withFakerSeed(key, () => {

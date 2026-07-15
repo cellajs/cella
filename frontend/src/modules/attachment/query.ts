@@ -6,19 +6,19 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import {
-  type Attachment,
-  type CreateAttachmentsData,
-  createAttachments,
-  deleteAttachments,
-  type GetAttachmentsData,
-  getAttachment,
-  getAttachments,
-  type UpdateAttachmentData,
-  updateAttachment,
-} from 'sdk';
+import { type Attachment, type GetAttachmentsData, getAttachment, getAttachments } from 'sdk';
 import { zAttachment } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
+import {
+  type CreateAttachmentInput,
+  type CreateAttachmentVars,
+  createAttachmentsMutationFn,
+  type DeleteAttachmentVars,
+  deleteAttachmentsMutationFn,
+  type UpdateAttachmentFullVars,
+  type UpdateAttachmentVars,
+  updateAttachmentMutationFn,
+} from '~/modules/attachment/query-mutations';
 import { cacheCreate, cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
@@ -30,18 +30,10 @@ import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/
 import { syncStaleTime } from '~/query/basic/sync-stale-config';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import { coalescePendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
-import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
 import { mergeServerResponse, syncEntityToCache } from '~/query/offline/update-success-utils';
 import { getCacheToken } from '~/query/realtime/cache-token-store';
 import { getRouteOrgId, getRouteTenantId } from '~/query/realtime/sync-priority';
-import type { QueryOrgContext } from '~/query/types';
 import { createResourceError } from '~/utils/resource-error';
-
-type CreateAttachmentItem = CreateAttachmentsData['body'][number];
-type CreateAttachmentInput = Omit<CreateAttachmentItem, 'stx'>[];
-type UpdateAttachmentItem = UpdateAttachmentData['body'];
-type UpdateAttachmentFields = UpdateAttachmentItem['ops'];
-type UpdateAttachmentVars = { id: string; ops: UpdateAttachmentFields };
 
 const attachmentsLimit = appConfig.requestLimits.attachments;
 
@@ -171,23 +163,20 @@ export function useGroupAttachments(
 }
 
 // --- Mutations ---
+// The mutation functions live in ./attachment-mutations (shared with the offline-replay defaults).
 
 export const useAttachmentCreateMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
   const orgKey = keys.list.org(organizationId);
 
-  return useMutation({
+  const mutation = useMutation({
     mutationKey: keys.create,
     scope: { id: 'attachment' },
-    mutationFn: async (data: CreateAttachmentInput) => {
-      const stx = createStxForCreate();
-      const body = data.map((item) => ({ ...item, stx }));
-      return createAttachments({ path: { tenantId, organizationId }, body });
-    },
-    onMutate: async (newAttachments) => {
+    mutationFn: createAttachmentsMutationFn,
+    onMutate: async ({ data }: CreateAttachmentVars) => {
       await queryClient.cancelQueries({ queryKey: orgKey });
       // Attachments already have IDs from Transloadit, preserved in optimistic entity.
-      const optimisticAttachments = newAttachments.map((att) => createOptimisticEntity(zAttachment, att));
+      const optimisticAttachments = data.map((att) => createOptimisticEntity(zAttachment, att));
       cacheCreate(orgKey, optimisticAttachments);
       return { optimisticAttachments };
     },
@@ -209,20 +198,25 @@ export const useAttachmentCreateMutation = (tenantId: string, organizationId: st
       if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, orgKey);
     },
   });
+
+  // Inject org context so persisted variables replay correctly after a reload; callers pass just the data.
+  return {
+    ...mutation,
+    mutate: (data: CreateAttachmentInput, options?: Parameters<typeof mutation.mutate>[1]) =>
+      mutation.mutate({ tenantId, organizationId, data }, options),
+    mutateAsync: (data: CreateAttachmentInput, options?: Parameters<typeof mutation.mutateAsync>[1]) =>
+      mutation.mutateAsync({ tenantId, organizationId, data }, options),
+  };
 };
 
 export const useAttachmentUpdateMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
   const orgKey = keys.list.org(organizationId);
 
-  return useMutation({
+  const mutation = useMutation({
     mutationKey: keys.update,
-    mutationFn: async ({ id, ops }: UpdateAttachmentVars) => {
-      const scalarFieldNames = ops ? Object.keys(ops) : [];
-      const stx = createStxForUpdate(scalarFieldNames);
-      return updateAttachment({ path: { tenantId, organizationId, id }, body: { ops, stx } });
-    },
-    onMutate: async ({ id, ops }: UpdateAttachmentVars) => {
+    mutationFn: updateAttachmentMutationFn,
+    onMutate: async ({ id, ops }: UpdateAttachmentFullVars) => {
       // If there's a pending create for this entity, fold update ops into it
       if (coalescePendingCreate(queryClient, keys.create, id, ops as Record<string, unknown>)) {
         return { coalesced: true };
@@ -260,32 +254,36 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
       if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, orgKey);
     },
   });
+
+  return {
+    ...mutation,
+    mutate: (vars: UpdateAttachmentVars, options?: Parameters<typeof mutation.mutate>[1]) =>
+      mutation.mutate({ tenantId, organizationId, ...vars }, options),
+    mutateAsync: (vars: UpdateAttachmentVars, options?: Parameters<typeof mutation.mutateAsync>[1]) =>
+      mutation.mutateAsync({ tenantId, organizationId, ...vars }, options),
+  };
 };
 
 export const useAttachmentDeleteMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
   const orgKey = keys.list.org(organizationId);
 
-  return useMutation({
+  const mutation = useMutation({
     mutationKey: keys.delete,
     scope: { id: 'attachment' },
-    mutationFn: async (attachments: Attachment[]) => {
-      const ids = attachments.map((a) => a.id);
-      const stx = createStxForDelete();
-      await deleteAttachments({ path: { tenantId, organizationId }, body: { ids, stx } });
-    },
-    onMutate: async (attachmentsToDelete) => {
+    mutationFn: deleteAttachmentsMutationFn,
+    onMutate: async ({ attachments }: DeleteAttachmentVars) => {
       removePendingMutations(
         queryClient,
         keys.update,
-        attachmentsToDelete.map((a) => a.id),
+        attachments.map((a) => a.id),
       );
       await queryClient.cancelQueries({ queryKey: orgKey });
-      cacheRemove(orgKey, attachmentsToDelete);
-      for (const { id } of attachmentsToDelete) {
+      cacheRemove(orgKey, attachments);
+      for (const { id } of attachments) {
         queryClient.removeQueries({ queryKey: keys.detail.byId(id) });
       }
-      return { deletedAttachments: attachmentsToDelete };
+      return { deletedAttachments: attachments };
     },
     meta: { suppressGlobalErrorToast: true },
     onError: (_err, _attachments, context) => {
@@ -297,6 +295,14 @@ export const useAttachmentDeleteMutation = (tenantId: string, organizationId: st
       if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, orgKey);
     },
   });
+
+  return {
+    ...mutation,
+    mutate: (attachments: Attachment[], options?: Parameters<typeof mutation.mutate>[1]) =>
+      mutation.mutate({ tenantId, organizationId, attachments }, options),
+    mutateAsync: (attachments: Attachment[], options?: Parameters<typeof mutation.mutateAsync>[1]) =>
+      mutation.mutateAsync({ tenantId, organizationId, attachments }, options),
+  };
 };
 
 // --- Mutation defaults (offline persistence) ---
@@ -319,27 +325,9 @@ addMutationRegistrar((queryClient: QueryClient) => {
     },
   });
 
-  queryClient.setMutationDefaults(keys.create, {
-    mutationFn: async ({ tenantId, organizationId, data }: QueryOrgContext & { data: CreateAttachmentInput }) => {
-      const stx = createStxForCreate();
-      const body = data.map((item) => ({ ...item, stx }));
-      return createAttachments({ path: { tenantId, organizationId }, body });
-    },
-  });
-
-  queryClient.setMutationDefaults(keys.update, {
-    mutationFn: async ({ tenantId, organizationId, id, ops }: UpdateAttachmentVars & QueryOrgContext) => {
-      const scalarFieldNames = ops ? Object.keys(ops) : [];
-      const stx = createStxForUpdate(scalarFieldNames);
-      return updateAttachment({ path: { tenantId, organizationId, id }, body: { ops, stx } });
-    },
-  });
-
-  queryClient.setMutationDefaults(keys.delete, {
-    mutationFn: async ({ tenantId, organizationId, attachments }: QueryOrgContext & { attachments: Attachment[] }) => {
-      const ids = attachments.map((a) => a.id);
-      const stx = createStxForDelete();
-      await deleteAttachments({ path: { tenantId, organizationId }, body: { ids, stx } });
-    },
-  });
+  // Same functions the hooks use, so a mutation replayed from the persisted queue after a reload
+  // (when the hook's closure is gone) runs identically to the live one.
+  queryClient.setMutationDefaults(keys.create, { mutationFn: createAttachmentsMutationFn });
+  queryClient.setMutationDefaults(keys.update, { mutationFn: updateAttachmentMutationFn });
+  queryClient.setMutationDefaults(keys.delete, { mutationFn: deleteAttachmentsMutationFn });
 });

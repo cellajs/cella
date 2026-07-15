@@ -2,7 +2,7 @@ import type { Attachment } from 'sdk';
 import type { BlobVariant } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { downloadService } from '~/modules/attachment/download-service';
-import { getFileUrl } from '~/modules/attachment/file-url';
+import { getPrivateFileUrlById, getPublicFileUrl } from '~/modules/attachment/file-url';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 
 /** Result of resolving an attachment URL */
@@ -47,17 +47,29 @@ export async function resolveAttachmentUrl(
   const meta = attachment ?? findAttachmentInCache(attachmentId);
   if (!meta) return null;
 
-  // 3. Get cloud presigned URL
-  const cloudKey =
+  // 3. Get cloud URL. Resolve the effective variant (the requested one only if its
+  // key exists, else original), then reference the attachment by id + variant for
+  // private files so the server signs the key — never a client-supplied key.
+  const effectiveVariant =
     preferredVariant === 'thumbnail' && meta.thumbnailKey
-      ? meta.thumbnailKey
+      ? 'thumbnail'
       : preferredVariant === 'converted' && meta.convertedKey
+        ? 'converted'
+        : 'original';
+
+  const cloudKey =
+    effectiveVariant === 'thumbnail'
+      ? meta.thumbnailKey
+      : effectiveVariant === 'converted'
         ? meta.convertedKey
         : meta.originalKey;
 
   if (!cloudKey) return null;
 
-  const fileUrl = await getFileUrl(cloudKey, meta.public, meta.tenantId, meta.organizationId);
+  // Public files build the CDN URL from the key directly; private files are signed by id.
+  const fileUrl = meta.public
+    ? getPublicFileUrl(cloudKey)
+    : await getPrivateFileUrlById(attachmentId, effectiveVariant, meta.tenantId, meta.organizationId);
 
   // 4. Queue for background download
   if (queueDownload) {

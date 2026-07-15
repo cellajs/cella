@@ -26,7 +26,7 @@ function createMockEntityKeys(entityType: string) {
 
 const mockEntityQueryRegistry = new Map<string, ReturnType<typeof createMockEntityKeys>>();
 
-// Register the test context entity types
+// Register the test channel entity types
 mockEntityQueryRegistry.set('organization', createMockEntityKeys('organization'));
 mockEntityQueryRegistry.set('workspace', createMockEntityKeys('workspace'));
 mockEntityQueryRegistry.set('project', createMockEntityKeys('project'));

@@ -3,7 +3,7 @@ import { replaceEqualDeep } from '@tanstack/react-query';
 type WithIncluded = { included?: Record<string, unknown> };
 
 /**
- * Custom `structuralSharing` function for context entity detail queries.
+ * Custom `structuralSharing` function for channel entity detail queries.
  * Preserves `included` sub-fields (e.g. `counts`, `membership`) from the cached
  * data when the incoming data omits them. This prevents a refetch or
  * `setQueryData` call that carries a partial `included` from wiping out

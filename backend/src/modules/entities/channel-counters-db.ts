@@ -4,7 +4,7 @@ import { maxLength } from '#/db/utils/constraints';
 /**
  * Counters for sync sequences and entity/membership counts.
  *
- * One row per context entity (org, project, etc.) keyed by its ID,
+ * One row per channel entity (org, project, etc.) keyed by its ID,
  *
  * - counts: extensible JSONB for entity counts, membership role breakdown,
  *   and entity-type seqs (s:{type} keys, managed by the CDC worker)

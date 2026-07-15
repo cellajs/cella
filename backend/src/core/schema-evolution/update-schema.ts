@@ -1,34 +1,14 @@
 import { z } from '@hono/zod-openapi';
 import type { ProductEntityType } from 'shared';
 import { stxBaseSchema } from '#/schemas';
+import { isArrayDelta } from '../stx/array-delta';
 import { widenBodySchema } from './lens-seam';
 
 /**
- * Create an ops-based update schema for a product entity.
- * Generates a consistent update contract: `{ ops: { [key]: value }, stx }`.
- *
- * The merge strategy is implicit from the value shape:
- * - Bare value (string, number, boolean, null) → scalar → LWW with HLC
- * - Object with `{ add, remove }` → set → AWSet delta
- *
- * Each field in `opsShape` is optional. The schema is refined to require at least one op.
- *
- * During a lens expand window, the ops object is widened via `widenBodySchema`
- * (an ops object is a partial entity body): the old field name is accepted as
- * an alias of its canonical twin, so old bundles pass validation. `normalizeOps`
- * (via `resolveUpdateOps`) canonicalizes after validation. Aliases exist only
- * at runtime while the static type stays canonical.
- *
- * @param entityType - Product entity the ops apply to (drives lens widening)
- * @param opsShape - Zod object shape where each key maps to its accepted value type
- *
- * @example
- * ```ts
- * const attachmentUpdateStxBodySchema = createUpdateSchema('attachment', {
- *   name: z.string(),
- *   originalKey: z.string(),
- * });
- * ```
+ * Build a product update schema for `{ ops, stx }`. Declared ops are optional,
+ * at least one is required, and active expand aliases leave the static type canonical.
+ * Downstream resolution treats `{ add, remove }` values as AWSet deltas and all
+ * other values as LWW scalars requiring a matching HLC timestamp.
  */
 export function createUpdateSchema<T extends z.ZodRawShape>(entityType: ProductEntityType, opsShape: T) {
   const partialOps = widenBodySchema(entityType, z.object(opsShape).partial());
@@ -38,8 +18,31 @@ export function createUpdateSchema<T extends z.ZodRawShape>(entityType: ProductE
       ops: partialOps,
       stx: stxBaseSchema,
     })
-    .refine((val) => Object.keys(val.ops).length > 0, {
-      message: 'At least one op must be provided',
-      path: ['ops'],
+    .superRefine((val, ctx) => {
+      const opEntries = Object.entries(val.ops);
+      const opsByField = new Map(opEntries);
+      if (opEntries.length === 0) {
+        ctx.addIssue({ code: 'custom', message: 'At least one op must be provided', path: ['ops'] });
+      }
+
+      for (const [field, value] of opEntries) {
+        if (!isArrayDelta(value) && !(field in val.stx.fieldTimestamps)) {
+          ctx.addIssue({
+            code: 'custom',
+            message: `Missing HLC timestamp for scalar op "${field}"`,
+            path: ['stx', 'fieldTimestamps', field],
+          });
+        }
+      }
+
+      for (const field of Object.keys(val.stx.fieldTimestamps)) {
+        if (!opsByField.has(field) || isArrayDelta(opsByField.get(field))) {
+          ctx.addIssue({
+            code: 'custom',
+            message: `Timestamp "${field}" does not match a scalar op`,
+            path: ['stx', 'fieldTimestamps', field],
+          });
+        }
+      }
     });
 }

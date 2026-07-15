@@ -350,7 +350,7 @@ const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount
   };
 };
 
-/** Variables for changing a user's role on a context entity from an entity table */
+/** Variables for changing a user's role on a channel entity from an entity table */
 type ChangeEntityRoleVariables = {
   entity: EnrichedChannelEntity;
   role: MembershipBase['role'];
@@ -363,7 +363,7 @@ type ChangeEntityRoleResult = {
 };
 
 /**
- * Entity-agnostic mutation hook for changing a user's role on a context entity.
+ * Entity-agnostic mutation hook for changing a user's role on a channel entity.
  * Handles both updating an existing membership and creating a new one via invite.
  * Updates the entity list cache and myMemberships cache automatically.
  */

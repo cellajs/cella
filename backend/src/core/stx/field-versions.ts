@@ -21,18 +21,10 @@ export function filterNoOpFields<T extends Record<string, unknown>>(
   return result as T;
 }
 
-interface ResolveResult<T> {
-  /** Fields that won the HLC comparison, with their values. */
-  acceptedFields: Partial<T>;
-  /** Field names that lost the HLC comparison. */
-  dropped: string[];
-}
-
 /**
  * Resolve field-level conflicts using HLC timestamps.
  * For each scalar field, accept when incoming HLC > stored HLC; otherwise drop.
- * Returns accepted fields as a partial object (preserving the input type)
- * and dropped field names.
+ * Returns accepted fields as a partial object preserving the input type.
  *
  * @param incomingFields - Scalar field values from the request
  * @param incomingTimestamps - Per-field HLC timestamps from the request
@@ -42,22 +34,18 @@ export function resolveFieldConflicts<T extends Record<string, unknown>>(
   incomingFields: T,
   incomingTimestamps: Record<string, string>,
   storedTimestamps: Record<string, string>,
-): ResolveResult<T> {
+): Partial<T> {
   const acceptedFields = {} as Partial<T>;
-  const dropped: string[] = [];
 
   for (const field of Object.keys(incomingFields)) {
     const incomingHLC = incomingTimestamps[field];
     const storedHLC = storedTimestamps[field];
 
-    // No stored HLC: first write, always accept.
-    // No incoming HLC: not tracked (set fields), always accept.
-    if (!storedHLC || !incomingHLC || compareHLC(incomingHLC, storedHLC) > 0) {
+    if (!incomingHLC) throw new Error(`Missing HLC timestamp for scalar field "${field}"`);
+    if (!storedHLC || compareHLC(incomingHLC, storedHLC) > 0) {
       (acceptedFields as Record<string, unknown>)[field] = incomingFields[field];
-    } else {
-      dropped.push(field);
     }
   }
 
-  return { acceptedFields, dropped };
+  return acceptedFields;
 }

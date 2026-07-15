@@ -332,7 +332,7 @@ export const zRequest = z.object({
 });
 
 /**
- * The main context entity is an organization.
+ * The main channel entity is an organization.
  */
 export const zOrganization = z.object({
   createdAt: z.string(),
@@ -419,7 +419,7 @@ export const zAttachment = z.object({
 });
 
 /**
- * A user's membership in a context entity, including role and activity data.
+ * A user's membership in a channel entity, including role and activity data.
  */
 export const zMembership = z.object({
   createdAt: z.string(),
@@ -763,7 +763,7 @@ export const zGetMyMembershipsResponse = z.object({
 });
 
 /**
- * Unseen counts per parent context entity per entity type
+ * Unseen counts per parent channel entity per entity type
  */
 export const zGetUnseenCountsResponse = z.record(z.string(), z.record(z.string(), z.int().gte(0)));
 
@@ -1456,7 +1456,8 @@ export const zGetPresignedUrlPath = z.object({
 });
 
 export const zGetPresignedUrlQuery = z.object({
-  key: z.string().max(2048),
+  attachmentId: z.uuid(),
+  variant: z.enum(['original', 'thumbnail', 'converted']).optional().default('original'),
 });
 
 /**

@@ -8,7 +8,7 @@ import { propagateEmbeddings } from './propagation';
 import { getTenantIdForOrg } from './sync-priority';
 
 /**
- * Process app stream catchup response. For each org: store org-level and child-context entitySeqs,
+ * Process app stream catchup response. For each org: store org-level and child-channel entitySeqs,
  * and use server/client seq deltas to fetch only changed entities via `seqCursor` (falling back to
  * list invalidation on first session or when delta is too large). Soft-deleted product entities are
  * returned by the seq fetch as tombstones and removed by cache-ops.
@@ -181,7 +181,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
     if (membershipChanged) membershipOps.invalidateMemberQueries(organizationId);
   }
 
-  // Step 6: Refresh memberships. Fetch getMyMemberships, invalidate context entity lists,
+  // Step 6: Refresh memberships. Fetch getMyMemberships, invalidate channel entity lists,
   // and refreshes the current user. Uses fetchQuery so React Query deduplicates with
   // the ensureQueryData call in getMenuData (sync service), preventing double fetches on app init.
   membershipOps.invalidateChannelList(null);

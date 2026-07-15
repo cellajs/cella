@@ -10,7 +10,7 @@ import {
   attachmentListQuerySchema,
   attachmentSchema,
   attachmentUpdateStxBodySchema,
-  presignedUrlKeySchema,
+  presignedUrlQuerySchema,
 } from '#/modules/attachment/attachment-schema';
 import {
   batchResponseSchema,
@@ -188,7 +188,7 @@ const attachmentRoutes = {
     summary: 'Get presigned URL',
     description:
       'Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.',
-    request: { params: tenantOrgParamSchema, query: presignedUrlKeySchema },
+    request: { params: tenantOrgParamSchema, query: presignedUrlQuerySchema },
     responses: {
       200: {
         description: 'Presigned URL',

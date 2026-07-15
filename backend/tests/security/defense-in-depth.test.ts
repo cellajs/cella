@@ -104,11 +104,11 @@ describe('Defense-in-depth data isolation', async () => {
   });
 
   describe('RLS-level data scoping (runtime_role)', () => {
-    it('should allow cross-tenant organization reads (no RLS on context entities — app-layer isolation)', async () => {
+    it('should allow cross-tenant organization reads (no RLS on channel entities — app-layer isolation)', async () => {
       if (!rolesAvailable || !runtimeDb) return;
 
       // Organizations have no RLS, so runtime_role can read all orgs.
-      // Cross-tenant isolation for context entities is enforced at the API layer (tenantGuard/orgGuard).
+      // Cross-tenant isolation for channel entities is enforced at the API layer (tenantGuard/orgGuard).
       const rows = await runtimeDb.transaction(async (tx) => {
         await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantA.tenantId}, true)`);
         await tx.execute(sql`SELECT set_config('app.user_id', ${tenantA.user.id}, true)`);

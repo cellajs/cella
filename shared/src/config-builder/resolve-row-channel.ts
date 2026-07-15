@@ -1,7 +1,3 @@
-/**
- * Row-to-context attribution: which context "owns" a row. See README.md in this directory
- * for the full rule and why every attribution site must share it.
- */
 
 /** Minimal hierarchy surface needed for attribution: lets tests inject a synthetic hierarchy. */
 export interface AncestorSource {
@@ -10,7 +6,7 @@ export interface AncestorSource {
 }
 
 export interface ResolvedAncestor {
-  /** Ancestor context type (e.g. 'project'). */
+  /** Ancestor channel type (e.g. 'project'). */
   type: string;
   /** The row's id column for it (e.g. 'projectId'). */
   idColumn: string;

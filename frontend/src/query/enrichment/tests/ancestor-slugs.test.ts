@@ -66,7 +66,7 @@ describe('ancestor slug enrichment', () => {
     expect(item.ancestorSlugs.organization).toBe('acme-corp');
   });
 
-  it('does not set ancestorSlugs for root context entities', () => {
+  it('does not set ancestorSlugs for root channel entities', () => {
     unsubscribe = initChannelEntityEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {

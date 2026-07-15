@@ -16,7 +16,7 @@ import { createDate, TimeSpan } from '#/utils/time-span';
 import { memberInviteEmail, memberInviteWithTokenEmail } from '../../../../emails';
 
 interface DispatchDeferredInvitesOpts {
-  /** Context entity ids whose pending invites should be dispatched (e.g. a published course + descendants). */
+  /** Channel entity ids whose pending invites should be dispatched (e.g. a published course + descendants). */
   channelIds: string[];
 }
 

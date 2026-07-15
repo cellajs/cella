@@ -25,7 +25,7 @@ export const seenByTable = snakeCase.table(
     userId: uuid().notNull(),
     entityId: uuid().notNull(),
     entityType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
-    /** Parent context entity ID for grouping (e.g., projectId for tasks). Falls back to organizationId. */
+    /** Parent channel entity ID for grouping (e.g., projectId for tasks). Falls back to organizationId. */
     channelId: uuid().notNull(),
     organizationId: uuid().notNull(),
     tenantId: varchar('tenant_id', { length: tenantIdLength }).notNull(),

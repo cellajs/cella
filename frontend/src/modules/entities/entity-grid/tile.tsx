@@ -10,7 +10,7 @@ import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 /**
- * Structural tile entity: any context entity whose optional `included.counts`
+ * Structural tile entity: any channel entity whose optional `included.counts`
  * carries a membership total fits, without coupling to a concrete entity type.
  */
 type TileEntity = EnrichedChannelEntity & {

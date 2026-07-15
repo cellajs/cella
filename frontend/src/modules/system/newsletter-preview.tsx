@@ -18,7 +18,6 @@ export function NewsletterPreview() {
             defaultValue={form.getValues('content')}
             className="text-muted-foreground"
             clickOpensPreview
-            publicFiles
           />
         </Suspense>
       </section>

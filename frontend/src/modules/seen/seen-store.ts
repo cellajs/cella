@@ -13,7 +13,7 @@ import { queryClient } from '~/query/query-client';
 interface SeenBatch {
   tenantId: string;
   organizationId: string;
-  /** Context entity ID for badge grouping (e.g., projectId). Defaults to organizationId. */
+  /** Channel entity ID for badge grouping (e.g., projectId). Defaults to organizationId. */
   channelId: string;
   entityType: ProductEntityType;
   entityIds: Set<string>;

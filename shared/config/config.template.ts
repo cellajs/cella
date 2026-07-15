@@ -16,7 +16,7 @@ export const config = {
   /** All entity types in the app - must match hierarchy.allTypes. */
   entityTypes,
 
-  /** Context entities with memberships - must match hierarchy.channelTypes. */
+  /** Channel entities with memberships - must match hierarchy.channelTypes. */
   channelEntityTypes: ['organization'] as const,
 
   /** Product/content entities - must match hierarchy.productTypes. */
@@ -24,7 +24,7 @@ export const config = {
 
   /**
    * Product entity types tracked for seen/unseen counts.
-   * Unseen counts are grouped by the parent context entity of each tracked type.
+   * Unseen counts are grouped by the parent channel entity of each tracked type.
    */
   seenTrackedEntityTypes: ['attachment'] as const,
 
@@ -52,7 +52,7 @@ export const config = {
   }[],
 
   /**
-   * User menu structure of context entities with optional nested subentities.
+   * User menu structure of channel entities with optional nested subentities.
    * If subentityType is set, the table must include `${entity}Id` foreign key.
    */
   menuStructure: [

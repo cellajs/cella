@@ -3,6 +3,7 @@ import { ApiError } from '~/lib/api';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { checkConnectivity } from '~/query/offline/connectivity';
+import { isNetworkError } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
 import { flushStores } from '~/utils/flush-stores';
 
@@ -45,18 +46,10 @@ const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
  * Handles network errors, API errors, and redirects to the sign-in page if the user is not authenticated.
  * @param error - The error object.
  */
-const isNetworkError = (error: Error): boolean => {
-  const msg = error.message?.toLowerCase() ?? '';
-  return (
-    msg.includes('failed to fetch') || // Chrome, Edge
-    msg.includes('load failed') || // Safari
-    msg.includes('networkerror') // Firefox
-  );
-};
-
 export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
-  // Handle network-level failures (no HTTP response received)
-  if (!(error instanceof ApiError) && isNetworkError(error)) {
+  // Handle network-level failures (no HTTP response received). isNetworkError excludes ApiError,
+  // so a server that responded (any status) falls through to the ApiError handling below.
+  if (isNetworkError(error)) {
     checkConnectivity();
     return;
   }

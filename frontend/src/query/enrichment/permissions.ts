@@ -31,7 +31,7 @@ function hasCanChanged(a: EntityCanMap | undefined, b: EntityCanMap | undefined)
 
 /**
  * Build an all-actions-allowed permission map for system admins.
- * Mirrors the structure of computeCan (context type + descendants) but with full permissions.
+ * Mirrors the structure of computeCan (channel type + descendants) but with full permissions.
  */
 function computeSystemAdminCan(channelType: ChannelEntityType): EntityCanMap {
   const map: EntityCanMap = { [channelType]: { ...allActionsAllowed } };

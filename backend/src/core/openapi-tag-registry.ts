@@ -81,7 +81,7 @@ registerTag({
 registerTag({
   tag: 'channel',
   kind: 'entity',
-  description: 'Operations on context entities (entities that have memberships, e.g. organizations, projects).',
+  description: 'Operations on channel entities (entities that have memberships, e.g. organizations, projects).',
 });
 
 registerTag({

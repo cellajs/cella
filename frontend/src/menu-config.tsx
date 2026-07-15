@@ -36,7 +36,7 @@ function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null
 }
 
 /**
- * Configuration to set menu sections with options for different context entities.
+ * Configuration to set menu sections with options for different channel entities.
  */
 export const menuSectionsSchema: Partial<Record<ChannelEntityType, MenuSectionOptions>> = {
   organization: { createAction: createOrganizationAction, label: 'c:organization_other', entityType: 'organization' },

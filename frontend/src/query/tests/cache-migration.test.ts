@@ -29,7 +29,7 @@ describe('entityTypeOf', () => {
     expect(entityTypeOf(['attachment'])).toBe('attachment');
   });
 
-  it('extracts a context entity type from a query key', () => {
+  it('extracts a channel entity type from a query key', () => {
     expect(entityTypeOf(['organization', 'detail'])).toBe('organization');
     const deepestChannel = appConfig.channelEntityTypes[appConfig.channelEntityTypes.length - 1];
     expect(entityTypeOf([deepestChannel])).toBe(deepestChannel);

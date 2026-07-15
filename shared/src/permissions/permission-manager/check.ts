@@ -294,7 +294,7 @@ export function getAllDecisions<T extends PermissionMembership>(
   const channelCache = new Map<ChannelEntityType | ProductEntityType, ChannelEntityType[]>();
 
   // Ordered contexts for an entity type (most specific → root), cached.
-  // For context entities (e.g., project): [project, organization] (includes self and ancestors)
+  // For channel entities (e.g., project): [project, organization] (includes self and ancestors)
   // For product entities (e.g., attachment): [organization] (just ancestors)
   // The first element [0] is always the primary context used for membership capture.
   const resolveOrderedChannels = (entityType: ChannelEntityType | ProductEntityType): ChannelEntityType[] => {

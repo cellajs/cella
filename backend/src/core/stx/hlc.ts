@@ -1,17 +1,50 @@
 import { hashSourceId } from 'shared/utils/hash-source-id';
 
+const hlcPattern = /^(\d+):(\d{4,}):([0-9a-z]{5})$/;
+
+/** Parsed components of a wire-format HLC timestamp. */
+export interface ParsedHLC {
+  timestamp: bigint;
+  counter: bigint;
+  source: string;
+}
+
 /** Server-side HLC state (module-scoped singleton). */
-let lastTimestamp = 0;
-let lastCounter = 0;
+let lastTimestamp = 0n;
+let lastCounter = 0n;
+
+/** Parse `millis:counter:sourceHash`, returning `null` for malformed input. */
+export function parseHLC(value: string): ParsedHLC | null {
+  const match = hlcPattern.exec(value);
+  if (!match) return null;
+  return {
+    timestamp: BigInt(match[1]),
+    counter: BigInt(match[2]),
+    source: match[3],
+  };
+}
+
+/** Whether a string uses the canonical HLC wire format. */
+export function isValidHLC(value: string): boolean {
+  return parseHLC(value) !== null;
+}
+
+function requireHLC(value: string): ParsedHLC {
+  const parsed = parseHLC(value);
+  if (!parsed) throw new TypeError(`Invalid HLC timestamp: "${value}"`);
+  return parsed;
+}
 
 /**
  * Create a new HLC timestamp.
  * Advances beyond the last generated timestamp.
  */
 export function createHLC(now: number, sourceId: string): string {
-  if (now > lastTimestamp) {
-    lastTimestamp = now;
-    lastCounter = 0;
+  if (!Number.isSafeInteger(now) || now < 0) throw new RangeError(`Invalid HLC time: ${now}`);
+  const timestamp = BigInt(now);
+  if (timestamp > lastTimestamp) {
+    lastTimestamp = timestamp;
+    lastCounter = 0n;
   } else {
     lastCounter++;
   }
@@ -20,12 +53,16 @@ export function createHLC(now: number, sourceId: string): string {
 }
 
 /**
- * Compare two HLC timestamps.
- * Lexicographic comparison is valid because all segments are fixed-width.
+ * Compare two valid HLC timestamps by millis, counter, then source hash.
+ * Throws when either timestamp is malformed.
  */
 export function compareHLC(a: string, b: string): -1 | 0 | 1 {
-  if (a < b) return -1;
-  if (a > b) return 1;
+  const left = requireHLC(a);
+  const right = requireHLC(b);
+  if (left.timestamp !== right.timestamp) return left.timestamp < right.timestamp ? -1 : 1;
+  if (left.counter !== right.counter) return left.counter < right.counter ? -1 : 1;
+  if (left.source < right.source) return -1;
+  if (left.source > right.source) return 1;
   return 0;
 }
 
@@ -34,13 +71,11 @@ export function compareHLC(a: string, b: string): -1 | 0 | 1 {
  * Keeps server-initiated timestamps causally later than triggering client writes.
  */
 export function advanceClock(receivedHLC: string): void {
-  const parts = receivedHLC.split(':');
-  const ts = Number(parts[0]);
-  const counter = Number(parts[1]);
-  if (ts > lastTimestamp) {
-    lastTimestamp = ts;
+  const { timestamp, counter } = requireHLC(receivedHLC);
+  if (timestamp > lastTimestamp) {
+    lastTimestamp = timestamp;
     lastCounter = counter;
-  } else if (ts === lastTimestamp && counter > lastCounter) {
+  } else if (timestamp === lastTimestamp && counter > lastCounter) {
     lastCounter = counter;
   }
 }
@@ -52,6 +87,6 @@ export function generateServerHLC(sourceId = 'server'): string {
 
 /** Reset HLC state (for testing only). */
 export function _resetHLC(): void {
-  lastTimestamp = 0;
-  lastCounter = 0;
+  lastTimestamp = 0n;
+  lastCounter = 0n;
 }

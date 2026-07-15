@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { attachmentsDb, type BlobVariant } from '~/modules/attachment/dexie/attachments-db';
 import { downloadQueue } from '~/modules/attachment/dexie/download-queue';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
-import { getFileUrl } from '~/modules/attachment/file-url';
+import { getPrivateFileUrlById, getPublicFileUrl } from '~/modules/attachment/file-url';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 import { isPersisted } from '~/modules/attachment/types';
 import { getAppDb } from '~/query/app-db';
@@ -317,6 +317,9 @@ class AttachmentDownloadService {
     const key = this.getVariantKey(attachment, variant);
     if (!key) return 'skipped';
 
+    // 'raw' is a local-only variant with no cloud key; nothing to fetch remotely.
+    if (variant === 'raw') return 'skipped';
+
     // Already have it locally.
     if (await attachmentStorage.hasVariant(attachment.id, variant)) return 'skipped';
 
@@ -324,7 +327,9 @@ class AttachmentDownloadService {
     if (!attachment.tenantId || !attachment.organizationId) return 'failed-other';
 
     try {
-      const url = await getFileUrl(key, attachment.public, attachment.tenantId, attachment.organizationId);
+      const url = attachment.public
+        ? getPublicFileUrl(key)
+        : await getPrivateFileUrlById(attachment.id, variant, attachment.tenantId, attachment.organizationId);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), variantFetchTimeoutMs);

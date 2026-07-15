@@ -2,25 +2,13 @@ import type { z } from '@hono/zod-openapi';
 import { type LensEntityType, normalizeOps, widenedOpsKeyMap } from 'shared/schema-evolution';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
-/**
- * Runtime lens seam for entity bodies: canonicalize old-shape field names and
- * mirror-write expand-window twins. Works for any entity body — a product
- * create item's fields or a context entity's plain create/update body (an ops
- * object and a plain body are both "partial entity bodies"; only product
- * entities additionally carry stx). Passthrough while the lens list is empty.
- */
+/** Normalize a plain entity body through its lens chain, retaining legacy rename twins during expand. */
 export function normalizeBody<T extends Record<string, unknown>>(entityType: LensEntityType, body: T): T {
   const { ops } = normalizeOps(entityType, body, {});
   return ops;
 }
 
-/**
- * Create-path lens seam for sync (product) entities: canonicalize old-shape
- * field names in a create item and mirror-write expand-window twins, so both
- * DB columns stay fresh whichever bundle created the row — and rewrite the
- * item's `stx.fieldTimestamps` keys alongside. Passthrough while the lens
- * list is empty.
- */
+/** Normalize product-create fields and timestamps through the lens chain, retaining legacy twins during expand. */
 export function normalizeCreateItem<T extends { stx: StxBase }>(entityType: LensEntityType, item: T): T {
   const { stx, ...fields } = item;
   const normalized = normalizeOps(entityType, fields, stx);
@@ -28,14 +16,8 @@ export function normalizeCreateItem<T extends { stx: StxBase }>(entityType: Lens
 }
 
 /**
- * Expand-window widening for entity body schemas (create items, plain context
- * update bodies, ops shapes): accept the old field name as an optional alias
- * of its canonical twin. When the canonical field is required, the requirement
- * relaxes to "alias or canonical present".
- *
- * The static type is intentionally unchanged — aliases exist only at runtime,
- * and `normalizeBody`/`normalizeCreateItem`/`normalizeOps` restore canonical
- * keys before any code reads the body. Identity while the lens list is empty.
+ * Add active expand aliases to a body schema. A required canonical field becomes
+ * an alias-or-canonical requirement; the schema's static type remains unchanged.
  */
 export function widenBodySchema<T extends z.ZodObject<z.ZodRawShape>>(entityType: LensEntityType, schema: T): T {
   const pairs = Object.entries(widenedOpsKeyMap(entityType)).filter(

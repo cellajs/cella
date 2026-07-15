@@ -15,7 +15,7 @@ import type { AttachmentModel } from '#/modules/attachment/attachment-db';
 /**
  * Generates a mock attachment with all fields populated.
  * Uses deterministic seeding - same key produces same data.
- * Context entity ID columns are generated dynamically from the attachment's hierarchy ancestors.
+ * Channel entity ID columns are generated dynamically from the attachment's hierarchy ancestors.
  */
 export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
   withFakerSeed(key, () => {

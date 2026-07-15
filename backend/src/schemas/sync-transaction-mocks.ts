@@ -10,13 +10,3 @@ export const mockStxBase = (key = 'stx-base:default') =>
     sourceId: mockUuid(),
     fieldTimestamps: {},
   }));
-
-/**
- * Generates a mock StxResponse example.
- * Used for sync transaction responses.
- */
-export const mockStxResponse = (key = 'stx-response:default') =>
-  withFakerSeed(key, () => ({
-    mutationId: mockUuid(),
-    droppedFields: [],
-  }));

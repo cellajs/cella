@@ -30,7 +30,7 @@ export interface PendingMembershipsTableProps {
 }
 
 /**
- * Displays a table of pending memberships for a context entity.
+ * Displays a table of pending memberships for a channel entity.
  */
 export function PendingMembershipsTable({ channelEntity }: PendingMembershipsTableProps) {
   const { t } = useTranslation();

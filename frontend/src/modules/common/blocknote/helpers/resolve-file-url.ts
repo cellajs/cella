@@ -1,5 +1,5 @@
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
-import { getFileUrl } from '~/modules/attachment/file-url';
+import { getPrivateFileUrlById, getPublicFileUrl } from '~/modules/attachment/file-url';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 import type { CommonBlockNoteProps } from '~/modules/common/blocknote/types';
 
@@ -10,42 +10,33 @@ interface ResolveFileUrlContext {
 }
 
 /**
- * Build the `resolveFileUrl` callback for BlockNote with offline-first lookup.
+ * Build the `resolveFileUrl` callback for BlockNote.
  *
- * Resolution strategy:
- * 1. If the key looks like an attachment ID (nanoid format, no slashes), try
- *    local blob storage first with variant fallback (converted → original → raw).
- * 2. Otherwise (or if no local blob), fall back to a presigned cloud URL.
- *    - Public files use the CDN URL directly (no tenant context required).
- *    - Private files require `tenantId` + `organizationId`, sourced from the
- *      attachment cache (if available) or `baseFilePanelProps`.
+ * The block reference alone determines resolution — no public/private flag needed:
+ * - A **UUID attachment id** (no slashes) → private media. Try a local blob first
+ *   (offline-first), else a presigned URL by id + variant (permission-checked server-side).
+ * - A **slashed cloud key** → public media, served directly from the CDN.
  */
-export function createResolveFileUrl({ publicFiles, baseFilePanelProps }: ResolveFileUrlContext) {
-  return async (key: string): Promise<string> => {
-    if (!key.length) return '';
+export function createResolveFileUrl({ baseFilePanelProps }: ResolveFileUrlContext) {
+  return async (ref: string): Promise<string> => {
+    if (!ref.length) return '';
 
-    // Attachment IDs are nanoid format; cloud keys contain slashes.
-    const isAttachmentId = !key.includes('/');
+    // Attachment ids are UUIDs (no slashes); public cloud keys contain slashes.
+    const isAttachmentId = !ref.includes('/');
+    if (!isAttachmentId) return getPublicFileUrl(ref);
 
-    if (isAttachmentId) {
-      const localResult = await attachmentStorage.createBlobUrlWithVariant(key, 'converted', true);
-      if (localResult) return localResult.url;
-    }
+    // Private attachment: prefer a local blob, else resolve a presigned URL by id.
+    const localResult = await attachmentStorage.createBlobUrlWithVariant(ref, 'converted', true);
+    if (localResult) return localResult.url;
 
-    const isPublic = publicFiles ?? baseFilePanelProps?.isPublic ?? false;
-
-    // Public files use CDN URL directly; no tenantId/organizationId needed.
-    if (isPublic) return getFileUrl(key, true, '', '');
-
-    const cachedAttachment = isAttachmentId ? findAttachmentInCache(key) : null;
+    const cachedAttachment = findAttachmentInCache(ref);
     const tenantId = cachedAttachment?.tenantId ?? baseFilePanelProps?.tenantId;
     const organizationId = cachedAttachment?.organizationId ?? baseFilePanelProps?.organizationId;
-
     if (!tenantId || !organizationId) {
-      console.error('[BlockNote] Cannot resolve private file URL: no tenantId/organizationId available for key:', key);
+      console.error('[BlockNote] Cannot resolve private file URL: no tenantId/organizationId for id:', ref);
       return '';
     }
 
-    return getFileUrl(key, false, tenantId, organizationId);
+    return getPrivateFileUrlById(ref, 'converted', tenantId, organizationId);
   };
 }

@@ -7,7 +7,7 @@
  * Architecture:
  * - SELECT-only RLS policies on product entity tables (attachments, tasks, labels, yjs_documents)
  * - Write-through RLS policies (unconditional allow), write isolation enforced by guards + composite FKs + immutability triggers
- * - No RLS on context entities (organizations, memberships), guarded at app layer
+ * - No RLS on channel entities (organizations, memberships), guarded at app layer
  *
  * IMPORTANT: These tests require PostgreSQL with RLS roles configured.
  * Run with `pnpm test:full` (not test:core).
@@ -578,11 +578,11 @@ const rlsSuiteReady = await (async () => {
   // ---- Fail-closed: no context → zero rows ----
 
   describe('Fail-closed (no context)', () => {
-    it('should allow reading organizations without tenant context (no RLS on context entities)', async () => {
+    it('should allow reading organizations without tenant context (no RLS on channel entities)', async () => {
       const rows = await queryWithoutChannel(async (tx) =>
         tx.execute(sql`SELECT id FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B})`),
       );
-      // Context entities rely on app-layer guards, so runtime_role can read all rows.
+      // Channel entities rely on app-layer guards, so runtime_role can read all rows.
       expect(rows.length).toBeGreaterThanOrEqual(2);
     });
 
@@ -605,7 +605,7 @@ const rlsSuiteReady = await (async () => {
   // ---- Cross-tenant read isolation ----
 
   describe('Cross-tenant read isolation', () => {
-    it('should see all organizations across tenants (no RLS on context entities)', async () => {
+    it('should see all organizations across tenants (no RLS on channel entities)', async () => {
       const rows = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
         tx.execute(sql`SELECT id FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B})`),
       );
@@ -637,7 +637,7 @@ const rlsSuiteReady = await (async () => {
   // ---- Cross-tenant write isolation ----
 
   describe('Cross-tenant write isolation', () => {
-    it('should allow inserting organization into any tenant (no RLS on context entities)', async () => {
+    it('should allow inserting organization into any tenant (no RLS on channel entities)', async () => {
       const fakeOrgId = '00000000-0000-4000-a000-000000000301';
       // No RLS on organizations, insert succeeds (guard middleware prevents this at API layer)
       await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
@@ -891,7 +891,7 @@ const rlsSuiteReady = await (async () => {
       ...attachmentHierarchyA.seedChannelRows.map((row) => [row.tableName, row.id] as const),
     ]);
 
-    // Context entities: use base columns. Only target rows this suite owns.
+    // Channel entities: use base columns. Only target rows this suite owns.
     const channelCases: ImmutableEntityCase[] = appConfig.channelEntityTypes.flatMap((entityType) => {
       const tableName = getTableName(entityTables[entityType as keyof typeof entityTables]);
       const rowId = seededChannelRowIdsByTable.get(tableName);

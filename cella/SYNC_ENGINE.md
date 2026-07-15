@@ -252,7 +252,7 @@ Each field type has its own merge strategy:
 The merge strategy is implicit from the value shape in the `ops` key: bare value → LWW scalar, `{ add, remove }` object → array delta.
 
 #### 3. Conflict resolution
-The server does not return a 409 for an HLC loss. `resolveFieldConflicts()` computes dropped scalar names internally, but `resolveUpdateOps()` currently discards that list and mutation responses do not expose `droppedFields`. Missing incoming timestamps are accepted, so entity modules must generate timestamps for every scalar if they want LWW protection.
+The server does not return a 409 for an HLC loss: losing scalar values are omitted from the write, and the returned entity carries the authoritative values. Client update schemas require one valid HLC per scalar op; array deltas carry none. Trusted server updates use a separate resolver that generates their timestamps internally.
 
 Resolution is performed in JavaScript after reading the entity, followed by an ordinary `UPDATE` inside the transaction. It is not a SQL `CASE` compare-and-set and the read is not locked with `FOR UPDATE`, so overlapping writes can still race (especially whole-array delta writes and `stx` metadata).
 
@@ -404,7 +404,7 @@ Combines the local physical clock, a logical counter, and a source hash:
 
 ```
 Format: "1710500000123:0001:abcde" (unix millis + zero-padded counter + sourceId hash)
-Compare: lexicographic string comparison gives correct ordering
+Compare: parsed millis, then counter, then source hash
 ```
 
 The 5-character `sourceId` hash breaks ties when timestamps and counters match. Each tab advances its own clock, and the server advances its module clock from received timestamps before generating server timestamps. Clients do not advance their clocks from remote HLCs, so this is deterministic LWW ordering rather than a full cross-client causal clock.
@@ -423,13 +423,14 @@ function createStxForUpdate(scalarFieldNames: string[]): StxBase {
 
 **Server-side (merge resolution in handlers):**
 ```typescript
-import { resolveUpdateOps } from '#/core/stx/resolve-update';
+import { resolveServerUpdateOps, resolveUpdateOps } from '#/core/stx/resolve-update';
 
-// Normalizes lens keys, filters scalar no-ops, applies HLC comparison,
-// resolves array deltas against the entity snapshot, and builds merged stx.
+// Client path: validates timestamps at the wire schema, then normalizes lens keys,
+// filters scalar no-ops, applies HLC comparison, and resolves array deltas.
 const resolved = resolveUpdateOps(entityType, entity, ops, stx);
 
-// The entity operation then performs a regular UPDATE with resolved.values/stx.
+// Trusted-server path: advances past stored scalar clocks and assigns one server HLC.
+const serverResolved = resolveServerUpdateOps(entityType, entity, ops);
 ```
 
 #### Array-delta properties
@@ -442,10 +443,10 @@ Array fields can use set-like delta operations:
 
 #### Key features
 - `stx.fieldTimestamps` tracks per-scalar-field HLC timestamps (replaces `recordVersion` + `fieldVersions`)
-- Entity modules should generate HLCs for every scalar field they change
-- Server accepts a scalar when its HLC is newer than the stored HLC; missing stored or incoming HLC is also accepted
-- Dropped scalar names remain internal and are not returned in current mutation responses
-- Server advances its local HLC state from incoming timestamps before generating a server HLC
+- Client update schemas require exactly the scalar op keys in `fieldTimestamps`; malformed, missing, unrelated, and array-delta timestamps are rejected
+- Server accepts a client scalar when no stored HLC exists or its valid incoming HLC is newer
+- Trusted server writes use `resolveServerUpdateOps()`, which generates one HLC causally after the affected fields' stored clocks
+- Losing scalar names are not returned separately; the mutation response entity contains the authoritative values
 - Resolution and persistence are separate read/compute/update steps; they do not eliminate concurrent write races
 
 ### Echo prevention (sourceId)
@@ -732,7 +733,7 @@ While a Yjs editor is active, the SSE handler skips Yjs-owned fields (descriptio
 
 ### Derived fields
 
-An opted-in entity registers a materializer with `registerYjsMaterializer`; that operation is responsible for computing derived fields and writing through the entity's standard update path. The relay sends empty `fieldTimestamps`. `buildStx()` generates a server HLC only when an accepted field has no existing timestamp; if the field already has one, the current code preserves it. A materializer therefore needs explicit timestamp handling before claiming coherent LWW ordering against offline REST edits.
+An opted-in entity registers a materializer with `registerYjsMaterializer`; that operation is responsible for computing derived fields and writing through the entity's standard update path. It uses `resolveServerUpdateOps()`, which advances the server clock past the affected fields' stored timestamps and assigns one new HLC to the materialized scalar update. The template does not register a product materializer by default.
 
 ---
 

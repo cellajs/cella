@@ -8,9 +8,9 @@ import { configurePermissions } from '../src/permissions/access-policies';
  * Values: `1` = allowed, `0` = denied. Any action you omit defaults to `0` (denied), so a row
  * only needs to list the actions it grants.
  *
- * ## Elevation vs. self rows (context entities)
+ * ## Elevation vs. self rows (channel entities)
  *
- * For a context entity (organization, workspace, project), its policy has two kinds of rows:
+ * For a channel entity (organization, workspace, project), its policy has two kinds of rows:
  * - **elevation** rows on an *ancestor* context (e.g. `organization.*` under `project`): what a
  *   member of the parent can do to children. `create` lives here — it grants making the child.
  * - **self** rows on the *same* context (e.g. `project.*` under `project`): what a member of the

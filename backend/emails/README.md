@@ -6,8 +6,6 @@ static HTML on the server. This module has **no runtime dependency on the
 of jsx-email v3.2.1 (MIT) is vendored under [renderer/](renderer/) and
 [components/primitives/](components/primitives/).
 
-<!-- TODO update, simplify some texts, developer just want to know how to create preveiw and test an email and hoe to use it in code. And add to docs through mdx/frontmatter -->
-
 ## Authoring a template
 
 A template is a `defineEmailTemplate()` definition with two parts:
@@ -51,20 +49,3 @@ template's `preview` field. This data is shared by previews and tests.
 
 `tests/emails/email-templates.test.ts` renders every fixture in every language to
 guard against regressions.
-
-## Vendored from jsx-email (what was dropped)
-
-The vendored subset is intentionally minimal. Compared with upstream jsx-email
-v3.2.1 we removed:
-
-- the **plugin system** (auto-discovery + dynamic import of `@jsx-email/plugin-*`)
-  and the inline-CSS / minify / pretty plugins;
-- on-disk **config discovery** (`jsx-email.config.*`) and the global config cache;
-- the **debug** (`data-*` attribute) and branded **logger** machinery;
-- the **CLI**, Tailwind support, and esbuild-based types.
-
-What remains is just the render pipeline and the primitives our templates use.
-All vendored files carry a provenance note; lint rules that conflict with the
-upstream shapes are relaxed for these folders in `biome.jsonc` (formatting and
-every other rule still apply).
-

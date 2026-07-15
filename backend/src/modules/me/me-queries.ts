@@ -120,7 +120,7 @@ interface FindPendingInvitationsOpts {
   userId: string;
 }
 
-/** Find pending invitations for a user across all context entity types. */
+/** Find pending invitations for a user across all channel entity types. */
 export const findPendingInvitations = async (ctx: DbContext, { userId }: FindPendingInvitationsOpts) => {
   const { db } = ctx.var;
   const results = await Promise.all(
