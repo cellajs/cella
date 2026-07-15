@@ -210,6 +210,21 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     })
   }
 
+  // Path-begin routes (same-origin migration): `https://<any host>/<prefix>...`
+  // reaches the service's backend so the app origin can serve `/api`, `/yjs`,
+  // `/mcp` while the host routes above keep the legacy subdomains working.
+  // Scaleway routes match on exactly ONE criterion (host or path) and do NOT
+  // strip the prefix — each service also serves itself under its `lbPathBegin`
+  // (registry-declared; validated in compose/infrastructure.ts).
+  for (const service of lbServices) {
+    if (!service.lbPathBegin) continue
+    new scaleway.loadbalancers.Route(`${baseName(service.slug)}-path-route`, {
+      frontendId: httpsFrontend.id,
+      backendId: backends.get(service.slug)!.id,
+      matchPathBegin: service.lbPathBegin,
+    })
+  }
+
   // Apex → www redirect (HTTPS) via ACL on the HTTPS frontend
   if (!appIsAtApex) {
     new scaleway.loadbalancers.Acl('apex-redirect-https', {

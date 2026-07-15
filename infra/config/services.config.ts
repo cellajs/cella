@@ -32,6 +32,9 @@ export const appServices = defineServices({
     primaryRollout: true,
     drainSeconds: 10,
     lbRoute: 'default',
+    // Same-origin migration: also reachable at https://<app-host>/api/... via
+    // an LB path-begin route; the backend self-mounts '/api' (no LB stripping).
+    lbPathBegin: '/api',
     // Per-service VM size (required on every service).
     instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },
     env: {
@@ -81,6 +84,9 @@ export const appServices = defineServices({
     drainPolicy: 'reconnect',
     drainSeconds: 5,
     lbRoute: 'host',
+    // Same-origin migration: also reachable at wss://<app-host>/yjs/... via an
+    // LB path-begin route; the yjs server accepts the unstripped prefix.
+    lbPathBegin: '/yjs',
     // WebSocket service: LB keeps connections open for up to an hour.
     lbWebsockets: true,
     // Only deployed when appConfig.services.yjs.enabled is true.
@@ -104,6 +110,9 @@ export const appServices = defineServices({
     // Reuses the backend image at the same SHA; CI builds no separate mcp image.
     reusesImageOf: 'backend',
     lbRoute: 'host',
+    // Same-origin migration: also reachable at https://<app-host>/mcp/... via
+    // an LB path-begin route; the shared base app self-mounts '/mcp'.
+    lbPathBegin: '/mcp',
     // Only deployed when appConfig.services.mcp.enabled is true.
     instanceType: 'DEV1-S',
     // singleVM: fold into the backend process (LB still routes to the host VM).

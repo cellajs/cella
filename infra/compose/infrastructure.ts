@@ -2,6 +2,20 @@ import type { AppServiceConfig, AppServices, ServiceMeta, ComposeFile, ComposeSe
 
 /** Helper for `services.config.ts`: typed identity that preserves literal keys. */
 export function defineServices<const T extends AppServices>(services: T): T {
+  const seenPrefixes = new Map<string, string>()
+  for (const [slug, cfg] of Object.entries(services)) {
+    const prefix = cfg.lbPathBegin
+    if (prefix === undefined) continue
+    // The LB matches the raw path-begin string, so a malformed prefix silently
+    // routes wrong traffic; fail at synth/plan time instead.
+    if (!cfg.lbRoute) throw new Error(`services config: '${slug}' declares lbPathBegin without lbRoute — an internal-only service has no LB backend to route to.`)
+    if (!/^\/[a-z0-9-]+$/.test(prefix)) {
+      throw new Error(`services config: '${slug}' lbPathBegin '${prefix}' must be a single lowercase path segment starting with '/' and no trailing slash (e.g. '/api').`)
+    }
+    const owner = seenPrefixes.get(prefix)
+    if (owner) throw new Error(`services config: lbPathBegin '${prefix}' declared by both '${owner}' and '${slug}' — path prefixes must be unique.`)
+    seenPrefixes.set(prefix, slug)
+  }
   return services
 }
 
@@ -37,6 +51,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   if (cfg.primaryRollout) meta.primaryRollout = true
   if (cfg.drainPolicy) meta.drainPolicy = cfg.drainPolicy
   if (cfg.lbRoute) meta.lbRoute = cfg.lbRoute
+  if (cfg.lbPathBegin) meta.lbPathBegin = cfg.lbPathBegin
   if (cfg.lbWebsockets) meta.lbWebsockets = true
   if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf
   if (cfg.dockerfile) meta.dockerfile = cfg.dockerfile

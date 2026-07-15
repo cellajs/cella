@@ -29,6 +29,18 @@ export type DrainPolicy = 'requests' | 'reconnect'
  */
 export type LbRoute = 'default' | 'host'
 
+/**
+ * Path-prefix route (`matchPathBegin`) on the shared HTTPS frontend, e.g.
+ * `/api`. Coexists with the service's host route during the same-origin
+ * migration: `https://<app-host><prefix>/...` reaches this service's LB
+ * backend while the legacy subdomain keeps working. The LB matches on ONE
+ * criterion per route (host OR path — never both) and does NOT strip the
+ * prefix, so the service must also serve itself under `<prefix>` (the
+ * backend/mcp self-mounts in backend/src/server.ts, the yjs prefix handling
+ * in yjs/src/server). Must start with '/' and have no trailing slash.
+ */
+export type LbPathBegin = `/${string}`
+
 /** A service's VM size: one type for all modes, or a per-mode map. */
 export type ServiceInstanceType = string | Partial<Record<Environment, string>>
 
@@ -73,6 +85,8 @@ export interface ServiceMeta {
   drainSeconds: number
   /** Public LB exposure; absent = internal-only. */
   lbRoute?: LbRoute
+  /** Path-prefix route on the shared HTTPS frontend (same-origin migration); see LbPathBegin. */
+  lbPathBegin?: LbPathBegin
   /** Long-lived LB timeouts (1h server/tunnel) for WebSocket services. */
   lbWebsockets?: boolean
   /** Service whose image this one reuses (mcp reuses backend); no own image built. */
@@ -179,6 +193,12 @@ export interface AppServiceConfig {
    * Omit for internal-only (no public LB backend; e.g. cdc).
    */
   lbRoute?: LbRoute
+  /**
+   * Additionally route `<prefix>` path-begins on the shared HTTPS frontend to
+   * this service (same-origin migration, e.g. '/api'). Only meaningful with
+   * `lbRoute`; see LbPathBegin for the exact matching/stripping semantics.
+   */
+  lbPathBegin?: LbPathBegin
   /**
    * Keep LB connections long-lived (1h server/tunnel timeouts) for services
    * speaking WebSockets through the LB (yjs). Only meaningful with `lbRoute`.

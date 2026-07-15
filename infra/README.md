@@ -49,7 +49,7 @@ The key resources and how traffic flows between them:
 - **Private network (VPC):** VMs and db connect over private IPs; only LB is publicly reachable (no SSH).
 - **Frontend:** a Caddy VM behind the LB that reverse-proxies the SPA static-file bucket.
 - **Backend VM:** the critical API path; replaced one generation at a time with LB overlap.
-- **Optional VMs:** `cdc`, `yjs`, `ai` run on their own VM  when enabled and `singleVm` is disabled.
+- **Optional VMs:** `cdc`, `yjs`, `mcp` run on their own VM  when enabled and `singleVm` is disabled.
 - **Database:** managed PostgreSQL reachable only from inside private network.
 - **Buckets:** public and private object storage for uploads, plus frontend SPA bucket.
 

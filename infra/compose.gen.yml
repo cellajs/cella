@@ -46,6 +46,7 @@ services:
       primaryRollout: true
       drainPolicy: requests
       lbRoute: default
+      lbPathBegin: /api
       dockerfile: Dockerfile
       target: backend
   migrate:
@@ -130,6 +131,7 @@ services:
       instanceType: DEV1-S
       drainPolicy: reconnect
       lbRoute: host
+      lbPathBegin: /yjs
       lbWebsockets: true
       dockerfile: Dockerfile
       target: yjs
@@ -169,6 +171,7 @@ services:
       instanceType: DEV1-S
       drainPolicy: requests
       lbRoute: host
+      lbPathBegin: /mcp
       reusesImageOf: backend
       coHosted: true
       bindings:
