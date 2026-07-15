@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { UsersIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
+import { appConfig, isUnconditionalPermission } from 'shared';
 import { useOrganizationLayoutContext } from '~/hooks/use-route-context';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
@@ -43,8 +43,9 @@ function MembersTable({ channelEntity, isSheet = false, children }: MembersTable
   const tenantId = organization.tenantId;
   const organizationId = organization.id;
 
-  // Check if user can update this context entity (and thus manage its members)
-  const canUpdate = channelEntity.can?.[channelEntity.entityType]?.update === true;
+  // Managing members is a channel-scoped affordance (not a per-row question), and the enriched
+  // entity carries no `createdBy` to resolve `'own'` against — so gate on an unconditional grant.
+  const canUpdate = isUnconditionalPermission(channelEntity.can?.[channelEntity.entityType]?.update);
 
   // Table state
   const { q, role, sort, order } = search;

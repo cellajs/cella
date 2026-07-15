@@ -7,6 +7,7 @@ import { PageHeader } from '~/modules/common/page/header';
 import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { ScrollReset } from '~/modules/common/scroll-reset';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -27,7 +28,8 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
   // Organization is enriched with membership via cache subscription
   const { data: organization } = useSuspenseQuery(orgQueryOptions);
 
-  const canUpdate = organization.can?.organization?.update === true;
+  const resolveCan = useResolveCan();
+  const canUpdate = resolveCan(organization.can?.organization?.update, organization.createdBy);
 
   // Filter tabs based on permissions - users who can't update don't see settings
   const filterTabIds = useMemo(() => (canUpdate ? undefined : ['members', 'attachments']), [canUpdate]);

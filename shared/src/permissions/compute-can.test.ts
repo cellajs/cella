@@ -118,21 +118,21 @@ describe('computeCan with own permissions', () => {
 });
 
 describe('computeCan three-state semantics', () => {
-  // Policies where every action is 'own' for member
+  // Policies where every row-conditionable action is 'own' for member. `create` can't take a row
+  // condition (rejected at config time — no row exists yet), so it is unconditional here.
   const { accessPolicies: allOwnPolicies } = configureWidePermissions(({ subject, contexts }) => {
     switch (subject.name) {
       case 'attachment':
         contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-        contexts.organization.member({ create: 'own', read: 'own', update: 'own', delete: 'own' });
+        contexts.organization.member({ create: 1, read: 'own', update: 'own', delete: 'own' });
         break;
     }
   });
 
-  it('preserves own for every action when all policies are own', () => {
+  it('preserves own for every row-conditional action', () => {
     const membership = wideMembership('organization', 'org1', 'member');
     const can = computeCan('organization', membership, allOwnPolicies, wideTopology);
 
-    expect(can.attachment?.create).toBe('own');
     expect(can.attachment?.read).toBe('own');
     expect(can.attachment?.update).toBe('own');
     expect(can.attachment?.delete).toBe('own');

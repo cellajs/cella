@@ -1,6 +1,6 @@
 import type { ChannelEntityType, EntityActionType, EntityType, ProductEntityType } from '../../types';
 import type { PublicReadGrants, PublicReadMode } from './public-read';
-import { own } from './row-conditions';
+import { isRowCondition, own } from './row-conditions';
 import type {
   AccessPolicies,
   AccessPolicyCallback,
@@ -39,7 +39,18 @@ const createChannelPolicyBuilder = (
       // built-in row condition.
       const fullPermissions = {} as EntityActionPermissions;
       for (const action of entityActions) {
-        fullPermissions[action] = normalizePermissionValue(permissions[action] ?? 0);
+        const value = normalizePermissionValue(permissions[action] ?? 0);
+        // Fail loud at boot: a row condition on `create` can never match. The row doesn't exist
+        // yet (the subject carries no `row`), so e.g. `create: 'own'` reads a `createdBy` that
+        // isn't there and silently denies forever. That's a config mistake, not a runtime state —
+        // surface it here rather than as a permanent, invisible denial in production.
+        if (action === 'create' && isRowCondition(value)) {
+          throw new Error(
+            `[Permission] "${channelType}.${role}" uses a row condition ('${value.name}') on 'create', ` +
+              `which can never match — the row does not exist yet. Use 1 or 0 for create.`,
+          );
+        }
+        fullPermissions[action] = value;
       }
       entries.push({ channelType, role, permissions: fullPermissions });
     };

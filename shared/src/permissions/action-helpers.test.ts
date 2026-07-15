@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolvePermission } from './action-helpers';
+import { isUnconditionalPermission, resolvePermission } from './action-helpers';
 
 describe('resolvePermission', () => {
   // --- Pass cases: permission should be granted ---
@@ -60,6 +60,23 @@ describe('resolvePermission', () => {
     expect(resolvePermission('own', '123', '123')).toBe(true);
     expect(resolvePermission('own', ' 123', '123')).toBe(false);
     expect(resolvePermission('own', '123 ', '123')).toBe(false);
+  });
+});
+
+describe('isUnconditionalPermission', () => {
+  it('is true only for an unconditional grant', () => {
+    expect(isUnconditionalPermission(true)).toBe(true);
+  });
+
+  it('is false for a row-conditional grant — it depends on the row, which this cannot see', () => {
+    // The whole point: context-scoped features (e.g. collab editing) enable on this, and `'own'`
+    // must NOT enable them, because ownership is per-row and unknown here.
+    expect(isUnconditionalPermission('own')).toBe(false);
+  });
+
+  it('is false for denied or absent', () => {
+    expect(isUnconditionalPermission(false)).toBe(false);
+    expect(isUnconditionalPermission(undefined)).toBe(false);
   });
 });
 

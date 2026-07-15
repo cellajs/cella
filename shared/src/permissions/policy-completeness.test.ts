@@ -48,3 +48,29 @@ describe('configurePermissions completeness validation', () => {
     ).not.toThrow();
   });
 });
+
+describe('configurePermissions — row condition on create is rejected at boot', () => {
+  const configure = (callback: AccessPolicyCallback) =>
+    configurePermissions(wideEntityTypes as unknown as readonly EntityType[], callback, wideTopology, {
+      // opt out of completeness so the test isolates the create-condition check
+      validateCompleteness: false,
+    });
+
+  it("throws for create: 'own' — it can never match (no row exists yet)", () => {
+    expect(() =>
+      configure(({ subject, contexts }) => {
+        if (subject.name !== 'attachment') return;
+        contexts.organization.member({ create: 'own', read: 1 });
+      }),
+    ).toThrow(/row condition[\s\S]*'create'[\s\S]*never match/);
+  });
+
+  it("allows 'own' on read/update/delete", () => {
+    expect(() =>
+      configure(({ subject, contexts }) => {
+        if (subject.name !== 'attachment') return;
+        contexts.organization.member({ create: 1, read: 'own', update: 'own', delete: 'own' });
+      }),
+    ).not.toThrow();
+  });
+});

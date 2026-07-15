@@ -79,42 +79,71 @@ This fixes a real bug: **system admins used to get an empty list.** A sysadmin p
 `orgGuard` with *no membership*, and the old membership-only resolver gave them no scope —
 while single-row reads of the very same rows succeeded.
 
-## 3. Public read: one mode, one column
+> **Behavior change to confirm, not just a fix.** After sync a system admin lists **every row in the
+> org** for collection reads (previously they were scoped by membership like anyone else). This is
+> intended — it matches single-row and SSE behavior — but it is a visible change for a fork that
+> relied on the old scoping. The one deliberate exception is `getUnseenCounts`, which stays grouped by
+> membership (a sysadmin with no memberships gets no badges); cella pins that with a regression test.
 
-`publicParent` and `publicParentOrSelf` are **removed**, along with `subject.parentRow`.
+## 3. Public read: one mode, one column — **this is the section that can break a live feature**
 
-They could not work. Nothing ever populated `parentRow`, so a `publicParent` grant matched
-nowhere — and it never could have been enforced anyway: the collection-read SQL compiler
-would need a join, and CDC stream dispatch only ever ships the row itself. Three paths,
-three different answers.
+`publicParent` and `publicParentOrSelf` are **removed**, along with `subject.parentRow`. Public
+readability is now purely row-local: `publicAt IS NOT NULL` on the row itself.
 
-```diff
-- publicRead('publicParent');
-+ publicRead('publicSelf');
+Be clear about *why*, because it is not "the old modes were broken." A `publicParent` grant works
+correctly on a **single-row** path where the caller resolves the parent and passes it as
+`parentRow` (raak does exactly this for public task share links). What it *cannot* do is be
+enforced on the **collection-read** path (the SQL compiler would need a join) or in **CDC dispatch**
+(which only ever ships the row itself). So it is a mode that is correct in one path and silently
+wrong in two — a footgun the closed model refuses to carry. `publicSelf`, by contrast, compiles
+identically in the check-form, in collection SQL, and in dispatch, so a public row appears in list
+endpoints too.
+
+**So this rewrite is semantically lossy, not mechanical.** Do not hand-edit blindly — use the codemod,
+which rewrites *and reports* every affected entity so you can decide what each one needs:
+
+```sh
+# from repo root — inventory FIRST, it writes nothing
+pnpm exec tsx cella/migrations/2026-07-permission-actor/publicread-codemod.ts inventory shared/config/permissions-config.ts
+pnpm exec tsx cella/migrations/2026-07-permission-actor/publicread-codemod.ts rewrite   shared/config/permissions-config.ts
 ```
 
-Public readability is now a property of the row: `publicAt IS NOT NULL`. Every context and
-product row carries the column (`channelEntityColumns` / `productEntityColumns`), nullable
-and dormant. `publicSelf` compiles identically in the check-form, in collection SQL, and in
-dispatch — so a public row now actually **appears in list endpoints**, which it previously
-did not.
+For each entity it reports, choose:
 
-If you declared `publicParent`, TypeScript will reject it. Pick one:
+- **It was genuinely public-via-parent (a live feature).** Denormalize `publicAt` onto its rows:
+  populate on parent-publish + backfill, using [`publicat-cascade.template.sql`](./publicat-cascade.template.sql).
+  Then rewrite any anonymous read handler to drop `parentRow` and read the row's own `publicAt`.
+- **It was dormant / never actually served publicly.** The rewrite to `publicSelf` is free; nothing
+  to populate.
 
-- **Publish the row itself** — set `publicAt` on the child. Simplest, and usually what was meant.
-- **Cascade in the data** — a trigger on the parent's `publicAt` that propagates to descendants.
-  Publication is a *data* concern now; the permission engine just reads the column.
+### Worked examples (the two known forks)
 
-### Schema
+- **raak — a LIVE break.** `task` uses `publicParent` and is served anonymously via public share
+  links (`task/public-handlers.ts` resolves the project and passes `parentRow`). After the rewrite,
+  public tasks 403 until you denormalize `task.publicAt` (its column exists but nothing populates it)
+  and rewrite the handler. `attachment` also declares `publicParent` but has **no `publicAt` column**
+  and no anonymous route — latent, but still a compile error to fix. `project` uses `publicSelf` and
+  is unaffected.
+- **projectcampus — DORMANT, near-trivial.** `item` and `comment` use `publicParentOrSelf`, but there
+  is no anonymous surface and `parentRow` was never populated (Phase P8). `comment` already copies
+  `publicAt` from its item, so `publicSelf` reproduces intent exactly. Net: two one-line config edits,
+  no runtime change; the real cascade is deferred until a public surface ships.
 
-Run `pnpm --filter backend generate` to pick up `public_at` on your own entity tables. Adding a
-nullable column with no default is a metadata-only `ALTER` in Postgres, so it does not rewrite
-the table even on large forks.
+### `publicAt` base-column collision — reconcile your schema
 
-> **`publicAt` vs `publishedAt`** — cella has both, and they are unrelated. `publishedAt` (context
-> entities, defaults to `now()`) gates **members**: null means draft. `publicAt` grants **non-members**:
-> null means not public. Note also that `attachments.public` is an S3 bucket-visibility boolean and
-> has nothing to do with either.
+`public_at` is now provided by the channel + product base column helpers (`channelEntityColumns` /
+`productEntityColumns`). If your fork **hand-rolled** a `publicAt` column on any table, it will be
+**double-defined** after sync — drop the hand-written one and inherit the base column.
+
+- raak: hand-rolls it on `project-db.ts`, `task-db.ts` → remove both.
+- projectcampus: hand-rolls it on `project-db.ts`, `item-db.ts`, `comment-db.ts` → remove all three.
+
+Then `pnpm --filter backend generate` and review the migration (adding the nullable base column is a
+metadata-only `ALTER`; removing a redundant identical column is too).
+
+> **Three lookalike columns, three meanings** — `publishedAt` (channel entities, defaults `now()`)
+> gates **members**: null = draft. `publicAt` grants **non-members**: null = not public.
+> `attachments.public` is an S3 bucket-visibility boolean, unrelated to permissions. Don't conflate them.
 
 ---
 
@@ -141,15 +170,48 @@ change, not a config knob. If you had layered a custom `RowCondition`, `Permissi
 whether it belongs in the permission model at all. Because the set is closed, CDC's
 `permissionRowKeys` is fixed (`createdBy` + `publicAt`, both already shipped) — nothing to add.
 
+Note `create: 'own'` is now **rejected at boot** (`configurePermissions` throws): a row condition on
+create can never match (no row exists yet). If you had one, it was silently denying anyway — replace
+it with `1` or `0`.
+
+## 6. Frontend: resolve the three-state `can` in one place
+
+`computeCan` emits `true | false | 'own'`. If your fork has any `'own'` cell, that `'own'` reaches the
+frontend `can` map — and hand-rolled collapses disagree on it: `=== true` denies an owner who *can*
+edit, while `!!` / `?? false` treat the `'own'` string as allowed for everyone. cella now routes
+per-entity reads through `useResolveCan` (`frontend/src/modules/entities/use-resolve-can.ts`), which
+resolves `'own'` against the entity's creator and the current user. Adopt the same in your fork's
+readers (they are fork-owned files, so they don't update on sync):
+
+- **Per-entity affordance** ("can I edit *this* row?") → `useResolveCan()(state, entity.createdBy)`.
+- **Context-scoped affordance** that can't resolve per-row ownership up front (e.g. offering collab
+  editing on an entity type) → `isUnconditionalPermission(state)` from `shared` (enables only on an
+  unconditional grant, never on `'own'`). `isUnconditionalPermission` is a stable exported helper — if
+  your fork already uses it (raak gates Yjs collab on it), it keeps working.
+
+## 7. Test helper import moved
+
+`configureAccessPolicies` (test-only) is off the public `shared` barrel — import it from
+`shared/testing/policies` instead. Update your test files:
+
+```diff
+- import { configureAccessPolicies } from 'shared';
++ import { configureAccessPolicies } from 'shared/testing/policies';
+```
+
 ---
 
 ## Checklist
 
 - [ ] Audited every `'own'` cell on **channel-entity** and **create** rows (§ widening)
 - [ ] `checkPermission` call sites pass `actorFrom(ctx)` (compiler-enforced)
-- [ ] Collection-read call sites pass the actor (compiler-enforced)
-- [ ] `publicRead('publicParent'|'publicParentOrSelf')` rewritten to `'publicSelf'` (compiler-enforced)
-- [ ] Any custom `RowCondition` reconciled with the now-closed set (compiler-enforced via `PermissionValue`)
+- [ ] Collection-read call sites pass the actor (compiler-enforced); **sysadmin-lists-whole-org** change confirmed (§2)
+- [ ] Ran `publicread-codemod.ts` (inventory then rewrite); each reported entity denormalized or confirmed dormant (§3)
+- [ ] Anonymous public-read handlers drop `parentRow`, read the row's own `publicAt` (§3)
+- [ ] Hand-rolled `publicAt` columns removed in favor of the base column (§3)
+- [ ] `create: 'own'` cells replaced with `1`/`0` (now a boot error)
+- [ ] Frontend `.can` readers routed through `useResolveCan` / `isUnconditionalPermission` (§6)
+- [ ] `configureAccessPolicies` test imports moved to `shared/testing/policies` (§7)
 - [ ] `pnpm --filter backend generate` run; `public_at` migration reviewed
 - [ ] Parity test scenario space extended for any fork-specific dimension
 - [ ] `pnpm ts`, `pnpm lint`, and the permission suites pass
