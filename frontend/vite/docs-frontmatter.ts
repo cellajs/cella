@@ -3,6 +3,7 @@ import path from 'node:path';
 import GithubSlugger from 'github-slugger';
 import type { Plugin } from 'vite';
 import { parse } from 'yaml';
+import { createUpdatedAtResolver, type UpdatedAtResolver } from './git-updated-at';
 
 /**
  * Virtual module `virtual:docs-frontmatter`: a build-time index of all docs pages
@@ -153,6 +154,19 @@ function parseFrontmatter(source: string): unknown {
   return match ? parse(match[1]) : {};
 }
 
+/**
+ * Attach a build-time `updatedAt` derived from git (the newest committer date across
+ * the page and its imported docs), so the "last edited" line and pages-table column
+ * stay correct without hand-maintained frontmatter. An author-pinned `updatedAt` is
+ * left untouched. See vite/git-updated-at.ts for the full precedence and caveats.
+ */
+function withUpdatedAt(frontmatter: unknown, files: string[], resolver: UpdatedAtResolver): unknown {
+  const record = frontmatter && typeof frontmatter === 'object' ? (frontmatter as Record<string, unknown>) : {};
+  const pinned = typeof record.updatedAt === 'string' ? record.updatedAt : undefined;
+  const updatedAt = resolver.resolve(files, pinned);
+  return updatedAt ? { ...record, updatedAt } : frontmatter;
+}
+
 /** Relative .md import targets of an .mdx wrapper, resolved to absolute paths. */
 function importTargets(file: string, source: string): string[] {
   if (!file.endsWith('.mdx')) return [];
@@ -178,6 +192,7 @@ export function pageStructure(file: string, source: string): { headings: DocHead
 
 export function docsFrontmatter(): Plugin {
   let contentDir: string;
+  let resolver: UpdatedAtResolver | undefined;
 
   const buildIndex = () => {
     const targets = new Set<string>();
@@ -186,10 +201,14 @@ export function docsFrontmatter(): Plugin {
 
     for (const file of collectPages(contentDir)) {
       const source = readFileSync(file, 'utf8');
-      for (const target of importTargets(file, source)) targets.add(target);
+      const imports = importTargets(file, source);
+      for (const target of imports) targets.add(target);
       const relative = path.relative(contentDir, file).replaceAll(path.sep, '/');
       const key = `/src/content/docs/${relative}`;
-      const frontmatter = parseFrontmatter(source);
+      // updatedAt tracks the page plus its imported repo docs (wrapper pages render a
+      // repo doc as their body): a body edit in cella/SYNC_ENGINE.md bumps the page.
+      const parsed = parseFrontmatter(source);
+      const frontmatter = resolver ? withUpdatedAt(parsed, [file, ...imports], resolver) : parsed;
       const { headings, sections } = pageStructure(file, source);
       entries.push([key, { frontmatter, headings }] as const);
 
@@ -211,6 +230,7 @@ export function docsFrontmatter(): Plugin {
     name: 'docs-frontmatter',
     configResolved(config) {
       contentDir = path.resolve(config.root, 'src/content/docs');
+      resolver = createUpdatedAtResolver(contentDir);
     },
     resolveId(id) {
       if (id === VIRTUAL_ID) return RESOLVED_ID;

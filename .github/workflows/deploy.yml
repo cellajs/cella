@@ -188,6 +188,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          # Full history: the docs-frontmatter Vite plugin derives each page's
+          # updatedAt from git commit dates (frontend/vite/git-updated-at.ts). A
+          # shallow clone would collapse tracked docs onto their checkout mtime.
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
