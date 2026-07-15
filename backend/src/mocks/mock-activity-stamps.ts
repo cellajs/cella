@@ -4,10 +4,9 @@ import { withFakerSeed } from './faker-seed';
 import { MOCK_REF_DATE } from './mock-timestamps';
 
 /**
- * Type for dynamically generated per-stream activity stamps in mocks.
- * Epoch-ms timestamps per product entity type: latest post (created, null when never
- * posted) and latest content update (updated, null when never updated), matching the
- * `activity` object in channelEntityIncludedSchema counts.
+ * Epoch-ms timestamps per product entity type: `created` = latest post (null when
+ * never posted), `updated` = latest content update (null when never updated),
+ * matching the `activity` object in channelEntityIncludedSchema counts.
  */
 export type MockActivityStamps = {
   [K in ProductEntityType]: { created: number | null; updated: number | null };

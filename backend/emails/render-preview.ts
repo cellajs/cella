@@ -12,10 +12,8 @@ export interface RenderEmailPreviewOptions {
 }
 
 /**
- * Render a single email template to HTML using its preview fixture.
- *
- * Goes through the real render pipeline (`emails/jsx-email`), so the output
- * matches what the mailer sends. Shared by the dev preview route and tests.
+ * Goes through the real render pipeline (`emails/jsx-email`), so preview output
+ * matches what the mailer actually sends. Shared by the dev preview route and tests.
  */
 export async function renderEmailPreview(
   name: EmailPreviewName,

@@ -24,9 +24,8 @@ export function createTestClient(app: AppLike): Client {
 }
 
 /**
- * Calls an SDK function in test mode, returning { data, error, response }.
- * Injects the test client, disables throwOnError, and sets responseStyle to 'fields'.
- * Input options are type-checked against the SDK function's signature.
+ * Injects the test client, disables throwOnError, and sets responseStyle to 'fields'; input
+ * options are type-checked against the SDK function's signature.
  */
 export function sdk(client: Client) {
   return async <F extends (opts: any) => Promise<any>>(

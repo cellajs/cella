@@ -43,9 +43,8 @@ export function getMigrationFolders(): string[] {
 }
 
 /**
- * Find the latest migration folder by tag suffix.
- * Since migrations can evolve (multiple folders with the same tag), returns the most recent one.
- * @param tagSuffix - The tag suffix to search for (e.g., 'cdc_setup')
+ * Find the latest migration folder by tag suffix. Migrations can evolve (multiple folders
+ * share a tag), so this returns the most recent match.
  */
 export function findMigrationByTag(tagSuffix: string): string | undefined {
   const matches = getMigrationFolders().filter((folder) => folder.endsWith(`_${tagSuffix}`));
@@ -81,13 +80,11 @@ export function resolveSqlContent(sqlOrPath: string): string {
 /**
  * Add or update a SQL migration in the Drizzle migrations folder (v1 format).
  *
- * When a migration with the given tag already exists:
- * - If the SQL content is identical, the action is 'unchanged'.
- * - If the SQL content changed, the action is 'evolved' and the old folder stays
- *   untouched while a fresh timestamped folder receives the new SQL.
+ * When a migration with the tag already exists: identical SQL → action 'unchanged'; changed
+ * SQL → action 'evolved', leaving the old folder untouched and writing a fresh timestamped
+ * folder with the new SQL.
  *
- * @param tag - Unique identifier for the migration (e.g., 'cdc_setup')
- * @param sql - SQL content (not a file path - use resolveSqlContent first if needed)
+ * @param sql - SQL content, not a file path (use resolveSqlContent first if needed)
  */
 export function upsertMigration(tag: string, sql: string): MigrationResult {
   // Normalize tag by removing leading timestamps/underscores if present.

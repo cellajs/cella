@@ -7,11 +7,9 @@ import { startSpinner, succeedSpinner } from '#/utils/console';
 const db = seedDb;
 
 /**
- * Recalculate channel_counters and product_counters from current database state.
- *
- * Delegates to recalculateCounters() which uses ON CONFLICT with || merge,
- * so it's safe to run even when rows already exist (e.g. pre-populated by triggers).
- * Runs on every seed invocation.
+ * Recalculate channel_counters and product_counters from current DB state. Delegates to
+ * recalculateCounters(), which uses ON CONFLICT with || merge, so it's safe to re-run even
+ * when rows already exist (e.g. pre-populated by triggers).
  */
 export const countersSeed = async () => {
   startSpinner('Recalculating counters...');

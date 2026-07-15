@@ -49,11 +49,6 @@ interface CdcTestHarness {
   stop(): Promise<void>;
 }
 
-/**
- * Helper to wait for an event with timeout.
- * @param eventType - The event type to wait for
- * @param timeoutMs - Maximum time to wait (default 10s)
- */
 export function waitForEvent(
   eventType: Parameters<typeof activityBus.once>[0],
   timeoutMs = 10000,
@@ -87,7 +82,6 @@ export async function waitFor(
 /**
  * Host the backend's real `/internal/cdc` WebSocket endpoint on an ephemeral
  * local port, standing in for the deployed backend the CDC worker would dial.
- * Returns the dial URL and a closer.
  */
 async function startInternalCdcWsServer(): Promise<{ url: string; close(): Promise<void> }> {
   const server = createServer((_req, res) => {

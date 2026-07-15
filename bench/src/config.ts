@@ -7,9 +7,8 @@ try {
 } catch {}
 
 /**
- * Shared configuration for Artillery load tests, derived from the fork's own
- * config (`appConfig`, `backend/.env`) so bench follows a fork's port offset
- * automatically. Dev-only, tied to the local stack.
+ * Load-test config derived from the fork's own config (`appConfig`, `backend/.env`)
+ * so bench follows a fork's port offset automatically. Dev-only, local stack.
  */
 export const BASE_URL = appConfig.backendUrl;
 

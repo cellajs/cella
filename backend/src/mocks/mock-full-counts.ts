@@ -3,9 +3,8 @@ import { generateMockEntityCounts, type MockEntityCounts } from './mock-entity-c
 import { generateMockMembershipCounts, type MockMembershipCounts } from './mock-membership-counts';
 
 /**
- * Generates full counts structure for organization responses.
- * Combines membership counts, entity counts and activity stamps dynamically.
- * @param key - Key for deterministic generation.
+ * Full counts (membership + entities + activity) for organization responses.
+ * @param key - seeds deterministic generation.
  */
 export const generateMockFullCounts = (
   key: string,

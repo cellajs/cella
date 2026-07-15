@@ -89,11 +89,9 @@ function printSummary(samples: PollState['samples']) {
 }
 
 /**
- * Polls the CDC worker's /health endpoint during a bench run to capture
- * throughput (ops/s), p95 latency, WAL lag, and event counts.
- *
- * Bench starts this automatically in the background for every run (`--quiet`),
- * so it stays silent unless CDC actually processed events. Run standalone for
+ * Polls the CDC worker's /health endpoint during a run to capture throughput
+ * (ops/s), p95 latency, WAL lag, and event counts. Bench starts it automatically
+ * in the background (`--quiet`), silent unless CDC processed events. Standalone for
  * live per-interval logging:
  *
  *   tsx src/cdc-poller.ts [--interval 3] [--duration 120] [--quiet]

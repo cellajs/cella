@@ -76,7 +76,6 @@ describe('Schema verification', () => {
     });
   });
 
-  // ── RLS setup: FORCE RLS + policies + ownership ─────────────────────────
   // These require the RLS migration to have been run. The beforeAll ensures
   // admin_role/runtime_role exist and FORCE RLS is set (mirrors 10-rls.migration.ts).
 

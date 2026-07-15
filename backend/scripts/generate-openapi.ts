@@ -67,10 +67,8 @@ function canSkipGeneration(): { skip: boolean; reason: string; hash: string | nu
 }
 
 /**
- * Generate the OpenAPI document and write it to a JSON file. Sets NODB='true' to avoid
- * database connections during generation.
- *
- * Git-based caching: skips generation if no relevant files changed since last run; --force bypasses it.
+ * Sets NODB='true' to avoid database connections during generation.
+ * Git-based caching: skips if no relevant files changed since last run; --force bypasses it.
  */
 (async () => {
   const startTime = performance.now();

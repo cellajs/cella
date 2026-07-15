@@ -4,9 +4,8 @@ import { faker } from '@faker-js/faker';
 export const MOCK_REF_DATE = new Date('2025-01-01T00:00:00.000Z');
 
 /**
- * Generates deterministic created/modified timestamps.
- * createdAt is in the past, updatedAt is between createdAt and refDate.
- * Must be called within withFakerSeed() for deterministic output.
+ * created/modified timestamps: createdAt in the past, updatedAt between createdAt
+ * and refDate. Must run inside withFakerSeed() for deterministic output.
  */
 export const mockTimestamps = (refDate = MOCK_REF_DATE) => {
   const createdAt = faker.date.past({ refDate });
