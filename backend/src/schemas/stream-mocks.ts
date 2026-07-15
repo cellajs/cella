@@ -7,7 +7,7 @@ import { mockStxBase } from './sync-transaction-mocks';
  *
  * For product entities (e.g. attachment):
  * - entityType is set, resourceType is null
- * - Includes stx, seq, cacheToken for sync engine
+ * - Includes stx, seq for sync engine
  * - channelType is null (not a channel entity event)
  */
 export const mockStreamNotification = (key = 'stream-notification:default') =>
@@ -22,9 +22,6 @@ export const mockStreamNotification = (key = 'stream-notification:default') =>
     channelType: null,
     channelId: mockUuid(),
     seq: faker.number.int({ min: 1, max: 500 }),
-    // Generate cacheToken before stx for deterministic output.
-    // stx uses nested withFakerSeed, which resets the seed after.
-    cacheToken: faker.string.alphanumeric(32),
     stx: mockStxBase(`${key}:stx`),
     batchUntilSeq: null,
     propagation: null,

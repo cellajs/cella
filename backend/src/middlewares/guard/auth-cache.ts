@@ -53,7 +53,10 @@ export const setSessionCache = (sessionId: string, userId: string, entry: Sessio
 };
 
 export const setMembershipCache = (userId: string, memberships: MembershipCacheEntry): void => {
-  membershipCache.set(userId, memberships);
+  // Jitter TTL ±20% (4-6 min) so a cohort with synchronized expiry doesn't fire a
+  // membership-DB burst on top of a fan-out stampede (see .todos/SYNC_FANOUT_SOLUTION.md, Piece J).
+  const jitteredTtl = Math.round(5 * 60_000 * (0.8 + Math.random() * 0.4));
+  membershipCache.set(userId, memberships, jitteredTtl);
 };
 
 /** Invalidate all cached entries for a user (across all their sessions) */

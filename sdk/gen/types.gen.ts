@@ -134,10 +134,6 @@ export type StreamNotification = {
       [key: string]: unknown;
     } | null);
   /**
-   * HMAC-signed token for single-entity LRU cache access
-   */
-  cacheToken: string | null;
-  /**
    * Last seq for a batched notification — client should fetch range
    */
   batchUntilSeq: number | null;

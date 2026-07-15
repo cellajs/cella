@@ -2955,7 +2955,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(
 /**
  * Get attachment
  *
- * Returns a single attachment by ID. Supports CDC cache via X-Cache-Token header.
+ * Returns a single attachment by ID. Served from the CDC-invalidated entity detail cache.
  *
  * **GET /{tenantId}/{organizationId}/attachments/{id}** ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments/{id}) ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/attachments/{id}) ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/GET/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments_cella_product_
  *

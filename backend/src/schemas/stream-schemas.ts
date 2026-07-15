@@ -19,11 +19,11 @@ const propagationHintSchema = z.object({
  * Lightweight payload - client fetches entity data via API if needed.
  *
  * For product entities (page, attachment):
- * - Includes stx, seq, cacheToken for sync engine
+ * - Includes stx, seq for sync engine
  *
  * For membership, app stream only:
  * - seq is null (membership changes detected via activity scan on catchup)
- * - stx/seq/cacheToken are null
+ * - stx/seq are null
  */
 export const streamNotificationSchema = z
   .object({
@@ -46,7 +46,6 @@ export const streamNotificationSchema = z
       .nullable()
       .describe('Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)'),
     stx: stxBaseSchema.nullable().describe('Sync transaction metadata for HLC conflict resolution'),
-    cacheToken: z.string().nullable().describe('HMAC-signed token for single-entity LRU cache access'),
     batchUntilSeq: z
       .number()
       .int()

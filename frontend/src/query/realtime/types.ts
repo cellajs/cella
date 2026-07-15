@@ -26,7 +26,7 @@ export interface StreamTraceContext {
 }
 
 /**
- * Product-entity notification for the seq/cacheToken sync path. `entityType` is
+ * Product-entity notification for the seq sync path. `entityType` is
  * non-null when `kind === 'entity'`.
  */
 export type EntityNotification = StreamNotification & { kind: 'entity'; entityType: ProductEntityType };

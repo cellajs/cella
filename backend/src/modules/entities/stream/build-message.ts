@@ -4,8 +4,8 @@ import type { StreamNotification } from '#/schemas';
 import type { AppStreamEvent, AppStreamMembershipEvent } from './types';
 
 /**
- * The app stream carries exactly two concerns: product entity sync (seq/cacheToken
- * range fetch on the client) and membership changes (query invalidation). This is the
+ * The app stream carries exactly two concerns: product entity sync (seq range fetch
+ * on the client) and membership changes (query invalidation). This is the
  * single source of the `kind` discriminant, used both to shape the wire notification
  * and to branch dispatch/handling on either end.
  */
@@ -23,17 +23,14 @@ export function isMembershipEvent(event: AppStreamEvent): event is AppStreamMemb
  * Notification-only format - no entity data included.
  *
  * For product entities:
- * - Includes stx, seq, cacheToken for sync engine
+ * - Includes stx, seq for sync engine
  *
  * For membership:
- * - stx/cacheToken/seq are null (memberships detected via activity scan on catchup)
+ * - stx/seq are null (memberships detected via activity scan on catchup)
  */
 export function buildStreamNotification(event: ActivityEvent): StreamNotification {
   const { entityType } = event;
   const isProduct = isProductEntity(entityType);
-
-  // Use cache token from CDC (all users share the same token)
-  const cacheToken = isProduct ? (event.cacheToken ?? null) : null;
 
   // Extract channelType for membership events
   const membership = event.resourceType === 'membership' ? getEventData(event, 'membership') : null;
@@ -68,7 +65,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   }
 
   return {
-    // Discriminant: product entities go through the seq/cacheToken sync path;
+    // Discriminant: product entities go through the seq sync path;
     // everything else on this stream is a membership change (query invalidation).
     kind: appNotificationKind(event),
     action: event.action,
@@ -81,7 +78,6 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     channelId,
     seq: isProduct ? (event.seq ?? null) : null,
     stx,
-    cacheToken,
     batchUntilSeq: event.batchUntilSeq ?? null,
     propagation,
   };

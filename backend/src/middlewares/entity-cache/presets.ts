@@ -1,109 +1,95 @@
-import type { MiddlewareHandler } from 'hono';
+import type { Context, MiddlewareHandler } from 'hono';
+import type { ProductEntityType } from 'shared';
 import type { Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
-import { log } from '#/utils/logger';
+import { checkPermission } from '#/permissions';
+import { actorFrom } from '#/permissions/actor';
+import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { coalesce, isInFlight } from '#/utils/request-coalescing';
 import { entityCache } from './app-entity-cache';
-import { validateSignedCacheToken } from './token-signer';
 
 /**
- * Entity-keyed TTL cache middleware with forward-only token resolution.
- * Uses X-Cache-Token header for access, validates session-signed tokens,
- * resolves token to entity key for cache lookup.
+ * Entity-keyed detail cache middleware.
  *
- * Forward-only flow:
- * 1. CDC reserves token, maps token to entity key, invalidates stale data
- * 2. SSE signs token per-subscriber with their session
- * 3. Client sends signed token, we validate and resolve to entity key
- * 4. First user fetch enriches: handler sets actual data under entity key
- * 5. Subsequent users (any token, old or new) get cache hit on same entity key
+ * Keyed by `entityType:{id}` from the request path — no cache token. On a hit, the caller is
+ * re-authorized against the cached row with `checkPermission` (live authorization, replacing the
+ * old session-signed token capability), then the enriched response is served. On a miss, the
+ * handler runs once (coalesced) and its enriched result is cached. CDC invalidates the entry by
+ * entity id on change (see cdc-websocket `handleMessage`), so the next fetch re-enriches.
  */
-export const appCache = (): MiddlewareHandler<Env> =>
+export const appCache = (entityType: ProductEntityType): MiddlewareHandler<Env> =>
   xMiddleware(
     {
       functionName: 'appCache',
       type: 'x-cache',
       name: 'app',
-      description: 'Entity-keyed TTL cache with forward-only token resolution',
+      description: 'Entity-keyed detail cache with per-request read authorization',
     },
     async (ctx, next) => {
-      const signedToken = ctx.req.header('X-Cache-Token');
-      const sessionToken = ctx.get('sessionToken');
-
-      // Skip if no token provided
-      if (!signedToken) {
-        ctx.set('entityCacheToken', null);
-        ctx.set('entityCacheHit', false);
+      const id = ctx.req.param('id');
+      if (!id) {
         await next();
         return;
       }
 
-      // Validate signature and extract base token
-      let baseToken: string | null = null;
-      if (sessionToken) {
-        baseToken = validateSignedCacheToken(signedToken, sessionToken);
-        if (!baseToken) {
-          log.debug('Cache token signature validation failed', {
-            signedTokenPrefix: signedToken.slice(0, 8),
-          });
+      const key = `${entityType}:${id}`;
+      const cached = entityCache.get(key);
+
+      // Enriched hit: re-authorize this caller against the cached row, then serve.
+      if (isEnriched(cached)) {
+        if (callerCanRead(ctx, entityType, cached)) {
+          ctx.header('X-Cache', 'HIT');
+          return ctx.json(cached);
         }
-      }
-
-      // If signature invalid, skip cache and proceed to handler
-      if (!baseToken) {
-        ctx.set('entityCacheToken', null);
-        ctx.set('entityCacheHit', false);
-        ctx.header('X-Cache', 'INVALID');
-        await next();
-        return;
-      }
-
-      // Resolve token to entity key (forward-only: old tokens still resolve)
-      const resolvedKey = entityCache.resolveToken(baseToken);
-
-      // Store resolved entity key in context for handler access
-      ctx.set('entityCacheToken', resolvedKey ?? null);
-
-      // If token can't be resolved (expired/unknown), skip cache
-      if (!resolvedKey) {
-        ctx.set('entityCacheHit', false);
+        // Denied from cache: fall through so the handler produces the authoritative 403/404.
         ctx.header('X-Cache', 'MISS');
         await next();
         return;
       }
 
-      // Check cache using entity key
-      const cached = entityCache.get(resolvedKey);
-
-      // If we have enriched data (not null/undefined and has 'id'), return it
-      if (cached !== undefined && cached !== null && 'id' in cached) {
-        ctx.set('entityCacheHit', true);
-        ctx.header('X-Cache', 'HIT');
-        return ctx.json(cached);
-      }
-
-      ctx.set('entityCacheHit', false);
-
-      if (isInFlight(resolvedKey)) {
-        await coalesce(resolvedKey, () => Promise.resolve());
-
-        const coalesced = entityCache.get(resolvedKey);
-        if (coalesced !== undefined && coalesced !== null && 'id' in coalesced) {
-          ctx.set('entityCacheHit', true);
+      // Coalesce concurrent misses on the same entity; a waiter re-checks the cache after.
+      if (isInFlight(key)) {
+        await coalesce(key, () => Promise.resolve());
+        const coalesced = entityCache.get(key);
+        if (isEnriched(coalesced) && callerCanRead(ctx, entityType, coalesced)) {
           ctx.header('X-Cache', 'COALESCED');
           return ctx.json(coalesced);
         }
       }
 
-      ctx.header('X-Cache', cached === null ? 'RESERVED' : 'MISS');
-
-      await coalesce(resolvedKey, async () => {
+      ctx.header('X-Cache', 'MISS');
+      await coalesce(key, async () => {
         await next();
-
         const entityData = ctx.get('entityCacheData');
-        if (entityData) {
-          entityCache.set(resolvedKey, entityData);
-        }
+        if (entityData) entityCache.set(key, entityData);
       });
     },
   );
+
+/** True if a cache value holds enriched entity data (not undefined and carrying an `id`). */
+function isEnriched(value: Record<string, unknown> | null | undefined): value is Record<string, unknown> {
+  return value !== undefined && value !== null && 'id' in value;
+}
+
+/**
+ * Re-authorize a cache hit against the cached row. The enriched response replaces `createdBy`
+ * with a user object, so normalize it back to the raw id the permission subject expects; every
+ * other field the check needs (channel ids, publicAt) is already present on the response.
+ */
+function callerCanRead(ctx: Context<Env>, entityType: ProductEntityType, cached: Record<string, unknown>): boolean {
+  try {
+    const createdBy = cached.createdBy;
+    const authRow = {
+      ...cached,
+      createdBy:
+        typeof createdBy === 'object' && createdBy !== null && 'id' in createdBy
+          ? ((createdBy as { id: string }).id ?? null)
+          : ((createdBy as string | null | undefined) ?? null),
+    } as { id: string; createdBy?: string | null };
+    const subject = buildSubjectFromEntity(entityType, authRow);
+    return checkPermission(ctx.var.memberships, 'read', subject, actorFrom(ctx)).isAllowed;
+  } catch {
+    // Unexpected row shape → don't serve from cache; the handler re-authorizes authoritatively.
+    return false;
+  }
+}

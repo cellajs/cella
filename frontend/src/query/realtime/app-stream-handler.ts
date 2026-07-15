@@ -15,27 +15,21 @@ import type { AppStreamNotification } from './types';
 
 /**
  * Route an incoming app-stream notification to the membership/organization/product handler.
- * Notification-only format: no entity data included — handlers invalidate to refetch, or use
- * cacheToken for efficient fetches.
+ * Notification-only format: no entity data included — handlers invalidate or seq-range fetch.
  */
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
-  const { subjectId, action, stx, organizationId, tenantId, channelType, seq, cacheToken, _trace } = notification;
+  const { subjectId, action, stx, organizationId, tenantId, channelType, seq, _trace } = notification;
 
   withSpanSync(
     syncSpanNames.messageProcess,
     { entityType: notification.entityType, action, entityId: subjectId, _trace },
     () => {
-      // Store the single-entity detail cache token (present only on non-batch product messages)
-      if (cacheToken && !notification.batchUntilSeq && notification.entityType && subjectId) {
-        cacheOps.storeEntityCacheToken(notification.entityType, subjectId, cacheToken);
-      }
-
       // Store tenantId in sync store whenever we see it in a notification
       if (organizationId && tenantId) {
         useSyncStore.getState().setOrgTenantId(organizationId, tenantId);
       }
 
-      // Membership changes use targeted query invalidation, not the seq/cacheToken sync path.
+      // Membership changes use targeted query invalidation, not the seq sync path.
       if (notification.kind === 'membership') {
         handleMembershipNotification(action, organizationId, channelType);
         return;
@@ -128,7 +122,7 @@ function handleMembershipNotification(
   console.debug(`[handleMembershipNotification] ${action} channelType=${channelType} organizationId=${organizationId}`);
 }
 
-/** Handle product entity events (page, attachment, …): notification-only, so invalidate/refetch (cacheToken for efficient fetches). */
+/** Handle product entity events (page, attachment, …): notification-only, so invalidate or seq-range refetch. */
 function handleEntityNotification(
   entityType: ProductEntityType,
   entityId: string,

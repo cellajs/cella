@@ -21,7 +21,7 @@ const allEventTypes = new Set<ActivityEventType>(activityEventTypes);
  * Activity event with entity or resource data, created from CDC message.
  * This is the in-memory event format emitted by ActivityBus.
  *
- * Sync fields (seq, cacheToken, etc.) originate from the CDC worker and are
+ * Sync fields (seq, batchUntilSeq, etc.) originate from the CDC worker and are
  * passed through to StreamNotification for the client sync engine.
  * `trace` is backend-internal only (OTel span correlation).
  */
@@ -37,7 +37,6 @@ export interface ActivityEvent extends Omit<ActivityModel, 'type' | 'createdAt'>
   /** Per-row permission fields for batch events — dispatch decides per subscriber per row. */
   batchRows?: ActivityBatchRow[] | null;
   // Sync fields from CDC worker
-  cacheToken: string | null;
   seq: number | null;
   batchUntilSeq: number | null;
   propagation: PropagationHint | null;

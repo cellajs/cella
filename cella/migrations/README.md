@@ -39,6 +39,10 @@ be a no-op.
   batch cache machinery (`batchCache` middleware, `batchReservations`, batch token
   index); fork-breaking on the frontend `DeltaFetchFn` (drops the 4th `options`/`cacheToken`
   param on every `registerEntityQueryKeys` delta-fetch). Manual, no script.
+- [2026-07-detail-cache-tokenless](./2026-07-detail-cache-tokenless/): drops the single-entity
+  cache token — `appCache()` → `appCache(entityType)` on every product detail route, cache
+  hits re-authorize via `checkPermission`, and `cacheToken` is removed from the whole
+  CDC→SSE→client pipeline (+ `X-Cache-Token` frontend sends). Manual, no script.
 - [2026-07-channel-entity-rename](./2026-07-channel-entity-rename/): renames the
   "channel entity" concept to "channel entity" (`ContextEntityType→ChannelEntityType`,
   builder `.context()→.channel()`, `context_type/context_id→channel_type/channel_id`,

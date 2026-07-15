@@ -1544,7 +1544,7 @@
     "path": "/{tenantId}/{organizationId}/attachments/{id}",
     "tags": ["attachments"],
     "summary": "Get attachment",
-    "description": "Returns a single attachment by ID. Supports CDC cache via X-Cache-Token header.",
+    "description": "Returns a single attachment by ID. Served from the CDC-invalidated entity detail cache.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,

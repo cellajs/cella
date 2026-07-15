@@ -37,6 +37,30 @@ const buildMembershipIndex = <T extends PermissionMembership>(memberships: T[]):
 };
 
 /**
+ * Per-array memo of the validated membership index, keyed by the memberships array's identity.
+ *
+ * The index is a pure function of the array's contents, and every membership-update path
+ * REPLACES the array rather than mutating it in place — HTTP requests read a fresh array after
+ * cache invalidation, and an SSE subscriber's `memberships` is reassigned on membership events.
+ * So a stable reference always maps to the same index, and the WeakMap frees the entry once the
+ * array is unreferenced (disconnect / cache expiry). This turns the per-event dispatch fan-out
+ * from N index builds into N O(1) lookups (and skips re-validating an already-validated array).
+ *
+ * Contract: do not mutate a memberships array in place after passing it to a permission check.
+ */
+const membershipIndexMemo = new WeakMap<object, MembershipIndex<PermissionMembership>>();
+
+const getMembershipIndex = <T extends PermissionMembership>(memberships: T[]): MembershipIndex<T> => {
+  const cached = membershipIndexMemo.get(memberships);
+  if (cached) return cached as MembershipIndex<T>;
+
+  memberships.forEach((m, i) => validateMembership(m, i));
+  const index = buildMembershipIndex(memberships);
+  membershipIndexMemo.set(memberships, index as MembershipIndex<PermissionMembership>);
+  return index;
+};
+
+/**
  * Builds a Map indexing policies by `${channelType}:${role}` for O(1) lookup.
  * Uses policies for a specific entityType (subject.entityType).
  */
@@ -273,12 +297,12 @@ export function getAllDecisions<T extends PermissionMembership>(
     return isSingle ? results.get(subjects.id ?? '_idx:0')! : results;
   }
 
-  // Validate all inputs before processing (against the topology hierarchy, which may be synthetic)
+  // Validate subjects (against the topology hierarchy, which may be synthetic).
   subjectArray.forEach((subject, i) => validateSubject(subject, i, topoHierarchy));
-  memberships.forEach((membership, i) => validateMembership(membership, i));
 
-  // Build membership index once for all subjects
-  const membershipIndex = buildMembershipIndex(memberships);
+  // Validated membership index, memoized per array identity (see membershipIndexMemo): reused
+  // across events for a stable subscriber/request array instead of rebuilt on every call.
+  const membershipIndex = getMembershipIndex(memberships);
 
   // Cache for policy indices by entity type
   const policyIndexCache = new Map<ChannelEntityType | ProductEntityType, PolicyIndex>();

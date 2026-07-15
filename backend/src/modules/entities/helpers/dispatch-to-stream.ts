@@ -1,6 +1,5 @@
 import { appConfig } from 'shared';
 import { type ActivityBatchRow, getEventData } from '#/lib/activity-bus';
-import { signCacheToken } from '#/middlewares/entity-cache/token-signer';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions';
 import { buildSubject } from '#/permissions/build-subject';
@@ -16,7 +15,6 @@ import type { AppStreamEvent, AppStreamProductEvent } from '../stream/types';
  */
 export interface AppStreamSubscriber extends CursoredSubscriber {
   userId: string;
-  sessionToken: string;
   organizationIds: Set<string>;
   isSystemAdmin: boolean;
   memberships: MembershipBaseModel[];
@@ -33,8 +31,8 @@ export type SubscriberAccess = Pick<AppStreamSubscriber, 'userId' | 'isSystemAdm
  * grants evaluate per subscriber. Rows are self-describing, so no second row is ever
  * needed. Fail-closed on malformed events.
  *
- * This decision doubles as cacheToken issuance (a signed token is a read capability
- * `appCache` honors without re-running predicates), so over-notifying is never OK.
+ * The same visibility is re-checked when a cache hit is served (`appCache` re-runs
+ * `checkPermission` against the cached row), so over-notifying is never a leak here.
  *
  * Forks may add product rules here (e.g. author-only draft rows) before the engine
  * check — concepts the engine has no policy vocabulary for.
@@ -106,12 +104,5 @@ export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, A
     return eventRows(event).some(({ rowData }) =>
       canReceiveEntityEvent(subscriber, rowData === event.rowData ? event : rowScopedEvent(event, rowData)),
     );
-  },
-  transformNotification: (notification, subscriber) => {
-    // Sign cache token per subscriber session
-    if (notification.cacheToken) {
-      return { ...notification, cacheToken: signCacheToken(notification.cacheToken, subscriber.sessionToken) };
-    }
-    return notification;
   },
 });

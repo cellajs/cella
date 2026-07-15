@@ -13,7 +13,6 @@ import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers'
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { EntityQueryData, InfiniteEntityQueryData, ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
-import { removeCacheToken, storeCacheToken } from './cache-token-store';
 
 /**
  * True if an entity has a pending (in-flight or paused) mutation. When true, skip remote cache
@@ -142,18 +141,12 @@ export function patchEntityStxInCache(
   }
 }
 
-/** Store cache token for entity (live notifications only) */
-export function storeEntityCacheToken(entityType: ProductEntityType, entityId: string, token: string): void {
-  storeCacheToken(entityType, entityId, token);
-}
-
-/** Remove entity from detail cache and remove cache token */
+/** Remove entity from detail cache */
 function removeEntityFromCache(entityType: string, entityId: string): void {
   if (hasEntityQueryKeys(entityType)) {
     const keys = getEntityQueryKeys(entityType);
     queryClient.removeQueries({ queryKey: keys.detail.byId(entityId) });
   }
-  removeCacheToken(entityType, entityId);
 }
 
 /** Remove entity from detail cache, list caches, and token store. */

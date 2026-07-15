@@ -660,9 +660,8 @@ describe('elevatedRoles parity: home-scoped grants agree between engine and SQL'
 /*
  * Three-way mirror parity under the REAL app config: collection SQL ≍ single-row
  * engine check ≍ SSE dispatch predicate (`canReceiveEntityEvent`). The dispatch
- * decision doubles as cacheToken issuance (a signed cache token is a read
- * capability `appCache` honors without re-running predicates), so any divergence
- * is a security bug.
+ * decision is re-checked when a cache hit is served (`appCache` re-runs the same
+ * predicate against the cached row), so any divergence is a security bug.
  *
  * Config note: `canReceiveEntityEvent` evaluates through `checkPermission`, which
  * binds the app's REAL policies — there is no policy-injection seam, and adding

@@ -100,7 +100,7 @@
         "values": {
           "appCache": {
             "name": "app",
-            "description": "Entity-keyed TTL cache with forward-only token resolution"
+            "description": "Entity-keyed detail cache with per-request read authorization"
           },
           "httpCache": {
             "name": "http",
@@ -706,10 +706,6 @@
               }
             ]
           },
-          "cacheToken": {
-            "type": ["string", "null"],
-            "description": "HMAC-signed token for single-entity LRU cache access"
-          },
           "batchUntilSeq": {
             "type": ["integer", "null"],
             "description": "Last seq for a batched notification — client should fetch range"
@@ -760,7 +756,6 @@
           "seq",
           "channelId",
           "stx",
-          "cacheToken",
           "batchUntilSeq",
           "propagation"
         ],
@@ -776,7 +771,6 @@
           "channelType": null,
           "channelId": "967b4d7e-cf6a-480d-8005-cee1180d3e4a",
           "seq": 218,
-          "cacheToken": "gV9Umhb9C4l3EKNwaUqHHn49KRYOFMDb",
           "stx": {
             "mutationId": "725782b0-16f4-4b4f-9577-8ebfa336f370",
             "sourceId": "be2fe601-891c-4ade-b70e-12c6d41d18b9",
@@ -8849,7 +8843,7 @@
         "operationId": "getAttachment",
         "tags": ["attachments", "cella", "product"],
         "summary": "Get attachment",
-        "description": "Returns a single attachment by ID. Supports CDC cache via X-Cache-Token header.",
+        "description": "Returns a single attachment by ID. Served from the CDC-invalidated entity detail cache.",
         "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": ["appCache"],

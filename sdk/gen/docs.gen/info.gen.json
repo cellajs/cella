@@ -81,7 +81,7 @@
       "required": false,
       "kind": "middleware",
       "values": {
-        "appCache": { "name": "app", "description": "Entity-keyed TTL cache with forward-only token resolution" },
+        "appCache": { "name": "app", "description": "Entity-keyed detail cache with per-request read authorization" },
         "httpCache": { "name": "http", "description": "HTTP private cache: max-age=3600s" }
       }
     },

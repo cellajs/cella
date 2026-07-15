@@ -14,7 +14,6 @@ const mockEventWithData = (key: string): ActivityEvent =>
   ({
     ...mockActivity(key),
     rowData: {},
-    cacheToken: null,
     seq: null,
     batchUntilSeq: null,
     propagation: null,

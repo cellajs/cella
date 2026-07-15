@@ -22,7 +22,7 @@ app.openapi(entityRoutes.checkSlug, async (ctx) => {
 });
 
 app.openapi(entityRoutes.appStream, async (ctx) => {
-  const { user, memberships, isSystemAdmin, sessionToken } = ctx.var;
+  const { user, memberships, isSystemAdmin } = ctx.var;
   const organizationIds = new Set(memberships.map((m) => m.organizationId));
   const cursor = await getLatestUserActivityId(organizationIds);
 
@@ -36,7 +36,6 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
       channel: orgChannels[0] ?? '',
       stream,
       userId: user.id,
-      sessionToken,
       organizationIds,
       isSystemAdmin,
       memberships,

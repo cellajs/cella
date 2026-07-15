@@ -100,10 +100,10 @@ const attachmentRoutes = {
     method: 'get',
     path: '/{id}',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    xCache: [appCache()],
+    xCache: [appCache('attachment')],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Get attachment',
-    description: 'Returns a single attachment by ID. Supports CDC cache via X-Cache-Token header.',
+    description: 'Returns a single attachment by ID. Served from the CDC-invalidated entity detail cache.',
     request: {
       params: idInTenantOrgParamSchema,
     },

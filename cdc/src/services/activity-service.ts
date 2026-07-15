@@ -4,7 +4,6 @@ import { log } from '../lib/pino';
 import type { TraceContext } from '../lib/tracing';
 import type { CdcRowData } from '../types';
 import { wsClient } from '../network/websocket-client';
-import { nanoid } from 'shared/utils/nanoid';
 import { resolveChannelKey } from '../utils/compute-unified-deltas';
 import { pickPermissionRowData } from '../utils/permission-row-data';
 
@@ -31,7 +30,6 @@ export interface CdcOutboundMessage {
   activity: InsertActivityModel & { id?: string; seq?: number; batchUntilSeq?: number };
   rowData: CdcRowData;
   batchRows?: CdcBatchRow[];
-  cacheToken: string | null;
   _trace: TraceContext;
 }
 
@@ -55,7 +53,6 @@ export function generateActivityId(lsn: string): string {
 
 /**
  * Build activity payload for WebSocket transmission.
- * Generates cacheToken for product entities.
  */
 function buildActivityPayload(
   baseActivity: InsertActivityModel & { id?: string },
@@ -63,18 +60,15 @@ function buildActivityPayload(
   traceContext: TraceContext,
   seq?: number,
 ): CdcOutboundMessage {
-  const cacheToken = baseActivity.entityType && isProductEntity(baseActivity.entityType) ? nanoid() : null;
-
   // Channel entity IDs are already populated on the activity by createActivity;
   // rowData is already compacted by the handlers (compactRowData).
   const activity = { ...baseActivity, seq };
 
-  return { activity, rowData, cacheToken, _trace: traceContext };
+  return { activity, rowData, _trace: traceContext };
 }
 
 /**
  * Send CDC message (activity + row data) to API server via WebSocket.
- * Generates cacheToken for product entities.
  */
 export function sendMessageToApi(
   activity: InsertActivityModel,
@@ -169,9 +163,9 @@ function sendBatchGroupToApi(
     rowData: pickPermissionRowData(event.rowData) as CdcRowData,
   }));
 
-  // Batch messages carry no cache token: the backend invalidates each row's detail-cache
-  // entry from batchRows, so a later detail fetch re-enriches (see cdc-websocket handleMessage).
-  const payload: CdcOutboundMessage = { ...base, activity, batchRows, cacheToken: null };
+  // The backend invalidates each row's detail-cache entry from batchRows, so a later detail
+  // fetch re-enriches (see cdc-websocket handleMessage).
+  const payload: CdcOutboundMessage = { ...base, activity, batchRows };
 
   if (!wsClient.send(payload)) {
     log.warn('Failed to send batch message to API', { batchSize: events.length });
