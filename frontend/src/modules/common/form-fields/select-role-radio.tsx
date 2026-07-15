@@ -4,7 +4,7 @@ import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { cn } from '~/utils/cn';
 
 interface Props {
-  onValueChange: (value?: string) => void;
+  onValueChange: (value?: EntityRole) => void;
   value?: EntityRole;
   /** Restrict options to this channel entity's role vocabulary (e.g. course → staff/student/guest). */
   entityType?: ChannelEntityType;
@@ -22,7 +22,7 @@ export function SelectRoleRadio({ onValueChange, value, entityType, className }:
   return (
     <RadioGroup
       value={value}
-      onValueChange={(v) => onValueChange(v as string)}
+      onValueChange={(v) => onValueChange(v as EntityRole)}
       className={cn('inline-flex items-center gap-4', className)}
     >
       {roleOptions.map((role) => (
