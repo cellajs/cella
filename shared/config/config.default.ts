@@ -154,6 +154,14 @@ export const config = {
   enabledOAuthProviders: ['github'] as const,
   tokenTypes: ['email-verification', 'oauth-verification', 'invitation', 'confirm-mfa', 'magic'] as const,
 
+  /**
+   * Maximum concurrent regular sessions per user. On sign-in, the oldest sessions beyond the cap are
+   * hard-deleted (Hanko-style eviction). Keep comfortably above a realistic device count — this is
+   * bloat/abuse protection (credential-stuffing bursts, unbounded session accumulation), not a UX
+   * feature. `mfa` and `impersonation` sessions never count toward or get evicted by the cap.
+   */
+  maxSessionsPerUser: 10,
+
   totpConfig: {
     intervalInSeconds: 30,
     gracePeriodInSeconds: 60,

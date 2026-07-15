@@ -41,6 +41,20 @@ export const hashIpForUser = (ip: string, userId: string): string => {
 };
 
 /**
+ * Hash a device id bound to a specific user. Different users on the same physical device produce
+ * different hashes, preventing cross-user device correlation if the table leaks. Used for "have I
+ * seen this device for this user?" checks and same-device session grouping/replacement. The raw
+ * device id lives only in the (signed, httpOnly) `device-id` cookie — never persisted.
+ */
+export const hashDeviceIdForUser = (deviceId: string, userId: string): string => {
+  if (!deviceId || !userId) return '';
+  return createHmac('sha256', env.PII_HASH_SECRET)
+    .update(`session:device:${userId}:${deviceId}`)
+    .digest('hex')
+    .slice(0, 32);
+};
+
+/**
  * Hash a network subnet (IPv4 /24 or IPv6 /48) with a global namespace so the
  * same subnet always produces the same hash. Used for cross-user blocklist
  * matching. This differs from `hashIpForUser` by design.

@@ -15,7 +15,6 @@ import {
   mockUuid,
   withFakerSeed,
 } from '#/mocks';
-import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import type { InsertOrganizationModel, OrganizationModel } from '#/modules/organization/organization-db';
@@ -52,7 +51,6 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
     logoUrl: null,
     websiteUrl: `https://${slug}.example`,
     welcomeText: `Welcome to ${name}!`,
-    authStrategies: ['passkey'] as AuthStrategy[],
     chatSupport: faker.datatype.boolean(),
     publishedAt: createdAt,
     publicAt: null,

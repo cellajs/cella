@@ -1,8 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { EntityRole } from 'shared';
 import { baseDb as db } from '#/db/db';
-import { organizationsTable } from '#/modules/organization/organization-db';
-import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession } from '../helpers';
 import type { createAppClient } from '../test-client';
 
@@ -40,16 +38,12 @@ export async function createTestTenant(_call: Call, label: string): Promise<Test
 }
 
 /**
- * Creates a second organization in an existing tenant.
- * Returns the new organization (id, slug, tenantId).
+ * Creates a second, independent organization for cross-org tests. Under the 1 tenant = 1 organization
+ * invariant (D4) each org lives in its own tenant, so this provisions a fresh tenant + org; the
+ * returned organization carries its own `tenantId` (distinct from any existing tenant).
  */
-export async function createSecondOrg(tenantId: string) {
-  const orgData = mockOrganization();
-  const [organization] = await db
-    .insert(organizationsTable)
-    .values({ ...orgData, tenantId })
-    .returning();
-  return organization;
+export async function createSecondOrg() {
+  return createTestOrganization();
 }
 
 /**

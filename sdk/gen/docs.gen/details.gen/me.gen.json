@@ -673,6 +673,11 @@
                     "minimum": -2147483648,
                     "maximum": 2147483647
                   },
+                  "deviceIdHash": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 64
+                  },
                   "createdAt": { "type": "string", "required": true },
                   "expiresAt": { "type": "string", "required": true },
                   "isCurrent": { "type": "boolean", "required": true }
@@ -736,6 +741,7 @@
               "ipSubnetHash": null,
               "ipCountry": null,
               "ipAsn": null,
+              "deviceIdHash": "9ad4a3a84be73e1e9b96a7acab442bcb",
               "isCurrent": true
             }
           ],

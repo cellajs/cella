@@ -72,14 +72,14 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
   try {
     // Check if token exists and create a new single use token session
     const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
-    if (!tokenRecord.singleUseToken)
-      throw new AppError(500, 'invalid_token', 'error', {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { errorPagePath: '/auth/error' },
-      });
 
-    // Set cookie using token type as name. Content is single use token. Expires in 5 minutes or until used.
-    await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(5, 'm'));
+    // getValidToken returns a RAW singleUseToken only when it freshly minted one (won the CAS). On a
+    // tolerated re-click / concurrent re-submit it returns null here, meaning the caller's existing
+    // 5-minute cookie is still valid — so only (re)set the cookie on a fresh mint.
+    if (tokenRecord.singleUseToken) {
+      // Set cookie using token type as name. Content is single use token. Expires in 5 minutes or until used.
+      await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(5, 'm'));
+    }
 
     // If verification email, we process it immediately and redirect to app
     if (tokenRecord.type === 'email-verification') return handleEmailVerification(ctx, tokenRecord);

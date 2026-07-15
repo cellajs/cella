@@ -12,7 +12,6 @@ export const loadtestOrganization = (): InsertOrganizationModel => {
     slug: 'xbench-org',
     defaultLanguage: 'en',
     languages: ['en'],
-    authStrategies: [],
     chatSupport: false,
   };
 };

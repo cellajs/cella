@@ -23,8 +23,9 @@ setMockContext('script');
 // Seed scripts use admin connection for privileged operations
 const db = seedDb;
 
-const TENANTS_COUNT = 10;
-const ORGANIZATIONS_PER_TENANT = 10;
+// D4 — 1 tenant = 1 organization. One org per tenant; keep ~100 orgs by using 100 tenants.
+const TENANTS_COUNT = 100;
+const ORGANIZATIONS_PER_TENANT = 1;
 const MEMBERS_COUNT = 100;
 const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
 
@@ -47,7 +48,7 @@ export const organizationsSeed = async () => {
     return;
   }
 
-  // Create tenants (10 tenants, each will have 10 organizations)
+  // Create tenants (one organization each, per the 1 tenant = 1 org invariant)
   const tenantRecords = Array.from({ length: TENANTS_COUNT }, (_, i) => ({
     name: `Tenant ${i + 1}`,
     createdBy: defaultAdminUser.id,
@@ -72,11 +73,11 @@ export const organizationsSeed = async () => {
   }));
   await db.insert(domainsTable).values(domainRecords).onConflictDoNothing();
 
-  // Make organizations - distribute across tenants (10 per tenant)
+  // Make organizations - one per tenant (1 tenant = 1 org)
   // Set createdBy to admin so system admin can access all orgs via RLS (createdBy match)
   const organizationRecords = mockMany(mockOrganization, TENANTS_COUNT * ORGANIZATIONS_PER_TENANT).map((org, i) => ({
     ...org,
-    tenantId: tenants[Math.floor(i / ORGANIZATIONS_PER_TENANT)].id, // Assign 10 orgs per tenant
+    tenantId: tenants[Math.floor(i / ORGANIZATIONS_PER_TENANT)].id, // one org per tenant
     createdBy: defaultAdminUser.id,
   }));
   const organizations = await db
@@ -141,7 +142,7 @@ export const organizationsSeed = async () => {
       .onConflictDoNothing();
   }
 
-  succeedSpinner(`Created ${TENANTS_COUNT} tenants with ${ORGANIZATIONS_PER_TENANT} organizations each (${TENANTS_COUNT * ORGANIZATIONS_PER_TENANT} total), ${MEMBERS_COUNT} members per org`);
+  succeedSpinner(`Created ${TENANTS_COUNT} tenants, one organization each (${TENANTS_COUNT * ORGANIZATIONS_PER_TENANT} total), ${MEMBERS_COUNT} members per org`);
 };
 
 /**

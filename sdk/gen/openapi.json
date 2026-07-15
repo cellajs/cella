@@ -1259,6 +1259,10 @@
                   "minimum": -2147483648,
                   "maximum": 2147483647
                 },
+                "deviceIdHash": {
+                  "type": ["string", "null"],
+                  "maxLength": 64
+                },
                 "createdAt": {
                   "type": "string"
                 },
@@ -1282,6 +1286,7 @@
                 "ipSubnetHash",
                 "ipCountry",
                 "ipAsn",
+                "deviceIdHash",
                 "createdAt",
                 "expiresAt",
                 "isCurrent"
@@ -1359,6 +1364,7 @@
               "ipSubnetHash": null,
               "ipCountry": null,
               "ipAsn": null,
+              "deviceIdHash": "9ad4a3a84be73e1e9b96a7acab442bcb",
               "isCurrent": true
             }
           ],
@@ -1556,6 +1562,13 @@
             },
             "required": ["quotas", "rateLimits"]
           },
+          "authStrategies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+            }
+          },
           "createdBy": {
             "type": ["string", "null"],
             "format": "uuid"
@@ -1588,6 +1601,7 @@
           "name",
           "status",
           "restrictions",
+          "authStrategies",
           "createdBy",
           "subscriptionId",
           "subscriptionStatus",
@@ -1744,13 +1758,6 @@
             "type": ["string", "null"],
             "maxLength": 1000000
           },
-          "authStrategies": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
-            }
-          },
           "chatSupport": {
             "type": "boolean"
           },
@@ -1844,7 +1851,6 @@
           "logoUrl",
           "websiteUrl",
           "welcomeText",
-          "authStrategies",
           "chatSupport",
           "included"
         ],
@@ -1867,7 +1873,6 @@
           "logoUrl": null,
           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-          "authStrategies": ["passkey"],
           "chatSupport": true,
           "publishedAt": "2024-12-25T15:04:42.969Z",
           "publicAt": null,
@@ -3994,6 +3999,7 @@
                       "ipSubnetHash": null,
                       "ipCountry": null,
                       "ipAsn": null,
+                      "deviceIdHash": "9ad4a3a84be73e1e9b96a7acab442bcb",
                       "isCurrent": true
                     }
                   ],
@@ -5552,6 +5558,13 @@
                     "type": ["string", "null"],
                     "maxLength": 255
                   },
+                  "authStrategies": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                    }
+                  },
                   "restrictions": {
                     "type": "object",
                     "properties": {
@@ -7095,7 +7108,6 @@
                           "logoUrl": null,
                           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-                          "authStrategies": ["passkey"],
                           "chatSupport": true,
                           "publishedAt": "2024-12-25T15:04:42.969Z",
                           "publicAt": null,
@@ -7178,7 +7190,6 @@
                       "logoUrl": null,
                       "websiteUrl": "https://conroy-kerluke-and-rowe.example",
                       "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
-                      "authStrategies": ["passkey"],
                       "chatSupport": false,
                       "publishedAt": "2024-04-18T21:12:59.543Z",
                       "publicAt": null,
@@ -7236,7 +7247,6 @@
                       "logoUrl": null,
                       "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
                       "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
-                      "authStrategies": ["passkey"],
                       "chatSupport": false,
                       "publishedAt": "2024-02-24T16:36:46.247Z",
                       "publicAt": null,
@@ -7547,7 +7557,6 @@
                       "logoUrl": null,
                       "websiteUrl": "https://anderson-ferry.example",
                       "welcomeText": "Welcome to Anderson - Ferry!",
-                      "authStrategies": ["passkey"],
                       "chatSupport": true,
                       "publishedAt": "2024-11-21T01:19:53.533Z",
                       "publicAt": null,
@@ -7605,7 +7614,6 @@
                       "logoUrl": null,
                       "websiteUrl": "https://wiegand-harber-and-stark-abshire.example",
                       "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
-                      "authStrategies": ["passkey"],
                       "chatSupport": false,
                       "publishedAt": "2024-10-29T04:35:17.725Z",
                       "publicAt": null,
@@ -7756,7 +7764,6 @@
                   "logoUrl": null,
                   "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                   "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-                  "authStrategies": ["passkey"],
                   "chatSupport": true,
                   "publishedAt": "2024-12-25T15:04:42.969Z",
                   "publicAt": null,
@@ -7924,13 +7931,6 @@
                     "type": ["string", "null"],
                     "maxLength": 1000000
                   },
-                  "authStrategies": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
-                    }
-                  },
                   "chatSupport": {
                     "type": "boolean"
                   }
@@ -7965,7 +7965,6 @@
                   "logoUrl": null,
                   "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                   "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-                  "authStrategies": ["passkey"],
                   "chatSupport": true,
                   "publishedAt": "2024-12-25T15:04:42.969Z",
                   "publicAt": null,

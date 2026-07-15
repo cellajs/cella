@@ -289,6 +289,7 @@ export type MeAuthData = {
     ipSubnetHash: string | null;
     ipCountry: string | null;
     ipAsn: number | null;
+    deviceIdHash: string | null;
     createdAt: string;
     expiresAt: string;
     isCurrent: boolean;
@@ -365,6 +366,7 @@ export type Tenant = {
       apiPointsPerHour: number;
     };
   };
+  authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic'>;
   createdBy: string | null;
   subscriptionId: string | null;
   subscriptionStatus: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
@@ -422,7 +424,6 @@ export type Organization = {
   logoUrl: string | null;
   websiteUrl: string | null;
   welcomeText: string | null;
-  authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic'>;
   chatSupport: boolean;
   included: {
     membership?: MembershipBase;
@@ -2733,6 +2734,7 @@ export type UpdateTenantData = {
     subscriptionId?: string | null;
     subscriptionStatus?: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
     subscriptionPlan?: string | null;
+    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic'>;
     /**
      * Partial restrictions override
      */
@@ -3738,7 +3740,6 @@ export type UpdateOrganizationData = {
     bannerUrl?: string | null;
     websiteUrl?: string | null;
     welcomeText?: string | null;
-    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic'>;
     chatSupport?: boolean;
   };
   path: {

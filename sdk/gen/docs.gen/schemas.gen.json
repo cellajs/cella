@@ -681,6 +681,11 @@
                 "minimum": -2147483648,
                 "maximum": 2147483647
               },
+              "deviceIdHash": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 64
+              },
               "createdAt": { "type": "string", "required": true },
               "expiresAt": { "type": "string", "required": true },
               "isCurrent": { "type": "boolean", "required": true }
@@ -749,6 +754,7 @@
           "ipSubnetHash": null,
           "ipCountry": null,
           "ipAsn": null,
+          "deviceIdHash": "9ad4a3a84be73e1e9b96a7acab442bcb",
           "isCurrent": true
         }
       ],
@@ -1145,12 +1151,6 @@
           "required": true,
           "maxLength": 1000000
         },
-        "authStrategies": {
-          "type": "array",
-          "required": true,
-          "itemType": "string",
-          "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
-        },
         "chatSupport": { "type": "boolean", "required": true },
         "included": {
           "type": "object",
@@ -1284,7 +1284,6 @@
       "logoUrl": null,
       "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
       "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-      "authStrategies": ["passkey"],
       "chatSupport": true,
       "publishedAt": "2024-12-25T15:04:42.969Z",
       "publicAt": null,
@@ -1396,6 +1395,12 @@
               }
             }
           }
+        },
+        "authStrategies": {
+          "type": "array",
+          "required": true,
+          "itemType": "string",
+          "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
         },
         "createdBy": {
           "type": ["string", "null"],

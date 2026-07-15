@@ -50,13 +50,19 @@ describe('Organization member previews (include=members)', async () => {
     return { status: result.response.status, items: data?.items ?? [] };
   };
 
-  const insertMembership = async (userId: string, orgId: string, role: 'admin' | 'member', createdAt: string) => {
+  const insertMembership = async (
+    userId: string,
+    orgId: string,
+    role: 'admin' | 'member',
+    createdAt: string,
+    tenantId: string = tenant.tenantId,
+  ) => {
     await db.insert(membershipsTable).values({
       id: generateId(),
       userId,
       channelId: orgId,
       organizationId: orgId,
-      tenantId: tenant.tenantId,
+      tenantId,
       channelType: 'organization',
       role,
       displayOrder: 1,
@@ -85,10 +91,11 @@ describe('Organization member previews (include=members)', async () => {
     memberUserId = member.id;
     await insertMembership(member.id, tenant.organization.id, 'member', daysAgo(2));
 
-    // Second org in the same tenant with only the caller as admin (grouping check)
-    const secondOrg = await createSecondOrg(tenant.tenantId);
+    // A second org (its own tenant, per 1:1) with only the caller as admin — the cross-org grouping
+    // check. The global org list returns the caller's orgs across tenants, so both still appear.
+    const secondOrg = await createSecondOrg();
     secondOrgId = secondOrg.id;
-    await insertMembership(tenant.user.id, secondOrg.id, 'admin', daysAgo(9));
+    await insertMembership(tenant.user.id, secondOrg.id, 'admin', daysAgo(9), secondOrg.tenantId);
   });
 
   afterAll(async () => {

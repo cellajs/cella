@@ -40,6 +40,10 @@ export const sessionsTable = snakeCase.table(
     ipSubnetHash: varchar({ length: 64 }),
     ipCountry: varchar({ length: 2 }),
     ipAsn: integer(),
+    // Per-user HMAC of the browser's long-lived `device-id` cookie. Groups a user's sessions by
+    // device and answers "known device for this user?"; drives same-device session replacement.
+    // Null for mfa/impersonation sessions and for legacy rows created before this column existed.
+    deviceIdHash: varchar({ length: 64 }),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,
   },
@@ -49,6 +53,7 @@ export const sessionsTable = snakeCase.table(
     index('sessions_user_id_idx').on(table.userId),
     index('sessions_user_id_ip_hash_idx').on(table.userId, table.ipHash),
     index('sessions_ip_subnet_hash_idx').on(table.ipSubnetHash),
+    index('sessions_user_id_device_id_hash_idx').on(table.userId, table.deviceIdHash),
   ],
 );
 

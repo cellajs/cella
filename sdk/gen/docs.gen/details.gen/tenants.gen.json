@@ -49,6 +49,12 @@
                       }
                     }
                   },
+                  "authStrategies": {
+                    "type": "array",
+                    "required": true,
+                    "itemType": "string",
+                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                  },
                   "createdBy": {
                     "type": ["string", "null"],
                     "required": true,
@@ -202,6 +208,12 @@
                 }
               }
             },
+            "authStrategies": {
+              "type": "array",
+              "required": true,
+              "itemType": "string",
+              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+            },
             "createdBy": {
               "type": ["string", "null"],
               "required": true,
@@ -345,6 +357,12 @@
                 }
               }
             },
+            "authStrategies": {
+              "type": "array",
+              "required": true,
+              "itemType": "string",
+              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+            },
             "createdBy": {
               "type": ["string", "null"],
               "required": true,
@@ -483,6 +501,12 @@
                 }
               }
             },
+            "authStrategies": {
+              "type": "array",
+              "required": true,
+              "itemType": "string",
+              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+            },
             "createdBy": {
               "type": ["string", "null"],
               "required": true,
@@ -595,6 +619,12 @@
             "type": ["string", "null"],
             "required": false,
             "maxLength": 255
+          },
+          "authStrategies": {
+            "type": "array",
+            "required": false,
+            "itemType": "string",
+            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
           },
           "restrictions": {
             "type": "object",

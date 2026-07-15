@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { nanoid } from 'shared/utils/nanoid';
 import type { Env } from '#/core/context';
@@ -61,18 +61,32 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
     if (!singleUseToken) throw new AppError(401, `${tokenRecord.type}_expired`, 'warn');
   }
 
-  // Create single use session token, mark token as invoked, and update expiresAt to 5 min from now
+  // Create single use session token, mark token as invoked, and update expiresAt to 5 min from now.
+  // The transition is a compare-and-swap on `invokedAt IS NULL` so two concurrent redemptions of the
+  // same primary token cannot both proceed to mint a session — exactly one wins the update.
   if (invokeToken) {
+    const rawSingleUseToken = nanoid(40);
     const [invokedTokenRecord] = await db
       .update(tokensTable)
       .set({
-        singleUseToken: nanoid(40),
+        // Store the HASH at rest; the raw value lives only in the caller's short-lived cookie, so a
+        // DB read never reveals a usable single-use token.
+        singleUseToken: encodeLowerCased(rawSingleUseToken),
         invokedAt: new Date().toISOString(),
         expiresAt: createDate(new TimeSpan(5, 'm')),
       })
-      .where(eq(tokensTable.id, tokenRecord.id))
+      .where(and(eq(tokensTable.id, tokenRecord.id), isNull(tokensTable.invokedAt)))
       .returning();
-    return invokedTokenRecord;
+
+    // CAS won: hand the RAW single-use token back so the caller can set the cookie.
+    if (invokedTokenRecord) return { ...invokedTokenRecord, singleUseToken: rawSingleUseToken };
+
+    // CAS lost → the token was already invoked (a concurrent double-submit or a legitimate re-click).
+    // Tolerate only if the caller still presents a valid single-use cookie; otherwise it is spent.
+    // Return without a raw `singleUseToken` (null) so the caller does NOT mint/re-set a cookie.
+    const singleUseCookie = await getAuthCookie(ctx, tokenType);
+    if (!singleUseCookie) throw new AppError(401, `${tokenRecord.type}_expired`, 'warn');
+    return { ...tokenRecord, singleUseToken: null };
   }
 
   return tokenRecord;

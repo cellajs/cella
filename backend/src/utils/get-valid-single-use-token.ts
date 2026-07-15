@@ -6,6 +6,7 @@ import { baseDb as db } from '#/db/db';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type TokenModel, tokensTable } from '#/modules/auth/tokens-db';
 import { isExpiredDate } from '#/utils/is-expired-date';
+import { encodeLowerCased } from '#/utils/oslo';
 
 type Props = {
   ctx: Context;
@@ -20,11 +21,14 @@ export const getValidSingleUseToken = async ({ ctx, tokenType }: Props): Promise
   const singleUseToken = await getAuthCookie(ctx, tokenType);
   if (!singleUseToken) throw new AppError(400, 'invalid_token', 'warn');
 
-  // Get token row that matches type and singleUseToken value
+  // The cookie holds the raw token; the DB stores only its hash. Hash before lookup so the (type,
+  // singleUseToken) index still serves the query. This flow is read-many (does not consume on read),
+  // so the row is left intact for subsequent reads within the same invitation/oauth flow.
+  const hashedSingleUseToken = encodeLowerCased(singleUseToken);
   const [tokenRecord] = await db
     .select()
     .from(tokensTable)
-    .where(and(eq(tokensTable.type, tokenType), eq(tokensTable.singleUseToken, singleUseToken)))
+    .where(and(eq(tokensTable.type, tokenType), eq(tokensTable.singleUseToken, hashedSingleUseToken)))
     .limit(1);
 
   if (!tokenRecord) throw new AppError(404, `${tokenType}_not_found`, 'error');
