@@ -30,10 +30,8 @@ const isUserSeeded = async () => {
 };
 
 /**
- * Seed an admin user to access app first time.
- * Works in all environments:
- * - ADMIN_EMAIL env var takes precedence when set; otherwise falls back to the fixture default (admin-test@cellajs.com)
- * - Production: ADMIN_EMAIL is required
+ * Seed an admin user for first-time app access. ADMIN_EMAIL takes precedence when set, otherwise
+ * falls back to the fixture default (admin-test@cellajs.com); ADMIN_EMAIL is required in production.
  */
 export const initSeed = async () => {
   // Determine admin email: env var takes precedence, then fixture default

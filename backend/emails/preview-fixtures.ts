@@ -15,14 +15,10 @@ import {
 import type { EmailTemplateDef } from './types';
 
 /**
- * A single email preview fixture: enough sample data to render one template.
- *
- * - `statics` are the props shared across all recipients (passed to `translate`).
- * - `recipient` are the per-recipient display props the component reads (the
- *   values the mailer turns into Brevo `{{params.x}}` placeholders at send time).
- *
- * Sample data lives on each template's `preview` field (type-checked against
- * the template's own props). This registry maps the preview slug to its template.
+ * `statics` are props shared across all recipients (passed to `translate`);
+ * `recipient` are per-recipient display props — the values the mailer turns into
+ * Brevo `{{params.x}}` placeholders at send time. Sample data lives on each
+ * template's `preview` field, type-checked against the template's own props.
  */
 export interface EmailPreviewFixture {
   // Template defs are heterogeneous (each binds its own statics/recipient shape).

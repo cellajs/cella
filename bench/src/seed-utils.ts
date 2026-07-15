@@ -4,19 +4,14 @@ import { type BenchSeed, getBenchSeedCleanupWhere, type TableBenchSeed } from '.
 
 const BATCH_SIZE = 200;
 
-/**
- * Convert a camelCase record key to its snake_case Postgres column name.
- * Inverse of the transform in `recordToRow`. Relies on the DB using snake_case
- * columns (all bench tables do).
- */
+/** snake_case column name for a camelCase key; inverse of `recordToRow`. Assumes snake_case DB columns (all bench tables). */
 function camelToSnake(key: string): string {
   return key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
 }
 
 /**
- * Convert a camelCase record to a snake_case value array for SQL insertion.
- * Columns listed in `pgArrayColumns` are kept as native JS arrays (pg driver converts them).
- * All other arrays/objects are JSON-stringified for json/jsonb columns.
+ * Value array for SQL insertion. Columns in `pgArrayColumns` stay native JS arrays
+ * (pg driver converts them); other arrays/objects are JSON-stringified for json/jsonb.
  */
 function recordToRow(record: Record<string, unknown>, columns: string[], pgArrayColumns?: Set<string>): unknown[] {
   return columns.map((col) => {

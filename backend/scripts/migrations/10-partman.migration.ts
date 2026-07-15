@@ -115,13 +115,10 @@ const partitionConfigs: PartitionConfig[] = [
 ];
 
 /**
- * Generate SQL for a single table partition setup using dynamic SQL.
- * Uses EXECUTE to avoid parser errors in environments that don't support PARTITION BY.
- *
- * Each table conversion is idempotent: checks if already partitioned before converting.
- *
- * For tables with createTableSql = null (like activities), uses PostgreSQL's LIKE clause
- * to clone the existing table structure. This makes it robust to dynamic columns.
+ * Uses EXECUTE (dynamic SQL) to avoid parser errors in environments that don't support PARTITION BY.
+ * Idempotent: checks if already partitioned before converting.
+ * For tables with createTableSql = null (like activities), uses PostgreSQL's LIKE clause to clone
+ * the existing table structure, making it robust to dynamic columns.
  */
 function generateTablePartitionSql(config: PartitionConfig): string {
   // Shared idempotency guard: skip if table is already partitioned.

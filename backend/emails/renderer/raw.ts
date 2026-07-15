@@ -32,8 +32,6 @@ export function unescapeForRawComponent(input: string): string {
 /**
  * Returns a rehype plugin that replaces `<jsx-email-raw><!--...--></jsx-email-raw>`
  * elements with a raw HTML node using the original, unescaped content.
- *
- * Mirrors the async factory pattern used by `getMovePlugin()`.
  */
 export const getRawPlugin = async () => {
   return function rawPlugin() {

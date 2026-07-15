@@ -2,11 +2,6 @@ import type { InsertMembershipModel } from '#/modules/memberships/memberships-db
 import { mockChannelMembership } from '#/modules/memberships/memberships-mocks';
 import { ORG_ID, TENANT_ID, userId } from './ids';
 
-/**
- * Generate organization-level membership for a load-test user, using backend
- * mocks for a type-safe entity. Runs in Node.js (data-setup), not in Artillery
- * scenarios.
- */
 export const loadtestOrgMembership = (userIndex: number): InsertMembershipModel => {
   const membership = mockChannelMembership(
     'organization',

@@ -16,11 +16,9 @@ const withAppName = (text: string) => text.replaceAll('{{appName}}', appName);
 const { welcomeEmail } = welcomeConfig;
 
 /**
- * Founder-style welcome email sent to new users.
- *
- * The marketing copy (intro, getting-started steps, P.S., founder details) is
- * fork-customizable in `json/text-blocks.json` under `welcomeEmail`, so forks can
- * tailor the message without touching code or translations.
+ * Founder-style welcome email. The marketing copy (intro, getting-started steps,
+ * P.S., founder details) is fork-customizable in `json/text-blocks.json` under
+ * `welcomeEmail`, so forks can tailor it without touching code or translations.
  */
 export const welcomeEmailTemplate = defineEmailTemplate<Record<string, never>, WelcomeRecipient>()({
   translate(lng) {

@@ -13,10 +13,10 @@ export const LOADTEST_ID_PREFIX = 'lt-';
 let currentMockContext: MockContext = 'example';
 
 /**
- * Sets the mock context for ID generation.
- * - 'example': No prefix (for OpenAPI examples)
- * - 'script': 'gen-' prefix (for seed scripts, CDC filtering)
- * - 'loadtest': 'lt-' prefix (for load-test data, never collides with real/seed data)
+ * ID prefix per context:
+ * - 'example': none (OpenAPI examples)
+ * - 'script': 'gen-' (seed scripts, CDC filtering)
+ * - 'loadtest': 'lt-' (load-test data, never collides with real/seed data)
  */
 export const setMockContext = (context: MockContext) => {
   currentMockContext = context;

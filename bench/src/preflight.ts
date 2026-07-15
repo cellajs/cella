@@ -33,10 +33,9 @@ export async function isServiceHealthy(url: string): Promise<boolean> {
 }
 
 /**
- * One-shot readiness probe: Postgres reachable and every enabled service
- * healthy. Shared between the bench CLI and the Vitest smoke test. Unlike the
- * CLI's `assertInfrastructureReady`, this does not poll or exit: it returns
- * `false` immediately so callers can skip gracefully.
+ * One-shot readiness probe (Postgres + every enabled service), shared by the bench
+ * CLI and the Vitest smoke test. Unlike `assertInfrastructureReady`, it never polls
+ * or exits — returns `false` immediately so callers can skip gracefully.
  */
 export async function isInfrastructureReady(): Promise<boolean> {
   if (!(await isPostgresReady())) return false;

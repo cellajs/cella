@@ -11,8 +11,6 @@ interface TableSpec {
 }
 
 /**
- * Build per-table publication specs.
- *
  * Publication column lists are incompatible with REPLICA IDENTITY FULL (PG error 42P10).
  * Since the CDC worker needs REPLICA IDENTITY FULL for old-row diffs, we publish all columns.
  * Large columns are still stripped from WS payloads via cdcExcludeColumnLengthThreshold in the activity service.

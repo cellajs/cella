@@ -17,9 +17,9 @@ const __dirname = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url))
 const SEEDS_DIR = resolve(__dirname, 'seeds');
 
 /**
- * Auto-import every `*.bench.ts` module under seeds/ so each self-registers
- * its seed target (core data + any fork-defined entities/resources). No barrel
- * or data-setup edit is needed to add a new load-test table.
+ * Auto-import every `*.bench.ts` under seeds/ so each self-registers its seed
+ * target — a fork adds a load-test table by dropping in one file, no barrel or
+ * data-setup edit.
  */
 async function loadBenchEntities(): Promise<void> {
   for (const file of readdirSync(SEEDS_DIR)
@@ -109,9 +109,8 @@ async function cleanLoadtestData(pool: pg.Pool) {
 // ── Seed ───────────────────────────────────────────────────────────────────
 
 /**
- * Seeds deterministic bench data into the dev database using mock generators
- * from backend/mocks for type-safe, schema-aligned rows. Idempotent: cleans
- * existing bench data before re-seeding. Run with `pnpm db:seed`.
+ * Seeds deterministic bench data via backend/mocks generators (type-safe rows).
+ * Idempotent: cleans existing bench data before re-seeding. Run with `pnpm db:seed`.
  */
 async function seed() {
   const pool = new Pool({ connectionString: DB_URL, statement_timeout: QUERY_TIMEOUT_MS });

@@ -33,9 +33,8 @@ export function loadtestEmail(index: number) {
 }
 
 /**
- * Generate a session row + cookie string for a load-test user.
- * Token is deterministic per index so the Artillery processor can reconstruct
- * the cookie without querying the DB.
+ * Token is deterministic per index so the Artillery processor can reconstruct the
+ * cookie without querying the DB.
  */
 export function loadtestSession(index: number, hashedToken: string, expiresAt: string) {
   return {

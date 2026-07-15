@@ -6,8 +6,7 @@ import { attachmentId, CORE_ID_VARIANTS, ORG_ID, TENANT_ID, userId } from './ids
 export const TOTAL_ATTACHMENTS = 500;
 
 /**
- * Generate a load-test attachment row by index. Reference implementation
- * for the fork seed pattern.
+ * Reference implementation for the fork seed pattern.
  *
  * @see seeds/README.md
  */

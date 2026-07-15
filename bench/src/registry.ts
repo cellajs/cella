@@ -34,9 +34,9 @@ export interface TableBenchSeed {
    */
   cleanupWhere?: string;
   /**
-   * Produce rows to insert. `now` is an ISO timestamp shared across the seed run.
-   * INSERT columns are derived from each row's keys (camelCase → snake_case), so
-   * generators should return typed insert rows whose keys are real columns.
+   * Produce rows to insert; `now` is one ISO timestamp shared across the seed run.
+   * INSERT columns derive from each row's keys (camelCase → snake_case), so keys
+   * must be real columns.
    */
   rows: (ctx: BenchSeedContext) => Record<string, unknown>[];
 }
@@ -70,11 +70,9 @@ export const getBenchSeedCleanupWhere = (seed: TableBenchSeed): string => {
 };
 
 /**
- * Registers a bench seed target as an import side effect (mirrors the cella
- * module/tag registry pattern in `shared/src/module-registry.ts`); `data-setup.ts`
- * auto-imports every `*.bench.ts` file under seeds/, so a fork adds a load-test
- * table by dropping in one file. Idempotent by name; rejects malformed or
- * duplicate id variants.
+ * Registers a bench seed as an import side effect (mirrors the module/tag registry
+ * in `shared/src/module-registry.ts`) — a fork adds a load-test table by dropping in
+ * one `*.bench.ts` file. Idempotent by name; rejects malformed or duplicate id variants.
  *
  * @see seeds/README.md
  */

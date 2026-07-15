@@ -1,10 +1,10 @@
 /**
  * Bench smoke test: runs every scenario through the real CLI in `--short` mode
- * (1s / 1 VU, no thresholds, no baselines) to catch scenarios that break, e.g.
- * after a route/schema change. It is a smoke check, not a performance gate.
+ * (1s/1 VU, no thresholds/baselines) to catch scenarios that break after a
+ * route/schema change. A smoke check, not a performance gate.
  *
- * Skips itself when the local stack is not reachable so the monorepo `vitest`
- * run does not require `pnpm dev` to be running.
+ * Skips itself when the local stack is unreachable, so the monorepo `vitest` run
+ * doesn't require `pnpm dev`.
  */
 
 import { execFileSync } from 'node:child_process';

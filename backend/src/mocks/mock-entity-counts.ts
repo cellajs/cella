@@ -18,9 +18,8 @@ export type MockEntityCounts = {
 };
 
 /**
- * Generates mock entity counts dynamically based on appConfig.entityTypes.
- * Excludes 'user' and 'organization' to match fullCountsSchema pattern.
- * @param key - Key for deterministic generation.
+ * Excludes 'user' and 'organization' to match the fullCountsSchema pattern.
+ * @param key - seeds deterministic generation.
  */
 export const generateMockEntityCounts = (key: string): MockEntityCounts => {
   const generator = (): MockEntityCounts =>

@@ -2,9 +2,8 @@
 export type EmailRecipient = { email: string; lng: string };
 
 /**
- * Per-recipient display props a component reads (the values the mailer turns
- * into Brevo `{{params.x}}` placeholders at send time). Derived from the
- * recipient type minus the always-present `EmailRecipient` base fields.
+ * Per-recipient display props a component reads — the values the mailer turns
+ * into Brevo `{{params.x}}` placeholders at send time.
  */
 export type RecipientProps<TRecipient extends EmailRecipient> = {
   [K in Exclude<keyof TRecipient, keyof EmailRecipient>]: string;
@@ -22,10 +21,9 @@ export interface EmailPreviewData<TStatic, TRecipient extends EmailRecipient = E
 }
 
 /**
- * Email template definition (runtime contract used by the mailer).
- *
- * @template TStatic     - Props shared across all recipients (e.g. senderName, entityName)
- * @template TRecipient  - Per-recipient props (must extend EmailRecipient)
+ * Email template definition — the runtime contract the mailer consumes.
+ * `TStatic`: props shared across recipients (e.g. senderName, entityName);
+ * `TRecipient` extends `EmailRecipient` with per-recipient props.
  */
 export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient extends EmailRecipient = EmailRecipient> {
   /** Pre-compute all translated strings (+ pass-through statics the component needs). Must include `subject`. */
@@ -39,16 +37,14 @@ export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient ex
 }
 
 /**
- * Type-safe factory for email templates.
+ * Type-safe factory for email templates: infers the shape returned by
+ * `translate()` and enforces that `component()` receives exactly those props
+ * (plus per-recipient placeholder strings), catching props a component
+ * destructures that `translate()` never returns.
  *
- * Infers the shape returned by `translate()` and enforces that `component()`
- * receives exactly those props (plus any per-recipient placeholder strings).
- * This prevents mismatches where a component destructures a prop that
- * `translate()` never returns.
- *
- * Uses a curried call because TypeScript cannot partially infer type params:
- * the first call binds TStatic / TRecipient (caller-specified), while the
- * second call lets TS infer TTranslated from the `translate` return type.
+ * Curried because TypeScript cannot partially infer type params: the first call
+ * binds TStatic / TRecipient (caller-specified), the second infers TTranslated
+ * from `translate`'s return type.
  *
  * @example
  * ```ts

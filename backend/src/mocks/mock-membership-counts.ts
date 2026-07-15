@@ -14,9 +14,7 @@ export type MockMembershipCounts = {
 };
 
 /**
- * Generates mock membership counts for an organization.
- * Dynamically generates counts for each entity role defined in config.
- * @param key - Key for deterministic generation.
+ * @param key - seeds deterministic generation.
  */
 export const generateMockMembershipCounts = (key: string): MockMembershipCounts => {
   const generator = (): MockMembershipCounts => {

@@ -78,8 +78,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('CDC Setup Verification', () =
 });
 
 /**
- * Full CDC flow tests.
- * These start the CDC worker pipeline in-process so the suite runs in `pnpm test`
+ * Starts the CDC worker pipeline in-process so the suite runs in `pnpm test`
  * without depending on a separately running worker.
  */
 describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {

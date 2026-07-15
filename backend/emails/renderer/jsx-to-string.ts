@@ -22,9 +22,8 @@ const renderSuspense = async (children: ReactNode[]): ReturnType<typeof jsxToStr
 };
 
 /**
- * Convert a JSX element to a string.
- * This is a slightly modified version of Hyperons's
- * [`renderToString`](https://github.com/i-like-robots/hyperons/blob/main/src/render-to-string.js) function.
+ * Slightly modified version of Hyperons's
+ * [`renderToString`](https://github.com/i-like-robots/hyperons/blob/main/src/render-to-string.js).
  */
 export async function jsxToString(element: ReactNode): Promise<string> {
   if (element == null) {

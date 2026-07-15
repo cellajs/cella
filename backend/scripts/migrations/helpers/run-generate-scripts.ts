@@ -12,12 +12,8 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Run all generation scripts.
- *
- * Scripts are executed in filename order (drizzle first via 00- prefix,
- * then migration scripts via 10- prefix).
- *
- * A 1-second delay is added between migration scripts to ensure unique timestamps.
+ * Scripts run in filename order (drizzle first via 00- prefix, then migration scripts via 10-).
+ * A 1-second delay between migration scripts ensures unique timestamps.
  */
 export async function runGenerateScripts(scripts: GenerateScript[]): Promise<void> {
   console.info('');

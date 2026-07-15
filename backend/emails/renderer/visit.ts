@@ -3,12 +3,11 @@ import type { Element, Parents, Root } from 'hast';
 type ElementVisitor = (node: Element, index: number | undefined, parent: Parents | undefined) => void;
 
 /**
- * Minimal, dependency-free replacement for `unist-util-visit`, scoped to the
- * only thing the email render pipeline needs: a depth-first, pre-order walk that
- * calls `visitor` for every `element` node with its index and parent.
+ * Dependency-free replacement for `unist-util-visit`: a depth-first, pre-order
+ * walk calling `visitor` for every `element` node with its index and parent.
  *
- * Visitors must not mutate the tree during the walk. Plugins collect
- * matches first and mutate afterwards, so this stays safe and simple.
+ * Visitors must not mutate the tree mid-walk — plugins collect matches first,
+ * then mutate afterwards.
  */
 export const visitElements = (tree: Root, visitor: ElementVisitor): void => {
   const walk = (node: Root | Element, index: number | undefined, parent: Parents | undefined): void => {

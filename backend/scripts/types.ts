@@ -1,7 +1,6 @@
 /**
- * Type of generation script.
- * - 'drizzle': Schema-to-SQL generation (drizzle-kit generate)
- * - 'migration': Custom migration script that upserts to drizzle folder
+ * - 'drizzle': schema-to-SQL generation (drizzle-kit generate)
+ * - 'migration': custom migration script that upserts to the drizzle folder
  */
 export type GenerateScriptType = 'drizzle' | 'migration';
 

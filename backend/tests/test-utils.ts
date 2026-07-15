@@ -54,9 +54,8 @@ export function mockFetchRequest() {
 }
 
 /**
- * Clear the database by truncating all test-related tables.
- * Uses TRUNCATE CASCADE which is much faster than individual DELETEs.
- * Also resets mock enforcers to prevent conflicts with unique values.
+ * Clear the database with TRUNCATE CASCADE (much faster than per-table DELETEs). Also resets
+ * mock enforcers so unique values don't conflict across tests.
  */
 export async function clearDatabase() {
   // Reset mock enforcers so unique values don't conflict across tests
@@ -69,7 +68,6 @@ export async function clearDatabase() {
 }
 
 /**
- * Mock factory for rate limiter core module.
  * vi.mock() calls must be at the top level of each test file because Vitest hoists them.
  * Use at top level: vi.mock('#/middlewares/rate-limiter/core', rateLimiterCoreMock)
  */
@@ -148,8 +146,7 @@ export function setTestConfig(overrides: ConfigOverride) {
 }
 
 /**
- * Mock factory for cookie helpers (used in OAuth tests).
- * Returns an in-memory cookie store with set/get/delete.
+ * In-memory cookie store standing in for the real cookie helpers (OAuth tests).
  * Use at top level: vi.mock('#/modules/auth/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock())
  * Call clearCookieStore() in afterEach to reset between tests.
  * Access mockCookieStore directly to pre-populate cookies in tests.

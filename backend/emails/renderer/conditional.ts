@@ -19,11 +19,9 @@ interface ParentWithRaw {
 }
 
 /**
- * Returns a rehype plugin that replaces `<jsx-email-cond>` elements (from
- * the Conditional component) with conditional comment wrappers, based on the
+ * Returns a rehype plugin that replaces `<jsx-email-cond>` elements (from the
+ * Conditional component) with conditional comment wrappers, based on the
  * `data-mso` and `data-expression` attributes.
- *
- * Mirrors the async factory pattern used by `getRawPlugin()`.
  */
 export const getConditionalPlugin = async () => {
   return function conditionalPlugin() {
@@ -61,10 +59,8 @@ export const getConditionalPlugin = async () => {
           const expression = exprAttr || (msoAttr === true ? 'mso' : void 0);
           if (expression) {
             openRaw = `<!--[if ${expression}]>`;
-            // Older Outlook/Word HTML parsers prefer the self-closing
-            // conditional terminator variant to avoid comment spillover
-            // when adjacent comments appear. Use the `<![endif]/-->` form
-            // for maximum compatibility.
+            // Older Outlook/Word parsers prefer the self-closing `<![endif]/-->`
+            // terminator, which avoids comment spillover when comments are adjacent.
             closeRaw = '<![endif]/-->';
           }
         }

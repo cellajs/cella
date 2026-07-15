@@ -86,11 +86,9 @@ interface SafeHtmlProps {
 }
 
 /**
- * Renders sanitized HTML using a strict allowlist policy.
- *
- * This is the only place in the email pipeline that is allowed to use
- * `dangerouslySetInnerHTML`. All input is run through `sanitize-html` against
- * one of the named policies above, so call sites stay safe by construction.
+ * The only place in the email pipeline allowed to use `dangerouslySetInnerHTML`:
+ * input is sanitized against one of the named allowlist policies above, so call
+ * sites stay safe by construction.
  */
 export const SafeHtml = ({ html, policy, as: Tag = 'span', className }: SafeHtmlProps) => {
   const clean = sanitizeHtml(html, policies[policy]);
