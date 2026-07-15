@@ -27,7 +27,9 @@ type CookieName = TokenType | 'session' | 'totp-challenge' | 'passkey-challenge'
  *   arrive cross-site (email link → OAuth callback).
  * Everything else — the session included — is only read from same-origin
  * requests and is hardened to Strict. The connect flow's session read at the
- * OAuth callback moved into the oauth-state payload for this (see initiation.ts).
+ * OAuth callback moved into the oauth-state payload for this.
+ *
+ * @see initiation.ts
  */
 const isLaxCookie = (name: CookieName) =>
   name === 'invitation' || name === 'oauth-verification' || name.startsWith('oauth-state-');

@@ -55,8 +55,8 @@ export type EntityView = UserEntityView | ChannelEntityView | ProductEntityView;
 
 /**
  * Builder for entity hierarchy. Chain calls to define entities, then call build().
- * See README.md in this directory for the fork contract and the home/related/
- * nullable-ancestor model.
+ *
+ * @see README.md
  */
 class EntityHierarchyBuilder<
   TRoles extends { all: readonly string[] },
@@ -128,7 +128,9 @@ class EntityHierarchyBuilder<
    * Add a product entity. Every product has exactly one home channel (`parent`): a non-null
    * `<channel>Id` column and the most-specific link used for permissions and public-read
    * inheritance. Optional `relatedChannels` and `nullableAncestors` add further
-   * non-home links; see README.md in this directory for the full model.
+   * non-home links.
+   *
+   * @see README.md
    */
   product<
     N extends string,

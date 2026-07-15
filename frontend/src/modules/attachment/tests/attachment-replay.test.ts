@@ -32,8 +32,10 @@ const lastPath = (spy: { mock: { lastCall?: [Req] } }) => spy.mock.lastCall?.[0]
 /**
  * These functions are what runs when a paused mutation is replayed from the persisted queue
  * after a reload — the component closure that supplied tenant/org is gone, so everything must
- * come from the persisted variables. The hooks inject that context (see query.ts), which is the
+ * come from the persisted variables. The hooks inject that context, which is the
  * fix these tests lock in.
+ *
+ * @see query.ts
  */
 describe('attachment offline-replay mutation functions', () => {
   it('update replays from persisted variables: tenant/org in the path, stx in the body', async () => {

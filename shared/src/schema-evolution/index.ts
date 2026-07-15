@@ -1,4 +1,8 @@
-/** Public barrel for the schema-evolution lens registry (see README.md). */
+/**
+ * Public barrel for the schema-evolution lens registry.
+ *
+ * @see README.md
+ */
 export { lenses } from './lens-list';
 export { schemaEvolutionPolicy, type UnknownFieldHandling } from './config';
 export { defineLens, LENS_FORMAT_VERSION, resolveAddDefault } from './define';

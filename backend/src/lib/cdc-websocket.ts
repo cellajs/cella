@@ -16,8 +16,10 @@ import { log } from '#/utils/logger';
  * Reuses activitySchema with stricter typing for fields that must be present in CDC context.
  *
  * This is the *validating* end of the CDC → API-server wire contract. The CDC worker
- * *produces* the same shape as `CdcOutboundMessage` (see cdc/src/services/activity-service.ts).
+ * *produces* the same shape as `CdcOutboundMessage`.
  * Keep the two in sync: a field added there needs a matching field here.
+ *
+ * @see cdc/src/services/activity-service.ts
  */
 const cdcMessageSchema = z.object({
   activity: z.object({
@@ -142,7 +144,7 @@ function isAllowedCdcSource(remoteIp: string | undefined, forwardedFor: string |
  * - Shared secret via `x-cdc-secret` header (min 16 chars, validated at startup)
  * - Source-IP restricted in production: loopback or the Scaleway VPC /24,
  *   read from X-Forwarded-For when reached through the per-VM Caddy ingress
- *   (see `isAllowedCdcSource`)
+ *   (see {@link isAllowedCdcSource})
  * - Single connection at a time (new connections replace existing ones)
  * - Idle timeout (90s) auto-closes stale connections
  */

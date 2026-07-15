@@ -13,7 +13,7 @@ import type { RowCondition } from './row-conditions';
  * concern — a fork that wants it propagates `publicAt` to descendants (trigger or app
  * logic) and every path keeps reading one self-describing column.
  *
- * See `cella/PERMISSIONS.md`.
+ * @see cella/PERMISSIONS.md
  */
 export type PublicReadMode = 'publicSelf';
 

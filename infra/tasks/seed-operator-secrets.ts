@@ -16,10 +16,12 @@ const defaultLog = (message: string) => console.info(message)
 /**
  * Seed operator-managed runtime secrets with their first value during bootstrap.
  *
- * Pulumi already creates the empty containers (see resources/secrets.ts), so this
- * only writes an initial Version for the values the operator typed at the
- * prompt. Containers that already have a version are left untouched, so re-runs
- * never clobber a value set later via "Manage runtime secrets".
+ * Pulumi already creates the empty containers, so this only writes an initial
+ * Version for the values the operator typed at the prompt. Containers that already
+ * have a version are left untouched, so re-runs never clobber a value set later
+ * via "Manage runtime secrets".
+ *
+ * @see resources/secrets.ts
  */
 export async function seedOperatorSecrets(options: SeedOperatorSecretsOptions): Promise<void> {
   const log = options.log ?? defaultLog

@@ -87,7 +87,7 @@ export interface PermissionsConfigResult {
 /**
  * Configures the full permission set for all entity types using a callback pattern.
  * The callback receives the subject, context builders for role×context grants, and
- * `publicRead(mode)` for the subject-level public read grant (see `public-read.ts`).
+ * `publicRead(mode)` for the subject-level public read grant.
  *
  * @example
  * ```ts
@@ -100,6 +100,8 @@ export interface PermissionsConfigResult {
  *   }
  * });
  * ```
+ *
+ * @see public-read.ts
  */
 export const configurePermissions = (
   entityTypes: readonly EntityType[],

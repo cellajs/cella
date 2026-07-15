@@ -13,7 +13,9 @@ import { createReplicationService, ensureReplicationSlot, setupBackpressure, sub
 
 /**
  * CDC Worker orchestrator: start & stop. Pipeline stages and their file layout are
- * documented in cdc/README.md ("Pipeline stages").
+ * documented under "Pipeline stages".
+ *
+ * @see cdc/README.md
  */
 export async function startCdcWorker(): Promise<void> {
   log.info(`CDC worker starting...`, {

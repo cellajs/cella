@@ -6,7 +6,9 @@
  * A rule that needed a second row, a join, or actor data beyond the user id has no place here —
  * it could not be enforced identically in the three paths that must agree: the engine's JS
  * check, the backend's compiled SQL, and CDC stream dispatch (which only ever ships the row
- * itself). See `cella/PERMISSIONS.md`.
+ * itself).
+ *
+ * @see cella/PERMISSIONS.md
  */
 
 /**

@@ -7,7 +7,9 @@ export const TOTAL_ATTACHMENTS = 500;
 
 /**
  * Generate a load-test attachment row by index. Reference implementation
- * for the fork seed pattern; see `seeds/README.md`.
+ * for the fork seed pattern.
+ *
+ * @see seeds/README.md
  */
 export const loadtestAttachment = (index: number): InsertAttachmentModel => ({
   ...mockAttachment(`attachment:loadtest:${index}`),

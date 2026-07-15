@@ -38,10 +38,12 @@ const MAX_NETWORK_RETRIES = 3;
  * Mutation `retry` predicate. Retries only connectivity failures, up to
  * {@link MAX_NETWORK_RETRIES}. Paired with `networkMode: 'offlineFirst'`, this is
  * what lets a mutation that failed offline enter the persisted paused-mutation
- * queue instead of being lost. See `query-client.ts`.
+ * queue instead of being lost.
  *
  * `failureCount` is the number of failures so far (0 on the first failure), matching
  * TanStack's numeric `retry` semantics: `failureCount < 3` == `retry: 3`.
+ *
+ * @see query-client.ts
  */
 export function mutationRetry(failureCount: number, error: unknown): boolean {
   return isNetworkError(error) && failureCount < MAX_NETWORK_RETRIES;

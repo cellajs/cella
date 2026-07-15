@@ -7,7 +7,9 @@ import { configurePermissions } from '../src/permissions/access-policies';
 /**
  * Optional product grant scoping: roles NOT in this list see only rows homed at their own context
  * level; listed roles keep full subtree scope. `undefined` keeps every grant subtree-scoped.
- * Read by the engine and the collection-scope SQL compiler alike — see cella/PERMISSIONS.md.
+ * Read by the engine and the collection-scope SQL compiler alike.
+ *
+ * @see cella/PERMISSIONS.md
  */
 export const elevatedRoles: readonly string[] | undefined = undefined;
 

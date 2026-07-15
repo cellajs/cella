@@ -24,13 +24,15 @@ export interface CdcBatchRow {
 /**
  * Outbound activity + row-data message the CDC worker sends to the API server.
  * This is the producing end of the wire contract; the backend independently validates
- * the same shape with `cdcMessageSchema` (see backend/src/lib/cdc-websocket.ts, `CdcMessage`).
+ * the same shape with `cdcMessageSchema`.
  * Keep both in sync: a field added here needs a matching field there, or the backend
  * will reject the message at runtime.
  *
  * `batchRows` carries per-row permission fields (context ids, createdBy, publicAt) so
  * mixed-visibility batches dispatch per subscriber per row instead of deciding on the
  * first row alone.
+ *
+ * @see backend/src/lib/cdc-websocket.ts
  */
 export interface CdcOutboundMessage {
   activity: InsertActivityModel & { id?: string; seq?: number; batchUntilSeq?: number };
@@ -103,7 +105,7 @@ export interface BatchEventInfo {
 
 /**
  * The seq-context key of a batch event, mirroring seq allocation: seqs are counters per
- * (channelKey, entityType) — see `computeBatchUnifiedDeltas`. Resource events (no
+ * (channelKey, entityType) — see {@link computeBatchUnifiedDeltas}. Resource events (no
  * entityType) never carry seqs; grouping them by org matches their dispatch channel.
  */
 function batchChannelKey({ activity, rowData }: BatchEventInfo): string {

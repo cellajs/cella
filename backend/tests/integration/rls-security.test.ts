@@ -181,7 +181,7 @@ const rlsProductFixtures: Record<string, RlsProductFixture> = {
 
 /**
  * RLS product types that have a fixture, what the generic blocks iterate (collection-time).
- * Table existence is checked at runtime in `beforeAll` (see `activeRlsProducts`).
+ * Table existence is checked at runtime in `beforeAll` (see {@link activeRlsProducts}).
  */
 const iterableRlsProducts = rlsProductTypes
   .filter((t) => rlsProductFixtures[t])

@@ -1,6 +1,8 @@
 /**
- * CI guards for schema-evolution lenses. See README.md in this directory for what each
- * check enforces. Exit code 1 on any violation; run via `pnpm --filter shared lens:check`.
+ * CI guards for schema-evolution lenses. Exit code 1 on any violation; run via
+ * `pnpm --filter shared lens:check`.
+ *
+ * @see README.md
  */
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
