@@ -75,9 +75,9 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
     })
     .returning();
 
-  // Build magic link URL
-  const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${newToken}`;
-  const magicLinkUrl = new URL(verifyPath, appConfig.backendUrl);
+  // Build magic link URL. Concatenate onto backendAuthUrl (which already ends in /auth) so the
+  // /api base path is preserved; new URL(absolutePath, backendUrl) would drop it.
+  const magicLinkUrl = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${newToken}`);
 
   // Send email
   const staticProps = { magicLinkUrl: magicLinkUrl.toString(), name: user.name, isNewUser: !existingUser };

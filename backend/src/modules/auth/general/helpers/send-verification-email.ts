@@ -68,9 +68,9 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   // Send email
   const lng = user.language;
 
-  // Create verification link: go to
-  const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${newToken}`;
-  const verificationURL = new URL(verifyPath, appConfig.backendUrl);
+  // Create verification link. Concatenate onto backendAuthUrl (which already ends in /auth) so the
+  // /api base path is preserved; new URL(absolutePath, backendUrl) would drop it.
+  const verificationURL = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${newToken}`);
 
   if (redirectPath) verificationURL.searchParams.set('redirect', redirectPath);
 
