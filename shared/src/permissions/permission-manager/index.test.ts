@@ -498,21 +498,15 @@ describe('wide hierarchy, guest role, multi-level ancestors', () => {
     ({ subject, contexts }) => {
       switch (subject.name) {
         case 'attachment':
-          // Guests can create at project level. Every context×role cell is declared (deny by
-          // default) so the engine's strict policy-coverage check is satisfied when memberships
-          // resolve at either level.
-          contexts.organization.admin({});
-          contexts.organization.member({});
+          // Guests can create at project level. Omitted actions and policy rows deny by default.
           contexts.project.admin({ create: 1, update: 1 });
           contexts.project.member({ create: 1, update: 1 });
           contexts.project.guest({ create: 1 });
           break;
         case 'task':
           contexts.organization.admin({ read: 1 });
-          contexts.organization.member({});
           contexts.project.admin({ read: 1, update: 1 });
           contexts.project.member({ read: 1, update: 1 });
-          contexts.project.guest({});
           break;
       }
     },

@@ -178,12 +178,9 @@ const checkWithIndices = <T extends PermissionMembership>(
 
     for (const m of matchingMemberships) {
       const permissions = policyIndex.get(`${channelType}:${m.role}`);
-      if (!permissions) {
-        // Strict: role exists in membership but has no policy - likely config/data issue
-        throw new Error(
-          `[Permission] Role "${m.role}" in context ${channelType} has no policy for ${subject.entityType}`,
-        );
-      }
+      // Missing policy rows deny every action, matching omitted actions, computeCan and
+      // collection-scope resolution. Policies only need to declare grants.
+      if (!permissions) continue;
 
       // Grant scope: applies to EVERY action of the grant, including create (a target
       // placement's home decides which grants may create there) and 'own' conditions.

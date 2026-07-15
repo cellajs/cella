@@ -114,10 +114,8 @@ export const { accessPolicies, publicReadGrants } = configurePermissions(
 
 Any action you omit defaults to `0`. The `'own'` literal is sugar: it is normalized into the built-in `own` row condition at config time, so the engine only ever sees `0 | 1 | RowCondition`.
 
-Two validators run at boot, both fail-loud by design:
-
-- **`validatePolicyCompleteness`** — every subject that declares any row must declare a row for *every role of every context in its ancestor chain*. An all-zero row (`contexts.x.role({})`) is the explicit way to say "no access". This exists because a missing policy row makes the engine **throw at request time**, and a 500 at request time is a far worse failure than a 500 at boot.
-- **`validatePublicReadGrants`** — a `publicParent` grant requires the parent subject to actually be publicly readable.
+Missing actions and missing role/context rows both deny by default, so policies only need to declare
+grants. Public-read declarations are collected separately because they are membership-independent.
 
 For channel entities, note the two row kinds: **elevation** rows sit on an *ancestor* context and say what a parent's member may do to the child (this is where `create` lives); **self** rows sit on the same context and say what the entity's own members may do to it (`create` is meaningless there). Product entities have only *home* rows, where `create` grants making the product inside that context.
 
@@ -242,7 +240,7 @@ The rest of the suite covers grant attribution, `'own'` denial when the actor or
 | Row's parent is public but the row itself is not | Denied. Publication does not cascade through the engine; propagate `publicAt` to the row |
 | System admin acts on any single row | Allowed, `grantedBy: systemAdmin`, short-circuited before membership lookup |
 | System admin without an org membership lists a collection | Every row in the org. The bypass applies to the collection path too |
-| Membership role has no policy row for the subject | **Throws** at request time. Prevented at boot by `validatePolicyCompleteness` |
+| Membership role has no policy row for the subject | Denies every action for that membership |
 | Required ancestor scope omitted from `channelIds` | Throws `MissingScopeError` → 400 `missing_scope` / WS `4400`. Never silently unscoped |
 | Actor loses access mid-Yjs-session | The relay's materialization re-checks `update` on the backend before persisting |
 | System admin joins a Yjs collab session | No bypass. Collaborative editing is authorized as the acting user, matching materialization |
@@ -275,7 +273,7 @@ The rest of the suite covers grant attribution, `'own'` denial when the actor or
 | `shared/config/permissions-config.ts` | The policy matrix, public read grants, `elevatedRoles` |
 | `shared/src/permissions/check-permission.ts` | `checkPermission` + `Actor` — the entry point every tier calls |
 | `shared/src/permissions/permission-manager/check.ts` | `getAllDecisions` — the engine |
-| `shared/src/permissions/access-policies.ts` | `configurePermissions` + `validatePolicyCompleteness` |
+| `shared/src/permissions/access-policies.ts` | `configurePermissions` + policy lookup helpers |
 | `shared/src/permissions/row-conditions.ts` | `RowPredicate` vocabulary, `rowPredicateMatches`, `own` |
 | `shared/src/permissions/public-read.ts` | `publicRow` — the public read predicate |
 | `shared/src/permissions/build-subject.ts` | Column-shaped input → domain subject (carries the row) |

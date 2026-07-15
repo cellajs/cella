@@ -18,7 +18,6 @@ export interface TopologyHierarchy {
   getRoles(channelType: string): readonly string[];
   isChannel(entityType: string): boolean;
   isProduct(entityType: string): boolean;
-  getParent(entityType: string): string | null;
 }
 
 export interface PermissionTopology {

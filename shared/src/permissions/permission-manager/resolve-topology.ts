@@ -9,7 +9,6 @@ export interface ResolvedTopology {
   entityActions: readonly EntityActionType[];
   channelEntityTypes: readonly ChannelEntityType[];
   getRoles: (type: string) => readonly string[];
-  getParent: (type: string) => string | null;
 }
 
 /**
@@ -29,6 +28,5 @@ export const resolveTopology = (topology?: PermissionTopology): ResolvedTopology
     entityActions: (topology?.entityActions ?? appConfig.entityActions) as readonly EntityActionType[],
     channelEntityTypes: (topology ? h.channelTypes : appConfig.channelEntityTypes) as readonly ChannelEntityType[],
     getRoles: (type) => h.getRoles(type),
-    getParent: (type) => h.getParent(type),
   };
 };

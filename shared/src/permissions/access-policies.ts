@@ -105,22 +105,12 @@ export const configurePermissions = (
   entityTypes: readonly EntityType[],
   callback: AccessPolicyCallback,
   topology?: PermissionTopology,
-  options?: {
-    /**
-     * Assert at config time that every subject with declared rows covers EVERY role of
-     * EVERY context in its ancestor chain (default true — see
-     * `validatePolicyCompleteness`). Test helpers with deliberately partial fixtures
-     * opt out.
-     */
-    validateCompleteness?: boolean;
-  },
 ): PermissionsConfigResult => {
   const policies: AccessPolicies = {};
   const publicReadGrants: PublicReadGrants = {};
 
   // Topology defaults to the app's real config; tests pass a synthetic one (wide-fixture.ts).
-  const { entityActions, channelEntityTypes, getRoles, getParent } = resolveTopology(topology);
-  const validateCompleteness = options?.validateCompleteness ?? true;
+  const { entityActions, channelEntityTypes, getRoles } = resolveTopology(topology);
 
   const permissionableTypes = entityTypes.filter(
     (type): type is ChannelEntityType | ProductEntityType => type !== 'user',
@@ -148,60 +138,7 @@ export const configurePermissions = (
     }
   }
 
-  if (validateCompleteness) {
-    validatePolicyCompleteness(policies, { channelEntityTypes, getRoles, getParent });
-  }
-
   return { accessPolicies: policies, publicReadGrants };
-};
-
-/**
- * The engine is strict at runtime: the first membership whose (context, role) has no
- * policy row for the checked subject THROWS — a request-time 500 that only surfaces
- * when a real user with that role hits that subject. Enforce the same rule at config
- * time instead: every subject that declares ANY rows must declare a row for every role
- * of every context in its ancestor chain — an all-zero row (`contexts.x.role({})`)
- * expresses "no access" explicitly. Subjects with no case at all are skipped (they
- * fail fast with a clear engine error on their first check).
- */
-const validatePolicyCompleteness = (
-  policies: AccessPolicies,
-  topology: {
-    channelEntityTypes: readonly ChannelEntityType[];
-    getRoles: (channelType: string) => readonly string[];
-    getParent: (type: string) => string | null;
-  },
-): void => {
-  const { channelEntityTypes, getRoles, getParent } = topology;
-
-  /** The subject's context chain: self (for channel entities) plus every ancestor. */
-  const chainOf = (subject: string): ChannelEntityType[] => {
-    const chain: ChannelEntityType[] = [];
-    let current: string | null = channelEntityTypes.includes(subject as ChannelEntityType)
-      ? subject
-      : getParent(subject);
-    while (current) {
-      chain.push(current as ChannelEntityType);
-      current = getParent(current);
-    }
-    return chain;
-  };
-
-  const missing: string[] = [];
-  for (const [subject, entries] of Object.entries(policies)) {
-    const declared = new Set(entries.map((entry) => `${entry.channelType}:${entry.role}`));
-    for (const channelType of chainOf(subject)) {
-      for (const role of getRoles(channelType)) {
-        if (!declared.has(`${channelType}:${role}`)) missing.push(`"${subject}": ${channelType}.${role}`);
-      }
-    }
-  }
-
-  if (missing.length > 0) {
-    throw new Error(
-      `[Permission] Incomplete policy: every subject with declared rows needs a row for every role of every context in its chain (all-zero rows express "no access"). Missing:\n  ${missing.join('\n  ')}`,
-    );
-  }
 };
 
 /**
@@ -214,8 +151,7 @@ export const configureAccessPolicies = (
   callback: AccessPolicyCallback,
   topology?: PermissionTopology,
 ): AccessPolicies => {
-  // Raw/test path: synthetic policy sets are deliberately partial, so no completeness check.
-  return configurePermissions(entityTypes, callback, topology, { validateCompleteness: false }).accessPolicies;
+  return configurePermissions(entityTypes, callback, topology).accessPolicies;
 };
 
 /**
