@@ -5,7 +5,7 @@ import type { CommonBlockNoteProps } from '~/modules/common/blocknote/types';
 
 interface ResolveFileUrlContext {
   /** When set, files are treated as public regardless of `baseFilePanelProps.isPublic`. */
-  publicFiles: boolean | undefined;
+  publicFiles?: boolean;
   baseFilePanelProps: CommonBlockNoteProps['baseFilePanelProps'];
 }
 

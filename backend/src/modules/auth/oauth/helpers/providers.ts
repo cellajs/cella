@@ -81,5 +81,5 @@ export interface MicrosoftUserProps {
   givenname: string;
   familyname: string;
   picture: string;
-  email: string | undefined;
+  email?: string;
 }

@@ -90,7 +90,7 @@ function OrganizationsTable() {
       />
       <DataTable<EnrichedOrganization>
         {...{
-          rows: rows as EnrichedOrganization[] | undefined,
+          rows,
           rowHeight: 52,
           onRowsChange,
           rowKeyGetter,
