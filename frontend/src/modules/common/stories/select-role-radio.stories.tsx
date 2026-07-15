@@ -22,7 +22,7 @@ export const Empty: Story = {
   render: function Render() {
     const [value, setValue] = useState<EntityRole | undefined>(undefined);
 
-    return <SelectRoleRadio value={value} onValueChange={(next) => setValue(next as EntityRole | undefined)} />;
+    return <SelectRoleRadio value={value} onValueChange={setValue} />;
   },
 };
 
@@ -34,7 +34,7 @@ export const Selected: Story = {
   render: function Render() {
     const [value, setValue] = useState<EntityRole | undefined>('admin');
 
-    return <SelectRoleRadio value={value} onValueChange={(next) => setValue(next as EntityRole | undefined)} />;
+    return <SelectRoleRadio value={value} onValueChange={setValue} />;
   },
 };
 
@@ -49,11 +49,7 @@ export const WrappedLayout: Story = {
 
     return (
       <div className="w-72 rounded-lg border p-4">
-        <SelectRoleRadio
-          value={value}
-          onValueChange={(next) => setValue(next as EntityRole | undefined)}
-          className="flex-wrap items-start gap-3"
-        />
+        <SelectRoleRadio value={value} onValueChange={setValue} className="flex-wrap items-start gap-3" />
       </div>
     );
   },
@@ -69,7 +65,7 @@ export const ShouldSelectRole: Story = {
   render: function Render() {
     const [value, setValue] = useState<EntityRole | undefined>(undefined);
 
-    return <SelectRoleRadio value={value} onValueChange={(next) => setValue(next as EntityRole | undefined)} />;
+    return <SelectRoleRadio value={value} onValueChange={setValue} />;
   },
   play: async ({ canvas, step }) => {
     const radios = await canvas.findAllByRole('radio');

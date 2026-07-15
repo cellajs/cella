@@ -1,15 +1,15 @@
 import { useTranslation } from 'react-i18next';
-import { roles } from 'shared';
+import { type EntityRole, roles } from 'shared';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { cn } from '~/utils/cn';
 
 interface SelectRoleProps {
-  onValueChange: (value: string[]) => void;
-  value?: string[];
+  onValueChange: (value: EntityRole[]) => void;
+  value?: EntityRole[];
   className?: string;
 }
 
-const EMPTY_ROLES: string[] = [];
+const EMPTY_ROLES: EntityRole[] = [];
 
 /**
  * Checkbox group for selecting multiple entity roles.
@@ -17,7 +17,7 @@ const EMPTY_ROLES: string[] = [];
 export function SelectRoles({ onValueChange, value = EMPTY_ROLES, className }: SelectRoleProps) {
   const { t } = useTranslation();
 
-  const handleCheckboxChange = (role: string) => {
+  const handleCheckboxChange = (role: EntityRole) => {
     const newValue = value.includes(role)
       ? value.filter((selectedRole) => selectedRole !== role) // Remove role if it already exists
       : [...value, role];

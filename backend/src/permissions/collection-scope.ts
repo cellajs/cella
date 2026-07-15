@@ -5,6 +5,7 @@ import {
   type ChannelEntityType,
   elevatedRoles as configuredElevatedRoles,
   publicReadGrants as configuredPublicReadGrants,
+  type EntityRole,
   getPolicyPermissions,
   getSubjectPolicies,
   hierarchy,
@@ -24,7 +25,7 @@ const roleReadValue = (
   policies: AccessPolicies,
   entityType: ProductEntityType,
   channelType: ChannelEntityType,
-  role: string,
+  role: EntityRole,
 ): NormalizedPermissionValue => {
   const subjectPolicies = getSubjectPolicies(entityType, policies);
   const permissions = getPolicyPermissions(subjectPolicies, channelType, role);
@@ -115,7 +116,7 @@ const resolveScopes = (
   // Grant scoping: with elevatedRoles configured, a non-elevated role's grant speaks only
   // for rows HOMED at its level. Grants at the deepest level are home-exact by
   // construction; root/intermediate grants of non-elevated roles become home-scoped.
-  const isHomeScopedGrant = (channelType: ChannelEntityType, role: string): boolean =>
+  const isHomeScopedGrant = (channelType: ChannelEntityType, role: EntityRole): boolean =>
     elevatedRoles !== undefined && !elevatedRoles.includes(role) && channelType !== subChannelType;
 
   const acc: ScopeAccumulator = {
@@ -145,7 +146,7 @@ const resolveScopes = (
     acc.conditional.set(key, entry);
   };
 
-  const addUnconditional = (channelType: ChannelEntityType, role: string, channelId: string | null) => {
+  const addUnconditional = (channelType: ChannelEntityType, role: EntityRole, channelId: string | null) => {
     // Non-elevated roles above the deepest level scope to rows HOMED at their grant level
     if (isHomeScopedGrant(channelType, role)) {
       const ids = acc.homeScoped.get(channelType) ?? new Set<string>();

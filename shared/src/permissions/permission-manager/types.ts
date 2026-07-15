@@ -55,7 +55,7 @@ export type SubjectForPermission = {
  * grants every action regardless of membership).
  */
 export type GrantSource =
-  | { type: 'membership'; channelType: ChannelEntityType; channelId: string; role: string }
+  | { type: 'membership'; channelType: ChannelEntityType; channelId: string; role: EntityRole }
   | { type: 'relation'; relation: string }
   | { type: 'public'; mode: PublicReadMode }
   | { type: 'systemAdmin' };

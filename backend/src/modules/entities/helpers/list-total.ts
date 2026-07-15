@@ -1,3 +1,4 @@
+import type { EntityType } from 'shared';
 import type { DbContext } from '#/core/context';
 import { getOrgEntityCount } from '#/modules/entities/entities-queries';
 
@@ -10,7 +11,7 @@ import { getOrgEntityCount } from '#/modules/entities/entities-queries';
  */
 export type ListTotalSource =
   | { kind: 'pageLength' }
-  | { kind: 'counter'; ctx: DbContext; channelKey: string; entityType: string }
+  | { kind: 'counter'; ctx: DbContext; channelKey: string; entityType: EntityType }
   | { kind: 'exact'; count: () => Promise<number> };
 
 /**
