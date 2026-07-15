@@ -11,7 +11,9 @@ import type { RowCondition } from './row-conditions';
  *   `own` `RowCondition` when policies are configured.
  *
  * Row conditions are a closed set (`own`, and the public read grant), not a fork extension
- * point — see `row-conditions.ts`. So a config cell is one of exactly these three literals.
+ * point. So a config cell is one of exactly these three literals.
+ *
+ * @see row-conditions.ts
  */
 export type PermissionValue = 0 | 1 | 'own';
 
@@ -64,7 +66,11 @@ export type ChannelPolicyBuilder = {
 export interface AccessPolicyConfiguration {
   subject: { name: EntityType };
   contexts: Record<ChannelEntityType, ChannelPolicyBuilder>;
-  /** Declare the subject-level public read grant for this subject (see `public-read.ts`). */
+  /**
+   * Declare the subject-level public read grant for this subject.
+   *
+   * @see public-read.ts
+   */
   publicRead: (mode: PublicReadMode) => void;
 }
 

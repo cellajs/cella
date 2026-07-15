@@ -56,7 +56,7 @@ export type ServiceInstanceType = string | Partial<Record<Environment, string>>
  *
  * Removing a block removes the service from the registry entirely (no VM, LB
  * backend, DNS, cert, or release SHA config). Optional per-app deployment is
- * gated by `appConfig.services.<slug>.enabled` (see `enabledServices`).
+ * gated by `appConfig.services.<slug>.enabled` (see {@link enabledServices}).
  */
 export interface ServiceMeta {
   /**

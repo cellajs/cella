@@ -16,10 +16,11 @@ export const clientConfig = {
 /**
  * Init shape for {@link ApiError}.
  *
- * Derived from the generated SDK `ApiError` payload (see `sdk/gen/types.gen.ts`),
- * with one adjustment: `status` is narrowed to Hono's branded HTTP error codes
- * for stricter typing. Everything except `status` is optional so client-synthesized
- * errors stay terse.
+ * Derived from the generated SDK `ApiError` payload, with one adjustment: `status`
+ * is narrowed to Hono's branded HTTP error codes for stricter typing. Everything
+ * except `status` is optional so client-synthesized errors stay terse.
+ *
+ * @see sdk/gen/types.gen.ts
  */
 export type ApiErrorInit = Partial<Omit<ApiErrorPayload, 'status'>> & {
   status: ClientErrorStatusCode | ServerErrorStatusCode;

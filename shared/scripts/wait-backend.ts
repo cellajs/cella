@@ -1,4 +1,8 @@
-/** Waits for the backend health endpoint before proceeding. See README.md in this directory for usage. */
+/**
+ * Waits for the backend health endpoint before proceeding.
+ *
+ * @see README.md
+ */
 import { waitForBackend } from '../src/utils/wait-for-backend';
 
 const args = process.argv.slice(2);

@@ -12,7 +12,7 @@ export type RuntimeSecretGeneration = 'manual' | 'random'
 /**
  * One runtime secret's fork-owned mapping data, authored in
  * `runtime-secrets.config.ts`. The `id` is the config object key, so it is not
- * repeated here (see `RuntimeSecretDefinition` for the flattened shape).
+ * repeated here (see {@link RuntimeSecretDefinition} for the flattened shape).
  */
 export interface RuntimeSecretConfig {
   /** Scaleway Secret Manager container name (kebab-case). */

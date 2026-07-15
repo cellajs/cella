@@ -3,9 +3,11 @@ import type { DocRenderMode } from '~/modules/page/content';
 
 /**
  * Editing docs pages writes back to the md/mdx source files, which is only
- * possible while the Vite dev server is running (see vite/docs-editor.ts). In a
- * production build the content is bundled and there is no filesystem to write,
- * so the pages table stays read-only. Callers gate their editing UI on this.
+ * possible while the Vite dev server is running. In a production build the content
+ * is bundled and there is no filesystem to write, so the pages table stays
+ * read-only. Callers gate their editing UI on this.
+ *
+ * @see vite/docs-editor.ts
  */
 export const canEditDocs = import.meta.env.DEV;
 

@@ -5,7 +5,11 @@ export { createSpanStoreProcessor, type SpanStoreProcessorOptions } from './span
 /** Span status aligned with OTel conventions. */
 export type SpanStatus = 'ok' | 'error' | 'unset';
 
-/** Span data structure for storage and display; real OTel tracers create the underlying spans (see span-store-processor.ts for the bridge). */
+/**
+ * Span data structure for storage and display; real OTel tracers create the underlying spans.
+ *
+ * @see span-store-processor.ts
+ */
 export interface SpanData {
   traceId: string;
   spanId: string;

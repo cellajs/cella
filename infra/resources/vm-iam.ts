@@ -17,9 +17,10 @@ function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types.input.
  * registry + object-storage + secret-manager permission sets. Reconciled on
  * every `pulumi up`.
  *
- * Compute VMs depend on this (see `resources/compute.ts`) so that on a fresh
- * bootstrap the grant is attached before the VMs boot and run their first
- * runtime-secret hydration.
+ * Compute VMs depend on this so that on a fresh bootstrap the grant is attached
+ * before the VMs boot and run their first runtime-secret hydration.
+ *
+ * @see resources/compute.ts
  */
 export const vmReaderPolicy = new scaleway.iam.Policy('vm-reader-policy', {
   name: naming.resource('vm-reader-policy'),

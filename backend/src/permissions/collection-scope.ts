@@ -336,9 +336,15 @@ export interface CollectionReadScopeInput {
    * When neither is provided the read is an aggregate over the caller's readable scope.
    */
   requested?: { subChannelId?: string; subChannelIds?: string[] };
-  /** Grant scoping role list (see `shared/config/permissions-config.ts`). */
+  /**
+   * Grant scoping role list.
+   * @see shared/config/permissions-config.ts
+   */
   elevatedRoles?: readonly string[];
-  /** Subject-level public read grants (see `shared/src/permissions/public-read.ts`). */
+  /**
+   * Subject-level public read grants.
+   * @see shared/src/permissions/public-read.ts
+   */
   publicGrants?: PublicReadGrants;
   /**
    * Hierarchy override, the same seam `getAllDecisions(…, { topology })` exposes. Defaults to

@@ -236,7 +236,7 @@ const checkWithIndices = <T extends PermissionMembership>(
  * Checks all permissions for one or more subjects. A single subject returns a
  * `PermissionDecision`; an array returns a `Map` keyed by subject.id.
  *
- * See README.md in this directory for the context/attribution data model and a worked example.
+ * @see README.md
  */
 export function getAllDecisions<T extends PermissionMembership>(
   policies: AccessPolicies,

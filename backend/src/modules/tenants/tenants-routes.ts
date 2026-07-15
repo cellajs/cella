@@ -1,5 +1,5 @@
 /**
- * Tenant CRUD routes — system-admin only (see `sysAdminGuard`).
+ * Tenant CRUD routes — system-admin only (see {@link sysAdminGuard}).
  * @see cella/ARCHITECTURE.md
  */
 

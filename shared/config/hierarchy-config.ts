@@ -7,7 +7,9 @@ export const roles = createRoleRegistry(['admin', 'member'] as const);
 /**
  * Entity relationships, single-parent inheritance. Parents before children; order sets the ancestor
  * chain. Products may add `relatedChannels` (non-ancestor context refs, nullable id columns). Public
- * readability is a permission concern, not declared here — see cella/PERMISSIONS.md for the model.
+ * readability is a permission concern, not declared here.
+ *
+ * @see cella/PERMISSIONS.md
  */
 export const hierarchy = createEntityHierarchy(roles)
   .user()

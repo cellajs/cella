@@ -37,7 +37,7 @@ export const generateMockChannelIdColumns = (mode: 'all' | 'relatable' = 'all'):
 
 /**
  * Mock channel entity id columns for a specific product entity, mirroring its DB schema:
- * strict ancestors and declared related contexts (see `channelRelationColumns`).
+ * strict ancestors and declared related contexts (see {@link channelRelationColumns}).
  */
 export type MockEntityChannelIdColumns<E extends string> = EntityIdColumns<
   (AncestorChannelType<E> | RelatedChannelType<E>) & EntityType,

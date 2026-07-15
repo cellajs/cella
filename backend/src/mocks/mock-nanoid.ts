@@ -36,7 +36,7 @@ export const withMockContext = <T>(context: MockContext, fn: () => T): T => {
   }
 };
 
-/** ID prefix for the current mock context (see `setMockContext`). */
+/** ID prefix for the current mock context (see {@link setMockContext}). */
 const getIdPrefix = (): string => {
   switch (currentMockContext) {
     case 'script':
@@ -49,7 +49,7 @@ const getIdPrefix = (): string => {
 };
 
 /**
- * Mock nanoid with context-aware prefixing (see `setMockContext`). Total length matches the
+ * Mock nanoid with context-aware prefixing (see {@link setMockContext}). Total length matches the
  * nanoid config (24 chars by default). Uses faker's seeded RNG for deterministic output.
  */
 export const mockNanoid = (length = 24) => {
@@ -66,7 +66,7 @@ export const SCRIPT_UUID_PREFIX = '00000000';
 export const LOADTEST_UUID_PREFIX = '00000001';
 
 /**
- * Mock UUID entity ID with context-aware prefixing (see `setMockContext`): 'script' IDs start
+ * Mock UUID entity ID with context-aware prefixing (see {@link setMockContext}): 'script' IDs start
  * with '00000000', 'loadtest' with '00000001'. Uses faker's seeded RNG for deterministic output.
  */
 export const mockUuid = () => {

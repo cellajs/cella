@@ -14,8 +14,8 @@
  * import paths. It deliberately does NOT touch unrelated "context" (React context,
  * AuthContext, DbContext, TraceContext, ContextMenu, canvas getContext, tenant context, …).
  *
- * DB migration, i18n prose/values, doc prose and the file renames (see README.md) are
- * handled outside this codemod.
+ * DB migration, i18n prose/values, doc prose and the file renames are handled
+ * outside this codemod.
  *
  * Modes:
  *   inventory — report only (no writes)
@@ -24,6 +24,8 @@
  * Usage (repo root):
  *   pnpm exec tsx cella/migrations/2026-07-channel-entity-rename/context-to-channel.ts inventory <srcDir ...>
  *   pnpm exec tsx cella/migrations/2026-07-channel-entity-rename/context-to-channel.ts rewrite  <srcDir ...>
+ *
+ * @see README.md
  */
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

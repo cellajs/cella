@@ -54,7 +54,7 @@ export function enabledServices(serviceConfig: Record<string, AppServiceEndpoint
  * (backend) VM instead, so only the host and any non-co-hosted service (the
  * SPA proxy) keep their own VM. The load balancer still derives its routes from
  * `enabledServices`, so a co-hosted service keeps its public endpoint; only its
- * backend target changes (see `serviceGenerationIps`).
+ * backend target changes (see {@link serviceGenerationIps}).
  */
 export function deployedServices(
   serviceConfig: Record<string, AppServiceEndpointConfig>,

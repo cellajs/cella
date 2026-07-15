@@ -73,8 +73,10 @@ export const getBenchSeedCleanupWhere = (seed: TableBenchSeed): string => {
  * Registers a bench seed target as an import side effect (mirrors the cella
  * module/tag registry pattern in `shared/src/module-registry.ts`); `data-setup.ts`
  * auto-imports every `*.bench.ts` file under seeds/, so a fork adds a load-test
- * table by dropping in one file. See `seeds/README.md` for the identity-band
- * contract. Idempotent by name; rejects malformed or duplicate id variants.
+ * table by dropping in one file. Idempotent by name; rejects malformed or
+ * duplicate id variants.
+ *
+ * @see seeds/README.md
  */
 export const registerBenchSeed = (seed: BenchSeed): void => {
   const name = getBenchSeedName(seed);

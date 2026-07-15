@@ -224,7 +224,7 @@ export async function resolveEntity<T extends EntityType>(
   return entity as EntityModel<T> | undefined;
 }
 
-/** @internal Resolves multiple entities by IDs. See `resolveEntity` for usage guidelines. */
+/** @internal Resolves multiple entities by IDs. See {@link resolveEntity} for usage guidelines. */
 export async function resolveEntities<T extends EntityType>(
   { var: { db } }: DbContext,
   entityType: T,

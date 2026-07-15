@@ -5,8 +5,9 @@ import { errorMessage } from '../utils/errors'
 /** A materialized, content-addressed generation: the VM resource is
  *  `vm-<svc>-<id>`, baked with `sha`, promoted at monotonic `seq`. */
 export interface GenRef {
-  /** Content-addressed generation id (see lib/gen-id.ts). Authoritative resource
-   *  suffix. The live VM exists under THIS id, so it is stored, not re-derived. */
+  /** Content-addressed generation id. Authoritative resource suffix. The live VM
+   *  exists under THIS id, so it is stored, not re-derived.
+   *  @see lib/gen-id.ts */
   id: string
   /** Image SHA baked into this generation. */
   sha: string
