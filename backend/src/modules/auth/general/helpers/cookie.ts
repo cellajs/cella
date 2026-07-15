@@ -18,7 +18,13 @@ const secure = appConfig.mode !== 'development';
 // possible: every service lives under the app origin.
 const prefix = secure ? ('host' as const) : undefined;
 
-type CookieName = TokenType | 'session' | 'totp-challenge' | 'passkey-challenge' | `oauth-state-${string}`;
+type CookieName =
+  | TokenType
+  | 'session'
+  | 'device-id'
+  | 'totp-challenge'
+  | 'passkey-challenge'
+  | `oauth-state-${string}`;
 
 /**
  * Cookies read during a cross-site top-level navigation must stay Lax:

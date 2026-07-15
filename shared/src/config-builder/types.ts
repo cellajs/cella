@@ -211,6 +211,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   enabledAuthStrategies: readonly BaseAuthStrategies[];
   enabledOAuthProviders: readonly BaseOAuthProviders[];
   totpConfig: TotpConfig;
+  /** Per-user concurrent regular-session cap; oldest beyond it are evicted on sign-in. */
+  maxSessionsPerUser: number;
 
   // Versioning
   apiVersion: string;

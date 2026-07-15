@@ -43,6 +43,7 @@ export const mockMeAuthDataResponse = (key = 'me-auth:default'): MeAuthDataRespo
           ipSubnetHash: null,
           ipCountry: null,
           ipAsn: null,
+          deviceIdHash: faker.string.hexadecimal({ length: 32, prefix: '', casing: 'lower' }),
           isCurrent: true,
         },
       ],

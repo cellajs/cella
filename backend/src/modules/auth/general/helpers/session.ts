@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq, gt, or } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -18,7 +18,7 @@ import { userCountersTable } from '#/modules/user/user-counters-db';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { sessionCookieSchema } from '#/schemas';
 import { getIp } from '#/utils/get-ip';
-import { hashIpForUser, hashSubnet } from '#/utils/hash-pii';
+import { hashDeviceIdForUser, hashIpForUser, hashSubnet } from '#/utils/hash-pii';
 import { toSubnet } from '#/utils/ip-subnet';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
@@ -26,6 +26,56 @@ import { log } from '#/utils/logger';
 import { encodeLowerCased } from '#/utils/oslo';
 import { isSystemAccessAllowed } from '#/utils/system-access';
 import { createDate, TimeSpan } from '#/utils/time-span';
+
+/** Chrome caps cookie lifetime at 400 days; the device id slides forward on every sign-in. */
+const DEVICE_ID_LIFESPAN = new TimeSpan(400, 'd');
+
+/**
+ * Get or mint the opaque per-browser device id. Set only on successful sign-in (never for anonymous
+ * visitors) and refreshed each sign-in so active devices never expire. The raw id lives only in this
+ * signed, httpOnly cookie; the DB stores only a per-user HMAC of it (see {@link hashDeviceIdForUser}).
+ */
+const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
+  const existing = await getAuthCookie(ctx, 'device-id');
+  const deviceId = existing || nanoid(24);
+  await setAuthCookie(ctx, 'device-id', deviceId, DEVICE_ID_LIFESPAN);
+  return deviceId;
+};
+
+/**
+ * Enforce `appConfig.maxSessionsPerUser` by hard-deleting the oldest active regular sessions beyond
+ * the cap. Called just before inserting a new session, so `cap - 1` leaves room for it. Concurrent
+ * sign-ins can transiently overshoot by one — harmless. Only `regular` sessions count: `mfa`
+ * challenges and admin `impersonation` sessions are excluded.
+ *
+ * The two-step select-then-delete is deliberate: the PK is `(id, expiresAt)` on a partitioned table,
+ * and pairing both columns in the delete lets PostgreSQL prune straight to the right partition — the
+ * same trick the expired-row cleanup in {@link validateSession} uses.
+ *
+ * Exported for direct unit testing of the cap; production callers reach it via {@link setUserSession}.
+ */
+export const evictExcessSessions = async (userId: string): Promise<void> => {
+  const excess = await db
+    .select({ id: sessionsTable.id, expiresAt: sessionsTable.expiresAt })
+    .from(sessionsTable)
+    .where(
+      and(
+        eq(sessionsTable.userId, userId),
+        eq(sessionsTable.type, 'regular'),
+        gt(sessionsTable.expiresAt, getIsoDate()),
+      ),
+    )
+    .orderBy(desc(sessionsTable.createdAt))
+    .offset(appConfig.maxSessionsPerUser - 1);
+
+  if (excess.length === 0) return;
+
+  await db
+    .delete(sessionsTable)
+    .where(or(...excess.map((s) => and(eq(sessionsTable.id, s.id), eq(sessionsTable.expiresAt, s.expiresAt)))));
+
+  log.info('Evicted sessions beyond per-user cap', { userId, count: excess.length });
+};
 
 /**
  * Sets a user session and stores it in the database.
@@ -73,6 +123,10 @@ export const setUserSession = async (
   // Calculate expiration
   const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
+  // Mint/refresh the long-lived per-browser device id (regular sign-ins only) and derive its
+  // per-user HMAC. mfa/impersonation sessions get no device id.
+  const deviceId = type === 'regular' ? await ensureDeviceId(ctx) : null;
+
   const sessionId = generateId();
   const session = {
     id: sessionId,
@@ -88,9 +142,29 @@ export const setUserSession = async (
     ipSubnetHash: subnet ? hashSubnet(subnet) : null,
     ipCountry: country,
     ipAsn: asn,
+    deviceIdHash: deviceId ? hashDeviceIdForUser(deviceId, user.id) : null,
     createdAt: getIsoDate(),
     expiresAt: createDate(timeSpan),
   };
+
+  if (type === 'regular') {
+    // A3 — a browser holds at most one live session: replace this device's previous one, so repeated
+    // sign-ins from the same browser don't stack up as unrelated rows.
+    if (session.deviceIdHash) {
+      await db
+        .delete(sessionsTable)
+        .where(
+          and(
+            eq(sessionsTable.userId, user.id),
+            eq(sessionsTable.deviceIdHash, session.deviceIdHash),
+            eq(sessionsTable.type, 'regular'),
+            gt(sessionsTable.expiresAt, getIsoDate()),
+          ),
+        );
+    }
+    // Bound total concurrent regular sessions (evict oldest beyond the cap).
+    await evictExcessSessions(user.id);
+  }
 
   // Insert session
   await db.insert(sessionsTable).values(session);
