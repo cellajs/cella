@@ -27,7 +27,7 @@ describe('EntityHierarchyBuilder', () => {
     it('throws if organization context is missing', () => {
       expect(() => {
         createEntityHierarchy(roles).user().channel('workspace', { parent: null, roles: roles.all }).build();
-      }).toThrow('organization context is required');
+      }).toThrow('organization channel is required');
     });
 
     it('throws on duplicate entity name', () => {
@@ -57,7 +57,7 @@ describe('EntityHierarchyBuilder', () => {
           .product('attachment', { parent: 'organization' })
           // @ts-expect-error - Testing runtime validation
           .product('file', { parent: 'attachment' });
-      }).toThrow('must be a context entity');
+      }).toThrow('must be a channel entity');
     });
 
     it('throws on invalid role', () => {
