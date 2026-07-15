@@ -2,10 +2,8 @@ import { hashSourceId } from 'shared/utils/hash-source-id';
 import { uuidv7 } from 'uuidv7';
 
 /**
- * Unique identifier for this browser tab/instance.
- * Generated once per page load, used for:
- * - Mutation source tracking (`stx.sourceId`)
- * - "Is this mine?" checks on stream notifications
+ * Unique id for this browser tab, generated once per page load. Used for mutation source tracking
+ * (`stx.sourceId`) and "is this mine?" echo checks on stream notifications.
  */
 export const sourceId = uuidv7();
 

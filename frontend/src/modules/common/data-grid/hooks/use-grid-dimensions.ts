@@ -37,18 +37,16 @@ function getScrollParent(node: HTMLElement): HTMLElement | null {
 }
 
 /**
- * Hook to measure grid dimensions and track scroll position.
  * Auto-detects the nearest scrollable ancestor unless an explicit
- * scrollContainerRef is provided. Falls back to window-level scroll.
+ * scrollContainerRef is provided; falls back to window-level scroll.
  *
  * Column virtualization is absent, so the grid does not track its own
- * inline-size in JS. CSS grid handles column sizing natively between
- * breakpoints. Only viewportHeight and scroll positions are tracked
- * (needed for row virtualization).
+ * inline-size in JS (CSS grid sizes columns natively between breakpoints).
+ * Only viewportHeight and scroll positions are tracked (row virtualization).
  *
  * Backed by `useSyncExternalStore` to avoid tearing under concurrent
- * rendering (mirrors upstream PR #3968). All updates are rAF-throttled
- * to stay cheap. ResizeObserver tracks horizontalScrollbarHeight.
+ * rendering (mirrors upstream PR #3968). Updates are rAF-throttled;
+ * ResizeObserver tracks horizontalScrollbarHeight.
  */
 export function useGridDimensions(
   scrollContainerRef?: RefObject<HTMLElement | null>,
@@ -85,10 +83,8 @@ export function useGridDimensions(
     const scrollContainer = scrollContainerRef?.current ?? getScrollParent(grid);
     const isWindowScroll = scrollContainer === null;
 
-    // Commit a new snapshot only if it differs from the cached one. Mutating
-    // snapshotRef + calling the React notifier triggers a re-read via
-    // getSnapshot. useSyncExternalStore handles the bailout when the
-    // returned reference is identical.
+    // Mutate snapshotRef + notify → re-read via getSnapshot. useSyncExternalStore
+    // bails out when the returned reference is identical.
     const commit = (next: GridDimensions) => {
       if (next === snapshotRef.current) return;
       snapshotRef.current = next;

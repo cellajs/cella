@@ -11,10 +11,8 @@ interface UseHasScrolledOptions {
 const SCROLL_KEYS = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '];
 
 /**
- * Hook to track if the user has initiated a scroll interaction.
- * Uses wheel, touch, and keyboard events which work with any scroll container.
- * Returns true after the first scroll interaction and stays true.
- * By default, waits 2 seconds before activating to prevent false positives on page load.
+ * True once the user initiates a scroll (via wheel/touch/keyboard, so it works with any scroll
+ * container), and stays true. Waits 2s before activating to avoid false positives on page load.
  */
 export const useHasScrolled = ({ delay = 2000, immediate = false }: UseHasScrolledOptions = {}) => {
   const [hasScrolled, setHasScrolled] = useState(false);

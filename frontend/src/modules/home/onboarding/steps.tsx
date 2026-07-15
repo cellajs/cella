@@ -98,10 +98,8 @@ export function Onboarding({
                             if (args.status === 'success') {
                               setOrganization(args.data);
                               setCreatedOrganization(args.data);
-                              // Await seeding here so the user cannot reach the
-                              // completed screen / leave onboarding before the
-                              // demo workspace + projects are persisted and the
-                              // menu cache is primed.
+                              // Await seeding here so the user cannot leave onboarding before the
+                              // demo workspace + projects are persisted and the menu cache is primed.
                               const result = await seedOnboardingDemoData(args.data);
                               setSeeded(result);
                             }

@@ -5,9 +5,8 @@ import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData } from '~/query/types';
 
 /**
- * Returns the total number of items from an infinite query.
- * Automatically updates when the query cache changes.
- * Returns null while fetching if only initialData is available (dataUpdatedAt is 0).
+ * Live total from an infinite query (updates on cache changes). Returns null while fetching if only
+ * initialData is present (dataUpdatedAt === 0), to avoid showing a stale count.
  */
 export function useInfiniteQueryTotal<T = unknown>(queryKey: QueryKey) {
   const keyHash = hashKey(queryKey);

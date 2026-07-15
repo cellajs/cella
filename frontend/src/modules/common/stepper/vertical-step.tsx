@@ -86,10 +86,7 @@ function VerticalStepBase(props: VerticalStepProps, ref: React.ForwardedRef<HTML
           <CollapsibleContent
             ref={(node) => {
               if (
-                // If the step is the first step and the previous step
-                // was the last step or if the step is not the first step
-                // This prevents initial scrolling when the stepper
-                // is located anywhere other than the top of the view.
+                // Prevents initial auto-scroll when the stepper isn't at the top of the view.
                 scrollTracking &&
                 ((index === 0 && previousActiveStep && previousActiveStep === steps.length) || (index && index > 0))
               ) {

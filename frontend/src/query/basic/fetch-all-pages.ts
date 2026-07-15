@@ -2,13 +2,7 @@ import type { QueryData } from '~/query/types';
 
 type PaginatedFetcher<T> = (params: { limit: string; offset: string }) => Promise<QueryData<T>>;
 
-/**
- * Fetches all pages of a paginated endpoint, using `total` from the first
- * response to determine how many additional fetches are needed.
- *
- * Entity-agnostic: works with any endpoint returning `{ items: T[], total }`.
- * Remaining pages are fetched concurrently after the first page.
- */
+/** Fetch all pages of a paginated `{ items, total }` endpoint; pages after the first run concurrently. */
 export async function fetchAllPages<T>(fetcher: PaginatedFetcher<T>, limit: number): Promise<QueryData<T>> {
   const first = await fetcher({ limit: String(limit), offset: '0' });
 

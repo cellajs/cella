@@ -2,9 +2,8 @@ import type { CalculatedColumn, CellRange } from '../types';
 import { normalizeCellRange } from './cell-range-utils';
 
 /**
- * Convert a cell value to a clipboard-friendly string.
- * Objects fall back to their `name` field (common convention for entity-shaped
- * values like users, organizations, labels). Anything else uses `String(value)`.
+ * Cell value → clipboard string. Objects fall back to their `name` field (the
+ * convention for entity-shaped values like users, orgs, labels); else `String(value)`.
  */
 export function cellValueToText(value: unknown): string {
   if (value == null) return '';

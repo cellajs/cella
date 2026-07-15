@@ -60,15 +60,7 @@ export const Hero = ({ title, text, children, chips }: HeroProps) => {
   );
 };
 
-/**
- * Decorative SVG curve at the edge of a gradient section.
- * Uses absolute positioning inside a `relative` parent for pixel-perfect
- * flush placement regardless of viewport width or resize.
- *
- * @param position - 'bottom' (default): curve at section bottom (gradient → content).
- *                   'top': curve at section top (content → gradient).
- * @param height - CSS height value, e.g. clamp(). Controls curve depth.
- */
+/** Decorative SVG curve at a gradient section edge; `position` places it at the section top or bottom. */
 export const BackgroundCurve = ({
   height = 'clamp(3rem, 8vw, 8rem)',
   position = 'bottom',

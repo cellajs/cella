@@ -241,10 +241,9 @@ export const ShouldCycleForwardOnTab: Story = {
     });
 
     await step('Tab from last reaches the trailing sentinel, which wraps to first', async () => {
-      // Real Tab-key navigation can't run in the headless browser-test runner
-      // (the page has no OS focus, so keypresses don't move focus). Instead we
-      // drive the trap's actual mechanism: focusing the trailing sentinel guard,
-      // which is exactly what a forward Tab off the last element does.
+      // Real Tab-key navigation can't run headless (the page has no OS focus, so keypresses don't move focus).
+      // We drive the trap's mechanism instead: focusing the trailing sentinel guard — exactly what a forward
+      // Tab off the last element does.
       afterGuard.focus();
       await waitFor(() => expect(first).toHaveFocus());
     });
@@ -365,10 +364,9 @@ export const ShouldFocusMainOnEscape: Story = {
     });
 
     await step('press Escape', async () => {
-      // The trap listens for a real keydown on its container; dispatch one that
-      // bubbles up from the focused button. userEvent.keyboard's focus side
-      // effects don't apply in the headless runner, but the handler only reads
-      // event.key, so a dispatched KeyboardEvent exercises it faithfully.
+      // The trap listens for a real keydown on its container; dispatch one that bubbles from the focused button.
+      // userEvent.keyboard's focus side effects don't apply headless, but the handler only reads event.key, so a
+      // dispatched KeyboardEvent exercises it faithfully.
       trapButton?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     });
 
@@ -420,10 +418,9 @@ export const ShouldHandleMiddleElementFocus: Story = {
     const container = canvasElement.querySelector<HTMLElement>('[data-focus-guard]')!.parentElement!;
 
     await step('interior buttons stay natively tabbable (tabindex 0)', async () => {
-      // Real Tab between interior elements can't be simulated in the headless
-      // runner. Instead we assert the invariant that makes native mid-trap
-      // tabbing work: every child button remains in the natural tab order and
-      // the trap never rewrites their tabindex while active.
+      // Real Tab between interior elements can't be simulated headless. We assert the invariant that makes native
+      // mid-trap tabbing work instead: every child button stays in the natural tab order and the trap never
+      // rewrites their tabindex while active.
       for (const btn of buttons) expect(btn.tabIndex).toBe(0);
     });
 

@@ -7,10 +7,8 @@ import type { Organization } from 'sdk';
 type OrganizationLayoutContext = { organization: Organization; tenantId: string };
 
 /**
- * Returns organization context from the nearest active route that provides it.
- * Works for authenticated routes (OrganizationLayoutRoute) and public routes
- * that carry tenantId + a minimal organization in context.
- * Throws if no matching route is active.
+ * Organization context from the nearest active route that provides it — works for authenticated
+ * (OrganizationLayoutRoute) and public routes carrying tenantId + a minimal organization. Throws if none.
  */
 export const useOrganizationLayoutContext = (): OrganizationLayoutContext => {
   const match = useRouterState({

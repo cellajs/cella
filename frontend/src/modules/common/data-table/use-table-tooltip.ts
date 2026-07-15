@@ -13,9 +13,7 @@ const positionTooltip = (reference: HTMLElement, tooltip: HTMLElement, gap = 4) 
 };
 
 /**
- * Tooltip designed to be used with a data grid. Works largely outside of react to prevent rerendering/perf issues.
- * @param gridRef
- * @param initialDone
+ * Tooltip for a data grid. Works largely outside React to avoid re-render/perf issues.
  */
 export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>, initialDone: boolean) {
   const tooltipRef = useRef<HTMLDivElement | null>(null);

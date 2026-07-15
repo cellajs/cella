@@ -174,12 +174,8 @@ function releaseConnection(editSessionId: string) {
 }
 
 /**
- * Acquires a Yjs connection on mount, releases on unmount.
- * The connection (Y.Doc + WebsocketProvider) is ref-counted and survives
- * a 30 s grace period after the last consumer unmounts, enabling instant
- * remounts without reconnecting or re-seeding.
- *
- * Pass `undefined` for editSessionId to disable (returns `null`).
+ * Ref-counted Yjs connection (Y.Doc + WebsocketProvider): survives a 30 s grace period after the last
+ * consumer unmounts, enabling instant remounts without reconnecting or re-seeding. `undefined` disables it.
  */
 export function useYjsConnection(editSessionId: string | undefined, entityType: ProductEntityType, tenantId: string) {
   const [conn, setConn] = useState<YjsConnection | null>(() => {

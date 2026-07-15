@@ -27,15 +27,13 @@ export function useViewportRows<R>({
       };
     }
 
-    // Calcule the height of all the rows upfront. This can cause performance issues
-    // and we can consider using a similar approach as react-window
-    // https://github.com/bvaughn/react-window/blob/b0a470cc264e9100afcaa1b78ed59d88f7914ad4/src/VariableSizeList.js#L68
+    // Heights of all rows are computed upfront — a known perf cost. Could adopt
+    // react-window's approach: https://github.com/bvaughn/react-window/blob/b0a470cc264e9100afcaa1b78ed59d88f7914ad4/src/VariableSizeList.js#L68
     let totalRowHeight = 0;
     let gridTemplateRows = '';
     let currentHeight: number | null = null;
     let repeatCount = 0;
 
-    // Helper to flush a run of same-height rows into the gridTemplateRows string.
     // Uses minmax(Xpx, max-content) so rendered rows can grow beyond the estimate
     // while non-rendered rows stay at the estimated minimum.
     const flushRun = (height: number, count: number) => {

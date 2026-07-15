@@ -7,17 +7,15 @@ type InfiniteLoaderProps = {
   isFetching?: boolean;
   isFetchMoreError?: boolean;
   /**
-   * Optional callback to fetch more data. When provided, uses intersection observer
-   * to trigger fetch when the loader enters the viewport.
-   * When used with DataGrid, omit this prop as DataGrid handles triggering via onRowsEndApproaching.
+   * Fetch-more callback. When provided, an intersection observer triggers it as the
+   * loader enters the viewport. Omit with DataGrid — it triggers via onRowsEndApproaching.
    */
   fetchMore?: () => Promise<unknown>;
 };
 
 /**
- * Displays infinite scroll status indicators (loading, error, all-loaded, offline).
- * Optionally triggers fetch via intersection observer when fetchMore is provided.
- * When used with DataGrid, the fetch triggering is handled by DataGrid's onRowsEndApproaching callback.
+ * Infinite-scroll status indicators (loading, error, all-loaded, offline).
+ * Optionally triggers fetch via intersection observer when `fetchMore` is provided.
  */
 export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, fetchMore }: InfiniteLoaderProps) {
   const { t } = useTranslation();

@@ -181,16 +181,15 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
     if (membershipChanged) membershipOps.invalidateMemberQueries(organizationId);
   }
 
-  // Step 6: Refresh memberships. Fetch getMyMemberships, invalidate channel entity lists,
-  // and refreshes the current user. Uses fetchQuery so React Query deduplicates with
-  // the ensureQueryData call in getMenuData (sync service), preventing double fetches on app init.
+  // Step 6: Refresh memberships (getMyMemberships, invalidate channel lists, refresh current user).
+  // Uses fetchQuery so React Query dedupes with getMenuData's ensureQueryData (sync service),
+  // preventing double fetches on app init.
   membershipOps.invalidateChannelList(null);
   membershipOps.fetchMemberships();
   membershipOps.refreshMe();
 
-  // Step 7: Cache integrity check. Compare server entity counts with cached totals.
-  // Catches drift where seqs matched but cache is out of sync (e.g., failed refetch after invalidation).
-  // Runs at both org level and child-context level for precision.
+  // Step 7: Cache integrity check — compare server entity counts vs cached totals to catch drift
+  // where seqs matched but the cache is stale (e.g. a failed refetch after invalidation). Org + child level.
   verifyCacheIntegrity(changes);
 }
 

@@ -8,11 +8,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 
-/**
- * Self-contained legal dialog body. Owns the current subject so cross-links can swap
- * content (terms <-> privacy) without leaving the page. Keeps the dialog title in sync
- * and resets scroll to the top on each swap.
- */
+/** Legal dialog body. Owns the current subject so cross-links can swap terms <-> privacy in place, without navigating to /legal. */
 function LegalDialog({ initialSubject }: { initialSubject: LegalSubject }) {
   const { t } = useTranslation();
   const [subject, setSubject] = useState(initialSubject);

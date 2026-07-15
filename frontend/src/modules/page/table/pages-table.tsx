@@ -35,12 +35,10 @@ const DEFAULT_EXPANDED = true;
 const noopMutate = () => {};
 
 /**
- * Index of the MDX docs content (`src/content/docs`). Rows come from the
- * build-time content collection. In dev ({@link canEditDocs}) the table is
- * editable: title / render mode / published status are inline-editable and rows
- * can be dragged to reorder or reparent. Edits are applied optimistically and
- * written back to the md/mdx frontmatter by the dev server (vite/docs-editor.ts),
- * which then triggers a reload that reconciles the table with the files on disk.
+ * Index of the MDX docs content (`src/content/docs`); rows come from the build-time content
+ * collection. In dev ({@link canEditDocs}) the table is editable (see pages-columns.tsx): edits
+ * apply optimistically and the dev server writes them back to the md/mdx frontmatter
+ * (vite/docs-editor.ts), then triggers a reload that reconciles the table with the files on disk.
  * In production the content is bundled, so the table is read-only.
  */
 function PagesTable() {
@@ -85,9 +83,8 @@ function PagesTable() {
   });
 
   const buildRows = tree.buildRows;
-  // `filtered` is the flat set of matching pages; `rows` is the visible tree
-  // (collapsed descendants omitted). The header count uses `filtered.length` so
-  // it stays the true page total regardless of which subtrees are expanded.
+  // `filtered` = flat set of matching pages; `rows` = visible tree (collapsed descendants omitted).
+  // The header count uses `filtered.length` to stay the true total regardless of expansion.
   const { filtered, rows } = useMemo(() => {
     const query = q?.trim().toLowerCase();
     const filtered = query

@@ -55,9 +55,8 @@ class AttachmentDownloadService {
     // Drive processing reactively from the queue itself.
     this.subscribeQueue();
 
-    // The queue lives in the per-user appdb, which rebinds on sign-in / account switch.
-    // A liveQuery only tracks the DB it first resolved, so re-subscribe on owner change
-    // (and schedule a run) to bind against the freshly opened instance.
+    // liveQuery only tracks the DB it first resolved, but the per-user appdb rebinds on
+    // sign-in / account switch — re-subscribe (and schedule a run) against the new instance.
     this.ownerUnsubscribe = subscribeOwnerChange(() => {
       this.subscribeQueue();
       this.processQueueSoon();
@@ -103,12 +102,10 @@ class AttachmentDownloadService {
   }
 
   /**
-   * (Re)subscribe the pending-queue liveQuery against the currently bound appdb.
-   * No-ops to a 0 count while signed out (no DB). Tears down any prior subscription first.
-   *
-   * Uses a table-scan `.filter` rather than `.where('status')` because `status`
-   * is only part of a compound index (`[organizationId+status]`) in the schema,
-   * the queue is small so a scan is cheap and avoids a schema migration.
+   * (Re)subscribe the pending-queue liveQuery against the current appdb (no-op / 0 while signed
+   * out); tears down any prior subscription first. Uses a table-scan `.filter` rather than
+   * `.where('status')` since `status` is only part of the compound `[organizationId+status]`
+   * index — the queue is small, so a scan is cheap and avoids a schema migration.
    */
   private subscribeQueue(): void {
     this.queueSubscription?.unsubscribe();
@@ -238,15 +235,10 @@ class AttachmentDownloadService {
     }
   }
 
-  /**
-   * Download a single attachment by looking up metadata from react-query cache.
-   * Downloads variants in priority order: thumbnail, converted, original.
-   * Evicts raw blob after original is downloaded.
-   */
+  /** Downloads variants in priority order (thumbnail, converted, original), then evicts raw. */
   private async downloadAttachment(attachmentId: string, organizationId: string): Promise<void> {
-    // Lookup attachment in react-query cache *before* claiming the row, so we don't
-    // burn an attempt on rows whose metadata hasn't synced yet. The liveQuery will
-    // re-trigger us once the cache fills.
+    // Look up in cache *before* claiming the row, so we don't burn an attempt on rows whose
+    // metadata hasn't synced yet; the liveQuery re-triggers us once the cache fills.
     const attachment = findAttachmentInCache(attachmentId);
     if (!attachment) {
       console.debug(`[DownloadService] Attachment ${attachmentId} not in cache yet, leaving pending`);

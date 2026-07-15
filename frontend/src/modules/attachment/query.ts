@@ -101,10 +101,9 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
 };
 
 /**
- * Canonical attachment query, one flat query per organization scope.
- * Fetches all attachments for the org, stored at keys.list.org(organizationId).
- * Consumers derive views via select() for groupId filtering.
- * Sync (SSE + delta fetch) keeps this fresh; staleTime follows sync liveness.
+ * Canonical attachment query: one flat query per org (keys.list.org), fetching all its attachments.
+ * Consumers derive views via select() for groupId filtering. Sync (SSE + delta fetch) keeps it
+ * fresh; staleTime follows sync liveness.
  */
 export const attachmentsCanonicalOptions = ({
   organizationId,

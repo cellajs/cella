@@ -3,14 +3,13 @@ import type { ComponentType } from 'react';
 import { z } from 'zod';
 
 /**
- * Docs content collection. Pages are md/mdx files in `src/content/docs`,
- * compiled by @mdx-js/rollup (vite.config.ts). This module builds the typed
- * metadata index that drives the docs sidebar, the pages table and the page
+ * Docs content collection. Pages are md/mdx in `src/content/docs`, compiled by @mdx-js/rollup
+ * (vite.config.ts). Builds the typed metadata index driving the sidebar, pages table and page
  * view; page bodies stay code-split and load lazily per page.
  *
- * Slug rules: the slug is the file path relative to the content root without
- * extension; `index` files represent their directory (`architecture/index.md`
- * → `architecture`). A page's parent is the index page of its directory.
+ * Slug rules: slug = file path relative to the content root without extension; `index` files
+ * represent their directory (`architecture/index.md` → `architecture`), and a page's parent is
+ * its directory's index page.
  */
 
 const CONTENT_ROOT = '/src/content/docs/';
@@ -30,10 +29,9 @@ const frontmatterSchema = z.object({
 });
 
 /**
- * Global docs config, authored as the frontmatter of the content root `index.mdx`.
- * Drives the /docs landing page (title, intro body, tiles) and the docs sidebar
- * sections so forks can customize both without code. Tiles and sections render
- * in array order.
+ * Global docs config, authored as the content root `index.mdx` frontmatter. Drives the /docs
+ * landing page (title, intro, tiles) and sidebar sections so forks can customize both without
+ * code; tiles and sections render in array order.
  */
 const docsTileSchema = z.object({
   label: z.string().min(1),
@@ -84,9 +82,8 @@ const defaultDocsConfig: DocsConfig = {
 export type DocHeading = { id: string; text: string; depth: number };
 
 /**
- * A docs page's metadata. Field names (`id`, `parentId`, `name`,
- * `displayOrder`) intentionally mirror the old page entity shape so the tree
- * helpers in the sidebar and table keep working unchanged.
+ * A docs page's metadata. Field names (`id`, `parentId`, `name`, `displayOrder`) intentionally
+ * mirror the old page entity shape, so the sidebar/table tree helpers keep working unchanged.
  */
 export type DocPage = {
   id: string;
@@ -107,9 +104,9 @@ export type DocPage = {
 /** DOM id prefix the mdx pipeline (rehype-slug) puts on heading ids; spy store convention. */
 const HEADING_ID_PREFIX = 'spy-';
 
-// Frontmatter + headings come from a build-time index (vite/docs-frontmatter.ts) rather
-// than an eager glob: eagerly importing page modules for their `frontmatter` export would
-// pull every page body into this chunk, defeating the lazy per-page glob below.
+// Frontmatter + headings come from a build-time index (vite/docs-frontmatter.ts), not an eager
+// glob: importing page modules for their `frontmatter` export would pull every page body into
+// this chunk, defeating the lazy per-page glob below.
 const metaModules = docsFrontmatter;
 const componentModules = import.meta.glob<ComponentType>('/src/content/docs/**/*.{md,mdx}', { import: 'default' });
 
@@ -203,9 +200,9 @@ export function getDocPageLoader(slug: string): (() => Promise<ComponentType>) |
   return loaders.get(slug);
 }
 
-// Components resolved ahead of render (docs page route loader), so the page view can
-// render the body synchronously — a fresh Suspense boundary otherwise commits its
-// fallback for at least a frame even when the chunk is already cached.
+// Components resolved ahead of render (docs route loader) so the page view renders the body
+// synchronously — a fresh Suspense boundary otherwise commits its fallback for at least a frame
+// even when the chunk is already cached.
 const resolvedComponents = new Map<string, ComponentType>();
 
 /** Load and memoize a page's compiled MDX component; undefined for unknown slugs. */

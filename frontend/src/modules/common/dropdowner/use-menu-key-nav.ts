@@ -25,16 +25,9 @@ function focusItem(items: HTMLElement[], idx: number) {
 }
 
 /**
- * Adds WAI-ARIA menu keyboard navigation to a container holding `[role="menuitem"]` elements.
- *
- * - Manages roving tabindex (only one item is tabbable, so Tab leaves the menu).
- * - ArrowDown/ArrowUp: move focus to next/previous item (wraps).
- * - Home/End: jump to first/last item.
- * - Printable characters: typeahead (matches start of item text, resets after ~500ms).
- *
- * Items themselves still own click/Enter/Space activation (native button behavior).
- * No-op when the container has no `[role="menuitem"]` descendants; safe to call
- * unconditionally on every dropdowner popover.
+ * Adds WAI-ARIA menu keyboard nav to a container of `[role="menuitem"]` elements: roving tabindex (only one
+ * item tabbable, so Tab leaves the menu), Arrow/Home/End movement, and printable-char typeahead. Items keep
+ * their own click/Enter/Space activation. No-op without menuitem descendants — safe to call unconditionally.
  */
 export function useMenuKeyNav(containerRef: RefObject<HTMLElement | null>) {
   const typeaheadRef = useRef({ buffer: '', timer: 0 });

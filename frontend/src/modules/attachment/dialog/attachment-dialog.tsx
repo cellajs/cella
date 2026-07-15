@@ -16,9 +16,8 @@ import { Button } from '~/modules/ui/button';
 type AttachmentDialogItem = Partial<CarouselItemData> & { id: string };
 
 /**
- * Attachment dialog that displays a carousel of attachments.
- * Uses selective URL subscriptions to prevent re-renders during carousel navigation.
- * Uses reactive query subscription for group attachments to handle post-upload timing.
+ * Uses selective URL subscriptions to avoid re-renders during carousel navigation, and a reactive
+ * query subscription for group attachments to handle post-upload timing.
  */
 export function AttachmentDialog() {
   const removeDialog = useDialoger((state) => state.remove);
@@ -68,10 +67,8 @@ export function AttachmentDialog() {
   const index = resolvedItems.findIndex(({ id }) => id === initialAttachmentId);
   const itemIndex = index === -1 ? 0 : index;
 
-  // Loading state - still resolving URLs or waiting for group data.
-  // Only gate on the INITIAL load: once the carousel has mounted we keep it mounted, so a
-  // background refetch (isFetchingSingle), a transient group-null, or a URL re-resolve can't
-  // swap the whole carousel back to a full-screen spinner and make the image reappear.
+  // Only gate the spinner on the INITIAL load: once mounted we keep the carousel mounted, so a
+  // background refetch, transient group-null, or URL re-resolve can't flash it back to a spinner.
   const blocking = isLoading || awaitingContext || awaitingGroup || isFetchingSingle;
   if (blocking && !hasRenderedRef.current) {
     return (

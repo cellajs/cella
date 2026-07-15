@@ -15,12 +15,9 @@ const PAGE_PADDING = 20; // Breathing room around each page (px)
 type PageSize = { width: number; height: number };
 
 /**
- * `fitMode` controls how each page is scaled to the container:
- * - `width` (default): fit each page to the container width and scroll vertically. Best for reading
- *   multi-page documents, keeps text large and legible.
- * - `contain`: fit each page fully within the container (width and height), like an image lightbox.
- *   Best for the dialog/carousel where a single page should be visible at a glance, regardless of
- *   orientation (landscape, A4, legal, etc.).
+ * `fitMode`: `width` (default) fits each page to container width and scrolls vertically (reading
+ * multi-page docs); `contain` fits each page fully within the container like a lightbox (single
+ * page at a glance, any orientation).
  */
 interface RenderPDFProps {
   file: string;

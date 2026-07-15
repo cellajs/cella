@@ -3,17 +3,11 @@ import { useEffect, useState } from 'react';
 import { appConfig } from 'shared';
 
 /**
- * Email preview that renders backend email templates inside Storybook.
- *
- * The HTML is produced server-side by the dev-only backend route
- * (`GET /dev/emails/:name`), since jsx-email's `render()` is Node-only. The
- * Storybook Vite proxy (`/dev-emails` -> backend `/dev/emails`, see
- * `.storybook/main.ts`) makes the fetch same-origin, so the HTML can be shown
- * in an `<iframe srcDoc>` without CORS or X-Frame-Options friction.
- *
- * Each template gets its own story via `makeEmailStory(name)`. Language and
- * placeholders stay as controls. Requires the dev backend to be running
- * (`pnpm dev`); excluded from automated test/Chromatic runs.
+ * Email preview: renders backend email templates in Storybook. HTML is produced server-side by the
+ * dev-only route `GET /dev/emails/:name` (jsx-email's `render()` is Node-only); the Storybook Vite
+ * proxy (`/dev-emails` -> backend, see `.storybook/main.ts`) makes it same-origin so it can render in
+ * an `<iframe srcDoc>` without CORS / X-Frame-Options friction. Requires the dev backend (`pnpm dev`);
+ * excluded from automated test/Chromatic runs.
  */
 
 interface EmailPreviewArgs {

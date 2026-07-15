@@ -194,13 +194,7 @@ async function buildLocalesCache(userOptions: LocalesHMROptions = {}) {
 }
 
 /**
- * Vite plugin for i18next locale file Hot Module Replacement.
- *
- * Features:
- * - Watches locale files for changes during development
- * - Syncs changes to a cache directory for faster loading
- * - Sends custom HMR events instead of triggering full page reload
- * - Merges specified namespaces for convenience
+ * Vite plugin for i18next locale-file HMR (see the file header for what it does).
  *
  * Client-side integration required:
  * ```ts

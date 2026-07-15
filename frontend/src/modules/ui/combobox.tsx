@@ -152,9 +152,8 @@ function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.
 }
 
 /**
- * Inline item indicator that reserves space (always rendered) and only shows
- * the check icon when the item is selected. Useful when the item has other
- * trailing content (e.g. hotkey numbers) that should appear after the indicator.
+ * Item indicator kept mounted to reserve space (only shows the check when selected), so trailing
+ * content (e.g. hotkey numbers) stays aligned.
  */
 function ComboboxItemIndicator({ className, ...props }: ComboboxPrimitive.ItemIndicator.Props) {
   return (
@@ -271,10 +270,8 @@ function ComboboxChipRemove({ className, ...props }: ComboboxPrimitive.ChipRemov
 }
 
 /**
- * Search-styled input variant for command-palette / dropdowner usage.
- *
- * Pairs `Combobox.Input` with the `SearchSpinner` icon, an inline clear button
- * and `type="search"` so password managers (NordPass, etc.) skip it.
+ * Search-styled combobox input (command palette / dropdowner). Uses `type="search"` so password
+ * managers (NordPass, etc.) skip it.
  */
 function ComboboxSearchInput({
   className,

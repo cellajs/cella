@@ -17,9 +17,8 @@ function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | nul
 }
 
 /**
- * Enrich an item with ancestor slugs using a pre-built slug index.
- * Falls back to ancestor ID when slug isn't indexed; rewriteUrlToSlug corrects the URL later.
- * Returns the original reference when nothing changed.
+ * Enrich an item with ancestor slugs via a pre-built index. Falls back to ancestor ID when a slug
+ * isn't indexed (rewriteUrlToSlug fixes the URL later). Returns the original reference if unchanged.
  */
 export function enrichWithAncestorSlugs(
   item: EnrichableEntity,

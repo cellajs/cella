@@ -104,11 +104,7 @@ interface TagOperationsListProps {
   operations: GenOperationSummary[];
 }
 
-/**
- * Renders a list of operation details and registers all operation hashes
- * with the shared scroll spy in a single hook call.
- * Fetches tag details once and distributes resolved details to children.
- */
+/** Fetches tag details once (not per-child) and registers all operation hashes with the scroll spy. */
 export const TagOperationsList = ({ operations }: TagOperationsListProps) => {
   // Register all operation hashes for this tag section
   const sectionIds = operations.map((op) => op.hash);

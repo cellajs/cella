@@ -4,14 +4,13 @@ import { ApiError } from '~/lib/api';
 import { mutationRetry } from '~/query/offline/network-retry';
 
 /**
- * End-to-end proof of the offline mutation queue behavior enabled by the
- * `networkMode: 'offlineFirst'` + `mutationRetry` config in query-client.ts: a
- * mutation that fails with a connectivity error while offline must PAUSE (so it can
- * be dehydrated into the persisted replay queue) rather than settle as an error,
- * then resume to success on reconnect. A server error must still fail fast.
+ * End-to-end proof of the offline mutation queue (`networkMode: 'offlineFirst'` + `mutationRetry`
+ * in query-client.ts): a mutation failing on connectivity error while offline must PAUSE (so it's
+ * dehydrated into the persisted replay queue), not settle as an error, then resume on reconnect.
+ * A server error must still fail fast.
  *
- * `retryDelay: 0` exercises the pause path without waiting on the exponential
- * backoff — the pause is driven by onlineManager state, not by the delay.
+ * `retryDelay: 0` exercises the pause path without the exponential backoff — the pause is driven
+ * by onlineManager state, not the delay.
  */
 describe('mutation pausing on connectivity failure', () => {
   let queryClient: QueryClient;

@@ -10,11 +10,8 @@ export type EntityRouteEntry = {
 };
 
 /**
- * Unified route config for channel entities.
- *
- * Each entity declares its route path, its param name, and optional subitem behavior.
- * The param name is used both when the entity is the target AND when it appears as an
- * ancestor in another entity's route.
+ * Unified route config for channel entities. `paramName` is used both when the entity is the route
+ * target AND when it appears as an ancestor in another entity's route.
  */
 export const entityRouteConfig = {
   organization: {

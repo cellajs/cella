@@ -15,11 +15,6 @@ type OrganizationLayoutBeforeLoadArgs = {
   cause: 'preload' | 'enter' | 'stay';
 };
 
-/**
- * beforeLoad logic for the organization layout route.
- * Captures $tenantId and $organizationSlug params, validates tenant access,
- * fetches org, and provides context for all nested routes.
- */
 export const organizationLayoutBeforeLoad = async ({ params, cause }: OrganizationLayoutBeforeLoadArgs) => {
   // TODO [#12] Revalidate on initial entry; child useSuspenseQuery handles search param changes.
   const shouldRevalidate = cause === 'enter';

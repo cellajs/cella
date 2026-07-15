@@ -17,10 +17,8 @@ export const getHeadlessEditor = () => {
 };
 
 /**
- * Depth-first walk over parsed (JSON) blocks and their nested children.
- * Returning `false` from the visitor stops the traversal early; mirrors the
- * signature of `editor.forEachBlock`, which only works on a live editor's
- * document; this walker covers our JSON-string helpers.
+ * Depth-first walk over parsed (JSON) blocks and children; returning `false` from the visitor stops early.
+ * Mirrors `editor.forEachBlock` (which needs a live editor) for our JSON-string helpers.
  */
 // biome-ignore lint/suspicious/noConfusingVoidType: `boolean | void` lets visitors omit a return (mirrors editor.forEachBlock)
 export const walkBlocks = (blocks: CustomBlock[], visitor: (block: CustomBlock) => boolean | void): boolean => {
@@ -32,11 +30,9 @@ export const walkBlocks = (blocks: CustomBlock[], visitor: (block: CustomBlock) 
 };
 
 /**
- * Locate the media element for a click in rendered BlockNote content.
- * `includeWrapped` extends detection to media nested inside the click target and to
- * `.bn-file-block-content-wrapper` hits (file blocks without a media preview), used
- * by the live editor; the static full-HTML renderer only matches direct media clicks.
- * Returns null when the click isn't on media.
+ * Locate the media element for a click in rendered BlockNote content (null when not on media).
+ * `includeWrapped` extends detection to nested media and `.bn-file-block-content-wrapper` hits (file blocks
+ * without a preview), used by the live editor; the static full-HTML renderer matches only direct media clicks.
  */
 export const findClickedMedia = (
   target: HTMLElement,
@@ -96,9 +92,8 @@ export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<b
 type AnyBlockNoteEditor = BlockNoteEditor<any, any, any>;
 
 /**
- * Update a block without recording it in the undo/redo history.
- * Works in both collaborative (Yjs UndoManager) and non-collaborative (ProseMirror history) modes.
- * Uses BlockNote's `transact` so the outer transaction carries `addToHistory: false`.
+ * Works in both collaborative (Yjs UndoManager) and non-collaborative (ProseMirror history) modes via
+ * BlockNote's `transact`, so the outer transaction carries `addToHistory: false`.
  */
 export const updateBlockWithoutHistory = <TEditor extends AnyBlockNoteEditor>(
   editor: TEditor,

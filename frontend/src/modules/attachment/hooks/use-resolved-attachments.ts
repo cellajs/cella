@@ -101,9 +101,8 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
         }
 
         try {
-          // Prefer freshest metadata from the list cache, but fall back to the item's own keys —
-          // group/single items are full attachments. This keeps cloud resolution working even if
-          // the list cache dropped the entry, instead of silently showing "not found".
+          // Prefer the list cache's fresher metadata, but fall back to the item's own keys
+          // (group/single are full attachments) so a dropped cache entry doesn't show "not found".
           const cachedMeta = findAttachmentInCache(item.id);
           const meta = cachedMeta ?? (item.originalKey ? (item as AttachmentMetaFields) : null);
 

@@ -45,13 +45,8 @@ export interface UploadContext {
 }
 
 /**
- * Blob storage for attachments.
- *
- * Single table serves two purposes:
- * - 'upload': Files created locally, pending cloud sync
- * - 'download': Files fetched from cloud for offline viewing
- *
- * Uses composite key format: `${attachmentId}:${variant}`
+ * Blob storage. One table serves both 'upload' (created locally, pending cloud sync) and
+ * 'download' (fetched from cloud for offline viewing) sources.
  */
 export interface AttachmentBlob {
   /**
@@ -84,20 +79,12 @@ export interface AttachmentBlob {
   /** MIME type (denormalized for filtering) */
   contentType: string;
 
-  /**
-   * How this blob was created:
-   * - 'upload': User uploaded locally (may need cloud sync)
-   * - 'download': Fetched from cloud for offline access
-   */
+  /** How this blob was created: 'upload' (local, may need cloud sync) or 'download' (from cloud). */
   source: BlobSource;
 
   /**
-   * Upload status:
-   * - 'pending': Waiting to upload (source='upload' only)
-   * - 'uploading': Currently uploading (source='upload' only)
-   * - 'uploaded': Uploaded successfully or downloaded from cloud
-   * - 'failed': Upload failed after retries (source='upload' only)
-   * - 'local-only': No cloud configured, permanent local storage
+   * Upload status. Note 'uploaded' also covers blobs downloaded from cloud, and 'local-only' means
+   * no cloud is configured (permanent local storage); other states apply only to source='upload'.
    */
   uploadStatus: UploadStatus;
 
@@ -128,14 +115,7 @@ export interface DownloadQueueEntry {
   /** Download priority (lower = higher priority) */
   priority: number;
 
-  /**
-   * Download status:
-   * - 'pending': Waiting to download
-   * - 'downloading': Currently fetching
-   * - 'downloaded': Successfully stored in blobs table
-   * - 'failed': Download failed
-   * - 'skipped': Skipped due to filter (too large, wrong type)
-   */
+  /** Download status; 'skipped' means filtered out (too large / wrong type), see skipReason. */
   status: DownloadStatus;
 
   /** Why skipped (if status='skipped') */

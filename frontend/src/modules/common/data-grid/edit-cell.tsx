@@ -58,9 +58,8 @@ export function EditCell<R, SR>({
   const frameRequestRef = useRef<number>(undefined);
   const commitOnOutsideClick = column.editorOptions?.commitOnOutsideClick ?? true;
 
-  // We need to prevent the `useLayoutEffect` from cleaning up between re-renders,
-  // as `onWindowCaptureMouseDown` might otherwise miss valid mousedown events.
-  // To that end we instead access the latest props via useLatestFunc.
+  // Access latest props via useEffectEvent so the useLayoutEffect isn't torn down
+  // between re-renders — otherwise `onWindowCaptureMouseDown` could miss valid mousedowns.
   const commitOnOutsideMouseDown = useEffectEvent(() => {
     onClose(true, false);
   });

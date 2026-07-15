@@ -16,15 +16,7 @@ declare global {
   }
 }
 
-/**
- * Invisible component that initializes the seen-tracking system.
- * - Starts the periodic flush interval (1 min).
- * - Registers sendBeacon flush on page unload.
- * - Syncs the PWA app badge with the total unseen count.
- * - Cleans up on unmount.
- *
- * Mount once in the app layout.
- */
+/** Invisible component that boots seen-tracking (flush interval, unload beacon, PWA badge sync). Mount once in the app layout. */
 export function SeenTracker() {
   useEffect(() => {
     const { startFlushInterval, stopFlushInterval, flush } = useSeenStore.getState();
@@ -54,11 +46,7 @@ export function SeenTracker() {
   return null;
 }
 
-/**
- * Keeps the PWA app badge count in sync with the total unseen count.
- * Works on installed PWAs (Chrome, Edge, Safari iOS 16.4+).
- * Falls back gracefully when the Badging API is unavailable.
- */
+/** Syncs the PWA app badge with total unseen count. Badging API only (Chrome/Edge/Safari iOS 16.4+); no-ops elsewhere. */
 function useAppBadge() {
   const total = useTotalUnseenCount();
 
@@ -78,11 +66,7 @@ function useAppBadge() {
   }, []);
 }
 
-/**
- * Registers periodic background sync so the service worker can update the
- * app badge even when the app is closed. Chromium-only (Chrome 80+, Edge).
- * Silently no-ops on unsupported browsers.
- */
+/** Registers periodic background sync so the service worker updates the badge while the app is closed. Chromium-only (Chrome 80+, Edge); no-ops elsewhere. */
 async function registerPeriodicBadgeSync() {
   try {
     const registration = await navigator.serviceWorker?.ready;

@@ -60,11 +60,7 @@ function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamReturn {
   };
 }
 
-/**
- * Component that connects to the app-scoped stream for real-time updates.
- * Handles membership, organization, and product entity events via CDC -> ActivityBus pipeline.
- * Use in AppLayout for app-wide real-time sync.
- */
+/** Connects to the app-scoped stream for real-time sync (CDC -> ActivityBus pipeline). Mount in AppLayout. */
 export function AppStream() {
   useAppStream();
   return null;

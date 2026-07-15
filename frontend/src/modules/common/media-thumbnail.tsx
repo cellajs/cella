@@ -10,11 +10,8 @@ interface MediaThumbnailProps {
 }
 
 /**
- * Thumbnail for an attachment / media file.
- *
- * Renders the image when `url` is set and `contentType` is an image type.
- * Falls back to a content-type-derived file icon when the url is missing,
- * the type is non-image, or the image fails to load (broken/expired url).
+ * Renders the image when `url` is an image type; falls back to a content-type-derived file icon when the url
+ * is missing, non-image, or fails to load (broken/expired url).
  */
 export function MediaThumbnail({ url, contentType, name, className }: MediaThumbnailProps) {
   const isImage = !!url && contentType.startsWith('image/');

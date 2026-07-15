@@ -1,14 +1,6 @@
 import { useEffect, useEffectEvent } from 'react';
 
-/**
- * Hook to listen for window events.
- *
- * @param eventName - Event type to listen for.
- * @param handler - Function to handle the event.
- * @param options - Optional configuration.
- * @param options.enabled - Whether the listener is active (defaults to true).
- * @param options.passive - Indicates the handler will never call preventDefault.
- */
+/** Listens for a window event while `options.enabled` (default true). `passive`: handler never calls preventDefault. */
 export function useEventListener<K extends keyof WindowEventMap>(
   eventName: K,
   handler: (event: WindowEventMap[K]) => void,

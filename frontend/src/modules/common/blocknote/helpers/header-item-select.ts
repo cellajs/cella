@@ -4,12 +4,6 @@ interface HeadingBlock {
   props: Record<string, unknown>;
 }
 
-/**
- * Determines if a heading menu item should be selected.
- * @param block - The block being rendered.
- * @param title - The menu item title.
- * @returns True if the menu item should be selected.
- */
 export const isHeadingMenuItemActive = (block: HeadingBlock, title: string): boolean => {
   if (block.type !== 'heading') return false;
 

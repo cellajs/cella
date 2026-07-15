@@ -67,10 +67,8 @@ export function PageBranch({
             buttonVariants({ variant: 'ghost' }),
             'group w-full justify-start gap-2 pl-5 text-left lowercase',
             isRoot
-              ? // Sticky tier-1 row (default button height, matching the operations/schemas
-                // triggers): pins just below the scroller top (top-2; the sidebar's mask bar
-                // covers the gap) while its subtree (the row's SidebarMenuItem) is scrolled,
-                // pushed out when the subtree ends.
+              ? // Sticky tier-1 row: pins just below the scroller top (top-2; the sidebar's mask
+                // bar covers the gap) while its subtree scrolls, pushed out when the subtree ends.
                 'sticky top-2 z-10 bg-card px-3 font-medium data-[active=true]:bg-accent'
               : 'h-8 font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
           )}

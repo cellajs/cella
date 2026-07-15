@@ -362,11 +362,6 @@ type ChangeEntityRoleResult = {
   wasNew: boolean;
 };
 
-/**
- * Entity-agnostic mutation hook for changing a user's role on a channel entity.
- * Handles both updating an existing membership and creating a new one via invite.
- * Updates the entity list cache and myMemberships cache automatically.
- */
 export const useChangeEntityRoleMutation = () =>
   useMutation<ChangeEntityRoleResult, ApiError, ChangeEntityRoleVariables>({
     mutationFn: async ({ entity, role }) => {

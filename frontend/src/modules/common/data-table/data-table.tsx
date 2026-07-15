@@ -123,9 +123,8 @@ export const DataTable = <TData,>({
     setColumnWidths(new Map());
   }, [resetWidthsKey]);
 
-  // Handle infinite scroll - guards against multiple calls while fetching
   // Only use DataGrid's onRowsEndApproaching when virtualization is enabled;
-  // otherwise, delegate to InfiniteLoader's intersection observer to avoid
+  // otherwise delegate to InfiniteLoader's intersection observer to avoid
   // cascading fetches (without virtualization, all rows are "visible").
   const handleRowsEndApproaching = enableVirtualization
     ? () => {

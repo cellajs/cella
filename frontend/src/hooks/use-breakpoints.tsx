@@ -7,9 +7,7 @@ const sortedBreakpoints = Object.keys(breakpoints).sort(
   (a, b) => Number.parseInt(breakpoints[a], 10) - Number.parseInt(breakpoints[b], 10),
 );
 
-// Function to get the matched breakpoint based on window width.
-// Returns the largest breakpoint whose threshold is ≤ the current width,
-// aligning with CSS min-width media queries.
+// Largest breakpoint whose threshold is ≤ current width, matching CSS min-width media queries.
 function getMatchedBreakpoints() {
   const width = window.innerWidth;
   let matched = sortedBreakpoints[0]; // Default to smallest breakpoint
@@ -42,11 +40,7 @@ function updateGlobalBreakpoint() {
 // Attach the listener once per app lifecycle
 window.addEventListener('resize', updateGlobalBreakpoint);
 
-/**
- * Subscribe to breakpoint changes (works outside React components).
- * @param callback - Function to call when breakpoint changes
- * @returns Unsubscribe function
- */
+/** Subscribe to breakpoint changes; works outside React components. Returns an unsubscribe fn. */
 export function subscribeToBreakpointChanges(callback: () => void) {
   listeners.add(callback);
   return () => listeners.delete(callback);
@@ -107,11 +101,8 @@ function useBreakpointState(enableReactivity = true) {
 }
 
 /**
- * Returns true when the viewport is below the given breakpoint (strict less-than).
- * E.g. useBreakpointBelow('md') is true when viewport < 768px.
- * useBreakpointBelow(bp) and useBreakpointAbove(bp) are exact inverses when using the same bp.
- * @param breakpoint - The breakpoint to compare against (e.g., 'md', 'lg')
- * @param enableReactivity - Whether to re-render on resize (default: true)
+ * Returns true when the viewport is below `breakpoint` (strict less-than); exact inverse of
+ * `useBreakpointAbove` for the same breakpoint. `enableReactivity` re-renders on resize (default true).
  * @example
  * const isMobile = useBreakpointBelow('sm'); // true when viewport < 768px
  */
@@ -122,11 +113,8 @@ export function useBreakpointBelow(breakpoint: keyof typeof breakpoints, enableR
 }
 
 /**
- * Returns true when the viewport is at or above the given breakpoint.
- * E.g. useBreakpointAbove('md') is true when viewport >= 768px.
- * useBreakpointAbove(bp) and useBreakpointBelow(bp) are exact inverses when using the same bp.
- * @param breakpoint - The breakpoint to compare against (e.g., 'sm', 'xl')
- * @param enableReactivity - Whether to re-render on resize (default: true)
+ * Returns true when the viewport is at or above `breakpoint`; exact inverse of `useBreakpointBelow`
+ * for the same breakpoint. `enableReactivity` re-renders on resize (default true).
  * @example
  * const isDesktop = useBreakpointAbove('xl'); // true when viewport >= 1280px
  */

@@ -66,12 +66,6 @@ export const useAttachmentsUploadDialog = (tenantId: string, organizationId: str
   return { open };
 };
 
-/**
- * Utility function to format bytes into human-readable format
- *
- * @param bytes The size in bytes
- * @returns Nicely formatted size
- */
 export const formatBytes = (bytes: string): string => {
   const parsedBytes = Number(bytes);
 

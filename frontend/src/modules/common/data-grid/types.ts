@@ -140,27 +140,20 @@ export interface Column<TRow, TSummaryRow = unknown> {
   /** Sets the column sort order to be descending instead of ascending the first time the column is sorted */
   readonly sortDescendingFirst?: Maybe<boolean>;
   /**
-   * Placeholder to display when the cell value is nullish.
-   * Rendered as muted text. Only applies when renderCell returns null/undefined.
+   * Muted-text placeholder shown only when `renderCell` returns null/undefined.
    * @example placeholderValue: '-'
    */
   readonly placeholderValue?: Maybe<string>;
-  /**
-   * Whether the column can receive keyboard focus.
-   * When false, Tab and Arrow keys skip this column.
-   * @default true
-   */
+  /** When false, Tab and Arrow keys skip this column (no keyboard focus). @default true */
   readonly focusable?: Maybe<boolean>;
   /**
-   * Minimum breakpoint at which this column is visible.
-   * Below this breakpoint the column is excluded from the grid.
-   * Evaluated by the grid against its internal breakpoint; keep this static.
+   * Below this breakpoint the column is excluded. Evaluated against the grid's
+   * internal breakpoint; keep this static.
    * @example minBreakpoint: 'md'  // Hidden on xs, sm
    */
   readonly minBreakpoint?: BreakpointKey;
   /**
-   * Maximum breakpoint at which this column is visible.
-   * Above this breakpoint the column is excluded from the grid.
+   * Above this breakpoint the column is excluded.
    * @example maxBreakpoint: 'sm'  // Only visible on xs, sm (mobile-only)
    */
   readonly maxBreakpoint?: BreakpointKey;
@@ -173,20 +166,13 @@ export interface Column<TRow, TSummaryRow = unknown> {
    * @default undefined (single-line truncation)
    */
   readonly wrapText?: Maybe<number | boolean>;
-  /**
-   * Custom line estimator for variable row height calculation.
-   * When provided, overrides the default newline-counting heuristic.
-   * Should return the estimated number of content lines for the given row.
-   */
+  /** Overrides the default newline-counting heuristic for variable row height. */
   readonly estimateLines?: (row: TRow) => number;
   /**
-   * Per-mode overrides, keyed by the display mode that activates them.
-   * - `compact`: active while the grid's `isCompact` prop is true (user density toggle)
-   * - `mobile`: active on the xs breakpoint (hardcoded for now)
-   * Each mode can override widths and/or declare a `merge` rule that folds this
-   * column into a host column's cell. When both modes are active, `mobile` wins
-   * per overridden property. A merge rule whose host is not currently a grid
-   * column is inactive, and the column falls back to its normal visibility.
+   * Per-mode overrides (see `GridMode`). Each mode can override widths and/or
+   * declare a `merge` rule folding this column into a host cell. When both modes
+   * are active, `mobile` wins per overridden property. A merge rule whose host is
+   * not currently a grid column is inactive; the column falls back to normal visibility.
    * @example modes: { compact: { width: 50 }, mobile: { merge: { into: 'summary', side: 'left' } } }
    */
   readonly modes?: Maybe<Partial<Record<GridMode, ColumnModeOverrides>>>;
@@ -200,10 +186,8 @@ export interface Column<TRow, TSummaryRow = unknown> {
      */
     readonly editorType?: Maybe<'text' | 'select'>;
     /**
-     * Render the cell content in addition to the edit cell content.
-     * Enable this option when the editor is rendered outside the grid, like a modal for example.
-     * By default, the cell content is not rendered when the edit cell is open.
-     * @default false
+     * Also render the cell content while editing. Enable when the editor renders
+     * outside the grid (e.g. a modal/popover). @default false (content hidden while editing)
      */
     readonly displayCellContent?: Maybe<boolean>;
     /**
@@ -294,8 +278,8 @@ interface BaseCellRendererProps<TRow, TSummaryRow = unknown> extends Omit<React.
   rowIdx: number;
   selectCell: (position: Position, options?: SelectCellOptions) => void;
   /**
-   * Whether cell selection (and the cell-level roving tab index) is enabled for the grid.
-   * When false, the gridcell wrapper drops out of the tab order and interactive children
+   * Enables cell selection + the cell-level roving tab index. When false, the
+   * gridcell wrapper drops out of the tab order and interactive children
    * (buttons, links) fall back to natural DOM tab order.
    */
   isCellSelectionEnabled: boolean;

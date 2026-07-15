@@ -45,11 +45,9 @@ function Cell<R, SR>({
   const { cellClass } = column;
 
   const isEditable = isCellEditableUtil(column, row);
-  // Editable cells get an explicit cursor so the hover affordance matches the
-  // editor: an I-beam for free-text inputs, a pointer for editors that open a
-  // picker (select/popover/drawer). Without this, every editable cell inherits
-  // the browser's text I-beam from its selectable content, misleading for
-  // non-text editors.
+  // Explicit cursor so the hover affordance matches the editor: I-beam for free-text,
+  // pointer for picker editors (select/popover/drawer). Without it, editable cells
+  // inherit the browser's text I-beam from selectable content — misleading for non-text editors.
   const editorCursor = isEditable
     ? column.editorOptions?.editorType === 'select'
       ? 'cursor-pointer'
@@ -194,7 +192,6 @@ interface MergedCellContentProps<R, SR> {
 
 /**
  * Host-cell content when other columns are merged into this column (`modes.*.merge`).
- * Layout: top slot row, then left slots | main content | right slots, then bottom slot row.
  * Slot wrappers carry `data-is-compact` so columns reuse their existing
  * `in-data-[is-compact=true]:hidden` classes for icon-only rendering, and
  * `data-tile-slot="<side>"` as a styling hook. Empty slots collapse entirely;

@@ -10,9 +10,8 @@ export const operationsRouteSearchParamsSchema = z.object({
 });
 
 /**
- * Search params schema for schemas route.
- * schemaTag uses string instead of enum since bucket names are configured by the
- * backend (registered tags with `kind: 'schema'`) and resolved at runtime.
+ * Schemas-route search params. schemaTag is a string, not an enum, because bucket names are
+ * backend-configured (tags with `kind: 'schema'`) and resolved at runtime.
  */
 export const schemasRouteSearchParamsSchema = z.object({
   schemaTag: z.string().optional(),

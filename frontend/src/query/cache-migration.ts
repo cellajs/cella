@@ -1,9 +1,6 @@
 /**
- * Boot-time cache migration (Phase 1, runtime touch point 2).
- *
- * When the persisted schema ordinal is behind the running bundle, cached
- * entity rows (product per-query records + bundled context queries) and queued
- * mutations are rewritten in place via the lens engine, no refetch.
+ * Boot-time cache migration: when the persisted schema ordinal is behind the running bundle, cached
+ * entity rows and queued mutations are rewritten in place via the lens engine (no refetch).
  * Migrations are idempotent, so an interrupted pass is safe to re-run.
  */
 import type { DehydratedState } from '@tanstack/react-query';

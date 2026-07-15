@@ -8,10 +8,8 @@ import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 /**
- * Scroll spy test bed: each story runs in its own Storybook iframe
- * with isolated `window`, `history`, and `location`.
- *
- * Open in **Canvas** tab (not Docs) for proper iframe isolation.
+ * Scroll spy test bed. Each story runs in its own Storybook iframe (isolated `window`/`history`/`location`);
+ * open in the **Canvas** tab, not Docs, for proper iframe isolation.
  */
 
 // ─── Shared types & data ─────────────────────────────────────────────────────

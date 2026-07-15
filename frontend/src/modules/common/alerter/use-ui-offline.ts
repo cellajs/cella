@@ -8,18 +8,11 @@ import { revalidateConnectivity } from '~/query/offline/connectivity';
 const showDelay = 2000;
 
 /**
- * Derives the *UI* offline state from the *logic* offline state (`onlineManager`).
- *
- * `onlineManager` is the single source of truth for connectivity (driven by the /health
- * probe). It reacts instantly, ideal for pausing queries/mutations but unsuitable for UI,
- * since a transient blip would flash a toast. This hook is a low-pass filter over that signal:
- *
- * - logic offline to UI offline: only after `showDelay` of *sustained* disconnection (debounced)
- * - logic online to UI offline cleared: immediately
- * - on tab resume while offline: re-verify with a real request, since mobile's 'online' event
- *   is laggy and the pre-freeze offline state may be stale
- *
- * UI offline is derived from logic offline + time, not stored as an independent state.
+ * Low-pass filter over `onlineManager` (the connectivity source of truth, driven by the /health probe).
+ * onlineManager reacts instantly — right for pausing queries, wrong for UI where a transient blip would
+ * flash a toast. So: surface offline only after `showDelay` of sustained disconnection, clear immediately
+ * on reconnect, and on tab resume re-verify with a real request (mobile's 'online' event is laggy, so the
+ * pre-freeze offline state may be stale).
  */
 export const useUiOffline = () => {
   const isOnline = useOnlineManager();

@@ -30,11 +30,9 @@ const lastBody = (spy: { mock: { lastCall?: [Req] } }) => spy.mock.lastCall?.[0]
 const lastPath = (spy: { mock: { lastCall?: [Req] } }) => spy.mock.lastCall?.[0].path;
 
 /**
- * These functions are what runs when a paused mutation is replayed from the persisted queue
- * after a reload — the component closure that supplied tenant/org is gone, so everything must
- * come from the persisted variables. The hooks inject that context, which is the
- * fix these tests lock in.
- *
+ * These fns run when a paused mutation replays from the persisted queue after a reload — the
+ * component closure that supplied tenant/org is gone, so everything must come from persisted
+ * variables. The hooks inject that context; these tests lock that fix in.
  * @see query.ts
  */
 describe('attachment offline-replay mutation functions', () => {

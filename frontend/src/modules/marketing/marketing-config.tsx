@@ -165,10 +165,9 @@ export const featuresPageItems: FeaturesPageItem[] = [
   { id: 'load_testing', category: 'performance' },
 ];
 
-// Sync engine — categorised capability list (/sync-engine). Kept separate from featuresPageItems so
-// this page can group its many capabilities into sub-categories.
-// Translation keys: item → `about:features.<id>` / `.text`; category → `about:features.category_<category>`.
-// `layers` tags which part of the stack a capability runs in; rendered as badges, multiple means it spans them.
+// Sync engine capability list (/sync-engine). Kept separate from featuresPageItems so this page can
+// group into sub-categories. Translation keys: item → `about:features.<id>` / `.text`; category →
+// `about:features.category_<category>`. `layers` tags which stack part a capability runs in (badges).
 
 export type SyncCategory = 'realtime' | 'offline' | 'consistency' | 'resilience';
 

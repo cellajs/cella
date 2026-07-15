@@ -100,13 +100,9 @@ export interface RowDragConfig<R> {
   /** When provided, the middle 50% of each row becomes a "reparent" drop zone. */
   onRowReparent?: (fromIdx: number, toIdx: number) => void;
   /**
-   * Optional per-zone drop validation. When provided, the predicate is
-   * consulted on hover to decide whether each zone is a valid target. If the
-   * cursor's natural zone is blocked but another zone is allowed, the drop
-   * indicator falls back to the nearest allowed zone. If all three are blocked,
-   * no indicator is shown and `onDrop` is suppressed.
-   *
-   * Keep this fast (O(1)/O(depth)). Called on every drag move.
+   * Optional per-zone drop validation, consulted on hover. Falls back to the
+   * nearest allowed zone; if all three are blocked, no indicator + `onDrop`
+   * suppressed. Keep it fast (O(1)/O(depth)) — called on every drag move.
    */
   canDropRow?: (args: { fromIdx: number; toIdx: number; zone: 'top' | 'bottom' | 'center' }) => boolean;
   /** Optional content rendered inside the native drag preview. Defaults to a generic preview. */

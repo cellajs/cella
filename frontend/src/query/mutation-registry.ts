@@ -7,16 +7,12 @@ const registrars: MutationDefaultsRegistrar[] = [];
 let storedClient: QueryClient | null = null;
 
 /**
- * Register a mutation defaults registrar.
- * If the queryClient is already initialized, the registrar is applied immediately.
- * Otherwise it's buffered and applied when initMutationDefaults() runs.
+ * Register a mutation-defaults registrar. Applied immediately if the queryClient is already
+ * initialized, otherwise buffered until initMutationDefaults() runs.
  *
  * @example
  * ```ts
- * // In pages/query.ts
- * addMutationRegistrar((qc) => {
- *   qc.setMutationDefaults(keys.create, { mutationFn: ... });
- * });
+ * addMutationRegistrar((qc) => qc.setMutationDefaults(keys.create, { mutationFn: ... }));
  * ```
  */
 export function addMutationRegistrar(registrar: MutationDefaultsRegistrar): void {
@@ -28,8 +24,8 @@ export function addMutationRegistrar(registrar: MutationDefaultsRegistrar): void
 }
 
 /**
- * Initialize buffered mutation defaults and store the client for future registrations.
- * Call this once during app startup, before PersistQueryClientProvider restores.
+ * Apply buffered mutation defaults and store the client for later registrations. Call once at
+ * startup, before PersistQueryClientProvider restores.
  *
  * @see https://tanstack.com/query/latest/docs/framework/react/guides/mutations#persist-mutations
  */

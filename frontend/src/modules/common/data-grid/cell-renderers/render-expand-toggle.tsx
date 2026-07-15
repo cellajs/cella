@@ -130,7 +130,7 @@ function buildConnectorPaths(g: ConnectorGeometry): ConnectorPath[] {
 }
 
 /**
- * Reusable, focusable expand/collapse toggle for tree-style data grids.
+ * Focusable expand/collapse toggle for tree-style data grids.
  *
  * Visual language (calibrated for a tree with 2 or 3 levels; the consumer
  * sets the limit via `maxDepth`):
@@ -164,9 +164,7 @@ export function RenderExpandToggle({
   // or this is a nested row that has more siblings after it (joining the next sibling).
   const showLineBelow = (hasChildren && expanded) || (depth > 0 && !isLastChild);
 
-  // Visual flags derived from the depth limit. Kept here so consumers only
-  // need to pass the underlying tree shape, so they don't have to memorise the
-  // visual language.
+  // Derived here (not by consumers) so callers pass only the tree shape, not visual flags.
   const isDeepest = maxDepth !== undefined && depth >= maxDepth - 1;
   const childIsDeepest = maxDepth !== undefined && depth + 1 >= maxDepth - 1;
   // Below-line joins either children (when expanded) or the next sibling.
@@ -176,9 +174,7 @@ export function RenderExpandToggle({
   // Keep the depth-1 trunk continuous through deepest rows when the depth-1
   // ancestor still has more siblings to come.
   const parentTrunkContinues = isDeepest && !parentIsLastChild;
-  // Lower-half centered trunk on an expanded parent whose children sit on the
-  // deeper thin track; keeps the centered trunk continuous to the next
-  // sibling at this depth.
+  // Keeps the centered trunk continuous to the next sibling when children sit on the thin track.
   const solidTrunkBelow = hasChildren && expanded && !isLastChild && childIsDeepest;
 
   const paths = buildConnectorPaths({

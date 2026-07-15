@@ -47,11 +47,8 @@ export function getTenantIdForOrg(organizationId: string): string | null {
 }
 
 /**
- * Determine sync priority based on current route context.
- *
- * Priority levels:
- * - high: User is viewing the organization that scopes this entity
- * - low: User is elsewhere (different org, not in org route, etc.)
+ * Sync priority by current route: high when the user is viewing the org that scopes this entity,
+ * low otherwise (different org, not in an org route, non-product entity).
  */
 export function getSyncPriority(notification: SyncNotification): SyncPriority {
   const { entityType, organizationId } = notification;

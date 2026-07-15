@@ -112,12 +112,10 @@ const viteConfig = {
       // Non-route helper files living in src/routes (router instance, shared utils, types, generated tree)
       routeFileIgnorePattern: '(router\\.ts|route-utils\\.tsx|types\\.ts|routeTree\\.gen\\.ts)$',
     }),
-    // Docs content: compiles src/content/docs md/mdx files to React components with a
-    // `frontmatter` named export (consumed by ~/modules/page/content.ts). Must run
-    // before react() so the compiled JSX output is plain JS by the time react() sees it.
-    // Repo docs (cella/*.md and package READMEs like infra/README.md) are also compilable
-    // so a thin content/docs .mdx wrapper can import them as the page body. Single
-    // source of truth for docs that live in the repo.
+    // Docs content: compiles src/content/docs md/mdx to React components with a `frontmatter`
+    // named export (consumed by ~/modules/page/content.ts). Must run before react() so the compiled
+    // JSX is plain JS by the time react() sees it. Repo docs (cella/*.md, package READMEs) are also
+    // compilable so a thin .mdx wrapper can import them as the page body.
     {
       enforce: 'pre' as const,
       ...mdx({

@@ -5,12 +5,6 @@ import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 import { appStreamManager } from '~/query/realtime/stream-store';
 
-/**
- * Retrieves the current user's information and updates the user store.
- * If the user is impersonating, it does not update the last user.
- *
- * @returns The user data object.
- */
 export const getAndSetMe = async () => {
   const { user, isSystemAdmin } = await getMe();
   const skipLastUser = useUIStore.getState().impersonating;
@@ -19,10 +13,9 @@ export const getAndSetMe = async () => {
   useUserStore.getState().setUser(user, skipLastUser);
   useUserStore.getState().setIsSystemAdmin(isSystemAdmin);
 
-  // A different user signed in on this browser. Per-user storage namespaces are
-  // bound at boot from the persisted user id (just updated above), so a full
-  // reload rebinds every cache/store to the new owner. The previous user's data
-  // stays isolated in its own namespace, with no surgical flush or cross-user bleed.
+  // A different user signed in. Per-user storage namespaces are bound at boot from the persisted
+  // user id (just updated above), so a full reload rebinds every cache/store to the new owner —
+  // the previous user's data stays isolated, no surgical flush or cross-user bleed.
   if (!skipLastUser && previousUserId && previousUserId !== user.id) window.location.reload();
 
   return user;

@@ -2,12 +2,6 @@ import { toast } from 'sonner';
 
 export type ToastSeverity = 'success' | 'error' | 'info' | 'warning' | 'default';
 
-/**
- * Show a toast message
- * @param text
- * @param type
- * @param options Pass an id to update an existing toast
- */
 export const toaster = (
   text: string,
   type: ToastSeverity = 'default',

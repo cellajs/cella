@@ -13,15 +13,9 @@ import type { UploadTokenQuery } from '~/modules/me/types';
 import { cleanFileName } from '~/utils/clean-file-name';
 
 /**
- * Creates and initializes a new Uppy instance with local-first upload support.
- *
- * Flow:
- * 1. Get upload token from backend
- * 2. If Transloadit configured (params/signature present): use cloud upload
- * 3. If Transloadit not configured (params=null): store locally in IndexedDB
- * 4. If offline: queue for later upload (pending status)
- *
- * The local blob is always stored first, then synced to cloud when available.
+ * Creates a local-first Uppy instance: when Transloadit is configured (params/signature present) uploads to
+ * cloud, otherwise stores locally in IndexedDB; offline uploads queue as pending. The local blob is always
+ * stored first, then synced to cloud when available.
  */
 export const createBaseTransloaditUppy = async (
   uppyOptions: CustomUppyOpt,
@@ -70,9 +64,7 @@ export const createBaseTransloaditUppy = async (
   uppy.on('upload', async (_uploadId, uploadFiles) => {
     const filesMap = Object.fromEntries(uploadFiles.map((f) => [f.id, f]));
 
-    // Determine upload status based on cloud availability
-    // - 'pending': Cloud available, queue for upload
-    // - 'local-only': No cloud configured, permanent local storage
+    // 'pending' = cloud available, queue for upload; 'local-only' = no cloud, permanent local storage.
     const isOnline = onlineManager.isOnline();
     const uploadStatus = hasCloudUpload ? 'pending' : 'local-only';
 

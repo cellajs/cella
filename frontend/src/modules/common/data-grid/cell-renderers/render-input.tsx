@@ -2,7 +2,6 @@ import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 /**
- * Input variant tailored for inline-editing data-grid cells.
  * Strips the default focus ring/shadow since the grid cell already provides
  * its own focus styling, and keeps the input flush with the cell.
  */

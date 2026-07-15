@@ -5,9 +5,7 @@ import { ApiError, clientConfig } from '~/lib/api';
 import { checkConnectivity } from '~/query/offline/connectivity';
 
 /**
- * Runtime client configuration for the API client after it generated.
- * The generated SDK output is in /sdk/gen/
- *
+ * Runtime config for the generated API client (SDK output in /sdk/gen/).
  * @link https://heyapi.dev/openapi-ts/get-started
  */
 export const createClientConfig: CreateClientConfig = (baseConfig) => ({
@@ -16,9 +14,8 @@ export const createClientConfig: CreateClientConfig = (baseConfig) => ({
   responseStyle: 'data',
   throwOnError: true,
   fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
-    // Tag each request with the client schema version (lens fleet-floor telemetry).
-    // hey-api passes a Request as the sole arg, so merge onto its existing headers
-    // (never pass a fresh init, that drops Content-Type).
+    // Tag each request with the client schema version. hey-api passes a Request as the sole arg,
+    // so merge onto its existing headers — never pass a fresh init, that drops Content-Type.
     const version = String(currentSchemaVersion);
     let nextInput = input;
     let nextInit = init;

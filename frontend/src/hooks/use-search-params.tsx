@@ -12,10 +12,8 @@ type SearchParams<T> = {
 };
 
 /**
- * Manages search parameters (query string) and optionally syncs them to the URL.
- * @param from - Route id to scope the hook to (optional).
- * @param saveDataInSearch - Persist changes to the URL; also gates whether existing URL params are read on mount (default: `true`).
- * @returns `{ search, setSearch }`.
+ * Manages search params (query string), optionally syncing to the URL.
+ * `saveDataInSearch` (default true) persists changes AND gates whether existing URL params are read on mount.
  */
 export function useSearchParams<T extends Record<string, string | string[] | undefined>>(
   searchParams?: SearchParams<T>,

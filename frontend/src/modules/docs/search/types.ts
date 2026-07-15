@@ -1,7 +1,6 @@
 /**
- * Docs search contract. The dialog renders `DocsSearchResult` rows and stays
- * agnostic of the engine behind `DocsSearchClient`, so the engine can be
- * swapped (metadata matcher → Orama full-text) without touching the UI.
+ * Docs search contract. The dialog renders `DocsSearchResult` rows and stays agnostic of the
+ * engine behind `DocsSearchClient`, so the engine can be swapped without touching the UI.
  */
 
 export type DocsSearchResultType = 'page' | 'heading' | 'text' | 'operation' | 'schema';

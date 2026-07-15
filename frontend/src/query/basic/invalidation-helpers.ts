@@ -18,15 +18,10 @@ export function removePendingMutations(queryClient: QueryClient, updateKey: Quer
 }
 
 /**
- * Check if invalidation should be skipped because other related mutations are still running.
- * Call this in onSettled before invalidating to prevent over-invalidation.
- *
- * @param queryClient - React Query client
- * @param mutationKey - Key to filter mutations (typically entity mutation key)
- * @returns true if invalidation should be skipped
+ * True if invalidation should be skipped because sibling mutations are still running; call in
+ * onSettled before invalidating to avoid over-invalidation during concurrent optimistic updates.
  *
  * @see https://tkdodo.eu/blog/concurrent-optimistic-updates-in-react-query
- *
  * @example
  * ```ts
  * onSettled: () => {
@@ -36,25 +31,17 @@ export function removePendingMutations(queryClient: QueryClient, updateKey: Quer
  * ```
  */
 function shouldSkipInvalidation(queryClient: QueryClient, mutationKey: QueryKey): boolean {
-  // When onSettled runs, the current mutation is still counted as "mutating"
-  // So if count === 1, this is the last mutation and we should invalidate
-  // If count > 1, other mutations are pending and will handle invalidation
+  // onSettled still counts the current mutation as "mutating": >1 means siblings are pending and
+  // will handle invalidation; ===1 means this is the last one.
   return queryClient.isMutating({ mutationKey }) > 1;
 }
 
 /**
- * Invalidate queries only if this is the last mutation in the group.
- * Convenience wrapper that combines the check and invalidation.
- *
- * @param queryClient - React Query client
- * @param mutationKey - Key to filter related mutations
- * @param queryKey - Query key to invalidate
+ * Invalidate only if this is the last mutation in the group (wraps shouldSkipInvalidation).
  *
  * @example
  * ```ts
- * onSettled: () => {
- *   invalidateIfLastMutation(queryClient, keys.update, keys.list.base);
- * }
+ * onSettled: () => invalidateIfLastMutation(queryClient, keys.update, keys.list.base),
  * ```
  */
 export function invalidateIfLastMutation(queryClient: QueryClient, mutationKey: QueryKey, queryKey: QueryKey): void {
@@ -63,19 +50,7 @@ export function invalidateIfLastMutation(queryClient: QueryClient, mutationKey: 
   }
 }
 
-/**
- * Invalidate channel entity queries when membership changes.
- * Call this after invite/update/delete membership mutations to sync entity counts.
- *
- * Invalidates:
- * - Entity detail + list queries for the affected entity
- * - Parent organization detail if organizationId differs from entityId
- *
- * @param queryClient - React Query client
- * @param entityType - Type of the channel entity (e.g., 'organization')
- * @param entityId - ID of the affected entity
- * @param organizationId - Parent organization ID (if entity is nested under an org)
- */
+/** Invalidate an entity's detail + list (and parent-org detail if nested) after a membership change, to resync counts. */
 export function invalidateOnMembershipChange(
   queryClient: QueryClient,
   entityType: ChannelEntityType,

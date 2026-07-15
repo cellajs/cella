@@ -42,9 +42,8 @@ function computeSystemAdminCan(channelType: ChannelEntityType): EntityCanMap {
 }
 
 /**
- * Enrich an item with computed permissions from its membership.
- * Computes a permission map keyed by entity type (self + descendants per hierarchy).
- * System admins without a membership get full permissions, mirroring backend behavior.
+ * Enrich an item with a permission map (keyed by entity type: self + hierarchy descendants) computed
+ * from its membership. System admins without a membership get full permissions, mirroring the backend.
  * Returns the original reference when nothing changed.
  */
 export function enrichWithPermissions(item: EnrichableEntity, channelType: ChannelEntityType): EnrichableEntity {

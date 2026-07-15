@@ -7,13 +7,8 @@ type UseDebounceOptions<T> = {
 };
 
 /**
- * Custom hook that debounces a value by a specified delay.
- * Optionally, a specific value can bypass the debounce and apply instantly.
- *
- * @param value - Value to debounce.
- * @param delay - Debounce delay in milliseconds (default: 1000ms).
- * @param options - Options object with `immediateValue` to specify a value that applies immediately.
- * @returns Debounced value.
+ * Debounces a value by `delay`. `options.immediateValue` bypasses the debounce and applies
+ * instantly when the value matches it — useful to delay showing a spinner but hide it at once.
  *
  * @example
  * // Regular debounce for search input

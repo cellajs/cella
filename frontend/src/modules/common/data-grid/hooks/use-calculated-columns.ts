@@ -210,9 +210,8 @@ export function useCalculatedColumns<R, SR>({
       }
     });
 
-    // Attach slot columns to their hosts, grouped by side and sorted by
-    // `order` (ties keep column order). Hosts exist here because
-    // rules with unresolvable hosts were deactivated above.
+    // Grouped by side, sorted by `order` (ties keep column order). Hosts are
+    // guaranteed present — rules with unresolvable hosts were deactivated above.
     if (slotColumns.length > 0) {
       const slotsByHost = new Map<string, typeof slotColumns>();
       for (const slot of slotColumns) {
@@ -282,9 +281,9 @@ export function useCalculatedColumns<R, SR>({
         columnMetrics.set(column, { width: clampedWidth, left });
         left += clampedWidth;
       } else {
-        // CSS-native flex distribution: CSS grid handles sizing between breakpoints.
-        // No JS measurement needed; minmax distributes remaining space with proper constraints.
-        // maxWidth is only enforced during resize, not for initial flex sizing.
+        // CSS-native flex: CSS grid + minmax distribute remaining space between
+        // breakpoints, no JS measurement. maxWidth is enforced only during resize,
+        // not for initial flex sizing.
         lastAutoColumnIndex = i;
         hasFlexColumn = true;
         templateColumns.push(`minmax(${column.minWidth}px, ${column.minWidth}fr)`);

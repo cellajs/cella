@@ -62,12 +62,7 @@ interface BoardLayoutProps {
   ref?: React.Ref<BoardLayoutHandle>;
 }
 
-/**
- * Generic board layout with resizable, collapsible panels.
- *
- * Uses pixel-based panel widths. Wrapped in a ScrollArea for horizontal
- * scrolling with auto-scroll support during drag-and-drop operations.
- */
+// Panel widths are pixel-based (not percentage); the wrapping ScrollArea adds auto-scroll during drag-and-drop.
 export function BoardLayout({
   boardId,
   panels,

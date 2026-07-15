@@ -3,10 +3,8 @@ import { createContext, type ReactNode, use } from 'react';
 import type { LegalSubject } from '~/modules/auth/legal/legal-config';
 
 /**
- * When legal texts are rendered inside the legal dialog, this context provides a handler
- * to switch the dialog content between subjects (terms <-> privacy) instead of navigating
- * away to the `/legal` page. On the legal page itself the context is absent, so cross-links
- * fall back to regular router links.
+ * Provides a handler to swap the legal dialog's subject (terms <-> privacy) in place. Absent on the
+ * `/legal` page itself, where cross-links fall back to regular router links.
  */
 const LegalDialogNavContext = createContext<((subject: LegalSubject) => void) | null>(null);
 

@@ -9,9 +9,8 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { cn } from '~/utils/cn';
 
 /**
- * Shows the logo for 3s on startup (scale-up + fade), transitioning out before the home icon; a
- * spinner for subsequent loading states. Skips the intro animation if the menu sheet is already
- * open. Loading state is debounced to avoid flicker on quick loads.
+ * Logo intro (3s) then a spinner for later loads. Skips the intro if the menu sheet is already
+ * open; loading is debounced to avoid flicker on quick loads.
  */
 export function AppNavLoader({ className }: { className?: string }) {
   const [hasLoaded, setHasLoaded] = useState(false);

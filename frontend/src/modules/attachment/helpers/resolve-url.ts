@@ -19,12 +19,7 @@ export interface ResolveOptions {
   queueDownload?: boolean;
 }
 
-/**
- * Core URL resolution: local blob first, then cloud fallback.
- * Pure async function - no React hooks.
- *
- * @returns Resolved URL info, or null if not resolvable
- */
+/** Core URL resolution: local blob first, then cloud fallback. Pure — no React hooks. */
 export async function resolveAttachmentUrl(
   attachmentId: string,
   attachment: Pick<
@@ -47,9 +42,8 @@ export async function resolveAttachmentUrl(
   const meta = attachment ?? findAttachmentInCache(attachmentId);
   if (!meta) return null;
 
-  // 3. Get cloud URL. Resolve the effective variant (the requested one only if its
-  // key exists, else original), then reference the attachment by id + variant for
-  // private files so the server signs the key — never a client-supplied key.
+  // 3. Cloud URL: pick the requested variant only if its key exists (else original), and
+  // reference private files by id + variant so the server signs the key — never a client key.
   const effectiveVariant =
     preferredVariant === 'thumbnail' && meta.thumbnailKey
       ? 'thumbnail'

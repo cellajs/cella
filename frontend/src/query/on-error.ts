@@ -41,11 +41,7 @@ const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
   return getFallbackMessage(status) || 'Unknown error occurred';
 };
 
-/**
- * Global error handler for API requests.
- * Handles network errors, API errors, and redirects to the sign-in page if the user is not authenticated.
- * @param error - The error object.
- */
+/** Global handler for API request errors: network errors, ApiErrors, and 401 -> sign-in redirect. */
 export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
   // Handle network-level failures (no HTTP response received). isNetworkError excludes ApiError,
   // so a server that responded (any status) falls through to the ApiError handling below.
@@ -118,9 +114,8 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
         redirectOptions.search = { redirect: redirectPath };
       }
 
-      // Soft-flush sensitive stores and navigate to the sign-in page. Pass `false` so the appdb
-      // (and the user's unsynced offline work) is kept on disk. A 401 is involuntary and the
-      // same user typically re-authenticates and recovers their data.
+      // Soft-flush sensitive stores, then go to sign-in. Pass `false` so the appdb (unsynced offline
+      // work) stays on disk: a 401 is involuntary and the same user usually re-auths and recovers it.
       flushStores(false);
       // Dynamic import breaks circular dep: query-client -> on-error -> router -> route tree -> query-client
       import('~/routes/router').then(({ router: r }) => r.navigate(redirectOptions));

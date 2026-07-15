@@ -10,9 +10,8 @@ import { getSkipPageEnter } from '~/utils/nav-transition';
  * Main content area for the app layout, includes error boundary and alerter.
  */
 export const AppContent = () => {
-  // Per-channel entity navigation mask: a curtain over the content area that briefly holds the
-  // background, then reveals, hiding the scroll-to-header travel. Re-triggers when the entity key
-  // changes; skipped on same-base forward navigation (e.g. org -> org), where there's no scroll delta.
+  // Curtain over the content area that briefly holds the background then reveals, masking scroll-to-header
+  // travel on entity navigation. Skipped on same-base forward nav (org -> org), which has no scroll delta.
   const entityKey = usePageEntityKey();
   const showCurtain = !!entityKey && !getSkipPageEnter();
 

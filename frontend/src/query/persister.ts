@@ -48,11 +48,9 @@ const PERSIST_THROTTLE_MS = 1000;
 const trackerResets: Array<() => void> = [];
 
 /**
- * Creates a hybrid IndexedDB persister for React Query, backed by the live `appdb`.
- *
- * Product entity queries are stored as individual IDB records (incremental
- * diffing). Context queries are bundled into the meta record. All ops no-op while
- * no per-user DB is bound (signed out).
+ * Hybrid IndexedDB persister for React Query, backed by the live `appdb`: product entity queries
+ * are individual IDB records (incremental diffing), context queries are bundled into the meta
+ * record. All ops no-op while no per-user DB is bound (signed out).
  */
 function createIDBPersister(scope = 'rq') {
   /** In-memory change tracker: queryHash → last persisted dataUpdatedAt (product queries only) */

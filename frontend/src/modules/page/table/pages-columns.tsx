@@ -19,14 +19,11 @@ const publishStatuses = ['published', 'draft'] as const;
 type PublishStatus = (typeof publishStatuses)[number];
 
 /**
- * Builds column definitions for the pages table. The tree expand toggle pulls
- * its handler / row height / max depth from the surrounding `<TreeProvider>`
- * (set up in `pages-table.tsx`), so no per-column wiring is needed here.
- *
- * When {@link canEditDocs} (dev only), title / render mode / published status
- * are inline-editable and a drag handle enables reorder + reparent. Edits are
- * written back to the md/mdx frontmatter by the dev server (vite/docs-editor.ts).
- * In production the columns render read-only.
+ * Column definitions for the pages table. The tree expand toggle pulls its handler / row height /
+ * max depth from the surrounding `<TreeProvider>` (in `pages-table.tsx`), so no per-column wiring
+ * is needed. When {@link canEditDocs} (dev only), title / render mode / published status are
+ * inline-editable and a drag handle enables reorder + reparent; edits are written back to the
+ * md/mdx frontmatter by the dev server (vite/docs-editor.ts). Production renders read-only.
  */
 export function usePagesTableColumns() {
   const { t } = useTranslation();
@@ -147,9 +144,8 @@ export function usePagesTableColumns() {
 
   const [columns, setColumns] = useState(configs);
 
-  // Memoized so the array identity stays stable across renders. The DataGrid
-  // passes this through to memoized Row/Cell; a fresh array each render would
-  // defeat that memoization and re-render every visible row.
+  // Stable array identity across renders: the DataGrid passes this to memoized Row/Cell, so a
+  // fresh array each render would defeat that memoization and re-render every visible row.
   return {
     columns,
     setColumns,

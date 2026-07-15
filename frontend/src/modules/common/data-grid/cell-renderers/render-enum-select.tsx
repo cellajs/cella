@@ -41,17 +41,13 @@ type Props<TRow, TValue extends string> = Pick<RenderEditCellProps<TRow>, 'onRow
 };
 
 /**
- * Generic enum-select editor for data-grid cells.
- *
- * Renders a popover (desktop) or drawer (mobile) anchored to the gridcell.
- * Uses base-ui's Popover/Drawer directly (not via the dropdowner store) so
- * the editor lifecycle is fully owned by `EditCell`; commit/dismiss flow
- * through the standard `onRowChange` / `onClose` callbacks with no extra
- * coordination layer.
+ * Enum-select editor: popover (desktop) / drawer (mobile). Uses base-ui directly,
+ * not the dropdowner store, so `EditCell` fully owns the lifecycle (commit/dismiss
+ * via `onRowChange`/`onClose`, no extra coordination layer).
  *
  * Two usage modes:
- * - **Flat field** (`field`): shorthand for top-level row fields.
- * - **Custom** (`currentValue` + `setValue`): for nested/derived fields, e.g.
+ * - **Flat field** (`field`): top-level row fields.
+ * - **Custom** (`currentValue` + `setValue`): nested/derived fields, e.g.
  *   `currentValue={row.membership?.role}` + `setValue={(r, v) => ({ ...r, membership: { ...r.membership, role: v } })}`.
  *
  * Always pair the column with `editorOptions: enumSelectEditorOptions`.
@@ -87,9 +83,8 @@ export function RenderEnumSelect<TRow extends { id: string }, TValue extends str
     return setValue(row, value);
   };
 
-  // Commit the chosen value via EditCell's onRowChange (commitChanges=true).
-  // EditCell handles flushSync + focus restoration to the cell, same path
-  // as text and toggle editors.
+  // EditCell handles flushSync + focus restoration to the cell on commit,
+  // same path as text and toggle editors.
   const handleSelect = (value: TValue) => {
     onRowChange(buildNextRow(value), true);
   };

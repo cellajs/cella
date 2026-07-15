@@ -60,9 +60,8 @@ type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 
 };
 
 /**
- * Infinite query options to get a paginated list of organizations.
- * Note: `include` is NOT part of the cache key - queries with/without counts share the same cache
- * for seamless offline behavior. The most recent fetch determines what's cached.
+ * Paginated organizations infinite query. `include` is deliberately NOT part of the cache key —
+ * queries with/without counts share one cache for offline behavior; the most recent fetch wins.
  */
 export const organizationsListQueryOptions = (params: OrganizationsListParams) => {
   const {

@@ -17,12 +17,7 @@ const defaultMaxLines = 10;
  */
 const heightTiers = [1, 2, 3, 4] as const;
 
-/**
- * Resolve a wrapText value to a concrete max-lines number.
- * - `undefined` / `null` / `false` → 0 (no wrapping)
- * - `true` → defaultMaxLines
- * - `number` → that number (clamped ≥ 1)
- */
+/** Resolve a wrapText value to a concrete max-lines number (0 = no wrapping). */
 export function resolveWrapTextLines(wrapText: Maybe<number | boolean>): number {
   if (wrapText === true) return defaultMaxLines;
   if (typeof wrapText === 'number' && wrapText >= 1) return Math.max(1, Math.floor(wrapText));
@@ -30,11 +25,8 @@ export function resolveWrapTextLines(wrapText: Maybe<number | boolean>): number 
 }
 
 /**
- * Estimate the number of content lines for a text value based on explicit
- * line breaks (`\n`). Returns at least 1.
- *
- * This is the "B" part of the A+B hybrid: a lightweight data-aware heuristic
- * that counts explicit newlines to size rows that need fewer lines than the cap.
+ * Estimate content lines from explicit `\n` breaks (min 1). The "B" of the A+B
+ * hybrid: a lightweight heuristic to size rows needing fewer lines than the cap.
  */
 function estimateTextLines(value: unknown): number {
   if (value == null) return 1;
