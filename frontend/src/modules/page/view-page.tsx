@@ -66,10 +66,7 @@ function ViewPage({ slug }: ViewPageProps) {
     <div className="container">
       <div className="mx-auto flex max-w-4xl justify-center gap-10 lg:max-w-292">
         <div className="min-w-0 max-w-208 flex-1">
-          {/* scroll-mt on anchor targets (spy-prefixed heading ids): native hash scrolls
-              land with breathing room below the viewport edge (same technique as the
-              operations/schemas pages' scroll-mt-4 cards). */}
-          <div className="prose dark:prose-invert max-w-none [&_[id^=spy-]]:scroll-mt-4">
+          <div className="prose dark:prose-invert max-w-none **:[[id^=spy-]]:scroll-mt-4">
             <h1 className="pt-6">{page.name}</h1>
             {page.updatedAt && <PageUpdatedAt updatedAt={page.updatedAt} />}
 
@@ -101,14 +98,13 @@ function ViewPage({ slug }: ViewPageProps) {
           </div>
         </div>
 
-        {/* Affixed "On this page" aside (same sticky wrapper as settings/legal asides) */}
-        {showToc && (
-          <aside className="w-52 shrink-0 max-lg:hidden">
+        <aside className="w-52 shrink-0 max-lg:hidden">
+          {showToc && (
             <div className="group sticky top-3 z-10 max-h-[calc(100dvh-1.5rem)] overflow-y-auto pt-8">
               <TocAside headings={tocHeadings} />
             </div>
-          </aside>
-        )}
+          )}
+        </aside>
       </div>
     </div>
   );
