@@ -8,7 +8,7 @@ import { useUserStore } from '~/modules/user/user-store';
 
 declare global {
   interface Window {
-    Gleap: typeof Gleap | undefined;
+    Gleap?: typeof Gleap;
   }
 }
 

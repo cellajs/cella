@@ -60,7 +60,7 @@ export const envOr = async (envName: string | string[], prompt: () => Promise<st
  * `encryptionsalt` (a brand-new stack with nothing encrypted yet) there is
  * nothing to verify against, so we fall back to env-or-single-prompt.
  */
-export async function resolveVerifiedPassphrase(stackYaml: string | undefined): Promise<string> {
+export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<string> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml)
   if (!canVerify) return envOr('PULUMI_CONFIG_PASSPHRASE', () => maskedSecret({ message: 'Pulumi passphrase' }))
 
@@ -103,7 +103,7 @@ export async function confirmPassphraseStored(passphrase: string, heading: strin
  * showing it once via `confirmPassphraseStored`. `generated` tells the caller
  * this is a newly established passphrase.
  */
-export async function resolveOrCreatePassphrase(stackYaml: string | undefined): Promise<{ passphrase: string; generated: boolean }> {
+export async function resolveOrCreatePassphrase(stackYaml?: string): Promise<{ passphrase: string; generated: boolean }> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml)
   if (canVerify || process.env.PULUMI_CONFIG_PASSPHRASE) {
     return { passphrase: await resolveVerifiedPassphrase(stackYaml), generated: false }

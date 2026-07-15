@@ -10,7 +10,7 @@ import type { ItemData } from '~/query/basic/types';
  * Returns the server entity directly when no cached version exists.
  */
 export function mergeServerResponse<T extends { id: string; stx?: unknown; updatedAt?: string | null }>(opts: {
-  cached: T | undefined;
+  cached?: T;
   serverEntity: T;
   mutatedKeys: string[];
   skipKeys?: string[];

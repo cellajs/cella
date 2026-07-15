@@ -32,9 +32,9 @@ function getMembershipEntityId(m: MembershipBase): string | null {
   return m.channelId;
 }
 
-/** Find the membership for a given entity ID */
-export function findMembership(memberships: MembershipBase[], entityId: string): MembershipBase | undefined {
-  return memberships.find((m) => getMembershipEntityId(m) === entityId);
+/** Find the membership for a given entity ID, or null if none matches */
+export function findMembership(memberships: MembershipBase[], entityId: string): MembershipBase | null {
+  return memberships.find((m) => getMembershipEntityId(m) === entityId) ?? null;
 }
 
 /**

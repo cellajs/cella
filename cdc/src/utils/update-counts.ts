@@ -131,14 +131,12 @@ export function getCountDeltas(
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function getStringValue(row: CdcRowData | null | undefined, key: string): string | null {
-  if (!row) return null;
+function getStringValue(row: CdcRowData, key: string): string | null {
   const v = row[key];
   return typeof v === 'string' ? v : null;
 }
 
-function getArrayValue(row: CdcRowData | undefined, key: string): string[] {
-  if (!row) return [];
+function getArrayValue(row: CdcRowData, key: string): string[] {
   const v = row[key];
   return Array.isArray(v) ? v.filter((item): item is string => typeof item === 'string') : [];
 }

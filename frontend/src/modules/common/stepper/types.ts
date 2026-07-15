@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 
 // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
-type IconType = LucideIcon | React.ComponentType<any> | undefined;
+type IconType = LucideIcon | React.ComponentType<any>;
 
 type StepItem = {
   id?: string;
@@ -74,7 +74,7 @@ interface StepSharedProps extends StepProps {
   isLastStep?: boolean;
   isCurrentStep?: boolean;
   index?: number;
-  hasVisited: boolean | undefined;
+  hasVisited?: boolean;
   isError?: boolean;
   isLoading?: boolean;
 }

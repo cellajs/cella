@@ -167,7 +167,7 @@ export type SpanAttributeValue = string | number | boolean | null | undefined;
 
 /** Span attributes with optional trace context for auto e2e latency. */
 export interface SpanAttributes {
-  [key: string]: SpanAttributeValue | IncomingTraceContext | undefined;
+  [key: string]: SpanAttributeValue | IncomingTraceContext;
   _trace?: IncomingTraceContext;
 }
 

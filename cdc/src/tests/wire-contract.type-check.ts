@@ -1,7 +1,7 @@
 import type { CdcMessage } from '#/lib/cdc-websocket';
 import type { CdcOutboundMessage } from '../services/activity-service';
 
-type ActivityFieldsTolerant<T> = { [K in keyof T]?: T[K] | undefined };
+type ActivityFieldsTolerant<T> = { [K in keyof T]?: T[K] };
 
 type WireConformanceTarget = Omit<CdcMessage, 'activity'> & {
   activity: ActivityFieldsTolerant<CdcMessage['activity']>;
