@@ -11,7 +11,6 @@ import {
   PaperclipIcon,
   SquareCheckBigIcon,
   TagIcon,
-  UserIcon,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -27,13 +26,12 @@ type Entity = { Icon: LucideIcon; label: string };
 
 type AppConfig = { label: string; channel: Entity[]; product: Entity[] };
 
-// Each config keeps a structural "Channel entities" bucket (users/org + a channel entity) and a
+// Each config keeps a structural "Channel entities" bucket (org + a channel entity) and a
 // synced "Product entities" bucket of high-frequency collaborative content typical for that app.
 const configs: Record<string, AppConfig> = {
   todo: {
     label: 'about:entity_buckets.config_todo',
     channel: [
-      { Icon: UserIcon, label: 'about:entity_buckets.users' },
       { Icon: Building2Icon, label: 'about:entity_buckets.organizations' },
       { Icon: FolderKanbanIcon, label: 'about:entity_buckets.projects' },
     ],
@@ -46,7 +44,6 @@ const configs: Record<string, AppConfig> = {
   docs: {
     label: 'about:entity_buckets.config_docs',
     channel: [
-      { Icon: UserIcon, label: 'about:entity_buckets.users' },
       { Icon: Building2Icon, label: 'about:entity_buckets.organizations' },
       { Icon: LayoutGridIcon, label: 'about:entity_buckets.spaces' },
     ],
@@ -59,7 +56,6 @@ const configs: Record<string, AppConfig> = {
   chat: {
     label: 'about:entity_buckets.config_chat',
     channel: [
-      { Icon: UserIcon, label: 'about:entity_buckets.users' },
       { Icon: Building2Icon, label: 'about:entity_buckets.organizations' },
       { Icon: HashIcon, label: 'about:entity_buckets.channels' },
     ],

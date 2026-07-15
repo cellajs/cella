@@ -229,7 +229,6 @@
   "entity_buckets.config_todo": "Todo app",
   "entity_buckets.config_docs": "Docs",
   "entity_buckets.config_chat": "AI chat",
-  "entity_buckets.users": "Users",
   "entity_buckets.organizations": "Organizations",
   "entity_buckets.projects": "Projects",
   "entity_buckets.labels": "Labels",

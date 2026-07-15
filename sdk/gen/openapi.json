@@ -252,7 +252,7 @@
       "cookieAuth": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "cella-development-session-v1",
+        "name": "cella-development-session-v2",
         "description": "Authentication cookie. Copy cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first."
       }
     },
