@@ -48,7 +48,7 @@ interface SeenStoreState {
 const FLUSH_INTERVAL_MS = appConfig.mode === 'development' ? 10 * 1000 : 60 * 1000; // 10s in dev, 1min in prod
 
 /** Build a key for the pending map */
-const batchKey = (organizationId: string, entityType: string) => `${organizationId}:${entityType}`;
+const batchKey = (organizationId: string, entityType: ProductEntityType) => `${organizationId}:${entityType}`;
 
 /**
  * Batched unseen-count optimistic update.
@@ -62,7 +62,7 @@ const batchKey = (organizationId: string, entityType: string) => `${organization
  * Decrements are accumulated and applied in a single `setQueryData` call via
  * microtask, so one scroll batch produces at most one cache event.
  */
-const pendingDecrements: { channelId: string; entityType: string }[] = [];
+const pendingDecrements: { channelId: string; entityType: ProductEntityType }[] = [];
 let decrementScheduled = false;
 
 /** Max delay before forcing a flush even if the browser never goes idle */
@@ -73,7 +73,7 @@ const scheduleIdleCallback =
     ? (cb: () => void) => requestIdleCallback(cb, { timeout: UNSEEN_DECREMENT_MAX_DELAY_MS })
     : (cb: () => void) => setTimeout(cb, 1000);
 
-function scheduleUnseenDecrement(channelId: string, entityType: string) {
+function scheduleUnseenDecrement(channelId: string, entityType: ProductEntityType) {
   pendingDecrements.push({ channelId, entityType });
 
   if (!decrementScheduled) {

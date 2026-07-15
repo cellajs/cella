@@ -45,7 +45,7 @@ export const findUnseenCountsByUser = async (
   { userId, channelIds, entityTypes, cutoff, scopeWhereByType }: FindUnseenCountsByUserOpts,
 ) => {
   const { db } = ctx.var;
-  const rows: { channelId: string; entityType: string; unseenCount: number }[] = [];
+  const rows: { channelId: string; entityType: SeenTrackedEntityType; unseenCount: number }[] = [];
 
   for (const entityType of entityTypes) {
     const entityTable = getEntityTable(entityType);
@@ -74,7 +74,7 @@ export const findUnseenCountsByUser = async (
     const entityRows = await db
       .select({
         channelId: channelIdColumn,
-        entityType: sql<string>`${entityType}`,
+        entityType: sql<SeenTrackedEntityType>`${entityType}`,
         unseenCount: count(),
       })
       .from(entityTable)

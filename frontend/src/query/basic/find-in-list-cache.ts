@@ -1,4 +1,5 @@
 import type { QueryKey } from '@tanstack/react-query';
+import type { EntityType } from 'shared';
 import { queryClient } from '~/query/query-client';
 import { flattenInfiniteData } from './flatten';
 
@@ -35,6 +36,6 @@ export function findInCache<T extends { id: string }>(
 /**
  * Create a typed cache finder bound to an entity type.
  */
-export function createCacheFinder<T extends { id: string }>(entityType: string) {
+export function createCacheFinder<T extends { id: string }>(entityType: EntityType) {
   return (matcher: string | ((item: T) => boolean)): T | undefined => findInCache<T>(entityType, matcher);
 }

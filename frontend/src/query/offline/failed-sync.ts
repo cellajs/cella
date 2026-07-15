@@ -1,3 +1,4 @@
+import type { ProductEntityType } from 'shared';
 import { reportCriticalError } from '~/lib/tracing';
 import { getAppDb } from '~/query/app-db';
 
@@ -8,7 +9,7 @@ export interface FailedSyncRecord {
   /** Mutation id (stx.mutationId) for idempotent manual replay. */
   mutationId: string;
   /** Product entity type, when known. */
-  entityType?: string;
+  entityType?: ProductEntityType;
   /** Client cache version (appConfig.clientCacheVersion) the client was on when it failed. */
   clientCacheVersion: string;
   /** HTTP status of the failed replay. */

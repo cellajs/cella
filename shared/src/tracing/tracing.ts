@@ -1,3 +1,5 @@
+import type { EntityType } from '../../types';
+
 export * from './span-names';
 export { createSpanStoreProcessor, type SpanStoreProcessorOptions } from './span-store-processor';
 
@@ -200,7 +202,7 @@ export interface ActivityInput {
   type?: string | null;
   action?: string | null;
   subjectId?: string | null;
-  entityType?: string | null;
+  entityType?: EntityType | null;
 }
 
 /** Build prefixed activity attributes from an activity object. */
@@ -217,7 +219,7 @@ export function activityAttrs(input: ActivityInput): CleanSpanAttributes {
 export interface EventInput {
   type: string;
   subjectId?: string | null;
-  entityType?: string | null;
+  entityType?: EntityType | null;
 }
 
 /** Build prefixed event attributes for ActivityBus spans. */

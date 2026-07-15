@@ -1,5 +1,5 @@
 import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack/react-query';
-import { appConfig } from 'shared';
+import { appConfig, type ProductEntityType } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { resetConnectivityCache } from '~/query/offline/connectivity';
 import { mutationRetry } from '~/query/offline/network-retry';
@@ -8,9 +8,9 @@ import type { QueryMeta } from '~/query/react-query';
 const productEntitySet = new Set<string>(appConfig.productEntityTypes);
 
 /** Product entity type encoded in a query/mutation key, or undefined. */
-function entityTypeOf(key: unknown): string | undefined {
+function entityTypeOf(key: unknown): ProductEntityType | undefined {
   const head = Array.isArray(key) ? key[0] : undefined;
-  return typeof head === 'string' && productEntitySet.has(head) ? head : undefined;
+  return typeof head === 'string' && productEntitySet.has(head) ? (head as ProductEntityType) : undefined;
 }
 
 // Lazy import to break circular dependency: query-client -> on-error -> flush-stores -> query-client

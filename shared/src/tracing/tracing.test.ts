@@ -170,11 +170,11 @@ describe('attribute helpers', () => {
       'activity.entityType': null,
     });
 
-    expect(activityAttrs({ type: 'entity', action: 'create', subjectId: 'abc', entityType: 'task' })).toEqual({
+    expect(activityAttrs({ type: 'entity', action: 'create', subjectId: 'abc', entityType: 'attachment' })).toEqual({
       'activity.type': 'entity',
       'activity.action': 'create',
       'activity.subjectId': 'abc',
-      'activity.entityType': 'task',
+      'activity.entityType': 'attachment',
     });
   });
 
@@ -185,10 +185,10 @@ describe('attribute helpers', () => {
       'event.entityType': null,
     });
 
-    expect(eventAttrs({ type: 'update', subjectId: 'x', entityType: 'task' })).toEqual({
+    expect(eventAttrs({ type: 'update', subjectId: 'x', entityType: 'attachment' })).toEqual({
       'event.type': 'update',
       'event.subjectId': 'x',
-      'event.entityType': 'task',
+      'event.entityType': 'attachment',
     });
   });
 });

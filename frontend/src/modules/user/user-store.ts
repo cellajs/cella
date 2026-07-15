@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import type { User } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, type ProductEntityType } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -10,7 +10,7 @@ import type { MeUser } from '~/modules/me/types';
 type LastUser = Pick<MeUser, 'id' | 'email'>;
 
 /** Construct the store key for a context-scoped Yjs token. */
-export const yjsTokenKey = (entityType: string, tenantId: string) => `${entityType}:${tenantId}`;
+export const yjsTokenKey = (entityType: ProductEntityType, tenantId: string) => `${entityType}:${tenantId}`;
 
 interface UserStoreState {
   user: MeUser; // Current user data

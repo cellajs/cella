@@ -6,6 +6,7 @@ import { env } from '#/env';
 import { getYjsTokenOp } from '#/modules/yjs/operations/get-yjs-token';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { yjsRoutes } from '#/modules/yjs/yjs-routes';
+import { productEntityTypeSchema } from '#/schemas';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 
@@ -17,7 +18,7 @@ app.openapi(yjsRoutes.getYjsToken, async (ctx) => {
 });
 
 const materializeBodySchema = z.object({
-  entityType: z.string().max(50),
+  entityType: productEntityTypeSchema,
   entityId: z.uuid(),
   tenantId: z.string().max(50),
   organizationId: z.uuid().nullable(),
