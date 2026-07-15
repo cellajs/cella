@@ -1,7 +1,6 @@
 import { httpInstrumentationMiddleware } from '@hono/otel';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { compress } from 'hono/compress';
-import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import { appConfig } from 'shared';
@@ -40,18 +39,12 @@ app.use(
 // Logger (pino)
 app.use('*', loggerMiddleware);
 
-const corsOptions: Parameters<typeof cors>[0] = {
-  origin: appConfig.frontendUrl,
-  credentials: true,
-  allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
-  allowHeaders: ['content-type', 'x-cache-token', 'x-client-version', 'traceparent', 'tracestate'],
-  maxAge: 7200,
-};
+// No CORS middleware: every consumer is same-origin (the API lives under the
+// app origin at /api; dev and tunnel proxy through the Vite origin). Requests
+// from other origins simply get no CORS grant — the browser blocks them.
 
-// CORS
-app.use('*', cors(corsOptions));
-
-// CSRF protection
+// CSRF protection: rejects state-changing requests whose Origin header is not
+// the app origin (defense in depth now that same-origin is structural).
 app.use('*', csrf({ origin: appConfig.frontendUrl }));
 
 // Client schema-version telemetry (fleet floor for lens contract gating)

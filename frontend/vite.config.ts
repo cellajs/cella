@@ -39,6 +39,10 @@ const isStorybook = process.env.STORYBOOK === 'true';
 const isDev = appConfig.mode === 'development';
 const frontendUrl = new URL(appConfig.frontendUrl);
 
+// Tunnel mode: frontendUrl is the public ngrok origin (no port); Vite still listens locally.
+const devPort = Number(frontendUrl.port) || 3000;
+const isTunneled = frontendUrl.hostname !== 'localhost';
+
 // Release identifier for error/replay tagging (Maple serviceVersion). Git SHA
 // when available (local/CI builds), 'unknown' otherwise (e.g. sourceless container).
 const gitSha = (() => {
@@ -53,14 +57,25 @@ const viteConfig = {
   logLevel: isDev || process.env.DEBUG_MODE ? 'info' : 'warn',
   server: {
     host: '0.0.0.0',
-    port: Number(frontendUrl.port),
+    port: devPort,
     strictPort: true,
+    // Same-origin development: the dev server is the app origin and proxies the
+    // service prefixes to their local ports. Services serve under their own prefix
+    // (backend self-mounts /api, yjs strips /yjs), so no path rewrite here.
+    proxy: {
+      '/api': { target: 'http://localhost:4000' },
+      '/yjs': { target: 'ws://localhost:4002', ws: true },
+      '/mcp': { target: 'http://localhost:4003' },
+    },
+    // Tunnel mode: ngrok terminates TLS and forwards plain HTTP — accept the public
+    // Host header and point HMR websockets back at the public origin.
+    ...(isTunneled ? { allowedHosts: [frontendUrl.hostname], hmr: { protocol: 'wss', host: frontendUrl.hostname, clientPort: 443 } } : {}),
     watch: {
       ignored: ['**/backend/**', '**/sdk/**'],
     },
   },
   preview: {
-    port: Number(frontendUrl.port),
+    port: devPort,
   },
   build: {
     rollupOptions: {
@@ -264,8 +279,9 @@ viteConfig.plugins?.push(
   })
 );
 
-// Enable HTTPS in development if the frontend URL uses it
-if (appConfig.frontendUrl.includes('https')) {
+// Enable HTTPS only when serving https on localhost directly. Tunnel mode is https at
+// the public origin, but ngrok terminates TLS and forwards plain HTTP to Vite.
+if (frontendUrl.protocol === 'https:' && !isTunneled) {
   viteConfig.plugins?.push(basicSsl());
 }
 

@@ -5,7 +5,11 @@ export function defineServices<const T extends AppServices>(services: T): T {
   const seenPrefixes = new Map<string, string>()
   for (const [slug, cfg] of Object.entries(services)) {
     const prefix = cfg.lbPathBegin
-    if (prefix === undefined) continue
+    if (prefix === undefined) {
+      // A path-routed service is reachable ONLY through its path route.
+      if (cfg.lbRoute === 'path') throw new Error(`services config: '${slug}' has lbRoute 'path' but no lbPathBegin — nothing would route to it.`)
+      continue
+    }
     // The LB matches the raw path-begin string, so a malformed prefix silently
     // routes wrong traffic; fail at synth/plan time instead.
     if (!cfg.lbRoute) throw new Error(`services config: '${slug}' declares lbPathBegin without lbRoute — an internal-only service has no LB backend to route to.`)

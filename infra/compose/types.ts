@@ -23,21 +23,25 @@ export type DrainPolicy = 'requests' | 'reconnect'
 
 /**
  * How the load balancer exposes a service publicly:
- *  - 'default': the LB's fallback backend (the API).
+ *  - 'default': the LB's fallback backend — the app origin (the SPA proxy);
+ *    everything no path route matches lands here.
  *  - 'host': host-header routed (own DNS record + cert + route).
+ *  - 'path': reached only via its `lbPathBegin` path route on the shared HTTPS
+ *    frontend (same-origin model: `https://<app-host><prefix>/...`).
  * Absent = internal-only (no public LB backend; e.g. cdc).
  */
-export type LbRoute = 'default' | 'host'
+export type LbRoute = 'default' | 'host' | 'path'
 
 /**
  * Path-prefix route (`matchPathBegin`) on the shared HTTPS frontend, e.g.
- * `/api`. Coexists with the service's host route during the same-origin
- * migration: `https://<app-host><prefix>/...` reaches this service's LB
- * backend while the legacy subdomain keeps working. The LB matches on ONE
- * criterion per route (host OR path — never both) and does NOT strip the
- * prefix, so the service must also serve itself under `<prefix>` (the
- * backend/mcp self-mounts in backend/src/server.ts, the yjs prefix handling
- * in yjs/src/server). Must start with '/' and have no trailing slash.
+ * `/api`: `https://<app-host><prefix>/...` reaches this service's LB backend.
+ * The LB matches on ONE criterion per route (host OR path — never both) and
+ * does NOT strip the prefix, so the service must also serve itself under
+ * `<prefix>` (the backend/mcp self-mounts in backend/src/server.ts, the yjs
+ * prefix handling in yjs/src/server). Must start with '/' and have no
+ * trailing slash. Required for `lbRoute: 'path'` services; also the redirect
+ * target prefix when the service has a decommissioned host in
+ * `appConfig.legacyUrls`.
  */
 export type LbPathBegin = `/${string}`
 

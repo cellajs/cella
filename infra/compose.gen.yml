@@ -45,7 +45,7 @@ services:
         staging: DEV1-S
       primaryRollout: true
       drainPolicy: requests
-      lbRoute: default
+      lbRoute: path
       lbPathBegin: /api
       dockerfile: Dockerfile
       target: backend
@@ -130,7 +130,7 @@ services:
       drainSeconds: 5
       instanceType: DEV1-S
       drainPolicy: reconnect
-      lbRoute: host
+      lbRoute: path
       lbPathBegin: /yjs
       lbWebsockets: true
       dockerfile: Dockerfile
@@ -170,7 +170,7 @@ services:
       drainSeconds: 10
       instanceType: DEV1-S
       drainPolicy: requests
-      lbRoute: host
+      lbRoute: path
       lbPathBegin: /mcp
       reusesImageOf: backend
       coHosted: true
@@ -201,5 +201,5 @@ services:
       drainSeconds: 0
       instanceType: DEV1-S
       drainPolicy: requests
-      lbRoute: host
+      lbRoute: default
       dockerfile: infra/caddy/Dockerfile

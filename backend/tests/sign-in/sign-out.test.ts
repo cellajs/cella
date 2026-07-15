@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { signOut } from 'sdk';
-import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { encodeLowerCased } from '#/utils/oslo';
 import { defaultHeaders } from '../fixtures';
@@ -35,7 +35,7 @@ describe('Sign-out scoping', async () => {
     // Forge a cookie: victim's sessionId but an attacker-chosen (wrong) secret.
     const forgedSecret = encodeLowerCased(nanoid(40));
     const forgedContent = `${forgedSecret}.${victimSessionId}.`;
-    const forgedCookie = `${appConfig.slug}-session-${appConfig.cookieVersion}=${forgedContent}`;
+    const forgedCookie = `${authCookieName('session')}=${forgedContent}`;
 
     const { response: res } = await call(signOut, {
       headers: { ...defaultHeaders, Cookie: forgedCookie },

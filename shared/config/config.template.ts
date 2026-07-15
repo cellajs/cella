@@ -97,26 +97,31 @@ export const config = {
    * URLS & ENDPOINTS
    ******************************************************************************/
 
-  /** Frontend SPA base URL */
+  /** Frontend SPA base URL (the app origin — every service is a path under it) */
   frontendUrl: 'https://__project_slug__.example.com',
   /** Backend API base URL */
-  backendUrl: 'https://api.__project_slug__.example.com',
+  backendUrl: 'https://__project_slug__.example.com/api',
   /** OAuth callback base URL */
-  backendAuthUrl: 'https://api.__project_slug__.example.com/auth',
+  backendAuthUrl: 'https://__project_slug__.example.com/api/auth',
   /** Yjs realtime relay URL */
-  yjsUrl: 'wss://yjs.__project_slug__.example.com',
+  yjsUrl: 'wss://__project_slug__.example.com/yjs',
   /** AI service base URL */
-  mcpUrl: 'https://ai.__project_slug__.example.com',
+  mcpUrl: 'https://__project_slug__.example.com/mcp',
+  /**
+   * Decommissioned service hosts kept as LB 301 redirects into the path-based
+   * URLs (same-origin migration). A fresh fork starts same-origin and needs none.
+   */
+  legacyUrls: {} as Partial<Record<string, string>>,
   /**
    * Per-service toggles and public URLs. `enabled` controls whether the service
    * is wired up; `publicUrl` is the externally reachable endpoint.
    */
   services: {
     frontend: { enabled: true as boolean, publicUrl: 'https://__project_slug__.example.com' },
-    backend: { enabled: true as boolean, publicUrl: 'https://api.__project_slug__.example.com' },
+    backend: { enabled: true as boolean, publicUrl: 'https://__project_slug__.example.com/api' },
     cdc: { enabled: true as boolean },
-    yjs: { enabled: false as boolean, publicUrl: 'wss://yjs.__project_slug__.example.com' },
-    ai: { enabled: false as boolean, publicUrl: 'https://ai.__project_slug__.example.com' },
+    yjs: { enabled: false as boolean, publicUrl: 'wss://__project_slug__.example.com/yjs' },
+    ai: { enabled: false as boolean, publicUrl: 'https://__project_slug__.example.com/mcp' },
   },
 
   // Cost escape hatch: when true the backend (MODE=api) also boots every enabled

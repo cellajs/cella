@@ -35,14 +35,21 @@ describe('deriveInfra', () => {
     expect(deriveInfra(fakeConfig()).dnsZone).toBe('cellajs.com')
   })
 
-  it('derives every public service host from the registry', () => {
+  it('derives every public service host from the registry (same-origin: all on the app host)', () => {
     const bySlug = new Map(serviceEndpoints(fakeConfig()).map((e) => [e.slug, e.host]))
     expect(bySlug.get('frontend')).toBe('www.cellajs.com')
-    expect(bySlug.get('backend')).toBe('api.cellajs.com')
-    expect(bySlug.get('yjs')).toBe('yjs.cellajs.com')
-    expect(bySlug.get('mcp')).toBe('mcp.cellajs.com')
+    expect(bySlug.get('backend')).toBe('www.cellajs.com')
+    expect(bySlug.get('yjs')).toBe('www.cellajs.com')
+    expect(bySlug.get('mcp')).toBe('www.cellajs.com')
     // cdc is internal-only (no lbRoute) → no endpoint
     expect(bySlug.has('cdc')).toBe(false)
+  })
+
+  it('path-routed endpoints keep their prefix in the URL', () => {
+    const bySlug = new Map(serviceEndpoints(fakeConfig()).map((e) => [e.slug, e.url]))
+    expect(bySlug.get('backend')).toBe('https://www.cellajs.com/api')
+    expect(bySlug.get('yjs')).toBe('wss://www.cellajs.com/yjs')
+    expect(bySlug.get('mcp')).toBe('https://www.cellajs.com/mcp')
   })
 
   it('hasDomain is false for localhost', () => {

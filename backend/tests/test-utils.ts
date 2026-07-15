@@ -158,6 +158,8 @@ export const mockCookieStore = new Map<string, string>();
 export const clearCookieStore = () => mockCookieStore.clear();
 
 export const cookieMock = () => ({
+  // Mirrors the real helper (test mode is secure → __Host- prefix applies).
+  authCookieName: (name: string) => `__Host-${appConfig.slug}-${name}-${appConfig.cookieVersion}`,
   setAuthCookie: vi.fn().mockImplementation(async (ctx, name, value, _maxAge) => {
     const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
     mockCookieStore.set(name, stringValue);

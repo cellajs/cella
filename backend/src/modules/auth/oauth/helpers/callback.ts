@@ -6,7 +6,7 @@ import { AppError, type ErrorKey } from '#/core/error';
 import { type DbOrTx, baseDb as db } from '#/db/db';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { getPostAuthRedirectPath } from '#/modules/auth/general/helpers/redirect-path';
-import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
+import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
@@ -86,7 +86,7 @@ export const handleOAuthCallback = async (
   try {
     switch (type) {
       case 'connect':
-        result = await connectCallbackFlow({ ctx, ...baseCallbackProps });
+        result = await connectCallbackFlow({ connectUserId: oauthPayload.connectUserId, ...baseCallbackProps });
         break;
       case 'invite':
         result = await inviteCallbackFlow({ ctx, ...baseCallbackProps });
@@ -167,27 +167,26 @@ const authCallbackFlow = async ({
 /**
  * Handles connecting an OAuth provider to an existing user account.
  *
- * @param ctx - The request context.
+ * The connecting user comes from the signed oauth-state payload, pinned at
+ * initiation where the session was validated — the SameSite=Strict session
+ * cookie is not sent on the provider's cross-site callback navigation.
+ *
  * @param providerUser - The transformed user data from the OAuth provider.
  * @param provider - The OAuth provider (e.g., 'google', 'github').
  * @param connectUserId - The ID of the user who is attempting to connect an OAuth account.
  * @param oauthAccount - The existing OAuth account, if one exists.
- * @param redirectAfter - OAuth query redirect path, if one exists.
  * @returns A redirect response.
  */
 const connectCallbackFlow = async ({
-  ctx,
+  connectUserId,
   providerUser,
   provider,
   oauthAccount = null,
-}: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
-  const { sessionToken } = await getParsedSessionCookie(ctx);
+}: { connectUserId?: string } & BaseCallbackProps): Promise<OAuthFlowResult> => {
+  if (!connectUserId) throw new AppError(401, 'unauthorized', 'warn');
 
-  // Get user from valid session
-  const { user } = await validateSession(sessionToken);
+  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, connectUserId));
   if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
-
-  const connectUserId = user.id;
 
   if (oauthAccount) {
     // OAuth account is linked to a different user

@@ -72,13 +72,13 @@ describe('service registry — singleVM (deployedServices / coHostedServices)', 
 })
 
 describe('service registry — lbRoute invariants', () => {
-  it('backend is the default LB backend', () => {
-    expect(services.find((s) => s.slug === 'backend')?.lbRoute).toBe('default')
+  it('frontend (the app origin) is the default LB backend', () => {
+    expect(services.find((s) => s.slug === 'frontend')?.lbRoute).toBe('default')
   })
 
-  it('yjs / mcp / frontend are host-routed', () => {
-    for (const name of ['yjs', 'mcp', 'frontend'] as const) {
-      expect(services.find((s) => s.slug === name)?.lbRoute).toBe('host')
+  it('backend / yjs / mcp are path-routed (same-origin model)', () => {
+    for (const name of ['backend', 'yjs', 'mcp'] as const) {
+      expect(services.find((s) => s.slug === name)?.lbRoute).toBe('path')
     }
   })
 

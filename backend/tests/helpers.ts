@@ -1,10 +1,11 @@
 import type { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
-import { appConfig, type EntityRole } from 'shared';
+import type { EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
+import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
@@ -240,5 +241,5 @@ export async function createTestSession(user: { id: string }) {
   });
 
   const cookieContent = `${hashedSessionToken}.${sessionId}.`;
-  return `${appConfig.slug}-session-${appConfig.cookieVersion}=${cookieContent}`;
+  return `${authCookieName('session')}=${cookieContent}`;
 }

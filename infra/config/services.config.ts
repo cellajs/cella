@@ -31,9 +31,9 @@ export const appServices = defineServices({
     runMigrate: true,
     primaryRollout: true,
     drainSeconds: 10,
-    lbRoute: 'default',
-    // Same-origin migration: also reachable at https://<app-host>/api/... via
-    // an LB path-begin route; the backend self-mounts '/api' (no LB stripping).
+    // Same-origin: reached at https://<app-host>/api/... via an LB path-begin
+    // route; the backend self-mounts '/api' (no LB stripping).
+    lbRoute: 'path',
     lbPathBegin: '/api',
     // Per-service VM size (required on every service).
     instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },
@@ -83,9 +83,9 @@ export const appServices = defineServices({
     // CRDT state rather than having sessions held open during drain.
     drainPolicy: 'reconnect',
     drainSeconds: 5,
-    lbRoute: 'host',
-    // Same-origin migration: also reachable at wss://<app-host>/yjs/... via an
-    // LB path-begin route; the yjs server accepts the unstripped prefix.
+    // Same-origin: reached at wss://<app-host>/yjs/... via an LB path-begin
+    // route; the yjs server accepts the unstripped prefix.
+    lbRoute: 'path',
     lbPathBegin: '/yjs',
     // WebSocket service: LB keeps connections open for up to an hour.
     lbWebsockets: true,
@@ -109,9 +109,9 @@ export const appServices = defineServices({
     drainSeconds: 10,
     // Reuses the backend image at the same SHA; CI builds no separate mcp image.
     reusesImageOf: 'backend',
-    lbRoute: 'host',
-    // Same-origin migration: also reachable at https://<app-host>/mcp/... via
-    // an LB path-begin route; the shared base app self-mounts '/mcp'.
+    // Same-origin: reached at https://<app-host>/mcp/... via an LB path-begin
+    // route; the shared base app self-mounts '/mcp'.
+    lbRoute: 'path',
     lbPathBegin: '/mcp',
     // Only deployed when appConfig.services.mcp.enabled is true.
     instanceType: 'DEV1-S',
@@ -140,7 +140,9 @@ export const appServices = defineServices({
     startPeriod: '10s',
     replacementStrategy: 'lb-overlap',
     drainPolicy: 'requests',
-    lbRoute: 'host',
+    // The app origin: the LB's fallback backend. Everything no path route
+    // matches (/api, /yjs, /mcp) lands on the SPA proxy.
+    lbRoute: 'default',
     // The SPA proxy reads no app secret: no standard env, no .env files.
     includeStandardEnv: false,
     includeEnvFile: false,
