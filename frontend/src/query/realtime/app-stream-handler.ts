@@ -14,11 +14,9 @@ import { getSyncPriority } from './sync-priority';
 import type { AppStreamNotification } from './types';
 
 /**
- * Handles incoming app stream notifications and updates the React Query cache accordingly.
- * Routes notifications to membership, organization, or product entity handlers.
- *
- * Notification-only format: no entity data is included. Handlers invalidate queries
- * to trigger refetch, or use cacheToken for efficient fetches.
+ * Route an incoming app-stream notification to the membership/organization/product handler.
+ * Notification-only format: no entity data included — handlers invalidate to refetch, or use
+ * cacheToken for efficient fetches.
  */
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
   const { subjectId, action, stx, organizationId, tenantId, channelType, seq, cacheToken, _trace } = notification;
@@ -101,13 +99,9 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
 }
 
 /**
- * Handle membership events (created, updated, deleted).
- * Uses channelType for targeted query invalidation instead of broad invalidation.
- *
- * Strategy:
- * - create: Invalidate the specific channel entity list (e.g., organizations), then refresh menu
- * - update: Invalidate member queries for the org, refresh user data for role changes
- * - delete: Invalidate the specific channel entity list, then refresh menu
+ * Handle membership create/update/delete via channelType-targeted invalidation (not broad):
+ * create/delete invalidate the specific channel list + refresh menu; update invalidates member
+ * queries and refreshes user data for role changes.
  */
 function handleMembershipNotification(
   action: AppStreamNotification['action'],
@@ -134,11 +128,7 @@ function handleMembershipNotification(
   console.debug(`[handleMembershipNotification] ${action} channelType=${channelType} organizationId=${organizationId}`);
 }
 
-/**
- * Handle product entity events (page, attachment, etc).
- * Uses notification-based sync: no entity data included.
- * Invalidates queries to trigger refetch, using cacheToken for efficient fetches.
- */
+/** Handle product entity events (page, attachment, …): notification-only, so invalidate/refetch (cacheToken for efficient fetches). */
 function handleEntityNotification(
   entityType: ProductEntityType,
   entityId: string,
@@ -240,9 +230,8 @@ function invalidateUnseenCounts(entityType: string): void {
 }
 
 /**
- * Adjust unseen count optimistically when a tracked entity is created or deleted via SSE.
- * Uses channelId to patch the query cache directly, avoiding a full refetch.
- * Falls back to query invalidation if channelId is unavailable.
+ * Optimistically adjust the unseen count for a tracked entity created/deleted via SSE: patch the
+ * cache directly by channelId to avoid a full refetch, falling back to invalidation if none.
  */
 function adjustUnseenCount(entityType: string, channelId: string | null, delta: number): void {
   const trackedTypes = appConfig.seenTrackedEntityTypes as readonly string[];
@@ -274,10 +263,9 @@ function adjustUnseenCount(entityType: string, channelId: string | null, delta: 
 }
 
 /**
- * Handle unseen count adjustment when a tracked entity is deleted.
- * If the entity was already seen (in flushedIds or pending), the unseen count
- * doesn't change (total−1 and seen−1 cancel out). If it was unseen, decrement.
- * Falls back to query invalidation when channelId is unavailable.
+ * Adjust the unseen count when a tracked entity is deleted: if it was already seen (flushedIds or
+ * pending), the count is unchanged (total−1 and seen−1 cancel); if unseen, decrement. Falls back to
+ * invalidation when channelId is unavailable.
  */
 function handleDeleteUnseenCount(entityType: string, entityId: string, channelId: string | null): void {
   const trackedTypes = appConfig.seenTrackedEntityTypes as readonly string[];

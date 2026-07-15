@@ -37,12 +37,10 @@ precacheAndRoute(self.__WB_MANIFEST);
 // automatically. InjectManifest workers must register it themselves.
 registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')));
 
-// Docs data JSON (openapi reference + search corpus) is fetched at runtime by
-// react-query and excluded from the precache glob (json isn't in globPatterns).
-// Serve it stale-while-revalidate so the docs section — reference pages and
-// search — works offline after one online visit. The files aren't
-// content-hashed, so background revalidation picks up new API docs per deploy.
-// Scoped to these prefixes; no other request is affected.
+// Docs data JSON (openapi reference + search corpus) is fetched at runtime by react-query and
+// excluded from the precache glob (json isn't in globPatterns). Serve it stale-while-revalidate so
+// the docs section works offline after one online visit; the files aren't content-hashed, so
+// background revalidation picks up new API docs per deploy.
 registerRoute(
   ({ url }) =>
     url.origin === self.location.origin &&

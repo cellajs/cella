@@ -1,11 +1,8 @@
 import { Children, cloneElement, type HTMLAttributes, isValidElement, type ReactNode } from 'react';
 
 /**
- * Merges Slot props onto the child element's props.
- * - Event handlers (on*) are composed so both fire
- * - className values are concatenated
- * - style objects are shallow-merged (child wins)
- * - All other props: child's value wins
+ * Merges Slot props onto the child: `on*` handlers composed (both fire), className concatenated,
+ * style shallow-merged (child wins); all other props the child wins.
  */
 function mergeProps(slotProps: Record<string, unknown>, childProps: Record<string, unknown>) {
   const merged: Record<string, unknown> = { ...slotProps };

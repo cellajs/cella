@@ -192,9 +192,6 @@ class WebGLRenderer {
    */
   handlePerformanceFallback() {
     try {
-      // Switch to fallback mechanism
-      // Example: switch to a static image or other fallback mechanism
-      // Stops the WebGL rendering process.
       this.stop();
     } catch (error) {
       console.error('Error in handlePerformanceFallback:', error);

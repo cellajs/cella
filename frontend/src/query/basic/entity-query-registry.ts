@@ -22,14 +22,13 @@ export interface EntityQueryKeys {
 export const SYNC_CHUNK_SIZE = 1000;
 
 /**
- * Delta fetch function signature for catchup-based sync.
- * Called with organizationId (null for public entities), tenantId, and a seqCursor string.
- * Returns changed entities since that seq via the list endpoint's `seqCursor` param.
- * Implementations should request `limit: String(SYNC_CHUNK_SIZE)`.
+ * Delta fetch for catchup-based sync (organizationId null for public entities). Returns entities
+ * changed since a seq via the list endpoint's `seqCursor` param; implementations must request
+ * `limit: String(SYNC_CHUNK_SIZE)`.
  *
  * seqCursor formats:
- * - "51": open-ended (seq >= 51), used by catchup
- * - "51,150": bounded range (seq >= 51 AND seq <= 150), used by batch notifications
+ * - "51":     open-ended (seq >= 51)          — used by catchup
+ * - "51,150": bounded (seq >= 51 AND <= 150)  — used by batch notifications
  */
 export type DeltaFetchFn = (
   organizationId: string | null,
@@ -39,32 +38,15 @@ export type DeltaFetchFn = (
 ) => Promise<{ items: ItemData[]; total: number }>;
 
 /**
- * Central registry for entity query keys.
- * Modules register their query keys here, enabling dynamic lookup in stream handlers.
- *
- * Usage in entity modules:
- * ```ts
- * // At module load time (e.g., in query.ts)
- * const keys = createEntityKeys<Filters>('attachment');
- * registerEntityQueryKeys('attachment', keys);
- * export const attachmentQueryKeys = keys;
- * ```
- *
- * Usage in stream handlers:
- * ```ts
- * const keys = getEntityQueryKeys(entityType);
- * queryClient.invalidateQueries({ queryKey: keys.list.base });
- * ```
+ * Central registry decoupling entity modules from stream handlers: modules register keys at load
+ * time (createEntityKeys -> registerEntityQueryKeys), stream/cache code looks them up by entityType.
  */
 const entityQueryKeysRegistry = new Map<string, EntityQueryKeys>();
 const deltaFetchRegistry = new Map<string, DeltaFetchFn>();
 
 /**
- * Register query keys for an entity type, with optional delta fetch support.
- * Call this at module initialization (e.g., in the entity's query.ts file).
- *
- * The `deltaFetch` function enables efficient catchup: instead of full list refetch,
- * the catchup processor calls the list endpoint with `seqCursor` to get only changed entities.
+ * Register query keys for an entity type at module init. Optional `deltaFetch` lets the catchup
+ * processor fetch only changed entities (via `seqCursor`) instead of a full list refetch.
  */
 export function registerEntityQueryKeys(
   entityType: EntityType,
@@ -75,11 +57,7 @@ export function registerEntityQueryKeys(
   if (deltaFetch) deltaFetchRegistry.set(entityType, deltaFetch);
 }
 
-/**
- * Get query keys for an entity type.
- * Throws if the entity type hasn't been registered: all entity types
- * must be registered at module load time before any stream/cache code runs.
- */
+/** Throws if the entity type wasn't registered — all types must register at module load, before any stream/cache code runs. */
 export function getEntityQueryKeys(entityType: string): EntityQueryKeys {
   const keys = entityQueryKeysRegistry.get(entityType);
   if (!keys) throw new Error(`No query keys registered for entity type: ${entityType}`);

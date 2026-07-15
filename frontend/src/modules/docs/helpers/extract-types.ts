@@ -92,9 +92,8 @@ const toPascalCase = (str: string): string => {
 };
 
 /**
- * Get the Zod schema code for a specific operation response.
- * For error responses (status >= 400), uses responseName (e.g., 'BadRequestError').
- * For success responses, uses operationId + 'Response' (e.g., 'GetMeResponse').
+ * Zod schema code for an operation response. Error responses (status >= 400) use responseName
+ * (e.g. 'BadRequestError'); success responses use operationId + 'Response' (e.g. 'GetMeResponse').
  */
 export const getZodCodeForResponse = (
   zodIndex: DefinitionIndex,

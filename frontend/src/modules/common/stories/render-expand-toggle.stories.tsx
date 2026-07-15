@@ -4,15 +4,12 @@ import { expect, userEvent, within } from 'storybook/test';
 import { RenderExpandToggle } from '~/modules/common/data-grid/cell-renderers';
 
 /**
- * Reusable focusable expand/collapse toggle for tree-style data tables.
- * Renders an SVG connector behind the chevron so nested rows visually flow
- * into their ancestors. See `data-table/tree/` for the full integration:
- * `useTreeRows` + `<TreeProvider>` + `ExpandToggleColumn`.
+ * Focusable expand/collapse toggle for tree-style tables; renders an SVG connector behind the chevron so nested
+ * rows visually flow into their ancestors. See `data-table/tree/` (`useTreeRows` + `<TreeProvider>` +
+ * `ExpandToggleColumn`) for the full integration.
  *
- * Visual language (calibrated for trees of 2–3 levels):
- * - Root (`depth = 0`): chevron only, no connector lines
- * - Inner: 2px solid lines + filled bullet for leaves
- * - Deepest (`depth = maxDepth - 1`): 1px thin lines + hollow bullet on a deeper track
+ * Visual language (trees of 2–3 levels): root (`depth 0`) chevron only; inner 2px solid lines + filled bullet
+ * for leaves; deepest (`depth = maxDepth - 1`) 1px thin lines + hollow bullet on a deeper track.
  */
 const meta = {
   title: 'common/RenderExpandToggle',

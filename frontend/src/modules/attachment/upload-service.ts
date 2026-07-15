@@ -9,12 +9,9 @@ import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { getAppDb } from '~/query/app-db';
 
 /**
- * Background service that syncs pending local uploads to cloud storage. Runs periodically and when
- * coming back online. Uses headless Uppy with @uppy/transloadit:
- * - Tus resumable upload protocol
- * - Built-in exponential backoff for rate limiting
- * - Lazy token fetching per upload (never expires mid-upload)
- * - Assembly completion waiting with internal polling
+ * Background service that syncs pending local uploads to cloud, periodically and on reconnect.
+ * Headless Uppy + @uppy/transloadit: Tus resumable protocol, built-in backoff, lazy per-upload
+ * token fetch (never expires mid-upload), and assembly-completion polling.
  */
 class AttachmentUploadService {
   private processing = false;

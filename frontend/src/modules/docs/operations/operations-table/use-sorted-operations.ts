@@ -3,9 +3,8 @@ import type { SortColumn } from '~/modules/common/data-grid';
 import type { GenOperationSummary } from '~/modules/docs/types';
 
 /**
- * Build a comparable key from an array of string values. Returns `''` for
- * missing/empty so the sort comparator can detect "no value" and pin those
- * rows to the bottom regardless of direction.
+ * Comparable key from an array of strings. Returns `''` for missing/empty so the comparator can
+ * pin those rows to the bottom regardless of sort direction.
  */
 const arrayKey = (values: string[] | undefined): string => {
   if (!values?.length) return '';
@@ -13,10 +12,8 @@ const arrayKey = (values: string[] | undefined): string => {
 };
 
 /**
- * Resolve a comparable string for a column key. Dynamic tag columns
- * (`tag-${kind}`) and extension columns sort by their joined sorted values so
- * direction toggles produce a visible reordering even when every row has a
- * value.
+ * Comparable string for a column key. Dynamic tag (`tag-${kind}`) and extension columns sort by
+ * their joined sorted values, so a direction toggle reorders visibly even when every row has one.
  */
 const getSortValue = (row: GenOperationSummary, columnKey: string): string => {
   if (columnKey.startsWith('tag-')) return arrayKey(row.tagsByKind?.[columnKey.slice(4)]);

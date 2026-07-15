@@ -8,10 +8,8 @@ interface UseFocusByRefOptions {
 }
 
 /**
- * Hook to provide focus control for an element.
- * Focus is only set if window width is >= 640px.
- * Without options: focuses on mount.
- * With trigger: focuses when trigger becomes true.
+ * Focus control for an input ref: focuses on mount, or when `trigger` flips true.
+ * Only focuses when viewport width >= 640px.
  */
 export function useFocusByRef(options?: UseFocusByRefOptions) {
   const { trigger, delay = 0 } = options ?? {};

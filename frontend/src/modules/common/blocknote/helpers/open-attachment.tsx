@@ -2,12 +2,7 @@ import type { CarouselItemData } from '~/modules/attachment/attachments-carousel
 import { openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
-/**
- * Opens an attachment dialog with carousel for media in the editor.
- * Collects all media blocks and displays them in a carousel.
- *
- * @param clickedSrc - Optional: the src of clicked media to start at that index
- */
+// `clickedSrc` picks the carousel's start index; otherwise it opens at the first media block.
 export const openAttachment = async (
   editor: CustomBlockNoteEditor,
   blockNoteRef: React.RefObject<HTMLDivElement | null>,

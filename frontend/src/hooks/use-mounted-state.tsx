@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 
 /**
- * Custom hook to track mounting stages of a component.
- *
- * @returns flags for:
- * - `hasMounted`: component mounted (ref-based, no re-render)
- * - `hasStarted`: component started after 200ms
- * - `hasWaited`: component waited 800ms
+ * Tracks mount stages, returning flags:
+ * - `hasMounted`: mounted (ref-based, no re-render)
+ * - `hasStarted`: true after 200ms
+ * - `hasWaited`: true after 800ms
  */
 export const useMountedState = () => {
   const mountedRef = useRef(false);

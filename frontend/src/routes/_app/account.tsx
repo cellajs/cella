@@ -12,9 +12,8 @@ import { lazyNamed } from '~/utils/lazy-named';
 const UserAccountPage = lazyNamed(() => import('~/modules/me/account-page'), 'UserAccountPage');
 
 /**
- * User account settings page for personal configuration.
- * Accepts error/severity search params from backend OAuth connect redirects
- * (e.g. /account?error=oauth_conflict&severity=error), shows a toast, and cleans the URL.
+ * User account settings page. Accepts error/severity search params from backend OAuth connect
+ * redirects (e.g. ?error=oauth_conflict&severity=error), shows a toast, and cleans the URL.
  */
 export const Route = createFileRoute('/_app/account')({
   staticData: { isAuth: true },

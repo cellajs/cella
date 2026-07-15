@@ -3,9 +3,8 @@ import type { GenComponentSchema, GenOperationSummary } from '~/modules/docs/typ
 import { createEngine, type EnginePage } from './engine';
 
 /**
- * Pins the engine's search behavior: BM25 ordering with title boost, typo
- * tolerance, the explicit threshold=0 (multi-word queries must match every
- * term) and the page-row + child-row group shape the dialog renders.
+ * Pins the engine's search behavior: BM25 ordering with title boost, typo tolerance, threshold=0
+ * (multi-word queries must match every term), and the page-row + child-row group shape.
  */
 
 const pages: EnginePage[] = [

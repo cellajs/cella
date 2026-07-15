@@ -3,10 +3,8 @@ import { organizationLayoutBeforeLoad } from '~/modules/organization/route-logic
 import { noDirectAccess } from '~/utils/no-direct-access';
 
 /**
- * Layout route for tenant and organization-scoped pages.
- * Captures $tenantId and $organizationSlug params, validates tenant access,
- * fetches org, and provides context for all nested routes.
- * Forks can nest additional routes (workspace, project, etc.) under this layout.
+ * Layout route for tenant + organization-scoped pages. Forks can nest additional routes
+ * (workspace, project, etc.) under this layout.
  */
 export const Route = createFileRoute('/_app/$tenantId/$organizationSlug')({
   staticData: { isAuth: true },

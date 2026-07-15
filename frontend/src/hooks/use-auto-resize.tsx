@@ -1,10 +1,6 @@
 import * as React from 'react';
 
-/**
- * Auto-resizes a `<textarea>` to fit its content on input, matching height to `scrollHeight`.
- * @param autoResize - Enables the resize behavior when true.
- * @returns `{ areaRef }` ref to attach to the textarea.
- */
+/** Auto-resizes a `<textarea>` to its `scrollHeight` on input. Returns `{ areaRef }` to attach. */
 export const useAutoResize = (autoResize: boolean) => {
   const areaRef = React.useRef<HTMLTextAreaElement>(null);
 

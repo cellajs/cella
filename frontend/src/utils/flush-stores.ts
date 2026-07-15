@@ -17,8 +17,6 @@ import { queryClient } from '~/query/query-client';
  * - `wipe = false` (involuntary session loss, e.g. a 401): keep the appdb and `lastUser` on disk.
  *   The DB is only closed, so the SAME user recovers their offline work (queued mutations, drafts)
  *   and gets a prefilled sign-in after re-authenticating. Avoids data loss on a transient expiry.
- *
- * @param wipe - When true, permanently delete the user's appdb and forget `lastUser`.
  */
 export const flushStores = async (wipe = true): Promise<void> => {
   queryClient.clear();

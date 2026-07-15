@@ -16,11 +16,6 @@ interface FloatingNavProps {
   resetTrigger?: unknown;
 }
 
-/**
- * Floating navigation for mobile devices.
- * Renders FAB-style buttons that show/hide based on scroll direction.
- * Callers are responsible for building the items array.
- */
 export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-nav', resetTrigger }: FloatingNavProps) {
   const isMobile = useBreakpointBelow('sm');
   const { isVisible: showButtons, reset } = useScrollVisibility(isMobile, scrollContainerRef);

@@ -14,9 +14,8 @@ type SelectTenantProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TF
 };
 
 /**
- * Form field for selecting a tenant.
- * System admins see all tenants (fetched from the API).
- * Regular users see only tenants they belong to (derived from their memberships).
+ * System admins see all tenants (fetched from the API); regular users see only tenants they belong to
+ * (derived from their memberships).
  */
 export const SelectTenantFormField = <TFieldValues extends FieldValues>({
   control,

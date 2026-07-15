@@ -20,9 +20,7 @@ const preview: Preview = {
     },
 
     a11y: {
-      // 'todo' - show a11y violations in the test UI only
-      // 'error' - fail CI on a11y violations
-      // 'off' - skip a11y checks entirely
+      // test mode: 'todo' shows violations in the test UI only | 'error' fails CI | 'off' skips checks
       test: 'todo',
     },
   },

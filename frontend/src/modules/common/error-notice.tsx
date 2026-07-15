@@ -22,11 +22,7 @@ interface ErrorNoticeProps {
 }
 
 /**
- * Error can be shown in multiple levels
- *
- * root: no footer can be shown because services are not available
- * app: no footer required
- * public: show footer
+ * `boundary` levels: root (no footer — services may be down), app (no footer), public (footer shown).
  */
 export function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {
   const { t } = useTranslation();

@@ -83,9 +83,8 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
 };
 
 /**
- * Apply a `create | update | remove` action to arbitrary query data, scoped by `entityType`.
- * When `keyToOperateIn` is provided, only that key is updated; otherwise all matching
- * entries (by `entityType`) across the data shape are updated.
+ * Apply a `create | update | remove` action to arbitrary query data. With `keyToOperateIn`, only
+ * that key is updated; otherwise all entries matching `entityType` across the data shape are.
  */
 export const changeArbitraryQueryData = (
   queryKey: QueryKey,

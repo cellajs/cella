@@ -5,9 +5,8 @@ function buildKey(entityType: string, entityId: string): string {
 }
 
 /**
- * Store a cache token received from SSE stream notifications. The token is later sent
- * in the `X-Cache-Token` header on entity fetches to leverage server-side caching.
- * Tokens expire server-side (10 min TTL); invalid tokens result in a cache miss.
+ * Store a cache token from SSE notifications; later sent as the `X-Cache-Token` header on entity
+ * fetches for server-side caching. Tokens expire server-side (10 min TTL); invalid ones just miss.
  */
 export function storeCacheToken(entityType: string, entityId: string, token: string): void {
   const key = buildKey(entityType, entityId);

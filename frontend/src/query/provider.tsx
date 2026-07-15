@@ -15,9 +15,8 @@ import { waitForActiveCatchup } from '~/query/realtime/stream-store';
 import { useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 
 /**
- * Initialize mutation defaults BEFORE any cache restoration.
- * This stores the queryClient so that entity modules can self-register their
- * mutationFn via addMutationRegistrar() whenever they load, so no explicit imports are needed.
+ * Init mutation defaults BEFORE cache restoration: stores the queryClient so entity modules can
+ * self-register their mutationFn via addMutationRegistrar() on load (no explicit imports needed).
  */
 initMutationDefaults(queryClient);
 
@@ -36,9 +35,8 @@ if (import.meta.hot) {
 }
 
 /**
- * QueryClientProvider wrapper handling cache persistence and offline capabilities.
- * Uses session or IndexedDB persister based on offlineAccess setting.
- * Only leader tab persists mutations in app routes to prevent cross-tab conflicts.
+ * QueryClientProvider wrapper for cache persistence + offline. Persister is session or IndexedDB
+ * per offlineAccess. In app routes only the leader tab persists mutations, to avoid cross-tab conflicts.
  */
 export function QueryClientProvider({ children }: { children: React.ReactNode }) {
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
@@ -69,9 +67,8 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
     };
   }, []);
 
-  // Select persister based on offline access mode
-  // - offlineAccess: IndexedDB (survives browser restart)
-  // - session: sessionStorage (survives refresh, cleared on tab close)
+  // Persister by mode: offlineAccess -> IndexedDB (survives restart); session -> sessionStorage
+  // (survives refresh, cleared on tab close).
   const activePersister = offlineAccess ? persister : sessionPersister;
 
   // Track online/offline status and update staleTime accordingly

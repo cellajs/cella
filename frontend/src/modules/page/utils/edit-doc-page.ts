@@ -2,11 +2,9 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import type { DocRenderMode } from '~/modules/page/content';
 
 /**
- * Editing docs pages writes back to the md/mdx source files, which is only
- * possible while the Vite dev server is running. In a production build the content
- * is bundled and there is no filesystem to write, so the pages table stays
- * read-only. Callers gate their editing UI on this.
- *
+ * Editing docs pages writes back to the md/mdx source files, only possible while the Vite dev
+ * server runs; a production build bundles the content with no filesystem to write, so the pages
+ * table stays read-only. Callers gate their editing UI on this.
  * @see vite/docs-editor.ts
  */
 export const canEditDocs = import.meta.env.DEV;
@@ -21,9 +19,8 @@ export interface DocEditOps {
 }
 
 /**
- * Persist a page edit by rewriting its frontmatter (and, for a `parentId`
- * change, moving the file) via the dev-server endpoint. Resolves on success;
- * shows an error toast and rejects otherwise. No-op outside dev.
+ * Persist a page edit via the dev-server endpoint: rewrites frontmatter (and moves the file on a
+ * `parentId` change). Resolves on success; on failure shows an error toast and rejects. No-op outside dev.
  */
 export async function editDocPage(slug: string, ops: DocEditOps): Promise<void> {
   if (!canEditDocs) return;

@@ -25,11 +25,9 @@ interface UseInfiniteScrollOptions {
 }
 
 /**
- * Fires `onRowsEndApproaching` when the rendered viewport approaches the end
- * of the row dataset. Useful for implementing infinite scroll / load-more.
- *
- * Tracks `lastFiredForRowsLength` to prevent re-triggering immediately after
- * new data arrives, so the callback fires once per `totalRows` value.
+ * Fires `onRowsEndApproaching` when the rendered viewport approaches the dataset
+ * end (infinite scroll / load-more). Tracks `lastFiredForRowsLength` so it fires
+ * once per `totalRows` value, not repeatedly after new data arrives.
  */
 export function useInfiniteScroll({
   totalRows,

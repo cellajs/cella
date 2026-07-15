@@ -158,9 +158,8 @@ export const registerSections = (ids: string[]) => {
   }
   savedSection = '';
 
-  // Scroll to initial hash if present.
-  // Allow during init window even if a child set currentSection first. This prevents early
-  // registration from overriding the parent's hash-matched section.
+  // Scroll to initial hash. Allowed during the init window even if a child set currentSection
+  // first, so early registration can't override the parent's hash-matched section.
   const hash = location.hash.slice(1);
   const inInitWindow = Date.now() - initTime < 500;
   if (hash && sections.has(hash) && currentSection !== hash && (inInitWindow || !currentSection)) {

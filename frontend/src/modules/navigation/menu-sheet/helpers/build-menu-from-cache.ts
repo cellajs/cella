@@ -11,11 +11,8 @@ const menuEntityTypes = Array.from(
 ) as ChannelEntityType[];
 
 /**
- * Reads enriched entity data from the query cache and builds the user menu.
- * Assumes entity lists have already been enriched with memberships by
- * the cache subscriber (initChannelEntityEnrichment).
- *
- * Used by both useMenu (reactive) and getMenuData (imperative).
+ * Builds the user menu from cached entity data. Assumes entity lists were already enriched with
+ * memberships by the cache subscriber (initChannelEntityEnrichment). Used by useMenu + getMenuData.
  */
 export function buildMenuFromCache(userId: string): UserMenu {
   const registry = channelEntityListQueriesByType;

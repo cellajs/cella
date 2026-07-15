@@ -35,9 +35,8 @@ export type EntityNotification = StreamNotification & { kind: 'entity'; entityTy
 export type MembershipNotification = StreamNotification & { kind: 'membership'; resourceType: 'membership' };
 
 /**
- * App stream notification with optional trace context for debugging.
- * Discriminated on `kind` so entity vs membership branches are exhaustive and
- * the compiler proves which fields are present in each.
+ * App stream notification (+ optional trace context). Discriminated on `kind` so entity vs
+ * membership branches are exhaustive and the compiler proves which fields each has.
  */
 export type AppStreamNotification = (EntityNotification | MembershipNotification) & {
   _trace?: StreamTraceContext;

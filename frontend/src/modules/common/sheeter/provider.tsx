@@ -9,9 +9,7 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import { router } from '~/routes/router';
 
 /**
- * Sheeter provider to render drawers on mobile, sheets on desktop.
- * When container is provided, sheets are portaled into the container element.
- * State is managed by the useSheeter zustand store hook.
+ * Renders drawers on mobile, sheets on desktop; when `container` is provided, sheets are portaled into it.
  */
 export const Sheeter = () => {
   const isMobile = useBreakpointBelow('sm');

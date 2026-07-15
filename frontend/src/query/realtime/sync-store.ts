@@ -46,13 +46,7 @@ function ensureOrg(orgs: Record<string, OrgSyncState>, orgId: string, tenantId?:
   return existing;
 }
 
-/**
- * Sync store for offline sync state management.
- *
- * Data model:
- * - `orgs`: per-organization sync state (tenantId, entity seqs, child-context seqs)
- * - `cursor`, `lastSyncAt`: global sync metadata
- */
+/** Offline sync state: `orgs` (per-org tenantId + entity/child-context seqs), plus global `cursor`/`lastSyncAt`. */
 export const useSyncStore = create<SyncStoreState>()(
   devtools(
     persist(

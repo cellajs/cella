@@ -60,11 +60,8 @@ export async function runSyncService(offlineAccess: boolean, signal: AbortSignal
 }
 
 /**
- * Sync a single menu item by running ensureQueryData for its entity queries.
- *
- * ensureQueryData only fetches when data is missing or stale. If catchup marked
- * the list stale (creates/updates detected), it will refetch. If the list is fresh
- * (nothing changed), it's a no-op.
+ * Sync a single menu item via ensureQueryData for its entity queries: refetches only when catchup
+ * marked the list stale (creates/updates), no-op when the list is still fresh.
  */
 async function syncMenuItem(item: UserMenuItem, offlineAccess: boolean): Promise<void> {
   if (item.membership.archived) return;

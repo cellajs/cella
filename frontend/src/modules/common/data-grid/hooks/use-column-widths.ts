@@ -19,18 +19,13 @@ function getWidth<R, SR>(widths: ReadonlyMap<string, number>, col: CalculatedCol
 }
 
 /**
- * Manages column widths for user-initiated resize operations.
+ * Column widths for user-initiated resize.
  *
- * Auto columns use CSS-native `minmax(min, 1fr)`, with no JS measurement
- * needed for initial sizing or window resize.
- *
- * During drag resize, ALL columns are fixed to pixel widths and space is
- * actively redistributed. Columns to the right absorb the inverse delta:
- * widening shrinks right columns (neighbor first), narrowing grows them.
- * Dragging past minWidth overflows to shrink left columns too.
- *
- * On resize end, temporary widths promote to 'resized' so flex sizing
- * is restored for columns the user did not explicitly resize.
+ * Auto columns use CSS-native `minmax(min, 1fr)` — no JS measurement for initial
+ * sizing or window resize. During drag resize, ALL columns are pinned to pixel
+ * widths and space is redistributed (see `redistributeWidths`). On resize end,
+ * temporary widths promote to 'resized' so flex sizing is restored for columns
+ * the user did not explicitly resize.
  */
 export function useColumnWidths<R, SR>(
   columns: readonly CalculatedColumn<R, SR>[],

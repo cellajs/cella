@@ -8,9 +8,8 @@ import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notic
 import { Sheeter } from '~/modules/common/sheeter/provider';
 
 /**
- * This is the layout for all public routes, for users without authentication. Marketing, auth pages and more.
- * The public SSE stream is mounted by `PublicContentLayout` (a sublayout) only on routes that actually
- * render synced public entities, so auth/sign-out/error/marketing routes don't open a stream connection.
+ * Layout for all public (unauthenticated) routes. The public SSE stream is mounted by `PublicContentLayout`
+ * (a sublayout) only on routes that render synced public entities, so auth/error/marketing routes don't open one.
  */
 export function PublicLayout() {
   return (

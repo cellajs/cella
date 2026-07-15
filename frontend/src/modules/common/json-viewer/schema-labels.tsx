@@ -39,11 +39,7 @@ function getTypeColorClass(
   }
 }
 
-/**
- * Renders type, ref, and contentType labels for OpenAPI schema mode.
- * Shows type label (e.g., "object", "string"), ref label (e.g., "User"), and contentType (e.g., "application/json").
- * Also shows composition labels (anyOf, oneOf) when present.
- */
+// Renders OpenAPI schema-mode labels: type, ref, contentType, and composition markers (anyOf/oneOf) when present.
 export const SchemaLabels: FC<SchemaLabelsProps> = ({
   typeValue,
   refValue,

@@ -14,12 +14,6 @@ import { UserSheetHandler } from '~/modules/user/user-sheet-handler';
 import { AppStream } from '~/query/realtime/app-stream';
 import { TabCoordinator } from '~/query/realtime/tab-coordinator';
 
-/**
- * Main application layout component.
- * - Wraps the app in error boundaries.
- * - Renders navigation, content area, dialogs, sheets, and other global components.
- * - Uses AppStream for real-time membership/organization updates via CDC events.
- */
 function AppLayout() {
   return (
     <div id="appLayout" className="in-[.floating-nav]:mb-0 max-sm:mb-16">

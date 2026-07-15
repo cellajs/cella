@@ -49,9 +49,8 @@ interface SidebarNavProps {
 }
 
 /**
- * Sidebar navigation: icon bar + sheet panel.
- * Widths are computed and set as CSS custom properties.
- * Data attributes control non-width styling (opacity, position, pointer-events).
+ * Sidebar navigation: icon bar + sheet panel. Widths are set as CSS custom properties;
+ * data attributes drive the rest (opacity, position, pointer-events).
  */
 export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
   const { hasStarted } = useMountedState();

@@ -203,17 +203,9 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
    * When set, overrides enableVirtualization for rows
    */
   enableRowVirtualization?: Maybe<boolean>;
-  /**
-   * Pin header rows to the viewport top when the grid scrolls out of view.
-   * Opt-in: most embedded/static tables don't want this.
-   * @default false
-   */
+  /** Pin header rows to viewport top when the grid scrolls out of view. Opt-in. @default false */
   enableStickyHeader?: Maybe<boolean>;
-  /**
-   * Enable vertical auto-scroll of the grid viewport during pragmatic-dnd drag operations.
-   * Opt-in: only useful for tables that wire up row drag-and-drop.
-   * @default false
-   */
+  /** Vertical auto-scroll of the viewport during pragmatic-dnd drag. Opt-in; only for row-drag tables. @default false */
   enableDragAutoScroll?: Maybe<boolean>;
   /**
    * Cell selection mode (focus + range).
@@ -246,10 +238,9 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
    * Infinite scroll support
    */
   /**
-   * Callback triggered when the rendered rows approach the end of the dataset.
-   * Useful for implementing infinite scroll / load more functionality.
-   * Fires when rowOverscanEndIdx >= rows.length - rowsEndApproachingThreshold.
-   * Only fires once per rows.length to prevent re-triggering after data loads.
+   * Fires when rendered rows approach the dataset end (infinite scroll / load more):
+   * when rowOverscanEndIdx >= rows.length - rowsEndApproachingThreshold. Fires once
+   * per rows.length to avoid re-triggering after data loads.
    */
   onRowsEndApproaching?: Maybe<(args: RowsEndApproachingArgs) => void>;
   /**
@@ -425,9 +416,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   // Get current breakpoint for responsive features
   const currentBreakpoint = useCurrentBreakpoint();
 
-  // Active display modes: 'compact' is the user density toggle, 'mobile' is
-  // viewport-driven (xs, hardcoded for now). Columns key their `modes`
-  // overrides and merge rules off these.
+  // 'compact' = user density toggle, 'mobile' = viewport-driven (xs, hardcoded).
+  // Columns key their `modes` overrides and merge rules off these.
   const isMobileBreakpoint = currentBreakpoint === 'xs';
   const activeModes = useMemo<ActiveModes>(
     () => ({ compact: isCompact ?? false, mobile: isMobileBreakpoint }),
@@ -507,12 +497,10 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   // while a pragmatic-dnd drag is in progress.
   useDragAutoScroll(gridRef, enableDragAutoScroll);
 
-  // Compute effective rowHeight, wrapping baseRowHeight with wrapText-aware logic
-  // when any column has wrapText enabled. This turns a fixed height into a per-row
-  // function that accounts for multi-line content. Merged host cells with occupied
-  // top/bottom slot rows additionally need constant extra height (virtualization
-  // needs heights without rendering). On the mobile breakpoint rows are scaled up
-  // for easier touch targets. DataGrid owns this breakpoint-specific scaling.
+  // wrapText turns the fixed height into a per-row function (multi-line content).
+  // Merged host cells with occupied top/bottom slots add constant extra height
+  // (virtualization needs heights up front, without rendering). Mobile scales rows
+  // up for touch targets — DataGrid owns this breakpoint-specific scaling.
   const rowHeight = useMemo(() => {
     const slotExtra = computeMergedSlotExtraHeight(columns);
     const mobileScale = isMobileBreakpoint ? 1.2 : 1;
@@ -808,9 +796,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     }
   }, [selectedPosition.mode]);
 
-  // Infinite scroll: fires onRowsEndApproaching when the rendered viewport
-  // approaches the end of the dataset. Tracks lastFiredForRowsLength internally
-  // to prevent re-triggering immediately after new data arrives.
   useInfiniteScroll({
     totalRows: rows.length,
     rowOverscanEndIdx,

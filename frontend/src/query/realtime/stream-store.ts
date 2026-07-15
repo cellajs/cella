@@ -503,12 +503,8 @@ export const appStreamManager = new StreamManager('AppStream', {
 appStreamManager.useStore.subscribe((s) => setSyncStreamLive(s.state === 'live'));
 
 /**
- * Wait for the first stream catchup to complete after page load.
- * Returns a promise created at module init time and resolved when
- * the app stream finishes its first catchup or fails.
- *
- * Safe to call before any stream has connected: the promise is
- * already pending and will resolve once a stream catches up.
+ * Wait for the first stream catchup after page load (resolves on catchup or failure).
+ * Safe to call before any stream has connected — the gate promise is already pending.
  */
 export function waitForActiveCatchup(): Promise<void> {
   return initialCatchupGate;

@@ -8,9 +8,8 @@ import { docPages, getDocPage, pathToSlug } from '~/modules/page/content';
 let clientPromise: Promise<DocsSearchClient> | null = null;
 
 /**
- * Lazily create (once per session) the docs search client. The engine (Orama)
- * and the body-text corpus are dynamic imports, so their weight only loads
- * when search is actually used.
+ * Lazily create the docs search client (once per session). The engine (Orama) and body-text
+ * corpus are dynamic imports, so their weight loads only when search is actually used.
  */
 export function getDocsSearchClient(queryClient: QueryClient): Promise<DocsSearchClient> {
   clientPromise ??= buildClient(queryClient);
@@ -35,9 +34,8 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
   const [{ createEngine }, { docsSectionsIndex }, operations, schemas] = await Promise.all([
     import('~/modules/docs/search/engine'),
     import('virtual:docs-search-sections'),
-    // Reads the same cache the API reference uses (staleTime: Infinity, prefetched
-    // by the docs route loader). Offline with a cold cache the fetch fails —
-    // degrade to docs-only and retry per search.
+    // Reads the same cache the API reference uses (staleTime: Infinity, prefetched by the docs
+    // route loader). Offline with a cold cache the fetch fails — degrade to docs-only, retry per search.
     queryClient.ensureQueryData(operationsQueryOptions).catch(() => null),
     queryClient.ensureQueryData(schemasQueryOptions).catch(() => null),
   ]);

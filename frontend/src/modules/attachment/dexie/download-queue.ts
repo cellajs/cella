@@ -42,14 +42,10 @@ async function transition(id: string, to: DownloadStatus, skipReason?: string): 
 }
 
 /**
- * Enqueue attachments for background download.
- *
- * The queue table itself is the registry of "have I seen this attachment?":
- *   - Any existing row (pending / downloading / downloaded / failed) is left untouched.
- *   - The single exception is rows that were `skipped` because the attachment had no
- *     `originalKey` at queue time but now has one. Those get reset to `pending`.
- *
- * Skips attachments that already have a processed variant cached locally (no work to do).
+ * Enqueue attachments for background download. The queue table doubles as the "seen?" registry:
+ * existing rows (pending/downloading/downloaded/failed) are left untouched. The one exception is
+ * rows `skipped` for lacking an `originalKey` at queue time — those reset to `pending` once one
+ * exists. Attachments with a processed variant already cached locally are skipped.
  */
 async function enqueue(attachments: Attachment[], organizationId: string): Promise<void> {
   if (!attachments.length) return;

@@ -3,13 +3,8 @@ import { redirect } from '@tanstack/react-router';
 /**
  * Rewrite URL params to use slugs instead of IDs where available.
  *
- * Call this in beforeLoad after fetching entity data. If the user navigated
- * using IDs but entities have slugs, this will redirect (replace) to
- * the prettier slug-based URL without causing a re-render or extra fetch.
- *
- * @param params - Current route params
- * @param slugOverrides - Map of param names to their slug values (e.g., { organizationSlug: 'my-org', tenantId: 'abc' })
- * @param routeTo - Target route path
+ * Call in beforeLoad after fetching entity data: if the user navigated by IDs but entities have
+ * slugs, redirects (replace) to the slug-based URL without a re-render or extra fetch.
  *
  * @example
  * beforeLoad: async ({ params }) => {

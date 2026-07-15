@@ -21,10 +21,9 @@ interface ViewPageProps {
 }
 
 /**
- * Registers the page's headings with the scroll spy. Rendered inside the Suspense
- * boundary after the content so it mounts only once the lazy body is in the DOM.
- * registerSections only observes elements that exist at call time, and its
- * initial-hash scroll needs the targets present.
+ * Registers the page's headings with the scroll spy. Mounts inside the Suspense boundary after the
+ * content, so the lazy body is in the DOM first: registerSections only observes elements that exist
+ * at call time, and its initial-hash scroll needs the targets present.
  */
 function RegisterSpySections({ ids }: { ids: string[] }) {
   useScrollSpy(ids);
@@ -32,19 +31,15 @@ function RegisterSpySections({ ids }: { ids: string[] }) {
 }
 
 /**
- * Displays a docs page: frontmatter title + compiled MDX body.
- * Supports three render modes:
- * - default: renders full page content
- * - overview: renders intro content + auto-generated child page list
- * - nodeOnly: redirect-like experience showing child page navigation only
+ * Displays a docs page (frontmatter title + compiled MDX). Render modes: `default` (full content),
+ * `overview` (intro + auto-generated child page list), `nodeOnly` (child navigation only).
  */
 function ViewPage({ slug }: ViewPageProps) {
   const page = getDocPage(slug);
 
-  // The code-split MDX body for this slug. On the docs route it is already resolved
-  // by the route loader (page.$.tsx), so the body renders synchronously — no Suspense
-  // fallback. The lazy path covers callers that render without that loader. The
-  // component is keyed by slug at the call site, so this memo lives for exactly one page.
+  // Code-split MDX body for this slug. On the docs route the route loader (page.$.tsx) already
+  // resolved it, so it renders synchronously — no Suspense fallback; the lazy path covers callers
+  // without that loader. The component is keyed by slug at the call site, so this memo is per-page.
   const Content = useMemo<ComponentType<{ components?: typeof mdxComponents }> | null>(() => {
     const resolved = getResolvedDocPageComponent(slug);
     if (resolved) return resolved;

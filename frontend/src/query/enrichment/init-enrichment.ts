@@ -20,11 +20,7 @@ let isEnriching = false;
 /** Cache of extended ancestors (hierarchy + menu parents) per entity type */
 const extendedAncestorsCache = new Map<ChannelEntityType, readonly ChannelEntityType[]>();
 
-/**
- * Get ancestors including menu parent types for URL building.
- * Hierarchy ancestors come first, then menu parents not already in the list.
- * E.g. for project: ['organization'] (hierarchy) + ['workspace'] (menu parent).
- */
+/** Ancestors for URL building: hierarchy ancestors first, then menu parents not already included. */
 function getExtendedAncestors(entityType: ChannelEntityType): readonly ChannelEntityType[] {
   const cached = extendedAncestorsCache.get(entityType);
   if (cached) return cached;
@@ -48,8 +44,7 @@ function getExtendedAncestors(entityType: ChannelEntityType): readonly ChannelEn
 }
 
 /**
- * Run all enrichers on a single item in sequence.
- * Each enricher returns the same reference when nothing changed.
+ * Run enrichers on an item in sequence (each returns the same reference when unchanged).
  * Order matters: membership must run before permissions and ancestor-slugs (they read item.membership).
  */
 function enrichItem(
@@ -143,9 +138,8 @@ function enrichEntityType(entityType: ChannelEntityType, memberships: Membership
 }
 
 /**
- * Ensure the slug index contains entries for all ancestors of a given entity type.
- * This is needed so enrichWithAncestorSlugs can resolve ancestor slugs from the index
- * regardless of which entity type triggered the enrichment.
+ * Populate the slug index with all ancestors of this entity type, so enrichWithAncestorSlugs can
+ * resolve ancestor slugs regardless of which type triggered enrichment.
  */
 function ensureAncestorSlugs(entityType: ChannelEntityType, slugIndex: SlugIndex) {
   for (const ancestor of getExtendedAncestors(entityType)) {
@@ -153,11 +147,7 @@ function ensureAncestorSlugs(entityType: ChannelEntityType, slugIndex: SlugIndex
   }
 }
 
-/**
- * Run enrichment for a single entity type using targeted cache lookups.
- * Builds a slug index on demand from the type's own list data,
- * then enriches lists + details and any child types that depend on it for ancestor slugs.
- */
+/** Enrich one entity type: build its slug index on demand, then enrich its lists, details, and dependent child types. */
 function runEnrichment(entityType: ChannelEntityType) {
   const memberships = getCachedMemberships();
   if (!memberships?.length) return;

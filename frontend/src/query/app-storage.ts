@@ -21,9 +21,8 @@ let readyPromise: Promise<void> = Promise.resolve();
 const ownerListeners = new Set<(owner: string | null) => void>();
 
 /**
- * Subscribe to appdb owner changes. Fires AFTER the DB is (re)bound or closed, so callbacks
- * see the live instance via `getAppDb()`. Used by long-lived consumers (e.g. attachment
- * services holding a `liveQuery`) that must re-subscribe against the freshly bound DB.
+ * Fires AFTER the DB is (re)bound or closed, so callbacks see the live instance via `getAppDb()`.
+ * Long-lived consumers (e.g. attachment services holding a `liveQuery`) must re-subscribe here.
  */
 export function subscribeOwnerChange(listener: (owner: string | null) => void): () => void {
   ownerListeners.add(listener);
@@ -71,11 +70,7 @@ export function appStorageReady(): Promise<void> {
   return readyPromise;
 }
 
-/**
- * One-time best-effort cleanup of pre-appdb client storage (hard cutover, no migration):
- * obsolete per-store localStorage/sessionStorage keys (incl. orphaned `...:anon`) and the
- * retired standalone IndexedDB databases. Failures are ignored because this only removes dead noise.
- */
+/** One-time, best-effort GC of pre-appdb client storage (hard cutover, no migration). */
 function gcLegacyStorage(): void {
   const flag = `${appConfig.slug}-storage-gc-v2`;
   try {

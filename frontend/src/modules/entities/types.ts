@@ -28,9 +28,5 @@ export type EntityEnrichment = {
   can?: EntityCan;
 };
 
-/**
- * Frontend-enriched channel entity type.
- * Extends the API base with client-side data populated via cache enrichment.
- * Use `ChannelEntityBase` from `sdk` when you only need the base fields.
- */
+/** API base + frontend cache enrichment. Use `ChannelEntityBase` from `sdk` for base fields only. */
 export type EnrichedChannelEntity = ChannelEntityBase & EntityEnrichment;

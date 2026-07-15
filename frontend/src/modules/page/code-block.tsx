@@ -4,10 +4,9 @@ import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { Button } from '~/modules/ui/button';
 
 /**
- * Docs code block: the Shiki-highlighted `<pre>` (build-time, vite.config.ts) wrapped
- * with a hover copy button. The raw text is read from the rendered element rather than
- * reconstructed from the token spans. The incoming `<pre>` already carries the `shiki`
- * class; styling of `pre.shiki` lives in styling/tailwind.css.
+ * Docs code block: the build-time Shiki-highlighted `<pre>` (vite.config.ts) wrapped with a hover
+ * copy button. Raw text is read from the rendered element, not reconstructed from token spans. The
+ * `<pre>` already carries the `shiki` class; `pre.shiki` styling lives in styling/tailwind.css.
  */
 export function CodeBlock({ children, ...props }: ComponentProps<'pre'>) {
   const ref = useRef<HTMLPreElement>(null);

@@ -47,11 +47,7 @@ export const FilterBarActions = ({ children, className = '' }: FilterBarChildPro
   );
 };
 
-/**
- * Search input container with simple fade animation on mobile.
- * Absolutely positioned to fill left side, overlaying actions.
- * On desktop it's always visible.
- */
+/** Search input container: fades in over the actions on mobile; always visible on desktop. */
 export const FilterBarSearch = ({ children, className = '' }: FilterBarChildProps) => {
   const { isFilterActive } = useContext(TableFilterBarContext);
 
@@ -77,11 +73,7 @@ export const FilterBarSearch = ({ children, className = '' }: FilterBarChildProp
   );
 };
 
-/**
- * Filter controls that slide in from the right on mobile when filter is active.
- * Absolutely positioned on the right side, just before the toggle button.
- * On desktop it's always visible. Use this for filters other than search.
- */
+/** Filter controls (non-search): slide in from the right on mobile; always visible on desktop. */
 export const FilterBarFilters = ({ children, className = '' }: FilterBarChildProps) => {
   const { isFilterActive } = useContext(TableFilterBarContext);
 

@@ -53,10 +53,8 @@ const isBroadcastChannelAvailable = (): boolean => {
 };
 
 /**
- * Initialize the tab coordinator.
- * Sets up BroadcastChannel and attempts leader election via Web Locks.
- * Returns a promise that resolves when leader election is complete.
- * Safe to call multiple times - initialization only happens once.
+ * Initialize the tab coordinator (BroadcastChannel + leader election via Web Locks). Resolves once
+ * leader status is known. Idempotent — initialization happens only once across repeated calls.
  */
 export const initTabCoordinator = async (): Promise<void> => {
   // Return existing promise if already initializing/initialized
@@ -94,11 +92,7 @@ export const initTabCoordinator = async (): Promise<void> => {
   return initPromise;
 };
 
-/**
- * Attempt to acquire the leader lock.
- * The first tab to acquire the lock becomes the leader.
- * Returns a promise that resolves once we know our leader status.
- */
+/** Acquire the leader lock (first tab to acquire it becomes leader); resolves once leader status is known. */
 const attemptLeaderElection = (): Promise<void> => {
   const store = useTabCoordinatorStore.getState();
   lockController = new AbortController();

@@ -7,11 +7,8 @@ const RESET_COOLDOWN_MS = 3000; // Cooldown period after reset where scroll even
 const INITIAL_COOLDOWN_MS = 500; // Brief cooldown on mount to prevent hiding from restored scroll position
 
 /**
- * Hook that tracks scroll direction and returns visibility state.
+ * Tracks scroll direction; returns `{ isVisible, scrollTop, reset }`.
  * Shows when scrolling up, hides when scrolling down.
- * @param enabled - Whether to enable scroll tracking
- * @param containerRef - Optional ref to a scrollable container (defaults to window)
- * @returns Object with isVisible state, scrollTop position, and reset function
  */
 export const useScrollVisibility = (enabled = true, containerRef?: RefObject<HTMLElement | null>) => {
   const [isVisible, setIsVisible] = useState(true);

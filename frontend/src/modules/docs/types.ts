@@ -1,7 +1,6 @@
 /**
- * Centralized types for OpenAPI documentation module.
- * These types are used by the openapi-parser plugin and the generated files.
- * Prefixed with "Gen" to indicate they are generated from OpenAPI spec for docs.
+ * Centralized types for the OpenAPI docs module, shared with the openapi-parser plugin and
+ * generated files. The "Gen" prefix marks types generated from the OpenAPI spec.
  */
 
 /**
@@ -171,9 +170,8 @@ export interface GenSchema {
   anyOf?: GenSchema[];
   /** oneOf schemas */
   oneOf?: GenSchema[];
-  // Example is intentionally omitted here.
-  // Examples belong at the GenComponentSchema level, not inside schema.schema.
-  // This prevents duplication of example data in the generated output.
+  // Example is intentionally omitted here: examples belong at the GenComponentSchema level, not
+  // inside schema.schema, to avoid duplicating example data in the generated output.
 }
 
 /**
@@ -266,9 +264,8 @@ export interface GenOperationDetail {
 }
 
 /**
- * Schema tag summary with description and count.
- * Schema tags are configured backend-side as registered tags with `kind: 'schema'`.
- * Used for schema tag navigation and filtering.
+ * Schema tag summary. Schema tags are configured backend-side as registered tags with
+ * `kind: 'schema'`, used for schema-tag navigation and filtering.
  */
 export interface GenSchemaTagSummary {
   /** Tag name identifier (e.g. 'base', 'data', 'errors') */

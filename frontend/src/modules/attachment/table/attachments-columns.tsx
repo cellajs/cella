@@ -27,11 +27,10 @@ const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
 export const useColumns = (channelEntity: EnrichedChannelEntity, isSheet: boolean) => {
   const { t } = useTranslation();
 
-  // Deliberately optimistic and table-scoped: enable inline edit when update is `true` (admin) OR
-  // `'own'` (owner-scoped) — `!!` is true for both. This is a product entity shown as a table, so
-  // there is no single row to resolve `'own'` against here; the backend enforces the owner check
-  // per row on save. Per-ENTITY affordances should instead resolve `'own'` via `useResolveCan`
-  // (see `~/modules/entities/use-resolve-can`); this optimistic table-level case is the exception.
+  // Deliberately optimistic and table-scoped: `!!` enables inline edit for both `true` (admin) and
+  // `'own'` — there's no single row here to resolve `'own'` against, and the backend enforces the
+  // owner check per row on save. Per-ENTITY affordances must instead resolve `'own'` via
+  // `useResolveCan` (~/modules/entities/use-resolve-can); this table-level case is the exception.
   const canUpdate = !!channelEntity.can?.attachment?.update;
 
   const columns: ColumnOrColumnGroup<Attachment>[] = useMemo(

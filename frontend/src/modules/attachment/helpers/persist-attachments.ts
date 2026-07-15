@@ -4,12 +4,9 @@ import { createAttachments } from 'sdk';
 import { createStxForCreate } from '~/query/offline/stx-utils';
 
 /**
- * Persist already-parsed attachments as real entities.
- *
- * Used by contexts that upload inline media as true attachments (BlockNote's
- * `public-attachment` / `private-attachment` modes). The attachments keep their
- * client-generated ids, so anything already referencing those ids (e.g. a
- * BlockNote block written on upload) stays valid after persistence.
+ * Persist already-parsed attachments as real entities (BlockNote's `public-attachment` /
+ * `private-attachment` modes). They keep their client-generated ids, so a BlockNote block written
+ * on upload that references those ids stays valid after persistence.
  */
 export async function persistAttachments(
   attachments: Attachment[],

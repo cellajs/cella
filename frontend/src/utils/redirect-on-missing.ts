@@ -4,9 +4,8 @@ import i18n from 'i18next';
 import { useToastStore } from '~/modules/common/toaster/toast-store';
 
 /**
- * Throws a redirect to /home when a required entity is missing.
- * Shows an offline cache miss toast when the user is offline.
- * Acts as a type guard, narrowing the entity to non-nullable after the call.
+ * Asserts a required entity is present, else throws a redirect to /home (narrows to NonNullable).
+ * Shows an offline cache-miss toast when offline.
  */
 export function redirectOnMissing<T>(entity: T): asserts entity is NonNullable<T> {
   if (entity != null) return;

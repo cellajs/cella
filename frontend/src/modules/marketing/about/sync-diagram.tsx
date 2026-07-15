@@ -88,9 +88,8 @@ const modeText: Record<SyncMode, { label: string; text: string }> = {
   yjs: { label: 'about:sync_diagram.part_3.label', text: 'about:sync_diagram.part_3.text' },
 };
 
-// ── Animation timeline (seconds) ────────────────────────────────────────────────────
-// Base REST (Postgres/OpenAPI/React Query + HTTP & SQL lines) fades in and holds,
-// then the mode-specific node fades in and the stream/branch lines draw in flow order.
+// Animation timeline (seconds): base REST fades in and holds, then the mode-specific node fades
+// in and the stream/branch lines draw in flow order.
 const ANIM = { fade: 0.6, hold: 1, cdcIn: 0.6, draw: 0.9, sqlDraw: 0.6, gap: 0.4 } as const;
 
 type EdgeTiming = { delay: number; duration: number; draw: boolean };

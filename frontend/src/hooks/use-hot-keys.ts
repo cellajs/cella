@@ -2,11 +2,7 @@ import { useEffect } from 'react';
 import { getHotkeyMatcher, type HotkeyItem, shouldFireEvent } from '~/hooks/use-hot-keys-helpers';
 
 /**
- * Hook to handle global keyboard shortcuts.
- *
- * @param hotkeys - Array of hotkey definitions ([key combination, handler function, options]).
- * @param tagsToIgnore - Elements where hotkeys should be ignored(default `['INPUT', 'TEXTAREA', 'SELECT']`).
- * @param triggerOnContentEditable - Whether hotkeys should trigger in content-editable elements(default `false`0.
+ * Global keyboard shortcuts. Each hotkey is `[combination, handler, options?]`.
  *
  * @example
  * useHotkeys([

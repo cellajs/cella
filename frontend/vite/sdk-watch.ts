@@ -4,13 +4,9 @@ import { checkMark, crossMark } from 'shared/utils/console';
 import type { Plugin, ViteDevServer } from 'vite';
 
 /**
- * Vite plugin that watches the SDK output for changes and triggers a full reload.
- *
- * The actual spec watching and SDK regeneration is handled by the SDK's
- * own generate-sdk script (sdk/src/generate-sdk.ts --watch). This plugin
- * only reacts to the final output in sdk/gen/ to trigger browser reloads.
- *
- * Also provides graceful degradation if sdk/gen/ is missing (virtual empty module).
+ * Vite plugin: watches the SDK output (sdk/gen/) and triggers a full browser reload on change.
+ * Spec watching and regeneration belong to the SDK's own generate-sdk script (--watch); this only
+ * reacts to the final output. Degrades gracefully when sdk/gen/ is missing (virtual empty module).
  */
 export const sdkWatch = (): Plugin => {
   const sdkGenDir = resolve(import.meta.dirname, '../../sdk/gen');

@@ -9,9 +9,8 @@ export const getQueryItems = <TItem>(prevItems: BaseQueryItem<TItem>) =>
   isQueryData(prevItems) ? prevItems.items : prevItems.pages.flatMap(({ items }) => items);
 
 /**
- * Replaces the items in a query while preserving the structure of the previous data, splitting
- * into chunks for infinite queries. Optionally adjusts the cached `total` via `addToTotal`.
- * Infinite queries assume **standard page parameters** of shape `{ page: number; offset: number }`.
+ * Replace a query's items while preserving prev structure, re-chunking into pages for infinite
+ * queries. `addToTotal` adjusts cached `total`. Assumes page params of shape `{ page, offset }`.
  */
 export function formatUpdatedCacheData<TItem>(
   prevData: BaseQueryItem<TItem>,

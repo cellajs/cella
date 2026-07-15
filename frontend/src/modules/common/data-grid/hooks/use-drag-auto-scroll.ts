@@ -5,9 +5,8 @@ import {
 import { type RefObject, useEffect, useRef } from 'react';
 
 /**
- * Walk up the ancestor chain to find the nearest vertically-scrollable
- * ancestor. Mirrors `getScrollParent` in `useGridDimensions` and
- * `usePanelAutoScroll`'s window-fallback pattern.
+ * Nearest vertically-scrollable ancestor. Mirrors `getScrollParent` in
+ * `useGridDimensions` and `usePanelAutoScroll`'s window-fallback pattern.
  */
 function findScrollParent(start: HTMLElement | null): HTMLElement | null {
   let parent: HTMLElement | null = start;

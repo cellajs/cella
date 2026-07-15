@@ -42,10 +42,9 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import { router } from '~/routes/router';
 
 /**
- * Everything collaborative mode needs, bundled: the Yjs wiring (provider, fragment,
- * cursor user) plus the entity identity for SSE suppression while editing.
- * Presence of the bundle switches the editor into collaborative mode.
- * Persistence is relay-side: the relay materializes sessions into the entity row.
+ * Bundle for collaborative mode: Yjs wiring (provider, fragment, cursor user) + entity identity for SSE
+ * suppression while editing. Presence of this bundle switches the editor into collaborative mode;
+ * persistence is relay-side (the relay materializes sessions into the entity row).
  */
 export interface CollaborationBundle {
   provider: WebsocketProvider;

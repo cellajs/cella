@@ -17,11 +17,8 @@ export function createStxForCreate(): StxBase {
 }
 
 /**
- * Create sync transaction metadata for an update mutation.
- * Generates HLC timestamps for each scalar field being changed.
- * AWSet fields (labels, assignedTo) don't need timestamps (commutative).
- *
- * @param scalarFieldNames - Names of scalar fields being updated
+ * Sync transaction metadata for an update: HLC timestamps per changed scalar field.
+ * AWSet fields (labels, assignedTo) need no timestamps (commutative).
  */
 export function createStxForUpdate(scalarFieldNames: string[] = []): StxBase {
   return {

@@ -11,9 +11,8 @@ import { CodeBlock } from '~/modules/page/code-block';
  */
 
 /**
- * Internal /docs links in content navigate via the router; in-page #anchor links scroll
- * via the spy store (which also queues until lazy content is laid out); external links
- * open in a new tab.
+ * Internal /docs links navigate via the router; in-page #anchor links scroll via the spy store
+ * (which queues until lazy content is laid out); external links open in a new tab.
  */
 function MdxLink({ href = '', children, ...props }: ComponentProps<'a'>) {
   if (href.startsWith('/')) {
@@ -46,9 +45,9 @@ function MdxLink({ href = '', children, ...props }: ComponentProps<'a'>) {
 }
 
 /**
- * Section heading (h2) with a hover copy-link button. The copied URL carries the bare
- * hash slug (spy store convention). The DOM id keeps its `spy-` prefix. Deeper
- * headings keep their anchor ids but render plain (the button sits awkwardly at h3 size).
+ * Section heading (h2) with a hover copy-link button; the copied URL uses the bare hash slug while
+ * the DOM id keeps its `spy-` prefix (spy store convention). Deeper headings keep anchor ids but
+ * render plain (the button sits awkwardly at h3 size).
  */
 function MdxHeading({ id = '', children, ...props }: ComponentProps<'h2'>) {
   const hash = id.replace(/^spy-/, '');

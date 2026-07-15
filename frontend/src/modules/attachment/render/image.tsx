@@ -53,9 +53,9 @@ function RenderImage(
 
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // The image fits its container via CSS (object-contain), so zoom = 1 is the natural "fit" state.
-  // We no longer measure the rendered size on load and rescale — that caused a visible resize jump
-  // one frame after the image appeared (and never fit cached images, whose load event never fires).
+  // Image fits its container via CSS (object-contain), so zoom = 1 is the natural "fit". We don't
+  // measure rendered size on load and rescale — that jumped one frame after paint, and never fit
+  // cached images (whose load event never fires).
   const resetAll = () => {
     setDx(0);
     setDy(0);

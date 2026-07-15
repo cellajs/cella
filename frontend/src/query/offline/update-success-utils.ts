@@ -3,11 +3,9 @@ import { cacheUpdate } from '~/query/basic/cache-mutations';
 import type { ItemData } from '~/query/basic/types';
 
 /**
- * Merge only the mutated fields from the server response onto the cached entity.
- * Preserves optimistic values for fields that weren't part of this mutation,
- * while always syncing stx, updatedAt, and updatedBy from the server.
- *
- * Returns the server entity directly when no cached version exists.
+ * Merge only this mutation's mutated fields from the server response onto the cached entity,
+ * preserving optimistic values for fields it didn't touch (avoids clobbering concurrent mutations),
+ * while always syncing stx/updatedAt/updatedBy. Returns the server entity when nothing is cached.
  */
 export function mergeServerResponse<T extends { id: string; stx?: unknown; updatedAt?: string | null }>(opts: {
   cached?: T;

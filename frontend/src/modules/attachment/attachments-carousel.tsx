@@ -74,9 +74,8 @@ export function AttachmentsCarousel({
     return index !== -1 ? index : itemIndex;
   })();
 
-  // Track startIndex to prevent Embla reInit flashes during carousel navigation.
-  // Updates when the item set changes (e.g., group data arrives), but stays stable
-  // when only the URL changes from slide navigation.
+  // startIndexRef stays stable across URL-only changes so Embla doesn't reInit (flash) on slide
+  // nav; it only re-syncs when the item set size changes (e.g. group data arrives).
   const startIndexRef = useRef<number | null>(null);
   const itemCountRef = useRef(items.length);
   if (startIndexRef.current === null || itemCountRef.current !== items.length) {
@@ -107,9 +106,8 @@ export function AttachmentsCarousel({
 
   const toggleWatchDrag = (enabled: boolean) => setWatchDrag(enabled && items.length > 1);
 
-  // Register the Embla `select` listener once (stable setApi), reading the latest items and
-  // updateSearchParam via refs. Previously setApi was an inline arrow re-invoked on every render,
-  // stacking duplicate `select` listeners that fired redundant navigations on each slide change.
+  // Stable setApi registers Embla's `select` listener once, reading latest items via refs. An
+  // inline setApi re-ran each render, stacking duplicate listeners → redundant navigations.
   const itemsRef = useLatestRef(items);
   const handleSelect = useLatestCallback(updateSearchParam);
   const handleSetApi = useCallback(

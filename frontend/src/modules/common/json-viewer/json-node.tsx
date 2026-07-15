@@ -312,9 +312,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
     const closeBracket = isArray ? ']' : '}';
     const isEmpty = entries.length === 0;
 
-    // In schema mode, check if this object has any nested objects (not arrays) as children
-    // Only objects with nested object children should be expandable
-    // Arrays are always expandable, and we check the filtered entries for actual object children
+    // Schema mode: an object is expandable only if it has nested object (not array) children; arrays are always expandable.
     const hasNestedObjects =
       openapiMode === 'schema' && !isArray
         ? entries.some(([, val]) => val !== null && typeof val === 'object' && !Array.isArray(val))

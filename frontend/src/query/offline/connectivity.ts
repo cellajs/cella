@@ -17,21 +17,13 @@ let lastResult: boolean | null = null;
 let inFlight: Promise<boolean> | null = null;
 
 /**
- * Probe actual internet connectivity via /health (shallow 204).
+ * Probe actual internet connectivity via /health (shallow 204). Triggered by network-level fetch
+ * failures (TypeError) in lib/api-client.ts and on-error.ts to detect "WiFi connected but no
+ * internet" — where navigator.onLine stays true but all API calls fail.
  *
- * Triggered by network-level fetch failures (TypeError) in lib/api-client.ts and on-error.ts
- * to detect "WiFi connected but no internet", a scenario where navigator.onLine stays
- * true but all API calls fail.
- *
- * Behavior:
- * - Results cached for 10s to debounce bursts of failing queries
- * - Concurrent calls are deduplicated (single in-flight probe)
- * - On failure: sets onlineManager.setOnline(false), which cascades to:
- *   -> DownAlert shows "offline" banner
- *   -> staleTime goes infinite (stops refetch attempts)
- *   -> mutations pause until reconnect
- * - On recovery: browser 'online' event resets cache (via resetConnectivityCache)
- *   and sets onlineManager back online, restoring normal operation
+ * Results are cached (10s) and concurrent calls deduped. On failure it calls
+ * onlineManager.setOnline(false), which cascades: DownAlert banner, staleTime -> infinite (stops
+ * refetches), mutations pause until reconnect. Recovery is driven by the browser 'online' event.
  */
 export async function checkConnectivity(): Promise<boolean> {
   const now = Date.now();

@@ -5,9 +5,8 @@ interface FilterOptions {
   /** Free-text query; space-separated terms are AND-combined. */
   q: string;
   /**
-   * Tag filter encoded as `${kind}:${value}` (e.g. `'owner:cella'`,
-   * `'entity:context'`). Restricts to operations whose `tagsByKind[kind]`
-   * includes `value`.
+   * Tag filter encoded as `${kind}:${value}` (e.g. `'owner:cella'`); restricts to operations whose
+   * `tagsByKind[kind]` includes `value`.
    */
   tag?: string;
 }

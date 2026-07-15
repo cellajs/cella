@@ -12,9 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/modu
 import { cn } from '~/utils/cn';
 
 /**
- * Sidebar component for displaying a collapsible sidebar with various features.
- * Uses the navigation store instead of a provider pattern.
- *
+ * Collapsible sidebar. Uses the navigation store instead of shadcn's provider pattern.
  * @link https://ui.shadcn.com/docs/components/sidebar
  */
 
@@ -29,14 +27,9 @@ type UseSidebarReturn = {
 };
 
 /**
- * Hook to access sidebar state from the navigation store.
- * No provider required - uses the global navigation store.
- *
- * With nested sidebars (sidebar-09 pattern), the outer sidebar stays at icon width
- * and the content panel expands/collapses. This hook is simplified to just track
- * the keepNavOpen state for keyboard shortcuts.
- *
- * Mobile sheets are handled by the sheeter service, not the sidebar.
+ * Accesses sidebar state from the navigation store (no provider). With nested sidebars (sidebar-09
+ * pattern) the outer bar stays icon-width and the content panel collapses, so this hook only tracks
+ * `keepNavOpen` for keyboard shortcuts. Mobile sheets are handled by the sheeter service.
  */
 function useSidebar(): UseSidebarReturn {
   const isMobile = useBreakpointBelow('sm');

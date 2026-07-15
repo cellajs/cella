@@ -58,10 +58,9 @@ export function remarkLinkRepoPaths({ repoRoot, repoUrl, branch = 'main' }: Opti
   };
 
   return (tree: MdNode, file?: { path?: string }) => {
-    // Repo docs (imported from outside the content root) carry repo-relative markdown
-    // links, which would resolve as broken SPA routes when rendered — point them at
-    // GitHub instead. Content-root pages keep their links untouched (authors there
-    // use absolute /docs/... or external URLs).
+    // Repo docs (imported from outside the content root) carry repo-relative markdown links that
+    // would render as broken SPA routes — point them at GitHub. Content-root pages keep their links
+    // (authors there use absolute /docs/... or external URLs).
     const docDir = file?.path && !file.path.includes('/src/content/docs/') ? path.dirname(file.path) : null;
 
     const relativeLinkFor = (url: string): string | null => {

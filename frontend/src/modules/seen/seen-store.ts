@@ -114,14 +114,9 @@ function flushUnseenDecrements() {
 }
 
 /**
- * Store for tracking "seen" entities in the viewport.
- *
- * Entities observed via IntersectionObserver are queued here, then batch-flushed
- * to POST /:tenantId/:organizationId/seen periodically (or on page unload via sendBeacon).
- *
- * Successfully flushed IDs are kept in `flushedIds` and persisted to localStorage
- * via Zustand's persist middleware, so they are not re-sent on subsequent sessions.
- * If a flush fails, pending IDs are retained for the next interval.
+ * Store for "seen" entities. Queued from IntersectionObserver, then batch-flushed to
+ * POST /:tenantId/:organizationId/seen periodically (or on unload via sendBeacon). Flushed IDs
+ * persist to localStorage (Zustand persist) so they aren't re-sent next session; failed flushes are retained.
  */
 export const useSeenStore = create<SeenStoreState>()(
   devtools(
@@ -271,12 +266,7 @@ export const useSeenStore = create<SeenStoreState>()(
   ),
 );
 
-/**
- * Flush pending seen data via sendBeacon on page unload.
- * Uses sendBeacon for reliability when the page is being closed.
- *
- * Call this once at app init (e.g., in a useEffect in the root component).
- */
+/** Flush pending seen data via sendBeacon on page unload. Call once at app init (e.g. root useEffect). */
 export const setupSeenBeaconFlush = () => {
   const handler = () => {
     const { pending } = useSeenStore.getState();

@@ -27,18 +27,13 @@ type StandardEntityKeys<
 };
 
 /**
- * Factory function to create standardized query keys for an entity module.
+ * Standardized query keys for an entity module. Key hierarchy (prefix-matchable):
+ *   [entity, 'list']                              broadest (all queries)
+ *   [entity, 'list', organizationId]              all queries for one org
+ *   [entity, 'list', organizationId, projectId]  canonical scope (product entities)
+ *   [entity, 'list', organizationId, {filters}]  specific filtered query
  *
- * Key hierarchy:
- *   [entity, 'list']: broadest (all queries)
- *   [entity, 'list', organizationId]: all queries for one org
- *   [entity, 'list', organizationId, projectId]: canonical scope (product entities)
- *   [entity, 'list', organizationId, {filters}]: specific filtered query
- *
- * Scope keys are derived from hierarchy-config automatically:
- *   task (ancestors: project->organization) -> scope(organizationId, projectId)
- *   page (no ancestors) -> scope()
- *
+ * Scope ancestors derived from hierarchy-config: task -> scope(organizationId, projectId), page -> scope().
  * `list.scopeKeys` exposes ancestor ID column names for entity-agnostic scope derivation.
  */
 export function createEntityKeys<

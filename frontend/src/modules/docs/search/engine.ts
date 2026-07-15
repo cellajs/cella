@@ -4,13 +4,12 @@ import type { DocsSearchResult, DocsSearchResultType, DocsSearchScope } from '~/
 import type { GenComponentSchema, GenOperationSummary } from '~/modules/docs/types';
 
 /**
- * Orama full-text engine, built in the browser on first search. Shipping raw
- * documents and indexing client-side beats a prebuilt `save()` dump: the
- * serialized index is ~5x larger on the wire while `insertMultiple` costs only
- * tens of milliseconds at this corpus size (.todos/DOCS_SEARCH_RESEARCH.md).
+ * Orama full-text engine, built in the browser on first search. Indexing raw documents
+ * client-side beats a prebuilt `save()` dump: that serialized index is ~5x larger on the wire,
+ * while `insertMultiple` costs only tens of ms at this corpus size (.todos/DOCS_SEARCH_RESEARCH.md).
  *
- * Pure module: corpus assembly (virtual sections module, query cache) lives in
- * client.ts, so tests can drive this engine with plain fixtures.
+ * Pure module — corpus assembly (virtual sections, query cache) lives in client.ts, so tests can
+ * drive the engine with plain fixtures.
  */
 
 /** Everything the engine indexes for one docs page. */
@@ -139,9 +138,8 @@ const SCOPE_KINDS: Record<Exclude<DocsSearchScope, 'all'>, DocsSearchResultType[
 };
 
 /**
- * Build a search client over the given corpus. Pure — no data fetching — so
- * tests can drive it with fixtures. `addOperations`/`addSchemas` support late
- * arrival of the API corpus (offline with a cold query cache).
+ * Build a search client over the given corpus. `addOperations`/`addSchemas` support late arrival
+ * of the API corpus (offline with a cold query cache).
  */
 export function createEngine(
   pages: EnginePage[],

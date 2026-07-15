@@ -18,12 +18,7 @@ function invalidateAllChannelDetails(): void {
   }
 }
 
-/**
- * Invalidate channel entity list for a specific channelType.
- * Falls back to invalidating all context details if channelType is unknown.
- *
- * @param channelType - The channel entity type (e.g., 'organization'), or null for fallback
- */
+/** Invalidate the channel entity list for `channelType`; falls back to invalidating all context details when null/unknown. */
 export function invalidateChannelList(channelType: ChannelEntityType | null): void {
   if (channelType && hasEntityQueryKeys(channelType)) {
     // Invalidate by the `list` prefix key; covers all filtered list variants for this context type.
@@ -33,12 +28,7 @@ export function invalidateChannelList(channelType: ChannelEntityType | null): vo
   }
 }
 
-/**
- * Invalidate member queries for an organization.
- * Invalidates member lists that include the specified organization.
- *
- * @param organizationId - The organization ID, or null to invalidate all member queries
- */
+/** Invalidate member queries for an org (null invalidates all member queries). */
 export function invalidateMemberQueries(organizationId: string | null): void {
   if (organizationId) {
     queryClient.invalidateQueries({

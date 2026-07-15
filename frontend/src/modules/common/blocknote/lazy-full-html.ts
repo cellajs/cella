@@ -1,10 +1,7 @@
 import { lazyNamed } from '~/utils/lazy-named';
 
 /**
- * Shared React.lazy wrapper for BlockNoteFullHtml.
- *
- * Using a single lazy instance ensures that preloading the component
- * (e.g. via usePreloadLazyComponents on board mount) resolves the same
- * wrapper used by every consumer, eliminating the Suspense spinner flash.
+ * A single shared lazy instance so preloading (e.g. usePreloadLazyComponents on board mount) resolves the
+ * same wrapper every consumer uses, eliminating the Suspense spinner flash.
  */
 export const BlockNoteFullHtml = lazyNamed(() => import('~/modules/common/blocknote/full-html'), 'BlockNoteFullHtml');

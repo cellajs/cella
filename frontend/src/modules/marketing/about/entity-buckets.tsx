@@ -17,10 +17,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 
-// A conceptual illustration of Cella's selective sync: channel entities (structural, no sync)
-// and product entities (opt-in sync) both live in the same REST/Postgres/React Query foundation.
-// The wrapper is an open-top "U" to signal this is conceptual, not a closed system. A toggle
-// swaps between example app configs to show the same split holds for different entity setups.
+// Conceptual illustration of selective sync: channel entities (structural, no sync) and product
+// entities (opt-in sync) share one REST/Postgres/React Query base. Open-top "U" signals it's
+// conceptual, not a closed system.
 
 type Entity = { Icon: LucideIcon; label: string };
 
@@ -130,10 +129,8 @@ const DashedBorder = ({ animated = false }: { animated?: boolean }) => {
   );
 };
 
-// One category card. Both buckets get a dashed primary border; `animated` makes the synced
-// bucket's dashes flow and `badge` pins a pill label onto the middle of that border's top edge.
-// On config switch, tiles whose entity persists across configs (users, organizations, ...) stay
-// put; only slots whose entity actually changed crossfade, entering one by one.
+// One category card. On config switch, tiles whose entity persists across configs stay put;
+// only slots whose entity changed crossfade, entering one by one.
 const Bucket = ({
   title,
   entities,

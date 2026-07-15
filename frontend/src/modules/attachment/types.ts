@@ -5,9 +5,8 @@ import type { attachmentsRouteSearchParamsSchema } from '~/modules/attachment/se
 export type AttachmentsRouteSearchParams = z.infer<typeof attachmentsRouteSearchParamsSchema>;
 
 /**
- * Returns true if the attachment has been persisted server-side.
- * Optimistic rows produced by `createOptimisticEntity` carry `_optimistic: true`
- * and must not be queued for cloud-side operations (presigned URLs, downloads).
+ * True if the attachment is persisted server-side. Optimistic rows (`createOptimisticEntity`)
+ * carry `_optimistic: true` and must not be queued for cloud ops (presigned URLs, downloads).
  */
 export function isPersisted(attachment: Attachment): boolean {
   return !('_optimistic' in attachment);

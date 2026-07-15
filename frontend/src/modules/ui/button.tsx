@@ -93,9 +93,8 @@ type SubmitButtonProps = Omit<ButtonProps, 'type'> & {
 };
 
 /**
- * Submit button for forms that warns when offline.
- * When `icon` is provided, it swaps to a spinner on loading.
- * Without `icon`, loading overlays a spinner on the entire button content.
+ * Form submit button that warns when offline. With `icon`, it swaps to a spinner on loading;
+ * without `icon`, loading overlays a spinner on the whole button.
  */
 export function SubmitButton({
   onClick,

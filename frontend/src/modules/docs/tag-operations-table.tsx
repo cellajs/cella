@@ -19,9 +19,8 @@ interface TagOperationsTableProps {
 function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] {
   const navigate = useNavigate();
 
-  // Click handler: enqueue scroll (store retries until target is laid out), then navigate.
-  // The <Link>'s default navigation also works for keyboard / middle-click; this path is for
-  // primary-button clicks where we want the scroll queued before navigation re-renders.
+  // Enqueue scroll (store retries until the target is laid out), then navigate. The <Link>'s
+  // default nav covers keyboard/middle-click; this path queues the scroll before nav re-renders.
   const handleOperationClick = (hash: string) => {
     scrollToSectionById(hash);
     navigate({

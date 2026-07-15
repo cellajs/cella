@@ -10,13 +10,9 @@ import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
 const TOKEN_REFETCH_MS = 25 * 60 * 1000; // Refetch at 25min (TTL is 30min)
 
 /**
- * Fetches and maintains a context-scoped Yjs auth token in the user store.
- * Should be rendered per context (e.g. per project or org layout) so the
- * token is ready before a user opens an editor.
- *
- * Also refetches immediately on `visibilitychange` (tab wake / laptop resume)
- * because `setInterval`-based refetch is throttled or paused by browsers
- * when the page is backgrounded or the device sleeps.
+ * Fetches and maintains a context-scoped Yjs auth token in the user store; render per context (project/org
+ * layout) so the token is ready before an editor opens. Also refetches on `visibilitychange` (tab wake /
+ * resume) because browsers throttle or pause `setInterval` when the page is backgrounded.
  */
 export function YjsTokenFetcher({
   entityType,

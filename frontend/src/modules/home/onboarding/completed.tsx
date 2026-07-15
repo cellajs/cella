@@ -32,9 +32,8 @@ export const OnboardingCompleted = ({ createdOrganization, seeded }: OnboardingC
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
   const hasOrganization = organizations.length > 0;
 
-  // If an organization was just created, wait for the seed result before
-  // marking onboarding finished so the menu cache is primed with the demo
-  // workspace + projects on first paint.
+  // Wait for the seed result before finishing onboarding, so the menu cache is primed
+  // with the demo workspace + projects on first paint.
   const seedingInFlight = !!createdOrganization && seeded === null;
 
   useEffect(() => {

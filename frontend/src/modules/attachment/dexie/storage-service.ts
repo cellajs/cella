@@ -95,10 +95,9 @@ class AttachmentStorageService {
   async evictRawBlob(attachmentId: string): Promise<boolean> {
     const rawKey = makeBlobKey(attachmentId, 'raw');
     try {
-      // Safety net: never drop the raw blob unless a durable replacement variant is actually
-      // persisted locally. If an 'original' store was rolled back / raced, evicting raw could leave
-      // the attachment with no local blob at all — and a no-cloud-key resource then becomes
-      // permanently unresolvable ("This resource does not exist or has been deleted").
+      // Never evict raw unless a durable variant ('original'/'converted') is actually persisted.
+      // If an 'original' store raced or rolled back, dropping raw could leave a no-cloud-key
+      // resource with no local blob at all — permanently unresolvable.
       const hasDurable =
         (await this.hasVariant(attachmentId, 'original')) || (await this.hasVariant(attachmentId, 'converted'));
       if (!hasDurable) {

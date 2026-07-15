@@ -135,11 +135,7 @@ if (import.meta.hot) {
   import.meta.hot.data.listenersAttached = true;
 }
 
-/**
- * Update staleTime based on offline access mode and network status.
- * When offlineAccess is enabled AND offline, use infinite staleTime.
- * Otherwise use normal staleTime for standard refetch behavior.
- */
+/** Set staleTime: infinite when offlineAccess is on AND offline (stop refetching), else the normal default. */
 export function updateStaleTime(offlineAccess: boolean, isOnline: boolean): void {
   const shouldUseInfiniteStale = offlineAccess && !isOnline;
   const newStaleTime = shouldUseInfiniteStale ? offlineStaleTime : defaultStaleTime;
