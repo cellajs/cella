@@ -1,6 +1,6 @@
 import type { ChannelEntityType, EntityActionType, EntityType, ProductEntityType } from '../../types';
 import type { PublicReadGrants, PublicReadMode } from './public-read';
-import { isRowCondition, own } from './row-conditions';
+import { isRowCondition } from './row-conditions';
 import type {
   AccessPolicies,
   AccessPolicyCallback,
@@ -8,17 +8,11 @@ import type {
   AccessPolicyEntry,
   ChannelPolicyBuilder,
   EntityActionPermissions,
-  NormalizedPermissionValue,
   PermissionValue,
   SubjectAccessPolicies,
 } from './types';
 import { resolveTopology } from './permission-manager/resolve-topology';
 import type { PermissionTopology } from './permission-manager/topology';
-
-/** Resolves the `'own'` sugar literal to the built-in condition; passes everything else through. */
-const normalizePermissionValue = (value: PermissionValue): NormalizedPermissionValue => {
-  return value === 'own' ? own : value;
-};
 
 /**
  * Creates a context policy builder for fluent role-permission configuration.
@@ -34,19 +28,19 @@ const createChannelPolicyBuilder = (
 
   for (const role of roles) {
     builder[role] = (permissions: Partial<Record<EntityActionType, PermissionValue>>) => {
-      // Normalize to a full record so the engine always reads an explicit value: any action the
-      // policy omits defaults to 0 (denied), and the `'own'` sugar literal resolves to the
-      // built-in row condition.
+      // Expand to a full record so the engine always reads an explicit value: any action the
+      // policy omits defaults to 0 (denied). A cell is the config literal verbatim — the `'own'`
+      // name IS the value the engine reads, so there is nothing to normalize.
       const fullPermissions = {} as EntityActionPermissions;
       for (const action of entityActions) {
-        const value = normalizePermissionValue(permissions[action] ?? 0);
+        const value = permissions[action] ?? 0;
         // Fail loud at boot: a row condition on `create` can never match. The row doesn't exist
         // yet (the subject carries no `row`), so e.g. `create: 'own'` reads a `createdBy` that
         // isn't there and silently denies forever. That's a config mistake, not a runtime state —
         // surface it here rather than as a permanent, invisible denial in production.
         if (action === 'create' && isRowCondition(value)) {
           throw new Error(
-            `[Permission] "${channelType}.${role}" uses a row condition ('${value.name}') on 'create', ` +
+            `[Permission] "${channelType}.${role}" uses a row condition ('${value}') on 'create', ` +
               `which can never match — the row does not exist yet. Use 1 or 0 for create.`,
           );
         }
