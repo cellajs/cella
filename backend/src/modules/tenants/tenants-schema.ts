@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
+import { authStrategiesEnum } from '#/modules/auth/sessions-db';
 import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
 import { paginationQuerySchema, validNameSchema } from '#/schemas';
 
@@ -33,6 +34,7 @@ export const tenantSchema = z
   .object({
     ...createSelectSchema(tenantsTable, {
       restrictions: restrictionsSchema,
+      authStrategies: z.array(z.enum(authStrategiesEnum)),
     }).omit({ subscriptionData: true }).shape,
     domainsCount: z.number().int().describe('Number of domains claimed by this tenant'),
   })
@@ -74,6 +76,9 @@ export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
   name: validNameSchema,
   status: tenantStatusSchema,
   subscriptionStatus: subscriptionStatusSchema,
+  // Allowed sign-in strategies for the tenant's members (empty = all enabled). Settable now;
+  // enforcement (tenantGuard) is deferred to the SSO build (D6).
+  authStrategies: z.array(z.enum(authStrategiesEnum)),
 })
   .pick({
     name: true,
@@ -81,6 +86,7 @@ export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
     subscriptionId: true,
     subscriptionStatus: true,
     subscriptionPlan: true,
+    authStrategies: true,
   })
   .partial()
   .extend({

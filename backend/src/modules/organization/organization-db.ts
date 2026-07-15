@@ -2,7 +2,6 @@ import { boolean, index, json, snakeCase, unique, varchar } from 'drizzle-orm/pg
 import { appConfig, type Language } from 'shared';
 import { channelEntityColumns } from '#/db/utils/channel-entity-columns';
 import { maxLength } from '#/db/utils/constraints';
-import type { AuthStrategy } from '#/modules/auth/sessions-db';
 
 const languagesEnum = appConfig.languages;
 
@@ -24,13 +23,15 @@ export const organizationsTable = snakeCase.table(
     logoUrl: varchar({ length: maxLength.url }),
     websiteUrl: varchar({ length: maxLength.url }),
     welcomeText: varchar({ length: maxLength.html }),
-    authStrategies: json().$type<AuthStrategy[]>().notNull().default([]),
     chatSupport: boolean().notNull().default(false),
   },
   (table) => [
     index('organizations_name_index').on(table.name.desc()),
     index('organizations_created_at_index').on(table.createdAt.desc()),
-    index('organizations_tenant_id_index').on(table.tenantId),
+    // D4 — 1 tenant = 1 organization: a tenant holds at most one org. This unique constraint is the
+    // hard backstop for the guard in create-organizations; it also serves tenant_id lookups (so the
+    // former non-unique organizations_tenant_id_index is dropped as redundant).
+    unique('organizations_tenant_id_key').on(table.tenantId),
     index('organizations_created_by_index').on(table.createdBy),
     index('organizations_updated_by_index').on(table.updatedBy),
     // Compound unique for composite FK targets (memberships, products reference this)

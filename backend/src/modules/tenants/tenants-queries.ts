@@ -33,6 +33,7 @@ export const getTenantsList = async (ctx: DbContext, opts: GetTenantsListOpts) =
         name: tenantsTable.name,
         status: tenantsTable.status,
         restrictions: tenantsTable.restrictions,
+        authStrategies: tenantsTable.authStrategies,
         createdBy: tenantsTable.createdBy,
         subscriptionId: tenantsTable.subscriptionId,
         subscriptionStatus: tenantsTable.subscriptionStatus,

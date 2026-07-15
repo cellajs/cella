@@ -141,12 +141,6 @@
                     "required": true,
                     "maxLength": 1000000
                   },
-                  "authStrategies": {
-                    "type": "array",
-                    "required": true,
-                    "itemType": "string",
-                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
-                  },
                   "chatSupport": { "type": "boolean", "required": true },
                   "included": {
                     "type": "object",
@@ -292,7 +286,6 @@
               "logoUrl": null,
               "websiteUrl": "https://conroy-kerluke-and-rowe.example",
               "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
-              "authStrategies": ["passkey"],
               "chatSupport": false,
               "publishedAt": "2024-04-18T21:12:59.543Z",
               "publicAt": null,
@@ -345,7 +338,6 @@
               "logoUrl": null,
               "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
               "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
-              "authStrategies": ["passkey"],
               "chatSupport": false,
               "publishedAt": "2024-02-24T16:36:46.247Z",
               "publicAt": null,
@@ -697,12 +689,6 @@
                     "required": true,
                     "maxLength": 1000000
                   },
-                  "authStrategies": {
-                    "type": "array",
-                    "required": true,
-                    "itemType": "string",
-                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
-                  },
                   "chatSupport": { "type": "boolean", "required": true },
                   "included": {
                     "type": "object",
@@ -837,7 +823,6 @@
               "logoUrl": null,
               "websiteUrl": "https://anderson-ferry.example",
               "welcomeText": "Welcome to Anderson - Ferry!",
-              "authStrategies": ["passkey"],
               "chatSupport": true,
               "publishedAt": "2024-11-21T01:19:53.533Z",
               "publicAt": null,
@@ -890,7 +875,6 @@
               "logoUrl": null,
               "websiteUrl": "https://wiegand-harber-and-stark-abshire.example",
               "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
-              "authStrategies": ["passkey"],
               "chatSupport": false,
               "publishedAt": "2024-10-29T04:35:17.725Z",
               "publicAt": null,
@@ -1142,12 +1126,6 @@
               "required": true,
               "maxLength": 1000000
             },
-            "authStrategies": {
-              "type": "array",
-              "required": true,
-              "itemType": "string",
-              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
-            },
             "chatSupport": { "type": "boolean", "required": true },
             "included": {
               "type": "object",
@@ -1276,7 +1254,6 @@
           "logoUrl": null,
           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-          "authStrategies": ["passkey"],
           "chatSupport": true,
           "publishedAt": "2024-12-25T15:04:42.969Z",
           "publicAt": null,
@@ -1510,12 +1487,6 @@
               "required": true,
               "maxLength": 1000000
             },
-            "authStrategies": {
-              "type": "array",
-              "required": true,
-              "itemType": "string",
-              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
-            },
             "chatSupport": { "type": "boolean", "required": true },
             "included": {
               "type": "object",
@@ -1644,7 +1615,6 @@
           "logoUrl": null,
           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-          "authStrategies": ["passkey"],
           "chatSupport": true,
           "publishedAt": "2024-12-25T15:04:42.969Z",
           "publicAt": null,
@@ -1807,12 +1777,6 @@
             "type": ["string", "null"],
             "required": false,
             "maxLength": 1000000
-          },
-          "authStrategies": {
-            "type": "array",
-            "required": false,
-            "itemType": "string",
-            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
           },
           "chatSupport": { "type": "boolean", "required": false }
         },

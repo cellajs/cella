@@ -21,12 +21,13 @@ const attachmentBody = (id: string) => ({
   stx: { mutationId: id, sourceId: 'cross-org', fieldTimestamps: {} },
 });
 
-// Verifies org guard isolation for users in different organizations within
-// the same tenant.
+// Verifies isolation between users in different organizations. Under 1 tenant = 1 organization,
+// each org lives in its own tenant, so the "other org" is reached at its own tenantId and access is
+// rejected at the tenant boundary (tenantGuard) — the isolation guarantee is unchanged.
 describe('Cross-organization API isolation', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
-  let orgB: { id: string; slug: string };
+  let orgB: { id: string; slug: string; tenantId: string };
   let userB: { id: string; email: string; sessionCookie: string };
 
   beforeAll(async () => {
@@ -35,10 +36,10 @@ describe('Cross-organization API isolation', async () => {
     // Create tenant with org A and admin user A
     tenant = await createTestTenant(call, 'org-isolation');
 
-    // Create a second org in the same tenant, with its own user
-    const secondOrg = await createSecondOrg(tenant.tenantId);
-    orgB = { id: secondOrg.id, slug: secondOrg.slug };
-    userB = await createOrgUser(call, tenant.tenantId, orgB.id, 'org-b');
+    // Create a second, independent org (its own tenant, per 1:1), with its own user
+    const secondOrg = await createSecondOrg();
+    orgB = { id: secondOrg.id, slug: secondOrg.slug, tenantId: secondOrg.tenantId };
+    userB = await createOrgUser(call, secondOrg.tenantId, orgB.id, 'org-b');
   });
 
   afterAll(async () => {
@@ -50,7 +51,7 @@ describe('Cross-organization API isolation', async () => {
   describe('User A (org A) cannot read org B resources', () => {
     it('should reject GET attachments in another org with 403', async () => {
       const { error, response } = await call(getAttachments, {
-        path: { tenantId: tenant.tenantId, organizationId: orgB.id },
+        path: { tenantId: orgB.tenantId, organizationId: orgB.id },
         headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
       });
       expect(response.status).toBe(403);
@@ -86,7 +87,7 @@ describe('Cross-organization API isolation', async () => {
 
     it('should reject User A updating org B with 403', async () => {
       const { error, response } = await call(updateOrganization, {
-        path: { tenantId: tenant.tenantId, id: orgB.id },
+        path: { tenantId: orgB.tenantId, id: orgB.id },
         body: { name: 'Hijacked by User A' },
         headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
       });
@@ -96,7 +97,7 @@ describe('Cross-organization API isolation', async () => {
 
     it('should reject User A creating attachment in org B with 403', async () => {
       const { error, response } = await call(createAttachments, {
-        path: { tenantId: tenant.tenantId, organizationId: orgB.id },
+        path: { tenantId: orgB.tenantId, organizationId: orgB.id },
         body: [attachmentBody('00000000-0000-4000-a000-000000000001')],
         headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
       });
@@ -128,7 +129,7 @@ describe('Cross-organization API isolation', async () => {
 
     it('should allow User B to GET attachments in org B', async () => {
       const { response } = await call(getAttachments, {
-        path: { tenantId: tenant.tenantId, organizationId: orgB.id },
+        path: { tenantId: orgB.tenantId, organizationId: orgB.id },
         headers: { ...defaultHeaders, Cookie: userB.sessionCookie },
       });
       expect(response.status).toBe(200);

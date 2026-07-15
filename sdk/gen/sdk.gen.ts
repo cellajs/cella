@@ -2042,6 +2042,7 @@ export const selfCreateTenant = <ThrowOnError extends boolean = true>(
  * @param {string | null=} options.body.subscriptionId - `string | null` (optional)
  * @param {enum=} options.body.subscriptionStatus - `enum` (optional)
  * @param {string | null=} options.body.subscriptionPlan - `string | null` (optional)
+ * @param {any[]=} options.body.authStrategies - `any[]` (optional)
  * @param {object=} options.body.restrictions - `object` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
@@ -2713,7 +2714,6 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
  * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
  * @param {string | null=} options.body.websiteUrl - `string | null` (optional)
  * @param {string | null=} options.body.welcomeText - `string | null` (optional)
- * @param {any[]=} options.body.authStrategies - `any[]` (optional)
  * @param {boolean=} options.body.chatSupport - `boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */

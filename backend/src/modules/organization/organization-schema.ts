@@ -4,7 +4,6 @@ import { roles } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
-import { authStrategiesEnum } from '#/modules/auth/sessions-db';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import {
@@ -33,7 +32,6 @@ export const organizationSchema = z
     createdBy: userMinimalBaseSchema.nullable(),
     updatedBy: userMinimalBaseSchema.nullable(),
     languages: z.array(languageSchema).min(1),
-    authStrategies: z.array(z.enum(authStrategiesEnum)),
     included: organizationIncludedSchema,
   })
   .openapi('Organization', {
@@ -59,7 +57,6 @@ export const organizationContract = evolutionContract.channel('organization', {
     shortName: validNameSchema.nullable(),
     languages: z.array(languageSchema).min(1),
     defaultLanguage: languageSchema.optional(),
-    authStrategies: z.array(z.enum(authStrategiesEnum)).optional(),
     websiteUrl: validUrlSchema.nullable(),
     thumbnailUrl: validCDNUrlSchema.nullable(),
     bannerUrl: validCDNUrlSchema.nullable(),
@@ -81,7 +78,6 @@ export const organizationContract = evolutionContract.channel('organization', {
       bannerUrl: true,
       websiteUrl: true,
       welcomeText: true,
-      authStrategies: true,
       chatSupport: true,
     })
     .partial(),
