@@ -10,9 +10,15 @@ try {
  * Load-test config derived from the fork's own config (`appConfig`, `backend/.env`)
  * so bench follows a fork's port offset automatically. Dev-only, local stack.
  */
-export const BASE_URL = appConfig.backendUrl;
-
-export const BACKEND_PORT = Number(new URL(appConfig.backendUrl).port || '80');
+// Bench the backend DIRECTLY, not appConfig.backendUrl — in dev that is the browser-facing
+// vite origin (http://localhost:3000/api), so load would funnel through vite's single-threaded
+// dev proxy (no keep-alive), which serializes writes and resets connections under a burst.
+// backend/.env is loaded above, so process.env.PORT is the backend's real listen port. Keep
+// backendUrl's mount path (e.g. /api) so routes still resolve.
+const backendMountPath = new URL(appConfig.backendUrl).pathname.replace(/\/$/, '');
+// biome-ignore lint/style/noProcessEnv: bench reads the fork's backend PORT from backend/.env here.
+export const BACKEND_PORT = Number(process.env.PORT ?? '4000');
+export const BASE_URL = `http://localhost:${BACKEND_PORT}${backendMountPath}`;
 
 export const CDC_HEALTH_URL = `http://localhost:${BACKEND_PORT + 1}/health?depth=full`;
 

@@ -97,12 +97,17 @@ export interface BatchEventInfo {
 
 /**
  * The seq-context key of a batch event, mirroring seq allocation: seqs are counters per
- * (channelKey, entityType) — see {@link computeBatchUnifiedDeltas}. Resource events (no
- * entityType) never carry seqs; grouping them by org matches their dispatch channel.
+ * (channelKey, entityType) — see {@link computeBatchUnifiedDeltas}. Only product entities
+ * carry seqs. Resource events (no entityType) and non-product entities (user, organization)
+ * have no seq context; grouping them by org matches their dispatch channel.
  */
 function batchChannelKey({ activity, rowData }: BatchEventInfo): string {
-  if (!activity.entityType) return activity.organizationId ?? 'none';
-  return resolveChannelKey(activity.entityType, rowData, activity);
+  // Only product entities carry seqs and need channel-key grouping. Resources (no entityType)
+  // and non-product entities (user, organization) have no seq context: group by org, or 'none'.
+  if (activity.entityType && isProductEntity(activity.entityType)) {
+    return resolveChannelKey(activity.entityType, rowData, activity);
+  }
+  return activity.organizationId ?? 'none';
 }
 
 /**

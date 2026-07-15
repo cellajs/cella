@@ -120,6 +120,27 @@ describe('sendBatchMessageToApi', () => {
     });
   });
 
+  it('groups non-product entities (user) by org instead of demanding a channel ancestor', () => {
+    // A user has no organization ancestor and its activity carries no organizationId. Before the
+    // fix, batching ≥2 user rows (e.g. seeding) called resolveChannelKey and threw
+    // "the hierarchy model requires an organization ancestor". Non-product entities have no seq
+    // context and must group by org (here 'none'), like resources.
+    const asUser = (seq: number): ReturnType<typeof mockBatchEvent> => {
+      const event = mockBatchEvent(seq, `user-${seq}`);
+      return {
+        ...event,
+        activity: { ...event.activity, entityType: 'user', organizationId: null } as typeof event.activity,
+        rowData: { id: `user-${seq}` },
+        seq: undefined,
+      };
+    };
+    const events = [asUser(1), asUser(2)];
+
+    expect(() => sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never)).not.toThrow();
+    expect(wsClient.send).toHaveBeenCalledOnce();
+    expect(log.error).not.toHaveBeenCalled();
+  });
+
   it('handles single-event batch without error', () => {
     const events = [mockBatchEvent(42)];
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
