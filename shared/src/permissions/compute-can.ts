@@ -36,9 +36,9 @@ function computeEntityPermissions(
   return recordFromKeys(entityActions, (action) => {
     const value = permissions[action];
     if (value === 1) return true;
-    // Row-conditional grant → surface the condition name (e.g. 'own'); the frontend
-    // resolves it per row via resolvePermission / the condition's check-form.
-    if (isRowCondition(value)) return value.name;
+    // Row-conditional grant → surface the condition name (e.g. 'own'); the name IS the cell
+    // value. The frontend resolves it per row via resolvePermission.
+    if (isRowCondition(value)) return value;
     return false;
   }) as ActionStates;
 }

@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { configureWidePermissions, widePublicGrants, wideSubject, wideTopology } from '../testing/wide-fixture';
 import { getAllDecisions } from './permission-manager/check';
 import type { SubjectForPermission } from './permission-manager/types';
-import { publicRow } from './public-read';
-import { rowPredicateMatches } from './row-conditions';
+import { matchesRowCondition } from './row-conditions';
 
 /**
  * Public read grants (`publicRead`): subject-level, membership-independent read access derived
@@ -106,17 +105,14 @@ describe('public read grants — anonymous actor', () => {
   });
 });
 
-describe('publicRow — the shared predicate', () => {
-  it('is actor-independent: it matches for anonymous actors', () => {
-    expect(rowPredicateMatches(publicRow.predicate, { publicAt: NOW }, {})).toBe(true);
-    expect(rowPredicateMatches(publicRow.predicate, { publicAt: null }, {})).toBe(false);
-    expect(rowPredicateMatches(publicRow.predicate, {}, {})).toBe(false);
-  });
-
-  it('is a column-is-not-null predicate, so collection SQL can enforce it', () => {
-    // This is what makes public read enforceable in list endpoints. An actor-bound or
-    // cross-row predicate could not be compiled, and public rows would silently vanish from lists.
-    expect(publicRow.predicate).toEqual({ kind: 'columnIsNotNull', column: 'publicAt' });
+describe("the 'public' row condition — the shared rule", () => {
+  it('is actor-independent and reads only the row: it matches for anonymous actors when publicAt is set', () => {
+    // This is what makes public read enforceable in list endpoints too: `'public'` reads only the
+    // row's own `publicAt`, so it compiles identically in the check-form here and in collection SQL.
+    // An actor-bound or cross-row rule could not be compiled, and public rows would vanish from lists.
+    expect(matchesRowCondition('public', { publicAt: NOW }, {})).toBe(true);
+    expect(matchesRowCondition('public', { publicAt: null }, {})).toBe(false);
+    expect(matchesRowCondition('public', {}, {})).toBe(false);
   });
 });
 

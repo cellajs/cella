@@ -1,14 +1,13 @@
 import type { ChannelEntityType, EntityActionType, EntityRole, EntityType, ProductEntityType } from '../../types';
 import type { PublicReadMode } from './public-read';
-import type { RowCondition } from './row-conditions';
+import type { RowConditionName } from './row-conditions';
 
 /**
  * Permission value accepted in access policy configuration.
  *
  * - `1` = allowed for all entities of this type (unconditional)
  * - `0` = denied
- * - `'own'` = the built-in owner condition (actor is the entity's creator); normalized to the
- *   `own` `RowCondition` when policies are configured.
+ * - `'own'` = the built-in owner condition (actor is the entity's creator).
  *
  * Row conditions are a closed set (`own`, and the public read grant), not a fork extension
  * point. So a config cell is one of exactly these three literals.
@@ -18,10 +17,12 @@ import type { RowCondition } from './row-conditions';
 export type PermissionValue = 0 | 1 | 'own';
 
 /**
- * Permission value after configuration-time normalization (`'own'` sugar resolved).
- * This is the only vocabulary the engine and downstream consumers see.
+ * Permission value the engine and downstream consumers read. A cell is the config literal
+ * verbatim — there is no object to normalize into, the `'own'` name IS the value. Typed as the
+ * full {@link RowConditionName} union (rather than just `'own'`) because that is the vocabulary
+ * the name-keyed switches close over; `'public'` never actually appears as a cell.
  */
-export type NormalizedPermissionValue = 0 | 1 | RowCondition;
+export type NormalizedPermissionValue = 0 | 1 | RowConditionName;
 
 /**
  * Entity action permission set mapping each action to a normalized permission value.
@@ -84,7 +85,9 @@ export type AccessPolicyCallback = (config: AccessPolicyConfiguration) => void;
  *
  * - `true` = unconditionally allowed
  * - `false` = denied
- * - condition name (e.g. `'own'`) = allowed only for rows satisfying that row condition;
- *   resolve per row via `resolvePermission` (built-in `'own'`) or the condition's `matches`.
+ * - a {@link RowConditionName} (e.g. `'own'`) = allowed only for rows satisfying that row
+ *   condition; resolve per row via `resolvePermission`. Narrowed to the closed name union (not a
+ *   bare `string`) so `resolvePermission`'s switch is exhaustive — a new condition name is a
+ *   compile error there, not a silent frontend denial.
  */
-export type ActionPermissionState = boolean | string;
+export type ActionPermissionState = boolean | RowConditionName;

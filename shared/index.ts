@@ -87,8 +87,8 @@ export type {
   PermissionValue,
   SubjectAccessPolicies,
 } from './src/permissions';
-export { isRowCondition, own, publicRow, rowPredicateMatches } from './src/permissions';
-export type { ConditionActor, PublicReadGrants, PublicReadMode, RowCondition, RowForCondition, RowPredicate } from './src/permissions';
+export { isRowCondition, matchesRowCondition } from './src/permissions';
+export type { ConditionActor, PublicReadGrants, PublicReadMode, RowConditionName, RowForCondition } from './src/permissions';
 export { configurePermissions, getPolicyPermissions, getSubjectPolicies } from './src/permissions';
 export type { PermissionsConfigResult } from './src/permissions';
 export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './src/permissions';

@@ -29,6 +29,12 @@ be a no-op.
   permission check, system-admin + public-read parity in collection reads, and public
   read collapsed to a single row-local `publicAt` mode. **Widens access** — audit
   `'own'` cells on channel-entity and `create` rows *before* pulling.
+- [2026-07-row-condition-names](./2026-07-row-condition-names/): collapses the row-condition
+  model to a `RowConditionName = 'own' | 'public'` union — drops the `RowPredicate`/`RowCondition`
+  descriptor, replaces `rowPredicateMatches`/`own`/`publicRow` with `matchesRowCondition(name, …)`,
+  and narrows `ActionPermissionState` to the closed name union. **Shape-only, no semantic change**
+  and fully compiler-enforced; config surface (`read: 'own'`, `publicRead`) unchanged. In-sync
+  forks get it for free; no script.
 - [2026-07-batch-cache-removal](./2026-07-batch-cache-removal/): removes the unused
   batch cache machinery (`batchCache` middleware, `batchReservations`, batch token
   index); fork-breaking on the frontend `DeltaFetchFn` (drops the 4th `options`/`cacheToken`

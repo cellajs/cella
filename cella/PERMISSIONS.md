@@ -19,7 +19,7 @@ Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and 
 │  │                               │  │                                     │  │
 │  │ createEntityHierarchy(roles)  │  │ configurePermissions(types, cb)     │  │
 │  │   .user()                     │  │   subject × context × role → cell   │  │
-│  │   .channel(name, {parent,     │  │   cell = 0 | 1 | RowCondition       │  │
+│  │   .channel(name, {parent,     │  │   cell = 0 | 1 | 'own'              │  │
 │  │             roles})           │  │   publicRead(mode)                  │  │
 │  │   .product(name, {parent})    │  │   elevatedRoles                     │  │
 │  │                               │  │                                     │  │
@@ -39,7 +39,7 @@ Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and 
 │      │  2. system admin?    allow every action, short-circuit   │            │
 │      │  3. memberships      policy cell per (channelType, role) │            │
 │      │       1           → grant            grantedBy membership│            │
-│      │       RowCondition→ grant iff matches(row, actor)        │            │
+│      │       condition   → grant iff matches(row, actor)        │            │
 │      │                                      grantedBy relation  │            │
 │      │       0           → nothing                              │            │
 │      │  4. public read      widens `read` only                  │            │
@@ -72,7 +72,7 @@ The engine **never loads rows**. Callers resolve whatever row data a decision ne
 | **User entity** | Carries no policies at all; `configurePermissions` filters it out. |
 | **Membership** | The engine reads only `{ channelType, channelId, role }`. Explicit `user → context` relation. |
 | **Subject** | What is being acted on: entity type, optional id, `channelIds` scope, and optionally `row`. |
-| **Policy cell** | `0` (deny), `1` (allow), or a `RowCondition` (allow on qualifying rows). |
+| **Policy cell** | `0` (deny), `1` (allow), or a row-condition name (`'own'` — allow on qualifying rows). |
 | **Action** | `create`, `read`, `update`, `delete` (`appConfig.entityActions`). |
 | **Grant source** | Why an action was allowed: `membership`, `relation`, `public`, or `systemAdmin`. |
 
@@ -112,7 +112,7 @@ export const { accessPolicies, publicReadGrants } = configurePermissions(
 );
 ```
 
-Any action you omit defaults to `0`. The `'own'` literal is sugar: it is normalized into the built-in `own` row condition at config time, so the engine only ever sees `0 | 1 | RowCondition`.
+Any action you omit defaults to `0`. `'own'` is the built-in owner condition: the engine reads the config cell verbatim (the name *is* the value), so it only ever sees `0 | 1 | 'own'`.
 
 Missing actions and missing role/context rows both deny by default, so policies only need to declare
 grants. Public-read declarations are collected separately because they are membership-independent.
@@ -150,28 +150,22 @@ Boundary code that starts from DB rows, route params, or CDC events uses `buildS
 
 Two mechanisms widen access beyond the policy matrix, and both read the row's own columns. There are exactly two rules — `own` and `public` — and that set is **closed**: it is not a fork extension point. The reasoning is in Constraints; the mechanism is here.
 
-A **row condition** (`shared/src/permissions/row-conditions.ts`) qualifies a grant per row. A cell of `1` grants the action on every row the context scope reaches; a condition cell grants it only on rows the condition matches. A condition is pure data — a name and a `RowPredicate` from a closed vocabulary:
+A **row condition** (`shared/src/permissions/row-conditions.ts`) qualifies a grant per row. A cell of `1` grants the action on every row the context scope reaches; a condition cell grants it only on rows the condition matches. Because the set is closed, a condition is just its **name** — the name determines the rule, so there is no descriptor to carry:
 
 ```ts
-export type RowPredicate =
-  | { kind: 'columnEqualsActor'; column: string }   // row[column] === acting user id (anonymous never matches)
-  | { kind: 'columnIsNotNull'; column: string };    // row[column] is set (actor-independent)
+export type RowConditionName = 'own' | 'public';   // this union IS the contract
 
-export interface RowCondition {
-  name: string;
-  predicate: RowPredicate;
-}
-
-export const own = { name: 'own', predicate: { kind: 'columnEqualsActor', column: 'createdBy' } };
+export const matchesRowCondition = (name: RowConditionName, row, actor): boolean => {
+  switch (name) {
+    case 'own':    return !!actor.userId && row.createdBy === actor.userId; // anonymous never matches
+    case 'public': return !!row.publicAt;                                   // actor-independent
+  }
+};
 ```
 
-The predicate is the single source of truth. Two shared interpreters read it — `rowPredicateMatches` (JS, in `shared/`) and `compileRowConditionSql` (Drizzle, in `backend/`) — so a condition's check-form and SQL-form **cannot drift from each other**: there are no per-condition implementations to keep in sync, only the two interpreters, which the parity property test proves equal. The `shared/`→`backend/` split is why the predicate is a declarative descriptor rather than an inline query builder: `shared/` is ORM-free, so it emits the predicate and the backend compiles it.
+The name is the single source of truth. Three paths map it to behaviour through an exhaustive `switch` — `matchesRowCondition` (JS, in `shared/`), `compileRowConditionSql` (Drizzle, in `backend/`), and the frontend `resolvePermission` (`action-helpers.ts`) — so their forms **cannot drift**: TypeScript's exhaustiveness makes adding a name a compile error in every one of them, and the parity property test proves the paths agree. The `shared/`→`backend/` split is why `shared/` emits only the name and the backend compiles the SQL: `shared/` is ORM-free.
 
-**Public read** (`shared/src/permissions/public-read.ts`) makes rows readable by *any* actor, anonymous included, independent of memberships. One rule: the row's own `publicAt` is set. Declared per subject with `publicRead('publicSelf')`, it widens `read` and nothing else. It is *not* a policy cell — it grants with no membership — but it is the same `RowCondition` shape, so it rides the same interpreters and the same parity test:
-
-```ts
-export const publicRow = { name: 'public', predicate: { kind: 'columnIsNotNull', column: 'publicAt' } };
-```
+**Public read** (`shared/src/permissions/public-read.ts`) makes rows readable by *any* actor, anonymous included, independent of memberships. One rule: the row's own `publicAt` is set. Declared per subject with `publicRead('publicSelf')`, it widens `read` and nothing else. It is *not* a policy cell — it grants with no membership — but it resolves through the same `'public'` row condition, so it rides the same switches and the same parity test.
 
 ## The actor
 
@@ -239,4 +233,3 @@ The rest of the suite covers grant attribution, `'own'` denial when the actor or
 | Required ancestor scope omitted from `channelIds` | Throws `MissingScopeError` → 400 `missing_scope` / WS `4400`. Never silently unscoped |
 | Actor loses access mid-Yjs-session | The relay's materialization re-checks `update` on the backend before persisting |
 | System admin joins a Yjs collab session | No bypass. Collaborative editing is authorized as the acting user, matching materialization |
-

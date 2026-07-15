@@ -1,7 +1,7 @@
 import type { ChannelEntityType, EntityActionType, ProductEntityType } from '../../../types';
 import { allActionsAllowed, createActionRecord } from '../action-helpers';
-import { type PublicReadGrants, publicRow } from '../public-read';
-import { type ConditionActor, isRowCondition, rowPredicateMatches, type RowForCondition } from '../row-conditions';
+import type { PublicReadGrants } from '../public-read';
+import { type ConditionActor, isRowCondition, matchesRowCondition, type RowForCondition } from '../row-conditions';
 import type { AccessPolicies, EntityActionPermissions } from '../types';
 import { formatBatchPermissionSummary, formatPermissionDecision } from './format';
 import { resolveTopology } from './resolve-topology';
@@ -84,9 +84,9 @@ const getSubjectChannelId = (
  * Internal function to check permissions for a single subject using pre-built indices.
  * This is the core logic shared by both single and batch permission checks.
  *
- * Supports row-conditional grants: when a policy value is a `RowCondition` (e.g. the
- * built-in `own`, normalized from the `'own'` literal), the engine evaluates its
- * check-form against the subject's row fields to determine the grant.
+ * Supports row-conditional grants: when a policy value is a row-condition name (e.g. the
+ * built-in `'own'`), the engine evaluates that condition's check-form (`matchesRowCondition`)
+ * against the subject's row fields to determine the grant.
  */
 const checkWithIndices = <T extends PermissionMembership>(
   membershipIndex: MembershipIndex<T>,
@@ -204,9 +204,9 @@ const checkWithIndices = <T extends PermissionMembership>(
 
         // Row-conditional grant: allowed only when the row satisfies the condition for this
         // actor (e.g. built-in `own`: actor created the row). Attributed by condition name.
-        if (isRowCondition(policyValue) && rowPredicateMatches(policyValue.predicate, conditionRow, conditionActor)) {
+        if (isRowCondition(policyValue) && matchesRowCondition(policyValue, conditionRow, conditionActor)) {
           actions[action].enabled = true;
-          actions[action].grantedBy.push({ type: 'relation', relation: policyValue.name });
+          actions[action].grantedBy.push({ type: 'relation', relation: policyValue });
         }
       }
     }
@@ -214,9 +214,9 @@ const checkWithIndices = <T extends PermissionMembership>(
 
   // Subject-level public read grant: rows readable by any actor (anonymous included) when
   // the row's own `publicAt` is set. Membership-independent, so it is evaluated outside the
-  // policy walk — but through the same row-predicate the SQL compiler uses (`public-read.ts`).
+  // policy walk — but through the same `'public'` row condition the SQL compiler uses.
   const publicMode = publicGrants?.[subject.entityType];
-  if (publicMode && rowPredicateMatches(publicRow.predicate, conditionRow, conditionActor)) {
+  if (publicMode && matchesRowCondition('public', conditionRow, conditionActor)) {
     actions.read.enabled = true;
     actions.read.grantedBy.push({ type: 'public', mode: publicMode });
   }

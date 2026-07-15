@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import { type Actor, appConfig, type ChannelEntityType, type RowCondition, type RowPredicate } from 'shared';
+import { type Actor, appConfig, type ChannelEntityType, type RowConditionName } from 'shared';
 import type { CollectionReadFilter } from './collection-scope';
 
 /**
@@ -26,22 +26,20 @@ const resolveColumn = (table: AnyPgTable, columnName: string, conditionName: str
 };
 
 /**
- * Compile a single row condition to a predicate over `table`'s rows for the acting user.
- * Anonymous actors never match actor-bound forms, mirroring the check-form.
+ * Compile a single row condition (by name) to a predicate over `table`'s rows for the acting
+ * user. The name-keyed switch is the SQL twin of the check-form's `matchesRowCondition`; the two
+ * must agree, asserted by the parity test. Anonymous actors never match actor-bound forms.
  */
-export const compileRowConditionSql = (condition: RowCondition, table: AnyPgTable, actor: Actor): SQL => {
-  const predicate: RowPredicate = condition.predicate;
-  const column = resolveColumn(table, predicate.column, condition.name);
-
-  switch (predicate.kind) {
-    case 'columnEqualsActor': {
+export const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable, actor: Actor): SQL => {
+  switch (name) {
+    case 'own': {
       const userId = 'anonymous' in actor ? undefined : actor.userId;
       if (!userId) return NEVER;
-      return eq(column, userId);
+      return eq(resolveColumn(table, 'createdBy', name), userId);
     }
     // Actor-independent (public read): matches for anonymous actors too.
-    case 'columnIsNotNull':
-      return isNotNull(column);
+    case 'public':
+      return isNotNull(resolveColumn(table, 'publicAt', name));
   }
 };
 

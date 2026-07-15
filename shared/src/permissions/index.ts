@@ -10,10 +10,9 @@ export type {
   PermissionValue,
   SubjectAccessPolicies,
 } from './types';
-export { publicRow } from './public-read';
 export type { PublicReadGrants, PublicReadMode } from './public-read';
-export { isRowCondition, own, rowPredicateMatches } from './row-conditions';
-export type { ConditionActor, RowCondition, RowForCondition, RowPredicate } from './row-conditions';
+export { isRowCondition, matchesRowCondition } from './row-conditions';
+export type { ConditionActor, RowConditionName, RowForCondition } from './row-conditions';
 
 // `configureAccessPolicies` is test-only; it lives at `shared/testing/policies`, not on this barrel.
 export { configurePermissions, getPolicyPermissions, getSubjectPolicies } from './access-policies';

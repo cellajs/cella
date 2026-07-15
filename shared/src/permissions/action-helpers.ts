@@ -22,19 +22,25 @@ export const allActionsAllowed = Object.freeze(createActionRecord(() => true as 
 >;
 
 /**
- * Resolves a three-state permission (`true | false | condition name`) to a boolean. Handles the
- * built-in `'own'` condition (compares the actor's `userId` against `entity.createdBy`). Any other
- * condition name resolves to `false` here (secure default); custom row conditions must be resolved
- * by the call site via the condition's own check-form.
+ * Resolves a three-state permission (`true | false | condition name`) to a boolean. `'own'`
+ * compares the actor's `userId` against `entity.createdBy`. The switch is exhaustive over the
+ * closed {@link ActionPermissionState} name union, so adding a row condition is a compile error
+ * here — the frontend can never silently deny a new condition.
  */
 export const resolvePermission = (
   permission: ActionPermissionState | undefined,
   entityCreatedBy?: string | null,
   userId?: string,
 ): boolean => {
-  if (permission === true) return true;
-  if (permission === 'own') return !!userId && !!entityCreatedBy && entityCreatedBy === userId;
-  return false;
+  if (typeof permission !== 'string') return permission === true;
+  switch (permission) {
+    case 'own':
+      return !!userId && !!entityCreatedBy && entityCreatedBy === userId;
+    case 'public':
+      // Public read is membership-independent and resolved server-side; it never appears in the
+      // frontend can-map. Denied here (secure default) — this arm exists only for exhaustiveness.
+      return false;
+  }
 };
 
 /**

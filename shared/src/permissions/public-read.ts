@@ -1,5 +1,4 @@
 import type { ChannelEntityType, ProductEntityType } from '../../types';
-import type { RowCondition } from './row-conditions';
 
 /**
  * Public read mode: a subject-level grant that makes rows readable by any actor —
@@ -13,25 +12,15 @@ import type { RowCondition } from './row-conditions';
  * concern — a fork that wants it propagates `publicAt` to descendants (trigger or app
  * logic) and every path keeps reading one self-describing column.
  *
+ * A public read grant resolves through the `'public'` row condition (`row-conditions.ts`), so it
+ * rides the exact same name-keyed switches as policy row conditions — the engine's check-form, the
+ * backend's compiled SQL, and stream dispatch all agree, and the parity property test covers it for
+ * free. Unlike a policy row condition it is membership-INDEPENDENT: it is not a policy cell, it
+ * widens `read` on its own, which is why `'public'` is actor-independent (anonymous actors match).
+ *
  * @see cella/PERMISSIONS.md
  */
 export type PublicReadMode = 'publicSelf';
 
 /** Per-subject public read grants, keyed by entity type. */
 export type PublicReadGrants = Partial<Record<ChannelEntityType | ProductEntityType, PublicReadMode>>;
-
-/**
- * The row predicate a public read grant evaluates to.
- *
- * Shares the `RowCondition` shape with policy row conditions so that every enforcement path —
- * the engine's check-form, the backend's compiled SQL, and stream dispatch — evaluates it
- * through the one shared interpreter, and the check/SQL parity property test covers it for free.
- *
- * Unlike a policy row condition, this grant is membership-INDEPENDENT: it is not a policy cell,
- * it widens `read` on its own. Hence the actor-independent `columnIsNotNull` predicate —
- * anonymous actors match.
- */
-export const publicRow: RowCondition = {
-  name: 'public',
-  predicate: { kind: 'columnIsNotNull', column: 'publicAt' },
-};
