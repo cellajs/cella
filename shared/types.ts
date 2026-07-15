@@ -1,9 +1,7 @@
 import { hierarchy, roles } from './config/config.default';
 import { appConfig } from './src/config-builder/app-config';
 
-/******************************************************************************
- * ENTITY TYPES
- ******************************************************************************/
+// Entity types
 
 /** All entities in this app */
 export type EntityType = (typeof appConfig.entityTypes)[number];
@@ -23,9 +21,7 @@ export type ResourceType = (typeof appConfig.resourceTypes)[number];
 /** Product entity types tracked for seen/unseen counts */
 export type SeenTrackedEntityType = (typeof appConfig.seenTrackedEntityTypes)[number];
 
-/******************************************************************************
- * APP CONFIGURATION TYPES
- ******************************************************************************/
+// App configuration types
 
 /** Menu sections in the menu structure */
 export type MenuSection = {
@@ -93,9 +89,7 @@ export type TokenType = (typeof appConfig.tokenTypes)[number];
 /** System roles available in the app */
 export type SystemRole = (typeof appConfig.systemRoles)[number] | null;
 
-/******************************************************************************
- * ENTITY HIERARCHY HELPERS
- ******************************************************************************/
+// Entity hierarchy helpers
 
 /** Entity roles type - union of all roles from the role registry. */
 export type EntityRole = (typeof roles.all)[number];
@@ -117,11 +111,8 @@ export type EntityIdColumnKey<T extends EntityType> = EntityIdColumnKeys[T];
  */
 export type EntityIdColumns<TS extends EntityType, V> = { [T in TS as EntityIdColumnKey<T>]: V };
 
-/******************************************************************************
- * CONTEXT RELATION TYPES
- * Derived from the hierarchy's phantom parent/related maps. Used to generate
- * context-entity id columns on product/context tables in a fork-agnostic way.
- ******************************************************************************/
+// Context relation types, derived from the hierarchy's phantom parent/related maps — used to
+// generate context-entity id columns on product/context tables in a fork-agnostic way.
 
 /** Type-level map of each entity to its strict parent (null = root). */
 type HierarchyParentMap = typeof hierarchy._parentMap;
@@ -172,9 +163,7 @@ export type NullableAncestorType<E extends string> = E extends keyof HierarchyNu
 /** Entity actions that can be performed (CRUD + search) */
 export type EntityActionType = (typeof appConfig.entityActions)[number];
 
-/******************************************************************************
- * EMBEDDING PROPAGATION TYPES
- ******************************************************************************/
+// Embedding propagation types
 
 /** Single entity embedding relationship derived from config */
 type EntityEmbedding = (typeof appConfig.entityEmbeddings)[number];

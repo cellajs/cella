@@ -27,17 +27,10 @@ interface GetUrlOptions {
 }
 
 /**
- * Generate a presigned URL for a private object in Scaleway Object Storage.
- * - Blob → return as-is
- * - Public → returns permanent public URL (no signing)
- * - Private → returns presigned URL with optional `expiresIn` (default 24h)
- *
- * @param Key - The object key or blob URL.
- * @param options - Optional settings:
- *   - isPublic: whether the object is public
- *   - bucketName: name of the S3 bucket
- *   - expiresIn: seconds until the presigned URL expires (only used if private, default: 86400)
- * @returns A promise resolving to the URL string.
+ * Resolves an object URL in Scaleway Object Storage:
+ * - blob URL → returned as-is
+ * - public → permanent public URL (no signing)
+ * - private → presigned URL, valid for `expiresIn` seconds (default 24h)
  */
 export async function getSignedUrlFromKey(
   Key: string,

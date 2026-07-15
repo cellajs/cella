@@ -14,13 +14,8 @@ import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
 
 /**
- * Starts a two-factor authentication challenge for a user.
- * Generates a temporary token, stores it in the database,
- * and sets a confirm MFA auth cookie.
- *
- * @param ctx - Hono context
- * @param user - User to start MFA for
- * @returns Redirect path to MFA confirmation page, or null if MFA is not enabled
+ * Starts an MFA challenge: stores a hashed `confirm-mfa` token and sets its cookie. Returns the
+ * `/auth/mfa` redirect path, or null when the user has no MFA enabled.
  */
 export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
   // If the user does not have MFA enabled, do nothing
@@ -52,13 +47,7 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
   return '/auth/mfa';
 };
 
-/**
- * Validates a confirm MFA token from cookie and optionally deletes it.
- *
- * @param ctx - Hono context
- * @returns UserModel
- * @throws AppError if token is missing, not found, or expired
- */
+/** Validates the `confirm-mfa` cookie token and returns its user. Throws if missing, not found, or expired. */
 export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserModel> => {
   const tokenFromCookie = await getAuthCookie(ctx, 'confirm-mfa');
   if (!tokenFromCookie)

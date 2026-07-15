@@ -48,11 +48,8 @@ type ChannelEntity = { id: string; tenantId: string };
 type ChannelEntityIdOverrides = Partial<MockChannelIdColumns>;
 
 /**
- * Generates a mock membership linking a user to a channel entity.
- * Works with any channel entity type (organization, project, etc.).
- * Initializes all channel entity ID columns to null, then sets the specific channel entity ID.
- * Additional ancestor IDs can be provided via overrideIds.
- * Ensures consistent ordering via the `getMembershipOrderOffset` function.
+ * Mock membership linking a user to a channel entity (any type). Nulls all channel-entity ID columns,
+ * then sets the target's (plus any ancestor IDs from `overrideIds`); ordering via `getMembershipOrderOffset`.
  */
 export const mockChannelMembership = <T extends ChannelEntityType>(
   channelType: T,

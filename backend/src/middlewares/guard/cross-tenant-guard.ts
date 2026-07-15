@@ -5,10 +5,6 @@ import { baseDb } from '#/db/db';
 /**
  * Guard middleware for authenticated cross-tenant routes.
  * Sets baseDb context for cross-tenant queries; handlers use tenantRead() for RLS when needed.
- *
- * @param ctx - Request/response context
- * @param next - The next middleware or route handler
- * @returns Continues to next handler with user RLS context set
  */
 export const crossTenantGuard = xMiddleware(
   {

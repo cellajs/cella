@@ -1,13 +1,10 @@
 import { findActivityByMutationId, findActivityRefByMutationId } from '#/db/prepared';
 
 /**
- * Check if a transaction has already been processed.
- * Idempotency check for replayed mutations.
- *
- * Uses a prepared statement since this runs on every create/update mutation.
+ * Idempotency check for replayed mutations: has this transaction already been processed?
+ * Prepared statement, since it runs on every create/update mutation.
  *
  * @param stxId - The client-generated mutation ID (nanoid)
- * @returns true if transaction exists in activities, false otherwise
  */
 export async function isTransactionProcessed(stxId: string): Promise<boolean> {
   const existing = await findActivityByMutationId.execute({ mutationId: stxId });
@@ -30,13 +27,10 @@ interface EntityReference {
 }
 
 /**
- * Get the entity created/modified by a transaction.
- * Returns the existing entity for idempotent responses.
- *
- * Uses a prepared statement since this runs on every create/update mutation.
+ * Get the entity created/modified by a transaction (the existing entity, for idempotent responses).
+ * Prepared statement, since it runs on every create/update mutation.
  *
  * @param stxId - The client-generated mutation ID (nanoid)
- * @returns Entity reference if found, null otherwise
  */
 export async function getEntityByTransaction(stxId: string): Promise<EntityReference | null> {
   const [activity] = await findActivityRefByMutationId.execute({ mutationId: stxId });

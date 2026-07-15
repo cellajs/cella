@@ -246,9 +246,7 @@ export default meta;
 
 type Story = StoryObj<DataGridProps<Person>>;
 
-// ============================================================================
 // Core stories
-// ============================================================================
 
 /** Default data grid with basic columns. */
 export const Default: Story = {};
@@ -444,9 +442,7 @@ export const CopyCell: Story = {
   },
 };
 
-// ============================================================================
 // Interaction tests (hidden from sidebar)
-// ============================================================================
 
 export const ShouldSelectCellOnClick: Story = {
   name: 'when cell is clicked, should select it',
@@ -679,9 +675,7 @@ export const ShouldFreezeFrozenColumns: Story = {
   },
 };
 
-// ============================================================================
 // Column drag-and-drop stories
-// ============================================================================
 
 const draggableHeaderColumns: Column<Person>[] = [
   { key: 'firstName', name: 'First Name', width: 120, draggable: true },
@@ -789,9 +783,7 @@ export const ShouldReorderColumnOnDragDrop: Story = {
   },
 };
 
-// ============================================================================
 // Row drag-and-drop stories
-// ============================================================================
 
 interface DraggablePerson extends Person {
   displayOrder: number;

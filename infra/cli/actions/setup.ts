@@ -433,7 +433,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     must,
   }
 
-  // -- State backend + stack --------------------------------------------------
+  // State backend + stack
   await must('Ensure Pulumi state bucket', 'pnpm', ['ensure-state-bucket'], spawnSync, { retry: true, env: stateBucketEnv })
   await must('Pulumi login (S3 backend)', 'pulumi', ['login', pulumiLoginUrl(appConfig)], spawnSync, { retry: true })
   const selected = spawnSync('pulumi', ['stack', 'select', stackName], { cwd: infraDir, env: childEnv, stdio: 'ignore' })
@@ -450,7 +450,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // is read-only, so it is safe to run before `up`.
   if (!inputs.operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx)
 
-  // -- Identities: CI deploy key, VM reader key, operator app ------------------
+  // Identities: CI deploy key, VM reader key, operator app
   let ciKey: CiKeyResult = { accessKey: '', secretKey: '', organizationId: '' }
   if (needsCiKey) {
     ciKey = await mintCiKey(ctx)
@@ -488,7 +488,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
 
   printSummary({ needsCiKey, ciAccessKey: ciKey.accessKey, vmAccessKey, operatorAppId, mode })
 
-  // -- Base infrastructure provisioning ----------------------------------------
+  // Base infrastructure provisioning
   const canDeploy = context.hasCiKey || !!ciKey.accessKey
   if (canDeploy) {
     console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network — no compute yet)`)

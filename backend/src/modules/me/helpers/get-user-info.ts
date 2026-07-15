@@ -10,16 +10,8 @@ import { totpsTable } from '#/modules/auth/totps/totps-db';
 import type { sessionSchema } from '#/modules/me/me-schema';
 
 /**
- * Fetches all authentication-related data for a user in parallel.
- *
- * This includes:
- * - Passkeys (excluding sensitive fields like credentialId & publicKey)
- * - TOTP entries
- * - Verified OAuth accounts
- *
- * @param db - Database connection
- * @param userId - ID of the user to fetch auth data for
- * @returns An object containing arrays of passkeys, TOTP entries, and OAuth providers
+ * Fetches a user's auth data in parallel: passkeys (minus the sensitive credentialId/publicKey),
+ * whether TOTP is set, and verified OAuth providers.
  */
 export const getAuthInfo = async (ctx: DbContext, { userId }: { userId: string }) => {
   const { db } = ctx.var;
@@ -38,13 +30,7 @@ export const getAuthInfo = async (ctx: DbContext, { userId }: { userId: string }
   return { passkeys, hasTotp: !!totps.length, oauth };
 };
 
-/**
- * Retrieves all sessions for a specific user, and marks the current session.
- *
- * @param ctx - Request/response context.
- * @param userId - ID of the user whose sessions are requested.
- * @returns A list of sessions, with an additional `isCurrent` flag indicating if the session is the current active session.
- */
+/** Returns a user's sessions (newest first, secret stripped), each flagged with `isCurrent`. */
 export const getUserSessions = async (ctx: Context<Env>, userId: string): Promise<z.infer<typeof sessionSchema>[]> => {
   const db = ctx.var.db;
   const sessions = await db

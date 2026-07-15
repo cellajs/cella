@@ -19,13 +19,8 @@ interface HandleCreateUserProps {
 }
 
 /**
- * Handles user creation, including OAuth-based sign-up.
- * Inserts the user into the database, processes OAuth accounts, and sends verification emails.
- * Sets a user session upon successful sign-up.
- *
- * @param newUser - New user data for registration(InsertUserModel).
- * @param emailVerified - Optional, new user email verified.
- * @returns Error response or Redirect response or Response
+ * Creates a user (also the OAuth sign-up path): inserts the user, unsubscribe token, and email row,
+ * links any pending invitation tokens to their inactive memberships. Throws 409 if the email exists.
  */
 export const handleCreateUser = async (
   ctx: DbContext,
@@ -94,13 +89,7 @@ export const handleCreateUser = async (
   }
 };
 
-/**
- * Handles updating inactive memberships with the new user ID upon user creation.
- * Deletes associated tokens after updating the memberships.
- *
- * @param userId - The ID of the newly created user.
- * @param inactiveMembershipIds - The IDs of the inactive memberships to update.
- */
+/** Sets the new user's ID on their inactive memberships, then deletes the associated tokens. */
 export const handleSetUserOnInactiveMemberships = async (
   ctx: DbContext,
   { userId, inactiveMembershipIds }: { userId: string; inactiveMembershipIds: string[] },

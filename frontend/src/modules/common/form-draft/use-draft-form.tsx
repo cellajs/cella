@@ -11,21 +11,14 @@ import { useDraftStore } from '~/modules/common/form-draft/draft-store';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 /**
- * This hook manages form state with draft-saving support. It automatically
- * restores saved drafts on mount and tracks unsaved changes.
+ * Form state with draft-saving: restores saved drafts on mount, tracks unsaved changes.
+ * Drafts persist via a debounced `form.watch` subscription (not per keystroke) and flush on
+ * unmount to prevent data loss.
  *
- * Drafts are persisted via a debounced subscription (not on every keystroke)
- * and flushed on unmount to prevent data loss.
- *
- * @param formId - A unique identifier for the form draft storage.
- * @param opt - Optional configuration:
- *   - `formOptions`: Props passed to `useForm()` from react-hook-form.
- *   - `formContainerId`: element id to target and toggle .unsaved-changes class with.
- *
- * @returns - Returns form methods along with:
- *  - `isDirty`: `true` if the form has unsaved changes.
- *  - `unsavedChanges`: `true` if the form has unsaved changes (alias for isDirty).
- *  - `loading`: `true` while restoring draft data.
+ * @param formId - Unique key for the draft storage.
+ * @param opt.formOptions - Passed through to react-hook-form's `useForm()`.
+ * @param opt.formContainerId - Element id whose `.unsaved-changes` class is toggled.
+ * @returns Form methods plus `isDirty`/`unsavedChanges` (aliases) and `loading` (true while restoring).
  */
 // biome-ignore lint/suspicious/noExplicitAny: Can be any form context
 export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues, TContext = any>(

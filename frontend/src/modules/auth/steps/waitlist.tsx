@@ -5,12 +5,7 @@ import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import { WaitlistForm } from '~/modules/requests/waitlist-form';
 
-/**
- * Renders the waitlist request step, including:
- * - Greeting with the user's email and a reset button
- * - Legal notice specific to the waitlist
- * - Waitlist form with a request access button
- */
+/** Waitlist request step: email greeting with reset, waitlist-specific legal notice, and the request form. */
 export function WaitlistStep() {
   const { t } = useTranslation();
 

@@ -8,9 +8,6 @@ import { baseDb } from '#/db/db';
  * RLS on tenant-scoped tables (organizations, attachments, etc.) will deny access
  * because no session variables are set, which is the correct fail-closed behavior.
  * Non-tenant tables (users, sessions, tokens) remain accessible for auth flows.
- *
- * @param ctx - Request/response context.
- * @param next - The next middleware or route handler.
  */
 export const publicGuard = xMiddleware(
   {

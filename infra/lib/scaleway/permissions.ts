@@ -1,6 +1,4 @@
-// ───────────────────────────────────────────────────────────────────────────
 // CI deploy key (`<slug>-ci-deploy`): project scope
-// ───────────────────────────────────────────────────────────────────────────
 
 /**
  * Permission sets granted to the CI deploy key at project scope. The `…ReadOnly`
@@ -23,9 +21,7 @@ export const PROJECT_PERMISSION_SETS = [
   'RelationalDatabasesReadOnly',
 ] as const
 
-// ───────────────────────────────────────────────────────────────────────────
 // CI deploy key: organization scope
-// ───────────────────────────────────────────────────────────────────────────
 
 // Org-level grants are split by Scaleway *scope type*: a single IAM policy rule
 // may only hold permission sets of ONE scope type, so these become two separate
@@ -44,9 +40,7 @@ export const ORG_SCOPED_PERMISSION_SETS = ['IAMReadOnly'] as const
 /** Union of all org-level grants, for audit/drift checks only (rule-agnostic). */
 export const ORG_PERMISSION_SETS = [...ORG_WIDE_PROJECT_PERMISSION_SETS, ...ORG_SCOPED_PERMISSION_SETS] as const
 
-// ───────────────────────────────────────────────────────────────────────────
 // VM reader key (`<slug>-vm-reader`): project scope
-// ───────────────────────────────────────────────────────────────────────────
 
 /**
  * Permission sets granted to the VM reader key at project scope. Deliberately
@@ -60,9 +54,7 @@ export const VM_PROJECT_PERMISSION_SETS = [
   'SecretManagerSecretAccess',
 ] as const
 
-// ───────────────────────────────────────────────────────────────────────────
 // Bootstrap-owned boundary
-// ───────────────────────────────────────────────────────────────────────────
 
 /**
  * Resource-token fragments that are bootstrap-owned: NOT write-granted to the CI

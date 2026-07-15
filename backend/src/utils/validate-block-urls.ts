@@ -10,9 +10,6 @@ type ValidationResult = { valid: true } | { valid: false; invalidUrls: string[] 
 
 /**
  * Validates that all media URLs in BlockNote JSON content are from trusted sources.
- * Parses the JSON string and delegates to the shared validation utility.
- *
- * @param blocksJson - Serialized BlockNote JSON string
  * @param extraAllowedDomains - Optional additional trusted domains (e.g., ['mycompany.com'])
  */
 export const validateBlockMediaUrls = (blocksJson: string, extraAllowedDomains?: string[]): ValidationResult => {

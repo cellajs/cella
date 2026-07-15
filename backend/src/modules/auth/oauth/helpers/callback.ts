@@ -41,23 +41,14 @@ interface BaseCallbackProps {
 }
 
 /**
- * Handles the OAuth provider callback for authentication, account linking, or invitation flows.
- *
- * This function determines the appropriate flow based on `type` from OAuth payload:
- * - 'connect' → link an existing account with the OAuth provider
- * - 'invite'  → handle invited users completing OAuth signup
+ * Handles the OAuth provider callback, branching on `oauthPayload.type`:
+ * - 'connect' → link the provider to an existing account
+ * - 'invite'  → invited user completing OAuth signup
  * - 'verify'  → verify an existing OAuth account
- * - 'auth'    → standard authentication/signup flow
+ * - 'auth'    → standard authentication/signup
  *
- * It fetches any existing OAuth account, executes corresponding flow handler,
- * and then processes OAuth account to handle session setup, MFA, or verification email,
- * ultimately redirecting user to correct client page.
- *
- * @param ctx - Request context containing request and environment info.
- * @param oauthPayload - Payload from OAuth flow, including type and optional redirect.
- * @param providerUser - Transformed user data returned by OAuth provider.
- * @param provider - OAuth provider identifier (e.g., 'google', 'github').
- * @returns A redirect response to appropriate client page.
+ * Fetches any existing OAuth account, runs the matching flow, then hands off to
+ * `processOAuthAccount` for session setup, MFA, or verification email and the final redirect.
  */
 export const handleOAuthCallback = async (
   ctx: Context<Env>,
@@ -165,17 +156,11 @@ const authCallbackFlow = async ({
 };
 
 /**
- * Handles connecting an OAuth provider to an existing user account.
+ * Connects an OAuth provider to an existing user account.
  *
- * The connecting user comes from the signed oauth-state payload, pinned at
- * initiation where the session was validated — the SameSite=Strict session
- * cookie is not sent on the provider's cross-site callback navigation.
- *
- * @param providerUser - The transformed user data from the OAuth provider.
- * @param provider - The OAuth provider (e.g., 'google', 'github').
- * @param connectUserId - The ID of the user who is attempting to connect an OAuth account.
- * @param oauthAccount - The existing OAuth account, if one exists.
- * @returns A redirect response.
+ * The connecting user comes from the signed oauth-state payload, pinned at initiation where the
+ * session was validated — the SameSite=Strict session cookie is not sent on the provider's
+ * cross-site callback navigation.
  */
 const connectCallbackFlow = async ({
   connectUserId,
@@ -217,15 +202,8 @@ const connectCallbackFlow = async ({
 };
 
 /**
- * Handles user sign-up via invitation flow.
- * Validates the invitation token, checks email matches, and creates an OAuth account.
- *
- * @param ctx - The request context.
- * @param providerUser - The transformed user data from the OAuth provider.
- * @param provider - The OAuth provider (e.g., 'google', 'github').
- * @param oauthAccount - The linked OAuth account, if one exists.
- * @param redirectAfter - OAuth query redirect path, if one exists.
- * @returns A redirect response.
+ * Sign-up via invitation: validates the invitation token, requires its email to match the
+ * provider email, then creates the OAuth account.
  */
 const inviteCallbackFlow = async ({
   ctx,
@@ -314,15 +292,7 @@ const verifyCallbackFlow = async ({
   return { type: 'verified', user, oauthAccount };
 };
 
-/**
- * Inserts a new OAuth account into the database.
- *
- * @param userId - Internal user ID to associate with the OAuth account.
- * @param providerUserId - Unique user ID from the OAuth provider.
- * @param provider - Identifier for the OAuth provider.
- * @param email - Email address associated with the OAuth account.
- * @returns The created OAuth account.
- */
+/** Inserts a new OAuth account row and returns it. */
 const createOAuthAccount = async (
   dbOrTx: DbOrTx,
   userId: OAuthAccountModel['userId'],
@@ -345,14 +315,9 @@ const createOAuthAccount = async (
 };
 
 /**
- * Processes an OAuth account after provider callback.
- *
- * This function handles both verified and unverified OAuth accounts:
- * - Verified, it may initiate MFA and/or set user session, then redirects to appropriate post-login path.
- * - Unverified, it sends a verification email and redirects  user to an email verification page with context.
- *
- * @param info - Contains OAuth flow result, request context, optional redirect path
- * @returns A redirect response to appropriate client page.
+ * Post-callback handling. Verified accounts may start an MFA challenge and/or set the session,
+ * then redirect to the post-login path; unverified accounts get a verification email and are
+ * redirected to the email-verification page.
  */
 const processOAuthAccount = async (info: OAuthFlowResult & { ctx: Context<Env>; redirectAfter?: string }) => {
   const { ctx, type, oauthAccount, redirectAfter } = info;

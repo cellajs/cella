@@ -3,12 +3,9 @@ import path from 'node:path';
 import type { HmrContext, ModuleNode, Plugin } from 'vite';
 
 /**
- * Vite plugin for i18next locale file Hot Module Replacement (HMR).
- *
- * This plugin watches locale files (JSON/YAML) in the source directory and:
- * 1. Syncs them to a cache directory for faster access
- * 2. Merges specified namespaces into a target namespace (e.g., 'app' -> 'common')
- * 3. Sends custom HMR events to trigger i18next reloads without full page refresh
+ * Vite plugin for i18next locale-file HMR: watches JSON/YAML locales, syncs them to a cache dir while
+ * merging configured namespaces (e.g. `app` -> `common`), and emits a custom HMR event so i18next
+ * reloads translations without a full page refresh. See {@link localesHMR} for client wire-up.
  *
  * @example
  * ```ts
@@ -106,15 +103,8 @@ async function readJsonIfExists(file: string): Promise<Record<string, unknown>> 
 }
 
 /**
- * Sync a single language directory to the cache.
- *
- * This function:
- * 1. Reads all JSON namespace files from the source language directory
- * 2. Merges configured source namespaces into the target namespace
- * 3. Copies non-merged namespaces as-is to the output directory
- *
- * @param lang - Language code (e.g., 'en', 'nl')
- * @param options - Resolved plugin options
+ * Sync one language directory to the cache: merge configured source namespaces into the target
+ * namespace, and copy the remaining namespaces as-is.
  */
 async function syncLanguage(lang: string, options: Required<LocalesHMROptions>): Promise<void> {
   const { srcDir, outDir, merge, verbose } = options;

@@ -406,9 +406,7 @@ async function queryWithoutChannel<T = Record<string, unknown>>(
   });
 }
 
-// ============================================================================
 // Session context tests (run with superuser connection)
-// ============================================================================
 
 describe('RLS Security Tests', () => {
   describe('Tenant Context Helpers', () => {
@@ -514,9 +512,7 @@ describe('RLS Security Tests', () => {
   });
 });
 
-// ============================================================================
 // RLS policy verification (runtime_role connection, genuinely subject to RLS)
-// ============================================================================
 
 /**
  * Whether the environment can run the RLS suite: roles + base tables present.

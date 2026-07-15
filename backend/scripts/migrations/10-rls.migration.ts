@@ -9,9 +9,7 @@ import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 import type { GenerateScript } from '../types';
 
 async function run() {
-  // ============================================================================
-  // Table Classification
-  // ============================================================================
+  // Table classification
 
   /**
    * Collect all entity tables that need RLS setup (ownership, FORCE RLS, grants).
@@ -67,9 +65,7 @@ async function run() {
   ];
   const readOnlyTables = ['system_roles', 'activities'];
 
-  // ============================================================================
   // Migration SQL
-  // ============================================================================
 
   const migrationSql = `-- RLS (Row-Level Security) Setup
 -- Configures FORCE RLS, table ownership, and grants.
@@ -113,9 +109,7 @@ ${readOnlyTables.map((t) => `    GRANT SELECT ON ${t} TO runtime_role;`).join('\
 END $$;
 `;
 
-  // ============================================================================
-  // Execute Migration
-  // ============================================================================
+  // Execute migration
 
   const result = upsertMigration('rls_setup', migrationSql);
   logMigrationResult(result, 'RLS setup');

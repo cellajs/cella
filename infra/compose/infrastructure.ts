@@ -116,10 +116,8 @@ function migrateBlock(slug: string, cfg: AppServiceConfig): ComposeService {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Machinery: hand-authored, cella-owned. The one-shot migrate companion and
 // the compose assembly. Not fork data; driven by the fork's service registry.
-// ---------------------------------------------------------------------------
 
 /**
  * Env injected into a `runMigrate` service's app block: its one-shot `migrate`

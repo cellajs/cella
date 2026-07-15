@@ -3,10 +3,8 @@ import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 import type { GenerateScript } from '../types';
 
 /**
- * UNLOGGED Tables Setup
- *
- * Converts ephemeral/regenerable tables to UNLOGGED to skip WAL writes.
- * These tables tolerate being truncated on unclean shutdown:
+ * Converts ephemeral/regenerable tables to UNLOGGED to skip WAL writes. These tolerate
+ * truncation on unclean shutdown:
  * - rate_limits: clients get a fresh window
  * - user_counters, channel_counters, product_counters: rebuilt from source data on startup
  *

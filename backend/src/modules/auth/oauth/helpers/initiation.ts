@@ -32,19 +32,11 @@ export const parseOAuthCookie = (raw: string | false | null | undefined): OAuthC
 };
 
 /**
- * Creates an OAuth session by setting the necessary cookies and redirecting to the provider.
+ * Creates an OAuth session: sets the flow-context cookies and redirects to the provider.
  *
  * - Stores OAuth flow context (invite, connect, verify, or default)
  * - Associates the context with the OAuth `state` to prevent CSRF
- * - Optionally includes PKCE `codeVerifier`
- *
- * @param ctx - Hono context
- * @param provider - OAuth provider name
- * @param url - Provider’s authorization endpoint
- * @param state - OAuth state param
- * @param codeVerifier - PKCE code verifier (optional)
- * @param nonce - OIDC nonce echoed back in the provider id_token (optional)
- * @returns redirect response
+ * - Optionally includes a PKCE `codeVerifier` and an OIDC `nonce` (echoed back in the id_token)
  */
 export const handleOAuthInitiation = async (
   ctx: Context<Env, string, { out: { query: OAuthQueryParams } }>,

@@ -18,9 +18,7 @@ import { Label } from '~/modules/ui/label';
 import { Separator } from '~/modules/ui/separator';
 import { cn } from '~/utils/cn';
 
-// ============================================================================
 // Layout primitives (no RHF dependency)
-// ============================================================================
 
 export function FieldSet({ className, ...props }: React.ComponentProps<'fieldset'>) {
   return (
@@ -234,9 +232,7 @@ export function FieldError({
   );
 }
 
-// ============================================================================
 // RHF + base-ui Field integration
-// ============================================================================
 
 export type LabelDirectionType = 'top' | 'left';
 const LabelDirectionContext = React.createContext<LabelDirectionType>('top');

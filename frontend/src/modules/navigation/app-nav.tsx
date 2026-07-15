@@ -11,10 +11,9 @@ import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
 
-/** Application navigation component.
- * - Renders floating, sidebar, or bottom bar nav.
- * - Manages navigation item triggering, including routing and sheet handling.
- * - Sets up hotkeys for quick navigation access.
+/**
+ * Renders the nav as a floating, sidebar, or bottom bar. Handles nav-item triggering (routing +
+ * sheet) and sets up quick-navigation hotkeys.
  */
 export function AppNav() {
   const navigate = useNavigate();

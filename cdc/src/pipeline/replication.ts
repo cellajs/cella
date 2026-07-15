@@ -14,9 +14,7 @@ import { handleDataMessage } from './handle-message';
 
 const { reconnection, slotTakeover } = RESOURCE_LIMITS;
 
-// ================================
 // Replication service setup
-// ================================
 
 /**
  * Build the replication connection URL from the CDC database URL.
@@ -72,9 +70,7 @@ export function createReplicationService(): LogicalReplicationService {
   return service;
 }
 
-// ================================
 // Slot management
-// ================================
 
 /**
  * Ensure the replication slot exists, creating it if necessary.
@@ -121,9 +117,7 @@ async function describeSlotHolder(): Promise<Record<string, unknown> | null> {
   }
 }
 
-// ================================
 // Backpressure
-// ================================
 
 /**
  * Wire up WebSocket callbacks for replication backpressure.
@@ -149,9 +143,7 @@ export function setupBackpressure(): void {
   });
 }
 
-// ================================
 // Subscription loop
-// ================================
 
 /**
  * Subscribe to the replication slot with automatic reconnection.

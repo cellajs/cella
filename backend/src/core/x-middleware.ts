@@ -28,10 +28,6 @@ export const getExtensionValueMetadata = () => extensionValueMetadata;
 /**
  * Creates a named middleware for Hono with proper function naming and OpenAPI extension type.
  * Sets `.name`, `.__extensionType`, and `.__description` for OpenAPI introspection.
- *
- * @param options - Configuration for the middleware identity and documentation.
- * @param fn - The middleware handler function.
- * @returns A named MiddlewareHandler with extension type and description.
  */
 export const xMiddleware = <E extends Env = Env>(
   options: XMiddlewareOptions,
@@ -55,10 +51,6 @@ export const xMiddleware = <E extends Env = Env>(
 
 /**
  * Sets the extension type on an existing middleware (for composed middlewares like `every()`).
- *
- * @param middleware - The middleware to extend.
- * @param options - Configuration for the middleware identity and documentation.
- * @returns The middleware with extension properties set.
  */
 export const setMiddlewareExtension = <E extends Env = Env>(
   middleware: MiddlewareHandler<E>,

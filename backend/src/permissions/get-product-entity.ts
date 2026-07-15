@@ -16,20 +16,9 @@ export interface ValidProductEntityResult<K extends ProductEntityType> {
 }
 
 /**
- * Checks if current user has permission to perform a given action on a product entity.
- *
- * Resolves product entity based on provided type and ID/slug, and verifies user permissions
- * (including system admin overrides).
- *
- * Returns resolved product entity and a `can` object with all action permissions.
- * Throws an error if entity cannot be found or user lacks required permissions.
- *
- * @param ctx - Hono context (for memberships, user info)
- * @param id - Product's unique ID.
- * @param entityType - Type of product entity.
- * @param action - The action to check (e.g., `"read" | "update" | "delete"`).
- * @param db - Database connection or transaction (e.g., from tenantRead).
- * @returns An object containing resolved entity and can object.
+ * Checks whether the current user may perform `action` on a product entity, resolving it by `id`
+ * (system-admin bypass handled inside `checkPermission`). Returns the resolved entity; throws 404 if
+ * not found, 403 if not allowed.
  */
 export const getValidProductEntity = async <K extends ProductEntityType>(
   ctx: AuthContext,

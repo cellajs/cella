@@ -9,9 +9,7 @@ import { env } from '../src/env';
  * callbacks (`<tunnel>/api/auth/...`) reach the backend through the proxy.
  * Only attempts to start when `TUNNEL_URL` and `TUNNEL_AUTH_TOKEN` are configured.
  *
- * @returns A Promise that resolves to the public URL (string) if the tunnel
- * is successfully established, or `null` if the tunnel is not configured
- * or the connection fails.
+ * @returns The public URL, or `null` if the tunnel is unconfigured or fails to connect.
  */
 const startTunnel = async (): Promise<string | null> => {
   // Check if tunnel is configured via environment variables

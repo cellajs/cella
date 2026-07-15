@@ -19,13 +19,11 @@ export const isConditionalMediationAvailable = async (): Promise<boolean> => {
 };
 
 /**
- * Starts a conditional mediation (passkey autofill) flow.
- * Returns an AbortController so the caller can cancel it (e.g. on unmount or navigation).
- * When a user selects a passkey from autofill, `onCredential` is called with the assertion data.
+ * Starts a conditional mediation (passkey autofill) flow. Returns an AbortController so the caller
+ * can cancel it (e.g. on unmount or navigation); `onCredential` fires with the assertion data when a
+ * user picks a passkey from autofill.
  *
- * @param onCredential - Callback when user selects a passkey
- * @param signal - AbortSignal to cancel the mediation
- * @param email - Optional email to get specific credential IDs (non-discoverable). If omitted, uses discoverable credentials only.
+ * @param email - Optional. Fetches specific credential IDs (non-discoverable); omit to use discoverable credentials only.
  */
 export const startConditionalMediation = async (
   onCredential: (data: ConditionalMediationResult) => void,

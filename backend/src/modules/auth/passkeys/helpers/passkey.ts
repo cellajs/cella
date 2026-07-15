@@ -26,16 +26,9 @@ import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 
 /**
- * Parses and validates passkey attestation data.
- *
- * Verifies attestation statement, relying party ID hash, user presence and verification, credential, algorithm, and challenge.
- * If valid, returns the encoded public key and credential ID.
- *
- * @param clientDataJSON -Client data JSON from the attestation.
- * @param encodedAttestationObject - Base64-encoded attestation object.
- * @param challengeFromCookie - Challenge value from the cookie to validate.
- * @throws Error if some data is invalid.
- * @returns An object with encoded public key and credential ID.
+ * Parses and validates passkey (WebAuthn) attestation: checks the attestation format, relying-party
+ * ID hash, user presence/verification, credential, ES256 algorithm, and challenge. Returns the
+ * encoded public key and credential ID.
  */
 export const parseAndValidatePasskeyAttestation = (
   clientDataJSON: string,
@@ -127,19 +120,7 @@ export const validatePasskey = async (
   if (!isValid) throw new AppError(401, 'invalid_token', 'warn');
 };
 
-/**
- * Verifies a passkey public key signature.
- *
- * Verifies that signature matches public key and client data, ensuring request is valid.
- *
- * @param signature - Base64-encoded signature to verify.
- * @param authenticatorObject - Base64-encoded authenticator object.
- * @param clientDataJSON - Base64-encoded client data JSON.
- * @param publicKey - Base64-encoded public key for verification.
- * @param challengeFromCookie - Challenge value from the cookie to validate.
- * @throws Error if some data is invalid.
- * @returns Boolean indicating whether the signature is valid.
- */
+/** Verifies the passkey assertion signature against the stored public key, challenge, and client data. */
 const verifyPassKeyPublic = async ({
   signature,
   authenticatorObject,

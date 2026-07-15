@@ -9,9 +9,7 @@ const productEntityTypes = ['attachment'] as const;
 
 export const config = {
 
-  /******************************************************************************
-   * ENTITY DATA MODEL
-   ******************************************************************************/
+  // Entity data model
 
   /** All entity types in the app - must match hierarchy.allTypes. */
   entityTypes,
@@ -71,15 +69,11 @@ export const config = {
     },
   } as const,
 
-  /******************************************************************************
-   * SYSTEM ROLES
-   ******************************************************************************/
+  // System roles
 
   systemRoles: ['admin'] as const,
 
-  /******************************************************************************
-   * APP IDENTITY
-   ******************************************************************************/
+  // App identity
 
   /** App display name shown in UI and emails */
   name: '__project_name__',
@@ -93,9 +87,7 @@ export const config = {
   keywords:
     'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, baseui, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
 
-  /******************************************************************************
-   * URLS & ENDPOINTS
-   ******************************************************************************/
+  // URLs & endpoints
 
   /** Frontend SPA base URL (the app origin — every service is a path under it) */
   frontendUrl: 'https://__project_slug__.example.com',
@@ -141,9 +133,7 @@ export const config = {
   /** Redirect path for first-time users */
   welcomeRedirectPath: '/welcome',
 
-  /******************************************************************************
-   * EMAIL
-   ******************************************************************************/
+  // Email
 
   /** From address for system notifications */
   senderEmail: 'notifications@__project_slug__.example.com',
@@ -152,9 +142,7 @@ export const config = {
   /** Receive security warnings */
   securityEmail: 'security@__project_slug__.example.com',
 
-  /******************************************************************************
-   * MODE & FLAGS
-   ******************************************************************************/
+  // Mode & flags
 
   /** Runtime mode - overridden per environment file */
   mode: 'development' as ConfigMode,
@@ -165,9 +153,7 @@ export const config = {
   /** Persisted client query-cache shape - bump on a breaking change to a cached entity so clients wipe stale cache */
   clientCacheVersion: 'v1',
 
-  /******************************************************************************
-   * FEATURE FLAGS
-   ******************************************************************************/
+  // Feature flags
 
   /**
    * Feature toggles for app capabilities.
@@ -186,9 +172,7 @@ export const config = {
     chatSupport: false as boolean,
   },
 
-  /******************************************************************************
-   * AUTHENTICATION
-   ******************************************************************************/
+  // Authentication
 
   /**
    * Enabled authentication strategies.
@@ -209,9 +193,7 @@ export const config = {
     digits: 6,
   },
 
-  /******************************************************************************
-   * API CONFIGURATION
-   ******************************************************************************/
+  // API configuration
 
   /** API version prefix for endpoints */
   apiVersion: 'v1',
@@ -219,9 +201,7 @@ export const config = {
   apiDescription: `⚠️ ATTENTION: PRERELEASE!
                   This API is organized into modules based on logical domains.`,
 
-  /******************************************************************************
-   * REQUEST LIMITS
-   ******************************************************************************/
+  // Request limits
 
   /**
    * Default page sizes for list endpoints. Backend enforces max 1000.
@@ -244,9 +224,7 @@ export const config = {
   /** Default body size limit in bytes */
   defaultBodyLimit: 1 * 1024 * 1024,
 
-  /******************************************************************************
-   * STORAGE & UPLOADS (S3)
-   ******************************************************************************/
+  // Storage & uploads (S3)
 
   /** S3-compatible storage configuration. Only region and host are required; the rest is derived from the slug. */
   s3: {
@@ -285,9 +263,7 @@ export const config = {
     uploadRetryDelays: [60000, 300000, 900000] as const,
   },
 
-  /******************************************************************************
-   * THIRD-PARTY SERVICES
-   ******************************************************************************/
+  // Third-party services
 
   /** Gleap token for customer support widget */
   gleapToken: '',
@@ -298,9 +274,7 @@ export const config = {
   /** Maple.dev public ingest key, safe to embed in the frontend bundle (empty disables frontend export) */
   maplePublicIngestKey: '',
 
-  /******************************************************************************
-   * THEMING & UI
-   ******************************************************************************/
+  // Theming & UI
 
   /** Primary theme color for PWA manifest and browser chrome */
   themeColor: '#26262b',
@@ -337,9 +311,7 @@ export const config = {
     'bg-red-300',
   ],
 
-  /******************************************************************************
-   * LOCALIZATION
-   ******************************************************************************/
+  // Localization
 
   /** Default language code */
   defaultLanguage: 'en' as const,
@@ -351,9 +323,7 @@ export const config = {
     timezones: [],
   },
 
-  /******************************************************************************
-   * COMPANY DETAILS
-   ******************************************************************************/
+  // Company details
 
   /** Company/organization details for footer, legal pages, and contact info */
   company: {
@@ -381,9 +351,7 @@ export const config = {
     },
   },
 
-  /******************************************************************************
-   * USER DEFAULTS
-   ******************************************************************************/
+  // User defaults
 
   /** Default user flags applied to new users */
   defaultUserFlags: {

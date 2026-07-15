@@ -30,13 +30,7 @@ export const resetOrganizationMockEnforcers = () => {
   organizationName.reset();
 };
 
-/**
- * Generates base organization fields shared between insert and response mocks.
- * @param id - Organization ID
- * @param tenantId - Tenant ID
- * @param name - Organization name
- * @param createdAt - Creation timestamp
- */
+/** Base organization fields shared between insert and response mocks. */
 const generateOrganizationBase = (id: string, tenantId: string, name: string, createdAt: string) => {
   const slug = slugify(name, { lower: true, strict: true });
 

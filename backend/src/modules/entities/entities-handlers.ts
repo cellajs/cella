@@ -14,10 +14,6 @@ import { keepAlive, streamSubscriberManager, writeOffset } from './stream';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-// ============================================
-// Route handlers
-// ============================================
-
 app.openapi(entityRoutes.checkSlug, async (ctx) => {
   const { slug, entityType } = ctx.req.valid('json');
   const result = await checkSlugOp(ctx, slug, entityType);

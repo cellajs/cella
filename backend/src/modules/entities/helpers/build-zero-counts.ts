@@ -1,12 +1,8 @@
 import { type ChannelEntityType, hierarchy, recordFromKeys, roles } from 'shared';
 
 /**
- * Build a zero-initialized counts response object for a new channel entity.
- * Used in create responses where the entity has no prior data.
- *
- * @param entityType - The channel entity type (e.g. 'organization')
- * @param creatorRole - The role assigned to the creator (defaults to 'admin')
- * @returns Object matching channelEntityIncludedSchema counts: { membership: {...}, entities: {...}, activity: {...} }
+ * Zero-initialized counts for a newly created channel entity (create responses, no prior data).
+ * Shape matches `channelEntityIncludedSchema`: { membership, entities, activity }.
  */
 export const buildZeroCounts = (entityType: ChannelEntityType, creatorRole = 'admin') => {
   const descendants = hierarchy.getOrderedDescendants(entityType);

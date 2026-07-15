@@ -30,7 +30,7 @@ const { persister, sessionPersister, cleanupOrphanedSessions } = await import('~
 // The persister reads/writes the live per-user appdb; bind one (owner `u1`) per test.
 const { bindAppDb, deleteAppDb, getAppDb } = await import('~/query/app-db');
 
-// -- Helpers ------------------------------------------------------------------
+// Helpers
 
 function makeQuery(hash: string, entityType: string, dataUpdatedAt: number, data: unknown = null) {
   return {
@@ -69,7 +69,7 @@ async function deleteDb() {
   await deleteAppDb();
 }
 
-// -- Tests --------------------------------------------------------------------
+// Tests
 
 describe('per-query IDB persister', () => {
   beforeEach(async () => {

@@ -36,12 +36,7 @@ export const withMockContext = <T>(context: MockContext, fn: () => T): T => {
   }
 };
 
-/**
- * Gets the ID prefix based on current mock context.
- * - 'example': empty string (IDs in OpenAPI docs look like real IDs)
- * - 'script': 'gen-' (CDC worker skips these)
- * - 'loadtest': 'lt-' (for load-test data)
- */
+/** ID prefix for the current mock context (see `setMockContext`). */
 const getIdPrefix = (): string => {
   switch (currentMockContext) {
     case 'script':
@@ -54,14 +49,8 @@ const getIdPrefix = (): string => {
 };
 
 /**
- * Generates a mock nanoid with context-aware prefixing.
- * Total length matches nanoid config (24 chars by default).
- * Uses faker's seeded RNG for deterministic output.
- *
- * Prefix behavior based on context set via setMockContext():
- * - 'example' (default): No prefix - for OpenAPI documentation
- * - 'script': 'gen-' prefix - for DB seeding, CDC filtering
- * - 'loadtest': 'lt-' prefix - for load-test data
+ * Mock nanoid with context-aware prefixing (see `setMockContext`). Total length matches the
+ * nanoid config (24 chars by default). Uses faker's seeded RNG for deterministic output.
  */
 export const mockNanoid = (length = 24) => {
   const prefix = getIdPrefix();
@@ -77,13 +66,8 @@ export const SCRIPT_UUID_PREFIX = '00000000';
 export const LOADTEST_UUID_PREFIX = '00000001';
 
 /**
- * Generates a mock UUID entity ID with context-aware prefixing.
- * Uses faker's seeded RNG for deterministic output.
- *
- * Prefix behavior based on context set via setMockContext():
- * - 'example' (default): Standard faker UUID - for OpenAPI documentation
- * - 'script': UUID starting with '00000000-' - for DB seeding, CDC filtering
- * - 'loadtest': UUID starting with '00000001-' - for load-test data
+ * Mock UUID entity ID with context-aware prefixing (see `setMockContext`): 'script' IDs start
+ * with '00000000', 'loadtest' with '00000001'. Uses faker's seeded RNG for deterministic output.
  */
 export const mockUuid = () => {
   const uuid = faker.string.uuid();

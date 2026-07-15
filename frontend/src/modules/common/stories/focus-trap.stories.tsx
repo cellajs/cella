@@ -3,9 +3,7 @@ import { useState } from 'react';
 import { expect, userEvent, waitFor } from 'storybook/test';
 import { FocusTrap } from '../focus-trap';
 
-// ============================================================================
 // Helpers
-// ============================================================================
 
 function TrapWithButtons({
   label = 'Trap',
@@ -153,9 +151,7 @@ function DisableInactiveTrap() {
   );
 }
 
-// ============================================================================
 // Meta
-// ============================================================================
 
 const meta = {
   title: 'common/FocusTrap',
@@ -169,9 +165,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-// ============================================================================
 // Visual stories
-// ============================================================================
 
 /**
  * Basic active focus trap. Tab cycles through the buttons and wraps around
@@ -228,9 +222,7 @@ export const DisableInactive: Story = {
   render: () => <DisableInactiveTrap />,
 };
 
-// ============================================================================
 // Interaction tests (hidden from sidebar)
-// ============================================================================
 
 export const ShouldCycleForwardOnTab: Story = {
   name: 'when Tab on last element, should wrap to first',

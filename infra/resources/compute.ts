@@ -16,11 +16,9 @@ import { secretIds } from './secrets'
 import { bootDiagBucketName } from './storage'
 import { vmReaderPolicy } from './vm-iam'
 
-// ---------------------------------------------------------------------------
 // Security Group: fully closed inbound; LB reaches VMs via private network.
 // Break-glass access is via Scaleway's serial console (no SSH on the public
 // internet). See infra/README.md, "Emergency access".
-// ---------------------------------------------------------------------------
 
 const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
   name: naming.resource('compute-sg'),
@@ -31,13 +29,11 @@ const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
   tags,
 })
 
-// ---------------------------------------------------------------------------
 // Runtime secret manifest: metadata only (secret IDs + env var names, never
 // values). Baked directly into the new generation's cloud-init: under immutable
 // releases every change replaces the VM anyway, so there is no reason to deliver
 // it out-of-band. The on-VM boot agent reads it to hydrate /opt/app/.env.runtime
 // from Secret Manager before the app boots.
-// ---------------------------------------------------------------------------
 
 function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi.Output<string> {
   const definitions = unionRuntimeSecrets(consumers)
@@ -60,18 +56,14 @@ function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi
   )
 }
 
-// ---------------------------------------------------------------------------
 // Compose file content (the generated deploy artifact, read at deploy time)
-// ---------------------------------------------------------------------------
 
 const composeContent = fs.readFileSync(
   path.resolve(import.meta.dirname, '../compose.gen.yml'),
   'utf-8',
 )
 
-// ---------------------------------------------------------------------------
 // Cloud-init template
-// ---------------------------------------------------------------------------
 
 interface ServiceConfig {
   name: string
@@ -126,20 +118,16 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
   )
 }
 
-// ---------------------------------------------------------------------------
 // Compose env: the `${VAR}` placeholder scan + `@{slug.prop}` binding DSL live
 // in resources/compose-env.ts; the per-generation private-IP supplier is the
 // only piece compute owns (it depends on VM planning state below).
-// ---------------------------------------------------------------------------
 
 const buildComposeEnv = createComposeEnvBuilder(currentGenBindingIp, { hostSlug, coHosted })
 
-// ---------------------------------------------------------------------------
 // Create VMs: the service set (`enabled`, `coHosted`, `hostSlug`) and the
 // content-addressed generation plan come from resources/generations.ts; the
 // program derives the content-addressed id for a pending SHA there and
 // materialises each generation here.
-// ---------------------------------------------------------------------------
 
 
 export interface GenerationInstance {
@@ -287,9 +275,7 @@ if (infra.computeEnabled) {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Exports
-// ---------------------------------------------------------------------------
 
 /** All generation VM instances (one per active generation per enabled service). */
 export const computeInstances = instances

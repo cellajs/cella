@@ -15,13 +15,8 @@ const stringToSeed = (key: string): number => {
 };
 
 /**
- * Runs a generator function with a deterministic faker seed.
- * The same key will always produce the same fake data.
- * Useful for OpenAPI examples and reproducible tests.
- *
- * @param key - A unique string key to seed the random generator.
- * @param generator - Function that generates fake data using faker.
- * @returns The result of the generator function.
+ * Runs a generator with a deterministic faker seed: the same `key` always produces the same
+ * fake data. Useful for OpenAPI examples and reproducible tests.
  */
 export const withFakerSeed = <T>(key: string, generator: () => T): T => {
   faker.seed(stringToSeed(key));

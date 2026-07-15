@@ -2,9 +2,7 @@ import ora, { type Ora } from 'ora';
 
 export { changeMark, checkMark, crossMark, loadingMark, tildeMark, timestamp, warningMark } from 'shared/utils/console';
 
-// ============================================================================
-// Spinner Utilities
-// ============================================================================
+// Spinner utilities
 
 /** Active spinner reference */
 let activeSpinner: Ora | null = null;

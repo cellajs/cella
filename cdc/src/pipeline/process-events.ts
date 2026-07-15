@@ -26,9 +26,7 @@ interface PreparedEvent {
   rowData: CdcRowData;
 }
 
-// ================================
 // Activity persistence
-// ================================
 
 /**
  * Prepare an activity for persistence: generate ID, extract seq.
@@ -114,9 +112,7 @@ async function persistActivities(
   return true;
 }
 
-// ================================
 // Sync dispatch
-// ================================
 
 /** Forward stamped events to the API server: one batch payload, or a single payload. */
 function dispatchToApi(stamped: PreparedEvent[], traceCtx: TraceContext): void {
@@ -133,9 +129,7 @@ function dispatchToApi(stamped: PreparedEvent[], traceCtx: TraceContext): void {
   }
 }
 
-// ================================
 // Unified event processing
-// ================================
 
 /**
  * Process one or more CDC events through three sequenced concerns:

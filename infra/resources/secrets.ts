@@ -44,9 +44,7 @@ function parseOperatorSecretImports(raw: string | undefined): Record<string, str
 
 const operatorSecretImports = parseOperatorSecretImports(process.env.OPERATOR_SECRET_IMPORTS)
 
-// ---------------------------------------------------------------------------
 // Helper: create a Secret container, optionally with a Version
-// ---------------------------------------------------------------------------
 
 function createSecretContainer(
   name: string,
@@ -110,9 +108,7 @@ function pulumiRuntimeSecretData(definition: RuntimeSecretDefinition): pulumi.In
   )
 }
 
-// ---------------------------------------------------------------------------
 // Registry-driven secret containers
-// ---------------------------------------------------------------------------
 
 const secretResources = Object.fromEntries(runtimeSecrets.map((definition) => {
   const isOperator = definition.valueSource === 'operator'
@@ -131,9 +127,7 @@ const secretResources = Object.fromEntries(runtimeSecrets.map((definition) => {
   return [definition.id, secret]
 }))
 
-// ---------------------------------------------------------------------------
 // Exports: secret IDs for container references
-// ---------------------------------------------------------------------------
 
 /** Map of runtime secret IDs to their Scaleway Secret IDs. The key type is the
  *  literal id union, so a typo'd lookup is a compile error rather than an

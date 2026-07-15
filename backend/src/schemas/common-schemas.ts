@@ -13,9 +13,7 @@ export const booleanTransformSchema = z
   .transform((v) => v === true || v === 'true')
   .pipe(z.boolean());
 
-/*************************************************************************************************
- * Entity schemas
- ************************************************************************************************/
+// Entity schemas
 
 /** Enum schema for entity types */
 export const entityTypeSchema = z.enum(appConfig.entityTypes);
@@ -26,13 +24,7 @@ export const channelEntityTypeSchema = z.enum(appConfig.channelEntityTypes);
 /** Enum schema for product entity types */
 export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
 
-/*************************************************************************************************
- * Common properties schemas
- ************************************************************************************************/
-
-/*************************************************************************************************
- * Common param schemas
- ************************************************************************************************/
+// Common param schemas
 
 /** Schema for an entity ID with max length */
 export const validIdSchema = z.string().max(maxLength.id);
@@ -79,9 +71,7 @@ export const inOrgParamSchema = z.object({ organizationId: validIdSchema });
 /** Schema for entity id within an organization organizationId */
 export const idInOrgParamSchema = z.object({ id: validIdSchema, organizationId: validIdSchema });
 
-/*************************************************************************************************
- * Tenant-scoped param schemas (for RLS-enabled routes)
- ************************************************************************************************/
+// Tenant-scoped param schemas (for RLS-enabled routes)
 
 /** Schema for tenant-scoped routes: tenantId + organizationId */
 export const tenantOrgParamSchema = z.object({
@@ -108,9 +98,7 @@ export const relatableUserIdParamSchema = z.object({
   relatableUserId: validIdSchema,
 });
 
-/*************************************************************************************************
- * Common query schemas
- ************************************************************************************************/
+// Common query schemas
 
 /** Schema for id that must be a specific entity type */
 export const entityWithTypeQuerySchema = z.object({ entityId: validIdSchema, entityType: channelEntityTypeSchema });
@@ -177,9 +165,7 @@ export const emailOrTokenIdQuerySchema = z.union([
   z.object({ email: z.email().optional(), tokenId: z.string() }),
 ]);
 
-/*************************************************************************************************
- * Common body schemas
- ************************************************************************************************/
+// Common body schemas
 
 /** Schema for a request body containing an array of IDs */
 export const idsBodySchema = (maxItems = 50) =>
@@ -205,16 +191,12 @@ export const idsWithStxBodySchema = (maxItems = 50) =>
       .optional(),
   });
 
-/*************************************************************************************************
- * Common headers schemas
- ************************************************************************************************/
+// Common headers schemas
 
 /** Schema for a redirect header */
 export const locationSchema = z.object({ Location: z.string() });
 
-/*************************************************************************************************
- * Validation schemas (for create and update)
- ************************************************************************************************/
+// Validation schemas (for create and update)
 
 /**
  * Creates a superRefine validator that passes a custom error type for i18n translation.

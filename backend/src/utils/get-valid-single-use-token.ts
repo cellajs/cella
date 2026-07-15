@@ -12,11 +12,7 @@ type Props = {
   tokenType: TokenType;
 };
 /**
- * Validates a single use token by its value, ensuring it matches the required type.
- *
- * @param ctx - Hono context
- * @param tokenType (optional) The required type of the token (e.g., 'email-verification').
- * @returns The valid single use token row from the database.
+ * Validates a single-use token from the auth cookie, ensuring it matches the required type.
  * @throws AppError if the token is not found or of an invalid type.
  */
 export const getValidSingleUseToken = async ({ ctx, tokenType }: Props): Promise<TokenModel> => {

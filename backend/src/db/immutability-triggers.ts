@@ -2,7 +2,7 @@ import { getTableName } from 'drizzle-orm';
 import { appConfig, toColumnName } from 'shared';
 import { entityTables } from '#/tables';
 
-// --- Immutable column sets --------------------------------------------------
+// Immutable column sets
 
 const BASE_ENTITY_COLUMNS = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'] as const;
 const MEMBERSHIP_CHANNEL_ID_COLUMNS = appConfig.channelEntityTypes.map((type) =>
@@ -19,7 +19,7 @@ export const membershipImmutableColumns = [...BASE_MEMBERSHIP_COLUMNS, 'user_id'
 /** Inactive memberships allow mutable user_id for re-assignable invitations. */
 export const inactiveMembershipImmutableColumns = BASE_MEMBERSHIP_COLUMNS;
 
-// --- SQL builders -----------------------------------------------------------
+// SQL builders
 
 interface TableImmutabilityConfig {
   tableName: string;
@@ -54,7 +54,7 @@ CREATE TRIGGER ${triggerName}
   FOR EACH ROW EXECUTE FUNCTION ${functionName}();`;
 }
 
-// --- Pre-built trigger functions -------------------------------------------
+// Pre-built trigger functions
 
 /** Shared by channel entities with tenant_id. */
 export const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', BASE_ENTITY_COLUMNS);
@@ -83,7 +83,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;`;
 
-// --- Table to function mapping ---------------------------------------------
+// Table to function mapping
 
 const channelEntityConfigs: TableImmutabilityConfig[] = appConfig.channelEntityTypes.map((t) => ({
   tableName: getTableName(entityTables[t]),
@@ -112,7 +112,7 @@ export const allImmutabilityTables: TableImmutabilityConfig[] = [
   ...appendOnlyConfigs,
 ];
 
-// --- Combined SQL output ----------------------------------------------------
+// Combined SQL output
 
 const baseEntityTables = channelEntityConfigs;
 const names = (configs: TableImmutabilityConfig[]) => configs.map((c) => c.tableName).join(', ');
@@ -142,4 +142,4 @@ ${appendOnlyImmutabilityFunctionSQL}
 ${allImmutabilityTables.map((t) => buildTriggerSQL(t.tableName, t.functionName)).join('\n')}
 `;
 
-// ─── Custom builders (for non-standard tables) ──────────────────────────────
+// Custom builders (for non-standard tables)

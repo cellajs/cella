@@ -196,11 +196,9 @@ export function serializeControlState(state: ControlState): string {
   return `${JSON.stringify(state, null, 2)}\n`
 }
 
-// ---------------------------------------------------------------------------
 // Pure ledger transitions: every rollout state change is a total function over
 // the previous rollout, so the orchestrator never hand-mutates pointer fields
 // and the transitions are unit-tested in isolation.
-// ---------------------------------------------------------------------------
 
 /** A service with no rollout history yet. */
 export function emptyRollout(): ServiceRollout {
@@ -242,10 +240,8 @@ export async function writeControlState(
   return putJsonObject(s3, bucket, key, serializeControlState(state), opts)
 }
 
-// ---------------------------------------------------------------------------
 // Orchestrator helpers (used by the deploy tasks; read process.env / build a
 // client, so not part of the pure unit-tested core above).
-// ---------------------------------------------------------------------------
 
 /** Build an S3 client for the state bucket with explicit credentials. */
 export async function makeControlClient(region: string, accessKey: string, secretKey: string): Promise<S3Like> {
@@ -313,12 +309,10 @@ export async function updateServiceRollout(
   await writeControlState(s3, bucket, key, state, etag ? { ifMatch: etag } : {})
 }
 
-// ---------------------------------------------------------------------------
 // Distributed lock: prevents concurrent mutating ops (two operators, or an
 // operator and CI) from racing on the same stack. Built on Scaleway's
 // conditional writes: atomic create-if-absent via `If-None-Match: *`, stale
 // break via `If-Match: <etag>`.
-// ---------------------------------------------------------------------------
 
 export interface LockInfo {
   owner: string

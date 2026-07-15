@@ -88,7 +88,6 @@ export function resolveSqlContent(sqlOrPath: string): string {
  *
  * @param tag - Unique identifier for the migration (e.g., 'cdc_setup')
  * @param sql - SQL content (not a file path - use resolveSqlContent first if needed)
- * @returns Object containing the folder name, path, tag, and action taken
  */
 export function upsertMigration(tag: string, sql: string): MigrationResult {
   // Normalize tag by removing leading timestamps/underscores if present.

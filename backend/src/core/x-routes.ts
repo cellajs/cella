@@ -34,7 +34,6 @@ type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>
  * Custom wrapper around hono/zod-openapi createRoute to extend it with extension middleware.
  * Extension middleware (xGuard, xRateLimiter) are documented in OpenAPI via x-* properties.
  *
- * @param config - Route configuration with extension middleware
  * @link https://github.com/honojs/middleware/tree/main/packages/zod-openapi#configure-middleware-for-each-endpoint
  */
 export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>(

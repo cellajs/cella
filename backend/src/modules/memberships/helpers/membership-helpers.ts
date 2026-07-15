@@ -52,16 +52,8 @@ interface InsertMultipleProps<T> {
 }
 
 /**
- * Returns an object mapping base membership entity IDs for the given entity.
- *
- * Each mapping corresponds to a channel entity type defined in `appConfig.channelEntityTypes`.
- * The key of each mapping is derived from the values of `appConfig.entityIdColumnKeys`
- * (e.g. `"organizationId"`, `"projectId"`), and the value is the corresponding string ID.
- *
- *
- * @template T - The specific channel entity type.
- * @param entity - The entity object to extract membership ID information from.
- * @returns An object mapping base membership entity IDs for the given entity.
+ * Maps a channel entity to its ancestor channel IDs, keyed by `appConfig.entityIdColumnKeys`
+ * (e.g. `{ organizationId, projectId }`).
  */
 export const getBaseMembershipEntityId = <T extends ChannelEntityType>(entity: EntityModel<T>) => {
   return appConfig.channelEntityTypes.reduce(
@@ -83,18 +75,10 @@ export const getBaseMembershipEntityId = <T extends ChannelEntityType>(entity: E
 };
 
 /**
- * Batch insert direct memberships for existing users. The function assumes that
- *  the data is already deduped, normalized and valid.
- *
- * - Ensures organization membership exists for non-organization entities.
- *   (relies on DB unique constraints + onConflictDoNothing to only insert when missing)
- * - Ensures associated parent membership exists when applicable.
- *   (same: only inserted when missing)
- * - Inserts the target entity memberships.
- * - Computes per-user 'order' in a single grouped query and increments by 10.
- *
- * @param items - membership requests for existing users
- * @returns inserted target memberships (MembershipBaseModel)
+ * Batch-insert direct memberships for existing users. Assumes `items` are already deduped,
+ * normalized, and valid. Root-context and associated parent memberships are upserted (unique
+ * constraint + onConflictDoNothing → inserted only when missing); per-user `displayOrder` is
+ * computed in one grouped query, spaced by `orderGap`. Returns the inserted target memberships.
  */
 export const insertMemberships = async <T extends BaseEntityModel>(
   ctx: DbContext,

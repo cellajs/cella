@@ -9,9 +9,7 @@ const productEntityTypes = ['attachment'] as const;
 
 export const config = {
 
-  /******************************************************************************
-   * ENTITY DATA MODEL
-   ******************************************************************************/
+  // Entity data model
 
   /** All entity types in the app - must match hierarchy.allTypes. */
   entityTypes,
@@ -71,15 +69,11 @@ export const config = {
     },
   } as const,
 
-  /******************************************************************************
-   * SYSTEM ROLES
-   ******************************************************************************/
+  // System roles
 
   systemRoles: ['admin'] as const,
 
-  /******************************************************************************
-   * APP IDENTITY
-   ******************************************************************************/
+  // App identity
 
   name: 'Cella',
   slug: 'cella',
@@ -88,9 +82,7 @@ export const config = {
   keywords:
     'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, baseui, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
 
-  /******************************************************************************
-   * URLS & ENDPOINTS
-   ******************************************************************************/
+  // URLs & endpoints
 
   // Same-origin: every service is a path under the app origin, so cookies stay
   // first-party (`__Host-`, SameSite=Strict), CORS disappears and CSP collapses
@@ -124,17 +116,13 @@ export const config = {
   defaultRedirectPath: '/home',
   welcomeRedirectPath: '/welcome',
 
-  /******************************************************************************
-   * EMAIL
-   ******************************************************************************/
+  // Email
 
   senderEmail: 'notifications@shareworks.nl',
   supportEmail: 'info@cellajs.com',
   securityEmail: 'security@cellajs.com',
 
-  /******************************************************************************
-   * MODE & FLAGS
-   ******************************************************************************/
+  // Mode & flags
 
   mode: 'development' as ConfigMode,
   maintenance: false,
@@ -147,18 +135,12 @@ export const config = {
     chatSupport: false as boolean,
   },
 
-  /******************************************************************************
-   * VERSIONING
-   *
-   * Three independent tokens. Bump the relevant one in the SAME PR as the change
-   * it guards:
-   * - apiVersion: API contract / frozen-envelope version (wire structure).
-   * - cookieVersion: session cookie name; bump to invalidate all sessions.
-   * - clientCacheVersion: persisted client query-cache shape; bump on a breaking
-   *   change to a cached entity so clients wipe stale cache (queued mutations are
-   *   preserved). CI's schema-bust gate enforces this. Temporary escape hatch
-   *   until the lens system lands.
-   ******************************************************************************/
+  // Three independent version tokens. Bump the relevant one in the SAME PR as the change it guards:
+  // - apiVersion: API contract / frozen-envelope version (wire structure).
+  // - cookieVersion: session cookie name; bump to invalidate all sessions.
+  // - clientCacheVersion: persisted client query-cache shape; bump on a breaking change to a cached
+  //   entity so clients wipe stale cache (queued mutations survive). Enforced by CI's schema-bust
+  //   gate; a temporary escape hatch until the lens system lands.
 
   apiVersion: 'v1',
   // v2: same-origin migration — clean break from the Domain-scoped v1 cookies
@@ -166,9 +148,7 @@ export const config = {
   cookieVersion: 'v2',
   clientCacheVersion: 'v1',
 
-  /******************************************************************************
-   * AUTHENTICATION
-   ******************************************************************************/
+  // Authentication
 
   enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as const,
   enabledOAuthProviders: ['github'] as const,
@@ -180,16 +160,12 @@ export const config = {
     digits: 6,
   },
 
-  /******************************************************************************
-   * API CONFIGURATION
-   ******************************************************************************/
+  // API configuration
 
   apiDescription: `⚠️ ATTENTION: PRERELEASE!
                   This API is organized into modules based on logical domains.`,
 
-  /******************************************************************************
-   * REQUEST LIMITS
-   ******************************************************************************/
+  // Request limits
 
   requestLimits: {
     default: 40,
@@ -205,9 +181,7 @@ export const config = {
   fileUploadLimit: 20 * 1024 * 1024,
   defaultBodyLimit: 1 * 1024 * 1024,
 
-  /******************************************************************************
-   * STORAGE & UPLOADS (S3)
-   ******************************************************************************/
+  // Storage & uploads (S3)
 
   s3: {
     region: 'nl-ams',
@@ -239,18 +213,14 @@ export const config = {
     uploadRetryDelays: [60000, 300000, 900000] as const,
   },
 
-  /******************************************************************************
-   * THIRD-PARTY SERVICES
-   ******************************************************************************/
+  // Third-party services
 
   gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
   googleMapsKey: 'AIzaSyBc1KkCJr6TNMeAw9XK4OunGVWDSXJAKEM',
   matrixURL: 'https://matrix-client.matrix.org',
   maplePublicIngestKey: 'maple_pk_LnUSK6-_5j3orVrlZ1Hv6I1pxzDh3SJ5',
 
-  /******************************************************************************
-   * THEMING & UI
-   ******************************************************************************/
+  // Theming & UI
 
   themeColor: '#26262b',
   theme: {
@@ -285,9 +255,7 @@ export const config = {
     'bg-red-300',
   ],
 
-  /******************************************************************************
-   * LOCALIZATION
-   ******************************************************************************/
+  // Localization
 
   defaultLanguage: 'en' as const,
   languages: ['en', 'nl'] as const,
@@ -296,9 +264,7 @@ export const config = {
     timezones: [],
   },
 
-  /******************************************************************************
-   * COMPANY DETAILS
-   ******************************************************************************/
+  // Company details
 
   company: {
     name: 'CellaJS',
@@ -325,9 +291,7 @@ export const config = {
     },
   },
 
-  /******************************************************************************
-   * USER DEFAULTS
-   ******************************************************************************/
+  // User defaults
 
   defaultUserFlags: {
     finishedOnboarding: false,

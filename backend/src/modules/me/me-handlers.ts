@@ -25,10 +25,6 @@ import { log } from '#/utils/logger';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-// ============================================
-// Route handlers
-// ============================================
-
 app.openapi(meRoutes.getMe, async (ctx) => {
   const data = await getMeOp(ctx);
   return ctx.json(data, 200);

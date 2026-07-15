@@ -4,13 +4,9 @@ import { channelEntityListQueriesByType } from '~/list-queries-config';
 import { buildMenuFromCache, menuEntityTypes } from './build-menu-from-cache';
 
 /**
- * React hook that fetches and builds the user menu based on their memberships.
- * Subscribes to entity list queries for granular reactivity. When the cache
- * subscriber enriches data, useQueries detects the update and re-builds the menu.
- *
- * @param userId - The ID of the user to fetch menu data for (optional - queries disabled when undefined)
- * @param opts - Optional configuration for building detailed menu with submenus
- * @returns An object containing the menu, loading state, and any errors
+ * React hook that fetches and builds the user menu from the user's memberships. Subscribes to entity
+ * list queries for granular reactivity: when the cache subscriber enriches data, useQueries detects
+ * the update and re-builds the menu. Queries are disabled when `userId` is undefined.
  */
 export function useMenu(userId: string | undefined) {
   // Subscribe to each entity list query for granular reactivity

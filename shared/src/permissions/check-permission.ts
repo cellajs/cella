@@ -45,21 +45,12 @@ export interface BatchPermissionResult<T extends PermissionMembership = Permissi
 }
 
 /**
- * Checks if a permission is allowed for the given memberships and action.
- * Accepts a single entity or array of entities.
+ * The one authorization entry point shared by every tier (backend handlers, yjs relay), so the
+ * decision is computed by a single engine. Public read grants and `elevatedRoles` are injected
+ * here; callers only supply the {@link Actor}. Allowed if the entity OR an ancestor matches a grant.
  *
- * This is the shared entry point used by every tier (backend handlers, yjs relay) so the
- * authorization decision is computed by exactly one engine. The configured public read
- * grants and `elevatedRoles` are injected here, so callers only supply the actor.
- *
- * @param memberships - User's memberships to check against
- * @param action - The action to check (create, read, update, delete)
- * @param entityOrEntities - Single entity or array of entities to check
- * @param actor - Who is acting. Required: see {@link Actor}
- * @returns Single entity: `PermissionResult` with `{ isAllowed, membership }`
- * @returns Array: `BatchPermissionResult` with `{ results: Map<id, PermissionResult>, decisions }`
- *
- * Permission is allowed if the entity OR an ancestor matches a membership grant.
+ * Overloaded on the entity arg: a single entity returns `PermissionResult`; an array returns
+ * `BatchPermissionResult` (`{ results: Map<id, …>, decisions }`).
  */
 export function checkPermission<T extends PermissionMembership>(
   memberships: T[],
