@@ -186,13 +186,15 @@ export const rateLimiter = (
           await limiter.delete(rateLimitKey);
         }
       } else if (isFail && !isIgnored && ['fail', 'failseries'].includes(mode)) {
-        const slowRateLimitKey = extractedIdentifiers.ip ? toRateLimitIp(extractedIdentifiers.ip) : rateLimitKey;
-
-        // To prevent slow brute force attacks, consume points on every failed request during 24 hours window duration
+        // Consume the SAME normalized key the slow limiter is CHECKED with above (slowLimiter.get),
+        // so the 24h slow-brute-force bucket actually accumulates against the key it is read from.
+        // Previously it consumed an un-prefixed `toRateLimitIp(ip)` while reading `ip:<normalized>`,
+        // so the bucket never grew and could never block. Slow-path limiters are ip-only, so
+        // rateLimitKey is exactly `ip:<normalized>`.
         try {
-          await slowLimiter.consume(slowRateLimitKey);
+          await slowLimiter.consume(rateLimitKey);
         } catch (rlRejected) {
-          if (rlRejected instanceof RateLimiterRes) return rateLimitError(ctx, rlRejected, slowRateLimitKey);
+          if (rlRejected instanceof RateLimiterRes) return rateLimitError(ctx, rlRejected, rateLimitKey);
           throw rlRejected;
         }
 

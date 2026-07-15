@@ -40,15 +40,21 @@ const sysAdminCheck: MiddlewareHandler = async (ctx, next) => {
  */
 const combinedMiddleware: MiddlewareHandler = every(
   sysAdminCheck,
-  ipRestriction(getIp, { allowList }, async (remote) => {
-    const ip = remote.addr ?? 'unknown';
-    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-fail', {
-      ip,
-      route: 'ip-restricted',
-      timestamp: new Date().toISOString(),
-    });
-    throw new AppError(403, 'forbidden', 'warn');
-  }),
+  // hono's ipRestriction wants a `(c) => string` getter; coerce a null IP to '' so it matches no
+  // allowlist entry (deny by default) rather than throwing.
+  ipRestriction(
+    (c) => getIp(c) ?? '',
+    { allowList },
+    async (remote) => {
+      const ip = remote.addr ?? 'unknown';
+      sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-fail', {
+        ip,
+        route: 'ip-restricted',
+        timestamp: new Date().toISOString(),
+      });
+      throw new AppError(403, 'forbidden', 'warn');
+    },
+  ),
 );
 
 export const sysAdminGuard = setMiddlewareExtension(combinedMiddleware, {
