@@ -3,11 +3,12 @@ import { appConfig, type ChannelEntityType, isProductEntity, type ProductEntityT
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { seenKeys } from '~/modules/seen/query';
 import { useSeenStore } from '~/modules/seen/seen-store';
-import { type EntityQueryKeys, getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline/stx-utils';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
+import { enqueueRange } from './lazy-sync-scheduler';
 import * as membershipOps from './membership-ops';
 import { propagateEmbeddings } from './propagation';
 import { getSyncPriority } from './sync-priority';
@@ -40,35 +41,21 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       if (!isProductEntity(entityType))
         return console.error('Unknown entityType in app stream notification:', entityType);
 
-      // Create/update batch: range fetch also handles soft-delete tombstones.
-      if (notification.batchUntilSeq && seq != null && organizationId && hasEntityQueryKeys(entityType)) {
-        const keys = getEntityQueryKeys(entityType);
-        const seqCursor = `${seq},${notification.batchUntilSeq}`;
-
-        cacheOps
-          .fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys)
-          .then((success) => {
-            if (success && notification.batchUntilSeq) {
-              // Store project-scoped seq when channelId (projectId) is available, else org-scoped
-              if (notification.channelId) {
-                useSyncStore
-                  .getState()
-                  .setChannelSeq(organizationId, notification.channelId, entityType, notification.batchUntilSeq);
-              } else {
-                useSyncStore.getState().setOrgSeq(organizationId, entityType, notification.batchUntilSeq);
-              }
-            }
-            // Propagate after fresh source data is in cache
-            if (notification.propagation) propagateEmbeddings(notification.propagation);
-          })
-          .catch((err) => console.warn('[AppStream] Batch fetch failed:', err));
-
-        // Unseen counts: never derive user-facing numbers from shared seq ranges — a
-        // batch may contain drafts or span contexts, so its width is not "new for you".
-        // Refetch the predicate-exact server counts instead (React Query dedupes bursts).
-        if (action === 'create') {
-          invalidateUnseenCounts(entityType);
-        }
+      // Create/update batch: enqueue the seq range for lazy fetching (merged, spread — the
+      // scheduler flushes viewing-tier scopes immediately). The range fetch also handles
+      // soft-delete tombstones; unseen counts recount once per merged flush, not per batch
+      // (a batch's width is never "new for you": drafts, own rows).
+      if (notification.batchUntilSeq && seq != null && organizationId) {
+        enqueueRange({
+          entityType,
+          organizationId,
+          tenantId: tenantId ?? null,
+          channelId: notification.channelId ?? null,
+          fromSeq: seq,
+          untilSeq: notification.batchUntilSeq,
+          isCreate: action === 'create',
+          propagation: notification.propagation ?? undefined,
+        });
         return;
       }
 
@@ -146,19 +133,6 @@ function handleEntityNotification(
     return;
   }
 
-  // Track project-scoped seq watermark (from CDC worker)
-  // Use channelId (projectId) for project-scoped entities, org fallback for org-scoped
-  if (seq !== null) {
-    const store = useSyncStore.getState();
-    if (channelId) {
-      const current = store.getChannelSeq(organizationId, channelId, entityType);
-      if (seq > current) store.setChannelSeq(organizationId, channelId, entityType, seq);
-    } else {
-      const current = store.getOrgSeq(organizationId, entityType);
-      if (seq > current) store.setOrgSeq(organizationId, entityType, seq);
-    }
-  }
-
   // Determine fetch priority based on entityConfig ancestors and current route
   const priority = getSyncPriority({ entityType, entityId, organizationId });
 
@@ -166,17 +140,26 @@ function handleEntityNotification(
     case 'create':
     case 'update':
       if (seq !== null) {
-        const seqCursor = `${seq},${seq}`;
-        cacheOps
-          .fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys)
-          .then((success) => {
-            if (!success) {
-              cacheOps.invalidateEntityDetail(entityId, keys, priority === 'low' ? 'none' : 'active');
-              cacheOps.invalidateEntityListForOrg(keys, organizationId, priority === 'low' ? 'none' : 'active');
-            }
-            if (propagation) propagateEmbeddings(propagation);
-          })
-          .catch((err) => console.warn('[AppStream] Entity range fetch failed:', err));
+        // A single event is a width-1 batch: same lazy path as batches (merge, spread, flush).
+        // The caught-up watermark now advances after a successful flush (batch semantics) —
+        // advancing before a fetch that never completes would permanently skip the range.
+        enqueueRange({
+          entityType,
+          organizationId,
+          tenantId,
+          channelId,
+          fromSeq: seq,
+          untilSeq: seq,
+          isCreate: action === 'create',
+          propagation: propagation ?? undefined,
+        });
+
+        // Optimistic +1 for others' creates stays at enqueue time until the unseen ledger
+        // (Piece B) counts from fetched rows; without it, singles would regress from
+        // optimistic patch to a delayed endpoint recount.
+        if (action === 'create') {
+          adjustUnseenCount(entityType, channelId, 1);
+        }
         break;
       }
 
@@ -214,13 +197,6 @@ function handleEntityNotification(
   }
 
   console.debug(`[handleEntityNotification] ${entityType}:${action} priority=${priority}`);
-}
-
-/** Refetch the server's predicate-exact unseen counts for a tracked entity type. */
-function invalidateUnseenCounts(entityType: ProductEntityType): void {
-  const trackedTypes = appConfig.seenTrackedEntityTypes as readonly string[];
-  if (!trackedTypes.includes(entityType)) return;
-  queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
 }
 
 /**

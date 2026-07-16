@@ -3,6 +3,7 @@ import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-que
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
+import { resetLazySync } from './lazy-sync-scheduler';
 import * as membershipOps from './membership-ops';
 import { propagateEmbeddings } from './propagation';
 import { getTenantIdForOrg } from './sync-priority';
@@ -43,6 +44,10 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   }
 
   console.debug(`[CatchupProcessor] App catchup: ${scopes.length} orgs`);
+
+  // Catchup recomputes every scope's delta itself; stale lazy-scheduler entries from before
+  // the disconnect would double-fetch ranges this pass already covers.
+  resetLazySync();
 
   for (const organizationId of scopes) {
     const { entitySeqs, childChannelChanges } = changes[organizationId];
@@ -97,13 +102,9 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
                 console.debug(`[CatchupProcessor] Context ${channelId}: ${entityType} no cached list → skip delta`);
               } else {
                 const seqCursor = String(clientChannelSeq + 1);
-                const patched = await cacheOps.fetchRangeAndPatch(
-                  entityType,
-                  organizationId,
-                  tenantId,
-                  seqCursor,
-                  keys,
-                );
+                const patched =
+                  (await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys)).status ===
+                  'ok';
                 if (!patched) {
                   cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
                 }
@@ -151,7 +152,9 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
             console.debug(`[CatchupProcessor] Org ${organizationId}: ${entityType} no cached list → skip delta`);
           } else {
             const seqCursor = String(clientEntitySeq + 1);
-            const patched = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys);
+            const patched =
+              (await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys)).status ===
+              'ok';
             if (!patched) {
               cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
             }

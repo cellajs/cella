@@ -342,21 +342,30 @@ function patchFetchedEntity(
  * one response — callers then fall back to full list invalidation and react-query owns recovery.
  *
  * seqCursor: "51" (open-ended, catchup) or "51,150" (bounded range, batch notifications).
+ *
+ * Result statuses drive the caller's recovery policy: 'ok' (patched; `items` are the fetched
+ * rows, e.g. for unseen-count accounting), 'overflow'/'unsupported' (fall back to list
+ * invalidation now), 'error' (transient — retry is reasonable).
  */
+export interface RangeFetchResult {
+  status: 'ok' | 'overflow' | 'unsupported' | 'error';
+  items: ItemData[];
+}
+
 export async function fetchRangeAndPatch(
   entityType: string,
   organizationId: string | null,
   tenantId: string | null,
   seqCursor: string,
   keys: EntityQueryKeys,
-): Promise<boolean> {
+): Promise<RangeFetchResult> {
   if (!tenantId && organizationId) {
     console.debug(`[CacheOps] No tenantId for ${entityType} delta fetch, falling back to invalidation`);
-    return false;
+    return { status: 'unsupported', items: [] };
   }
 
   const deltaFetch = getEntityDeltaFetch(entityType);
-  if (!deltaFetch) return false;
+  if (!deltaFetch) return { status: 'unsupported', items: [] };
 
   try {
     const { items } = await deltaFetch(organizationId, tenantId, seqCursor);
@@ -367,7 +376,7 @@ export async function fetchRangeAndPatch(
     // cursor to the window end), treat as "delta too large" and let the caller invalidate.
     if (items.length >= SYNC_CHUNK_SIZE) {
       console.debug(`[CacheOps] Delta fetch: ${entityType} window overflow (seqCursor=${seqCursor}) → invalidation`);
-      return false;
+      return { status: 'overflow', items: [] };
     }
 
     for (const entity of items) {
@@ -377,9 +386,9 @@ export async function fetchRangeAndPatch(
     if (items.length > 0) {
       console.debug(`[CacheOps] Delta fetch: ${entityType} patched ${items.length} entities (seqCursor=${seqCursor})`);
     }
-    return true;
+    return { status: 'ok', items };
   } catch (error) {
     console.warn(`[CacheOps] Delta fetch failed for ${entityType}, falling back to invalidation`, error);
-    return false;
+    return { status: 'error', items: [] };
   }
 }
