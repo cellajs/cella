@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import { getUnseenCounts } from 'sdk';
 import { appConfig } from 'shared';
+import { noteUnseenReconciled } from '~/modules/seen/seen-store';
 import { queryClient } from '~/query/query-client';
 
 export const seenKeys = {
@@ -15,11 +16,18 @@ export function invalidateUnseenCounts(entityType: string): void {
 
 /**
  * Query options for fetching the current user's unseen entity counts per org.
- * Used by menu badges to show how many new entities the user hasn't viewed.
+ * Used by menu badges. Live maintenance is the unseen ledger (deltas from synced rows +
+ * view-marks); this exact recount is the baseline + reconcile — on focus, reconnect, and
+ * after catchup — and it wins wholesale (the ledger re-anchors on every response).
  */
 export const unseenCountsQueryOptions = () =>
   queryOptions({
     queryKey: seenKeys.unseenCounts,
-    queryFn: () => getUnseenCounts(),
-    staleTime: 60 * 1000, // 1 minute, refetch on SSE entity.created or menu open
+    queryFn: async () => {
+      const counts = await getUnseenCounts();
+      noteUnseenReconciled();
+      return counts;
+    },
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: true,
   });

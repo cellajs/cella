@@ -1,11 +1,9 @@
-import type { GetUnseenCountsResponse } from 'sdk';
-import { appConfig, type ChannelEntityType, isProductEntity, type ProductEntityType } from 'shared';
+import { type ChannelEntityType, isProductEntity, type ProductEntityType } from 'shared';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
-import { seenKeys } from '~/modules/seen/query';
-import { useSeenStore } from '~/modules/seen/seen-store';
+import { invalidateUnseenCounts } from '~/modules/seen/query';
+import { applyHardDeleteUnseen } from '~/modules/seen/seen-store';
 import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline/stx-utils';
-import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
 import { enqueueRange } from './lazy-sync-scheduler';
@@ -157,13 +155,7 @@ function handleEntityNotification(
           syncWindowMs: syncWindow ?? undefined,
           propagation: propagation ?? undefined,
         });
-
-        // Optimistic +1 for others' creates stays at enqueue time until the unseen ledger
-        // (Piece B) counts from fetched rows; without it, singles would regress from
-        // optimistic patch to a delayed endpoint recount.
-        if (action === 'create') {
-          adjustUnseenCount(entityType, channelId, 1);
-        }
+        // Unseen accounting happens at flush time: the ledger counts the fetched rows.
         break;
       }
 
@@ -182,9 +174,9 @@ function handleEntityNotification(
           .catch((err) => console.warn('[AppStream] Entity fetch failed:', err));
       }
 
-      // Optimistically increment unseen count for new entities from other users
+      // Seq-less events bypass the ledger (no synced rows): exact recount instead.
       if (action === 'create') {
-        adjustUnseenCount(entityType, channelId, 1);
+        invalidateUnseenCounts(entityType);
       }
       break;
 
@@ -195,77 +187,10 @@ function handleEntityNotification(
       // with the catchup count-integrity invalidation flow. Covers single and batch deletes.
       cacheOps.invalidateEntityDetail(entityId, keys, 'none');
       cacheOps.invalidateEntityListForOrg(keys, organizationId, priority === 'low' ? 'none' : 'active');
-      handleDeleteUnseenCount(entityType, entityId, channelId);
+      applyHardDeleteUnseen(entityType, entityId, channelId);
       if (propagation) propagateEmbeddings(propagation);
       break;
   }
 
   console.debug(`[handleEntityNotification] ${entityType}:${action} priority=${priority}`);
-}
-
-/**
- * Optimistically adjust the unseen count for a tracked entity created/deleted via SSE: patch the
- * cache directly by channelId to avoid a full refetch, falling back to invalidation if none.
- */
-function adjustUnseenCount(entityType: ProductEntityType, channelId: string | null, delta: number): void {
-  const trackedTypes = appConfig.seenTrackedEntityTypes as readonly string[];
-  if (!trackedTypes.includes(entityType)) return;
-
-  if (!channelId) {
-    queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
-    return;
-  }
-
-  queryClient.setQueryData<GetUnseenCountsResponse>(seenKeys.unseenCounts, (old) => {
-    if (!old) return old;
-    const current = old[channelId]?.[entityType] ?? 0;
-    const updated = Math.max(0, current + delta);
-
-    if (updated === 0) {
-      // Remove zero entries to keep cache clean
-      if (!old[channelId]) return old;
-      const { [entityType]: _, ...rest } = old[channelId];
-      if (Object.keys(rest).length === 0) {
-        const { [channelId]: __, ...withoutChannel } = old;
-        return withoutChannel;
-      }
-      return { ...old, [channelId]: rest };
-    }
-
-    return { ...old, [channelId]: { ...old[channelId], [entityType]: updated } };
-  });
-}
-
-/**
- * Adjust the unseen count when a tracked entity is deleted: if it was already seen (flushedIds or
- * pending), the count is unchanged (total−1 and seen−1 cancel); if unseen, decrement. Falls back to
- * invalidation when channelId is unavailable.
- */
-function handleDeleteUnseenCount(entityType: ProductEntityType, entityId: string, channelId: string | null): void {
-  const trackedTypes = appConfig.seenTrackedEntityTypes as readonly string[];
-  if (!trackedTypes.includes(entityType)) return;
-
-  const seenStore = useSeenStore.getState();
-  const wasSeen = seenStore.flushedIds.has(entityId) || isInPending(seenStore.pending, entityId);
-
-  if (wasSeen) {
-    // Entity was seen: total and seen both decrease by 1, net unseen change is 0.
-    // Clean up flushedIds so it doesn't grow unbounded
-    if (seenStore.flushedIds.has(entityId)) {
-      const newFlushed = new Set(seenStore.flushedIds);
-      newFlushed.delete(entityId);
-      useSeenStore.setState({ flushedIds: newFlushed });
-    }
-  } else {
-    // Entity was unseen from this client's perspective, decrement.
-    adjustUnseenCount(entityType, channelId, -1);
-  }
-}
-
-/** Check if an entityId is in any pending seen batch */
-function isInPending(pending: Map<string, { entityIds: Set<string> }>, entityId: string): boolean {
-  for (const batch of pending.values()) {
-    if (batch.entityIds.has(entityId)) return true;
-  }
-  return false;
 }

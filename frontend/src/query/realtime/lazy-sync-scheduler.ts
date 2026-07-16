@@ -1,5 +1,6 @@
 import type { ProductEntityType } from 'shared';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
+import { ingestSyncedRows } from '~/modules/seen/seen-store';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline/stx-utils';
 import * as cacheOps from './cache-ops';
@@ -189,8 +190,8 @@ async function flushEntry(entry: DirtyEntry): Promise<void> {
 
   if (result.status === 'ok') {
     advanceCaughtUp(entry);
-    // Interim until the unseen ledger (Piece B): one exact recount per merged flush.
-    if (entry.hasCreates) invalidateUnseenCounts(entityType);
+    // Unseen ledger: exact badge deltas from the fetched rows (mirrors the server predicate).
+    ingestSyncedRows(entityType, channelId ?? organizationId, result.items as { id: string }[]);
   } else {
     // Overflow/unsupported/exhausted retries: hand the scope to react-query and advance the
     // watermark so the range is not re-fetched in a loop — the list refetch owns recovery.

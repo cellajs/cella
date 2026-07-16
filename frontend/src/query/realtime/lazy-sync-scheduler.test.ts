@@ -19,6 +19,8 @@ const propagateEmbeddings = vi.fn();
 vi.mock('./propagation', () => ({ propagateEmbeddings: (...a: unknown[]) => propagateEmbeddings(...a) }));
 const invalidateUnseenCounts = vi.fn();
 vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: (...a: unknown[]) => invalidateUnseenCounts(...a) }));
+const ingestSyncedRows = vi.fn();
+vi.mock('~/modules/seen/seen-store', () => ({ ingestSyncedRows: (...a: unknown[]) => ingestSyncedRows(...a) }));
 vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-client' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
 
@@ -115,12 +117,26 @@ describe('lazy-sync-scheduler', () => {
     expect(invalidateEntityListForOrg).toHaveBeenCalledTimes(1);
   });
 
-  it('recounts unseen once per merged flush when the range contained creates', async () => {
+  it('feeds fetched rows to the unseen ledger once per merged flush (no endpoint recount)', async () => {
+    const items = [{ id: 'a1' }, { id: 'a2' }];
+    fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items });
     enqueueRange({ ...base, fromSeq: 5, untilSeq: 6, isCreate: true });
     enqueueRange({ ...base, fromSeq: 7, untilSeq: 9, isCreate: true });
 
     await flushAllNow();
 
+    expect(ingestSyncedRows).toHaveBeenCalledTimes(1);
+    expect(ingestSyncedRows).toHaveBeenCalledWith('attachment', 'org-1', items);
+    expect(invalidateUnseenCounts).not.toHaveBeenCalled();
+  });
+
+  it('falls back to an exact unseen recount when the flush cannot deliver rows', async () => {
+    fetchRangeAndPatch.mockResolvedValue({ status: 'overflow', items: [] });
+    enqueueRange({ ...base, fromSeq: 1, untilSeq: 900, isCreate: true });
+
+    await flushAllNow();
+
+    expect(ingestSyncedRows).not.toHaveBeenCalled();
     expect(invalidateUnseenCounts).toHaveBeenCalledTimes(1);
   });
 
