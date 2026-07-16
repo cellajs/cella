@@ -7,6 +7,7 @@ import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { SessionTile } from '~/modules/me/session-tile';
+import type { Session } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 
@@ -19,7 +20,14 @@ export function SessionsList() {
   } = useSuspenseQuery(queryOptions);
 
   const sessionsWithoutCurrent = allSessions.filter((session) => !session.isCurrent);
-  const sessions = Array.from(allSessions).sort((a) => (a.isCurrent ? -1 : 1));
+
+  // Group by device: current session first, then other sessions from the same device
+  // (matched on deviceIdHash; null for mfa/impersonation and legacy rows), then the rest.
+  const currentDeviceHash = allSessions.find((session) => session.isCurrent)?.deviceIdHash ?? null;
+  const isCurrentDevice = (session: Session) =>
+    !session.isCurrent && session.deviceIdHash !== null && session.deviceIdHash === currentDeviceHash;
+  const rank = (session: Session) => (session.isCurrent ? 0 : isCurrentDevice(session) ? 1 : 2);
+  const sessions = Array.from(allSessions).sort((a, b) => rank(a) - rank(b));
 
   // Terminate one or all sessions
   const { mutate: _deleteMySessions, isPending } = useMutation({
@@ -71,6 +79,7 @@ export function SessionsList() {
             <SessionTile
               session={session}
               key={session.id}
+              isCurrentDevice={isCurrentDevice(session)}
               handleDeleteSessions={handleDeleteSessions}
               isPending={isPending}
             />

@@ -2,7 +2,7 @@ import { RateLimiterRes } from 'rate-limiter-flexible';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { extractIdentifiers, getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
-import { syncFromDb, tryFastConsume } from '#/middlewares/rate-limiter/points-cache';
+import { restoreDebt, syncFromDb, takeDebt, tryFastConsume } from '#/middlewares/rate-limiter/points-cache';
 import type {
   RateLimiterHandler,
   RateLimiterOpts,
@@ -41,8 +41,10 @@ export const slowOptions = {
  * The 'fail' decreases points on failed requests only.
  * The 'failseries' decreases points on consecutive failed requests: it resets the rate limit on a successful request.
  *
- * Each mode ALSO runs a slow brute force instance (duration 24h) in parallel to the rate limiter instance itself.
- * This is to prevent attackers from slowly trying to access data in a larger timeframe.
+ * The fail-driven modes ('fail', 'failseries') ALSO run a slow brute force instance (duration 24h)
+ * in parallel to the rate limiter instance itself. This is to prevent attackers from slowly trying
+ * to access data in a larger timeframe. 'limit' and 'success' never consume the slow bucket, so
+ * they skip it entirely.
  *
  * @param mode - Rate limit mode that dictates how rate limiting is applied.
  * @param key - The key to identify the user or entity being rate-limited (e.g., user ID, email).
@@ -62,7 +64,8 @@ export const rateLimiter = (
   const config = { ...defaultOptions, ...limits };
   const keyPrefix = `${key}_${mode}`;
   const limiter = getRateLimiterInstance({ ...config, keyPrefix });
-  const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${keyPrefix}:slow` });
+  const isFailMode = mode === 'fail' || mode === 'failseries';
+  const slowLimiter = isFailMode ? getRateLimiterInstance({ ...slowOptions, keyPrefix: `${keyPrefix}:slow` }) : null;
 
   const handler = xMiddleware(
     { functionName: functionName ?? `${key}Limiter`, type: 'x-rate-limiter', name: name ?? key, description },
@@ -99,14 +102,23 @@ export const rateLimiter = (
       // userId-keyed limiter on a public route) — treat it as a misconfiguration.
       if (!rateLimitKey) throw new AppError(400, 'invalid_request', 'warn');
 
+      // Resolve cost and budget once for `limit` mode. The static `config.points` is a hard
+      // ceiling: tenant budgets are clamped to it and never mutate the shared limiter instance
+      // (assigning `limiter.points` would let one tenant's budget judge another tenant's
+      // request, since instances are memoized per keyPrefix across all tenants).
+      // Budget 0 means "no tenant-specific limit": the global ceiling still applies.
+      const consumePoints = mode === 'limit' && getConsumePoints ? await getConsumePoints(ctx) : 1;
+      const tenantBudget = mode === 'limit' && getPointsBudget ? getPointsBudget(ctx) : null;
+      const effectiveBudget =
+        tenantBudget === null
+          ? config.points
+          : Math.min(tenantBudget > 0 ? tenantBudget : config.points, config.points);
+
       // ── Fast path for `limit` mode (pointsLimiter) ──
       // Uses an in-process LRU counter to skip DB when the key is well under budget.
       // Auth limiters (failseries, success, fail) always take the DB path for accuracy.
       if (mode === 'limit' && getPointsBudget) {
-        const consumePoints = getConsumePoints ? await getConsumePoints(ctx) : 1;
-        const budget = getPointsBudget(ctx);
-
-        const decision = tryFastConsume(rateLimitKey, consumePoints, budget);
+        const decision = tryFastConsume(rateLimitKey, consumePoints, effectiveBudget);
         if (decision === 'allow') {
           await next();
           return;
@@ -115,12 +127,11 @@ export const rateLimiter = (
       }
 
       const limitState = await limiter.get(rateLimitKey);
-      const slowLimitState = await slowLimiter.get(rateLimitKey);
 
       // If already rate limited, return 429
-      if (limitState !== null && limitState.consumedPoints > limiter.points) {
+      if (limitState !== null && limitState.consumedPoints > effectiveBudget) {
         try {
-          onBlock?.(rateLimitKey);
+          onBlock?.(rateLimitKey, ctx);
         } catch (err) {
           log.warn('Rate limit onBlock callback failed', { rateLimitKey, err });
         }
@@ -128,33 +139,41 @@ export const rateLimiter = (
       }
 
       // If slow brute forcing, return 429
-      if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points) {
-        try {
-          onBlock?.(rateLimitKey);
-        } catch (err) {
-          log.warn('Rate limit onBlock callback failed', { rateLimitKey, err });
+      if (slowLimiter) {
+        const slowLimitState = await slowLimiter.get(rateLimitKey);
+        if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points) {
+          try {
+            onBlock?.(rateLimitKey, ctx);
+          } catch (err) {
+            log.warn('Rate limit onBlock callback failed', { rateLimitKey, err });
+          }
+          return rateLimitError(ctx, slowLimitState, rateLimitKey);
         }
-        return rateLimitError(ctx, slowLimitState, rateLimitKey);
       }
 
       // If the rate limit mode is 'limit', consume points without blocking unless the limit is reached
       if (mode === 'limit') {
-        // Resolve how many points this request costs (default: 1)
-        const consumePoints = getConsumePoints ? await getConsumePoints(ctx) : 1;
-
-        // Dynamically adjust the budget per-tenant if a getPointsBudget callback is provided
-        if (getPointsBudget) {
-          const budget = getPointsBudget(ctx);
-          // Override the limiter's points cap for this key so existing consumed points are compared against the tenant budget
-          limiter.points = budget;
-        }
+        // Settle unflushed fast-path consumes together with this request's cost, so the
+        // DB count is authoritative. Without this the fast path undercounts the DB and
+        // `syncFromDb` resets the local counter to that undercount, disabling the budget.
+        const debt = getPointsBudget ? takeDebt(rateLimitKey) : 0;
 
         try {
-          const consumeResult = await limiter.consume(rateLimitKey, consumePoints);
+          const consumeResult = await limiter.consume(rateLimitKey, consumePoints + debt);
           // Sync the LRU cache with the authoritative DB count
           if (getPointsBudget) syncFromDb(rateLimitKey, consumeResult.consumedPoints);
+          // The library only rejects at the static ceiling; the (possibly smaller)
+          // per-tenant budget is enforced here.
+          if (consumeResult.consumedPoints > effectiveBudget) {
+            return rateLimitError(ctx, consumeResult, rateLimitKey);
+          }
         } catch (rlRejected) {
-          if (rlRejected instanceof RateLimiterRes) return rateLimitError(ctx, rlRejected, rateLimitKey);
+          if (rlRejected instanceof RateLimiterRes) {
+            if (getPointsBudget) syncFromDb(rateLimitKey, rlRejected.consumedPoints);
+            return rateLimitError(ctx, rlRejected, rateLimitKey);
+          }
+          // DB write failed: return the claimed debt so it is settled on a later request.
+          restoreDebt(rateLimitKey, debt);
           throw rlRejected;
         }
       }
@@ -178,7 +197,7 @@ export const rateLimiter = (
         } else if (mode === 'failseries') {
           await limiter.delete(rateLimitKey);
         }
-      } else if (isFail && !isIgnored && ['fail', 'failseries'].includes(mode)) {
+      } else if (isFail && !isIgnored && slowLimiter) {
         // Consume the SAME normalized key the slow limiter is CHECKED with above (slowLimiter.get),
         // so the 24h slow-brute-force bucket actually accumulates against the key it is read from.
         // Previously it consumed an un-prefixed `toRateLimitIp(ip)` while reading `ip:<normalized>`,

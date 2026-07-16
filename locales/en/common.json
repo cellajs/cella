@@ -589,6 +589,7 @@
   "terms_of_use": "Terms of use",
   "test_email": "Test email only",
   "test_email.text": "This email will only be sent to yourself when you send it. The newsletter form will not close.",
+  "this_device": "This device",
   "timezone": "Timezone",
   "title": "Title",
   "totp": "Time-based password",

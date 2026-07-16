@@ -1548,7 +1548,7 @@
                   "apiPointsPerHour": {
                     "type": "integer",
                     "minimum": 0,
-                    "description": "Max API points per hour per user within this tenant"
+                    "description": "Max API points per hour per user within this tenant (0 = no tenant limit; the global safety ceiling still applies)"
                   }
                 },
                 "required": ["apiPointsPerHour"]

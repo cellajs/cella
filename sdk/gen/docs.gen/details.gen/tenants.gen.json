@@ -42,7 +42,7 @@
                           "apiPointsPerHour": {
                             "type": "integer",
                             "required": true,
-                            "description": "Max API points per hour per user within this tenant",
+                            "description": "Max API points per hour per user within this tenant (0 = no tenant limit; the global safety ceiling still applies)",
                             "minimum": 0
                           }
                         }
@@ -201,7 +201,7 @@
                     "apiPointsPerHour": {
                       "type": "integer",
                       "required": true,
-                      "description": "Max API points per hour per user within this tenant",
+                      "description": "Max API points per hour per user within this tenant (0 = no tenant limit; the global safety ceiling still applies)",
                       "minimum": 0
                     }
                   }
@@ -350,7 +350,7 @@
                     "apiPointsPerHour": {
                       "type": "integer",
                       "required": true,
-                      "description": "Max API points per hour per user within this tenant",
+                      "description": "Max API points per hour per user within this tenant (0 = no tenant limit; the global safety ceiling still applies)",
                       "minimum": 0
                     }
                   }
@@ -494,7 +494,7 @@
                     "apiPointsPerHour": {
                       "type": "integer",
                       "required": true,
-                      "description": "Max API points per hour per user within this tenant",
+                      "description": "Max API points per hour per user within this tenant (0 = no tenant limit; the global safety ceiling still applies)",
                       "minimum": 0
                     }
                   }

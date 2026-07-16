@@ -9,11 +9,13 @@ import { dateShort } from '~/utils/date-short';
 
 interface SessionTileProps {
   session: Session;
+  /** Session from the same device as the current session (matched on deviceIdHash). */
+  isCurrentDevice?: boolean;
   handleDeleteSessions: (sessionIds: string[]) => void;
   isPending: boolean;
 }
 
-export const SessionTile = ({ session, handleDeleteSessions, isPending }: SessionTileProps) => {
+export const SessionTile = ({ session, isCurrentDevice, handleDeleteSessions, isPending }: SessionTileProps) => {
   const { t, i18n } = useTranslation();
 
   const [expanded, setExpanded] = useState(false);
@@ -50,6 +52,11 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
               {session.isCurrent && (
                 <Badge size="xs" variant="plain">
                   {t('c:current')}
+                </Badge>
+              )}
+              {isCurrentDevice && (
+                <Badge size="xs" variant="outline">
+                  {t('c:this_device')}
                 </Badge>
               )}
             </div>
