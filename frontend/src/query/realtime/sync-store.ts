@@ -14,6 +14,13 @@ interface SyncStoreState {
   cursor: string | null;
   lastSyncAt: string | null;
   orgs: Record<string, OrgSyncState>;
+  /**
+   * Latest seq the server has MENTIONED per scope (channelId or orgId) — the "known" side of the
+   * known-vs-caught-up split. Recorded from every notification, even for pages the lazy scheduler
+   * won't fetch (muted). Deliberately NOT persisted: catchup's counter comparison rebuilds it on
+   * boot, and persisting would only risk staleness. Caught-up seqs stay in `orgs` (persisted).
+   */
+  known: Record<string, Record<string, number>>;
 
   setCursor: (cursor: string | null) => void;
   setLastSyncAt: (timestamp: string | null) => void;
@@ -23,6 +30,9 @@ interface SyncStoreState {
   getOrgSeq: (orgId: string, entityType: string) => number;
   setChannelSeq: (orgId: string, channelId: string, entityType: string, seq: number) => void;
   getChannelSeq: (orgId: string, channelId: string, entityType: string) => number;
+  /** Record the latest server-mentioned seq for a scope (monotonic max-merge). */
+  setKnownSeq: (scopeId: string, entityType: string, seq: number) => void;
+  getKnownSeq: (scopeId: string, entityType: string) => number;
   /** Build flat seqs map for the catchup API body (backward-compatible with backend) */
   getFlatSeqs: () => Record<string, number>;
   reset: () => void;
@@ -32,6 +42,7 @@ const initStore = {
   cursor: null as string | null,
   lastSyncAt: null as string | null,
   orgs: {} as Record<string, OrgSyncState>,
+  known: {} as Record<string, Record<string, number>>,
 };
 
 /** Ensure an org entry exists, creating it with defaults if needed. */
@@ -81,6 +92,13 @@ export const useSyncStore = create<SyncStoreState>()(
             org.contexts[channelId][entityType] = seq;
           }),
         getChannelSeq: (orgId, channelId, entityType) => get().orgs[orgId]?.contexts[channelId]?.[entityType] ?? 0,
+
+        setKnownSeq: (scopeId, entityType, seq) =>
+          set((s) => {
+            s.known[scopeId] ??= {};
+            if (seq > (s.known[scopeId][entityType] ?? 0)) s.known[scopeId][entityType] = seq;
+          }),
+        getKnownSeq: (scopeId, entityType) => get().known[scopeId]?.[entityType] ?? 0,
 
         getFlatSeqs: () => {
           const { orgs } = get();
