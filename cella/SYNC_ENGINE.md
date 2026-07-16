@@ -80,15 +80,15 @@ Postgres → CDC Worker → API Server → SSE → Client
 - **Logical replication** - CDC Worker receives WAL changes, activities to `activitiesTable`, sends to API
 - **ActivityBus** - Receives CDC messages via WebSocket, emits events to internal handlers
 - **Catchup via POST + delta fetch** - Client POSTs `{ cursor, seqs }` to the stream endpoint; server compares per-scope seqs and returns a gap summary. Client calls registered REST list endpoints with an open-ended `?seqCursor=min` and patches cached rows, including soft-delete tombstones.
-- **Live stream** - One authenticated SSE stream sends lightweight product-entity and membership notifications. Product notifications include a cache token.
-- **Notify + fetch pattern** - SSE product notifications trigger seq-range fetches. The app entity cache can coalesce token-backed detail fetches.
+- **Live stream** - One authenticated SSE stream sends lightweight product-entity and membership notifications. Product notifications carry the seq range and a server-suggested `syncWindow`.
+- **Notify + fetch pattern** - SSE product notifications enqueue lazy seq-range fetches (merged per scope, spread across the negotiated window). The app entity cache coalesces detail fetches.
 - **React Query as merge point** - Initial/prefetch load and notification-triggered fetches enter same cache
 
 ### Realtime mechanics
 - **Gap detection** - Entity-type sequence numbers (`seq`) detect missed product entity changes
 - **Leader-tab SSE** - One leader tab owns the SSE connection and broadcasts notifications to followers
-- **TTL app entity cache** - Server-side cache with request coalescing for token-backed detail fetches
-- **Fetch prioritizer** - Client distinguishes the currently viewed organization (`high`) from others (`low`)
+- **TTL app entity cache** - Server-side detail cache with request coalescing; hits re-authorize per request
+- **Eagerness tiers** - Client fetches the viewed scope live; background scopes lazily; muted scopes on open
 
 ### Sync mechanics
 - **Catchup before persisted replay** - On startup, restored paused mutations wait for the first catchup attempt before replay. Ordinary online mutations are not gated on stream state.
@@ -113,7 +113,7 @@ Postgres WAL
 CDC worker
     ├── persist activity
     ├── update counters and stamp product seq
-    └── WebSocket { activity, rowData, cacheToken, batchRows? }
+    └── WebSocket { activity, rowData, batchRows? }
             │
             ▼
 API /internal/cdc → ActivityBus
@@ -133,7 +133,7 @@ Leader tab ── BroadcastChannel ──► follower tabs
 
 ### Notification shapes
 
-Clients first branch on `kind`. Membership notifications invalidate membership/context queries; entity notifications use the seq/cache-token path. Entity notifications then have three shapes:
+Clients first branch on `kind`. Membership notifications invalidate membership/context queries; entity notifications use the seq sync path. Entity notifications then have three shapes:
 
 | Shape | Detection | Client behavior |
 |-------|-----------|----------------|
@@ -158,8 +158,8 @@ interface StreamNotification {
   channelId: string | null;                     // Parent entity ID for unseen count grouping
   seq: number | null;                           // Per-entityType sequence stamped by CDC worker (entities only)
   stx: StxBase | null;                          // Sync transaction metadata (entities only)
-  cacheToken: string | null;                    // Session-signed app entity-cache token (entities only)
   batchUntilSeq: number | null;                 // Last seq in batch (null = single entity notification)
+  syncWindow: number | null;                    // Server-suggested lazy-fetch spread window in ms (entities only)
   propagation: PropagationHint | null;          // Embedded entity propagation hint (null = no propagation)
 }
 
@@ -178,7 +178,7 @@ interface StxBase {
 }
 ```
 
-Product-entity and membership notifications are both transported as `event: change`, `id: activityId`, and `data: JSON(StreamNotification)`. The payload's `kind: 'entity' | 'membership'` discriminator selects either the seq/cache-token path or the membership-invalidation path. When a GET connection opens, the server sends `event: offset` with its current cursor; the client treats that as the live barrier. Keep-alives are SSE comments (`: ping`), not named events. Application failures use `event: error`.
+Product-entity and membership notifications are both transported as `event: change`, `id: activityId`, and `data: JSON(StreamNotification)`. The payload's `kind: 'entity' | 'membership'` discriminator selects either the seq sync path or the membership-invalidation path. When a GET connection opens, the server sends `event: offset` with its current cursor; the client treats that as the live barrier. Keep-alives are SSE comments (`: ping`), not named events. Application failures use `event: error`.
 
 ---
 
@@ -538,62 +538,40 @@ Leader-only mutation dehydration reduces duplicate persisted queues but does not
 
 ## TTL cache
 
-The API has one authenticated, token-gated entity cache for detail endpoints. It provides:
+The API has one authenticated entity cache for detail endpoints. It provides:
 - **Request coalescing**: concurrent detail misses for one entity share work
-- **Token-gated reuse**: the token is signed for the subscriber's session
+- **Per-request authorization on hits**: `checkPermission` re-runs against the cached row (live authz — no revocation window)
 - **Short-lived enriched responses**: cached values are endpoint responses, not raw CDC rows
 
 ### App cache design
 
-Values are entity-keyed (`entityType:entityId` → enriched response). Tokens are a forward-only index for access control, not cache keys.
+Values are entity-keyed (`entityType:entityId` → enriched response); the key comes from the request path — no tokens involved.
 
-| Cache | Key | Token role | TTL | Current route use |
-|-------|-----|------------|-----|-------------------|
-| **App entity cache** | `{entityType}:{entityId}` | Session-signed access token | 10 min | Attachment detail (`GET .../attachment/{id}`) |
+| Cache | Key | Authorization | TTL | Current route use |
+|-------|-----|---------------|-----|-------------------|
+| **App entity cache** | `{entityType}:{entityId}` | `checkPermission(ctx.memberships, 'read', cachedRow)` per hit | 10 min | Attachment detail (`GET .../attachment/{id}`), via `xCache: [appCache('attachment')]` |
 
-**Forward-only token design (app cache):** Multiple unexpired tokens can point to the same entity key. When an entity changes, the old cache value is replaced with a reserved marker but old tokens still resolve to that key. The first valid request repopulates the latest value; later requests using any still-indexed token can reuse it. No duplicate data entries are created per entity.
-
-### Token flow (app stream only)
-
-When a realtime entity changes, the SSE stream notification includes a `cacheToken`:
+### Detail cache flow
 
 ```
-1. CDC sends message → ActivityBus emits event
-   └── reserve(token, entityType, entityId): maps token → entity key, invalidates stale data
-
-2. SSE broadcasts notification with cacheToken to subscribers
-   └── Notification: { kind, action, entityType, subjectId, stx, cacheToken }
-
-3. Client receives notification
-   └── Stores cacheToken in cache-token-store (entityType:entityId → token)
-   └── The handler normally performs a seq-range fetch; a later detail fetch can use the token
-
-4. React Query fetches entity data
-   └── GET /attachment/{id} with X-Cache-Token header
-   └── Middleware: validate signature → resolve token → entity key → cache lookup
-   └── First client to fetch populates entity cache (X-Cache: MISS)
-   └── Subsequent clients (any token for same entity) get cache hit (X-Cache: HIT)
+1. GET /attachment/{id} → appCache middleware keys `attachment:{id}`
+2. HIT: re-authorize the caller against the cached row (memberships are already on ctx —
+   guards run outer to the cache — so the recheck is CPU-only) → serve, or fall through
+   to the handler for the authoritative 403/404
+3. MISS: coalesce by entity key → handler runs once → enriched response cached
+4. CDC change (single subjectId or batch batchRows ids) → invalidateByEntity(type, id)
+   → next fetch re-enriches
 ```
 
-**Token signing:** Session-signed HMAC. CDC provides base token (nanoid), SSE signs per-subscriber with session token. Server validates signature and extracts base token for resolution.
-
-**Frontend flow:**
-- Stream handler stores tokens on notification receive
-- Query options check store and add X-Cache-Token header
-- Tombstones processed by `cacheOps.removeEntity()` remove the token; the rare hard-delete invalidation path currently leaves its in-memory token to expire server-side
+Forks adopt it per product detail route: `xCache: [appCache('<entityType>')]`. The cached row carries everything the read check needs (channel ids, `createdBy`, `publicAt`); the middleware normalizes the enriched `createdBy` user object back to its id for the permission subject.
 
 ### Request coalescing (singleflight)
 
-N concurrent detail misses for the same entity → 1 handler execution → N responses. Coalescing is by **entity key**, so different valid tokens for the same entity share one in-flight fetch.
-
+N concurrent detail misses for the same entity → 1 handler execution → N responses. Coalescing is by **entity key**.
 
 ### Cache invalidation via ActivityBus
 
-Cache lifecycle follows CDC/ActivityBus events:
-- **Create/update (including soft delete):** the CDC WebSocket handler calls `reserve(token, entityType, subjectId)`, mapping the token and replacing any cached value with a reserved marker.
-- **Physical delete:** the ActivityBus cache hook calls `invalidateByEntity(entityType, subjectId)`.
-
-The normal live create/update path fetches the notified seq range from the list endpoint and patches React Query. Detail cache reuse occurs when a consumer subsequently requests that entity with `X-Cache-Token`. Batch create/update messages carry no cache token: the CDC handler invalidates each affected entity's detail-cache entry from `batchRows` (by row id) so a later detail fetch re-enriches. List-range fan-out is intentionally not coalesced server-side today — see *Optimization posture* below.
+Cache lifecycle follows CDC/ActivityBus events: every create/update/delete (single via `subjectId`, batches via `batchRows` row ids, physical deletes via the ActivityBus cache hook) calls `invalidateByEntity(entityType, id)` — delete-on-invalidate, no reserved markers. Recovery is always "next fetch re-enriches".
 
 ### Endpoint-first caching
 
@@ -608,9 +586,10 @@ Subsequent requests → Cache hit → Return cached enriched data
 
 | Race condition | Mitigation |
 |----------------|------------|
-| Thundering herd | Request coalescing by entity key (singleflight) |
-| Stale tokens after rapid edits | Forward-only: old indexed tokens resolve to the same key; first miss repopulates, later requests reuse the latest value |
-| Rapid sequential updates | Each CDC reservation replaces cached data with a reserved marker |
+| Thundering herd (detail) | Request coalescing by entity key (singleflight) |
+| Thundering herd (list fan-out) | Lazy sync scheduling (below): merge + deterministic spread |
+| Rapid sequential updates | Each CDC change deletes the cached entry; next fetch re-enriches |
+| Revoked access after caching | Per-request `checkPermission` on every hit |
 | Read-your-writes | Cache miss falls through to DB |
 
 ### Configuration
@@ -618,24 +597,39 @@ Subsequent requests → Cache hit → Return cached enriched data
 | Setting | Value | Notes |
 |---------|-------|-------|
 | App entity cache max size | 5000 entries | ~25-50MB RAM |
-| Token index max size | 10000 entries | Lightweight string→string mappings |
-| App cache TTL | 10 min | Entity data + token index auto-expire |
-| Token signing | Session-signed HMAC | Base token from CDC, signed per subscriber |
+| App cache TTL | 10 min | Entity data auto-expires; CDC invalidates on change |
+
+---
+
+## Lazy sync scheduling (negotiated)
+
+Live list syncing is **lazy and negotiated** — both sides get a say in when a client fetches a notified seq range, and the outcome is a pure function:
+
+```
+delay = clamp(tier.min, hash(sourceId:scope) % syncWindow, tier.max)
+        ^ client floor   ^ deterministic per-client jitter  ^ client ceiling
+```
+
+- **Client's say — eagerness tiers** (`getSyncTier`): viewing the scope → `{0,0}` (live, exactly today's behavior); membership `muted`/`archived` → fetch-on-open only; anything else → `{2s,30s}` background. The ceiling is the offline-freshness guarantee: non-muted pages are never more than ~30s stale.
+- **Server's say — `syncWindow`** on each product notification: a spread window scaled by the org channel's online audience (~20ms/subscriber) and DB pool pressure, capped at 120s. Same value for every subscriber (rides the serialize-once body); under load the fleet decelerates within seconds — throttling without 429s.
+- **Scheduler** (`lazy-sync-scheduler.ts`): every notification — a single is a width-1 batch — enqueues a dirty range per scope. Contiguous ranges **merge** (a burst becomes ONE fetch), more news never postpones, and the deterministic hash spreads clients evenly instead of stampeding. Flush triggers: due timer, navigating into the scope, tab hiding (top-up before the user disappears), coming back online.
+- **Known vs caught-up seqs**: every notification records the scope's *known* latest seq (even for muted scopes — powers catch-up-on-open); the *caught-up* seq advances only after a successful flush. Small live gaps self-heal (fetch anchors at caught-up+1). Failures retry with backoff, then fall back to targeted list invalidation + advance so a range can never loop. Catchup resets the scheduler — it recomputes scope deltas itself.
+
+### Unseen ledger
+
+Badge counts are maintained by **one ledger** (`seen-store.ts`) instead of per-event server recounts: a per-row mirror of the server's unseen predicate (created within the shared `seenWindowMs` window, not deleted, not locally seen; forks must mirror their feed filters, e.g. a `draft` column) applied to the rows each flush delivers (+1 new-and-unseen, −1 tombstoned-and-unseen) and to view-marks (−1), all through one idle-batched applicator. Double-count guards: `countedIds` + a `lastReconcileAt` anchor.
+
+The exact counts endpoint is baseline + reconcile only — staleness, window focus, catchup completion (covers cross-device seen-marks; `seen_by` is excluded from CDC) — and each recount wins wholesale, re-anchoring the ledger. A startup config invariant requires every seen-tracked entity type to have **unconditional** channel read; a fork with row-conditional visibility must keep endpoint counting for that type.
 
 ### Optimization posture
 
-Live fan-out is kept lean. The single-entity detail cache (`appCache`, forward-only tokens, entity-key coalescing) plus client-side granular patch/invalidation are the current optimization surface; the batch-list cache (`batchCache` middleware + per-row reservations + batch token index) was prototyped, never wired to a route, and removed as unused.
-
-The measured fan-out constraints in a very active org (single-process dispatch CPU, an 80-connection pool with no replica, unindexed seq reads, a discarded `COUNT(*)` on delta fetches, and a parallel unseen-counts stampede) and the ranked options to address them — per-product `seq` index, skip-count-on-delta, a short-TTL response-coalesce successor to `batchCache`, client jitter, and (the fork frontier) channel-scoped dispatch — are tracked in [.todos/SYNC_FANOUT_OPTIMIZATION.md](../.todos/SYNC_FANOUT_OPTIMIZATION.md).
+The fan-out constraints measured in a very active org (single-process dispatch CPU, an 80-connection pool with no replica) are addressed by: serialize-once dispatch + a memoized per-array membership index (permission checks are O(1) lookups per event), the per-product `seq` index + skip-count-on-delta, the lazy scheduler above (the org-wide eager fetch stampede no longer exists), and the unseen ledger (no per-batch recount storms). History, measurements, and the deferred escape hatch (single-level channel-scoped dispatch for forks) are tracked in [.todos/SYNC_FANOUT_SOLUTION.md](../.todos/SYNC_FANOUT_SOLUTION.md).
 
 ---
 
 ### Sync priority
 
-Priority routing compares the current route organization with the notification/sync target. The type includes `medium`, but `getSyncPriority()` currently returns only `high` or `low`. It applies in two places:
-
-1. **Live SSE handler**: when a product notification has a seq (the normal create/update path), both priorities run the range fetch. Priority only changes fallback invalidation/refetch behavior. Batch notifications also always range-fetch.
-2. **Sync service (Phase B)**: processes current org first, other orgs after (or not at all without `offlineAccess`)
+`getSyncTier` (route + membership flags) decides range-fetch eagerness for the scheduler. The older `getSyncPriority` (org-level `high`/`low`) remains for the two paths without synced rows — hard-delete and seq-less fallbacks — where it only selects invalidation refetch behavior (`active` vs `none`). The sync service still processes the current org first, other orgs after (or not at all without `offlineAccess`)
 
 | Priority | Condition | Live SSE behavior | Sync service behavior |
 |----------|-----------|--------------------|-----------------------|
