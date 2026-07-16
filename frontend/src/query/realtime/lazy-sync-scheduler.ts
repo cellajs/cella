@@ -80,6 +80,27 @@ function negotiatedDelay(tier: { min: number; max: number }, scopeKey: string, w
 
 /** Enqueue a notified seq range for lazy fetching. Always records the known watermark. */
 export function enqueueRange(input: EnqueueInput): void {
+  const tier = getSyncTier(input.entityType, input.organizationId, input.channelId);
+  if (tier.min === Number.POSITIVE_INFINITY) {
+    // Muted/archived: record the known watermark only — fetch on open.
+    useSyncStore.getState().setKnownSeq(input.channelId ?? input.organizationId, input.entityType, input.untilSeq);
+    return;
+  }
+  enqueueWithTier(input, tier);
+}
+
+/**
+ * Enqueue a catchup gap (reconnect/boot top-up). Unlike live notifications, muted scopes are
+ * treated as background here: catchup is a one-shot reconciliation, and skipping muted scopes
+ * would leave their persisted caches stale forever (nothing else refetches them). The
+ * background spread also de-stampedes the reconnect herd.
+ */
+export function enqueueCatchupRange(input: EnqueueInput): void {
+  const tier = getSyncTier(input.entityType, input.organizationId, input.channelId);
+  enqueueWithTier(input, tier.min === Number.POSITIVE_INFINITY ? { min: 2_000, max: 30_000 } : tier);
+}
+
+function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }): void {
   const { entityType, organizationId, tenantId, channelId, fromSeq, untilSeq, isCreate, propagation } = input;
   const store = useSyncStore.getState();
   const scopeId = channelId ?? organizationId;
@@ -93,9 +114,6 @@ export function enqueueRange(input: EnqueueInput): void {
     ? store.getChannelSeq(organizationId, channelId, entityType)
     : store.getOrgSeq(organizationId, entityType);
   if (untilSeq <= caughtUp) return; // already have this range
-
-  const tier = getSyncTier(entityType, organizationId, channelId);
-  if (tier.min === Number.POSITIVE_INFINITY) return; // muted/archived: fetch on open only
 
   // Self-heal small live gaps: anchor at caught-up+1 so a missed notification's range is
   // swept up by this flush instead of waiting for reconnect count-integrity.
