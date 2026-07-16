@@ -1,11 +1,12 @@
 import type { ChannelEntityType, EntityActionType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { type EntityModel, resolveEntity } from '#/modules/entities/entities-queries';
+import { resolveEntity } from '#/modules/entities/entities-queries';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions';
 import { actorFrom } from '#/permissions/actor';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
+import type { EntityModel } from '#/tables';
 
 /**
  * Result type for channel entity validation including the can object.

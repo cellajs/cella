@@ -3,13 +3,13 @@ import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import type { MenuStructureItem } from 'shared/config-builder';
 import { defaultOrder, orderGap } from 'shared/utils/display-order';
 import type { DbContext } from '#/core/context';
-import type { EntityModel } from '#/modules/entities/entities-queries';
 import { type MembershipBaseModel, membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import {
   type InsertMembershipModel,
   type MembershipModel,
   membershipsTable,
 } from '#/modules/memberships/memberships-db';
+import type { EntityModel } from '#/tables';
 import { log } from '#/utils/logger';
 
 /**

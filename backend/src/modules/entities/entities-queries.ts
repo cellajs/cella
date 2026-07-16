@@ -6,13 +6,8 @@ import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import type { membershipCountSchema } from '#/schemas';
-import type { ResolvableTable, TableWithIdAndSlug } from '#/tables';
-import { type entityTables, getEntityTable } from '#/tables';
-
-// Types
-
-export type EntityType = keyof typeof entityTables;
-export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$inferSelect'];
+import type { EntityModel, EntityType, ResolvableTable, TableWithIdAndSlug } from '#/tables';
+import { getEntityTable } from '#/tables';
 
 // Helpers
 

@@ -3,10 +3,11 @@ import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
-import { type EntityModel, resolveEntity } from '#/modules/entities/entities-queries';
+import { resolveEntity } from '#/modules/entities/entities-queries';
 import { checkPermission } from '#/permissions';
 import { actorFrom } from '#/permissions/actor';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
+import type { EntityModel } from '#/tables';
 
 /**
  * Result type for product entity validation including the can object.
