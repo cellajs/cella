@@ -1,0 +1,46 @@
+# SSE fan-out — measures the notify→fetch reaction under many live subscribers.
+#
+# 90% of VUs subscribe to the app stream and react to notifications like the frontend's
+# lazy-sync scheduler (merge per scope + negotiated spread); 10% write attachment edits to
+# generate CDC events. Compare modes:
+#
+#   SYNC_MODE=lazy      pnpm bench sse-fanout   (default — merged + spread)
+#   SYNC_MODE=immediate pnpm bench sse-fanout   (pre-lazy behavior — fetch per notification)
+#
+# Key custom metrics: sse.notifications vs sync.delta_fetches (merge factor),
+# sync.reaction_delay_ms (spread distribution), sync.fetch_ms (delta fetch latency).
+config:
+  target: "{{ $processEnvironment.BASE_URL }}"
+  processor: "../src/processors/sse-fanout.ts"
+  phases:
+    - duration: 10
+      arrivalRate: 8
+      name: "ramp subscribers"
+    - duration: 20
+      arrivalRate: 12
+      name: "hold with writes"
+  plugins:
+    ensure:
+      maxErrorRate: 5
+
+scenarios:
+  - name: "subscriber"
+    weight: 9
+    beforeScenario: "authenticate"
+    flow:
+      - function: "subscribeAndReact"
+
+  - name: "writer"
+    weight: 1
+    beforeScenario: "authenticate"
+    flow:
+      - loop:
+          - function: "buildAttachmentEditPayload"
+          - put:
+              url: "/{{ tenantId }}/{{ orgId }}/attachments/{{ attachmentId }}"
+              headers:
+                Content-Type: "application/json"
+                cookie: "{{ cookie }}"
+              json: "{{ payload }}"
+          - think: "500ms"
+        count: 20
