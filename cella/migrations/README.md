@@ -43,6 +43,11 @@ be a no-op.
   cache token — `appCache()` → `appCache(entityType)` on every product detail route, cache
   hits re-authorize via `checkPermission`, and `cacheToken` is removed from the whole
   CDC→SSE→client pipeline (+ `X-Cache-Token` frontend sends). Manual, no script.
+- [2026-07-lazy-sync](./2026-07-lazy-sync/): negotiated lazy sync — notifications enqueue
+  merged seq ranges (client tiers × server `syncWindow`), unseen badges move to a client
+  ledger, catchup folds into the scheduler. Fork steps: `appCache(entityType)` signature,
+  verify sub-org viewing detection, mirror feed filters (e.g. `draft`) in `ingestSyncedRows`,
+  seen-tracked config invariant. Manual, no script.
 - [2026-07-channel-entity-rename](./2026-07-channel-entity-rename/): renames the
   "channel entity" concept to "channel entity" (`ContextEntityType→ChannelEntityType`,
   builder `.context()→.channel()`, `context_type/context_id→channel_type/channel_id`,
