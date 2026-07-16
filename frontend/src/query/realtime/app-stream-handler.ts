@@ -42,8 +42,10 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       // Create/update batch: enqueue the seq range for lazy fetching (merged, spread — the
       // scheduler flushes viewing-tier scopes immediately). The range fetch also handles
       // soft-delete tombstones; unseen counts recount once per merged flush, not per batch
-      // (a batch's width is never "new for you": drafts, own rows).
-      if (notification.batchUntilSeq && seq != null && organizationId) {
+      // (a batch's width is never "new for you": drafts, own rows). Hard-delete batches must
+      // NOT enqueue: deleted rows leave no tombstone to fetch, so they'd never be removed —
+      // they fall through to the delete branch's invalidation below.
+      if (action !== 'delete' && notification.batchUntilSeq && seq != null && organizationId) {
         enqueueRange({
           entityType,
           organizationId,
