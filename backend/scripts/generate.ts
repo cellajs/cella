@@ -1,7 +1,21 @@
-import { runGenerateScripts } from './migrations/helpers/run-generate-scripts';
-import { generateScripts } from './scripts-discovery';
+import { generateSideEffects } from './migrations/helpers/combine-side-effects';
+import { runDrizzleGenerate } from './migrations/helpers/run-drizzle-generate';
+import { sideEffectProducers } from './scripts-discovery';
 
-runGenerateScripts(generateScripts).catch((err) => {
-  console.error('Generation failed:', err.message);
+/**
+ * `pnpm generate` runs in two phases:
+ *   1. drizzle-kit generate — the schema-diff migration folder.
+ *   2. side-effect collector — one combined folder for all raw-SQL side-effects that Drizzle Kit
+ *      cannot express (RLS grants, triggers, functions, publications, partitioning, …).
+ *
+ * The collector runs second so its folder sorts (and applies) after the schema changes.
+ */
+async function generate(): Promise<void> {
+  await runDrizzleGenerate();
+  await generateSideEffects(sideEffectProducers);
+}
+
+generate().catch((err) => {
+  console.error('Generation failed:', err instanceof Error ? err.message : err);
   process.exit(1);
 });

@@ -23,12 +23,40 @@ interface MigrationResult {
   action: 'created' | 'evolved' | 'unchanged';
 }
 
+/** Format a Date as a Drizzle v1 timestamp (YYYYMMDDHHmmss, UTC). */
+function toTimestamp(date: Date): string {
+  return date.toISOString().replace(/[-:T]/g, '').slice(0, 14);
+}
+
+/** Add one second to a YYYYMMDDHHmmss timestamp string. */
+function incrementTimestamp(ts: string): string {
+  const date = new Date(
+    Date.UTC(
+      Number(ts.slice(0, 4)),
+      Number(ts.slice(4, 6)) - 1,
+      Number(ts.slice(6, 8)),
+      Number(ts.slice(8, 10)),
+      Number(ts.slice(10, 12)),
+      Number(ts.slice(12, 14)) + 1,
+    ),
+  );
+  return toTimestamp(date);
+}
+
 /**
- * Generate a timestamp in Drizzle v1 format (YYYYMMDDHHmmss).
+ * Generate a folder timestamp in Drizzle v1 format (YYYYMMDDHHmmss), guaranteed to sort strictly
+ * after every existing migration folder.
+ *
+ * The v1 migrator orders and applies folders by lexicographic name (see readMigrationFiles), so a
+ * new migration MUST out-sort the ones it depends on. `drizzle-kit generate` runs first and may
+ * stamp a folder in the same wall-clock second; bumping past the latest existing folder makes the
+ * ordering robust without relying on inter-step sleeps.
  */
 function generateTimestamp(): string {
-  const now = new Date();
-  return now.toISOString().replace(/[-:T]/g, '').slice(0, 14);
+  const now = toTimestamp(new Date());
+  const folders = getMigrationFolders();
+  const latest = folders.length > 0 ? folders[folders.length - 1].slice(0, 14) : '';
+  return latest && latest >= now ? incrementTimestamp(latest) : now;
 }
 
 /**

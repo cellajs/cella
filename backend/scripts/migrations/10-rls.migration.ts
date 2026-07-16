@@ -1,14 +1,12 @@
 import { getTableName } from 'drizzle-orm';
-import pc from 'picocolors';
 import { appConfig } from 'shared';
 import { entityTables } from '#/tables';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { yjsDocumentsTable } from '#/modules/yjs/yjs-db';
-import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
-import type { GenerateScript } from '../types';
+import type { SideEffectBlock, SideEffectProducer } from '../types';
 
-async function run() {
+async function run(): Promise<SideEffectBlock> {
   // Table classification
 
   /**
@@ -109,18 +107,15 @@ ${readOnlyTables.map((t) => `    GRANT SELECT ON ${t} TO runtime_role;`).join('\
 END $$;
 `;
 
-  // Execute migration
-
-  const result = upsertMigration('rls_setup', migrationSql);
-  logMigrationResult(result, 'RLS setup');
-
-  console.info('');
-  console.info(`  ${pc.greenBright('RLS tables:')} ${rlsTables.join(', ')}`);
-  console.info('');
+  return {
+    tag: 'rls_setup',
+    title: 'RLS — ownership, FORCE RLS, grants',
+    sql: migrationSql,
+    notes: [`RLS tables: ${rlsTables.join(', ')}`],
+  };
 }
 
-export const generateConfig: GenerateScript = {
+export const sideEffect: SideEffectProducer = {
   name: 'RLS',
-  type: 'migration',
-  run,
+  produce: run,
 };
