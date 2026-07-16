@@ -85,13 +85,24 @@ export const useSyncStore = create<SyncStoreState>()(
           }),
         getOrgSeq: (orgId, entityType) => get().orgs[orgId]?.seqs[entityType] ?? 0,
 
+        // Org-homed scopes arrive with channelId === orgId on the live wire, while catchup
+        // reports them at org level — normalize both to the org slot so live and catchup
+        // share ONE caught-up watermark per scope (contexts[orgId] would also collide with
+        // the org slot's key in getFlatSeqs).
         setChannelSeq: (orgId, channelId, entityType, seq) =>
           set((s) => {
             const org = ensureOrg(s.orgs, orgId);
+            if (channelId === orgId) {
+              org.seqs[entityType] = seq;
+              return;
+            }
             org.contexts[channelId] ??= {};
             org.contexts[channelId][entityType] = seq;
           }),
-        getChannelSeq: (orgId, channelId, entityType) => get().orgs[orgId]?.contexts[channelId]?.[entityType] ?? 0,
+        getChannelSeq: (orgId, channelId, entityType) =>
+          channelId === orgId
+            ? (get().orgs[orgId]?.seqs[entityType] ?? 0)
+            : (get().orgs[orgId]?.contexts[channelId]?.[entityType] ?? 0),
 
         setKnownSeq: (scopeId, entityType, seq) =>
           set((s) => {

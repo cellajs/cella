@@ -94,6 +94,19 @@ describe('lazy-sync-scheduler', () => {
     expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('5,8');
   });
 
+  it('org-homed scopes (wire channelId === orgId) share ONE watermark slot with catchup', async () => {
+    // Catchup advanced the org slot; the live notification carries channelId = orgId.
+    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 6);
+    enqueueRange({ ...base, channelId: 'org-1', fromSeq: 3, untilSeq: 9 });
+
+    await flushAllNow();
+
+    // Anchors at the org slot (7,9 — not 3,9) and advances that same slot after success.
+    expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('7,9');
+    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
+    expect(useSyncStore.getState().getChannelSeq('org-1', 'org-1', 'attachment')).toBe(9);
+  });
+
   it('retries transient errors with backoff, then invalidates and advances so the range cannot loop', async () => {
     fetchRangeAndPatch.mockResolvedValue({ status: 'error', items: [] });
     enqueueRange({ ...base, fromSeq: 2, untilSeq: 2 });

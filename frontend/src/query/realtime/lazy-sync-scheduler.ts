@@ -115,9 +115,10 @@ function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }
     : store.getOrgSeq(organizationId, entityType);
   if (untilSeq <= caughtUp) return; // already have this range
 
-  // Self-heal small live gaps: anchor at caught-up+1 so a missed notification's range is
-  // swept up by this flush instead of waiting for reconnect count-integrity.
-  const anchoredFrom = caughtUp > 0 ? Math.min(fromSeq, caughtUp + 1) : fromSeq;
+  // Anchor at caught-up+1: heals missed-notification gaps (fromSeq above the watermark) and
+  // trims already-ingested overlap (fromSeq below it, e.g. a range catchup partly covered).
+  // Without a baseline (caughtUp 0) trust the notification's own range.
+  const anchoredFrom = caughtUp > 0 ? caughtUp + 1 : fromSeq;
 
   const key = entryKey(entityType, organizationId, channelId);
   const dueAt = Date.now() + negotiatedDelay(tier, key, input.syncWindowMs ?? DEFAULT_SYNC_WINDOW_MS);
