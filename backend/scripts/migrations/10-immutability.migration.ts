@@ -1,5 +1,3 @@
-import pc from 'picocolors';
-import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 import { allImmutabilityTables } from '#/db/immutability-triggers';
 import {
   baseEntityImmutabilityFunctionSQL,
@@ -7,14 +5,14 @@ import {
   membershipImmutabilityFunctionSQL,
   inactiveMembershipImmutabilityFunctionSQL,
 } from '#/db/immutability-triggers';
-import type { GenerateScript } from '../types';
+import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 /**
  * Creates triggers that prevent modification of identity columns (id, tenant_id,
  * organization_id, etc.) after row creation — defense-in-depth that holds even under
  * admin bypass.
  */
-async function run() {
+async function run(): Promise<SideEffectBlock> {
   const functionsSql = [
     baseEntityImmutabilityFunctionSQL,
     productEntityImmutabilityFunctionSQL,
@@ -54,19 +52,15 @@ ${triggersSql}
 END $$;
 `;
 
-  const result = upsertMigration('immutability_setup', migrationSql);
-  logMigrationResult(result, 'Immutability triggers');
-
-  console.info('');
-  console.info(`  ${pc.bold(pc.greenBright('Protected tables:'))}`);
-  for (const { tableName, functionName } of allImmutabilityTables) {
-    console.info(`    - ${tableName} (${functionName})`);
-  }
-  console.info('');
+  return {
+    tag: 'immutability_setup',
+    title: 'Immutability triggers — identity columns',
+    sql: migrationSql,
+    notes: [`Protected tables: ${allImmutabilityTables.map((t) => t.tableName).join(', ')}`],
+  };
 }
 
-export const generateConfig: GenerateScript = {
+export const sideEffect: SideEffectProducer = {
   name: 'Immutability',
-  type: 'migration',
-  run,
+  produce: run,
 };

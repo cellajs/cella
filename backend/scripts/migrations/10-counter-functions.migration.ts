@@ -1,6 +1,4 @@
-import pc from 'picocolors';
-import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
-import type { GenerateScript } from '../types';
+import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 /**
  * PL/pgSQL function merging JSONB count deltas into channel_counters rows. Fixed-shape SQL
@@ -10,7 +8,7 @@ import type { GenerateScript } from '../types';
  * (last update) keys are epoch-ms activity stamps, not deltas: they merge via GREATEST so
  * the signal only moves forward.
  */
-async function run() {
+async function run(): Promise<SideEffectBlock> {
   const migrationSql = `-- Counter Functions Setup
 -- PL/pgSQL helper for JSONB counter delta merging.
 -- Used by the CDC worker for prepared-statement-compatible counter upserts.
@@ -42,16 +40,15 @@ END;
 $$;
 `;
 
-  const result = upsertMigration('counter_functions', migrationSql);
-  logMigrationResult(result, 'Counter functions');
-
-  console.info('');
-  console.info(`  ${pc.bold(pc.greenBright('Function:'))} apply_count_deltas(existing jsonb, deltas jsonb) → jsonb`);
-  console.info('');
+  return {
+    tag: 'counter_functions',
+    title: 'Counter functions — apply_count_deltas',
+    sql: migrationSql,
+    notes: ['Function: apply_count_deltas(existing jsonb, deltas jsonb) → jsonb'],
+  };
 }
 
-export const generateConfig: GenerateScript = {
+export const sideEffect: SideEffectProducer = {
   name: 'Counters',
-  type: 'migration',
-  run,
+  produce: run,
 };

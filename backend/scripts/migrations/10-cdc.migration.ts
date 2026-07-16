@@ -3,8 +3,7 @@ import { getTableName } from 'drizzle-orm';
 import { resourceTables } from '#/tables';
 import { entityTables } from '#/tables';
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../../cdc/src/constants';
-import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
-import type { GenerateScript } from '../types';
+import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 interface TableSpec {
   tableName: string;
@@ -20,7 +19,7 @@ function buildTableSpecs(): TableSpec[] {
   return allTables.map((table) => ({ tableName: getTableName(table) }));
 }
 
-async function run() {
+async function run(): Promise<SideEffectBlock> {
   const tableSpecs = buildTableSpecs();
 
   if (tableSpecs.length === 0) {
@@ -86,20 +85,15 @@ ${trackedTableNames.map((table) => `    ALTER TABLE ${table} REPLICA IDENTITY FU
 END $$;
 `;
 
-  // Use the shared migration utility.
-  const result = upsertMigration('cdc_setup', migrationSql);
-  logMigrationResult(result, 'CDC setup');
-
-  console.info('');
-  console.info(`  ${pc.bold(pc.greenBright('Tracked tables:'))}`);
-  for (const spec of tableSpecs) {
-    console.info(`    - ${spec.tableName}`);
-  }
-  console.info('');
+  return {
+    tag: 'cdc_setup',
+    title: 'CDC — publication, replica identity, replication slot',
+    sql: migrationSql,
+    notes: [`Tracked tables (${trackedTableNames.length}): ${trackedTableNames.join(', ')}`],
+  };
 }
 
-export const generateConfig: GenerateScript = {
+export const sideEffect: SideEffectProducer = {
   name: 'CDC',
-  type: 'migration',
-  run,
+  produce: run,
 };

@@ -1,6 +1,4 @@
-import pc from 'picocolors';
-import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
-import type { GenerateScript } from '../types';
+import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 // Partition configuration
 
@@ -238,7 +236,7 @@ ${endGuard}
 `;
 }
 
-async function run() {
+async function run(): Promise<SideEffectBlock> {
   // Generate the full migration SQL.
   const tableSetupSql = partitionConfigs.map(generateTablePartitionSql).join('\n');
 
@@ -321,21 +319,17 @@ ${tableSetupSql}
 END $$;
 `;
 
-  // Use shared migration utility
-  const result = upsertMigration('partman_setup', migrationSql);
-  logMigrationResult(result, 'pg_partman setup');
-
-  console.info('');
-  console.info(`  ${pc.bold(pc.greenBright('Configured tables:'))}`);
-  for (const config of partitionConfigs) {
-    const retentionLabel = config.retention ?? 'indefinite';
-    console.info(`    - ${config.name}: ${config.interval} partitions, ${retentionLabel} retention`);
-  }
-  console.info('');
+  return {
+    tag: 'partman_setup',
+    title: 'pg_partman — partitioned tables',
+    sql: migrationSql,
+    notes: partitionConfigs.map(
+      (config) => `${config.name}: ${config.interval} partitions, ${config.retention ?? 'indefinite'} retention`,
+    ),
+  };
 }
 
-export const generateConfig: GenerateScript = {
+export const sideEffect: SideEffectProducer = {
   name: 'Partman',
-  type: 'migration',
-  run,
+  produce: run,
 };

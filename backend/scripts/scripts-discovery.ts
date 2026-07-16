@@ -1,21 +1,23 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { GenerateScript } from './types';
 import type { SeedScript } from './types';
+import type { SideEffectProducer } from './types';
 
 /**
- * Auto-discover generate scripts from scripts/migrations/*.migration.ts files.
- * Each must export a `generateConfig: GenerateScript`. Sorted by filename (use numeric prefixes for order).
+ * Auto-discover side-effect producers from scripts/migrations/*.migration.ts files.
+ * Each must export a `sideEffect: SideEffectProducer`. Sorted by filename (use numeric prefixes
+ * for block order). The schema-diff step (drizzle-kit generate) is a separate first phase in
+ * generate.ts, not a discovered producer.
  */
 const migrationDir = join(import.meta.dirname, 'migrations');
 const migrationFiles = readdirSync(migrationDir).filter((f) => f.endsWith('.migration.ts')).sort();
 
-export const generateScripts: GenerateScript[] = [];
+export const sideEffectProducers: SideEffectProducer[] = [];
 
 for (const file of migrationFiles) {
   const mod = await import(`./migrations/${file.replace('.ts', '')}`);
-  if (!mod.generateConfig) throw new Error(`Missing generateConfig export in migrations/${file}`);
-  generateScripts.push(mod.generateConfig);
+  if (!mod.sideEffect) throw new Error(`Missing sideEffect export in migrations/${file}`);
+  sideEffectProducers.push(mod.sideEffect);
 }
 
 /**
