@@ -1,7 +1,10 @@
 import { LRUCache } from '#/lib/lru-cache';
 
 interface PointsEntry {
+  /** Local truth: last known DB count plus every fast-path consume since. */
   consumed: number;
+  /** Portion of `consumed` that has been written to the DB. */
+  flushed: number;
   windowStart: number;
 }
 
@@ -23,6 +26,12 @@ const cache = new LRUCache<PointsEntry>({
  * Try the in-memory fast path for a points-budget key.
  * Used by `limit` mode for API budgets; brute-force limiters always use the DB.
  *
+ * Fast-path consumes are not written to the DB immediately; they accrue as debt
+ * (`consumed - flushed`) that {@link takeDebt} settles in bulk on the next DB trip.
+ * Without that settlement the DB count stays near zero and the budget is never
+ * enforced. The remaining imprecision is multi-process: each process can run
+ * up to `threshold × budget` locally before its first flush.
+ *
  * @returns `'allow'` if the request can proceed without DB,
  *          `'check-db'` if the DB path should be used
  */
@@ -30,31 +39,55 @@ export function tryFastConsume(key: string, cost: number, budget: number): 'allo
   const now = Date.now();
   const entry = cache.get(key);
 
-  if (!entry || now - entry.windowStart >= WINDOW_MS) {
-    cache.set(key, { consumed: cost, windowStart: now });
-    return 'allow';
-  }
+  const isFresh = !entry || now - entry.windowStart >= WINDOW_MS;
+  const priorConsumed = isFresh ? 0 : entry.consumed;
 
-  const projectedTotal = entry.consumed + cost;
+  // Everything at/above the threshold goes to the DB, including a first request
+  // whose own cost is already over it (e.g. an oversized bulk body).
+  if (priorConsumed + cost >= budget * FAST_PATH_THRESHOLD) return 'check-db';
 
-  if (projectedTotal < budget * FAST_PATH_THRESHOLD) {
-    entry.consumed = projectedTotal;
+  if (isFresh) {
+    cache.set(key, { consumed: cost, flushed: 0, windowStart: now });
+  } else {
+    entry.consumed = priorConsumed + cost;
     cache.set(key, entry);
-    return 'allow';
   }
-
-  return 'check-db';
+  return 'allow';
 }
 
 /**
- * Sync the cache after a successful DB consume.
- * Called when the DB path is taken so the cache reflects the authoritative count.
+ * Claim the unflushed fast-path consumes for a key, marking them as flushed.
+ * The caller must add the returned debt to its DB consume; on a failed DB write
+ * (other than a rate limit rejection) call {@link restoreDebt} so it isn't lost.
+ */
+export function takeDebt(key: string): number {
+  const entry = cache.get(key);
+  if (!entry) return 0;
+  const debt = Math.max(0, entry.consumed - entry.flushed);
+  entry.flushed = entry.consumed;
+  cache.set(key, entry);
+  return debt;
+}
+
+/** Return previously claimed debt after a failed DB write. */
+export function restoreDebt(key: string, debt: number): void {
+  if (debt <= 0) return;
+  const entry = cache.get(key);
+  if (!entry) return;
+  entry.flushed = Math.max(0, entry.flushed - debt);
+  cache.set(key, entry);
+}
+
+/**
+ * Sync the cache after a DB consume (successful or rejected).
+ * The DB count is authoritative: it includes our flushed debt and any
+ * consumption from other processes.
  */
 export function syncFromDb(key: string, consumedPoints: number): void {
   const now = Date.now();
   const entry = cache.get(key);
   const windowStart = entry ? entry.windowStart : now;
-  cache.set(key, { consumed: consumedPoints, windowStart });
+  cache.set(key, { consumed: consumedPoints, flushed: consumedPoints, windowStart });
 }
 
 /** Exposed for testing. */

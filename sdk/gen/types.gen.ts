@@ -357,7 +357,7 @@ export type Tenant = {
     };
     rateLimits: {
       /**
-       * Max API points per hour per user within this tenant
+       * Max API points per hour per user within this tenant (0 = no tenant limit; the global safety ceiling still applies)
        */
       apiPointsPerHour: number;
     };

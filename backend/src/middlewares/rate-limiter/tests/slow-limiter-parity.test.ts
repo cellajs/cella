@@ -4,9 +4,11 @@ import { describe, expect, it, vi } from 'vitest';
 // Undo setup.ts mock: this test needs the real rateLimiter to exercise the slow-limiter path.
 vi.unmock('#/middlewares/rate-limiter/core');
 
-// Record the keys each limiter instance is called with, so we can assert get/consume parity.
+// Record the keys each limiter instance is called with, so we can assert get/consume parity,
+// and every created keyPrefix, so we can assert which modes get a slow instance at all.
 const slowCalls = { get: [] as string[], consume: [] as string[] };
 const fastCalls = { get: [] as string[], consume: [] as string[] };
+const createdPrefixes: string[] = [];
 
 // Mock only the limiter factory; keep the real extractIdentifiers/rateLimitError so key derivation
 // (getIp → `ip:<normalized>`) runs exactly as in production.
@@ -15,6 +17,7 @@ vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => {
   return {
     ...original,
     getRateLimiterInstance: (options: { keyPrefix: string }) => {
+      createdPrefixes.push(options.keyPrefix);
       const bucket = options.keyPrefix.endsWith(':slow') ? slowCalls : fastCalls;
       return {
         points: options.keyPrefix.endsWith(':slow') ? 100 : 10,
@@ -51,5 +54,32 @@ describe('slow brute-force limiter key parity (F7)', () => {
     // reading `ip:1.2.3.4`, so the 24h bucket never accumulated and could never block).
     expect(slowCalls.consume[0]).toBe(slowCalls.get[0]);
     expect(slowCalls.get[0]).toBe('ip:1.2.3.4');
+  });
+
+  it('never creates or reads a slow bucket for non-fail modes', async () => {
+    // Only fail-driven modes ever CONSUME the slow bucket, so reading it for 'limit' and
+    // 'success' was a wasted DB round-trip on every request against a bucket stuck at zero.
+    const slowGetsBefore = slowCalls.get.length;
+    createdPrefixes.length = 0;
+
+    for (const mode of ['limit', 'success'] as const) {
+      const limiter = rateLimiter(mode, `test${mode}`, ['ip'], { limits: { points: 10, duration: 60 } });
+      const app = new Hono();
+      app.post('/test', limiter, (c) => c.json({ ok: true }, 200));
+      await app.request('http://localhost/test', { method: 'POST', headers: { 'x-forwarded-for': '1.2.3.4' } });
+    }
+
+    expect(createdPrefixes.filter((p) => p.endsWith(':slow'))).toEqual([]);
+    expect(slowCalls.get.length).toBe(slowGetsBefore);
+  });
+
+  it('creates the slow bucket for both fail-driven modes', () => {
+    createdPrefixes.length = 0;
+    rateLimiter('fail', 'testfailmode', ['ip'], { limits: { points: 10, duration: 60 } });
+    rateLimiter('failseries', 'testfsmode', ['ip'], { limits: { points: 10, duration: 60 } });
+    expect(createdPrefixes.filter((p) => p.endsWith(':slow'))).toEqual([
+      'testfailmode_fail:slow',
+      'testfsmode_failseries:slow',
+    ]);
   });
 });

@@ -14,7 +14,13 @@ const subscriptionStatusSchema = z.enum(subscriptionStatusValues);
 
 /** Restrictions: rate limits sub-schema */
 const rateLimitsSchema = z.object({
-  apiPointsPerHour: z.number().int().min(0).describe('Max API points per hour per user within this tenant'),
+  apiPointsPerHour: z
+    .number()
+    .int()
+    .min(0)
+    .describe(
+      'Max API points per hour per user within this tenant (0 = no tenant limit; the global safety ceiling still applies)',
+    ),
 });
 
 /** Restrictions: quotas sub-schema (entity type string → hard cap) */

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearCache, syncFromDb, tryFastConsume } from '#/middlewares/rate-limiter/points-cache';
+import { clearCache, restoreDebt, syncFromDb, takeDebt, tryFastConsume } from '#/middlewares/rate-limiter/points-cache';
 
 describe('points-cache', () => {
   beforeEach(() => {
@@ -13,6 +13,12 @@ describe('points-cache', () => {
   describe('tryFastConsume', () => {
     it('should allow first request for a new key', () => {
       expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('allow');
+    });
+
+    it('should send an oversized first request to the DB instead of allowing it blind', () => {
+      // A single bulk request costing more than the whole budget must not pass just
+      // because the key is new.
+      expect(tryFastConsume('tenant:user1', 5000, 1000)).toBe('check-db');
     });
 
     it('should allow requests well under budget (< 80%)', () => {
@@ -70,15 +76,70 @@ describe('points-cache', () => {
     });
   });
 
-  describe('syncFromDb', () => {
-    it('should update cache with authoritative DB count', () => {
-      // Start with some local state
-      tryFastConsume('tenant:user1', 1, 1000);
+  describe('takeDebt / restoreDebt', () => {
+    it('should return every fast-path consume as unflushed debt, exactly once', () => {
+      for (let i = 0; i < 10; i++) {
+        tryFastConsume('tenant:user1', 1, 1000);
+      }
+      // All 10 allowed requests were never written to the DB — they are debt.
+      expect(takeDebt('tenant:user1')).toBe(10);
+      // Claimed debt is marked flushed; a second claim has nothing left.
+      expect(takeDebt('tenant:user1')).toBe(0);
+    });
 
-      // DB says 900 points consumed (other processes counted too)
+    it('should return 0 for unknown keys', () => {
+      expect(takeDebt('tenant:nobody')).toBe(0);
+    });
+
+    it('should accumulate new debt after a claim', () => {
+      tryFastConsume('tenant:user1', 5, 1000);
+      expect(takeDebt('tenant:user1')).toBe(5);
+
+      tryFastConsume('tenant:user1', 3, 1000);
+      expect(takeDebt('tenant:user1')).toBe(3);
+    });
+
+    it('should restore claimed debt after a failed DB write', () => {
+      tryFastConsume('tenant:user1', 7, 1000);
+      const debt = takeDebt('tenant:user1');
+      expect(debt).toBe(7);
+
+      // DB write failed: the debt must not be lost.
+      restoreDebt('tenant:user1', debt);
+      expect(takeDebt('tenant:user1')).toBe(7);
+    });
+  });
+
+  describe('syncFromDb', () => {
+    it('should adopt the authoritative DB count and clear debt', () => {
+      for (let i = 0; i < 10; i++) {
+        tryFastConsume('tenant:user1', 1, 1000);
+      }
+
+      // DB path settled everything: count now includes our debt (and other processes).
       syncFromDb('tenant:user1', 900);
 
-      // Now should go to DB since 900 + 1 > 800 threshold
+      // Nothing left to flush — the DB already has it all.
+      expect(takeDebt('tenant:user1')).toBe(0);
+      // And the local counter now reflects the DB: next request is over threshold.
+      expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('check-db');
+    });
+
+    it('should never lose local consumes to a DB undercount', () => {
+      // THE original budget-bypass bug: 799 fast-path consumes, then a DB trip that only
+      // knew about 1 request, reset the local counter to that undercount and restarted
+      // the fast path forever. Debt settlement makes the DB count genuinely authoritative
+      // because the debt is consumed into it before syncing.
+      for (let i = 0; i < 799; i++) {
+        tryFastConsume('tenant:user1', 1, 1000);
+      }
+      const debt = takeDebt('tenant:user1');
+      expect(debt).toBe(799);
+
+      // The DB trip consumes cost + debt, so the count it reports includes everything.
+      syncFromDb('tenant:user1', debt + 1);
+
+      // Still at the threshold — the budget keeps being checked against the DB.
       expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('check-db');
     });
 

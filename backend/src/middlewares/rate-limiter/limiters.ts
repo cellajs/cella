@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import type { Env } from '#/core/context';
 import { rateLimiter } from '#/middlewares/rate-limiter/core';
 import { bulkBodyLength } from '#/middlewares/rate-limiter/helpers';
-import { sendLockoutEmail } from '#/middlewares/rate-limiter/helpers/send-lockout-email';
+import { sendLockoutEmail } from '#/middlewares/rate-limiter/send-lockout-email';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 
 /**
@@ -12,6 +12,12 @@ import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
  * requests (sign up, public requests etc.).
  */
 export const spamLimiter = rateLimiter('success', 'spam', [['userId', 'ip']], {
+  // 204 must count as success: sendMagicLink and resendInvitationWithToken return 204, and with
+  // the default [200, 201] this limiter never consumed a point on them (i.e. no spam limit at
+  // all). Scoped here rather than in defaultOptions because a global 204 would let failseries
+  // limiters (e.g. emailEnumLimiter on checkEmail, whose hit response is 204) be reset by
+  // interleaving a known-valid request between probes.
+  limits: { successStatusCodes: [200, 201, 204] },
   description: 'Max 10 requests/hour per user (per IP when anonymous) for email-sending endpoints',
 });
 
@@ -42,12 +48,15 @@ export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', [['userI
 });
 
 /**
- * TOTP verification rate limiter to prevent brute force attacks on MFA codes
+ * TOTP verification rate limiter to prevent brute force attacks on MFA codes.
+ * The key is IP-only (the body carries just the code), so the lockout email resolves the
+ * pending user from the request's `confirm-mfa` cookie via ctx.
  */
+const totpLimits = { points: 5, duration: 60 * 60, blockDuration: 60 * 30 };
 export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerification', ['ip'], {
-  limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30 },
+  limits: totpLimits,
   description: 'Blocks IP for 30 min after 5 failed TOTP attempts',
-  onBlock: (key) => sendLockoutEmail(key, 'totp-lockout'),
+  onBlock: (key, ctx) => sendLockoutEmail(key, 'totp-lockout', ctx, totpLimits),
 });
 
 /**
@@ -80,7 +89,8 @@ export const passkeyChallengeLimiter = rateLimiter('limit', 'passkeyChallenge', 
  * `ctx.var.tenant.restrictions.rateLimits.apiPointsPerHour`, falling back
  * to the global default when no tenant is available on the context.
  *
- * Global safety-net ceiling: 5000 points/hour (static `limits.points`).
+ * Global safety-net ceiling: 5000 points/hour (static `limits.points`). Tenant budgets are
+ * clamped to it, and a budget of 0 ("no tenant-specific limit") falls back to it.
  *
  * @internal Use `bulkPointsLimiter` or `singlePointsLimiter` for common cases, or create custom limiters with different costs as needed.
  * @param cost - Static cost per request, or 0 to use dynamic `getConsumePoints`.

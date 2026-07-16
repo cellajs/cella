@@ -35,9 +35,12 @@ export interface RateLimiterOpts {
   /** Description for OpenAPI documentation */
   description?: string;
   /** Callback fired when rate limit blocks a request (fire-and-forget, errors are swallowed) */
-  onBlock?: (rateLimitKey: string) => void;
+  onBlock?: (rateLimitKey: string, ctx: Context<Env>) => void;
   /** Dynamic points to consume per request (for points-weighted limiters). Called at request time. */
   getConsumePoints?: (ctx: Context<Env>) => number | Promise<number>;
-  /** Dynamic points budget read from tenant restrictions. Overrides static `limits.points` at runtime. */
+  /**
+   * Dynamic points budget read from tenant restrictions. Clamped to the static `limits.points`
+   * ceiling; 0 means "no tenant-specific limit" and falls back to that ceiling.
+   */
   getPointsBudget?: (ctx: Context<Env>) => number;
 }

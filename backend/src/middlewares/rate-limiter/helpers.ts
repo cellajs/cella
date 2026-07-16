@@ -73,9 +73,10 @@ export const rateLimitError = (ctx: Context<Env>, limitState: RateLimiterRes, ra
 };
 
 /**
- * Get Retry-After header value
+ * Get Retry-After header value. Floored to 1s so sub-second waits never emit
+ * `Retry-After: 0`, which well-behaved clients treat as "retry immediately".
  */
-export const getRetryAfter = (ms: number) => Math.round(ms / 1000).toString() || '1';
+export const getRetryAfter = (ms: number) => Math.max(1, Math.round(ms / 1000)).toString();
 
 /**
  * Extract email from multiple sources: body, query, params, headers
@@ -94,11 +95,14 @@ export const extractIdentifiers = async (
   for (const identifier of identifiersToExtract) {
     switch (identifier) {
       case 'email': {
-        // Extract email from JSON body only – use Hono's cached json() so the body stays available for the handler
+        // Extract email from JSON body only – use Hono's cached json() so the body stays available for the handler.
+        // Normalize the same way handlers/schemas do before use (validEmailSchema lowercases and
+        // trims), otherwise `Victim@x.com` and `victim@x.com` occupy separate buckets while mail
+        // is delivered to one inbox. Runs before zod validation, so also guard the type.
         if (ctx.req.header('content-type')?.includes('application/json')) {
           try {
-            const body = (await ctx.req.json()) as { email?: string };
-            if (body.email) results.email = body.email;
+            const body = (await ctx.req.json()) as { email?: unknown };
+            if (typeof body.email === 'string' && body.email) results.email = body.email.toLowerCase().trim();
           } catch {}
         }
         break;
