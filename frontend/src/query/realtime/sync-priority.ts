@@ -2,7 +2,7 @@ import type { GetMyMembershipsResponse } from 'sdk';
 import { hierarchy, type ProductEntityType } from 'shared';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
-import { router } from '~/routes/router';
+import { getRouter } from '~/routes/_router-instance';
 
 type SyncPriority = 'high' | 'medium' | 'low';
 
@@ -14,7 +14,7 @@ interface SyncNotification {
 
 /** Get the current org ID from the router's matched route context, if user is within an org layout. */
 export function getRouteOrgId(): string | null {
-  for (const match of router.state.matches) {
+  for (const match of getRouter().state.matches) {
     const ctx = match.context;
     if (ctx && 'organization' in ctx && ctx.organization) {
       return (ctx.organization as { id: string }).id;
@@ -25,7 +25,7 @@ export function getRouteOrgId(): string | null {
 
 /** Get the current tenant ID from the router's matched route context, if user is within an org layout. */
 export function getRouteTenantId(): string | null {
-  for (const match of router.state.matches) {
+  for (const match of getRouter().state.matches) {
     const ctx = match.context;
     if (ctx && 'tenantId' in ctx && typeof ctx.tenantId === 'string') {
       return ctx.tenantId;
@@ -62,7 +62,7 @@ const TIER_ON_OPEN: SyncTier = { min: Number.POSITIVE_INFINITY, max: Number.POSI
 
 /** True when any matched route param carries this channel id (fork project/course routes). */
 function routeMatchesChannel(channelId: string): boolean {
-  for (const match of router.state.matches) {
+  for (const match of getRouter().state.matches) {
     const params = match.params as Record<string, unknown> | undefined;
     if (params && Object.values(params).some((value) => value === channelId)) return true;
   }

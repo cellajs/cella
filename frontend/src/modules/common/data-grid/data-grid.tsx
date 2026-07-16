@@ -16,10 +16,9 @@ import {
   useColumnWidths,
   useDragAutoScroll,
   useGridDimensions,
-  useInfiniteScroll,
+  useNearEnd,
   useViewportRows,
 } from './hooks';
-import type { RowsEndApproachingArgs } from './hooks/use-infinite-scroll';
 import { useStickyHeader } from './hooks/use-sticky-header';
 import { defaultRenderRow } from './row';
 import { RowDragCell, type RowDragConfig } from './row-drag-cell';
@@ -84,8 +83,6 @@ interface EditCellState<R> extends Position {
   readonly row: R;
   readonly originalRow: R;
 }
-
-export type { RowsEndApproachingArgs };
 
 type SharedDivProps = Pick<
   React.ComponentProps<'div'>,
@@ -238,16 +235,19 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
    * Infinite scroll support
    */
   /**
-   * Fires when rendered rows approach the dataset end (infinite scroll / load more):
-   * when rowOverscanEndIdx >= rows.length - rowsEndApproachingThreshold. Fires once
-   * per rows.length to avoid re-triggering after data loads.
+   * Level-triggered near-end signal: called with true while rendered rows are
+   * within `nearEndThreshold` rows of the dataset end, with false when they
+   * leave the zone, and with false on unmount. State, not a one-shot event —
+   * pair it with query state (isFetching, hasNextPage) to decide when to load
+   * more; re-evaluating on your own state changes is what makes a load
+   * opportunity retryable instead of droppable.
    */
-  onRowsEndApproaching?: Maybe<(args: RowsEndApproachingArgs) => void>;
+  onNearEndChange?: Maybe<(nearEnd: boolean) => void>;
   /**
-   * Number of rows from the end at which onRowsEndApproaching fires.
+   * Number of rows from the end at which onNearEndChange reports true.
    * @default Dynamic: 25% of rows, clamped between 10 and 50
    */
-  rowsEndApproachingThreshold?: Maybe<number>;
+  nearEndThreshold?: Maybe<number>;
 
   /**
    * Miscellaneous
@@ -329,8 +329,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     selectedCellRange: selectedCellRangeProp,
     onSelectedCellRangeChange,
     // Infinite scroll
-    onRowsEndApproaching,
-    rowsEndApproachingThreshold: rawRowsEndApproachingThreshold,
+    onNearEndChange,
+    nearEndThreshold: rawNearEndThreshold,
     // Miscellaneous
     renderers,
     className,
@@ -469,7 +469,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     [columnWidths],
   );
 
-  const { gridRef, viewportHeight, horizontalScrollbarHeight, scrollTop } = useGridDimensions(
+  const { gridRef, viewportHeight, horizontalScrollbarHeight, scrollTop, measured } = useGridDimensions(
     undefined,
     enableRowVirtualization,
   );
@@ -590,6 +590,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     clientHeight,
     scrollTop,
     enableVirtualization: enableRowVirtualization,
+    measured,
   });
 
   const {
@@ -796,12 +797,12 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     }
   }, [selectedPosition.mode]);
 
-  useInfiniteScroll({
+  useNearEnd({
     totalRows: rows.length,
     rowOverscanEndIdx,
-    clientHeight,
-    onRowsEndApproaching,
-    threshold: rawRowsEndApproachingThreshold,
+    measured,
+    onNearEndChange,
+    threshold: rawNearEndThreshold,
   });
 
   /**

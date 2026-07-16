@@ -30,7 +30,6 @@ export const openApiUrl = `${appConfig.frontendUrl}/static/openapi.json`;
  * Query keys for docs-related queries.
  */
 const docsKeys = {
-  all: ['docs'] as const,
   spec: ['openapi-spec'] as const,
   operations: ['docs', 'operations'] as const,
   operationTags: ['docs', 'operation-tags'] as const,

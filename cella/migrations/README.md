@@ -48,6 +48,16 @@ be a no-op.
   ledger, catchup folds into the scheduler. Fork steps: `appCache(entityType)` signature,
   verify sub-org viewing detection, mirror feed filters (e.g. `draft`) in `ingestSyncedRows`,
   seen-tracked config invariant. Manual, no script.
+- [2026-07-deprecated-shims](./2026-07-deprecated-shims/): removes the last two
+  `@deprecated` compat shims — the `FilterBarContent` alias (→ `FilterBarFilters`,
+  or `FilterBarSearch` for search inputs) and the `entities/helpers/get-entity-counts`
+  re-export file (→ import from `entities/entities-queries`). Manual, no script.
+- [2026-07-search-defaults](./2026-07-search-defaults/): list routes declare their default
+  view once (`<name>SearchDefaults`) and keep it out of the URL — zod `.default()` rehydrates
+  on read, a `stripSearchParams` middleware strips on write. **Fork-breaking**: the
+  `defaultValues` option is gone from `useSearchParams` (its mount effect was the inverse of
+  the middleware). Read each default off your own generated schema — they differ per endpoint.
+  Manual, no script.
 - [2026-07-channel-entity-rename](./2026-07-channel-entity-rename/): renames the
   "channel entity" concept to "channel entity" (`ContextEntityType→ChannelEntityType`,
   builder `.context()→.channel()`, `context_type/context_id→channel_type/channel_id`,

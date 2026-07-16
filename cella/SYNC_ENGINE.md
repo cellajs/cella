@@ -1,6 +1,6 @@
 # Cella sync engine
 
-> The [Architecture](/docs/page/architecture) document explains why Cella uses notify-then-fetch. This document explains the reasoning behind the sync engine. It also provides more details on how a mutation travels through the sync pipeline and how clients stay consistent while online and offline.
+This document explains the reasoning behind the sync engine. It also provides more details on how a mutation travels through the sync pipeline and how clients stay consistent while online and offline.
 
 ## TL;DR
 
@@ -39,16 +39,16 @@ Postgres + OpenAPI + React Query are the foundational primitives. Standard OpenA
 
 ## Why built-in?
 
-External sync solutions typically have their own patterns for operations, authorization, and caching. This creates either an all-or-nothing approach or the DX of having dual patterns. Especially if you **do not want** to push all your app data through a sync engine.
+External or generic sync solutions typically have their own patterns for operations, authorization, and caching. This creates either an all-or-nothing approach. Or - if you **do not want** to push all your app data through a sync engine -  the DX of having dual patterns.
 
-Hidden opportunities! We found out that internalizing the sync engine means you can make amazing combos: think audit trail, API event bus, unified count logic, schema evolution tolerance and unified tracing.
+Hidden opportunities! We found out that internalizing the sync engine means you reuse some of the complicated logic in other areas: think audit trail, API event bus, unified count logic, schema evolution tolerance.
 
 | Concern | External services | Built-in approach |
 |---------|-------------------|-------------------|
 | **OpenAPI contract** | Bypassed | Extends existing endpoints with `stx` object in entity |
 | **Authorization** | Requires re-implementing | Reuses `checkPermission()` and existing guards |
 | **Schema ownership** | Sync layer dictates patterns | Drizzle/Zod schemas remain authoritative |
-| **Opt-in complexity** | All-or-nothing-or-double | Progressive: REST → Tracked → Offline → Realtime |
+| **Opt-in complexity** | All-or-nothing-or-double | Progressive: REST → Offline &realtime |
 | **React Query** | New reactive layer | Builds on existing TanStack Query cache & hooks |
 
 ---
@@ -71,6 +71,17 @@ Postgres → CDC Worker → API Server → SSE → Client
          activitiesTable
             (activity)
 ```
+
+And distinct terms for *what* a change is about and *where* it is routed:
+
+| Term | Description |
+|------|-------------|
+| **Product entity** | A synced entity: seq-stamped, streamed, offline-capable (`ProductEntityType`, e.g. `attachment`). |
+| **Channel entity** | A membership-scoped entity that hosts products and carries the permission check (`ChannelEntityType`, e.g. `organization`, `project` in a fork). |
+| **Channel** | The routing key a change fans out and counts on: a row's deepest non-null channel-entity ancestor id, falling back to its organization (`resolveChannelKey()`). The **org channel** is the root; a **child channel** is a deeper one (e.g. a project). |
+| **Scope** | Entity type + channel (`{entityType}:{channelId ?? organizationId}`). The unit seq watermarks are stored per, and the unit the lazy scheduler merges ranges and fetches per. |
+
+"Context" is **not** a sync-engine term: it means only the ambient kind (`AuthContext`, request `Context`, the routing context on mutation variables). Anything that routes or scopes a change is a channel — see [the rename migration](./migrations/2026-07-channel-entity-rename/README.md).
 
 ---
 
@@ -104,7 +115,7 @@ Postgres → CDC Worker → API Server → SSE → Client
 
 This architecture uses a persistent WebSocket connection from the CDC worker to the API server and channel-indexed SSE subscribers. Channel lookup is constant-time; broadcasting still scales with the number of matching subscribers. Existing permission logic filters each notification before delivery.
 
-**CDC buffering and batching:** `TransactionBuffer` retains transaction boundaries to suppress cascaded child deletes. After commit, `FlushBuffer` can micro-batch surviving events across transactions and groups them by `(type, action)`. Product groups are split again by their effective seq context (the deepest non-null ancestor), so every notification describes one contiguous seq range.
+**CDC buffering and batching:** `TransactionBuffer` retains transaction boundaries to suppress cascaded child deletes. After commit, `FlushBuffer` can micro-batch surviving events across transactions and groups them by `(type, action)`. Product groups are split again by their effective seq channel (the deepest non-null ancestor, via `resolveChannelKey()`), so every notification describes one contiguous seq range.
 
 ```
 Postgres WAL
@@ -133,7 +144,7 @@ Leader tab ── BroadcastChannel ──► follower tabs
 
 ### Notification shapes
 
-Clients first branch on `kind`. Membership notifications invalidate membership/context queries; entity notifications use the seq sync path. Entity notifications then have three shapes:
+Clients first branch on `kind`. Membership notifications invalidate membership/channel queries; entity notifications use the seq sync path. Entity notifications then have three shapes:
 
 | Shape | Detection | Client behavior |
 |-------|-----------|----------------|
@@ -210,10 +221,10 @@ interface CatchupChangeSummary {
 The client processes catchup in a two-phase sync cycle:
 
 **Phase A (catchup, before SSE opens):**
-- On the first connection (`cursor` absent), stores org and child-context seq baselines and returns. Route loaders are responsible for initial data.
+- On the first connection (`cursor` absent), stores org and child-channel seq baselines and returns. Route loaders are responsible for initial data.
 - On later connections, compares server and stored seqs. For cached scopes with a positive delta, it fetches from `clientSeq + 1` using open-ended `seqCursor`; a full chunk or failed fetch falls back to active-list invalidation.
 - Soft-delete tombstones returned by the delta endpoint remove rows from detail/list caches.
-- Membership member-list invalidation is scoped to organizations whose `s:membership` counter changed. If the response contains any changed scope, context lists, `me`, and the user's memberships are refreshed.
+- Membership member-list invalidation is scoped to organizations whose `s:membership` counter changed. If the response contains any changed scope, channel lists, `me`, and the user's memberships are refreshed.
 - `entityCounts` are compared with the previous server counts seen in this browser session. They are deliberately not compared with permission-filtered cached totals.
 - Embedded propagation runs after all delta fetches.
 
@@ -298,16 +309,16 @@ Uses entity-type sequence numbers (`seq`) for **create/update/soft-delete/restor
 
 **Sequence architecture:**
 - **`seq`**: Per-row sequence stamped by the CDC worker after each product-entity create/update. The worker reserves a range in `channel_counters.counts['s:{entityType}']` and writes assigned values back to the rows. New rows have their schema default until CDC stamps them.
-- **Hierarchy-aware scoping**: The CDC worker uses the row's deepest non-null ancestor ID as the context key. This equals the declared parent for ordinary hierarchies and supports variable-depth entities whose nearer ancestor can be null.
+- **Hierarchy-aware scoping**: The CDC worker uses the row's deepest non-null ancestor ID as the channel key. This equals the declared parent for ordinary hierarchies and supports variable-depth entities whose nearer ancestor can be null.
 - **Membership detection**: Membership changes are detected via the org-level `s:membership` counter and standard membership invalidation.
 - **Delete detection**: Soft deletes are seq-stamped tombstone rows (`deletedAt != null`) returned by `seqCursor` reads. A physical hard delete has no row to fetch; the live handler invalidates the list, while the in-session server-count signal may detect a missed create/delete. No automatic hard-purge horizon is implemented in this repository.
 - **`seqCursor`**: List query parameter with two forms: `seqCursor=51` means `seq >= 51` and is used by catchup; `seqCursor=51,150` means the inclusive bounded range and is used by live batch notifications.
 
 **Two modes of gap detection:**
 
-1. **Catchup (offline/reconnect):** Client compares stored org/child-context `clientEntitySeq` values with `serverEntitySeq` values from `channel_counters`. For a cached changed scope it reads from `clientEntitySeq + 1` without an upper bound. Tombstones remove entities from cache. The first connection only records a baseline.
+1. **Catchup (offline/reconnect):** Client compares stored org/child-channel `clientEntitySeq` values with `serverEntitySeq` values from `channel_counters`. For a cached changed scope it reads from `clientEntitySeq + 1` without an upper bound. Tombstones remove entities from cache. The first connection only records a baseline.
 
-2. **Live (SSE):** Product create/update notifications include `seq`, scoped to entity type + effective context (e.g., tasks within a project in a fork). The single-notification path advances its watermark before starting the range fetch; the batch path advances to `batchUntilSeq` only after a successful range fetch. An own create/update echo returns before either update after patching cached `stx`, so catchup may safely see that seq again.
+2. **Live (SSE):** Product create/update notifications include `seq`, scoped to entity type + effective channel (e.g., tasks within a project in a fork). The single-notification path advances its watermark before starting the range fetch; the batch path advances to `batchUntilSeq` only after a successful range fetch. An own create/update echo returns before either update after patching cached `stx`, so catchup may safely see that seq again.
 
 **How it works (scenario):**
 
@@ -359,7 +370,7 @@ Only product entity queries opt in to `syncStaleTime`: they are the only entitie
 
 After seq-based processing, catchup uses `entityCounts` as an additional in-session change signal. These counts are shared server totals, while cached lists can be permission-filtered, so the client **never compares them directly with a cached list total**.
 
-Instead it remembers the last server count seen for each org/entity/context in this browser session. If a later catchup reports a different server count and a corresponding list is cached, the active list is invalidated. First sight has no comparison and a page reload clears this memory; seq watermarks remain the primary cross-session mechanism.
+Instead it remembers the last server count seen for each org/entity/channel in this browser session. If a later catchup reports a different server count and a corresponding list is cached, the active list is invalidated. First sight has no comparison and a page reload clears this memory; seq watermarks remain the primary cross-session mechanism.
 
 **How it works:**
 ```typescript
@@ -492,9 +503,9 @@ Deploys change entity schemas; clients don't update in lockstep. A PWA tab can r
 
 There are two runtime seams; the rest is derived schema/configuration:
 
-**1. Server seam: entity evolution contracts.** During a lens's *expand window*, generated schemas accept both old and new field names. Product creates/updates pass through `normalizeCreateItem`/`resolveUpdateOps`; context creates/updates pass through `normalizeBody`. Product normalization canonicalizes `ops` keys **and their `stx.fieldTimestamps` keys** (a renamed scalar must keep its HLC history, or an older offline edit could wrongly win). The normalizers mirror-write the expand-window twin so persisted rows can carry both columns, and product HLC/array-delta resolution sees the normalized keys.
+**1. Server seam: entity evolution contracts.** During a lens's *expand window*, generated schemas accept both old and new field names. Product creates/updates pass through `normalizeCreateItem`/`resolveUpdateOps`; channel creates/updates pass through `normalizeBody`. Product normalization canonicalizes `ops` keys **and their `stx.fieldTimestamps` keys** (a renamed scalar must keep its HLC history, or an older offline edit could wrongly win). The normalizers mirror-write the expand-window twin so persisted rows can carry both columns, and product HLC/array-delta resolution sees the normalized keys.
 
-**2. Client seam: boot cache migration in the persister.** The persisted meta record carries a `schemaVersion` ordinal (the lens count baked into the bundle). When it's behind, cached product rows, bundled context queries, and queued mutation variables are rewritten in place: chunked Dexie transactions, pointer advanced atomically in the final write, Web Lock so only one tab runs the pass. Migrations are idempotent, so an interrupted pass safely re-runs. No network involved: a fleet of clients migrating costs the server nothing.
+**2. Client seam: boot cache migration in the persister.** The persisted meta record carries a `schemaVersion` ordinal (the lens count baked into the bundle). When it's behind, cached product rows, bundled channel queries, and queued mutation variables are rewritten in place: chunked Dexie transactions, pointer advanced atomically in the final write, Web Lock so only one tab runs the pass. Migrations are idempotent, so an interrupted pass safely re-runs. No network involved: a fleet of clients migrating costs the server nothing.
 
 **Multi-tab safety**: tabs announce their schema version on the BroadcastChannel; a tab that sees a higher version (or a newer pointer on disk) marks itself **stale** via `schema-version-guard` and stops persisting: a stale bundle must never write old-shape data over a migrated store. A pointer *ahead* of the bundle on restore means the same thing: restore nothing, never write, let the PWA reload prompt replace the bundle.
 
@@ -530,7 +541,7 @@ With an empty lens list (the current state) every seam is a passthrough no-op. T
 - Automatic failover: when leader closes, a waiting follower is promoted
 - Tabs announce their **schema version** on the channel; a tab running an older bundle marks itself stale and stops persisting (see "Schema evolution" above)
 
-All tabs for a user open `${appConfig.slug}:${userId}`. With `offlineAccess=true` they share the `rq` persistence scope; session mode uses a separate `s-<tab>` scope. Persistence uses a hybrid layout: product queries are individual `queries` records, while context queries and the dehydrated mutation array share one `meta` record per scope. Every tab may persist query changes.
+All tabs for a user open `${appConfig.slug}:${userId}`. With `offlineAccess=true` they share the `rq` persistence scope; session mode uses a separate `s-<tab>` scope. Persistence uses a hybrid layout: product queries are individual `queries` records, while channel queries and the dehydrated mutation array share one `meta` record per scope. Every tab may persist query changes.
 
 Leader-only mutation dehydration reduces duplicate persisted queues but does not make the shared offline persister a general single-writer system. In the shared `rq` scope, a follower query write can still replace the meta record with its own (usually empty) dehydrated mutation array, and a follower's paused mutation is lost on refresh. This cross-tab mutation/meta overwrite remains a current implementation limitation; schema-version guards protect shape compatibility, not mutation ownership.
 

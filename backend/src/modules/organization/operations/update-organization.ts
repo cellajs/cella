@@ -1,8 +1,8 @@
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { getEntityCounts } from '#/modules/entities/entities-queries';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { getEntityCounts } from '#/modules/entities/helpers/get-entity-counts';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { updateOrganization } from '#/modules/organization/organization-queries';
 import { organizationContract } from '#/modules/organization/organization-schema';

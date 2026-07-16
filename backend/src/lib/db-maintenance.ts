@@ -1,9 +1,9 @@
 import { sql } from 'drizzle-orm';
-import { baseDb as db } from '#/db/db';
+import { type PgDB, unsafeInternalAdminDb } from '#/db/db';
 import { baseLog } from '#/lib/pino';
 
 /** Check if the pg_partman extension is installed. */
-async function isPgPartmanAvailable(): Promise<boolean> {
+async function isPgPartmanAvailable(db: PgDB): Promise<boolean> {
   try {
     const result = await db.execute<{ exists: boolean }>(
       sql`SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_partman') as exists`,
@@ -18,10 +18,19 @@ async function isPgPartmanAvailable(): Promise<boolean> {
  * Run a single pg_partman maintenance pass (creates upcoming partitions, drops expired ones).
  * Skips with a warning when the pg_partman extension is not installed.
  *
+ * Runs on the admin connection: run_maintenance() creates and drops partition tables,
+ * which requires ownership of the parent tables — beyond runtime_role's grants.
+ *
  * @param log - Optional log sink (defaults to console.info). Throws on failure; callers decide how to handle it.
  */
 export async function runDbMaintenance(log: (msg: string) => void = console.info): Promise<void> {
-  if (!(await isPgPartmanAvailable())) {
+  const db = unsafeInternalAdminDb;
+  if (!db) {
+    log('no admin db connection - skipping maintenance');
+    return;
+  }
+
+  if (!(await isPgPartmanAvailable(db))) {
     log('pg_partman not installed - skipping maintenance (partitioned tables will not be reaped)');
     return;
   }

@@ -1,7 +1,6 @@
 import { useUIStore } from '~/modules/ui/ui-store';
 
 export interface LogoProps extends React.SVGProps<SVGSVGElement> {
-  className?: string;
   iconColor?: string;
   textColor?: string;
   height?: number;

@@ -15,13 +15,13 @@ import {
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { requestsSearchDefaults } from '~/modules/requests/search-params-schemas';
 import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
  */
 export const requestsKeys = {
-  all: ['requests'] as const,
   table: {
     base: () => ['requests', 'table'] as const,
     entries: (filters: Omit<GetRequestsData['query'], 'limit' | 'offset'>) =>
@@ -34,9 +34,9 @@ export const requestsKeys = {
 
 /** Infinite query options for a paginated list of requests. */
 export const requestsListQueryOptions = ({
-  q = '',
-  sort = 'createdAt',
-  order = 'desc',
+  q = requestsSearchDefaults.q,
+  sort = requestsSearchDefaults.sort,
+  order = requestsSearchDefaults.order,
   limit: baseLimit = appConfig.requestLimits.requests,
 }: Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const limit = String(baseLimit);
@@ -46,7 +46,7 @@ export const requestsListQueryOptions = ({
   return infiniteQueryOptions({
     queryKey,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset || (page || 0) * Number(limit));
+      const offset = String(_offset ?? (page ?? 0) * Number(limit));
       return await getRequests({ query: { q, sort, order, limit, offset }, signal });
     },
     ...baseInfiniteQueryOptions,
@@ -81,7 +81,7 @@ export const useSendApprovalInviteMutation = () => {
 };
 
 /**
- * Mutation hook to delete a requests.
+ * Mutation hook to delete requests.
  *
  * @returns Mutation hook for deleting requests.
  */
@@ -104,7 +104,13 @@ export const fetchRequestsForExport = async (params: {
   sort?: NonNullable<GetRequestsData['query']>['sort'];
   order?: NonNullable<GetRequestsData['query']>['order'];
 }) => {
-  const { limit, offset = 0, q = '', sort = 'createdAt', order = 'desc' } = params;
+  const {
+    limit,
+    offset = 0,
+    q = requestsSearchDefaults.q,
+    sort = requestsSearchDefaults.sort,
+    order = requestsSearchDefaults.order,
+  } = params;
   const response = await getRequests({
     query: { q, sort, order, limit: String(limit), offset: String(offset) },
   });

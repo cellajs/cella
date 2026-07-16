@@ -1,9 +1,11 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { FocusViewContainer } from '~/modules/common/focus-view';
+import { DocsPageHeader } from '~/modules/docs/docs-page-header';
 import { OperationsTableBar } from '~/modules/docs/operations/operations-table/operations-bar';
 import { useColumns } from '~/modules/docs/operations/operations-table/operations-columns';
 import { useFilteredOperations } from '~/modules/docs/operations/operations-table/use-filtered-operations';
@@ -13,6 +15,7 @@ import type { GenOperationSummary } from '~/modules/docs/types';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 function OperationsTable() {
+  const { t } = useTranslation();
   const focusView = useUIStore((state) => state.focusView);
   const { search, setSearch } = useSearchParams<{
     q?: string;
@@ -65,33 +68,40 @@ function OperationsTable() {
   const sortedOperations = useSortedOperations(filteredOperations, sortColumns);
 
   return (
-    <FocusViewContainer>
-      <OperationsTableBar
-        total={filteredOperations.length}
-        searchVars={{ q, tag }}
-        setSearch={setSearch}
-        columns={columns}
-        setColumns={setColumns}
-        tagFilters={tagFilters}
-      />
-      <DataTable<GenOperationSummary>
-        columns={columns}
-        rows={sortedOperations}
-        cellSelectionMode="none"
-        hasNextPage={false}
-        rowKeyGetter={(row) => row.hash}
-        isLoading={false}
-        isFetching={false}
-        limit={sortedOperations.length}
-        isFiltered={!!q}
-        rowHeight={42}
-        enableVirtualization
-        enableStickyHeader
-        resetWidthsKey={focusView ? 'focus' : 'normal'}
-        sortColumns={sortColumns}
-        onSortColumnsChange={setSortColumns}
-      />
-    </FocusViewContainer>
+    <>
+      {/* Outside the focus-view container so focus view hides it along with the rest of the chrome */}
+      <div className="container">
+        <DocsPageHeader title={t('c:operation', { count: 2 })} />
+      </div>
+
+      <FocusViewContainer>
+        <OperationsTableBar
+          total={filteredOperations.length}
+          searchVars={{ q, tag }}
+          setSearch={setSearch}
+          columns={columns}
+          setColumns={setColumns}
+          tagFilters={tagFilters}
+        />
+        <DataTable<GenOperationSummary>
+          columns={columns}
+          rows={sortedOperations}
+          cellSelectionMode="none"
+          hasNextPage={false}
+          rowKeyGetter={(row) => row.hash}
+          isLoading={false}
+          isFetching={false}
+          limit={sortedOperations.length}
+          isFiltered={!!q}
+          rowHeight={42}
+          enableVirtualization
+          enableStickyHeader
+          resetWidthsKey={focusView ? 'focus' : 'normal'}
+          sortColumns={sortColumns}
+          onSortColumnsChange={setSortColumns}
+        />
+      </FocusViewContainer>
+    </>
   );
 }
 

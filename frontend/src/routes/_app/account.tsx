@@ -5,7 +5,7 @@ import { useToastStore } from '~/modules/common/toaster/toast-store';
 import type { ToastSeverity } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
-import { withSuspenseSpinner } from '~/routes/route-utils';
+import { withSuspenseSpinner } from '~/routes/_route-utils';
 import { appTitle } from '~/utils/app-title';
 import { lazyNamed } from '~/utils/lazy-named';
 

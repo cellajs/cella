@@ -1,6 +1,6 @@
 import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { router } from '~/routes/router';
+import { getRouter } from '~/routes/_router-instance';
 
 interface OpenAttachmentDialogParams {
   attachmentIndex: number;
@@ -34,7 +34,9 @@ export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef 
  * It creates and removes an attachment dialog by listening to `attachmentDialogId` in search parameters.
  */
 export const clearAttachmentDialogSearchParams = () => {
-  router.navigate({
+  // Keep this on the router instance rather than `useNavigate()`: `to: '.'` resolves against the
+  // current location here, where a hook would resolve it against the calling component's match.
+  getRouter().navigate({
     to: '.',
     replace: true,
     resetScroll: false,

@@ -1,4 +1,4 @@
-import process from 'node:process';
+import { BASE_URL, SSE_HOLD_MS, SSE_SYNC_MODE } from '../config';
 import { ORG_ID, TENANT_ID } from '../seeds/ids';
 
 export { buildAttachmentEditPayload } from './attachment-edit';
@@ -19,8 +19,6 @@ export { authenticate } from './auth';
  * fetches), sync.reaction_delay_ms (spread), sync.fetch_ms, sse.errors.
  */
 
-const HOLD_MS = Number(process.env.HOLD_MS ?? 25_000);
-const MODE = process.env.SYNC_MODE === 'immediate' ? 'immediate' : 'lazy';
 const DEFAULT_WINDOW_MS = 15_000;
 /** Bench tier: no floor (we measure the spread itself), ceiling like the background tier. */
 const TIER_MAX_MS = 30_000;
@@ -54,7 +52,6 @@ export async function subscribeAndReact(
   context: { vars: Record<string, unknown> },
   events: ArtilleryEvents,
 ): Promise<void> {
-  const base = process.env.BASE_URL ?? 'http://localhost:4000';
   const cookie = context.vars.cookie as string;
   const clientId = `vu-${context.vars.userIndex}`;
 
@@ -65,7 +62,7 @@ export async function subscribeAndReact(
   const deltaFetch = async (from: number, until: number) => {
     const started = Date.now();
     try {
-      const res = await fetch(`${base}/${TENANT_ID}/${ORG_ID}/attachments?seqCursor=${from},${until}&limit=1000`, {
+      const res = await fetch(`${BASE_URL}/${TENANT_ID}/${ORG_ID}/attachments?seqCursor=${from},${until}&limit=1000`, {
         headers: { cookie },
       });
       await res.json();
@@ -83,7 +80,7 @@ export async function subscribeAndReact(
     const until = n.batchUntilSeq ?? n.seq;
     const scope = `${n.entityType}:${n.channelId ?? n.organizationId}`;
 
-    if (MODE === 'immediate') {
+    if (SSE_SYNC_MODE === 'immediate') {
       events.emit('histogram', 'sync.reaction_delay_ms', 0);
       void deltaFetch(n.seq, until);
       return;
@@ -114,11 +111,11 @@ export async function subscribeAndReact(
 
   // ── SSE read loop ─────────────────────────────────────────────────────────
   const controller = new AbortController();
-  const holdTimer = setTimeout(() => controller.abort(), HOLD_MS);
+  const holdTimer = setTimeout(() => controller.abort(), SSE_HOLD_MS);
 
   try {
     const started = Date.now();
-    const res = await fetch(`${base}/entities/app/stream`, {
+    const res = await fetch(`${BASE_URL}/entities/app/stream`, {
       headers: { cookie, accept: 'text/event-stream' },
       signal: controller.signal,
     });

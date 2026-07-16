@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import { useFetchMoreOnDemand } from '~/modules/common/data-table/use-fetch-more-on-demand';
 
 type InfiniteLoaderProps = {
   hasNextPage: boolean;
@@ -8,7 +9,7 @@ type InfiniteLoaderProps = {
   isFetchMoreError?: boolean;
   /**
    * Fetch-more callback. When provided, an intersection observer triggers it as the
-   * loader enters the viewport. Omit with DataGrid — it triggers via onRowsEndApproaching.
+   * loader enters the viewport. Omit with DataGrid — it triggers via onNearEndChange.
    */
   fetchMore?: () => Promise<unknown>;
 };
@@ -21,14 +22,20 @@ export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, fetc
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
-  // Intersection observer for non-DataGrid usage (e.g., entity grids)
-  const { ref: measureRef } = useInView({
+  // Intersection observer for non-DataGrid usage (e.g., entity grids).
+  // inView is consumed as level-triggered state, not an enter-event: a sentinel
+  // that comes into view during a fetch is served when the fetch settles.
+  const { ref: measureRef, inView } = useInView({
     triggerOnce: false,
     delay: 50,
     threshold: 0,
-    onChange: (inView) => {
-      if (inView && !isFetchMoreError && !isFetching && fetchMore) fetchMore();
-    },
+  });
+  useFetchMoreOnDemand({
+    demand: inView,
+    hasNextPage,
+    isFetching: !!isFetching,
+    error: !!isFetchMoreError,
+    fetchMore,
   });
 
   // Error state

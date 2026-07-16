@@ -12,24 +12,17 @@ const tenantA = 'yjs-authz-tenant-a';
 const tenantB = 'yjs-authz-tenant-b';
 
 const orgA = '20000000-0000-4000-a000-000000000001';
-const orgB = '20000000-0000-4000-a000-000000000002';
 const orgC = '20000000-0000-4000-a000-000000000003';
 
 const userA = randomUUID();
 const userB = randomUUID();
 
 const attachmentA = randomUUID(); // tenantA / orgA, owned by userA
-const attachmentB = randomUUID(); // tenantA / orgB, no membership for userA
 const attachmentC = randomUUID(); // tenantB / orgC
 
 const hierarchyA = buildTestEntityHierarchyPlan({
   entityType: 'attachment',
   rootChannelId: orgA,
-  makeChannelId: () => randomUUID(),
-});
-const hierarchyB = buildTestEntityHierarchyPlan({
-  entityType: 'attachment',
-  rootChannelId: orgB,
   makeChannelId: () => randomUUID(),
 });
 const hierarchyC = buildTestEntityHierarchyPlan({
@@ -156,7 +149,8 @@ async function seedAttachment(
 }
 
 // Exercises the real `loadMemberships` / `resolveEntityScope` SQL and the shared permission engine
-// against Postgres, covering cross-tenant and cross-organization isolation.
+// against Postgres, covering cross-tenant isolation. Cross-organization isolation within one tenant
+// is not representable: 1 tenant = 1 organization (organizations_tenant_id_key).
 describe('Local entity authorization (canEditEntity)', () => {
   let admin: pg.Client;
 
@@ -171,26 +165,23 @@ describe('Local entity authorization (canEditEntity)', () => {
     await seedTenant(admin, tenantB);
 
     await seedOrg(admin, tenantA, orgA, 'authz-a');
-    await seedOrg(admin, tenantA, orgB, 'authz-b');
     await seedOrg(admin, tenantB, orgC, 'authz-c');
 
     await seedEntityHierarchy(admin, hierarchyA, tenantA, userA, 'authz-a');
-    await seedEntityHierarchy(admin, hierarchyB, tenantA, userA, 'authz-b');
     await seedEntityHierarchy(admin, hierarchyC, tenantB, userB, 'authz-c');
 
     await seedMembership(admin, tenantA, orgA, userA);
     await seedMembership(admin, tenantB, orgC, userB);
 
     await seedAttachment(admin, attachmentA, tenantA, hierarchyA, userA);
-    await seedAttachment(admin, attachmentB, tenantA, hierarchyB, userA);
     await seedAttachment(admin, attachmentC, tenantB, hierarchyC, userB);
   });
 
   afterAll(async () => {
-    await admin.query(`DELETE FROM attachments WHERE id = ANY($1::uuid[])`, [[attachmentA, attachmentB, attachmentC]]);
+    await admin.query(`DELETE FROM attachments WHERE id = ANY($1::uuid[])`, [[attachmentA, attachmentC]]);
     await admin.query(`DELETE FROM memberships WHERE user_id = ANY($1::uuid[])`, [[userA, userB]]);
-    await cleanupEntityHierarchy(admin, [hierarchyA, hierarchyB, hierarchyC]);
-    await admin.query(`DELETE FROM organizations WHERE id = ANY($1::uuid[])`, [[orgA, orgB, orgC]]);
+    await cleanupEntityHierarchy(admin, [hierarchyA, hierarchyC]);
+    await admin.query(`DELETE FROM organizations WHERE id = ANY($1::uuid[])`, [[orgA, orgC]]);
     await admin.query(`DELETE FROM tenants WHERE id = ANY($1::text[])`, [[tenantA, tenantB]]);
     await admin.query(`DELETE FROM users WHERE id = ANY($1::uuid[])`, [[userA, userB]]);
     await admin.end();
@@ -198,10 +189,6 @@ describe('Local entity authorization (canEditEntity)', () => {
 
   it('allows an org admin to edit an entity in their organization', async () => {
     await expect(canEditEntity(ctx({ entityId: attachmentA }))).resolves.toBe(true);
-  });
-
-  it('denies editing an entity in a different organization within the same tenant', async () => {
-    await expect(canEditEntity(ctx({ entityId: attachmentB, organizationId: orgB }))).resolves.toBe(false);
   });
 
   it('denies editing an entity in a tenant where the user has no membership', async () => {

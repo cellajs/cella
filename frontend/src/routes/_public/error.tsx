@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { errorSearchSchema } from '~/modules/common/search-params-schemas';
-import { ErrorNoticePageComponent } from '~/routes/route-utils';
+import { ErrorNoticePageComponent } from '~/routes/_route-utils';
 import { appTitle } from '~/utils/app-title';
 
 /**

@@ -4,7 +4,7 @@ import { buildStx } from '#/core/stx';
 import { tenantContext, tenantRead } from '#/db/tenant-context';
 import { findAttachmentsByStxMutationId, insertAttachments } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
-import { getOrgEntityCount } from '#/modules/entities/helpers/get-entity-counts';
+import { getOrgEntityCount } from '#/modules/entities/entities-queries';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { canCreateEntity } from '#/permissions/can-create';
 import { checkIdempotency } from '#/utils/idempotency';

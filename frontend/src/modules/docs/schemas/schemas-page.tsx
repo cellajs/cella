@@ -6,7 +6,7 @@ import { usePrerenderSection, usePrerenderTrigger } from '~/hooks/use-prerender'
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { HashUrlButton } from '~/modules/common/hash-url-button';
-import { StickyBox } from '~/modules/common/sticky-box';
+import { DocsPageHeader } from '~/modules/docs/docs-page-header';
 import { schemasByTagQueryOptions, schemasQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
 import { TagSchemasList } from '~/modules/docs/schemas/schema-detail';
 import { TagSchemasTable } from '~/modules/docs/schemas/tag-schemas-table';
@@ -58,13 +58,13 @@ function SchemasPage() {
 
   return (
     <div className="container">
-      <StickyBox className="z-10 bg-background/60 backdrop-blur-xs" hideWhenOutOfView>
-        <div className="flex items-center gap-3 py-5">
-          <span className="text-muted-foreground text-sm">
-            {schemaCount} {t('c:schema', { count: schemaCount })}
-          </span>
-        </div>
-      </StickyBox>
+      <DocsPageHeader title={t('c:schema', { count: 2 })} />
+
+      <div className="flex items-center gap-3 py-5">
+        <span className="text-muted-foreground text-sm">
+          {schemaCount} {t('c:schema', { count: schemaCount })}
+        </span>
+      </div>
 
       <div className="flex flex-col gap-12 lg:gap-20">
         {schemaTags.map((tag) => (

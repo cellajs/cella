@@ -100,11 +100,6 @@ export const config = {
   /** AI service base URL */
   mcpUrl: 'https://__project_slug__.example.com/mcp',
   /**
-   * Decommissioned service hosts kept as LB 301 redirects into the path-based
-   * URLs (same-origin migration). A fresh fork starts same-origin and needs none.
-   */
-  legacyUrls: {} as Partial<Record<string, string>>,
-  /**
    * Per-service toggles and public URLs. `enabled` controls whether the service
    * is wired up; `publicUrl` is the externally reachable endpoint.
    */

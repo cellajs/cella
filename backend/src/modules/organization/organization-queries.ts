@@ -2,7 +2,7 @@ import { and, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm'
 import type { EntityRole } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
-import { getEntityCountsSelect } from '#/modules/entities/helpers/get-entity-counts';
+import { getEntityCountsSelect } from '#/modules/entities/entities-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { auditUserSelect, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';

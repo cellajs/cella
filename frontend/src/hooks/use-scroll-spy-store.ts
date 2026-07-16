@@ -49,6 +49,70 @@ const canWriteHash = () => Date.now() > hashWriteBlockedUntil && initTime && Dat
 /** Check if a programmatic scroll is currently in progress */
 export const isProgrammaticScroll = () => Date.now() < hashWriteBlockedUntil;
 
+/** Within this many px of the top, no section counts as anchored. */
+const TOP_THRESHOLD = 64;
+
+let topWatchTarget: HTMLElement | Window | null = null;
+let topWatchFrame = 0;
+
+const scrollTopOf = (target: HTMLElement | Window) =>
+  target === window ? window.scrollY : (target as HTMLElement).scrollTop;
+
+/** Parked at (or within a hair of) the top of whichever scroller the sections live in. */
+const isAtTop = () => scrollTopOf(topWatchTarget ?? window) <= TOP_THRESHOLD;
+
+/** Drop the hash, keeping path and search intact. */
+const clearHash = () => {
+  if (!location.hash) return;
+  history.replaceState(null, '', location.pathname + location.search);
+};
+
+/**
+ * Reflect the active section in the URL. Near the top the hash is dropped instead: no anchor applies
+ * up there, and a leftover one would make a reload jump to the last section scrolled past rather
+ * than back to the top. `currentSection` is deliberately left alone, so the TOC still highlights.
+ */
+const syncHash = (id: string) => {
+  if (!canWriteHash()) return;
+  if (isAtTop()) clearHash();
+  else if (location.hash !== `#${id}`) history.replaceState(null, '', `#${id}`);
+};
+
+/**
+ * The observer only fires on intersection-ratio changes, so the final stretch back to the top often
+ * fires nothing at all and the last hash sticks. Watch scroll directly to catch it. Clears only —
+ * writes stay with the observer, so this can't introduce a hash the spy wouldn't have set itself.
+ */
+const onScrollNearTop = () => {
+  if (topWatchFrame) return;
+  topWatchFrame = requestAnimationFrame(() => {
+    topWatchFrame = 0;
+    if (isProgrammaticScroll() || !canWriteHash() || !isAtTop()) return;
+    clearHash();
+  });
+};
+
+/** Point the top watcher at the sections' scroller (window when that is the document scroller). */
+const watchScroller = () => {
+  const anchor = [...sections.keys()]
+    .map((id) => document.getElementById(`${SPY_PREFIX}${id}`))
+    .find((el): el is HTMLElement => el !== null);
+  const scroller = anchor ? findScrollParent(anchor) : null;
+  const next: HTMLElement | Window = !scroller || isRootScroller(scroller) ? window : scroller;
+  if (next === topWatchTarget) return;
+
+  topWatchTarget?.removeEventListener('scroll', onScrollNearTop);
+  topWatchTarget = next;
+  topWatchTarget.addEventListener('scroll', onScrollNearTop, { passive: true });
+};
+
+const unwatchScroller = () => {
+  topWatchTarget?.removeEventListener('scroll', onScrollNearTop);
+  topWatchTarget = null;
+  cancelAnimationFrame(topWatchFrame);
+  topWatchFrame = 0;
+};
+
 let blockReEvalTimer = 0;
 
 /** Block hash writes for a duration, then re-evaluate best section */
@@ -95,6 +159,7 @@ const rebuild = () => {
   observer?.disconnect();
   if (!sections.size) {
     observer = null;
+    unwatchScroller();
     return;
   }
 
@@ -112,10 +177,8 @@ const rebuild = () => {
         currentSection = best;
         syncActiveDOM();
 
-        // Write hash (skip during initial load delay)
-        if (canWriteHash() && location.hash !== `#${best}`) {
-          history.replaceState(null, '', `#${best}`);
-        }
+        // Write hash (skip during initial load delay, drop it entirely near the top)
+        syncHash(best);
 
         // Notify React subscribers after scroll settles (no re-render during active scroll)
         clearTimeout(scrollSettleTimer);
@@ -129,6 +192,8 @@ const rebuild = () => {
     const el = document.getElementById(`${SPY_PREFIX}${id}`);
     if (el) observer.observe(el);
   }
+
+  watchScroller();
 };
 
 /** Register section IDs for observation */
@@ -188,6 +253,7 @@ export const unregisterSections = (ids: string[]) => {
   if (!sections.size) {
     observer?.disconnect();
     observer = null;
+    unwatchScroller();
     savedSection = currentSection; // Preserve for potential re-registration
     if (currentSection !== '') {
       currentSection = '';
@@ -199,6 +265,10 @@ export const unregisterSections = (ids: string[]) => {
     rebuild();
   }
 };
+
+/** The scroller is the document's own, so scroll events land on window rather than the element. */
+const isRootScroller = (el: HTMLElement) =>
+  el === document.scrollingElement || el === document.documentElement || el === document.body;
 
 /** Find the nearest scrollable ancestor (overflow-y auto/scroll with actual overflow), else the document scroller. */
 const findScrollParent = (el: HTMLElement): HTMLElement => {
@@ -215,9 +285,7 @@ const findScrollParent = (el: HTMLElement): HTMLElement => {
 const performScroll = (el: HTMLElement, id: string) => {
   // Drive the overflow container directly; for the root scroller use 0 as reference (not rect.top).
   const scroller = findScrollParent(el);
-  const isRootScroller =
-    scroller === document.scrollingElement || scroller === document.documentElement || scroller === document.body;
-  const scrollerTop = isRootScroller ? 0 : scroller.getBoundingClientRect().top;
+  const scrollerTop = isRootScroller(scroller) ? 0 : scroller.getBoundingClientRect().top;
   const delta = el.getBoundingClientRect().top - scrollerTop;
   const targetTop = scroller.scrollTop + delta - 16;
   const smooth = Math.abs(delta) < window.innerHeight * 2;

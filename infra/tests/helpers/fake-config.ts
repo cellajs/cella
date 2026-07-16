@@ -11,7 +11,6 @@ export function fakeConfig(overrides: Partial<Record<string, unknown>> = {}) {
     backendUrl: 'https://www.cellajs.com/api',
     yjsUrl: 'wss://www.cellajs.com/yjs',
     mcpUrl: 'https://www.cellajs.com/mcp',
-    legacyUrls: { backend: 'https://api.cellajs.com' },
     services: {
       frontend: { enabled: true, publicUrl: 'https://www.cellajs.com' },
       backend: { enabled: true, publicUrl: 'https://www.cellajs.com/api' },

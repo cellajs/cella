@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { CreateDomainResponse, Tenant, VerifyDomainResponse } from 'sdk';
+import type { CreateDomainResponse, DeleteDomainResponse, Tenant, VerifyDomainResponse } from 'sdk';
 import {
   type CreateDomainData,
   type CreateTenantData,
@@ -18,6 +18,7 @@ import {
 } from 'sdk';
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
+import { tenantsSearchDefaults } from '~/modules/tenants/search-params-schemas';
 import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 import type { MutationData } from '~/query/types';
 
@@ -28,28 +29,22 @@ type TenantFilters = Omit<GetTenantsData['query'], 'limit' | 'offset'>;
  * Tenants are resources (not entities), so we define keys manually.
  */
 const tenantQueryKeys = {
-  all: ['tenant'] as const,
   list: {
     base: ['tenant', 'list'] as const,
     filtered: (filters: TenantFilters) => ['tenant', 'list', filters] as const,
   },
-  detail: {
-    base: ['tenant', 'detail'] as const,
-    byId: (id: string) => ['tenant', 'detail', id] as const,
-  },
   create: ['tenant', 'create'] as const,
   update: ['tenant', 'update'] as const,
-  delete: ['tenant', 'delete'] as const,
 };
 
 /**
  * Infinite query options for fetching a paginated list of tenants.
  */
 export const tenantsListQueryOptions = ({
-  q = '',
+  q = tenantsSearchDefaults.q,
   status,
-  sort = 'createdAt',
-  order = 'desc',
+  sort = tenantsSearchDefaults.sort,
+  order = tenantsSearchDefaults.order,
   limit: baseLimit = appConfig.requestLimits.users, // Use users limit as fallback
 }: Omit<NonNullable<GetTenantsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const limit = String(baseLimit);
@@ -59,7 +54,7 @@ export const tenantsListQueryOptions = ({
   return infiniteQueryOptions({
     queryKey,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset || (page || 0) * Number(limit));
+      const offset = String(_offset ?? (page ?? 0) * Number(limit));
       return await getTenants({ query: { q, status, sort, order, limit, offset }, signal });
     },
     ...baseInfiniteQueryOptions,
@@ -145,7 +140,7 @@ export const useDomainCreateMutation = () => {
 export const useDomainDeleteMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<CreateDomainResponse, ApiError, MutationData<DeleteDomainData>>({
+  return useMutation<DeleteDomainResponse, ApiError, MutationData<DeleteDomainData>>({
     mutationFn: ({ path }) => deleteDomain({ path }),
     onSuccess: (_, { path }) => {
       queryClient.invalidateQueries({ queryKey: domainQueryKeys.list(path.tenantId) });

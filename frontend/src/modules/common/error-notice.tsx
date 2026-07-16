@@ -1,4 +1,4 @@
-import { useRouterState } from '@tanstack/react-router';
+import { useRouter, useRouterState } from '@tanstack/react-router';
 import { ChevronUpIcon, HouseIcon, MessageCircleQuestionMarkIcon, RefreshCwIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
@@ -8,7 +8,6 @@ import { Dialoger } from '~/modules/common/dialoger/provider';
 import { type ErrorNoticeError, getErrorInfo, handleAskForHelp } from '~/modules/common/error-helpers';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
-import { router } from '~/routes/router';
 import type { BoundaryType } from '~/routes/types';
 
 export type { ErrorNoticeError } from '~/modules/common/error-helpers';
@@ -26,6 +25,7 @@ interface ErrorNoticeProps {
  */
 export function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {
   const { t } = useTranslation();
+  const router = useRouter();
   const { location } = useRouterState();
   const contactButtonRef = useRef<HTMLButtonElement>(null);
 

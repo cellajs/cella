@@ -7,6 +7,7 @@ import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { HashUrlButton } from '~/modules/common/hash-url-button';
 import { StickyBox } from '~/modules/common/sticky-box';
+import { DocsPageHeader } from '~/modules/docs/docs-page-header';
 import { TagOperationsList } from '~/modules/docs/operations/operation-detail';
 import { ViewModeToggle } from '~/modules/docs/operations/view-mode-toggle';
 import { operationsByTagQueryOptions, tagDetailsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
@@ -54,6 +55,10 @@ function OperationsPage() {
 
   return (
     <div>
+      <div className="container">
+        <DocsPageHeader title={t('c:operation', { count: 2 })} />
+      </div>
+
       <StickyBox className="z-10 bg-background/60 backdrop-blur-xs" placeholderClassName="my-2" hideWhenOutOfView>
         <div className="container flex items-center gap-3 py-3">
           <ViewModeToggle />

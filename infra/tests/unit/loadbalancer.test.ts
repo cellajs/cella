@@ -22,19 +22,6 @@ describe('loadbalancer module — registry-driven wiring', () => {
     expect(src).toMatch(/data:\s*lbPublicIp/)
   })
 
-  it('keeps legacy hosts (appConfig.legacyUrls) alive with DNS + cert + 301 redirect', () => {
-    // Config-driven: hosts come from appConfig.legacyUrls, the redirect prefix
-    // from the service's lbPathBegin — never hardcoded per service.
-    expect(src).toMatch(/Object\.entries\(appConfig\.legacyUrls\)/)
-    expect(src).toMatch(/redirectPrefix: service\.lbPathBegin/)
-    expect(src).toMatch(/new scaleway\.loadbalancers\.Acl\(`\$\{base\}-legacy-redirect`/)
-    // {{path}} lacks the leading slash and never carries the prefix, so the
-    // target writes the prefix literally (same contract as the apex redirect).
-    expect(src).toMatch(/target: `https:\/\/\$\{appHost\}\$\{redirectPrefix\}\/\{\{path\}\}\?\{\{query\}\}`/)
-    // A host still serving as a live endpoint must never be redirected away.
-    expect(src).toMatch(/if \(hostEntries\.has\(host\)\) continue/)
-  })
-
   it('issues a Lets Encrypt certificate per DNS record, gated on public propagation', () => {
     expect(src).toMatch(/new scaleway\.loadbalancers\.Certificate\(`\$\{base\}-cert`/)
     expect(src).toMatch(/commonName:\s*host/)

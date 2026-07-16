@@ -19,6 +19,7 @@ import {
   type UpdateAttachmentVars,
   updateAttachmentMutationFn,
 } from '~/modules/attachment/query-mutations';
+import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
 import { cacheCreate, cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
@@ -68,9 +69,9 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   const {
     tenantId,
     organizationId,
-    q = '',
-    sort = 'createdAt',
-    order = 'desc',
+    q = attachmentsSearchDefaults.q,
+    sort = attachmentsSearchDefaults.sort,
+    order = attachmentsSearchDefaults.order,
     limit: baseLimit = attachmentsLimit,
   } = params;
 

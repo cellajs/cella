@@ -63,6 +63,37 @@ ledger ingest for that type) — a row-conditional read makes row-count badges s
 `StreamNotification` gained a nullable `syncWindow` field (additive). Run `pnpm sdk`.
 Old clients ignore it; without it the scheduler uses a fixed 15s window.
 
+## 6. Default table views: canonical query + stripped URLs (optional, recommended)
+
+Live-created rows are spliced into **canonical scope** list caches (string-only key
+segments) but can only be *invalidated* into filtered ones (object key segment — the
+server-side filter can't be replicated client-side). Base cella therefore serves the
+attachments table's **default view** (no search, default sort) straight from the canonical
+org query — the one the SyncService already prefetches — and only uses the filtered
+infinite query when a filter deviates. Defaults also no longer appear in the URL.
+
+The pattern (see `attachments-table.tsx`, `search-params-schemas.ts`, the attachments
+route, and `isDefaultListView` in `create-query-keys.ts`):
+
+1. Export a `<entity>SearchDefaults` constant next to the search-params schema.
+2. Route: `search: { middlewares: [stripSearchParams(<defaults>)] }` — absence means default.
+3. Table: `isDefaultListView({ q, sort, order }, defaults)` picks between the canonical
+   query (`enabled: isDefaultView`, `select` sorted like the server default) and the
+   filtered infinite query (`enabled: !isDefaultView`).
+4. `useListQueryTotal` accepts flat `{ items, total }` data too — pass whichever key
+   is active to the table bar.
+
+Rename that rides along (fork-breaking if your fork added its own tables):
+`useInfiniteQueryTotal` → `useListQueryTotal` (`use-infinite-query-total.tsx` →
+`use-list-query-total.tsx`) — it no longer only reads infinite queries. `pnpm ts` fails
+on any import you miss; plain grep-rename.
+
+**Parity condition — do NOT adopt blindly:** only valid for entities whose default list
+response IS the unfiltered scope (delta rows row-identical to default-list rows, tombstones
+aside). A feed whose default response is server-filtered — e.g. **projectcampus excludes
+`draft` items** — must keep its filtered key for the default view, or drafts leak into the
+table via splices. Same reasoning as the ledger mirror in step 3.
+
 ## Gates
 
 ```sh

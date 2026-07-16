@@ -40,7 +40,7 @@ export function Counters() {
     <div ref={ref} className={`mx-auto grid grid-cols-2 gap-4 md:max-w-5xl lg:grid-cols-${countsLength}`}>
       {inView &&
         counts.map(({ id, title, icon: Icon }) => {
-          const countValue = data[id];
+          const countValue = data?.[id] ?? 0;
 
           return (
             <Card key={id} className="bg-background">

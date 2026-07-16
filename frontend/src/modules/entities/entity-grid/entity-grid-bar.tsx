@@ -13,7 +13,7 @@ import { FocusView } from '~/modules/common/focus-view';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { SelectSort } from '~/modules/common/form-fields/select-sort';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
+import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type EntityGridBarSearch = {
   q?: string;
@@ -55,7 +55,7 @@ export const EntityGridBar = ({
 }: Props) => {
   const { q, sort, role } = searchVars;
 
-  const total = useInfiniteQueryTotal(queryKey);
+  const total = useListQueryTotal(queryKey);
 
   const isFiltered = !!q;
 
