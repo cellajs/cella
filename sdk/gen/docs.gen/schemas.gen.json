@@ -414,6 +414,11 @@
           "required": true,
           "description": "Last seq for a batched notification — client should fetch range"
         },
+        "syncWindow": {
+          "type": ["integer", "null"],
+          "required": true,
+          "description": "Server-suggested spread window (ms) for the lazy delta fetch — scales with channel audience and load; the client clamps it between its eagerness tier bounds"
+        },
         "propagation": {
           "type": ["object", "null"],
           "required": true,
@@ -474,6 +479,7 @@
         "fieldTimestamps": {}
       },
       "batchUntilSeq": null,
+      "syncWindow": null,
       "propagation": null
     }
   },

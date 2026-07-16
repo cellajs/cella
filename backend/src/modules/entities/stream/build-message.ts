@@ -1,7 +1,27 @@
 import { appConfig, type ChannelEntityType, hierarchy, isProductEntity, resolveDeepestAncestorId } from 'shared';
+import { dbPoolPressure } from '#/db/db';
 import { type ActivityEvent, getEventData } from '#/lib/activity-bus';
 import type { StreamNotification } from '#/schemas';
+import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamEvent, AppStreamMembershipEvent } from './types';
+
+/** ~20ms of client spread per online org subscriber: 10 users → near-instant, 3000 → ~60s. */
+const SPREAD_MS_PER_SUBSCRIBER = 20;
+/** Never let a client lag more than this behind by server suggestion (client tiers cap lower). */
+const MAX_SYNC_WINDOW_MS = 120_000;
+
+/**
+ * The server's say in sync timing (RTCP-style): a spread window scaled by the org channel's
+ * online audience and DB pool pressure. Identical for every subscriber, so it rides in the
+ * shared (serialize-once) notification body; each client picks a deterministic slot in it.
+ */
+function computeSyncWindow(organizationId: string | null): number | null {
+  if (!organizationId) return null;
+  const audience = streamSubscriberManager.getByChannel(`org:${organizationId}`).length;
+  if (audience <= 1) return 0;
+  const pressure = Math.min(dbPoolPressure(), 2);
+  return Math.min(Math.round(audience * SPREAD_MS_PER_SUBSCRIBER * (1 + pressure)), MAX_SYNC_WINDOW_MS);
+}
 
 /**
  * The app stream carries exactly two concerns: product entity sync (seq range fetch
@@ -79,6 +99,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     seq: isProduct ? (event.seq ?? null) : null,
     stx,
     batchUntilSeq: event.batchUntilSeq ?? null,
+    syncWindow: isProduct ? computeSyncWindow(event.organizationId) : null,
     propagation,
   };
 }

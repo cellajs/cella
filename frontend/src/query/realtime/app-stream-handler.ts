@@ -54,6 +54,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
           fromSeq: seq,
           untilSeq: notification.batchUntilSeq,
           isCreate: action === 'create',
+          syncWindowMs: notification.syncWindow ?? undefined,
           propagation: notification.propagation ?? undefined,
         });
         return;
@@ -74,6 +75,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
         notification.channelId ?? null,
         keys,
         notification.propagation,
+        notification.syncWindow ?? null,
       );
     },
   );
@@ -121,6 +123,7 @@ function handleEntityNotification(
   channelId: string | null,
   keys: EntityQueryKeys,
   propagation?: AppStreamNotification['propagation'],
+  syncWindow?: number | null,
 ): void {
   // Echo prevention for create/update: skip data fetch for own mutations,
   // but still patch stx metadata so subsequent mutations read fresh versions.
@@ -151,6 +154,7 @@ function handleEntityNotification(
           fromSeq: seq,
           untilSeq: seq,
           isCreate: action === 'create',
+          syncWindowMs: syncWindow ?? undefined,
           propagation: propagation ?? undefined,
         });
 

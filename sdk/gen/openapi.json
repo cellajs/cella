@@ -710,6 +710,10 @@
             "type": ["integer", "null"],
             "description": "Last seq for a batched notification — client should fetch range"
           },
+          "syncWindow": {
+            "type": ["integer", "null"],
+            "description": "Server-suggested spread window (ms) for the lazy delta fetch — scales with channel audience and load; the client clamps it between its eagerness tier bounds"
+          },
           "propagation": {
             "type": ["object", "null"],
             "properties": {
@@ -757,6 +761,7 @@
           "channelId",
           "stx",
           "batchUntilSeq",
+          "syncWindow",
           "propagation"
         ],
         "description": "Realtime notification delivered via SSE for entity and membership changes.",
@@ -777,6 +782,7 @@
             "fieldTimestamps": {}
           },
           "batchUntilSeq": null,
+          "syncWindow": null,
           "propagation": null
         },
         "x-tags": ["data", "entities", "cella"]
