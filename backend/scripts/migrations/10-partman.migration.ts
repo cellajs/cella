@@ -21,31 +21,41 @@ interface PartitionConfig {
   indexesSql: string[];
 }
 
-// Partition configurations must match the Drizzle schemas.
-const partitionConfigs: PartitionConfig[] = [
+// Partition configurations must match the Drizzle schemas: columns and indexes are verified
+// against them by tests/partman-parity.test.ts, and the generated SQL re-checks column parity
+// at conversion time before copying data. Exported for that test.
+export const partitionConfigs: PartitionConfig[] = [
   {
     name: 'sessions',
     partitionColumn: 'expires_at',
     interval: '1 week',
     retention: '30 days',
     createTableSql: `CREATE TABLE sessions (
-    id varchar NOT NULL,
-    token varchar NOT NULL,
+    id uuid NOT NULL,
+    secret varchar(255) NOT NULL,
     type varchar NOT NULL DEFAULT 'regular',
-    user_id varchar NOT NULL,
-    device_name varchar,
+    user_id uuid NOT NULL,
+    device_name varchar(255),
     device_type varchar NOT NULL DEFAULT 'desktop',
-    device_os varchar,
-    browser varchar,
+    device_os varchar(255),
+    browser varchar(255),
     auth_strategy varchar NOT NULL,
+    ip_hash varchar(64),
+    ip_subnet_hash varchar(64),
+    ip_country varchar(2),
+    ip_asn integer,
+    device_id_hash varchar(64),
     created_at timestamp DEFAULT now() NOT NULL,
     expires_at timestamp with time zone NOT NULL,
     CONSTRAINT sessions_id_expires_at_pk PRIMARY KEY (id, expires_at),
     CONSTRAINT sessions_user_id_users_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   ) PARTITION BY RANGE (expires_at)`,
     indexesSql: [
-      'CREATE INDEX sessions_token_idx ON sessions (token)',
+      'CREATE INDEX sessions_secret_idx ON sessions (secret)',
       'CREATE INDEX sessions_user_id_idx ON sessions (user_id)',
+      'CREATE INDEX sessions_user_id_ip_hash_idx ON sessions (user_id, ip_hash)',
+      'CREATE INDEX sessions_ip_subnet_hash_idx ON sessions (ip_subnet_hash)',
+      'CREATE INDEX sessions_user_id_device_id_hash_idx ON sessions (user_id, device_id_hash)',
     ],
   },
   {
@@ -54,15 +64,15 @@ const partitionConfigs: PartitionConfig[] = [
     interval: '1 week',
     retention: '30 days',
     createTableSql: `CREATE TABLE tokens (
-    id varchar NOT NULL,
-    token varchar NOT NULL,
-    single_use_token varchar,
+    id uuid NOT NULL,
+    secret varchar(255) NOT NULL,
+    single_use_token varchar(255),
     type varchar NOT NULL,
-    email varchar NOT NULL,
-    user_id varchar,
-    oauth_account_id varchar,
-    inactive_membership_id varchar,
-    created_by varchar,
+    email varchar(255) NOT NULL,
+    user_id uuid,
+    oauth_account_id uuid,
+    inactive_membership_id uuid,
+    created_by uuid,
     created_at timestamp DEFAULT now() NOT NULL,
     expires_at timestamp with time zone NOT NULL,
     invoked_at timestamp with time zone,
@@ -72,8 +82,10 @@ const partitionConfigs: PartitionConfig[] = [
     CONSTRAINT tokens_created_by_users_id_fk FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
   ) PARTITION BY RANGE (expires_at)`,
     indexesSql: [
-      'CREATE INDEX tokens_token_type_idx ON tokens (token, type)',
+      'CREATE INDEX tokens_secret_type_idx ON tokens (secret, type)',
       'CREATE INDEX tokens_user_id_idx ON tokens (user_id)',
+      'CREATE INDEX tokens_created_by_idx ON tokens (created_by)',
+      'CREATE INDEX tokens_single_use_token_idx ON tokens (type, single_use_token)',
     ],
   },
   {
@@ -82,15 +94,15 @@ const partitionConfigs: PartitionConfig[] = [
     interval: '1 month',
     retention: '90 days',
     createTableSql: `CREATE TABLE unsubscribe_tokens (
-    id varchar NOT NULL,
-    user_id varchar NOT NULL,
-    token varchar NOT NULL,
+    id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    secret varchar(255) NOT NULL,
     created_at timestamp DEFAULT now() NOT NULL,
     CONSTRAINT unsubscribe_tokens_id_created_at_pk PRIMARY KEY (id, created_at),
     CONSTRAINT unsubscribe_tokens_user_id_users_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   ) PARTITION BY RANGE (created_at)`,
     indexesSql: [
-      'CREATE INDEX unsubscribe_tokens_token_idx ON unsubscribe_tokens (token)',
+      'CREATE INDEX unsubscribe_tokens_secret_idx ON unsubscribe_tokens (secret)',
       'CREATE INDEX unsubscribe_tokens_user_id_idx ON unsubscribe_tokens (user_id)',
     ],
   },
@@ -227,9 +239,18 @@ ${escapedIndexesSql.map((sql) => `  EXECUTE '${sql}';`).join('\n')}
     infinite_time_partitions = true
   WHERE parent_table = 'public.${config.name}';
   
-  -- 6. Migrate existing data
-  INSERT INTO ${config.name} SELECT * FROM ${config.name}_old;
-  
+  -- 6. Migrate existing data. Column-name matched with a parity guard: if the hardcoded
+  -- createTableSql drifts from the Drizzle-created table, abort the conversion loudly
+  -- (rolled back by the outer exception handler) instead of corrupting rows positionally.
+  SELECT string_agg(quote_ident(attname), ', ' ORDER BY attname) INTO cols_new
+    FROM pg_attribute WHERE attrelid = '${config.name}'::regclass AND attnum > 0 AND NOT attisdropped;
+  SELECT string_agg(quote_ident(attname), ', ' ORDER BY attname) INTO cols_old
+    FROM pg_attribute WHERE attrelid = '${config.name}_old'::regclass AND attnum > 0 AND NOT attisdropped;
+  IF cols_new IS DISTINCT FROM cols_old THEN
+    RAISE EXCEPTION '${config.name}: partman createTableSql columns (%) do not match the Drizzle schema (%)', cols_new, cols_old;
+  END IF;
+  EXECUTE format('INSERT INTO ${config.name} (%s) SELECT %s FROM ${config.name}_old', cols_new, cols_new);
+
   -- 7. Drop old table
   DROP TABLE ${config.name}_old;
   
@@ -281,6 +302,8 @@ DO $$
 DECLARE
   partman_available BOOLEAN := false;
   r RECORD;
+  cols_new text;
+  cols_old text;
 BEGIN
   -- Try to create pg_partman extension
   BEGIN
