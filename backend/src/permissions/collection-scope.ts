@@ -401,6 +401,12 @@ export const resolveCollectionReadFilterForPolicies = ({
   // sysadmin passes `orgGuard` with NO membership, so without this they would resolve to an
   // empty scope and get an empty list — while single-row reads of the same rows succeed.
   if (!('anonymous' in actor) && actor.isSystemAdmin) {
+    // An explicitly requested sub-context still narrows the read — sysadmin widens
+    // WHO can read, never WHAT a placement-filtered list returns.
+    if (requested?.subChannelId !== undefined)
+      return { subChannelIds: [requested.subChannelId], conditionalScopes: [] };
+    if (requested?.subChannelIds !== undefined)
+      return { subChannelIds: requested.subChannelIds, conditionalScopes: [] };
     return { subChannelIds: undefined, conditionalScopes: [] };
   }
 

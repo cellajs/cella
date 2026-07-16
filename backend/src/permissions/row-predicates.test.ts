@@ -581,6 +581,34 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
       expect(fromSql, label).toEqual(fromEngine);
     }
   });
+
+  // Sysadmin widens WHO can read, never WHAT a placement-filtered list returns: the
+  // admin bypass must not skip `requested` narrowing. (Regression: the sysadmin
+  // early-return used to answer org-wide, so ?projectId=… listed the whole org.)
+  it('an explicitly requested sub-context narrows a sysadmin read like any other', async () => {
+    const sysadmin: Actor = { userId: 'u1', isSystemAdmin: true };
+    const sqlIdsFor = async (requested: { subChannelId?: string; subChannelIds?: string[] }) => {
+      const filter = resolveCollectionReadFilterForPolicies({
+        policies: deepPolicies(() => 0),
+        memberships: [],
+        entityType: DEEP_ITEM,
+        organizationId: ROOT_ID,
+        actor: sysadmin,
+        topology: deepTopology,
+        requested,
+      });
+      const where = buildCollectionReadWhere(filter, deepParityTable, deepParityTable.projectId, sysadmin);
+      if (where.kind === 'none') return new Set<string>();
+      const query = seedDb.select({ id: deepParityTable.id }).from(deepParityTable);
+      const rows = where.kind === 'all' ? await query : await query.where(where.where);
+      return new Set(rows.map((r) => r.id));
+    };
+    const homedAt = (...projectIds: string[]) =>
+      new Set(DEEP_ROWS.filter((r) => r.projectId !== null && projectIds.includes(r.projectId)).map((r) => r.id));
+
+    expect(await sqlIdsFor({ subChannelId: 'p1' })).toEqual(homedAt('p1'));
+    expect(await sqlIdsFor({ subChannelIds: ['p1', 'p2'] })).toEqual(homedAt('p1', 'p2'));
+  });
 });
 
 /*

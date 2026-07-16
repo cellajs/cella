@@ -1,5 +1,5 @@
 import type { SSEStreamingApi } from 'hono/streaming';
-import type { EntityRole } from 'shared';
+import { appConfig, type EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
@@ -56,9 +56,22 @@ const fakeSubscriber = (
   return { subscriber, received };
 };
 
+/**
+ * Rows and events must carry the FULL ancestor scope of the configured hierarchy —
+ * `null` (not absent) for contexts the row isn't homed under, or `buildSubject`
+ * fail-closes with MissingScopeError. Empty in base cella (organization only); forks
+ * with deeper chains (e.g. project) get their id columns nulled here.
+ */
+const nullAncestorScopes = Object.fromEntries(
+  appConfig.channelEntityTypes
+    .filter((channelType) => channelType !== 'organization')
+    .map((channelType) => [appConfig.entityIdColumnKeys[channelType], null]),
+);
+
 const attachmentRow = (id: string, organizationId: string, extra: Record<string, unknown> = {}) => ({
   id,
   organizationId,
+  ...nullAncestorScopes,
   createdBy: 'author-user',
   ...extra,
 });
@@ -74,6 +87,7 @@ const attachmentEvent = (organizationId: string, overrides: Record<string, unkno
     subjectId: 'attachment-1',
     tenantId: 'tenant-1',
     organizationId,
+    ...nullAncestorScopes,
     rowData: null,
     seq: 7,
     batchUntilSeq: null,
@@ -104,8 +118,12 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
       streamSubscriberManager.register(subscriber);
     }
 
+    // Row authored by the org member: keeps "read granted" true under forks where org
+    // members hold read:'own' (row condition) instead of an unconditional read grant.
     await dispatchToAppStream(
-      attachmentEvent(ORG_A, { rowData: attachmentRow('attachment-1', ORG_A) }) as AppStreamEvent,
+      attachmentEvent(ORG_A, {
+        rowData: attachmentRow('attachment-1', ORG_A, { createdBy: 'member-user' }),
+      }) as AppStreamEvent,
     );
 
     expect(member.received).toHaveLength(1); // org member: read granted
@@ -136,7 +154,8 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
         rowData: attachmentRow('attachment-a', ORG_B),
         batchRows: [
           { seq: 20, rowData: attachmentRow('attachment-a', ORG_B) },
-          { seq: 21, rowData: attachmentRow('attachment-b', ORG_A) },
+          // Authored by the subscriber: readable under both read:1 and read:'own' configs
+          { seq: 21, rowData: attachmentRow('attachment-b', ORG_A, { createdBy: 'moved-user' }) },
         ],
       }) as AppStreamEvent,
     );
