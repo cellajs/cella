@@ -41,6 +41,9 @@ export type Language = (typeof appConfig.languages)[number];
 /** User flags */
 export type UserFlags = typeof appConfig.defaultUserFlags;
 
+/** Organization flags (per-org feature toggles; keys declared in fork config) */
+export type OrganizationFlags = typeof appConfig.defaultOrganizationFlags;
+
 /** Theme options */
 export type Theme = keyof typeof appConfig.theme.colors | 'none';
 

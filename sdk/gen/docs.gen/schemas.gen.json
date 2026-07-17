@@ -1152,6 +1152,11 @@
           "maxLength": 1000000
         },
         "chatSupport": { "type": "boolean", "required": true },
+        "organizationFlags": {
+          "type": "object",
+          "required": true,
+          "properties": {}
+        },
         "included": {
           "type": "object",
           "required": true,
@@ -1285,6 +1290,7 @@
       "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
       "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
       "chatSupport": true,
+      "organizationFlags": {},
       "publishedAt": "2024-12-25T15:04:42.969Z",
       "publicAt": null,
       "createdAt": "2024-12-25T15:04:42.969Z",

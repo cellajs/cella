@@ -31,8 +31,8 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
   const resolveCan = useResolveCan();
   const canUpdate = resolveCan(organization.can?.organization?.update, organization.createdBy);
 
-  // Filter tabs based on permissions - users who can't update don't see settings
-  const filterTabIds = useMemo(() => (canUpdate ? undefined : ['members', 'attachments']), [canUpdate]);
+  // Grants for declarative tab gating: tabs declaring navTab.requires (settings) hide without them
+  const grants = useMemo(() => (canUpdate ? ['update'] : []), [canUpdate]);
 
   const { mutate } = useOrganizationUpdateMutation();
 
@@ -73,7 +73,7 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
           title={organization.name}
           avatar={organization}
           parentRouteId="/_app/$tenantId/$organizationSlug/organization"
-          filterTabIds={filterTabIds}
+          grants={grants}
         />
         <FocusViewContainer>
           <Outlet />

@@ -4,6 +4,7 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { getEntityCounts } from '#/modules/entities/entities-queries';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
+import { withOrganizationFlagDefaults } from '#/modules/organization/helpers/select';
 import { updateOrganization } from '#/modules/organization/organization-queries';
 import { organizationContract } from '#/modules/organization/organization-schema';
 import { withAuditUser } from '#/modules/user/helpers/audit-user';
@@ -40,7 +41,9 @@ export async function updateOrganizationOp(
   if (input.welcomeText) assertBlockMediaUrls(input.welcomeText as string, 'organization', 'welcomeText');
 
   const values = { ...input, updatedAt: getIsoDate(), updatedBy: user.id };
-  const updatedOrganizationRecord = await updateOrganization(ctx, { id: organization.id, values });
+  const updatedRecord = await updateOrganization(ctx, { id: organization.id, values });
+  // Rows store organizationFlags sparse; merge config defaults under the stored bag
+  const updatedOrganizationRecord = withOrganizationFlagDefaults(updatedRecord);
 
   invalidateCache.org(tenantId, organization.id);
 

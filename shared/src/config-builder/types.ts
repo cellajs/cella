@@ -247,4 +247,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   // User defaults
   defaultUserFlags: Record<string, boolean>;
+
+  // Organization defaults
+  defaultOrganizationFlags: Record<string, boolean>;
 }

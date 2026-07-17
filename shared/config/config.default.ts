@@ -301,5 +301,9 @@ export const config = {
   defaultUserFlags: {
     finishedOnboarding: false,
   },
+
+  // Organization defaults
+
+  defaultOrganizationFlags: {},
 } satisfies RequiredConfig;
 

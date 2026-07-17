@@ -361,6 +361,7 @@ export const zOrganization = z.object({
   websiteUrl: z.string().max(2048).nullable(),
   welcomeText: z.string().max(1000000).nullable(),
   chatSupport: z.boolean(),
+  organizationFlags: z.record(z.string(), z.unknown()),
   included: z.object({
     membership: zMembershipBase.optional(),
     counts: z
@@ -1347,6 +1348,7 @@ export const zUpdateOrganizationBody = z.object({
   websiteUrl: z.string().max(2048).nullish(),
   welcomeText: z.string().max(1000000).nullish(),
   chatSupport: z.boolean().optional(),
+  organizationFlags: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const zUpdateOrganizationPath = z.object({

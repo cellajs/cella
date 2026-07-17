@@ -1,7 +1,8 @@
 import type { ChannelEntityType } from 'shared';
 
 export type EntityRouteEntry = {
-  /** Route path template for this entity */
+  /** Route path template for this entity: its canonical landing surface. Also the redirect
+   *  target when the entity's tabbed layout route is visited directly (default tab). */
   path: string;
   /** Route param name this entity's slug fills (both as self and as ancestor) */
   paramName: string;
