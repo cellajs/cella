@@ -1,24 +1,19 @@
 import { queryOptions } from '@tanstack/react-query';
 import { getUnseenCounts } from 'sdk';
-import { appConfig } from 'shared';
-import { noteUnseenReconciled } from '~/modules/seen/seen-store';
+import { isSeenTracked, seenKeys } from '~/modules/seen/helpers';
+import { noteUnseenReconciled } from '~/modules/seen/unseen-sync';
 import { queryClient } from '~/query/query-client';
 
-export const seenKeys = {
-  unseenCounts: ['me', 'unseen', 'counts'],
-};
-
-/** Refetch the server's predicate-exact unseen counts for a tracked entity type. */
+/** Refetch the server's exact unseen counts for a tracked entity type. */
 export function invalidateUnseenCounts(entityType: string): void {
-  if (!(appConfig.seenTrackedEntityTypes as readonly string[]).includes(entityType)) return;
+  if (!isSeenTracked(entityType)) return;
   queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
 }
 
 /**
- * Query options for fetching the current user's unseen entity counts per org.
- * Used by menu badges. Live maintenance is the unseen ledger (deltas from synced rows +
- * view-marks); this exact recount is the baseline + reconcile — on focus, reconnect, and
- * after catchup — and it wins wholesale (the ledger re-anchors on every response).
+ * The current user's unseen entity counts per channel (menu badges). This exact recount — on
+ * focus, reconnect, and after catchup — is the baseline; between recounts, unseen-delta.ts and
+ * unseen-sync.ts keep it live. Each response replaces all local deltas (`noteUnseenReconciled`).
  */
 export const unseenCountsQueryOptions = () =>
   queryOptions({

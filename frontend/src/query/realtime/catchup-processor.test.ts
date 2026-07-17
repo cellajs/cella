@@ -6,12 +6,14 @@ vi.mock('shared', () => ({
     slug: 'test',
     channelEntityTypes: ['organization', 'project'],
     entityIdColumnKeys: { organization: 'organizationId', project: 'projectId' },
+    seenTrackedEntityTypes: [],
   },
   hierarchy: {
     getOrderedAncestors: (entityType: string) => {
       if (entityType === 'attachment') return ['project', 'organization'];
       return ['organization'];
     },
+    getParent: () => null,
   },
 }));
 

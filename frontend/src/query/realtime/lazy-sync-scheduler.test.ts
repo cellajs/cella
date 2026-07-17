@@ -20,7 +20,7 @@ vi.mock('./propagation', () => ({ propagateEmbeddings: (...a: unknown[]) => prop
 const invalidateUnseenCounts = vi.fn();
 vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: (...a: unknown[]) => invalidateUnseenCounts(...a) }));
 const ingestSyncedRows = vi.fn();
-vi.mock('~/modules/seen/seen-store', () => ({ ingestSyncedRows: (...a: unknown[]) => ingestSyncedRows(...a) }));
+vi.mock('~/modules/seen/unseen-sync', () => ({ ingestSyncedRows: (...a: unknown[]) => ingestSyncedRows(...a) }));
 vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-client' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
 
@@ -130,7 +130,7 @@ describe('lazy-sync-scheduler', () => {
     expect(invalidateEntityListForOrg).toHaveBeenCalledTimes(1);
   });
 
-  it('feeds fetched rows to the unseen ledger once per merged flush (no endpoint recount)', async () => {
+  it('feeds fetched rows to unseen-sync once per merged flush (no endpoint recount)', async () => {
     const items = [{ id: 'a1' }, { id: 'a2' }];
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items });
     enqueueRange({ ...base, fromSeq: 5, untilSeq: 6, isCreate: true });

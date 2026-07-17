@@ -1,6 +1,6 @@
 import type { PostAppCatchupResponse } from 'sdk';
 import type { ProductEntityType } from 'shared';
-import { seenKeys } from '~/modules/seen/query';
+import { seenKeys } from '~/modules/seen/helpers';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
@@ -230,8 +230,8 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   // where seqs matched but the cache is stale (e.g. a failed refetch after invalidation). Org + child level.
   verifyCacheIntegrity(changes);
 
-  // Step 8: Unseen-count reconcile — the ledger can't see what happened while disconnected
-  // (other-device seen-marks, missed windows); an exact recount re-anchors it.
+  // Step 8: Unseen-count reconcile — synced-row deltas can't see what happened while
+  // disconnected (other-device seen-marks, missed windows); an exact recount re-anchors them.
   queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
 }
 

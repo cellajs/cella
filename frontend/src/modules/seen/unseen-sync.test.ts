@@ -4,8 +4,9 @@ vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn(
 vi.stubGlobal('navigator', { onLine: true });
 
 const { queryClient } = await import('~/query/query-client');
-const { seenKeys } = await import('./query');
-const { applyHardDeleteUnseen, ingestSyncedRows, noteUnseenReconciled, useSeenStore } = await import('./seen-store');
+const { seenKeys } = await import('./helpers');
+const { useSeenStore } = await import('./seen-store');
+const { applyHardDeleteUnseen, ingestSyncedRows, noteUnseenReconciled } = await import('./unseen-sync');
 
 // Base config tracks 'attachment'; rows are attachment-shaped (org-homed → channelId = orgId).
 const CHANNEL = 'org-1';
@@ -22,10 +23,10 @@ const row = (id: string, overrides: Record<string, unknown> = {}) => ({
 
 const counts = () => (queryClient.getQueryData(seenKeys.unseenCounts) as Record<string, Record<string, number>>) ?? {};
 
-/** The applicator batches via idle callback (setTimeout fallback in jsdom) — flush it. */
-const settle = () => vi.advanceTimersByTimeAsync(1_100);
+/** Deltas batch via idle callback (setTimeout fallback outside the browser) — flush it. */
+const settle = () => vi.advanceTimersByTimeAsync(5_100);
 
-describe('unseen ledger', () => {
+describe('unseen count deltas from synced rows', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     queryClient.setQueryData(seenKeys.unseenCounts, { [CHANNEL]: { attachment: 5 } });
@@ -106,6 +107,18 @@ describe('unseen ledger', () => {
     applyHardDeleteUnseen('attachment', 'gone-2', CHANNEL); // seen → net 0
     await settle();
     expect(counts()[CHANNEL].attachment).toBe(3);
+  });
+
+  it('derives the channel from the row (deepest ancestor id), falling back to the passed channel', async () => {
+    vi.advanceTimersByTime(10);
+    ingestSyncedRows('attachment', 'fallback-ch', [
+      row('c1'), // row's own organizationId wins over the fallback
+      { id: 'c2', createdAt: now(), deletedAt: null }, // no ancestor id on the row → fallback
+    ]);
+    await settle();
+
+    expect(counts()[CHANNEL].attachment).toBe(6);
+    expect(counts()['fallback-ch'].attachment).toBe(1);
   });
 
   it('ignores untracked entity types', async () => {

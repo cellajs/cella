@@ -1,7 +1,7 @@
 import { type ChannelEntityType, isProductEntity, type ProductEntityType } from 'shared';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
-import { applyHardDeleteUnseen } from '~/modules/seen/seen-store';
+import { applyHardDeleteUnseen } from '~/modules/seen/unseen-sync';
 import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline/stx-utils';
 import { useSyncStore } from '~/query/realtime/sync-store';
@@ -157,7 +157,7 @@ function handleEntityNotification(
           syncWindowMs: syncWindow ?? undefined,
           propagation: propagation ?? undefined,
         });
-        // Unseen accounting happens at flush time: the ledger counts the fetched rows.
+        // Unseen accounting happens at flush time: unseen-sync counts the fetched rows.
         break;
       }
 
@@ -176,7 +176,7 @@ function handleEntityNotification(
           .catch((err) => console.warn('[AppStream] Entity fetch failed:', err));
       }
 
-      // Seq-less events bypass the ledger (no synced rows): exact recount instead.
+      // Seq-less events bypass unseen-sync (no synced rows): exact recount instead.
       if (action === 'create') {
         invalidateUnseenCounts(entityType);
       }

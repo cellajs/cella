@@ -1,6 +1,6 @@
 import type { ProductEntityType } from 'shared';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
-import { ingestSyncedRows } from '~/modules/seen/seen-store';
+import { ingestSyncedRows } from '~/modules/seen/unseen-sync';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline/stx-utils';
 import * as cacheOps from './cache-ops';
@@ -209,7 +209,7 @@ async function flushEntry(entry: DirtyEntry): Promise<void> {
 
   if (result.status === 'ok') {
     advanceCaughtUp(entry);
-    // Unseen ledger: exact badge deltas from the fetched rows (mirrors the server predicate).
+    // Unseen sync: exact badge deltas from the fetched rows (mirrors the server's unseen filters).
     ingestSyncedRows(entityType, channelId ?? organizationId, result.items as { id: string }[]);
   } else {
     // Overflow/unsupported/exhausted retries: hand the scope to react-query and advance the
