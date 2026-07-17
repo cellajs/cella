@@ -63,9 +63,8 @@ const TIER_ON_OPEN: SyncTier = { min: Number.POSITIVE_INFINITY, max: Number.POSI
 
 /**
  * True when the user is looking at the scope: same org, and (for sub-org scopes) a mounted view
- * observes a query for the channel. The router cannot answer the sub-org question — routes carry
- * slugs, not ids (`rewriteUrlToSlug`), and a board renders channels its route never names — so the
- * channel check asks the query cache instead (see `observed-channels.ts`).
+ * observes a query carrying the channel ID. This covers slug routes and boards whose routes do not
+ * name every rendered channel. See `observed-channels.ts`.
  */
 export function isViewingScope(organizationId: string, channelId: string | null): boolean {
   const routeOrgId = getRouteOrgId();

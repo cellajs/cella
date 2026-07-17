@@ -1,12 +1,3 @@
-/**
- * Bench smoke test: runs every scenario through the real CLI in `--short` mode
- * (1s/1 VU, no thresholds/baselines) to catch scenarios that break after a
- * route/schema change. A smoke check, not a performance gate.
- *
- * Skips itself when the local stack is unreachable, so the monorepo `vitest` run
- * doesn't require `pnpm dev`.
- */
-
 import { execFileSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,6 +8,7 @@ import { isInfrastructureReady } from '../preflight';
 const __dirname = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = resolve(__dirname, '..', '..');
 
+// Exercise the real short-mode CLI as a smoke check when the local stack is available.
 describe('bench scenarios (short)', () => {
   let ready = false;
 

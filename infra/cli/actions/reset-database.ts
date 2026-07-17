@@ -21,11 +21,7 @@ const ROLES = ['admin_role', 'runtime_role'] as const
 /** Retention for the pre-reset backup. Long enough to notice a bad reset the next working week. */
 const BACKUP_RETENTION_DAYS = 7
 
-/**
- * Render the target for approval. The database list comes from the live instance, so aiming at the
- * wrong instance is visible here rather than after the fact — these keys reach every RDB instance
- * in the project, not just this app's.
- */
+/** Render live instance data so an incorrectly targeted RDB instance is visible before approval. */
 function describeTarget(target: ResetTarget, region: string): string {
   const others = target.databases
     .filter((database) => database.name !== target.databaseName)
@@ -47,8 +43,8 @@ function describeTarget(target: ResetTarget, region: string): string {
 
 /**
  * "Reset database": delete + recreate this app's logical database over the Scaleway API with a
- * bootstrap key, then re-grant both roles. Pulumi is not involved — same-name recreate keeps its
- * state correct — and the database is never exposed.
+ * bootstrap key, then re-grant both roles. The same-name recreate preserves Pulumi state without
+ * exposing the database.
  */
 export async function runResetDatabase(context: InfraContext): Promise<void> {
   if (context.state !== 'bootstrapped') {

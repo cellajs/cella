@@ -1,15 +1,6 @@
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
-/**
- * Converts ephemeral/regenerable tables to UNLOGGED to skip WAL writes. These tolerate
- * truncation on unclean shutdown:
- * - rate_limits: clients get a fresh window
- * - user_counters, channel_counters, product_counters: rebuilt from source data on startup
- *
- * Idempotent: checks pg_class.relpersistence before altering.
- */
-
-/** Exported so the verify block (99-verify) asserts against the same list. */
+/** Regenerable tables converted to UNLOGGED; shared with the verification block. */
 export const unloggedTables = ['rate_limits', 'user_counters', 'channel_counters', 'product_counters'];
 
 async function run(): Promise<SideEffectBlock> {

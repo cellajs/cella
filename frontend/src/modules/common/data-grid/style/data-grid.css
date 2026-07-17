@@ -1,15 +1,3 @@
-/**
- * Cella Data Grid Styles
- *
- * Only rules that cannot be expressed as Tailwind classes live here:
- * - CSS vars consumed by JS (--rdg-grid-row-start)
- * - Complex selectors (:nth-last-child, :not())
- * - Pseudo-elements (::before/::after for drop indicators)
- * - Relative oklch colors (not in Tailwind palette)
- *
- * Everything else is on the components via Tailwind aria-* modifiers.
- */
-
 /* ==========================================================================
    Cell Styles (layout that needs CSS vars + complex selectors)
    ========================================================================== */
@@ -29,25 +17,8 @@
    DataTable Overrides (drag-and-drop indicators)
    ========================================================================== */
 
-/* Drop indicator line spanning the full row.
- *
- * The `data-drop-edge` attribute is written imperatively (no React state) by
- * row-drag-cell.tsx onto the `.rdg-row` element during drag. Plain attribute
- * selectors only, with no `:has()` or sibling combinators, so style invalidation
- * is O(1) per row regardless of table size. `:has()` with sibling combinators
- * is a known foot-gun on large/virtualized lists because it forces relational
- * re-evaluation across siblings on every attribute mutation.
- *
- * Cells use `overflow: hidden`, so absolute pseudo-elements positioned outside
- * the cell box would be clipped. Inset box-shadows paint
- * inside the cell and are unaffected by overflow.
- *
- * To prevent the indicator from "jumping" 2px when the pointer crosses a row
- * seam, the JS redirects a `bottom` zone on row N to a `top` mark on row N+1
- * (so the line sits in the same pixel band whether the user is at the bottom
- * of row N or the top of row N+1). The last row, having no next sibling, is
- * the only case where `data-drop-edge="bottom"` is actually written to the DOM.
- */
+/* Attribute selectors keep drag updates local to one row. Inset shadows escape cell clipping.
+ * The drag handler maps a bottom seam to the next row's top; only the final row uses bottom. */
 .rdg-row[data-drop-edge="top"] > .rdg-cell {
   box-shadow: inset 0 2px 0 0 var(--primary);
 }
@@ -56,13 +27,8 @@
   box-shadow: inset 0 -2px 0 0 var(--primary);
 }
 
-/* Center drop zone highlights the entire row for reparenting.
- * Rows use `display: contents` so we can't put a single border on the row.
- * Compose a continuous 1px ring across all cells using inset
- * box-shadows: top+bottom on every cell (which join seamlessly between cells),
- * left only on the first cell, right only on the last. This avoids the noisy
- * per-cell dashed outline where each cell would draw its own broken rectangle.
- */
+/* Rows use display:contents, so joined inset cell shadows form the center-zone ring.
+ * Only the first and last cells draw the vertical edges. */
 .rdg-row[data-drop-edge="center"] > .rdg-cell {
   background-color: oklch(from var(--primary) l c h / 0.08);
   box-shadow:

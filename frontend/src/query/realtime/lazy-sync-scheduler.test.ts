@@ -26,8 +26,7 @@ vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-client' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
 
 // Node test env has no document/window; stub them (before importing query-client, which attaches
-// online listeners at load) so installListeners wires the promote-on-observe path (observed-channels)
-// instead of returning early.
+// online listeners at load) so installListeners wires the promote-on-observe path.
 vi.stubGlobal('document', { addEventListener: vi.fn(), hidden: false });
 vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
 vi.stubGlobal('navigator', { onLine: true });

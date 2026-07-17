@@ -1,16 +1,3 @@
-/**
- * Route-aware URL/path scrubber for logs, error payloads, and security notifications.
- *
- * Pino redaction is key-based and cannot touch a secret embedded *inside* a `url`
- * or `path` string value (e.g. a token in a path segment or a `?code=` query).
- * This helper redacts those before serialization:
- * - secret path segments (currently the `/auth/invoke-token/{type}/{token}` bearer),
- * - values of sensitive query keys (OAuth `code`/`state`, `token`, provider tokens).
- *
- * It accepts either a full URL or a bare path (with optional query string) and
- * returns the same shape with secrets replaced by `[REDACTED]`.
- */
-
 const REDACTED = '[REDACTED]';
 
 /** Query keys whose values must never be logged/returned verbatim. */

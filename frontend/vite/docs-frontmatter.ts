@@ -5,18 +5,6 @@ import type { Plugin } from 'vite';
 import { parse } from 'yaml';
 import { createUpdatedAtResolver, type UpdatedAtResolver } from './git-updated-at';
 
-/**
- * Virtual module `virtual:docs-frontmatter`: a build-time index of all docs pages
- * (src/content/docs md/mdx) keyed by content-root-relative module path, each entry
- * holding the page's parsed frontmatter and extracted headings.
- *
- * Parsing here, without importing page modules, keeps each page body in its own
- * code-split chunk and lets the "on this page" aside render before the body chunk loads.
- * Headings must produce the same ids as the mdx pipeline (rehype-slug with the `spy-`
- * prefix, vite.config.ts): same slugger (github-slugger), fresh instance per source
- * file, and the leading h1 of repo docs skipped (mirrors remarkStripRepoDocH1).
- */
-
 const VIRTUAL_ID = 'virtual:docs-frontmatter';
 const RESOLVED_ID = `\0${VIRTUAL_ID}`;
 
@@ -190,6 +178,7 @@ export function pageStructure(file: string, source: string): { headings: DocHead
   };
 }
 
+/** Exposes page metadata and search text as virtual modules without importing page components. */
 export function docsFrontmatter(): Plugin {
   let contentDir: string;
   let resolver: UpdatedAtResolver | undefined;

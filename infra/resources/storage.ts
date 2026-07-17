@@ -78,10 +78,8 @@ const frontendWebsite = new scaleway.object.BucketWebsiteConfiguration(
   },
 )
 
-// Public read access for frontend bucket.
-// dependsOn: website config must be created first. The restrictive policy
-// (Principal: '*', Action: s3:GetObject only) would otherwise block the
-// provider's ListObjects call needed to set up website configuration.
+// Create website configuration before restricting the public policy to GetObject;
+// the provider needs ListObjects while configuring the website.
 new scaleway.object.BucketPolicy('frontend-policy', {
   bucket: frontendBucket.name,
   region,

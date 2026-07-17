@@ -119,24 +119,6 @@ function isAllowedCdcSource(remoteIp: string | undefined, forwardedFor: string |
   return false;
 }
 
-/**
- * CDC WebSocket server for the internal CDC worker channel.
- *
- * Accepts connections exclusively from the co-located CDC Worker process.
- * This is a server-to-server channel (Node.js → Node.js) that carries full
- * entity row data for the real-time sync pipeline. It must NEVER be exposed
- * to external networks or browser clients.
- *
- * Security layers:
- * - Path-locked to `/internal/cdc` (all other paths → 404)
- * - Shared secret via `x-cdc-secret` header (min 16 chars, validated at startup)
- * - Source-IP restricted in production: loopback or the Scaleway VPC /24,
- *   read from X-Forwarded-For when reached through the per-VM Caddy ingress
- *   (see {@link isAllowedCdcSource})
- * - Single connection at a time (new connections replace existing ones)
- * - Idle timeout (90s) auto-closes stale connections
- */
-
 /** Self-reported CDC worker health payload pushed over the WS control channel. */
 export interface CdcWorkerHealth {
   replicationStatus: string;
@@ -152,6 +134,10 @@ export interface CdcWorkerHealth {
   catchingUp?: boolean;
 }
 
+/**
+ * Internal CDC worker channel. It requires the shared secret and an allowed source,
+ * permits one live connection, and closes idle peers after 90 seconds.
+ */
 class CdcWebSocketServer {
   private wss: WebSocketServer | null = null;
   private currentConnection: WebSocket | null = null;

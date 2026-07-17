@@ -54,12 +54,8 @@ describe('shared buildSubject', () => {
   });
 });
 
-/**
- * Single-row enforcement paths (`getValidProductEntity`, `getValidChannelEntity`,
- * `splitByPermission`, the Yjs relay) all build their subject from a resolved DB row. If that
- * row is not carried onto the subject, every row-derived grant evaluates against nothing and
- * fails CLOSED: a silent denial, not an error. That regression is what this pins.
- */
+// Single-row enforcement requires the resolved row on its subject. Missing row data
+// makes row-derived grants fail closed without an explicit error.
 describe('buildSubjectFromEntity — carries the row', () => {
   const product = hierarchy.productTypes.find((t) => hierarchy.getOrderedAncestors(t).length > 0);
   if (!product) throw new Error('No product entity types with ancestors found');

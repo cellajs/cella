@@ -1,15 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS, VM_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'
 
-/**
- * Lock the CI key's permission sets. Any addition must be deliberate and visible
- * in a PR; changing this test is the code-review trigger.
- *
- * Forbidden permissions are listed explicitly so a regex/typo can't sneak them
- * in (e.g. `IAMManager` would let the CI key mint more API keys for itself,
- * a self-rotating super-key).
- */
-
+// Exact snapshots make every CI privilege change reviewable. Explicit forbidden
+// permissions prevent the key from gaining IAM authority to escalate itself.
 const FORBIDDEN = [
   'IAMManager',
   'IAMFullAccess',

@@ -1,21 +1,3 @@
-/**
- * Create (or reuse) the scoped IAM application `<slug>-vm-reader` and mint a fresh
- * API key (deleting any orphans). The application's IAM **policy** is NOT created
- * here: it is a Pulumi-managed `iam.Policy` (`infra/resources/vm-iam.ts`) so
- * `pulumi up` reconciles the permission sets (VM_PROJECT_PERMISSION_SETS in
- * lib/scaleway/permissions.ts, the canonical manifest) on every deploy and the
- * VM's grant can never silently drift.
- *
- * The VM reader is intentionally read-only (registry pull + Secret Manager
- * read/decrypt) with NO write access to instances, the LB, or IAM: a compromised
- * container can exfiltrate its own secrets but cannot provision infrastructure or
- * escalate privileges.
- *
- * Used by bootstrap's "Rotate keys" path so the CI key and VM key are provisioned
- * atomically from one IAM bootstrap credential. Standalone: SCW_SECRET_KEY +
- * SCW_DEFAULT_PROJECT_ID required.
- */
-
 import { pc } from 'shared/cli-utils/colors';
 import { DIVIDER } from 'shared/cli-utils/display'
 import { checkMark } from 'shared/utils/console'
@@ -27,6 +9,7 @@ import { seedVmReaderKey } from './seed-vm-reader-key'
 export type SetupVmKeyOptions = ProvisionScopedKeyOptions
 export type VmKeyResult = ScopedKeyResult
 
+/** Mint the VM reader key; Pulumi owns and reconciles its read-only IAM policy. */
 export function setupVmKey(opts: SetupVmKeyOptions): Promise<VmKeyResult> {
   return provisionScopedKey(opts, {
     suffix: 'vm-reader',

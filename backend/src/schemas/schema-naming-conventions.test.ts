@@ -4,13 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { entityTables } from '#/tables';
 
-/**
- * The yjs relay can't import backend drizzle tables (it builds in isolation), so it derives physical
- * table/column names from `toTableName`/`toColumnName` conventions in `shared`. These tests keep the
- * conventions honest by asserting they match the live drizzle schema for every entity table, so a
- * a fork whose table or column naming diverges fails CI before edits are silently denied at
- * runtime.
- */
+// The Yjs relay derives physical names without importing backend tables. These assertions
+// keep shared naming conventions aligned with the live Drizzle schema.
 describe('yjs schema-naming conventions match the drizzle schema', () => {
   // Logical column keys the relay's permission SQL reads (id, ownership, tenant, ancestor scopes).
   const readKeys = ['id', 'createdBy', 'tenantId', ...Object.values(appConfig.entityIdColumnKeys)];

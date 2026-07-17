@@ -17,12 +17,8 @@ import { runSetup } from './actions/setup'
 import { runUnlock } from './actions/unlock'
 import type { CliMode, InfraContext } from './shared'
 
-// Load infra-only repo envs (e.g. SCW_PROJECT_ID) so they reach the CLI and the
-// child tasks it spawns. The canonical location is backend/.env (same file the
-// backend loads and what backend/.env.example documents); the repo-root .env is
-// a fallback for forks that keep one there. Real environment variables still win
-// (loadEnvFile never overrides an already-set var), so CI's explicit SCW_* take
-// precedence, and backend/.env wins over the root fallback by loading first.
+// Load backend/.env before the root fallback so infra child tasks share the app's
+// local config. Existing environment variables keep precedence over both files.
 for (const envFile of [resolve(infraDir, '..', 'backend', '.env'), resolve(infraDir, '..', '.env')]) {
   if (existsSync(envFile)) process.loadEnvFile(envFile)
 }
@@ -33,11 +29,8 @@ async function loadContext(): Promise<InfraContext> {
   const stackYaml = existsSync(stackPath) ? readFileSync(stackPath, 'utf8') : undefined
   const state = detectStackState({ yamlText: stackYaml })
 
-  // Resolve appConfig once, keyed to this stack's environment. `shared` reads
-  // APP_MODE at module-eval time, so it must be set before the first import.
-  // The CLI is authoritative here (force-assign, don't defer to a stray shell
-  // APP_MODE): this keeps context.appConfig, the spawned child tasks, and the
-  // Pulumi program's stack/APP_MODE consistency guard all on this one mode.
+  // Set the stack mode before importing `shared`, which reads APP_MODE during
+  // module evaluation. The CLI-selected stack is authoritative for child tasks.
   process.env.APP_MODE = environment
   const { appConfig } = await import('shared')
 
@@ -48,10 +41,8 @@ async function loadContext(): Promise<InfraContext> {
     throw new Error('SCW_PROJECT_ID is not set — add it to backend/.env before running the infra CLI.')
   }
 
-  // Operator application id: required like SCW_PROJECT_ID once bootstrapped:
-  // granted full S3 on the CI-scoped buckets (storage.ts) so operator keys can
-  // read/refresh them. On a fresh stack it doesn't exist yet; bootstrap creates
-  // the app and writes the id into backend/.env, so only enforce it afterwards.
+  // Bootstrap creates the operator application and writes its id to backend/.env.
+  // Bootstrapped stacks require it for operator access to CI-scoped buckets.
   const operatorApplicationId = process.env.SCW_OPERATOR_APPLICATION_ID?.trim()
   if (!operatorApplicationId && state === 'bootstrapped') {
     throw new Error('SCW_OPERATOR_APPLICATION_ID is not set — add it to backend/.env before running the infra CLI.')

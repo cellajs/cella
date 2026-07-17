@@ -9,13 +9,8 @@ import type { StreamNotification } from '#/schemas';
 import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamEvent } from './types';
 
-/**
- * Dispatch-mirror behavior on the real dispatcher: pings go to exactly the subscribers
- * who can read the event's rows. Org membership under cella's two-level config and batches
- * per row. Row-level permission parity itself is covered by the three-way property test
- * in permissions/row-predicates.test.ts.
- */
-
+// The dispatcher must notify exactly the subscribers permitted to read each event row.
+// Row-predicate parity is covered by the permission property tests.
 const ORG_A = 'org-dispatch-a';
 const ORG_B = 'org-dispatch-b';
 

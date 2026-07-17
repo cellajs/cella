@@ -3,11 +3,7 @@ import { createRdbClient, type RdbClient, waitForBackupReady } from './scaleway-
 
 type Call = { url: string; method: string; body: unknown }
 
-/**
- * Fetch stub recording method/url/body. The URL and verb of every write are asserted below because
- * they were captured from the live API (`scw --debug`) rather than read from docs — a silent drift
- * here would only ever be discovered by a destructive call in production.
- */
+/** Record requests so destructive endpoint methods and paths remain pinned to live API observations. */
 function makeFetch(routes: Array<{ method: string; match: string; body?: unknown; status?: number }>) {
   const calls: Call[] = []
   const fn = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
@@ -39,7 +35,7 @@ describe('createRdbClient', () => {
   })
 
   it('does not accept a prefix match for an instance name', async () => {
-    // `?name=` is a filter, not an exact match — `cella` must never resolve to `cella-staging`.
+    // `?name=` is a filter. `cella` must never resolve to `cella-staging`.
     const { fn } = makeFetch([
       { method: 'GET', match: '/instances', body: { instances: [{ id: 'i-2', name: 'cella-postgres-staging', status: 'ready' }], total_count: 1 } },
     ])

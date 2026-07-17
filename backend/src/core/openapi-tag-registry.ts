@@ -48,12 +48,8 @@ registerTag({
   description: 'Application-specific modules.',
 });
 
-/**
- * Default schema-kind tags: buckets for grouping OpenAPI component schemas
- * in the docs UI. Schemas declare membership via an `x-tags` extension on the
- * component schema itself; schemas without a matching tag fall back to the
- * tag flagged with `default: true`.
- */
+// Schema tags group OpenAPI components in the docs UI. Components opt in through
+// `x-tags`; unmatched schemas use the tag marked as the default.
 registerTag({
   tag: 'data',
   kind: 'schema',

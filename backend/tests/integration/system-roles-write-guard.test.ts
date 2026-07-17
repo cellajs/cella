@@ -1,20 +1,3 @@
-/**
- * `system_roles` write-guard regression tests.
- *
- * `system_roles` decides who is a system admin, so a write from the app's runtime connection is a
- * privilege escalation. It has no RLS policy (only attachments/yjs_documents do), which left the
- * table GRANT as its single control. That GRANT lives in the one layer Scaleway's coarse
- * per-database privilege API rewrites in bulk (`permission=all`), so one reconcile could hand
- * `runtime_role` write access silently.
- *
- * These tests therefore assert the trigger holds **with the GRANT deliberately wide open**: the
- * guard must not depend on the layer that can be reset. They also pin the two things that would
- * make the guard unshippable. Reads must still work, and the `ON DELETE CASCADE` from `users`
- * must still cascade (referential actions run as the referencing table's owner, not the caller).
- *
- * Runs under `pnpm test:full` only (tests/integration/** is excluded from core).
- */
-
 import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -26,12 +9,7 @@ import { baseDb as adminDb } from '#/db/db';
 const TEST_USER = '00000000-0000-4000-b000-0000000000f1';
 const TEST_ROLE_ROW = '00000000-0000-4000-b000-0000000000f2';
 
-/**
- * The message of the error a write was rejected with. Drizzle wraps pg errors in a
- * `DrizzleQueryError` whose own message is just the failed SQL, so the guard's `RAISE` lands on
- * `cause`. Asserting on it distinguishes "the trigger refused" from "the GRANT
- * refused", which is the entire point of these tests.
- */
+/** Return the PostgreSQL cause so tests distinguish trigger rejection from grant rejection. */
 async function rejectionMessage(run: Promise<unknown>): Promise<string> {
   const error = await run.then(
     () => null,
@@ -45,14 +23,8 @@ async function rejectionMessage(run: Promise<unknown>): Promise<string> {
 let runtimePool: pg.Pool | undefined;
 let runtimeDb: NodePgDatabase;
 
-/**
- * Resolved at module load, not in `beforeAll`: vitest evaluates the `describe` gate at collection
- * time, so a flag set later would leave the suite permanently skipped.
- *
- * Gates on reachability only, not on the trigger existing. A missing guard is the
- * regression these tests exist to catch, so it has to fail here without skipping. (A silent skip
- * on a missing trigger is precisely how the immutability triggers stayed absent unnoticed.)
- */
+// Vitest evaluates the suite gate during collection. Gate only on database reachability
+// so a missing trigger fails the suite.
 const guardSuiteReady = await (async () => {
   try {
     // Open the GRANT layer wide, exactly as a `permission=all` reconcile would. Without this the
@@ -81,6 +53,8 @@ afterAll(async () => {
   await adminDb.execute(sql`DELETE FROM users WHERE id = ${TEST_USER}`).catch(() => {});
 });
 
+// Runtime writes must remain blocked even when database grants are open. Runtime reads
+// and owner-driven `ON DELETE CASCADE` must continue to work.
 (guardSuiteReady ? describe : describe.skip)('system_roles write guard', () => {
   beforeAll(async () => {
     await adminDb.execute(sql`DELETE FROM users WHERE id = ${TEST_USER}`);

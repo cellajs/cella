@@ -5,22 +5,7 @@ const coverageReporters =
     ? ['json-summary']
     : ['text-summary', 'html', 'lcov', 'json-summary'];
 
-/**
- * Vitest configuration for unified monorepo testing.
- *
- * Uses the `projects` feature to run tests across multiple packages with
- * a single command and unified reporting.
- *
- * @example
- * ```bash
- * pnpm vitest                     # Run all package tests
- * pnpm vitest --project=backend   # Run only backend tests
- * pnpm vitest --project=cella      # Run only the CLI package tests
- * pnpm vitest run --coverage      # Run all tests with merged coverage
- * ```
- *
- * @link https://vitest.dev/guide/projects
- */
+// Unified project list and coverage reporting for the monorepo test command.
 export default defineConfig({
   test: {
     passWithNoTests: true,

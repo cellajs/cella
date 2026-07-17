@@ -5,20 +5,13 @@ import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-ac
 import { findUserById } from '#/modules/system/system-queries';
 import { log } from '#/utils/logger';
 
-/**
- * Activity bus listeners for system role changes.
- *
- * System roles have no API mutation path; rows appear via seed or direct DB writes.
- * CDC is therefore the only hook that sees every committed change, regardless of origin.
- * Each change triggers a security notification to the configured security email.
- */
-
 const securityEmailType = {
   create: 'system-role-granted',
   update: 'system-role-changed',
   delete: 'system-role-revoked',
 } as const;
 
+/** Notify the security contact for every CDC-observed system-role change. */
 const notifySystemRoleChange = async (event: ActivityEvent) => {
   const systemRole = getEventData(event, 'system_role');
   if (!systemRole) return;

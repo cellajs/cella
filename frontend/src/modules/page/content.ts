@@ -2,16 +2,6 @@ import { docsIndex as docsFrontmatter } from 'virtual:docs-frontmatter';
 import type { ComponentType } from 'react';
 import { z } from 'zod';
 
-/**
- * Docs content collection. Pages are md/mdx in `src/content/docs`, compiled by @mdx-js/rollup
- * (vite.config.ts). Builds the typed metadata index driving the sidebar, pages table and page
- * view; page bodies stay code-split and load lazily per page.
- *
- * Slug rules: slug = file path relative to the content root without extension; `index` files
- * represent their directory (`architecture/index.md` → `architecture`), and a page's parent is
- * its directory's index page.
- */
-
 const CONTENT_ROOT = '/src/content/docs/';
 
 export const docRenderModes = ['default', 'overview', 'nodeOnly'] as const;

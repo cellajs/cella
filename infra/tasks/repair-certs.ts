@@ -4,24 +4,6 @@ import { scwSend, scwFetch, type ScwAuth } from '../lib/scaleway/scw-fetch'
 import { infraDir } from '../lib/utils/paths'
 import { getFlag } from './args'
 
-/**
- * Level-triggered repair for terminally-errored LB certificates, run in CI
- * right before `pulumi up` (and available as `pnpm --filter infra repair-certs`).
- *
- * Scaleway never retries a Let's Encrypt certificate whose issuance failed
- * (status `error`, e.g. an ACME NXDOMAIN when validation raced DNS propagation).
- * The provider still records the errored cert as created, wedging every subsequent
- * deploy. This task deletes such certs from Pulumi state and from Scaleway so the
- * following `up` recreates them behind the DNS-propagation gate. A cert whose
- * live object is gone (deleted out-of-band) is pruned from state only.
- *
- * Ordering per cert: state first, live second. State delete refuses while a
- * dependent (e.g. an attached frontend) references the cert, which doubles as
- * the safety interlock against deleting TLS material something still serves.
- *
- * @see resources/dns-cert-gates.ts
- */
-
 const CERT_TYPE = 'scaleway:loadbalancers/certificate:Certificate'
 
 export interface StateCert {

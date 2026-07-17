@@ -3,19 +3,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-/**
- * Architecture guard: the raw permission engine (`getAllDecisions`) must be reached ONLY through
- * the actor-guarded wrapper `checkPermission`. `getAllDecisions` takes an options bag with an
- * OPTIONAL actor; `checkPermission` requires an explicit `Actor`. Every call that skips the wrapper
- * is a place an actor can be silently omitted. That fail-closes `'own'` and every row condition,
- * a denial nobody notices. This test makes "only the wrapper touches the engine" a guarantee, not a
- * convention.
- *
- * A Biome `noRestrictedImports` rule is fragile here because its override cascade
- * would either clobber the existing per-package import rules or also flag test files. A filesystem
- * scan catches barrel AND deep imports and states the rule in one place.
- */
-
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 // The one file allowed to call the engine directly: the wrapper itself.
@@ -42,6 +29,8 @@ const walk = (dir: string): string[] => {
   return out;
 };
 
+// Production code must reach the raw permission engine through the actor-required wrapper.
+// Scan both barrel and deep imports so every row-condition check receives an actor.
 describe('permission engine boundary', () => {
   it('only check-permission.ts imports getAllDecisions directly', () => {
     const offenders = SOURCE_ROOTS.flatMap((root) => walk(path.join(repoRoot, root)))

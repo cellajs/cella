@@ -148,13 +148,8 @@
       }
     },
     {
-      // Frontend boundary rules:
-      // - paths: ban cross-package imports (backend, cdc, infra)
-      // - patterns: ban direct SDK operation calls (camelCase imports from `sdk`).
-      //   Type imports (PascalCase) are always allowed.
-      // The rule applies to all frontend files; legitimate SDK callers (query
-      // layer, api-client, route loaders, auth flows, tests) disable the
-      // patterns rule via the next override.
+      // Ban frontend cross-package paths and direct SDK operation calls. Type imports
+      // remain allowed; the next override permits operations at designated boundaries.
       "includes": ["frontend/src/**", "frontend/storybook/**", "frontend/vite/**"],
       "linter": {
         "rules": {
@@ -411,11 +406,8 @@
       }
     },
     {
-      // Allow direct `process.env` / `process` global usage in places that
-      // legitimately need them: env loaders (env.ts files in workers, the
-      // shared config-builder), bootstrap entrypoints that set env before
-      // imports, infra / scripts / *.config.ts build-time tooling, vite
-      // plugins (process.cwd) and CLI runtime.
+      // Permit process globals in env loaders, bootstrap entrypoints, infrastructure,
+      // scripts, build configuration, Vite plugins, and CLI runtime.
       "includes": [
         "shared/src/config-builder/app-config.ts",
         "infra/**",
@@ -459,12 +451,8 @@
       }
     },
     {
-      // Vendored from jsx-email v3.2.1 (MIT). The renderer internals (a JSX
-      // stringifier, style/rehype helpers) and the email primitives keep their
-      // upstream shapes so the fork stays behavior-preserving and easy to
-      // re-sync. They legitimately use `dangerouslySetInnerHTML` (raw email
-      // HTML), loose `any`/banned types in the stringifier, and a few perf/style
-      // patterns Biome flags. Formatting and all other rules still apply.
+      // Vendored from jsx-email v3.2.1 (MIT). Preserve upstream renderer shapes,
+      // including raw email HTML and loose stringifier types; other rules still apply.
       "includes": ["backend/emails/renderer/**", "backend/emails/components/primitives/**"],
       "linter": {
         "rules": {

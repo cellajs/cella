@@ -1,29 +1,5 @@
 import * as pulumi from '@pulumi/pulumi'
 
-/**
- * Deploy-time gates between DNS records, Let's Encrypt certificates, and the
- * LB frontend that consumes them.
- *
- * Why they exist: a `pulumi up` that creates a service's A record and its LE
- * certificate in one pass races global DNS propagation. Scaleway requests the
- * cert immediately, Let's Encrypt's (multi-vantage) resolvers may still see
- * NXDOMAIN, and the cert lands in a terminal `error` status that Scaleway never
- * retries. The provider still records the errored cert as created, so the
- * failure only surfaces later when the frontend refuses to attach it
- * ("Certificate not ready"): far from the cause.
- *
- * - `DnsPropagationGate` runs AFTER the record and BEFORE the cert: it polls
- *   public resolvers until the FQDN answers with the LB IP, so the ACME
- *   validation starts only against propagated DNS.
- * - `CertReadyGate` runs AFTER the cert and BEFORE the frontend: it fails the
- *   deploy AT THE CERT with the ACME `status_details` when issuance errored,
- *   and holds the frontend attach until the cert is `ready`.
- *
- * Both are create-only (a no-op on every later `pulumi up`), and both are
- * complemented by tasks/repair-certs.ts, which deletes terminally-errored
- * certs (live + state) before the next `up` so the gate pipeline re-runs.
- */
-
 /** True when every resolver's answer set contains the expected IP. */
 export function dnsAnswersSatisfy(answersPerResolver: string[][], expectedIp: string): boolean {
   return answersPerResolver.length > 0 && answersPerResolver.every((answers) => answers.includes(expectedIp))

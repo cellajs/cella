@@ -1,16 +1,3 @@
-/**
- * Wide synthetic permission fixture for upstream engine tests that require a rich hierarchy.
- * The template ships a minimal hierarchy
- * (organization → attachment) that structurally can't exercise the engine's deeper features (nested +
- * sibling contexts, guest role, multi-level ancestors, all three public-read modes); this one can, so
- * one test set covers them in every fork. It mirrors raak's real hierarchy (the reference example in
- * `hierarchy-config.ts`) and MUST stay a superset of every builder feature, including variable-depth /
- * nullable-ancestor coverage lives in `config-builder/tests/resolve-row-channel.test.ts`.
- *
- * The engine reads it via the `topology` seam (`PermissionTopology`) with no module mocks. All casts for
- * entities the app config doesn't know about are contained here, so consumer test files stay
- * cast-free and byte-identical across forks.
- */
 import { createEntityHierarchy, createRoleRegistry } from '../config-builder/entity-hierarchy';
 import type { EntityActionType, EntityType } from '../../types';
 import {
@@ -37,10 +24,7 @@ export type WideRole = 'admin' | 'member' | 'guest';
 
 export const wideRoles = createRoleRegistry(['admin', 'member', 'guest'] as const);
 
-/**
- * The wide hierarchy. Two sibling nested contexts (workspace, project) under organization, three
- * products under project, guest role on the nested contexts only.
- */
+/** Fork-independent hierarchy with sibling contexts, deep products, and guest roles. */
 export const wideHierarchy = createEntityHierarchy(wideRoles)
   .user()
   .channel('organization', { parent: null, roles: ['admin', 'member'] })
@@ -61,10 +45,7 @@ export const wideEntityTypes: readonly WideEntityType[] = [
   'attachment',
 ];
 
-/**
- * Topology bag the engine reads. `entityActions`/`entityIdColumnKeys` are omitted so they default
- * to the app config because they are hierarchy-independent (the CRUD action set is identical across forks).
- */
+/** Wide hierarchy override; actions retain their hierarchy-independent app defaults. */
 export const wideTopology: PermissionTopology = { hierarchy: wideHierarchy };
 
 type WidePerms = Partial<Record<EntityActionType, PermissionValue>>;
@@ -79,11 +60,7 @@ export interface WideAccessPolicyConfiguration {
 
 export type WideAccessPolicyCallback = (config: WideAccessPolicyConfiguration) => void;
 
-/**
- * Configure permissions over the wide hierarchy. Same semantics as `configurePermissions`, but the
- * callback is typed with the wide vocabulary (so `contexts.project.guest(...)` / `case 'project'`
- * type-check regardless of the fork's real config). The app-config↔wide cast is contained here.
- */
+/** Configure permissions with the wide vocabulary while containing app-config casts here. */
 export const configureWidePermissions = (callback: WideAccessPolicyCallback): PermissionsConfigResult =>
   configurePermissions(
     wideEntityTypes as unknown as readonly EntityType[],
@@ -114,11 +91,7 @@ export const widePublicGrants = (grants: Partial<Record<WideEntityType, PublicRe
 /** `computeCan`'s result keyed by the wide vocabulary, so tests read `.task` etc. cast-free. */
 export type WideCanMap = Partial<Record<WideEntityType, Record<EntityActionType, ActionPermissionState>>>;
 
-/**
- * Drive `computeCan` over the wide hierarchy. `computeCan` is typed against the app's real
- * entities (its `channelType` param and result map), so this wrapper contains the wide↔app casts,
- * keeping the tests cast-free.
- */
+/** Drive `computeCan` over the wide hierarchy while containing app-config casts here. */
 export const computeWideCan = (
   channelType: WideChannelType,
   membership: PermissionMembership | undefined | null,

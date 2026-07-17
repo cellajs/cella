@@ -42,11 +42,8 @@ void _productTypesMatch1;
 void _productTypesMatch2;
 
 
-// Runtime invariant: seen-tracked entity types must have UNCONDITIONAL read grants (no
-// row-conditional cells like read:'own'). The client-side unseen ledger counts new rows from
-// synced ranges assuming "a channel member sees every row in the channel"; a row-conditional
-// read would silently miscount badges. A fork that needs a conditional seen-tracked type must
-// remove it here and keep endpoint-based counting for it.
+// The unseen ledger requires unconditional channel reads for tracked types.
+// Conditional visibility must keep endpoint-based counting.
 for (const entityType of appConfig.seenTrackedEntityTypes) {
   for (const policy of getSubjectPolicies(entityType as ProductEntityType, accessPolicies)) {
     if (isRowCondition(policy.permissions.read)) {

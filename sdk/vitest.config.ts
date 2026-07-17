@@ -1,12 +1,6 @@
 import { defineProject } from 'vitest/config';
 
-/**
- * Vitest configuration for the SDK package.
- *
- * Covers the custom generation logic (`generate-sdk.ts`) and the OpenAPI
- * parser / tsdoc plugins. The generated output in `gen/` is never tested
- * directly: it is excluded from coverage at the root config.
- */
+// Cover SDK generation and parser plugins. Root coverage excludes generated output.
 export default defineProject({
   test: {
     environment: 'node',

@@ -29,12 +29,6 @@ const ctx = { tenantId: 'ten-1', organizationId: 'org-1' };
 const lastBody = (spy: { mock: { lastCall?: [Req] } }) => spy.mock.lastCall?.[0].body as Record<string, unknown>;
 const lastPath = (spy: { mock: { lastCall?: [Req] } }) => spy.mock.lastCall?.[0].path;
 
-/**
- * These functions run when a paused mutation replays from the persisted queue after a reload. The
- * component closure that supplied tenant/org is gone, so everything must come from persisted
- * variables. The hooks inject that context; these tests lock that fix in.
- * @see query.ts
- */
 describe('attachment offline-replay mutation functions', () => {
   it('update replays from persisted variables: tenant/org in the path, stx in the body', async () => {
     updateAttachment.mockClear();

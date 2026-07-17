@@ -104,7 +104,7 @@ The permission system in `backend/src/permissions/` provides: `checkPermission` 
 - Indentation: 2 spaces; line width: 100; quotes: single; semicolons: as needed; trailing commas: ES5.
 - Zod v4 only: `import { z } from 'zod'`. In backend: `import { z } from '@hono/zod-openapi'`.
 - camelCase for variables/functions (including constants), PascalCase for components, kebab-case for files, snake_case for translation keys.
-- JSDoc on all exports. Backend: full JSDoc with params/response. Frontend: 1-3 lines. No standalone file-level comments above imports.
+- JSDoc on all exports. Backend: full JSDoc with params/response. Frontend: 1-3 lines. No standalone file-level comments above imports. A comment longer than three prose lines must directly document a declaration or local executable block. Move cross-file architecture, workflows, and failure-mode narratives to the nearest canonical README.
 - Code comments explain non-trivial logic only. Do not narrate decision history, what was considered and rejected, or how the code evolved; that belongs in commit messages, not source. A comment should describe *what* the code does and *why*, not *what it replaced* or *what it is not*.
 - Avoid em dashes in source comments. Split the sentence, use a colon, or remove the secondary clause. Treat contrast, history, and conversational phrases such as `instead`, `rather than`, `previously`, `used to`, `maybe`, and `we should` as review signals. Rewrite useful comments around the current behavior or invariant, and delete the rest.
 - Reserve `materialize` and `materialization` for the named Yjs operation that converts collaborative state into durable entity data. Use concrete verbs such as `persist`, `provision`, `create`, or `resolve` elsewhere.

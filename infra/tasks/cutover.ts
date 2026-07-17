@@ -147,12 +147,6 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
   return { ok: true, steps }
 }
 
-// Impure edge: the real Scaleway `SetBackendServers` REST call.
-// PUT /lb/v1/zones/{zone}/backends/{backendId}/servers   body: { server_ip: [...] }
-// replaces the whole server list in one atomic server-side operation (Scaleway
-// Load Balancer zoned API v1). Preview-gated: exercised only in a live deploy,
-// never by the unit tests (which inject `setServers`).
-
 const LB_BASE = 'https://api.scaleway.com/lb/v1'
 
 export interface LbSetServersOptions {

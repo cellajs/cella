@@ -1,21 +1,3 @@
-/**
- * Attachment seq-read contract integration tests.
- *
- * Pins the seq-read contract that delta sync relies on, on the template's product
- * entity (attachment):
- * - B1: `seqCursor` reads return seq-ascending order regardless of sort/order params,
- *   so a limit-capped response is a clean, deterministic prefix.
- * - B2: `seqCursor` reads include soft-deleted rows (tombstones, so caches can drop them);
- *   normal reads never see them.
- * - B3: `limit` above 1000 is rejected, not clamped.
- * - B4: bounded `seqCursor` ("a,b") respects both bounds so rows outside the range stay excluded.
- *
- * (Raak also pins B5: `seqCursor` composes with `acceptedCutOff`; a task-status
- * feature with no template counterpart.)
- *
- * Requires: PostgreSQL (core mode or higher)
- */
-
 import { inArray } from 'drizzle-orm';
 import { getAttachments } from 'sdk';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';

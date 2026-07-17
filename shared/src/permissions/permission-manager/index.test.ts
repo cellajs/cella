@@ -4,13 +4,6 @@ import { configureWidePermissions, wideMembership, wideSubject, wideTopology } f
 import { getAllDecisions } from './check';
 import type { SubjectForPermission } from './types';
 
-/**
- * Engine decision tests. The policy-driven cases run against the wide fixture (a synthetic
- * hierarchy: organization → workspace/project → task/label/attachment, guest role on the nested
- * contexts) via the `topology` seam, so this suite covers guest roles and multi-level ancestor
- * resolution regardless of a fork's own config.
- */
-
 const organizationSubject = (id: string): SubjectForPermission =>
   wideSubject({ entityType: 'organization', id, channelIds: {} });
 

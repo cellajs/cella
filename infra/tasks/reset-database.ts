@@ -2,38 +2,14 @@ import { pc } from 'shared/cli-utils/colors'
 import { checkMark, crossMark, warningMark } from 'shared/utils/console'
 import type { RdbBackup, RdbDatabase, RdbInstance, RdbPermission } from '../lib/scaleway/scaleway-rdb'
 
-/**
- * Wipe the managed database's *contents* by deleting and recreating the logical database over the
- * Scaleway API, then re-granting both roles. For large rewrites, where replaying migration history
- * is not worth it and a clean baseline is.
- *
- * Why the control plane and not SQL inside the database: every database on the instance is owned by
- * `_rdb_superadmin`, so `admin_role` cannot drop `SCHEMA public`; and reaching the database at all
- * from outside means exposing it. The API needs neither.
- *
- * Why delete+create under the SAME name rather than a new one: Scaleway's resource IDs are
- * name-derived (`{region}/{instance_id}/{DBNAME}`, and `{…}/{db}/{user}` for privileges), so a
- * same-name recreate yields identical IDs and Pulumi's state stays correct — no `pulumi up`, no
- * generation bump, no secret churn, no VM roll.
- *
- * The migrate and seed steps cannot be automated from here: `migrate` is `restart: 'no'` in
- * compose, cloud-init is first-boot only, and the boot-replay unit merely cats a log — so no reboot
- * re-runs migrations. They are printed for the operator to run on the serial console.
- *
- * The sequencer is pure: every side effect arrives on the plan, so the unit tests assert exact step
- * order and the guards without touching the network.
- *
- * @see .todos/DB_RESET_DESIGN.md — measured constraints behind each step.
- */
-
-/** What the operator is asked to confirm — resolved from the live API, not from config. */
+/** The live API target shown to the operator for confirmation. */
 export interface ResetTarget {
   instanceName: string
   instanceId: string
   databaseName: string
   /** Every database on the instance, so a wrong instance is visible before anything is destroyed. */
   databases: RdbDatabase[]
-  /** `<database>@<instance>` — the exact string the operator must type. */
+  /** `<database>@<instance>`, the exact string the operator must type. */
   token: string
 }
 
@@ -83,8 +59,8 @@ export class ResetIrrecoverableError extends Error {
  * Order the reset over injected effects.
  *
  * Everything before the delete is a guard; everything after is recovery-critical. Nothing mutates
- * before `confirm` returns true, and the delete never runs until a backup reports `ready` — it is
- * the only undo, and staging has `disableBackup: true`, so no automatic backup exists to fall back
+ * before `confirm` returns true, and the delete never runs until its only undo, a backup, reports
+ * `ready`. Staging has `disableBackup: true`, so no automatic backup exists to fall back
  * on. Failures after the delete rethrow as {@link ResetIrrecoverableError} carrying the backup id.
  */
 export async function sequenceDatabaseReset(plan: ResetDatabasePlan): Promise<ResetDatabaseResult> {
@@ -138,8 +114,8 @@ export async function sequenceDatabaseReset(plan: ResetDatabasePlan): Promise<Re
     await plan.createDatabase(instance.id, plan.databaseName)
     plan.log(`${checkMark} Created empty database ${plan.databaseName}`)
 
-    // Mandatory: deleting the database dropped its privileges. Neither the recreate nor a restore
-    // brings them back, and without them the app reports `database_unreachable`.
+    // Deletion drops database privileges. The recreated app stays unreachable
+    // until both roles regain them.
     const granted: string[] = []
     for (const role of plan.roles) {
       await plan.setPrivilege(instance.id, plan.databaseName, role, plan.permission)
@@ -158,7 +134,7 @@ export async function sequenceDatabaseReset(plan: ResetDatabasePlan): Promise<Re
   }
 }
 
-/** e.g. `pre-reset-cella-20260717-1345` — sorts chronologically in the backup list. */
+/** For example, `pre-reset-cella-20260717-1345`; sorts chronologically. */
 export function backupName(databaseName: string, now: Date): string {
   const stamp = now.toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 13)
   return `pre-reset-${databaseName}-${stamp}`

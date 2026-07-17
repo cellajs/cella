@@ -21,10 +21,9 @@ function rolePassword(name: string): pulumi.Output<string> {
 const adminPassword = rolePassword('admin')
 const runtimePassword = rolePassword('runtime')
 
-// Temporary public endpoint for operator tasks (e.g. one-off data migrations).
-// `infra:dbPublicEndpoint=true` attaches a public LB endpoint to the instance.
-// `infra:dbPublicAcl` is a comma-separated list of CIDRs allowed to connect.
-// Both should be unset once the task is done so the DB returns to private-only.
+// Opt-in public endpoint for scoped operator tasks such as data migrations.
+// `infra:dbPublicEndpoint` enables it; `infra:dbPublicAcl` limits client CIDRs.
+// Unset both after the task to return the database to private-only access.
 const dbPublicEndpoint = infraConfig.getBoolean('dbPublicEndpoint') ?? false
 const dbPublicAcl = infraConfig.get('dbPublicAcl') ?? ''
 
@@ -195,7 +194,7 @@ export const connectionStringRuntime = buildConnectionString(runtimeUser.name, r
 export const connectionStringCdc = buildConnectionString(adminUser.name, adminPassword)
 
 /**
- * Admin connection over the temporary public endpoint, when enabled.
+ * Admin connection over the opt-in public endpoint, when enabled.
  * Returns an empty string when `infra:dbPublicEndpoint` is false.
  */
 export const connectionStringAdminPublic = pulumi

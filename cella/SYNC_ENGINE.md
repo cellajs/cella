@@ -115,6 +115,10 @@ And distinct terms for *what* a change is about and *where* it is routed:
 
 This architecture uses a persistent WebSocket connection from the CDC worker to the API server and channel-indexed SSE subscribers. Channel lookup is constant-time; broadcasting still scales with the number of matching subscribers. Existing permission logic filters each notification before delivery.
 
+The worker channel is internal-only. The API accepts it only at `/internal/cdc`, requires the
+shared CDC secret, restricts production sources to loopback or the deployment VPC, permits one
+connection, and closes idle peers after 90 seconds. External routing must never expose this path.
+
 **CDC buffering and batching:** `TransactionBuffer` retains transaction boundaries to suppress cascaded child deletes. After commit, `FlushBuffer` can micro-batch surviving events across transactions and groups them by `(type, action)`. Product groups are split again by their effective seq channel (the deepest non-null ancestor, via `resolveChannelKey()`), so every notification describes one contiguous seq range.
 
 ```

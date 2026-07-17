@@ -308,11 +308,7 @@ export async function updateServiceRollout(
   await writeControlState(s3, bucket, key, state, etag ? { ifMatch: etag } : {})
 }
 
-// Distributed lock: prevents concurrent mutating ops (two operators, or an
-// operator and CI) from racing on the same stack. Built on Scaleway's
-// conditional writes: atomic create-if-absent via `If-None-Match: *`, stale
-// break via `If-Match: <etag>`.
-
+/** Metadata for the conditional-write lock that serializes stack mutations. */
 export interface LockInfo {
   owner: string
   operation: string

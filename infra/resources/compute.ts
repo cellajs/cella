@@ -29,12 +29,7 @@ const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
   tags,
 })
 
-// Runtime secret manifest: metadata only (secret IDs + env var names, never
-// values). Baked directly into the new generation's cloud-init: under immutable
-// releases every change replaces the VM anyway, so there is no reason to deliver
-// it out-of-band. The on-VM boot agent reads it to hydrate /opt/app/.env.runtime
-// from Secret Manager before the app boots.
-
+/** Build the secret ID and env-name manifest baked into cloud-init. It never contains values. */
 function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi.Output<string> {
   const definitions = unionRuntimeSecrets(consumers)
   return pulumi.all(definitions.map((definition) => secretIds[definition.id])).apply((ids) =>
@@ -124,12 +119,8 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
 
 const buildComposeEnv = createComposeEnvBuilder(currentGenBindingIp, { hostSlug, coHosted })
 
-// Create VMs: the service set (`enabled`, `coHosted`, `hostSlug`) and the
-// content-addressed generation plan come from resources/generations.ts; the
-// program derives the content-addressed id for a pending SHA there and
-// provisions each generation here.
-
-
+// Generation planning owns the service set and content-addressed IDs; this
+// module provisions the resulting VMs.
 export interface GenerationInstance {
   /** Logical service slug. */
   service: ServiceName

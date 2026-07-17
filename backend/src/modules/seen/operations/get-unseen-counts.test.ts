@@ -2,18 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { AuthContext } from '#/core/context';
 import { getUnseenCountsOp } from './get-unseen-counts';
 
-/**
- * Regression guard for a DELIBERATE asymmetry, not a bug.
- *
- * Unseen counts are grouped by the caller's channel memberships. A system admin with no
- * memberships therefore gets `{}`, even though the system-admin bypass lets them read
- * every row. That is correct: the bypass widens rows WITHIN an org, it does not enrol the admin in
- * every org's unseen tally (firing badges for every org in the system would be worse than useless).
- *
- * This is the one place a system admin does NOT "see everything," so it reads like an inconsistency
- * someone might later "fix" for uniformity. This test exists to make that a conscious choice: if you
- * change it, you are changing intended behavior, not correcting an oversight.
- */
+// Unseen counts are membership-grouped. The system-admin bypass widens rows within an
+// organization but does not enroll the admin in every organization's tally.
 describe('getUnseenCountsOp — membership-less system admin', () => {
   it('returns {} for a system admin with no memberships (grouped by membership, not by bypass)', async () => {
     const ctx = {
