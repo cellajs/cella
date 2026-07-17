@@ -37,7 +37,7 @@ export const config = {
   entityActions: ['create', 'read', 'update', 'delete'] as const,
 
   /** Resource types that are not entities but have activities logged */
-  resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant'] as const,
+  resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant', 'system_role'] as const,
 
   /**
    * Entity embeddings: declares which entities are embedded as ID arrays inside

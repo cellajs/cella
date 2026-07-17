@@ -5,6 +5,7 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { requestsTable } from '#/modules/requests/requests-db';
+import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -21,7 +22,7 @@ export const entityTables = {
 } as const satisfies Record<string, ResolvableTable>;
 
 /** Resource types that are not entities but have activities logged. */
-export const resourceTypes = ['request', 'membership', 'inactive_membership', 'tenant'] as const;
+export const resourceTypes = ['request', 'membership', 'inactive_membership', 'tenant', 'system_role'] as const;
 
 /** Resource-to-table mapping. */
 export const resourceTables = {
@@ -29,6 +30,7 @@ export const resourceTables = {
   membership: membershipsTable,
   inactive_membership: inactiveMembershipsTable,
   tenant: tenantsTable,
+  system_role: systemRolesTable,
 } as const satisfies Record<string, TableWithId>;
 
 // Derived types from the table registries above

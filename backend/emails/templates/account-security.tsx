@@ -14,7 +14,10 @@ type AccountSecurityType =
   | 'passkey-removed'
   | 'totp-added'
   | 'totp-removed'
-  | 'tenant-created';
+  | 'tenant-created'
+  | 'system-role-granted'
+  | 'system-role-changed'
+  | 'system-role-revoked';
 
 interface AccountSecurityStatic {
   name: string;

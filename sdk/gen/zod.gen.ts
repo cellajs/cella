@@ -91,7 +91,7 @@ export const zStreamNotification = z.object({
   kind: z.enum(['entity', 'membership']),
   action: z.enum(['create', 'update', 'delete']),
   entityType: z.enum(['attachment']).nullable(),
-  resourceType: z.enum(['request', 'membership', 'inactive_membership', 'tenant']).nullable(),
+  resourceType: z.enum(['request', 'membership', 'inactive_membership', 'tenant', 'system_role']).nullable(),
   subjectId: z.string().nullable(),
   organizationId: z.string().nullable(),
   tenantId: z.string().nullable(),
