@@ -20,14 +20,12 @@ interface ImageViewerProps {
   width?: string;
   className?: string;
   enablePan?: boolean;
-  reset?: () => void;
   zoom?: number;
   pandx?: number;
   pandy?: number;
   rotation?: number;
   onPan?: (x: number, y: number) => void;
   setZoom: (z: number) => void;
-  onReset?: (dx: number, dy: number, zoom: number) => void;
   // biome-ignore lint/suspicious/noExplicitAny:by author
   onClick?: (e: React.MouseEvent<any>) => void;
   children?: React.ReactNode;
@@ -40,7 +38,6 @@ export class ImageViewer extends React.PureComponent<ImageViewerProps, ImageView
   public static defaultProps: Partial<ImageViewerProps> = {
     enablePan: true,
     onPan: () => undefined,
-    onReset: () => undefined,
     pandx: 0,
     pandy: 0,
     zoom: 0,
@@ -88,14 +85,6 @@ export class ImageViewer extends React.PureComponent<ImageViewerProps, ImageView
     }
     this.setState({ matrixData: newMatrixData });
   }
-
-  public reset = () => {
-    const matrixData = [0.4, 0, 0, 0.4, 0, 0];
-    this.setState({ matrixData });
-    if (this.props.onReset) {
-      this.props.onReset(0, 0, 1);
-    }
-  };
 
   public onClick = (e: React.MouseEvent<EventTarget>) => {
     if (this.state.comesFromDragging) {
@@ -239,7 +228,6 @@ export class ImageViewer extends React.PureComponent<ImageViewerProps, ImageView
     document.removeEventListener('wheel', this.preventDefault, false);
   };
 
-  // Change visibility from private to public
   public componentWillUnmount() {
     document.removeEventListener('wheel', this.preventDefault, false);
   }

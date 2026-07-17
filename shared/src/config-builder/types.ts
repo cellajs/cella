@@ -62,6 +62,7 @@ export interface LocalBlobStorageConfig {
   allowedContentTypes: string[];
   excludedContentTypes: string[];
   downloadConcurrency: number;
+  downloadRetryAttempts: number;
   uploadRetryAttempts: number;
   uploadRetryDelays: readonly number[];
 }

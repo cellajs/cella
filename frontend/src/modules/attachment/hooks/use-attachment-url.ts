@@ -11,13 +11,8 @@ interface UseAttachmentUrlResult {
   error: Error | null;
 }
 
-interface UseAttachmentUrlOptions extends ResolveOptions {
-  skip?: boolean;
-}
-
 /**
- * Resolves an attachment URL with offline-first approach.
- * Checks local IndexedDB blob storage first, falls back to cloud presigned URL.
+ * Resolves an attachment URL local-first: checks the local blob store, falls back to a cloud URL.
  */
 export function useAttachmentUrl(
   attachment:
@@ -27,22 +22,20 @@ export function useAttachmentUrl(
       >
     | null
     | undefined,
-  options: UseAttachmentUrlOptions = {},
+  { preferredVariant }: ResolveOptions = {},
 ): UseAttachmentUrlResult {
-  const { skip = false, ...resolveOptions } = options;
-
   const [result, setResult] = useState<UseAttachmentUrlResult>({
     url: null,
     isLocal: false,
     resolvedVariant: null,
-    isLoading: !skip && !!attachment,
+    isLoading: !!attachment,
     error: null,
   });
 
   const blobUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (skip || !attachment) {
+    if (!attachment) {
       setResult((prev) => ({ ...prev, isLoading: false }));
       return;
     }
@@ -59,7 +52,7 @@ export function useAttachmentUrl(
       setResult((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        const resolved = await resolveAttachmentUrl(attachment.id, attachment, resolveOptions);
+        const resolved = await resolveAttachmentUrl(attachment.id, attachment, { preferredVariant });
 
         if (!cancelled) {
           if (resolved?.isLocal) blobUrlRef.current = resolved.url;
@@ -93,7 +86,7 @@ export function useAttachmentUrl(
         blobUrlRef.current = null;
       }
     };
-  }, [attachment?.id, attachment?.originalKey, skip, resolveOptions.preferCloud, resolveOptions.preferredVariant]);
+  }, [attachment?.id, attachment?.originalKey, preferredVariant]);
 
   return result;
 }

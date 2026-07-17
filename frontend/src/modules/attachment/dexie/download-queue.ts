@@ -3,7 +3,17 @@ import { appConfig } from 'shared';
 import { attachmentsDb, type DownloadQueueEntry, type DownloadStatus } from './attachments-db';
 import { attachmentStorage } from './storage-service';
 
-/** Valid status transitions for background attachment downloads. */
+/**
+ * Skip reason for a row queued before its cloud keys arrived. Shared with the download service:
+ * it writes this reason, `enqueue` matches on it to re-queue once `originalKey` shows up.
+ */
+export const SKIP_REASON_NO_ORIGINAL_KEY = 'No originalKey';
+
+/**
+ * Valid transitions for the download service's own state machine. `failed` is terminal *to the
+ * service* — it must not resurrect a row mid-run. Reviving is an out-of-band `enqueue` decision
+ * (see `shouldRevive`), so it writes the row directly rather than going through `transition`.
+ */
 const transitions: Record<DownloadStatus, DownloadStatus[]> = {
   pending: ['downloading', 'skipped'],
   downloading: ['downloaded', 'failed'],
@@ -43,9 +53,13 @@ async function transition(id: string, to: DownloadStatus, skipReason?: string): 
 
 /**
  * Enqueue attachments for background download. The queue table doubles as the "seen?" registry:
- * existing rows (pending/downloading/downloaded/failed) are left untouched. The one exception is
- * rows `skipped` for lacking an `originalKey` at queue time — those reset to `pending` once one
- * exists. Attachments with a processed variant already cached locally are skipped.
+ * existing `pending`/`downloading`/`downloaded` rows are left untouched, which is what keeps a
+ * finished attachment from being re-downloaded on every list refresh. Two kinds of row are
+ * revived here, because enqueue is the natural retry trigger (the user is looking at the list
+ * again, and the metadata may have changed since):
+ * - `skipped` for lacking an `originalKey` at queue time, once one exists;
+ * - `failed`, while it still has retry attempts left.
+ * Attachments with a processed variant already stored locally are skipped.
  */
 async function enqueue(attachments: Attachment[], organizationId: string): Promise<void> {
   if (!attachments.length) return;
@@ -67,14 +81,11 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
       const existing = existingById.get(attachment.id);
 
       if (existing) {
-        // Re-queue rows that were skipped solely because keys hadn't arrived yet.
-        if (existing.status === 'skipped' && existing.skipReason === 'No originalKey' && attachment.originalKey) {
-          resetIds.push(attachment.id);
-        }
+        if (shouldRevive(existing, attachment, config)) resetIds.push(attachment.id);
         continue;
       }
 
-      // Skip if blob is already cached with a processed variant.
+      // Skip if the blob is already stored locally with a processed variant.
       const storedVariants = (await attachmentStorage.getStoredVariants(attachment.id)) ?? [];
       if (storedVariants.some((v) => v !== 'raw')) continue;
 
@@ -97,23 +108,41 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
 
     if (resetIds.length > 0) {
       await attachmentsDb.downloadQueue.where('id').anyOf(resetIds).modify({ status: 'pending', skipReason: null });
-      console.debug(`[DownloadQueue] Reset ${resetIds.length} skipped entries for re-download`);
+      console.debug(`[DownloadQueue] Revived ${resetIds.length} entries for re-download`);
     }
   } catch (error) {
     console.error('[DownloadQueue] Failed to enqueue:', error);
   }
 }
 
-/** Garbage collect completed and skipped entries for an organization. */
-async function gc(organizationId: string): Promise<void> {
+/**
+ * Whether an existing entry should go back to `pending`. Rows are otherwise left alone so the
+ * table can act as the dedupe registry.
+ */
+function shouldRevive(
+  entry: DownloadQueueEntry,
+  attachment: Attachment,
+  config: NonNullable<typeof appConfig.localBlobStorage>,
+): boolean {
+  // Queued before its keys had synced; now they have.
+  if (entry.status === 'skipped' && entry.skipReason === SKIP_REASON_NO_ORIGINAL_KEY && attachment.originalKey) {
+    return true;
+  }
+
+  // Transient fetch failure (offline, 5xx, timeout) — retry while attempts remain, so one bad
+  // fetch doesn't exclude an attachment from offline availability until sign-out.
+  if (entry.status === 'failed' && entry.attempts < config.downloadRetryAttempts) return true;
+
+  return false;
+}
+
+/** Drop queue entries for attachments that no longer exist (deleted). */
+async function remove(ids: string[]): Promise<void> {
+  if (!ids.length) return;
   try {
-    await attachmentsDb.downloadQueue
-      .where('organizationId')
-      .equals(organizationId)
-      .filter((entry) => entry.status === 'downloaded' || entry.status === 'skipped')
-      .delete();
+    await attachmentsDb.downloadQueue.where('id').anyOf(ids).delete();
   } catch (error) {
-    console.error('[DownloadQueue] Failed to gc:', error);
+    console.error('[DownloadQueue] Failed to remove entries:', error);
   }
 }
 
@@ -164,5 +193,5 @@ function calculatePriority(attachment: Attachment): number {
   return 5;
 }
 
-/** Queue API for background fetching of cloud attachments. */
-export const downloadQueue = { enqueue, transition, gc };
+/** Queue API for background downloading of cloud attachments. */
+export const downloadQueue = { enqueue, transition, remove };

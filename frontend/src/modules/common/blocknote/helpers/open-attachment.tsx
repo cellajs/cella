@@ -1,5 +1,5 @@
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
-import { openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
+import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
 // `clickedSrc` picks the carousel's start index; otherwise it opens at the first media block.

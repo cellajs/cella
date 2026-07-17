@@ -2,25 +2,31 @@ import { onlineManager } from '@tanstack/react-query';
 import { liveQuery, type Subscription } from 'dexie';
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
-import { attachmentsDb, type BlobVariant } from '~/modules/attachment/dexie/attachments-db';
-import { downloadQueue } from '~/modules/attachment/dexie/download-queue';
+import { attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
+import { downloadQueue, SKIP_REASON_NO_ORIGINAL_KEY } from '~/modules/attachment/dexie/download-queue';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
-import { getPrivateFileUrlById, getPublicFileUrl } from '~/modules/attachment/file-url';
-import { findAttachmentInCache } from '~/modules/attachment/query';
+import { type CloudFileVariant, getCloudUrl, getVariantKey } from '~/modules/attachment/file-url';
+import { attachmentQueryKeys, findAttachmentInCache } from '~/modules/attachment/query';
 import { isPersisted } from '~/modules/attachment/types';
 import { getAppDb } from '~/query/app-db';
 import { subscribeOwnerChange } from '~/query/app-storage';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { queryClient } from '~/query/query-client';
 
-/** Variant download priority, in download order. */
-const variantPriority: BlobVariant[] = ['thumbnail', 'converted', 'original'];
+/** Variant download priority, in download order. 'raw' is local-only, so never fetched. */
+const variantPriority: CloudFileVariant[] = ['thumbnail', 'converted', 'original'];
 
 /** Per-fetch timeout for variant downloads. */
 const variantFetchTimeoutMs = 30_000;
 
 /** Result of attempting to download a single variant. */
 type VariantResult = 'stored' | 'skipped' | 'failed-auth' | 'failed-other';
+
+/** True when `key` starts with every segment of `prefix` (react-query's own key-matching rule). */
+function matchesKeyPrefix(key: unknown, prefix: readonly unknown[]): boolean {
+  if (!Array.isArray(key)) return false;
+  return prefix.every((segment, i) => key[i] === segment);
+}
 
 class AttachmentDownloadService {
   private processing = false;
@@ -68,8 +74,8 @@ class AttachmentDownloadService {
       if (event.type !== 'updated') return;
       if (event.action.type !== 'success') return;
 
-      const queryKey = event.query.queryKey;
-      if (!Array.isArray(queryKey) || queryKey[0] !== 'attachment' || queryKey[1] !== 'list') return;
+      // Compare against the real key factory rather than re-encoding its shape here.
+      if (!matchesKeyPrefix(event.query.queryKey, attachmentQueryKeys.list.base)) return;
 
       // Extract attachments from the query data
       const attachments = flattenInfiniteData<Attachment>(event.query.state.data);
@@ -84,17 +90,20 @@ class AttachmentDownloadService {
       if (event.type !== 'updated') return;
       if (event.mutation.state.status !== 'success') return;
 
-      const mutationKey = event.mutation.options.mutationKey;
-      if (!Array.isArray(mutationKey) || mutationKey[0] !== 'attachment' || mutationKey[1] !== 'delete') return;
+      if (!matchesKeyPrefix(event.mutation.options.mutationKey, attachmentQueryKeys.delete)) return;
 
       // Get the deleted attachments from mutation variables
       const deletedAttachments = event.mutation.state.variables as Attachment[] | undefined;
       if (!deletedAttachments?.length) return;
 
-      // Remove blobs from local storage
+      // Drop both the local blobs and their queue rows; a deleted attachment will never be
+      // re-downloaded, so leaving its row behind only grows the dedupe registry forever.
       const ids = deletedAttachments.map((a) => a.id);
       attachmentStorage.deleteBlobs(ids).catch((err) => {
         console.error('[DownloadService] Failed to delete local blobs:', err);
+      });
+      downloadQueue.remove(ids).catch((err) => {
+        console.error('[DownloadService] Failed to remove queue entries:', err);
       });
     });
 
@@ -246,7 +255,7 @@ class AttachmentDownloadService {
     }
 
     if (!attachment.originalKey) {
-      await downloadQueue.transition(attachmentId, 'skipped', 'No originalKey');
+      await downloadQueue.transition(attachmentId, 'skipped', SKIP_REASON_NO_ORIGINAL_KEY);
       return;
     }
 
@@ -303,14 +312,11 @@ class AttachmentDownloadService {
    */
   private async downloadVariant(
     attachment: Attachment,
-    variant: BlobVariant,
+    variant: CloudFileVariant,
     organizationId: string,
   ): Promise<VariantResult> {
-    const key = this.getVariantKey(attachment, variant);
-    if (!key) return 'skipped';
-
-    // 'raw' is a local-only variant with no cloud key; nothing to fetch remotely.
-    if (variant === 'raw') return 'skipped';
+    // This attachment has no object for this variant.
+    if (!getVariantKey(attachment, variant)) return 'skipped';
 
     // Already have it locally.
     if (await attachmentStorage.hasVariant(attachment.id, variant)) return 'skipped';
@@ -319,9 +325,8 @@ class AttachmentDownloadService {
     if (!attachment.tenantId || !attachment.organizationId) return 'failed-other';
 
     try {
-      const url = attachment.public
-        ? getPublicFileUrl(key)
-        : await getPrivateFileUrlById(attachment.id, variant, attachment.tenantId, attachment.organizationId);
+      const url = await getCloudUrl(attachment, variant);
+      if (!url) return 'skipped';
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), variantFetchTimeoutMs);
@@ -352,22 +357,6 @@ class AttachmentDownloadService {
     } catch (err) {
       console.debug(`[DownloadService] Error downloading ${variant} for ${attachment.id}:`, err);
       return 'failed-other';
-    }
-  }
-
-  /**
-   * Get the cloud key for a specific variant.
-   */
-  private getVariantKey(attachment: Attachment, variant: BlobVariant): string | null {
-    switch (variant) {
-      case 'thumbnail':
-        return attachment.thumbnailKey || null;
-      case 'converted':
-        return attachment.convertedKey || null;
-      case 'original':
-        return attachment.originalKey || null;
-      default:
-        return null;
     }
   }
 }

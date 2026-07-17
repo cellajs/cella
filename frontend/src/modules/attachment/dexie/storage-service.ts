@@ -8,7 +8,6 @@ import {
   type UploadStatus,
 } from '~/modules/attachment/dexie/attachments-db';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
-import { getAppDb } from '~/query/app-db';
 
 /** Fallback chain for blob resolution, in lookup order. */
 const displayFallbackChain: BlobVariant[] = ['converted', 'original', 'raw'];
@@ -21,7 +20,7 @@ class AttachmentStorageService {
   /**
    * Get a blob by attachment ID and variant, with optional fallback chain.
    */
-  async getBlobWithVariant(
+  private async getBlobWithVariant(
     attachmentId: string,
     variant: BlobVariant,
     useFallback = false,
@@ -83,7 +82,7 @@ class AttachmentStorageService {
       await attachmentsDb.blobs.put(record);
       return record;
     } catch (error) {
-      console.error('Failed to store download blob:', error);
+      console.error('[AttachmentStorage] Failed to store download blob:', error);
       throw error;
     }
   }
@@ -101,33 +100,21 @@ class AttachmentStorageService {
       const hasDurable =
         (await this.hasVariant(attachmentId, 'original')) || (await this.hasVariant(attachmentId, 'converted'));
       if (!hasDurable) {
-        console.debug(`[Storage] Skipped raw eviction for ${attachmentId} — no durable variant stored`);
+        console.debug(`[AttachmentStorage] Skipped raw eviction for ${attachmentId} — no durable variant stored`);
         return false;
       }
 
       const exists = await attachmentsDb.blobs.get(rawKey);
       if (exists) {
         await attachmentsDb.blobs.delete(rawKey);
-        console.debug(`[Storage] Evicted raw blob for ${attachmentId}`);
+        console.debug(`[AttachmentStorage] Evicted raw blob for ${attachmentId}`);
         return true;
       }
       return false;
     } catch (error) {
-      console.error(`Failed to evict raw blob (${attachmentId}):`, error);
+      console.error(`[AttachmentStorage] Failed to evict raw blob (${attachmentId}):`, error);
       return false;
     }
-  }
-
-  /**
-   * Check if any variant of an attachment exists locally.
-   */
-  async hasAnyVariant(attachmentId: string): Promise<BlobVariant | null> {
-    for (const variant of ['original', 'converted', 'thumbnail', 'raw'] as BlobVariant[]) {
-      const key = makeBlobKey(attachmentId, variant);
-      const exists = await attachmentsDb.blobs.get(key);
-      if (exists) return variant;
-    }
-    return null;
   }
 
   /**
@@ -151,7 +138,7 @@ class AttachmentStorageService {
     try {
       const blobs = await attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray();
       return blobs.map((b) => b.variant);
-    } catch (error) {
+    } catch {
       return [];
     }
   }
@@ -188,7 +175,7 @@ class AttachmentStorageService {
       contentType: file.type || 'application/octet-stream',
       source: 'upload',
       uploadStatus,
-      syncAttempts: 0,
+      uploadAttempts: 0,
       nextRetryAt: null,
       lastError: null,
       storedAt: new Date(),
@@ -198,7 +185,7 @@ class AttachmentStorageService {
       await attachmentsDb.blobs.add(blob);
       return blob;
     } catch (error) {
-      console.error('Failed to store upload blob:', error);
+      console.error('[AttachmentStorage] Failed to store upload blob:', error);
       throw error;
     }
   }
@@ -206,11 +193,11 @@ class AttachmentStorageService {
   /**
    * Get a blob by composite key (id:variant format).
    */
-  async getBlob(id: string): Promise<AttachmentBlob | undefined> {
+  private async getBlob(id: string): Promise<AttachmentBlob | undefined> {
     try {
       return await attachmentsDb.blobs.get(id);
     } catch (error) {
-      console.error(`Failed to get blob (${id}):`, error);
+      console.error(`[AttachmentStorage] Failed to get blob (${id}):`, error);
       return undefined;
     }
   }
@@ -225,7 +212,7 @@ class AttachmentStorageService {
         await attachmentsDb.blobs.where('attachmentId').equals(id).delete();
       }
     } catch (error) {
-      console.error('Failed to delete blobs:', error);
+      console.error('[AttachmentStorage] Failed to delete blobs:', error);
       throw error;
     }
   }
@@ -240,8 +227,8 @@ class AttachmentStorageService {
       if (status === 'failed' && error) {
         const blob = await attachmentsDb.blobs.get(id);
         if (blob) {
-          const attempts = blob.syncAttempts ?? 0;
-          updates.syncAttempts = attempts + 1;
+          const attempts = blob.uploadAttempts ?? 0;
+          updates.uploadAttempts = attempts + 1;
           updates.lastError = error;
 
           // Exponential backoff using config
@@ -259,16 +246,9 @@ class AttachmentStorageService {
 
       await attachmentsDb.blobs.update(id, updates);
     } catch (error) {
-      console.error(`Failed to update sync status (${id}):`, error);
+      console.error(`[AttachmentStorage] Failed to update upload status (${id}):`, error);
       throw error;
     }
-  }
-
-  /**
-   * Mark upload as uploading.
-   */
-  async markUploading(id: string): Promise<void> {
-    await this.updateUploadStatus(id, 'uploading');
   }
 
   /**
@@ -290,21 +270,8 @@ class AttachmentStorageService {
     try {
       const blobs = await attachmentsDb.blobs.where('organizationId').equals(organizationId).toArray();
       return blobs.reduce((total, blob) => total + blob.size, 0);
-    } catch (error) {
+    } catch {
       return 0;
-    }
-  }
-
-  /**
-   * Clear all blobs and download queue entries (for sign-out/cleanup).
-   */
-  async clearAll(): Promise<void> {
-    if (!getAppDb()) return; // No per-user DB bound (signed out / impersonating)
-    try {
-      await attachmentsDb.blobs.clear();
-      await attachmentsDb.downloadQueue.clear();
-    } catch (error) {
-      console.error('Failed to clear attachment storage:', error);
     }
   }
 }

@@ -9,7 +9,7 @@ import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { getAppDb } from '~/query/app-db';
 
 /**
- * Background service that syncs pending local uploads to cloud, periodically and on reconnect.
+ * Background service that uploads pending local blobs to cloud, periodically and on reconnect.
  * Headless Uppy + @uppy/transloadit: Tus resumable protocol, built-in backoff, lazy per-upload
  * token fetch (never expires mid-upload), and assembly-completion polling.
  */
@@ -20,14 +20,14 @@ class AttachmentUploadService {
 
   /** Start the upload service. Listens for online events and polls periodically. */
   start(): void {
-    this.onlineHandler = () => this.attemptSync();
+    this.onlineHandler = () => this.processPendingUploads();
     window.addEventListener('online', this.onlineHandler);
 
     // Poll every 60 seconds
-    this.intervalId = setInterval(() => this.attemptSync(), 60000);
+    this.intervalId = setInterval(() => this.processPendingUploads(), 60000);
 
-    // Initial sync attempt
-    this.attemptSync();
+    // Initial upload attempt
+    this.processPendingUploads();
   }
 
   /** Stop the upload service. */
@@ -42,8 +42,8 @@ class AttachmentUploadService {
     }
   }
 
-  /** Attempt to sync all pending uploads. */
-  async attemptSync(): Promise<void> {
+  /** Attempt to upload all pending blobs. */
+  async processPendingUploads(): Promise<void> {
     if (this.processing) return;
     if (!onlineManager.isOnline()) return;
     if (!getAppDb()) return; // Signed out, no per-user blob store to process.
@@ -63,11 +63,11 @@ class AttachmentUploadService {
       }
 
       for (const [organizationId, blobs] of byOrg) {
-        await this.syncOrganizationUploads(organizationId, blobs);
+        await this.uploadOrganizationBlobs(organizationId, blobs);
       }
     } catch (error) {
-      console.error('[UploadService] Sync failed:', error);
-      reportCriticalError('attachment.upload_sync_failed', error);
+      console.error('[UploadService] Upload run failed:', error);
+      reportCriticalError('attachment.upload_failed', error);
     } finally {
       this.processing = false;
     }
@@ -85,8 +85,8 @@ class AttachmentUploadService {
     }
   }
 
-  /** Sync uploads for a specific organization. Each blob gets a fresh token via lazy assemblyOptions. */
-  private async syncOrganizationUploads(organizationId: string, blobs: AttachmentBlob[]): Promise<void> {
+  /** Upload blobs for a specific organization. Each blob gets a fresh token via lazy assemblyOptions. */
+  private async uploadOrganizationBlobs(organizationId: string, blobs: AttachmentBlob[]): Promise<void> {
     const cloudAvailable = await this.checkCloudAvailability(organizationId);
 
     if (!cloudAvailable) {
@@ -98,16 +98,16 @@ class AttachmentUploadService {
 
     for (const blob of blobs) {
       try {
-        await this.syncSingleBlob(blob);
+        await this.uploadBlob(blob);
       } catch (error) {
-        console.error(`[UploadService] Failed to sync blob ${blob.id}:`, error);
+        console.error(`[UploadService] Failed to upload blob ${blob.id}:`, error);
         await attachmentStorage.updateUploadStatus(blob.id, 'failed');
       }
     }
   }
 
-  /** Sync a single blob using headless Uppy with lazy token fetching. */
-  private async syncSingleBlob(blob: AttachmentBlob): Promise<void> {
+  /** Upload a single blob using headless Uppy with lazy token fetching. */
+  private async uploadBlob(blob: AttachmentBlob): Promise<void> {
     await attachmentStorage.updateUploadStatus(blob.id, 'uploading');
 
     const uppy = new Uppy({
@@ -164,23 +164,6 @@ class AttachmentUploadService {
     } finally {
       uppy.destroy();
     }
-  }
-
-  /** Get sync status summary. */
-  async getStatus(): Promise<{
-    pending: number;
-    uploading: number;
-    failed: number;
-    localOnly: number;
-  }> {
-    const [pending, uploading, failed, localOnly] = await Promise.all([
-      attachmentsDb.blobs.where('uploadStatus').equals('pending').count(),
-      attachmentsDb.blobs.where('uploadStatus').equals('uploading').count(),
-      attachmentsDb.blobs.where('uploadStatus').equals('failed').count(),
-      attachmentsDb.blobs.where('uploadStatus').equals('local-only').count(),
-    ]);
-
-    return { pending, uploading, failed, localOnly };
   }
 }
 

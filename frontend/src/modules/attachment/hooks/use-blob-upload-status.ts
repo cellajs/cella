@@ -1,12 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import type { AttachmentBlob, BlobVariant, UploadStatus } from '~/modules/attachment/dexie/attachments-db';
-import { attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
+import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
 import { getAppDb } from '~/query/app-db';
 
 interface BlobUploadInfo {
-  uploadStatus: UploadStatus | null;
+  /** False when no local blob exists for this attachment — i.e. it lives only in the cloud. */
   hasLocalBlob: boolean;
-  storedVariants: BlobVariant[];
   isUploaded: boolean;
   isUploading: boolean;
   isFailed: boolean;
@@ -15,10 +13,9 @@ interface BlobUploadInfo {
   lastError: string | null;
 }
 
+/** No local blob means the attachment is cloud-only, which is the "done" state for the UI. */
 const defaultUploadInfo: BlobUploadInfo = {
-  uploadStatus: null,
   hasLocalBlob: false,
-  storedVariants: [],
   isUploaded: true,
   isUploading: false,
   isFailed: false,
@@ -30,14 +27,12 @@ const defaultUploadInfo: BlobUploadInfo = {
 function blobsToUploadInfo(blobs: AttachmentBlob[]): BlobUploadInfo {
   if (!blobs.length) return defaultUploadInfo;
 
-  const storedVariants = blobs.map((b) => b.variant);
+  // The raw blob carries the upload state; downloaded variants are by definition already in cloud.
   const rawBlob = blobs.find((b) => b.variant === 'raw');
   const primaryBlob = rawBlob || blobs[0];
 
   return {
-    uploadStatus: primaryBlob.uploadStatus,
     hasLocalBlob: true,
-    storedVariants,
     isUploaded: primaryBlob.uploadStatus === 'uploaded',
     isUploading: primaryBlob.uploadStatus === 'uploading',
     isFailed: primaryBlob.uploadStatus === 'failed',

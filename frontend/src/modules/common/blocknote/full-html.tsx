@@ -6,7 +6,7 @@ import DOMPurify from 'dompurify';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
-import { openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
+import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { getPrivateFileUrlById, getPublicFileUrl } from '~/modules/attachment/file-url';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 import {

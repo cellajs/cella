@@ -10,6 +10,7 @@ export const mockAttachmentAppConfig = {
     allowedContentTypes: [],
     excludedContentTypes: ['video/*'],
     downloadConcurrency: 2,
+    downloadRetryAttempts: 3,
     uploadRetryAttempts: 3,
     uploadRetryDelays: [1000, 2000, 3000],
   },
