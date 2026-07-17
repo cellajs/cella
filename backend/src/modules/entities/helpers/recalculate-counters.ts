@@ -138,24 +138,54 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
-  // ── Phase 3: Seq counters from MAX(seq) ───────────────────────────────
-  // Grouped by the deepest non-null ancestor, the same scope CDC stamps seqs from.
+  // ── Phase 3: Org ledger + high-water marks from MAX(seq) ──────────────
+  // `s:ledger` per org = the max stamped ledger value across ALL product tables (the
+  // reservation counter CDC increments). `hw:{type}` = MAX(seq) per (node, entityType)
+  // at the org and at every ancestor level column, matching CDC's hwNodeKeys rollup.
   // Tombstones keep their seq, so no live filter: MAX is a high-water mark.
-  for (const entityType of appConfig.productEntityTypes) {
-    const tableName = tbl(entityType);
-    const seqKey = `s:${entityType}`;
-    const ctxExpr = deepestAncestorExpr(entityType, 't');
-    if (!ctxExpr) continue;
-
+  const ledgerMaxes = appConfig.productEntityTypes.map(
+    (et) => `COALESCE((SELECT MAX(t.seq) FROM ${tbl(et)} t WHERE t.organization_id = o.id), 0)`,
+  );
+  if (ledgerMaxes.length > 0) {
     await upsertChannelCounters(
       db,
       `
-      SELECT ${ctxExpr}, jsonb_build_object('${seqKey}', COALESCE(MAX(t.seq), 0)), NOW()
-      FROM ${tableName} t
-      WHERE ${ctxExpr} IS NOT NULL
-      GROUP BY ${ctxExpr}
+      SELECT o.id, jsonb_build_object('s:ledger', GREATEST(${ledgerMaxes.join(', ')})), NOW()
+      FROM organizations o
     `,
     );
+  }
+
+  for (const entityType of appConfig.productEntityTypes) {
+    const tableName = tbl(entityType);
+    const hwKey = `hw:${entityType}`;
+
+    // Org node: every stamped row rolls up to its organization.
+    await upsertChannelCounters(
+      db,
+      `
+      SELECT t.organization_id, jsonb_build_object('${hwKey}', COALESCE(MAX(t.seq), 0)), NOW()
+      FROM ${tableName} t
+      WHERE t.organization_id IS NOT NULL
+      GROUP BY t.organization_id
+    `,
+    );
+
+    // Every non-root ancestor level the table carries a FK column for (full rollup,
+    // matching CDC's hwNodeKeys: org + every non-null ancestor).
+    for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
+      if (ancestor === 'organization') continue;
+      const col = fkCol(ancestor);
+      await upsertChannelCounters(
+        db,
+        `
+        SELECT t.${col}, jsonb_build_object('${hwKey}', COALESCE(MAX(t.seq), 0)), NOW()
+        FROM ${tableName} t
+        WHERE t.${col} IS NOT NULL
+        GROUP BY t.${col}
+      `,
+      );
+    }
   }
 
   // ── Phase 3b: Activity stamps from MAX(published_at/created_at) / MAX(updated_at) ──

@@ -55,7 +55,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.seqGroups).toHaveLength(0);
+    expect(plan.ledgerGroups).toHaveLength(0);
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:admin': 1, 'm:total': 1, 's:membership': 1 });
   });
 
@@ -124,15 +124,11 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    // One seq group for (org-1, attachment)
-    expect(plan.seqGroups).toHaveLength(1);
-    expect(plan.seqGroups[0].channelKey).toBe('org-1');
-    expect(plan.seqGroups[0].seqKey).toBe('s:attachment');
-    expect(plan.seqGroups[0].count).toBe(5);
-    expect(plan.seqGroups[0].events).toHaveLength(5);
-
-    // ctx === org → no separate org signal
-    expect(plan.seqGroups[0].orgSignal).toBeNull();
+    // One ledger group per organization (all product types share the org ledger)
+    expect(plan.ledgerGroups).toHaveLength(1);
+    expect(plan.ledgerGroups[0].orgKey).toBe('org-1');
+    expect(plan.ledgerGroups[0].count).toBe(5);
+    expect(plan.ledgerGroups[0].events).toHaveLength(5);
 
     // Count deltas: accumulated across all 5 events on org, plus one activity stamp
     // (rows carry no createdAt here, so the stamp falls back to Date.now())
@@ -160,11 +156,11 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    expect(plan.seqGroups).toHaveLength(0);
+    expect(plan.ledgerGroups).toHaveLength(0);
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2 });
   });
 
-  it('batch of attachment soft deletes: seq group and count deltas accumulated', () => {
+  it('batch of attachment soft deletes: ledger group and count deltas accumulated', () => {
     const events = [
       mockEvent({
         tableMeta: attachmentEntry(),
@@ -182,14 +178,13 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    expect(plan.seqGroups).toHaveLength(1);
-    expect(plan.seqGroups[0].channelKey).toBe('org-1');
-    expect(plan.seqGroups[0].seqKey).toBe('s:attachment');
-    expect(plan.seqGroups[0].count).toBe(2);
+    expect(plan.ledgerGroups).toHaveLength(1);
+    expect(plan.ledgerGroups[0].orgKey).toBe('org-1');
+    expect(plan.ledgerGroups[0].count).toBe(2);
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2 });
   });
 
-  it('no channelKey is duplicated across seq groups', () => {
+  it('one ledger group per organization, never duplicated', () => {
     const events = Array.from({ length: 3 }, (_, i) =>
       mockEvent({
         tableMeta: attachmentEntry(),
@@ -200,8 +195,9 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    const seqChannelKeys = plan.seqGroups.map((g) => g.channelKey);
-    expect(new Set(seqChannelKeys).size).toBe(seqChannelKeys.length);
+    const orgKeys = plan.ledgerGroups.map((g) => g.orgKey);
+    expect(new Set(orgKeys).size).toBe(orgKeys.length);
+    expect(orgKeys).toHaveLength(3);
   });
 });
 
@@ -351,7 +347,7 @@ describe('draft lifecycle count deltas (publishedAt)', () => {
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
-    expect(plan.seqGroups).toHaveLength(1); // drafts keep create-time seqs
+    expect(plan.ledgerGroups).toHaveLength(1); // drafts keep create-time ledger stamps
   });
 
   it('draft-internal edits count nothing', () => {

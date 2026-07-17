@@ -30,7 +30,9 @@ export const streamNotificationSchema = z
     kind: z
       .enum(['entity', 'membership'])
       .describe('Discriminant for the notification: product-entity sync vs membership change'),
-    action: z.enum(activityActions),
+    action: z
+      .enum([...activityActions, 'moveOut'] as const)
+      .describe('Change kind; moveOut = the row left this path (reparent) and is no longer readable there'),
     entityType: z.enum(appConfig.productEntityTypes).nullable(),
     resourceType: z.enum(appConfig.resourceTypes).nullable(),
     subjectId: z.string().nullable(),
@@ -40,7 +42,11 @@ export const streamNotificationSchema = z
       .enum(appConfig.channelEntityTypes)
       .nullable()
       .describe('Channel entity type for membership events (e.g. organization, project)'),
-    seq: z.number().int().nullable().describe('Per-entityType sequence number used for gap detection in sync'),
+    path: z
+      .string()
+      .nullable()
+      .describe('Materialized id-path of the affected rows (root-first ancestor ids); moveOut carries the OLD path'),
+    seq: z.number().int().nullable().describe('Org-ledger sequence (shared across product entity types)'),
     channelId: z
       .string()
       .nullable()
@@ -50,7 +56,12 @@ export const streamNotificationSchema = z
       .number()
       .int()
       .nullable()
-      .describe('Last seq for a batched notification — client should fetch range'),
+      .describe('Last ledger seq for a batched notification — client should fetch range'),
+    count: z
+      .number()
+      .int()
+      .nullable()
+      .describe('Authoritative row count for batches: the ledger range may interleave with other paths'),
     syncWindow: z
       .number()
       .int()

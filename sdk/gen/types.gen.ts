@@ -111,7 +111,10 @@ export type StreamNotification = {
    * Discriminant for the notification: product-entity sync vs membership change
    */
   kind: 'entity' | 'membership';
-  action: 'create' | 'update' | 'delete';
+  /**
+   * Change kind; moveOut = the row left this path (reparent) and is no longer readable there
+   */
+  action: 'create' | 'update' | 'delete' | 'moveOut';
   entityType: 'attachment' | null;
   resourceType: 'request' | 'membership' | 'inactive_membership' | 'tenant' | 'system_role' | null;
   subjectId: string | null;
@@ -122,7 +125,11 @@ export type StreamNotification = {
    */
   channelType: 'organization' | null;
   /**
-   * Per-entityType sequence number used for gap detection in sync
+   * Materialized id-path of the affected rows (root-first ancestor ids); moveOut carries the OLD path
+   */
+  path: string | null;
+  /**
+   * Org-ledger sequence (shared across product entity types)
    */
   seq: number | null;
   /**
@@ -134,9 +141,13 @@ export type StreamNotification = {
       [key: string]: unknown;
     } | null);
   /**
-   * Last seq for a batched notification — client should fetch range
+   * Last ledger seq for a batched notification — client should fetch range
    */
   batchUntilSeq: number | null;
+  /**
+   * Authoritative row count for batches: the ledger range may interleave with other paths
+   */
+  count: number | null;
   /**
    * Server-suggested spread window (ms) for the lazy delta fetch — scales with channel audience and load; the client clamps it between its eagerness tier bounds
    */

@@ -16,6 +16,7 @@ const mockEventWithData = (key: string): ActivityEvent =>
     rowData: {},
     seq: null,
     batchUntilSeq: null,
+    count: null,
     propagation: null,
     trace: null,
   }) as ActivityEvent;

@@ -31,6 +31,15 @@ export function isActivityStampKey(key: string): boolean {
 }
 
 /**
+ * Keys that merge via GREATEST instead of summing: activity stamps (`li:`/`lu:`, epoch ms)
+ * and ledger high-water marks (`hw:<type>`, the max org-ledger seq of that entity type at
+ * or below the node). Mirrored by the apply_count_deltas PG function.
+ */
+export function isMaxMergeKey(key: string): boolean {
+  return isActivityStampKey(key) || key.startsWith('hw:');
+}
+
+/**
  * Determine count deltas from a CDC event.
  *
  * Membership rows yield `m:<role>` / `m:total` deltas plus an org-level

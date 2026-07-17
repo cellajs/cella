@@ -89,17 +89,19 @@ export const zStxBase = z.object({
  */
 export const zStreamNotification = z.object({
   kind: z.enum(['entity', 'membership']),
-  action: z.enum(['create', 'update', 'delete']),
+  action: z.enum(['create', 'update', 'delete', 'moveOut']),
   entityType: z.enum(['attachment']).nullable(),
   resourceType: z.enum(['request', 'membership', 'inactive_membership', 'tenant', 'system_role']).nullable(),
   subjectId: z.string().nullable(),
   organizationId: z.string().nullable(),
   tenantId: z.string().nullable(),
   channelType: z.enum(['organization']).nullable(),
+  path: z.string().nullable(),
   seq: z.int().nullable(),
   channelId: z.string().nullable(),
   stx: zStxBase.and(z.record(z.string(), z.unknown())).nullable(),
   batchUntilSeq: z.int().nullable(),
+  count: z.int().nullable(),
   syncWindow: z.int().nullable(),
   propagation: z
     .object({

@@ -1,3 +1,4 @@
+import { createEntityHierarchy, createRoleRegistry } from 'shared';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { BatchUnifiedDeltaPlan } from '../utils/compute-unified-deltas';
 import type { ParseMessageResult } from '../pipeline/parse-message';
@@ -39,6 +40,16 @@ vi.mock('../lib/db', () => {
 
 // Import after mocks are set up
 const { applyBatchUnifiedDeltas, sumInto } = await import('../utils/apply-unified-deltas');
+const { hwNodeKeys } = await import('../utils/compute-unified-deltas');
+
+// Synthetic two-level hierarchy: org > project > task (cella's own config has no sub-org product)
+const roles = createRoleRegistry(['admin', 'member'] as const);
+const syntheticH = createEntityHierarchy(roles)
+  .user()
+  .channel('organization', { parent: null, roles: roles.all })
+  .channel('project', { parent: 'organization', roles: roles.all })
+  .product('task', { parent: 'project' })
+  .build();
 
 beforeEach(() => {
   dbOps.length = 0;
@@ -50,88 +61,91 @@ describe('applyBatchUnifiedDeltas', () => {
     return {
       lsn: `0/${id}`,
       result: {
-        activity: { action: 'create', entityType: 'task' } as unknown as InsertActivityModel,
+        activity: { action: 'create', entityType: 'task', organizationId: 'org-1' } as unknown as InsertActivityModel,
         rowData: { id, projectId: 'proj-1', organizationId: 'org-1' },
         oldRowData: null,
-        tableMeta: { kind: 'entity', type: 'task', table: {} } as unknown as EntityTableMeta,
+        tableMeta: {
+          kind: 'entity',
+          type: 'task',
+          table: { [Symbol.for('drizzle:Name')]: 'tasks' },
+        } as unknown as EntityTableMeta,
       },
     };
   }
 
-  it('assigns sequential seq values to events from reserved range', async () => {
-    upsertReturnValue = { 's:task': 5 }; // highSeq = 5, count = 3, baseSeq = 2
+  it('assigns sequential org-ledger values to events from the reserved range', async () => {
+    upsertReturnValue = { 's:ledger': 5 }; // highSeq = 5, count = 3, baseSeq = 2
 
     const events = [mockEvent('t1'), mockEvent('t2'), mockEvent('t3')];
 
     const plan: BatchUnifiedDeltaPlan = {
-      seqGroups: [{
-        channelKey: 'proj-1',
-        seqKey: 's:task',
-        count: 3,
-        orgSignal: { orgKey: 'org-1', seqKey: 's:task', count: 3 },
-        events,
-        tableName: 'tasks',
-      }],
+      ledgerGroups: [{ orgKey: 'org-1', count: 3, events }],
       countDeltasByChannelKey: new Map([
         ['org-1', { 'e:task': 3 }],
         ['proj-1', { 'e:task': 3 }],
       ]),
-      entityStamps: [],
     };
 
-    await applyBatchUnifiedDeltas(plan);
+    await applyBatchUnifiedDeltas(plan, syntheticH);
 
-    // Events should have sequential seq values: 3, 4, 5
+    // Events should have sequential ledger values: 3, 4, 5
     expect(events[0].result.rowData.seq).toBe(3);
     expect(events[1].result.rowData.seq).toBe(4);
     expect(events[2].result.rowData.seq).toBe(5);
   });
 
-  it('merges seq and count deltas for the same channelKey', async () => {
-    upsertReturnValue = { 's:task': 2, 'e:task': 2 };
+  it('phase 1 merges ledger + org counts; phase 2 writes hw nodes and the stamp-back', async () => {
+    upsertReturnValue = { 's:ledger': 2, 'e:task': 2 };
 
     const events = [mockEvent('t1'), mockEvent('t2')];
 
     const plan: BatchUnifiedDeltaPlan = {
-      seqGroups: [{
-        channelKey: 'proj-1',
-        seqKey: 's:task',
-        count: 2,
-        orgSignal: null,
-        events,
-        tableName: 'tasks',
-      }],
+      ledgerGroups: [{ orgKey: 'org-1', count: 2, events }],
       countDeltasByChannelKey: new Map([
-        // proj-1 has both seq (from seqGroup) AND entity count deltas
+        ['org-1', { 'e:task': 2 }],
         ['proj-1', { 'e:task': 2 }],
       ]),
-      entityStamps: [],
     };
 
-    await applyBatchUnifiedDeltas(plan);
+    await applyBatchUnifiedDeltas(plan, syntheticH);
 
-    // proj-1 handled by Phase 1 (merged), no remaining count upserts for it
-    const upserts = dbOps.filter(op => op.type === 'upsert');
-    expect(upserts).toHaveLength(1);
+    // Upserts: phase-1 org reservation, phase-2 org hw, phase-2 proj-1 (counts + hw)
+    const upserts = dbOps.filter((op) => op.type === 'upsert');
+    expect(upserts).toHaveLength(3);
+    // Stamp-back: one bulk UPDATE for the tasks table
+    const executes = dbOps.filter((op) => op.type === 'execute');
+    expect(executes).toHaveLength(1);
   });
 
   it('handles empty plan', async () => {
     const plan: BatchUnifiedDeltaPlan = {
-      seqGroups: [],
+      ledgerGroups: [],
       countDeltasByChannelKey: new Map(),
-      entityStamps: [],
     };
 
-    await applyBatchUnifiedDeltas(plan);
+    await applyBatchUnifiedDeltas(plan, syntheticH);
     expect(dbOps).toHaveLength(0);
+  });
+});
+
+describe('hwNodeKeys', () => {
+  it('org first, then every non-null ancestor, deduplicated', () => {
+    expect(hwNodeKeys('task', { id: 't1', projectId: 'proj-1', organizationId: 'org-1' }, 'org-1', syntheticH)).toEqual([
+      'org-1',
+      'proj-1',
+    ]);
+  });
+
+  it('org-homed row rolls up to the org node only', () => {
+    expect(hwNodeKeys('task', { id: 't1', organizationId: 'org-1' }, 'org-1', syntheticH)).toEqual(['org-1']);
   });
 });
 
 describe('sumInto', () => {
   it('sums plain delta keys on collision', () => {
-    const target = { 's:task': 2, 'e:task': 1 };
+    const target = { 's:ledger': 2, 'e:task': 1 };
     sumInto(target, { 'e:task': 2, 'm:admin': 1 });
-    expect(target).toEqual({ 's:task': 2, 'e:task': 3, 'm:admin': 1 });
+    expect(target).toEqual({ 's:ledger': 2, 'e:task': 3, 'm:admin': 1 });
   });
 
   it('max-merges li:/lu: keys instead of summing (timestamps must not add up)', () => {
@@ -146,9 +160,17 @@ describe('sumInto', () => {
     expect(target['lu:task']).toBe(1_753_000_000_000);
   });
 
-  it('li:/lu: keys pass through unchanged when absent from target', () => {
-    const target: Record<string, number> = { 's:task': 1 };
-    sumInto(target, { 'li:task': 1_751_000_000_000, 'lu:task': 1_751_500_000_000, 'e:task': 1 });
-    expect(target).toEqual({ 's:task': 1, 'li:task': 1_751_000_000_000, 'lu:task': 1_751_500_000_000, 'e:task': 1 });
+  it('max-merges hw: keys (high-water marks only move forward)', () => {
+    const target = { 'hw:task': 40 };
+    sumInto(target, { 'hw:task': 35 });
+    expect(target['hw:task']).toBe(40);
+    sumInto(target, { 'hw:task': 41 });
+    expect(target['hw:task']).toBe(41);
+  });
+
+  it('max-merge keys pass through unchanged when absent from target', () => {
+    const target: Record<string, number> = { 's:ledger': 1 };
+    sumInto(target, { 'li:task': 1_751_000_000_000, 'hw:task': 7, 'e:task': 1 });
+    expect(target).toEqual({ 's:ledger': 1, 'li:task': 1_751_000_000_000, 'hw:task': 7, 'e:task': 1 });
   });
 });

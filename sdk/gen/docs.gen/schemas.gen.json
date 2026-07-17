@@ -348,7 +348,8 @@
         "action": {
           "type": "string",
           "required": true,
-          "enum": ["create", "update", "delete"]
+          "description": "Change kind; moveOut = the row left this path (reparent) and is no longer readable there",
+          "enum": ["create", "update", "delete", "moveOut"]
         },
         "entityType": {
           "type": ["string", "null"],
@@ -378,10 +379,15 @@
           "description": "Channel entity type for membership events (e.g. organization, project)",
           "enum": ["organization", null]
         },
+        "path": {
+          "type": ["string", "null"],
+          "required": true,
+          "description": "Materialized id-path of the affected rows (root-first ancestor ids); moveOut carries the OLD path"
+        },
         "seq": {
           "type": ["integer", "null"],
           "required": true,
-          "description": "Per-entityType sequence number used for gap detection in sync"
+          "description": "Org-ledger sequence (shared across product entity types)"
         },
         "channelId": {
           "type": ["string", "null"],
@@ -417,7 +423,12 @@
         "batchUntilSeq": {
           "type": ["integer", "null"],
           "required": true,
-          "description": "Last seq for a batched notification — client should fetch range"
+          "description": "Last ledger seq for a batched notification — client should fetch range"
+        },
+        "count": {
+          "type": ["integer", "null"],
+          "required": true,
+          "description": "Authoritative row count for batches: the ledger range may interleave with other paths"
         },
         "syncWindow": {
           "type": ["integer", "null"],

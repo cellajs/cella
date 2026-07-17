@@ -5,6 +5,7 @@ import type { TableMeta } from '../types';
 import { convertRowKeys, extractRowData, getChangedFields } from '../utils';
 import { compactRowData } from '../utils/compact-row-data';
 import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
+import { pickPermissionRowData } from '../utils/permission-row-data';
 import { createActivity } from '../services/create-activity';
 
 /** 
@@ -50,7 +51,9 @@ export function handleUpdate(
 
   // Strip sync-state fields: they always change on every write but aren't user mutations.
   // Must happen before embedding suppression so WAL-diff paths don't see 'stx'/'seq'.
-  const syncStateKeys = new Set(['stx', 'seq']);
+  // 'path' is a stored generated column derived from the placement columns — the placement
+  // change itself is the user mutation, the path echo is not.
+  const syncStateKeys = new Set(['stx', 'seq', 'path']);
   const userChangedFields = changedFields?.filter((k) => !syncStateKeys.has(k)) ?? null;
 
   // Skip CDC's own seq stamps (only seq/stx changed, no user mutation)
@@ -65,6 +68,20 @@ export function handleUpdate(
 
   const activity = createActivity(tableMeta, rowData, 'update', { changedFields: userChangedFields });
 
+  // Move-out detection: the materialized `path` (stored generated column, present in the
+  // REPLICA IDENTITY FULL old image) changed → carry the old row's permission subset so
+  // dispatch can notify subscribers who could read the old location but not the new one.
+  const movedFrom =
+    oldRowData && typeof oldRowData.path === 'string' && typeof rowData.path === 'string' && oldRowData.path !== rowData.path
+      ? pickPermissionRowData(oldRowData)
+      : null;
+
   // Strip large columns: changedFields already computed, downstream never reads content
-  return { activity, rowData: compactRowData(rowData), oldRowData: oldRowData ? compactRowData(oldRowData) : null, tableMeta };
+  return {
+    activity,
+    rowData: compactRowData(rowData),
+    oldRowData: oldRowData ? compactRowData(oldRowData) : null,
+    movedFrom,
+    tableMeta,
+  };
 }

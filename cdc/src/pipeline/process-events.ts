@@ -24,6 +24,7 @@ interface PreparedEvent {
   seq: number | undefined;
   lsn: string;
   rowData: CdcRowData;
+  movedFrom: CdcRowData | null;
 }
 
 // Activity persistence
@@ -117,15 +118,16 @@ async function persistActivities(
 /** Forward stamped events to the API server: one batch payload, or a single payload. */
 function dispatchToApi(stamped: PreparedEvent[], traceCtx: TraceContext): void {
   if (stamped.length > 1) {
-    const batchInfos: BatchEventInfo[] = stamped.map(({ activityWithId, rowData, seq }) => ({
+    const batchInfos: BatchEventInfo[] = stamped.map(({ activityWithId, rowData, seq, movedFrom }) => ({
       activity: activityWithId,
       rowData,
       seq,
+      movedFrom,
     }));
     sendBatchMessageToApi(batchInfos, traceCtx);
   } else {
-    const { activityWithId, rowData, seq } = stamped[0];
-    sendMessageToApi(activityWithId, rowData, traceCtx, seq);
+    const { activityWithId, rowData, seq, movedFrom } = stamped[0];
+    sendMessageToApi(activityWithId, rowData, traceCtx, seq, movedFrom);
   }
 }
 
@@ -160,7 +162,7 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
     const prepared = events.map(({ lsn, result }) => {
       replicationState.lastLsn = lsn;
       const { activityWithId, seq } = prepareActivity(result, lsn);
-      return { activityWithId, seq, lsn, rowData: result.rowData };
+      return { activityWithId, seq, lsn, rowData: result.rowData, movedFrom: result.movedFrom ?? null };
     });
 
     // Persist activities FIRST: if this fails, no deltas are applied (no side effects)

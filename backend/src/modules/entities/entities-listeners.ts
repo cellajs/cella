@@ -1,10 +1,14 @@
 import { appConfig } from 'shared';
 import { activityBus, getEventData } from '#/lib/activity-bus';
-import { type AppStreamSubscriber, dispatchToAppStream } from '#/modules/entities/helpers/dispatch-to-stream';
+import {
+  type AppStreamSubscriber,
+  dispatchMoveOuts,
+  dispatchToAppStream,
+} from '#/modules/entities/helpers/dispatch-to-stream';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
 import { streamSubscriberManager } from './stream';
-import type { AppStreamEvent } from './stream/types';
+import type { AppStreamEvent, AppStreamProductEvent } from './stream/types';
 
 /**
  * Activity bus listeners for entity changes.
@@ -19,6 +23,8 @@ for (const entityType of appConfig.productEntityTypes) {
       if (!event.subjectId || !event.organizationId) return;
       try {
         await dispatchToAppStream(event as AppStreamEvent);
+        // Reparented rows additionally notify old-path readers who lost visibility
+        if (action === 'updated') await dispatchMoveOuts(event as AppStreamProductEvent);
       } catch (error) {
         log.error('Failed to dispatch entity change event', { error, activityId: event.id });
       }

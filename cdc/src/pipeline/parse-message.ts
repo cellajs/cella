@@ -11,11 +11,15 @@ export type ActivityWithoutId = Omit<InsertActivityModel, 'id'>;
 /**
  * Result of parsing a CDC message.
  * Includes activity to insert, row data (entity or resource) and table metadata.
+ * `movedFrom` is set on product updates whose materialized `path` changed (reparent):
+ * the permission-relevant subset of the OLD row, so dispatch can deliver a move-out
+ * to subscribers who could read the old location but not the new one.
  */
 export interface ParseMessageResult {
   activity: ActivityWithoutId;
   rowData: CdcRowData;
   oldRowData: CdcRowData | null;
+  movedFrom?: CdcRowData | null;
   tableMeta: TableMeta;
 }
 

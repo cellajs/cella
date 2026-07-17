@@ -27,18 +27,24 @@ const cdcMessageSchema = z.object({
     // Override nullable fields that are always present in CDC messages
     action: activityActionSchema,
     subjectId: z.string().nullable(),
-    // seq: entity-type sequence stamped by CDC worker (product entities only)
+    // seq: org-ledger sequence stamped by CDC worker (product entities only)
     seq: z.number().optional(),
-    // Batch fields (set by CDC Worker for multi-entity transactions)
+    // Batch fields (set by CDC Worker for multi-entity transactions). Under the org
+    // ledger a group's seq..batchUntilSeq range may interleave with other groups;
+    // `count` is the authoritative row count.
     batchUntilSeq: z.number().optional(),
+    count: z.number().optional(),
   }),
   rowData: z.record(z.string(), z.unknown()),
+  // Old-row permission subset when the row's materialized path changed (move-out)
+  movedFrom: z.record(z.string(), z.unknown()).nullable().optional(),
   // Per-row permission fields for batches: dispatch decides per subscriber across all rows
   batchRows: z
     .array(
       z.object({
         seq: z.number().optional(),
         rowData: z.record(z.string(), z.unknown()),
+        movedFrom: z.record(z.string(), z.unknown()).nullable().optional(),
       }),
     )
     .optional(),
@@ -308,9 +314,11 @@ class CdcWebSocketServer {
         ...message.activity,
         type,
         rowData: message.rowData,
+        movedFrom: message.movedFrom ?? null,
         batchRows: message.batchRows ?? null,
         seq: message.activity.seq ?? null,
         batchUntilSeq: message.activity.batchUntilSeq ?? null,
+        count: message.activity.count ?? null,
         propagation: null,
         trace: message._trace ?? null,
       } as ActivityEvent;

@@ -3,7 +3,7 @@ import { createEntityHierarchy, createRoleRegistry } from 'shared';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { EntityTableMeta } from '../types';
-import { computeBatchUnifiedDeltas, resolveChannelKey } from '../utils/compute-unified-deltas';
+import { computeBatchUnifiedDeltas, hwNodeKeys, resolveChannelKey } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/update-counts';
 import { log } from '../lib/pino';
 
@@ -62,7 +62,7 @@ beforeEach(() => {
 
 // ── Seq scope ────────────────────────────────────────────────────────────────
 
-describe('seq scope: deepest non-null ancestor (resolveChannelKey)', () => {
+describe('home channel: deepest non-null ancestor (resolveChannelKey)', () => {
   const activity = (organizationId: string | null = 'o1') =>
     ({ organizationId }) as unknown as ActivityWithoutId;
 
@@ -87,29 +87,33 @@ describe('seq scope: deepest non-null ancestor (resolveChannelKey)', () => {
   });
 });
 
-describe('seq groups per effective home (computeBatchUnifiedDeltas)', () => {
-  it('groups variable-depth rows under their own contexts, with org signals', () => {
+describe('ledger groups per organization (computeBatchUnifiedDeltas)', () => {
+  it('variable-depth rows in one org share ONE ledger group (all depths, one order)', () => {
     const plan = computeBatchUnifiedDeltas(
       [mockEvent('create', fullDepthRow), mockEvent('create', { ...courseStreamRow, id: 'i2' })],
       h,
     );
 
-    expect(plan.seqGroups).toHaveLength(2);
-    const byCtx = new Map(plan.seqGroups.map((g) => [g.channelKey, g]));
-    expect(byCtx.get('p1')).toMatchObject({ seqKey: 's:item', count: 1, orgSignal: { orgKey: 'o1' } });
-    expect(byCtx.get('c1')).toMatchObject({ seqKey: 's:item', count: 1, orgSignal: { orgKey: 'o1' } });
+    expect(plan.ledgerGroups).toHaveLength(1);
+    expect(plan.ledgerGroups[0]).toMatchObject({ orgKey: 'o1', count: 2 });
+    expect(plan.ledgerGroups[0].events).toHaveLength(2);
   });
 
-  it('same-context rows share one group and seq range', () => {
+  it('same-org rows preserve WAL order within the group', () => {
     const plan = computeBatchUnifiedDeltas(
       [mockEvent('create', fullDepthRow), mockEvent('create', { ...fullDepthRow, id: 'i2' })],
       h,
     );
-    expect(plan.seqGroups).toHaveLength(1);
-    expect(plan.seqGroups[0]).toMatchObject({ channelKey: 'p1', count: 2 });
+    expect(plan.ledgerGroups).toHaveLength(1);
+    expect(plan.ledgerGroups[0].events.map((e) => e.result.rowData.id)).toEqual(['i1', 'i2']);
   });
 
-  it('a contextless row fails the batch loudly instead of inventing a scope', () => {
+  it('hwNodeKeys rolls a full-depth row up to org + every non-null ancestor', () => {
+    expect(hwNodeKeys('item', fullDepthRow, 'o1', h)).toEqual(['o1', 'p1', 's1', 'c1']);
+    expect(hwNodeKeys('item', courseStreamRow, 'o1', h)).toEqual(['o1', 'c1']);
+  });
+
+  it('an org-less row fails the batch loudly instead of inventing a scope', () => {
     expect(() => computeBatchUnifiedDeltas([mockEvent('create', { id: 'i1' }, null, null)], h)).toThrow(/organization ancestor/);
   });
 });

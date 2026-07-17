@@ -13,7 +13,7 @@ import type { CdcRowData } from '../types';
  * Limits per-row batch data on the wire to permission evaluation fields, never content.
  */
 const permissionRowKeys: Set<string> = (() => {
-  const keys = new Set<string>(['id', 'createdBy', 'deletedAt', 'publicAt', 'publishedAt']);
+  const keys = new Set<string>(['id', 'createdBy', 'deletedAt', 'publicAt', 'publishedAt', 'path']);
   for (const channelType of appConfig.channelEntityTypes) {
     keys.add(appConfig.entityIdColumnKeys[channelType]);
   }

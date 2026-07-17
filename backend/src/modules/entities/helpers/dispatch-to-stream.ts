@@ -5,8 +5,10 @@ import { checkPermission } from '#/permissions';
 import { buildSubject } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
 import type { CursoredSubscriber } from '../stream';
-import { isMembershipEvent } from '../stream/build-message';
+import { buildMoveOutNotification, isMembershipEvent } from '../stream/build-message';
 import { createStreamDispatcher } from '../stream/dispatcher';
+import { sendNotificationToSubscriber } from '../stream/send-to-subscriber';
+import { streamSubscriberManager } from '../stream/subscriber-manager';
 import type { AppStreamEvent, AppStreamProductEvent } from '../stream/types';
 
 /**
@@ -110,3 +112,60 @@ export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, A
     );
   },
 });
+
+/** The (currentRow, oldRow) pairs of an event's moved rows, single or batch. */
+const movedRows = (
+  event: AppStreamProductEvent,
+): Array<{ rowData: Record<string, unknown>; movedFrom: Record<string, unknown> }> => {
+  if (event.batchRows?.length) {
+    return event.batchRows
+      .filter((row): row is ActivityBatchRow & { movedFrom: Record<string, unknown> } => !!row.movedFrom)
+      .map((row) => ({ rowData: row.rowData, movedFrom: row.movedFrom }));
+  }
+  const movedFrom = event.movedFrom;
+  if (movedFrom) return [{ rowData: event.rowData as Record<string, unknown>, movedFrom }];
+  return [];
+};
+
+/**
+ * Move-out delivery: when a row's path changed, subscribers who could read the OLD
+ * location but not the new one would otherwise never learn the row left — the normal
+ * notification is permission-filtered on the NEW row, and a later delta fetch is
+ * permission-filtered too, so no tombstone ever reaches them. For exactly those
+ * subscribers this sends an `action: 'moveOut'` notification carrying the old path;
+ * the notification itself is the removal instruction.
+ *
+ * Subscribers who can read BOTH locations get the normal update and route the row
+ * between views client-side; they are excluded here to avoid remove-then-reinsert races.
+ */
+export async function dispatchMoveOuts(event: AppStreamProductEvent): Promise<void> {
+  const moves = movedRows(event);
+  if (moves.length === 0) return;
+
+  const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(`org:${event.organizationId}`);
+  if (subscribers.length === 0) return;
+
+  for (const { rowData, movedFrom } of moves) {
+    const oldEvent = rowScopedEvent(event, movedFrom);
+    const newEvent = rowData === event.rowData ? event : rowScopedEvent(event, rowData);
+
+    const eligible = subscribers.filter(
+      (subscriber) =>
+        subscriber.organizationIds.has(event.organizationId) &&
+        canReceiveEntityEvent(subscriber, oldEvent) &&
+        !canReceiveEntityEvent(subscriber, newEvent),
+    );
+    if (eligible.length === 0) continue;
+
+    const notification = buildMoveOutNotification(oldEvent, movedFrom);
+    const preSerialized = JSON.stringify(notification);
+
+    await Promise.allSettled(
+      eligible.map((subscriber) =>
+        sendNotificationToSubscriber(subscriber, oldEvent, notification, undefined, preSerialized).catch((error) => {
+          log.error('Failed to dispatch move-out', { subscriberId: subscriber.id, activityId: event.id, error });
+        }),
+      ),
+    );
+  }
+}

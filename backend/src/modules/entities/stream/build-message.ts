@@ -84,6 +84,11 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     }
   }
 
+  // Materialized id-path of the affected rows (message groups are per path, so the
+  // representative row's path speaks for the whole batch).
+  const rowData = event.rowData as Record<string, unknown> | null;
+  const path = isProduct && rowData && typeof rowData.path === 'string' ? rowData.path : null;
+
   return {
     // Discriminant: product entities go through the seq sync path;
     // everything else on this stream is a membership change (query invalidation).
@@ -95,11 +100,36 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     organizationId: event.organizationId,
     tenantId: event.tenantId ?? null,
     channelType,
+    path,
     channelId,
     seq: isProduct ? (event.seq ?? null) : null,
     stx,
     batchUntilSeq: event.batchUntilSeq ?? null,
+    count: isProduct ? (event.count ?? null) : null,
     syncWindow: isProduct ? computeSyncWindow(event.organizationId) : null,
     propagation,
+  };
+}
+
+/**
+ * Move-out notification: the row left `movedFrom.path` (reparent). Sent ONLY to
+ * subscribers who could read the old location but not the new one — for them the
+ * row effectively disappeared, and no delta fetch will return it (permission-filtered),
+ * so the notification itself is the removal instruction.
+ */
+export function buildMoveOutNotification(event: ActivityEvent, movedFrom: Record<string, unknown>): StreamNotification {
+  const base = buildStreamNotification(event);
+  const oldPath = typeof movedFrom.path === 'string' ? movedFrom.path : null;
+  return {
+    ...base,
+    action: 'moveOut',
+    path: oldPath,
+    // The old path's deepest segment is the old home channel (unseen grouping).
+    channelId: oldPath ? (oldPath.split('/').pop() ?? null) : base.channelId,
+    // No range to fetch: the removal is the payload.
+    batchUntilSeq: null,
+    count: 1,
+    stx: null,
+    propagation: null,
   };
 }
