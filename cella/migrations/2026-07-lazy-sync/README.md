@@ -28,11 +28,13 @@ the other 5 product detail routes while you're here; the cache is free to adopt 
 
 The scheduler arrives via pull with no per-entity work. Verify:
 
-- **Viewing detection for sub-org pages** (`isViewingScope` in `sync-priority.ts`): a page
-  counts as "viewed" when a matched route param equals the channel id. If your project/
-  course routes use slugs (not ids) in params, the viewing tier misses and the on-screen
-  page syncs on the 2–30s background tier instead of live — add an id-based match for your
-  routes in `routeMatchesChannel`.
+- **Viewing detection for sub-org pages** (`isViewingScope` in `sync-priority.ts`): derived
+  from the query cache — a channel counts as "viewed" while a mounted view observes a list
+  query scoped to it (`observed-channels.ts`). Nothing to wire: slug routes, board panels
+  rendering channels the route never names, and sheets all register through their own
+  queries. One requirement, checked at startup: channel-scoped list keys must carry the
+  channel id (scope segment or filter value). `createEntityKeys` keys always do;
+  `registerEntityQueryKeys` throws at module load for hand-rolled keys that cannot.
 - **Muted/archived tiers** read the membership flags from the `['me','memberships']` query
   cache — works out of the box if your fork kept the standard membership shape.
 

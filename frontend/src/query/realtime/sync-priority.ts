@@ -1,6 +1,7 @@
 import type { GetMyMembershipsResponse } from 'sdk';
 import { hierarchy, type ProductEntityType } from 'shared';
 import { queryClient } from '~/query/query-client';
+import { isObservedChannel } from '~/query/realtime/observed-channels';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import { getRouter } from '~/routes/_router-instance';
 
@@ -60,21 +61,17 @@ const TIER_VIEWING: SyncTier = { min: 0, max: 0 };
 const TIER_BACKGROUND: SyncTier = { min: 2_000, max: 30_000 };
 const TIER_ON_OPEN: SyncTier = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
 
-/** True when any matched route param carries this channel id (fork project/course routes). */
-function routeMatchesChannel(channelId: string): boolean {
-  for (const match of getRouter().state.matches) {
-    const params = match.params as Record<string, unknown> | undefined;
-    if (params && Object.values(params).some((value) => value === channelId)) return true;
-  }
-  return false;
-}
-
-/** True when the user is looking at the scope: same org, and (for sub-org scopes) the channel is in the route. */
+/**
+ * True when the user is looking at the scope: same org, and (for sub-org scopes) a mounted view
+ * observes a query for the channel. The router cannot answer the sub-org question — routes carry
+ * slugs, not ids (`rewriteUrlToSlug`), and a board renders channels its route never names — so the
+ * channel check asks the query cache instead (see `observed-channels.ts`).
+ */
 export function isViewingScope(organizationId: string, channelId: string | null): boolean {
   const routeOrgId = getRouteOrgId();
   if (!routeOrgId || routeOrgId !== organizationId) return false;
   if (!channelId || channelId === organizationId) return true;
-  return routeMatchesChannel(channelId);
+  return isObservedChannel(channelId);
 }
 
 /** Membership `muted`/`archived` = the user declared "not urgent" for this scope. */
