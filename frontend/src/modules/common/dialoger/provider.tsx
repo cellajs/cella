@@ -5,7 +5,7 @@ import { DialogerDialog } from '~/modules/common/dialoger/dialog';
 import { DialogerDrawer } from '~/modules/common/dialoger/drawer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useUIStore } from '~/modules/ui/ui-store';
-import { router } from '~/routes/router';
+import { getRouter } from '~/routes/_router-instance';
 
 /**
  * Dialoger provider to render drawers on mobile and dialogs on other screens.
@@ -28,7 +28,7 @@ export function Dialoger() {
 
   // Close all dialogs on route change
   useEffect(() => {
-    return router.subscribe('onBeforeLoad', ({ pathChanged }) => {
+    return getRouter().subscribe('onBeforeLoad', ({ pathChanged }) => {
       if (pathChanged) useDialoger.getState().remove();
     });
   }, []);

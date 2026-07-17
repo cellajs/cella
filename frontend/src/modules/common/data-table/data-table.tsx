@@ -12,6 +12,7 @@ import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import { NoRows } from '~/modules/common/data-table/no-rows';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useFetchMoreOnDemand } from '~/modules/common/data-table/use-fetch-more-on-demand';
 import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { cn } from '~/utils/cn';
@@ -123,15 +124,20 @@ export const DataTable = <TData,>({
     setColumnWidths(new Map());
   }, [resetWidthsKey]);
 
-  // Only use DataGrid's onRowsEndApproaching when virtualization is enabled;
-  // otherwise delegate to InfiniteLoader's intersection observer to avoid
-  // cascading fetches (without virtualization, all rows are "visible").
-  const handleRowsEndApproaching = enableVirtualization
-    ? () => {
-        if (!fetchMore || isFetching || !hasNextPage) return;
-        fetchMore();
-      }
-    : undefined;
+  // Only use DataGrid's near-end signal when virtualization is enabled;
+  // otherwise delegate to InfiniteLoader's intersection observer (without
+  // virtualization all rows render, so near-end would always be true).
+  // Level-triggered: the grid reports near-end as state and this effect
+  // fetches whenever the query can accept it, so demand raised during a
+  // background refetch is served when it settles instead of dropped.
+  const [nearEnd, setNearEnd] = useState(false);
+  useFetchMoreOnDemand({
+    demand: !!enableVirtualization && nearEnd,
+    hasNextPage,
+    isFetching: !!isFetching,
+    error: !!error,
+    fetchMore,
+  });
 
   // Wrap selection handler to enforce max selection limit. Memoized so the
   // identity stays stable across renders; `DataGrid` passes it through to
@@ -195,7 +201,7 @@ export const DataTable = <TData,>({
             onColumnWidthsChange={setColumnWidths}
             selectedRows={selectedRows}
             onSelectedRowsChange={handleSelectedRowsChange}
-            onRowsEndApproaching={handleRowsEndApproaching}
+            onNearEndChange={enableVirtualization ? setNearEnd : undefined}
             cellSelectionMode={cellSelectionMode ?? (readOnly ? 'none' : undefined)}
             renderers={renderers}
           />

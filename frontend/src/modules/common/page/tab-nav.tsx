@@ -9,7 +9,7 @@ import { useMountedState } from '~/hooks/use-mounted-state';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useScrollReset } from '~/modules/common/scroll-reset';
 import { StickyBox } from '~/modules/common/sticky-box';
-import { router } from '~/routes/router';
+import { getRouter } from '~/routes/_router-instance';
 import { cn } from '~/utils/cn';
 import { truncateMiddle } from '~/utils/truncate-middle';
 
@@ -41,7 +41,7 @@ function useNavTabs(parentRouteId: string, filterTabIds?: string[]): PageTab[] {
   if (!parentRouteId) return [];
 
   // Cast: generated FileRoutesById is a closed interface without index signature
-  const routesById = router.routesById as unknown as Record<string, AnyRoute>;
+  const routesById = getRouter().routesById as unknown as Record<string, AnyRoute>;
   if (!hasRoute(routesById, parentRouteId)) return [];
 
   const parentRoute = routesById[parentRouteId];

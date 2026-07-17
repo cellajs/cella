@@ -5,20 +5,21 @@ import { objectKeys } from '~/utils/object-keys';
 
 type RoutesById = keyof typeof router.routesById;
 
-type SearchParams<T> = {
+type SearchParams = {
   from?: RoutesById;
-  defaultValues?: Partial<T>;
   saveDataInSearch?: boolean;
 };
 
 /**
  * Manages search params (query string), optionally syncing to the URL.
  * `saveDataInSearch` (default true) persists changes AND gates whether existing URL params are read on mount.
+ *
+ * Defaults are not this hook's job: a route declares them with zod `.default()` on `validateSearch`
+ * (which rehydrates them on read) plus a `stripSearchParams` middleware (which keeps them out of the
+ * URL). Each module's search-params-schemas file exports the defaults both sides share.
  */
-export function useSearchParams<T extends Record<string, string | string[] | undefined>>(
-  searchParams?: SearchParams<T>,
-) {
-  const { from, defaultValues, saveDataInSearch = true } = searchParams ?? {};
+export function useSearchParams<T extends Record<string, string | string[] | undefined>>(searchParams?: SearchParams) {
+  const { from, saveDataInSearch = true } = searchParams ?? {};
 
   const navigate = useNavigate();
   const params = useParams(from ? { from, strict: true } : { strict: false });
@@ -28,7 +29,7 @@ export function useSearchParams<T extends Record<string, string | string[] | und
   const searchKey = saveDataInSearch ? JSON.stringify(search) : '';
   const prevSearchKeyRef = useRef(searchKey);
 
-  const getMergedSearch = () => ({ ...defaultValues, ...(saveDataInSearch ? search : {}) }) as T;
+  const getMergedSearch = () => (saveDataInSearch ? { ...search } : {}) as T;
 
   // State to hold the current search parameters
   const [currentSearch, setCurrentSearch] = useState<T>(getMergedSearch);
@@ -37,9 +38,9 @@ export function useSearchParams<T extends Record<string, string | string[] | und
     const updatedSearch = { ...currentSearch, ...newValues };
 
     for (const key of objectKeys(updatedSearch)) {
-      // Reset empty values to defaults
+      // Clear empty values; the route's zod defaults fill them back in on read
       if (updatedSearch[key] === '' || updatedSearch[key] === undefined) {
-        updatedSearch[key] = defaultValues?.[key] ?? (undefined as T[keyof T]);
+        updatedSearch[key] = undefined as T[keyof T];
         continue;
       }
 
@@ -63,23 +64,6 @@ export function useSearchParams<T extends Record<string, string | string[] | und
       });
     }
   };
-
-  // Sync default values on mount if necessary
-  useEffect(() => {
-    if (!defaultValues) return;
-
-    // Only navigate if some defaults are missing from the URL
-    const needsSync = Object.keys(defaultValues).some((key) => !(key in search));
-    if (!needsSync) return;
-
-    navigate({
-      replace: true,
-      params,
-      resetScroll: false,
-      to: '.',
-      search: (prev) => ({ ...prev, ...defaultValues }),
-    });
-  }, []);
 
   // Update current search state when URL search changes
   useEffect(() => {

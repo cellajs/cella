@@ -100,11 +100,6 @@ export const FilterBarFilters = ({ children, className = '' }: FilterBarChildPro
 };
 
 /**
- * @deprecated Use FilterBarSearch for search input or FilterBarFilters for other filters
- */
-export const FilterBarContent = FilterBarFilters;
-
-/**
  * Filter bar container with toggle button for mobile.
  * Uses absolute positioning pattern for smooth mobile animations.
  */

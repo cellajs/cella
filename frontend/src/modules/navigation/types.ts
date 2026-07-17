@@ -26,7 +26,7 @@ export type NavItem = {
   id: NavItemId;
   icon: IconComponent;
   type: 'base' | 'floating' | 'footer' | 'hidden';
-  sheet?: React.ReactNode;
+  sheet?: () => React.ReactNode;
   action?: (ref: RefObject<HTMLButtonElement | null>) => void;
   href?: string;
   mirrorOnMobile?: boolean;

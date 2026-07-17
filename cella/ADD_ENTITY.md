@@ -303,6 +303,7 @@ Channel entities do **not** go through the CDC/SSE product pipeline or the wire-
 ## Optional capabilities
 
 - **Public read**: `publicRead('publicSelf')` in Step 3. Set the row's `publicAt` to publish it; it then appears for anonymous actors on single-row reads, in list endpoints, and over SSE alike.
+- **Drafts (author-only until published)**: spread `...publishedColumn` ([`published-column.ts`](../backend/src/db/utils/published-column.ts)) into the table. `publishedAt` null = author-only draft, excluded from dispatch, reads, counters, stamps and badges everywhere upstream (introspection-guarded — no further wiring). Fork adds a publish endpoint (`resolveServerUpdateOps`) and a drafts view; see [2026-07-published-rows](./migrations/2026-07-published-rows/).
 - **Unseen-count badges**: add the type to `seenTrackedEntityTypes` (Step 2); tracking in [`app-stream-handler.ts`](../frontend/src/query/realtime/app-stream-handler.ts) and the `seen` module then covers it automatically, grouping badges by the parent context.
 - **Embedded id-arrays**: if the entity is referenced as an id array on another entity (like `label` in `task.labels`), add an `entityEmbeddings` entry (Step 2) so CDC ref-counting, cache patching, and cascade suppression handle it.
 

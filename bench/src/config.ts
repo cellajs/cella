@@ -24,6 +24,13 @@ export const CDC_HEALTH_URL = `http://localhost:${BACKEND_PORT + 1}/health?depth
 
 export const SESSION_COOKIE_NAME = `${appConfig.slug}-session-${appConfig.cookieVersion}`;
 
+/** How long an SSE benchmark subscriber remains connected. */
+// biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
+export const SSE_HOLD_MS = Number(process.env.HOLD_MS ?? 25_000);
+/** Whether the SSE benchmark merges notifications or fetches each delta immediately. */
+// biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
+export const SSE_SYNC_MODE = process.env.SYNC_MODE === 'immediate' ? 'immediate' : 'lazy';
+
 // Admin (superuser) connection: bench seeds bypass RLS via `session_replication_role`.
 // biome-ignore lint/style/noProcessEnv: bench reads the fork's DATABASE_ADMIN_URL here.
 export const DB_URL = process.env.DATABASE_ADMIN_URL ?? 'postgres://postgres:postgres@0.0.0.0:5432/postgres';

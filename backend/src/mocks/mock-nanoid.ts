@@ -3,13 +3,9 @@ import { faker } from '@faker-js/faker';
 /** Context for mock ID generation - determines prefix behavior */
 export type MockContext = 'example' | 'script' | 'loadtest';
 
-/** Prefix for seed script IDs - CDC worker skips these */
 export const SCRIPT_ID_PREFIX = 'gen-';
-
-/** Prefix for load-test IDs - never collides with real/seed data */
 export const LOADTEST_ID_PREFIX = 'lt-';
 
-/** Current mock context - defaults to 'example' (no prefix) */
 let currentMockContext: MockContext = 'example';
 
 /**
@@ -36,7 +32,6 @@ export const withMockContext = <T>(context: MockContext, fn: () => T): T => {
   }
 };
 
-/** ID prefix for the current mock context (see {@link setMockContext}). */
 const getIdPrefix = (): string => {
   switch (currentMockContext) {
     case 'script':
@@ -49,8 +44,7 @@ const getIdPrefix = (): string => {
 };
 
 /**
- * Mock nanoid with context-aware prefixing (see {@link setMockContext}). Total length matches the
- * nanoid config (24 chars by default). Uses faker's seeded RNG for deterministic output.
+ * Mock nanoid with context-aware prefixing.
  */
 export const mockNanoid = (length = 24) => {
   const prefix = getIdPrefix();
@@ -59,15 +53,11 @@ export const mockNanoid = (length = 24) => {
   return `${prefix}${randomPart}`;
 };
 
-/** UUID prefix for seed script entity IDs - CDC worker skips these on catch-up */
 export const SCRIPT_UUID_PREFIX = '00000000';
-
-/** UUID prefix for load-test entity IDs */
 export const LOADTEST_UUID_PREFIX = '00000001';
 
 /**
- * Mock UUID entity ID with context-aware prefixing (see {@link setMockContext}): 'script' IDs start
- * with '00000000', 'loadtest' with '00000001'. Uses faker's seeded RNG for deterministic output.
+ * Mock UUID entity ID with context-aware prefixing.
  */
 export const mockUuid = () => {
   const uuid = faker.string.uuid();

@@ -50,15 +50,15 @@ async function tenantReadTest<T>(tenantId: string, userId: string, fn: (tx: Tx) 
 // Test IDs - deterministic UUIDs for reliable cleanup
 const TEST_TENANT_A = 'rlsta1';
 const TEST_TENANT_B = 'rlsta2';
+/** Org-less tenant: 1 tenant = 1 org, so cross-tenant org-insert tests need a free tenant to aim at. */
+const TEST_TENANT_EMPTY = 'rlsta3';
 const TEST_USER_A = '00000000-0000-4000-a000-000000000001';
 const TEST_USER_B = '00000000-0000-4000-a000-000000000002';
 const TEST_ORG_A = '00000000-0000-4000-a000-000000000003';
 const TEST_ORG_B = '00000000-0000-4000-a000-000000000004';
-const TEST_ORG_C = '00000000-0000-4000-a000-000000000005';
 const TEST_MEMBERSHIP_A = '00000000-0000-4000-a000-000000000006';
 const TEST_MEMBERSHIP_B = '00000000-0000-4000-a000-000000000007';
 const TEST_ATTACHMENT_A = '00000000-0000-4000-a000-00000000000e';
-const TEST_ATTACHMENT_C = '00000000-0000-4000-a000-00000000000f';
 const TEST_ACTIVITY_A = 'rls-activity-001';
 
 // Runtime role connection (subject to RLS)
@@ -76,15 +76,7 @@ const attachmentHierarchyA = buildTestEntityHierarchyPlan({
   rootChannelId: TEST_ORG_A,
   makeChannelId: () => randomUUID(),
 });
-const attachmentHierarchyC = buildTestEntityHierarchyPlan({
-  entityType: 'attachment',
-  rootChannelId: TEST_ORG_C,
-  makeChannelId: () => randomUUID(),
-});
-
 const quoteIdent = (identifier: string) => `"${identifier.replaceAll('"', '""')}"`;
-
-const hierarchyForOrg = (orgId: string) => (orgId === TEST_ORG_C ? attachmentHierarchyC : attachmentHierarchyA);
 
 const channelColumnList = (plan: TestEntityHierarchyPlan) =>
   sql.raw(plan.sqlChannelColumns.map(({ columnName }) => `, ${quoteIdent(columnName)}`).join(''));
@@ -156,25 +148,20 @@ const rlsProductFixtures: Record<string, RlsProductFixture> = {
     table: 'attachments',
     rowId: TEST_ATTACHMENT_A,
     rowName: 'Test File',
-    insert: ({ id, tenantId, orgId, createdBy }) => {
-      const plan = hierarchyForOrg(orgId);
-      return sql`
-        INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by${channelColumnList(plan)}, bucket_name, filename, content_type, size, original_key)
-        VALUES (${id}, 'attachment', ${tenantId}, 'WT File', '{}', '', ${createdBy}${contextValueList(plan)}, 'test-bucket', 'wt.txt', 'text/plain', '100', 'attachments/wt.txt')
-      `;
-    },
+    insert: ({ id, tenantId, createdBy }) => sql`
+        INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by${channelColumnList(attachmentHierarchyA)}, bucket_name, filename, content_type, size, original_key)
+        VALUES (${id}, 'attachment', ${tenantId}, 'WT File', '{}', '', ${createdBy}${contextValueList(attachmentHierarchyA)}, 'test-bucket', 'wt.txt', 'text/plain', '100', 'attachments/wt.txt')
+      `,
     seed: async () => {
-      // Two attachments: one in Org A (User A has membership), one in Org C (User A has NO membership)
       await adminDb.execute(sql`
         INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by${channelColumnList(attachmentHierarchyA)}, bucket_name, filename, content_type, size, original_key)
         VALUES
-          (${TEST_ATTACHMENT_A}, 'attachment', ${TEST_TENANT_A}, 'Test File', '{}', '', ${TEST_USER_A}${contextValueList(attachmentHierarchyA)}, 'test-bucket', 'test.txt', 'text/plain', '1024', 'attachments/test.txt'),
-          (${TEST_ATTACHMENT_C}, 'attachment', ${TEST_TENANT_A}, 'Org C File', '{}', '', ${TEST_USER_B}${contextValueList(attachmentHierarchyC)}, 'test-bucket', 'orgc.txt', 'text/plain', '512', 'attachments/orgc.txt')
+          (${TEST_ATTACHMENT_A}, 'attachment', ${TEST_TENANT_A}, 'Test File', '{}', '', ${TEST_USER_A}${contextValueList(attachmentHierarchyA)}, 'test-bucket', 'test.txt', 'text/plain', '1024', 'attachments/test.txt')
         ON CONFLICT (id) DO NOTHING
       `);
     },
     cleanup: async () => {
-      await adminDb.execute(sql`DELETE FROM attachments WHERE id IN (${TEST_ATTACHMENT_A}, ${TEST_ATTACHMENT_C})`);
+      await adminDb.execute(sql`DELETE FROM attachments WHERE id = ${TEST_ATTACHMENT_A}`);
     },
   },
 };
@@ -285,7 +272,8 @@ async function setupTestData() {
     INSERT INTO tenants (id, name, status, created_at, updated_at)
     VALUES
       (${TEST_TENANT_A}, 'RLS Test Tenant A', 'active', NOW(), NOW()),
-      (${TEST_TENANT_B}, 'RLS Test Tenant B', 'active', NOW(), NOW())
+      (${TEST_TENANT_B}, 'RLS Test Tenant B', 'active', NOW(), NOW()),
+      (${TEST_TENANT_EMPTY}, 'RLS Test Tenant Empty', 'active', NOW(), NOW())
     ON CONFLICT (id) DO NOTHING
   `);
 
@@ -298,21 +286,18 @@ async function setupTestData() {
     ON CONFLICT (id) DO NOTHING
   `);
 
-  // Create orgs: Org A and Org C in Tenant A, Org B in Tenant B
+  // Create orgs: Org A in Tenant A, Org B in Tenant B (1 tenant = 1 organization)
   await adminDb.execute(sql`
     INSERT INTO organizations (id, entity_type, tenant_id, name, slug, created_by, created_at)
     VALUES
       (${TEST_ORG_A}, 'organization', ${TEST_TENANT_A}, 'RLS Org A', ${`rls-org-a-${Date.now()}`}, ${TEST_USER_A}, NOW()),
-      (${TEST_ORG_B}, 'organization', ${TEST_TENANT_B}, 'RLS Org B', ${`rls-org-b-${Date.now()}`}, ${TEST_USER_B}, NOW()),
-      (${TEST_ORG_C}, 'organization', ${TEST_TENANT_A}, 'RLS Org C', ${`rls-org-c-${Date.now()}`}, ${TEST_USER_B}, NOW())
+      (${TEST_ORG_B}, 'organization', ${TEST_TENANT_B}, 'RLS Org B', ${`rls-org-b-${Date.now()}`}, ${TEST_USER_B}, NOW())
     ON CONFLICT (id) DO NOTHING
   `);
 
   await seedEntityHierarchy(attachmentHierarchyA, TEST_TENANT_A, TEST_USER_A, `rls-a-${Date.now()}`);
-  await seedEntityHierarchy(attachmentHierarchyC, TEST_TENANT_A, TEST_USER_B, `rls-c-${Date.now()}`);
 
   // Create memberships: User A in Org A (Tenant A), User B in Org B (Tenant B)
-  // Note: User A has NO membership in Org C, cross-org isolation tested at app layer
   await adminDb.execute(sql`
     INSERT INTO memberships (id, tenant_id, channel_type, channel_id, user_id, role, created_by, display_order, organization_id)
     VALUES
@@ -345,10 +330,12 @@ async function cleanupTestData() {
     await fixture.cleanup();
   }
   await adminDb.execute(sql`DELETE FROM memberships WHERE id IN (${TEST_MEMBERSHIP_A}, ${TEST_MEMBERSHIP_B})`);
-  await cleanupEntityHierarchy(attachmentHierarchyA, attachmentHierarchyC);
-  await adminDb.execute(sql`DELETE FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B}, ${TEST_ORG_C})`);
+  await cleanupEntityHierarchy(attachmentHierarchyA);
+  await adminDb.execute(sql`DELETE FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B})`);
   await adminDb.execute(sql`DELETE FROM users WHERE id IN (${TEST_USER_A}, ${TEST_USER_B})`);
-  await adminDb.execute(sql`DELETE FROM tenants WHERE id IN (${TEST_TENANT_A}, ${TEST_TENANT_B})`);
+  await adminDb.execute(
+    sql`DELETE FROM tenants WHERE id IN (${TEST_TENANT_A}, ${TEST_TENANT_B}, ${TEST_TENANT_EMPTY})`,
+  );
 }
 
 /**
@@ -611,13 +598,12 @@ const rlsSuiteReady = await (async () => {
       expect(ids).toContain(TEST_ORG_B);
     });
 
-    it('should see all organizations within own tenant', async () => {
+    it('should see the single organization within own tenant', async () => {
       const rows = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
         tx.execute(sql`SELECT id FROM organizations WHERE tenant_id = ${TEST_TENANT_A}`),
       );
-      const ids = rows.map((r) => r.id);
-      expect(ids).toContain(TEST_ORG_A);
-      expect(ids).toContain(TEST_ORG_C);
+      // 1 tenant = 1 organization, so a tenant lookup yields exactly its own org.
+      expect(rows.map((r) => r.id)).toEqual([TEST_ORG_A]);
     });
 
     it('should read all memberships (no RLS on memberships)', async () => {
@@ -635,11 +621,13 @@ const rlsSuiteReady = await (async () => {
   describe('Cross-tenant write isolation', () => {
     it('should allow inserting organization into any tenant (no RLS on channel entities)', async () => {
       const fakeOrgId = '00000000-0000-4000-a000-000000000301';
-      // No RLS on organizations, insert succeeds (guard middleware prevents this at API layer)
+      // No RLS on organizations, insert succeeds (guard middleware prevents this at API layer).
+      // Targets the org-less tenant: aiming at Tenant B would trip organizations_tenant_id_key
+      // (1 tenant = 1 org) and mask the absence of RLS this test is asserting.
       await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
         tx.execute(sql`
             INSERT INTO organizations (id, entity_type, tenant_id, name, slug, created_by, created_at)
-            VALUES (${fakeOrgId}, 'organization', ${TEST_TENANT_B}, 'Fake Org', ${`rls-fake-${Date.now()}`}, ${TEST_USER_A}, NOW())
+            VALUES (${fakeOrgId}, 'organization', ${TEST_TENANT_EMPTY}, 'Fake Org', ${`rls-fake-${Date.now()}`}, ${TEST_USER_A}, NOW())
           `),
       );
       // Cleanup
@@ -688,19 +676,9 @@ const rlsSuiteReady = await (async () => {
       expect(rows[0].id).toBe(TEST_ATTACHMENT_A);
     });
 
-    it('should see attachments in other orgs within same tenant at RLS level (org isolation is app-layer)', async () => {
-      // User A can see Org C's attachment at the DB level, orgGuard prevents API access
-      const rows = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`SELECT id FROM attachments WHERE id = ${TEST_ATTACHMENT_C}`),
-      );
-      // RLS allows this (same tenant), orgGuard would block at API layer
-      expect(rows).toHaveLength(1);
-      expect(rows[0].id).toBe(TEST_ATTACHMENT_C);
-    });
-
     it('should deny access to attachments without tenant context', async () => {
       const rows = await queryWithoutChannel(async (tx) =>
-        tx.execute(sql`SELECT id FROM attachments WHERE id IN (${TEST_ATTACHMENT_A}, ${TEST_ATTACHMENT_C})`),
+        tx.execute(sql`SELECT id FROM attachments WHERE id = ${TEST_ATTACHMENT_A}`),
       );
       expect(rows).toHaveLength(0);
     });

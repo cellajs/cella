@@ -1,17 +1,28 @@
 import { queryOptions } from '@tanstack/react-query';
 import { getUnseenCounts } from 'sdk';
+import { isSeenTracked, seenKeys } from '~/modules/seen/helpers';
+import { noteUnseenReconciled } from '~/modules/seen/unseen-sync';
+import { queryClient } from '~/query/query-client';
 
-export const seenKeys = {
-  unseenCounts: ['me', 'unseen', 'counts'],
-};
+/** Refetch the server's exact unseen counts for a tracked entity type. */
+export function invalidateUnseenCounts(entityType: string): void {
+  if (!isSeenTracked(entityType)) return;
+  queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
+}
 
 /**
- * Query options for fetching the current user's unseen entity counts per org.
- * Used by menu badges to show how many new entities the user hasn't viewed.
+ * The current user's unseen entity counts per channel (menu badges). This exact recount — on
+ * focus, reconnect, and after catchup — is the baseline; between recounts, unseen-delta.ts and
+ * unseen-sync.ts keep it live. Each response replaces all local deltas (`noteUnseenReconciled`).
  */
 export const unseenCountsQueryOptions = () =>
   queryOptions({
     queryKey: seenKeys.unseenCounts,
-    queryFn: () => getUnseenCounts(),
-    staleTime: 60 * 1000, // 1 minute, refetch on SSE entity.created or menu open
+    queryFn: async () => {
+      const counts = await getUnseenCounts();
+      noteUnseenReconciled();
+      return counts;
+    },
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: true,
   });

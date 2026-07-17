@@ -24,5 +24,6 @@ export const mockStreamNotification = (key = 'stream-notification:default') =>
     seq: faker.number.int({ min: 1, max: 500 }),
     stx: mockStxBase(`${key}:stx`),
     batchUntilSeq: null,
+    syncWindow: null,
     propagation: null,
   }));

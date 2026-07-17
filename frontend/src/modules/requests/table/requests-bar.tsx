@@ -18,7 +18,7 @@ import { DeleteRequests } from '~/modules/requests/delete-requests';
 import { fetchRequestsForExport, requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
 import type { RequestsRouteSearchParams } from '~/modules/requests/types';
 import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
-import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
+import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type RequestsTableBarProps = BaseTableBarProps<Request, RequestsRouteSearchParams>;
 
@@ -34,7 +34,7 @@ export const RequestsTableBar = ({
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
-  const total = useInfiniteQueryTotal(queryKey);
+  const total = useListQueryTotal(queryKey);
 
   const deleteButtonRef = useRef(null);
 
@@ -107,7 +107,7 @@ export const RequestsTableBar = ({
   };
 
   const fetchExport = async (limit: number, offset: number) => {
-    return fetchRequestsForExport({ limit, offset, q, sort: sort || 'createdAt', order: order || 'desc' });
+    return fetchRequestsForExport({ limit, offset, q, sort, order });
   };
 
   return (

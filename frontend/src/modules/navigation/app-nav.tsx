@@ -57,7 +57,7 @@ export function AppNav() {
       setNavSheetOpen(navItem.id);
 
       const sheetSide = isMobile && navItem.mirrorOnMobile ? 'right' : 'left';
-      useSheeter.getState().replace(navItem.sheet, {
+      useSheeter.getState().replace(navItem.sheet(), {
         id: 'nav-sheet',
         triggerRef,
         side: sheetSide as 'left' | 'right',

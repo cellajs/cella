@@ -1,4 +1,4 @@
-import type { EntityActionType, ProductEntityType } from 'shared';
+import { draftVisibleTo, type EntityActionType, type ProductEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -36,6 +36,12 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
       ? await tenantRead(ctx, (readCtx) => resolveEntity(readCtx, entityType, id))
       : await resolveEntity(ctx, entityType, id);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
+
+  // Unpublished drafts (publishedAt null) read as absent to everyone but their author —
+  // same 404 shape as a soft-deleted row, so a draft's existence is never revealed.
+  if (!draftVisibleTo(entity as Record<string, unknown>, ctx.var.userId)) {
+    throw new AppError(404, 'not_found', 'warn', { entityType });
+  }
 
   // Step 2: Check permission for the requested action. The entity doubles as `row`, so
   // 'own' row conditions and public read grants evaluate from real row data.

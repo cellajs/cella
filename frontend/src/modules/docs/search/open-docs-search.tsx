@@ -1,33 +1,24 @@
-import { Suspense } from 'react';
 import { type TriggerRef, useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { Spinner } from '~/modules/common/spinner';
-import { lazyNamed } from '~/utils/lazy-named';
+import { DocsSearch } from '~/modules/docs/search/docs-search';
 
-// Lazy: the dialog (and the search engine it pulls in) loads on first open only.
-const LazyDocsSearch = lazyNamed(() => import('~/modules/docs/search/docs-search'), 'DocsSearch');
+/**
+ * Imported eagerly, not lazily: the dialog is sized by its own content, so a suspended shell opened
+ * at fallback height and then jumped to full height. What is actually worth deferring — Orama and
+ * the body-text corpus — is dynamically imported in client.ts and loads on first search instead.
+ * The shell adds no third-party weight of its own on top of what the docs sidebar already pulls in.
+ */
 
 /** Fallback focus target when opened via hotkey (no triggering button). */
 const hotkeyTriggerRef: TriggerRef = { current: null };
 
 export function openDocsSearch(triggerRef: TriggerRef = hotkeyTriggerRef) {
-  return useDialoger.getState().create(
-    <Suspense
-      fallback={
-        <div className="flex h-24 items-center justify-center">
-          <Spinner />
-        </div>
-      }
-    >
-      <LazyDocsSearch />
-    </Suspense>,
-    {
-      id: 'docs-search',
-      triggerRef,
-      className: 'sm:max-w-3xl p-0 border-0 mb-4',
-      headerClassName: 'hidden',
-      drawerOnMobile: false,
-    },
-  );
+  return useDialoger.getState().create(<DocsSearch />, {
+    id: 'docs-search',
+    triggerRef,
+    className: 'sm:max-w-3xl p-0 border-0 mb-4',
+    headerClassName: 'hidden',
+    drawerOnMobile: false,
+  });
 }
 
 /** Hotkey handler: ⌘K/Ctrl-K toggles the dialog. */

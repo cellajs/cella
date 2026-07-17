@@ -188,9 +188,17 @@ The engine produces a verdict. Each tier is responsible for *asking* — and eve
 | **Guard chain** | `authGuard` → `tenantGuard` → `orgGuard` | Coarse gate only: authenticated, in-tenant, and a member of the org *or* a system admin. It does **not** consult `accessPolicies`. |
 | **Single row** | `getValidProductEntity`, `getValidChannelEntity`, `canCreateEntity`, `splitByPermission` | Loads the row, passes it as `subject.row` via `buildSubjectFromEntity`, runs the engine. `splitByPermission` powers bulk ops and 403s only when *nothing* is allowed. |
 | **Collection read** | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Turns the actor's access into a readable scope, then compiles it — unconditional grants, row conditions, and the public grant — into one Drizzle `SQL` predicate. Set-based, so it never materializes rows to reject them. |
-| **SSE dispatch** | `canReceiveEntityEvent` | Runs the engine per event row. Doubles as cacheToken issuance, so over-notifying is a data leak, not just noise. |
+| **SSE dispatch** | `canReceiveEntityEvent` | Runs the engine per event row. Notified rows are fetchable by seq, so over-notifying is a data leak, not just noise. |
 | **Yjs relay** | `canEditEntity` on WS upgrade | Reads the entity row and memberships over raw `pg` (table/column names derived via `toTableName`/`toColumnName`), then runs the same engine. |
 | **Postgres RLS** | `tenantRead` / `tenantContext` | Tenant isolation only. Not a permission layer. |
+
+One row-lifecycle check runs **before** the engine on every row path: unpublished drafts
+(`publishedAt` null — an opt-in product-table column, see `shared/src/published-rows.ts`) are
+visible to their author alone. SSE dispatch drops them for everyone, collection/delta reads
+exclude them by predicate, the detail read 404s non-authors, the detail cache refuses to serve
+them, and the yjs relay rejects non-author write connections. The engine itself has no draft
+vocabulary — the column is the contract, and every check is introspection-guarded so tables
+without the column are untouched.
 
 Two rules keep these honest, and both were once broken:
 

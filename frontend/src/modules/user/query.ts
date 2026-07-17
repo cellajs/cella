@@ -3,6 +3,7 @@ import type { User } from 'sdk';
 import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from 'sdk';
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
+import { usersSearchDefaults } from '~/modules/user/search-params-schemas';
 import type { BaseUser } from '~/modules/user/types';
 import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
@@ -34,9 +35,9 @@ export const userQueryOptions = (id: string) =>
  * Infinite query options to get a paginated list of users.
  */
 export const usersListQueryOptions = ({
-  q = '',
-  sort = 'createdAt',
-  order = 'desc',
+  q = usersSearchDefaults.q,
+  sort = usersSearchDefaults.sort,
+  order = usersSearchDefaults.order,
   role,
   limit: baseLimit = appConfig.requestLimits.users,
 }: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
@@ -47,7 +48,7 @@ export const usersListQueryOptions = ({
   return infiniteQueryOptions({
     queryKey,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset || (page || 0) * Number(limit));
+      const offset = String(_offset ?? (page ?? 0) * Number(limit));
       return await getUsers({ query: { q, sort, order, role, limit, offset }, signal });
     },
     ...baseInfiniteQueryOptions,

@@ -100,6 +100,7 @@ export const zStreamNotification = z.object({
   channelId: z.string().nullable(),
   stx: zStxBase.and(z.record(z.string(), z.unknown())).nullable(),
   batchUntilSeq: z.int().nullable(),
+  syncWindow: z.int().nullable(),
   propagation: z
     .object({
       sourceType: z.string(),

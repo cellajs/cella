@@ -14,6 +14,7 @@ import {
 import { appConfig } from 'shared';
 import { ApiError } from '~/lib/api';
 import { addMyMembershipCache, getApiIncludedMembership } from '~/modules/memberships/query-mutations';
+import { organizationsSearchDefaults } from '~/modules/organization/search-params-schemas';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { cacheCreate, cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
@@ -65,8 +66,9 @@ type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 
  */
 export const organizationsListQueryOptions = (params: OrganizationsListParams) => {
   const {
-    q = '',
-    sort = 'displayOrder',
+    q = organizationsSearchDefaults.q,
+    sort = organizationsSearchDefaults.sort,
+    // displayOrder reads ascending; every other column defaults to descending
     order = sort === 'displayOrder' ? 'asc' : 'desc',
     relatableUserId,
     excludeArchived,
@@ -187,7 +189,8 @@ export const fetchOrganizationsForExport = async (params: {
   sort?: NonNullable<GetOrganizationsData['query']>['sort'];
   order?: NonNullable<GetOrganizationsData['query']>['order'];
 }) => {
-  const { limit, offset = 0, q = '', sort = 'createdAt' } = params;
+  const { limit, offset = 0, q = '', sort = organizationsSearchDefaults.sort } = params;
+  // displayOrder reads ascending; every other column defaults to descending
   const order = params.order ?? (sort === 'displayOrder' ? 'asc' : 'desc');
   const response = await getOrganizations({
     query: { limit: String(limit), q, sort, order, offset: String(offset) },

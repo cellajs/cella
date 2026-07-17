@@ -7,7 +7,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
-import { router } from '~/routes/router';
+import { getRouter } from '~/routes/_router-instance';
 
 /**
  * Create new organization from the menu.
@@ -16,7 +16,7 @@ function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null
   const callback = (args: CallbackArgs<Organization>) => {
     if (args.status === 'success') {
       useDialoger.getState().remove('create-organization');
-      router.navigate({
+      getRouter().navigate({
         to: '/$tenantId/$organizationSlug/organization/members',
         params: { tenantId: args.data.tenantId, organizationSlug: args.data.slug },
       });

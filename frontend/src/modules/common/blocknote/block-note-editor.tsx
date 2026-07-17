@@ -39,7 +39,7 @@ import type {
   CustomBlockTypes,
 } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/modules/ui/ui-store';
-import { router } from '~/routes/router';
+import { getRouter } from '~/routes/_router-instance';
 
 /**
  * Bundle for collaborative mode: Yjs wiring (provider, fragment, cursor user) + entity identity for SSE
@@ -187,7 +187,7 @@ function BlockNote({
 
   useEffect(() => {
     if (!onBeforeLoad || !editable) return;
-    const unsubscribe = router.subscribe('onBeforeLoad', handleOnBeforeLoad);
+    const unsubscribe = getRouter().subscribe('onBeforeLoad', handleOnBeforeLoad);
     return () => unsubscribe();
   }, []);
 

@@ -1,7 +1,7 @@
 import { and, eq, getColumns, gt, inArray, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { ProductEntityType, SeenTrackedEntityType } from 'shared';
-import { appConfig, hierarchy, possibleHomeChannels } from 'shared';
+import { appConfig, hierarchy, possibleHomeChannels, seenWindowMs } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { AuthContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
@@ -18,8 +18,9 @@ type OrgScopedEntityTable = AnyPgTable & {
 export const trackedEntityTypes = appConfig.seenTrackedEntityTypes;
 const trackedEntityTypeSet = new Set<string>(trackedEntityTypes);
 
-/** 90-day rolling window; older entities are ignored for seen/unseen tracking. */
-export const seenWindowMs = 90 * 24 * 60 * 60 * 1000;
+/** 90-day rolling window; older entities are ignored for seen/unseen tracking. Single source in
+ * `shared` so the client-side unseen ledger mirrors the same window. */
+export { seenWindowMs };
 
 /** Type guard: narrows a product entity type to a seen-tracked entity type */
 export function isTrackedEntityType(entityType: string): entityType is SeenTrackedEntityType {

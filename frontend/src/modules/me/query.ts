@@ -3,6 +3,7 @@ import { t } from 'i18next';
 import type {
   DeletePasskeyData,
   DeletePasskeyResponse,
+  DeleteTotpResponse,
   GetMyInvitationsResponse,
   HandleMembershipInvitationData,
   HandleMembershipInvitationResponse,
@@ -37,7 +38,6 @@ import type { MutationData } from '~/query/types';
  */
 export const meKeys = {
   all: ['me'],
-  menu: ['me', 'menu'],
   auth: ['me', 'auth'],
   invites: ['me', 'invites'],
   memberships: ['me', 'memberships'],
@@ -91,9 +91,9 @@ export const useUpdateSelfMutation = () => {
 };
 
 /**
- * Mutation hook for updating current user (self) MFA requirment state
+ * Mutation hook for updating current user (self) MFA requirement state
  *
- * @returns The mutation hook for updating the user MFA requirment state.
+ * @returns The mutation hook for updating the user MFA requirement state.
  */
 export const useToggleMfaMutation = () => {
   return useMutation<User, ApiError, NonNullable<ToggleMfaData['body']>>({
@@ -184,7 +184,7 @@ export const useDeletePasskeyMutation = () => {
  * @returns The mutation hook for unlink totp.
  */
 export const useDeleteTotpMutation = () => {
-  return useMutation<DeletePasskeyResponse, ApiError, void>({
+  return useMutation<DeleteTotpResponse, ApiError, void>({
     mutationKey: meKeys.delete.totp,
     mutationFn: () => deleteTotp(),
     onSuccess: () => {

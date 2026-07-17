@@ -51,6 +51,13 @@ export const streamNotificationSchema = z
       .int()
       .nullable()
       .describe('Last seq for a batched notification — client should fetch range'),
+    syncWindow: z
+      .number()
+      .int()
+      .nullable()
+      .describe(
+        'Server-suggested spread window (ms) for the lazy delta fetch — scales with channel audience and load; the client clamps it between its eagerness tier bounds',
+      ),
     propagation: propagationHintSchema
       .nullable()
       .describe('Embedded entity propagation hint for cross-entity cache invalidation'),

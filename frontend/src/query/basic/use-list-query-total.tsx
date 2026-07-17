@@ -5,10 +5,11 @@ import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData } from '~/query/types';
 
 /**
- * Live total from an infinite query (updates on cache changes). Returns null while fetching if only
- * initialData is present (dataUpdatedAt === 0), to avoid showing a stale count.
+ * Live total from a list query — infinite (pages) or flat ({ items, total }, e.g. canonical
+ * org queries) — updating on cache changes. Returns null while fetching if only initialData
+ * is present (dataUpdatedAt === 0), to avoid showing a stale count.
  */
-export function useInfiniteQueryTotal<T = unknown>(queryKey: QueryKey) {
+export function useListQueryTotal<T = unknown>(queryKey: QueryKey) {
   const keyHash = hashKey(queryKey);
 
   return useSyncExternalStore(
@@ -20,14 +21,17 @@ export function useInfiniteQueryTotal<T = unknown>(queryKey: QueryKey) {
 
     // Calculate snapshot of the total
     () => {
-      const queryState = queryClient.getQueryState<InfiniteQueryData<T>>(queryKey);
-      if (!queryState?.data?.pages.length) return null;
+      const queryState = queryClient.getQueryState<InfiniteQueryData<T> | { items: T[]; total: number }>(queryKey);
+      if (!queryState?.data) return null;
 
       // If only initialData is present (dataUpdatedAt is 0) and still fetching, defer showing total
       if (queryState.dataUpdatedAt === 0 && queryState.fetchStatus === 'fetching') return null;
 
-      // Return total from last page
-      return queryState.data.pages[queryState.data.pages.length - 1].total;
+      if ('pages' in queryState.data) {
+        const { pages } = queryState.data;
+        return pages.length ? pages[pages.length - 1].total : null;
+      }
+      return queryState.data.total;
     },
   );
 }

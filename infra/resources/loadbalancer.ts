@@ -37,40 +37,23 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   const appHost = serviceHost('frontend')
   const appIsAtApex = appHost === dnsZone
 
-  // TODO get rid of legacyUrls asap
   // Public hosts: one DNS record + cert per unique HOSTNAME, not per service.
   // Under the same-origin model every path-routed service shares the app host,
-  // and decommissioned service hosts (appConfig.legacyUrls) stay alive so their
-  // TLS-terminated 301 redirects can answer. `base` names the Pulumi resources;
-  // the ownership rules keep pre-migration URNs stable: the default (app)
-  // service claims its host first (www stays `app-*`), and a host that moved
-  // from endpoint to legacyUrls keeps its service's base name (api.example.com
-  // stays `api-*`), so no DNS record or cert is replaced by the migration.
+  // so a per-service loop would emit duplicate records. `base` names the Pulumi
+  // resources and the first service carrying a host claims it: the default (app)
+  // service goes first, so the shared app host keeps its `app-*` URNs. A fork
+  // running host-routed services gets one host (and one base name) per service.
 
   interface PublicHost {
     host: string
     /** Resource base name of the first service carrying this host. */
     base: string
-    /** Set for legacy hosts: 301 into the app origin under this path prefix. */
-    redirectPrefix?: string
   }
 
   const hostEntries = new Map<string, PublicHost>()
   for (const service of [defaultService, ...lbServices.filter((s) => s !== defaultService)]) {
     const host = serviceHost(service.slug)
     if (!hostEntries.has(host)) hostEntries.set(host, { host, base: baseName(service.slug) })
-  }
-  for (const [slug, url] of Object.entries(appConfig.legacyUrls)) {
-    const service = lbServices.find((s) => s.slug === slug)
-    // A disabled/unknown service never had a live host — nothing to redirect.
-    if (!service || !url) continue
-    if (!service.lbPathBegin) {
-      throw new Error(`loadbalancer: legacyUrls['${slug}'] has no lbPathBegin on the service — no path to redirect its legacy host into.`)
-    }
-    const host = new URL(url).hostname
-    // Still the live endpoint host (fork not yet flipped): not a legacy host.
-    if (hostEntries.has(host)) continue
-    hostEntries.set(host, { host, base: baseName(service.slug), redirectPrefix: service.lbPathBegin })
   }
   const publicHosts = [...hostEntries.values()]
 
@@ -273,34 +256,6 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
         httpFilter: 'http_header_match',
         httpFilterOption: 'host',
         httpFilterValues: [dnsZone],
-      },
-    })
-  }
-
-  // Legacy service hosts (appConfig.legacyUrls) 301 into the app origin under
-  // the service's path prefix. ACLs evaluate BEFORE routes, so these hosts
-  // never reach a backend; DNS + cert above keep them TLS-terminated for the
-  // deprecation window. {{path}} lacks the leading slash (see apex redirect),
-  // and never carries the prefix, so the prefix is written literally.
-  let redirectAclIndex = 1 // apex-redirect holds index 0
-  for (const { host, base, redirectPrefix } of publicHosts) {
-    if (!redirectPrefix) continue
-    new scaleway.loadbalancers.Acl(`${base}-legacy-redirect`, {
-      frontendId: httpsFrontend.id,
-      name: naming.resource(`${base}-legacy-redirect`),
-      index: redirectAclIndex++,
-      action: {
-        type: 'redirect',
-        redirects: [{
-          type: 'location',
-          target: `https://${appHost}${redirectPrefix}/{{path}}?{{query}}`,
-          code: 301,
-        }],
-      },
-      match: {
-        httpFilter: 'http_header_match',
-        httpFilterOption: 'host',
-        httpFilterValues: [host],
       },
     })
   }

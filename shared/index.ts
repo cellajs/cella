@@ -74,6 +74,8 @@ export {
 } from './src/entity-guards';
 
 export { hasKey, recordFromKeys, identityRecord, typedEntries, typedKeys } from './src/config-builder/utils';
+export { seenWindowMs } from './src/seen-window';
+export { draftVisibleTo, isUnpublishedDraft } from './src/published-rows';
 
 // Permissions
 export type {

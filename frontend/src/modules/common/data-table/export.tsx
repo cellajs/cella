@@ -9,7 +9,7 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { uiStore } from '~/modules/ui/ui-store';
-import { router } from '~/routes/router';
+import { getRouter } from '~/routes/_router-instance';
 
 interface Props<TData> {
   filename: string;
@@ -37,7 +37,7 @@ export const Export = <R extends Record<string, any>>({
     const filenameWithExtension = `${filename}.${type}`;
 
     if (type === 'csv') return exportToCsv(columns, rows, filenameWithExtension);
-    return exportToPdf(columns, rows, filenameWithExtension, router.state.location.pathname, mode);
+    return exportToPdf(columns, rows, filenameWithExtension, getRouter().state.location.pathname, mode);
   };
 
   const exportSelected = async (type: 'csv' | 'pdf') => {
@@ -47,7 +47,7 @@ export const Export = <R extends Record<string, any>>({
     if (type === 'csv') return exportToCsv(columns, selectedRows, filenameWithExtension);
 
     if (!isOnline) toaster(t('c:action.offline.text'), 'warning');
-    return exportToPdf(columns, selectedRows, filenameWithExtension, router.state.location.pathname, mode);
+    return exportToPdf(columns, selectedRows, filenameWithExtension, getRouter().state.location.pathname, mode);
   };
 
   return (

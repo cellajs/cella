@@ -22,6 +22,14 @@ const livePredicate = (et: EntityType, alias: string) =>
   'deletedAt' in getColumns(getEntityTable(et)) ? ` AND ${alias}.deleted_at IS NULL` : '';
 
 /**
+ * Published-rows-only predicate (opt-in `publishedAt` draft lifecycle). CDC counts a row
+ * only when live AND published (`isCountableRow` in cdc), so recalculation must exclude
+ * unpublished drafts to agree. Empty for tables without the column.
+ */
+const publishedPredicate = (et: EntityType, alias: string) =>
+  'publishedAt' in getColumns(getEntityTable(et)) ? ` AND ${alias}.published_at IS NOT NULL` : '';
+
+/**
  * Deepest-non-null-ancestor grouping expression (e.g. task → COALESCE(t.project_id, t.organization_id)).
  * Matches CDC's `resolveChannelKey`: variable-depth rows scope to their effective home.
  * Exported for tests; the hierarchy parameter exists to prove the SQL shape on synthetic hierarchies.
@@ -91,7 +99,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
         countPair(
           `e:${et}`,
           `${tbl(et as EntityType)} e`,
-          `e.organization_id = o.id${livePredicate(et as EntityType, 'e')}`,
+          `e.organization_id = o.id${livePredicate(et as EntityType, 'e')}${publishedPredicate(et as EntityType, 'e')}`,
         ),
       ),
   ].join(', ');
@@ -116,7 +124,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
         countPair(
           `e:${et}`,
           `${tbl(et as EntityType)} ce`,
-          `ce.${fk} = ctx.id${livePredicate(et as EntityType, 'ce')}`,
+          `ce.${fk} = ctx.id${livePredicate(et as EntityType, 'ce')}${publishedPredicate(et as EntityType, 'ce')}`,
         ),
       ),
     ].join(', ');
@@ -150,28 +158,33 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
-  // ── Phase 3b: Activity stamps from MAX(created_at) / MAX(updated_at) ──
-  // li:{type} = epoch ms of the latest live row created in the context's own stream,
-  // lu:{type} = epoch ms of the latest live-row update, both grouped by the home context
-  // key (deepest non-null ancestor, org fallback via COALESCE). Unlike e: counts these are
-  // deliberately NOT fanned out to ancestor levels — they are per-stream signals, matching
-  // CDC's stamp scope. Draft rows (fork-only column) never stamp, mirroring CDC.
+  // ── Phase 3b: Activity stamps from MAX(published_at/created_at) / MAX(updated_at) ──
+  // li:{type} = epoch ms of the latest countable row born in the context's own stream
+  // (publish time on draft-lifecycle tables, created_at elsewhere), lu:{type} = epoch ms
+  // of the latest countable-row update, both grouped by the home context key (deepest
+  // non-null ancestor, org fallback via COALESCE). Unlike e: counts these are
+  // deliberately NOT fanned out to ancestor levels — they are per-stream signals,
+  // matching CDC's stamp scope. Unpublished drafts never stamp, mirroring CDC.
   // jsonb_strip_nulls drops lu: when no live row was ever updated (updated_at all NULL).
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);
     const ctxExpr = deepestAncestorExpr(entityType, 't');
     if (!ctxExpr) continue;
-    const draftPredicate = 'draft' in getColumns(getEntityTable(entityType)) ? ' AND t.draft = false' : '';
+    // COALESCE mirrors CDC's li: stamp source (publishedAt ?? createdAt).
+    const liSource =
+      'publishedAt' in getColumns(getEntityTable(entityType))
+        ? 'COALESCE(t.published_at, t.created_at)'
+        : 't.created_at';
 
     await upsertChannelCounters(
       db,
       `
       SELECT ${ctxExpr}, jsonb_strip_nulls(jsonb_build_object(
-        'li:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(t.created_at)) * 1000)::bigint,
+        'li:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(${liSource})) * 1000)::bigint,
         'lu:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(t.updated_at)) * 1000)::bigint
       )), NOW()
       FROM ${tableName} t
-      WHERE ${ctxExpr} IS NOT NULL${livePredicate(entityType, 't')}${draftPredicate}
+      WHERE ${ctxExpr} IS NOT NULL${livePredicate(entityType, 't')}${publishedPredicate(entityType, 't')}
       GROUP BY ${ctxExpr}
     `,
     );

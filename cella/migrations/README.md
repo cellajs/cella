@@ -43,8 +43,28 @@ be a no-op.
   cache token — `appCache()` → `appCache(entityType)` on every product detail route, cache
   hits re-authorize via `checkPermission`, and `cacheToken` is removed from the whole
   CDC→SSE→client pipeline (+ `X-Cache-Token` frontend sends). Manual, no script.
+- [2026-07-lazy-sync](./2026-07-lazy-sync/): negotiated lazy sync — notifications enqueue
+  merged seq ranges (client tiers × server `syncWindow`), unseen badges move to a client
+  ledger, catchup folds into the scheduler. Fork steps: `appCache(entityType)` signature,
+  verify sub-org viewing detection, mirror feed filters (e.g. `draft`) in `ingestSyncedRows`,
+  seen-tracked config invariant. Manual, no script.
+- [2026-07-deprecated-shims](./2026-07-deprecated-shims/): removes the last two
+  `@deprecated` compat shims — the `FilterBarContent` alias (→ `FilterBarFilters`,
+  or `FilterBarSearch` for search inputs) and the `entities/helpers/get-entity-counts`
+  re-export file (→ import from `entities/entities-queries`). Manual, no script.
+- [2026-07-search-defaults](./2026-07-search-defaults/): list routes declare their default
+  view once (`<name>SearchDefaults`) and keep it out of the URL — zod `.default()` rehydrates
+  on read, a `stripSearchParams` middleware strips on write. **Fork-breaking**: the
+  `defaultValues` option is gone from `useSearchParams` (its mount effect was the inverse of
+  the middleware). Read each default off your own generated schema — they differ per endpoint.
+  Manual, no script.
 - [2026-07-channel-entity-rename](./2026-07-channel-entity-rename/): renames the
   "channel entity" concept to "channel entity" (`ContextEntityType→ChannelEntityType`,
   builder `.context()→.channel()`, `context_type/context_id→channel_type/channel_id`,
   `context_counters→channel_counters`, …). Allow-list codemod; also needs file renames,
   i18n keys, SDK regen, and a DB rename migration — see the folder README.
+- [2026-07-published-rows](./2026-07-published-rows/): opt-in draft lifecycle for product
+  entities — nullable `publishedAt` (NULL = author-only draft). Dispatch, reads, counters,
+  stamps, badges, cache, detail and yjs all enforce it upstream via column introspection;
+  forks add the column, a publish endpoint (`resolveServerUpdateOps`) and a drafts view,
+  and delete their imperative `draft`-column rules. SQL data migration only, no codemod.

@@ -6,7 +6,7 @@ import { SheeterSheet } from '~/modules/common/sheeter/sheet';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUIStore } from '~/modules/ui/ui-store';
-import { router } from '~/routes/router';
+import { getRouter } from '~/routes/_router-instance';
 
 /**
  * Renders drawers on mobile, sheets on desktop; when `container` is provided, sheets are portaled into it.
@@ -31,7 +31,7 @@ export const Sheeter = () => {
 
   // Handle route changes (respects nav menu keepOpen preference)
   useEffect(() => {
-    return router.subscribe('onBeforeLoad', ({ pathChanged }) => {
+    return getRouter().subscribe('onBeforeLoad', ({ pathChanged }) => {
       if (!pathChanged) return;
 
       const navState = useNavigationStore.getState();

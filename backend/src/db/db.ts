@@ -58,6 +58,17 @@ const initConnections = (): { db: DB; migrationDb?: PgDB; adminDb?: PgDB } => {
 const connections = initConnections();
 
 export const baseDb: DB = connections.db;
+
+/**
+ * Runtime pool pressure: waiting clients relative to pool size (0 = idle, ≥1 = queueing).
+ * Feeds the sync spread window so the notification fan-out decelerates under DB load.
+ */
+export const dbPoolPressure = (): number => {
+  const pool = baseDb.$client as unknown as { waitingCount?: number; options?: { max?: number } };
+  const max = pool?.options?.max ?? 0;
+  if (!max || typeof pool.waitingCount !== 'number') return 0;
+  return pool.waitingCount / max;
+};
 export const migrationDb: PgDB | undefined = connections.migrationDb;
 export const unsafeInternalAdminDb: PgDB | undefined = connections.adminDb;
 

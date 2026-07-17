@@ -41,6 +41,8 @@ This diagram shows the normal production topology of a Cella app. Your own setup
 
 ### Stack
 
+Investing in a narrow all-TypeScript stack using open standards and well-positioned libraries has been fundamental. We always try to let the libraries be the abstraction layer, not Cella itself.
+
 | Backend    | Frontend    | Build    | Deploy    |
 |------------|-------------|----------|-----------|
 | [nodejs](https://nodejs.org) | [react](https://reactjs.org) | [pnpm](https://pnpm.io) | [pulumi](https://www.pulumi.com) |
@@ -62,8 +64,6 @@ Tables can be split into `entity`, `resource`, and other tables. Entities are sp
 
 The template config has one channel entity, `organization`, and one product entity, `attachment`, whose parent is `organization`. Forks commonly add deeper channels and products; examples in comments use `project`, `task`, and `label`, but those are not part of the default hierarchy.
 
-> **Glossary — "channel".** A **channel entity** is a membership-scoped entity that hosts products (e.g. `organization`, `project`): it carries roles and memberships, and its `channelType`/`channelId` scope permissions and counters. This is distinct from two other uses of "channel": a **stream channel** — the sync dispatcher's routing key `type:id` (e.g. `org:abc`), which at runtime is always a root channel-entity id — and the browser's **tab broadcast channel** (`BroadcastChannel`). The three align by design (a stream channel *is* a root channel entity's routing key); where a doc means the routing key or the browser API specifically, it says "stream channel" or "tab broadcast channel".
-
 Both frontend and backend have business logic split in modules. Most of them are in both backend and frontend, such as `authentication`, `user` and `organization`. The benefit of modularity is twofold: better code (readability, portability etc) and to pull upstream cella changes with less friction.
 
 ### Entity hierarchy builder
@@ -74,33 +74,27 @@ The entity taxonomy is defined using `createEntityHierarchy()`. Forks customize 
 createEntityHierarchy(roles).user().channel('organization', ...).product('attachment', ...).build()
 ```
 
-The builder validates that parents exist before children, products have a context parent, context roles are valid, and optional `relatedChannels`/`nullableAncestors` are structurally valid. Public readability is declared and validated separately by `configurePermissions()` in `shared/config/permissions-config.ts`. The resulting frozen `EntityHierarchy` drives schema helpers, permission traversal, count/seq scoping, menu construction, and stream dispatch.
+The builder validates that parents exist before children, products have a channel, channel/entity roles are valid, and optional `relatedChannels`/`nullableAncestors` are structurally valid. Public readability is declared and validated separately by `configurePermissions()` in `shared/config/permissions-config.ts`. The resulting frozen `EntityHierarchy` drives schema helpers, permission traversal, count/seq scoping, menu construction, and stream dispatch.
 
 Key methods: `getParent()`, `getOrderedAncestors()`, `getRelatedChannels()`, `getNullableAncestors()`, `getChildren()`, and `getOrderedDescendants()`.
 
 ## Sync engine
 
-Cella has a selective approach to sync and offline. Channel entities such as organizations use standard CRUD OpenAPI endpoints. Product entities such as attachments add `stx`, seq-based catchup, offline mutation plumbing, and a notify-then-fetch realtime path. TanStack Query is the client-side merge point for both context and product entities as well as other resources.
+Cella has a selective approach to sync and offline. Channel entities such as organizations use standard CRUD OpenAPI endpoints. Product entities such as attachments add `stx`, seq-based catchup, offline mutation plumbing, and a notify-then-fetch realtime path. TanStack Query is the client-side merge point for both channel and product entities as well as other resources.
 
 The pipeline flows: **Postgres WAL → CDC worker → WebSocket → ActivityBus → SSE → client**. There is one realtime endpoint:
 
 - **App stream** (`/entities/app/stream`): authenticated, carries permitted product-entity notifications and membership changes. Product and membership payloads share `event: change` and are distinguished by `kind: 'entity' | 'membership'`. One leader tab holds SSE; followers receive notifications through BroadcastChannel.
 
-Sequence numbers are hierarchy-aware: the CDC worker stamps product creates and updates (including soft deletes and restores) and scopes counters to the row's deepest non-null ancestor. 
-
-### Merge and client lifecycle
-
-Product update `ops` select their merge behavior by value shape: scalars use HLC-based LWW, set-like arrays use remove-then-add deltas, and configured rich-text fields can use the optional Yjs relay. This is not one uniform CRDT model: scalar and array persistence follows a normal JavaScript read/compute/update path, so overlapping writes can race, and opposite array operations are not commutative.
-
-Before opening SSE, the client performs catchup to establish or reconcile per-scope sequence watermarks. Once live, product notifications trigger range fetches, membership notifications use targeted invalidation, and a background sync pass prioritizes the current organization while filling other organizations only when `offlineAccess` is enabled. React Query can persist mutations that are already paused and replay them after the initial catchup attempt. See [Sync engine](/docs/page/architecture/sync-engine) for the complete lifecycle, merge semantics, and current implementation limitations.
+Sequence numbers are hierarchy-aware: the CDC worker stamps product creates and updates (including soft deletes and restores) and scopes counters to the row's deepest non-null ancestor. See [Sync engine](/docs/page/architecture/sync-engine) for the complete lifecycle, merge semantics, and current implementation limitations.
 
 ### Schema evolution (WIP)
 
-Offline clients don't update in lockstep with deploys, so breaking schema changes to context and product entities can ship as **append-only lens modules** in `shared/src/schema-evolution/` (global schema version = lens count). Each lens declares one change (`rename`, `add`, `drop`, `retype`, `setRename`); from that declaration the system derives widened wire schemas for the expand window, product ops/context body normalization, and a boot-time client cache migration that rewrites cached rows and queued mutations locally (no refetch). Tabs broadcast their schema version so a stale bundle stops persisting before it can downgrade a migrated store. With an empty lens list (current state) everything is a passthrough; the interim mechanism for breaking changes is a `clientCacheVersion` bump (cache wipe, mutations kept), CI-enforced by `schema-bust-gate`. Version telemetry and contraction policy exist, but fleet-floor/minimum-window contraction is not automatically enforced yet. See [Schema evolution](/docs/page/architecture/schema-evolution) for the shipping playbook.
+Offline and PWA clients don't update in lockstep with deploys, so breaking schema changes to channel and product entities can ship as **append-only lens modules** in `shared/src/schema-evolution/` (global schema version = lens count). See [Schema evolution](/docs/page/architecture/schema-evolution) for the shipping playbook.
 
 ## Query layer
 
-TanStack Query is the central frontend server-state layer, in `frontend/src/query/`. Entity modules create standardized keys with `createEntityKeys(entityType)` and register stream-facing keys plus an optional delta fetcher through `registerEntityQueryKeys()`. A separate list-queries config builds context/menu sync queries. Optimistic updates (`createOptimisticEntity`) and last-mutation-wins invalidation helpers are core patterns.
+TanStack Query is the central frontend server-state layer, in `frontend/src/query/`. Entity modules create standardized keys with `createEntityKeys(entityType)` and register stream-facing keys plus an optional delta fetcher through `registerEntityQueryKeys()`. A separate list-queries config builds channel/menu sync queries. Optimistic updates (`createOptimisticEntity`) and last-mutation-wins invalidation helpers are core patterns.
 
 Product entity queries can use a sync-aware `staleTime` (`syncStaleTime` in `frontend/src/query/basic/sync-stale-config.ts`): Infinity while the app stream is live and 5 minutes while disconnected. The default attachment canonical/list queries opt in. Non-synced queries keep the global 30-second default unless their module overrides it; global `refetchOnMount` is `false` and `refetchOnReconnect` is `true`.
 
@@ -121,9 +115,9 @@ The React Query cache is persisted into `appdb` via Dexie with two modes control
 - **Offline mode** (`offlineAccess=true`): scope `rq`, survives browser restart and eagerly fills read caches for all orgs. It does not by itself make failed writes durable.
 - **Session mode** (`offlineAccess=false`): per-tab scope `s-<uuid>`, survives refresh but cleaned up on tab close (orphans swept on next startup). Sync service only resolves staleness for the current org.
 
-While signed out the persister simply does nothing and the cache stays in memory, so the provider can stay mounted at the app root and persistence follows the user automatically. Within each mode the persister uses a **hybrid storage layout**: product entity queries are stored as individual records in the `queries` table for incremental diffing (only changed queries are written), while context queries are bundled into the `meta` record, since they are few, small, and all needed at startup.
+While signed out the persister simply does nothing and the cache stays in memory, so the provider can stay mounted at the app root and persistence follows the user automatically. Within each mode the persister uses a **hybrid storage layout**: product entity queries are stored as individual records in the `queries` table for incremental diffing (only changed queries are written), while channel queries are bundled into the `meta` record, since they are few, small, and all needed at startup.
 
-On app routes, only the leader tab's paused mutations pass `shouldDehydrateMutation`; all tabs can still persist query changes. In the shared offline `rq` scope, context queries and mutations occupy the same meta record, so a follower query write can still replace the leader's dehydrated mutation array. Leader-only dehydration therefore reduces duplication but is not a complete cross-tab single-writer guarantee. Since `mutationFn` cannot be serialized, entity modules register replay defaults through `addMutationRegistrar()` before restoration; serialized variables must include every ID the default needs after reload.
+On app routes, only the leader tab's paused mutations pass `shouldDehydrateMutation`; all tabs can still persist query changes. In the shared offline `rq` scope, channel queries and mutations occupy the same meta record, so a follower query write can still replace the leader's dehydrated mutation array. Leader-only dehydration therefore reduces duplication but is not a complete cross-tab single-writer guarantee. Since `mutationFn` cannot be serialized, entity modules register replay defaults through `addMutationRegistrar()` before restoration; serialized variables must include every ID the default needs after reload.
 
 The meta record also carries a `schemaVersion` ordinal (see [Schema evolution](/docs/page/architecture/schema-evolution)): when it's behind the running bundle, a chunked boot-migration pass rewrites cached rows and queued mutations in place before hydration; when it's ahead (another tab migrated forward, or a rollback), the bundle marks itself stale and stops persisting rather than downgrade the store.
 
@@ -141,8 +135,8 @@ This is how `item.membership`, `item.can`, and `item.ancestorSlugs` are populate
 
 Cella supports four configurable auth-strategy families; the default config enables all four and enables GitHub as its sole OAuth provider:
 
-| Strategy | Description | Key details |
-|----------|-------------|-------------|
+| Strategy       | Description | Key details |
+|----------------|-------------|-------------|
 | Magic Link | Email magic link | Single-use tokenized link sent via email |
 | Passkey | WebAuthn | Credentials stored in `passkeys` table |
 | OAuth | GitHub by default; Google and Microsoft supported | Uses `arctic`; Google and Microsoft use PKCE |
@@ -152,7 +146,7 @@ Cookie-based sessions (hashed, typed as `regular`/`impersonation`/`mfa`) with si
 
 ## Multi-tenancy
 
-A `tenant` is not an entity, but a `resource` that acts as top-level isolation unit.
+A `tenant` is not an entity, but just a `resource` that acts as top-level isolation unit.
 
 Tenant-scoped routes use `/:tenantId/` in the path. Organization-scoped product routes use the `authGuard` → `tenantGuard` → `orgGuard` chain; the guards load the authorized context and initially set `ctx.var.db` to `baseDb`. Product entity handlers then wrap their DB operations in `tenantRead()` (read-only) or `tenantContext()` (read-write) to get an RLS-scoped transaction. Channel entity handlers use `baseDb` directly (no RLS), with the guard set appropriate to their route. See AGENTS.md for the full guard matrix.
 
@@ -208,13 +202,13 @@ Identity columns (`tenant_id`, `organization_id`, `user_id` on memberships, etc.
 
 ### Permission manager
 
-`getAllDecisions()` resolves permissions by walking the entity hierarchy (most-specific context → root), matching memberships against policies defined with `configurePermissions()` in `shared/config/permissions-config.ts`. Policies support `1` (allowed), `0` (denied), and `'own'` (allowed only when `entity.createdBy === userId`). Grant attribution records membership, relation, public, or system-admin sources. System admins bypass ordinary checks.
+`getAllDecisions()` resolves permissions by walking the entity hierarchy (most-specific channel → root), matching memberships against policies defined with `configurePermissions()` in `shared/config/permissions-config.ts`. Policies support `1` (allowed), `0` (denied), and `'own'` (allowed only when `entity.createdBy === userId`). Grant attribution records membership, relation, public, or system-admin sources. System admins bypass ordinary checks.
 
 See [Permissions](/docs/page/architecture/permissions) for the full permission model, including row conditions, public read grants, the per-tier enforcement paths, and their constraints.
 
 ### Fork contract
 
-> Every product has a context parent. Tenant-scoped tables carry `tenant_id`; rows with an organization ancestor also carry `organization_id` and use composite FKs to keep IDs in the same tenant. A product's root context must remain non-null even when nearer ancestors are configured nullable. The hierarchy and DB schema must be changed together.
+> Every product has a channel. Tenant-scoped tables carry `tenant_id`; rows with an organization ancestor also carry `organization_id` and use composite FKs to keep IDs in the same tenant. A product's root channel must remain non-null even when nearer ancestors are configured nullable. The hierarchy and DB schema must be changed together.
 
 
 ## Observability

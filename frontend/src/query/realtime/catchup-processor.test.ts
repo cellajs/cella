@@ -6,12 +6,14 @@ vi.mock('shared', () => ({
     slug: 'test',
     channelEntityTypes: ['organization', 'project'],
     entityIdColumnKeys: { organization: 'organizationId', project: 'projectId' },
+    seenTrackedEntityTypes: [],
   },
   hierarchy: {
     getOrderedAncestors: (entityType: string) => {
       if (entityType === 'attachment') return ['project', 'organization'];
       return ['organization'];
     },
+    getParent: () => null,
   },
 }));
 
@@ -33,6 +35,14 @@ vi.mock('./membership-ops', () => ({
 
 vi.mock('./sync-priority', () => ({
   getTenantIdForOrg: vi.fn(() => null),
+  // Viewing tier by default: catchup reconciles inline, preserving the original test behavior.
+  getSyncTier: vi.fn(() => ({ min: 0, max: 0 })),
+}));
+
+const enqueueCatchupRange = vi.fn();
+vi.mock('./lazy-sync-scheduler', () => ({
+  resetLazySync: vi.fn(),
+  enqueueCatchupRange: (...a: unknown[]) => enqueueCatchupRange(...a),
 }));
 
 vi.stubGlobal('window', {
@@ -217,5 +227,60 @@ describe('catchup processor', () => {
     // Count changed while this client wasn't watching → invalidate
     await catchup(4);
     expect(queryClient.getQueryState(scopedListKey)?.isInvalidated).toBe(true);
+  });
+});
+
+describe('catchup → scheduler fold (N-d)', () => {
+  afterEach(() => {
+    queryClient.clear();
+    useSyncStore.getState().reset();
+    vi.clearAllMocks();
+  });
+
+  it('enqueues background scopes lazily and does NOT advance their caught-up seq inline', async () => {
+    const { getSyncTier } = await import('./sync-priority');
+    vi.mocked(getSyncTier).mockReturnValue({ min: 2_000, max: 30_000 }); // background
+
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, deltaFetch);
+
+    useSyncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
+
+    await processAppCatchup({
+      cursor: 'cursor-1',
+      changes: { 'org-1': { entitySeqs: { attachment: 9 } } },
+    } as unknown as PostAppCatchupResponse);
+
+    // Handed to the scheduler with the bounded gap; no inline fetch, no inline advance.
+    expect(enqueueCatchupRange).toHaveBeenCalledWith(
+      expect.objectContaining({ entityType: 'attachment', organizationId: 'org-1', fromSeq: 5, untilSeq: 9 }),
+    );
+    expect(deltaFetch).not.toHaveBeenCalled();
+    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
+  });
+
+  it('still reconciles viewing scopes inline (mutation-replay gate)', async () => {
+    const { getSyncTier } = await import('./sync-priority');
+    vi.mocked(getSyncTier).mockReturnValue({ min: 0, max: 0 }); // viewing
+
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, deltaFetch);
+
+    useSyncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
+
+    await processAppCatchup({
+      cursor: 'cursor-1',
+      changes: { 'org-1': { entitySeqs: { attachment: 9 } } },
+    } as unknown as PostAppCatchupResponse);
+
+    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5');
+    expect(enqueueCatchupRange).not.toHaveBeenCalled();
+    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
   });
 });

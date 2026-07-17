@@ -6,7 +6,7 @@ import {
   tagsQueryOptions,
 } from '~/modules/docs/query';
 import { queryClient } from '~/query/query-client';
-import { createErrorComponent, createNotFoundComponent, withSuspense } from '~/routes/route-utils';
+import { createErrorComponent, createNotFoundComponent, withSuspense } from '~/routes/_route-utils';
 import { appTitle } from '~/utils/app-title';
 import { lazyNamed } from '~/utils/lazy-named';
 

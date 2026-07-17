@@ -1,11 +1,14 @@
 import type { PostAppCatchupResponse } from 'sdk';
+import type { ProductEntityType } from 'shared';
+import { seenKeys } from '~/modules/seen/helpers';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
+import { enqueueCatchupRange, resetLazySync } from './lazy-sync-scheduler';
 import * as membershipOps from './membership-ops';
 import { propagateEmbeddings } from './propagation';
-import { getTenantIdForOrg } from './sync-priority';
+import { getSyncTier, getTenantIdForOrg } from './sync-priority';
 
 /**
  * Process app stream catchup response. For each org: store org-level and child-channel entitySeqs,
@@ -43,6 +46,10 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   }
 
   console.debug(`[CatchupProcessor] App catchup: ${scopes.length} orgs`);
+
+  // Catchup recomputes every scope's delta itself; stale lazy-scheduler entries from before
+  // the disconnect would double-fetch ranges this pass already covers.
+  resetLazySync();
 
   for (const organizationId of scopes) {
     const { entitySeqs, childChannelChanges } = changes[organizationId];
@@ -95,15 +102,30 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
               // fresh and resets the cursor (see e.g. tasksCanonicalOptions).
               if (!hasAnyCachedList(keys, organizationId)) {
                 console.debug(`[CatchupProcessor] Context ${channelId}: ${entityType} no cached list → skip delta`);
-              } else {
-                const seqCursor = String(clientChannelSeq + 1);
-                const patched = await cacheOps.fetchRangeAndPatch(
-                  entityType,
+              } else if (getSyncTier(entityType, organizationId, channelId).min > 0) {
+                // Background scope: hand the gap to the lazy scheduler (spread, merged with any
+                // live notifications). The caught-up seq advances when the flush succeeds —
+                // NOT here — so continue before the advance below.
+                enqueueCatchupRange({
+                  entityType: entityType as ProductEntityType,
                   organizationId,
                   tenantId,
-                  seqCursor,
-                  keys,
+                  channelId,
+                  fromSeq: clientChannelSeq + 1,
+                  untilSeq: serverChannelSeq,
+                  isCreate: false,
+                });
+                console.debug(
+                  `[CatchupProcessor] Context ${channelId}: ${entityType} delta=${channelDelta} → enqueued`,
                 );
+                continue;
+              } else {
+                // Viewing scope: reconcile inline — paused-mutation replay gates on catchup
+                // completion (waitForActiveCatchup) and must see the on-screen scope fresh.
+                const seqCursor = String(clientChannelSeq + 1);
+                const patched =
+                  (await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys)).status ===
+                  'ok';
                 if (!patched) {
                   cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
                 }
@@ -149,9 +171,25 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
           } else if (!hasAnyCachedList(keys, organizationId)) {
             // Scope-symmetry guard: nothing cached to patch, hydration re-establishes the cursor.
             console.debug(`[CatchupProcessor] Org ${organizationId}: ${entityType} no cached list → skip delta`);
+          } else if (getSyncTier(entityType, organizationId, null).min > 0) {
+            // Background org scope: lazy-scheduled; caught-up seq advances at flush, not here.
+            enqueueCatchupRange({
+              entityType: entityType as ProductEntityType,
+              organizationId,
+              tenantId,
+              channelId: null,
+              fromSeq: clientEntitySeq + 1,
+              untilSeq: serverEntitySeq,
+              isCreate: false,
+            });
+            console.debug(`[CatchupProcessor] Org ${organizationId}: ${entityType} delta=${entityDelta} → enqueued`);
+            continue;
           } else {
+            // Viewing scope: reconcile inline for the mutation-replay gate (waitForActiveCatchup).
             const seqCursor = String(clientEntitySeq + 1);
-            const patched = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys);
+            const patched =
+              (await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys)).status ===
+              'ok';
             if (!patched) {
               cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
             }
@@ -191,6 +229,10 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   // Step 7: Cache integrity check — compare server entity counts vs cached totals to catch drift
   // where seqs matched but the cache is stale (e.g. a failed refetch after invalidation). Org + child level.
   verifyCacheIntegrity(changes);
+
+  // Step 8: Unseen-count reconcile — synced-row deltas can't see what happened while
+  // disconnected (other-device seen-marks, missed windows); an exact recount re-anchors them.
+  queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
 }
 
 /**

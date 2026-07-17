@@ -3,7 +3,8 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { appStreamManager } from '~/query/realtime/stream-store';
-import { createNotFoundComponent } from '~/routes/route-utils';
+import { createNotFoundComponent } from '~/routes/_route-utils';
+import { setRouter } from '~/routes/_router-instance';
 import { routeTree } from '~/routes/routeTree.gen';
 import type { BoundaryType } from '~/routes/types';
 import { setSkipPageEnter } from '~/utils/nav-transition';
@@ -26,6 +27,10 @@ const router = createRouter({
   // route's notFoundComponent only handles not-founds attached to the root match.
   defaultNotFoundComponent: createNotFoundComponent('public'),
 });
+
+// Publish the instance for consumers that need it outside React. Registering here rather than at the
+// render site keeps the invariant that whoever creates the router also publishes it.
+setRouter(router);
 
 /** Get the deepest boundary from a route match array (e.g. 'app' or 'public') */
 const getBoundary = (matches?: { staticData: { boundary?: BoundaryType } }[]) =>

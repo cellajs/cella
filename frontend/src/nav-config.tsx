@@ -8,10 +8,10 @@ import { startSearchAction } from '~/modules/navigation/start-search-action';
  * Declare all of your main navigation items, visible in main navigation bar or as floating buttons on mobile
  */
 export const navItems = [
-  { id: 'menu', type: 'base', icon: MenuIcon, sheet: <MenuSheet /> },
+  { id: 'menu', type: 'base', icon: MenuIcon, sheet: () => <MenuSheet /> },
   { id: 'home', type: 'base', icon: HouseIcon, href: '/home' },
   { id: 'search', type: 'base', icon: SearchIcon, action: startSearchAction },
-  { id: 'account', type: 'base', icon: UserIcon, sheet: <AccountSheet />, mirrorOnMobile: true },
+  { id: 'account', type: 'base', icon: UserIcon, sheet: () => <AccountSheet />, mirrorOnMobile: true },
 ] as const;
 /**
  * Set footer links

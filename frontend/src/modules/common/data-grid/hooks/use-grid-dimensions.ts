@@ -6,6 +6,12 @@ interface GridDimensions {
   horizontalScrollbarHeight: number;
   scrollTop: number;
   gridRect: DOMRect | null;
+  /**
+   * False until the first real layout measurement commits. Consumers must not
+   * treat the placeholder numbers below as actual viewport geometry — doing so
+   * once made the first render report every row as visible.
+   */
+  measured: boolean;
 }
 
 interface GridDimensionsResult extends GridDimensions {
@@ -17,6 +23,7 @@ const initialDimensions: GridDimensions = {
   horizontalScrollbarHeight: 0,
   scrollTop: 0,
   gridRect: null,
+  measured: false,
 };
 
 /**
@@ -111,8 +118,11 @@ export function useGridDimensions(
         scrollTop = Math.max(0, containerRect.top - rect.top);
       }
 
-      // Bail out if nothing meaningful changed to avoid unnecessary rerenders
+      // Bail out if nothing meaningful changed to avoid unnecessary rerenders.
+      // Never bail while unmeasured: the first measurement must commit even if
+      // the numbers happen to match the placeholders.
       if (
+        prev.measured &&
         prev.viewportHeight === viewportHeight &&
         Math.abs(prev.scrollTop - scrollTop) < 1 &&
         prev.gridRect?.top === rect.top &&
@@ -126,6 +136,7 @@ export function useGridDimensions(
         viewportHeight,
         scrollTop,
         gridRect: rect,
+        measured: true,
       };
     };
 

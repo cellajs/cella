@@ -20,7 +20,7 @@ import { fetchOrganizationsForExport } from '~/modules/organization/query';
 import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/modules/organization/types';
 import { CreateNewsletterForm } from '~/modules/system/create-newsletter-form';
 import { NewsletterPreview } from '~/modules/system/newsletter-preview';
-import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
+import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type OrganizationsTableBarProps = BaseTableBarProps<EnrichedOrganization, OrganizationsRouteSearchParams>;
 
@@ -38,7 +38,7 @@ export const OrganizationsTableBar = ({
   const removeDialog = useDialoger((state) => state.remove);
   const createDialog = useDialoger((state) => state.create);
 
-  const total = useInfiniteQueryTotal(queryKey);
+  const total = useListQueryTotal(queryKey);
 
   const createButtonRef = useRef(null);
   const newsletterButtonRef = useRef(null);
@@ -85,13 +85,7 @@ export const OrganizationsTableBar = ({
   };
 
   const fetchExport = async (limit: number, offset: number) => {
-    return fetchOrganizationsForExport({
-      limit,
-      offset,
-      q,
-      sort: sort || 'createdAt',
-      order: order || (sort === 'displayOrder' ? 'asc' : 'desc'),
-    });
+    return fetchOrganizationsForExport({ limit, offset, q, sort, order });
   };
 
   return (

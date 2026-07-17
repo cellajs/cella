@@ -27,7 +27,7 @@ import { PendingMembershipsCount } from '~/modules/memberships/pending-membershi
 import { fetchMembersForExport } from '~/modules/memberships/query';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 import { InviteUsers } from '~/modules/user/invite-users';
-import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
+import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type MembersTableBarProps = MembersTableWrapperProps & BaseTableBarProps<Member, MembersRouteSearchParams>;
 
@@ -45,7 +45,7 @@ export const MembersTableBar = ({
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
-  const total = useInfiniteQueryTotal(queryKey);
+  const total = useListQueryTotal(queryKey);
 
   const deleteButtonRef = useRef(null);
   const inviteButtonRef = useRef(null);
@@ -126,8 +126,8 @@ export const MembersTableBar = ({
       limit,
       offset,
       q,
-      sort: sort || 'createdAt',
-      order: order || 'desc',
+      sort,
+      order,
       role,
       entityId: channelEntity.id,
       entityType: channelEntity.entityType,

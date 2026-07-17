@@ -1,6 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { type GetMembersData, type GetPendingMembershipsData, getMembers, getPendingMemberships } from 'sdk';
 import { appConfig } from 'shared';
+import { membersSearchDefaults } from '~/modules/memberships/search-params-schemas';
 import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 
 type GetPendingMembershipsParams = Omit<GetPendingMembershipsData['query'], 'limit' | 'offset'> &
@@ -8,7 +9,6 @@ type GetPendingMembershipsParams = Omit<GetPendingMembershipsData['query'], 'lim
 type GetMembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
 
 const keys = {
-  all: ['member'],
   list: {
     base: ['member', 'list'],
     members: (filters: GetMembersParams) => [...keys.list.base, filters],
@@ -35,9 +35,9 @@ export const membersListQueryOptions = ({
   tenantId,
   organizationId,
   entityType,
-  q = '',
-  sort = 'createdAt',
-  order = 'desc',
+  q = membersSearchDefaults.q,
+  sort = membersSearchDefaults.sort,
+  order = membersSearchDefaults.order,
   role,
   userIds,
   limit: baseLimit = appConfig.requestLimits.members,
@@ -49,7 +49,7 @@ export const membersListQueryOptions = ({
   return infiniteQueryOptions({
     queryKey,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset || (page || 0) * Number(limit));
+      const offset = String(_offset ?? (page ?? 0) * Number(limit));
 
       return await getMembers({
         query: { q, sort, order, role, userIds, limit, entityId, entityType, offset },
@@ -79,7 +79,7 @@ export const pendingMembershipsQueryOptions = ({
   return infiniteQueryOptions({
     queryKey,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset || (page || 0) * Number(limit));
+      const offset = String(_offset ?? (page ?? 0) * Number(limit));
 
       return await getPendingMemberships({
         query: { q, sort, order, limit, entityId, entityType, offset },
@@ -98,8 +98,8 @@ export const fetchMembersForExport = async (params: GetMembersParams & { limit: 
   const { items } = await getMembers({
     query: {
       q: rest.q,
-      sort: rest.sort ?? 'createdAt',
-      order: rest.order ?? 'desc',
+      sort: rest.sort ?? membersSearchDefaults.sort,
+      order: rest.order ?? membersSearchDefaults.order,
       role: rest.role,
       limit: String(limit),
       offset: String(offset),

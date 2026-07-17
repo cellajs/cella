@@ -16,7 +16,7 @@ import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
-import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
+import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type AttachmentsTableBarProps = AttachmentsTableProps & BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>;
 
@@ -38,7 +38,7 @@ export const AttachmentsTableBar = ({
 
   const deleteButtonRef = useRef(null);
 
-  const total = useInfiniteQueryTotal(queryKey);
+  const total = useListQueryTotal(queryKey);
 
   const { q } = searchVars;
 

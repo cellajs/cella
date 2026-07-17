@@ -16,7 +16,7 @@ import { FocusView } from '~/modules/common/focus-view';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { CreateTenantForm } from '~/modules/tenants/create-tenant-form';
 import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schemas';
-import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
+import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 interface TenantsTableBarProps {
   queryKey: QueryKey;
@@ -32,7 +32,7 @@ export const TenantsTableBar = ({ queryKey, searchVars, setSearch, columns, setC
   const removeDialog = useDialoger((state) => state.remove);
   const createDialog = useDialoger((state) => state.create);
 
-  const total = useInfiniteQueryTotal(queryKey);
+  const total = useListQueryTotal(queryKey);
   const createButtonRef = useRef(null);
 
   const { q } = searchVars;

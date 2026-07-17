@@ -39,9 +39,7 @@ export type LbRoute = 'default' | 'host' | 'path'
  * does NOT strip the prefix, so the service must also serve itself under
  * `<prefix>` (the backend/mcp self-mounts in backend/src/server.ts, the yjs
  * prefix handling in yjs/src/server). Must start with '/' and have no
- * trailing slash. Required for `lbRoute: 'path'` services; also the redirect
- * target prefix when the service has a decommissioned host in
- * `appConfig.legacyUrls`.
+ * trailing slash. Required for `lbRoute: 'path'` services.
  */
 export type LbPathBegin = `/${string}`
 

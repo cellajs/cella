@@ -6,6 +6,11 @@ import { AppError, type ErrorKey } from '#/core/error';
 /**
  * Default validation hook for zod-openapi routes.
  * Extracts custom error types from Zod refinements via params.type for proper i18n support.
+ *
+ * A failed request validation is a malformed request, not a permission verdict, so it
+ * surfaces as 400 — 403 is reserved for genuine authorization denials. Debugging a
+ * schema mismatch (e.g. a hand-built stx envelope missing a per-field HLC) must not
+ * read as "insufficient permissions".
  */
 export const defaultHook: Hook<unknown, Env, '', unknown> = (result) => {
   if (!result.success && result.error instanceof ZodError) {
@@ -21,6 +26,6 @@ export const defaultHook: Hook<unknown, Env, '', unknown> = (result) => {
       type = `form.${code}` as ErrorKey;
     }
 
-    throw new AppError(403, type, 'error', { message, originalError: result.error });
+    throw new AppError(400, type, 'error', { message, originalError: result.error });
   }
 };

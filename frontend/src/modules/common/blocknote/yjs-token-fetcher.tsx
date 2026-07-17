@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 // biome-ignore lint/style/noRestrictedImports: runtime token fetcher consumed by the Yjs provider; query options live here because they're tightly coupled to user-store side effects.
 import { getYjsToken } from 'sdk';
@@ -11,8 +11,7 @@ const TOKEN_REFETCH_MS = 25 * 60 * 1000; // Refetch at 25min (TTL is 30min)
 
 /**
  * Fetches and maintains a context-scoped Yjs auth token in the user store; render per context (project/org
- * layout) so the token is ready before an editor opens. Also refetches on `visibilitychange` (tab wake /
- * resume) because browsers throttle or pause `setInterval` when the page is backgrounded.
+ * layout) so the token is ready before an editor opens.
  */
 export function YjsTokenFetcher({
   entityType,
@@ -24,7 +23,6 @@ export function YjsTokenFetcher({
   organizationId: string;
 }) {
   const setYjsToken = useUserStore((s) => s.setYjsToken);
-  const queryClient = useQueryClient();
   const isOnline = useOnlineManager();
   const tokenKey = yjsTokenKey(entityType, tenantId);
 
@@ -40,6 +38,9 @@ export function YjsTokenFetcher({
     staleTime: TOKEN_REFETCH_MS,
     refetchInterval: TOKEN_REFETCH_MS,
     refetchIntervalInBackground: true,
+    // Override the app-wide `false`: browsers throttle or pause timers in backgrounded tabs, so on tab
+    // wake / resume the interval may not have fired. This refetches on visibility only when stale (>25min).
+    refetchOnWindowFocus: true,
     retry: (count, error) => {
       if (error instanceof ApiError && error.status === 403) return false;
       return count < 3;
@@ -48,29 +49,13 @@ export function YjsTokenFetcher({
     meta: { suppressGlobalErrorToast: true },
   });
 
-  // Clear the token in the user store when access is denied (403).
+  // Sync query state into the user store, where the non-React Yjs connection layer reads it
+  // (including cached returns). A 403 wins over stale cached data: access denied must disable
+  // collaborative mode even when an old token is still in the query cache.
   useEffect(() => {
     if (error instanceof ApiError && error.status === 403) setYjsToken(tokenKey, null);
-  }, [error, tokenKey, setYjsToken]);
-
-  // Sync token to store whenever query data changes (including cached returns).
-  useEffect(() => {
-    if (token) setYjsToken(tokenKey, token);
-  }, [token, tokenKey, setYjsToken]);
-
-  // Immediately refetch token when page becomes visible again (wake from sleep / tab focus).
-  useEffect(() => {
-    if (!appConfig.yjsUrl) return;
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        queryClient.invalidateQueries({ queryKey: ['yjs', 'token', entityType, tenantId] });
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [queryClient, entityType, tenantId]);
+    else if (token) setYjsToken(tokenKey, token);
+  }, [token, error, tokenKey, setYjsToken]);
 
   return null;
 }

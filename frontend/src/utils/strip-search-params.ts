@@ -1,6 +1,5 @@
 /**
- * Creates a search middleware that strips specified params from the URL.
- * Useful for removing search params from other routes when navigating.
+ * Creates a search middleware that strips specified params from the URL
  */
 export const stripParams = (...keys: string[]) => {
   return ({

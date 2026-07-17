@@ -3,7 +3,7 @@ export * from './use-column-widths';
 export * from './use-copy-paste';
 export * from './use-drag-auto-scroll';
 export * from './use-grid-dimensions';
-export * from './use-infinite-scroll';
+export * from './use-near-end';
 export * from './use-roving-tab-index';
 export * from './use-row-selection';
 export * from './use-viewport-rows';
