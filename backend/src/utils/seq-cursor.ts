@@ -1,5 +1,5 @@
 import type { Column, SQL } from 'drizzle-orm';
-import { gte, lte } from 'drizzle-orm';
+import { eq, gte, like, lte, or } from 'drizzle-orm';
 
 /**
  * Parse a seqCursor string into gte/lte boundaries.
@@ -24,4 +24,16 @@ export function seqCursorFilters(seqColumn: Column, raw: string | undefined): SQ
   if (cursor?.gte !== undefined) filters.push(gte(seqColumn, cursor.gte));
   if (cursor?.lte !== undefined) filters.push(lte(seqColumn, cursor.lte));
   return filters;
+}
+
+/**
+ * Segment-safe materialized-path prefix filter: matches the node itself and true
+ * descendants (`o1/c1` covers `o1/c1` and `o1/c1/p9`, never `o1/c11`). The permission
+ * WHERE is always applied separately — this only narrows placement.
+ */
+export function pathPrefixFilter(pathColumn: Column, prefix: string | undefined): SQL[] {
+  if (!prefix) return [];
+  return [
+    or(eq(pathColumn, prefix), like(pathColumn, `${prefix.replaceAll('%', '\\%').replaceAll('_', '\\_')}/%`)) as SQL,
+  ];
 }

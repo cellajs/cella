@@ -299,7 +299,8 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "seqCursor": { "type": "string", "required": false }
+          "seqCursor": { "type": "string", "required": false },
+          "pathPrefix": { "type": "string", "required": false, "maxLength": 512 }
         }
       }
     }

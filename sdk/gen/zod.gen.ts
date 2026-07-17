@@ -793,6 +793,18 @@ export const zCheckSlugResponse = z.void();
 
 export const zPostAppCatchupBody = z.object({
   cursor: z.string().optional(),
+  views: z
+    .array(
+      z.object({
+        key: z.string().max(512),
+        organizationId: z.string(),
+        prefixes: z.array(z.string().max(512)).min(1).max(64),
+        entityTypes: z.array(z.enum(['attachment'])).min(1),
+        cursor: z.int().gte(0),
+      }),
+    )
+    .max(256)
+    .optional(),
   seqs: z.record(z.string(), z.int()).optional(),
 });
 
@@ -827,6 +839,16 @@ export const zPostAppCatchupResponse = z.object({
         .optional(),
     }),
   ),
+  views: z
+    .array(
+      z.object({
+        key: z.string(),
+        status: z.enum(['ok', 'opaque', 'forbidden']),
+        highWaters: z.record(z.string(), z.int()).optional(),
+        counts: z.record(z.string(), z.int()).optional(),
+      }),
+    )
+    .optional(),
   cursor: z.string().nullable(),
 });
 
@@ -1408,6 +1430,7 @@ export const zGetAttachmentsQuery = z.object({
   offset: z.string().optional(),
   limit: z.string().optional(),
   seqCursor: z.string().optional(),
+  pathPrefix: z.string().max(512).optional(),
 });
 
 /**

@@ -1702,6 +1702,7 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
  *
  * @param {postAppCatchupData} options
  * @param {string=} options.body.cursor - `string` (optional)
+ * @param {any[]=} options.body.views - `any[]` (optional)
  * @param {object=} options.body.seqs - `object` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
@@ -2846,6 +2847,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
  * @param {string=} options.query.seqcursor - `string` (optional)
+ * @param {string=} options.query.pathprefix - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const getAttachments = <ThrowOnError extends boolean = true>(

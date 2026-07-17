@@ -7,6 +7,7 @@ import '#/modules/entities/entities-module';
 import { entityRoutes } from '#/modules/entities/entities-routes';
 import { appCatchupOp, getLatestUserActivityId } from '#/modules/entities/operations/app-catchup';
 import { checkSlugOp } from '#/modules/entities/operations/check-slug';
+import { actorFrom } from '#/permissions/actor';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 import type { AppStreamSubscriber } from './helpers/dispatch-to-stream';
@@ -61,8 +62,9 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
 });
 
 app.openapi(entityRoutes.appCatchup, async (ctx) => {
-  const { cursor, seqs } = ctx.req.valid('json');
-  const result = await appCatchupOp(ctx.var.memberships, cursor, seqs);
+  const { cursor, seqs, views } = ctx.req.valid('json');
+  const actor = actorFrom(ctx as never);
+  const result = await appCatchupOp(ctx.var.memberships, cursor, seqs, actor, views);
   assertSuccess(result, 'user');
   return ctx.json(result.data);
 });

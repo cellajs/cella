@@ -81,20 +81,43 @@ export const streamNotificationSchema = z
 
 export type StreamNotification = z.infer<typeof streamNotificationSchema>;
 
+/** One client view: a prefix set + entity types + the ledger cursor it has caught up to. */
+export const catchupViewSchema = z.object({
+  key: z.string().max(512).openapi({
+    description: 'Client-chosen stable view key, echoed back verbatim to correlate responses',
+  }),
+  organizationId: z.string(),
+  prefixes: z
+    .array(z.string().max(512))
+    .min(1)
+    .max(64)
+    .openapi({ description: 'Materialized id-path prefixes this view covers (root-first ids, slash-joined)' }),
+  entityTypes: z.array(z.enum(appConfig.productEntityTypes)).min(1),
+  cursor: z.number().int().min(0).openapi({
+    description: 'Org-ledger seq this view has fully ingested (0 = baseline not yet established)',
+  }),
+});
+
+export type CatchupView = z.infer<typeof catchupViewSchema>;
+
 /**
  * Body schema for stream catchup POST requests.
- * Replaces the previous query-param approach for cleaner typed payloads.
+ * `views` is the ledger-sync contract (client-declared views over path prefixes);
+ * `seqs` is the legacy per-scope watermark contract, kept while the client migrates.
  */
 export const streamCatchupBodySchema = z.object({
   cursor: z.string().optional().openapi({
     description: 'Last activity cursor received by the client (LSN-based). Omit on first sync.',
     example: '0-16B3748',
   }),
+  views: z.array(catchupViewSchema).max(256).optional().openapi({
+    description: 'Client-declared views: prefix set + entity types + org-ledger cursor per view',
+  }),
   seqs: z
     .record(z.string(), z.number().int())
     .optional()
     .openapi({
-      description: 'Client-side sequence numbers per scope: { "organizationId:s:attachment": 42 }',
+      description: 'Legacy client-side sequence numbers per scope: { "organizationId:s:attachment": 42 }',
       example: { 'abc123:s:attachment': 10 },
     }),
 });
@@ -134,12 +157,37 @@ export const catchupChangeSummarySchema = z.object({
 export type CatchupChangeSummary = z.infer<typeof catchupChangeSummarySchema>;
 
 /**
+ * Per-view catchup answer. Summaries (`highWaters`, `counts`) are present only for
+ * `status: 'ok'` views (unconditional read of the whole prefix subtree — see
+ * `resolveViewReadStatus`); `opaque` views get no numbers and fall back to normal
+ * staleness; `forbidden` views must be dropped by the client.
+ */
+export const catchupViewAnswerSchema = z.object({
+  key: z.string().openapi({ description: 'The client-supplied view key, echoed verbatim' }),
+  status: z.enum(['ok', 'opaque', 'forbidden']),
+  highWaters: z
+    .record(z.string(), z.number().int())
+    .optional()
+    .openapi({ description: 'Per-entityType max org-ledger seq at or below the view prefixes (hw:{type} rollups)' }),
+  counts: z
+    .record(z.string(), z.number().int())
+    .optional()
+    .openapi({ description: 'Per-entityType live row counts summed over the view prefixes (e:{type} rollups)' }),
+});
+
+export type CatchupViewAnswer = z.infer<typeof catchupViewAnswerSchema>;
+
+/**
  * Catchup response schema for app stream.
- * Changes keyed by organizationId. Client uses org context for priority routing.
+ * `views` answers the client-declared views (ledger-sync contract); `changes` is the
+ * legacy per-org summary, still authoritative for membership screening and propagation.
  */
 export const appCatchupResponseSchema = z.object({
   changes: z.record(z.string(), catchupChangeSummarySchema).openapi({
     description: 'Per-org change summary: { [organizationId]: { entitySeqs?, entityCounts? } }',
+  }),
+  views: z.array(catchupViewAnswerSchema).optional().openapi({
+    description: 'Per-view answers for client-declared views (same order as the request)',
   }),
   cursor: z.string().nullable().openapi({ description: 'Last activity ID (use as offset for next request)' }),
 });

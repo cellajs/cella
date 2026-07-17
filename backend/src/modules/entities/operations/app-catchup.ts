@@ -1,4 +1,5 @@
-import { appConfig } from 'shared';
+import type { Actor, ProductEntityType } from 'shared';
+import { appConfig, pathHomeId } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { OperationResult } from '#/core/operation-result';
 import { baseDb as db } from '#/db/db';
@@ -7,9 +8,75 @@ import { collectSubChannelIds } from '#/modules/entities/helpers/collect-sub-cha
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
 import { buildPropagationHints } from '#/modules/entities/helpers/propagation-hints';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import type { AppCatchupResponse } from '#/schemas';
+import { resolveViewReadStatus } from '#/permissions/view-read-status';
+import type { AppCatchupResponse, CatchupView, CatchupViewAnswer } from '#/schemas';
 
 const dbCtx: DbContext = { var: { db } };
+
+/**
+ * Answer client-declared views from per-node summaries. Authorization first
+ * (`resolveViewReadStatus` per prefix × entityType): a view is `ok` only when EVERY
+ * pair proves unconditional subtree read; any readable-but-unproven pair makes it
+ * `opaque` (no numbers), and no read route at all makes it `forbidden`. Summaries for
+ * `ok` views come from one channel_counters read over the prefixes' deepest nodes:
+ * `highWaters` = per-type max of `hw:{type}`, `counts` = per-type sum of `e:{type}`.
+ */
+export async function answerCatchupViews(
+  memberships: MembershipBaseModel[],
+  actor: Actor,
+  views: CatchupView[],
+): Promise<CatchupViewAnswer[]> {
+  if (views.length === 0) return [];
+
+  // Authorize every (prefix, entityType) pair per view.
+  const statuses = views.map((view) => {
+    let sawOpaque = false;
+    let sawOk = false;
+    for (const prefix of view.prefixes) {
+      for (const entityType of view.entityTypes) {
+        const status = resolveViewReadStatus(
+          memberships,
+          entityType as ProductEntityType,
+          view.organizationId,
+          actor,
+          prefix,
+        );
+        if (status === 'forbidden') return 'forbidden' as const;
+        if (status === 'opaque') sawOpaque = true;
+        if (status === 'ok') sawOk = true;
+      }
+    }
+    return sawOpaque || !sawOk ? ('opaque' as const) : ('ok' as const);
+  });
+
+  // One counters read for all ok views' nodes (a prefix's deepest segment is its node).
+  const nodeKeys = new Set<string>();
+  views.forEach((view, i) => {
+    if (statuses[i] !== 'ok') return;
+    for (const prefix of view.prefixes) nodeKeys.add(pathHomeId(prefix));
+  });
+  const counterRows = nodeKeys.size > 0 ? await findChannelCountersByKeys(dbCtx, [...nodeKeys]) : [];
+  const countersByNode = new Map(counterRows.map((r) => [r.channelKey, parseCounterCounts(r.counts)]));
+
+  return views.map((view, i) => {
+    const status = statuses[i];
+    if (status !== 'ok') return { key: view.key, status };
+
+    const highWaters: Record<string, number> = {};
+    const counts: Record<string, number> = {};
+    for (const prefix of view.prefixes) {
+      const parsed = countersByNode.get(pathHomeId(prefix));
+      if (!parsed) continue;
+      for (const entityType of view.entityTypes) {
+        const hw = parsed.highWaters[entityType];
+        if (hw !== undefined) highWaters[entityType] = Math.max(highWaters[entityType] ?? 0, hw);
+        const count = parsed.entityCounts[entityType];
+        if (count !== undefined) counts[entityType] = (counts[entityType] ?? 0) + count;
+      }
+    }
+    return { key: view.key, status, highWaters, counts };
+  });
+}
 
 /**
  * Build app stream catch-up data with org-level and sub-context counter checks.
@@ -20,10 +87,17 @@ export async function appCatchupOp(
   memberships: MembershipBaseModel[],
   cursor?: string,
   seqs?: Record<string, number>,
+  actor?: Actor,
+  views?: CatchupView[],
 ): Promise<OperationResult<AppCatchupResponse>> {
   const organizationIds = new Set(memberships.map((m) => m.organizationId));
 
-  if (organizationIds.size === 0) return { success: true, data: { changes: {}, cursor: cursor ?? null } };
+  // View answers are permission-resolved per prefix, independent of membership-derived
+  // org enumeration (elevated readers hold no child memberships but declare views).
+  const viewAnswers = actor && views?.length ? await answerCatchupViews(memberships, actor, views) : undefined;
+
+  if (organizationIds.size === 0)
+    return { success: true, data: { changes: {}, views: viewAnswers, cursor: cursor ?? null } };
 
   const organizationIdArray = Array.from(organizationIds);
 
@@ -102,7 +176,7 @@ export async function appCatchupOp(
       null;
   }
 
-  return { success: true, data: { changes, cursor: newCursor } };
+  return { success: true, data: { changes, views: viewAnswers, cursor: newCursor } };
 }
 
 /**

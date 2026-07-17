@@ -4728,12 +4728,54 @@
                     "description": "Last activity cursor received by the client (LSN-based). Omit on first sync.",
                     "example": "0-16B3748"
                   },
+                  "views": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "maxLength": 512,
+                          "description": "Client-chosen stable view key, echoed back verbatim to correlate responses"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "prefixes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 512
+                          },
+                          "minItems": 1,
+                          "maxItems": 64,
+                          "description": "Materialized id-path prefixes this view covers (root-first ids, slash-joined)"
+                        },
+                        "entityTypes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": ["attachment"]
+                          },
+                          "minItems": 1
+                        },
+                        "cursor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Org-ledger seq this view has fully ingested (0 = baseline not yet established)"
+                        }
+                      },
+                      "required": ["key", "organizationId", "prefixes", "entityTypes", "cursor"]
+                    },
+                    "maxItems": 256,
+                    "description": "Client-declared views: prefix set + entity types + org-ledger cursor per view"
+                  },
                   "seqs": {
                     "type": "object",
                     "additionalProperties": {
                       "type": "integer"
                     },
-                    "description": "Client-side sequence numbers per scope: { \"organizationId:s:attachment\": 42 }",
+                    "description": "Legacy client-side sequence numbers per scope: { \"organizationId:s:attachment\": 42 }",
                     "example": {
                       "abc123:s:attachment": 10
                     }
@@ -4826,6 +4868,38 @@
                         }
                       },
                       "description": "Per-org change summary: { [organizationId]: { entitySeqs?, entityCounts? } }"
+                    },
+                    "views": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string",
+                            "description": "The client-supplied view key, echoed verbatim"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["ok", "opaque", "forbidden"]
+                          },
+                          "highWaters": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "integer"
+                            },
+                            "description": "Per-entityType max org-ledger seq at or below the view prefixes (hw:{type} rollups)"
+                          },
+                          "counts": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "integer"
+                            },
+                            "description": "Per-entityType live row counts summed over the view prefixes (e:{type} rollups)"
+                          }
+                        },
+                        "required": ["key", "status"]
+                      },
+                      "description": "Per-view answers for client-declared views (same order as the request)"
                     },
                     "cursor": {
                       "type": ["string", "null"],
@@ -8230,6 +8304,15 @@
             },
             "required": false,
             "name": "seqCursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "required": false,
+            "name": "pathPrefix",
             "in": "query"
           }
         ],

@@ -2264,7 +2264,26 @@ export type PostAppCatchupData = {
      */
     cursor?: string;
     /**
-     * Client-side sequence numbers per scope: { "organizationId:s:attachment": 42 }
+     * Client-declared views: prefix set + entity types + org-ledger cursor per view
+     */
+    views?: Array<{
+      /**
+       * Client-chosen stable view key, echoed back verbatim to correlate responses
+       */
+      key: string;
+      organizationId: string;
+      /**
+       * Materialized id-path prefixes this view covers (root-first ids, slash-joined)
+       */
+      prefixes: Array<string>;
+      entityTypes: Array<'attachment'>;
+      /**
+       * Org-ledger seq this view has fully ingested (0 = baseline not yet established)
+       */
+      cursor: number;
+    }>;
+    /**
+     * Legacy client-side sequence numbers per scope: { "organizationId:s:attachment": 42 }
      */
     seqs?: {
       [key: string]: number;
@@ -2354,6 +2373,28 @@ export type PostAppCatchupResponses = {
         }>;
       };
     };
+    /**
+     * Per-view answers for client-declared views (same order as the request)
+     */
+    views?: Array<{
+      /**
+       * The client-supplied view key, echoed verbatim
+       */
+      key: string;
+      status: 'ok' | 'opaque' | 'forbidden';
+      /**
+       * Per-entityType max org-ledger seq at or below the view prefixes (hw:{type} rollups)
+       */
+      highWaters?: {
+        [key: string]: number;
+      };
+      /**
+       * Per-entityType live row counts summed over the view prefixes (e:{type} rollups)
+       */
+      counts?: {
+        [key: string]: number;
+      };
+    }>;
     /**
      * Last activity ID (use as offset for next request)
      */
@@ -3932,6 +3973,7 @@ export type GetAttachmentsData = {
     offset?: string;
     limit?: string;
     seqCursor?: string;
+    pathPrefix?: string;
   };
   url: '/{tenantId}/{organizationId}/attachments';
 };
