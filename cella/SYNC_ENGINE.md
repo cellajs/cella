@@ -639,7 +639,7 @@ The exact counts endpoint is baseline + reconcile only — staleness, window foc
 
 ### Optimization posture
 
-The fan-out constraints measured in a very active org (single-process dispatch CPU, an 80-connection pool with no replica) are addressed by: serialize-once dispatch + a memoized per-array membership index (permission checks are O(1) lookups per event), the per-product `seq` index + skip-count-on-delta, the lazy scheduler above (the org-wide eager fetch stampede no longer exists), and the unseen ledger (no per-batch recount storms). History, measurements, and the deferred escape hatch (single-level channel-scoped dispatch for forks) are tracked in [.todos/SYNC_FANOUT_SOLUTION.md](../.todos/SYNC_FANOUT_SOLUTION.md).
+The fan-out constraints measured in a very active org (single-process dispatch CPU, an 80-connection pool with no replica) are addressed by: serialize-once dispatch + a memoized per-array membership index (permission checks are O(1) lookups per event), the per-product `seq` index + skip-count-on-delta, the lazy scheduler above (the org-wide eager fetch stampede no longer exists), and the unseen ledger (no per-batch recount storms). History, measurements, and the deferred escape hatch (single-level channel-scoped dispatch for forks) are tracked in [.todos/SYNC_FANOUT_OPTIMIZATION.md](../.todos/SYNC_FANOUT_OPTIMIZATION.md).
 
 ---
 

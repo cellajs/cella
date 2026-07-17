@@ -93,7 +93,7 @@ Processed events reach clients indirectly: the worker holds **one server-to-serv
 
 This channel carries **full entity row data**: it is an internal service channel and must never be exposed to browsers or external networks. Defense layers: path isolation (`/internal/cdc` only), shared secret (`CDC_SECRET`, min 16 chars, sent as `x-cdc-secret`), a production source-IP allowlist (loopback/VPC), a single-connection limit (a new worker connection replaces the old), and a 90 s idle timeout.
 
-**Message shape** (`CdcOutboundMessage`): the activity (with id, `seq`, `batchUntilSeq`), the compacted `rowData`, `batchRows` for batches (permission-relevant fields only: id, createdBy, deletedAt, publicAt, context ids), a `cacheToken` for single-entity product messages (null on batches — the backend invalidates detail-cache entries from `batchRows` instead), and trace context. Batches are split per seq context so **every message describes one contiguous seq range**, the invariant client gap detection relies on.
+**Message shape** (`CdcOutboundMessage`): the activity (with id, `seq`, `batchUntilSeq`), the compacted `rowData`, `batchRows` for batches (permission-relevant fields only: id, createdBy, deletedAt, publicAt, channel ids), and trace context. The backend invalidates detail-cache entries by entity id (single `subjectId` or `batchRows` ids). Batches are split per seq channel so **every message describes one contiguous seq range**, the invariant client gap detection relies on.
 
 **Control messages** bypass the data schema: `health` (pushed every 15 s), `catchup_complete`, and `wal_lag_alert`.
 
