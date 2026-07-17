@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { pc } from 'shared/cli-utils/colors';
 import { warningMark } from 'shared/utils/console'
 import { isBootstrapOwned } from '../scaleway/permissions'
@@ -24,14 +24,66 @@ export function classifyPermissionError(stderr: string): PermissionHint {
     : { kind: 'ci-grantable', resource }
 }
 
+/** URNs whose DELETE failed because the live object is already gone (HTTP 404
+ *  from the provider). Pruning such an entry from state is safe by construction:
+ *  the delete's goal — resource gone — is already true, so `pulumi state delete`
+ *  completes what the operation would have done. Matches the single-line
+ *  diagnostic and the multierror form where the 404 detail is on the following
+ *  bullet line; only `deleting` operations qualify (a 404 on update/read means
+ *  drift on a resource that should exist — a different repair). Pure. */
+export function parseOrphanedDeletes(output: string): string[] {
+  const urns = new Set<string>()
+  const lines = output.split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? ''
+    const next = lines[i + 1] ?? ''
+    const m = line.match(/error: deleting (urn:pulumi:\S+): /)
+    if (!m?.[1]) continue
+    const notFound404 = /\b404\b[^\n]*not found/i
+    if (notFound404.test(line) || (/^\s*\* /.test(next) && notFound404.test(next))) urns.add(m[1])
+  }
+  return [...urns]
+}
+
+/** `pulumi state delete --yes` each URN. Returns true when all succeeded; a
+ *  refusal (e.g. a dependent still references the entry) is reported and the
+ *  entry left in place. */
+export function pruneOrphanedDeletes(urns: string[], stack: string, cwd: string, env: NodeJS.ProcessEnv): boolean {
+  let ok = true
+  for (const urn of urns) {
+    const res = spawnSync('pulumi', ['state', 'delete', urn, '--stack', stack, '--yes'], { cwd, env, encoding: 'utf8' })
+    if (res.status === 0) {
+      console.info(`  pruned ${urn}`)
+    } else {
+      ok = false
+      console.warn(`${warningMark} state delete refused for ${urn}: ${(res.stderr ?? '').trim().slice(0, 300)}`)
+    }
+  }
+  return ok
+}
+
+export interface PulumiUpResult {
+  code: number
+  /** Combined stdout+stderr for post-mortem parsing (permission hints, orphaned deletes). */
+  output: string
+}
+
 /** Runs `pulumi up --stack <s> --yes --non-interactive` in `cwd` with `env`.
  *  On non-zero exit, prints a permission hint when stderr indicates one. */
-export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJS.ProcessEnv): Promise<number> {
+export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJS.ProcessEnv): Promise<PulumiUpResult> {
   console.info(`\n→ pulumi up (base infra)\n  $ pulumi up --stack ${stack} --yes --non-interactive`)
+  // stdout is teed rather than inherited so the Diagnostics section reaches
+  // parseOrphanedDeletes; with --non-interactive pulumi already uses the plain
+  // (non-TTY) display, so piping does not change what the operator sees.
   const child = spawn('pulumi', ['up', '--stack', stack, '--yes', '--non-interactive'], {
     cwd,
     env,
-    stdio: ['inherit', 'inherit', 'pipe'],
+    stdio: ['inherit', 'pipe', 'pipe'],
+  })
+  let stdoutBuf = ''
+  child.stdout?.on('data', (chunk: Buffer) => {
+    stdoutBuf += chunk.toString()
+    process.stdout.write(chunk)
   })
   let stderrBuf = ''
   child.stderr?.on('data', (chunk: Buffer) => {
@@ -53,5 +105,5 @@ export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJ
     }
   }
 
-  return exitCode
+  return { code: exitCode, output: `${stdoutBuf}\n${stderrBuf}` }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifyPermissionError } from './pulumi-up'
+import { classifyPermissionError, parseOrphanedDeletes } from './pulumi-up'
 
 describe('classifyPermissionError', () => {
   it('returns undefined when stderr has no perms diagnostic', () => {
@@ -53,5 +53,64 @@ describe('classifyPermissionError', () => {
       kind: 'bootstrap-owned',
       resource: 'RDB_ACL',
     })
+  })
+})
+
+describe('parseOrphanedDeletes', () => {
+  const ACL_URN = 'urn:pulumi:production::infra::scaleway:loadbalancers/acl:Acl::http-to-https'
+
+  // Verbatim (trimmed) from a real failed apply: the inline progress lines carry
+  // the URN without the 404 detail; the Diagnostics block pairs them.
+  const realFailure = [
+    ' -- scaleway:loadbalancers:Acl http-to-https deleting original (2s) error:   sdk-v2/provider2.go:572: sdk.helper_schema: scaleway-sdk-go: http error 404 Not Found: acl not Found: provider=scaleway@1.51.0',
+    ` -- scaleway:loadbalancers:Acl http-to-https deleting original (2s) error: deleting ${ACL_URN}: 1 error occurred:`,
+    ` -- scaleway:loadbalancers:Acl http-to-https **deleting failed** error: deleting ${ACL_URN}: 1 error occurred:`,
+    'Diagnostics:',
+    '  scaleway:loadbalancers:Acl (http-to-https):',
+    '    error:   sdk-v2/provider2.go:572: sdk.helper_schema: scaleway-sdk-go: http error 404 Not Found: acl not Found: provider=scaleway@1.51.0',
+    `    error: deleting ${ACL_URN}: 1 error occurred:`,
+    '        * scaleway-sdk-go: http error 404 Not Found: acl not Found',
+    '',
+    '    error: update failed',
+  ].join('\n')
+
+  it('extracts the URN of a delete that 404d, deduplicated across inline and diagnostics lines', () => {
+    expect(parseOrphanedDeletes(realFailure)).toEqual([ACL_URN])
+  })
+
+  it('returns empty for output with no errors', () => {
+    expect(parseOrphanedDeletes('Resources:\n    7 created\n    85 unchanged')).toEqual([])
+  })
+
+  it('ignores a delete that failed for a non-404 reason', () => {
+    const output = [
+      `    error: deleting ${ACL_URN}: 1 error occurred:`,
+      '        * scaleway-sdk-go: http error 403 Forbidden: Permission denied',
+    ].join('\n')
+    expect(parseOrphanedDeletes(output)).toEqual([])
+  })
+
+  it('ignores a 404 on a non-delete operation', () => {
+    const output = [
+      '    error: updating urn:pulumi:production::infra::scaleway:databases/instance:Instance::main-postgres: 1 error occurred:',
+      '        * scaleway-sdk-go: http error 404 Not Found: instance not Found',
+    ].join('\n')
+    expect(parseOrphanedDeletes(output)).toEqual([])
+  })
+
+  it('matches the single-line diagnostic form', () => {
+    const output = `    error: deleting ${ACL_URN}: scaleway-sdk-go: http error 404 Not Found: acl not Found`
+    expect(parseOrphanedDeletes(output)).toEqual([ACL_URN])
+  })
+
+  it('collects multiple orphaned deletes', () => {
+    const routeUrn = 'urn:pulumi:production::infra::scaleway:loadbalancers/route:Route::ai-route'
+    const output = [
+      `    error: deleting ${ACL_URN}: 1 error occurred:`,
+      '        * scaleway-sdk-go: http error 404 Not Found: acl not Found',
+      `    error: deleting ${routeUrn}: 1 error occurred:`,
+      '        * scaleway-sdk-go: http error 404 Not Found: route not Found',
+    ].join('\n')
+    expect(parseOrphanedDeletes(output)).toEqual([ACL_URN, routeUrn])
   })
 })
