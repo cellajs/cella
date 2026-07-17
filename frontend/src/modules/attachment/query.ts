@@ -94,9 +94,9 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
 };
 
 /**
- * Canonical attachment query: one flat query per org (keys.list.org), fetching all its attachments.
- * Consumers derive views via select() for groupId filtering. Sync (SSE + delta fetch) keeps it
- * fresh; staleTime follows sync liveness.
+ * Canonical attachment query: one flat home list per org (keys.list.home — attachments are
+ * org-homed), fetching all its attachments. Consumers derive views via select() for groupId
+ * filtering. Sync (SSE + delta fetch) keeps it fresh; staleTime follows sync liveness.
  */
 export const attachmentsCanonicalOptions = ({
   organizationId,
@@ -106,7 +106,7 @@ export const attachmentsCanonicalOptions = ({
   tenantId: string;
 }) => {
   return queryOptions({
-    queryKey: keys.list.org(organizationId),
+    queryKey: keys.list.home(organizationId),
     queryFn: async () => {
       return fetchAllPages(
         ({ limit, offset }) =>

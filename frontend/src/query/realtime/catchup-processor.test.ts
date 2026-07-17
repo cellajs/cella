@@ -15,6 +15,17 @@ vi.mock('shared', () => ({
     },
     getParent: () => null,
   },
+  resolveDeepestAncestorId: (
+    hierarchy: { getOrderedAncestors: (entityType: string) => readonly string[] },
+    entityType: string,
+    row: Record<string, unknown>,
+  ) => {
+    for (const type of hierarchy.getOrderedAncestors(entityType)) {
+      const id = row[`${type}Id`];
+      if (typeof id === 'string' && id) return id;
+    }
+    return null;
+  },
 }));
 
 vi.mock('~/modules/common/blocknote/yjs-editor', () => ({
@@ -163,7 +174,7 @@ describe('catchup processor', () => {
 
     useSyncStore.getState().setOrgTenantId('org-1', 'tenant-1');
     useSyncStore.getState().setChannelSeq('org-1', 'project-1', 'attachment', 5);
-    queryClient.setQueryData(keys.list.scope('org-1', 'project-1'), {
+    queryClient.setQueryData(keys.list.home('org-1', 'project-1'), {
       items: [{ id: 'attachment-1', organizationId: 'org-1', projectId: 'project-1', seq: 5, name: 'stale' }],
       total: 1,
     });
@@ -182,7 +193,7 @@ describe('catchup processor', () => {
     expect(useSyncStore.getState().getChannelSeq('org-1', 'project-1', 'attachment')).toBe(8);
     // Org-level screening seq also advances for context-handled types
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(8);
-    expect(queryClient.getQueryData(keys.list.scope('org-1', 'project-1'))).toMatchObject({
+    expect(queryClient.getQueryData(keys.list.home('org-1', 'project-1'))).toMatchObject({
       items: [{ name: 'fresh' }],
     });
   });
@@ -191,7 +202,7 @@ describe('catchup processor', () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     registerEntityQueryKeys('attachment', keys);
 
-    const scopedListKey = keys.list.scope('org-1', 'project-1');
+    const scopedListKey = keys.list.home('org-1', 'project-1');
     // Cached total deliberately disagrees with the server count: caches are
     // predicate-filtered per user, so equality with shared counts means nothing
     queryClient.setQueryData(scopedListKey, {

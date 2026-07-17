@@ -1,6 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { ProductEntityType } from 'shared';
-import { appConfig } from 'shared';
+import { appConfig, hierarchy, resolveDeepestAncestorId } from 'shared';
 import { getYjsOwnedFields, isYjsEditorActive } from '~/modules/common/blocknote/yjs-editor';
 import {
   type EntityQueryKeys,
@@ -78,21 +78,26 @@ function stripYjsOwnedFields(entityType: string, entity: ItemData, detailKey: Qu
 }
 
 /**
- * Whether `queryKey` is the canonical scope key for `entity`.
- * Keys shaped like [entityType, 'list', ...ancestorIds] match when every string segment
- * equals the entity's corresponding ancestor ID column. Filtered keys (object segments)
- * never match, those lists are scoped by server-side filters we can't replicate here.
+ * The row's effective home channel id: deepest non-null ancestor, the org itself for org-homed
+ * rows. The same resolution SSE routing uses (resolve-row-channel), so cache placement and
+ * stream routing can never disagree.
  */
-function matchesCanonicalScope(queryKey: readonly unknown[], entity: ItemData, scopeKeys: readonly string[]): boolean {
-  const segments = queryKey.slice(2);
+function resolveHomeChannelId(entityType: string, entity: ItemData): string | null {
   const entityRecord = entity as unknown as Record<string, unknown>;
-  for (let i = 0; i < segments.length; i++) {
-    const seg = segments[i];
-    if (typeof seg !== 'string') return false;
-    const expected = entityRecord[scopeKeys[i]];
-    if (typeof expected !== 'string' || expected !== seg) return false;
-  }
-  return true;
+  const home = resolveDeepestAncestorId(hierarchy, entityType, entityRecord);
+  if (home) return home;
+  const organizationId = entityRecord.organizationId;
+  return typeof organizationId === 'string' ? organizationId : null;
+}
+
+/**
+ * Whether `queryKey` is the canonical home list for a row homed at `homeChannelId`:
+ * [entityType, 'list', organizationId, homeChannelId]. Every row belongs to exactly one home
+ * list. Filtered keys (object segments) never match, those lists are scoped by server-side
+ * filters we can't replicate here; string keys at other depths are prefixes, never data keys.
+ */
+function matchesCanonicalHome(queryKey: readonly unknown[], organizationId: string, homeChannelId: string): boolean {
+  return queryKey.length === 4 && queryKey[2] === organizationId && queryKey[3] === homeChannelId;
 }
 
 /**
@@ -189,7 +194,7 @@ export function invalidateEntityListForOrg(
 
 /**
  * Invalidate org-scoped lists whose key tail contains a filter object (i.e. filtered lists).
- * Canonical scope lists (string-only tails) are left alone, they're patched directly.
+ * Canonical home lists (string-only tails) are left alone, they're patched directly.
  */
 function invalidateFilteredLists(orgListKey: readonly unknown[]): void {
   queryClient.invalidateQueries({
@@ -215,7 +220,8 @@ export function removeEntityFromListCache(entityId: string, keys: EntityQueryKey
 /**
  * Apply one server-truth row to detail and list caches through the shared applicator for both
  * realtime paths (seq-range fetches and seq-less single fetches). Tombstones remove; rows
- * already cached update in place; unknown rows insert only into their canonical scope list (the base per-scope list that live sync patches).
+ * already cached update in place; unknown rows insert only into their canonical home list
+ * (the row's effective home channel — see matchesCanonicalHome).
  * Returns true when the row was new to every scanned list cache, so callers can invalidate
  * filtered lists with object key segments, whose server-side filters cannot be replicated, once per flush.
  */
@@ -245,9 +251,15 @@ function applyServerEntity(
     return { ...old, ...filtered };
   });
 
+  const homeChannelId = resolveHomeChannelId(entityType, filtered);
+
   let seen = false;
+  let spliced = false;
+  let sawFilteredList = false;
   const listPrefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
   for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: listPrefix })) {
+    sawFilteredList ||= queryKey.slice(2).some((seg) => typeof seg === 'object' && seg !== null);
+
     let cachedItem: ItemData | undefined;
     let change: typeof changeQueryData;
     if (isInfiniteQueryData<ItemData>(queryData)) {
@@ -266,14 +278,22 @@ function applyServerEntity(
       continue;
     }
 
-    // Cached rows update in place. New rows insert only into lists that canonically scope
-    // to this entity; 'update' elsewhere is a deliberate no-op ('create' on a cached row
-    // would also drift `total` because updateArrayItems dedupes but the total adjustment does not).
+    // Cached rows update in place. New rows insert only into the row's canonical home list;
+    // 'update' elsewhere is a deliberate no-op ('create' on a cached row would also drift
+    // `total` because updateArrayItems dedupes but the total adjustment does not).
+    const isHomeList =
+      !!organizationId && !!homeChannelId && matchesCanonicalHome(queryKey, organizationId, homeChannelId);
     seen = seen || !!cachedItem;
-    change(
-      queryKey,
-      [filtered],
-      cachedItem || !matchesCanonicalScope(queryKey, filtered, keys.list.scopeKeys) ? 'update' : 'create',
+    spliced ||= !cachedItem && isHomeList;
+    change(queryKey, [filtered], cachedItem || !isHomeList ? 'update' : 'create');
+  }
+
+  // A new row that no home list spliced and no filtered list will refetch stays invisible until
+  // an unrelated refetch — always a key-shape bug (canonical data cached outside keys.list.home).
+  if (organizationId && homeChannelId && !seen && !spliced && !sawFilteredList) {
+    console.warn(
+      `[CacheOps] New ${entityType} row ${entity.id} landed in no list cache — ` +
+        `no canonical home list ${JSON.stringify(keys.list.home(organizationId, homeChannelId))} and no filtered list to invalidate.`,
     );
   }
 
