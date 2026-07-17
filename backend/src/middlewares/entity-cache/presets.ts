@@ -1,5 +1,5 @@
 import type { Context, MiddlewareHandler } from 'hono';
-import type { ProductEntityType } from 'shared';
+import { draftVisibleTo, type ProductEntityType } from 'shared';
 import type { Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
 import { checkPermission } from '#/permissions';
@@ -72,9 +72,11 @@ function isEnriched(value: Record<string, unknown> | null | undefined): value is
 }
 
 /**
- * Re-authorize a cache hit against the cached row. The enriched response replaces `createdBy`
- * with a user object, so normalize it back to the raw id the permission subject expects; every
- * other field the check needs (channel ids, publicAt) is already present on the response.
+ * Re-authorize a cache hit against the cached row: the draft veto first (an author-cached
+ * draft must never serve to a non-author — same rule as SSE dispatch and the detail read),
+ * then the engine. The enriched response replaces `createdBy` with a user object, so
+ * normalize it back to the raw id the permission subject expects; every other field the
+ * check needs (channel ids, publicAt, publishedAt) is already present on the response.
  */
 function callerCanRead(ctx: Context<Env>, entityType: ProductEntityType, cached: Record<string, unknown>): boolean {
   try {
@@ -86,8 +88,10 @@ function callerCanRead(ctx: Context<Env>, entityType: ProductEntityType, cached:
           ? ((createdBy as { id: string }).id ?? null)
           : ((createdBy as string | null | undefined) ?? null),
     } as { id: string; createdBy?: string | null };
+    const actor = actorFrom(ctx);
+    if (!draftVisibleTo(authRow, 'anonymous' in actor ? undefined : actor.userId)) return false;
     const subject = buildSubjectFromEntity(entityType, authRow);
-    return checkPermission(ctx.var.memberships, 'read', subject, actorFrom(ctx)).isAllowed;
+    return checkPermission(ctx.var.memberships, 'read', subject, actor).isAllowed;
   } catch {
     // Unexpected row shape → don't serve from cache; the handler re-authorizes authoritatively.
     return false;

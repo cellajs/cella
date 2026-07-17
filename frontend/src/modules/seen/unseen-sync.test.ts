@@ -121,6 +121,24 @@ describe('unseen count deltas from synced rows', () => {
     expect(counts()['fallback-ch'].attachment).toBe(1);
   });
 
+  it('publish lights the badge: recency keys on publishedAt, not the old createdAt', async () => {
+    vi.advanceTimersByTime(10);
+    // Draft created 100 days ago, published just now: createdAt is outside the window AND
+    // before the reconcile anchor — only the publishedAt recency key counts it as new.
+    ingestSyncedRows('attachment', CHANNEL, [row('pub-1', { createdAt: daysAgo(100), publishedAt: now() })]);
+    await settle();
+
+    expect(counts()[CHANNEL].attachment).toBe(6);
+  });
+
+  it('never counts an unpublished draft (defense in depth — drafts do not sync at all)', async () => {
+    vi.advanceTimersByTime(10);
+    ingestSyncedRows('attachment', CHANNEL, [row('draft-1', { publishedAt: null })]);
+    await settle();
+
+    expect(counts()[CHANNEL].attachment).toBe(5);
+  });
+
   it('ignores untracked entity types', async () => {
     ingestSyncedRows('page' as never, CHANNEL, [row('p1')]);
     await settle();

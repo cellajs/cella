@@ -1,4 +1,4 @@
-import { appConfig } from 'shared';
+import { appConfig, isUnpublishedDraft } from 'shared';
 import { type ActivityBatchRow, getEventData } from '#/lib/activity-bus';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions';
@@ -34,14 +34,18 @@ export type SubscriberAccess = Pick<AppStreamSubscriber, 'userId' | 'isSystemAdm
  * The same visibility is re-checked when a cache hit is served (`appCache` re-runs
  * `checkPermission` against the cached row), so over-notifying is never a leak here.
  *
- * Forks may add product rules here (e.g. author-only draft rows) before the engine
- * check — concepts the engine has no policy vocabulary for.
+ * Unpublished drafts (`publishedAt` null, see `shared/src/published-rows.ts`) are
+ * dropped for EVERYONE, author included: drafts live outside the sync engine, and
+ * the publish update is the row's sync birth. Delta reads apply the same exclusion,
+ * so a draft seq is never fetchable either.
  *
  * Exported so the parity property test can assert: SQL predicate ≍ checkPermission ≍
  * this function.
  */
 export function canReceiveEntityEvent(subscriber: SubscriberAccess, event: AppStreamProductEvent): boolean {
   const row = (event.rowData ?? undefined) as Record<string, unknown> | undefined;
+
+  if (isUnpublishedDraft(row)) return false;
 
   try {
     const subject = buildSubject(event.entityType, event, {

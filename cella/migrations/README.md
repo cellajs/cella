@@ -63,3 +63,8 @@ be a no-op.
   builder `.context()→.channel()`, `context_type/context_id→channel_type/channel_id`,
   `context_counters→channel_counters`, …). Allow-list codemod; also needs file renames,
   i18n keys, SDK regen, and a DB rename migration — see the folder README.
+- [2026-07-published-rows](./2026-07-published-rows/): opt-in draft lifecycle for product
+  entities — nullable `publishedAt` (NULL = author-only draft). Dispatch, reads, counters,
+  stamps, badges, cache, detail and yjs all enforce it upstream via column introspection;
+  forks add the column, a publish endpoint (`resolveServerUpdateOps`) and a drafts view,
+  and delete their imperative `draft`-column rules. SQL data migration only, no codemod.

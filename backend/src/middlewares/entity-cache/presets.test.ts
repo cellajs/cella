@@ -11,7 +11,8 @@ vi.mock('./app-entity-cache', () => ({
 }));
 const checkPermission = vi.fn();
 vi.mock('#/permissions', () => ({ checkPermission: (...a: unknown[]) => checkPermission(...a) }));
-vi.mock('#/permissions/actor', () => ({ actorFrom: () => ({}) }));
+const actorFrom = vi.fn((): Record<string, unknown> => ({}));
+vi.mock('#/permissions/actor', () => ({ actorFrom: () => actorFrom() }));
 const buildSubjectFromEntity = vi.fn((..._a: unknown[]) => ({}));
 vi.mock('#/permissions/build-subject', () => ({
   buildSubjectFromEntity: (...a: unknown[]) => buildSubjectFromEntity(...a),
@@ -66,6 +67,52 @@ describe('appCache — per-request authorization on cache hit', () => {
 
   it('falls through to the handler (never a stale serve) when the caller is NOT allowed', async () => {
     checkPermission.mockReturnValue({ isAllowed: false });
+    const ctx = mockCtx();
+    const next = vi.fn();
+
+    await appCache('attachment')(ctx as never, next);
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(ctx.json).not.toHaveBeenCalled();
+  });
+});
+
+describe('appCache — draft veto on cache hit (publishedAt lifecycle)', () => {
+  // An author-cached draft: the handler ran for the author and the enriched response
+  // was cached; a later hit by anyone else must not serve it, even when the engine
+  // would allow the read (the engine has no draft vocabulary).
+  const cachedDraft = { ...cachedAttachment, publishedAt: null };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    entityCacheGet.mockReturnValue(cachedDraft);
+    checkPermission.mockReturnValue({ isAllowed: true });
+  });
+
+  it('serves a cached draft to its author', async () => {
+    actorFrom.mockReturnValue({ userId: 'user-1', isSystemAdmin: false });
+    const ctx = mockCtx();
+    const next = vi.fn();
+
+    await appCache('attachment')(ctx as never, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(ctx.json).toHaveBeenCalledWith(cachedDraft);
+  });
+
+  it('falls through for a non-author even though the engine allows the read', async () => {
+    actorFrom.mockReturnValue({ userId: 'user-2', isSystemAdmin: false });
+    const ctx = mockCtx();
+    const next = vi.fn();
+
+    await appCache('attachment')(ctx as never, next);
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(ctx.json).not.toHaveBeenCalled();
+  });
+
+  it('falls through for a system admin too — author-only means author-only', async () => {
+    actorFrom.mockReturnValue({ userId: 'admin-user', isSystemAdmin: true });
     const ctx = mockCtx();
     const next = vi.fn();
 

@@ -163,6 +163,39 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
     expect(received).toHaveLength(1);
   });
 
+  it('drops draft rows for everyone — author and admin included (drafts are outside sync)', async () => {
+    const author = fakeSubscriber([membership(ORG_A, 'member', 'author-user')], 'author-user', [ORG_A], ORG_A);
+    const admin = fakeSubscriber([membership(ORG_A, 'admin', 'admin-user')], 'admin-user', [ORG_A], ORG_A);
+    for (const { subscriber } of [author, admin]) {
+      streamSubscriberManager.register(subscriber);
+    }
+
+    await dispatchToAppStream(
+      attachmentEvent(ORG_A, {
+        rowData: attachmentRow('attachment-draft', ORG_A, { createdBy: 'author-user', publishedAt: null }),
+      }) as AppStreamEvent,
+    );
+
+    expect(author.received).toHaveLength(0);
+    expect(admin.received).toHaveLength(0);
+  });
+
+  it('a published row (publishedAt set) dispatches normally — the veto only hits null', async () => {
+    const member = fakeSubscriber([membership(ORG_A, 'member', 'member-user')], 'member-user', [ORG_A], ORG_A);
+    streamSubscriberManager.register(member.subscriber);
+
+    await dispatchToAppStream(
+      attachmentEvent(ORG_A, {
+        rowData: attachmentRow('attachment-published', ORG_A, {
+          createdBy: 'member-user',
+          publishedAt: '2026-07-04T09:00:00.000Z',
+        }),
+      }) as AppStreamEvent,
+    );
+
+    expect(member.received).toHaveLength(1);
+  });
+
   it('does not ping anyone for a batch with no readable rows', async () => {
     const { subscriber, received } = fakeSubscriber(
       [membership(ORG_A, 'member', 'moved-user')],

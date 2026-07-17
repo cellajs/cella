@@ -3,6 +3,7 @@ import { and, asc, count, eq, getColumns, ilike, isNull, or, type SQL, sql } fro
 import type { AuthContext } from '#/core/context';
 import type { OperationResult } from '#/core/operation-result';
 import { tenantRead, tenantReadIncludingDeleted } from '#/db/tenant-context';
+import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
 import { type ListTotalSource, resolveListTotal } from '#/modules/entities/helpers/list-total';
@@ -43,6 +44,12 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   if (!seqCursor) {
     filters.push(isNull(attachmentsTable.deletedAt));
   }
+
+  // Unpublished drafts are excluded from every read, delta included — they are outside
+  // the sync engine until published. No-op here (attachments carry no publishedAt);
+  // kept so fork entity ops copy the pattern.
+  const publishedOnly = publishedRowsPredicate(attachmentsTable);
+  if (publishedOnly) filters.push(publishedOnly);
 
   // Sequence-based delta sync filter
   filters.push(...seqCursorFilters(attachmentsTable.seq, seqCursor));

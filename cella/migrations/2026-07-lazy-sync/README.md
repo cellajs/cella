@@ -47,8 +47,13 @@ Behavior changes to be aware of (intentional, see SYNC_ENGINE.md):
 Badges are now computed from synced rows by `ingestSyncedRows` (`seen-store.ts`), a
 client-side mirror of your server's unseen predicate (`findUnseenCountsByUser`). If your
 fork adds feed-parity filters server-side via `scopeWhereByType` — e.g. **projectcampus
-excludes `draft` item rows** — add the same filter inside `ingestSyncedRows`' row loop
-(e.g. `if (row.draft) continue;`), or badges drift upward until the next exact reconcile.
+excludes `draft` item rows** — add the same filter in `matchesUnseenFilters`
+(`seen/helpers.ts`), or badges drift upward until the next exact reconcile.
+
+> Superseded for drafts: [2026-07-published-rows](../2026-07-published-rows/) ships an
+> upstream `publishedAt` draft lifecycle whose filter and recency key are mirrored on both
+> sides already — migrate the `draft` column to it and this mirror is no longer yours to
+> maintain. Only non-draft feed filters still need hand-mirroring.
 
 ## 4. Config invariant — may throw at startup
 
@@ -92,7 +97,10 @@ on any import you miss; plain grep-rename.
 response IS the unfiltered scope (delta rows row-identical to default-list rows, tombstones
 aside). A feed whose default response is server-filtered — e.g. **projectcampus excludes
 `draft` items** — must keep its filtered key for the default view, or drafts leak into the
-table via splices. Same reasoning as the ledger mirror in step 3.
+table via splices. Same reasoning as the ledger mirror in step 3. (On the
+[2026-07-published-rows](../2026-07-published-rows/) lifecycle this concern disappears for
+drafts: delta reads exclude them server-side for everyone, so delta rows ARE row-identical
+to the default list again.)
 
 ## Gates
 

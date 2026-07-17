@@ -272,16 +272,20 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
     expect(stamp).toBeLessThanOrEqual(after);
   });
 
-  it('draft rows never stamp (author-only fork rows)', () => {
+  it('a row created directly published stamps li: from publishedAt', () => {
+    const publishedAt = '2026-07-01T10:00:00.500Z';
     const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, draft: true },
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt },
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
+      'e:attachment': 1,
+      'li:attachment': Date.parse(publishedAt),
+    });
   });
 
   it('genuine update stamps lu:attachment with the row updatedAt, not li:', () => {
@@ -341,5 +345,123 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': 1 });
+  });
+});
+
+// ── Draft lifecycle (opt-in publishedAt) ─────────────────────────────────────
+// Only countable rows (live AND published) participate in e: counters and li:/lu:
+// stamps. Unpublished drafts are invisible until their publish edge, which counts
+// as a create; unpublish counts as a delete. Rows keep their create-time seq while
+// drafting (gap-tolerant watermarks absorb the unfetchable seqs).
+
+describe('draft lifecycle count deltas (publishedAt)', () => {
+  const createdAt = '2026-07-01T10:00:00.000Z';
+  const publishedAt = '2026-07-04T09:00:00.000Z';
+
+  it('a draft create counts nothing and stamps nothing, but still reserves a seq', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'create',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null },
+      }),
+    ]);
+
+    expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
+    expect(plan.seqGroups).toHaveLength(1); // drafts keep create-time seqs
+  });
+
+  it('draft-internal edits count nothing', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, updatedAt: '2026-07-02T10:00:00.000Z', publishedAt: null, deletedAt: null },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: null },
+      }),
+    ]);
+
+    expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
+  });
+
+  it('the publish edge counts as a create and stamps li: from publishedAt', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, updatedAt: publishedAt, publishedAt, deletedAt: null },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: null },
+      }),
+    ]);
+
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
+      'e:attachment': 1,
+      'li:attachment': Date.parse(publishedAt),
+    });
+  });
+
+  it('unpublish counts as a delete and stamps nothing', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: null },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
+      }),
+    ]);
+
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1 });
+  });
+
+  it('hard-deleting a draft counts nothing (it was never counted)', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'delete',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null },
+      }),
+    ]);
+
+    expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
+  });
+
+  it('soft-deleting a draft counts nothing (outside the countable set on both sides)', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: '2026-07-03T10:00:00.000Z' },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: null },
+      }),
+    ]);
+
+    expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
+  });
+
+  it('publishing a trashed row counts nothing (deletedAt still excludes it)', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: '2026-07-03T10:00:00.000Z' },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: '2026-07-03T10:00:00.000Z' },
+      }),
+    ]);
+
+    expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
+  });
+
+  it('soft-deleting a PUBLISHED row still decrements (the two dimensions compose)', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: '2026-07-05T10:00:00.000Z' },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
+      }),
+    ]);
+
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1 });
   });
 });

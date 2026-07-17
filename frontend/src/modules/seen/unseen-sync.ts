@@ -8,8 +8,9 @@ import { queryClient } from '~/query/query-client';
  * Exact unseen-count deltas derived from synced rows, valid between two exact server recounts.
  *
  * `countedIds` holds rows counted (+1) since the last recount, so a row appearing in several
- * synced ranges (created, then updated) counts once. Rows created before `lastReconcileAt` are
- * already in the server's counts and are never re-counted.
+ * synced ranges (created, then updated) counts once. Rows whose recency (publish time on
+ * draft-lifecycle rows, else created time) predates `lastReconcileAt` are already in the
+ * server's counts and are never re-counted.
  */
 const countedIds = new Set<string>();
 // Session start doubles as the first recount point: a persisted counts cache may restore before the first refetch.
@@ -35,8 +36,14 @@ export function ingestSyncedRows(
   const cutoff = Date.now() - seenWindowMs;
 
   for (const row of rows) {
-    const createdAt = typeof row.createdAt === 'string' ? Date.parse(row.createdAt) : Number.NaN;
-    if (Number.isNaN(createdAt) || createdAt <= cutoff) continue;
+    // Recency = publish time on draft-lifecycle rows (publishedAt ?? createdAt), mirroring
+    // the server's unseen window key in `findUnseenCountsByUser` — publishing an old draft
+    // must still count as new.
+    const recencySource =
+      (typeof row.publishedAt === 'string' ? row.publishedAt : undefined) ??
+      (typeof row.createdAt === 'string' ? row.createdAt : undefined);
+    const recencyAt = recencySource ? Date.parse(recencySource) : Number.NaN;
+    if (Number.isNaN(recencyAt) || recencyAt <= cutoff) continue;
     if (!matchesUnseenFilters(entityType, row)) continue;
 
     const channelId = resolveDeepestAncestorId(hierarchy, entityType, row) ?? fallbackChannelId;
@@ -44,11 +51,11 @@ export function ingestSyncedRows(
 
     if (typeof row.deletedAt === 'string' && row.deletedAt.length > 0) {
       // Decrement only rows the current count can include: counted here, or in the server
-      // baseline (created before the last recount).
-      if (!seen && (countedIds.has(row.id) || createdAt <= lastReconcileAt))
+      // baseline (recency before the last recount).
+      if (!seen && (countedIds.has(row.id) || recencyAt <= lastReconcileAt))
         applyUnseenDelta(channelId, entityType, -1);
       countedIds.delete(row.id);
-    } else if (createdAt > lastReconcileAt && !seen && !countedIds.has(row.id)) {
+    } else if (recencyAt > lastReconcileAt && !seen && !countedIds.has(row.id)) {
       countedIds.add(row.id);
       applyUnseenDelta(channelId, entityType, 1);
     }

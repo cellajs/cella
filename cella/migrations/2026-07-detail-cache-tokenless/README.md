@@ -44,14 +44,24 @@ the frontend header removal).
 4. **Verify custom read rules still authorize from cached data.** Cache hits now
    re-run `checkPermission` against the *cached enriched response* (with `createdBy`
    normalized back to the raw id). If your fork added product read conditions in
-   `canReceiveEntityEvent` or the config, confirm your detail response carries the
-   fields the check needs (channel ids, `createdBy`, `publicAt`) — attachments and
-   the standard product columns already do.
+   the config, confirm your detail response carries the fields the check needs
+   (channel ids, `createdBy`, `publicAt`, `publishedAt`) — attachments and the
+   standard product columns already do.
+
+   > **Imperative rules do NOT re-run on cache hits.** A product rule written
+   > directly into `canReceiveEntityEvent` (rather than expressed as config or a
+   > lifecycle column) is invisible to the cache path — a cache hit would serve
+   > rows your dispatch withholds. Author-only drafts specifically are covered
+   > upstream by [2026-07-published-rows](../2026-07-published-rows/) (`publishedAt`
+   > lifecycle; the cache applies the same veto). Migrate `draft`-style rules to it
+   > before adopting step 5 on those routes; any remaining imperative rule must be
+   > added to `callerCanRead` (`entity-cache/presets.ts`) as well.
 
 5. **(Optional, projectcampus) adopt `appCache` on the uncached detail routes.**
    Only `attachment` is cached today; extend `xCache: [appCache('<type>')]` to
    `item/label/material/comment/submission` detail GETs to get the same detail
-   cache the base ships for attachments.
+   cache the base ships for attachments — after the step-4 caveat is resolved for
+   each route's read rules.
 
 ## Gates
 

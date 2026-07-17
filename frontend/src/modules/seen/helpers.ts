@@ -26,10 +26,11 @@ export function getSeenChannelId(entityType: ProductEntityType, entity: Record<s
 
 /**
  * Fork extension point: extra row filters mirroring the server's unseen predicate
- * (`findUnseenCountsByUser`). Cella filters nothing beyond live-and-in-window. A fork whose feeds
- * exclude more rows (e.g. a `draft` column in its `scopeWhereByType`) must mirror that exclusion
- * here, or badge deltas drift until the next exact recount.
+ * (`findUnseenCountsByUser`). Cella filters unpublished drafts (`publishedAt` lifecycle
+ * feed parity — synced rows should never carry one, so this is defense in depth) and
+ * nothing else. A fork whose feeds exclude more rows must mirror that exclusion here,
+ * or badge deltas drift until the next exact recount.
  */
-export function matchesUnseenFilters(_entityType: ProductEntityType, _row: Record<string, unknown>): boolean {
-  return true;
+export function matchesUnseenFilters(_entityType: ProductEntityType, row: Record<string, unknown>): boolean {
+  return row.publishedAt !== null;
 }

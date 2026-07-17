@@ -574,7 +574,7 @@ Values are entity-keyed (`entityType:entityId` → enriched response); the key c
    → next fetch re-enriches
 ```
 
-Forks adopt it per product detail route: `xCache: [appCache('<entityType>')]`. The cached row carries everything the read check needs (channel ids, `createdBy`, `publicAt`); the middleware normalizes the enriched `createdBy` user object back to its id for the permission subject.
+Forks adopt it per product detail route: `xCache: [appCache('<entityType>')]`. The cached row carries everything the read check needs (channel ids, `createdBy`, `publicAt`, `publishedAt`); the middleware normalizes the enriched `createdBy` user object back to its id for the permission subject. Cache hits also apply the draft veto (`draftVisibleTo`): an author-cached unpublished draft never serves to anyone else, mirroring SSE dispatch and the detail read.
 
 ### Request coalescing (singleflight)
 
@@ -628,7 +628,7 @@ delay = clamp(tier.min, hash(sourceId:scope) % syncWindow, tier.max)
 
 ### Unseen ledger
 
-Badge counts are maintained by **one ledger** (`seen-store.ts`) instead of per-event server recounts: a per-row mirror of the server's unseen predicate (created within the shared `seenWindowMs` window, not deleted, not locally seen; forks must mirror their feed filters, e.g. a `draft` column) applied to the rows each flush delivers (+1 new-and-unseen, −1 tombstoned-and-unseen) and to view-marks (−1), all through one idle-batched applicator. Double-count guards: `countedIds` + a `lastReconcileAt` anchor.
+Badge counts are maintained by **one ledger** (`seen-store.ts`) instead of per-event server recounts: a per-row mirror of the server's unseen predicate (recency within the shared `seenWindowMs` window — publish time on `publishedAt` draft-lifecycle tables, else created time — not deleted, not an unpublished draft, not locally seen) applied to the rows each flush delivers (+1 new-and-unseen, −1 tombstoned-and-unseen) and to view-marks (−1), all through one idle-batched applicator. The draft filter and recency key ship upstream on both mirrors; a fork with *additional* feed filters must still mirror those in `matchesUnseenFilters`. Double-count guards: `countedIds` + a `lastReconcileAt` anchor.
 
 The exact counts endpoint is baseline + reconcile only — staleness, window focus, catchup completion (covers cross-device seen-marks; `seen_by` is excluded from CDC) — and each recount wins wholesale, re-anchoring the ledger. A startup config invariant requires every seen-tracked entity type to have **unconditional** channel read; a fork with row-conditional visibility must keep endpoint counting for that type.
 

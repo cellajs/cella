@@ -5,6 +5,7 @@ import {
   checkPermission,
   type ChannelEntityIdColumns,
   type ChannelEntityType,
+  draftVisibleTo,
   hierarchy,
   isChannelEntity,
   isProductEntity,
@@ -92,7 +93,8 @@ export async function resolveEntityScope(
   if (!existing.has('id')) return null; // unknown / non-conforming table
 
   // Logical keys the permission engine may read, filtered to columns the table actually has.
-  const candidateKeys = ['id', 'createdBy', 'tenantId'];
+  // `publishedAt` feeds the draft veto in `canEditEntity` (absent column → always published).
+  const candidateKeys = ['id', 'createdBy', 'tenantId', 'publishedAt'];
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
     candidateKeys.push(appConfig.entityIdColumnKeys[ancestor]);
   }
@@ -129,6 +131,11 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
 
     // Defense-in-depth: verify tenant match even if RLS is not enforced (e.g. superuser connection).
     if (typeof entity.tenantId === 'string' && entity.tenantId !== ctx.tenantId) return false;
+
+    // Unpublished drafts (publishedAt null) are editable by their author alone — the
+    // published-rows lifecycle veto, ahead of the engine (which has no draft vocabulary).
+    // Absent column (resolveEntityScope filtered it out) → always published → no-op.
+    if (!draftVisibleTo(entity as unknown as Record<string, unknown>, ctx.userId)) return false;
 
     const createdBy = typeof entity.createdBy === 'string' || entity.createdBy === null ? entity.createdBy : undefined;
     const subject = buildSubject(entityType, entity, {
