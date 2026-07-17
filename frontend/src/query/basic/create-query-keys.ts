@@ -27,9 +27,9 @@ type StandardEntityKeys<
 };
 
 /**
- * True when a list view's filters all sit at their defaults (absent, empty, or equal) — the
+ * True when a list view's filters all sit at their defaults (absent, empty, or equal). The
  * signal to serve the view from the entity's canonical scope query, which live sync keeps
- * fresh and splices creates into, instead of a filtered query that can only invalidate.
+ * fresh and splices creates into. Filtered queries can only be invalidated.
  *
  * Only valid for entities whose default list response IS the unfiltered scope: delta rows
  * must be row-identical to default-list rows. Fork feeds with implicit server-side filters

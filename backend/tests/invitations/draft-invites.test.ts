@@ -30,7 +30,7 @@ afterEach(async () => await clearDatabase());
  * role stays live so staff can collaborate in drafts; `dispatchDeferredInvites`
  * (called by a fork's publish flow) releases held invites with token rotation and the
  * 7-day reminder throttle. Cella's template never nulls publishedAt, so everything
- * here is dormant by default — these tests null it explicitly.
+ * here is dormant by default, so these tests null it explicitly.
  */
 describe('Draft context invite deferral', async () => {
   const call = await createAppClient();

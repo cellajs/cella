@@ -11,8 +11,8 @@ import { idbKvStorage } from '~/query/idb-kv-storage';
 
 /*
  * Client-side seen state, split by who has been told:
- * - `pending`    — seen locally, server not yet told (module state; flushed periodically + on unload)
- * - `flushedIds` — server confirmed (persisted so the next session doesn't re-send)
+ * - `pending`: seen locally, server not yet told (module state; flushed periodically + on unload)
+ * - `flushedIds`: server confirmed (persisted so the next session doesn't re-send)
  * unseen-sync.ts adds a third set, `countedIds`: badge deltas already applied this session.
  */
 
@@ -137,7 +137,7 @@ export const useSeenStore = create<SeenStoreState>()(
         name: 'seen',
         skipHydration: true,
         storage: createJSONStorage(() => idbKvStorage('seen')),
-        // Set ↔ array for JSON compatibility; insertion order (oldest first) survives the round-trip.
+        // Sets serialize as arrays; insertion order (oldest first) survives the round-trip.
         partialize: (state) => ({ flushedIds: [...state.flushedIds] }),
         merge: (persisted, current) => ({
           ...current,
@@ -151,7 +151,7 @@ export const useSeenStore = create<SeenStoreState>()(
 
 /**
  * True when this client already saw the entity (flushed to the server, or queued to be).
- * The supported accessor for fork code — don't read store internals directly.
+ * Fork code must use this accessor and keep store internals private.
  */
 export function isSeenLocally(entityId: string): boolean {
   if (useSeenStore.getState().flushedIds.has(entityId)) return true;

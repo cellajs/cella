@@ -18,8 +18,8 @@ export type PermissionValue = 0 | 1 | 'own';
 
 /**
  * Permission value the engine and downstream consumers read. A cell is the config literal
- * verbatim — there is no object to normalize into, the `'own'` name IS the value. Typed as the
- * full {@link RowConditionName} union (rather than just `'own'`) because that is the vocabulary
+ * verbatim: there is no object to normalize into, the `'own'` name IS the value. Typed as the
+ * full {@link RowConditionName} union because the engine supports conditions beyond `'own'` and that is the vocabulary
  * the name-keyed switches close over; `'public'` never actually appears as a cell.
  */
 export type NormalizedPermissionValue = 0 | 1 | RowConditionName;
@@ -55,7 +55,7 @@ export type AccessPolicies = Partial<Record<ChannelEntityType | ProductEntityTyp
 /**
  * Fluent per-role permission setters for a context. Permissions are partial: any omitted action
  * defaults to `0` (denied), so a policy lists only what it grants (e.g. a channel entity's own
- * "self" rows omit `create` — creation is granted on ancestor rows, not from inside the entity).
+ * "self" rows omit `create`: creation is granted on ancestor rows, not from inside the entity).
  */
 export type ChannelPolicyBuilder = {
   [R in EntityRole]: (permissions: Partial<Record<EntityActionType, PermissionValue>>) => void;
@@ -87,7 +87,7 @@ export type AccessPolicyCallback = (config: AccessPolicyConfiguration) => void;
  * - `false` = denied
  * - a {@link RowConditionName} (e.g. `'own'`) = allowed only for rows satisfying that row
  *   condition; resolve per row via `resolvePermission`. Narrowed to the closed name union (not a
- *   bare `string`) so `resolvePermission`'s switch is exhaustive — a new condition name is a
+ *   bare `string`) so `resolvePermission`'s switch is exhaustive. A new condition name is a
  *   compile error there, not a silent frontend denial.
  */
 export type ActionPermissionState = boolean | RowConditionName;

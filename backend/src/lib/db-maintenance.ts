@@ -19,7 +19,7 @@ async function isPgPartmanAvailable(db: PgDB): Promise<boolean> {
  * Skips with a warning when the pg_partman extension is not installed.
  *
  * Runs on the admin connection: run_maintenance() creates and drops partition tables,
- * which requires ownership of the parent tables — beyond runtime_role's grants.
+ * which requires ownership of the parent tables and exceeds runtime_role's grants.
  *
  * @param log - Optional log sink (defaults to console.info). Throws on failure; callers decide how to handle it.
  */

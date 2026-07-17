@@ -37,8 +37,8 @@ export function useViewportRows<R>({
       };
     }
 
-    // Heights of all rows are computed upfront — a known perf cost. Could adopt
-    // react-window's approach: https://github.com/bvaughn/react-window/blob/b0a470cc264e9100afcaa1b78ed59d88f7914ad4/src/VariableSizeList.js#L68
+    // Computing all row heights upfront is an accepted performance cost. For a variable-height
+    // indexing approach, see https://github.com/bvaughn/react-window/blob/b0a470cc264e9100afcaa1b78ed59d88f7914ad4/src/VariableSizeList.js#L68
     let totalRowHeight = 0;
     let gridTemplateRows = '';
     let currentHeight: number | null = null;

@@ -19,7 +19,7 @@ export const tenantsTable = snakeCase.table(
     restrictions: json().$type<Restrictions>().notNull().default(defaultRestrictions()),
     // Auth strategies a tenant's members are allowed to sign in with (empty = all enabled strategies).
     // Relocated from the unenforced organizations.authStrategies. Enforcement lives at the tenant
-    // boundary (tenantGuard) and is deferred to the SSO build — nothing reads this yet.
+    // boundary (tenantGuard). This remains inert until the SSO build reads it.
     authStrategies: json().$type<AuthStrategy[]>().notNull().default([]),
     createdBy: uuid().references(() => usersTable.id, { onDelete: 'set null' }),
     subscriptionId: varchar({ length: maxLength.field }),

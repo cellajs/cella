@@ -10,14 +10,14 @@ import { statSync } from 'node:fs';
  * across the page *and* its imported bodies, not the wrapper file alone.
  *
  * Precedence, per page:
- *  1. an explicit frontmatter `updatedAt` (an author pin — always respected);
+ *  1. an explicit frontmatter `updatedAt`, which is an author pin and always respected;
  *  2. else the newest git committer date across the page + its imported docs;
  *  3. else (untracked file, or no git history at all) the file's mtime.
  *
  * Caveats mirror the wider ecosystem (Astro/VitePress/Docusaurus all read git):
  * the value reflects the last *commit*, so a locally-edited-but-uncommitted page
  * shows its previous commit date until committed, and CI must fetch full history
- * (`fetch-depth: 0`) — a shallow clone collapses tracked files onto the mtime path.
+ * (`fetch-depth: 0`). A shallow clone collapses tracked files onto the mtime path.
  */
 
 const toIso = (ms: number) => new Date(ms).toISOString();

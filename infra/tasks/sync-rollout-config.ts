@@ -11,7 +11,7 @@ import { getFlag } from './args'
 type RolloutGeneration = Pick<GenerationMetadata, 'service' | 'genId' | 'sha'>
 
 /**
- * Validate the raw `computeGenerationMetadata` stack output instead of blind-
+ * Validate the raw `computeGenerationMetadata` stack output before
  * casting: rows are checked field-by-field. A row with a non-string genId is
  * normalised to '' and filtered out by `seedCandidates`.
  */
@@ -84,9 +84,8 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
  * Initialize the `active` pointer for any service that has none yet: first adoption
  * of a live generation into the control object. Deliberately NEVER promotes a pending
  * generation or demotes an existing active: the orchestrator (deploy-service)
- * owns promotion after a health-gated cutover, so a freshly-materialised but
- * un-cutover generation must not be mistaken for "live" here (that was the old
- * max-gen reconcile bug). A service that already has an `active` OR a `pendingSha`
+ * owns promotion after a health-gated cutover, so a freshly provisioned but
+ * un-cutover generation must not be treated as live. A service that already has an `active` OR a `pendingSha`
  * is skipped entirely. Skipped (with a warning) when no S3 creds are present.
  */
 async function seedActivePointers(stack: string, seeds: Map<string, RolloutGeneration>): Promise<void> {

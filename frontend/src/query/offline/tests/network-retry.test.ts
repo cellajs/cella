@@ -19,7 +19,7 @@ describe('isNetworkError', () => {
   });
 
   it('never treats an ApiError (server responded) as a network error', () => {
-    // A server that responded is not offline — even a 5xx, and even if its message happens to
+    // A server that responded is not offline, even for a 5xx or a message that happens to
     // contain a network-y phrase. These must fail fast so their handlers run.
     expect(isNetworkError(new ApiError({ status: 503 }))).toBe(false);
     expect(isNetworkError(new ApiError({ status: 500, message: 'failed to fetch' }))).toBe(false);

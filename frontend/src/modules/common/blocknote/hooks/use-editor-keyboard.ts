@@ -22,7 +22,7 @@ interface UseEditorKeyboardArgs {
 
 /**
  * Returns an `onKeyDown` with three IDE-like behaviors:
- * - Selection wrapping: typing `[ { ( \` " '` with a non-empty selection wraps it instead of replacing.
+ * - Selection wrapping: typing `[ { ( \` " '` with a non-empty selection wraps it without replacing it.
  * - Escape / Cmd+Ctrl+Enter: commit (non-empty only) + onEscapeClick / onEnterClick. Enter stops
  *   propagation so the submit shortcut doesn't bubble to surrounding forms.
  */

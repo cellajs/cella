@@ -103,9 +103,8 @@
   border-color: color-mix(in srgb, var(--intent-color) 20%, var(--background));
 }
 
-/* Semantic icon sizes. Icons are sized with classes only (never lucide's px-based
-   `size` prop — the base rule below overrides its width/height attributes), so they
-   scale with the mobile root-font-size bump like the rest of the UI. */
+/* Semantic icon sizes. Icons use classes because the base rule below overrides Lucide's
+   px-based `size` prop. They scale with the mobile root-font-size bump like the rest of the UI. */
 @utility icon-xs {
   width: 0.75rem;
   height: 0.75rem;
@@ -134,7 +133,7 @@
 }
 
 /* Prose sizing. The 18px mobile root (html rule in @layer base below) makes prose
-   oversized for reading — pull it back to ~16px on small screens; em-based headings
+   oversized for reading. Pull it back to ~16px on small screens; em-based headings
    and spacing scale along. Unlayered for the same reason as the code styling below:
    it must beat the plugin's utilities-layer `font-size: 1rem`. */
 .prose {
@@ -143,7 +142,7 @@
 
 /* Docs code styling. Deliberately UNLAYERED so it beats @tailwindcss/typography's
    `prose` rules, which live in @layer utilities (later than @layer components) and set
-   `pre` to a fixed dark background in both themes — a layered override loses to them by
+   `pre` to a fixed dark background in both themes. A layered override loses to them by
    layer order regardless of specificity. */
 
 /* Inline `code` pills: drop the prose backtick pseudo-elements, add a bordered chip. */
@@ -164,7 +163,7 @@
 
 /* Shiki (build-time syntax highlighting, vite.config.ts). Dual-theme output emits both
    light and dark token colors as CSS vars per span with no default applied
-   (defaultColor:false) — pick the set matching the active theme. Container chrome
+   (defaultColor:false). Pick the set matching the active theme. Container chrome
    (border, radius, padding) comes from app tokens; token/background colors from the
    github theme so contrast stays correct. */
 .prose pre.shiki {
@@ -276,9 +275,9 @@
     @apply font-sans overscroll-none max-sm:text-[18px];
   }
 
-  /* Icon default: 1rem (icon-md) instead of lucide's fixed 24px attributes, so icons
-     scale with the root font-size. Zero specificity via :where — any size class
-     (icon-*, size-*) or container rule ([&>svg]:size-*) wins, but CSS beats the svg
+  /* Icon default: 1rem (icon-md), overriding Lucide's fixed 24px attributes so icons
+     scale with the root font-size. Zero specificity via :where lets any size class
+     (icon-*, size-*) or container rule ([&>svg]:size-*) win, but CSS beats the svg
      width/height attributes, which is why lucide's `size` prop must not be used. */
   :where(svg.lucide) {
     width: 1rem;

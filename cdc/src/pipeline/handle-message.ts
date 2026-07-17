@@ -36,7 +36,7 @@ function getMessageRow(msg: DmlMessage): Record<string, unknown> | null {
 /**
  * Check if a message is a seeded INSERT during catch-up and should be skipped.
  * Detects seeded entities by UUID prefix '00000000-' (from mockUuid in script context)
- * or legacy nanoid prefix 'gen-'.
+ * or the supported nanoid prefix 'gen-'.
  * Only skips inserts; updates/deletes to seeded entities must still be tracked.
  */
 function isSeededInsert(msg: DmlMessage): boolean {
@@ -111,7 +111,7 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
 
   const tableName = msg.relation?.name;
 
-  // Early exit for seeded inserts during catch-up (UUID prefix '00000000-' or legacy 'gen-')
+  // Early exit for seeded inserts during catch-up (UUID prefix '00000000-' or nanoid 'gen-').
   if (isSeededInsert(msg)) {
     if (wsClient.isConnected()) await replicationState.service?.acknowledge(lsn);
     return;

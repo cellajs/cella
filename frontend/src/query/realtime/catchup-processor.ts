@@ -103,9 +103,9 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
               if (!hasAnyCachedList(keys, organizationId)) {
                 console.debug(`[CatchupProcessor] Context ${channelId}: ${entityType} no cached list → skip delta`);
               } else if (getSyncTier(entityType, organizationId, channelId).min > 0) {
-                // Background scope: hand the gap to the lazy scheduler (spread, merged with any
-                // live notifications). The caught-up seq advances when the flush succeeds —
-                // NOT here — so continue before the advance below.
+                // Hand background gaps to the lazy scheduler, which spreads and merges them with
+                // live notifications. A successful flush advances the caught-up seq, so continue
+                // before the advance below.
                 enqueueCatchupRange({
                   entityType: entityType as ProductEntityType,
                   organizationId,
@@ -120,8 +120,8 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
                 );
                 continue;
               } else {
-                // Viewing scope: reconcile inline — paused-mutation replay gates on catchup
-                // completion (waitForActiveCatchup) and must see the on-screen scope fresh.
+                // Reconcile viewing scopes inline. Paused-mutation replay waits for catchup
+                // completion (waitForActiveCatchup) and must see fresh on-screen data.
                 const seqCursor = String(clientChannelSeq + 1);
                 const patched =
                   (await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys)).status ===
@@ -226,11 +226,11 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   membershipOps.fetchMemberships();
   membershipOps.refreshMe();
 
-  // Step 7: Cache integrity check — compare server entity counts vs cached totals to catch drift
+  // Step 7: Compare server entity counts with cached totals to catch drift
   // where seqs matched but the cache is stale (e.g. a failed refetch after invalidation). Org + child level.
   verifyCacheIntegrity(changes);
 
-  // Step 8: Unseen-count reconcile — synced-row deltas can't see what happened while
+  // Step 8: Reconcile unseen counts. Synced-row deltas cannot see what happened while
   // disconnected (other-device seen-marks, missed windows); an exact recount re-anchors them.
   queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
 }
@@ -255,8 +255,8 @@ const lastSeenServerCounts = new Map<string, number>();
 
 /**
  * Verify cache freshness from server-reported entity counts: a count that CHANGED since
- * the last catchup means rows were created/deleted while this client wasn't watching —
- * invalidate the affected lists. Checks child-context counts (precise) first, then
+ * the last catchup means rows were created or deleted while this client was not watching.
+ * Invalidates the affected lists. Checks child-context counts (precise) first, then
  * org-level counts for entity types not covered by child contexts. In-session signal
  * only; across reloads the entitySeqs screening remains the primary catchup mechanism.
  */

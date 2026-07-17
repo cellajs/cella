@@ -36,7 +36,7 @@ const roleReadValue = (
  * (undefined = org-wide) are readable only where `condition` matches.
  * Compiled to SQL by `buildCollectionReadWhere` (`row-predicates.ts`).
  * `channelType` is the grant's level; absent = the entity's home context (sub-context
- * column) — the shape every pre-deep-chain caller produced.
+ * column), the shape required by callers that do not provide a deep chain.
  */
 export interface ConditionalScope {
   condition: RowConditionName;
@@ -59,7 +59,7 @@ export interface AncestorScope {
 }
 
 /**
- * A HOME-scoped unconditional grant (elevatedRoles): rows homed exactly at this level —
+ * A HOME-scoped unconditional grant (elevatedRoles): rows homed exactly at this level,
  * that level's id column matches AND every more-specific ancestor column is NULL.
  * Produced only when `elevatedRoles` is configured, for roles outside the list.
  */
@@ -178,7 +178,7 @@ const resolveScopes = (
     // level like course/courseSection) → scope to those ids within this organization.
     // Each grant is later filtered by its OWN level's id column; on tables with
     // denormalized ancestor columns an intermediate id covers every row physically
-    // below it (single-row checks walk the same chain — see getAllDecisions).
+    // below it. Single-row checks walk the same chain; see getAllDecisions.
     if (
       membership.organizationId === organizationId &&
       membership.channelId &&
@@ -198,7 +198,7 @@ const resolveScopes = (
     }
   }
 
-  // Public read grant: membership-INDEPENDENT, so it is added outside the membership walk —
+  // Public read grants are membership-independent, so they are added outside the membership walk.
   // a caller with no membership scope at all can still read public rows. Modelled as an
   // org-wide conditional slice (`publicAt IS NOT NULL`), which means it rides the exact same
   // compile path as policy row conditions and needs no special case downstream.
@@ -228,7 +228,7 @@ export interface CollectionReadFilter {
   conditionalScopes: ConditionalScope[];
   /**
    * Unconditional grants at intermediate ancestor levels (deep chains; aggregate reads
-   * only — `requested` narrowing stays home-level). OR-ed with everything else, each
+   * only; `requested` narrowing stays home-level). OR-ed with everything else, each
    * scoped by its own level's id column.
    */
   ancestorScopes?: AncestorScope[];
@@ -399,9 +399,9 @@ export const resolveCollectionReadFilterForPolicies = ({
   // System admins read every row the organization contains. This mirrors the engine's own
   // short-circuit (`getAllDecisions` grants all actions before consulting memberships): a
   // sysadmin passes `orgGuard` with NO membership, so without this they would resolve to an
-  // empty scope and get an empty list — while single-row reads of the same rows succeed.
+  // empty scope and get an empty list while single-row reads of the same rows succeed.
   if (!('anonymous' in actor) && actor.isSystemAdmin) {
-    // An explicitly requested sub-context still narrows the read — sysadmin widens
+    // An explicitly requested sub-context still narrows the read. Sysadmin widens
     // WHO can read, never WHAT a placement-filtered list returns.
     if (requested?.subChannelId !== undefined)
       return { subChannelIds: [requested.subChannelId], conditionalScopes: [] };
@@ -443,7 +443,7 @@ export const resolveCollectionReadFilterForPolicies = ({
     channelType !== undefined && channelType !== homeChannel && channelType !== rootChannel;
 
   // `requested` narrowing stays strictly home-level (pre-deep-chain semantics):
-  // intermediate-level entries are DROPPED here — a requested-id read widened by an
+  // Intermediate-level entries are dropped here. A requested-id read widened by an
   // intermediate grant would leak rows outside the requested set unless every caller
   // also ANDs its own placement filter. Deep-chain list ops therefore skip `requested`
   // and apply placement as an explicit filter on top of the aggregate WHERE.

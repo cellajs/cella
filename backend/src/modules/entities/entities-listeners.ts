@@ -33,8 +33,8 @@ for (const action of ['created', 'updated', 'deleted'] as const) {
 
     // Keep connected subscribers' membership snapshots fresh BEFORE dispatch: the
     // dispatch decision must mirror the API, which reads live memberships per request.
-    // (A membership in a NEW org still requires a reconnect — channel registration is
-    // connect-time — but grants within already-subscribed orgs update live.)
+    // (A membership in a new org still requires a reconnect because channel registration
+    // occurs at connect time. Grants within already-subscribed orgs update live.)
     const membership = getEventData(event, 'membership');
     if (membership?.userId) {
       const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(`org:${event.organizationId}`);

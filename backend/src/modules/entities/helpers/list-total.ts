@@ -3,7 +3,7 @@ import type { DbContext } from '#/core/context';
 import { getOrgEntityCount } from '#/modules/entities/entities-queries';
 
 /**
- * Where a product list's `total` comes from — the caller picks one:
+ * Sources for a product list's `total`; the caller picks one:
  * - `pageLength`: delta reads discard `total` → report the page, no second query.
  * - `counter`: org-wide unfiltered read (`kind:'all'`, no `q`, not delta) → the O(1)
  *   `e:{entityType}` channel counter (CDC-maintained, eventually consistent; fine here).
@@ -16,7 +16,7 @@ export type ListTotalSource =
 
 /**
  * Run `itemsQuery` and resolve `total` from `source`, keeping the count (when any) in
- * parallel with the items query — the delta path skips the second query entirely.
+ * parallel with the items query. The delta path skips the second query entirely.
  */
 export async function resolveListTotal<TItem>(
   itemsQuery: PromiseLike<TItem[]>,

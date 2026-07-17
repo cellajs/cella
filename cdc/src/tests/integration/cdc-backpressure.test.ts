@@ -134,7 +134,7 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
     activityMsgs = [];
 
     await startStubWs();
-    // Force an immediate reconnect rather than waiting out the exponential backoff
+    // Force an immediate reconnect to keep this test independent of the backoff timer.
     // that accumulated while the stub was down (keeps the test fast and deterministic).
     wsClient.close();
     wsClient.connect();

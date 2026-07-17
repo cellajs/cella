@@ -2,13 +2,19 @@ import type { z } from '@hono/zod-openapi';
 import { type LensEntityType, normalizeOps, widenedOpsKeyMap } from 'shared/schema-evolution';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
-/** Normalize a plain entity body through its lens chain, retaining legacy rename twins during expand. */
+/**
+ * Normalize a plain entity body through its lens chain, retaining required rename twins
+ * during expand.
+ */
 export function normalizeBody<T extends Record<string, unknown>>(entityType: LensEntityType, body: T): T {
   const { ops } = normalizeOps(entityType, body, {});
   return ops;
 }
 
-/** Normalize product-create fields and timestamps through the lens chain, retaining legacy twins during expand. */
+/**
+ * Normalize product-create fields and timestamps through the lens chain, retaining required
+ * twins during expand.
+ */
 export function normalizeCreateItem<T extends { stx: StxBase }>(entityType: LensEntityType, item: T): T {
   const { stx, ...fields } = item;
   const normalized = normalizeOps(entityType, fields, stx);

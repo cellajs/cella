@@ -15,7 +15,7 @@ import { usersRouteSearchParamsSchema, usersSearchDefaults } from '~/modules/use
 /**
  * Each list route strips params equal to its defaults from the URL, and zod re-applies those same
  * defaults on read. The two only cancel out while the defaults const matches the generated schema.
- * If a backend default changes, the SDK regenerates and these assertions fail — otherwise stripping
+ * If a backend default changes, the SDK regenerates and these assertions fail. This prevents stripping
  * would silently go dead (or worse, strip a non-default).
  */
 const cases: Array<{ name: string; parse: () => Record<string, unknown>; defaults: Record<string, unknown> }> = [

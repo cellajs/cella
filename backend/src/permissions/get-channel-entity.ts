@@ -21,7 +21,7 @@ export interface ValidChannelEntityResult<T extends ChannelEntityType> {
  * slug when `bySlug`). Returns the entity plus the user's membership; throws 404 if not found, 403
  * if not allowed.
  *
- * `membership` may be `null` even when allowed — the user is a system admin, or an admin of a
+ * `membership` may be `null` even when allowed if the user is a system admin or an admin of a
  * higher-level entity as defined in `permissions-config`.
  *
  * @param ctx - Context with memberships and isSystemAdmin set by the guard chain.

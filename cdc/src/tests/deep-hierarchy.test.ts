@@ -125,7 +125,7 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
         { channelKey: 'p1', deltas: { 'e:item': 1 } },
         { channelKey: 's1', deltas: { 'e:item': 1 } },
         { channelKey: 'c1', deltas: { 'e:item': 1 } },
-        // Activity stamp at the home context only — never fanned out to higher ancestors
+        // Activity stamps stay at the home context and never fan out to higher ancestors.
         { channelKey: 'p1', deltas: { 'li:item': expect.any(Number) } },
       ]),
     );

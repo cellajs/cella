@@ -13,7 +13,7 @@ const normalizeOpenApiDocument = (doc: Record<string, unknown>) => {
 /**
  * Validate that every `x-tags` entry on a component schema refers to a tag
  * registered in the tag registry. Throws on the first violation so misconfig
- * surfaces at boot instead of silently producing miscategorized docs.
+ * surfaces at boot before it can silently produce miscategorized docs.
  */
 const validateSchemaTags = (doc: Record<string, unknown>) => {
   const known = new Set(getRegisteredTags().map((t) => t.tag));

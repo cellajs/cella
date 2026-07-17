@@ -1,4 +1,4 @@
-# CDC Throughput (attachment) — measures CDC pipeline lag under increasing write load.
+# CDC Throughput (attachment): measures CDC pipeline lag under increasing write load.
 #
 # Each VU loops 10 times. Steps up: 25 → 50 → 75 → 100 arrivals/s.
 config:

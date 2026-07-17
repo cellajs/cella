@@ -1,4 +1,4 @@
-# Page Load — looping VUs simulate repeated page loads.
+# Page Load: looping VUs simulate repeated page loads.
 #
 # Each VU loops 15 times, fetching /me + /me/memberships + /organizations.
 # Steps up: 40 → 50 → 60 arrivals/s (~2700 req/s peak).

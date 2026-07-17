@@ -155,8 +155,8 @@ async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector
     if (canonical && canonical.length > 0) fullState = canonical;
   }
 
-  // Initialize the materialization diff baseline from the state the session starts with
-  // (seed or stored row), so seed-only sessions and unchanged rejoins never POST.
+  // Record the session's initial blocks JSON so seed-only sessions and unchanged
+  // rejoins never POST a durable entity update.
   const collabForBaseline = getCollab(ctx.entityType, ctx.entityId);
   if (collabForBaseline && !collabForBaseline.lastMaterializedJson && fullState && fullState.length > 0) {
     collabForBaseline.lastMaterializedJson = stateToBlocksJson(fullState) ?? undefined;
@@ -184,7 +184,7 @@ async function handleSyncUpdate(ctx: DocContext, ws: WebSocket, update: Uint8Arr
   const collab = getCollab(ctx.entityType, ctx.entityId);
   if (!collab) return;
 
-  // Last writer in the save window: attribution for the debounced save + materialization
+  // The last writer in the save window supplies the user id for the durable entity update.
   collab.lastEditor = ctx;
 
   if (collab.pendingState && collab.pendingState.length > 0) {
@@ -210,8 +210,8 @@ async function handleSyncUpdate(ctx: DocContext, ws: WebSocket, update: Uint8Arr
     collab.savingPromise = savePromise;
     try {
       await savePromise;
-      // Materialize the saved state into the entity's durable record (single writer:
-      // one call per doc per save window, regardless of how many clients are typing).
+      // Convert the saved state to blocks and persist it to the entity (single writer:
+      // one call per document per save window, regardless of how many clients are typing).
       // A 'retry' failure leaves the diff baseline stale; the next save window or the
       // gated session cleanup converges it.
       await materializeState(collab, snapshotToSave);

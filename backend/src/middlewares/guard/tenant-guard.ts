@@ -80,7 +80,7 @@ export const tenantGuard = xMiddleware(
     // TODO(sso): enforce tenant.authStrategies here. When the SSO build
     // lands, reject a session whose authStrategy is not in the tenant's allowed set (empty = all) with
     // `403 sso_required` + a redirect hint to the tenant entry URL; system admins exempt (break-glass).
-    // The policy column already exists on the tenant; nothing reads it yet, so this is inert for now.
+    // The policy column remains inert until a tenant authorization path reads it.
 
     // Populate cache for subsequent requests
     setTenantCache(tenantId, tenant);

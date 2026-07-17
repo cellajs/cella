@@ -93,7 +93,7 @@ export const DocsSearch = () => {
   };
 
   const onSelect = (selection: SearchSelection) => {
-    // History entry: re-run that query instead of navigating.
+    // History entries re-run their query without navigating.
     if ('kind' in selection) {
       setSearchValue(selection.value);
       return;

@@ -40,7 +40,7 @@ const buildMembershipIndex = <T extends PermissionMembership>(memberships: T[]):
  * Per-array memo of the validated membership index, keyed by the memberships array's identity.
  *
  * The index is a pure function of the array's contents, and every membership-update path
- * REPLACES the array rather than mutating it in place — HTTP requests read a fresh array after
+ * REPLACES the array and never mutates it in place. HTTP requests read a fresh array after
  * cache invalidation, and an SSE subscriber's `memberships` is reassigned on membership events.
  * So a stable reference always maps to the same index, and the WeakMap frees the entry once the
  * array is unreferenced (disconnect / cache expiry). This turns the per-event dispatch fan-out
@@ -165,7 +165,7 @@ const checkWithIndices = <T extends PermissionMembership>(
   const conditionRow: RowForCondition = { ...subject.row, createdBy: subject.createdBy };
   const conditionActor: ConditionActor = { userId };
 
-  // Grant scoping (elevatedRoles): product subjects only — context subjects keep full
+  // Grant scoping (elevatedRoles): product subjects only. Context subjects keep full
   // elevation semantics (e.g. members of a parent context may still discover child
   // contexts). The subject's HOME is the most specific context with an id; non-elevated
   // roles speak only for rows homed at their own grant level.
@@ -238,7 +238,7 @@ const checkWithIndices = <T extends PermissionMembership>(
 
   // Subject-level public read grant: rows readable by any actor (anonymous included) when
   // the row's own `publicAt` is set. Membership-independent, so it is evaluated outside the
-  // policy walk — but through the same `'public'` row condition the SQL compiler uses.
+  // policy walk: but through the same `'public'` row condition the SQL compiler uses.
   const publicMode = publicGrants?.[subject.entityType];
   if (publicMode && matchesRowCondition('public', conditionRow, conditionActor)) {
     actions.read.enabled = true;
@@ -300,8 +300,8 @@ export function getAllDecisions<T extends PermissionMembership>(
   // Validate subjects (against the topology hierarchy, which may be synthetic).
   subjectArray.forEach((subject, i) => validateSubject(subject, i, topoHierarchy));
 
-  // Validated membership index, memoized per array identity (see membershipIndexMemo): reused
-  // across events for a stable subscriber/request array instead of rebuilt on every call.
+  // Validated membership index, memoized per array identity (see membershipIndexMemo) and reused
+  // across events for a stable subscriber/request array.
   const membershipIndex = getMembershipIndex(memberships);
 
   // Cache for policy indices by entity type

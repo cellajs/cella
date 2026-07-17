@@ -13,11 +13,11 @@ import { classifyRlsTables } from './10-rls.migration';
 import { unloggedTables } from './10-unlogged.migration';
 
 /**
- * Verification block — always the LAST block in the combined side-effect migration
+ * Verification block that always runs last in the combined side-effect migration.
  * (99- filename prefix), asserting that the earlier blocks achieved their end state.
  *
  * Why this exists: every side-effect block runs inside its own guards, and a failure
- * that slips through (or a block that silently rolls back) previously shipped databases
+ * that slips through (or a block that silently rolls back) leaves shipped databases
  * where triggers or partitioning were simply absent while the migration reported success.
  * Because the migrator applies everything in one transaction, a failed assertion here
  * rolls back the ENTIRE migration and surfaces the real problem at migrate time.

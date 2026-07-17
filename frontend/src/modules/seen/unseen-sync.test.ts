@@ -23,7 +23,7 @@ const row = (id: string, overrides: Record<string, unknown> = {}) => ({
 
 const counts = () => (queryClient.getQueryData(seenKeys.unseenCounts) as Record<string, Record<string, number>>) ?? {};
 
-/** Deltas batch via idle callback (setTimeout fallback outside the browser) — flush it. */
+/** Flush deltas batched by the idle callback (setTimeout fallback outside the browser). */
 const settle = () => vi.advanceTimersByTimeAsync(5_100);
 
 describe('unseen count deltas from synced rows', () => {
@@ -123,8 +123,8 @@ describe('unseen count deltas from synced rows', () => {
 
   it('publish lights the badge: recency keys on publishedAt, not the old createdAt', async () => {
     vi.advanceTimersByTime(10);
-    // Draft created 100 days ago, published just now: createdAt is outside the window AND
-    // before the reconcile anchor — only the publishedAt recency key counts it as new.
+    // The draft's createdAt is outside the window and before the reconcile anchor.
+    // Its recent publishedAt value makes it count as new.
     ingestSyncedRows('attachment', CHANNEL, [row('pub-1', { createdAt: daysAgo(100), publishedAt: now() })]);
     await settle();
 

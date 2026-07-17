@@ -63,7 +63,7 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
 
   // Create single use session token, mark token as invoked, and update expiresAt to 5 min from now.
   // The transition is a compare-and-swap on `invokedAt IS NULL` so two concurrent redemptions of the
-  // same primary token cannot both proceed to mint a session — exactly one wins the update.
+  // same primary token cannot both mint a session. Exactly one wins the update.
   if (invokeToken) {
     const rawSingleUseToken = nanoid(40);
     const [invokedTokenRecord] = await db

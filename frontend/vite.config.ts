@@ -67,7 +67,7 @@ const viteConfig = {
       '/yjs': { target: 'ws://localhost:4002', ws: true },
       '/mcp': { target: 'http://localhost:4003' },
     },
-    // Tunnel mode: ngrok terminates TLS and forwards plain HTTP — accept the public
+    // Tunnel mode: ngrok terminates TLS and forwards plain HTTP. Accept the public
     // Host header and point HMR websockets back at the public origin.
     ...(isTunneled ? { allowedHosts: [frontendUrl.hostname], hmr: { protocol: 'wss', host: frontendUrl.hostname, clientPort: 443 } } : {}),
     watch: {

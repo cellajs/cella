@@ -15,8 +15,8 @@ interface UseFetchMoreOnDemandOptions {
  * present AND the query can accept it. The effect re-evaluates on every input
  * change, so demand that arrives during a background refetch (mount refetch of
  * persisted pages, reconnect, sync invalidation) is served once the refetch
- * settles instead of being dropped — one-shot edge-triggered callbacks lost
- * those and permanently stalled infinite scroll.
+ * settles. Queuing prevents one-shot edge-triggered callbacks from losing
+ * requests and permanently stalling infinite scroll.
  */
 export function useFetchMoreOnDemand({
   demand,

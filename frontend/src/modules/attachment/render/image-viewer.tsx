@@ -68,8 +68,7 @@ export class ImageViewer extends React.PureComponent<ImageViewerProps, ImageView
   public componentDidUpdate(prevProps: ImageViewerProps) {
     const { zoom, pandx, pandy } = this.props;
     const zoomChanged = prevProps.zoom !== zoom;
-    // Sync pan from props too (e.g. on reset). Previously the parent forced a full remount via a
-    // `key` to apply pan/reset, which reloaded the <img> and flickered after every pan gesture.
+    // Sync pan from props too (e.g. on reset) so local state follows external resets without remounting.
     const panChanged = prevProps.pandx !== pandx || prevProps.pandy !== pandy;
     if (!zoomChanged && !panChanged) return;
 
@@ -79,7 +78,7 @@ export class ImageViewer extends React.PureComponent<ImageViewerProps, ImageView
       newMatrixData[3] = zoom || newMatrixData[3];
     }
     if (panChanged) {
-      // Nullish so a legitimate 0 (reset / centered) is applied rather than skipped.
+      // Nullish checks preserve a legitimate 0 for reset or centered positions.
       newMatrixData[4] = pandx ?? newMatrixData[4];
       newMatrixData[5] = pandy ?? newMatrixData[5];
     }

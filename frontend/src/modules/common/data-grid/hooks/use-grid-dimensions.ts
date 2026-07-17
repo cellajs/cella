@@ -8,7 +8,7 @@ interface GridDimensions {
   gridRect: DOMRect | null;
   /**
    * False until the first real layout measurement commits. Consumers must not
-   * treat the placeholder numbers below as actual viewport geometry — doing so
+   * treat the placeholder numbers below as actual viewport geometry because that
    * once made the first render report every row as visible.
    */
   measured: boolean;

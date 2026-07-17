@@ -61,7 +61,7 @@ function createTestApp(middleware: ReturnType<typeof rateLimiter>, userId?: stri
   return app;
 }
 
-/** Fake node-server bindings so getIp's socket fallback resolves to null instead of crashing */
+/** Fake node-server bindings so getIp's socket fallback resolves to null without crashing. */
 const emptyBindings = { incoming: { socket: {} } } as Env['Bindings'];
 
 describe('rate limiter identifier validation', () => {

@@ -47,7 +47,7 @@ function Cell<R, SR>({
   const isEditable = isCellEditableUtil(column, row);
   // Explicit cursor so the hover affordance matches the editor: I-beam for free-text,
   // pointer for picker editors (select/popover/drawer). Without it, editable cells
-  // inherit the browser's text I-beam from selectable content — misleading for non-text editors.
+  // inherit the browser's text I-beam from selectable content, which misleads for non-text editors.
   const editorCursor = isEditable
     ? column.editorOptions?.editorType === 'select'
       ? 'cursor-pointer'
@@ -65,7 +65,7 @@ function Cell<R, SR>({
     },
     // When cell selection is disabled, render the focus affordance via :focus-visible on
     // any interactive child (Button cell variant, links). Using has-[:focus-visible]
-    // (instead of :focus-within) avoids showing the outline on mouse clicks.
+    // This explicit focus state avoids showing the outline on mouse clicks.
     !isCellSelectionEnabled &&
       'has-focus-visible:outline-2 has-focus-visible:outline-primary has-focus-visible:outline-solid has-focus-visible:-outline-offset-2',
     editorCursor,

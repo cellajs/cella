@@ -13,14 +13,14 @@ import { log } from '../lib/pino';
  */
 export type MaterializeResult = 'ok' | 'permanent' | 'retry';
 
-/** Minimal session shape materialization reads/writes: matches CollabSession. */
+/** Minimal session shape read and updated by materializeState; matches CollabSession. */
 export interface MaterializableSession {
   ctx: DocContext;
   lastMaterializedJson?: string;
   lastEditor?: DocContext;
 }
 
-/** POST a materialized description to the backend's secret-gated internal endpoint. */
+/** POST blocks JSON to the backend's secret-gated materialize endpoint. */
 export async function postMaterialize(ctx: DocContext, editedBy: string, description: string): Promise<MaterializeResult> {
   try {
     const res = await fetch(`${appConfig.backendUrl}/yjs/materialize`, {
@@ -58,9 +58,9 @@ export function stateToBlocksJson(state: Uint8Array): string | null {
 
 /**
  * Materialize a session's current state into the entity's durable record.
- * Diffs against the session's last materialized content, so caret-only save
- * windows and seed-only (never-edited) sessions cost nothing. On `retry` the baseline stays
- * stale so the next save window (or gated cleanup) tries again.
+ * Compares blocks JSON with `lastMaterializedJson`, so caret-only save windows and
+ * seed-only (never-edited) sessions cost nothing. On `retry`, the stored JSON stays
+ * unchanged so the next save window or gated cleanup tries again.
  */
 export async function materializeState(collab: MaterializableSession, state: Uint8Array): Promise<MaterializeResult> {
   const json = stateToBlocksJson(state);

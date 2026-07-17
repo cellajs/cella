@@ -22,7 +22,7 @@ const derived = deriveInfra(appConfig)
 
 export const { naming, dnsZone, region, zone, tags, tagsAsMap, isProduction } = derived
 
-// Deploys require a real domain; fail fast here instead of gating each resource
+// Deploys require a real domain; validate it once before defining resources.
 // module on `hasDomain` independently.
 if (!derived.hasDomain) {
   throw new Error(

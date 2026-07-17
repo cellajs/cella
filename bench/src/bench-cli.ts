@@ -31,7 +31,7 @@ function parseArgs() {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    // `--scenario <name>` is a legacy alias for the positional argument below.
+    // `--scenario <name>` remains an alias for the positional argument below.
     if (arg === '--scenario' && args[i + 1]) scenario = args[++i];
     else if (arg === '--skip-seed') skipSeed = true;
     else if (arg === '--all') all = true;
@@ -54,7 +54,7 @@ function discoverScenarios(): string[] {
     .sort();
 }
 
-/** Scenario description from the first `#` comment line of its YAML — keeps the picker in sync as forks add scenarios, no hardcoded map. */
+/** Scenario description from the first `#` comment line of its YAML. Keeps the picker in sync as forks add scenarios, no hardcoded map. */
 function scenarioDescription(name: string): string {
   try {
     const content = readFileSync(resolve(BENCH_ROOT, 'scenarios', `${name}.yaml`), 'utf-8');
@@ -87,7 +87,7 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 // ── Preflight ──────────────────────────────────────────────────────────────
 
 /**
- * Fail-fast preflight — bench does NOT start services; it expects Postgres seeded
+ * Fail-fast preflight: bench does NOT start services; it expects Postgres seeded
  * and backend/cdc/yjs/mcp already up via `pnpm dev`. Services are polled briefly to
  * tolerate `dev` still compiling, then it exits with an actionable message rather
  * than hanging on empty runs.
@@ -157,7 +157,7 @@ function seedDatabase(): Promise<{ output: string }> {
 
 /**
  * Artillery `--overrides` for `--short`: collapse every phase to a single 1s/1-VU
- * arrival and drop ensure thresholds — a fast "does it still work" smoke check, not
+ * arrival and drop ensure thresholds. A fast "does it still work" smoke check, not
  * a load test. Loop `count`s in scenario flows stay but execute once (single VU).
  */
 const SHORT_OVERRIDES = JSON.stringify({
@@ -431,8 +431,8 @@ interface ScenarioResult {
 /**
  * Run one scenario end to end (CDC poller + Artillery + baseline compare/save).
  * Short runs are smoke checks: metrics aren't comparable and never touch baselines.
- * `quiet` (used by `--all`) hides Artillery output and the per-scenario table — the
- * caller prints one combined summary instead.
+ * `quiet` (used by `--all`) hides Artillery output and the per-scenario table so
+ * the caller can print one combined summary.
  */
 async function runScenario(
   name: string,

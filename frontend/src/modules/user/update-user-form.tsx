@@ -71,7 +71,7 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
       form.reset(updatedUser);
       if (isSheet) useSheeter.getState().remove(formContainerId);
 
-      // Onboarding advances through stepper state instead of the optional callback.
+      // Onboarding advances through stepper state; the callback is optional.
       nextStep?.();
 
       callback?.({ data: updatedUser, status: 'success' });

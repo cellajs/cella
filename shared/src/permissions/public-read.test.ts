@@ -10,7 +10,7 @@ import { matchesRowCondition } from './row-conditions';
  * members alike.
  *
  * There is exactly one mode. A grant derived from ANOTHER row would be unenforceable in the two
- * paths that must agree with the engine — the collection-read SQL compiler and CDC stream
+ * paths that must agree with the engine. The collection-read SQL compiler and CDC stream
  * dispatch, which only ever ships the row itself. Cascading publication is a data concern.
  *
  * Runs against the wide fixture (organization → workspace/project, project → task/label/attachment),
@@ -54,7 +54,7 @@ describe('public read grants — anonymous actor', () => {
 
   it('reads the row itself, never an ancestor: a public parent does NOT publish its children', () => {
     // The project (parent) is public; the task is not. Publication does not cascade through the
-    // permission engine — a fork that wants it propagates `publicAt` to the child row.
+    // permission engine: a fork that wants it propagates `publicAt` to the child row.
     const task = wideSubject({
       entityType: 'task',
       id: 't1',

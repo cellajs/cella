@@ -91,8 +91,8 @@ describe('subscribeWithReconnect — replication slot lifecycle', () => {
   });
 
   it('does not fight the outgoing worker for a slot that already exists', async () => {
-    // Rolling deploy: the slot exists and is held by the previous worker, so subscribe() rejects
-    // with 55006 until it lets go. Ensuring must stay a no-op read — never a create attempt.
+    // A rolling deploy keeps the slot in the outgoing worker until handoff. Ensuring an existing
+    // slot must remain a no-op read while subscribe() rejects with 55006.
     execute.mockResolvedValue({ rows: [{ exists: 1 }] });
     const service = makeService(2);
 

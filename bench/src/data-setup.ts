@@ -18,7 +18,7 @@ const SEEDS_DIR = resolve(__dirname, 'seeds');
 
 /**
  * Auto-import every `*.bench.ts` under seeds/ so each self-registers its seed
- * target — a fork adds a load-test table by dropping in one file, no barrel or
+ * target: a fork adds a load-test table by dropping in one file, no barrel or
  * data-setup edit.
  */
 async function loadBenchEntities(): Promise<void> {

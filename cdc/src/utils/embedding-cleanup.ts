@@ -113,7 +113,7 @@ export async function cleanupEmbeddingReferences(
             WHERE elem != ALL(${embeddedIds})
           )`,
           // Strip changedFields from stx so CDC's handleUpdate recognizes this as
-          // a cleanup write (WAL diff fallback) rather than a user-driven mutation.
+          // a cleanup write (WAL diff fallback), not a user-driven mutation.
           stx: sql`stx - 'changedFields'`,
         })
         .where(and(...conditions));

@@ -532,7 +532,7 @@ export const ShouldSelectCellRange: Story = {
       const grid = canvas.getByRole('grid');
       // A real shift+pointer range drag can't run in the headless test runner (untrusted pointer events don't
       // drive react-data-grid's range selection). We drive cella's keyboard range extension (Shift+Arrow, wired
-      // to `extendSelection`) — the deterministic path — from the already-selected cell instead.
+      // to `extendSelection`) from the already-selected cell, which is the deterministic path.
       const selected = grid.querySelector<HTMLElement>('.rdg-cell[aria-selected="true"]') ?? grid;
       selected.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', shiftKey: true, bubbles: true }));
       selected.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', shiftKey: true, bubbles: true }));
@@ -549,7 +549,7 @@ export const ShouldSelectCellRange: Story = {
       const rangeCells = grid.querySelectorAll('.rdg-cell-in-range');
       for (const cell of rangeCells) {
         const style = window.getComputedStyle(cell);
-        // See ShouldSelectRowOnClick: assert no per-cell selection ring instead
+        // See ShouldSelectRowOnClick: assert that no per-cell selection ring appears.
         // of outlineStyle === 'none' to avoid UA :focus-visible interference.
         expect(style.outlineWidth).not.toBe('2px');
       }
@@ -629,12 +629,12 @@ export const ShouldResizeColumn: Story = {
       const grid = canvas.getByRole('grid');
       const firstHeader = grid.querySelector<HTMLElement>('[role="columnheader"]')!;
       // The headless runner doesn't apply full grid layout (getBoundingClientRect unreliable), so we assert the
-      // grid's inline grid-template-columns — deterministic React output recomputed from width state — instead.
+      // grid's inline grid-template-columns, deterministic React output recomputed from width state.
       const initialTemplate = grid.style.gridTemplateColumns;
 
       // A real pointer-drag on the resize handle can't run headless: react-data-grid uses pointer capture, which
-      // ignores untrusted synthetic PointerEvents. We drive cella's keyboard resize affordance instead
-      // (Ctrl+ArrowRight, see header-cell.tsx onKeyDown) — the accessible, deterministic path.
+      // ignores untrusted synthetic PointerEvents. Use Cella's accessible, deterministic keyboard resize
+      // affordance (Ctrl+ArrowRight, see header-cell.tsx onKeyDown).
       firstHeader.focus();
       firstHeader.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', ctrlKey: true, bubbles: true }));
 
@@ -656,7 +656,7 @@ export const ShouldFreezeFrozenColumns: Story = {
         const frozenCells = grid.querySelectorAll<HTMLElement>('.rdg-cell-frozen');
         expect(frozenCells.length).toBeGreaterThan(0);
         // The headless runner doesn't apply the grid's full CSS layout, so computed position/geometry are
-        // unreliable. We assert cella's deterministic contract (getCellStyle/getCellClassname) instead: every
+        // unreliable. Assert Cella's deterministic contract (getCellStyle/getCellClassname): every
         // frozen cell gets the `sticky` class and an inline inset var pinning it left as the grid scrolls.
         for (const cell of frozenCells) {
           expect(cell.classList.contains('sticky')).toBe(true);
@@ -893,7 +893,7 @@ export const ShouldReorderRowOnDragDrop: Story = {
 
 /**
  * With `enableDragAutoScroll`, dragging near the top/bottom edge auto-scrolls so off-screen rows become valid
- * drop targets. Visual demo only — auto-scroll needs a real pointer drag and can't be exercised by `userEvent`.
+ * drop targets. Visual demo only; auto-scroll needs a real pointer drag and cannot use `userEvent`.
  */
 export const RowDragDropAutoScroll: Story = {
   render: function Render() {

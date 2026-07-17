@@ -5,7 +5,7 @@ import { requestLogger } from '#/lib/pino';
 import { isBenchTraffic } from '#/utils/logger';
 import { scrubUrl } from '#/utils/scrub-url';
 
-// Instantiate the requestId middleware once at module scope rather than per request.
+// Instantiate requestId middleware once at module scope to reuse it across requests.
 const requestIdMiddleware = requestId();
 
 /**

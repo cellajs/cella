@@ -30,11 +30,11 @@ export const partitionConfigs: PartitionConfig[] = [
  *
  *   1. Guards: PK must include the partition column; no extra UNIQUE constraints (a unique
  *      index on a partitioned table must include the partition column, so any other unique
- *      cannot be carried over — fail loudly instead of silently dropping a guarantee).
+ *      cannot be carried over, so fail loudly to preserve the guarantee).
  *   2. Capture PK / FK / index / trigger definitions from the catalog. They reference the
- *      table by its original name — which the new partitioned table takes over — so they
+ *      table by its original name, which the new partitioned table takes over, so they
  *      replay verbatim once the old table (and its schema-wide index names) is dropped.
- *   3. Clone via LIKE (defaults, NOT NULL, CHECKs — PK/FK/indexes come from step 2).
+ *   3. Clone via LIKE (defaults, NOT NULL, CHECKs; PK/FK/indexes come from step 2).
  *   4. Register with pg_partman (creates child + default partitions), configure retention.
  *   5. Copy data (LIKE guarantees identical column order; pre-window rows land in the
  *      DEFAULT partition, reaped by retention like any other partition).

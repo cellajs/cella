@@ -11,9 +11,9 @@ import type {
 /**
  * Who is acting.
  *
- * Deliberately a discriminated union rather than an optional `userId`. An optional actor is
+ * The discriminated union makes the actor state explicit. An optional `userId` is
  * how permission bugs get in: a caller that simply forgets it still compiles, and every rule
- * that reads the actor (`'own'`, and any fork condition) then silently fails closed — a
+ * that reads the actor (`'own'`, and any fork condition) then silently fails closed. A
  * denial nobody notices. Anonymity has to be *stated*, not achieved by omission.
  *
  * `{ anonymous: true }` cannot be produced by accident and is greppable in review.

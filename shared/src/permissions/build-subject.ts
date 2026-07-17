@@ -52,8 +52,8 @@ export const buildSubject = (
 /**
  * Build a subject from a resolved DB row.
  *
- * The row is passed through as `row`, so every row-derived rule — `'own'`, public read, and
- * any fork condition — evaluates from real data. Omitting it would fail those grants closed
+ * The row is passed through as `row`, so every row-derived rule. `'own'`, public read, and
+ * any fork condition: evaluates from real data. Omitting it would fail those grants closed
  * on every single-row check, which is exactly the bug this shape prevents.
  */
 export const buildSubjectFromEntity = (

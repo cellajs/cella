@@ -5,14 +5,13 @@ const mediaBlockTypes = new Set(['image', 'video', 'audio', 'file']);
 type BlockLike = { type: string; props?: Record<string, unknown>; children?: BlockLike[] };
 
 /**
- * Sanitize untrusted media URLs in relay-materialized description content.
+ * Sanitize untrusted media URLs before the relay persists description content.
  *
  * Client PUTs reject untrusted URLs outright (`assertBlockMediaUrls`), but relay
- * materializations must stay persistable: a client could
- * inject a bad URL directly into the Y.Doc, and rejecting would wedge the
- * materialization retry loop and block session-row cleanup forever. Instead we
- * blank the offending `url` props (blank/non-URL values are treated as trusted
- * internal references by the validator) and persist the sanitized content.
+ * relay writes must remain persistable: a client can inject a bad URL directly into
+ * the Y.Doc, and rejecting it would block retries and session-row cleanup. Offending
+ * `url` props are blanked because the validator treats blank and non-URL values as
+ * trusted internal references. The sanitized content can then be persisted.
  */
 export function sanitizeBlockMediaUrls(description: string): {
   description: string;

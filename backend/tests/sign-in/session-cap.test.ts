@@ -73,7 +73,7 @@ describe('per-user session cap (A1)', () => {
 
     const all = await db.select({ id: sessionsTable.id }).from(sessionsTable).where(eq(sessionsTable.userId, user.id));
     const ids = new Set(all.map((r) => r.id));
-    // The two oldest rows overall are mfa/impersonation, yet both survive — they are excluded from the cap.
+    // The two oldest rows are mfa/impersonation sessions, which are excluded from the cap.
     expect(ids.has(mfaId)).toBe(true);
     expect(ids.has(imperId)).toBe(true);
   });

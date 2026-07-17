@@ -51,7 +51,7 @@ export const runtimeSecrets: RuntimeSecretDefinition[] = Object.entries(runtimeS
   ...definition,
 }))
 
-// Fail fast at load time on a fork misconfiguration, rather than as a missing
+// Fail fast at load time on a fork misconfiguration, preventing a missing
 // container at deploy time or a missing variable at runtime.
 {
   const knownServices = new Set<string>(serviceNames)

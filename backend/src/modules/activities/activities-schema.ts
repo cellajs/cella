@@ -29,7 +29,7 @@ export const activitySchema = z
     type: activityEventTypeSchema,
     // Override jsonb columns with properly typed schemas to avoid generic types in OpenAPI
     changedFields: z.array(z.string()).nullable(),
-    // Use union instead of .nullable() to generate proper anyOf in OpenAPI (avoids allOf intersection issue)
+    // A union generates proper anyOf in OpenAPI and avoids an allOf intersection.
     stx: z.union([stxBaseSchema, z.null()]),
   })
   .openapi('Activity', {

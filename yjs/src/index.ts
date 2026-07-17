@@ -49,7 +49,7 @@ export async function startYjsWorker(): Promise<void> {
         log.warn('waitForBackend failed. Yjs will retry per-request.', { err });
       });
   } else {
-    // Materialize + clean up sessions orphaned by a previous crash
+    // Persist and clean up sessions orphaned by a relay crash.
     runStartupSweep().catch((err) => log.warn('Startup sweep failed', { err }));
   }
 }

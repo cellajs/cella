@@ -7,7 +7,7 @@ export type EnsureResult = 'exists' | 'created'
 
 /**
  * Guard against the wrong-project trap: Scaleway Object Storage pins an API
- * key to its `default_project_id` — bucket creation lands there and buckets in
+ * key to its `default_project_id`: bucket creation lands there and buckets in
  * other projects are unreachable regardless of IAM grants (bucket policies
  * cannot bridge projects either). A bootstrap key created as a Personal API
  * Key defaults to the ORG's default project, so without this check the state

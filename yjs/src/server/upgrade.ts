@@ -14,9 +14,8 @@ import { handleMessage, releaseBufferedMessages, discardPendingBuffer } from '..
 
 /**
  * Reject the upgrade at the HTTP level: no WebSocket handshake is completed.
- * Calling handleUpgrade + ws.close() instead would fire the client's `onopen`
- * (resetting its backoff counter) before `onclose`, causing a rapid ~100ms
- * retry loop with the same bad credentials.
+ * Completing the handshake before closing fires the client's `onopen`, resets its
+ * backoff counter, and causes a rapid ~100ms retry loop with the same bad credentials.
  */
 function rejectUpgrade(socket: Duplex, code: number, reason: string): void {
   if (socket.destroyed) return;
@@ -71,7 +70,7 @@ async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> 
  */
 export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {
   return async (req, socket, head) => {
-    // Same-origin migration: accept both '/<entityId>' (legacy subdomain
+    // Same-origin migration: accept both '/<entityId>' (direct LB or subdomain
     // origin) and '/yjs/<entityId>' (path-routed app origin; the LB does not
     // strip the prefix).
     const url = new URL(stripYjsPrefix(req.url ?? '/'), `http://${req.headers.host}`);

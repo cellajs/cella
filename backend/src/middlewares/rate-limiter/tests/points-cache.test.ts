@@ -81,7 +81,7 @@ describe('points-cache', () => {
       for (let i = 0; i < 10; i++) {
         tryFastConsume('tenant:user1', 1, 1000);
       }
-      // All 10 allowed requests were never written to the DB — they are debt.
+      // All 10 allowed requests were never written to the DB, so they are debt.
       expect(takeDebt('tenant:user1')).toBe(10);
       // Claimed debt is marked flushed; a second claim has nothing left.
       expect(takeDebt('tenant:user1')).toBe(0);
@@ -119,7 +119,7 @@ describe('points-cache', () => {
       // DB path settled everything: count now includes our debt (and other processes).
       syncFromDb('tenant:user1', 900);
 
-      // Nothing left to flush — the DB already has it all.
+      // Nothing remains to flush because the DB already has it all.
       expect(takeDebt('tenant:user1')).toBe(0);
       // And the local counter now reflects the DB: next request is over threshold.
       expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('check-db');
@@ -139,7 +139,7 @@ describe('points-cache', () => {
       // The DB trip consumes cost + debt, so the count it reports includes everything.
       syncFromDb('tenant:user1', debt + 1);
 
-      // Still at the threshold — the budget keeps being checked against the DB.
+      // At the threshold, the budget keeps being checked against the DB.
       expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('check-db');
     });
 

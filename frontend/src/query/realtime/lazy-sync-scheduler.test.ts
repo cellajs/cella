@@ -101,7 +101,7 @@ describe('lazy-sync-scheduler', () => {
 
     await flushAllNow();
 
-    // Anchors at the org slot (7,9 — not 3,9) and advances that same slot after success.
+    // Anchors at the org slot (7,9) and advances that same slot after success.
     expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('7,9');
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
     expect(useSyncStore.getState().getChannelSeq('org-1', 'org-1', 'attachment')).toBe(9);

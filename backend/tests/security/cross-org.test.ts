@@ -23,7 +23,7 @@ const attachmentBody = (id: string) => ({
 
 // Verifies isolation between users in different organizations. Under 1 tenant = 1 organization,
 // each org lives in its own tenant, so the "other org" is reached at its own tenantId and access is
-// rejected at the tenant boundary (tenantGuard) — the isolation guarantee is unchanged.
+// rejected at the tenant boundary (tenantGuard), preserving the isolation guarantee.
 describe('Cross-organization API isolation', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;

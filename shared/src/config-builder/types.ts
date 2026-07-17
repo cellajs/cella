@@ -109,7 +109,7 @@ export interface MenuStructureItem {
   /**
    * When a subentity membership is created, an associated membership on the parent entity is
    * auto-created. By default it gets the least-privileged fitting role (`member` when the parent
-   * vocabulary has it). Set `carryRole` to carry the invited role over instead, when valid in the
+   * vocabulary has it). Set `carryRole` to preserve the invited role when it is valid in the
    * parent's vocabulary (e.g. courseSection `student` → course `student`).
    */
   carryRole?: boolean;

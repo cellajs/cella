@@ -23,8 +23,8 @@ export function FocusTarget({ target }: { target: keyof typeof focusTargets }) {
 }
 
 /**
- * Focus a specific element by ID, temporarily making it focusable if needed.
- * This is more reliable than querySelector chains for portaled content.
+ * Focus a specific element by ID. Adds `tabindex=-1` when needed, which is more
+ * reliable than querySelector chains for portaled content.
  */
 function focusById(id: string) {
   const el = document.getElementById(id);

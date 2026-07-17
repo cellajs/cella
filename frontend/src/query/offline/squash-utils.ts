@@ -53,7 +53,7 @@ export function squashPendingMutation(
 
 /**
  * If a pending create exists for the entity (matched by temp `id`), merge the update `ops` into its
- * variables and return true — the caller then skips the normal update flow. False if none to squash into.
+ * variables and return true, causing the caller to skip the normal update flow. False if none exist.
  */
 export function squashIntoPendingCreate(
   queryClient: QueryClient,

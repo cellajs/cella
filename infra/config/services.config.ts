@@ -80,7 +80,7 @@ export const appServices = defineServices({
     startPeriod: '10s',
     replacementStrategy: 'lb-overlap',
     // WebSocket clients reconnect to the new generation and resync from durable
-    // CRDT state rather than having sessions held open during drain.
+    // CRDT state while sessions close during drain.
     drainPolicy: 'reconnect',
     drainSeconds: 5,
     // Same-origin: reached at wss://<app-host>/yjs/... via an LB path-begin

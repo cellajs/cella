@@ -10,8 +10,7 @@ import { errorMessage } from '../lib/utils/errors'
 import { isRecord } from '../lib/utils/guards'
 import { getFlag } from './args'
 
-/** A GenRef is only valid with a string id + sha and a numeric seq. A pointer
- *  missing its `id` is the corruption an old sync-rollout-config could write. */
+/** A GenRef is valid only with a string id and sha plus a numeric seq. */
 function validGenRef(value: unknown): { id: string; sha: string; seq: number } | undefined {
   if (!isRecord(value)) return undefined
   const { id, sha, seq } = value
@@ -28,15 +27,13 @@ export type RepairResult =
 
 /**
  * Break-glass repair for the S3 control object. Every read validates the
- * document strictly (`parseControlState`), so a malformed pointer fails the
- * deploy rather than being silently ignored — this task is how such a stack is
- * unbricked. It drops any `active` pointer that lacks a valid `id` (the
- * corruption a pre-fix sync-rollout-config could write) and strips any obsolete
- * `previous` pointer (rollback generations are no longer retained).
+ * document strictly (`parseControlState`), so a malformed pointer fails the deploy.
+ * This task unbricks such a stack by dropping an `active` pointer without a valid
+ * `id` and stripping an obsolete `previous` pointer.
  *
  * Pure transform: given the raw control document text (or undefined when the
  * object does not exist), produce the outcome. Throws on an unrecognised
- * schemaVersion so a corrupt or future document fails loudly rather than being
+ * schemaVersion so a corrupt or future document fails loudly and is never
  * silently overwritten.
  */
 export function repairControlDocument(raw: string | undefined): RepairResult {

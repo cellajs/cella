@@ -44,7 +44,7 @@ function MembersTable({ channelEntity, isSheet = false, children }: MembersTable
   const organizationId = organization.id;
 
   // Managing members is a channel-scoped affordance (not a per-row question), and the enriched
-  // entity carries no `createdBy` to resolve `'own'` against — so require an unconditional grant.
+  // The entity has no `createdBy` for resolving `'own'`, so require an unconditional grant.
   const canUpdate = isUnconditionalPermission(channelEntity.can?.[channelEntity.entityType]?.update);
 
   // Table state

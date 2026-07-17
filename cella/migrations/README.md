@@ -21,6 +21,9 @@ be a no-op.
 
 ## Migrations
 
+- [2026-07-comment-reasoning](./2026-07-comment-reasoning/): removes source-comment
+  change history, rejected alternatives, unresolved review discussion, and vague jargon. Ships a
+  reusable comment checker and a wider audit for fork-specific code.
 - [2026-07-icon-conventions](./2026-07-icon-conventions/): icons to the
   runtime-only convention with class-based rem sizing (`icon-*` utilities, never
   lucide's px `size` prop), modern `*Icon` names, strokeWidth via

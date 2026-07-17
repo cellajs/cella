@@ -28,8 +28,8 @@ export const useColumns = (channelEntity: EnrichedChannelEntity, isSheet: boolea
   const { t } = useTranslation();
 
   // Deliberately optimistic and table-scoped: `!!` enables inline edit for both `true` (admin) and
-  // `'own'` — there's no single row here to resolve `'own'` against, and the backend enforces the
-  // owner check per row on save. Per-ENTITY affordances must instead resolve `'own'` via
+  // `'own'` because there is no single row here to resolve it against. The backend enforces the
+  // owner check per row on save. Per-entity affordances resolve `'own'` via
   // `useResolveCan` (~/modules/entities/use-resolve-can); this table-level case is the exception.
   const canUpdate = !!channelEntity.can?.attachment?.update;
 

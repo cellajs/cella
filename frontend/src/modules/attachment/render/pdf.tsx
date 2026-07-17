@@ -49,7 +49,7 @@ export function RenderPDF({ file, className, fitMode = 'width' }: RenderPDFProps
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Read each page's real dimensions instead of assuming a fixed portrait Letter size.
+  // Read each page's dimensions so non-Letter and landscape pages render correctly.
   // This is what makes landscape, A4, legal and mixed-orientation PDFs render naturally.
   const onDocumentLoad = async (pdf: PDFDocumentProxy) => {
     const sizes = await Promise.all(

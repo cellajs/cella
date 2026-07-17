@@ -40,7 +40,7 @@ import { getRouter } from '~/routes/_router-instance';
 /**
  * Bundle for collaborative mode: Yjs wiring (provider, fragment, cursor user) + entity identity for SSE
  * suppression while editing. Presence of this bundle switches the editor into collaborative mode;
- * persistence is relay-side (the relay materializes sessions into the entity row).
+ * the relay persists session state to the entity row.
  */
 export interface CollaborationBundle {
   provider: WebsocketProvider;
@@ -127,7 +127,7 @@ function BlockNote({
   useYjsUndoManagerFix(editor, collaborative);
 
   // Shield Yjs-owned fields from SSE while this editor is active. The relay owns
-  // persistence (seeding + materialization), so no client sends description updates.
+  // persistence and seeding, so no client sends description updates.
   useYjsSseSuppression(
     collaboration ? { entityType: collaboration.entityType, entityId: collaboration.entityId } : null,
   );

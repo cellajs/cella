@@ -132,7 +132,7 @@ describe('realtime cache ops', () => {
 
     const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '1', keys);
 
-    // Patching a truncated window would drop the remainder; caller must invalidate instead.
+    // The caller invalidates because patching a truncated window would drop the remainder.
     expect(status).toBe('overflow');
     expect(queryClient.getQueryData(keys.detail.byId('att-1'))).toBeUndefined();
   });

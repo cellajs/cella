@@ -61,7 +61,7 @@ import * as lb from './resources/loadbalancer'
 
 // Public URL per LB-exposed service slug (e.g. { backend: 'https://api...', ... }).
 // Empty object when no domain / compute. Consumers (CI summary, docs) read
-// slugs from this map instead of per-service named outputs, so a new service
+// slugs from this map, so a new service
 // needs no export added here.
 export const serviceDomainUrls = lb.serviceDomainUrls
 export const lbId = lb.lbId

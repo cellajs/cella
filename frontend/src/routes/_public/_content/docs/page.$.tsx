@@ -21,7 +21,7 @@ export const Route = createFileRoute('/_public/_content/docs/page/$')({
     };
   },
   // Resolve the code-split MDX body before rendering so the page view mounts with
-  // content in hand — a suspending lazy body would flash the fallback for at least a
+  // content in hand. A suspending lazy body would flash the fallback for at least a
   // frame even when the chunk is cached. Unknown slugs resolve to undefined; the page
   // view throws notFound for those.
   loader: async ({ params }) => {

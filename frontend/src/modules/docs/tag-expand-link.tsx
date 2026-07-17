@@ -6,7 +6,7 @@ import { cn } from '~/utils/cn';
 
 type TagExpandLinkProps = Pick<LinkProps, 'to' | 'search' | 'hash'> & {
   isOpen: boolean;
-  /** Show spinner instead of the chevron (e.g. while details data is loading). */
+  /** Show a spinner while details data is loading. */
   loading?: boolean;
   onMouseEnter?: () => void;
   onClick?: () => void;

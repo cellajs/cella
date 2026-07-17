@@ -127,7 +127,7 @@ const buildComposeEnv = createComposeEnvBuilder(currentGenBindingIp, { hostSlug,
 // Create VMs: the service set (`enabled`, `coHosted`, `hostSlug`) and the
 // content-addressed generation plan come from resources/generations.ts; the
 // program derives the content-addressed id for a pending SHA there and
-// materialises each generation here.
+// provisions each generation here.
 
 
 export interface GenerationInstance {

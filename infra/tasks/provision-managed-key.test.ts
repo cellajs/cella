@@ -78,7 +78,7 @@ describe('provisionManagedKey', () => {
 
     await expect(provisionManagedKey({ ...baseOptions, definition: aiKey })).rejects.toThrow(/no container yet/)
 
-    // Never mint an IAM key we cannot store — that would orphan a live credential.
+    // Never mint an IAM key we cannot store. That would orphan a live credential.
     expect(provisionScopedKey).not.toHaveBeenCalled()
     expect(putSecretValue).not.toHaveBeenCalled()
   })

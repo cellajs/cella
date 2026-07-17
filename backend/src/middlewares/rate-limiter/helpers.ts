@@ -51,7 +51,7 @@ export const getRateLimiterInstance = (options: RateLimiterOptions) => {
       storeClient: db,
       schema: rateLimitsTable,
       // Fail-open: when DB is unreachable, fall back to in-memory limiter
-      // rather than crashing the request with a 500
+      // Keep the request alive without returning a 500.
       insuranceLimiter: new RateLimiterMemory(enforcedOptions),
       // Block over-limit keys in-memory so repeat offenders don't hit the DB.
       // When blockDuration=0 (e.g. pointsLimiter), uses remaining window time.

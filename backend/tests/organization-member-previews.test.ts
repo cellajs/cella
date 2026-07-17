@@ -91,7 +91,7 @@ describe('Organization member previews (include=members)', async () => {
     memberUserId = member.id;
     await insertMembership(member.id, tenant.organization.id, 'member', daysAgo(2));
 
-    // A second org (its own tenant, per 1:1) with only the caller as admin — the cross-org grouping
+    // A second org (its own tenant, per 1:1) has only the caller as admin. The cross-org grouping
     // check. The global org list returns the caller's orgs across tenants, so both still appear.
     const secondOrg = await createSecondOrg();
     secondOrgId = secondOrg.id;

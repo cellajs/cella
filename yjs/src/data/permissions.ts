@@ -132,7 +132,7 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
     // Defense-in-depth: verify tenant match even if RLS is not enforced (e.g. superuser connection).
     if (typeof entity.tenantId === 'string' && entity.tenantId !== ctx.tenantId) return false;
 
-    // Unpublished drafts (publishedAt null) are editable by their author alone — the
+    // Unpublished drafts (publishedAt null) are editable by their author alone. The
     // published-rows lifecycle veto, ahead of the engine (which has no draft vocabulary).
     // Absent column (resolveEntityScope filtered it out) → always published → no-op.
     if (!draftVisibleTo(entity as unknown as Record<string, unknown>, ctx.userId)) return false;
@@ -145,7 +145,7 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
       row: entity as unknown as Record<string, unknown>,
     });
 
-    // Collaborative editing confers no system-admin bypass — the same stance the backend's
+    // Collaborative editing confers no system-admin bypass. The same stance the backend's
     // materialize endpoint takes, so the relay and the write it triggers agree.
     const { isAllowed } = checkPermission(memberships, 'update', subject, {
       userId: ctx.userId,

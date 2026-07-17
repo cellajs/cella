@@ -15,7 +15,7 @@ export const createClientConfig: CreateClientConfig = (baseConfig) => ({
   throwOnError: true,
   fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
     // Tag each request with the client schema version. hey-api passes a Request as the sole arg,
-    // so merge onto its existing headers — never pass a fresh init, that drops Content-Type.
+    // so merge onto its existing headers. A fresh init drops Content-Type.
     const version = String(currentSchemaVersion);
     let nextInput = input;
     let nextInit = init;

@@ -30,7 +30,7 @@ export interface ManagedKeyConfig {
   /**
    * Routes each minted key half to the runtime secret that stores it. Keys are
    * `RuntimeSecretId`s (the runtime-secrets.config object keys), so a typo is a
-   * compile error rather than a runtime miss.
+   * compile error before runtime.
    */
   assign: Partial<Record<MintedKeyField, RuntimeSecretId>>
 }
@@ -54,7 +54,7 @@ export const managedKeys: ManagedKeyDefinition[] = Object.entries(managedKeysCon
   ...definition,
 }))
 
-// Fail fast at load time on a fork misconfiguration, rather than as a bad IAM
+// Fail fast at load time on a fork misconfiguration, preventing a bad IAM
 // call or a mis-seeded secret at bootstrap time.
 {
   const operatorSecretIds = new Set(runtimeSecrets.filter((secret) => secret.valueSource === 'operator').map((secret) => secret.id))

@@ -87,7 +87,7 @@ describe('points budget enforcement (end to end)', () => {
     await hammer(app, 90);
 
     const state = await instances.get('settle_limit')!.get('tenantId:t1');
-    // 79 requests ran on the fast path, 11 on the DB path — the DB must have all 90.
+    // The DB must contain all 90 requests: 79 from the fast path and 11 from the DB path.
     expect(state?.consumedPoints).toBe(90);
   });
 

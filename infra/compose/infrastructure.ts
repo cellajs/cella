@@ -11,7 +11,7 @@ export function defineServices<const T extends AppServices>(services: T): T {
       continue
     }
     // The LB matches the raw path-begin string, so a malformed prefix silently
-    // routes wrong traffic; fail at synth/plan time instead.
+    // routes wrong traffic, so validation fails during synth/plan.
     if (!cfg.lbRoute) throw new Error(`services config: '${slug}' declares lbPathBegin without lbRoute — an internal-only service has no LB backend to route to.`)
     if (!/^\/[a-z0-9-]+$/.test(prefix)) {
       throw new Error(`services config: '${slug}' lbPathBegin '${prefix}' must be a single lowercase path segment starting with '/' and no trailing slash (e.g. '/api').`)
@@ -149,7 +149,7 @@ export function assembleCompose(appServices: AppServices): ComposeFile {
  * Env keys NEVER folded from a co-hosted service into the host block: they
  * configure the container's process identity (which entrypoint mode to boot,
  * which port the main process binds), and under `singleVM` that identity is
- * the host's — the folded workers are booted in-process by the host's own
+ * the host's: the folded workers are booted in-process by the host's own
  * startup (`main.api.ts`) and read only their service-specific vars
  * (`CDC_HEALTH_PORT`, `YJS_PORT`, `API_WS_URL`, …).
  */
@@ -159,12 +159,12 @@ const PROCESS_IDENTITY_ENV = new Set(['MODE', 'PORT'])
  * singleVM support, part 2 of 2 (ports above): fold every co-hosted service's
  * `env` into the host block. The workers run in-process on the host container,
  * so their wiring (`API_WS_URL`, `YJS_PORT`, …) must reach the HOST's
- * environment — their own blocks never start under the host's compose profile.
+ * environment: their own blocks never start under the host's compose profile.
  * Placeholders (`${VAR}`) folded here are collected for the host VM by the
  * profile-driven scan in resources/compose-env.ts, which also unions the
  * co-hosted registry `bindings` that supply them. Same-value collisions are
  * fine (e.g. `BACKEND_URL` on host and worker); conflicting values fail synth
- * loudly rather than silently breaking one of the folded workers.
+ * loudly to prevent a folded worker from receiving a broken environment.
  */
 function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, ComposeService>): void {
   const hostSlug = Object.entries(appServices).find(([, cfg]) => cfg.primaryRollout)?.[0]

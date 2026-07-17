@@ -38,8 +38,8 @@ export interface ScopedKeyConfig {
   /**
    * Whether this flow owns the identity's IAM policy. Defaults to `true`.
    *
-   * Set `false` when the policy is declared as a Pulumi-managed resource
-   * instead (so `pulumi up` reconciles its permission sets on every deploy and
+   * Set `false` when the policy is declared as a Pulumi-managed resource,
+   * so `pulumi up` reconciles its permission sets on every deploy and
    * the grant can never drift). In that case this flow provisions only the
    * application + API key and leaves the policy untouched, without deleting a
    * policy it does not own.
@@ -190,7 +190,7 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
 /**
  * Find an IAM policy id by exact name within an organization, or undefined when
  * none matches. Detects a pre-existing (orphaned) policy that must be
- * adopted into Pulumi state rather than re-created.
+ * adopted into Pulumi state and preserved.
  */
 export async function findPolicyIdByName(secretKey: string, organizationId: string, name: string): Promise<string | undefined> {
   const { policies } = await scwFetch<{ policies: ScwPolicy[] }>({ secretKey },

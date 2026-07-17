@@ -5,7 +5,7 @@ export type { CdcRowData, RowData };
 
 /**
  * Convert row data keys from snake_case to camelCase.
- * When columnNameMap is provided, uses O(1) lookup instead of regex conversion.
+ * A provided columnNameMap enables O(1) lookup and avoids regex conversion.
  */
 export function convertRowKeys(row: RowData, columnNameMap?: Map<string, string>): CdcRowData {
   const result: RowData = {};

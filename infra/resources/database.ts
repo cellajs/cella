@@ -131,7 +131,7 @@ export const instanceId = instance.id
  * Instance CA certificate (PEM) for verifying the TLS connection to the managed
  * PostgreSQL. Scaleway issues a per-instance, self-signed CA; this output feeds
  * the `database-ssl-ca` runtime secret (resources/secrets.ts) so app services
- * can pin it and verify the connection instead of skipping verification.
+ * can pin it and verify the connection.
  */
 export const caCertificate = instance.certificate
 
@@ -140,7 +140,7 @@ export const databaseName = database.name
 
 // The instance is created with a privateNetwork block, so this only trips if
 // Scaleway ever returns an instance without one, fail with a real error
-// instead of an opaque undefined-property crash.
+// before an opaque undefined-property crash can occur.
 const privateNetwork = instance.privateNetwork.apply((pn) => {
   if (!pn) throw new Error('database: main-postgres has no private network endpoint')
   return pn

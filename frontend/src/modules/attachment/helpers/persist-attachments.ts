@@ -6,7 +6,7 @@ import { createAttachmentsMutationFn } from '~/modules/attachment/query-mutation
  * `private-attachment` modes). They keep their client-generated ids, so a BlockNote block written
  * on upload that references those ids stays valid after persistence.
  *
- * Imperative rather than a mutation hook: the caller is a form submit handler, not a component
+ * Imperative because the caller is a form submit handler, not a component
  * render. It still shares `createAttachmentsMutationFn` with the hook and the offline-replay
  * defaults, so the request (and its stx stamping) is identical however it is reached.
  */

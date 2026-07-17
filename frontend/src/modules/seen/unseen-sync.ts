@@ -36,9 +36,9 @@ export function ingestSyncedRows(
   const cutoff = Date.now() - seenWindowMs;
 
   for (const row of rows) {
-    // Recency = publish time on draft-lifecycle rows (publishedAt ?? createdAt), mirroring
-    // the server's unseen window key in `findUnseenCountsByUser` — publishing an old draft
-    // must still count as new.
+    // Draft-lifecycle rows use publish time for recency (publishedAt ?? createdAt), matching
+    // the server's unseen window key in `findUnseenCountsByUser`. Publishing an old draft
+    // still counts as new.
     const recencySource =
       (typeof row.publishedAt === 'string' ? row.publishedAt : undefined) ??
       (typeof row.createdAt === 'string' ? row.createdAt : undefined);

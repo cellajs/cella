@@ -17,7 +17,7 @@ export type RelatedChannelShape<E extends string> = EntityIdColumns<
  *
  * Counterpart to `channelRelationColumns` (which builds the drizzle columns): this keeps the
  * request/query validation layer in lockstep with the hierarchy config, so forks only adjust
- * the hierarchy rather than each schema.
+ * the hierarchy, keeping this rule out of individual schemas.
  */
 export const relatedChannelShape = <E extends ProductEntityType>(entityType: E): RelatedChannelShape<E> => {
   const shape = {} as Record<string, z.ZodOptional<z.ZodString>>;

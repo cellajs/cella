@@ -40,7 +40,7 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
     })
     .returning({ secret: tokensTable.secret });
 
-  // Set a temporary auth cookie to track confirm MFA session
+  // Track the MFA confirmation session in a short-lived auth cookie.
   await setAuthCookie(ctx, 'confirm-mfa', newToken, timespan);
 
   // Return the path to redirect the user to MFA authentication page

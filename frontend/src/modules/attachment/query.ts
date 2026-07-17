@@ -162,7 +162,7 @@ export const useAttachmentCreateMutation = (tenantId: string, organizationId: st
     onMutate: async ({ data }: CreateAttachmentVars) => {
       await queryClient.cancelQueries({ queryKey: orgKey });
       // Attachments are minted with an id before upload (`onBeforeFileAdded`), which the
-      // optimistic entity preserves — that id also keys the local blob, so the optimistic row
+      // optimistic entity preserves. That id also keys the local blob, so the optimistic row
       // can resolve its own bytes while the create is still in flight or paused offline.
       const optimisticAttachments = data.map((att) => createOptimisticEntity(zAttachment, att));
       cacheCreate(orgKey, optimisticAttachments);

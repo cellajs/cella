@@ -19,7 +19,7 @@ export const parseUploadedAttachments = (
   for (const file of originalFiles) {
     const { size, url, mime, original_name, original_id, user_meta } = file;
 
-    // Upload IDs are only used to correlate converted and thumbnail variants back to the original.
+    // Upload IDs only correlate converted and thumbnail variants with the original.
     const uploadId = Array.isArray(original_id) ? original_id[0] : original_id;
 
     const filename = original_name || user_meta?.name || 'file';

@@ -75,7 +75,7 @@ export async function adoptOrphanedPolicy(opts: AdoptOrphanedPolicyOptions): Pro
   }
   if (!policyId) return 'absent'
 
-  // 3. Adopt it into state so the next `pulumi up` updates rather than creates.
+  // 3. Adopt it into state so the next `pulumi up` updates the existing policy.
   log(`\n→ Adopting existing IAM policy ${opts.policyName} (${policyId}) into Pulumi state before \`pulumi up\``)
   const imported = spawnSync(
     'pulumi',

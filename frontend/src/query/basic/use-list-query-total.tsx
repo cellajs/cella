@@ -5,8 +5,8 @@ import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData } from '~/query/types';
 
 /**
- * Live total from a list query — infinite (pages) or flat ({ items, total }, e.g. canonical
- * org queries) — updating on cache changes. Returns null while fetching if only initialData
+ * Live total from an infinite (pages) or flat ({ items, total }, e.g. canonical org) list query.
+ * Updates on cache changes. Returns null while fetching if only initialData
  * is present (dataUpdatedAt === 0), to avoid showing a stale count.
  */
 export function useListQueryTotal<T = unknown>(queryKey: QueryKey) {

@@ -57,7 +57,7 @@ export interface ComponentIssue {
  * deregisters itself), so this check intentionally treats anything other than
  * `healthy` as a failure: by the time smoke runs, all services have rolled
  * green and nothing should be degraded. A malformed/empty body yields a
- * synthetic issue so the check fails loudly instead of passing silently.
+ * synthetic issue so the check fails loudly.
  */
 export function unhealthyComponents(body: string): ComponentIssue[] {
   let parsed: { components?: Record<string, { status?: string; reason?: string }> }
@@ -178,9 +178,8 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
 
   // 1. Frontend index.html references the freshly built hashed entry asset.
   // When the local dist hash is known (expectedAsset), assert the served HTML
-  // references that exact bundle; the post-publish bundle check folded in from
-  // the former verify-frontend-bundle task. Otherwise fall back to "references
-  // some hashed asset" so the check still runs without the artifact.
+  // references that exact bundle. Without the artifact, fall back to checking
+  // that the page references some hashed asset.
   await check(opts.expectedAsset ? 'index.html references freshly built bundle' : 'index.html references hashed asset', async () => {
     const res = await get(`${frontendUrl}/`)
     const matched = opts.expectedAsset ? res.body.includes(opts.expectedAsset) : hasHashedAsset(res.body)

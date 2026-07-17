@@ -18,7 +18,7 @@ export const { accessPolicies, publicReadGrants } = configurePermissions(
   ({ subject, contexts }) => {
     switch (subject.name) {
       case 'organization':
-        // self (this organization) — create is inert here: org creation is gated by tenant quota, not this policy
+        // self (this organization): create is inert here: org creation is gated by tenant quota, not this policy
         contexts.organization.admin({ read: 1, update: 1, delete: 1 });
         contexts.organization.member({ read: 1, update: 0, delete: 0 });
         break;

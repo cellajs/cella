@@ -4,8 +4,8 @@ import { sideEffectProducers } from './scripts-discovery';
 
 /**
  * `pnpm generate` runs in two phases:
- *   1. drizzle-kit generate — the schema-diff migration folder.
- *   2. side-effect collector — one combined folder for all raw-SQL side-effects that Drizzle Kit
+ *   1. drizzle-kit generate creates the schema-diff migration folder.
+ *   2. The side-effect collector creates one combined folder for raw SQL that Drizzle Kit
  *      cannot express (RLS grants, triggers, functions, publications, partitioning, …).
  *
  * The collector runs second so its folder sorts (and applies) after the schema changes.

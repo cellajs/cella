@@ -7,8 +7,8 @@ import { queryClient } from '~/query/query-client';
  * Batched ± patching of the unseen-counts query cache.
  *
  * Each `setQueryData` fires a cache event that makes PersistQueryClientProvider dehydrate the
- * entire cache — real main-thread jank with hundreds of cached queries, while SeenMark observers
- * fire per frame during scroll. Deltas therefore accumulate and apply as a single `setQueryData`
+ * entire cache, causing main-thread jank with hundreds of cached queries while SeenMark observers
+ * fire per frame during scroll. Deltas accumulate and apply as a single `setQueryData`
  * per idle callback. Counts clamp at 0; the periodic exact recount absorbs residual drift.
  */
 const pendingDeltas: { channelId: string; entityType: ProductEntityType; delta: number }[] = [];

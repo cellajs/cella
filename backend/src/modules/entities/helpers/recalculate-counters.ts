@@ -163,7 +163,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   // (publish time on draft-lifecycle tables, created_at elsewhere), lu:{type} = epoch ms
   // of the latest countable-row update, both grouped by the home context key (deepest
   // non-null ancestor, org fallback via COALESCE). Unlike e: counts these are
-  // deliberately NOT fanned out to ancestor levels — they are per-stream signals,
+  // These per-stream signals stay at the home context and do not fan out to ancestors,
   // matching CDC's stamp scope. Unpublished drafts never stamp, mirroring CDC.
   // jsonb_strip_nulls drops lu: when no live row was ever updated (updated_at all NULL).
   for (const entityType of appConfig.productEntityTypes) {

@@ -21,7 +21,7 @@ const defaultLog = (message: string) => console.info(message)
  *
  * Idempotent: ensures the container exists and always writes a fresh version
  * (`disablePrevious: true`) so a re-mint/rotate immediately invalidates the
- * previous value rather than leaving two live versions.
+ * previous value so only one version remains live.
  */
 export async function seedVmReaderKey(options: SeedVmReaderKeyOptions): Promise<void> {
   const log = options.log ?? defaultLog

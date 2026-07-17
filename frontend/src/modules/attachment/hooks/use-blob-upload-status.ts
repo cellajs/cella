@@ -3,7 +3,7 @@ import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/offline
 import { getAppDb } from '~/query/app-db';
 
 interface BlobUploadInfo {
-  /** False when no local blob exists for this attachment — i.e. it lives only in the cloud. */
+  /** False when no local blob exists for this attachment, meaning it lives only in the cloud. */
   hasLocalBlob: boolean;
   isUploaded: boolean;
   isUploading: boolean;

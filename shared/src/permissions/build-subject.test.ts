@@ -58,7 +58,7 @@ describe('shared buildSubject', () => {
  * Single-row enforcement paths (`getValidProductEntity`, `getValidChannelEntity`,
  * `splitByPermission`, the Yjs relay) all build their subject from a resolved DB row. If that
  * row is not carried onto the subject, every row-derived grant evaluates against nothing and
- * fails CLOSED — a silent denial, not an error. That regression is what this pins.
+ * fails CLOSED: a silent denial, not an error. That regression is what this pins.
  */
 describe('buildSubjectFromEntity — carries the row', () => {
   const product = hierarchy.productTypes.find((t) => hierarchy.getOrderedAncestors(t).length > 0);

@@ -20,7 +20,7 @@ vi.mock('#/permissions/build-subject', () => ({
 
 const { appCache } = await import('./presets');
 
-// The cached detail response enriches `createdBy` into a user object — the case that would
+// The cached detail response enriches `createdBy` into a user object, the case that would
 // break an `own` grant if fed to the permission subject verbatim.
 const cachedAttachment = {
   id: 'att-1',

@@ -2,7 +2,7 @@ import { zGetAttachmentsQuery } from 'sdk/zod.gen';
 import z from 'zod';
 
 /**
- * Default list view state — the single source for URL stripping (route search middleware)
+ * Default list view state. This is the single source for URL stripping (route search middleware)
  * and default-view detection (table serves the default view from the canonical org query).
  */
 export const attachmentsSearchDefaults = { q: '', sort: 'createdAt', order: 'desc' } as const;

@@ -109,7 +109,7 @@ function commandField(obj: Record<string, unknown>, key: string): [string, ...st
 
 /** Validate a runtime-secret manifest value. Also used by the boot-plan
  *  producer (resources/cloud-init.ts) so a malformed manifest fails at plan
- *  time instead of at VM boot. */
+ *  time during planning. */
 export function parseRuntimeSecretManifest(value: unknown): RuntimeSecretManifestEntry[] {
   if (!Array.isArray(value)) throw new Error("boot plan: 'runtimeSecretManifest' must be an array")
   return value.map((entry, index) => {

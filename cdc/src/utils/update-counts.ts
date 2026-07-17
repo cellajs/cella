@@ -11,7 +11,7 @@ export interface CountDelta {
   channelKey: string;
   /**
    * Key-value deltas: e.g. { 'm:admin': 1, 'm:total': 1 } or { 'e:attachment': -1 }.
-   * `li:<type>` / `lu:<type>` keys carry an epoch-ms activity stamp instead of a delta; they merge via max.
+   * `li:<type>` / `lu:<type>` keys carry an epoch-ms activity stamp that merges via max.
    */
   deltas: Record<string, number>;
 }
@@ -23,7 +23,7 @@ export type CountsHierarchy = AncestorSource & {
 
 /**
  * `li:<type>` (last insert) / `lu:<type>` (last update) keys carry epoch-ms activity
- * stamps instead of deltas: they merge via max, never sum. Mirrored by the
+ * stamps that merge via max and never sum. Mirrored by the
  * apply_count_deltas PG function.
  */
 export function isActivityStampKey(key: string): boolean {
@@ -79,9 +79,10 @@ export function getCountDeltas(
     const deltas = countAction ? getEntityDeltas(countAction, organizationId, tableMeta.type, newRow, oldRow, h) : [];
 
     // Activity stamps (epoch ms) at the home context only (deepest non-null ancestor, org
-    // fallback) — deliberately NOT propagated to higher ancestors like `e:` deltas; they are
-    // per-stream signals. `li:<type>` moves forward when a row enters the countable set as
-    // NEW content — a published INSERT, or a publish edge — and `lu:<type>` on countable-row
+    // fallback). These per-stream signals stay at the home context and do not propagate to
+    // higher ancestors like `e:` deltas. `li:<type>` moves forward when a row enters the
+    // countable set as new content (a published INSERT or a publish edge), and `lu:<type>`
+    // moves on countable-row
     // content updates. Deletes, soft-deletes, restores, unpublishes and draft edits leave
     // both untouched (a restore re-counts the row but is old content, so no stamp).
     if (h.isProduct(tableMeta.type) && countAction !== null && countAction !== 'delete') {
@@ -109,7 +110,7 @@ export function getCountDeltas(
     // Embedding counters: track e:<hostEntity> counts per embedded entity ID. The draft
     // dimension mirrors the countable set (draft hosts never bump embedding counters;
     // a publish edge adds every ref, an unpublish removes them), while the deletedAt
-    // dimension is deliberately NOT remapped — soft-delete ref cleanup is owned by
+    // dimension is not remapped. Soft-delete ref cleanup is owned by
     // embedding-cleanup, which rewrites the arrays and emits its own updates.
     for (const embedding of appConfig.entityEmbeddings) {
       if (embedding.hostEntity !== tableMeta.type) continue;
@@ -123,7 +124,7 @@ export function getCountDeltas(
           deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
         }
       } else if (action === 'create') {
-        if (isUnpublishedDraft(newRow)) continue; // counted at the publish edge instead
+        if (isUnpublishedDraft(newRow)) continue; // counted when the row is published
         const ids = getArrayValue(newRow, col);
         for (const id of ids) {
           deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
@@ -141,7 +142,7 @@ export function getCountDeltas(
           for (const id of added) deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
           for (const id of removed) deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
         }
-        // draft-internal ref edits: nothing to do — refs count from the publish edge
+        // Draft ref edits do not count until the row is published.
       }
     }
 
@@ -155,7 +156,7 @@ export function getCountDeltas(
 
 /**
  * Map a WAL action onto the countable set (`isCountableRow`): creates and deletes count
- * only when the row is (or was) in the set; an update counts by its countable-set edge —
+ * only when the row is (or was) in the set; an update counts by its countable-set edge:
  * enter = create (restore, publish), leave = delete (soft-delete, unpublish), stay
  * inside = update, stay outside = nothing (draft edits, trash edits). `null` = the
  * event is invisible to counters and stamps.

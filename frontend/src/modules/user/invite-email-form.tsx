@@ -47,7 +47,7 @@ export function InviteEmailForm({ channelEntity, dialog: isDialog, children }: P
     if (rejectedIds.length)
       toaster(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }), 'info');
 
-    // Onboarding advances through stepper state instead of the optional callback.
+    // Onboarding advances through stepper state; the callback is optional.
     nextStep?.();
   };
 

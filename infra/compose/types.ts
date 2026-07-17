@@ -23,7 +23,7 @@ export type DrainPolicy = 'requests' | 'reconnect'
 
 /**
  * How the load balancer exposes a service publicly:
- *  - 'default': the LB's fallback backend — the app origin (the SPA proxy);
+ *  - 'default': the LB's fallback backend. The app origin (the SPA proxy);
  *    everything no path route matches lands here.
  *  - 'host': host-header routed (own DNS record + cert + route).
  *  - 'path': reached only via its `lbPathBegin` path route on the shared HTTPS
@@ -35,7 +35,7 @@ export type LbRoute = 'default' | 'host' | 'path'
 /**
  * Path-prefix route (`matchPathBegin`) on the shared HTTPS frontend, e.g.
  * `/api`: `https://<app-host><prefix>/...` reaches this service's LB backend.
- * The LB matches on ONE criterion per route (host OR path — never both) and
+ * The LB matches on ONE criterion per route (host OR path: never both) and
  * does NOT strip the prefix, so the service must also serve itself under
  * `<prefix>` (the backend/mcp self-mounts in backend/src/server.ts, the yjs
  * prefix handling in yjs/src/server). Must start with '/' and have no
@@ -217,7 +217,7 @@ export interface AppServiceConfig {
   target?: string
   /**
    * Under `appConfig.singleVM`, co-host this service in-process on the host
-   * (backend) VM instead of giving it its own VM: the cost escape hatch for
+   * (backend) VM under the cost-saving single-VM deployment mode.
    * zero/low-traffic apps. Mirrors the in-process worker startup in
    * `backend/src/main.api.ts`; set on the backend's worker subsystems (cdc, yjs,
    * mcp), never on the host service or the SPA proxy. Ignored when `singleVM` is

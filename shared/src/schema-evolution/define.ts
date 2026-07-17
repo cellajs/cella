@@ -73,7 +73,7 @@ export interface LensDefinition {
   delta: LensDelta;
   /** Optional custom converters when `delta` is insufficient (required for `retype`). */
   custom?: LensCustom;
-  /** When true, backward migration omits the field instead of restoring it (security). */
+  /** When true, backward migration omits the field to prevent restoring sensitive data. */
   lossyBackward?: boolean;
 }
 
@@ -81,7 +81,7 @@ const ID_PATTERN = /^\d{4}-\d{2}-\d{2}-[a-z0-9-]+$/;
 
 /**
  * Validates and returns a frozen lens definition. Throws on malformed input so
- * mistakes surface at module load / test time rather than at runtime.
+ * mistakes surface during module load and tests.
  */
 export function defineLens(def: LensDefinition): LensDefinition {
   if (!ID_PATTERN.test(def.id)) {

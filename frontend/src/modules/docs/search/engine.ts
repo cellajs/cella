@@ -8,7 +8,7 @@ import type { GenComponentSchema, GenOperationSummary } from '~/modules/docs/typ
  * client-side beats a prebuilt `save()` dump: that serialized index is ~5x larger on the wire,
  * while `insertMultiple` costs only tens of ms at this corpus size (.todos/DOCS_SEARCH_RESEARCH.md).
  *
- * Pure module — corpus assembly (virtual sections, query cache) lives in client.ts, so tests can
+ * Pure module. Corpus assembly (virtual sections, query cache) lives in client.ts, so tests can
  * drive the engine with plain fixtures.
  */
 

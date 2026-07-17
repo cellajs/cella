@@ -196,7 +196,7 @@ export async function migrateCachedEntity<T extends AnyRecord>(
 
 /**
  * Phase 2 only: down-migrate a current-shape entity to an older peer version.
- * `lossyBackward` lenses omit removed fields rather than restoring them.
+ * `lossyBackward` lenses keep removed fields absent during backward migration.
  */
 export async function downgradeEntity<T extends AnyRecord>(
   entityType: LensEntityType,

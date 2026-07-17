@@ -26,7 +26,7 @@ const { transactionTimeoutMs } = RESOURCE_LIMITS.buffers;
  *
  * This keeps memory bounded to surviving events only (channel entity deletes +
  * non-delete mutations), regardless of cascade size. A 100k-task org delete
- * buffers ~8 events instead of ~116k.
+ * buffers about 8 events while avoiding roughly 116k individual events.
  *
  * Single-event transactions (the common case) are passed through with no overhead.
  */

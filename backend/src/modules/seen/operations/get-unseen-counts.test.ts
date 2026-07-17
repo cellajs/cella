@@ -6,7 +6,7 @@ import { getUnseenCountsOp } from './get-unseen-counts';
  * Regression guard for a DELIBERATE asymmetry, not a bug.
  *
  * Unseen counts are grouped by the caller's channel memberships. A system admin with no
- * memberships therefore gets `{}` — even though the system-admin bypass makes them able to *read*
+ * memberships therefore gets `{}`, even though the system-admin bypass lets them read
  * every row. That is correct: the bypass widens rows WITHIN an org, it does not enrol the admin in
  * every org's unseen tally (firing badges for every org in the system would be worse than useless).
  *

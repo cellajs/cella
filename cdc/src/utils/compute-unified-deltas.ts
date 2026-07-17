@@ -40,7 +40,7 @@ export interface SeqGroup {
  * `projectId = null` scopes to its course). Without nullable ancestors this equals the
  * declared parent. Falls back to the activity's org for rows whose ancestor ids are all null.
  * The hierarchy model guarantees every product entity at least an organization, so a row
- * without one is a modeling error: fail the group loudly rather than invent a scope.
+ * without one is a modeling error, so the group fails loudly without inventing a scope.
  */
 export function resolveChannelKey(
   entityType: string,

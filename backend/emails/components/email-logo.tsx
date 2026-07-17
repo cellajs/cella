@@ -6,7 +6,7 @@ const logoUrl = `${appConfig.productionUrl}/static/common/logo/logo.png`;
 
 /**
  * Email logo component using an image with a text fallback.
- * When images are blocked by the email client, the alt text is shown instead.
+ * The alt text remains visible when the email client blocks images.
  */
 export const EmailLogo = ({ style }: { style?: React.CSSProperties }): JSX.Element => (
   <a

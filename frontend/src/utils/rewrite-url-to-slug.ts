@@ -1,7 +1,7 @@
 import { redirect } from '@tanstack/react-router';
 
 /**
- * Rewrite URL params to use slugs instead of IDs where available.
+ * Rewrite URL params to use available slugs.
  *
  * Call in beforeLoad after fetching entity data: if the user navigated by IDs but entities have
  * slugs, redirects (replace) to the slug-based URL without a re-render or extra fetch.

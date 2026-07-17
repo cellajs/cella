@@ -242,8 +242,7 @@ export const ShouldCycleForwardOnTab: Story = {
 
     await step('Tab from last reaches the trailing sentinel, which wraps to first', async () => {
       // Real Tab-key navigation can't run headless (the page has no OS focus, so keypresses don't move focus).
-      // We drive the trap's mechanism instead: focusing the trailing sentinel guard — exactly what a forward
-      // Tab off the last element does.
+      // Focusing the trailing sentinel guard exercises the same mechanism as tabbing off the last element.
       afterGuard.focus();
       await waitFor(() => expect(first).toHaveFocus());
     });
@@ -418,8 +417,8 @@ export const ShouldHandleMiddleElementFocus: Story = {
     const container = canvasElement.querySelector<HTMLElement>('[data-focus-guard]')!.parentElement!;
 
     await step('interior buttons stay natively tabbable (tabindex 0)', async () => {
-      // Real Tab between interior elements can't be simulated headless. We assert the invariant that makes native
-      // mid-trap tabbing work instead: every child button stays in the natural tab order and the trap never
+      // Real Tab between interior elements can't be simulated headless. Assert the invariant that enables native
+      // mid-trap tabbing: every child button stays in the natural tab order and the trap never
       // rewrites their tabindex while active.
       for (const btn of buttons) expect(btn.tabIndex).toBe(0);
     });

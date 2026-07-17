@@ -10,8 +10,8 @@ import { partitionConfigs } from '../scripts/migrations/10-partman.migration';
 /**
  * The partman migration converts tables to partitioned clones straight from the catalog
  * (LIKE + captured PK/FK/index DDL), so there is no hardcoded SQL copy to drift anymore.
- * What remains are the structural preconditions PostgreSQL imposes on the conversion —
- * violating any of them makes the (fail-loud) migration abort at migrate time. This suite
+ * PostgreSQL imposes structural preconditions on the conversion. Violating any of them makes
+ * the fail-loud migration abort at migrate time. This suite
  * moves that failure to CI: any schema change that breaks a precondition fails here first.
  */
 

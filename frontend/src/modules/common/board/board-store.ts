@@ -14,7 +14,7 @@ interface BoardUIState {
   activeBoardType: string | null;
   setActiveBoard: (boardId: string, boardType: string) => void;
 
-  // Active panel (only one at a time — set by hover/focus on desktop, tab on mobile)
+  // Active panel, set by hover/focus on desktop or tab on mobile. Only one can be active.
   activePanelId: string | null;
   setActivePanel: (panelId: string | null) => void;
 

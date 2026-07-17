@@ -8,7 +8,7 @@ type UseDebounceOptions<T> = {
 
 /**
  * Debounces a value by `delay`. `options.immediateValue` bypasses the debounce and applies
- * instantly when the value matches it — useful to delay showing a spinner but hide it at once.
+ * instantly when the value matches it. This can delay showing a spinner while hiding it at once.
  *
  * @example
  * // Regular debounce for search input

@@ -7,9 +7,8 @@ import type { OpenApiSpec, OpenApiTag } from '../types';
 /**
  * Behavioural tests for the OpenAPI → docs parser.
  *
- * These replace the old full-spec snapshot: the OpenAPI *contract* is now
- * guarded in CI by oasdiff (`schema-bust-gate`), which watches the parser's
- * *input*. Here we assert the parser's *transformation* against small,
+ * CI guards the OpenAPI *contract* with oasdiff (`schema-bust-gate`), which watches
+ * the parser's *input*. These tests assert the parser's *transformation* against small,
  * hand-owned fixtures, so a test only fails when parser behaviour changes,
  * never on ordinary API/schema churn.
  */

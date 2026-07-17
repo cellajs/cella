@@ -11,9 +11,9 @@ export function invalidateUnseenCounts(entityType: string): void {
 }
 
 /**
- * The current user's unseen entity counts per channel (menu badges). This exact recount — on
- * focus, reconnect, and after catchup — is the baseline; between recounts, unseen-delta.ts and
- * unseen-sync.ts keep it live. Each response replaces all local deltas (`noteUnseenReconciled`).
+ * The current user's unseen entity counts per channel (menu badges). Exact recounts on focus,
+ * reconnect, and catchup establish the baseline. Between recounts, unseen-delta.ts and
+ * unseen-sync.ts keep counts live. Each response replaces all local deltas (`noteUnseenReconciled`).
  */
 export const unseenCountsQueryOptions = () =>
   queryOptions({

@@ -107,7 +107,7 @@ export async function main(): Promise<void> {
     const stateDelete = spawnSync('pulumi', ['state', 'delete', repair.urn, '--stack', stack, '--yes'], { cwd: infraDir, encoding: 'utf8' })
     if (stateDelete.status !== 0) {
       // A dependent (attached frontend) still references it: leave the live
-      // object alone too — never delete TLS material something may serve.
+      // object alone too: never delete TLS material something may serve.
       console.warn(`repair-certs: state delete refused for ${repair.urn} (${stateDelete.stderr.trim().slice(0, 300)}) — skipping live delete; resolve the dependent first.`)
       continue
     }

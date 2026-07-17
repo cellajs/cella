@@ -65,7 +65,7 @@ export type DocsTile = z.infer<typeof docsTileSchema>;
 export type DocsSection = z.infer<typeof docsSectionSchema>;
 
 // Migration cushion for forks that sync code before adding a root index.mdx: warn and
-// keep the docs section working with default section labels instead of failing the build.
+// keep the docs section working with default section labels and prevent a build failure.
 const defaultDocsConfig: DocsConfig = {
   title: 'Docs',
   description: undefined,
@@ -83,7 +83,7 @@ export type DocHeading = { id: string; text: string; depth: number };
 
 /**
  * A docs page's metadata. Field names (`id`, `parentId`, `name`, `displayOrder`) intentionally
- * mirror the old page entity shape, so the sidebar/table tree helpers keep working unchanged.
+ * expose the page entity shape expected by the sidebar and table tree helpers.
  */
 export type DocPage = {
   id: string;
@@ -201,7 +201,7 @@ export function getDocPageLoader(slug: string): (() => Promise<ComponentType>) |
 }
 
 // Components resolved ahead of render (docs route loader) so the page view renders the body
-// synchronously — a fresh Suspense boundary otherwise commits its fallback for at least a frame
+// synchronously. A fresh Suspense boundary otherwise commits its fallback for at least a frame
 // even when the chunk is already cached.
 const resolvedComponents = new Map<string, ComponentType>();
 
@@ -216,7 +216,7 @@ export async function ensureDocPageComponent(slug: string): Promise<ComponentTyp
   return component;
 }
 
-/** Synchronous access to a component previously resolved via ensureDocPageComponent. */
+/** Synchronous access to a component resolved by ensureDocPageComponent. */
 export function getResolvedDocPageComponent(slug: string): ComponentType | undefined {
   return resolvedComponents.get(slug);
 }

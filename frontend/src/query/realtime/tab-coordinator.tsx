@@ -54,7 +54,7 @@ const isBroadcastChannelAvailable = (): boolean => {
 
 /**
  * Initialize the tab coordinator (BroadcastChannel + leader election via Web Locks). Resolves once
- * leader status is known. Idempotent — initialization happens only once across repeated calls.
+ * leader status is known. Initialization is idempotent across repeated calls.
  */
 export const initTabCoordinator = async (): Promise<void> => {
   // Return existing promise if already initializing/initialized

@@ -8,7 +8,7 @@ export function hasPublishedAt(table: AnyPgTable): table is AnyPgTable & { publi
 
 /**
  * Published-rows-only predicate for collection, delta and catchup reads: excludes
- * unpublished drafts for EVERYONE, author included — drafts live outside the sync
+ * unpublished drafts for everyone, including the author. Drafts live outside the sync
  * engine and surface via a dedicated drafts query, never the feed (see
  * `shared/src/published-rows.ts`). `undefined` (no-op) for tables without the column.
  */

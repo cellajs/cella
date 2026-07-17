@@ -11,7 +11,7 @@ import { entityCache } from './app-entity-cache';
 /**
  * Entity-keyed detail cache middleware.
  *
- * Keyed by `entityType:{id}` from the request path — no cache token. On a hit, the caller is
+ * Keyed by `entityType:{id}` from the request path with no cache token. On a hit, the caller is
  * re-authorized against the cached row with `checkPermission` (live authorization, replacing the
  * old session-signed token capability), then the enriched response is served. On a miss, the
  * handler runs once (coalesced) and its enriched result is cached. CDC invalidates the entry by
@@ -73,7 +73,7 @@ function isEnriched(value: Record<string, unknown> | null | undefined): value is
 
 /**
  * Re-authorize a cache hit against the cached row: the draft veto first (an author-cached
- * draft must never serve to a non-author — same rule as SSE dispatch and the detail read),
+ * draft must never serve to a non-author, matching SSE dispatch and the detail read),
  * then the engine. The enriched response replaces `createdBy` with a user object, so
  * normalize it back to the raw id the permission subject expects; every other field the
  * check needs (channel ids, publicAt, publishedAt) is already present on the response.

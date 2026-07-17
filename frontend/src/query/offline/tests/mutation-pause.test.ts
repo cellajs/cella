@@ -9,7 +9,7 @@ import { mutationRetry } from '~/query/offline/network-retry';
  * dehydrated into the persisted replay queue), not settle as an error, then resume on reconnect.
  * A server error must still fail fast.
  *
- * `retryDelay: 0` exercises the pause path without the exponential backoff — the pause is driven
+ * `retryDelay: 0` exercises the pause path without exponential backoff. The pause is driven
  * by onlineManager state, not the delay.
  */
 describe('mutation pausing on connectivity failure', () => {
@@ -47,11 +47,11 @@ describe('mutation pausing on connectivity failure', () => {
     const mutation = queryClient.getMutationCache().getAll()[0];
     await vi.waitFor(() => expect(mutation.state.isPaused).toBe(true));
 
-    // Paused, NOT errored — this is the state provider.tsx dehydrates into the replay queue.
+    // The paused, non-error state is what provider.tsx dehydrates into the replay queue.
     expect(mutation.state.status).toBe('pending');
     expect(mutation.state.failureCount).toBeGreaterThanOrEqual(1);
 
-    // Reconnect + resume — mirrors the PersistQueryClientProvider onSuccess flow.
+    // Reconnect and resume to mirror the PersistQueryClientProvider onSuccess flow.
     onlineManager.setOnline(true);
     await queryClient.resumePausedMutations();
 

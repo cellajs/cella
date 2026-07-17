@@ -1,4 +1,4 @@
-# GET /me — looping VUs test read throughput ceiling.
+# GET /me: looping VUs test read throughput ceiling.
 #
 # Each VU loops 20 times, hitting the /me endpoint.
 # Sustained at 100 arrivals/s (~2000 req/s).

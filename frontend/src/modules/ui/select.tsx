@@ -9,7 +9,7 @@ import { cn } from '~/utils/cn';
 const SelectValueContext = createContext<string | null | undefined>(undefined);
 
 // Registry that lets SelectItem children register their displayed label so SelectValue
-// can render the label (e.g. "Banana") instead of the raw value ("banana").
+// can render the label (e.g. "Banana") for a raw value (e.g. "banana").
 type LabelRegistry = {
   register: (value: string, label: React.ReactNode) => () => void;
   getLabel: (value: string | null) => React.ReactNode;

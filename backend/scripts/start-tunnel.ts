@@ -4,7 +4,7 @@ import { env } from '../src/env';
 
 /**
  * Starts a tunnel that exposes the local app origin to the internet. The tunnel fronts
- * the Vite dev server — which proxies /api, /yjs and /mcp to the service ports — so the
+ * the Vite dev server, which proxies /api, /yjs and /mcp to the service ports, so the
  * whole stack shares one public origin: cookies stay first-party and OAuth provider
  * callbacks (`<tunnel>/api/auth/...`) reach the backend through the proxy.
  * Only attempts to start when `TUNNEL_URL` and `TUNNEL_AUTH_TOKEN` are configured.
@@ -41,8 +41,7 @@ const startTunnel = async (): Promise<string | null> => {
     return listener.url();
   } catch (err) {
     console.warn(pc.red('Tunnel connection failed'), err);
-    // Depending on your development setup, you might want to `process.exit(1)` here
-    // if the tunnel is critical for development. For now, it just logs and returns null.
+    // Tunnel failure is non-fatal in development, so log it and return null.
     return null;
   }
 };

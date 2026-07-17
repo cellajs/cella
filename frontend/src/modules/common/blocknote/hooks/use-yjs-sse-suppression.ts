@@ -7,7 +7,7 @@ import { registerActiveYjsEditor, unregisterActiveYjsEditor } from '~/modules/co
  * cache ops skip Yjs-owned fields (description + derived), since a slightly stale server
  * snapshot must not overwrite the fresher local Y.Doc state.
  *
- * Persistence is relay-side (the relay materializes the session into the entity row),
+ * The relay persists session state to the entity row,
  * so there is nothing to flush on unmount: unregister immediately and let the next
  * SSE update bring authoritative values.
  *

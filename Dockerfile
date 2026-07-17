@@ -5,15 +5,15 @@
 # `--target <name>` (see `target` in infra/config/services.config.ts, threaded
 # through print-deploy-env into .github/workflows/deploy.yml). Shared stages:
 #
-#   base     — node:24-alpine + corepack (pnpm version pinned by the root
+#   base    : node:24-alpine + corepack (pnpm version pinned by the root
 #              package.json `packageManager` field)
-#   runtime  — node:24-alpine + non-root `app` user + RELEASE_SHA/NODE_ENV,
+#   runtime : node:24-alpine + non-root `app` user + RELEASE_SHA/NODE_ENV,
 #              the parent of every production target
-#   geoip    — downloads GeoIP databases in a discarded stage (backend only)
+#   geoip   : downloads GeoIP databases in a discarded stage (backend only)
 #
-#   manifests — all workspace manifests + lockfile (shared by every service:
-#              `--filter` scopes each install, and the lockfile — which changes
-#              with any dependency change — already invalidates all services)
+#   manifests: all workspace manifests + lockfile (shared by every service;
+#              `--filter` scopes each install, and lockfile changes already
+#              invalidate all services)
 #
 # Per service: `<svc>-deps` (prod install) / `<svc>-builder` (full install +
 # tsup build) → `<svc>` (production target). Targets: `backend` (also reused by
@@ -52,16 +52,15 @@ ENV NODE_ENV=production
 USER app
 
 # -----------------------------------------------------------------------------
-# Shared: GeoIP databases (DB-IP Lite, CC BY 4.0) — backend only
+# Shared: GeoIP databases (DB-IP Lite, CC BY 4.0). Backend only
 # -----------------------------------------------------------------------------
 # Runs in a discarded stage so curl/gzip never reach the final image.
-# Best-effort — if the current-month URL isn't published yet, the build still
+# Best-effort: if the current-month URL isn't published yet, the build still
 # succeeds and country lookups simply return null until the file is supplied
 # at runtime.
 FROM node:24-alpine AS geoip
 
-# ARG busts this stage's cache every release, so the data is refreshed per
-# deploy (matching the pre-consolidation behavior).
+# ARG busts this stage's cache every release so each deploy refreshes the data.
 ARG RELEASE_SHA=unknown
 
 RUN --mount=type=cache,id=apk-cache,target=/var/cache/apk \
@@ -79,7 +78,7 @@ RUN --mount=type=cache,id=apk-cache,target=/var/cache/apk \
 # -----------------------------------------------------------------------------
 # One stage for all services: each install below is scoped by `--filter`, and
 # pnpm-lock.yaml pins resolution, so unused manifests can't change what gets
-# installed — they only ride along for the workspace layout.
+# installed: they only ride along for the workspace layout.
 FROM base AS manifests
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -92,7 +91,7 @@ COPY yjs/package.json ./yjs/
 COPY patches/ ./patches/
 
 # =============================================================================
-# backend — Hono API server
+# backend: Hono API server
 # =============================================================================
 
 # Install production dependencies only (--ignore-scripts avoids native build issues)
@@ -155,7 +154,7 @@ WORKDIR /app/backend
 CMD ["node", "dist/main.js"]
 
 # =============================================================================
-# cdc — Change Data Capture worker
+# cdc: Change Data Capture worker
 # =============================================================================
 # Connects to PostgreSQL logical replication and forwards to backend WebSocket.
 
@@ -194,9 +193,9 @@ WORKDIR /app/cdc
 CMD ["node", "dist/cdc-worker.js"]
 
 # =============================================================================
-# yjs — collaborative editing relay worker
+# yjs: collaborative editing relay worker
 # =============================================================================
-# Pure binary passthrough — no Y.Doc instantiation on server.
+# Pure binary passthrough: no Y.Doc instantiation on server.
 
 # Install production dependencies only (--ignore-scripts avoids native build issues)
 FROM manifests AS yjs-deps

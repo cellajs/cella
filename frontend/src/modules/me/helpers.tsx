@@ -14,7 +14,7 @@ export const getAndSetMe = async () => {
   useUserStore.getState().setIsSystemAdmin(isSystemAdmin);
 
   // A different user signed in. Per-user storage namespaces are bound at boot from the persisted
-  // user id (just updated above), so a full reload rebinds every cache/store to the new owner —
+  // user id (just updated above), so a full reload rebinds every cache/store to the new owner.
   // the previous user's data stays isolated, no surgical flush or cross-user bleed.
   if (!skipLastUser && previousUserId && previousUserId !== user.id) window.location.reload();
 

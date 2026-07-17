@@ -49,7 +49,7 @@ export const env = createEnv({
 
     // Optional operator-managed runtime secret (system-admin-ip-allowlist). When
     // the secret has no version the env var is omitted, so it defaults to 'none'
-    // (deny) — sys-admin routes stay off until an operator sets the allowlist.
+    // (deny). Sys-admin routes stay off until an operator sets the allowlist.
     SYSTEM_ADMIN_IP_ALLOWLIST: z
       .union([
         z.literal('none'),

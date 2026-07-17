@@ -29,7 +29,7 @@ export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
 /** Schema for an entity ID with max length */
 export const validIdSchema = z.string().max(maxLength.id);
 
-/** Schema for a temporary ID (must start with 'temp-') used for optimistic creates */
+/** Schema for an optimistic-create ID that must start with 'temp-'. */
 export const validTempIdSchema = z
   .string()
   .max(maxLength.id)
@@ -51,7 +51,7 @@ export const languageSchema = z.enum(appConfig.languages);
 /** Schema for entity identifier id */
 export const entityIdParamSchema = z.object({ id: validIdSchema });
 
-/** Schema for optional slug query flag; true resolves entity by slug instead of ID. */
+/** Schema for optional slug query flag; true resolves the entity by slug, not ID. */
 export const slugQuerySchema = z.object({ slug: booleanTransformSchema.optional() });
 
 /** Schema for tenant-scoped entity id (for organization routes) */

@@ -9,8 +9,8 @@ import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 /**
  * Creates triggers that prevent modification of identity columns (id, tenant_id,
- * organization_id, etc.) after row creation — defense-in-depth that holds even under
- * admin bypass — plus write guards on tables the app may read but never write.
+ * organization_id, etc.) after row creation. This defense-in-depth holds even under
+ * admin bypass, with write guards on tables the app may read but never write.
  *
  * Functions and trigger names both come from `#/db/immutability-triggers`. Do not hand-list them
  * here: this block creates its triggers inside a single `EXCEPTION WHEN OTHERS`, so one trigger

@@ -51,7 +51,7 @@ const hlc = '100:0001:aaaaa';
 
 afterEach(() => _resetHLC());
 
-// Synthetic lens-less entity — widenedOpsKeyMap/normalizeOps are mocked above by name
+// Synthetic lens-less entity; widenedOpsKeyMap/normalizeOps are mocked above by name.
 const LENSLESS = 'doc' as ProductEntityType;
 
 describe('createUpdateSchema widening', () => {

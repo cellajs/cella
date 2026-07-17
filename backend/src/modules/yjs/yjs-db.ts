@@ -26,7 +26,10 @@ export const yjsDocumentsTable = snakeCase.table(
       .references(() => tenantsTable.id),
     organizationId: uuid(),
     state: bytea().notNull(),
-    /** Last user whose update the relay saved, for materialization attribution (null = seed-only, no edits). */
+    /**
+     * Last user whose update the relay saved and credits when persisting.
+     * Null for seed-only documents.
+     */
     lastEditedBy: uuid(),
     updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
   },

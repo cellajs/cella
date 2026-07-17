@@ -8,7 +8,7 @@ import { AppError, type ErrorKey } from '#/core/error';
  * Extracts custom error types from Zod refinements via params.type for proper i18n support.
  *
  * A failed request validation is a malformed request, not a permission verdict, so it
- * surfaces as 400 — 403 is reserved for genuine authorization denials. Debugging a
+ * surfaces as 400. Status 403 is reserved for genuine authorization denials. Debugging a
  * schema mismatch (e.g. a hand-built stx envelope missing a per-field HLC) must not
  * read as "insufficient permissions".
  */

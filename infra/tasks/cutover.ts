@@ -108,7 +108,7 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
   // after the new generation is health-verified; the safe intermediate state is
   // the overlap `[old, new]`. Drive the live list toward desired with idempotent
   // SetBackendServers calls; an empty, stale, or unexpected live pool (including
-  // old == new on an idempotent redeploy) is reconciled rather than assumed
+  // old == new on an idempotent redeploy) is always reconciled
   // correct.
   const overlap = [...new Set([...plan.oldIps, ...plan.newIps])]
   let live = plan.getServers ? await plan.getServers() : plan.oldIps

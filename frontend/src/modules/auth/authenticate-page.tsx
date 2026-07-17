@@ -22,7 +22,7 @@ import { useUserStore } from '~/modules/user/user-store';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
-// Warn the user after the "slow" delay and give up after the timeout — otherwise a
+// Warn the user after the "slow" delay and give up after the timeout. This prevents a
 // down backend leaves the spinner hanging on the browser's default timeout.
 const HEALTH_SLOW_MS = 5000;
 const HEALTH_TIMEOUT_MS = 20000;
@@ -49,7 +49,7 @@ export function AuthenticatePage() {
   } = useQuery({
     queryKey: ['auth', 'health'],
     // Bound the request: combine the query's own signal with a hard timeout so a
-    // down/unreachable backend fails deterministically instead of hanging.
+    // down or unreachable backend fails deterministically without hanging.
     queryFn: ({ signal }) =>
       getAuthHealth({ signal: AbortSignal.any([signal, AbortSignal.timeout(HEALTH_TIMEOUT_MS)]) }),
     staleTime: 0,

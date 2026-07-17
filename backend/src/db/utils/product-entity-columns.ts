@@ -26,7 +26,7 @@ export const productEntityColumns = <T extends ProductEntityType>(entityType: T)
    * Deliberately denormalized onto the row: the check-form, the collection-read SQL compiler,
    * and CDC stream dispatch must all reach the same verdict, and dispatch only ever ships the
    * row itself. A fork wanting "public because the parent is public" propagates `publicAt` to
-   * descendants — publication is data, not a permission rule.
+   * descendants. Publication is data, not a permission rule.
    */
   publicAt: timestamp('public_at', { mode: 'string' }),
   /** Sequence number within (parent context, entityType) scope. Set by CDC worker, used for delta sync. */

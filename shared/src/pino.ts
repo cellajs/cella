@@ -136,8 +136,8 @@ export type Log = Record<Severity, LogFn>;
 export const createLog = (logger: pino.Logger): Log => {
   const recent = new Map<string, { lastEmitAt: number; suppressed: number }>();
 
-  // Dedup applies to warn and above only: info/debug/trace repetition is intentional
-  // (heartbeats, progress) and filtered by level instead.
+  // Dedup applies to warn and above only. Level filtering handles intentional
+  // info/debug/trace repetition such as heartbeats and progress messages.
   const shouldEmit = (severity: Severity, msg: string): { emit: boolean; repeated?: number } => {
     if (severity !== 'warn' && severity !== 'error' && severity !== 'fatal') return { emit: true };
     const key = `${severity}:${msg}`;

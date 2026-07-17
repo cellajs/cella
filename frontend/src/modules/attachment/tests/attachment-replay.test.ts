@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 // Mock the generated SDK so we can assert exactly how a *replayed* mutation calls the API.
-// `Req` is intentionally loose — the tests inspect opaque request objects the SDK would send.
+// `Req` is intentionally loose because the tests inspect opaque request objects the SDK would send.
 type Req = { path: Record<string, string | undefined>; body: Record<string, unknown> | Array<Record<string, unknown>> };
 const { createAttachments, updateAttachment, deleteAttachments } = vi.hoisted(() => ({
   createAttachments: vi.fn(async (_req: Req) => ({ data: [] })),
@@ -30,7 +30,7 @@ const lastBody = (spy: { mock: { lastCall?: [Req] } }) => spy.mock.lastCall?.[0]
 const lastPath = (spy: { mock: { lastCall?: [Req] } }) => spy.mock.lastCall?.[0].path;
 
 /**
- * These fns run when a paused mutation replays from the persisted queue after a reload — the
+ * These functions run when a paused mutation replays from the persisted queue after a reload. The
  * component closure that supplied tenant/org is gone, so everything must come from persisted
  * variables. The hooks inject that context; these tests lock that fix in.
  * @see query.ts
@@ -77,7 +77,7 @@ describe('attachment offline-replay mutation functions', () => {
 
   it('REGRESSION: without injected context the persisted request loses tenant/org', async () => {
     // The exact bug the fix prevents: before the hook injected context, a mutation persisted as
-    // `{ id, ops }` replayed through the default fn with tenant/org undefined — a broken request.
+    // `{ id, ops }` replayed through the default function with tenant/org undefined, producing a broken request.
     updateAttachment.mockClear();
     // @ts-expect-error intentionally passing the OLD (incomplete) variable shape.
     await updateAttachmentMutationFn({ id: 'att-1', ops: { name: 'x' } });

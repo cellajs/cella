@@ -43,7 +43,7 @@ async function currentRollout(stack: string, service: string): Promise<ServiceRo
   return state.rollout[service]
 }
 
-/** Resolve the generation just materialised for `sha`. When a redeploy keeps the
+/** Resolve the generation just provisioned for `sha`. When a redeploy keeps the
  *  same sha but changes config, two generations share the sha; the pending one is
  *  the id that differs from the current active. A same-config redeploy collapses
  *  to the active id (a single candidate). */
@@ -85,8 +85,7 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   if (!serviceFlag || !sha || !stack) throw new Error('Usage: deploy-service.ts --service <svc> --sha <git-sha> --stack <stack> [--health-url URL] [--lb-zone ZONE]')
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`)
 
-  // The registry lookup IS the validation: a hit narrows the raw flag to a real
-  // ServiceName instead of asserting the union up front.
+  // The registry lookup validates and narrows the raw flag to a real ServiceName.
   const definition = servicesByName.get(serviceFlag as ServiceName)
   if (!definition) throw new Error(`Unknown service '${serviceFlag}'`)
   const service = definition.slug
@@ -95,7 +94,7 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   const healthUrl = healthUrlFromFlag(getFlag(argv, '--health-url'))
 
   // Record the deploy INTENT (pendingSha) and let the Pulumi program, the genId
-  // authority, derive the content-addressed id and materialise the VM. We read
+  // authority, derive the content-addressed id and provision the VM. We read
   // the resolved id back from `computeGenerationMetadata`.
   await updateStore(stack, service, (cur) => setPending(cur, sha))
   runPulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
@@ -104,7 +103,7 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   const target = resolvePendingGen(generations, service, sha, current?.active?.id)
 
   if (definition.replacementStrategy === 'exclusive') {
-    // cdc: no LB, no overlap. The Pulumi program materialised only the new
+    // cdc: no LB, no overlap. The Pulumi program provisioned only the new
     // generation (the old one is replaced/destroyed in the same `up`); the new
     // worker reports healthy once it acquires the slot the old one releases.
     console.info(`[deploy ${service}] exclusive replacement -> gen ${target.genId} (${sha})`)
@@ -146,7 +145,7 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
 
   // Under singleVM the co-hosted lb-routed workers (e.g. yjs) ride this host
   // VM in-process, but their LB backends are separate Scaleway objects nothing
-  // else reconciles (Pulumi sets serverIps at create, then ignoreChanges — the
+  // else reconciles (Pulumi sets serverIps at create, then ignoreChanges: the
   // cutover task owns the live list). Drive each one to the promoted
   // generation's IP with the same idempotent corrective call, or the worker's
   // public route keeps pointing at a reaped generation forever.

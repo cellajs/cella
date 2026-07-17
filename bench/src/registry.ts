@@ -15,7 +15,7 @@ export interface TableBenchSeed {
   /** Target database table, also used for dedup and seed/cleanup logging. */
   table: string;
   /**
-   * Columns kept as native Postgres arrays instead of JSON-stringified.
+   * Columns stored as native Postgres arrays.
    * Snake_case column names (e.g. `'languages'`).
    */
   pgArrayColumns?: string[];
@@ -71,7 +71,7 @@ export const getBenchSeedCleanupWhere = (seed: TableBenchSeed): string => {
 
 /**
  * Registers a bench seed as an import side effect (mirrors the module/tag registry
- * in `shared/src/module-registry.ts`) — a fork adds a load-test table by dropping in
+ * in `shared/src/module-registry.ts`). A fork adds a load-test table by dropping in
  * one `*.bench.ts` file. Idempotent by name; rejects malformed or duplicate id variants.
  *
  * @see seeds/README.md

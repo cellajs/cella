@@ -27,7 +27,7 @@ describe('one organization per tenant', () => {
   it('allows one organization per distinct tenant', async () => {
     const a = await createTestOrganization();
     const b = await createTestOrganization();
-    // Two orgs, two tenants — no conflict.
+    // Two organizations in two tenants do not conflict.
     expect(a.tenantId).not.toBe(b.tenantId);
     expect(a.id).not.toBe(b.id);
   });

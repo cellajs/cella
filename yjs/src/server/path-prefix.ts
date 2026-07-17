@@ -1,7 +1,7 @@
 /**
  * Same-origin migration: the LB path route forwards `/yjs/...` from the app
  * origin without stripping the prefix (Scaleway routes match, never rewrite),
- * so the server accepts both the bare path (legacy subdomain / direct LB
+ * so the server accepts both the bare path (subdomain or direct LB
  * health check) and the `/yjs`-prefixed one. Operates on the raw request URL,
  * so a query string survives the strip.
  */

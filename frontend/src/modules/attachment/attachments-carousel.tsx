@@ -33,7 +33,7 @@ export type CarouselItemData = {
   filename?: string;
   /**
    * Content type driving renderer choice. BlockNote passes a block *type* ('image', 'video'…)
-   * rather than a mime type; `AttachmentRender` matches both by substring.
+   * or a MIME type; `AttachmentRender` matches both by substring.
    */
   contentType?: string;
   convertedContentType?: string | null;

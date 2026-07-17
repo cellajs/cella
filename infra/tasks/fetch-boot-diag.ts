@@ -67,7 +67,7 @@ export interface DiagReader {
 /**
  * Default reader shelling out to the preinstalled aws CLI (no shell). Unlike a
  * bare `.stdout ?? ''`, this surfaces the read failure reason: a missing aws
- * binary, bad credentials, or the wrong bucket, instead of silently returning
+ * binary, bad credentials, or the wrong bucket, and never silently returns
  * an empty string that the renderer would misreport as "no logs uploaded". The
  * `list` failure throws (without it nothing else can run); a per-object `cat`
  * failure is left for the renderer to annotate inline so one unreadable object
@@ -123,7 +123,7 @@ export function summarizeBundles(keys: string[], serviceNames: readonly string[]
  * Print the selected diagnostics. `style` controls presentation: `'ci'` emits
  * GitHub Actions collapsible `::group::` log groups (the default, for the deploy
  * workflow); `'plain'` emits readable section headers for a local terminal. A
- * per-object read that fails is annotated inline rather than aborting the dump.
+ * failed per-object read is annotated inline while the dump continues.
  */
 export function renderDiagnostics(
   service: string,

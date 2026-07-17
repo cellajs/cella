@@ -89,7 +89,7 @@ export const config = {
 
   // URLs & endpoints
 
-  /** Frontend SPA base URL (the app origin — every service is a path under it) */
+  /** Frontend SPA base URL (the app origin: every service is a path under it) */
   frontendUrl: 'https://__project_slug__.example.com',
   /** Backend API base URL */
   backendUrl: 'https://__project_slug__.example.com/api',
@@ -112,7 +112,7 @@ export const config = {
   },
 
   // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
-  // service in-process — one VM for previews/small forks. Default false keeps the
+  // service in-process: one VM for previews/small forks. Default false keeps the
   // split (one service per process). cdc co-hosting forfeits API blue-green.
   singleVM: false as boolean,
 
@@ -357,4 +357,3 @@ export const config = {
     finishedOnboarding: false,
   },
 } satisfies RequiredConfig;
-

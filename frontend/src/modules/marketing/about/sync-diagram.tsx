@@ -104,7 +104,7 @@ const buildTimeline = (lead: number) => {
   const T_WS = T_SQL_CDC + ANIM.sqlDraw + ANIM.gap;
   const T_SSE = T_WS + ANIM.draw + ANIM.gap;
 
-  // Yjs timeline — builds on top of the full CDC flow, then adds the collaboration path.
+  // The Yjs timeline adds the collaboration path to the full CDC flow.
   const T_YJS_NODE = T_SSE + ANIM.draw + ANIM.gap;
   const T_WS_YJS = T_YJS_NODE + ANIM.cdcIn + ANIM.gap;
   const T_YJS_PERSIST = T_WS_YJS + ANIM.draw + ANIM.gap;
@@ -175,7 +175,7 @@ export const SyncDiagram = () => {
   const [hovered, setHovered] = useState<string | null>(null);
   // Clicking the diagram toggles a "reveal every label" override on/off.
   const [showAllLabels, setShowAllLabels] = useState(false);
-  // Time (s) subtracted from delays so a toggle only animates the part that is new — the
+  // Time (s) subtracted from delays so a toggle animates only the new part. The
   // shared structure from earlier parts stays put while the new flow draws in from t≈0.
   const [rebase, setRebase] = useState(0);
   // "Try me" hint nudges the user to interact; hidden as soon as they switch parts.
@@ -272,7 +272,7 @@ export const SyncDiagram = () => {
 
   return (
     <div className="mx-auto mb-8 flex w-full max-w-3xl flex-col items-center">
-      {/* Mode toggle — switches which nodes/edges and timeline the diagram shows */}
+      {/* Mode toggle switches the diagram's nodes, edges, and timeline. */}
       <div className="relative mb-6">
         {hint && (
           <div className="absolute top-1/2 right-full mr-3 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap text-muted-foreground max-sm:hidden">
@@ -333,7 +333,7 @@ export const SyncDiagram = () => {
         aria-label="Toggle all data-flow labels"
         className="relative aspect-4/3 w-full cursor-pointer sm:aspect-video md:aspect-5/2"
       >
-        {/* SVG overlay — drawn in real pixel space, re-measured on resize */}
+        {/* SVG overlay drawn in real pixel space and re-measured on resize. */}
         {geom && (
           <svg
             className="absolute inset-0 h-full w-full"

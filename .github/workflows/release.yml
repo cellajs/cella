@@ -6,7 +6,7 @@ name: Release
 # runs heavy security + e2e checks before production deploy starts.
 #
 # Add a new releasable package by adding an entry to .github/release-please-config.json
-# and .github/release-please-manifest.json — no workflow changes needed.
+# and .github/release-please-manifest.json. No workflow changes needed.
 
 permissions: {}
 

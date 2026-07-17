@@ -106,7 +106,7 @@ export const errorResponses: Responses = Object.fromEntries(
 
 /**
  * Errors as `$ref` for route definitions, keeping OpenAPI output compact by referencing
- * registered response components instead of inlining the full schema per route.
+ * registered response components and avoids inlining the full schema per route.
  *
  * NOTE: The type is cast to look like inline Zod-backed responses. Without this,
  * `@hono/zod-openapi` sees `$ref` objects (no `content` key) and widens the handler

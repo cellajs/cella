@@ -11,8 +11,8 @@ export const SKIP_REASON_NO_ORIGINAL_KEY = 'No originalKey';
 
 /**
  * Valid transitions for the download service's own state machine. `failed` is terminal *to the
- * service* — it must not resurrect a row mid-run. Reviving is an out-of-band `enqueue` decision
- * (see `shouldRevive`), so it writes the row directly rather than going through `transition`.
+ * service*. It must not resurrect a row mid-run. Reviving is an out-of-band `enqueue` decision
+ * (see `shouldRevive`), so it writes the row directly without going through `transition`.
  */
 const transitions: Record<DownloadStatus, DownloadStatus[]> = {
   pending: ['downloading', 'skipped'],
@@ -129,14 +129,14 @@ function shouldRevive(
     return true;
   }
 
-  // Transient fetch failure (offline, 5xx, timeout) — retry while attempts remain, so one bad
+  // Retry transient fetch failures (offline, 5xx, timeout) while attempts remain, so one bad
   // fetch doesn't exclude an attachment from offline availability until sign-out.
   if (entry.status === 'failed' && entry.attempts < config.downloadRetryAttempts) return true;
 
   return false;
 }
 
-/** Drop queue entries for attachments that no longer exist (deleted). */
+/** Drop queue entries for deleted attachments. */
 async function remove(ids: string[]): Promise<void> {
   if (!ids.length) return;
   try {

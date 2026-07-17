@@ -9,7 +9,7 @@ type InfiniteLoaderProps = {
   isFetchMoreError?: boolean;
   /**
    * Fetch-more callback. When provided, an intersection observer triggers it as the
-   * loader enters the viewport. Omit with DataGrid — it triggers via onNearEndChange.
+   * loader enters the viewport. Omit with DataGrid because it triggers via onNearEndChange.
    */
   fetchMore?: () => Promise<unknown>;
 };

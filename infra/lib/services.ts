@@ -50,8 +50,8 @@ export function enabledServices(serviceConfig: Record<string, AppServiceEndpoint
 /**
  * Services that get their OWN dedicated VM for a given app. In the normal
  * split-VM deploy this is every enabled service. Under `singleVM` the enabled
- * `coHosted` workers (cdc/yjs/ai) are dropped. They run in-process on the host
- * (backend) VM instead, so only the host and any non-co-hosted service (the
+ * `coHosted` workers (cdc/yjs/ai) are dropped because they run in-process on the host
+ * (backend) VM. Only the host and any non-co-hosted service (the
  * SPA proxy) keep their own VM. The load balancer still derives its routes from
  * `enabledServices`, so a co-hosted service keeps its public endpoint; only its
  * backend target changes (see {@link serviceGenerationIps}).
@@ -90,8 +90,7 @@ export interface ServiceEndpoint {
 }
 
 /**
- * Per-service public endpoints, derived from appConfig by the registry instead
- * of a hand-maintained parallel map in `naming`. A service has an endpoint
+ * The registry derives per-service public endpoints directly from appConfig. A service has an endpoint
  * iff it declares an `lbRoute` (cdc has none → internal-only, omitted here).
  *
  * Pure: pass the resolved appConfig. This module never reads appConfig eagerly
