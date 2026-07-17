@@ -5,7 +5,7 @@
  * `backend/src/db/utils/published-column.ts`). While `publishedAt` is NULL the row is an
  * author-only draft: it is dropped from SSE dispatch, excluded from collection and delta
  * reads, never counted or stamped, and readable/editable only by its author. Setting
- * `publishedAt` is the row's public birth — counters, stamps and unseen badges all fire
+ * `publishedAt` is the row's public birth. Counters, stamps and unseen badges all fire
  * from the publish edge.
  *
  * Distinct from the channel-entity `publishedAt` (defaults to now; gates invitees during

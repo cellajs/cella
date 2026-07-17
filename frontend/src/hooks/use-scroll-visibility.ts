@@ -84,7 +84,7 @@ export const useScrollVisibility = (enabled = true, containerRef?: RefObject<HTM
       setScrollTop(currentY);
 
       // Content height changed (lazy body mounting, font swap, collapsibles): scroll
-      // anchoring turns those into scroll events that aren't gestures — resync, don't flip.
+      // anchoring turns those into non-gesture scroll events. Resync without flipping.
       const currentHeight = getScrollHeight();
       if (currentHeight !== lastScrollHeight.current) {
         lastScrollHeight.current = currentHeight;

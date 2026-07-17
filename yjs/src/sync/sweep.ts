@@ -5,12 +5,12 @@ import { postMaterialize, stateToBlocksJson } from './materialize';
 
 /**
  * Startup sweep: recover sessions orphaned by a relay crash between last-disconnect
- * and cleanup. Rows with `lastEditedBy` carried edits: materialize them into the
- * durable record before deleting. Rows without never diverged from their seed
+ * and cleanup. Rows with `lastEditedBy` carried edits, so convert their Y.Doc state
+ * to blocks and persist it before deleting. Rows without never diverged from their seed
  * (saveState only runs on updates), so they are deleted directly.
  *
  * Retry-class failures leave the row for the next boot or a later session on that
- * entity; concurrent materializations from different relay instances converge via
+ * entity; concurrent durable writes from different relay instances converge via
  * server-side HLC last-write-wins.
  */
 export async function runStartupSweep(): Promise<void> {

@@ -504,7 +504,7 @@ describe('RLS Security Tests', () => {
 /**
  * Whether the environment can run the RLS suite: roles + base tables present.
  * Checked at module load (after global-setup migrations) so the suite skips
- * gracefully on a DB without RLS roles rather than failing every assertion.
+ * gracefully on a database without RLS roles and avoids failing every assertion.
  */
 const rlsSuiteReady = await (async () => {
   try {

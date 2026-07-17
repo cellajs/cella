@@ -42,7 +42,7 @@ type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
  * single source of truth for the `data-sticky` state (used for styling), and an
  * optional `offsetBottom` releases the bar before the container's bottom edge.
  *
- * Not for tall sticky *sidebars*: use plain CSS instead:
+ * Tall sticky *sidebars* require plain CSS:
  * `sticky top-X max-h-[calc(100vh-…)] overflow-y-auto`.
  */
 export function StickyBox({
@@ -62,7 +62,7 @@ export function StickyBox({
   const [stuck, setStuck] = useState(false);
   const [visible, setVisible] = useState(true);
   // When set, the bar is docked near the container bottom (offsetBottom release)
-  // via `position: relative` instead of sticky, so it scrolls away with content.
+  // via `position: relative`, so it scrolls away with content.
   const [clampedTop, setClampedTop] = useState<number | null>(null);
 
   // Source of truth for `data-sticky`: a zero-height sentinel at the bar's

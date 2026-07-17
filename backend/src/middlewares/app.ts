@@ -41,7 +41,7 @@ app.use('*', loggerMiddleware);
 
 // No CORS middleware: every consumer is same-origin (the API lives under the
 // app origin at /api; dev and tunnel proxy through the Vite origin). Requests
-// from other origins simply get no CORS grant — the browser blocks them.
+// from other origins get no CORS grant, so the browser blocks them.
 
 // CSRF protection: rejects state-changing requests whose Origin header is not
 // the app origin (defense in depth now that same-origin is structural).

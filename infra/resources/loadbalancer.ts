@@ -125,7 +125,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   // Let's Encrypt certificates: gated on the DNS record being publicly
   // resolvable (not merely created) before Scaleway runs the ACME validation,
   // and gated after on `ready` status so an issuance failure surfaces AT the
-  // cert with its ACME detail instead of at the frontend attach.
+  // cert with its ACME detail before the frontend attach.
 
   const certs = new Map<string, scaleway.loadbalancers.Certificate>()
   const certGates: CertReadyGate[] = []
@@ -201,14 +201,14 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     inboundPort: 443,
     certificateIds: allCertIds,
   }, {
-    // Attach only certs proven `ready` — a pending/errored cert fails its own
+    // Attach only certs proven `ready`: a pending/errored cert fails its own
     // gate first, with the ACME detail (see dns-cert-gates.ts).
     dependsOn: certGates,
   })
 
   // Host-header routes for every host-routed service with a DNS record.
   // (No shipped service is host-routed after the same-origin migration; the
-  // loop stays for forks that still run — or add — host-routed services.)
+  // loop stays for forks that still run. Or add. Host-routed services.)
   for (const service of lbServices) {
     if (service.lbRoute !== 'host' || !dnsRecords.has(serviceHost(service.slug))) continue
     new scaleway.loadbalancers.Route(`${baseName(service.slug)}-route`, {
@@ -221,7 +221,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   // Path-begin routes (same-origin model): `https://<any host>/<prefix>...`
   // reaches the service's backend; everything else falls through to the
   // default backend (the app origin / SPA proxy). Scaleway routes match on
-  // exactly ONE criterion (host or path) and do NOT strip the prefix — each
+  // exactly ONE criterion (host or path) and do NOT strip the prefix. Each
   // service also serves itself under its `lbPathBegin` (registry-declared;
   // validated in compose/infrastructure.ts).
   for (const service of lbServices) {

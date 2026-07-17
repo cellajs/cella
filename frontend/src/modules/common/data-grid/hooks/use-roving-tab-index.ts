@@ -14,7 +14,7 @@ export function useRovingTabIndex(isSelected: boolean) {
     if (event.target === event.currentTarget) {
       const elementToFocus = event.currentTarget.querySelector<Element & HTMLOrSVGElement>('[tabindex="0"]');
 
-      // Focus cell content when available instead of the cell itself
+      // Prefer focusable cell content over the cell container.
       if (elementToFocus !== null) {
         elementToFocus.focus({ preventScroll: true });
         setIsChildFocused(true);

@@ -170,7 +170,7 @@ const generate = async () => {
   const tempDocsPath = resolve(tempOutputPath, 'docs.gen');
 
   try {
-    // Clean up any old temp folders from previous runs
+    // Clean up stale temp folders before generating output.
     try {
       const entries = readdirSync(srcDir, { withFileTypes: true });
       for (const entry of entries) {

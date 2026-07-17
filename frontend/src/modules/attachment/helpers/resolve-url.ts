@@ -23,7 +23,7 @@ type AttachmentMeta = Pick<
 >;
 
 /**
- * Core URL resolution: local blob first, then cloud fallback. Pure — no React hooks.
+ * Core URL resolution: local blob first, then cloud fallback. Pure, with no React hooks.
  *
  * Resolving a cloud URL also queues the attachment for background download, so the next view of
  * the same file can be served locally.
@@ -46,7 +46,7 @@ export async function resolveAttachmentUrl(
   if (!meta) return null;
 
   // 3. Cloud URL: use the requested variant only if its key exists, else fall back to original.
-  // Private files are referenced by id + variant so the server signs the key — never a client key.
+  // Private files use id + variant so the server signs the key. Client keys are not trusted.
   const effectiveVariant =
     preferredVariant !== 'raw' && getVariantKey(meta, preferredVariant) ? preferredVariant : 'original';
   const fileUrl = await getCloudUrl({ ...meta, id: attachmentId }, effectiveVariant);
@@ -66,16 +66,16 @@ interface RefContext {
 }
 
 /**
- * Resolve a BlockNote block's file reference. The reference alone decides how — no public/private
+ * Resolve a BlockNote block's file reference. The reference alone determines how; no public/private
  * flag needed:
  * - a **UUID attachment id** (no slashes) → private media: local blob first, else a presigned URL
  *   by id + variant (permission-checked server-side);
  * - a **slashed cloud key** → public media, straight from the CDN.
  *
- * Returns `''` for anything unresolvable, which renders an empty `src` rather than firing a
+ * Returns `''` for anything unresolvable, which renders an empty `src` and prevents a
  * request at a bogus URL.
  *
- * NOTE: a local hit returns an object URL this function cannot revoke — it has no lifecycle to
+ * A local hit returns an object URL this function cannot revoke because it has no lifecycle to
  * hang that on, and BlockNote embeds the result in static HTML. Callers that re-resolve often
  * should track and revoke `blob:` results themselves.
  */

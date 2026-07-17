@@ -61,7 +61,7 @@ sed -E -i '/SECRET|PASSWORD|API_KEY|DATABASE_URL|docker login/Id' /var/log/cloud
 
 // `satisfies BootPlan` + the agent's own schema constants keep producer and
 // consumer in lockstep: a contract change on either side fails the typecheck
-// (or the manifest validation) at plan time instead of at VM boot.
+// (or the manifest validation) during planning, before VM boot.
 function bootPlan(p: CloudInitParams): string {
   return JSON.stringify({
     schemaVersion: supportedSchemaVersion,

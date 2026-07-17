@@ -42,7 +42,7 @@ export const sessionsTable = snakeCase.table(
     ipAsn: integer(),
     // Per-user HMAC of the browser's long-lived `device-id` cookie. Groups a user's sessions by
     // device and answers "known device for this user?"; drives same-device session replacement.
-    // Null for mfa/impersonation sessions and for legacy rows created before this column existed.
+    // Null for sessions without an associated browser device, including mfa and impersonation.
     deviceIdHash: varchar({ length: 64 }),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,

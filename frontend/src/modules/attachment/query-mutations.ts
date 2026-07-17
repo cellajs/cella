@@ -9,7 +9,7 @@ type UpdateAttachmentFields = UpdateAttachmentData['body']['ops'];
 export type UpdateAttachmentVars = { id: string; ops: UpdateAttachmentFields };
 
 // Offline-replay variable shapes: a persisted mutation must carry tenant/org in its variables
-// because the component closure that supplied them is gone after a reload — setMutationDefaults
+// because the component closure that supplied them is gone after a reload. setMutationDefaults
 // reconstructs the request from variables alone. The hooks inject these transparently.
 export type CreateAttachmentVars = QueryOrgContext & { data: CreateAttachmentInput };
 export type UpdateAttachmentFullVars = QueryOrgContext & UpdateAttachmentVars;
@@ -17,7 +17,7 @@ export type DeleteAttachmentVars = QueryOrgContext & { attachments: Attachment[]
 
 /**
  * Mutation fns shared by the interactive hooks (query.ts) and the offline-replay defaults
- * (setMutationDefaults) — one implementation so a mutation runs identically live or replayed.
+ * (setMutationDefaults), ensuring a mutation runs identically live or replayed.
  * Kept out of query.ts so they carry no query-client/window dependency and can be unit-tested.
  */
 

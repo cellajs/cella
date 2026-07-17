@@ -36,7 +36,7 @@ export function getPublicFileUrl(key: string): string {
 
 /**
  * Presigned URL for a private attachment referenced by id + variant.
- * The server resolves the row (RLS + permission) and signs the variant's key —
+ * The server resolves the row (RLS + permission) and signs the variant's key.
  * the client never submits a storage key. Preferred for entity grids/downloads.
  */
 export async function getPrivateFileUrlById(

@@ -9,7 +9,7 @@ import { createUpdateSchema } from './update-schema';
 type AnyRecord = Record<string, unknown>;
 
 /**
- * Schema-evolution contract — the single registration point per entity type
+ * Schema-evolution contract: the single registration point per entity type
  * for version-tolerant wire schemas (an entity's create/update body schemas as
  * they cross the API boundary) plus the bound runtime seams that keep them
  * honest across schema versions.

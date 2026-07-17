@@ -35,7 +35,7 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
     import('~/modules/docs/search/engine'),
     import('virtual:docs-search-sections'),
     // Reads the same cache the API reference uses (staleTime: Infinity, prefetched by the docs
-    // route loader). Offline with a cold cache the fetch fails — degrade to docs-only, retry per search.
+    // route loader). With a cold offline cache the fetch fails, so degrade to docs-only and retry per search.
     queryClient.ensureQueryData(operationsQueryOptions).catch(() => null),
     queryClient.ensureQueryData(schemasQueryOptions).catch(() => null),
   ]);

@@ -96,7 +96,7 @@ class AttachmentStorageService {
     try {
       // Never evict raw unless a durable variant ('original'/'converted') is actually persisted.
       // If an 'original' store raced or rolled back, dropping raw could leave a no-cloud-key
-      // resource with no local blob at all — permanently unresolvable.
+      // resource with no local blob at all, making it permanently unresolvable.
       const hasDurable =
         (await this.hasVariant(attachmentId, 'original')) || (await this.hasVariant(attachmentId, 'converted'));
       if (!hasDurable) {

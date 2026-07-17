@@ -12,11 +12,11 @@ import type { AppStreamNotification } from './types';
 /**
  * Lazy sync scheduler (see .todos/SYNC_FANOUT_SOLUTION.md, Piece N).
  *
- * Every product notification — single or batch (a single is a width-1 batch) — is enqueued as a
- * dirty seq range per scope instead of fetched immediately. The fetch delay is negotiated:
- * `clamp(tier.min, hash(sourceId:scope) % syncWindow, tier.max)` — the client's eagerness tier
- * bounds the server's spread window, and the hash gives deterministic per-client jitter so a
- * fan-out burst spreads evenly instead of stampeding. Ranges for the same scope merge (they are
+ * Every product notification, single or batch, enters a dirty seq range for its scope. A single
+ * notification is a width-1 batch. The negotiated fetch delay is
+ * `clamp(tier.min, hash(sourceId:scope) % syncWindow, tier.max)`. The client's eagerness tier
+ * bounds the server's spread window, and deterministic per-client jitter distributes fan-out
+ * bursts evenly. Ranges for the same scope merge because they are
  * contiguous per context), so a burst becomes ONE fetch. The caught-up watermark advances only
  * after a successful fetch; the "known" watermark records what the server has mentioned even for
  * scopes that never fetch (muted).
@@ -62,7 +62,7 @@ let listenersInstalled = false;
 const entryKey = (entityType: string, organizationId: string, channelId: string | null) =>
   `${entityType}:${channelId ?? organizationId}`;
 
-/** FNV-1a 32-bit: deterministic jitter — same client + scope always spreads to the same slot. */
+/** FNV-1a 32-bit gives the same client and scope a stable spread slot. */
 function hashSpread(key: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < key.length; i++) {
@@ -82,7 +82,7 @@ function negotiatedDelay(tier: { min: number; max: number }, scopeKey: string, w
 export function enqueueRange(input: EnqueueInput): void {
   const tier = getSyncTier(input.entityType, input.organizationId, input.channelId);
   if (tier.min === Number.POSITIVE_INFINITY) {
-    // Muted/archived: record the known watermark only — fetch on open.
+    // Muted and archived scopes record the known watermark and fetch when opened.
     useSyncStore.getState().setKnownSeq(input.channelId ?? input.organizationId, input.entityType, input.untilSeq);
     return;
   }
@@ -213,7 +213,7 @@ async function flushEntry(entry: DirtyEntry): Promise<void> {
     ingestSyncedRows(entityType, channelId ?? organizationId, result.items as { id: string }[]);
   } else {
     // Overflow/unsupported/exhausted retries: hand the scope to react-query and advance the
-    // watermark so the range is not re-fetched in a loop — the list refetch owns recovery.
+    // watermark to prevent a fetch loop. The list refetch owns recovery.
     const refetchType = isViewingScope(organizationId, channelId) ? 'active' : 'none';
     cacheOps.invalidateEntityListForOrg(keys, organizationId, refetchType);
     advanceCaughtUp(entry);
@@ -252,7 +252,7 @@ function installListeners(): void {
   if (listenersInstalled || typeof document === 'undefined') return;
   listenersInstalled = true;
 
-  // Tab hiding: top everything up before the user disappears — the offline-freshness story.
+  // Top up every scope before a hidden tab may go offline.
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) void flushAllNow();
   });

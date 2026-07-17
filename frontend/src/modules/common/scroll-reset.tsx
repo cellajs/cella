@@ -4,7 +4,7 @@ const ScrollResetContext = createContext<(() => void) | null>(null);
 
 /**
  * Zero-height sentinel in document flow; any descendant calls `useScrollReset()` to scroll back to it.
- * Nestable — an inner `ScrollReset` overrides the outer context.
+ * Nestable. An inner `ScrollReset` overrides the outer context.
  */
 export const ScrollReset = ({ children }: { children: ReactNode }) => {
   const ref = useRef<HTMLDivElement>(null);

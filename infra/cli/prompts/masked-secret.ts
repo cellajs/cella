@@ -21,8 +21,8 @@ interface MaskedSecretConfig {
 }
 
 /**
- * A password-style prompt that, instead of fully masking, live-reveals the ends
- * of the (typically pasted) value and shows its length, catching a wrong paste
+ * A password-style prompt that reveals only the ends of the typically pasted value
+ * and shows its length, catching a wrong paste
  * before it is stored. Drop-in replacement for `@inquirer/prompts`' `password`:
  * same `{ message, validate? }` config and `Promise<string>` result.
  *
@@ -47,8 +47,8 @@ export const maskedSecret = createPrompt<string, MaskedSecretConfig>((config, do
         setStatus('done')
         done(value)
       } else {
-        // Restore the line so the operator can fix the value in place instead of
-        // re-entering it (the line event clears it otherwise).
+        // Restore the line so the operator can fix the value in place after the
+        // line event clears it.
         rl.write(value)
         setError(typeof isValid === 'string' ? isValid : 'You must provide a valid value')
         setStatus('idle')

@@ -9,7 +9,7 @@ import { computeWideCan, configureWidePermissions, wideMembership, wideTopology 
  * Runs against the wide fixture (organization → workspace/project → task/label/attachment, with a
  * guest role on the nested contexts), which every fork can exercise regardless of its own config's
  * shape. `wideTopology` is threaded through as `computeCan`'s optional 4th argument so the
- * hierarchy/entityActions used to compute the map match the wide policies driving it.
+ * hierarchy/entityActions that compute the map match the wide policies driving it.
  */
 
 // Policies with 'own' permission for attachment update/delete, plus project-scoped grants
@@ -119,7 +119,7 @@ describe('computeCan with own permissions', () => {
 
 describe('computeCan three-state semantics', () => {
   // Policies where every row-conditionable action is 'own' for member. `create` can't take a row
-  // condition (rejected at config time — no row exists yet), so it is unconditional here.
+  // condition (rejected at config time: no row exists yet), so it is unconditional here.
   const { accessPolicies: allOwnPolicies } = configureWidePermissions(({ subject, contexts }) => {
     switch (subject.name) {
       case 'attachment':

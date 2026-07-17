@@ -111,7 +111,7 @@ export type EntityIdColumnKey<T extends EntityType> = EntityIdColumnKeys[T];
  */
 export type EntityIdColumns<TS extends EntityType, V> = { [T in TS as EntityIdColumnKey<T>]: V };
 
-// Context relation types, derived from the hierarchy's phantom parent/related maps — used to
+// Context relation types derived from the hierarchy's phantom parent/related maps. They
 // generate context-entity id columns on product/context tables in a fork-agnostic way.
 
 /** Type-level map of each entity to its strict parent (null = root). */
@@ -135,7 +135,7 @@ export type AncestorChannelType<E extends string> = E extends keyof HierarchyPar
 /**
  * The root channel entity type: the parentless context (no ancestors), e.g. `'organization'`.
  * Derived from the hierarchy so forks that rename/restructure the root don't need code changes.
- * Use `EntityIdColumnKey<RootChannelType>` instead of hardcoding `'organizationId'`.
+ * Root context identifiers use `EntityIdColumnKey<RootChannelType>`.
  */
 export type RootChannelType = {
   [K in ChannelEntityType]: [AncestorChannelType<K>] extends [never] ? K : never;

@@ -237,10 +237,10 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   /**
    * Level-triggered near-end signal: called with true while rendered rows are
    * within `nearEndThreshold` rows of the dataset end, with false when they
-   * leave the zone, and with false on unmount. State, not a one-shot event —
+   * leave the zone, and with false on unmount. This is state, not a one-shot event;
    * pair it with query state (isFetching, hasNextPage) to decide when to load
    * more; re-evaluating on your own state changes is what makes a load
-   * opportunity retryable instead of droppable.
+   * opportunity retryable.
    */
   onNearEndChange?: Maybe<(nearEnd: boolean) => void>;
   /**
@@ -500,7 +500,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   // wrapText turns the fixed height into a per-row function (multi-line content).
   // Merged host cells with occupied top/bottom slots add constant extra height
   // (virtualization needs heights up front, without rendering). Mobile scales rows
-  // up for touch targets — DataGrid owns this breakpoint-specific scaling.
+  // up for touch targets. DataGrid owns this breakpoint-specific scaling.
   const rowHeight = useMemo(() => {
     const slotExtra = computeMergedSlotExtraHeight(columns);
     const mobileScale = isMobileBreakpoint ? 1.2 : 1;
@@ -994,7 +994,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   }
 
   function handleColumnResizeEnd() {
-    // Remove temporary measured widths, restore flex sizing
+    // Clear measured widths after resizing to restore flex sizing.
     handleColumnResizeEndWidths();
     // This check is needed as double click on the resize handle triggers onPointerMove
     if (isColumnResizing) {

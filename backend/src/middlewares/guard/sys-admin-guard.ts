@@ -41,7 +41,7 @@ const sysAdminCheck: MiddlewareHandler = async (ctx, next) => {
 const combinedMiddleware: MiddlewareHandler = every(
   sysAdminCheck,
   // hono's ipRestriction wants a `(c) => string` getter; coerce a null IP to '' so it matches no
-  // allowlist entry (deny by default) rather than throwing.
+  // allowlist entry and denies by default without throwing.
   ipRestriction(
     (c) => getIp(c) ?? '',
     { allowList },

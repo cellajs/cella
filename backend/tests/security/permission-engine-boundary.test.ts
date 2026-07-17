@@ -7,11 +7,11 @@ import { describe, expect, it } from 'vitest';
  * Architecture guard: the raw permission engine (`getAllDecisions`) must be reached ONLY through
  * the actor-guarded wrapper `checkPermission`. `getAllDecisions` takes an options bag with an
  * OPTIONAL actor; `checkPermission` requires an explicit `Actor`. Every call that skips the wrapper
- * is a place an actor can be silently omitted — which fail-closes `'own'` and every row condition,
+ * is a place an actor can be silently omitted. That fail-closes `'own'` and every row condition,
  * a denial nobody notices. This test makes "only the wrapper touches the engine" a guarantee, not a
  * convention.
  *
- * A Biome `noRestrictedImports` rule was considered but is fragile here: Biome's override cascade
+ * A Biome `noRestrictedImports` rule is fragile here because its override cascade
  * would either clobber the existing per-package import rules or also flag test files. A filesystem
  * scan catches barrel AND deep imports and states the rule in one place.
  */

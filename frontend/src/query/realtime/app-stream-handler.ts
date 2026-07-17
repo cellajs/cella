@@ -14,7 +14,7 @@ import type { AppStreamNotification } from './types';
 
 /**
  * Route an incoming app-stream notification to the membership/organization/product handler.
- * Notification-only format: no entity data included — handlers invalidate or seq-range fetch.
+ * Notifications omit entity data, so handlers invalidate or fetch a seq range.
  */
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
   const { subjectId, action, stx, organizationId, tenantId, channelType, seq, _trace } = notification;
@@ -39,12 +39,12 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       if (!isProductEntity(entityType))
         return console.error('Unknown entityType in app stream notification:', entityType);
 
-      // Create/update batch: enqueue the seq range for lazy fetching (merged, spread — the
-      // scheduler flushes viewing-tier scopes immediately). The range fetch also handles
+      // Create/update batches enqueue a merged, spread seq range for lazy fetching.
+      // The scheduler flushes viewing-tier scopes immediately. The range fetch also handles
       // soft-delete tombstones; unseen counts recount once per merged flush, not per batch
       // (a batch's width is never "new for you": drafts, own rows). Hard-delete batches must
-      // NOT enqueue: deleted rows leave no tombstone to fetch, so they'd never be removed —
-      // they fall through to the delete branch's invalidation below.
+      // not enqueue because deleted rows leave no tombstone to fetch. They fall through to
+      // the delete branch's invalidation below.
       if (action !== 'delete' && notification.batchUntilSeq && seq != null && organizationId) {
         enqueueRange({
           entityType,
@@ -144,8 +144,8 @@ function handleEntityNotification(
     case 'update':
       if (seq !== null) {
         // A single event is a width-1 batch: same lazy path as batches (merge, spread, flush).
-        // The caught-up watermark now advances after a successful flush (batch semantics) —
-        // advancing before a fetch that never completes would permanently skip the range.
+        // The caught-up watermark advances after a successful flush. Advancing before a fetch
+        // completes would permanently skip the range.
         enqueueRange({
           entityType,
           organizationId,
@@ -176,7 +176,7 @@ function handleEntityNotification(
           .catch((err) => console.warn('[AppStream] Entity fetch failed:', err));
       }
 
-      // Seq-less events bypass unseen-sync (no synced rows): exact recount instead.
+      // Seq-less events have no synced rows, so they trigger an exact unseen-count recount.
       if (action === 'create') {
         invalidateUnseenCounts(entityType);
       }

@@ -351,7 +351,7 @@ class StreamManager {
 
   /**
    * Attempt reconnect with circuit breaker + health check gate.
-   * Used by visibility/leader handlers instead of the forced `reconnect()`.
+   * Visibility and leader handlers use this gated path; `reconnect()` remains the forced path.
    */
   private async attemptReconnect() {
     // If circuit isn't open, just connect normally
@@ -504,7 +504,7 @@ appStreamManager.useStore.subscribe((s) => setSyncStreamLive(s.state === 'live')
 
 /**
  * Wait for the first stream catchup after page load (resolves on catchup or failure).
- * Safe to call before any stream has connected — the gate promise is already pending.
+ * Safe to call before any stream connects because the gate promise is already pending.
  */
 export function waitForActiveCatchup(): Promise<void> {
   return initialCatchupGate;

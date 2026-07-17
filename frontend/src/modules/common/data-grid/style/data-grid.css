@@ -14,12 +14,12 @@
    Cell Styles (layout that needs CSS vars + complex selectors)
    ========================================================================== */
 
-/* Grid-row-start via CSS var — cascades naturally through display:contents rows */
+/* Grid-row-start via CSS var cascades naturally through display:contents rows. */
 .rdg-cell {
   grid-row-start: var(--rdg-grid-row-start);
 }
 
-/* Last frozen cell shadow — only when grid is scrolled horizontally */
+/* Show the last frozen cell shadow only when the grid is scrolled horizontally. */
 [data-scrolled-left] > .rdg-cell-frozen:nth-last-child(1 of .rdg-cell-frozen),
 [data-scrolled-left] > * > .rdg-cell-frozen:nth-last-child(1 of .rdg-cell-frozen) {
   box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);
@@ -33,13 +33,13 @@
  *
  * The `data-drop-edge` attribute is written imperatively (no React state) by
  * row-drag-cell.tsx onto the `.rdg-row` element during drag. Plain attribute
- * selectors only — no `:has()`, no sibling combinators — so style invalidation
+ * selectors only, with no `:has()` or sibling combinators, so style invalidation
  * is O(1) per row regardless of table size. `:has()` with sibling combinators
  * is a known foot-gun on large/virtualized lists because it forces relational
  * re-evaluation across siblings on every attribute mutation.
  *
  * Cells use `overflow: hidden`, so absolute pseudo-elements positioned outside
- * the cell box would be clipped. We use inset box-shadows instead, which paint
+ * the cell box would be clipped. Inset box-shadows paint
  * inside the cell and are unaffected by overflow.
  *
  * To prevent the indicator from "jumping" 2px when the pointer crosses a row
@@ -56,9 +56,9 @@
   box-shadow: inset 0 -2px 0 0 var(--primary);
 }
 
-/* Center drop zone — highlight entire row for reparenting.
+/* Center drop zone highlights the entire row for reparenting.
  * Rows use `display: contents` so we can't put a single border on the row.
- * Instead, compose a continuous 1px ring across all cells using inset
+ * Compose a continuous 1px ring across all cells using inset
  * box-shadows: top+bottom on every cell (which join seamlessly between cells),
  * left only on the first cell, right only on the last. This avoids the noisy
  * per-cell dashed outline where each cell would draw its own broken rectangle.

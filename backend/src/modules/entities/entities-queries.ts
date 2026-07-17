@@ -35,19 +35,19 @@ export const findChannelCountersByKeys = async ({ var: { db } }: DbContext, keys
 
 /**
  * Returns the SQL select shape for entity counts from channelCountersTable.
- * Reads pre-computed counts from JSONB instead of running COUNT(*) subqueries.
+ * Reads pre-computed counts from JSONB without running COUNT(*) subqueries.
  *
  * JSONB key conventions:
  *   m:{role}  → membership count by role (e.g. m:admin, m:member)
  *   m:pending → pending invitations count
  *   m:total   → total active members
- *   e:{type}  → child entity count (e.g. e:attachment; countable rows only — live AND
+ *   e:{type}  → child entity count (e.g. e:attachment; countable rows must be live AND
  *               published on draft-lifecycle tables)
  *   li:{type} → epoch ms of the latest countable row born in the context's OWN stream
  *               (publish time on draft-lifecycle tables, else created time)
  *   lu:{type} → epoch ms of the latest countable-row content update in that stream
  *               (product types only). Stamped at the home context (deepest non-null
- *               ancestor) — deliberately NOT propagated to higher ancestors like
+ *               ancestor). These stamps do not propagate to higher ancestors like
  *               e: deltas are; they are per-stream signals.
  */
 export const getEntityCountsSelect = (entityType: ChannelEntityType) => {
@@ -121,7 +121,7 @@ export const getEntityCounts = async ({ var: { db } }: DbContext, entityType: Ch
  *
  * Draft-lifecycle tables (opt-in `publishedAt`) fall back to a direct COUNT over live
  * rows INCLUDING drafts: the `e:` counter tracks published rows only, but a quota must
- * bound total storage, not published visibility — otherwise drafts stockpile for free.
+ * bound total storage, not published visibility. This prevents drafts from stockpiling for free.
  */
 export const getOrgEntityCount = async (ctx: DbContext, orgId: string, entityType: EntityType) => {
   const { db } = ctx.var;
@@ -149,15 +149,15 @@ export const getOrgEntityCount = async (ctx: DbContext, orgId: string, entityTyp
 /**
  * Max delete rows to enumerate per catchup before falling back to list invalidation.
  * The delete scan requests `CAP + 1` rows so the caller can detect overflow (more deletes
- * than we are willing to enumerate) and tell the client to invalidate the whole list instead
- * of removing entities one id at a time.
+ * than we are willing to enumerate) and tell the client to invalidate the whole list without
+ * removing entities one id at a time.
  */
 export const DELETE_ENUMERATE_CAP = 200;
 
 /**
  * Scan product entity delete activities after a cursor (app stream), capped at
  * `DELETE_ENUMERATE_CAP + 1` so the caller can detect overflow and fall back to list invalidation.
- * Membership changes are excluded here — detected via the `s:membership` seq counter instead, so
+ * Membership changes are excluded here and detected via the `s:membership` seq counter, so
  * membership churn never consumes the delete budget.
  */
 export const findDeleteActivities = async (
@@ -212,7 +212,7 @@ export const findLatestUserActivityId = async (
 /**
  * @internal Resolves an entity by ID or slug from its table.
  *
- * **Do not use directly in route handlers.** Use the permission-checking wrappers instead:
+ * **Do not use directly in route handlers.** Use these permission-checking wrappers:
  * - `getValidChannelEntity` for channel entities (e.g., organization)
  * - `getValidProductEntity` for product entities (e.g., attachment, page)
  *

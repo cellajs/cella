@@ -3,7 +3,7 @@ import type { RowData } from '../types';
 
 /**
  * The countable set: rows that participate in `e:` counters and `li:`/`lu:` activity
- * stamps — live (not soft-deleted) AND published (draft lifecycle, see
+ * stamps: live (not soft-deleted) AND published (draft lifecycle, see
  * `shared/src/published-rows.ts`). Tables without either column are always in the set
  * for that dimension. Counter recalculation applies the same two predicates in SQL
  * (`recalculate-counters.ts`); CDC and recalculation must agree or counters drift on
@@ -15,8 +15,8 @@ export function isCountableRow(row: RowData): boolean {
 
 /**
  * True when an UPDATE publishes a draft: `publishedAt` was null on the old row and is
- * set on the new row. The row's public birth — counters and `li:` stamps fire from
- * this edge. Strict `=== null` on the old side so tables without the column
+ * set on the new row. Counters and `li:` stamps fire when the row becomes public.
+ * Strict `=== null` on the old side ensures tables without the column
  * (`undefined`) never match.
  */
 export function isPublishTransition(newRow: RowData, oldRow: RowData | null | undefined): boolean {

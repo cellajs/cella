@@ -51,7 +51,7 @@ export interface PollOptions {
   /**
    * Optional reconciler status reader. When provided, a TERMINAL failure for
    * OUR sha (a bad release; see TERMINAL_EXIT_CODES) aborts the poll
-   * immediately with the reconciler's reason instead of burning the whole
+   * immediately with the reconciler's reason, preserving the remaining
    * budget. Infra transients (tag-fetch/pull) self-heal on the next tick, so we
    * keep polling through those and just surface the phase. Best-effort: a
    * missing/unparseable status never changes the outcome.
@@ -81,8 +81,8 @@ export function isHealthy(result: ProbeResult, expectedSha: string): boolean {
 
 /**
  * Default probe using global fetch with a per-request timeout. A failed request
- * (network error, TLS, timeout) surfaces as status 0 rather than throwing, so
- * the caller keeps polling instead of aborting the whole deploy on one blip.
+ * (network error, TLS, timeout) surfaces as status 0, so the caller keeps polling
+ * through a transient failure.
  */
 export function createFetchProbe(timeoutMs: number): ProbeFn {
   return async (url) => {
@@ -123,7 +123,7 @@ export async function pollForVersion(opts: PollOptions): Promise<PollOutcome> {
       // Consult the reconciler's own status. Fast-fail ONLY on a terminal rollout
       // failure (bad release); keep polling through self-healing infra transients
       // (pull/tag-fetch) and just surface the phase/reason so the CI log shows
-      // progress instead of silence.
+      // progress for long-running probes.
       const roll = opts.status?.()
       if (roll && roll.desired === expectedSha) {
         if (roll.result === 'failed' && roll.exitCode && TERMINAL_EXIT_CODES.has(roll.exitCode)) {

@@ -62,7 +62,7 @@ class AttachmentDownloadService {
     this.subscribeQueue();
 
     // liveQuery only tracks the DB it first resolved, but the per-user appdb rebinds on
-    // sign-in / account switch — re-subscribe (and schedule a run) against the new instance.
+    // Re-subscribe and schedule a run against the new instance after sign-in or an account switch.
     this.ownerUnsubscribe = subscribeOwnerChange(() => {
       this.subscribeQueue();
       this.processQueueSoon();
@@ -74,7 +74,7 @@ class AttachmentDownloadService {
       if (event.type !== 'updated') return;
       if (event.action.type !== 'success') return;
 
-      // Compare against the real key factory rather than re-encoding its shape here.
+      // Compare against the key factory to keep its shape in one place.
       if (!matchesKeyPrefix(event.query.queryKey, attachmentQueryKeys.list.base)) return;
 
       // Extract attachments from the query data
@@ -112,9 +112,9 @@ class AttachmentDownloadService {
 
   /**
    * (Re)subscribe the pending-queue liveQuery against the current appdb (no-op / 0 while signed
-   * out); tears down any prior subscription first. Uses a table-scan `.filter` rather than
+   * out); tears down any prior subscription first. Uses a table-scan `.filter` because
    * `.where('status')` since `status` is only part of the compound `[organizationId+status]`
-   * index — the queue is small, so a scan is cheap and avoids a schema migration.
+   * index. The queue is small, so a scan is cheap and avoids a schema migration.
    */
   private subscribeQueue(): void {
     this.queueSubscription?.unsubscribe();

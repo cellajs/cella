@@ -148,7 +148,7 @@ const onBeforeFileAdded = (file: CustomUppyFile) => {
   file.id = nanoid();
   // Mint the attachment id up front so the local blob is stored under the id its row will get.
   // Uppy passes file meta to Transloadit as `user_meta`, so it survives the round trip and
-  // `parseUploadedAttachments` can reuse it instead of minting a second, unrelated id.
+  // `parseUploadedAttachments` reuses it to keep the upload and attachment IDs aligned.
   file.meta.attachmentId = generateId();
   return file;
 };

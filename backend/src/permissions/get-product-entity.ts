@@ -37,7 +37,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
       : await resolveEntity(ctx, entityType, id);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
-  // Unpublished drafts (publishedAt null) read as absent to everyone but their author —
+  // Unpublished drafts (publishedAt null) read as absent to everyone but their author.
   // same 404 shape as a soft-deleted row, so a draft's existence is never revealed.
   if (!draftVisibleTo(entity as Record<string, unknown>, ctx.var.userId)) {
     throw new AppError(404, 'not_found', 'warn', { entityType });

@@ -20,7 +20,7 @@ import { createCellEvent, getCellClassname, getCellStyle, onEditorNavigation } f
  * so an alternative check must be used. The check must happen after the event can reach the "inside" container,
  * and not before it run to completion. `postTask`/`requestAnimationFrame` are the best way we know to achieve this.
  * Usually we want click event handlers from parent components to access the latest commited values,
- * so `mousedown` is used instead of `click`.
+ * so `mousedown` commits before blur can unmount the editor.
  *
  * We must also rely on React's event capturing/bubbling to handle elements rendered in a portal.
  */
@@ -59,7 +59,7 @@ export function EditCell<R, SR>({
   const commitOnOutsideClick = column.editorOptions?.commitOnOutsideClick ?? true;
 
   // Access latest props via useEffectEvent so the useLayoutEffect isn't torn down
-  // between re-renders — otherwise `onWindowCaptureMouseDown` could miss valid mousedowns.
+  // between re-renders. Otherwise `onWindowCaptureMouseDown` could miss valid mousedowns.
   const commitOnOutsideMouseDown = useEffectEvent(() => {
     onClose(true, false);
   });

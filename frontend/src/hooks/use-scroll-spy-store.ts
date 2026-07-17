@@ -68,7 +68,7 @@ const clearHash = () => {
 };
 
 /**
- * Reflect the active section in the URL. Near the top the hash is dropped instead: no anchor applies
+ * Reflect the active section in the URL. Near the top, drop the hash because no anchor applies
  * up there, and a leftover one would make a reload jump to the last section scrolled past rather
  * than back to the top. `currentSection` is deliberately left alone, so the TOC still highlights.
  */
@@ -80,7 +80,7 @@ const syncHash = (id: string) => {
 
 /**
  * The observer only fires on intersection-ratio changes, so the final stretch back to the top often
- * fires nothing at all and the last hash sticks. Watch scroll directly to catch it. Clears only —
+ * fires nothing at all and the last hash sticks. Watch scroll directly to catch it. Clear only
  * writes stay with the observer, so this can't introduce a hash the spy wouldn't have set itself.
  */
 const onScrollNearTop = () => {
@@ -266,7 +266,7 @@ export const unregisterSections = (ids: string[]) => {
   }
 };
 
-/** The scroller is the document's own, so scroll events land on window rather than the element. */
+/** The document owns the scroller, so scroll events land on window. */
 const isRootScroller = (el: HTMLElement) =>
   el === document.scrollingElement || el === document.documentElement || el === document.body;
 

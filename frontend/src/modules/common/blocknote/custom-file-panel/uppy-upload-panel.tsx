@@ -132,7 +132,7 @@ export function UppyFilePanel({
             }
 
             // Hand the parsed attachments (stable client ids) to the host so it can add
-            // host linkage and persist them — the block already references these ids/keys.
+            // host linkage and persist them. The block already references these ids and keys.
             latestOnCompleteRef.current?.(attachments);
           });
 

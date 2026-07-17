@@ -15,7 +15,7 @@ export const scwConfigPathNone = (infraDir: string): string => resolve(infraDir,
  * `buildProviderEnv` inject). Either is accepted, but if both are set they MUST
  * agree; a mismatch almost always means a stale `SCW_DEFAULT_PROJECT_ID`
  * exported in the shell is silently shadowing the repo's `SCW_PROJECT_ID`, so we
- * fail loudly rather than guess which one is intended.
+ * fail loudly because choosing one would be ambiguous.
  *
  * Returns the single agreed value, or `undefined` when neither is set (callers
  * decide whether that is fatal).

@@ -15,8 +15,8 @@ describe('loadbalancer module — registry-driven wiring', () => {
   })
 
   it('creates one DNS record per unique public host pointing at the LB IP', () => {
-    // Deduped by HOSTNAME, not per service: path-routed services share the app
-    // host, so a per-service loop would emit duplicate records post-migration.
+    // Deduped by HOSTNAME because path-routed services share the app host and a
+    // per-service loop would emit duplicate records.
     expect(src).toMatch(/for \(const \{ host, base \} of publicHosts\)/)
     expect(src).toMatch(/new scaleway\.domain\.Record\(`\$\{base\}-dns`/)
     expect(src).toMatch(/data:\s*lbPublicIp/)
@@ -26,7 +26,7 @@ describe('loadbalancer module — registry-driven wiring', () => {
     expect(src).toMatch(/new scaleway\.loadbalancers\.Certificate\(`\$\{base\}-cert`/)
     expect(src).toMatch(/commonName:\s*host/)
     // Cert creation waits for the record to answer publicly (not merely exist),
-    // and the frontend attach waits for the cert to be `ready` — both via the
+    // and the frontend attach waits for the cert to be `ready`. Both via the
     // create-only gates in resources/dns-cert-gates.ts.
     expect(src).toMatch(/dependsOn:\s*\[dns,\s*dnsGates\.get\(host\)!\]/)
     expect(src).toMatch(/new DnsPropagationGate\(/)

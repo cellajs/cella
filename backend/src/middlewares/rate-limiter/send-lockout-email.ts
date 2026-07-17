@@ -18,7 +18,7 @@ const emailFromKey = (key: string) => {
 /**
  * Resolve the blocked account behind an IP-only rate limit key. TOTP verification bodies carry
  * just the code, so the key has no email segment; the pending user is identified by the
- * `confirm-mfa` cookie instead. Read-only on purpose: invoking the token here would consume the
+ * `confirm-mfa` cookie. This remains read-only because invoking the token would consume the
  * user's MFA challenge as a side effect of a notification.
  */
 const emailFromMfaCookie = async (ctx: Context<Env>) => {
@@ -45,7 +45,7 @@ const emailFromMfaCookie = async (ctx: Context<Env>) => {
  * swallowed so a broken mail path can never fail the rate limit response itself.
  *
  * @param limits - The blocking limiter's own limits, so the email reports the real attempt
- *   count and block duration instead of the defaults.
+ *   count and block duration, overriding the defaults.
  */
 export const sendLockoutEmail = (
   rateLimitKey: string,

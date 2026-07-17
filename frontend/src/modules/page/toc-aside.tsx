@@ -18,7 +18,7 @@ interface TocAsideProps {
 
 /**
  * "On this page" nav: the page's h2/h3 headings with a cursor bar that follows scroll (spy store).
- * Section registration happens next to the content (view-page.tsx), not here — the body is lazy and
+ * Section registration happens next to the content (view-page.tsx) because the body is lazy and
  * the spy observer only picks up elements present at registration time.
  */
 export const TocAside = ({ headings, className }: TocAsideProps) => {

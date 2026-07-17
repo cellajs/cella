@@ -6,7 +6,7 @@ type ElementVisitor = (node: Element, index: number | undefined, parent: Parents
  * Dependency-free replacement for `unist-util-visit`: a depth-first, pre-order
  * walk calling `visitor` for every `element` node with its index and parent.
  *
- * Visitors must not mutate the tree mid-walk — plugins collect matches first,
+ * Visitors must not mutate the tree mid-walk. Plugins collect matches first,
  * then mutate afterwards.
  */
 export const visitElements = (tree: Root, visitor: ElementVisitor): void => {

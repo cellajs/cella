@@ -12,7 +12,7 @@ const isProduction = appConfig.mode === 'production';
 // __Host-) cookies are rejected by some browsers; every other mode is https.
 const secure = appConfig.mode !== 'development';
 
-// __Host- prefix: host-locked — no Domain attribute, so the cookie is never
+// __Host- prefix: host-locked with no Domain attribute, so the cookie is never
 // sent to (or spoofable by) other subdomains. Hono enforces Path=/ and Secure
 // when the prefix option is set. Same-origin serving is what makes this
 // possible: every service lives under the app origin.
@@ -31,7 +31,7 @@ type CookieName =
  * - `oauth-state-*` is read on the OAuth provider's callback redirect.
  * - `invitation` / `oauth-verification` are re-read mid-chain in flows that
  *   arrive cross-site (email link → OAuth callback).
- * Everything else — the session included — is only read from same-origin
+ * Everything else, including the session, is only read from same-origin
  * requests and is hardened to Strict. The connect flow's session read at the
  * OAuth callback moved into the oauth-state payload for this.
  *
@@ -48,7 +48,7 @@ const isLaxCookie = (name: CookieName) =>
 export const authCookieName = (name: CookieName) =>
   `${prefix === 'host' ? '__Host-' : ''}${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
 
-/** Sets an auth cookie — signed in production, plain otherwise; SameSite per `isLaxCookie`. */
+/** Sets an auth cookie, signed in production and plain otherwise; SameSite per `isLaxCookie`. */
 export const setAuthCookie = async (ctx: Context<Env>, name: CookieName, content: string, timeSpan: TimeSpan) => {
   const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
   const options = {

@@ -30,7 +30,7 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
 
   // Set() widens the fixed-length config tuple so an empty fork config is a real runtime check.
   // Counts are grouped by the caller's org memberships, so no memberships means nothing to
-  // count — including for system admins, whose bypass widens rows WITHIN an org, not the set
+  // count, including for system admins. Their bypass widens rows within an org, not the set
   // of orgs they are counted against.
   if (memberships.length === 0 || new Set(trackedEntityTypes).size === 0) {
     return {};
@@ -58,7 +58,7 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
   const results: Record<string, Record<string, number>> = {};
 
   // Per org: compose each tracked type's collection read predicate (same compiler as
-  // list endpoints) so badges only count rows this user can actually fetch — the seen
+  // list endpoints) so badges only count rows this user can actually fetch. The seen
   // counter is a change signal that must mirror the feed, never a wider number.
   for (const [organizationId, { tenantId, channelIds }] of orgGroups) {
     const scopeWhereByType: Partial<Record<SeenTrackedEntityType, SQL | undefined>> = {};

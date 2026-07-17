@@ -11,7 +11,7 @@ type PromptOption<T extends string> = { name: string; value: T; description?: st
 
 /**
  * Resolved by a selection prompt when the operator presses Esc to step back to
- * the previous menu instead of choosing an option. A symbol so it can never
+ * the previous menu without choosing an option. A symbol ensures it cannot
  * collide with a real (string) secret id or action value.
  */
 export const BACK = Symbol('runtime-secret-menu-back')
@@ -26,7 +26,7 @@ export interface ManageRuntimeSecretsOptions {
   secretKey: string
   projectId: string
   region: string
-  /** App slug, used to name the `<slug>-<suffix>` IAM app when minting a managed key. */
+  /** App slug that names the `<slug>-<suffix>` IAM app when minting a managed key. */
   slug: string
   path: string
   prompts: RuntimeSecretPrompts
@@ -178,7 +178,7 @@ async function handleSet(ctx: MenuContext): Promise<void> {
 
 /**
  * Mint (or rotate) a managed key: a scoped Scaleway IAM key cella creates and
- * writes into its runtime secret(s), instead of the operator hand-creating one.
+ * writes into its runtime secrets without requiring an operator-created key.
  * Needs an IAMManager-capable caller key. The heavy lifting (verify containers
  * exist → mint → write versions) lives in `provision-managed-key.ts`.
  */
@@ -247,7 +247,7 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
   )
 
   // Loop the menu so an operator setting up a fresh environment can manage
-  // several secrets in one session instead of re-running the CLI per secret.
+  // several secrets in one session.
   // Each handler returns here; "Exit" (or Esc) is the only way out.
   while (true) {
     const action = await options.prompts.select<Action>({

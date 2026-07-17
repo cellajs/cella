@@ -99,7 +99,7 @@ export const rateLimiter = (
       }
 
       // An empty key would silently share one bucket across all traffic (e.g. a
-      // userId-keyed limiter on a public route) — treat it as a misconfiguration.
+      // userId-keyed limiter on a public route). Treat it as a misconfiguration.
       if (!rateLimitKey) throw new AppError(400, 'invalid_request', 'warn');
 
       // Resolve cost and budget once for `limit` mode. The static `config.points` is a hard
@@ -200,9 +200,9 @@ export const rateLimiter = (
       } else if (isFail && !isIgnored && slowLimiter) {
         // Consume the SAME normalized key the slow limiter is CHECKED with above (slowLimiter.get),
         // so the 24h slow-brute-force bucket actually accumulates against the key it is read from.
-        // Previously it consumed an un-prefixed `toRateLimitIp(ip)` while reading `ip:<normalized>`,
-        // so the bucket never grew and could never block. Slow-path limiters are ip-only, so
-        // rateLimitKey is exactly `ip:<normalized>`.
+        // Slow-path limiters are IP-only, so rateLimitKey is exactly `ip:<normalized>` and
+        // includes the same prefix used by slowLimiter.get. A different key would prevent the
+        // bucket from growing and blocking.
         try {
           await slowLimiter.consume(rateLimitKey);
         } catch (rlRejected) {

@@ -1,13 +1,13 @@
 /**
- * Wide synthetic permission fixture — the canonical "rich hierarchy" upstream engine tests run
- * against instead of a fork's real `shared/config`. The template ships a minimal hierarchy
+ * Wide synthetic permission fixture for upstream engine tests that require a rich hierarchy.
+ * The template ships a minimal hierarchy
  * (organization → attachment) that structurally can't exercise the engine's deeper features (nested +
  * sibling contexts, guest role, multi-level ancestors, all three public-read modes); this one can, so
  * one test set covers them in every fork. It mirrors raak's real hierarchy (the reference example in
- * `hierarchy-config.ts`) and MUST stay a superset of every builder feature — variable-depth /
+ * `hierarchy-config.ts`) and MUST stay a superset of every builder feature, including variable-depth /
  * nullable-ancestor coverage lives in `config-builder/tests/resolve-row-channel.test.ts`.
  *
- * The engine reads it via the `topology` seam (`PermissionTopology`) — no module mocks. All casts for
+ * The engine reads it via the `topology` seam (`PermissionTopology`) with no module mocks. All casts for
  * entities the app config doesn't know about are contained here, so consumer test files stay
  * cast-free and byte-identical across forks.
  */
@@ -28,7 +28,7 @@ import {
   type SubjectForPermission,
 } from '../permissions';
 
-// Wide entity/role vocabulary — typed independently of any fork's app config so the tests that
+// Wide entity/role vocabulary typed independently of any fork's app config so the tests that
 // use these names compile in every fork (a fork whose real config lacks `project` still builds).
 export type WideChannelType = 'organization' | 'workspace' | 'project';
 export type WideProductType = 'task' | 'label' | 'attachment';
@@ -63,14 +63,14 @@ export const wideEntityTypes: readonly WideEntityType[] = [
 
 /**
  * Topology bag the engine reads. `entityActions`/`entityIdColumnKeys` are omitted so they default
- * to the app config — they are hierarchy-independent (the CRUD action set is identical across forks).
+ * to the app config because they are hierarchy-independent (the CRUD action set is identical across forks).
  */
 export const wideTopology: PermissionTopology = { hierarchy: wideHierarchy };
 
 type WidePerms = Partial<Record<EntityActionType, PermissionValue>>;
 type WideChannelBuilder = Record<WideRole, (perms: WidePerms) => void>;
 
-/** Callback config surfaced to `configureWidePermissions` — wide-typed mirror of the engine's. */
+/** Wide-typed callback config surfaced to `configureWidePermissions`. */
 export interface WideAccessPolicyConfiguration {
   subject: { name: WideEntityType };
   contexts: Record<WideChannelType, WideChannelBuilder>;

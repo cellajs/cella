@@ -191,7 +191,7 @@ export const EntityBuckets = () => {
 
   return (
     <div className="mx-auto mt-4 mb-4 flex w-full max-w-3xl flex-col items-center">
-      {/* App-config toggle — swaps which entities populate the buckets */}
+      {/* App-config toggle swaps which entities populate the buckets. */}
       <div className="relative mb-6">
         {hint && (
           <div className="absolute top-1/2 right-full mr-3 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap text-muted-foreground text-sm max-sm:hidden">
@@ -223,7 +223,7 @@ export const EntityBuckets = () => {
         </ToggleGroup>
       </div>
 
-      {/* Open-top "U": only side and bottom walls — a conceptual, not closed, boundary */}
+      {/* Open-top "U" with side and bottom walls forms a conceptual, not closed, boundary. */}
       <div className="w-full rounded-b-3xl border-primary border-x border-b px-2 pt-6 pb-4 sm:px-6 sm:pt-6 sm:pb-8">
         <div className="grid grid-cols-2 gap-2 sm:gap-6">
           <Bucket title="about:entity_buckets.channel_entities" entities={active.channel} />

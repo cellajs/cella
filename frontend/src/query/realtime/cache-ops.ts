@@ -16,7 +16,7 @@ import { queryClient } from '~/query/query-client';
 
 /**
  * True if an entity has a pending (in-flight or paused) mutation. When true, skip remote cache
- * writes to preserve optimistic state — the mutation's own onSuccess reconciles the cache on settle.
+ * writes to preserve optimistic state. The mutation's own onSuccess reconciles the cache on settle.
  */
 export function hasPendingMutationForEntity(entityType: string, entityId: string): boolean {
   const mutationCache = queryClient.getMutationCache();
@@ -213,11 +213,11 @@ export function removeEntityFromListCache(entityId: string, keys: EntityQueryKey
 }
 
 /**
- * Apply one server-truth row to detail + list caches — the single applicator shared by both
+ * Apply one server-truth row to detail and list caches through the shared applicator for both
  * realtime paths (seq-range fetches and seq-less single fetches). Tombstones remove; rows
  * already cached update in place; unknown rows insert only into their canonical scope list (the base per-scope list that live sync patches).
  * Returns true when the row was new to every scanned list cache, so callers can invalidate
- * filtered lists (object key segments — server-side filters we can't replicate) once per flush.
+ * filtered lists with object key segments, whose server-side filters cannot be replicated, once per flush.
  */
 function applyServerEntity(
   entityType: string,
@@ -260,7 +260,7 @@ function applyServerEntity(
       continue;
     }
 
-    // Remove from caches where the entity no longer belongs (e.g. parent context changed).
+    // Remove cached items after their parent context changes.
     if (cachedItem && hasParentChannelChanged(cachedItem, filtered)) {
       change(queryKey, [filtered], 'remove');
       continue;
@@ -268,7 +268,7 @@ function applyServerEntity(
 
     // Cached rows update in place. New rows insert only into lists that canonically scope
     // to this entity; 'update' elsewhere is a deliberate no-op ('create' on a cached row
-    // would also drift `total` — updateArrayItems dedupes but the total adjustment doesn't).
+    // would also drift `total` because updateArrayItems dedupes but the total adjustment does not).
     seen = seen || !!cachedItem;
     change(
       queryKey,
@@ -321,13 +321,13 @@ export async function fetchEntityAndUpdateList(
  * Fetch changed entities by seq range (via the registered deltaFetch: list endpoint + `seqCursor`)
  * and patch them into list + detail caches. Returns true only when the FULL range was ingested (so
  * callers may advance their sync cursor); false when unavailable, failed, or the window overflows
- * one response — callers then fall back to full list invalidation and react-query owns recovery.
+ * one response. Callers then fall back to full list invalidation and react-query owns recovery.
  *
  * seqCursor: "51" (open-ended, catchup) or "51,150" (bounded range, batch notifications).
  *
  * Result statuses drive the caller's recovery policy: 'ok' (patched; `items` are the fetched
  * rows, e.g. for unseen-count accounting), 'overflow'/'unsupported' (fall back to list
- * invalidation now), 'error' (transient — retry is reasonable).
+ * invalidation now), 'error' (transient and safe to retry).
  */
 export interface RangeFetchResult {
   status: 'ok' | 'overflow' | 'unsupported' | 'error';
@@ -366,8 +366,8 @@ export async function fetchRangeAndPatch(
       sawNewRow = applyServerEntity(entityType, entity, keys, organizationId) || sawNewRow;
     }
 
-    // Rows new to every list cache can't be spliced into filtered lists (server-side filter
-    // unknown) — one invalidation per flush lets active filtered lists refetch and place them.
+    // Rows new to every list cache cannot be spliced into filtered lists with unknown server-side
+    // filters. One invalidation per flush lets active filtered lists refetch and place them.
     if (sawNewRow && organizationId) invalidateFilteredLists(keys.list.org(organizationId));
 
     if (items.length > 0) {

@@ -6,7 +6,7 @@ const normalize = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+
 /**
  * Add a query to a recent-searches list (used by app search and docs search).
  * Most recent first; entries deduped by normalized form; containment-deduped so
- * only the most detailed variant survives — searching "user" after
+ * only the most detailed variant survives. Searching "user" after
  * "user roles" keeps "user roles" (bumped to the top), while searching
  * "user roles" after "user" replaces it.
  *

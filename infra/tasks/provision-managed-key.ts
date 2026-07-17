@@ -39,9 +39,9 @@ function runtimeSecretById(id: string): RuntimeSecretDefinition {
  * it needs into the runtime-secret container Pulumi already created.
  *
  * Pulumi owns the containers (resources/secrets.ts), so this NEVER creates one
- * out-of-band — that would make the next `pulumi up` fail with "secret already
+ * out-of-band: that would make the next `pulumi up` fail with "secret already
  * exists". It verifies every target container exists BEFORE minting, so a
- * missing container aborts cleanly instead of orphaning a freshly minted IAM key.
+ * missing container aborts before an IAM key is minted.
  *
  * Each write uses `disablePrevious: true`, so a re-mint immediately supersedes
  * the prior value (the next VM boot/deploy picks it up). Minting itself is
@@ -60,7 +60,7 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
 
   // Resolve + verify every target container up front. Minting an IAM key is a
   // side effect we cannot cheaply undo, so bail before minting if a container is
-  // missing rather than leaking a live key.
+  // missing so a live key is never leaked.
   const containerBySecretName = new Map<string, { id: string }>()
   for (const { secret } of targets) {
     const container = await client.getSecretByName(secret.secretName, opts.path)

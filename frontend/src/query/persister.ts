@@ -260,7 +260,7 @@ function createIDBPersister(scope = 'rq') {
         const persistedVersion = meta.clientCacheVersion ?? appConfig.clientCacheVersion;
         if (persistedVersion !== appConfig.clientCacheVersion) {
           if (scope.startsWith(SESSION_KEY_PREFIX)) {
-            // Session scopes are cold; wipe entirely rather than salvage.
+            // Session scopes are cold, so wipe them entirely.
             await clearScope(db);
             return undefined;
           }
@@ -275,7 +275,7 @@ function createIDBPersister(scope = 'rq') {
         const pointer = meta.schemaVersion ?? currentSchemaVersion;
         if (pointer !== currentSchemaVersion) {
           if (scope.startsWith(SESSION_KEY_PREFIX)) {
-            // Session scopes are cold; wipe rather than migrate.
+            // Session scopes are cold, so wipe them.
             await clearScope(db);
             return undefined;
           }

@@ -9,7 +9,7 @@ import type { RenderEditCellProps } from '../types';
  * Recommended `editorOptions` for any column using `RenderEnumSelect`.
  * - `commitOnOutsideClick: false`: the popover is portaled, so the grid's
  *   window-level outside-click handler would otherwise treat its own popover
- *   as "outside" and double-commit. We commit on item select instead.
+ *   as "outside" and double-commit. Committing on item select avoids that race.
  * - `displayCellContent: true`: keep the cell content visible underneath
  *   the popover/drawer while the editor is mounted.
  */

@@ -41,7 +41,7 @@ const STROKE_SOLID = 2;
 const STROKE_THIN = 1;
 /**
  * Half-height of the chevron button (size-5 = 20px tall, so 10px). Elbows
- * terminate at this distance from row center instead of at row center, so
+ * terminate at this distance from row center, so
  * the curve isn't clipped by the chevron sitting on top of it.
  */
 const CHEVRON_HALF = 10;
@@ -66,7 +66,7 @@ interface ConnectorGeometry {
  * Smooth elbow above the chevron: straight stem on the offset track, then a
  * cubic-Bézier S-curve that lands on the chevron's top edge (not its center).
  * Terminating at the chevron edge means the entire curve stays visible above
- * the button rather than being clipped behind it. Tangents are vertical at
+ * the button without being clipped behind it. Tangents are vertical at
  * both ends so the path connects seamlessly to the previous row's vertical
  * line and aligns with the chevron's vertical centerline.
  */
@@ -194,7 +194,7 @@ export function RenderExpandToggle({
         // No fixed width/height: `preserveAspectRatio="none"` lets the SVG stretch to fill the
         // actual rendered cell (via `inset-0` + `h-full w-full`). On mobile the grid renders rows
         // ~1.2x taller and the rem-scaled UI grows the column, so the connector follows along
-        // instead of staying locked to the desktop px size. The viewBox stays in desktop user-units.
+        // with the mobile root font size. The viewBox stays in desktop user-units.
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 h-full w-full text-input"

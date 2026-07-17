@@ -6,7 +6,7 @@ import { sleep } from './sleep';
  * Used by workers (cdc, yjs) to delay startup until the backend is ready.
  *
  * In development/test, backendUrl points at the Vite dev server (same-origin proxy),
- * which may not be running when a worker boots — probe the backend's own port instead.
+ * which may not be running when a worker boots. Probe the backend's own port directly.
  */
 export async function waitForBackend(interval = 1000, timeout = 60000): Promise<void> {
   const isLocal = appConfig.mode === 'development' || appConfig.mode === 'test';

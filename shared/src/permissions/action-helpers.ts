@@ -25,7 +25,7 @@ export const allActionsAllowed = Object.freeze(createActionRecord(() => true as 
  * Resolves a three-state permission (`true | false | condition name`) to a boolean. `'own'`
  * compares the actor's `userId` against `entity.createdBy`. The switch is exhaustive over the
  * closed {@link ActionPermissionState} name union, so adding a row condition is a compile error
- * here — the frontend can never silently deny a new condition.
+ * here: the frontend can never silently deny a new condition.
  */
 export const resolvePermission = (
   permission: ActionPermissionState | undefined,
@@ -38,21 +38,20 @@ export const resolvePermission = (
       return !!userId && !!entityCreatedBy && entityCreatedBy === userId;
     case 'public':
       // Public read is membership-independent and resolved server-side; it never appears in the
-      // frontend can-map. Denied here (secure default) — this arm exists only for exhaustiveness.
+      // frontend can-map. Denied here (secure default). This arm exists only for exhaustiveness.
       return false;
   }
 };
 
 /**
- * Whether a permission is granted **unconditionally** (`true`), as opposed to row-conditional
- * (`'own'` or another condition name) or denied (`false`).
+ * Whether a permission is granted **unconditionally** (`true`). Row-conditional
+ * (`'own'` or another condition name) and denied (`false`) permissions return false.
  *
- * Use this — rather than {@link resolvePermission} — for **context-scoped** features that can't
- * resolve per-row ownership up front: e.g. deciding whether to offer collaborative (Yjs) editing
- * on an entity type, where the affordance is enabled for a role, not for a specific row. A `'own'`
+ * Use this for **context-scoped** features that cannot resolve per-row ownership up front, such as
+ * deciding whether to offer collaborative (Yjs) editing on an entity type, where the affordance is
+ * enabled for a role, not for a specific row. An `'own'`
  * grant is deliberately NOT unconditional: it depends on the row, which this check has no access
  * to, so it returns `false` (secure default). Per-row affordances should use `resolvePermission`.
  */
 export const isUnconditionalPermission = (permission: ActionPermissionState | undefined): boolean =>
   permission === true;
-

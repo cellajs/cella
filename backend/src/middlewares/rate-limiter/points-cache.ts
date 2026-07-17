@@ -69,7 +69,7 @@ export function takeDebt(key: string): number {
   return debt;
 }
 
-/** Return previously claimed debt after a failed DB write. */
+/** Restore claimed debt after a failed DB write. */
 export function restoreDebt(key: string, debt: number): void {
   if (debt <= 0) return;
   const entry = cache.get(key);

@@ -6,8 +6,8 @@ import { deepestAncestorExpr } from './recalculate-counters';
  * Recalculation must group seq counters by the same deepest-non-null-ancestor rule CDC
  * stamps them with (`resolveChannelKey`), or recovery fights live CDC. The full pipeline
  * runs against real fork tables; the grouping SQL shape is asserted here on synthetic
- * hierarchies built inline (plus one architectural invariant — organization is always the
- * root context and has no ancestors — true in every fork), so the assertions are fork-independent.
+ * hierarchies built inline. The only architectural invariant is that organization is the
+ * root context and has no ancestors, so the assertions are fork-independent.
  */
 describe('deepestAncestorExpr', () => {
   it('two-level hierarchy: product groups by parent context, then organization', () => {

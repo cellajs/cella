@@ -1018,7 +1018,7 @@ export function ResizableSeparator({ index, className, children, ...rest }: Sepa
 
     const now = Date.now();
     if (now - lastPointerDownRef.current < 300) {
-      // Double-click detected: toggle collapse instead of starting drag.
+      // Double-click toggles collapse without starting a drag.
       lastPointerDownRef.current = 0;
       dragCtx.toggleCollapseAtSeparator(index);
       return;

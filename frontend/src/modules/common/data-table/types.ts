@@ -9,7 +9,7 @@ export type BaseTableSearchVariables<T> = T & {
 
 /**
  * The grid's column union, narrowed so every entry (including groups) carries a
- * string `key` — the table chrome (columns-view toggle, bars) keys off it.
+ * string `key`; the table chrome (columns-view toggle, bars) keys off it.
  * `hidden` lives on the grid `Column`/`ColumnGroup` types and is filtered by the
  * grid; consumers pass the full column list.
  */

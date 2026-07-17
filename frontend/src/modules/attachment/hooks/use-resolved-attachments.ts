@@ -134,7 +134,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
         setErrorIds(errors);
         setIsLoading(false);
 
-        // Retry transient failures a few times before letting the dialog show "not found" — the
+        // Retry transient failures a few times before letting the dialog show "not found". The
         // blob may still be downloading or the cache mid-sync. Bounded per item-set to avoid loops.
         if (errors.length > 0 && retryCountRef.current < RESOLVE_RETRY_LIMIT) {
           retryCountRef.current += 1;

@@ -16,9 +16,9 @@ interface CollabSession {
   savingPromise?: Promise<void>;
   /** Cached DB state from the first loadState call within a debounce window. */
   cachedDbState?: Uint8Array | null;
-  /** Blocks JSON of the last successful (or seed) materialization: diff baseline. */
+  /** Last blocks JSON accepted by the backend or loaded as the seed; enables skipping unchanged writes. */
   lastMaterializedJson?: string;
-  /** Context of the last client whose update was relayed: materialization attribution. */
+  /** Last client's context, which supplies the user id for the durable entity update. */
   lastEditor?: DocContext;
 }
 
@@ -115,8 +115,8 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
         }
       }
 
-      // Delete only after a final materialization: the durable record must absorb the
-      // session before its state is destroyed. Only 'retry' (backend/network down)
+      // Delete only after the durable record accepts the session's final blocks.
+      // Only 'retry' (backend/network down)
       // blocks: reschedule and keep the row. 'permanent' (entity deleted, permission
       // revoked) can never converge, so deletion proceeds.
       if (finalState && finalState.length > 0) {

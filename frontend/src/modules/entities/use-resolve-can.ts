@@ -14,7 +14,7 @@ type CreatedBy = string | { id: string } | null | undefined;
  *
  * For a context-scoped affordance that can't resolve per-row ownership up front (e.g. deciding
  * whether to offer collaborative editing on an entity type), use `isUnconditionalPermission` from
- * `shared` instead — it enables only on an unconditional grant, never on `'own'`.
+ * `shared`. It enables only on an unconditional grant, never on `'own'`.
  */
 export const useResolveCan = () => {
   const { user } = useUserStore();

@@ -22,7 +22,7 @@ interface UseNearEndOptions {
  * The consumer pairs it with its own query state (isFetching, hasNextPage) and
  * re-evaluates when that state changes, so a load opportunity that can't be
  * acted on immediately (e.g. a background refetch is in flight) is retried once
- * it can be — a fired-and-dropped event here used to kill infinite scroll
+ * it can be. A fired-and-dropped event here can stop infinite scroll
  * permanently.
  */
 export function useNearEnd({
@@ -38,13 +38,13 @@ export function useNearEnd({
   );
 
   // Before layout is measured the overscan range is a bounded placeholder, not a
-  // real viewport position — report false rather than guessing.
+  // real viewport position. Report false when the position is unknown.
   const nearEnd = measured && totalRows > 0 && rowOverscanEndIdx >= totalRows - effectiveThreshold;
 
   useEffect(() => {
     onNearEndChange?.(nearEnd);
     // Reset on unmount (and before re-runs) so consumers never hold a stale
-    // near-end from a grid that no longer exists (e.g. filter change → skeleton).
+    // near-end from a removed grid (e.g. filter change → skeleton).
     return () => onNearEndChange?.(false);
   }, [nearEnd, onNearEndChange]);
 }

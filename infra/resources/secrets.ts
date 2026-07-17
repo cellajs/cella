@@ -12,7 +12,7 @@ const secretPath = secretManagerPath(naming.slug, mode)
 /**
  * One-time adoption hook for operator secret containers that were created
  * out-of-band before Pulumi owned them (so they are not yet in state). Importing
- * them on the first run of this code adopts the existing container instead of
+ * them on the first run of this code adopts the existing container without
  * trying to create it (which would fail with "secret already exists"). Supply the
  * ids for a single, targeted `pulumi up`, then unset the variable again:
  *
@@ -130,7 +130,7 @@ const secretResources = Object.fromEntries(runtimeSecrets.map((definition) => {
 // Exports: secret IDs for container references
 
 /** Map of runtime secret IDs to their Scaleway Secret IDs. The key type is the
- *  literal id union, so a typo'd lookup is a compile error rather than an
+ *  literal id union, so a typo'd lookup is a compile error before
  *  undefined Output at deploy time (Object.fromEntries widens, hence the cast). */
 export const secretIds = Object.fromEntries(
   Object.entries(secretResources).map(([id, secret]) => [id, secret.id]),

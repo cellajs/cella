@@ -52,7 +52,7 @@ export function isCtrlKeyHeldDown(e: React.KeyboardEvent): boolean {
   return (e.ctrlKey || e.metaKey) && e.key !== 'Control';
 }
 
-// event.key may differ by keyboard input language, so we use event.keyCode instead
+// event.keyCode remains stable when event.key differs by keyboard input language.
 // event.nativeEvent.code cannot be used either as it would break copy/paste for the DVORAK layout
 const vKey = 86;
 

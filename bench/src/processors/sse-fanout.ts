@@ -6,11 +6,11 @@ export { authenticate } from './auth';
 
 /**
  * SSE fan-out subscriber: opens the app stream and reacts to notifications like the
- * frontend's lazy-sync scheduler — merge ranges per scope, wait the negotiated delay
+ * frontend's lazy-sync scheduler: merge ranges per scope, wait the negotiated delay
  * (`hash(clientId:scope) % syncWindow`), then issue ONE delta fetch for the merged range.
  *
  * `SYNC_MODE=immediate` disables merging/spreading (fetch per notification, delay 0) to
- * reproduce the pre-lazy behavior — run both modes to compare:
+ * provide a per-notification baseline. Run both modes to compare:
  *
  *   SYNC_MODE=immediate pnpm bench sse-fanout
  *   SYNC_MODE=lazy      pnpm bench sse-fanout   (default)
@@ -38,7 +38,7 @@ interface Notification {
   organizationId: string | null;
 }
 
-/** FNV-1a 32-bit — same deterministic jitter as the frontend scheduler. */
+/** FNV-1a 32-bit: same deterministic jitter as the frontend scheduler. */
 function hashSpread(key: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < key.length; i++) {
@@ -88,7 +88,7 @@ export async function subscribeAndReact(
 
     const entry = pending.get(scope);
     if (entry) {
-      // Merge: the pending flush will cover this range too — no new fetch scheduled.
+      // Merge: the pending flush will cover this range too. No new fetch scheduled.
       entry.from = Math.min(entry.from, n.seq);
       entry.until = Math.max(entry.until, until);
       return;

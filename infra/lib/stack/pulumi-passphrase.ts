@@ -47,8 +47,8 @@ export function generatePassphrase(): string {
 
 /**
  * True when this `pulumi version` output supports non-interactive passphrase
- * rotation — `stack change-secrets-provider passphrase` reading the NEW
- * passphrase from stdin — added in v3.44.0 (pulumi/pulumi#11094). Older CLIs
+ * rotation: `stack change-secrets-provider passphrase` reading the NEW
+ * passphrase from stdin: added in v3.44.0 (pulumi/pulumi#11094). Older CLIs
  * fail with "passphrase rotation requires an interactive terminal".
  * Unparseable output (e.g. a dev build) is not blocked; pulumi itself errors
  * if it is genuinely too old. Pure.

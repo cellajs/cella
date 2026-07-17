@@ -4,7 +4,7 @@ import { env } from '../env';
 // In production we require a verified TLS connection to the managed PostgreSQL.
 // The CA (Scaleway RDB instance cert) is provisioned automatically into the
 // DATABASE_SSL_CA runtime secret by `pulumi up`; a missing value is a
-// misconfiguration we fail fast on rather than silently downgrading security.
+// misconfiguration causes an immediate failure to prevent a silent security downgrade.
 // The secret is base64-encoded (the PEM is multi-line and would break the
 // line-based `.env.runtime` delivery), so decode it back to PEM here.
 const sslConfig =

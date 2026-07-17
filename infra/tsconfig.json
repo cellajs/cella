@@ -4,7 +4,7 @@
     "lib": ["es2024", "dom"],
     "rootDir": "..",
     // Indexed access (obj[key], arr[i]) yields T | undefined so unchecked
-    // lookups fail the typecheck. Infra-only for now — the workspace root does
+    // lookups fail the typecheck. Infra-only for now. The workspace root does
     // not set it.
     "noUncheckedIndexedAccess": true
   },

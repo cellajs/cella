@@ -44,7 +44,7 @@ function resolveDropZone(
 
 /**
  * Imperatively set/clear `data-drop-edge` on a row element. Mutating the DOM
- * directly (instead of React state) avoids a render storm during drag.
+ * directly to avoid a render storm during drag.
  *
  * A `bottom` zone on row N is painted as `top` on row N+1 so the indicator
  * doesn't jump across the row seam; the last row falls back to `bottom` on
@@ -102,7 +102,7 @@ export interface RowDragConfig<R> {
   /**
    * Optional per-zone drop validation, consulted on hover. Falls back to the
    * nearest allowed zone; if all three are blocked, no indicator + `onDrop`
-   * suppressed. Keep it fast (O(1)/O(depth)) — called on every drag move.
+   * suppressed. Keep it fast (O(1)/O(depth)) because it runs on every drag move.
    */
   canDropRow?: (args: { fromIdx: number; toIdx: number; zone: 'top' | 'bottom' | 'center' }) => boolean;
   /** Optional content rendered inside the native drag preview. Defaults to a generic preview. */
@@ -113,7 +113,7 @@ export interface RowDragConfig<R> {
  * A renderCell wrapper that attaches drag source + drop target listeners to
  * each cell. Used internally by `<DataGrid>` when `onRowReorder` is set.
  *
- * Per-cell wiring (rather than per-row) is required because data-grid uses
+ * Per-cell wiring is required because data-grid uses
  * `display: contents` on the row container, so the row element has no
  * bounding rect for hit-testing. Drop indicators are written imperatively to
  * the row element (`data-drop-edge` attribute) and styled by CSS, with no React

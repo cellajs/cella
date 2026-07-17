@@ -3,8 +3,8 @@ import { DocsSearch } from '~/modules/docs/search/docs-search';
 
 /**
  * Imported eagerly, not lazily: the dialog is sized by its own content, so a suspended shell opened
- * at fallback height and then jumped to full height. What is actually worth deferring — Orama and
- * the body-text corpus — is dynamically imported in client.ts and loads on first search instead.
+ * at fallback height before jumping to full height. Orama and the body-text corpus are dynamically
+ * imported in client.ts and load on first search.
  * The shell adds no third-party weight of its own on top of what the docs sidebar already pulls in.
  */
 

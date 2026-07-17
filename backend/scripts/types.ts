@@ -1,5 +1,5 @@
 /**
- * A single side-effect migration block — raw SQL that Drizzle Kit cannot express from the
+ * A single side-effect migration block for raw SQL that Drizzle Kit cannot express from the
  * schema diff (RLS grants, triggers, functions, publications, partitioning, …).
  *
  * Producers are PURE: they compute SQL from the schema and return it. They never touch the
@@ -35,9 +35,9 @@ export interface SideEffectProducer {
   /** Human-readable name (log label). */
   name: string;
   /**
-   * Pure producer: computes SQL from the current schema and returns a block. Must be
-   * DETERMINISTIC — same schema in, same SQL out (sort table lists; no Date/random in SQL) —
-   * so unchanged runs produce byte-identical output and never churn a new folder.
+   * Pure producer: computes SQL from the current schema and returns a block. The same schema
+   * must produce the same SQL (sorted table lists; no Date/random in SQL), so unchanged runs
+   * produce byte-identical output and never churn a new folder.
    */
   produce: () => SideEffectBlock | Promise<SideEffectBlock>;
 }

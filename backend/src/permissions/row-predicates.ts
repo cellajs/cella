@@ -59,7 +59,7 @@ export type CollectionReadWhere =
  *
  * Deep chains: entries tagged with an intermediate `channelType` (e.g. course grants on
  * a project-homed entity) are scoped by THAT level's own id column, resolved via
- * `appConfig.entityIdColumnKeys` — on tables with denormalized ancestor columns an
+ * `appConfig.entityIdColumnKeys`. On tables with denormalized ancestor columns an
  * intermediate id covers every row physically below it.
  *
  * @param filter - Resolved scope filter (`resolveCollectionReadFilter`).
@@ -103,7 +103,7 @@ export const buildCollectionReadWhere = (
   }
 
   // HOME-scoped grants (elevatedRoles): the grant level's column matches AND every
-  // more-specific ancestor column is NULL — rows homed exactly at that level.
+  // more-specific ancestor column is NULL, which identifies rows homed at that level.
   for (const { channelType, subChannelIds, deeperChannels } of filter.homeScopes ?? []) {
     if (subChannelIds.length === 0) continue;
     const scoped = and(

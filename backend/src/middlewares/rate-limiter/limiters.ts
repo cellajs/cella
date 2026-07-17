@@ -14,7 +14,7 @@ import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 export const spamLimiter = rateLimiter('success', 'spam', [['userId', 'ip']], {
   // 204 must count as success: sendMagicLink and resendInvitationWithToken return 204, and with
   // the default [200, 201] this limiter never consumed a point on them (i.e. no spam limit at
-  // all). Scoped here rather than in defaultOptions because a global 204 would let failseries
+  // all). This stays scoped here because a global 204 would let failseries
   // limiters (e.g. emailEnumLimiter on checkEmail, whose hit response is 204) be reset by
   // interleaving a known-valid request between probes.
   limits: { successStatusCodes: [200, 201, 204] },

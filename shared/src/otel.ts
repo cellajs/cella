@@ -92,7 +92,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     resource,
   });
 
-  // Nothing to export and no local span processors → return a no-op instead of spinning up a NodeSDK.
+  // Skip NodeSDK startup when there is nothing to export and no local span processor.
   if (!hasMaple && spanProcessors.length === 0) {
     return {
       sdk: undefined,
@@ -109,7 +109,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   const logExporter = hasMaple ? new OTLPLogExporter(hasMaple('logs')) : undefined;
 
   // Opt into the stable HTTP semantic conventions (http.request.method, http.response.status_code,
-  // url.full, server.address, user_agent.original, …) instead of the legacy http.* keys. This is
+  // url.full, server.address, user_agent.original, …). This avoids deprecated http.* keys and is
   // read by @opentelemetry/instrumentation-http at construction, so it must be set before
   // getNodeAutoInstrumentations() runs below. `??=` lets an explicit env override (e.g. 'http/dup') win.
   if (autoInstrumentations) {

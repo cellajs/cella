@@ -15,8 +15,8 @@ const configModes = { development, tunnel, staging, production, test } satisfies
 // behaviour like pino-pretty worker threads) while still loading the
 // development config for correct slug/naming.
 const rawMode = process.env.APP_MODE || process.env.NODE_ENV || 'development';
-// Fail loud on an unknown mode: an unchecked value would index `configModes` to `undefined` and
-// silently boot the default config instead of the intended environment.
+// Fail loud on an unknown mode so an undefined `configModes` entry cannot silently boot the
+// default configuration for the wrong environment.
 if (!Object.hasOwn(configModes, rawMode)) {
   throw new Error(
     `Invalid config mode "${rawMode}": must be one of ${Object.keys(configModes).join(', ')} (set APP_MODE or NODE_ENV).`,
@@ -53,7 +53,7 @@ merged.services = {
 // Validate slug is a true, URL-safe slug. It feeds resource names (S3 buckets,
 // Scaleway Container Registry namespace, etc). Scaleway registry namespaces
 // require >= 4 chars with no hyphens, so we enforce a 4-char minimum on the
-// hyphen-stripped form. Forks must pick a valid slug rather than have one quietly mangled.
+// hyphen-stripped form. Forks must provide a valid slug; validation never rewrites it.
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 if (!slugPattern.test(merged.slug)) {
   throw new Error(`Invalid config slug "${merged.slug}": must be lowercase alphanumeric, hyphen-separated (e.g. "my-app").`);

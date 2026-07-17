@@ -21,8 +21,8 @@ export interface CdcBatchRow {
  * will reject the message at runtime.
  *
  * `batchRows` carries per-row permission fields (context ids, createdBy, publicAt) so
- * mixed-visibility batches dispatch per subscriber per row instead of deciding on the
- * first row alone.
+ * mixed-visibility batches dispatch per subscriber per row. The first row alone cannot
+ * represent visibility for the entire batch.
  *
  * @see backend/src/lib/cdc-websocket.ts
  */
@@ -91,7 +91,7 @@ export interface BatchEventInfo {
 
 /**
  * The seq-context key of a batch event, mirroring seq allocation: seqs are counters per
- * (channelKey, entityType) — see {@link computeBatchUnifiedDeltas}. Only product entities
+ * (channelKey, entityType); see {@link computeBatchUnifiedDeltas}. Only product entities
  * carry seqs. Resource events (no entityType) and non-product entities (user, organization)
  * have no seq context; grouping them by org matches their dispatch channel.
  */
@@ -109,9 +109,9 @@ function batchChannelKey({ activity, rowData }: BatchEventInfo): string {
  *
  * Seqs are per-context counters, so one message can only describe one seq context: a
  * transaction batch spanning contexts (e.g. one bulk create with mixed placements) is
- * split into one message per seq context — the same channelKey seq allocation groups
- * by — each with its own contiguous seq..batchUntilSeq range. Single-context batches
- * send exactly one message, as before.
+ * split into one message per seq context. The same channelKey used for seq allocation
+ * defines each group and its contiguous seq..batchUntilSeq range. Single-context batches
+ * send exactly one message.
  */
 export function sendBatchMessageToApi(
   events: BatchEventInfo[],
@@ -145,7 +145,7 @@ function sendBatchGroupToApi(
   const minSeq = seqs.length > 0 ? Math.min(...seqs) : undefined;
 
   // Within one seq context the range is contiguous by construction (ranges are reserved
-  // per context, and the per-context split above matches that grouping) — if this fires,
+  // per context, and the per-context split above matches that grouping). A gap means
   // seq allocation itself is broken.
   if (minSeq !== undefined && batchUntilSeq !== undefined && batchUntilSeq - minSeq + 1 !== seqs.length) {
     log.error('Non-contiguous seqs within one seq context — sync integrity at risk', {

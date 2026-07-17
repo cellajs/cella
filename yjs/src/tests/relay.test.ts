@@ -11,7 +11,7 @@ vi.mock('../data/entity-content', () => ({
   loadEntityDescription: vi.fn().mockResolvedValue(null),
 }));
 
-// Mock materialization: the save-window integration is asserted via call args
+// Mock the durable-record write; call arguments verify the save-window integration.
 vi.mock('../sync/materialize', () => ({
   materializeState: vi.fn().mockResolvedValue('ok'),
   postMaterialize: vi.fn().mockResolvedValue('ok'),

@@ -48,7 +48,7 @@ export function ReactPanZoom({ image, alt, showButtons, imageClassName, onPanSta
   const [panState, setPanState] = useState(!onPanStateToggle);
 
   // Image fits its container via CSS (object-contain), so zoom = 1 is the natural "fit". We don't
-  // measure rendered size on load and rescale — that jumped one frame after paint, and never fit
+  // Calculate the initial scale before paint to avoid a visible jump and fit
   // cached images (whose load event never fires).
   const resetAll = () => {
     setDx(0);

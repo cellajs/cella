@@ -2,7 +2,7 @@
 export type EmailRecipient = { email: string; lng: string };
 
 /**
- * Per-recipient display props a component reads — the values the mailer turns
+ * Per-recipient display props a component reads. The mailer turns these values
  * into Brevo `{{params.x}}` placeholders at send time.
  */
 export type RecipientProps<TRecipient extends EmailRecipient> = {
@@ -21,7 +21,7 @@ export interface EmailPreviewData<TStatic, TRecipient extends EmailRecipient = E
 }
 
 /**
- * Email template definition — the runtime contract the mailer consumes.
+ * Email template definition consumed as the mailer's runtime contract.
  * `TStatic`: props shared across recipients (e.g. senderName, entityName);
  * `TRecipient` extends `EmailRecipient` with per-recipient props.
  */

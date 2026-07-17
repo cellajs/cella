@@ -35,7 +35,8 @@ export const seenByTable = snakeCase.table(
     // Composite PK required for partitioning by created_at
     primaryKey({ columns: [table.id, table.createdAt] }),
     // Dedup lookup: mark-seen inserts via NOT EXISTS on (userId, entityId). A UNIQUE constraint
-    // is impossible here — partitioned tables require the partition column (createdAt) in every
+    // is impossible here because partitioned tables require the partition column (createdAt) in
+    // every
     // unique index. Rare concurrent-flush races can leave duplicate rows; readers use
     // EXISTS/NOT EXISTS (dup-safe) and counter recalculation counts DISTINCT users.
     index('seen_by_user_entity_index').on(table.userId, table.entityId),

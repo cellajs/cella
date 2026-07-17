@@ -15,7 +15,7 @@ interface SyncStoreState {
   lastSyncAt: string | null;
   orgs: Record<string, OrgSyncState>;
   /**
-   * Latest seq the server has MENTIONED per scope (channelId or orgId) — the "known" side of the
+   * Latest seq the server has mentioned per scope (channelId or orgId), which is the "known" side of the
    * known-vs-caught-up split. Recorded from every notification, even for pages the lazy scheduler
    * won't fetch (muted). Deliberately NOT persisted: catchup's counter comparison rebuilds it on
    * boot, and persisting would only risk staleness. Caught-up seqs stay in `orgs` (persisted).
@@ -86,7 +86,7 @@ export const useSyncStore = create<SyncStoreState>()(
         getOrgSeq: (orgId, entityType) => get().orgs[orgId]?.seqs[entityType] ?? 0,
 
         // Org-homed scopes arrive with channelId === orgId on the live wire, while catchup
-        // reports them at org level — normalize both to the org slot so live and catchup
+        // reports them at org level. Normalize both to the org slot so live and catchup
         // share ONE caught-up watermark per scope (contexts[orgId] would also collide with
         // the org slot's key in getFlatSeqs).
         setChannelSeq: (orgId, channelId, entityType, seq) =>

@@ -83,7 +83,7 @@ async function buildMcpSelfComponent(): Promise<HealthComponent> {
  * Every dependency and sibling worker is a uniform `component` keyed by name.
  * The api process grades its own runtime (`api`), checks the database, watches
  * the pushed CDC report, and actively probes the yjs/mcp workers. The mcp worker
- * process reports its own queue depth instead of probing itself.
+ * process reports its own queue depth without probing itself.
  */
 export async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: number }> {
   const components: Record<string, HealthComponent> = {};

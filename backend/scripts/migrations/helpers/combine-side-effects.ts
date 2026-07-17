@@ -5,7 +5,7 @@ import { logMigrationResult, upsertMigration } from './drizzle-utils';
 
 /**
  * Single tag for the combined side-effect migration. Every producer's SQL lands in one folder
- * per generate run (created/evolved/unchanged handled by `upsertMigration`), instead of one
+ * per generate run (created/evolved/unchanged handled by `upsertMigration`), avoiding one
  * folder per producer. Keeps the `drizzle/` folder count flat as producers come and go.
  */
 const SIDE_EFFECT_TAG = 'side_effects';
@@ -22,7 +22,7 @@ function sectionRule(tag: string, title: string): string {
  * The collector is generic over `producers`: it knows nothing about what any block does, so
  * adding or removing a producer never touches this file. Blocks are concatenated in the order
  * given (discovery = filename order) and separated by `--> statement-breakpoint` so the migrator
- * runs each as its own statement — identical boundaries to the previous one-folder-per-producer
+ * runs each as its own statement with producer-specific transaction boundaries
  * layout, and applied in the same single transaction.
  *
  * Change detection is delegated to `upsertMigration`: identical combined SQL → no new folder;
@@ -50,7 +50,7 @@ export async function generateSideEffects(producers: SideEffectProducer[]): Prom
       console.info(`${label} ${pc.dim('(no SQL — skipped)')}`);
       continue;
     }
-    // Duplicate tags would silently merge two unrelated blocks under one section — fail loud.
+    // Duplicate tags would silently merge unrelated blocks, so fail loudly.
     if (seenTags.has(block.tag)) throw new Error(`Duplicate side-effect tag: "${block.tag}"`);
     seenTags.add(block.tag);
     blocks.push(block);

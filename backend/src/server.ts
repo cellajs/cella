@@ -15,7 +15,7 @@ const baseApp = new OpenAPIHono<Env>();
  * to the backend/mcp service (registry `lbPathBegin`) but does NOT strip the
  * prefix, so the app also serves itself under those prefixes. `mount()`
  * re-dispatches with the prefix stripped, so handlers see the same paths as
- * legacy subdomain traffic and routes registered later (modules, OpenAPI docs,
+ * direct subdomain traffic and routes registered later (modules, OpenAPI docs,
  * the mcp worker's mounts) are covered dynamically. Registered before the
  * global middleware so prefixed requests run it once, in the inner dispatch.
  */

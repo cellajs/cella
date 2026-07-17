@@ -83,7 +83,7 @@ export const stackItems = [
   { id: 'artillery' },
 ];
 
-// Features page — categorised capability list (/features).
+// Features page with categorised capability list (/features).
 // Each item maps to translation keys `about:features.<id>` and `about:features.<id>.text`.
 
 export type FeatureCategory = 'security' | 'auth' | 'ux' | 'dx' | 'deploy' | 'performance' | 'data';

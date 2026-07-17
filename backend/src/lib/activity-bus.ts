@@ -29,7 +29,7 @@ export interface ActivityBatchRow {
 export interface ActivityEvent extends Omit<ActivityModel, 'type' | 'createdAt'> {
   type: ActivityEventType;
   rowData: unknown;
-  /** Per-row permission fields for batch events — dispatch decides per subscriber per row. */
+  /** Per-row permission fields let dispatch decide visibility per subscriber and row. */
   batchRows?: ActivityBatchRow[] | null;
   // Sync fields from CDC worker
   seq: number | null;

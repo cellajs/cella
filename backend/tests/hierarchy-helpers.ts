@@ -4,13 +4,13 @@ import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 /**
  * Config-adaptive seeding for a product entity's ancestor context chain, derived from the app's
  * real hierarchy via `buildTestEntityHierarchyPlan`. A fork whose attachment lives directly under
- * organization seeds nothing; a fork with `organization → project → attachment` seeds a project —
+ * organization seeds nothing; a fork with `organization → project → attachment` seeds a project,
  * from the same test source. Mirrors the inline pattern in `tests/integration/rls-security.test.ts`.
  */
 
 const quoteIdent = (identifier: string) => `"${identifier.replaceAll('"', '""')}"`;
 
-/** Minimal shape needed to run raw SQL — satisfied by both `baseDb` and the admin connection. */
+/** Minimal shape needed to run raw SQL, satisfied by both `baseDb` and the admin connection. */
 type ExecutableDb = { execute: (query: ReturnType<typeof sql>) => Promise<unknown> };
 
 /** Insert every intermediate context row the plan declares (root context is assumed to exist). */

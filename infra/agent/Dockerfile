@@ -1,6 +1,5 @@
-# Cella boot agent — runs at VM first-boot via `docker run` to bring a service's
-# Docker Compose stack up. Replaces the baked Node SEA + Packer image: the agent
-# ships as a normal registry image, pulled at boot.
+# Cella boot agent: runs at VM first-boot via `docker run` to bring a service's
+# Docker Compose stack up. The agent ships as a normal registry image pulled at boot.
 #
 # It drives the HOST Docker daemon through the mounted socket
 # (/var/run/docker.sock), so it needs the docker CLI + compose plugin. The agent

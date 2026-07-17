@@ -59,7 +59,7 @@ describe('sendBatchMessageToApi', () => {
   });
 
   it('logs error for non-contiguous seqs within one context (gap detection invariant)', () => {
-    // seq 10, 12 in the same seq context: gap at 11 — seq allocation itself broke
+    // A gap at 11 proves seq allocation broke within this context.
     const events = [mockBatchEvent(10), mockBatchEvent(12)];
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
 
@@ -70,8 +70,7 @@ describe('sendBatchMessageToApi', () => {
   });
 
   it('splits a cross-context batch into per-context messages with contiguous ranges', () => {
-    // Seqs are per-context counters: org-a holds 10-11, org-b holds 5-7. Pre-split this
-    // was ONE message with seq 5..11 — a non-contiguous, semantically wrong range.
+    // Seqs are per-context counters: org-a holds 10-11 and org-b holds 5-7.
     const inOrg = (org: string, seq: number): ReturnType<typeof mockBatchEvent> => {
       const event = mockBatchEvent(seq, `entity-${org}-${seq}`);
       return { ...event, rowData: { ...event.rowData, organizationId: org } };

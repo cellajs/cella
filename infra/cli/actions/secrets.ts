@@ -8,7 +8,7 @@ type PromptOption<T extends string> = { name: string; value: T; description?: st
 
 /**
  * `select` that also resolves the {@link BACK} sentinel when the operator presses
- * Esc, so selection prompts can return to the previous menu instead of forcing a
+ * Esc, so selection prompts can return to the previous menu without forcing a
  * choice. Inquirer's select has no native Esc handling, so we abort it via an
  * AbortController driven by a keypress listener on stdin (Inquirer's own readline
  * emits the events while the prompt is active).

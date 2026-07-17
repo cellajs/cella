@@ -40,7 +40,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   const reader = createAwsReader(`https://s3.${region}.scw.cloud`, bucket)
   // A list failure (missing aws CLI, bad creds, wrong bucket) throws here with a
-  // clear message instead of silently rendering "no logs uploaded".
+  // clear message when the service slug is invalid.
   const keys = parseKeys(reader.list())
 
   if (wantList) {

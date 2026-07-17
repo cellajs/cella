@@ -139,7 +139,7 @@ export function useCalculatedColumns<R, SR>({
           continue;
         }
 
-        // Merged columns are relocated into their host cell rather than hidden, so they
+        // Merged columns are relocated into their host cell so they
         // bypass the breakpoint visibility check.
         const mergeRule = validMerges.get(rawColumn.key);
         if (mergeRule == null && !isVisibleAtBreakpoint(rawColumn)) continue;
@@ -211,7 +211,7 @@ export function useCalculatedColumns<R, SR>({
     });
 
     // Grouped by side, sorted by `order` (ties keep column order). Hosts are
-    // guaranteed present — rules with unresolvable hosts were deactivated above.
+    // guaranteed present because rules with unresolvable hosts were deactivated above.
     if (slotColumns.length > 0) {
       const slotsByHost = new Map<string, typeof slotColumns>();
       for (const slot of slotColumns) {

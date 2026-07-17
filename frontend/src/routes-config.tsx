@@ -5,7 +5,7 @@ export type EntityRouteEntry = {
   path: string;
   /** Route param name this entity's slug fills (both as self and as ancestor) */
   paramName: string;
-  /** When shown as subitem, navigate to a parent entity's route instead */
+  /** When shown as a subitem, navigate to a parent entity's route. */
   subitemOf?: { entityType: ChannelEntityType; searchParam: string };
 };
 

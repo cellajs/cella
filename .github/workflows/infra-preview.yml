@@ -3,7 +3,7 @@
 # =============================================================================
 # Runs `pulumi preview` against the production stack for any PR that touches
 # infrastructure code, and posts the plan as a job summary so reviewers can
-# see what would change before merging. Read-only — never calls `pulumi up`.
+# see what would change before merging. Read-only. Never calls `pulumi up`.
 # =============================================================================
 
 name: Infra preview
@@ -28,7 +28,7 @@ env:
 
 jobs:
   preview:
-    # Skip preview for PRs from forks — they cannot access repo secrets, and
+    # Skip preview for PRs from forks: they cannot access repo secrets, and
     # we do not want to expose Scaleway/Pulumi credentials to fork code.
     if: github.event.pull_request.head.repo.full_name == github.repository
     # Source SCW_*/PULUMI_CONFIG_PASSPHRASE from the production Environment.
@@ -95,8 +95,8 @@ jobs:
         working-directory: infra
         env:
           # AWS_* = state-bucket S3 access only. The Scaleway provider authenticates
-          # from SCW_* env (the CI deploy key) — scaleway:accessKey/secretKey/projectId
-          # are no longer stored in stack config.
+          # from SCW_* env (the CI deploy key). Scaleway:accessKey/secretKey/projectId
+          # remain absent from stack config.
           AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}

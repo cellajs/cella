@@ -11,7 +11,7 @@ import type { AppStreamEvent } from './types';
 
 /**
  * Dispatch-mirror behavior on the real dispatcher: pings go to exactly the subscribers
- * who can read the event's row(s) — org membership under cella's 2-level config, batches
+ * who can read the event's rows. Org membership under cella's two-level config and batches
  * per row. Row-level permission parity itself is covered by the three-way property test
  * in permissions/row-predicates.test.ts.
  */
@@ -57,7 +57,7 @@ const fakeSubscriber = (
 };
 
 /**
- * Rows and events must carry the FULL ancestor scope of the configured hierarchy —
+ * Rows and events must carry the full ancestor scope of the configured hierarchy.
  * `null` (not absent) for contexts the row isn't homed under, or `buildSubject`
  * fail-closes with MissingScopeError. Empty in base cella (organization only); forks
  * with deeper chains (e.g. project) get their id columns nulled here.
@@ -111,7 +111,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
     const member = fakeSubscriber([membership(ORG_A, 'member', 'member-user')], 'member-user', [ORG_A], ORG_A);
     const admin = fakeSubscriber([membership(ORG_A, 'admin', 'admin-user')], 'admin-user', [ORG_A], ORG_A);
     // Membership deleted after connect: the listener refreshed the snapshot to empty,
-    // but channel registration is connect-time — the engine must deny per event.
+    // but channel registration occurs at connect time. The engine must deny per event.
     const stale = fakeSubscriber([], 'stale-user', [ORG_A], ORG_A);
     const otherOrg = fakeSubscriber([membership(ORG_B, 'member', 'other-user')], 'other-user', [ORG_B], ORG_B);
     for (const { subscriber } of [member, admin, stale, otherOrg]) {
@@ -119,7 +119,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
     }
 
     // Row authored by the org member: keeps "read granted" true under forks where org
-    // members hold read:'own' (row condition) instead of an unconditional read grant.
+    // members hold a row-conditional read:'own' grant, not an unconditional read grant.
     await dispatchToAppStream(
       attachmentEvent(ORG_A, {
         rowData: attachmentRow('attachment-1', ORG_A, { createdBy: 'member-user' }),
@@ -136,7 +136,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
     // Subscriber connected while a member of both orgs (registered on org:B), but the
     // org-B membership is gone from the live snapshot. CDC splits batch messages per seq
     // context (per org here), so mixed-org rows in one message should not occur on the
-    // wire — dispatch still evaluates per row and must not assume it.
+    // wire. Dispatch still evaluates per row and must not assume it.
     const { subscriber, received } = fakeSubscriber(
       [membership(ORG_A, 'member', 'moved-user')],
       'moved-user',
@@ -145,7 +145,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
     );
     streamSubscriberManager.register(subscriber);
 
-    // Representative (first) row lives in org B (unreadable); the second row is in org A —
+    // The representative first row lives in unreadable org B; the second row is in org A.
     // under representative-row dispatch this subscriber would have been skipped
     await dispatchToAppStream(
       attachmentEvent(ORG_B, {

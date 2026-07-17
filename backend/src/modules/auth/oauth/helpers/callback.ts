@@ -159,7 +159,7 @@ const authCallbackFlow = async ({
  * Connects an OAuth provider to an existing user account.
  *
  * The connecting user comes from the signed oauth-state payload, pinned at initiation where the
- * session was validated — the SameSite=Strict session cookie is not sent on the provider's
+ * session was validated because the SameSite=Strict session cookie is not sent on the provider's
  * cross-site callback navigation.
  */
 const connectCallbackFlow = async ({

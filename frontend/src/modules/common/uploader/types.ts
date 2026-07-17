@@ -8,7 +8,7 @@ type UppyBody = Record<string, unknown>;
 /**
  * `attachmentId` is assigned per file in `onBeforeFileAdded` (never on the Uppy-wide meta, which
  * every file would share). It is the id the attachment row will be created with, so the local
- * blob and its row agree from the moment the file is picked — Uppy round-trips it through
+ * blob and its row agree from the moment the file is picked. Uppy round-trips it through
  * Transloadit as `user_meta.attachmentId`.
  */
 type UppyMeta = { public: boolean; bucketName: string; offlineUploaded: boolean; attachmentId?: string };

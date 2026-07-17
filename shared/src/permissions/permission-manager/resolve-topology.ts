@@ -13,8 +13,8 @@ export interface ResolvedTopology {
 
 /**
  * Resolve the topology override (tests) or the app singletons into the surface the permission
- * machinery reads. Centralizes the `topology ?? app-config` fallback — and the accompanying
- * widening casts — that were otherwise duplicated across `configurePermissions`,
+ * machinery reads. Centralizes the `topology ?? app-config` fallback. And the accompanying
+ * widening casts: that were otherwise duplicated across `configurePermissions`,
  * `getAllDecisions` and `computeCan`.
  *
  * The context set derives from the (possibly synthetic) hierarchy's own `channelTypes`, not

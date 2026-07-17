@@ -68,7 +68,7 @@ const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t
 /**
  * Generates the channel entity id columns a product entity carries in a create-request body, derived
  * from the hierarchy but excluding the root context (e.g. 'organization'), which is supplied by the
- * route path rather than the body. In cella's default hierarchy this yields an empty object, so
+ * route path and not the body. In cella's default hierarchy this yields an empty object, so
  * cella-origin request-body mocks are unchanged; forks that add deeper context relations (e.g. a
  * 'project') get those ids automatically, keeping security/API tests fork-agnostic.
  *

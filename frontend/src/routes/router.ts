@@ -28,7 +28,7 @@ const router = createRouter({
   defaultNotFoundComponent: createNotFoundComponent('public'),
 });
 
-// Publish the instance for consumers that need it outside React. Registering here rather than at the
+// Publish the instance here for consumers that need it outside React. Registration at the
 // render site keeps the invariant that whoever creates the router also publishes it.
 setRouter(router);
 

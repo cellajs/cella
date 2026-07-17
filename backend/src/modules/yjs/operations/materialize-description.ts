@@ -51,8 +51,8 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
   // (user, memberships, tenant/org scope, base db). Session-bound vars don't apply here.
   //
   // `isSystemAdmin: false` is deliberate and matches the relay's own check: collaborative
-  // editing confers no system-admin bypass. A materialization is attributed to the window's
-  // last editor and must be authorized as that user, not as an operator.
+  // editing confers no system-admin bypass. The relay credits the window's last editor and
+  // authorizes the persisted update as that user, not as an operator.
   const ctx = {
     var: {
       user,

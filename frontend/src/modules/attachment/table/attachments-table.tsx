@@ -75,7 +75,7 @@ function AttachmentsTable({ channelEntity, canUpload = true, isSheet = false }: 
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   // Default view (no search, default sort) is served straight from the canonical org query:
-  // SyncService prefetches it and live sync splices creates into it — no fetch of its own.
+  // SyncService prefetches it and live sync splices creates into it. It does not fetch independently.
   // Any deviating filter switches to the server-filtered infinite query.
   const isDefaultView = isDefaultListView({ q, sort, order }, attachmentsSearchDefaults);
 

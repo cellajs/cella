@@ -9,7 +9,7 @@ const showDelay = 2000;
 
 /**
  * Low-pass filter over `onlineManager` (the connectivity source of truth, driven by the /health probe).
- * onlineManager reacts instantly — right for pausing queries, wrong for UI where a transient blip would
+ * onlineManager reacts instantly, which suits query pausing but makes transient UI blips visible and
  * flash a toast. So: surface offline only after `showDelay` of sustained disconnection, clear immediately
  * on reconnect, and on tab resume re-verify with a real request (mobile's 'online' event is laggy, so the
  * pre-freeze offline state may be stale).

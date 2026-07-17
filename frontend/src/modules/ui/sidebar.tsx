@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/modu
 import { cn } from '~/utils/cn';
 
 /**
- * Collapsible sidebar. Uses the navigation store instead of shadcn's provider pattern.
+ * Collapsible sidebar backed by the navigation store.
  * @link https://ui.shadcn.com/docs/components/sidebar
  */
 

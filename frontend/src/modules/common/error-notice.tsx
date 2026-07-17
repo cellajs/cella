@@ -21,7 +21,7 @@ interface ErrorNoticeProps {
 }
 
 /**
- * `boundary` levels: root (no footer — services may be down), app (no footer), public (footer shown).
+ * `boundary` levels: root (no footer because services may be down), app (no footer), public (footer shown).
  */
 export function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {
   const { t } = useTranslation();

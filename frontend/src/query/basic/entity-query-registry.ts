@@ -17,7 +17,7 @@ export interface EntityQueryKeys {
 /**
  * Chunk size for delta sync fetches: the backend's max limit. A response of exactly this
  * size means the seq window may exceed one response; fetchRangeAndPatch treats that as
- * overflow and falls back to full list invalidation instead of paging.
+ * overflow and falls back to full list invalidation without paging.
  */
 export const SYNC_CHUNK_SIZE = 1000;
 
@@ -27,8 +27,8 @@ export const SYNC_CHUNK_SIZE = 1000;
  * `limit: String(SYNC_CHUNK_SIZE)`.
  *
  * seqCursor formats:
- * - "51":     open-ended (seq >= 51)          — used by catchup
- * - "51,150": bounded (seq >= 51 AND <= 150)  — used by batch notifications
+ * - "51":     open-ended (seq >= 51), used by catchup
+ * - "51,150": bounded (seq >= 51 AND <= 150), used by batch notifications
  */
 export type DeltaFetchFn = (
   organizationId: string | null,
@@ -45,7 +45,7 @@ const deltaFetchRegistry = new Map<string, DeltaFetchFn>();
 
 /**
  * Register query keys for an entity type at module init. Optional `deltaFetch` lets the catchup
- * processor fetch only changed entities (via `seqCursor`) instead of a full list refetch.
+ * processor fetch only changed entities via `seqCursor`, avoiding a full list refetch.
  */
 export function registerEntityQueryKeys(
   entityType: EntityType,
@@ -56,7 +56,7 @@ export function registerEntityQueryKeys(
   if (deltaFetch) deltaFetchRegistry.set(entityType, deltaFetch);
 }
 
-/** Throws if the entity type wasn't registered — all types must register at module load, before any stream/cache code runs. */
+/** Throws if the entity type was not registered. All types must register before stream/cache code runs. */
 export function getEntityQueryKeys(entityType: string): EntityQueryKeys {
   const keys = entityQueryKeysRegistry.get(entityType);
   if (!keys) throw new Error(`No query keys registered for entity type: ${entityType}`);

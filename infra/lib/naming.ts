@@ -7,7 +7,7 @@ type Cfg = typeof AppConfig
 /**
  * The one misconfiguration guard worth failing every deploy path on: an app
  * served at the zone apex. The LB module gives an apex-hosted app no DNS
- * record, cert, or host route by design (resources/loadbalancer.ts) — the
+ * record, cert, or host route by design (resources/loadbalancer.ts). The
  * supported pattern is a subdomain with the automatic apex→www redirect. A
  * fork that ships `frontendUrl: https://<domain>` gets a live API and a dead
  * site, so this is checked centrally in deriveInfra (Pulumi program, CI's
@@ -60,7 +60,7 @@ export function deriveInfra(appConfig: Cfg) {
     zone: `${region}-1`,
     tags: [`env=${appConfig.mode}`, `app=${appConfig.slug}`, 'managed-by=pulumi'],
     // The same tags as a key→value map, for resources (Object Storage buckets)
-    // whose API takes a record instead of `key=value` strings.
+    // whose API takes a record.
     tagsAsMap: {
       env: appConfig.mode,
       app: appConfig.slug,

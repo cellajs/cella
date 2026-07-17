@@ -32,7 +32,7 @@ export function clearAttachmentDialogSearch(prev: Record<string, unknown>) {
 /**
  * Clear the dialog's search params from the current location.
  *
- * Kept on the router instance rather than `useNavigate()`: `to: '.'` resolves against the current
+ * Kept on the router instance because `useNavigate()` with `to: '.'` resolves against the current
  * location here, where a hook would resolve it against the calling component's match.
  */
 export const clearAttachmentDialogSearchParams = () => {

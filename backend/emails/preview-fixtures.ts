@@ -16,7 +16,7 @@ import type { EmailTemplateDef } from './types';
 
 /**
  * `statics` are props shared across all recipients (passed to `translate`);
- * `recipient` are per-recipient display props — the values the mailer turns into
+ * `recipient` are per-recipient display props. The mailer turns these values into
  * Brevo `{{params.x}}` placeholders at send time. Sample data lives on each
  * template's `preview` field, type-checked against the template's own props.
  */

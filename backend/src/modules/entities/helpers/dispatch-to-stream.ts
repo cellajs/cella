@@ -26,7 +26,7 @@ export type SubscriberAccess = Pick<AppStreamSubscriber, 'userId' | 'isSystemAdm
 /**
  * SSE must mirror API read visibility: can this subscriber read the event's row?
  *
- * Runs the SAME engine as API reads (`checkPermission`) with the SAME inputs — the
+ * Runs the SAME engine as API reads (`checkPermission`) with the SAME inputs. The
  * event carries the full row (REPLICA IDENTITY FULL), which row conditions and public
  * grants evaluate per subscriber. Rows are self-describing, so no second row is ever
  * needed. Fail-closed on malformed events.
@@ -69,7 +69,7 @@ export function canReceiveEntityEvent(subscriber: SubscriberAccess, event: AppSt
 
 /**
  * Rebase a product event onto one of its batch rows: subjectId and every CONTEXT id
- * column come from the row itself — rows are self-describing, which also makes
+ * column come from the row itself. Rows are self-describing, which also makes
  * re-parenting evaluate correctly.
  */
 const rowScopedEvent = (event: AppStreamProductEvent, rowData: Record<string, unknown>): AppStreamProductEvent => {

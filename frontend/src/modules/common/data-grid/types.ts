@@ -24,7 +24,7 @@ export type ActiveModes = Readonly<Record<GridMode, boolean>>;
 /**
  * Merge this column into another column's cell while a mode is active.
  * The column stops being a grid column (no track, no header, no cell focus)
- * and its `renderCell` output is rendered inside the host cell instead.
+ * and renders its `renderCell` output inside the host cell.
  */
 export interface ColumnMergeRule {
   /** Key of the host column to merge into. Must resolve to a non-merged, currently visible column. */
@@ -137,7 +137,7 @@ export interface Column<TRow, TSummaryRow = unknown> {
    * still active per-cell so other columns can be dragged onto.
    */
   readonly rowDragHandle?: Maybe<boolean>;
-  /** Sets the column sort order to be descending instead of ascending the first time the column is sorted */
+  /** Sets descending as the column's initial sort order. */
   readonly sortDescendingFirst?: Maybe<boolean>;
   /**
    * Muted-text placeholder shown only when `renderCell` returns null/undefined.

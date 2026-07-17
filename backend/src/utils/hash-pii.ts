@@ -10,7 +10,7 @@ import { env } from '#/env';
  *
  * Use this for any PII that is stored or logged purely as a key (rate-limit
  * buckets, audit event subjects, analytics dimensions). Do NOT use this where
- * the original value must be recoverable. Encrypt instead.
+ * the original value must be recoverable. Use encryption for recoverable values.
  *
  * Properties:
  * - Deterministic: same input always produces the same output (good for keying).
@@ -44,7 +44,7 @@ export const hashIpForUser = (ip: string, userId: string): string => {
  * Hash a device id bound to a specific user. Different users on the same physical device produce
  * different hashes, preventing cross-user device correlation if the table leaks. Used for "have I
  * seen this device for this user?" checks and same-device session grouping/replacement. The raw
- * device id lives only in the (signed, httpOnly) `device-id` cookie — never persisted.
+ * device id lives only in the signed, httpOnly `device-id` cookie and is never persisted.
  */
 export const hashDeviceIdForUser = (deviceId: string, userId: string): string => {
   if (!deviceId || !userId) return '';

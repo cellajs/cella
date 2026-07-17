@@ -28,7 +28,7 @@ interface DocsSidebarProps {
 
 /**
  * Docs sidebar: logo + theme, then sections from the global docs config (content root index.mdx
- * frontmatter) — label, order, visibility are config-driven; each section id maps to a renderer.
+ * frontmatter). Label, order, and visibility are config-driven; each section id maps to a renderer.
  */
 export function DocsSidebar({ tags }: DocsSidebarProps) {
   const { t } = useTranslation();

@@ -129,7 +129,7 @@ export const DataTable = <TData,>({
   // virtualization all rows render, so near-end would always be true).
   // Level-triggered: the grid reports near-end as state and this effect
   // fetches whenever the query can accept it, so demand raised during a
-  // background refetch is served when it settles instead of dropped.
+  // background refetch is served when it settles.
   const [nearEnd, setNearEnd] = useState(false);
   useFetchMoreOnDemand({
     demand: !!enableVirtualization && nearEnd,

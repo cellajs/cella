@@ -39,7 +39,7 @@ interface BoardLayoutProps {
   defaultLayout: Record<string, number>;
   onLayoutChanged?: (layout: Record<string, number>) => void;
   children: (panelId: string, index: number) => ReactNode;
-  /** When true, panels grow with content instead of being viewport-height constrained */
+  /** When true, panels grow with content without a viewport-height constraint. */
   autoHeight?: boolean;
   /** When true, panels can be reordered via drag-and-drop */
   reorderable?: boolean;

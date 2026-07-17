@@ -134,7 +134,7 @@ async function mintCiKey(ctx: SetupContext): Promise<CiKeyResult> {
  * alongside the CI key on fresh/rotate, OR on its own to self-heal a stack that
  * is missing it (a plain Resume). provisionScopedKey is idempotent: it reuses
  * the `<slug>-vm-reader` app by name and just mints a fresh key, so a repeated
- * heal rotates rather than duplicates. Minting the IAM app requires a key with
+ * heal rotates existing credentials and never duplicates them. Minting the IAM app requires a key with
  * IAMManager: on fresh/rotate the bootstrap key already is one; on a plain
  * Resume prompt for a bootstrap key just for this step.
  *
@@ -244,7 +244,7 @@ function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; vmAccess
  * Mint the scoped Scaleway IAM keys the operator opted into at the bootstrap
  * prompts, now that `pulumi up` has created their (empty) runtime-secret
  * containers. Non-fatal per key: a mint failure warns and continues so one bad
- * key never blocks the rest of the bootstrap — it can be minted later via
+ * key never blocks the rest of the bootstrap. It can be minted later via
  * "Manage runtime secrets".
  */
 async function provisionConfirmedManagedKeys(ctx: SetupContext, mintDecisions: Map<ManagedKeyId, boolean>): Promise<void> {
@@ -269,8 +269,8 @@ async function provisionConfirmedManagedKeys(ctx: SetupContext, mintDecisions: M
 
 /**
  * Base-infra provisioning: DNS zone check, stack lock, computeDeferred marker
- * on a fresh provision, the `pulumi up` retry loop, and — once the containers
- * exist — the first-value seed for operator secrets and the mint of any
+ * on a fresh provision, the `pulumi up` retry loop, and. Once the containers
+ * exist: the first-value seed for operator secrets and the mint of any
  * managed keys the operator opted into at the prompts.
  */
 async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInputs): Promise<void> {
@@ -368,11 +368,11 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
 
   // Operator-managed runtime secrets (admin email, Brevo) live in Scaleway Secret
   // Manager and are owned by "Manage runtime secrets", not stack config. Managed
-  // keys (AI, S3) are scoped Scaleway IAM keys cella can MINT here instead of a
-  // pasted value — confirmed now, minted after the first `pulumi up` once their
+  // keys (AI, S3) are scoped Scaleway IAM keys that cella can MINT here without a
+  // pasted value: confirmed now, minted after the first `pulumi up` once their
   // containers exist. Only prompt on the very first bootstrap so the first deploy
   // works without a second step; on an already-bootstrapped stack we skip the
-  // prompts (Resume/Rotate shouldn't re-ask) and instead warn below about any
+  // prompts (Resume/Rotate should not re-ask) and warn below about any
   // required secret still missing. Declined keys are set/minted later via
   // "Manage runtime secrets".
   const isInitialBootstrap = !context.hasCiKey

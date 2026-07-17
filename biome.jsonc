@@ -377,9 +377,8 @@
       }
     },
     {
-      // Shadcn-derived UI primitives intentionally use ARIA roles
-      // (role="region", "group", "presentation") on <div> wrappers instead of
-      // semantic elements, matching upstream shadcn/BaseUI patterns.
+      // These shadcn-derived UI primitives follow upstream shadcn/BaseUI patterns,
+      // including ARIA roles (role="region", "group", "presentation") on <div> wrappers.
       "includes": [
         "frontend/src/modules/ui/breadcrumb.tsx",
         "frontend/src/modules/ui/button-group.tsx",

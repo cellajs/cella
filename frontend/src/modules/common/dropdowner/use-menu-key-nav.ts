@@ -27,7 +27,7 @@ function focusItem(items: HTMLElement[], idx: number) {
 /**
  * Adds WAI-ARIA menu keyboard nav to a container of `[role="menuitem"]` elements: roving tabindex (only one
  * item tabbable, so Tab leaves the menu), Arrow/Home/End movement, and printable-char typeahead. Items keep
- * their own click/Enter/Space activation. No-op without menuitem descendants — safe to call unconditionally.
+ * their own click/Enter/Space activation. Safe to call unconditionally; it is a no-op without menuitems.
  */
 export function useMenuKeyNav(containerRef: RefObject<HTMLElement | null>) {
   const typeaheadRef = useRef({ buffer: '', timer: 0 });
@@ -40,7 +40,7 @@ export function useMenuKeyNav(containerRef: RefObject<HTMLElement | null>) {
     if (initialItems.length === 0) return; // not a menu, leave focus handling to FocusTrap
 
     // Set up roving tabindex so Tab moves out of the menu and FocusTrap.initialFocus
-    // lands on the first item rather than skipping all -1 elements.
+    // lands on the first item and does not skip every -1 element.
     applyRovingTabindex(initialItems, 0);
 
     // Pull focus to the first menuitem after both FocusTrap and FloatingFocusManager

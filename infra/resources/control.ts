@@ -26,7 +26,7 @@ async function loadControlState(): Promise<ControlState> {
   } catch (err) {
     // readControlState returns the empty state for a missing object (fresh stack);
     // only genuine failures reach here. The control object is the sole source of
-    // rollout state, so fail closed rather than regress live compute.
+    // rollout state, so fail closed to protect live compute.
     throw new Error(`control-store: failed to read rollout state — aborting deploy (${errorMessage(err)})`)
   }
 }

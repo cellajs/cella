@@ -24,8 +24,7 @@ export const useAttachmentsUploadDialog = (tenantId: string, organizationId: str
         return;
       }
 
-      // Go through the mutation rather than calling the SDK directly. That buys the optimistic
-      // row, the SSE-race-safe upsert, and — the reason this matters — offline replay: while
+      // The mutation provides the optimistic row, the SSE-race-safe upsert, and offline replay. While
       // offline the mutation pauses with the row already in cache and fires on reconnect. A
       // direct call rejects offline, leaving bytes that upload later with no attachment row to
       // attach them to. Errors surface via the mutation's own onError toast.

@@ -44,11 +44,11 @@ const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
 /**
  * Enforce `appConfig.maxSessionsPerUser` by hard-deleting the oldest active regular sessions beyond
  * the cap. Called just before inserting a new session, so `cap - 1` leaves room for it. Concurrent
- * sign-ins can transiently overshoot by one — harmless. Only `regular` sessions count: `mfa`
+ * sign-ins can transiently overshoot by one without harm. Only `regular` sessions count: `mfa`
  * challenges and admin `impersonation` sessions are excluded.
  *
  * The two-step select-then-delete is deliberate: the PK is `(id, expiresAt)` on a partitioned table,
- * and pairing both columns in the delete lets PostgreSQL prune straight to the right partition — the
+ * and pairing both columns in the delete lets PostgreSQL prune directly to the right partition. The
  * same trick the expired-row cleanup in {@link validateSession} uses.
  *
  * Exported for direct unit testing of the cap; production callers reach it via {@link setUserSession}.
@@ -147,7 +147,7 @@ export const setUserSession = async (
   };
 
   if (type === 'regular') {
-    // A3 — a browser holds at most one live session: repeated sign-ins from the same browser don't stack up as unrelated rows.
+    // A3: a browser holds at most one live session, so repeated sign-ins do not stack up.
     if (session.deviceIdHash) {
       await db
         .delete(sessionsTable)

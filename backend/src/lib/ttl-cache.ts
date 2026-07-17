@@ -15,7 +15,7 @@ export interface TTLCacheOptions<T> {
 /**
  * TTL cache with prefix invalidation.
  * Automatic expiration via timer (no manual prune needed).
- * Uses soonest-expiring-first eviction rather than access recency.
+ * Evicts the soonest-expiring entry, independent of access recency.
  */
 export class TTLCache<T> {
   private cache: BaseTTLCache<string, T>;

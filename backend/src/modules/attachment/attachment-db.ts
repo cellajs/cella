@@ -13,7 +13,7 @@ export const attachmentsTable = snakeCase.table(
   'attachments',
   {
     ...productEntityColumns('attachment'),
-    // S3 bucket visibility (public vs private bucket) — NOT a permission grant. Unrelated to the
+    // S3 bucket visibility (public vs private bucket), not a permission grant. Unrelated to the
     // permission `publicAt` (from productEntityColumns) which grants non-member read. Named `public`
     // for historical reasons; a rename to e.g. `isInPublicBucket` is deferred to a future attachment
     // migration to avoid a standalone data migration here.

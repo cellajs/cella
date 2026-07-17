@@ -6,7 +6,7 @@ import { xMiddleware } from '#/core/x-middleware';
  *
  * Prevents concurrent insert requests for the same tenant from racing
  * past quota checks. When an insert is already in-flight for a given tenant,
- * subsequent requests receive a 409 Conflict instead of queuing.
+ * subsequent requests receive a 409 Conflict without queuing.
  *
  * Scoped by `tenantId`: a normal user only works in one tenant at a time,
  * so this effectively serializes their create requests without being too

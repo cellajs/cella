@@ -107,10 +107,10 @@ $$ LANGUAGE plpgsql;`;
  * re-grants in bulk), and a single reconcile would silently hand the app role write access. This
  * trigger is independent of grants, so it still refuses the write.
  *
- * Denies `runtime_role` specifically rather than allowing only `admin_role`: seeds and migrations
- * run as `postgres` locally and `admin_role` in production, and an allowlist would break the
- * former. Referential actions are unaffected — an `ON DELETE CASCADE` runs as the referencing
- * table's owner, not as the caller, so deleting a user still cascades into `system_roles`.
+ * Denies `runtime_role` specifically so seeds and migrations can run as `postgres` locally and
+ * `admin_role` in production. Referential actions are unaffected because an `ON DELETE CASCADE`
+ * runs as the referencing table's owner, not as the caller, so deleting a user still cascades
+ * into `system_roles`.
  *
  * `COALESCE(NEW, OLD)` because NEW is null on DELETE and OLD is null on INSERT.
  */
@@ -165,14 +165,11 @@ export const allImmutabilityTables: TableImmutabilityConfig[] = [
 export const allAdminOnlyWriteTables: TableImmutabilityConfig[] = adminOnlyWriteConfigs;
 
 /**
- * Every trigger function, in creation order — the single list both emitters build from.
+ * Every trigger function in creation order. Both emitters build from this single list.
  *
- * Load-bearing: the side-effect migration used to hand-list the functions it created while taking
- * its trigger list from `allImmutabilityTables`. The two drifted, `append_only_immutable_row` was
- * never created, and its `CREATE TRIGGER` failed inside the migration's `EXCEPTION WHEN OTHERS`
- * block — which rolls the whole subtransaction back, so *every* immutability trigger was silently
- * dropped on any database built from migrations alone. Deriving both from one list makes a
- * trigger-without-its-function unrepresentable.
+ * Load-bearing: both migration emitters derive from this list so every trigger function exists
+ * before `CREATE TRIGGER` runs. A missing function would fail inside `EXCEPTION WHEN OTHERS`,
+ * roll back the subtransaction, and silently remove every immutability trigger.
  */
 export const allImmutabilityFunctionsSQL: string[] = [
   baseEntityImmutabilityFunctionSQL,

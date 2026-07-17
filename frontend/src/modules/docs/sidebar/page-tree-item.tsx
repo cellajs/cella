@@ -19,7 +19,7 @@ type PageBranchProps = {
   node: PageNode;
   variant: 'root' | 'parent';
   activePageId: string | undefined;
-  /** Ancestor chain of the active page — this row contains the active page iff its id is in here */
+  /** Ancestor chain of the active page. This row contains the active page iff its id is included. */
   activeAncestorIds: ReadonlySet<string>;
   expandedIds: ReadonlySet<string>;
   onToggle: (id: string) => void;
@@ -79,7 +79,7 @@ export function PageBranch({
               onToggle(page.id);
               return;
             }
-            // Re-click on an expanded branch collapses it without navigating — unless the
+            // Re-click on an expanded branch collapses it without navigating, unless the
             // user is viewing one of its subpages; then it navigates to the branch page itself
             if (hasChildren && isExpanded && !activeAncestorIds.has(page.id)) {
               e.preventDefault();

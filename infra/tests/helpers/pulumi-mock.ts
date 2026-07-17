@@ -60,15 +60,15 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
           provider: args.provider,
         })
         // Echo inputs as outputs so chained pulumi.all() applies resolve with
-        // real-looking values rather than `undefined`.
+        // realistic values required by downstream resource construction.
         return {
           id: `${args.name}-id`,
           state: { ...args.inputs, id: `${args.name}-id` },
         }
       },
       call(args) {
-        // IAM data sources (pulumi-context.ts derives identity ids from these instead
-        // of stored config). Return deterministic stub ids so resource modules
+        // IAM data sources used by pulumi-context.ts to derive identity ids. Return
+        // deterministic stub ids so resource modules
         // that consume them render without talking to Scaleway.
         if (args.token.includes('getApplication')) {
           const name = String((args.inputs as { name?: string }).name ?? 'app')
@@ -82,8 +82,8 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
             defaultProjectId: 'mock-project-id',
           }
         }
-        // Secret Manager data sources (pulumi-context.ts readVmReaderKey reads the VM
-        // reader key from Secret Manager instead of stored config). getVersion
+        // Secret Manager data sources used by pulumi-context.ts readVmReaderKey to
+        // read the VM reader key. getVersion
         // returns the base64 JSON payload that readVmReaderKey decodes.
         if (args.token.includes('getSecret')) {
           const name = String((args.inputs as { name?: string }).name ?? 'secret')

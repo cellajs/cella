@@ -11,7 +11,7 @@ const defaultMaxLines = 10;
 
 /**
  * Quantized height tiers for wrapText rows.
- * Rows snap to one of these discrete heights instead of continuous values.
+ * Rows snap to one of these discrete heights.
  * This improves CSS grid track RLE compression and bounds scroll jitter
  * when using `minmax(tierPx, max-content)` tracks.
  */

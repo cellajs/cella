@@ -11,7 +11,7 @@ export const channelEntityListQueriesByType = {
   organization: (params) => organizationsListQueryOptions(params),
 } satisfies ChannelEntityListQueryMap;
 
-/** Returns query options to sync for a given entity. Pure mapping — staleness is handled by React Query. */
+/** Returns query options to sync for a given entity. React Query handles staleness. */
 export const buildEntitySyncQueries = ({
   targetEntityId,
   targetEntityType,

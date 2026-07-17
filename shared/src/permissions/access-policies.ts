@@ -29,15 +29,15 @@ const createChannelPolicyBuilder = (
   for (const role of roles) {
     builder[role] = (permissions: Partial<Record<EntityActionType, PermissionValue>>) => {
       // Expand to a full record so the engine always reads an explicit value: any action the
-      // policy omits defaults to 0 (denied). A cell is the config literal verbatim — the `'own'`
+      // policy omits defaults to 0 (denied). A cell is the config literal verbatim. The `'own'`
       // name IS the value the engine reads, so there is nothing to normalize.
       const fullPermissions = {} as EntityActionPermissions;
       for (const action of entityActions) {
         const value = permissions[action] ?? 0;
         // Fail loud at boot: a row condition on `create` can never match. The row doesn't exist
         // yet (the subject carries no `row`), so e.g. `create: 'own'` reads a `createdBy` that
-        // isn't there and silently denies forever. That's a config mistake, not a runtime state —
-        // surface it here rather than as a permanent, invisible denial in production.
+        // isn't there and silently denies forever. That's a config mistake, not a runtime state.
+        // Surface the configuration error here so it cannot become an invisible production denial.
         if (action === 'create' && isRowCondition(value)) {
           throw new Error(
             `[Permission] "${channelType}.${role}" uses a row condition ('${value}') on 'create', ` +

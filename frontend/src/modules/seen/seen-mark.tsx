@@ -79,8 +79,7 @@ interface SeenMarkProps {
 
 /**
  * Invisible zero-size marker that marks an entity row seen when it enters the viewport. Drop into any
- * cell (e.g. name column). Uses a shared singleton IntersectionObserver — safe to render hundreds of
- * instances.
+ * cell (e.g. name column). A shared singleton IntersectionObserver supports hundreds of instances.
  *
  * @example
  * ```tsx

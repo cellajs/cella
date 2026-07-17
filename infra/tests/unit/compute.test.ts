@@ -53,7 +53,7 @@ describe('compute module source invariants', () => {
   })
 
   it('sizes each VM via the per-service instanceTypeFor helper', () => {
-    // VM size must be resolved per service rather than a single fleet-wide size.
+    // VM size must be resolved per service.
     expect(source).toMatch(/type:\s*infra\.instanceTypeFor\(svc\.slug\)/)
     expect(source).not.toMatch(/type:\s*infra\.instanceType\b/)
   })
@@ -70,7 +70,7 @@ describe('compute module source invariants', () => {
 
   it('derives the VM service list from the canonical registry (deployedServices)', () => {
     // compute filters the canonical registry by feature flag (and folds
-    // co-hosted workers into the host under singleVM) rather than re-declaring
+    // co-hosted workers into the host under singleVM) without re-declaring
     // the service set, so LB / image-wait / compose wiring can't drift.
     expect(source).toMatch(/deployedServices\(appConfig\.services, appConfig\.singleVM\)/)
   })
@@ -88,12 +88,12 @@ describe('compute module source invariants', () => {
     // on the singleVM host), the shared envPool second.
     expect(source).toMatch(/effectiveBindings\(/)
     expect(source).toMatch(/resolveBinding\(/)
-    // Unknown placeholders must fail fast rather than booting a broken VM —
-    // except placeholders folded in from an inactive co-hosted worker, which
+    // Unknown placeholders must fail before a broken VM can boot.
+    // Except placeholders folded in from an inactive co-hosted worker, which
     // nothing in-process reads.
     expect(source).toMatch(/defines a value for it/)
     expect(source).toMatch(/inactiveCoHostedVars\(/)
-    // The old hand-maintained per-service map must not come back.
+    // The registry remains the sole source for per-service bindings.
     expect(source).not.toMatch(/composeEnvFor/)
   })
 
@@ -115,7 +115,7 @@ describe('compute module source invariants', () => {
     expect(source).toMatch(/activeGenerations\(/)
     expect(source).toMatch(/vm-\$\{svc\.slug\}-\$\{generation\.id\}/)
     expect(source).toMatch(/ipam-\$\{svc\.slug\}-\$\{generation\.id\}/)
-    // The old lifelong reserved-IP map must not come back.
+    // Generation-scoped IP allocation remains the sole allocation path.
     expect(source).not.toMatch(/reservedIps\.set\(/)
     expect(source).not.toMatch(/Create backend first/)
   })
@@ -158,7 +158,7 @@ describe('compute module source invariants', () => {
   it('bakes the runtime secret manifest inline into cloud-init, not as an out-of-band S3 object', () => {
     // Under immutable releases every change replaces the VM anyway, so the
     // manifest (metadata only) is baked into the new generation's cloud-init
-    // rather than published as a deploy-bucket object the VM fetches.
+    // and are not published as deploy-bucket objects for the VM to fetch.
     expect(source).toMatch(/buildRuntimeSecretsManifest\(service\.secretConsumers\)/)
     expect(source).not.toMatch(/new scaleway\.object\.Item\(`runtime-manifest-/)
     expect(source).not.toMatch(/runtimeSecretsManifestKey/)

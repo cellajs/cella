@@ -43,12 +43,12 @@ export function secretConsumersFor(svc: ServiceDefinition): RuntimeSecretConsume
  *
  *  Intentional asymmetry with the rollout tasks: deploy-service still runs the
  *  LB-overlap reconciler for the host (its registry strategy) even when the
- *  program materialises it exclusively here. That composes correctly because
- *  the reconciler is level-triggered — the old generation is already replaced
+ *  program provisions it exclusively here. That composes correctly because
+ *  the reconciler is level-triggered. The old generation is already replaced
  *  by `pulumi up`, so the expand phase is naturally empty and the reconciler
  *  simply repairs the LB onto the replacement generation and health-gates it.
  *  The trade-off is inherent to singleVM+cdc: the host cutover has a bounded
- *  downtime window instead of blue-green overlap. */
+ *  bounded downtime window with no blue-green overlap. */
 export function effectiveStrategy(svc: ServiceDefinition): ServiceDefinition['replacementStrategy'] {
   if (appConfig.singleVM && svc.slug === hostSlug && coHosted.some((s) => s.replacementStrategy === 'exclusive')) {
     return 'exclusive'
@@ -97,7 +97,7 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
 }
 
 /**
- * Generations a service materialises: the live one (`active`, else the pending
+ * Generations a service provisions: the live one (`active`, else the pending
  * intent on first deploy) and the pending generation being rolled in. This
  * derives the content-addressed id for a pending SHA (the genId authority).
  * Deduplicated by id. When a pending SHA hashes to the active id (a same-config
@@ -121,7 +121,7 @@ export function activeGenerations(svc: ServiceDefinition): Generation[] {
   }
 
   // Exclusive services (cdc) hold a single resource the platform permits one
-  // consumer of (the replication slot), so there is no overlap: materialise
+  // consumer of (the replication slot), so there is no overlap: provision
   // ONLY the live generation (the pending intent, else active), which replaces
   // the old VM in place. Under singleVM the host inherits this when it co-hosts
   // an exclusive worker (it now holds the slot in-process).

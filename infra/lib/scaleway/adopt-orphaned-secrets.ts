@@ -71,7 +71,7 @@ export async function adoptOrphanedSecrets(opts: AdoptOrphanedSecretsOptions): P
 
   // 2. List live containers once (only when something is missing). A read
   //    failure is non-fatal; skip adoption and let `pulumi up` report the real
-  //    error rather than masking it.
+  //    error without masking it.
   let liveByName: Map<string, { id: string; region?: string }>
   try {
     const client = createSecretManagerClient({ secretKey: opts.secretKey, region: opts.region, projectId: opts.projectId })
@@ -85,7 +85,7 @@ export async function adoptOrphanedSecrets(opts: AdoptOrphanedSecretsOptions): P
   }
 
   // 3. Adopt each orphan (present in Scaleway, missing from state) so the next
-  //    `pulumi up` updates rather than creates it.
+  //    the next `pulumi up` updates the existing resource.
   for (const secret of missing) {
     const live = liveByName.get(secret.secretName)
     if (!live) {

@@ -101,7 +101,7 @@ export const config = {
   },
 
   // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
-  // service in-process — one VM for previews/small forks. Default false keeps the
+  // service in-process: one VM for previews/small forks. Default false keeps the
   // split (one service per process). cdc co-hosting forfeits API blue-green.
   singleVM: false as boolean,
 
@@ -135,12 +135,11 @@ export const config = {
   // - apiVersion: API contract / frozen-envelope version (wire structure).
   // - cookieVersion: session cookie name; bump to invalidate all sessions.
   // - clientCacheVersion: persisted client query-cache shape; bump on a breaking change to a cached
-  //   entity so clients wipe stale cache (queued mutations survive). Enforced by CI's schema-bust
-  //   gate; a temporary escape hatch until the lens system lands.
+  //   entity so clients wipe stale cache (queued mutations survive). CI's schema-bust gate enforces
+  //   this when no schema-evolution lens covers the change.
 
   apiVersion: 'v1',
-  // v2: same-origin migration — clean break from the Domain-scoped v1 cookies
-  // (now __Host- prefixed, host-locked). Stale v1 cookies age out unread.
+  // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v2',
   clientCacheVersion: 'v1',
 
@@ -152,7 +151,7 @@ export const config = {
 
   /**
    * Maximum concurrent regular sessions per user. On sign-in, the oldest sessions beyond the cap are
-   * hard-deleted (Hanko-style eviction). Keep comfortably above a realistic device count — this is
+   * hard-deleted (Hanko-style eviction). Keep comfortably above a realistic device count. This is
    * bloat/abuse protection (credential-stuffing bursts, unbounded session accumulation), not a UX
    * feature. `mfa` and `impersonation` sessions never count toward or get evicted by the cap.
    */
@@ -302,4 +301,3 @@ export const config = {
     finishedOnboarding: false,
   },
 } satisfies RequiredConfig;
-

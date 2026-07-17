@@ -176,7 +176,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
     const parentKey = path.length > 0 ? path[path.length - 1] : null;
     const isInsideProperties = parentKey === 'properties';
 
-    // Get 'type' value if present and we should show it as a label (not inside 'properties')
+    // Show a present 'type' value as a label, not inside 'properties'.
     // Type can be a string (e.g., "string") or an array (e.g., ["string", "null"] for nullable)
     const typeValue = (() => {
       if (!openapiMode || openapiMode !== 'schema' || isArray || isInsideProperties) return null;
@@ -198,7 +198,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
     const hasAnyOf = valueObj ? Array.isArray(valueObj.anyOf) : false;
     const hasOneOf = valueObj ? Array.isArray(valueObj.oneOf) : false;
 
-    // Get 'ref' value if present and we should show it as a label (not inside 'properties')
+    // Show a present 'ref' value as a label, not inside 'properties'.
     // Extract just the schema name from the full ref path (e.g., '#/components/schemas/User' -> 'User')
     const refValue = (() => {
       if (valueObj && typeof valueObj.ref === 'string') {
@@ -246,7 +246,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
       ? (value as unknown[]).map((v, i) => [i, v] as [number, unknown])
       : Object.entries(value as Record<string, unknown>);
 
-    // Filter out 'required' key in schema mode (it will be shown as label instead)
+    // Filter out the 'required' key in schema mode because it is shown as a label.
     // Also filter out 'type' and 'ref' keys when not inside 'properties' (they will be shown as labels after open bracket)
     // For array schemas, filter out 'items' key (its properties will be hoisted)
     // 'anyOf' and 'oneOf' are flattened like 'properties' but still rendered.
