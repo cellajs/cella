@@ -4769,16 +4769,6 @@
                     },
                     "maxItems": 256,
                     "description": "Client-declared views: prefix set + entity types + org-ledger cursor per view"
-                  },
-                  "seqs": {
-                    "type": "object",
-                    "additionalProperties": {
-                      "type": "integer"
-                    },
-                    "description": "Legacy client-side sequence numbers per scope: { \"organizationId:s:attachment\": 42 }",
-                    "example": {
-                      "abc123:s:attachment": 10
-                    }
                   }
                 }
               }
@@ -4802,32 +4792,6 @@
                             "type": "object",
                             "additionalProperties": {
                               "type": "integer"
-                            }
-                          },
-                          "entityCounts": {
-                            "type": "object",
-                            "additionalProperties": {
-                              "type": "integer"
-                            }
-                          },
-                          "childChannelChanges": {
-                            "type": "object",
-                            "additionalProperties": {
-                              "type": "object",
-                              "properties": {
-                                "entitySeqs": {
-                                  "type": "object",
-                                  "additionalProperties": {
-                                    "type": "integer"
-                                  }
-                                },
-                                "entityCounts": {
-                                  "type": "object",
-                                  "additionalProperties": {
-                                    "type": "integer"
-                                  }
-                                }
-                              }
                             }
                           },
                           "propagation": {

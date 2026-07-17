@@ -42,8 +42,6 @@ interface SyncStoreState {
   /** Record the latest server-mentioned seq for a scope (monotonic max-merge). */
   setKnownSeq: (scopeId: string, entityType: string, seq: number) => void;
   getKnownSeq: (scopeId: string, entityType: string) => number;
-  /** Build flat seqs map for the catchup API body (backward-compatible with backend) */
-  getFlatSeqs: () => Record<string, number>;
   /** Build the view-driven catchup body: one org-prefix view per (org, entityType). */
   getCatchupViews: (entityTypes: readonly string[]) => CatchupViewRequest[];
   reset: () => void;
@@ -98,8 +96,7 @@ export const useSyncStore = create<SyncStoreState>()(
 
         // Org-homed scopes arrive with channelId === orgId on the live wire, while catchup
         // reports them at org level. Normalize both to the org slot so live and catchup
-        // share ONE caught-up watermark per scope (contexts[orgId] would also collide with
-        // the org slot's key in getFlatSeqs).
+        // share ONE caught-up watermark per scope.
         setChannelSeq: (orgId, channelId, entityType, seq) =>
           set((s) => {
             const org = ensureOrg(s.orgs, orgId);
@@ -121,18 +118,6 @@ export const useSyncStore = create<SyncStoreState>()(
             if (seq > (s.known[scopeId][entityType] ?? 0)) s.known[scopeId][entityType] = seq;
           }),
         getKnownSeq: (scopeId, entityType) => get().known[scopeId]?.[entityType] ?? 0,
-
-        getFlatSeqs: () => {
-          const { orgs } = get();
-          const flat: Record<string, number> = {};
-          for (const [orgId, org] of Object.entries(orgs)) {
-            for (const [et, seq] of Object.entries(org.seqs)) flat[`${orgId}:s:${et}`] = seq;
-            for (const [ctxId, ctxSeqs] of Object.entries(org.contexts)) {
-              for (const [et, seq] of Object.entries(ctxSeqs)) flat[`${ctxId}:s:${et}`] = seq;
-            }
-          }
-          return flat;
-        },
 
         getCatchupViews: (entityTypes) => {
           const { orgs } = get();

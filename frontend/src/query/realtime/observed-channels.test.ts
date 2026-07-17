@@ -23,7 +23,7 @@ vi.mock('shared', () => ({
 
 // Sub-org channels are absent from the route context, so viewing detection uses the query cache.
 let routeMatches: { context?: Record<string, unknown> }[] = [];
-vi.mock('~/routes/_router-instance', () => ({
+vi.mock('~/routes/-router-instance', () => ({
   getRouter: () => ({ state: { matches: routeMatches } }),
 }));
 

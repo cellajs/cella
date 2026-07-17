@@ -805,7 +805,6 @@ export const zPostAppCatchupBody = z.object({
     )
     .max(256)
     .optional(),
-  seqs: z.record(z.string(), z.int()).optional(),
 });
 
 /**
@@ -816,16 +815,6 @@ export const zPostAppCatchupResponse = z.object({
     z.string(),
     z.object({
       entitySeqs: z.record(z.string(), z.int()).optional(),
-      entityCounts: z.record(z.string(), z.int()).optional(),
-      childChannelChanges: z
-        .record(
-          z.string(),
-          z.object({
-            entitySeqs: z.record(z.string(), z.int()).optional(),
-            entityCounts: z.record(z.string(), z.int()).optional(),
-          }),
-        )
-        .optional(),
       propagation: z
         .array(
           z.object({

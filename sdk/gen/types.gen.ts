@@ -2282,12 +2282,6 @@ export type PostAppCatchupData = {
        */
       cursor: number;
     }>;
-    /**
-     * Legacy client-side sequence numbers per scope: { "organizationId:s:attachment": 42 }
-     */
-    seqs?: {
-      [key: string]: number;
-    };
   };
   path?: never;
   query?: never;
@@ -2335,19 +2329,6 @@ export type PostAppCatchupResponses = {
       [key: string]: {
         entitySeqs?: {
           [key: string]: number;
-        };
-        entityCounts?: {
-          [key: string]: number;
-        };
-        childChannelChanges?: {
-          [key: string]: {
-            entitySeqs?: {
-              [key: string]: number;
-            };
-            entityCounts?: {
-              [key: string]: number;
-            };
-          };
         };
         propagation?: Array<{
           /**

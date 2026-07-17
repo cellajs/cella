@@ -4,7 +4,6 @@ import type { DbContext } from '#/core/context';
 import type { OperationResult } from '#/core/operation-result';
 import { baseDb as db } from '#/db/db';
 import { findChannelCountersByKeys, findLatestUserActivityId } from '#/modules/entities/entities-queries';
-import { collectSubChannelIds } from '#/modules/entities/helpers/collect-sub-channel-ids';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
 import { buildPropagationHints } from '#/modules/entities/helpers/propagation-hints';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -79,14 +78,17 @@ export async function answerCatchupViews(
 }
 
 /**
- * Build app stream catch-up data with org-level and sub-context counter checks.
- * Entity seqs detect product entity changes; `s:membership` detects membership changes.
+ * Build app stream catch-up data (ledger sync).
+ *
+ * Product entity sync is answered per client-declared VIEW (`answerCatchupViews`,
+ * prefix-authorized, from `hw:`/`e:` rollups). The per-org `changes` block carries the
+ * remaining org-level concerns: the `s:membership` screening seq (membership change
+ * detection) and embedding propagation hints derived from the views' ledger cursors.
  * A null cursor returns baselines and causes client-side membership query invalidation.
  */
 export async function appCatchupOp(
   memberships: MembershipBaseModel[],
   cursor?: string,
-  seqs?: Record<string, number>,
   actor?: Actor,
   views?: CatchupView[],
 ): Promise<OperationResult<AppCatchupResponse>> {
@@ -101,70 +103,22 @@ export async function appCatchupOp(
 
   const organizationIdArray = Array.from(organizationIds);
 
-  // Collect sub-context IDs (e.g., projectId) from memberships for all orgs upfront
-  const { byOrg: subChannelIdsByOrg, all: allSubChannelIdSet } = collectSubChannelIds(memberships);
-  const allSubChannelIds = [...allSubChannelIdSet];
-
-  // Step 1: single query for all org + sub-context counters.
-  const allCounterRows = await findChannelCountersByKeys(dbCtx, [...organizationIdArray, ...allSubChannelIds]);
+  // One query for all org counter rows (membership screening seq + hw rollups for hints).
+  const allCounterRows = await findChannelCountersByKeys(dbCtx, organizationIdArray);
   const allCounters = new Map(allCounterRows.map((r) => [r.channelKey, r.counts]));
 
-  // Step 2: build changes entries for all orgs; empty entries are pruned later.
   const changes: AppCatchupResponse['changes'] = {};
-
   for (const organizationId of organizationIdArray) {
-    const { entitySeqs, entityCounts } = parseCounterCounts(allCounters.get(organizationId));
-
+    const { entitySeqs } = parseCounterCounts(allCounters.get(organizationId));
     changes[organizationId] = {
       entitySeqs: Object.keys(entitySeqs).length > 0 ? entitySeqs : undefined,
-      entityCounts: Object.keys(entityCounts).length > 0 ? entityCounts : undefined,
     };
-
-    // Attach sub-context data
-    const channelIds = subChannelIdsByOrg.get(organizationId);
-    if (channelIds) {
-      const childChannelChanges: Record<
-        string,
-        { entitySeqs?: Record<string, number>; entityCounts?: Record<string, number> }
-      > = {};
-
-      for (const channelId of channelIds) {
-        const { entitySeqs: ctxSeqs, entityCounts: ctxCounts } = parseCounterCounts(allCounters.get(channelId));
-        if (Object.keys(ctxSeqs).length > 0 || Object.keys(ctxCounts).length > 0) {
-          childChannelChanges[channelId] = {
-            entitySeqs: Object.keys(ctxSeqs).length > 0 ? ctxSeqs : undefined,
-            entityCounts: Object.keys(ctxCounts).length > 0 ? ctxCounts : undefined,
-          };
-        }
-      }
-
-      if (Object.keys(childChannelChanges).length > 0) {
-        changes[organizationId].childChannelChanges = childChannelChanges;
-      }
-    }
   }
 
-  // Step 3: build propagation hints for embedding relationships.
-  // Soft-deleted embedded sources are returned as removal hints by seq-delta lookup.
-  await buildPropagationHints(changes, seqs);
+  // Embedding propagation hints: hw vs the client's org-view cursors.
+  await buildPropagationHints(changes, views, allCounters);
 
-  // Step 4: prune orgs with no changes.
-  if (seqs) {
-    for (const [orgId, scope] of Object.entries(changes)) {
-      const hasPropagation = scope.propagation && scope.propagation.length > 0;
-      const seqsMatch =
-        !scope.entitySeqs ||
-        Object.entries(scope.entitySeqs).every(([entityType, serverVal]) => {
-          return seqs[`${orgId}:s:${entityType}`] === serverVal;
-        });
-
-      if (seqsMatch && !hasPropagation) {
-        delete changes[orgId];
-      }
-    }
-  }
-
-  // Step 5: advance cursor.
+  // Advance cursor.
   let newCursor: string | null = cursor ?? null;
   if (!cursor || Object.keys(changes).length > 0) {
     newCursor =

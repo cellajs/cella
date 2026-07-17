@@ -1703,7 +1703,6 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
  * @param {postAppCatchupData} options
  * @param {string=} options.body.cursor - `string` (optional)
  * @param {any[]=} options.body.views - `any[]` (optional)
- * @param {object=} options.body.seqs - `object` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const postAppCatchup = <ThrowOnError extends boolean = true>(

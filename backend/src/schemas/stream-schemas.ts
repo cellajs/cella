@@ -113,43 +113,16 @@ export const streamCatchupBodySchema = z.object({
   views: z.array(catchupViewSchema).max(256).optional().openapi({
     description: 'Client-declared views: prefix set + entity types + org-ledger cursor per view',
   }),
-  seqs: z
-    .record(z.string(), z.number().int())
-    .optional()
-    .openapi({
-      description: 'Legacy client-side sequence numbers per scope: { "organizationId:s:attachment": 42 }',
-      example: { 'abc123:s:attachment': 10 },
-    }),
-});
-
-/** Per-child-context change summary for sub-context seq drill-down. */
-const childChannelChangeSummarySchema = z.object({
-  entitySeqs: z.record(z.string(), z.number().int()).optional(),
-  entityCounts: z.record(z.string(), z.number().int()).optional(),
 });
 
 /**
- * Per-scope catchup change summary.
- * Used in catchup responses to give client minimal info to sync efficiently.
- *
- * Dual-level design:
- * - entitySeqs (org-level): quick screening for changes by entity type within the org.
- * - childChannelChanges: precision drill-down with per-child-channel entitySeqs for delta fetch.
- *
- * Client logic:
- * 1. Compare org-level entitySeqs for quick skip (unchanged → skip entirely)
- * 2. For changed orgs, iterate childChannelChanges to find which child contexts changed
- * 3. Delta fetch only for changed (childChannel, entityType) pairs
- * - product soft deletes are seq-stamped updates; seqCursor delta fetch returns tombstones
- * - On catchup: always invalidate membership queries (lightweight, deduplicated by React Query)
+ * Per-org catchup change summary (ledger sync). Product entity sync is answered per
+ * VIEW (`catchupViewAnswerSchema`); this block carries the remaining org-level concerns:
+ * the `s:membership` screening seq and embedding propagation hints.
  */
 export const catchupChangeSummarySchema = z.object({
-  /** Org-level entity seqs (change signal for quick screening). Managed by CDC worker. */
+  /** Org-level screening seqs: `membership` (s:membership) and the org `ledger` counter. */
   entitySeqs: z.record(z.string(), z.number().int()).optional(),
-  /** Org-level per-entityType total counts from channel_counters (e:{type} keys). Used for cache integrity checks. */
-  entityCounts: z.record(z.string(), z.number().int()).optional(),
-  /** Per-child-channel entity seqs and counts for sub-context delta fetch precision. */
-  childChannelChanges: z.record(z.string(), childChannelChangeSummarySchema).optional(),
   /** Embedded entity propagation hints (source entity changes that require target cache patching) */
   propagation: z.array(propagationHintSchema).optional(),
 });

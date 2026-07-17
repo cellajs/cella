@@ -148,31 +148,6 @@
                     "required": false,
                     "additionalProperties": { "type": "integer", "required": false }
                   },
-                  "entityCounts": {
-                    "type": "object",
-                    "required": false,
-                    "additionalProperties": { "type": "integer", "required": false }
-                  },
-                  "childChannelChanges": {
-                    "type": "object",
-                    "required": false,
-                    "additionalProperties": {
-                      "type": "object",
-                      "required": false,
-                      "properties": {
-                        "entitySeqs": {
-                          "type": "object",
-                          "required": false,
-                          "additionalProperties": { "type": "integer", "required": false }
-                        },
-                        "entityCounts": {
-                          "type": "object",
-                          "required": false,
-                          "additionalProperties": { "type": "integer", "required": false }
-                        }
-                      }
-                    }
-                  },
                   "propagation": {
                     "type": "array",
                     "required": false,
@@ -355,12 +330,6 @@
                 }
               }
             }
-          },
-          "seqs": {
-            "type": "object",
-            "required": false,
-            "description": "Legacy client-side sequence numbers per scope: { \"organizationId:s:attachment\": 42 }",
-            "additionalProperties": { "type": "integer", "required": false }
           }
         },
         "required": true,
