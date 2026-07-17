@@ -6,7 +6,7 @@ import { SheeterSheet } from '~/modules/common/sheeter/sheet';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUIStore } from '~/modules/ui/ui-store';
-import { getRouter } from '~/routes/_router-instance';
+import { getRouter } from '~/routes/-router-instance';
 
 /**
  * Renders drawers on mobile, sheets on desktop; when `container` is provided, sheets are portaled into it.

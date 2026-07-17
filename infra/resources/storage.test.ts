@@ -104,6 +104,23 @@ describe('storage module', () => {
     expect(assetRule.expiration?.days).toBeGreaterThan(0)
   })
 
+  it('frontend bucket purges noncurrent versions and orphaned delete markers', () => {
+    const bucket = h.resources.find((r) => r.name === 'frontend-bucket')
+    expect(bucket).toBeDefined()
+    // biome-ignore lint/suspicious/noExplicitAny: raw input shape
+    const rules = (bucket?.inputs.lifecycleRules as any[]) ?? []
+    const rule = rules.find((r) => r.id === 'cleanup-old-versions')
+    expect(rule, 'cleanup-old-versions lifecycle rule must exist').toBeDefined()
+    expect(rule.enabled).toBe(true)
+    // Noncurrent versions keep their original keys: they are not addressable
+    // via a key prefix, so cleanup must use noncurrentVersionExpiration. A
+    // prefix-scoped expiration matches nothing and retains versions forever.
+    expect(rule.prefix ?? '').toBe('')
+    expect(rule.noncurrentVersionExpiration?.noncurrentDays).toBeGreaterThan(0)
+    expect(rule.expiration?.expiredObjectDeleteMarker).toBe(true)
+    expect(rule.expiration?.days, 'expiredObjectDeleteMarker cannot combine with expiration.days').toBeUndefined()
+  })
+
   it('boot diagnostics bucket expires old boot-diag objects', () => {
     const bucket = h.resources.find((r) => r.name === 'boot-diag-bucket')
     expect(bucket).toBeDefined()

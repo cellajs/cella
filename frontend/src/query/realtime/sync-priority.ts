@@ -3,7 +3,7 @@ import { hierarchy, type ProductEntityType } from 'shared';
 import { queryClient } from '~/query/query-client';
 import { isObservedChannel } from '~/query/realtime/observed-channels';
 import { useSyncStore } from '~/query/realtime/sync-store';
-import { getRouter } from '~/routes/_router-instance';
+import { getRouter } from '~/routes/-router-instance';
 
 type SyncPriority = 'high' | 'medium' | 'low';
 

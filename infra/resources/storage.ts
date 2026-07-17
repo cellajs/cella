@@ -46,10 +46,17 @@ const frontendBucket = new scaleway.object.Bucket('frontend-bucket', {
   versioning: { enabled: true },
   lifecycleRules: [
     {
+      // On a versioned bucket, `expiration` never deletes data. It stamps a
+      // delete marker and demotes the object to a noncurrent version, which
+      // keeps its original key (there is no special prefix for noncurrent
+      // versions). Actual deletion happens here, bucket-wide: noncurrent
+      // versions (expired assets/ chunks and overwritten entry files alike)
+      // are purged after 30 days, and delete markers with no versions left
+      // behind them are removed.
       id: 'cleanup-old-versions',
       enabled: true,
-      expiration: { days: 30 },
-      prefix: '_noncurrent/',
+      noncurrentVersionExpiration: { noncurrentDays: 30 },
+      expiration: { expiredObjectDeleteMarker: true },
     },
     {
       // Prune stale, content-hashed chunks. Because filenames are immutable
@@ -57,6 +64,8 @@ const frontendBucket = new scaleway.object.Bucket('frontend-bucket', {
       // current index.html and past the open-tab window".
       // A rollback redeploy rebuilds identical hashes and re-uploads any
       // missing chunk, so expiring old assets never breaks rollback.
+      // On this versioned bucket the rule only files a delete marker; the
+      // cleanup-old-versions rule above performs the actual deletion.
       id: 'expire-stale-assets',
       enabled: true,
       expiration: { days: assetRetentionDays },

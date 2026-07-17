@@ -1,5 +1,5 @@
 import type { DialogData } from '~/modules/common/dialoger/use-dialoger';
-import { getRouter } from '~/routes/_router-instance';
+import { getRouter } from '~/routes/-router-instance';
 
 /** Search param holding the open attachment's id. Its presence is the dialog's open state. */
 export const ATTACHMENT_DIALOG_PARAM = 'attachmentDialogId';

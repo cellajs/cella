@@ -35,7 +35,7 @@ import type {
   CustomBlockTypes,
 } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/modules/ui/ui-store';
-import { getRouter } from '~/routes/_router-instance';
+import { getRouter } from '~/routes/-router-instance';
 
 /**
  * Bundle for collaborative mode: Yjs wiring (provider, fragment, cursor user) + entity identity for SSE

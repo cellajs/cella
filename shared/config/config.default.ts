@@ -304,4 +304,5 @@ export const config = {
   // Organization defaults
 
   defaultOrganizationFlags: {},
+
 } satisfies RequiredConfig;

@@ -22,7 +22,6 @@ export type UserWithCounters = UserModel & {
  */
 export const userSelect = (() => {
   const { userFlags: _uf, ...safeUserSelect } = getColumns(usersTable);
-  // TODO can we do theis more cleanly?
   return {
     ...safeUserSelect,
     // Merge defaults flags with DB ones

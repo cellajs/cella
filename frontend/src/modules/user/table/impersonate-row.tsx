@@ -5,7 +5,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { startImpersonationFlow } from '~/modules/me/helpers';
 import { Button } from '~/modules/ui/button';
 import type { BaseUser } from '~/modules/user/types';
-import { getRouter } from '~/routes/_router-instance';
+import { getRouter } from '~/routes/-router-instance';
 
 interface Props {
   user: BaseUser;

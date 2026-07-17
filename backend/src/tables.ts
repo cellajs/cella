@@ -1,5 +1,6 @@
 import { getTableName } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
+import type { ResourceType } from 'shared';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -21,9 +22,6 @@ export const entityTables = {
   attachment: attachmentsTable,
 } as const satisfies Record<string, ResolvableTable>;
 
-/** Resource types that are not entities but have activities logged. */
-export const resourceTypes = ['request', 'membership', 'inactive_membership', 'tenant', 'system_role'] as const;
-
 /** Resource-to-table mapping. */
 export const resourceTables = {
   request: requestsTable,
@@ -31,7 +29,7 @@ export const resourceTables = {
   inactive_membership: inactiveMembershipsTable,
   tenant: tenantsTable,
   system_role: systemRolesTable,
-} as const satisfies Record<string, TableWithId>;
+} as const satisfies Record<ResourceType, TableWithId>;
 
 // Derived types from the table registries above
 export type EntityType = keyof typeof entityTables;

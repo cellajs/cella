@@ -32,17 +32,10 @@ export const sessionsTable = snakeCase.table(
     deviceOs: varchar({ length: maxLength.field }),
     browser: varchar({ length: maxLength.field }),
     authStrategy: varchar({ enum: authStrategiesEnum }).notNull(),
-    // Pseudonymized network identity. Raw IP is never persisted.
-    // ipHash: per-user HMAC of the IP for "have I seen this IP for this user?" checks (MFA trust).
-    // ipSubnetHash: global HMAC of the /24 (v4) or /48 (v6) for cross-user blocklist matching.
-    // ipCountry / ipAsn: derived from GeoIP at session creation, used for geo-aware MFA and bot defense.
     ipHash: varchar({ length: 64 }),
     ipSubnetHash: varchar({ length: 64 }),
     ipCountry: varchar({ length: 2 }),
     ipAsn: integer(),
-    // Per-user HMAC of the browser's long-lived `device-id` cookie. Groups a user's sessions by
-    // device and answers "known device for this user?"; drives same-device session replacement.
-    // Null for sessions without an associated browser device, including mfa and impersonation.
     deviceIdHash: varchar({ length: 64 }),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,

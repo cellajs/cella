@@ -30,6 +30,7 @@ const notifySystemRoleChange = async (event: ActivityEvent) => {
   }
 };
 
+// TODO review: shouldn't we restrict an update and consider a delete fine security-wise? So only need to listen to create?
 activityBus.on('system_role.created', notifySystemRoleChange);
 activityBus.on('system_role.updated', notifySystemRoleChange);
 activityBus.on('system_role.deleted', notifySystemRoleChange);

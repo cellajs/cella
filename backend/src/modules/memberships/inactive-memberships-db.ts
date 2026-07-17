@@ -10,7 +10,9 @@ import { usersTable } from '#/modules/user/user-db';
 
 const roleEnum = roles.all;
 
-/** Inactive memberships track pending invitations and rejected membership requests. */
+/**
+ * Inactive memberships track pending invitations and rejected membership requests.
+ */
 export const inactiveMembershipsTable = snakeCase.table(
   'inactive_memberships',
   {
@@ -26,11 +28,6 @@ export const inactiveMembershipsTable = snakeCase.table(
     tokenId: uuid(), // References tokens.id logically (no FK due to partitioning)
     role: varchar({ enum: roleEnum }).notNull().default('member'),
     rejectedAt: timestamp({ mode: 'string' }),
-    /**
-     * Last invite/reminder email dispatch for this row; null when never dispatched (e.g.
-     * deferred while the target context was unpublished). Reminder emails are throttled
-     * against remindedAt ?? createdAt.
-     */
     remindedAt: timestamp({ mode: 'string' }),
     createdBy: uuid()
       .notNull()
