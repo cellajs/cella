@@ -10,6 +10,15 @@ interface OrgSyncState {
   contexts: Record<string, Record<string, number>>;
 }
 
+/** One catchup view request: org-ledger cursor over a prefix set (see streamCatchupBodySchema). */
+export interface CatchupViewRequest {
+  key: string;
+  organizationId: string;
+  prefixes: string[];
+  entityTypes: string[];
+  cursor: number;
+}
+
 interface SyncStoreState {
   cursor: string | null;
   lastSyncAt: string | null;
@@ -35,6 +44,8 @@ interface SyncStoreState {
   getKnownSeq: (scopeId: string, entityType: string) => number;
   /** Build flat seqs map for the catchup API body (backward-compatible with backend) */
   getFlatSeqs: () => Record<string, number>;
+  /** Build the view-driven catchup body: one org-prefix view per (org, entityType). */
+  getCatchupViews: (entityTypes: readonly string[]) => CatchupViewRequest[];
   reset: () => void;
 }
 
@@ -121,6 +132,26 @@ export const useSyncStore = create<SyncStoreState>()(
             }
           }
           return flat;
+        },
+
+        getCatchupViews: (entityTypes) => {
+          const { orgs } = get();
+          const views: CatchupViewRequest[] = [];
+          for (const [orgId, org] of Object.entries(orgs)) {
+            for (const entityType of entityTypes) {
+              views.push({
+                key: `${orgId}:${entityType}`,
+                organizationId: orgId,
+                prefixes: [orgId],
+                entityTypes: [entityType],
+                // Org-view cursor over the org ledger. Only the org slot proves org-WIDE
+                // ingestion (child-scope watermarks cover their own subtree only); 0 means
+                // no baseline yet — catchup stores the hw and route loaders supply data.
+                cursor: org.seqs[entityType] ?? 0,
+              });
+            }
+          }
+          return views;
         },
 
         reset: () => set(() => initStore),

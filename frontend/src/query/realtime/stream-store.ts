@@ -7,7 +7,7 @@ import { reportCriticalError } from '~/lib/tracing';
 import { setSyncStreamLive } from '~/query/basic/sync-stale-config';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import { handleAppStreamNotification } from './app-stream-handler';
-import { processAppCatchup } from './catchup-processor';
+import { catchupEntityTypes, processAppCatchup } from './catchup-processor';
 import {
   broadcastNotification,
   initTabCoordinator,
@@ -487,10 +487,18 @@ export const appStreamManager = new StreamManager('AppStream', {
   withCredentials: true,
   useTabCoordination: true,
   fetchAndProcessCatchup: async (cursor) => {
-    const seqs = useSyncStore.getState().getFlatSeqs();
-    const seqsParam = Object.keys(seqs).length > 0 ? seqs : undefined;
+    // View-driven catchup: one org-prefix view per (org, entityType) with its ledger cursor.
+    // The registry only holds registered product types, so the string[] narrows to the
+    // SDK's entity-type enum at runtime by construction.
+    const views = useSyncStore.getState().getCatchupViews(catchupEntityTypes());
     const response = await postAppCatchup({
-      body: { cursor: cursor ?? undefined, seqs: seqsParam },
+      body: {
+        cursor: cursor ?? undefined,
+        views:
+          views.length > 0
+            ? (views as unknown as NonNullable<Parameters<typeof postAppCatchup>[0]>['body']['views'])
+            : undefined,
+      },
     });
     await processAppCatchup(response, !cursor);
     return response.cursor ?? null;
