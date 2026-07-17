@@ -26,15 +26,6 @@ The recommended settings to put in your `.vscode/settings.json` or to edit in th
 }
 ```
 
-### WebStorm / JetBrains IDEs
-For WebStorm users, you can achieve similar inline translation previews using:
-
-1. **Interactive i18n plugin**: This is the closest equivalent to `i18n-ally`.
-   - Install the "Interactive i18n" plugin from the JetBrains Marketplace.
-   - Configure the locales path to `.vscode/.locales-cache` to benefit from the project's auto-merging logic (e.g., `common` + `app`).
-2. **Built-in Localization support**: Since version 2024.1, WebStorm includes a bundled "Localization" feature.
-   - It should automatically detect the `locales` folder, but you might need to enable "Inlay Hints" for i18n in `Settings > Editor > Inlay Hints`.
-
 ### Tips for consistency
 * Keep texts short
 * One-word translations have a one-word key
@@ -46,7 +37,15 @@ For WebStorm users, you can achieve similar inline translation previews using:
 * Sort JSON translation keys by alphabetical order
 * Modules or pages with a big amount of unique texts should get their own translation namespace and json: `about:` keys are provided by `about.json`.
 
-### Different namespaces
-* `common`: texts that are in a generic part of cella
-* `about`: texts that are in the marketing 'about' page of cella
-* `backend`: pure backend texts, mostly email translations
+### Translation files & runtime namespaces
+The JSON files per language do not map 1:1 to runtime namespaces:
+
+* `common.json`: texts that are in a generic part of cella, used in frontend and backend
+* `app.json`: app-specific texts. Forks add their own keys here, so upstream syncs don't conflict with cella-owned `common.json`
+* `about.json`: texts in the marketing 'about' page (`about:` namespace)
+* `error.json`: error texts used in both frontend and backend (`error:` namespace)
+* `backend.json`: pure backend texts, mostly email translations (`backend:` namespace)
+* `mini-time.json`: compact relative-time labels, exported separately via `locales/index.ts`
+
+> [!IMPORTANT]
+> `common.json` and `app.json` are **merged into a single `c` namespace** at runtime (see `frontend/src/lib/i18n-locales.ts`). All keys from *both* files — including keys you add to `app.json` — are referenced as `t('c:key')`. There is no `app:` or `common:` namespace, so `t('app:key')` resolves to nothing. The backend loads `common.json` under the same `c` namespace.

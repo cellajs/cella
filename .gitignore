@@ -47,6 +47,8 @@ sdk/src/temp-api-gen-*
 sdk/src/.generate-sdk.lock
 sdk/src/.spec-hash
 *.cache.json
+.pnpm-store
+.worktrees
 
 # Bench baseline snapshots (local only)
 bench/.baselines/

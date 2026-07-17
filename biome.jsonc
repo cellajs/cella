@@ -131,6 +131,7 @@
         "**/tsup.config.ts",
         "**/tailwind.config.ts",
         "**/drizzle.config.ts",
+        "**/svgo.config.mjs",
         "cella.config.ts",
         "sdk/openapi-ts.config.ts",
         "frontend/.storybook/**",
@@ -356,6 +357,19 @@
             "useButtonType": "off",
             "useKeyWithClickEvents": "off",
             "useSemanticElements": "off"
+          }
+        }
+      }
+    },
+    {
+      // Decorative svg assets (marketing illustrations, bg animation) are rendered
+      // aria-hidden via svgr; biome ≥2.5.3 lints .svg files, but a <title> on
+      // decorative art would only add screen-reader noise.
+      "includes": ["frontend/src/modules/marketing/assets/**", "frontend/src/modules/common/bg-animation/**"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noSvgWithoutTitle": "off"
           }
         }
       }

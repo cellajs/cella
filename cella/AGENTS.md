@@ -115,7 +115,7 @@ The permission system in `backend/src/permissions/` provides: `checkPermission` 
 - Console: `console.log` for temp debugging (remove before commit), `console.info` for logging, `console.debug` for dev (stripped in prod).
 - Links as buttons: Use `<Link>` with `buttonVariants()` for linkable actions. Allow new-tab opening for URL-targetable sheet content.
 - React-compiler: `useMemo`/`useCallback` can be avoided in most cases.
-- Translations: All UI text via `useTranslation()` and `t('c:key')`. Never hardcode. Files in `locales/en/`. General translations go in `common.json`, app-specific ones in `app.json`. Both are merged into the `common` namespace at runtime, so always use `t('c:key')`, never `t('app:key')`.
+- Translations: All UI text via `useTranslation()` and `t('c:key')`. Never hardcode. Files in `locales/en/`. General translations go in `common.json`, app-specific ones in `app.json`. Both are merged into the single `c` namespace at runtime, so always use `t('c:key')`, never `t('app:key')` or `t('common:key')`.
 
 ## Testing
 - Framework: Vitest. Name tests `*.test.ts`; place near source or under `tests/`.
