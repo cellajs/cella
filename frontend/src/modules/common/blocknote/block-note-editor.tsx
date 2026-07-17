@@ -2,12 +2,8 @@ import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/styles.css';
 import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
-import {
-  FilePanelController,
-  type FilePanelProps,
-  GridSuggestionMenuController,
-  useCreateBlockNote,
-} from '@blocknote/react';
+import type { FilePanelProps } from '@blocknote/react';
+import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type MouseEventHandler, useCallback, useEffect, useRef } from 'react';
 import { appConfig, type ProductEntityType } from 'shared';

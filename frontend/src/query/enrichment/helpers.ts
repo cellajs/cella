@@ -1,11 +1,8 @@
 import type { MembershipBase } from 'sdk';
 import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import { meKeys } from '~/modules/me/query';
-import {
-  type EntityQueryKeys,
-  getEntityQueryKeys,
-  getRegisteredEntityTypes,
-} from '~/query/basic/entity-query-registry';
+import type { EntityQueryKeys } from '~/query/basic/entity-query-registry';
+import { getEntityQueryKeys, getRegisteredEntityTypes } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 
 /** Get all registered channel entity types with their query keys */

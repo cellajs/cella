@@ -1,2 +1,0 @@
-ALTER TABLE "yjs_documents" ADD COLUMN IF NOT EXISTS "last_edited_by" uuid;--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "attachments_organization_id_created_at_index" ON "attachments" ("organization_id","created_at");

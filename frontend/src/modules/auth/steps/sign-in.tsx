@@ -12,11 +12,8 @@ import type { z } from 'zod';
 import type { ApiError } from '~/lib/api';
 import { AuthEmailButton } from '~/modules/auth/auth-email-button';
 import { useAuthStore } from '~/modules/auth/auth-store';
-import {
-  type ConditionalMediationResult,
-  isConditionalMediationAvailable,
-  startConditionalMediation,
-} from '~/modules/auth/passkey-credentials';
+import type { ConditionalMediationResult } from '~/modules/auth/passkey-credentials';
+import { isConditionalMediationAvailable, startConditionalMediation } from '~/modules/auth/passkey-credentials';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button, SubmitButton } from '~/modules/ui/button';

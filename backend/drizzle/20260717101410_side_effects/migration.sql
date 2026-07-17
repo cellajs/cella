@@ -3,6 +3,217 @@
 -- To make changes, edit the generator script and re-run it.
 -- The user will handle migration generation and application.
 --
+-- Combined side-effect migration.
+-- Blocks (in order): cdc_setup, counter_functions, immutability_setup, partman_setup, rls_setup, unlogged_setup
+-- Regenerate with `pnpm generate`. Every block is idempotent; the whole set re-runs
+-- whenever ANY block changes, so this file always reflects the full current side-effect state.
+
+-- ══════════════════════════════════════════════════════════════════════════
+-- [cdc_setup] CDC — publication, replica identity, replication slot
+-- ══════════════════════════════════════════════════════════════════════════
+-- CDC (Change Data Capture) Setup
+-- Sets up PostgreSQL logical replication for the activities CDC worker.
+-- Requires: wal_level=logical (see compose.yaml)
+-- Gracefully skips if logical replication is not available.
+
+DO $$
+BEGIN
+  -- Check if pg_publication is available
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class WHERE relname = 'pg_publication') THEN
+    RAISE NOTICE 'Logical replication not available - skipping CDC setup.';
+    RETURN;
+  END IF;
+
+  -- 1. Create or update publication
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'cdc_pub') THEN
+      CREATE PUBLICATION cdc_pub FOR TABLE users, organizations, attachments, requests, memberships, inactive_memberships, tenants;
+      RAISE NOTICE 'Created publication cdc_pub';
+    ELSE
+      -- Publication exists — replace with current table list
+      RAISE NOTICE 'Publication cdc_pub already exists, syncing tables...';
+      ALTER PUBLICATION cdc_pub SET TABLE users, organizations, attachments, requests, memberships, inactive_memberships, tenants;
+      RAISE NOTICE 'Publication tables synced';
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'Publication setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
+  END;
+
+  -- 2. Set REPLICA IDENTITY FULL (separate block)
+  BEGIN
+    ALTER TABLE users REPLICA IDENTITY FULL;
+    ALTER TABLE organizations REPLICA IDENTITY FULL;
+    ALTER TABLE attachments REPLICA IDENTITY FULL;
+    ALTER TABLE requests REPLICA IDENTITY FULL;
+    ALTER TABLE memberships REPLICA IDENTITY FULL;
+    ALTER TABLE inactive_memberships REPLICA IDENTITY FULL;
+    ALTER TABLE tenants REPLICA IDENTITY FULL;
+    RAISE NOTICE 'REPLICA IDENTITY FULL set on all tracked tables';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'REPLICA IDENTITY setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
+  END;
+
+  -- 3. Create replication slot (separate block - may fail on managed providers)
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = 'cdc_slot') THEN
+      PERFORM pg_create_logical_replication_slot('cdc_slot', 'pgoutput');
+      RAISE NOTICE 'Created replication slot cdc_slot';
+    ELSE
+      RAISE NOTICE 'Replication slot cdc_slot already exists';
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'Replication slot setup failed: % (SQLSTATE: %). Worker will create it at startup.', SQLERRM, SQLSTATE;
+  END;
+
+  RAISE NOTICE 'CDC setup complete.';
+END $$;
+--> statement-breakpoint
+-- ══════════════════════════════════════════════════════════════════════════
+-- [counter_functions] Counter functions — apply_count_deltas
+-- ══════════════════════════════════════════════════════════════════════════
+-- Counter Functions Setup
+-- PL/pgSQL helper for JSONB counter delta merging.
+-- Used by the CDC worker for prepared-statement-compatible counter upserts.
+
+CREATE OR REPLACE FUNCTION apply_count_deltas(existing jsonb, deltas jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql IMMUTABLE STRICT PARALLEL SAFE
+AS $$
+DECLARE
+  result jsonb := COALESCE(existing, '{}'::jsonb);
+  k text;
+  v text;
+BEGIN
+  FOR k, v IN SELECT * FROM jsonb_each_text(deltas)
+  LOOP
+    IF k LIKE 'li:%' OR k LIKE 'lu:%' THEN
+      -- Activity stamps (epoch ms): keep the max, the signal only moves forward
+      result := result || jsonb_build_object(
+        k, GREATEST(COALESCE((result->>k)::bigint, 0), v::bigint)
+      );
+    ELSE
+      result := result || jsonb_build_object(
+        k, GREATEST(0, COALESCE((result->>k)::bigint, 0) + v::bigint)
+      );
+    END IF;
+  END LOOP;
+  RETURN result;
+END;
+$$;
+--> statement-breakpoint
+-- ══════════════════════════════════════════════════════════════════════════
+-- [immutability_setup] Immutability triggers — identity columns, write guards
+-- ══════════════════════════════════════════════════════════════════════════
+-- Immutability Triggers Setup
+-- Prevents modification of identity columns after row creation.
+-- Gracefully skips triggers if required roles are not yet created.
+
+-- Functions are always created (harmless without triggers)
+
+CREATE OR REPLACE FUNCTION base_entity_immutable_keys() RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.id IS DISTINCT FROM OLD.id
+       OR NEW.tenant_id IS DISTINCT FROM OLD.tenant_id
+       OR NEW.entity_type IS DISTINCT FROM OLD.entity_type
+       OR NEW.created_at IS DISTINCT FROM OLD.created_at
+       OR NEW.created_by IS DISTINCT FROM OLD.created_by THEN
+    RAISE EXCEPTION 'Cannot modify immutable columns (%) on %', 'id, tenant_id, entity_type, created_at, created_by', TG_TABLE_NAME;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+--> statement-breakpoint
+
+CREATE OR REPLACE FUNCTION product_entity_immutable_keys() RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.id IS DISTINCT FROM OLD.id
+       OR NEW.tenant_id IS DISTINCT FROM OLD.tenant_id
+       OR NEW.entity_type IS DISTINCT FROM OLD.entity_type
+       OR NEW.created_at IS DISTINCT FROM OLD.created_at
+       OR NEW.created_by IS DISTINCT FROM OLD.created_by
+       OR NEW.organization_id IS DISTINCT FROM OLD.organization_id THEN
+    RAISE EXCEPTION 'Cannot modify immutable columns (%) on %', 'id, tenant_id, entity_type, created_at, created_by, organization_id', TG_TABLE_NAME;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+--> statement-breakpoint
+
+CREATE OR REPLACE FUNCTION membership_immutable_keys() RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.tenant_id IS DISTINCT FROM OLD.tenant_id
+       OR NEW.channel_id IS DISTINCT FROM OLD.channel_id
+       OR NEW.channel_type IS DISTINCT FROM OLD.channel_type
+       OR NEW.organization_id IS DISTINCT FROM OLD.organization_id
+       OR NEW.user_id IS DISTINCT FROM OLD.user_id THEN
+    RAISE EXCEPTION 'Cannot modify immutable columns (%) on %', 'tenant_id, channel_id, channel_type, organization_id, user_id', TG_TABLE_NAME;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+--> statement-breakpoint
+
+CREATE OR REPLACE FUNCTION inactive_membership_immutable_keys() RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.tenant_id IS DISTINCT FROM OLD.tenant_id
+       OR NEW.channel_id IS DISTINCT FROM OLD.channel_id
+       OR NEW.channel_type IS DISTINCT FROM OLD.channel_type
+       OR NEW.organization_id IS DISTINCT FROM OLD.organization_id THEN
+    RAISE EXCEPTION 'Cannot modify immutable columns (%) on %', 'tenant_id, channel_id, channel_type, organization_id', TG_TABLE_NAME;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+--> statement-breakpoint
+
+CREATE OR REPLACE FUNCTION append_only_immutable_row() RETURNS TRIGGER AS $$
+BEGIN
+  RAISE EXCEPTION 'Table % is append-only: updates are not allowed', TG_TABLE_NAME;
+END;
+$$ LANGUAGE plpgsql;
+--> statement-breakpoint
+
+CREATE OR REPLACE FUNCTION admin_only_write_row() RETURNS TRIGGER AS $$
+BEGIN
+  IF current_user = 'runtime_role' THEN
+    RAISE EXCEPTION 'Table % is not writable by %', TG_TABLE_NAME, current_user;
+  END IF;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+--> statement-breakpoint
+
+-- Triggers require roles to exist
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role') THEN
+    RAISE NOTICE 'Roles not available - skipping immutability triggers.';
+    RETURN;
+  END IF;
+
+  BEGIN
+    EXECUTE 'DROP TRIGGER IF EXISTS organizations_immutable_keys_trigger ON organizations';
+    EXECUTE 'CREATE TRIGGER organizations_immutable_keys_trigger BEFORE UPDATE ON organizations FOR EACH ROW EXECUTE FUNCTION base_entity_immutable_keys()';
+    EXECUTE 'DROP TRIGGER IF EXISTS attachments_immutable_keys_trigger ON attachments';
+    EXECUTE 'CREATE TRIGGER attachments_immutable_keys_trigger BEFORE UPDATE ON attachments FOR EACH ROW EXECUTE FUNCTION product_entity_immutable_keys()';
+    EXECUTE 'DROP TRIGGER IF EXISTS memberships_immutable_keys_trigger ON memberships';
+    EXECUTE 'CREATE TRIGGER memberships_immutable_keys_trigger BEFORE UPDATE ON memberships FOR EACH ROW EXECUTE FUNCTION membership_immutable_keys()';
+    EXECUTE 'DROP TRIGGER IF EXISTS inactive_memberships_immutable_keys_trigger ON inactive_memberships';
+    EXECUTE 'CREATE TRIGGER inactive_memberships_immutable_keys_trigger BEFORE UPDATE ON inactive_memberships FOR EACH ROW EXECUTE FUNCTION inactive_membership_immutable_keys()';
+    EXECUTE 'DROP TRIGGER IF EXISTS activities_immutable_keys_trigger ON activities';
+    EXECUTE 'CREATE TRIGGER activities_immutable_keys_trigger BEFORE UPDATE ON activities FOR EACH ROW EXECUTE FUNCTION append_only_immutable_row()';
+    EXECUTE 'DROP TRIGGER IF EXISTS system_roles_admin_only_write_trigger ON system_roles';
+    EXECUTE 'CREATE TRIGGER system_roles_admin_only_write_trigger BEFORE INSERT OR UPDATE OR DELETE ON system_roles FOR EACH ROW EXECUTE FUNCTION admin_only_write_row()';
+
+    RAISE NOTICE 'Immutability triggers setup complete.';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Immutability triggers setup failed: %. Skipping.', SQLERRM;
+  END;
+END $$;
+--> statement-breakpoint
+-- ══════════════════════════════════════════════════════════════════════════
+-- [partman_setup] pg_partman — partitioned tables
+-- ══════════════════════════════════════════════════════════════════════════
 -- =============================================================================
 -- Migration: pg_partman Setup for Token/Session/Activity/SeenBy Tables
 -- =============================================================================
@@ -441,4 +652,108 @@ BEGIN
     RAISE NOTICE 'Partition setup failed: %. Tables will use regular (non-partitioned) mode with manual cleanup.', SQLERRM;
   END;
 
+END $$;
+--> statement-breakpoint
+-- ══════════════════════════════════════════════════════════════════════════
+-- [rls_setup] RLS — ownership, FORCE RLS, grants
+-- ══════════════════════════════════════════════════════════════════════════
+-- RLS (Row-Level Security) Setup
+-- Configures FORCE RLS, table ownership, and grants.
+-- Policies are defined in Drizzle schema files using pgPolicy().
+-- RLS enforces tenant-level isolation only; org-level isolation is application-layer (orgGuard).
+-- Gracefully skips if required roles are not yet created.
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role') THEN
+    RAISE NOTICE 'Roles not available - skipping RLS setup.';
+    RETURN;
+  END IF;
+
+  BEGIN
+    -- Table ownership and FORCE RLS
+    ALTER TABLE attachments OWNER TO admin_role;
+    ALTER TABLE yjs_documents OWNER TO admin_role;
+    ALTER TABLE activities OWNER TO admin_role;
+
+    ALTER TABLE attachments FORCE ROW LEVEL SECURITY;
+    ALTER TABLE yjs_documents FORCE ROW LEVEL SECURITY;
+
+    -- Grants: runtime_role (subject to RLS)
+    GRANT SELECT, INSERT, UPDATE, DELETE ON attachments TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON yjs_documents TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON organizations TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON memberships TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON inactive_memberships TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON users TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON sessions TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON user_counters TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON tokens TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON passkeys TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON oauth_accounts TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON totps TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON requests TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON unsubscribe_tokens TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON emails TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON rate_limits TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON channel_counters TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON seen_by TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON product_counters TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON domains TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON tenants TO runtime_role;
+    GRANT SELECT ON system_roles TO runtime_role;
+    GRANT SELECT ON activities TO runtime_role;
+
+    -- Grants: admin_role (full access; also used by the CDC worker)
+    GRANT ALL ON ALL TABLES IN SCHEMA public TO admin_role;
+    GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO admin_role;
+
+    -- Grants: pg_catalog usage for JSONB operators
+    GRANT USAGE ON SCHEMA pg_catalog TO runtime_role;
+
+    RAISE NOTICE 'RLS setup complete.';
+  EXCEPTION WHEN OTHERS THEN
+    -- Fail LOUDLY: swallowing this rolled back ownership, FORCE RLS and every grant in
+    -- one silent NOTICE — the app then boots with no table grants (every request 403s)
+    -- or, worse, without enforced RLS.
+    RAISE EXCEPTION 'RLS setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
+  END;
+END $$;
+--> statement-breakpoint
+-- ══════════════════════════════════════════════════════════════════════════
+-- [unlogged_setup] UNLOGGED tables
+-- ══════════════════════════════════════════════════════════════════════════
+-- UNLOGGED Tables Setup
+-- Converts ephemeral counter/rate-limit tables to UNLOGGED (skip WAL writes).
+-- Idempotent: only alters tables not already UNLOGGED.
+-- Gracefully skips if required roles are not yet created.
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role') THEN
+    RAISE NOTICE 'Skipping UNLOGGED setup - roles not available.';
+    RETURN;
+  END IF;
+
+  IF (SELECT relpersistence FROM pg_class WHERE relname = 'rate_limits') != 'u' THEN
+    ALTER TABLE rate_limits SET UNLOGGED;
+    RAISE NOTICE 'rate_limits set to UNLOGGED';
+  END IF;
+
+  IF (SELECT relpersistence FROM pg_class WHERE relname = 'user_counters') != 'u' THEN
+    ALTER TABLE user_counters SET UNLOGGED;
+    RAISE NOTICE 'user_counters set to UNLOGGED';
+  END IF;
+
+  IF (SELECT relpersistence FROM pg_class WHERE relname = 'channel_counters') != 'u' THEN
+    ALTER TABLE channel_counters SET UNLOGGED;
+    RAISE NOTICE 'channel_counters set to UNLOGGED';
+  END IF;
+
+  IF (SELECT relpersistence FROM pg_class WHERE relname = 'product_counters') != 'u' THEN
+    ALTER TABLE product_counters SET UNLOGGED;
+    RAISE NOTICE 'product_counters set to UNLOGGED';
+  END IF;
+
+  RAISE NOTICE 'UNLOGGED setup complete.';
 END $$;

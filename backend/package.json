@@ -20,8 +20,6 @@
     "stop": "pnpm docker:down",
     "seed": "tsx scripts/seeds.ts",
     "migrate": "tsx scripts/migrate.ts",
-    "db:reset": "tsx scripts/reset-db.ts",
-    "db:clear": "tsx scripts/clear-db.ts",
     "generate:pg": "drizzle-kit generate --config drizzle.config.ts",
     "generate": "tsx scripts/generate.ts",
     "generate:openapi": "tsx scripts/generate-openapi.ts",

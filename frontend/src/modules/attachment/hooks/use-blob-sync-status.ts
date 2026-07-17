@@ -1,10 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import {
-  type AttachmentBlob,
-  attachmentsDb,
-  type BlobVariant,
-  type UploadStatus,
-} from '~/modules/attachment/dexie/attachments-db';
+import type { AttachmentBlob, BlobVariant, UploadStatus } from '~/modules/attachment/dexie/attachments-db';
+import { attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
 import { getAppDb } from '~/query/app-db';
 
 interface BlobUploadInfo {

@@ -5,13 +5,8 @@ import { type ComponentType, lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { Spinner } from '~/modules/common/spinner';
-import {
-  type DocPage,
-  getChildDocPages,
-  getDocPage,
-  getDocPageLoader,
-  getResolvedDocPageComponent,
-} from '~/modules/page/content';
+import type { DocPage } from '~/modules/page/content';
+import { getChildDocPages, getDocPage, getDocPageLoader, getResolvedDocPageComponent } from '~/modules/page/content';
 import { mdxComponents } from '~/modules/page/mdx-components';
 import { TocAside } from '~/modules/page/toc-aside';
 import { dateShort } from '~/utils/date-short';

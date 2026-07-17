@@ -9,7 +9,7 @@ import { wsClient } from '../network/websocket-client';
 import { startHealthReporter, stopHealthReporter } from '../network/health-reporter';
 
 import { drainBuffers } from './handle-message';
-import { createReplicationService, ensureReplicationSlot, setupBackpressure, subscribeWithReconnect } from './replication';
+import { createReplicationService, setupBackpressure, subscribeWithReconnect } from './replication';
 
 /**
  * CDC Worker orchestrator: start & stop. Pipeline stages and their file layout are
@@ -22,8 +22,6 @@ export async function startCdcWorker(): Promise<void> {
     publicationName: CDC_PUBLICATION_NAME,
     slotName: CDC_SLOT_NAME,
   });
-
-  await ensureReplicationSlot();
 
   const service = createReplicationService();
   replicationState.service = service;

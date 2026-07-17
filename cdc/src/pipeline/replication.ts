@@ -159,6 +159,15 @@ export async function subscribeWithReconnect(service: LogicalReplicationService,
   let attempt = 0;
   while (true) {
     try {
+      // Re-ensured before every attempt rather than once at boot. The slot is not permanent:
+      // dropping a database takes its slots with it, so a slot can vanish under a running worker.
+      // And a worker that boots while the database is unreachable cannot create one at all. In
+      // both cases a startup-only ensure leaves this loop retrying a slot that will never exist,
+      // and replication stays dead until someone restarts the process. Cheap enough to repeat:
+      // one catalog SELECT per (re)subscribe, and a no-op during a rolling deploy, where the slot
+      // exists and is merely held by the outgoing worker.
+      await ensureReplicationSlot();
+
       log.info(`Subscribing to replication slot...`);
       replicationState.status = wsClient.isConnected() ? 'active' : 'paused';
       await service.subscribe(plugin, CDC_SLOT_NAME);

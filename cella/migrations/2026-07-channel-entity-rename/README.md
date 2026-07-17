@@ -76,8 +76,9 @@ Then, by hand:
    constraints, plus the RLS / immutability / counter-function / unlogged SQL).
    Run `pnpm generate` and answer **"rename"** to the drizzle-kit
    column/table/index prompts (renames, not drop+create — the stored values are
-   entity-type names, so no row rewrite), then apply (`pnpm migrate`, or
-   `pnpm db:reset` for a dev DB). Postgres `RENAME` follows object OIDs, so
+   entity-type names, so no row rewrite), then apply (`pnpm migrate`, or wipe a
+   local dev DB with `docker compose -f backend/compose.yaml down -v` and
+   `pnpm seed`). Postgres `RENAME` follows object OIDs, so
    policies/triggers survive; function bodies that name the tables in text are
    re-emitted by the same `pnpm generate`.
 
