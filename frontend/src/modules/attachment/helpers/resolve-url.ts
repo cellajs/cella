@@ -1,5 +1,5 @@
 import type { Attachment } from 'sdk';
-import { getCloudUrl, getVariantKey } from '~/modules/attachment/file-url';
+import { getCloudUrl, getPrivateFileUrlById, getPublicFileUrl, getVariantKey } from '~/modules/attachment/file-url';
 import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
 import { downloadService } from '~/modules/attachment/offline/download-service';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
@@ -57,4 +57,45 @@ export async function resolveAttachmentUrl(
   if (fullAttachment) downloadService.queueForDownload([fullAttachment]);
 
   return { url: fileUrl, isLocal: false, variant: null };
+}
+
+/** Org context a block reference falls back to when the attachment isn't in cache. */
+interface RefContext {
+  tenantId?: string;
+  organizationId?: string;
+}
+
+/**
+ * Resolve a BlockNote block's file reference. The reference alone decides how — no public/private
+ * flag needed:
+ * - a **UUID attachment id** (no slashes) → private media: local blob first, else a presigned URL
+ *   by id + variant (permission-checked server-side);
+ * - a **slashed cloud key** → public media, straight from the CDN.
+ *
+ * Returns `''` for anything unresolvable, which renders an empty `src` rather than firing a
+ * request at a bogus URL.
+ *
+ * NOTE: a local hit returns an object URL this function cannot revoke — it has no lifecycle to
+ * hang that on, and BlockNote embeds the result in static HTML. Callers that re-resolve often
+ * should track and revoke `blob:` results themselves.
+ */
+export async function resolveBlockNoteFileRef(ref: string, ctx: RefContext = {}): Promise<string> {
+  if (!ref.length) return '';
+
+  // Attachment ids are UUIDs (no slashes); public cloud keys contain slashes.
+  if (ref.includes('/')) return getPublicFileUrl(ref);
+
+  // Private attachment: prefer a local blob, else resolve a presigned URL by id.
+  const localResult = await attachmentStorage.createBlobUrlWithVariant(ref, 'converted', true);
+  if (localResult) return localResult.url;
+
+  const cached = findAttachmentInCache(ref);
+  const tenantId = cached?.tenantId ?? ctx.tenantId;
+  const organizationId = cached?.organizationId ?? ctx.organizationId;
+  if (!tenantId || !organizationId) {
+    console.error('[BlockNote] Cannot resolve private file URL: no tenantId/organizationId for id:', ref);
+    return '';
+  }
+
+  return getPrivateFileUrlById(ref, 'converted', tenantId, organizationId);
 }

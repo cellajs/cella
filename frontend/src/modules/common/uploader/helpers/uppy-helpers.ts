@@ -4,6 +4,7 @@ import Transloadit from '@uppy/transloadit';
 // biome-ignore lint/style/noRestrictedImports: runtime token fetcher inside Uppy assembly callback; not eligible for a React Query hook.
 import { getUploadToken, type UploadToken } from 'sdk';
 import { appConfig } from 'shared';
+import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { makeBlobKey, type UploadContext } from '~/modules/attachment/offline/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
@@ -92,7 +93,7 @@ export const createBaseTransloaditUppy = async (
         public: tokenQuery.public,
       };
       for (const file of uploadFiles) {
-        await attachmentStorage.storeUploadBlob(file, organizationId, 'pending', uploadContext);
+        await attachmentStorage.storeUploadBlob(file, organizationId, 'pending', uploadContext, file.meta.attachmentId);
       }
     }
   });
@@ -108,22 +109,15 @@ export const createBaseTransloaditUppy = async (
       },
     });
 
-    // On successful cloud upload, mark local blobs as synced
+    // On successful cloud upload, mark local blobs as uploaded
     uppy.on('transloadit:complete', async (assembly) => {
       // Skip offline assemblies (already marked correctly)
       if (assembly.assembly_id?.startsWith('offline_')) return;
+      if (assembly.ok !== 'ASSEMBLY_COMPLETED') return;
 
-      if (assembly.ok === 'ASSEMBLY_COMPLETED') {
-        for (const upload of assembly.uploads || []) {
-          const fileId = upload.original_id || upload.id;
-          // Handle both string and string[] types
-          const fileIdStr = Array.isArray(fileId) ? fileId[0] : fileId;
-          if (fileIdStr) {
-            // Use composite key for raw variant
-            const compositeKey = makeBlobKey(fileIdStr, 'raw');
-            await attachmentStorage.markUploaded(compositeKey);
-          }
-        }
+      for (const upload of assembly.uploads || []) {
+        const attachmentId = uploadAttachmentId(upload);
+        if (attachmentId) await attachmentStorage.markUploaded(makeBlobKey(attachmentId, 'raw'));
       }
     });
 
@@ -131,14 +125,8 @@ export const createBaseTransloaditUppy = async (
     uppy.on('transloadit:assembly-error', async (assembly, error) => {
       const errorMessage = error?.message || 'Upload failed';
       for (const upload of assembly.uploads || []) {
-        const fileId = upload.original_id || upload.id;
-        // Handle both string and string[] types
-        const fileIdStr = Array.isArray(fileId) ? fileId[0] : fileId;
-        if (fileIdStr) {
-          // Use composite key for raw variant
-          const compositeKey = makeBlobKey(fileIdStr, 'raw');
-          await attachmentStorage.markFailed(compositeKey, errorMessage);
-        }
+        const attachmentId = uploadAttachmentId(upload);
+        if (attachmentId) await attachmentStorage.markFailed(makeBlobKey(attachmentId, 'raw'), errorMessage);
       }
     });
   }
@@ -146,8 +134,21 @@ export const createBaseTransloaditUppy = async (
   return uppy;
 };
 
+/**
+ * The attachment id an assembly upload carries. Minted in `onBeforeFileAdded` and round-tripped
+ * through Transloadit as `user_meta`, so it is the same id the blob was stored under.
+ */
+const uploadAttachmentId = (upload: { user_meta?: Record<string, unknown> }): string | undefined => {
+  const id = upload.user_meta?.attachmentId;
+  return typeof id === 'string' && id.length > 0 ? id : undefined;
+};
+
 const onBeforeFileAdded = (file: CustomUppyFile) => {
-  // Simplify file ID and add content type to meta
+  // Simplify Uppy's own file ID (it only has to be unique within this Uppy instance).
   file.id = nanoid();
+  // Mint the attachment id up front so the local blob is stored under the id its row will get.
+  // Uppy passes file meta to Transloadit as `user_meta`, so it survives the round trip and
+  // `parseUploadedAttachments` can reuse it instead of minting a second, unrelated id.
+  file.meta.attachmentId = generateId();
   return file;
 };

@@ -6,9 +6,7 @@ import DOMPurify from 'dompurify';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
-import { getPrivateFileUrlById, getPublicFileUrl } from '~/modules/attachment/file-url';
-import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
-import { findAttachmentInCache } from '~/modules/attachment/query';
+import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
 import {
   findClickedMedia,
   getHeadlessEditor,
@@ -107,23 +105,8 @@ function BlockNoteFullHtml({
 
     // Then resolve file URLs asynchronously for the final render
     async function resolveUrls(blocks: CustomBlock[]) {
-      const resolveUrl = async (ref: string): Promise<string> => {
-        if (!ref.length) return '';
-
-        // Slashed cloud key → public CDN; UUID id → local blob, else presigned by id.
-        const isAttachmentId = !ref.includes('/');
-        if (!isAttachmentId) return getPublicFileUrl(ref);
-
-        const localResult = await attachmentStorage.createBlobUrlWithVariant(ref, 'converted', true);
-        if (localResult) return localResult.url;
-
-        const cachedAttachment = findAttachmentInCache(ref);
-        const tenantId = cachedAttachment?.tenantId ?? propTenantId;
-        const organizationId = cachedAttachment?.organizationId ?? propOrganizationId;
-
-        if (!tenantId || !organizationId) return ref;
-        return getPrivateFileUrlById(ref, 'converted', tenantId, organizationId);
-      };
+      const resolveUrl = (ref: string): Promise<string> =>
+        resolveBlockNoteFileRef(ref, { tenantId: propTenantId, organizationId: propOrganizationId });
 
       const { resolved, media } = await processBlocks(blocks, resolveUrl);
       if (cancelled) return;

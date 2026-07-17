@@ -1,43 +1,35 @@
 import { t } from 'i18next';
-// biome-ignore lint/style/noRestrictedImports: colocated mutation, imperative attachment creation called from drag-drop helpers.
-import { createAttachments } from 'sdk';
 import { appConfig } from 'shared';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
-import { attachmentQueryKeys } from '~/modules/attachment/query';
+import { useAttachmentCreateMutation } from '~/modules/attachment/query';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
-import { createStxForCreate } from '~/query/offline/stx-utils';
-import { queryClient } from '~/query/query-client';
 
 const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
 
 export const useAttachmentsUploadDialog = (tenantId: string, organizationId: string) => {
+  const createAttachments = useAttachmentCreateMutation(tenantId, organizationId);
+
   const open = () => {
     const onComplete = async (result: UploadedUppyFile<'attachment'>) => {
-      try {
-        const attachments = parseUploadedAttachments(result, organizationId);
+      const attachments = parseUploadedAttachments(result, organizationId);
 
-        if (attachments.length === 0) {
-          toaster(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }), 'error');
-          useUploader.getState().remove();
-          return;
-        }
+      // Close the uploader either way; the optimistic row is what the user watches from here.
+      useUploader.getState().remove();
 
-        // Create attachments via API with transaction metadata (stx embedded in each item)
-        const stx = createStxForCreate();
-        const body = attachments.map((att) => ({ ...att, stx }));
-        await createAttachments({ path: { tenantId, organizationId: organizationId }, body });
-
-        // Invalidate the cache to refresh the table
-        queryClient.invalidateQueries({ queryKey: attachmentQueryKeys.list.base });
-
-        useUploader.getState().remove();
-      } catch (error) {
+      if (attachments.length === 0) {
         toaster(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }), 'error');
-        useUploader.getState().remove();
+        return;
       }
+
+      // Go through the mutation rather than calling the SDK directly. That buys the optimistic
+      // row, the SSE-race-safe upsert, and — the reason this matters — offline replay: while
+      // offline the mutation pauses with the row already in cache and fires on reconnect. A
+      // direct call rejects offline, leaving bytes that upload later with no attachment row to
+      // attach them to. Errors surface via the mutation's own onError toast.
+      createAttachments.mutate(attachments);
     };
 
     useUploader.getState().create({

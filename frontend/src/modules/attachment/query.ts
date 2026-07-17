@@ -149,7 +149,7 @@ export function useGroupAttachments(
 }
 
 // --- Mutations ---
-// The mutation functions live in ./attachment-mutations (shared with the offline-replay defaults).
+// The mutation functions live in ./query-mutations (shared with the offline-replay defaults).
 
 export const useAttachmentCreateMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
@@ -161,7 +161,9 @@ export const useAttachmentCreateMutation = (tenantId: string, organizationId: st
     mutationFn: createAttachmentsMutationFn,
     onMutate: async ({ data }: CreateAttachmentVars) => {
       await queryClient.cancelQueries({ queryKey: orgKey });
-      // Attachments already have IDs from Transloadit, preserved in optimistic entity.
+      // Attachments are minted with an id before upload (`onBeforeFileAdded`), which the
+      // optimistic entity preserves — that id also keys the local blob, so the optimistic row
+      // can resolve its own bytes while the create is still in flight or paused offline.
       const optimisticAttachments = data.map((att) => createOptimisticEntity(zAttachment, att));
       cacheCreate(orgKey, optimisticAttachments);
       return { optimisticAttachments };

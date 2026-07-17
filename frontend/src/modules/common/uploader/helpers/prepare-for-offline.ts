@@ -32,9 +32,9 @@ export const prepareFilesForOffline: PrepareFilesForOffline = async (files, toke
     public: tokenQuery.public,
   };
 
-  // Store each file blob locally
+  // Store each file blob locally, under the id its attachment row will be created with.
   for (const file of Object.values(files)) {
-    await attachmentStorage.storeUploadBlob(file, organizationId, uploadStatus, uploadContext);
+    await attachmentStorage.storeUploadBlob(file, organizationId, uploadStatus, uploadContext, file.meta.attachmentId);
   }
 
   // Prepare files for a manual 'complete' event (successfully uploaded files)

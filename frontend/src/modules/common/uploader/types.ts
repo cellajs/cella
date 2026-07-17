@@ -4,7 +4,14 @@ import type { UploadTemplateId } from 'shared';
 import type { uploadTemplates } from 'shared/transloadit-config';
 
 type UppyBody = Record<string, unknown>;
-type UppyMeta = { public: boolean; bucketName: string; offlineUploaded: boolean };
+
+/**
+ * `attachmentId` is assigned per file in `onBeforeFileAdded` (never on the Uppy-wide meta, which
+ * every file would share). It is the id the attachment row will be created with, so the local
+ * blob and its row agree from the moment the file is picked — Uppy round-trips it through
+ * Transloadit as `user_meta.attachmentId`.
+ */
+type UppyMeta = { public: boolean; bucketName: string; offlineUploaded: boolean; attachmentId?: string };
 
 type TemplateStepKeys<T extends UploadTemplateId> = (typeof uploadTemplates)[T]['use'][number];
 
