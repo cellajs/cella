@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { HomePage } from '~/modules/home/home-page';
 import { redirectToWelcomeIfOnboarding } from '~/modules/home/route-logic';
-import { withSuspense } from '~/routes/_route-utils';
+import { withSuspense } from '~/routes/-route-utils';
 import { appTitle } from '~/utils/app-title';
 
 /**

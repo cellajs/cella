@@ -1,6 +1,6 @@
 import { createFileRoute, stripSearchParams } from '@tanstack/react-router';
 import { usersRouteSearchParamsSchema, usersSearchDefaults } from '~/modules/user/search-params-schemas';
-import { withSuspense } from '~/routes/_route-utils';
+import { withSuspense } from '~/routes/-route-utils';
 import { appTitle } from '~/utils/app-title';
 import { lazyNamed } from '~/utils/lazy-named';
 

@@ -7,7 +7,7 @@ import { appStorageReady } from '~/query/app-storage';
 import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
 import { appStreamManager } from '~/query/realtime/stream-store';
-import { withSuspenseSpinner } from '~/routes/_route-utils';
+import { withSuspenseSpinner } from '~/routes/-route-utils';
 import { lazyNamed } from '~/utils/lazy-named';
 
 const AppLayout = lazyNamed(() => import('~/modules/common/app/app-layout'), 'AppLayout');

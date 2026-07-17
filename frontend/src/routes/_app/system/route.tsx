@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { SystemPage } from '~/modules/system/system-page';
-import { createErrorComponent } from '~/routes/_route-utils';
+import { createErrorComponent } from '~/routes/-route-utils';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
 /**

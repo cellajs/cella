@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { OrganizationRouteComponent } from '~/modules/organization/route-components';
-import { createErrorComponent } from '~/routes/_route-utils';
+import { createErrorComponent } from '~/routes/-route-utils';
 import { entityRouteConfig } from '~/routes-config';
 import { appTitle } from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';

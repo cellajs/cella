@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { infoQueryOptions, openApiSpecQueryOptions } from '~/modules/docs/query';
 import { queryClient } from '~/query/query-client';
-import { withSuspense } from '~/routes/_route-utils';
+import { withSuspense } from '~/routes/-route-utils';
 import { appTitle } from '~/utils/app-title';
 import { lazyNamed } from '~/utils/lazy-named';
 

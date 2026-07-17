@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { DocsIndexComponent } from '~/modules/docs/page-route-components';
 import { docsConfig, ensureDocPageComponent } from '~/modules/page/content';
-import { createErrorComponent, createNotFoundComponent } from '~/routes/_route-utils';
+import { createErrorComponent, createNotFoundComponent } from '~/routes/-route-utils';
 import { appTitle } from '~/utils/app-title';
 
 /**

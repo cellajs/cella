@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { redirectToHomeIfOnboarded } from '~/modules/home/route-logic';
-import { withSuspense } from '~/routes/_route-utils';
+import { withSuspense } from '~/routes/-route-utils';
 import { appTitle } from '~/utils/app-title';
 import { lazyNamed } from '~/utils/lazy-named';
 
