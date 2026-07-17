@@ -10,6 +10,7 @@ import { detectComputeDeferred, detectStackState, pickStackShort } from '../lib/
 import { infraDir } from '../lib/utils/paths'
 import { runApply } from './actions/apply'
 import { runPreview } from './actions/preview'
+import { runResetDatabase } from './actions/reset-database'
 import { runRotatePassphrase } from './actions/rotate-passphrase'
 import { runSecrets } from './actions/secrets'
 import { runSetup } from './actions/setup'
@@ -112,6 +113,7 @@ const mode: CliMode =
           { name: 'Apply infra change', value: 'apply', description: 'Privileged converge: one-shot `pulumi up` with a bootstrap key for DB/VPC/PN changes the CI key cannot. No refresh (buckets are CI-scoped).' },
           { name: 'Preview', value: 'preview', description: 'Read-only `pulumi preview`. Validates auth & shows drift; makes no changes.' },
           { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete operator-managed runtime secrets in Scaleway Secret Manager.' },
+          { name: 'Reset database', value: 'reset-database', description: 'DESTRUCTIVE: delete + recreate the app database empty (backup first, roles re-granted), then migrate/seed on the serial console. Pre-production, or with services quiesced.' },
           { name: 'Unlock', value: 'unlock', description: 'Clear a stale stack lock left by an interrupted apply/deploy. Use only when no run is actually in progress.' },
         ],
       })
@@ -134,6 +136,11 @@ if (mode === 'preview') {
 
 if (mode === 'secrets') {
   await runSecrets(context)
+  process.exit(0)
+}
+
+if (mode === 'reset-database') {
+  await runResetDatabase(context)
   process.exit(0)
 }
 

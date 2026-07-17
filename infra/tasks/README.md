@@ -44,3 +44,33 @@ tsx infra/tasks/cutover.ts --service backend --sha <git-sha> \
 ```
 
 `SCW_SECRET_KEY` must be set in the environment for the live LB call.
+
+## Database reset: [`reset-database.ts`](./reset-database.ts)
+
+`sequenceDatabaseReset` deletes and recreates the app's logical database over the
+Scaleway RDB API, then re-grants both roles. Like the cutover sequencer it is
+pure — every side effect (instance lookup, backup, delete, create, grant, the
+operator confirmation) arrives on the plan, so the unit tests assert exact step
+order and every guard without touching the network. The live wiring is in
+[`cli/actions/reset-database.ts`](../cli/actions/reset-database.ts) ("Reset
+database" in `pnpm infra`).
+
+The order is the safety property, and the tests pin it: the operator's typed
+`<database>@<instance>` confirmation and a backup reporting `ready` both precede
+the delete. Everything before the delete is a guard and fails harmlessly;
+everything after is recovery-critical and rethrows as `ResetIrrecoverableError`,
+carrying the backup id and printing the `scw rdb backup restore` command — plus
+the two `privilege set` calls, because a restore does not bring privileges back.
+
+The API surface (`lib/scaleway/scaleway-rdb.ts`) was captured from the live API
+with `scw --debug` rather than read from docs: a wrong verb or body on a
+destructive call is not something to discover in production. The tests assert
+each URL and method for that reason.
+
+Two steps are deliberately not automated — `migrate` is `restart: 'no'` in
+compose, cloud-init is first-boot only, and the boot-replay unit merely cats a
+log, so no reboot re-runs migrations. `serialConsoleSteps()` prints them.
+
+Scaleway deletes a database that is actively in use, including one holding a
+logical replication slot, which PostgreSQL itself refuses. There is no platform
+interlock; the confirmation is the only one.
