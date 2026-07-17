@@ -19,6 +19,21 @@ describe('deriveInfra', () => {
     expect(deriveInfra(fakeConfig({ slug: 'my-cool-app' })).naming.registryNamespace).toBe('mycoolapp')
   })
 
+  it('dbName replaces hyphens with underscores (PostgreSQL identifier constraint)', () => {
+    expect(deriveInfra(fakeConfig()).naming.dbName).toBe('cella')
+    expect(deriveInfra(fakeConfig({ slug: 'cella-staging' })).naming.dbName).toBe('cella_staging')
+  })
+
+  it('dbName is the single source for the logical database name', () => {
+    // `resources/database.ts` creates this database and the reset task deletes it *by name* over
+    // the Scaleway API. If the two derived it separately and drifted, the reset would address the
+    // wrong database — or create a second, empty one alongside the real one.
+    const derived = deriveInfra(fakeConfig({ slug: 'my-cool-app' }))
+    expect(derived.naming.dbName).toBe('my_cool_app')
+    expect(derived.naming.dbName).not.toContain('-')
+    expect(derived.naming.resource('postgres')).toBe('my-cool-app-postgres')
+  })
+
   it('all bucket names are unique within a stack', () => {
     const d = deriveInfra(fakeConfig())
     const names = [

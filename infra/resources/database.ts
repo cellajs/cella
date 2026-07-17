@@ -7,8 +7,8 @@ import { privateNetworkId } from './network'
 const dbNodeType = infra.dbNodeType
 const dbVolumeSize = infra.dbVolumeSize
 
-/** Database name derived from slug (e.g. 'cella') */
-const dbSlug = naming.slug.replace(/-/g, '_') // PostgreSQL identifiers can't have hyphens
+/** Database name derived from slug (e.g. 'cella'). Shared with the reset task via `naming`. */
+const dbSlug = naming.dbName
 
 // Passwords: one per role, each from stack config secret or generated.
 

@@ -343,6 +343,31 @@ The `.github/workflows/` files are tightly coupled to this package: `deploy.yml`
 
 ## Advanced operations
 
+### Reset the database
+
+Wipes the app's logical database and rebuilds it from migrations + the admin seed. For large rewrites, where replaying migration history is not worth it and a clean baseline is. **Pre-production, or with services deliberately quiesced — this is a hard outage.**
+
+Run the CLI (`pnpm infra`) and pick **Reset database**. It takes a backup (aborting unless it reports ready), deletes and recreates the logical database over the Scaleway API with a bootstrap key, and re-grants both roles. It never exposes the database and never runs `pulumi up`.
+
+Then run the two steps it prints, on the serial console:
+
+```bash
+cd /opt/app
+docker compose --profile backend run --rm migrate
+docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com migrate node dist/seeds-bundle.js init
+```
+
+Confirm with `curl https://<your-app>/api/health?depth=full` — all components `healthy`.
+
+Four things are worth understanding before running it:
+
+- **Nothing but you stops this.** Scaleway's API deletes a live database with connected clients and an active replication slot; PostgreSQL alone refuses that. Maintenance mode is a convention here, not an interlock — the typed `<database>@<instance>` confirmation is the guard.
+- **Re-granting is mandatory, and the task owns it.** Deleting a database drops its Scaleway privileges, and neither a recreate nor a *backup restore* brings them back — a per-database `pg_dump` carries table ACLs but not database-level ones, so `CONNECT` is absent and the app reports `database_unreachable`.
+- **Pulumi is untouched.** Scaleway's resource IDs are name-derived, so a same-name recreate yields identical IDs and stack state stays correct. No `pulumi up`, no secret churn, no VM roll.
+- **The CDC worker needs no restart** — it re-ensures its replication slot on every retry.
+
+If the task fails after the delete, it prints the exact `scw rdb backup restore` command plus the two `privilege set` calls a restore does not perform.
+
 ### Updating the boot agent
 
 The boot agent is a normal registry container, not a baked base image. CI rebuilds and pushes it per commit ([agent/Dockerfile](agent/Dockerfile)), so any change under [agent/](agent/) ships on the next deploy with no extra step. To build it locally:
