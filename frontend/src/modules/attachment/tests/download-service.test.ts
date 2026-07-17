@@ -260,7 +260,7 @@ describe('downloadService — auth fail-fast (401/403)', () => {
   });
 });
 
-describe('flushStores clears attachment IDB', () => {
+describe('teardownUserState clears attachment IDB', () => {
   beforeEach(async () => {
     await attachmentsDb.blobs.clear();
     await attachmentsDb.downloadQueue.clear();
@@ -273,12 +273,12 @@ describe('flushStores clears attachment IDB', () => {
 
   it('deletes the appdb on sign-out, wiping all attachment data', async () => {
     const { getAppDb, bindAppDb } = await import('~/query/app-db');
-    const { flushStores } = await import('~/utils/flush-stores');
+    const { teardownUserState } = await import('~/utils/teardown-user-state');
 
     // Sanity: the appdb is bound (attachment data reachable) before sign-out.
     expect(getAppDb()).not.toBeNull();
 
-    await flushStores();
+    await teardownUserState();
 
     // Sign-out deletes and unbinds the appdb.
     expect(getAppDb()).toBeNull();

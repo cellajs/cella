@@ -19,7 +19,7 @@ export type MockEntityCounts = {
 
 /**
  * Excludes 'user' and 'organization' to match the fullCountsSchema pattern.
- * @param key - seeds deterministic generation.
+ * @param key - keys the deterministic RNG.
  */
 export const generateMockEntityCounts = (key: string): MockEntityCounts => {
   const generator = (): MockEntityCounts =>

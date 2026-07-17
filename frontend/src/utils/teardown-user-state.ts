@@ -5,7 +5,7 @@ import { deleteAppDb } from '~/query/app-db';
 import { queryClient } from '~/query/query-client';
 
 /**
- * Flush client state when the user leaves the authenticated app.
+ * Tear down client state when the user leaves the authenticated app.
  *
  * Cross-user isolation is structural: all per-user data lives in one IndexedDB named for the
  * owner (`~/query/app-db`). Nulling the user drives the auth-driven lifecycle
@@ -18,7 +18,7 @@ import { queryClient } from '~/query/query-client';
  *   The DB is only closed, so the SAME user recovers their offline work (queued mutations, drafts)
  *   and gets a prefilled sign-in after re-authenticating. Avoids data loss on a transient expiry.
  */
-export const flushStores = async (wipe = true): Promise<void> => {
+export const teardownUserState = async (wipe = true): Promise<void> => {
   queryClient.clear();
 
   // Hard sign-out only: destroy all per-user persisted data while the owner is still known.
@@ -28,7 +28,7 @@ export const flushStores = async (wipe = true): Promise<void> => {
   useUIStore.getState().reset();
 
   // Nulling the user drives the appdb lifecycle to unbind (close) the DB and reset every
-  // per-user store's in-memory state. A hard wipe also forgets `lastUser`; a soft flush keeps it.
+  // per-user store's in-memory state. A hard wipe also forgets `lastUser`; a soft teardown keeps it.
   if (wipe) useUserStore.getState().reset();
   else useUserStore.setState({ user: null as unknown as MeUser, isSystemAdmin: false, yjsTokens: {} });
 };

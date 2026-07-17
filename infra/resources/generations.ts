@@ -137,7 +137,7 @@ export function activeGenerations(svc: ServiceDefinition): Generation[] {
   add(pending)
 
   if (generations.length === 0) {
-    // First provision, before any deploy seeds the ledger: a single default gen.
+    // First provision, before any deploy initializes the control object: a single default gen.
     const sha = 'latest'
     add({ id: deriveGenId(sha, fingerprint), sha })
   }

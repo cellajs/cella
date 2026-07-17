@@ -13,7 +13,7 @@ function entityTypeOf(key: unknown): ProductEntityType | undefined {
   return typeof head === 'string' && productEntitySet.has(head) ? (head as ProductEntityType) : undefined;
 }
 
-// Lazy import to break circular dependency: query-client -> on-error -> flush-stores -> query-client
+// Lazy import to break circular dependency: query-client -> on-error -> teardown-user-state -> query-client
 // Without this, HMR re-evaluation hits a TDZ error on `onError`.
 const handleError = (error: ApiError, meta: QueryMeta | undefined) =>
   import('~/query/on-error').then((m) => m.onError(error, meta));

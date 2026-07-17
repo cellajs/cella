@@ -12,7 +12,7 @@ export interface FailedSyncRecord {
   entityType?: ProductEntityType;
   /** Client cache version (appConfig.clientCacheVersion) the client was on when it failed. */
   clientCacheVersion: string;
-  /** HTTP status of the failed replay. */
+  /** HTTP status of the failed offline replay. */
   status: number;
   /** Serialized mutation variables (for export / manual repair). */
   variables: unknown;

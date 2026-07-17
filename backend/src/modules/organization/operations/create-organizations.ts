@@ -16,7 +16,7 @@ import { defaultWelcomeText } from '#json/text-blocks.json';
 type CreateOrganizationItem = { id: string; name: string; slug: string };
 
 export async function createOrganizationsOp(ctx: AuthContext, rawItems: CreateOrganizationItem[], tenantId: string) {
-  // Lens seam: canonicalize old-shape field names before any body access
+  // Lens seam: normalize old-shape field names to their current names before any body access
   const items = rawItems.map((item) => organizationContract.normalizeBody(item));
   const user = ctx.var.user;
   const isSystemAdmin = ctx.var.isSystemAdmin;

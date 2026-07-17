@@ -13,7 +13,7 @@ import { log } from '#/utils/logger';
 
 type CreateAttachmentsInput = z.infer<typeof attachmentCreateManyStxBodySchema>;
 export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAttachmentsInput) {
-  // Lens seam: canonicalize old-shape field names before any body access
+  // Lens seam: normalize old-shape field names to their current names before any body access
   const input = rawInput.map((item) => attachmentContract.normalizeCreateItem(item));
   const { organization, tenant } = ctx.var;
   const attachmentRestrictions = tenant.restrictions.quotas.attachment;

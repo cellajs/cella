@@ -18,7 +18,7 @@ export const channelEntityColumns = <T extends ChannelEntityType>(entityType: T)
    * When the context went live for its members: null = draft (invites against it are
    * deferred, see membership dispatch). Defaults to creation time, so forks without
    * draft flows never see null and the mechanism stays dormant. Distinct from
-   * `publicAt` below: `publishedAt` gates MEMBERS, `publicAt` grants NON-members.
+   * `publicAt` below: `publishedAt` controls MEMBER visibility, `publicAt` grants NON-members.
    * The PRODUCT-entity sibling (`published-column.ts`, nullable, no default) carries
    * different semantics: null = author-only draft, enforced across dispatch, reads,
    * counters and cache (see `shared/src/published-rows.ts`).

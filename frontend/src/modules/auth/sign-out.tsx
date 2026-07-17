@@ -6,7 +6,7 @@ import { signOut } from 'sdk';
 import { appConfig } from 'shared';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { flushStores } from '~/utils/flush-stores';
+import { teardownUserState } from '~/utils/teardown-user-state';
 
 // Sign out user and clear all stores and query cache
 export function SignOut() {
@@ -23,7 +23,7 @@ export function SignOut() {
 
     const handleSignOut = async () => {
       try {
-        flushStores();
+        teardownUserState();
         if (!force) await signOut();
         toaster(t('c:success.signed_out'), 'success');
       } catch (error) {

@@ -4,7 +4,7 @@ const mockCheckConnectivity = vi.fn();
 const mockToaster = vi.fn();
 const mockSetDownAlert = vi.fn();
 const mockNavigate = vi.fn();
-const mockFlushStores = vi.fn();
+const mockTeardownUserState = vi.fn();
 
 vi.mock('~/query/offline/connectivity', () => ({ checkConnectivity: mockCheckConnectivity }));
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: mockToaster }));
@@ -12,7 +12,7 @@ vi.mock('~/modules/common/alerter/alert-store', () => ({
   useAlertStore: { getState: () => ({ setDownAlert: mockSetDownAlert }) },
 }));
 vi.mock('~/routes/router', () => ({ default: { navigate: mockNavigate } }));
-vi.mock('~/utils/flush-stores', () => ({ flushStores: mockFlushStores }));
+vi.mock('~/utils/teardown-user-state', () => ({ teardownUserState: mockTeardownUserState }));
 vi.mock('i18next', () => {
   const t = (key: string) => key;
   return { default: { t, exists: () => false }, t, exists: () => false };

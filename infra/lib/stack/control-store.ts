@@ -16,14 +16,14 @@ export interface GenRef {
 }
 
 /**
- * Per-service rollout ledger. The pointers (not a single mutable gen number) are
+ * Per-service rollout record (the S3 control object). The pointers (not a single mutable gen number) are
  * the source of truth so a partial deploy is always recoverable by recomputing
  * desired-vs-live rather than replaying a transition:
  *   - `active`: the generation currently serving live on the LB.
  *   - `pendingSha`: a deploy INTENT, the SHA being rolled in. The genId is
  *                  derived and materialized by the Pulumi program (the genId
  *                  authority), then read back by the orchestrator, so the
- *                  ledger never has to predict an id the program owns.
+ *                  control object never has to predict an id the program owns.
  *   - `seq`: monotonic counter, bumped on each promotion (ordering + GC).
  * No `previous` is kept: the old generation is reaped once the new one is
  * healthy, and rollback is a revert commit + forward redeploy (recreates every
@@ -197,7 +197,7 @@ export function serializeControlState(state: ControlState): string {
   return `${JSON.stringify(state, null, 2)}\n`
 }
 
-// Pure ledger transitions: every rollout state change is a total function over
+// Pure rollout-state transitions: every state change is a total function over
 // the previous rollout, so the orchestrator never hand-mutates pointer fields
 // and the transitions are unit-tested in isolation.
 

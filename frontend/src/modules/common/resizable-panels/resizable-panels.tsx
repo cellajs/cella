@@ -27,7 +27,7 @@ interface HintState {
 interface LayoutResult {
   widths: Record<string, number>;
   hints: HintState[];
-  /** G12: true when the expand gate (G3) has been passed this frame */
+  /** G12: true when the expand threshold (G3) has been passed this frame */
   expandSnapped?: boolean;
 }
 
@@ -112,7 +112,7 @@ function resolveLayout(
   const growIndex = draggingLeft ? separatorIndex + 1 : separatorIndex;
   const growPanel = panels[growIndex];
 
-  // ─── Expand gate (G3) ─────────────────────────────────────────────────
+  // ─── Expand threshold (G3) ─────────────────────────────────────────────────
   if (growPanel && collapsedAtStart.has(growPanel.id) && growPanel.collapsible) {
     const expandThreshold = growPanel.minWidth - growPanel.collapsedWidth;
     if (absDx < expandThreshold) {
@@ -141,7 +141,7 @@ function resolveLayout(
   let remaining = absDx;
   const expandCost = isExpandingFromCollapsed && growPanel ? growPanel.minWidth - growPanel.collapsedWidth : 0;
   // In overflow mode the expand consumes trailing gap (O1), so victims
-  // only shrink for px beyond the gate. In autoFill the expand must be
+  // only shrink for px beyond the threshold. In autoFill the expand must be
   // zero-sum: victims fund the full expand cost.
   if (expandCost > 0 && !autoFill) {
     remaining -= expandCost;

@@ -24,7 +24,7 @@ export function parseRolloutGenerations(raw: string): RolloutGeneration[] {
     const { service, genId, sha } = item
     if (typeof service !== 'string' || typeof sha !== 'string') continue
     // Only rows for services the registry knows. A stale output row for a
-    // removed service must not seed the ledger.
+    // removed service must not enter the control object.
     if (!(serviceNames as readonly string[]).includes(service)) continue
     rows.push({ service: service as ServiceName, sha, genId: typeof genId === 'string' ? genId : '' })
   }
@@ -81,8 +81,8 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
 }
 
 /**
- * Seed the `active` pointer for any service that has none yet: first adoption
- * of a live generation into the ledger. Deliberately NEVER promotes a pending
+ * Initialize the `active` pointer for any service that has none yet: first adoption
+ * of a live generation into the control object. Deliberately NEVER promotes a pending
  * generation or demotes an existing active: the orchestrator (deploy-service)
  * owns promotion after a health-gated cutover, so a freshly-materialised but
  * un-cutover generation must not be mistaken for "live" here (that was the old

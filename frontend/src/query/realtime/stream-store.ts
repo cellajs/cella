@@ -71,13 +71,13 @@ function createStreamStore(name: string) {
 }
 
 /**
- * Module-level gate that resolves when the first stream completes catchup
+ * Module-level promise (the initial-catchup gate) that resolves when the first stream completes catchup
  * after page load. Used by the query provider to delay `resumePausedMutations`
  * until the cache is fresh, even though the provider's `onSuccess` fires
  * before any stream has called `connect()`.
  *
- * The gate is created eagerly at import time. Once resolved it stays resolved
- * for the lifetime of the page (we only need to gate the initial cache restore).
+ * The promise is created eagerly at import time. Once resolved it stays resolved
+ * for the lifetime of the page (only the initial cache restore needs to wait).
  */
 let initialCatchupResolve: (() => void) | null = null;
 const initialCatchupGate: Promise<void> = new Promise<void>((resolve) => {

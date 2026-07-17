@@ -32,7 +32,7 @@ export const organizationLayoutBeforeLoad = async ({ params, cause }: Organizati
   if (organizationId) {
     const orgOptions = organizationQueryOptions(organizationId, tenantId);
 
-    // Seed detail cache from list cache so ensureQueryData returns immediately
+    // Prime detail cache from list cache so ensureQueryData returns immediately
     // instead of blocking on a fetch. It will still revalidate in background if stale.
     if (cached && !queryClient.getQueryData(orgOptions.queryKey)) {
       queryClient.setQueryData(orgOptions.queryKey, cached);

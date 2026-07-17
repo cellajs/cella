@@ -45,7 +45,7 @@ export function isDefaultListView(filters: Record<string, unknown>, defaults: Re
  * Standardized query keys for an entity module. Key hierarchy (prefix-matchable):
  *   [entity, 'list']                              broadest (all queries)
  *   [entity, 'list', organizationId]              all queries for one org
- *   [entity, 'list', organizationId, projectId]  canonical scope (product entities)
+ *   [entity, 'list', organizationId, projectId]  canonical scope: the base list live sync patches (product entities)
  *   [entity, 'list', organizationId, {filters}]  specific filtered query
  *
  * Scope ancestors derived from hierarchy-config: task -> scope(organizationId, projectId), page -> scope().
