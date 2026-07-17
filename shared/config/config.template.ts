@@ -356,4 +356,10 @@ export const config = {
   defaultUserFlags: {
     finishedOnboarding: false,
   },
+
+  // Organization defaults
+
+  /** Per-organization feature flags with their default values. Cella ships none; forks declare
+   *  theirs here (e.g. `coursesEnabled: true`) and read them from `organization.organizationFlags`. */
+  defaultOrganizationFlags: {},
 } satisfies RequiredConfig;

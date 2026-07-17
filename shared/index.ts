@@ -49,6 +49,7 @@ export type {
   Language,
   MenuSection,
   NullableAncestorType,
+  OrganizationFlags,
   ProductEntityType,
   RootChannelType,
   SeenTrackedEntityType,

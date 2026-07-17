@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
-import { roles } from 'shared';
+import { appConfig, type OrganizationFlags, roles } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
@@ -26,12 +26,25 @@ import { mockOrganizationResponse } from './organization-mocks';
 
 const organizationIncludedSchema = channelEntityIncludedSchema('organization');
 
+/** Flag keys come from the fork-owned config, so the wire contract stays strictly typed per fork.
+ *  Built loose then cast: with zero flags (cella default) `keyof OrganizationFlags` is `never`. */
+export const organizationFlagsSchema = z.object(
+  Object.keys(appConfig.defaultOrganizationFlags).reduce(
+    (acc, key) => {
+      acc[key] = z.boolean();
+      return acc;
+    },
+    {} as Record<string, z.ZodBoolean>,
+  ) as { [K in keyof OrganizationFlags]: z.ZodBoolean },
+);
+
 export const organizationSchema = z
   .object({
     ...createSelectSchema(organizationsTable).shape,
     createdBy: userMinimalBaseSchema.nullable(),
     updatedBy: userMinimalBaseSchema.nullable(),
     languages: z.array(languageSchema).min(1),
+    organizationFlags: organizationFlagsSchema,
     included: organizationIncludedSchema,
   })
   .openapi('Organization', {
@@ -62,6 +75,8 @@ export const organizationContract = evolutionContract.channel('organization', {
     bannerUrl: validCDNUrlSchema.nullable(),
     logoUrl: validCDNUrlSchema.nullable(),
     welcomeText: z.string().max(maxLength.html).nullable(),
+    // Partial per key: a single flag can be toggled; the update query merges via jsonb ||
+    organizationFlags: organizationFlagsSchema.partial(),
   })
     .pick({
       slug: true,
@@ -79,6 +94,7 @@ export const organizationContract = evolutionContract.channel('organization', {
       websiteUrl: true,
       welcomeText: true,
       chatSupport: true,
+      organizationFlags: true,
     })
     .partial(),
 });

@@ -425,6 +425,9 @@ export type Organization = {
   websiteUrl: string | null;
   welcomeText: string | null;
   chatSupport: boolean;
+  organizationFlags: {
+    [key: string]: unknown;
+  };
   included: {
     membership?: MembershipBase;
     counts?: {
@@ -3741,6 +3744,9 @@ export type UpdateOrganizationData = {
     websiteUrl?: string | null;
     welcomeText?: string | null;
     chatSupport?: boolean;
+    organizationFlags?: {
+      [key: string]: unknown;
+    };
   };
   path: {
     tenantId: string;

@@ -1761,6 +1761,10 @@
           "chatSupport": {
             "type": "boolean"
           },
+          "organizationFlags": {
+            "type": "object",
+            "properties": {}
+          },
           "included": {
             "type": "object",
             "properties": {
@@ -1852,6 +1856,7 @@
           "websiteUrl",
           "welcomeText",
           "chatSupport",
+          "organizationFlags",
           "included"
         ],
         "description": "The main channel entity is an organization.",
@@ -1874,6 +1879,7 @@
           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
           "chatSupport": true,
+          "organizationFlags": {},
           "publishedAt": "2024-12-25T15:04:42.969Z",
           "publicAt": null,
           "createdAt": "2024-12-25T15:04:42.969Z",
@@ -7109,6 +7115,7 @@
                           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                           "chatSupport": true,
+                          "organizationFlags": {},
                           "publishedAt": "2024-12-25T15:04:42.969Z",
                           "publicAt": null,
                           "createdAt": "2024-12-25T15:04:42.969Z",
@@ -7191,6 +7198,7 @@
                       "websiteUrl": "https://conroy-kerluke-and-rowe.example",
                       "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
                       "chatSupport": false,
+                      "organizationFlags": {},
                       "publishedAt": "2024-04-18T21:12:59.543Z",
                       "publicAt": null,
                       "createdAt": "2024-04-18T21:12:59.543Z",
@@ -7248,6 +7256,7 @@
                       "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
                       "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
                       "chatSupport": false,
+                      "organizationFlags": {},
                       "publishedAt": "2024-02-24T16:36:46.247Z",
                       "publicAt": null,
                       "createdAt": "2024-02-24T16:36:46.247Z",
@@ -7558,6 +7567,7 @@
                       "websiteUrl": "https://anderson-ferry.example",
                       "welcomeText": "Welcome to Anderson - Ferry!",
                       "chatSupport": true,
+                      "organizationFlags": {},
                       "publishedAt": "2024-11-21T01:19:53.533Z",
                       "publicAt": null,
                       "createdAt": "2024-11-21T01:19:53.533Z",
@@ -7615,6 +7625,7 @@
                       "websiteUrl": "https://wiegand-harber-and-stark-abshire.example",
                       "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
                       "chatSupport": false,
+                      "organizationFlags": {},
                       "publishedAt": "2024-10-29T04:35:17.725Z",
                       "publicAt": null,
                       "createdAt": "2024-10-29T04:35:17.725Z",
@@ -7765,6 +7776,7 @@
                   "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                   "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                   "chatSupport": true,
+                  "organizationFlags": {},
                   "publishedAt": "2024-12-25T15:04:42.969Z",
                   "publicAt": null,
                   "createdAt": "2024-12-25T15:04:42.969Z",
@@ -7933,6 +7945,10 @@
                   },
                   "chatSupport": {
                     "type": "boolean"
+                  },
+                  "organizationFlags": {
+                    "type": "object",
+                    "properties": {}
                   }
                 }
               }
@@ -7966,6 +7982,7 @@
                   "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                   "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                   "chatSupport": true,
+                  "organizationFlags": {},
                   "publishedAt": "2024-12-25T15:04:42.969Z",
                   "publicAt": null,
                   "createdAt": "2024-12-25T15:04:42.969Z",

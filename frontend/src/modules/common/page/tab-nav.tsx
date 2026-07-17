@@ -37,7 +37,7 @@ function getChildRoutes(route: AnyRoute): AnyRoute[] {
  * Extract navigation tabs from child routes based on their staticData.navTab configuration.
  * Only routes with navTab defined in staticData will be included.
  */
-function useNavTabs(parentRouteId: string, filterTabIds?: string[]): PageTab[] {
+function useNavTabs(parentRouteId: string, filterTabIds?: string[], grants?: readonly string[]): PageTab[] {
   if (!parentRouteId) return [];
 
   // Cast: generated FileRoutesById is a closed interface without index signature
@@ -51,6 +51,8 @@ function useNavTabs(parentRouteId: string, filterTabIds?: string[]): PageTab[] {
     .map((route) => {
       const navTab = route.options?.staticData?.navTab;
       if (!navTab) return null;
+      // Deny by default: a tab declaring `requires` is hidden unless that grant is passed
+      if (navTab.requires && !grants?.includes(navTab.requires)) return null;
       return {
         id: navTab.id,
         label: navTab.label,
@@ -74,8 +76,10 @@ interface Props {
   tabs?: PageTab[];
   /** Parent route ID to auto-generate tabs from child routes with staticData.navTab */
   parentRouteId?: string;
-  /** Filter which tab IDs to show (for permission-based filtering) */
+  /** Filter which tab IDs to show (explicit allow-list; prefer `grants` + navTab.requires) */
   filterTabIds?: string[];
+  /** Grants held by the current user; tabs declaring navTab.requires are hidden unless granted */
+  grants?: readonly string[];
   title?: string;
   avatar?: {
     id: string;
@@ -93,6 +97,7 @@ export const PageTabNav = ({
   tabs: explicitTabs,
   parentRouteId,
   filterTabIds,
+  grants,
   title,
   avatar,
   fallbackToFirst,
@@ -103,7 +108,7 @@ export const PageTabNav = ({
   const { hasStarted } = useMountedState();
 
   // Use explicit tabs or auto-generate from parent route's children
-  const autoTabs = useNavTabs(parentRouteId ?? '', filterTabIds);
+  const autoTabs = useNavTabs(parentRouteId ?? '', filterTabIds, grants);
   const tabs = explicitTabs ?? autoTabs;
 
   const layoutId = useRef(nanoid()).current;

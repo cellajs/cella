@@ -2715,6 +2715,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
  * @param {string | null=} options.body.websiteUrl - `string | null` (optional)
  * @param {string | null=} options.body.welcomeText - `string | null` (optional)
  * @param {boolean=} options.body.chatSupport - `boolean` (optional)
+ * @param {object=} options.body.organizationFlags - `object` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const updateOrganization = <ThrowOnError extends boolean = true>(

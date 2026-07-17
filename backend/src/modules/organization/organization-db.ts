@@ -1,5 +1,5 @@
-import { boolean, index, json, snakeCase, unique, varchar } from 'drizzle-orm/pg-core';
-import { appConfig, type Language } from 'shared';
+import { boolean, index, json, jsonb, snakeCase, unique, varchar } from 'drizzle-orm/pg-core';
+import { appConfig, type Language, type OrganizationFlags } from 'shared';
 import { channelEntityColumns } from '#/db/utils/channel-entity-columns';
 import { maxLength } from '#/db/utils/constraints';
 
@@ -24,6 +24,13 @@ export const organizationsTable = snakeCase.table(
     websiteUrl: varchar({ length: maxLength.url }),
     welcomeText: varchar({ length: maxLength.html }),
     chatSupport: boolean().notNull().default(false),
+    // Per-org feature flags; keys + defaults are declared in `appConfig.defaultOrganizationFlags`.
+    // Stored sparse: reads merge config defaults under the stored bag (see helpers/select), so a
+    // flag added to the config later needs no backfill.
+    organizationFlags: jsonb()
+      .$type<OrganizationFlags>()
+      .notNull()
+      .default({} as OrganizationFlags),
   },
   (table) => [
     index('organizations_name_index').on(table.name.desc()),
