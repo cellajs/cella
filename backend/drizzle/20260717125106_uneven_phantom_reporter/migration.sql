@@ -203,6 +203,7 @@ CREATE TABLE "organizations" (
 	"website_url" varchar(2048),
 	"welcome_text" varchar(1000000),
 	"chat_support" boolean DEFAULT false NOT NULL,
+	"organization_flags" jsonb DEFAULT '{}' NOT NULL,
 	CONSTRAINT "organizations_tenant_id_unique" UNIQUE("tenant_id","id")
 );
 --> statement-breakpoint
@@ -224,8 +225,7 @@ CREATE TABLE "seen_by" (
 	"organization_id" uuid NOT NULL,
 	"tenant_id" varchar(24) NOT NULL,
 	"created_at" timestamp DEFAULT now(),
-	CONSTRAINT "seen_by_pkey" PRIMARY KEY("id","created_at"),
-	CONSTRAINT "seen_by_user_entity_unique" UNIQUE("user_id","entity_id")
+	CONSTRAINT "seen_by_pkey" PRIMARY KEY("id","created_at")
 );
 --> statement-breakpoint
 CREATE TABLE "system_roles" (
@@ -349,6 +349,7 @@ CREATE INDEX "organizations_created_by_index" ON "organizations" ("created_by");
 CREATE INDEX "organizations_updated_by_index" ON "organizations" ("updated_by");--> statement-breakpoint
 CREATE INDEX "requests_emails" ON "requests" ("email" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "requests_created_at" ON "requests" ("created_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "seen_by_user_entity_index" ON "seen_by" ("user_id","entity_id");--> statement-breakpoint
 CREATE INDEX "seen_by_user_channel_type_index" ON "seen_by" ("user_id","channel_id","entity_type");--> statement-breakpoint
 CREATE INDEX "seen_by_entity_id_index" ON "seen_by" ("entity_id");--> statement-breakpoint
 CREATE INDEX "seen_by_tenant_id_index" ON "seen_by" ("tenant_id");--> statement-breakpoint

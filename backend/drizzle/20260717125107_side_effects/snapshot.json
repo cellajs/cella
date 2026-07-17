@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "c99d27f5-c572-448b-bfa2-633bafe352dd",
+  "id": "af2f79a5-abfc-4be5-9e7e-5076118d195b",
   "prevIds": [
-    "ea22c9de-8746-46f7-9656-2479126fa25c"
+    "00000000-0000-0000-0000-000000000000"
   ],
   "ddl": [
     {
@@ -2194,6 +2194,19 @@
       "generated": null,
       "identity": null,
       "name": "chat_support",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'{}'",
+      "generated": null,
+      "identity": null,
+      "name": "organization_flags",
       "entityType": "columns",
       "schema": "public",
       "table": "organizations"

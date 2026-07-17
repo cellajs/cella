@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "ea22c9de-8746-46f7-9656-2479126fa25c",
+  "id": "af2f79a5-abfc-4be5-9e7e-5076118d195b",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -2199,6 +2199,19 @@
       "table": "organizations"
     },
     {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'{}'",
+      "generated": null,
+      "identity": null,
+      "name": "organization_flags",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
       "type": "timestamp",
       "typeSchema": null,
       "notNull": true,
@@ -4064,6 +4077,34 @@
           "opclass": null
         },
         {
+          "value": "entity_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "seen_by_user_entity_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
           "value": "channel_id",
           "isExpression": false,
           "asc": true,
@@ -5248,18 +5289,6 @@
       "entityType": "uniques",
       "schema": "public",
       "table": "organizations"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        "user_id",
-        "entity_id"
-      ],
-      "nullsNotDistinct": false,
-      "name": "seen_by_user_entity_unique",
-      "entityType": "uniques",
-      "schema": "public",
-      "table": "seen_by"
     },
     {
       "nameExplicit": false,
