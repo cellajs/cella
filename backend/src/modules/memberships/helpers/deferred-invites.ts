@@ -9,8 +9,8 @@ import {
   stampInactiveMembershipsReminded,
   updateInactiveMembershipToken,
 } from '#/modules/memberships/memberships-queries';
+import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
-import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { memberInviteEmail, memberInviteWithTokenEmail } from '../../../../emails';
@@ -70,7 +70,7 @@ export async function dispatchDeferredInvites(ctx: AuthContext, { channelIds }: 
         const [token] = await insertTokens(ctx, {
           tokens: [
             {
-              secret: encodeLowerCased(raw),
+              secret: hashToken(raw),
               type: 'invitation' as const,
               email: row.email,
               createdBy: row.createdBy,

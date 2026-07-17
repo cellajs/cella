@@ -5,8 +5,8 @@ import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type TokenModel, tokensTable } from '#/modules/auth/tokens-db';
+import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { encodeLowerCased } from '#/utils/oslo';
 
 type Props = {
   ctx: Context;
@@ -24,7 +24,7 @@ export const getValidSingleUseToken = async ({ ctx, tokenType }: Props): Promise
   // The cookie holds the raw token; the DB stores only its hash. Hash before lookup so the (type,
   // singleUseToken) index still serves the query. This flow is read-many (does not consume on read),
   // so the row is left intact for subsequent reads within the same invitation/oauth flow.
-  const hashedSingleUseToken = encodeLowerCased(singleUseToken);
+  const hashedSingleUseToken = hashToken(singleUseToken);
   const [tokenRecord] = await db
     .select()
     .from(tokensTable)

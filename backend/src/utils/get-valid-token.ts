@@ -7,8 +7,8 @@ import { baseDb as db } from '#/db/db';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { type TokenModel, tokensTable } from '#/modules/auth/tokens-db';
+import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
 
 type BaseProps = {
@@ -26,7 +26,7 @@ type BaseProps = {
  */
 export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true }: BaseProps): Promise<TokenModel> => {
   // Hash token
-  const hashedToken = encodeLowerCased(token);
+  const hashedToken = hashToken(token);
 
   // Get token row that matches (possibly invoked) token
   const [tokenRecord] = await db
@@ -71,7 +71,7 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
       .set({
         // Store the HASH at rest; the raw value lives only in the caller's short-lived cookie, so a
         // DB read never reveals a usable single-use token.
-        singleUseToken: encodeLowerCased(rawSingleUseToken),
+        singleUseToken: hashToken(rawSingleUseToken),
         invokedAt: new Date().toISOString(),
         expiresAt: createDate(new TimeSpan(5, 'm')),
       })

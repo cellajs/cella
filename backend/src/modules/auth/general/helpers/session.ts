@@ -19,11 +19,11 @@ import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { sessionCookieSchema } from '#/schemas';
 import { getIp } from '#/utils/get-ip';
 import { hashDeviceIdForUser, hashIpForUser, hashSubnet } from '#/utils/hash-pii';
+import { hashToken } from '#/utils/hash-token';
 import { toSubnet } from '#/utils/ip-subnet';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
-import { encodeLowerCased } from '#/utils/oslo';
 import { isSystemAccessAllowed } from '#/utils/system-access';
 import { createDate, TimeSpan } from '#/utils/time-span';
 
@@ -117,7 +117,7 @@ export const setUserSession = async (
 
   // Generate token and store hashed
   const sessionToken = nanoid(40);
-  const hashedSessionToken = encodeLowerCased(sessionToken);
+  const hashedSessionToken = hashToken(sessionToken);
 
   // Calculate expiration
   const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');

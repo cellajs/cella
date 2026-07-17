@@ -9,8 +9,8 @@ import {
   insertTokens,
   linkWaitlistRequest,
 } from '#/modules/system/system-queries';
+import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
-import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { systemInviteEmail } from '../../../../emails';
@@ -73,7 +73,7 @@ export async function createInviteOp(ctx: AuthContext, emails: string[]) {
 
   // Generate token and store hashed
   const newToken = nanoid(40);
-  const hashedToken = encodeLowerCased(newToken);
+  const hashedToken = hashToken(newToken);
 
   // Create new tokens for recipients
   const tokens = recipientEmails.map((email) => ({

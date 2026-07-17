@@ -10,8 +10,8 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { type EmailModel, emailsTable } from '#/modules/user/emails-db';
 import { userSelect } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
+import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
-import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { oauthVerificationEmail } from '../../../../../emails';
 
@@ -49,7 +49,7 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   await deleteVerificationTokens(user.id, 'oauth-verification', oauthAccountId);
 
   const newToken = nanoid(40);
-  const hashedToken = encodeLowerCased(newToken);
+  const hashedToken = hashToken(newToken);
   const email = oauthAccount?.email ?? user.email;
 
   // Create new token

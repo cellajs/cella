@@ -5,7 +5,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { sessionsTable } from '#/modules/auth/sessions-db';
-import { encodeLowerCased } from '#/utils/oslo';
+import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import { createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -33,7 +33,7 @@ describe('Sign-out scoping', async () => {
     const [, victimSessionId] = cookieValue.split('.');
 
     // Forge a cookie: victim's sessionId but an attacker-chosen (wrong) secret.
-    const forgedSecret = encodeLowerCased(nanoid(40));
+    const forgedSecret = hashToken(nanoid(40));
     const forgedContent = `${forgedSecret}.${victimSessionId}.`;
     const forgedCookie = `${authCookieName('session')}=${forgedContent}`;
 

@@ -15,8 +15,8 @@ import {
   stampInactiveMembershipsReminded,
 } from '#/modules/memberships/memberships-queries';
 import { getValidChannelEntity } from '#/permissions/get-channel-entity';
+import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
-import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail } from '../../../../emails';
@@ -196,7 +196,7 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
   const rawTokens: Array<{ email: string; raw: string }> = [];
   const tokensToInsert = newUserTokenEmails.map((email) => {
     const raw = nanoid(40);
-    const hashed = encodeLowerCased(raw);
+    const hashed = hashToken(raw);
     rawTokens.push({ email, raw });
 
     return {

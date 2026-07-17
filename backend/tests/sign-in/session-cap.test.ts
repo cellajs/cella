@@ -6,7 +6,7 @@ import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { evictExcessSessions } from '#/modules/auth/general/helpers/session';
 import { type SessionTypes, sessionsTable } from '#/modules/auth/sessions-db';
-import { encodeLowerCased } from '#/utils/oslo';
+import { hashToken } from '#/utils/hash-token';
 import { createTestUser } from '../helpers';
 import { clearDatabase } from '../test-utils';
 
@@ -26,7 +26,7 @@ async function insertSession(userId: string, type: SessionTypes, createdAtMs: nu
   const id = generateId();
   await db.insert(sessionsTable).values({
     id,
-    secret: encodeLowerCased(nanoid(40)),
+    secret: hashToken(nanoid(40)),
     userId,
     type,
     authStrategy: 'passkey',

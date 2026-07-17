@@ -7,7 +7,7 @@ import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { usersTable } from '#/modules/user/user-db';
-import { encodeLowerCased } from '#/utils/oslo';
+import { hashToken } from '#/utils/hash-token';
 
 /** Extract email from rate limit key like "email:user@example.com" or "email:user@example.comip:1.2.3.4" */
 const emailFromKey = (key: string) => {
@@ -30,7 +30,7 @@ const emailFromMfaCookie = async (ctx: Context<Env>) => {
     .from(tokensTable)
     .where(
       and(
-        eq(tokensTable.secret, encodeLowerCased(tokenFromCookie)),
+        eq(tokensTable.secret, hashToken(tokenFromCookie)),
         eq(tokensTable.type, 'confirm-mfa'),
         gt(tokensTable.expiresAt, new Date().toISOString()),
       ),

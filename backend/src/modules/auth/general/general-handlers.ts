@@ -31,9 +31,9 @@ import { resolveEntity } from '#/modules/entities/entities-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
+import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
-import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { memberInviteWithTokenEmail, systemInviteEmail } from '../../../../emails';
@@ -199,7 +199,7 @@ app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
 
   // Generate token and store hashed
   const newToken = nanoid(40);
-  const hashedToken = encodeLowerCased(newToken);
+  const hashedToken = hashToken(newToken);
 
   // Insert token first
   await insertInvitationToken(ctx, {

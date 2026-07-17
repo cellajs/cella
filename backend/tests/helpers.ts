@@ -20,7 +20,7 @@ import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { mockEmail, mockUnsubscribeToken, mockUser } from '#/modules/user/user-mocks';
 import type { apiErrorSchema } from '#/schemas';
-import { encodeLowerCased } from '#/utils/oslo';
+import { hashToken } from '#/utils/hash-token';
 
 /**
  * Types for test responses
@@ -43,7 +43,7 @@ export async function createUser(email: string) {
  */
 export async function createMfaToken(user: { id: string; email: string }) {
   const mfaToken = nanoid(40);
-  const hashedMfaToken = encodeLowerCased(mfaToken);
+  const hashedMfaToken = hashToken(mfaToken);
   await db.insert(tokensTable).values({
     secret: hashedMfaToken,
     type: 'confirm-mfa',
@@ -222,7 +222,7 @@ export async function createTestOrganization(
  */
 export async function createTestSession(user: { id: string }) {
   const sessionToken = nanoid(40);
-  const hashedSessionToken = encodeLowerCased(sessionToken);
+  const hashedSessionToken = hashToken(sessionToken);
   const sessionId = generateId();
 
   await db.insert(sessionsTable).values({

@@ -10,7 +10,7 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { userSelect } from '#/modules/user/helpers/select';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { getValidToken } from '#/utils/get-valid-token';
-import { encodeLowerCased } from '#/utils/oslo';
+import { hashToken } from '#/utils/hash-token';
 import { createDate, TimeSpan } from '#/utils/time-span';
 
 /**
@@ -25,7 +25,7 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
 
   // Generate token and store hashed
   const newToken = nanoid(40);
-  const hashedToken = encodeLowerCased(newToken);
+  const hashedToken = hashToken(newToken);
 
   // Generate a new random token and insert it
   await db

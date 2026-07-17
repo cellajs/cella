@@ -11,8 +11,8 @@ import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { authMagicLinkRoutes } from '#/modules/auth/magic/magic-routes';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { defaultHook } from '#/utils/default-hook';
+import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
-import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { magicLinkEmail } from '../../../../emails';
@@ -60,7 +60,7 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
 
   // Generate token
   const newToken = nanoid(40);
-  const hashedToken = encodeLowerCased(newToken);
+  const hashedToken = hashToken(newToken);
 
   // Create token row with 15-minute expiry
   const [tokenRecord] = await db
