@@ -1,2 +1,0 @@
-DROP TABLE "pages";--> statement-breakpoint
-ALTER TABLE "tenants" ALTER COLUMN "restrictions" SET DEFAULT '{"quotas":{"user":1000,"organization":5,"attachment":100},"rateLimits":{"apiPointsPerHour":1000}}';

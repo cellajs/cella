@@ -1,1 +1,0 @@
-CREATE INDEX "attachments_organization_id_seq_index" ON "attachments" ("organization_id","seq");

@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "b5f426ed-f4b5-46d7-8df0-76205bb01c2c",
+  "id": "c99d27f5-c572-448b-bfa2-633bafe352dd",
   "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
+    "ea22c9de-8746-46f7-9656-2479126fa25c"
   ],
   "ddl": [
     {
@@ -20,7 +20,37 @@
     },
     {
       "isRlsEnabled": false,
-      "name": "context_counters",
+      "name": "oauth_accounts",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "passkeys",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "rate_limits",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "sessions",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "tokens",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "totps",
       "entityType": "tables",
       "schema": "public"
     },
@@ -32,7 +62,13 @@
     },
     {
       "isRlsEnabled": false,
-      "name": "emails",
+      "name": "channel_counters",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "product_counters",
       "entityType": "tables",
       "schema": "public"
     },
@@ -50,37 +86,7 @@
     },
     {
       "isRlsEnabled": false,
-      "name": "oauth_accounts",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
       "name": "organizations",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
-      "name": "pages",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
-      "name": "passkeys",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
-      "name": "product_counters",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
-      "name": "rate_limits",
       "entityType": "tables",
       "schema": "public"
     },
@@ -98,18 +104,6 @@
     },
     {
       "isRlsEnabled": false,
-      "name": "seen_counts",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
-      "name": "sessions",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
       "name": "system_roles",
       "entityType": "tables",
       "schema": "public"
@@ -122,13 +116,7 @@
     },
     {
       "isRlsEnabled": false,
-      "name": "tokens",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
-      "name": "totps",
+      "name": "emails",
       "entityType": "tables",
       "schema": "public"
     },
@@ -469,6 +457,45 @@
       "table": "attachments"
     },
     {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "public_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
       "type": "bigint",
       "typeSchema": null,
       "notNull": true,
@@ -625,578 +652,6 @@
       "table": "attachments"
     },
     {
-      "type": "varchar(50)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "context_key",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "context_counters"
-    },
-    {
-      "type": "jsonb",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'{}'",
-      "generated": null,
-      "identity": null,
-      "name": "counts",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "context_counters"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "updated_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "context_counters"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "domains"
-    },
-    {
-      "type": "varchar(24)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "tenant_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "domains"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "domain",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "domains"
-    },
-    {
-      "type": "boolean",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "false",
-      "generated": null,
-      "identity": null,
-      "name": "verified",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "domains"
-    },
-    {
-      "type": "varchar(50)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "verification_token",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "domains"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "verified_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "domains"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "last_checked_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "domains"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "domains"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "emails"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "emails"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "email",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "emails"
-    },
-    {
-      "type": "boolean",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "false",
-      "generated": null,
-      "identity": null,
-      "name": "verified",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "emails"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "token_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "emails"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "user_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "emails"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "verified_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "emails"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "type": "varchar(24)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "tenant_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "context_type",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "context_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "email",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "user_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "token_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'member'",
-      "generated": null,
-      "identity": null,
-      "name": "role",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "rejected_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "created_by",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "organization_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "varchar(24)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "tenant_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "context_type",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "context_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "user_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'member'",
-      "generated": null,
-      "identity": null,
-      "name": "role",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "created_by",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "updated_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "updated_by",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "boolean",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "false",
-      "generated": null,
-      "identity": null,
-      "name": "archived",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "boolean",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "false",
-      "generated": null,
-      "identity": null,
-      "name": "muted",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "double precision",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "display_order",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "organization_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
       "type": "timestamp",
       "typeSchema": null,
       "notNull": true,
@@ -1299,513 +754,6 @@
       "entityType": "columns",
       "schema": "public",
       "table": "oauth_accounts"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'organization'",
-      "generated": null,
-      "identity": null,
-      "name": "entity_type",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(24)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "tenant_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "name",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "updated_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "slug",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(2048)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "thumbnail_url",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(2048)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "banner_url",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "created_by",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "updated_by",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "short_name",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "country",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "timezone",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'en'",
-      "generated": null,
-      "identity": null,
-      "name": "default_language",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "json",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'[\"en\"]'",
-      "generated": null,
-      "identity": null,
-      "name": "languages",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "notification_email",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "color",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(2048)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "logo_url",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(2048)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "website_url",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "varchar(1000000)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "welcome_text",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "json",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'[]'",
-      "generated": null,
-      "identity": null,
-      "name": "auth_strategies",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "boolean",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "false",
-      "generated": null,
-      "identity": null,
-      "name": "chat_support",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'page'",
-      "generated": null,
-      "identity": null,
-      "name": "entity_type",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'New page'",
-      "generated": null,
-      "identity": null,
-      "name": "name",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "updated_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "jsonb",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "stx",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "varchar(1000000)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": "''",
-      "generated": null,
-      "identity": null,
-      "name": "description",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "varchar(1000000)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "''",
-      "generated": null,
-      "identity": null,
-      "name": "keywords",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "created_by",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "updated_by",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "bigint",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "0",
-      "generated": null,
-      "identity": null,
-      "name": "seq",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'unpublished'",
-      "generated": null,
-      "identity": null,
-      "name": "status",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'default'",
-      "generated": null,
-      "identity": null,
-      "name": "render_mode",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "public_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "parent_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "type": "double precision",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "display_order",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "pages"
     },
     {
       "type": "uuid",
@@ -1938,58 +886,6 @@
       "table": "passkeys"
     },
     {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "entity_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "product_counters"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "entity_type",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "product_counters"
-    },
-    {
-      "type": "integer",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "0",
-      "generated": null,
-      "identity": null,
-      "name": "view_count",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "product_counters"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "last_viewed_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "product_counters"
-    },
-    {
       "type": "text",
       "typeSchema": null,
       "notNull": true,
@@ -2027,240 +923,6 @@
       "entityType": "columns",
       "schema": "public",
       "table": "rate_limits"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "requests"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "requests"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "message",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "requests"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "email",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "requests"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "type",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "requests"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "token_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "requests"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "seen_by"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "user_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "seen_by"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "entity_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "seen_by"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "entity_type",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "seen_by"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "context_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "seen_by"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "organization_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "seen_by"
-    },
-    {
-      "type": "varchar(24)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "tenant_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "seen_by"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "seen_by"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "entity_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "seen_counts"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "entity_type",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "seen_counts"
-    },
-    {
-      "type": "integer",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "0",
-      "generated": null,
-      "identity": null,
-      "name": "view_count",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "seen_counts"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "updated_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "seen_counts"
     },
     {
       "type": "uuid",
@@ -2432,6 +1094,19 @@
       "table": "sessions"
     },
     {
+      "type": "varchar(64)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "device_id_hash",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
       "type": "timestamp",
       "typeSchema": null,
       "notNull": true,
@@ -2456,214 +1131,6 @@
       "entityType": "columns",
       "schema": "public",
       "table": "sessions"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "system_roles"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "user_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "system_roles"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "role",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "system_roles"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "system_roles"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "updated_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "system_roles"
-    },
-    {
-      "type": "varchar(24)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "tenants"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "name",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "tenants"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'active'",
-      "generated": null,
-      "identity": null,
-      "name": "status",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "tenants"
-    },
-    {
-      "type": "json",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'{\"quotas\":{\"user\":1000,\"organization\":5,\"attachment\":100,\"page\":0},\"rateLimits\":{\"apiPointsPerHour\":1000}}'",
-      "generated": null,
-      "identity": null,
-      "name": "restrictions",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "tenants"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "created_by",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "tenants"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "subscription_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "tenants"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'none'",
-      "generated": null,
-      "identity": null,
-      "name": "subscription_status",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "tenants"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "subscription_plan",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "tenants"
-    },
-    {
-      "type": "json",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "subscription_data",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "tenants"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "tenants"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "updated_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "tenants"
     },
     {
       "type": "uuid",
@@ -2872,6 +1339,1358 @@
       "entityType": "columns",
       "schema": "public",
       "table": "totps"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "varchar(24)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "domain",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "verified",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "verification_token",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "verified_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_checked_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "channel_key",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "channel_counters"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'{}'",
+      "generated": null,
+      "identity": null,
+      "name": "counts",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "channel_counters"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "channel_counters"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "entity_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "product_counters"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "entity_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "product_counters"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "0",
+      "generated": null,
+      "identity": null,
+      "name": "view_count",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "product_counters"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_viewed_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "product_counters"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "type": "varchar(24)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "channel_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "channel_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "token_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'member'",
+      "generated": null,
+      "identity": null,
+      "name": "role",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "rejected_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "reminded_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "created_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "organization_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "varchar(24)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "channel_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "channel_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'member'",
+      "generated": null,
+      "identity": null,
+      "name": "role",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "created_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "updated_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "archived",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "muted",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "double precision",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "display_order",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "organization_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'organization'",
+      "generated": null,
+      "identity": null,
+      "name": "entity_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(24)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "slug",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(2048)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "thumbnail_url",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(2048)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "banner_url",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "created_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "updated_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "published_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "public_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "short_name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "country",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "timezone",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'en'",
+      "generated": null,
+      "identity": null,
+      "name": "default_language",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "json",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'[\"en\"]'",
+      "generated": null,
+      "identity": null,
+      "name": "languages",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "notification_email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "color",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(2048)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "logo_url",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(2048)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "website_url",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "varchar(1000000)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "welcome_text",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "chat_support",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requests"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requests"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "message",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requests"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requests"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requests"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "token_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requests"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "entity_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "entity_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "channel_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "organization_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "varchar(24)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "system_roles"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "system_roles"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "role",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "system_roles"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "system_roles"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "system_roles"
+    },
+    {
+      "type": "varchar(24)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'active'",
+      "generated": null,
+      "identity": null,
+      "name": "status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "json",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'{\"quotas\":{\"user\":1000,\"organization\":5,\"attachment\":100},\"rateLimits\":{\"apiPointsPerHour\":1000}}'",
+      "generated": null,
+      "identity": null,
+      "name": "restrictions",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "json",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'[]'",
+      "generated": null,
+      "identity": null,
+      "name": "auth_strategies",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "created_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "subscription_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'none'",
+      "generated": null,
+      "identity": null,
+      "name": "subscription_status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "subscription_plan",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "json",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "subscription_data",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "emails"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "emails"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "emails"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "verified",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "emails"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "token_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "emails"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "emails"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "verified_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "emails"
     },
     {
       "type": "uuid",
@@ -3264,6 +3083,19 @@
       "table": "yjs_documents"
     },
     {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_edited_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "yjs_documents"
+    },
+    {
       "type": "timestamp",
       "typeSchema": null,
       "notNull": true,
@@ -3378,6 +3210,34 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "organization_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "seq",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "attachments_organization_id_seq_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "tenant_id",
           "isExpression": false,
           "asc": true,
@@ -3462,6 +3322,307 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "oauth_accounts_user_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "oauth_accounts"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "passkeys_user_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "passkeys"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "credential_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "passkeys_credential_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "passkeys"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "secret",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "sessions_secret_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "sessions_user_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "ip_hash",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "sessions_user_id_ip_hash_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "ip_subnet_hash",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "sessions_ip_subnet_hash_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "device_id_hash",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "sessions_user_id_device_id_hash_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "secret",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "type",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "tokens_secret_type_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "tokens_user_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "created_by",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "tokens_created_by_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "type",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "single_use_token",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "tokens_single_use_token_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "totps_user_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "totps"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "tenant_id",
           "isExpression": false,
           "asc": true,
@@ -3499,27 +3660,6 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "domains"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "user_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "emails_user_id_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "emails"
     },
     {
       "nameExplicit": true,
@@ -3721,7 +3861,7 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "context_type",
+          "value": "channel_type",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -3747,7 +3887,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "memberships_context_org_role_idx",
+      "name": "memberships_channel_org_role_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "memberships"
@@ -3786,27 +3926,6 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "memberships"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "user_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "oauth_accounts_user_id_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "oauth_accounts"
     },
     {
       "nameExplicit": true,
@@ -3854,27 +3973,6 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "tenant_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "organizations_tenant_id_index",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
           "value": "created_by",
           "isExpression": false,
           "asc": true,
@@ -3912,111 +4010,6 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "organizations"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "seq",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "pages_seq_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "created_by",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "pages_created_by_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "updated_by",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "pages_updated_by_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "user_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "passkeys_user_id_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "passkeys"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "credential_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "passkeys_credential_id_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "passkeys"
     },
     {
       "nameExplicit": true,
@@ -4071,7 +4064,35 @@
           "opclass": null
         },
         {
-          "value": "context_id",
+          "value": "entity_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "seen_by_user_entity_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "seen_by"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "channel_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -4090,7 +4111,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "seen_by_user_context_type_index",
+      "name": "seen_by_user_channel_type_index",
       "entityType": "indexes",
       "schema": "public",
       "table": "seen_by"
@@ -4136,97 +4157,6 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "seen_by"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "secret",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "sessions_secret_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "sessions"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "user_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "sessions_user_id_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "sessions"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "user_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "ip_hash",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "sessions_user_id_ip_hash_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "sessions"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "ip_subnet_hash",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "sessions_ip_subnet_hash_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "sessions"
     },
     {
       "nameExplicit": true,
@@ -4316,34 +4246,6 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "secret",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "type",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "tokens_secret_type_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "tokens"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
           "value": "user_id",
           "isExpression": false,
           "asc": true,
@@ -4356,80 +4258,10 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "tokens_user_id_idx",
+      "name": "emails_user_id_idx",
       "entityType": "indexes",
       "schema": "public",
-      "table": "tokens"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "created_by",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "tokens_created_by_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "tokens"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "type",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "single_use_token",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "tokens_single_use_token_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "tokens"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "user_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "totps_user_id_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "totps"
+      "table": "emails"
     },
     {
       "nameExplicit": true,
@@ -4632,6 +4464,23 @@
     {
       "nameExplicit": false,
       "columns": [
+        "deleted_by"
+      ],
+      "schemaTo": "public",
+      "tableTo": "users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "attachments_deleted_by_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "tenant_id",
         "organization_id"
       ],
@@ -4651,19 +4500,19 @@
     {
       "nameExplicit": false,
       "columns": [
-        "tenant_id"
+        "user_id"
       ],
       "schemaTo": "public",
-      "tableTo": "tenants",
+      "tableTo": "users",
       "columnsTo": [
         "id"
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
-      "name": "domains_tenant_id_tenants_id_fkey",
+      "name": "oauth_accounts_user_id_users_id_fkey",
       "entityType": "fks",
       "schema": "public",
-      "table": "domains"
+      "table": "oauth_accounts"
     },
     {
       "nameExplicit": false,
@@ -4677,10 +4526,112 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
-      "name": "emails_user_id_users_id_fkey",
+      "name": "passkeys_user_id_users_id_fkey",
       "entityType": "fks",
       "schema": "public",
-      "table": "emails"
+      "table": "passkeys"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "sessions_user_id_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "tokens_user_id_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "oauth_account_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "oauth_accounts",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "tokens_oauth_account_id_oauth_accounts_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "created_by"
+      ],
+      "schemaTo": "public",
+      "tableTo": "users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "tokens_created_by_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "totps_user_id_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "totps"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tenants",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "domains_tenant_id_tenants_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "domains"
     },
     {
       "nameExplicit": false,
@@ -4842,23 +4793,6 @@
     {
       "nameExplicit": false,
       "columns": [
-        "user_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "oauth_accounts_user_id_users_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "oauth_accounts"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
         "tenant_id"
       ],
       "schemaTo": "public",
@@ -4910,74 +4844,6 @@
     {
       "nameExplicit": false,
       "columns": [
-        "created_by"
-      ],
-      "schemaTo": "public",
-      "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "SET NULL",
-      "name": "pages_created_by_users_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "updated_by"
-      ],
-      "schemaTo": "public",
-      "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "SET NULL",
-      "name": "pages_updated_by_users_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "parent_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "pages",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "SET NULL",
-      "name": "pages_parent_id_pages_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "pages"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "passkeys_user_id_users_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "passkeys"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
         "user_id"
       ],
       "schemaTo": "public",
@@ -4991,23 +4857,6 @@
       "entityType": "fks",
       "schema": "public",
       "table": "seen_by"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "sessions_user_id_users_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "sessions"
     },
     {
       "nameExplicit": false,
@@ -5055,61 +4904,10 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
-      "name": "tokens_user_id_users_id_fkey",
+      "name": "emails_user_id_users_id_fkey",
       "entityType": "fks",
       "schema": "public",
-      "table": "tokens"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "oauth_account_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "oauth_accounts",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "tokens_oauth_account_id_oauth_accounts_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "tokens"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "created_by"
-      ],
-      "schemaTo": "public",
-      "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "tokens_created_by_users_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "tokens"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "totps_user_id_users_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "totps"
+      "table": "emails"
     },
     {
       "nameExplicit": false,
@@ -5195,17 +4993,6 @@
     {
       "columns": [
         "id",
-        "created_at"
-      ],
-      "nameExplicit": false,
-      "name": "seen_by_pkey",
-      "entityType": "pks",
-      "schema": "public",
-      "table": "seen_by"
-    },
-    {
-      "columns": [
-        "id",
         "expires_at"
       ],
       "nameExplicit": false,
@@ -5224,6 +5011,17 @@
       "entityType": "pks",
       "schema": "public",
       "table": "tokens"
+    },
+    {
+      "columns": [
+        "id",
+        "created_at"
+      ],
+      "nameExplicit": false,
+      "name": "seen_by_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "seen_by"
     },
     {
       "columns": [
@@ -5259,12 +5057,42 @@
     },
     {
       "columns": [
-        "context_key"
+        "id"
       ],
       "nameExplicit": false,
-      "name": "context_counters_pkey",
+      "name": "oauth_accounts_pkey",
       "schema": "public",
-      "table": "context_counters",
+      "table": "oauth_accounts",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "passkeys_pkey",
+      "schema": "public",
+      "table": "passkeys",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "key"
+      ],
+      "nameExplicit": false,
+      "name": "rate_limits_pkey",
+      "schema": "public",
+      "table": "rate_limits",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "totps_pkey",
+      "schema": "public",
+      "table": "totps",
       "entityType": "pks"
     },
     {
@@ -5279,12 +5107,22 @@
     },
     {
       "columns": [
-        "id"
+        "channel_key"
       ],
       "nameExplicit": false,
-      "name": "emails_pkey",
+      "name": "channel_counters_pkey",
       "schema": "public",
-      "table": "emails",
+      "table": "channel_counters",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "entity_id"
+      ],
+      "nameExplicit": false,
+      "name": "product_counters_pkey",
+      "schema": "public",
+      "table": "product_counters",
       "entityType": "pks"
     },
     {
@@ -5312,16 +5150,6 @@
         "id"
       ],
       "nameExplicit": false,
-      "name": "oauth_accounts_pkey",
-      "schema": "public",
-      "table": "oauth_accounts",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
       "name": "organizations_pkey",
       "schema": "public",
       "table": "organizations",
@@ -5332,59 +5160,9 @@
         "id"
       ],
       "nameExplicit": false,
-      "name": "pages_pkey",
-      "schema": "public",
-      "table": "pages",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
-      "name": "passkeys_pkey",
-      "schema": "public",
-      "table": "passkeys",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "entity_id"
-      ],
-      "nameExplicit": false,
-      "name": "product_counters_pkey",
-      "schema": "public",
-      "table": "product_counters",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "key"
-      ],
-      "nameExplicit": false,
-      "name": "rate_limits_pkey",
-      "schema": "public",
-      "table": "rate_limits",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
       "name": "requests_pkey",
       "schema": "public",
       "table": "requests",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "entity_id"
-      ],
-      "nameExplicit": false,
-      "name": "seen_counts_pkey",
-      "schema": "public",
-      "table": "seen_counts",
       "entityType": "pks"
     },
     {
@@ -5412,9 +5190,9 @@
         "id"
       ],
       "nameExplicit": false,
-      "name": "totps_pkey",
+      "name": "emails_pkey",
       "schema": "public",
-      "table": "totps",
+      "table": "emails",
       "entityType": "pks"
     },
     {
@@ -5438,32 +5216,6 @@
       "entityType": "pks"
     },
     {
-      "nameExplicit": true,
-      "columns": [
-        "tenant_id",
-        "email",
-        "context_id"
-      ],
-      "nullsNotDistinct": false,
-      "name": "inactive_memberships_tenant_email_ctx",
-      "entityType": "uniques",
-      "schema": "public",
-      "table": "inactive_memberships"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        "tenant_id",
-        "user_id",
-        "context_id"
-      ],
-      "nullsNotDistinct": false,
-      "name": "memberships_unique_context",
-      "entityType": "uniques",
-      "schema": "public",
-      "table": "memberships"
-    },
-    {
       "nameExplicit": false,
       "columns": [
         "provider",
@@ -5480,10 +5232,35 @@
       "nameExplicit": true,
       "columns": [
         "tenant_id",
-        "id"
+        "email",
+        "channel_id"
       ],
       "nullsNotDistinct": false,
-      "name": "organizations_tenant_id_unique",
+      "name": "inactive_memberships_tenant_email_ctx",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "inactive_memberships"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "tenant_id",
+        "user_id",
+        "channel_id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "memberships_unique_channel",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "memberships"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "tenant_id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "organizations_tenant_id_key",
       "entityType": "uniques",
       "schema": "public",
       "table": "organizations"
@@ -5491,26 +5268,14 @@
     {
       "nameExplicit": true,
       "columns": [
-        "parent_id",
-        "display_order"
+        "tenant_id",
+        "id"
       ],
       "nullsNotDistinct": false,
-      "name": "pages_group_order",
+      "name": "organizations_tenant_id_unique",
       "entityType": "uniques",
       "schema": "public",
-      "table": "pages"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        "user_id",
-        "entity_id"
-      ],
-      "nullsNotDistinct": false,
-      "name": "seen_by_user_entity_unique",
-      "entityType": "uniques",
-      "schema": "public",
-      "table": "seen_by"
+      "table": "organizations"
     },
     {
       "nameExplicit": false,
@@ -5521,17 +5286,6 @@
       "name": "domains_domain_key",
       "schema": "public",
       "table": "domains",
-      "entityType": "uniques"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "email"
-      ],
-      "nullsNotDistinct": false,
-      "name": "emails_email_key",
-      "schema": "public",
-      "table": "emails",
       "entityType": "uniques"
     },
     {
@@ -5554,6 +5308,17 @@
       "name": "system_roles_user_id_key",
       "schema": "public",
       "table": "system_roles",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "email"
+      ],
+      "nullsNotDistinct": false,
+      "name": "emails_email_key",
+      "schema": "public",
+      "table": "emails",
       "entityType": "uniques"
     },
     {
@@ -5584,7 +5349,7 @@
       "roles": [
         "public"
       ],
-      "using": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n",
+      "using": "\n    \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n    AND (\"attachments\".\"deleted_at\" IS NULL OR current_setting('app.include_deleted', true) = 'true')\n  ",
       "withCheck": null,
       "name": "attachments_select_policy",
       "entityType": "policies",
@@ -5636,7 +5401,7 @@
       "roles": [
         "public"
       ],
-      "using": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"yjs_documents\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n",
+      "using": "\n    \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"yjs_documents\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n    \n  ",
       "withCheck": null,
       "name": "yjs_documents_select_policy",
       "entityType": "policies",

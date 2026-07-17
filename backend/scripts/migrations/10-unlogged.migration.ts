@@ -9,7 +9,8 @@ import type { SideEffectBlock, SideEffectProducer } from '../types';
  * Idempotent: checks pg_class.relpersistence before altering.
  */
 
-const unloggedTables = ['rate_limits', 'user_counters', 'channel_counters', 'product_counters'];
+/** Exported so the verify block (99-verify) asserts against the same list. */
+export const unloggedTables = ['rate_limits', 'user_counters', 'channel_counters', 'product_counters'];
 
 async function run(): Promise<SideEffectBlock> {
   const alterStatements = unloggedTables

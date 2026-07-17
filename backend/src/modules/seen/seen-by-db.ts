@@ -1,4 +1,4 @@
-import { foreignKey, index, primaryKey, snakeCase, timestamp, unique, uuid, varchar } from 'drizzle-orm/pg-core';
+import { foreignKey, index, primaryKey, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { tenantIdLength } from '#/db/utils/constraints';
@@ -34,8 +34,11 @@ export const seenByTable = snakeCase.table(
   (table) => [
     // Composite PK required for partitioning by created_at
     primaryKey({ columns: [table.id, table.createdAt] }),
-    // Deduplication: one row per user per entity
-    unique('seen_by_user_entity_unique').on(table.userId, table.entityId),
+    // Dedup lookup: mark-seen inserts via NOT EXISTS on (userId, entityId). A UNIQUE constraint
+    // is impossible here — partitioned tables require the partition column (createdAt) in every
+    // unique index. Rare concurrent-flush races can leave duplicate rows; readers use
+    // EXISTS/NOT EXISTS (dup-safe) and counter recalculation counts DISTINCT users.
+    index('seen_by_user_entity_index').on(table.userId, table.entityId),
     // Index for unseen count query: COUNT(*) WHERE userId AND channelId AND entityType
     index('seen_by_user_channel_type_index').on(table.userId, table.channelId, table.entityType),
     // Index for entity-level queries

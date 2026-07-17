@@ -89,22 +89,31 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
     log.debug(`markSeen: ${vIds.length}/${entityIds.length} valid entities`);
 
     // Single-roundtrip CTE that:
-    // 1. Bulk-inserts seen_by rows, skipping duplicates (ON CONFLICT DO NOTHING)
+    // 1. Bulk-inserts seen_by rows, skipping already-seen ones via NOT EXISTS. seen_by is
+    //    partitioned by created_at, so a (user_id, entity_id) unique arbiter cannot exist;
+    //    a concurrent flush of the same entity can rarely slip through as a duplicate row,
+    //    which readers tolerate (EXISTS semantics) and counter recalculation corrects.
     // 2. Upserts product_counters only for newly inserted rows (increments view_count)
     // 3. Returns the count of genuinely new seen rows
     const values = sql.join(
       vIds.map(
         (entityId) =>
-          sql`(${generateId()}, ${user.id}, ${entityId}, ${entityType}, ${ctxIdMap.get(entityId) ?? organization.id}, ${organization.id}, ${organization.tenantId}, now())`,
+          sql`(${generateId()}::uuid, ${user.id}::uuid, ${entityId}::uuid, ${entityType}, ${ctxIdMap.get(entityId) ?? organization.id}::uuid, ${organization.id}::uuid, ${organization.tenantId}, now())`,
       ),
       sql`, `,
     );
 
     const result = await db.execute(sql`
-      WITH inserted AS (
-        INSERT INTO seen_by (id, user_id, entity_id, entity_type, channel_id, organization_id, tenant_id, created_at)
+      WITH candidate (id, user_id, entity_id, entity_type, channel_id, organization_id, tenant_id, created_at) AS (
         VALUES ${values}
-        ON CONFLICT (user_id, entity_id) DO NOTHING
+      ),
+      inserted AS (
+        INSERT INTO seen_by (id, user_id, entity_id, entity_type, channel_id, organization_id, tenant_id, created_at)
+        SELECT c.id, c.user_id, c.entity_id, c.entity_type, c.channel_id, c.organization_id, c.tenant_id, c.created_at
+        FROM candidate c
+        WHERE NOT EXISTS (
+          SELECT 1 FROM seen_by sb WHERE sb.user_id = c.user_id AND sb.entity_id = c.entity_id
+        )
         RETURNING entity_id
       ),
       counters AS (
