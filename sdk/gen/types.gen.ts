@@ -414,6 +414,7 @@ export type Organization = {
     } | null);
   publishedAt: string | null;
   publicAt: string | null;
+  path: string | null;
   shortName: string | null;
   country: string | null;
   timezone: string | null;
@@ -476,6 +477,7 @@ export type Attachment = {
   deletedBy: string | null;
   publicAt: string | null;
   seq: number;
+  path: string | null;
   public: boolean;
   bucketName: string;
   groupId: string | null;

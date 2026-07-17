@@ -1,0 +1,2 @@
+ALTER TABLE "attachments" ADD COLUMN "path" text GENERATED ALWAYS AS ("organization_id"::text) STORED;--> statement-breakpoint
+ALTER TABLE "organizations" ADD COLUMN "path" text GENERATED ALWAYS AS ("id"::text) STORED;

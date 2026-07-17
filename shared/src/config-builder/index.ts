@@ -17,6 +17,16 @@ export {
 export type { AncestorSource, ResolvedAncestor } from './resolve-row-channel';
 export { possibleHomeChannels, resolveDeepestAncestorId, resolveNonNullAncestors } from './resolve-row-channel';
 
+// Materialized id-path rule (ledger sync: routing, move-out, subtree addressing)
+export {
+  computeAncestorPath,
+  computeChannelPath,
+  computeProductPath,
+  pathHomeId,
+  pathSegments,
+  pathStartsWith,
+} from './row-path';
+
 // Utility functions
 export { hasKey, identityRecord, mergeDeep, recordFromKeys } from './utils';
 

@@ -1,6 +1,7 @@
 import { timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType } from 'shared';
 import { maxLength } from '#/db/utils/constraints';
+import { channelPathColumn } from '#/db/utils/path-column';
 import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -30,4 +31,5 @@ export const channelEntityColumns = <T extends ChannelEntityType>(entityType: T)
    * `shared/config/permissions-config.ts`; null (the default) keeps the mechanism dormant.
    */
   publicAt: timestamp('public_at', { mode: 'string' }),
+  ...channelPathColumn(entityType),
 });

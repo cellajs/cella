@@ -28,6 +28,16 @@ export {
   resolveNonNullAncestors,
 } from './src/config-builder/resolve-row-channel';
 
+// Materialized id-path rule (ledger sync: routing, move-out, subtree addressing)
+export {
+  computeAncestorPath,
+  computeChannelPath,
+  computeProductPath,
+  pathHomeId,
+  pathSegments,
+  pathStartsWith,
+} from './src/config-builder/row-path';
+
 // Config builder types
 export type { AppServiceEndpointConfig, RequestLimitsConfig, RequiredConfig, S3Config, S3ConfigInput } from './src/config-builder/types';
 

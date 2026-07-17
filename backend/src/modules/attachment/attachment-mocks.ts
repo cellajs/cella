@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { computeProductPath, hierarchy } from 'shared';
 import {
   generateMockEntityChannelIdColumns,
   MOCK_REF_DATE,
@@ -23,6 +24,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockUuid();
     const filename = faker.system.fileName();
+    const channelIds = generateMockEntityChannelIdColumns('attachment');
 
     return {
       id: mockUuid(),
@@ -50,7 +52,9 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       publicAt: null,
       seq: faker.number.int({ min: 1, max: 500 }),
       stx: mockStx(),
-      ...generateMockEntityChannelIdColumns('attachment'),
+      ...channelIds,
+      // Generated column in the live schema (productPathColumn); mocks mirror the SQL rule.
+      path: computeProductPath(hierarchy, 'attachment', channelIds),
     };
   });
 

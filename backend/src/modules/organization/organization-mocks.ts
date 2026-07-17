@@ -37,6 +37,8 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
     id,
     tenantId,
     entityType: 'organization' as const,
+    // Generated column in the live schema (channelPathColumn); mocks mirror the SQL rule.
+    path: id,
     name,
     slug,
     shortName: name.split(' ')[0],

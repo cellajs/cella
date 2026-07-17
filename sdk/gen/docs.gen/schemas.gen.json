@@ -110,6 +110,10 @@
           "minimum": -9007199254740991,
           "maximum": 9007199254740991
         },
+        "path": {
+          "type": ["string", "null"],
+          "required": true
+        },
         "public": { "type": "boolean", "required": true },
         "bucketName": { "type": "string", "required": true, "maxLength": 255 },
         "groupId": {
@@ -148,20 +152,20 @@
     },
     "description": "A product entity for file attachment metadata.",
     "example": {
-      "id": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
-      "tenantId": "qnt152",
+      "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
+      "tenantId": "t58r8f",
       "entityType": "attachment",
       "name": "rightfully_lest_noted.mp3",
       "description": null,
-      "keywords": "vereor strenuus verecundia",
+      "keywords": "universe explicabo aliquid",
       "public": false,
       "bucketName": "attachments",
       "groupId": null,
       "filename": "rightfully_lest_noted.mp3",
-      "contentType": "video/mp4",
+      "contentType": "text/calendar",
       "convertedContentType": null,
-      "size": "7611296",
-      "originalKey": "uploads/fkyy8dwkbmpkeuemouu8t58r/rightfully_lest_noted.mp3",
+      "size": "6077039",
+      "originalKey": "uploads/enhqurk6hu54pnfytf99mpmu/rightfully_lest_noted.mp3",
       "convertedKey": null,
       "thumbnailKey": null,
       "createdAt": "2024-10-12T12:26:26.417Z",
@@ -171,13 +175,14 @@
       "deletedAt": null,
       "deletedBy": null,
       "publicAt": null,
-      "seq": 123,
+      "seq": 246,
       "stx": {
-        "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
-        "sourceId": "e036cee3-625c-452e-ab1a-be9390460217",
+        "mutationId": "e036cee3-625c-452e-ab1a-be9390460217",
+        "sourceId": "0841e0bb-2810-4252-8874-9789e1db3e97",
         "fieldTimestamps": {}
       },
-      "organizationId": "0841e0bb-2810-4252-8874-9789e1db3e97"
+      "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
+      "path": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
     }
   },
   {
@@ -1099,6 +1104,10 @@
           "type": ["string", "null"],
           "required": true
         },
+        "path": {
+          "type": ["string", "null"],
+          "required": true
+        },
         "shortName": {
           "type": ["string", "null"],
           "required": true,
@@ -1275,6 +1284,7 @@
       "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
       "tenantId": "d1lgzb",
       "entityType": "organization",
+      "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
       "name": "Spencer, Pouros and Bergnaum",
       "slug": "spencer-pouros-and-bergnaum",
       "shortName": "Spencer,",
