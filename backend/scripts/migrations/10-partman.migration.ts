@@ -10,262 +10,139 @@ interface PartitionConfig {
   interval: string;
   /** Retention period (e.g., '30 days', '90 days'). Null = no retention (keep indefinitely). */
   retention: string | null;
-  /**
-   * SQL for table creation. If null, uses LIKE clause to clone existing table.
-   * This is useful for tables with dynamic columns (like activities).
-   */
-  createTableSql: string | null;
-  /** SQL for index creation. If empty and createTableSql is null, indexes are cloned. */
-  indexesSql: string[];
 }
 
-// Partition configurations must match the Drizzle schemas: columns and indexes are verified
-// against them by tests/partman-parity.test.ts, and the generated SQL re-checks column parity
-// at conversion time before copying data. Exported for that test.
+// The conversion clones the live table from the catalog (LIKE + captured PK/FK/index DDL),
+// so there is no hardcoded copy of the schema to drift. tests/partman-parity.test.ts still
+// asserts the structural preconditions against the Drizzle schemas: the table exists, its PK
+// includes the partition column, and the control column is NOT NULL (pg_partman requirement).
+// Exported for that test.
 export const partitionConfigs: PartitionConfig[] = [
-  {
-    name: 'sessions',
-    partitionColumn: 'expires_at',
-    interval: '1 week',
-    retention: '30 days',
-    createTableSql: `CREATE TABLE sessions (
-    id uuid NOT NULL,
-    secret varchar(255) NOT NULL,
-    type varchar NOT NULL DEFAULT 'regular',
-    user_id uuid NOT NULL,
-    device_name varchar(255),
-    device_type varchar NOT NULL DEFAULT 'desktop',
-    device_os varchar(255),
-    browser varchar(255),
-    auth_strategy varchar NOT NULL,
-    ip_hash varchar(64),
-    ip_subnet_hash varchar(64),
-    ip_country varchar(2),
-    ip_asn integer,
-    device_id_hash varchar(64),
-    created_at timestamp DEFAULT now() NOT NULL,
-    expires_at timestamp with time zone NOT NULL,
-    CONSTRAINT sessions_id_expires_at_pk PRIMARY KEY (id, expires_at),
-    CONSTRAINT sessions_user_id_users_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  ) PARTITION BY RANGE (expires_at)`,
-    indexesSql: [
-      'CREATE INDEX sessions_secret_idx ON sessions (secret)',
-      'CREATE INDEX sessions_user_id_idx ON sessions (user_id)',
-      'CREATE INDEX sessions_user_id_ip_hash_idx ON sessions (user_id, ip_hash)',
-      'CREATE INDEX sessions_ip_subnet_hash_idx ON sessions (ip_subnet_hash)',
-      'CREATE INDEX sessions_user_id_device_id_hash_idx ON sessions (user_id, device_id_hash)',
-    ],
-  },
-  {
-    name: 'tokens',
-    partitionColumn: 'expires_at',
-    interval: '1 week',
-    retention: '30 days',
-    createTableSql: `CREATE TABLE tokens (
-    id uuid NOT NULL,
-    secret varchar(255) NOT NULL,
-    single_use_token varchar(255),
-    type varchar NOT NULL,
-    email varchar(255) NOT NULL,
-    user_id uuid,
-    oauth_account_id uuid,
-    inactive_membership_id uuid,
-    created_by uuid,
-    created_at timestamp DEFAULT now() NOT NULL,
-    expires_at timestamp with time zone NOT NULL,
-    invoked_at timestamp with time zone,
-    CONSTRAINT tokens_id_expires_at_pk PRIMARY KEY (id, expires_at),
-    CONSTRAINT tokens_user_id_users_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT tokens_oauth_account_id_oauth_accounts_id_fk FOREIGN KEY (oauth_account_id) REFERENCES oauth_accounts(id) ON DELETE CASCADE,
-    CONSTRAINT tokens_created_by_users_id_fk FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
-  ) PARTITION BY RANGE (expires_at)`,
-    indexesSql: [
-      'CREATE INDEX tokens_secret_type_idx ON tokens (secret, type)',
-      'CREATE INDEX tokens_user_id_idx ON tokens (user_id)',
-      'CREATE INDEX tokens_created_by_idx ON tokens (created_by)',
-      'CREATE INDEX tokens_single_use_token_idx ON tokens (type, single_use_token)',
-    ],
-  },
-  {
-    name: 'unsubscribe_tokens',
-    partitionColumn: 'created_at',
-    interval: '1 month',
-    retention: '90 days',
-    createTableSql: `CREATE TABLE unsubscribe_tokens (
-    id uuid NOT NULL,
-    user_id uuid NOT NULL,
-    secret varchar(255) NOT NULL,
-    created_at timestamp DEFAULT now() NOT NULL,
-    CONSTRAINT unsubscribe_tokens_id_created_at_pk PRIMARY KEY (id, created_at),
-    CONSTRAINT unsubscribe_tokens_user_id_users_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  ) PARTITION BY RANGE (created_at)`,
-    indexesSql: [
-      'CREATE INDEX unsubscribe_tokens_secret_idx ON unsubscribe_tokens (secret)',
-      'CREATE INDEX unsubscribe_tokens_user_id_idx ON unsubscribe_tokens (user_id)',
-    ],
-  },
-  // Activities uses LIKE to clone Drizzle's dynamic context columns.
-  {
-    name: 'activities',
-    partitionColumn: 'created_at',
-    interval: '1 week',
-    retention: '90 days',
-    createTableSql: null, // Use LIKE clause instead.
-    indexesSql: [], // Indexes are cloned from original table.
-  },
-  // seen_by uses LIKE for its high-write rolling window table.
-  {
-    name: 'seen_by',
-    partitionColumn: 'created_at',
-    interval: '1 week',
-    retention: '90 days',
-    createTableSql: null, // Use LIKE clause instead.
-    indexesSql: [], // Indexes are cloned from original table.
-  },
+  { name: 'sessions', partitionColumn: 'expires_at', interval: '1 week', retention: '30 days' },
+  { name: 'tokens', partitionColumn: 'expires_at', interval: '1 week', retention: '30 days' },
+  { name: 'unsubscribe_tokens', partitionColumn: 'created_at', interval: '1 month', retention: '90 days' },
+  { name: 'activities', partitionColumn: 'created_at', interval: '1 week', retention: '90 days' },
+  { name: 'seen_by', partitionColumn: 'created_at', interval: '1 week', retention: '90 days' },
 ];
 
 /**
- * Uses EXECUTE (dynamic SQL) to avoid parser errors in environments that don't support PARTITION BY.
- * Idempotent: checks if already partitioned before converting.
- * For tables with createTableSql = null (like activities), uses PostgreSQL's LIKE clause to clone
- * the existing table structure, making it robust to dynamic columns.
+ * Convert one table to a partitioned table, entirely catalog-driven:
+ *
+ *   1. Guards: PK must include the partition column; no extra UNIQUE constraints (a unique
+ *      index on a partitioned table must include the partition column, so any other unique
+ *      cannot be carried over — fail loudly instead of silently dropping a guarantee).
+ *   2. Capture PK / FK / index / trigger definitions from the catalog. They reference the
+ *      table by its original name — which the new partitioned table takes over — so they
+ *      replay verbatim once the old table (and its schema-wide index names) is dropped.
+ *   3. Clone via LIKE (defaults, NOT NULL, CHECKs — PK/FK/indexes come from step 2).
+ *   4. Register with pg_partman (creates child + default partitions), configure retention.
+ *   5. Copy data (LIKE guarantees identical column order; pre-window rows land in the
+ *      DEFAULT partition, reaped by retention like any other partition).
+ *   6. Drop the old table, then replay PK, FKs, indexes, and triggers.
+ *
+ * Index/PK creation happens strictly AFTER the old table is dropped: index names are
+ * schema-wide and renaming a table does NOT rename its indexes, so creating them any
+ * earlier collides with the originals (the bug that silently disabled partitioning).
+ *
+ * Idempotent: skips (and only refreshes retention config) if the table is already partitioned.
  */
 function generateTablePartitionSql(config: PartitionConfig): string {
-  // Shared idempotency guard: skip if table is already partitioned.
-  const idempotencyCheck = `  -- Skip if already partitioned
+  const retentionSql = `
+    UPDATE partman.part_config SET
+      retention = ${config.retention ? `'${config.retention}'` : 'NULL'},
+      retention_keep_table = ${config.retention ? 'false' : 'true'},
+      infinite_time_partitions = true`;
+
+  return `  -- ==========================================================================
+  -- ${config.name.toUpperCase()}: convert to partitioned by RANGE (${config.partitionColumn})
+  -- ==========================================================================
+
   IF EXISTS (
     SELECT 1 FROM pg_partitioned_table pt
     JOIN pg_class c ON c.oid = pt.partrelid
     WHERE c.relname = '${config.name}' AND c.relnamespace = 'public'::regnamespace
   ) THEN
-    -- Update retention config in case it changed
-    UPDATE partman.part_config SET
-      retention = ${config.retention ? `'${config.retention}'` : 'NULL'},
-      retention_keep_table = ${config.retention ? 'false' : 'true'},
-      infinite_time_partitions = true
+    -- Already partitioned: refresh retention config only
+${retentionSql}
     WHERE parent_table = 'public.${config.name}';
     RAISE NOTICE '${config.name} already partitioned — config updated, skipping conversion';
-  ELSE`;
+  ELSE
+    -- 1a. Guard: PK must include the partition column
+    SELECT array_agg(a.attname::text ORDER BY x.ord) INTO pk_cols
+      FROM pg_constraint con
+      JOIN LATERAL unnest(con.conkey) WITH ORDINALITY AS x(attnum, ord) ON true
+      JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = x.attnum
+      WHERE con.conrelid = 'public.${config.name}'::regclass AND con.contype = 'p';
+    IF pk_cols IS NULL OR NOT ('${config.partitionColumn}' = ANY(pk_cols)) THEN
+      RAISE EXCEPTION '${config.name}: primary key (%) must include partition column ${config.partitionColumn}', pk_cols;
+    END IF;
 
-  const endGuard = `  END IF;
-`;
+    -- 1b. Guard: no non-PK unique constraints (cannot exist on the partitioned table)
+    IF EXISTS (
+      SELECT 1 FROM pg_constraint con
+      WHERE con.conrelid = 'public.${config.name}'::regclass AND con.contype = 'u'
+    ) THEN
+      RAISE EXCEPTION '${config.name}: unique constraints other than the PK cannot be carried onto a table partitioned by ${config.partitionColumn}';
+    END IF;
 
-  // Handle tables that use LIKE clause for dynamic schema.
-  if (config.createTableSql === null) {
-    return `  -- ==========================================================================
-  -- ${config.name.toUpperCase()} TABLE: Convert to partitioned (using LIKE clause)
-  -- ==========================================================================
-  -- Uses LIKE to clone existing table structure, making it robust to schema changes
+    -- 2. Capture PK, FKs, non-constraint indexes, and triggers for replay after the
+    --    swap (earlier blocks may already have attached triggers, e.g. immutability)
+    SELECT pg_get_constraintdef(con.oid) INTO pk_def
+      FROM pg_constraint con
+      WHERE con.conrelid = 'public.${config.name}'::regclass AND con.contype = 'p';
+    SELECT COALESCE(array_agg(format('ALTER TABLE public.${config.name} ADD CONSTRAINT %I %s', con.conname, pg_get_constraintdef(con.oid))), '{}')
+      INTO fk_defs
+      FROM pg_constraint con
+      WHERE con.conrelid = 'public.${config.name}'::regclass AND con.contype = 'f';
+    SELECT COALESCE(array_agg(pg_get_indexdef(i.indexrelid)), '{}') INTO idx_defs
+      FROM pg_index i
+      WHERE i.indrelid = 'public.${config.name}'::regclass
+        AND NOT EXISTS (SELECT 1 FROM pg_constraint c WHERE c.conindid = i.indexrelid);
+    SELECT COALESCE(array_agg(pg_get_triggerdef(t.oid)), '{}') INTO trg_defs
+      FROM pg_trigger t
+      WHERE t.tgrelid = 'public.${config.name}'::regclass AND NOT t.tgisinternal;
 
-${idempotencyCheck}
-  -- 1. Create partitioned table cloning structure from Drizzle-created table
-  -- Note: We create the partitioned version first, then swap
-  EXECUTE 'CREATE TABLE ${config.name}_partitioned (LIKE ${config.name} INCLUDING DEFAULTS INCLUDING CONSTRAINTS) PARTITION BY RANGE (${config.partitionColumn})';
-  
-  -- 2. Clone indexes from original table
-  FOR r IN 
-    SELECT indexdef 
-    FROM pg_indexes 
-    WHERE tablename = '${config.name}' 
-    AND indexname NOT LIKE '%_pkey'
-  LOOP
-    -- Replace table name in index definition
-    EXECUTE replace(r.indexdef, ' ON ${config.name} ', ' ON ${config.name}_partitioned ');
-  END LOOP;
-  
-  -- 3. Setup pg_partman (${config.interval} partitions, 4 weeks ahead)
-  PERFORM partman.create_parent(
-    p_parent_table => 'public.${config.name}_partitioned',
-    p_control => '${config.partitionColumn}',
-    p_interval => '${config.interval}'
-  );
-  
-  -- 4. Configure retention${config.retention ? ` (${config.retention}, drop old partitions)` : ' (NONE — records kept indefinitely)'}
-  UPDATE partman.part_config SET
-    retention = ${config.retention ? `'${config.retention}'` : 'NULL'},
-    retention_keep_table = ${config.retention ? 'false' : 'true'},
-    infinite_time_partitions = true
-  WHERE parent_table = 'public.${config.name}_partitioned';
-  
-  -- 5. Migrate existing data
-  INSERT INTO ${config.name}_partitioned SELECT * FROM ${config.name};
-  
-  -- 6. Swap tables atomically
-  ALTER TABLE ${config.name} RENAME TO ${config.name}_old;
-  ALTER TABLE ${config.name}_partitioned RENAME TO ${config.name};
-  
-  -- 7. Update partman config to use new table name
-  UPDATE partman.part_config SET parent_table = 'public.${config.name}' WHERE parent_table = 'public.${config.name}_partitioned';
-  
-  -- 8. Drop old table
-  DROP TABLE ${config.name}_old;
-  
-  RAISE NOTICE '${config.name} table converted to partitioned (via LIKE clause)';
-${endGuard}
-`;
-  }
+    -- 3. Move the original aside and create the partitioned table directly under the
+    --    final name, so partman child partitions get clean names (${config.name}_p...).
+    --    The original's indexes keep their (schema-wide) names — safe, because no index
+    --    is created on the new table until the old one is dropped in step 6.
+    ALTER TABLE ${config.name} RENAME TO ${config.name}_old;
+    EXECUTE 'CREATE TABLE ${config.name} (LIKE ${config.name}_old INCLUDING ALL EXCLUDING INDEXES) PARTITION BY RANGE (${config.partitionColumn})';
 
-  // Standard path for tables with explicit createTableSql.
-  const escapedCreateTableSql = config.createTableSql.replace(/'/g, "''");
-  const escapedIndexesSql = config.indexesSql.map((sql) => sql.replace(/'/g, "''"));
+    -- 4. Register with pg_partman (${config.interval} partitions + DEFAULT) and configure
+    --    retention${config.retention ? ` (${config.retention}, drop old partitions)` : ' (NONE — records kept indefinitely)'}
+    PERFORM partman.create_parent(
+      p_parent_table => 'public.${config.name}',
+      p_control => '${config.partitionColumn}',
+      p_interval => '${config.interval}'
+    );
+${retentionSql}
+    WHERE parent_table = 'public.${config.name}';
 
-  return `  -- ==========================================================================
-  -- ${config.name.toUpperCase()} TABLE: Convert to partitioned
-  -- ==========================================================================
+    -- 5. Copy data (identical column order via LIKE; out-of-range rows go to DEFAULT)
+    EXECUTE 'INSERT INTO ${config.name} SELECT * FROM ${config.name}_old';
 
-${idempotencyCheck}
-  -- 1. Rename existing table
-  ALTER TABLE ${config.name} RENAME TO ${config.name}_old;
-  
-  -- 2. Create partitioned table with same structure (dynamic SQL to avoid parse errors)
-  EXECUTE '${escapedCreateTableSql}';
-  
-  -- 3. Create indexes
-${escapedIndexesSql.map((sql) => `  EXECUTE '${sql}';`).join('\n')}
-  
-  -- 4. Setup pg_partman (${config.interval} partitions, 4 weeks ahead)
-  PERFORM partman.create_parent(
-    p_parent_table => 'public.${config.name}',
-    p_control => '${config.partitionColumn}',
-    p_interval => '${config.interval}'
-  );
-  
-  -- 5. Configure retention${config.retention ? ` (${config.retention}, drop old partitions)` : ' (NONE — records kept indefinitely)'}
-  UPDATE partman.part_config SET
-    retention = ${config.retention ? `'${config.retention}'` : 'NULL'},
-    retention_keep_table = ${config.retention ? 'false' : 'true'},
-    infinite_time_partitions = true
-  WHERE parent_table = 'public.${config.name}';
-  
-  -- 6. Migrate existing data. Column-name matched with a parity guard: if the hardcoded
-  -- createTableSql drifts from the Drizzle-created table, abort the conversion loudly
-  -- (rolled back by the outer exception handler) instead of corrupting rows positionally.
-  SELECT string_agg(quote_ident(attname), ', ' ORDER BY attname) INTO cols_new
-    FROM pg_attribute WHERE attrelid = '${config.name}'::regclass AND attnum > 0 AND NOT attisdropped;
-  SELECT string_agg(quote_ident(attname), ', ' ORDER BY attname) INTO cols_old
-    FROM pg_attribute WHERE attrelid = '${config.name}_old'::regclass AND attnum > 0 AND NOT attisdropped;
-  IF cols_new IS DISTINCT FROM cols_old THEN
-    RAISE EXCEPTION '${config.name}: partman createTableSql columns (%) do not match the Drizzle schema (%)', cols_new, cols_old;
+    -- 6. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
+    DROP TABLE ${config.name}_old;
+
+    EXECUTE format('ALTER TABLE public.${config.name} ADD %s', pk_def);
+    FOREACH ddl IN ARRAY fk_defs LOOP EXECUTE ddl; END LOOP;
+    FOREACH ddl IN ARRAY idx_defs LOOP EXECUTE ddl; END LOOP;
+    FOREACH ddl IN ARRAY trg_defs LOOP EXECUTE ddl; END LOOP;
+
+    RAISE NOTICE '${config.name} converted to partitioned';
   END IF;
-  EXECUTE format('INSERT INTO ${config.name} (%s) SELECT %s FROM ${config.name}_old', cols_new, cols_new);
-
-  -- 7. Drop old table
-  DROP TABLE ${config.name}_old;
-  
-  RAISE NOTICE '${config.name} table converted to partitioned';
-${endGuard}
 `;
 }
 
 async function run(): Promise<SideEffectBlock> {
-  // Generate the full migration SQL.
   const tableSetupSql = partitionConfigs.map(generateTablePartitionSql).join('\n');
 
   const migrationSql = `-- =============================================================================
 -- Migration: pg_partman Setup for Token/Session/Activity/SeenBy Tables
 -- =============================================================================
--- This migration converts sessions, tokens, unsubscribe_tokens, activities,
--- and seen_by to partitioned tables managed by pg_partman for automatic cleanup.
+-- Converts sessions, tokens, unsubscribe_tokens, activities, and seen_by to
+-- partitioned tables managed by pg_partman for automatic time-based cleanup.
 --
 -- IMPORTANT: This creates a schema drift between Drizzle and the actual DB:
 -- - Drizzle sees: regular tables with composite PKs
@@ -274,71 +151,37 @@ async function run(): Promise<SideEffectBlock> {
 -- This is intentional. Standard ALTER TABLE operations (ADD COLUMN, etc.)
 -- work fine on partitioned tables. Only avoid operations that recreate tables.
 --
--- Tables affected:
--- - sessions: partitioned by expires_at (weekly, 30-day retention)
--- - tokens: partitioned by expires_at (weekly, 30-day retention)
--- - unsubscribe_tokens: partitioned by created_at (monthly, 90-day retention)
--- - activities: partitioned by created_at (weekly, 90-day retention)
--- - seen_by: partitioned by created_at (weekly, 90-day retention)
+${partitionConfigs
+  .map((c) => `-- - ${c.name}: partitioned by ${c.partitionColumn} (${c.interval}, ${c.retention ?? 'indefinite'} retention)`)
+  .join('\n')}
 --
--- pg_partman is required to reap these tables. If it is not available the
--- migration is skipped and the tables grow unbounded — local dev installs the
--- extension via backend/db/Dockerfile; production managed Postgres has it enabled.
+-- Skips ONLY when the pg_partman extension cannot be installed (managed providers
+-- without it); the tables then grow unbounded with manual cleanup. Any failure
+-- DURING conversion aborts the migration loudly — a swallowed error here previously
+-- shipped databases where nothing was partitioned while everyone believed it was.
+-- run_maintenance() is scheduled in-process daily (see src/lib/db-maintenance.ts).
 -- =============================================================================
 
--- First check: Skip entirely if extensions are not supported
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_extension WHERE extname = 'plpgsql') THEN
-    RAISE NOTICE 'Extensions not available - skipping partman setup.';
-    RETURN;
-  END IF;
-END $$;--> statement-breakpoint
-
--- Second phase: Check if pg_partman is available and run setup
 DO $$
 DECLARE
-  partman_available BOOLEAN := false;
-  r RECORD;
-  cols_new text;
-  cols_old text;
+  ddl text;
+  pk_def text;
+  pk_cols text[];
+  idx_defs text[];
+  fk_defs text[];
+  trg_defs text[];
 BEGIN
-  -- Try to create pg_partman extension
+  -- Graceful skip only for extension availability
   BEGIN
     CREATE SCHEMA IF NOT EXISTS partman;
     CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;
-    partman_available := true;
-    RAISE NOTICE 'pg_partman extension enabled';
   EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'pg_partman not available - skipping partition setup. Manual cleanup will be used.';
     RETURN;
   END;
 
-  IF NOT partman_available THEN
-    RETURN;
-  END IF;
-
-  -- Wrap all partition conversions in an exception handler so environments
-  -- where pg_partman installs but partitioning operations fail (e.g., Neon)
-  -- still complete the migration successfully.
-  BEGIN
-
 ${tableSetupSql}
-  -- ==========================================================================
-  -- Schedule automatic maintenance
-  -- ==========================================================================
-  -- pg_partman run_maintenance() should be called periodically.
-  -- Options:
-  -- 1. pg_cron: schedule run_maintenance_proc() hourly
-  -- 2. External scheduler (cron, Cloud Scheduler, etc.)
-  -- 3. Neon: pg_partman maintenance runs automatically
-  
-  RAISE NOTICE 'pg_partman setup complete. Remember to schedule run_maintenance().';
-
-  EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'Partition setup failed: %. Tables will use regular (non-partitioned) mode with manual cleanup.', SQLERRM;
-  END;
-
+  RAISE NOTICE 'pg_partman setup complete.';
 END $$;
 `;
 

@@ -69,17 +69,10 @@ ${trackedTableNames.map((table) => `    ALTER TABLE ${table} REPLICA IDENTITY FU
     RAISE WARNING 'REPLICA IDENTITY setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
   END;
 
-  -- 3. Create replication slot (separate block - may fail on managed providers)
-  BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = '${CDC_SLOT_NAME}') THEN
-      PERFORM pg_create_logical_replication_slot('${CDC_SLOT_NAME}', 'pgoutput');
-      RAISE NOTICE 'Created replication slot ${CDC_SLOT_NAME}';
-    ELSE
-      RAISE NOTICE 'Replication slot ${CDC_SLOT_NAME} already exists';
-    END IF;
-  EXCEPTION WHEN OTHERS THEN
-    RAISE WARNING 'Replication slot setup failed: % (SQLSTATE: %). Worker will create it at startup.', SQLERRM, SQLSTATE;
-  END;
+  -- Replication slot ('${CDC_SLOT_NAME}') is NOT created here: the migrator applies all
+  -- migrations in one transaction, and logical slot creation always fails in a transaction
+  -- that has performed writes. The CDC worker creates the slot at startup
+  -- (cdc/src/pipeline/replication.ts).
 
   RAISE NOTICE 'CDC setup complete.';
 END $$;

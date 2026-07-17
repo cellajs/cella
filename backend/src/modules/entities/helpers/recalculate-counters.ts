@@ -197,7 +197,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   await db.execute(
     sql.raw(`
     INSERT INTO product_counters (entity_id, entity_type, view_count, last_viewed_at)
-    SELECT sb.entity_id, sb.entity_type, COUNT(*)::int, MAX(sb.created_at)
+    SELECT sb.entity_id, sb.entity_type, COUNT(DISTINCT sb.user_id)::int, MAX(sb.created_at)
     FROM seen_by sb
     GROUP BY sb.entity_id, sb.entity_type
     ON CONFLICT (entity_id) DO UPDATE SET
