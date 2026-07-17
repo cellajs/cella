@@ -1,20 +1,4 @@
 /**
- * Published-row lifecycle for product entities.
- *
- * A product table opts in by adding a nullable `publishedAt` timestamp (see
- * `backend/src/db/utils/published-column.ts`). While `publishedAt` is NULL the row is an
- * author-only draft: it is dropped from SSE dispatch, excluded from collection and delta
- * reads, never counted or stamped, and readable/editable only by its author. Setting
- * `publishedAt` is the row's public birth. Counters, stamps and unseen badges all fire
- * from the publish edge.
- *
- * Distinct from the channel-entity `publishedAt` (defaults to now; gates invitees during
- * setup) and from `publicAt` (grants NON-members public read). Tables without the column
- * are always-published: both helpers treat an absent column as published, so every
- * consumer is dormant in apps that never add the column.
- */
-
-/**
  * True when the row is an unpublished draft. Strict `=== null`: a table without the
  * column yields `undefined` and is treated as published.
  */

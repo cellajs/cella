@@ -4,12 +4,8 @@ li:has(.is-focused) {
   z-index: 10;
 }
 
-/* BlockNote applies the `className` we pass to <BlockNoteView> onto BOTH the real editor
-   container (.bn-root.bn-container) AND its empty portal mount point (a bare .bn-root used
-   only for floating UI). When that className carries box chrome (border, padding, background,
-   min-height, overflow), the portal renders as a stray empty box below the editor. Strip the
-   chrome from the portal root so it collapses back to BlockNote's intended neutral mount point.
-   Higher specificity than Tailwind utilities (0,2,0 vs 0,1,0) means no !important is needed. */
+/* BlockNote copies the editor class onto its bare floating-UI portal root.
+   Strip editor chrome from that portal; this selector outranks Tailwind utilities. */
 .bn-root:not(.bn-container) {
   border: 0;
   padding: 0;

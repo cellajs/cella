@@ -4,21 +4,6 @@ import { ORG_ID, TENANT_ID } from '../seeds/ids';
 export { buildAttachmentEditPayload } from './attachment-edit';
 export { authenticate } from './auth';
 
-/**
- * SSE fan-out subscriber: opens the app stream and reacts to notifications like the
- * frontend's lazy-sync scheduler: merge ranges per scope, wait the negotiated delay
- * (`hash(clientId:scope) % syncWindow`), then issue ONE delta fetch for the merged range.
- *
- * `SYNC_MODE=immediate` disables merging/spreading (fetch per notification, delay 0) to
- * provide a per-notification baseline. Run both modes to compare:
- *
- *   SYNC_MODE=immediate pnpm bench sse-fanout
- *   SYNC_MODE=lazy      pnpm bench sse-fanout   (default)
- *
- * Emitted metrics: sse.notifications, sync.delta_fetches (merge factor = notifications ÷
- * fetches), sync.reaction_delay_ms (spread), sync.fetch_ms, sse.errors.
- */
-
 const DEFAULT_WINDOW_MS = 15_000;
 /** Bench tier: no floor (we measure the spread itself), ceiling like the background tier. */
 const TIER_MAX_MS = 30_000;
@@ -48,6 +33,10 @@ function hashSpread(key: string): number {
   return hash >>> 0;
 }
 
+/**
+ * Merge app-stream ranges per scope and fetch after deterministic sync-window jitter.
+ * Immediate mode fetches each notification as the comparison baseline.
+ */
 export async function subscribeAndReact(
   context: { vars: Record<string, unknown> },
   events: ArtilleryEvents,

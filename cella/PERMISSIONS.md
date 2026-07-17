@@ -200,6 +200,9 @@ them, and the yjs relay rejects non-author write connections. The engine itself 
 vocabulary — the column is the contract, and every check is introspection-guarded so tables
 without the column are untouched.
 
+Product `publishedAt` is distinct from channel `publishedAt`, which gates setup, and from
+`publicAt`, which grants non-members read access.
+
 Two rules keep these honest, and both were once broken:
 
 - **The system-admin bypass applies everywhere**, including collection reads. A sysadmin passes `orgGuard` with *no membership*, so a membership-only scope resolver hands them an empty list while single-row reads of the very same rows succeed.

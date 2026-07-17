@@ -30,31 +30,6 @@ import { checkPermission } from './check-permission';
 import { resolveCollectionReadFilter, resolveCollectionReadFilterForPolicies } from './collection-scope';
 import { buildCollectionReadWhere } from './row-predicates';
 
-/**
- * Check-form / SQL-form / compute-can parity property test.
- *
- * One policy definition drives three enforcement paths:
- * 1. the permission engine's per-subject decision (`getAllDecisions`),
- * 2. the compiled SQL row predicate for collection reads (`buildCollectionReadWhere`,
- *    executed against real Postgres here),
- * 3. the frontend `can` states (`computeCan` + `resolvePermission`).
- *
- * Any divergence between them is a security bug: a row readable via SQL but denied by
- * the engine leaks data; the reverse silently hides rows. This test generates random
- * policy sets (including row-conditional `'own'` grants), memberships and actors, and
- * asserts the three paths agree row-for-row.
- *
- * The scenario space varies both security-sensitive axes:
- * - `isSystemAdmin`: a system administrator with no membership must receive the same access
- *   from collection, single-row, and SSE checks.
- * - public read grants: a row published through `publicAt` must remain readable through all
- *   three paths.
- *
- * Config-adaptive: the scenario space is derived from `attachment`'s real ancestor chain, so it
- * runs on any fork. A fork with a nested context (raak: `project → organization`) exercises the
- * sub-context narrowing; an org-only fork (cella: `organization`) skips it (`runIf`).
- */
-
 // attachment's ancestor chain, most-specific → root. raak: [project, organization]; cella: [organization].
 const CHAIN = hierarchy.getOrderedAncestors('attachment') as ChannelEntityType[];
 const ROOT = CHAIN[CHAIN.length - 1]; // organization (the collection is scoped to one root instance)
@@ -368,17 +343,8 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
   });
 });
 
-/*
- * Deep-chain parity: 4-level SYNTHETIC hierarchy (organization > course >
- * courseSection > project, product `item` parented to project with nullable
- * ancestors). This exercises intermediate ancestor-level grants (course /
- * courseSection) that a 2-level config structurally cannot reach. Both paths
- * run on the same topology seam: the engine via `getAllDecisions(…, { topology })`,
- * the scope compiler via `resolveCollectionReadFilterForPolicies(…, topology)`.
- * The casts naming synthetic entities are contained in the fixtures below,
- * mirroring `shared/src/testing/wide-fixture.ts`.
- */
-
+// This synthetic four-level topology exercises intermediate ancestor grants. Both the
+// engine and scope compiler receive it through their topology seam.
 const deepRoles = createRoleRegistry(['admin', 'member', 'staff', 'student', 'owner', 'follower'] as const);
 const deepHierarchy = createEntityHierarchy(deepRoles)
   .user()
@@ -608,22 +574,10 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
   });
 });
 
-/*
- * elevatedRoles parity (same synthetic topology): with `elevatedRoles` configured,
- * a product grant of a non-listed role speaks only for rows HOMED at its own
- * context level, while listed roles (admin/staff) keep subtree scope. Engine
- * (`getAllDecisions(…, { elevatedRoles })`) ≍ compiled SQL, row for row.
- *
- * FORK WATCH: cella ships `elevatedRoles: undefined` and a single channel level, so this
- * behaviour is exercised only by the synthetic deep topology below, never by cella's real
- * config. The fork that actually turns it on (projectcampus: `['admin','staff']` over
- * organization→course→courseSection→project, with `submission read:'own'` home-scoped) is
- * covered by its own fork parity test. If this synthetic fixture and that real chain ever drift
- * in shape, both suites stay green while the fork breaks. Keep them shaped alike.
- */
-
 const SUBTREE_ROLES = ['admin', 'staff'] as const;
 
+// Non-elevated product roles see rows homed at their grant level; elevated roles retain
+// subtree scope. This synthetic chain covers configs that enable `elevatedRoles`.
 describe('elevatedRoles parity: home-scoped grants agree between engine and SQL', () => {
   it('agrees on every row across random policies and memberships with elevatedRoles configured', async () => {
     const random = mulberry32(0x50b7);
@@ -682,27 +636,8 @@ describe('elevatedRoles parity: home-scoped grants agree between engine and SQL'
   });
 });
 
-/*
- * Three-way mirror parity under the REAL app config: collection SQL ≍ single-row
- * engine check ≍ SSE dispatch predicate (`canReceiveEntityEvent`). The dispatch
- * decision is re-checked when a cache hit is served (`appCache` re-runs the same
- * predicate against the cached row), so any divergence is a security bug.
- *
- * Config note: `canReceiveEntityEvent` evaluates through `checkPermission`, which
- * binds the app's real policies. There is no policy-injection seam, and adding
- * one only for tests would fork the code path under test. So unlike the
- * synthetic-topology blocks above, this block runs the real config (cella:
- * 2-level, unconditional org grants; a fork with a nested chain or `'own'` read
- * cells exercises those automatically via the CHAIN-derived scenario space).
- * Deep-chain and elevatedRoles decisions are asserted engine ≍ SQL above and reach
- * dispatch through the same `checkPermission` call.
- *
- * `isSystemAdmin` is varied here because the bypass must agree across all three paths. Public
- * grants ride the real config
- * (which declares none), so their parity is asserted in the synthetic block above, where the
- * grants can actually be injected.
- */
-
+// Real-config scenarios must agree across collection SQL, single-row checks, and SSE
+// dispatch. The attachment ancestor chain and system-admin state define the scenario space.
 const realMembership = (
   channelType: ChannelEntityType,
   channelId: string,

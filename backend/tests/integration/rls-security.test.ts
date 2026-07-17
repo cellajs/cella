@@ -1,26 +1,3 @@
-/**
- * RLS security regression tests.
- *
- * These tests verify that Row-Level Security policies correctly
- * isolate tenant data and prevent unauthorized access.
- *
- * Architecture:
- * - SELECT-only RLS policies on product entity tables (attachments, tasks, labels, yjs_documents)
- * - Write-through RLS policies (unconditional allow), write isolation enforced by guards + composite FKs + immutability triggers
- * - No RLS on channel entities (organizations, memberships), guarded at app layer
- *
- * IMPORTANT: These tests require PostgreSQL with RLS roles configured.
- * Run with `pnpm test:full` (not test:core).
- *
- * Connections:
- * - `adminDb` (postgres superuser): Setup/cleanup, bypasses RLS
- * - `runtimeDb` (runtime_role): Subject to RLS policies, used for assertions
- * - Session variables (app.tenant_id, app.user_id)
- *   are set via set_config() within transactions to drive RLS policy evaluation
- *
- * @see cella/ARCHITECTURE.md for full architecture documentation
- */
-
 import { randomUUID } from 'node:crypto';
 import { getTableName, type SQL, sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -722,10 +699,8 @@ const rlsSuiteReady = await (async () => {
     it('drops the count once the entity is marked seen', async () => {
       if (!rolesAvailable || !requiredTablesAvailable || !seenByAvailable) return;
       const seenId = '00000000-0000-4000-a000-0000000000a1';
-      // No ON CONFLICT arbiter: seen_by is partitioned by created_at, so a unique index on
-      // (user_id, entity_id) cannot exist — every unique index on a partitioned table must carry
-      // the partition column. mark-seen dedups with NOT EXISTS for the same reason. A plain insert
-      // is right here anyway: the row is a fixture with a fixed id, dropped again in `finally`.
+      // `seen_by` is partitioned by `created_at`, so it cannot have a unique arbiter on
+      // `(user_id, entity_id)`. This fixed-id fixture is removed in `finally`.
       await adminDb.execute(sql`
         INSERT INTO seen_by (id, user_id, entity_id, entity_type, channel_id, organization_id, tenant_id, created_at)
         VALUES (${seenId}, ${TEST_USER_A}, ${TEST_ATTACHMENT_A}, 'attachment', ${TEST_ORG_A}, ${TEST_ORG_A}, ${TEST_TENANT_A}, NOW())

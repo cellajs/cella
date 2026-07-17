@@ -3,15 +3,6 @@ import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { type Actor, appConfig, type ChannelEntityType, type RowConditionName } from 'shared';
 import type { CollectionReadFilter } from './collection-scope';
 
-/**
- * Compiles row-condition SQL forms (declared ORM-free in `shared`, see
- * `shared/src/permissions/row-conditions.ts`) into drizzle predicates, and assembles the
- * full WHERE clause for a conditionally-scoped collection read.
- *
- * The compiled SQL must agree with each condition's check-form, asserted by the parity
- * property test (`row-predicates.test.ts`).
- */
-
 /** A never-matching predicate: the SQL analogue of a check-form returning `false`. */
 const NEVER: SQL = sql`false`;
 

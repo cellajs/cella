@@ -2,12 +2,6 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createUpdatedAtResolver } from './git-updated-at';
 
-/**
- * The resolver derives a page's `updatedAt` from git history at build time. These
- * tests pin the precedence (author pin > git/mtime) and the newest-wins invariant
- * without asserting exact dates, so they hold across commits and in git-less CI
- * (where every path falls back to mtime).
- */
 describe('createUpdatedAtResolver', () => {
   const resolver = createUpdatedAtResolver(__dirname);
   const existing = path.resolve(__dirname, 'docs-frontmatter.ts');

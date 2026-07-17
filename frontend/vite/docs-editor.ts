@@ -4,24 +4,6 @@ import path from 'node:path';
 import type { Connect, Plugin } from 'vite';
 import { parse, stringify } from 'yaml';
 
-/**
- * Dev-only write-back endpoint for the docs pages table (`POST /__docs-edit`).
- *
- * Since #855 pages are plain `src/content/docs/**\/*.{md,mdx}` files, not a DB
- * entity, so "editing" a page means rewriting its frontmatter (and, for
- * reparenting, moving the file on disk). This plugin is the counterpart to
- * `docsFrontmatter()`: that one reads the frontmatter index, this one mutates
- * the source files. It only exists on the dev server (`apply: 'serve'`); in a
- * production build the MDX is bundled and the editing UI is gated off.
- *
- * A page's parent is derived from its directory, so reparenting physically
- * moves the file/directory. After any write, the `docsFrontmatter` watcher
- * picks up the change and triggers a full reload, which is what refreshes the
- * table (there is no client cache to invalidate).
- *
- * Sibling of `locales-hmr.ts`, which also writes files from a Vite plugin.
- */
-
 /** Same frontmatter delimiter the read-side index uses (vite/docs-frontmatter.ts). */
 const FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---/;
 
@@ -152,6 +134,7 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
+/** Adds the dev-only `/__docs-edit` endpoint for frontmatter updates and page moves. */
 export function docsEditor(): Plugin {
   let contentDir: string;
 

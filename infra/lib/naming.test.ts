@@ -25,9 +25,8 @@ describe('deriveInfra', () => {
   })
 
   it('dbName is the single source for the logical database name', () => {
-    // `resources/database.ts` creates this database and the reset task deletes it *by name* over
-    // the Scaleway API. If the two derived it separately and drifted, the reset would address the
-    // wrong database — or create a second, empty one alongside the real one.
+    // The create and reset paths share this name to prevent the reset from
+    // addressing the wrong database or creating a second one.
     const derived = deriveInfra(fakeConfig({ slug: 'my-cool-app' }))
     expect(derived.naming.dbName).toBe('my_cool_app')
     expect(derived.naming.dbName).not.toContain('-')

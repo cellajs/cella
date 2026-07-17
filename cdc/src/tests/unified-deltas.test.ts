@@ -45,11 +45,6 @@ function mockEvent(overrides: {
   };
 }
 
-// ── Membership count deltas ──────────────────────────────────────────────────
-// Memberships are never seq-stampable, so all their deltas land in
-// countDeltasByChannelKey (no seq group). Exercised through the batch path (the
-// only path the pipeline runs) by wrapping a single event in an array.
-
 describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
   it('membership create: role + total count, plus org membership seq signal', () => {
     const plan = computeBatchUnifiedDeltas([
@@ -210,12 +205,6 @@ describe('computeBatchUnifiedDeltas', () => {
   });
 });
 
-// ── Activity stamps (li:{type} / lu:{type}) ──────────────────────────────────
-// New product posts stamp `li:<type>` (epoch ms of created_at) and genuine content
-// updates stamp `lu:<type>` (epoch ms of updated_at), both at their home context
-// only. The signals only move forward: deletes, soft-deletes, restores and draft
-// rows never stamp.
-
 describe('activity stamps (li:{type} / lu:{type})', () => {
   const createdAt = '2026-07-01T10:00:00.000Z';
   const createdAtMs = Date.parse(createdAt);
@@ -347,12 +336,6 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': 1 });
   });
 });
-
-// ── Draft lifecycle (opt-in publishedAt) ─────────────────────────────────────
-// Only countable rows (live AND published) participate in e: counters and li:/lu:
-// stamps. Unpublished drafts are invisible until their publish edge, which counts
-// as a create; unpublish counts as a delete. Rows keep their create-time seq while
-// drafting (gap-tolerant watermarks absorb the unfetchable seqs).
 
 describe('draft lifecycle count deltas (publishedAt)', () => {
   const createdAt = '2026-07-01T10:00:00.000Z';

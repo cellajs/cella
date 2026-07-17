@@ -9,13 +9,6 @@ import { isSeenTracked } from '~/modules/seen/helpers';
 import { applyUnseenDelta } from '~/modules/seen/unseen-delta';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
-/*
- * Client-side seen state, split by who has been told:
- * - `pending`: seen locally, server not yet told (module state; flushed periodically + on unload)
- * - `flushedIds`: server confirmed (persisted so the next session doesn't re-send)
- * unseen-sync.ts adds a third set, `countedIds`: badge deltas already applied this session.
- */
-
 /** Batch of seen entity IDs for one org + entity type (one markSeen call) */
 interface SeenBatch {
   tenantId: string;
@@ -61,6 +54,7 @@ interface SeenStoreState {
 /**
  * Store for "seen" entities. Queued from IntersectionObserver, batch-flushed to
  * POST /:tenantId/:organizationId/seen periodically (or on unload via sendBeacon).
+ * Pending IDs stay in memory; confirmed IDs persist to prevent resending next session.
  */
 export const useSeenStore = create<SeenStoreState>()(
   devtools(

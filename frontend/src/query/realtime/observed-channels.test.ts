@@ -2,9 +2,8 @@ import { QueryObserver } from '@tanstack/react-query';
 import type { EntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// Synthetic sub-org topology: base cella has no sub-org channels, so the branch under test is
-// unreachable with the real config — the exact reason the original route-param scan shipped
-// broken. Task is a product homed at the `project` channel, under `organization`.
+// Synthetic sub-org topology because base cella has no sub-org channels.
+// Task is a product homed at the `project` channel under `organization`.
 vi.mock('shared', () => ({
   appConfig: {
     slug: 'test',
@@ -22,8 +21,7 @@ vi.mock('shared', () => ({
   },
 }));
 
-// Route context: org layout only — sub-org channels never appear here (slug routes), which is
-// what forces viewing detection to the query cache.
+// Sub-org channels are absent from the route context, so viewing detection uses the query cache.
 let routeMatches: { context?: Record<string, unknown> }[] = [];
 vi.mock('~/routes/_router-instance', () => ({
   getRouter: () => ({ state: { matches: routeMatches } }),
@@ -52,7 +50,7 @@ const TASK = 'task' as EntityType;
 const taskKeys = createEntityKeys(TASK);
 registerEntityQueryKeys(TASK, taskKeys);
 
-/** Mount a headless observer — the same "a component renders this query" signal views produce. */
+/** Mount a headless observer matching the signal produced by a component rendering this query. */
 function observe(queryKey: readonly unknown[]): () => void {
   const observer = new QueryObserver(queryClient, {
     queryKey: [...queryKey],
@@ -134,7 +132,7 @@ describe('isViewingScope with sub-org channels', () => {
   });
 
   it('resolves sub-org scopes by observation: slug routes and unrouted board panels both work', () => {
-    routeMatches = [{ context: { organization: { id: 'org-1' } } }]; // route names no project — slug params, or a board
+    routeMatches = [{ context: { organization: { id: 'org-1' } } }]; // Slug routes and boards name no project.
     expect(isViewingScope('org-1', 'project-8')).toBe(false);
 
     const unsubscribe = observe(taskKeys.list.scope('org-1', 'project-8'));

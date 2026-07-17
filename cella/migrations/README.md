@@ -21,6 +21,9 @@ be a no-op.
 
 ## Migrations
 
+- [2026-07-comment-density](./2026-07-comment-density/): moves detached long-form source
+  comments to declarations or canonical READMEs, removes duplicated test preambles, and adds a
+  placement check for fork-specific code.
 - [2026-07-comment-reasoning](./2026-07-comment-reasoning/): removes source-comment
   change history, rejected alternatives, unresolved review discussion, and vague jargon. Ships a
   reusable comment checker and a wider audit for fork-specific code.

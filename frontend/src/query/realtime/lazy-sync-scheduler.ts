@@ -10,19 +10,6 @@ import { getSyncTier, isViewingScope } from './sync-priority';
 import { useSyncStore } from './sync-store';
 import type { AppStreamNotification } from './types';
 
-/**
- * Lazy sync scheduler (see .todos/SYNC_FANOUT_SOLUTION.md, Piece N).
- *
- * Every product notification, single or batch, enters a dirty seq range for its scope. A single
- * notification is a width-1 batch. The negotiated fetch delay is
- * `clamp(tier.min, hash(sourceId:scope) % syncWindow, tier.max)`. The client's eagerness tier
- * bounds the server's spread window, and deterministic per-client jitter distributes fan-out
- * bursts evenly. Ranges for the same scope merge because they are
- * contiguous per context), so a burst becomes ONE fetch. The caught-up watermark advances only
- * after a successful fetch; the "known" watermark records what the server has mentioned even for
- * scopes that never fetch (muted).
- */
-
 /** Fixed spread window until the server negotiates one per notification (Piece N-c). */
 const DEFAULT_SYNC_WINDOW_MS = 15_000;
 /** Transient fetch errors retry with exponential backoff before falling back to invalidation. */
@@ -249,7 +236,7 @@ function requeue(entry: DirtyEntry, delayMs: number): void {
   armTimer();
 }
 
-/** Flush pending ranges whose scope moved onto the live tier — the catch-up-on-open path. */
+/** Flush pending ranges whose scope moved onto the live tier for catch-up on open. */
 function promoteLiveScopes(): void {
   let changed = false;
   for (const entry of dirty.values()) {
@@ -280,9 +267,8 @@ function installListeners(): void {
     if (event.type === 'observerAdded' && dirty.size > 0) promoteLiveScopes();
   });
 
-  // Navigating into a scope flushes it immediately: the page catches up on open (org-level scopes
-  // reach the live tier via route context rather than an observed channel). The router is
-  // imported lazily so the scheduler does not pull the whole route tree into importers' graphs.
+  // Navigation flushes pending scopes immediately. Route context promotes org-level scopes.
+  // Import lazily to keep the route tree out of the scheduler's importer graphs.
   void import('~/routes/router').then(({ router }) => {
     router.subscribe('onLoad', () => promoteLiveScopes());
   });

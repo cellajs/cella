@@ -3,15 +3,6 @@ import { markMatches, trimAroundMatch } from '~/modules/docs/search/highlight';
 import type { DocsSearchResult, DocsSearchResultType, DocsSearchScope } from '~/modules/docs/search/types';
 import type { GenComponentSchema, GenOperationSummary } from '~/modules/docs/types';
 
-/**
- * Orama full-text engine, built in the browser on first search. Indexing raw documents
- * client-side beats a prebuilt `save()` dump: that serialized index is ~5x larger on the wire,
- * while `insertMultiple` costs only tens of ms at this corpus size (.todos/DOCS_SEARCH_RESEARCH.md).
- *
- * Pure module. Corpus assembly (virtual sections, query cache) lives in client.ts, so tests can
- * drive the engine with plain fixtures.
- */
-
 /** Everything the engine indexes for one docs page. */
 export type EnginePage = {
   slug: string;

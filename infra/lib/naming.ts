@@ -52,10 +52,8 @@ export function deriveInfra(appConfig: Cfg) {
       // Registry namespace names require >= 4 chars and no hyphens; slug length
       // is validated at config load, so only hyphens need stripping here.
       registryNamespace: appConfig.slug.replace(/-/g, ''),
-      // The logical database inside the managed instance. Shared rather than re-derived: the
-      // reset task addresses this database by name over the Scaleway API, and a name that
-      // disagrees with the one `resources/database.ts` creates would target the wrong thing —
-      // or nothing. PostgreSQL identifiers cannot contain hyphens.
+      // Shared by creation and reset so both address the same logical database.
+      // PostgreSQL identifiers cannot contain hyphens.
       dbName: appConfig.slug.replace(/-/g, '_'),
     },
     // DNS zone the app's records live under (e.g. `cellajs.com`). Per-service

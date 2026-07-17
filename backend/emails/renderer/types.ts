@@ -1,11 +1,7 @@
 import type { HtmlToTextOptions } from 'html-to-text';
 import type React from 'react';
 
-// Vendored from jsx-email v3.2.1 (MIT). Trimmed: the upstream `ESBuildOptions`
-// type (pulled in `esbuild`) and the `isJsxEmailPreview` global declarations
-// (used only by the upstream CLI preview) are omitted; neither is used at
-// render time.
-
+/** Vendored from jsx-email v3.2.1 (MIT), excluding CLI-only types and globals. */
 export type BaseProps<TElement extends React.ElementType> = React.ComponentPropsWithoutRef<TElement> & {
   disableDefaultStyle?: boolean;
 };

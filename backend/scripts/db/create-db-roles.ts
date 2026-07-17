@@ -5,19 +5,6 @@ import { timestamp } from '#/utils/console';
 import pc from 'picocolors';
 
 /**
- * Creates database roles for RLS tenant isolation.
- *
- * In production (Scaleway): roles are provisioned as Scaleway-managed users
- * (admin_role, runtime_role). This script only ensures schema grants
- * and role memberships are in place.
- *
- * In development (Docker Compose): roles are created from scratch using
- * passwords extracted from DATABASE_URL and DATABASE_CDC_URL connection strings.
- *
- * Requires DATABASE_ADMIN_URL (superuser/admin) to create or configure roles.
- */
-
-/**
  * Parse username and password from a PostgreSQL connection string.
  * Supports both `postgres://user:pass@host/db` and `postgresql://user:pass@host/db`.
  */

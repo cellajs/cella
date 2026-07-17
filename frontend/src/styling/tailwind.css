@@ -132,18 +132,12 @@
   }
 }
 
-/* Prose sizing. The 18px mobile root (html rule in @layer base below) makes prose
-   oversized for reading. Pull it back to ~16px on small screens; em-based headings
-   and spacing scale along. Unlayered for the same reason as the code styling below:
-   it must beat the plugin's utilities-layer `font-size: 1rem`. */
+/* Keep mobile prose near 16px despite the 18px root. Unlayered rules outrank typography utilities. */
 .prose {
   @apply max-sm:text-md;
 }
 
-/* Docs code styling. Deliberately UNLAYERED so it beats @tailwindcss/typography's
-   `prose` rules, which live in @layer utilities (later than @layer components) and set
-   `pre` to a fixed dark background in both themes. A layered override loses to them by
-   layer order regardless of specificity. */
+/* Keep docs code unlayered so it outranks typography's utilities-layer theme. */
 
 /* Inline `code` pills: drop the prose backtick pseudo-elements, add a bordered chip. */
 .prose code:not(pre code)::before,
@@ -161,11 +155,8 @@
   white-space: nowrap;
 }
 
-/* Shiki (build-time syntax highlighting, vite.config.ts). Dual-theme output emits both
-   light and dark token colors as CSS vars per span with no default applied
-   (defaultColor:false). Pick the set matching the active theme. Container chrome
-   (border, radius, padding) comes from app tokens; token/background colors from the
-   github theme so contrast stays correct. */
+/* Shiki emits light and dark token variables without a default color.
+   App tokens provide container chrome; the active GitHub theme provides contrast. */
 .prose pre.shiki {
   margin: 0;
   border: 1px solid var(--border);
@@ -275,10 +266,8 @@
     @apply font-sans overscroll-none max-sm:text-[18px];
   }
 
-  /* Icon default: 1rem (icon-md), overriding Lucide's fixed 24px attributes so icons
-     scale with the root font-size. Zero specificity via :where lets any size class
-     (icon-*, size-*) or container rule ([&>svg]:size-*) win, but CSS beats the svg
-     width/height attributes, which is why lucide's `size` prop must not be used. */
+  /* Override Lucide attributes with a scalable 1rem default.
+     :where keeps zero specificity so size utilities and container rules win. */
   :where(svg.lucide) {
     width: 1rem;
     height: 1rem;
@@ -313,10 +302,8 @@
   }
 }
 
-/* Page-enter curtain. On a context-entity navigation the page scrolls to its header (#pt); this
-   overlay covers the content area, holds the background for the first frames so the scroll travel
-   (forward) or restore (back/forward) happens off-screen, then fades out to reveal the positioned
-   page. Lives over #app-content only, so the sidebar/nav don't flash. */
+/* Cover content while navigation scrolls or restores position, then reveal the placed page.
+   The curtain excludes sidebar navigation. */
 @keyframes page-enter-curtain {
   0% {
     opacity: 1;

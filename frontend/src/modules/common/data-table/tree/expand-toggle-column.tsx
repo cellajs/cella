@@ -49,14 +49,6 @@ const def: ColumnOrColumnGroup<AnyTreeRow> = {
   renderCell: ({ row, tabIndex }) => <ExpandToggleCell row={row} tabIndex={tabIndex ?? -1} />,
 };
 
-/**
- * Drop-in column for tree-style data tables. Reads expansion handlers and
- * row height from `<TreeProvider>`; reads `_isExpanded`, `_hasChildren`,
- * `_depth`, `_isLastChild`, `_parentIsLastChild`, and `id` off each row.
- *
- * Pair with {@link useTreeRows} to populate those fields automatically. The
- * column is structurally compatible with any `TreeRow<T>`, so you can drop
- * it into a typed columns array without a factory call.
- */
+/** Drop-in tree-table column using {@link TreeProvider} handlers and rows from {@link useTreeRows}. */
 // biome-ignore lint/suspicious/noExplicitAny: column is structurally compatible with any TreeRow<T>; the cast keeps consumers from needing a factory.
 export const ExpandToggleColumn = def as ColumnOrColumnGroup<any>;

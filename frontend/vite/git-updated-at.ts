@@ -1,25 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { statSync } from 'node:fs';
 
-/**
- * Derives a docs page's `updatedAt` from git history at build time, so the value
- * never has to be hand-maintained in frontmatter and stays correct across the
- * import-wrapper pages that make up most of the docs: a thin `.mdx` shell rarely
- * changes, but the repo doc it imports (`cella/SYNC_ENGINE.md`, `cdc/README.md`, …)
- * changes constantly. The "updated" moment is therefore the most recent change
- * across the page *and* its imported bodies, not the wrapper file alone.
- *
- * Precedence, per page:
- *  1. an explicit frontmatter `updatedAt`, which is an author pin and always respected;
- *  2. else the newest git committer date across the page + its imported docs;
- *  3. else (untracked file, or no git history at all) the file's mtime.
- *
- * Caveats mirror the wider ecosystem (Astro/VitePress/Docusaurus all read git):
- * the value reflects the last *commit*, so a locally-edited-but-uncommitted page
- * shows its previous commit date until committed, and CI must fetch full history
- * (`fetch-depth: 0`). A shallow clone collapses tracked files onto the mtime path.
- */
-
 const toIso = (ms: number) => new Date(ms).toISOString();
 
 /** The later of two ISO 8601 dates (either may be undefined). */

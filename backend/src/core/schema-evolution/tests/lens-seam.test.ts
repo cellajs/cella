@@ -1,17 +1,9 @@
-/**
- * Tests for the lens seams: wire-schema widening (update + create) and
- * ops normalization inside resolveUpdateOps.
- *
- * `shared/schema-evolution` is mocked with a synthetic expand rename lens
- * (attachment.name → title); `LENSLESS` is a synthetic entity without lenses,
- * exercising the passthrough
- * branches. End-to-end engine behavior with real lens modules is covered in
- * shared/src/schema-evolution/tests.
- */
 import { z } from '@hono/zod-openapi';
 import type { LensEntityType } from 'shared/schema-evolution';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+// A synthetic rename lens exercises widening and normalization. Shared tests cover
+// complete engine behavior with real lens modules.
 vi.mock('shared/schema-evolution', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared/schema-evolution')>();
   return {

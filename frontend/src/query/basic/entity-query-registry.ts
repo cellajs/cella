@@ -47,7 +47,7 @@ const deltaFetchRegistry = new Map<string, DeltaFetchFn>();
  * Register query keys for an entity type at module init. Optional `deltaFetch` lets the catchup
  * processor fetch only changed entities via `seqCursor`, avoiding a full list refetch.
  *
- * Sub-org-homed entities must expose their home channel's id column in `list.scopeKeys` — viewing
+ * Sub-org-homed entities must expose their home channel's id column in `list.scopeKeys`. Viewing
  * detection (`observed-channels.ts`) derives "this channel is on screen" from observed list keys,
  * and keys that cannot carry the channel id would silently demote every on-screen scope to the
  * background sync tier. Keys built with `createEntityKeys` always satisfy this; the throw exists

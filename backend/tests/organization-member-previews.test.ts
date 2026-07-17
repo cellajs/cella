@@ -1,18 +1,3 @@
-/**
- * Member preview (include=members) contract tests on the organizations list endpoint.
- *
- * Pins the batched member-preview contract that entity tile grids rely on:
- * - M1: `include=members` returns at most 3 previews per organization, most-privileged
- *   role only (admin), ordered by membership createdAt (oldest first).
- * - M2: previews are UserMinimalBase-shaped (id, name, slug, thumbnailUrl, entityType),
- *   with no user email or other fields leaking through.
- * - M3: previews are grouped per organization (one batched query per page, no bleed
- *   between contexts).
- * - M4: without the include flag, `included.members` is absent.
- *
- * Requires: PostgreSQL (core mode or higher)
- */
-
 import { eq } from 'drizzle-orm';
 import { getOrganizations } from 'sdk';
 import { generateId } from 'shared/utils/entity-id';

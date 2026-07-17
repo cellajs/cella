@@ -1,24 +1,6 @@
 import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 
-/**
- * Remark plugin: turn inline code that names a repo file into a link to that file on
- * GitHub. `` `backend/src/server.ts` `` -> a link to the blob URL, with an optional
- * `:line` / `:line-line` suffix mapped to `#L..`. A trailing slash marks a directory
- * reference (`` `frontend/src/query/` ``) and links to the tree URL. Only
- * paths that resolve to a real file or directory (checked against the repo root at
- * build time) are linked, so dead links can't be introduced and ambiguous bare names
- * (e.g. `index.ts`) stay plain code.
- *
- * Also rewrites relative markdown links (`[x](../shared/...)`) inside imported repo
- * docs to GitHub blob URLs. In the SPA they would otherwise resolve as
- * broken routes. Content-root pages are left untouched.
- *
- * Runs at the mdast stage (before rehype), so it applies to content/docs pages and the
- * repo docs they import alike. Dependency-free: a manual walk avoids pulling in
- * unist-util-visit for one visitor.
- */
-
 interface Options {
   /** Absolute path to the repo root; candidate paths are resolved against it. */
   repoRoot: string;
@@ -35,6 +17,7 @@ const PATH_RE = /^([\w.][\w./-]*\.(?:tsx?|jsx?|mjs|cjs|json|ya?ml|css|md|sh|toml
 // The trailing slash in `dir/` marks an explicit directory reference.
 const DIR_RE = /^([\w.][\w./-]*)\/$/;
 
+/** Links verified repository paths in inline code and imported repository-document links. */
 export function remarkLinkRepoPaths({ repoRoot, repoUrl, branch = 'main' }: Options) {
   const root = repoUrl.replace(/\/+$/, '');
   const base = `${root}/blob/${branch}/`;

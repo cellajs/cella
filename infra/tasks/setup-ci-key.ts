@@ -1,15 +1,3 @@
-/**
- * Create (or reuse) a scoped IAM application `<slug>-ci-deploy` with a
- * least-privilege policy, then mint a fresh API key (deleting any orphans).
- * Used by the bootstrap command and the manual rotation procedure in
- * infra/README.md.
- * Standalone usage: SCW_SECRET_KEY + SCW_PROJECT_ID required.
- *
- * The shared provisioning flow lives in `lib/scaleway-iam.ts`; the CI-specific
- * permission sets live in `lib/permissions.ts` (the canonical IAM manifest).
- * This file owns only the policy-rule shape that binds them.
- */
-
 import { pc } from 'shared/cli-utils/colors';
 import { DIVIDER } from 'shared/cli-utils/display'
 import { checkMark } from 'shared/utils/console'
@@ -21,6 +9,7 @@ import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResul
 export type SetupCiKeyOptions = ProvisionScopedKeyOptions
 export type CiKeyResult = ScopedKeyResult
 
+/** Create the scoped CI application, least-privilege policy, and fresh key. */
 export function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> {
   return provisionScopedKey(opts, {
     suffix: 'ci-deploy',

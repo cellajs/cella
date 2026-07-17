@@ -10,15 +10,8 @@ import { app as middlewares } from '#/middlewares/app';
 
 const baseApp = new OpenAPIHono<Env>();
 
-/**
- * Same-origin migration: the LB routes `/api/*` and `/mcp/*` on the app host
- * to the backend/mcp service (registry `lbPathBegin`) but does NOT strip the
- * prefix, so the app also serves itself under those prefixes. `mount()`
- * re-dispatches with the prefix stripped, so handlers see the same paths as
- * direct subdomain traffic and routes registered later (modules, OpenAPI docs,
- * the mcp worker's mounts) are covered dynamically. Registered before the
- * global middleware so prefixed requests run it once, in the inner dispatch.
- */
+// The load balancer preserves same-origin `/api` and `/mcp` prefixes. Redispatching
+// through `mount()` strips the prefix and applies global middleware once.
 baseApp.mount('/api', (request, env, executionCtx) => baseApp.fetch(request, env, executionCtx));
 baseApp.mount('/mcp', (request, env, executionCtx) => baseApp.fetch(request, env, executionCtx));
 
@@ -28,14 +21,8 @@ baseApp.get('/favicon.ico', (c) => c.redirect(`${appConfig.frontendUrl}/favicon.
 // Add global middleware
 baseApp.route('/', middlewares);
 
-/**
- * Health check: `/health` returns 204 (shallow probe for LBs/frontend).
- * `/health?depth=full` returns JSON diagnostics with 200 or 503.
- *
- * Both responses carry `X-App-Version: <release-sha>` so the deploy verifier
- * can confirm the running container is the one CI just pushed without
- * breaking the LB's 204 contract.
- */
+// Shallow health checks return 204; full checks return diagnostics with 200 or 503.
+// Both include the release SHA so deployment verification preserves the LB contract.
 baseApp.get('/health', async (c) => {
   const depth = c.req.query('depth') ?? 'shallow';
   const version = env.RELEASE_SHA;

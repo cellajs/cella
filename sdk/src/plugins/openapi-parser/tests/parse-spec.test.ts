@@ -4,19 +4,11 @@ import { config } from '../../../../../shared/config/config.default';
 import { parseOpenApiSpec } from '../parse-spec';
 import type { OpenApiSpec, OpenApiTag } from '../types';
 
-/**
- * Behavioural tests for the OpenAPI → docs parser.
- *
- * CI guards the OpenAPI *contract* with oasdiff (`schema-bust-gate`), which watches
- * the parser's *input*. These tests assert the parser's *transformation* against small,
- * hand-owned fixtures, so a test only fails when parser behaviour changes,
- * never on ordinary API/schema churn.
- */
-
 // Derive config-dependent expectations so the fixture survives config renames.
 const ENTITY_TYPE = config.entityTypes[0]; // e.g. 'user'
 const MODULE_TAG = `${ENTITY_TYPE}s`; // e.g. 'users'
 
+// Hand-owned fixtures isolate parser transformations from ordinary API contract churn.
 describe('parseOpenApiSpec', () => {
   it('handles minimal spec', () => {
     const minimalSpec: OpenApiSpec = {

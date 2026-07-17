@@ -2,28 +2,6 @@ import fs, { promises as fsp } from 'node:fs';
 import path from 'node:path';
 import type { HmrContext, ModuleNode, Plugin } from 'vite';
 
-/**
- * Vite plugin for i18next locale-file HMR: watches JSON/YAML locales, syncs them to a cache dir while
- * merging configured namespaces (e.g. `app` -> `common`), and emits a custom HMR event so i18next
- * reloads translations without a full page refresh. See {@link localesHMR} for client wire-up.
- *
- * @example
- * ```ts
- * // vite.config.ts
- * import { localesHMR } from './vite/locales-hmr';
- *
- * export default {
- *   plugins: [
- *     localesHMR({
- *       srcDir: '../locales',
- *       outDir: '../.vscode/.locales-cache',
- *       merge: { target: 'common', sources: ['app'] },
- *     }),
- *   ],
- * };
- * ```
- */
-
 /** Custom HMR event name sent to the client when locale files change */
 const CUSTOM_EVENT = 'i18next-hmr:update' as const;
 
@@ -194,7 +172,7 @@ async function buildLocalesCache(userOptions: LocalesHMROptions = {}) {
 }
 
 /**
- * Vite plugin for i18next locale-file HMR (see the file header for what it does).
+ * Watches locale assets, rebuilds the merged cache, and emits `i18next-hmr:update`.
  *
  * Client-side integration required:
  * ```ts

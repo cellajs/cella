@@ -66,16 +66,8 @@ export interface RdbClientOptions {
 }
 
 /**
- * Minimal Scaleway Managed Database (RDB) client — only the calls the database reset needs.
- *
- * Every endpoint below was verified against the live API (via `scw --debug`) rather than taken from
- * docs, because the reset is destructive and a wrong method or body is not a failure you want to
- * discover in production.
- *
- * Note `deleteDatabase` will succeed on a database that is actively in use, including one with a
- * held logical replication slot. PostgreSQL itself refuses that ("is used by an active logical
- * replication slot"); Scaleway's control plane goes through it anyway. There is no interlock — the
- * caller is responsible for the confirmation, not the platform.
+ * Minimal RDB client with destructive endpoints pinned to live API observations.
+ * `deleteDatabase` has no active-use interlock; its caller must confirm the target.
  */
 export function createRdbClient(opts: RdbClientOptions) {
   const auth: ScwAuth = { secretKey: opts.secretKey, fetchImpl: opts.fetchImpl }
@@ -110,17 +102,12 @@ export function createRdbClient(opts: RdbClientOptions) {
       return scwFetch<RdbDatabase>(auth, 'POST', `${instanceBase(instanceId)}/databases`, { name })
     },
 
-    /** Destructive and un-interlocked — see the note on this module. */
+    /** Destructive and not protected by an active-use interlock. */
     async deleteDatabase(instanceId: string, name: string): Promise<void> {
       await scwSend(auth, 'DELETE', `${instanceBase(instanceId)}/databases/${encodeURIComponent(name)}`)
     },
 
-    /**
-     * Grant a role on a database. Mandatory after a delete+create: deleting a database drops its
-     * privileges, and neither a recreate nor a backup restore brings them back — a per-database
-     * `pg_dump` carries table ACLs but not database-level ones, so `CONNECT` is simply absent and
-     * the app reports `database_unreachable` until this runs.
-     */
+    /** Restore database-level privileges that deletion removes and recreation does not recover. */
     async setPrivilege(instanceId: string, databaseName: string, userName: string, permission: RdbPermission): Promise<void> {
       await scwFetch<RdbPrivilege>(auth, 'PUT', `${instanceBase(instanceId)}/privileges`, {
         database_name: databaseName,
@@ -147,8 +134,8 @@ export function createRdbClient(opts: RdbClientOptions) {
 export type RdbClient = ReturnType<typeof createRdbClient>
 
 /**
- * Poll a backup until it reports `ready`. The reset must not proceed on a backup that never
- * materialised — it is the only undo, and staging has `disableBackup: true` so no automatic
+ * Poll a backup until it reports `ready`. The reset must not proceed if the backup never
+ * becomes ready. It is the only undo, and staging has `disableBackup: true` so no automatic
  * backup exists to fall back on.
  */
 export async function waitForBackupReady(

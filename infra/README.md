@@ -146,6 +146,12 @@ Two safeguards keep a runtime-secret change from causing the kind of full outage
 1. **The secret *manifest* is baked into the new generation's cloud-init.** The per-service manifest (the list of which secrets a VM hydrates; metadata only, never values) is built by Pulumi ([resources/compute.ts](resources/compute.ts)) and written into cloud-init. Because every deploy already replaces the VM, there is no out-of-band channel to maintain; the first-boot agent reads the manifest and hydrates `/opt/app/.env.runtime` before the app starts.
 2. **Deliverability is preflighted in CI before rolling.** Right after `pulumi up`, and before any VM is rolled or replaced, the deploy asserts that every `required` secret can actually be hydrated the way a VM will (fetched from Secret Manager and single-line / decodable), failing loudly with the offending env vars instead of bricking the fleet ([tasks/assert-secrets-deliverable.ts](tasks/assert-secrets-deliverable.ts), wired into the `pulumi` job as **Verify runtime secrets are deliverable**, mirroring the existing **Verify VM reader IAM grant** preflight). The single-line rule itself lives in one place, [lib/env-file.ts](lib/env-file.ts), shared by the preflight and the on-VM boot agent that performs the hydration.
 
+### Certificate issuance and recovery
+
+A new service's DNS record must propagate before Scaleway requests its Let's Encrypt certificate. Otherwise ACME resolvers can see `NXDOMAIN`, leaving a terminally errored certificate that Scaleway does not retry. [`DnsPropagationGate`](resources/dns-cert-gates.ts) waits for public resolvers to return the load balancer IP before certificate creation; `CertReadyGate` then surfaces ACME failure details and delays frontend attachment until the certificate is ready. Both gates are create-only.
+
+CI runs [`repair-certs.ts`](tasks/repair-certs.ts) before `pulumi up`. It removes terminally errored certificates from Pulumi state and then from Scaleway so the gated issuance pipeline can run again. State deletion happens first: a dependent frontend makes Pulumi refuse the deletion, which preserves TLS material still in use. A certificate deleted out of band is pruned from state only. Operators can run the same repair with `pnpm --filter infra repair-certs --stack <stack>`.
+
 ## Configuration
 
 All tunable infra config lives in committed, type-checked files under [config/](config). Edit a value there and deploy. Each field is either a single value or a per-mode map (`{ production: …, staging: … }`).

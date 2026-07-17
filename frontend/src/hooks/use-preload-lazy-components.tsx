@@ -1,13 +1,7 @@
 import type { ComponentType, LazyExoticComponent } from 'react';
 import { useEffect } from 'react';
 
-/**
- * Preloads React.lazy components on mount, triggering the dynamic import early so they render
- * instantly when later needed.
- *
- * @see https://react.dev/reference/react/lazy#lazy
- * @see https://web.dev/articles/code-splitting-with-dynamic-imports-in-nextjs#prefetching_and_preloading
- */
+/** Preloads React.lazy components on mount by triggering their dynamic imports. */
 // biome-ignore lint/suspicious/noExplicitAny: Any component can be preloaded
 export function usePreloadLazyComponents(components: LazyExoticComponent<ComponentType<any>>[]) {
   useEffect(() => {

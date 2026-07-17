@@ -24,14 +24,8 @@ beforeAll(async () => {
 
 afterEach(async () => await clearDatabase());
 
-/**
- * Draft-mode invite deferral (context `publishedAt` mechanism): invites against an
- * unpublished context are recorded but not dispatched; the context's most-privileged
- * role stays live so staff can collaborate in drafts; `dispatchDeferredInvites`
- * (called by a fork's publish flow) releases held invites with token rotation and the
- * 7-day reminder throttle. Cella's template never nulls publishedAt, so everything
- * here is dormant by default, so these tests null it explicitly.
- */
+// Unpublished contexts hold invites until the publish flow calls `dispatchDeferredInvites`.
+// The template creates published contexts, so these tests explicitly clear `publishedAt`.
 describe('Draft context invite deferral', async () => {
   const call = await createAppClient();
 

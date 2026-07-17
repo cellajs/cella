@@ -1,6 +1,6 @@
 /**
  * Checks source comments for prose that belongs in commit history or review discussion.
- * The audit mode also reports lower-confidence compatibility, debt, and jargon markers.
+ * Audit modes report lower-confidence wording and detached long-form comment blocks.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -11,7 +11,10 @@ import ts from 'typescript';
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..');
 const audit = process.argv.includes('--audit');
-const requestedRoots = process.argv.slice(2).filter((arg) => arg !== '--audit');
+const placement = process.argv.includes('--placement');
+const requestedRoots = process.argv
+  .slice(2)
+  .filter((arg) => arg !== '--audit' && arg !== '--placement');
 
 const sourceExtensions = new Set([
   '.cjs',
@@ -38,6 +41,7 @@ const excludedPrefixes = [
 interface Comment {
   file: string;
   offset: number;
+  end: number;
   text: string;
 }
 
@@ -120,7 +124,12 @@ function typedComments(file: string, source: string): Comment[] {
 
   const addRanges = (ranges: readonly ts.CommentRange[] | undefined) => {
     for (const range of ranges ?? []) {
-      comments.set(range.pos, { file, offset: range.pos, text: source.slice(range.pos, range.end) });
+      comments.set(range.pos, {
+        file,
+        offset: range.pos,
+        end: range.end,
+        text: source.slice(range.pos, range.end),
+      });
     }
   };
 
@@ -153,7 +162,7 @@ function jsoncComments(file: string, source: string): Comment[] {
       while (i + 1 < source.length && !(source[i] === '*' && source[i + 1] === '/')) i++;
       if (i + 1 < source.length) i++;
     }
-    comments.push({ file, offset: start, text: source.slice(start, i + 1) });
+    comments.push({ file, offset: start, end: i + 1, text: source.slice(start, i + 1) });
   }
   return comments;
 }
@@ -171,7 +180,7 @@ function regexComments(file: string, source: string): Comment[] {
 
   for (const pattern of patterns) {
     for (const match of source.matchAll(pattern)) {
-      comments.push({ file, offset: match.index, text: match[0] });
+      comments.push({ file, offset: match.index, end: match.index + match[0].length, text: match[0] });
     }
   }
   return comments;
@@ -183,8 +192,77 @@ function lineAndColumn(source: string, offset: number): { line: number; column: 
   return { line: lines.length, column: lines.at(-1)!.length + 1 };
 }
 
+function groupedComments(comments: Comment[], source: string): Comment[] {
+  const groups: Comment[] = [];
+  for (const comment of comments) {
+    const previous = groups.at(-1);
+    if (
+      comment.text.startsWith('//') &&
+      previous?.text.startsWith('//') &&
+      /^[\t ]*\r?\n[\t ]*$/.test(source.slice(previous.end, comment.offset))
+    ) {
+      previous.end = comment.end;
+      previous.text += `\n${comment.text}`;
+      continue;
+    }
+    groups.push({ ...comment });
+  }
+  return groups;
+}
+
+function proseLineCount(text: string): number {
+  return text
+    .split(/\r?\n/)
+    .map((line) =>
+      line
+        .replace(/^\s*\/\/\/?\s?/, '')
+        .replace(/^\s*\/\*\*?\s?/, '')
+        .replace(/^\s*\*\/?\s?/, '')
+        .replace(/\s*\*\/$/, '')
+        .trim(),
+    )
+    .filter(Boolean).length;
+}
+
+function isRequiredHeader(text: string): boolean {
+  return /\b(?:copyright|licensed under|permission is hereby granted|the software is provided)\b/i.test(
+    text,
+  );
+}
+
+const declarationKinds = new Set([
+  ts.SyntaxKind.ClassDeclaration,
+  ts.SyntaxKind.EnumDeclaration,
+  ts.SyntaxKind.FunctionDeclaration,
+  ts.SyntaxKind.InterfaceDeclaration,
+  ts.SyntaxKind.ModuleDeclaration,
+  ts.SyntaxKind.TypeAliasDeclaration,
+  ts.SyntaxKind.VariableStatement,
+]);
+
+function hasDirectDeclarationOwner(file: string, source: string, comment: Comment): boolean {
+  const extension = extname(file);
+  if (!typedExtensions.has(extension)) return false;
+
+  const kind = extension === '.tsx' || extension === '.jsx' ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, kind);
+  const containingStatement = sourceFile.statements.find(
+    (statement) => statement.getStart(sourceFile) < comment.offset && comment.end < statement.end,
+  );
+  if (containingStatement) return true;
+
+  const nextStatement = sourceFile.statements.find(
+    (statement) => statement.getStart(sourceFile) >= comment.end,
+  );
+  if (!nextStatement || !declarationKinds.has(nextStatement.kind)) return false;
+
+  const gap = source.slice(comment.end, nextStatement.getStart(sourceFile));
+  return /^\s*$/.test(gap) && !/\r?\n[\t ]*\r?\n/.test(gap);
+}
+
 const failures: string[] = [];
 const findings: string[] = [];
+const placementFailures: string[] = [];
 
 for (const file of trackedFiles().filter(isSource)) {
   const source = readFileSync(join(repoRoot, file), 'utf8');
@@ -204,6 +282,16 @@ for (const file of trackedFiles().filter(isSource)) {
       }
     }
   }
+  if (!placement) continue;
+  for (const comment of groupedComments(comments, source)) {
+    const lineCount = proseLineCount(comment.text);
+    if (lineCount <= 3 || isRequiredHeader(comment.text)) continue;
+    if (hasDirectDeclarationOwner(file, source, comment)) continue;
+    const location = lineAndColumn(source, comment.offset);
+    placementFailures.push(
+      `${file}:${location.line}:${location.column} [detached-long-comment] ${lineCount} prose lines; move shared context to a README or attach a concise invariant to a declaration`,
+    );
+  }
 }
 
 if (failures.length > 0) {
@@ -216,9 +304,16 @@ if (audit && findings.length > 0) {
   for (const finding of findings) console.warn(`  ${finding}`);
 }
 
-if (failures.length > 0) process.exit(1);
+if (placement && placementFailures.length > 0) {
+  console.error(`[comments:placement] ${placementFailures.length} detached long comment(s):`);
+  for (const failure of placementFailures) console.error(`  ${failure}`);
+}
+
+if (failures.length > 0 || placementFailures.length > 0) process.exit(1);
 console.log(
-  audit
+  placement
+    ? '[comments:placement] OK, long comments are local to declarations or executable code.'
+    : audit
     ? `[comments:audit] OK, ${findings.length} lower-confidence marker(s) require review.`
     : '[comments:check] OK, source comments follow the required style.',
 );

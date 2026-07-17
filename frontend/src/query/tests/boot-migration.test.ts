@@ -1,10 +1,3 @@
-/**
- * Boot-time lens migration pass in the persister: persisted schema ordinal
- * behind the bundle → cached rows + queued mutations rewritten locally, pointer
- * advanced atomically; ahead (stale bundle or rollback) → restore nothing and
- * stop persisting (schema-version-guard); session scopes are wiped without
- * migrated.
- */
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
