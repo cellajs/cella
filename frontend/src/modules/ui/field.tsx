@@ -2,16 +2,8 @@ import { Field } from '@base-ui/react/field';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { ChevronUpIcon, CircleQuestionMarkIcon } from 'lucide-react';
 import * as React from 'react';
-import {
-  Controller,
-  type ControllerProps,
-  type FieldPath,
-  type FieldValues,
-  FormProvider,
-  type FormProviderProps,
-  useFormContext,
-  useFormState,
-} from 'react-hook-form';
+import type { ControllerProps, FieldPath, FieldValues, FormProviderProps } from 'react-hook-form';
+import { Controller, FormProvider, useFormContext, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Label } from '~/modules/ui/label';

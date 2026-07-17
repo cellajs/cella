@@ -5,11 +5,8 @@ import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
-import {
-  type OAuthCookiePayload,
-  oauthCookiePayloadSchema,
-  type oauthQuerySchema,
-} from '#/modules/auth/oauth/oauth-schema';
+import type { OAuthCookiePayload, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
+import { oauthCookiePayloadSchema } from '#/modules/auth/oauth/oauth-schema';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';

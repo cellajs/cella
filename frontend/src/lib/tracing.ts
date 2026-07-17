@@ -1,11 +1,6 @@
 import { type Span, SpanStatusCode } from '@opentelemetry/api';
-import {
-  frontendSpanNames,
-  type IncomingTraceContext,
-  type SpanData,
-  type SpanStats,
-  type TraceContext,
-} from 'shared/tracing';
+import type { IncomingTraceContext, SpanData, SpanStats, TraceContext } from 'shared/tracing';
+import { frontendSpanNames } from 'shared/tracing';
 import { isDebugMode } from '~/env';
 import { spanStore, tracer } from './otel';
 

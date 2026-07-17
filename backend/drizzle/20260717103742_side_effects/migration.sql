@@ -95,7 +95,7 @@ END;
 $$;
 --> statement-breakpoint
 -- ══════════════════════════════════════════════════════════════════════════
--- [immutability_setup] Immutability triggers — identity columns
+-- [immutability_setup] Immutability triggers — identity columns, write guards
 -- ══════════════════════════════════════════════════════════════════════════
 -- Immutability Triggers Setup
 -- Prevents modification of identity columns after row creation.
@@ -166,6 +166,16 @@ END;
 $$ LANGUAGE plpgsql;
 --> statement-breakpoint
 
+CREATE OR REPLACE FUNCTION admin_only_write_row() RETURNS TRIGGER AS $$
+BEGIN
+  IF current_user = 'runtime_role' THEN
+    RAISE EXCEPTION 'Table % is not writable by %', TG_TABLE_NAME, current_user;
+  END IF;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+--> statement-breakpoint
+
 -- Triggers require roles to exist
 DO $$
 BEGIN
@@ -185,6 +195,8 @@ BEGIN
     EXECUTE 'CREATE TRIGGER inactive_memberships_immutable_keys_trigger BEFORE UPDATE ON inactive_memberships FOR EACH ROW EXECUTE FUNCTION inactive_membership_immutable_keys()';
     EXECUTE 'DROP TRIGGER IF EXISTS activities_immutable_keys_trigger ON activities';
     EXECUTE 'CREATE TRIGGER activities_immutable_keys_trigger BEFORE UPDATE ON activities FOR EACH ROW EXECUTE FUNCTION append_only_immutable_row()';
+    EXECUTE 'DROP TRIGGER IF EXISTS system_roles_admin_only_write_trigger ON system_roles';
+    EXECUTE 'CREATE TRIGGER system_roles_admin_only_write_trigger BEFORE INSERT OR UPDATE OR DELETE ON system_roles FOR EACH ROW EXECUTE FUNCTION admin_only_write_row()';
 
     RAISE NOTICE 'Immutability triggers setup complete.';
   EXCEPTION WHEN OTHERS THEN
@@ -811,6 +823,8 @@ BEGIN
     missing := array_append(missing, 'function:inactive_membership_immutable_keys'); END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'append_only_immutable_row') THEN
     missing := array_append(missing, 'function:append_only_immutable_row'); END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'admin_only_write_row') THEN
+    missing := array_append(missing, 'function:admin_only_write_row'); END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'apply_count_deltas') THEN
     missing := array_append(missing, 'function:apply_count_deltas'); END IF;
 
@@ -841,6 +855,11 @@ BEGIN
       WHERE c.relnamespace = 'public'::regnamespace AND c.relname = 'activities'
         AND t.tgname = 'activities_immutable_keys_trigger' AND NOT t.tgisinternal
     ) THEN missing := array_append(missing, 'trigger:activities_immutable_keys_trigger'); END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
+      WHERE c.relnamespace = 'public'::regnamespace AND c.relname = 'system_roles'
+        AND t.tgname = 'system_roles_admin_only_write_trigger' AND NOT t.tgisinternal
+    ) THEN missing := array_append(missing, 'trigger:system_roles_admin_only_write_trigger'); END IF;
 
     IF NOT EXISTS (
       SELECT 1 FROM pg_class WHERE relname = 'attachments' AND relnamespace = 'public'::regnamespace

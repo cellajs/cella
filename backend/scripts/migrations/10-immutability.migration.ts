@@ -1,32 +1,38 @@
-import { allImmutabilityTables } from '#/db/immutability-triggers';
 import {
-  appendOnlyImmutabilityFunctionSQL,
-  baseEntityImmutabilityFunctionSQL,
-  productEntityImmutabilityFunctionSQL,
-  membershipImmutabilityFunctionSQL,
-  inactiveMembershipImmutabilityFunctionSQL,
+  allAdminOnlyWriteTables,
+  allImmutabilityFunctionsSQL,
+  allImmutabilityTables,
+  adminOnlyWriteTriggerName,
+  immutableKeysTriggerName,
 } from '#/db/immutability-triggers';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 /**
  * Creates triggers that prevent modification of identity columns (id, tenant_id,
  * organization_id, etc.) after row creation — defense-in-depth that holds even under
- * admin bypass.
+ * admin bypass — plus write guards on tables the app may read but never write.
+ *
+ * Functions and trigger names both come from `#/db/immutability-triggers`. Do not hand-list them
+ * here: this block creates its triggers inside a single `EXCEPTION WHEN OTHERS`, so one trigger
+ * referencing a function nobody created rolls back *every* trigger in the block, and the failure
+ * only ever surfaces as a NOTICE.
  */
 async function run(): Promise<SideEffectBlock> {
-  const functionsSql = [
-    baseEntityImmutabilityFunctionSQL,
-    productEntityImmutabilityFunctionSQL,
-    membershipImmutabilityFunctionSQL,
-    inactiveMembershipImmutabilityFunctionSQL,
-    appendOnlyImmutabilityFunctionSQL,
-  ].join('\n--> statement-breakpoint\n');
+  const functionsSql = allImmutabilityFunctionsSQL.join('\n--> statement-breakpoint\n');
 
-  const triggersSql = allImmutabilityTables.map(({ tableName, functionName }) => {
-    const triggerName = `${tableName}_immutable_keys_trigger`;
+  const immutableKeysTriggers = allImmutabilityTables.map(({ tableName, functionName }) => {
+    const triggerName = immutableKeysTriggerName(tableName);
     return `    EXECUTE 'DROP TRIGGER IF EXISTS ${triggerName} ON ${tableName}';
     EXECUTE 'CREATE TRIGGER ${triggerName} BEFORE UPDATE ON ${tableName} FOR EACH ROW EXECUTE FUNCTION ${functionName}()';`;
-  }).join('\n');
+  });
+
+  const adminOnlyWriteTriggers = allAdminOnlyWriteTables.map(({ tableName, functionName }) => {
+    const triggerName = adminOnlyWriteTriggerName(tableName);
+    return `    EXECUTE 'DROP TRIGGER IF EXISTS ${triggerName} ON ${tableName}';
+    EXECUTE 'CREATE TRIGGER ${triggerName} BEFORE INSERT OR UPDATE OR DELETE ON ${tableName} FOR EACH ROW EXECUTE FUNCTION ${functionName}()';`;
+  });
+
+  const triggersSql = [...immutableKeysTriggers, ...adminOnlyWriteTriggers].join('\n');
 
   const migrationSql = `-- Immutability Triggers Setup
 -- Prevents modification of identity columns after row creation.
@@ -59,9 +65,12 @@ END $$;
 
   return {
     tag: 'immutability_setup',
-    title: 'Immutability triggers — identity columns',
+    title: 'Immutability triggers — identity columns, write guards',
     sql: migrationSql,
-    notes: [`Protected tables: ${allImmutabilityTables.map((t) => t.tableName).join(', ')}`],
+    notes: [
+      `Protected tables: ${allImmutabilityTables.map((t) => t.tableName).join(', ')}`,
+      `Admin-only writes: ${allAdminOnlyWriteTables.map((t) => t.tableName).join(', ')}`,
+    ],
   };
 }
 

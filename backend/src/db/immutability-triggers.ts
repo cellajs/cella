@@ -44,14 +44,29 @@ END;
 $$ LANGUAGE plpgsql;`;
 }
 
+/** Trigger names. Exported so the side-effect migration emits the same names this file does. */
+export const immutableKeysTriggerName = (tableName: string) => `${tableName}_immutable_keys_trigger`;
+export const adminOnlyWriteTriggerName = (tableName: string) => `${tableName}_admin_only_write_trigger`;
+
 /** Attaches (or replaces) a BEFORE UPDATE trigger that calls `functionName`. */
 function buildTriggerSQL(tableName: string, functionName: string): string {
-  const triggerName = `${tableName}_immutable_keys_trigger`;
+  const triggerName = immutableKeysTriggerName(tableName);
   return `
 DROP TRIGGER IF EXISTS ${triggerName} ON ${tableName};
 CREATE TRIGGER ${triggerName}
   BEFORE UPDATE ON ${tableName}
   FOR EACH ROW EXECUTE FUNCTION ${functionName}();`;
+}
+
+/** Attaches (or replaces) the write-guard trigger. Covers INSERT/UPDATE/DELETE, unlike the
+ *  immutable-keys triggers, because the point is to block the write entirely, not police columns. */
+function buildAdminOnlyWriteTriggerSQL(tableName: string): string {
+  const triggerName = adminOnlyWriteTriggerName(tableName);
+  return `
+DROP TRIGGER IF EXISTS ${triggerName} ON ${tableName};
+CREATE TRIGGER ${triggerName}
+  BEFORE INSERT OR UPDATE OR DELETE ON ${tableName}
+  FOR EACH ROW EXECUTE FUNCTION admin_only_write_row();`;
 }
 
 // Pre-built trigger functions
@@ -83,6 +98,32 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;`;
 
+/**
+ * Blocks every write from the application's runtime role, so the table can only be changed over
+ * the admin connection.
+ *
+ * For privilege-bearing tables the table GRANT is not a sufficient control on its own: it lives in
+ * the one layer Scaleway's coarse per-database privilege API can overwrite (`permission=all`
+ * re-grants in bulk), and a single reconcile would silently hand the app role write access. This
+ * trigger is independent of grants, so it still refuses the write.
+ *
+ * Denies `runtime_role` specifically rather than allowing only `admin_role`: seeds and migrations
+ * run as `postgres` locally and `admin_role` in production, and an allowlist would break the
+ * former. Referential actions are unaffected — an `ON DELETE CASCADE` runs as the referencing
+ * table's owner, not as the caller, so deleting a user still cascades into `system_roles`.
+ *
+ * `COALESCE(NEW, OLD)` because NEW is null on DELETE and OLD is null on INSERT.
+ */
+export const adminOnlyWriteFunctionSQL = `
+CREATE OR REPLACE FUNCTION admin_only_write_row() RETURNS TRIGGER AS $$
+BEGIN
+  IF current_user = 'runtime_role' THEN
+    RAISE EXCEPTION 'Table % is not writable by %', TG_TABLE_NAME, current_user;
+  END IF;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;`;
+
 // Table to function mapping
 
 const channelEntityConfigs: TableImmutabilityConfig[] = appConfig.channelEntityTypes.map((t) => ({
@@ -104,12 +145,42 @@ const appendOnlyConfigs: TableImmutabilityConfig[] = [
   { tableName: 'activities', functionName: 'append_only_immutable_row' },
 ];
 
-/** Every table that has an immutability trigger. */
+/**
+ * Tables the app may read but never write: writes must go over the admin connection.
+ * `system_roles` decides who is a system admin, so a write here is a privilege escalation.
+ */
+const adminOnlyWriteConfigs: TableImmutabilityConfig[] = [
+  { tableName: 'system_roles', functionName: 'admin_only_write_row' },
+];
+
+/** Every table that has a BEFORE UPDATE immutable-keys trigger. */
 export const allImmutabilityTables: TableImmutabilityConfig[] = [
   ...channelEntityConfigs,
   ...productWithParentConfigs,
   ...membershipConfigs,
   ...appendOnlyConfigs,
+];
+
+/** Every table that has a write-guard trigger. */
+export const allAdminOnlyWriteTables: TableImmutabilityConfig[] = adminOnlyWriteConfigs;
+
+/**
+ * Every trigger function, in creation order — the single list both emitters build from.
+ *
+ * Load-bearing: the side-effect migration used to hand-list the functions it created while taking
+ * its trigger list from `allImmutabilityTables`. The two drifted, `append_only_immutable_row` was
+ * never created, and its `CREATE TRIGGER` failed inside the migration's `EXCEPTION WHEN OTHERS`
+ * block — which rolls the whole subtransaction back, so *every* immutability trigger was silently
+ * dropped on any database built from migrations alone. Deriving both from one list makes a
+ * trigger-without-its-function unrepresentable.
+ */
+export const allImmutabilityFunctionsSQL: string[] = [
+  baseEntityImmutabilityFunctionSQL,
+  productEntityImmutabilityFunctionSQL,
+  membershipImmutabilityFunctionSQL,
+  inactiveMembershipImmutabilityFunctionSQL,
+  appendOnlyImmutabilityFunctionSQL,
+  adminOnlyWriteFunctionSQL,
 ];
 
 // Combined SQL output
@@ -122,24 +193,19 @@ const names = (configs: TableImmutabilityConfig[]) => configs.map((c) => c.table
  * Run after migrations so protection is in place.
  */
 export const immutabilityTriggersSQL = `
--- Functions (5)
+-- Functions (${allImmutabilityFunctionsSQL.length})
 -- Base entities: ${names(baseEntityTables)}
-${baseEntityImmutabilityFunctionSQL}
-
 -- Product entities with parent: ${names(productWithParentConfigs) || 'none'}
-${productEntityImmutabilityFunctionSQL}
-
--- Memberships
-${membershipImmutabilityFunctionSQL}
-
--- Inactive memberships
-${inactiveMembershipImmutabilityFunctionSQL}
-
+-- Memberships, inactive memberships
 -- Append-only: ${names(appendOnlyConfigs)}
-${appendOnlyImmutabilityFunctionSQL}
+-- Admin-only writes: ${names(adminOnlyWriteConfigs)}
+${allImmutabilityFunctionsSQL.join('\n')}
 
--- Triggers (${allImmutabilityTables.length} tables)
+-- Immutable-keys triggers (${allImmutabilityTables.length} tables)
 ${allImmutabilityTables.map((t) => buildTriggerSQL(t.tableName, t.functionName)).join('\n')}
+
+-- Write-guard triggers (${allAdminOnlyWriteTables.length} tables)
+${allAdminOnlyWriteTables.map((t) => buildAdminOnlyWriteTriggerSQL(t.tableName)).join('\n')}
 `;
 
 // Custom builders (for non-standard tables)

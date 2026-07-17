@@ -1,14 +1,7 @@
 import { onlineManager, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import {
-  deleteMemberships,
-  type Membership,
-  type MembershipBase,
-  type MembershipInviteResponse,
-  membershipInvite,
-  type Organization,
-  updateMembership,
-} from 'sdk';
+import type { Membership, MembershipBase, MembershipInviteResponse, Organization } from 'sdk';
+import { deleteMemberships, membershipInvite, updateMembership } from 'sdk';
 import { appConfig, type ChannelEntityType } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';

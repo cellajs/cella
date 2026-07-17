@@ -1,13 +1,5 @@
-import type { EntityCanMap } from 'shared';
-import {
-  accessPolicies,
-  allActionsAllowed,
-  type ChannelEntityType,
-  computeCan,
-  type EntityActionType,
-  type EntityType,
-  hierarchy,
-} from 'shared';
+import type { ChannelEntityType, EntityActionType, EntityCanMap, EntityType } from 'shared';
+import { accessPolicies, allActionsAllowed, computeCan, hierarchy } from 'shared';
 import { useUserStore } from '~/modules/user/user-store';
 import type { EnrichableEntity } from '~/query/enrichment/types';
 

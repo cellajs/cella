@@ -1,5 +1,10 @@
 import { getTableName } from 'drizzle-orm';
-import { allImmutabilityTables } from '#/db/immutability-triggers';
+import {
+  adminOnlyWriteTriggerName,
+  allAdminOnlyWriteTables,
+  allImmutabilityTables,
+  immutableKeysTriggerName,
+} from '#/db/immutability-triggers';
 import { entityTables, resourceTables } from '#/tables';
 import { CDC_PUBLICATION_NAME } from '../../../cdc/src/constants';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
@@ -25,16 +30,23 @@ import { unloggedTables } from './10-unlogged.migration';
 async function run(): Promise<SideEffectBlock> {
   const { rlsTables, fullCrudTables, readOnlyTables } = classifyRlsTables();
   const grantTables = [...rlsTables, ...fullCrudTables, ...readOnlyTables];
-  const functionNames = [...new Set(allImmutabilityTables.map((t) => t.functionName)), 'apply_count_deltas'];
+  const expectedTriggers = [
+    ...allImmutabilityTables.map(({ tableName }) => ({ tableName, triggerName: immutableKeysTriggerName(tableName) })),
+    ...allAdminOnlyWriteTables.map(({ tableName }) => ({ tableName, triggerName: adminOnlyWriteTriggerName(tableName) })),
+  ];
+  const functionNames = [
+    ...new Set([...allImmutabilityTables, ...allAdminOnlyWriteTables].map((t) => t.functionName)),
+    'apply_count_deltas',
+  ];
   const publicationTableCount = [...Object.values(entityTables), ...Object.values(resourceTables)].map(getTableName).length;
 
-  const triggerChecks = allImmutabilityTables
+  const triggerChecks = expectedTriggers
     .map(
-      ({ tableName }) => `  IF NOT EXISTS (
+      ({ tableName, triggerName }) => `  IF NOT EXISTS (
     SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
     WHERE c.relnamespace = 'public'::regnamespace AND c.relname = '${tableName}'
-      AND t.tgname = '${tableName}_immutable_keys_trigger' AND NOT t.tgisinternal
-  ) THEN missing := array_append(missing, 'trigger:${tableName}_immutable_keys_trigger'); END IF;`,
+      AND t.tgname = '${triggerName}' AND NOT t.tgisinternal
+  ) THEN missing := array_append(missing, 'trigger:${triggerName}'); END IF;`,
     )
     .join('\n');
 
@@ -131,7 +143,7 @@ END $$;
     title: 'Verify — assert end state of all side-effect blocks',
     sql: migrationSql,
     notes: [
-      `asserts: ${allImmutabilityTables.length} triggers, ${functionNames.length} functions, ${partitionConfigs.length} partitioned tables, ${rlsTables.length} FORCE-RLS tables, ${grantTables.length} grants, ${unloggedTables.length} unlogged, 1 publication`,
+      `asserts: ${expectedTriggers.length} triggers, ${functionNames.length} functions, ${partitionConfigs.length} partitioned tables, ${rlsTables.length} FORCE-RLS tables, ${grantTables.length} grants, ${unloggedTables.length} unlogged, 1 publication`,
     ],
   };
 }

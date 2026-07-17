@@ -1,11 +1,5 @@
-import {
-  type Attachment,
-  type CreateAttachmentsData,
-  createAttachments,
-  deleteAttachments,
-  type UpdateAttachmentData,
-  updateAttachment,
-} from 'sdk';
+import type { Attachment, CreateAttachmentsData, UpdateAttachmentData } from 'sdk';
+import { createAttachments, deleteAttachments, updateAttachment } from 'sdk';
 import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
 import type { QueryOrgContext } from '~/query/types';
 

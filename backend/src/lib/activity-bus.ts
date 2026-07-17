@@ -1,13 +1,8 @@
 import { EventEmitter } from 'node:events';
 import { SpanStatusCode } from '@opentelemetry/api';
 import { type ActivityEventType, activityEventTypes, isValidEventType, type PropagationHint } from 'shared';
-import {
-  eventAttrs,
-  recordMessageReceived,
-  type SyncTraceContext,
-  startSyncSpan,
-  syncSpanNames,
-} from '#/lib/sync-metrics';
+import type { SyncTraceContext } from '#/lib/sync-metrics';
+import { eventAttrs, recordMessageReceived, startSyncSpan, syncSpanNames } from '#/lib/sync-metrics';
 import type { ActivityModel } from '#/modules/activities/activities-db';
 import type { TrackedModel, TrackedType } from '#/tables';
 import { log } from '#/utils/logger';

@@ -4,11 +4,8 @@ import type { MenuStructureItem } from 'shared/config-builder';
 import { defaultOrder, orderGap } from 'shared/utils/display-order';
 import type { DbContext } from '#/core/context';
 import { type MembershipBaseModel, membershipBaseSelect } from '#/modules/memberships/helpers/select';
-import {
-  type InsertMembershipModel,
-  type MembershipModel,
-  membershipsTable,
-} from '#/modules/memberships/memberships-db';
+import type { InsertMembershipModel, MembershipModel } from '#/modules/memberships/memberships-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import type { EntityModel } from '#/tables';
 import { log } from '#/utils/logger';
 

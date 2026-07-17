@@ -1,12 +1,6 @@
 import { z } from '@hono/zod-openapi';
-import {
-  appConfig,
-  type EntityIdColumns,
-  type EntityType,
-  hierarchy,
-  type ProductEntityType,
-  type RelatedChannelType,
-} from 'shared';
+import type { EntityIdColumns, EntityType, ProductEntityType, RelatedChannelType } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 
 /**
  * Zod raw-shape type for an entity's optional related-context id fields.

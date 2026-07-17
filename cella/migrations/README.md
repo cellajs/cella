@@ -63,6 +63,12 @@ be a no-op.
   builder `.context()→.channel()`, `context_type/context_id→channel_type/channel_id`,
   `context_counters→channel_counters`, …). Allow-list codemod; also needs file renames,
   i18n keys, SDK regen, and a DB rename migration — see the folder README.
+- [2026-07-drizzle-baseline](./2026-07-drizzle-baseline/): squashes `backend/drizzle/` from 28
+  folders to a `CREATE TABLE` baseline plus the combined side-effects folder. **Read before
+  running `pnpm migrate` after the pull** — the drizzle v1 migrator matches applied migrations by
+  folder name, so an existing DB tries to replay the baseline and fails on `relation "…" already
+  exists`. Local dev DBs destroy the volume and reseed; DBs with data mark the baseline applied and
+  migrate the side-effects only. SQL only, no codemod.
 - [2026-07-published-rows](./2026-07-published-rows/): opt-in draft lifecycle for product
   entities — nullable `publishedAt` (NULL = author-only draft). Dispatch, reads, counters,
   stamps, badges, cache, detail and yjs all enforce it upstream via column introspection;

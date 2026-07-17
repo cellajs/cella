@@ -3,14 +3,8 @@ import { CircleAlertIcon, CopyCheckIcon, CopyIcon, RefreshCwIcon } from 'lucide-
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  type ApiError,
-  type CreateTotpData,
-  type CreateTotpResponses,
-  createTotp,
-  generateTotpKey,
-  type MeAuthData,
-} from 'sdk';
+import type { ApiError, CreateTotpData, CreateTotpResponses, MeAuthData } from 'sdk';
+import { createTotp, generateTotpKey } from 'sdk';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

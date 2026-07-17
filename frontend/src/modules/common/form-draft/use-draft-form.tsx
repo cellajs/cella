@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  type FieldPath,
-  type FieldValues,
-  type UseFormProps,
-  type UseFormReturn,
-  useForm,
-  useFormState,
-} from 'react-hook-form';
+import type { FieldPath, FieldValues, UseFormProps, UseFormReturn } from 'react-hook-form';
+import { useForm, useFormState } from 'react-hook-form';
 import { useDraftStore } from '~/modules/common/form-draft/draft-store';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
