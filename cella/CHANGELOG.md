@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.4.1](https://github.com/cellajs/cella/compare/0.4.0...0.4.1) (2026-07-17)
+
+
+### 🎉 New features
+
+* add cdc-attachment load test ([723ae68](https://github.com/cellajs/cella/commit/723ae6802030824689a216df8e995a852673959f))
+* sync lazy overhaul ([#902](https://github.com/cellajs/cella/issues/902)) ([7ffe773](https://github.com/cellajs/cella/commit/7ffe7730ccbfa0412927c7524781c438dd9114f7))
+
+
+### 🐞 Bug fixes
+
+* **backend:** key spam limiter per user with IP fallback ([#894](https://github.com/cellajs/cella/issues/894)) ([88ed049](https://github.com/cellajs/cella/commit/88ed04956861ce5674e7df9c143551a14d0c8ff0))
+* bench fix due to same origin breaking it ([ff9740d](https://github.com/cellajs/cella/commit/ff9740d621093355004477ecb53966d03e4f693a))
+* enforce rate limiter budgets, partman schema parity, session device grouping ([#901](https://github.com/cellajs/cella/issues/901)) ([5de16a1](https://github.com/cellajs/cella/commit/5de16a12128b72e973c019db7130b58177ade5d4))
+
+
+### 🔧 Small improvements
+
+* **backend:** source list total from channel counter, skip COUNT(*) on delta sync ([#896](https://github.com/cellajs/cella/issues/896)) ([fabd8f4](https://github.com/cellajs/cella/commit/fabd8f46edbe0056cfa419d4a9ccf9377a39769d))
+* collect side-effect migrations into one combined folder ([#900](https://github.com/cellajs/cella/issues/900)) ([f583f0f](https://github.com/cellajs/cella/commit/f583f0f6f133a1e058fa9f39d5afdacbbf7888b2))
+* densify self-evident comments in emails/bench/tests/scripts/mocks ([#893](https://github.com/cellajs/cella/issues/893)) ([84fa08d](https://github.com/cellajs/cella/commit/84fa08da84ab8b045f048c10294a52fa88ef7841))
+* **frontend:** densify/remove comments where the code is self-evident ([#891](https://github.com/cellajs/cella/issues/891)) ([d578d91](https://github.com/cellajs/cella/commit/d578d9127741aac52a48f5af5499db3a62fc171f))
+* move type ([717c880](https://github.com/cellajs/cella/commit/717c880496ceea52827176169f1dd60cd224039c))
+* **permissions:** collapse row conditions to a name union ([#899](https://github.com/cellajs/cella/issues/899)) ([d218b69](https://github.com/cellajs/cella/commit/d218b6991ca4a88a88d3abfbbd88876b39be4318))
+* replace ([34bd720](https://github.com/cellajs/cella/commit/34bd720f7c2e96d619ac1ea237c5f3b1f512514a))
+* **types:** tighten entityType: string seams to named entity types ([#897](https://github.com/cellajs/cella/issues/897)) ([1923f30](https://github.com/cellajs/cella/commit/1923f30c850e378e1439af1a314f79535bbc4626))
+* **types:** tighten role: string seams to EntityRole (+ unbreak main) ([#898](https://github.com/cellajs/cella/issues/898)) ([c7ed1c7](https://github.com/cellajs/cella/commit/c7ed1c71e2745197653442f078a3375879d43839))
+
+
+### ⏪ Reverts
+
+* batchToken and batchCache ([16ce523](https://github.com/cellajs/cella/commit/16ce523f28d6a81d2d77a98cf86a6a7164dd77fb))
+
 ## [0.4.0](https://github.com/cellajs/cella/compare/0.3.5...0.4.0) (2026-07-15)
 
 
