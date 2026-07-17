@@ -1,0 +1,161 @@
+import { QueryObserver } from '@tanstack/react-query';
+import type { EntityType } from 'shared';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+// Synthetic sub-org topology: base cella has no sub-org channels, so the branch under test is
+// unreachable with the real config — the exact reason the original route-param scan shipped
+// broken. Task is a product homed at the `project` channel, under `organization`.
+vi.mock('shared', () => ({
+  appConfig: {
+    slug: 'test',
+    channelEntityTypes: ['organization', 'project'],
+    entityIdColumnKeys: { organization: 'organizationId', project: 'projectId', task: 'taskId' },
+    seenTrackedEntityTypes: [],
+  },
+  hierarchy: {
+    getOrderedAncestors: (entityType: string) => {
+      if (entityType === 'task') return ['project', 'organization'];
+      return ['organization'];
+    },
+    getParent: () => null,
+    isProduct: (entityType: string) => entityType === 'task',
+  },
+}));
+
+// Route context: org layout only — sub-org channels never appear here (slug routes), which is
+// what forces viewing detection to the query cache.
+let routeMatches: { context?: Record<string, unknown> }[] = [];
+vi.mock('~/routes/_router-instance', () => ({
+  getRouter: () => ({ state: { matches: routeMatches } }),
+}));
+
+// query-client attaches online/offline listeners at module load.
+vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+vi.stubGlobal('navigator', { onLine: true });
+vi.stubGlobal('localStorage', {
+  getItem: vi.fn(() => null),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+  key: vi.fn(() => null),
+  length: 0,
+});
+
+const { createEntityKeys } = await import('~/query/basic/create-query-keys');
+const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
+const { queryClient } = await import('~/query/query-client');
+const { isObservedChannel } = await import('./observed-channels');
+const { isViewingScope } = await import('./sync-priority');
+
+// The synthetic 'task' type exists only in this file's shared mock, hence the casts.
+const TASK = 'task' as EntityType;
+const taskKeys = createEntityKeys(TASK);
+registerEntityQueryKeys(TASK, taskKeys);
+
+/** Mount a headless observer — the same "a component renders this query" signal views produce. */
+function observe(queryKey: readonly unknown[]): () => void {
+  const observer = new QueryObserver(queryClient, {
+    queryKey: [...queryKey],
+    queryFn: async () => [],
+  });
+  return observer.subscribe(() => {});
+}
+
+describe('observed-channels', () => {
+  afterEach(() => {
+    queryClient.clear();
+    vi.clearAllMocks();
+  });
+
+  it('marks a channel observed while its canonical scope query has an observer, and clears on unsubscribe', () => {
+    expect(isObservedChannel('project-1')).toBe(false);
+
+    const unsubscribe = observe(taskKeys.list.scope('org-1', 'project-1'));
+    expect(isObservedChannel('project-1')).toBe(true);
+
+    unsubscribe();
+    expect(isObservedChannel('project-1')).toBe(false);
+  });
+
+  it('does not count cached data without observers (prefetching sibling channels stays background)', () => {
+    queryClient.setQueryData([...taskKeys.list.scope('org-1', 'project-2')], []);
+    expect(isObservedChannel('project-2')).toBe(false);
+  });
+
+  it('finds the channel id inside filter-object keys', () => {
+    const unsubscribe = observe(['task', 'list', { projectId: 'project-3', q: 'search' }]);
+    expect(isObservedChannel('project-3')).toBe(true);
+    expect(isObservedChannel('project-elsewhere')).toBe(false);
+
+    unsubscribe();
+  });
+
+  it('keeps a channel observed while any of its queries still has an observer', () => {
+    const first = observe(taskKeys.list.scope('org-1', 'project-4'));
+    const second = observe(['task', 'list', { projectId: 'project-4' }]);
+
+    first();
+    expect(isObservedChannel('project-4')).toBe(true);
+
+    second();
+    expect(isObservedChannel('project-4')).toBe(false);
+  });
+
+  it('ignores detail keys and unregistered entity types', () => {
+    const detail = observe(taskKeys.detail.byId('project-5')); // id happens to collide with a channel id
+    const foreign = observe(['unregistered', 'list', 'org-1', 'project-5']);
+
+    expect(isObservedChannel('project-5')).toBe(false);
+
+    detail();
+    foreign();
+  });
+});
+
+describe('isViewingScope with sub-org channels', () => {
+  afterEach(() => {
+    queryClient.clear();
+    routeMatches = [];
+  });
+
+  it('requires the route org to match, regardless of observation', () => {
+    routeMatches = [{ context: { organization: { id: 'org-1' } } }];
+    const unsubscribe = observe(taskKeys.list.scope('org-2', 'project-7'));
+
+    expect(isViewingScope('org-2', 'project-7')).toBe(false);
+
+    unsubscribe();
+  });
+
+  it('treats org-level scopes as viewed inside the org (base cella behavior unchanged)', () => {
+    routeMatches = [{ context: { organization: { id: 'org-1' } } }];
+    expect(isViewingScope('org-1', null)).toBe(true);
+    expect(isViewingScope('org-1', 'org-1')).toBe(true);
+  });
+
+  it('resolves sub-org scopes by observation: slug routes and unrouted board panels both work', () => {
+    routeMatches = [{ context: { organization: { id: 'org-1' } } }]; // route names no project — slug params, or a board
+    expect(isViewingScope('org-1', 'project-8')).toBe(false);
+
+    const unsubscribe = observe(taskKeys.list.scope('org-1', 'project-8'));
+    expect(isViewingScope('org-1', 'project-8')).toBe(true);
+
+    unsubscribe();
+    expect(isViewingScope('org-1', 'project-8')).toBe(false);
+  });
+});
+
+describe('registerEntityQueryKeys scope-key guard', () => {
+  it('rejects sub-org-homed entities whose keys cannot carry the channel id', () => {
+    const badKeys = {
+      list: { base: ['task', 'list'], org: () => [], scope: () => [], scopeKeys: ['organizationId'] },
+      detail: { base: ['task', 'detail'], byId: (id: string) => ['task', 'detail', id] },
+    };
+    expect(() => registerEntityQueryKeys(TASK, badKeys)).toThrow(/projectId/);
+  });
+
+  it('accepts createEntityKeys-built keys and org-homed entities', () => {
+    expect(() => registerEntityQueryKeys(TASK, createEntityKeys(TASK))).not.toThrow();
+    expect(() => registerEntityQueryKeys('attachment', createEntityKeys('attachment'))).not.toThrow();
+  });
+});

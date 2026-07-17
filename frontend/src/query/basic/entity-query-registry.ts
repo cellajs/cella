@@ -1,4 +1,4 @@
-import type { EntityType } from 'shared';
+import { appConfig, type EntityType, hierarchy } from 'shared';
 import type { ItemData } from '~/query/basic/types';
 
 /** Minimal query keys interface needed by stream handlers. */
@@ -46,12 +46,30 @@ const deltaFetchRegistry = new Map<string, DeltaFetchFn>();
 /**
  * Register query keys for an entity type at module init. Optional `deltaFetch` lets the catchup
  * processor fetch only changed entities via `seqCursor`, avoiding a full list refetch.
+ *
+ * Sub-org-homed entities must expose their home channel's id column in `list.scopeKeys` — viewing
+ * detection (`observed-channels.ts`) derives "this channel is on screen" from observed list keys,
+ * and keys that cannot carry the channel id would silently demote every on-screen scope to the
+ * background sync tier. Keys built with `createEntityKeys` always satisfy this; the throw exists
+ * for hand-rolled keys, at module load so it cannot reach production.
  */
 export function registerEntityQueryKeys(
   entityType: EntityType,
   keys: EntityQueryKeys,
   deltaFetch?: DeltaFetchFn,
 ): void {
+  const ancestors = hierarchy.getOrderedAncestors(entityType);
+  const homeChannel = ancestors[0];
+  if (homeChannel && homeChannel !== ancestors[ancestors.length - 1]) {
+    const column = (appConfig.entityIdColumnKeys as Record<string, string>)[homeChannel];
+    if (column && !keys.list.scopeKeys.includes(column)) {
+      throw new Error(
+        `Query keys for '${entityType}' lack home channel column '${column}' in list.scopeKeys — ` +
+          `viewing detection cannot see '${homeChannel}' scopes. Use createEntityKeys or add the column.`,
+      );
+    }
+  }
+
   entityQueryKeysRegistry.set(entityType, keys);
   if (deltaFetch) deltaFetchRegistry.set(entityType, deltaFetch);
 }

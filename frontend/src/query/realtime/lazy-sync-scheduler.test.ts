@@ -1,3 +1,4 @@
+import { QueryObserver } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
@@ -24,6 +25,14 @@ vi.mock('~/modules/seen/unseen-sync', () => ({ ingestSyncedRows: (...a: unknown[
 vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-client' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
 
+// Node test env has no document/window; stub them (before importing query-client, which attaches
+// online listeners at load) so installListeners wires the promote-on-observe path (observed-channels)
+// instead of returning early.
+vi.stubGlobal('document', { addEventListener: vi.fn(), hidden: false });
+vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+vi.stubGlobal('navigator', { onLine: true });
+
+const { queryClient } = await import('~/query/query-client');
 const { enqueueRange, flushAllNow, resetLazySync } = await import('./lazy-sync-scheduler');
 
 const BACKGROUND = { min: 2_000, max: 30_000 };
@@ -169,5 +178,26 @@ describe('lazy-sync-scheduler', () => {
     await vi.advanceTimersByTimeAsync(60_000);
 
     expect(fetchRangeAndPatch).not.toHaveBeenCalled();
+  });
+
+  it('flushes a pending scope when its channel gains an observer (catch-up-on-open without navigation)', async () => {
+    enqueueRange({ ...base, fromSeq: 5, untilSeq: 8 }); // background tier: waits for the spread slot
+    expect(fetchRangeAndPatch).not.toHaveBeenCalled();
+
+    // The scope's view mounts: its list query gains an observer and the tier turns live.
+    getSyncTier.mockReturnValue(VIEWING);
+    const observer = new QueryObserver(queryClient, {
+      queryKey: ['attachment', 'list', 'org-1'],
+      queryFn: async () => [],
+    });
+    const unsubscribe = observer.subscribe(() => {});
+
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(fetchRangeAndPatch).toHaveBeenCalledTimes(1);
+    expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('5,8');
+
+    unsubscribe();
+    queryClient.clear();
   });
 });

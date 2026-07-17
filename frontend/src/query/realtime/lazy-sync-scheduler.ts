@@ -3,6 +3,7 @@ import { invalidateUnseenCounts } from '~/modules/seen/query';
 import { ingestSyncedRows } from '~/modules/seen/unseen-sync';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline/stx-utils';
+import { queryClient } from '~/query/query-client';
 import * as cacheOps from './cache-ops';
 import { propagateEmbeddings } from './propagation';
 import { getSyncTier, isViewingScope } from './sync-priority';
@@ -248,6 +249,18 @@ function requeue(entry: DirtyEntry, delayMs: number): void {
   armTimer();
 }
 
+/** Flush pending ranges whose scope moved onto the live tier — the catch-up-on-open path. */
+function promoteLiveScopes(): void {
+  let changed = false;
+  for (const entry of dirty.values()) {
+    if (entry.dueAt > Date.now() && getSyncTier(entry.entityType, entry.organizationId, entry.channelId).min === 0) {
+      entry.dueAt = 0;
+      changed = true;
+    }
+  }
+  if (changed) void flushDue();
+}
+
 function installListeners(): void {
   if (listenersInstalled || typeof document === 'undefined') return;
   listenersInstalled = true;
@@ -260,21 +273,17 @@ function installListeners(): void {
   // Back online: retry what accumulated while offline.
   window.addEventListener('online', () => armTimer());
 
-  // Navigating into a scope flushes it immediately: the page catches up on open. The router is
+  // A mounting view can put a pending scope on the live tier (its list query gains an observer):
+  // same catch-up-on-open as the route subscription below, but it also covers panels opened
+  // without navigation and a notification that landed moments before the view mounted.
+  queryClient.getQueryCache().subscribe((event) => {
+    if (event.type === 'observerAdded' && dirty.size > 0) promoteLiveScopes();
+  });
+
+  // Navigating into a scope flushes it immediately: the page catches up on open (org-level scopes
+  // reach the live tier via route context rather than an observed channel). The router is
   // imported lazily so the scheduler does not pull the whole route tree into importers' graphs.
   void import('~/routes/router').then(({ router }) => {
-    router.subscribe('onLoad', () => {
-      let changed = false;
-      for (const entry of dirty.values()) {
-        if (
-          entry.dueAt > Date.now() &&
-          getSyncTier(entry.entityType, entry.organizationId, entry.channelId).min === 0
-        ) {
-          entry.dueAt = 0;
-          changed = true;
-        }
-      }
-      if (changed) void flushDue();
-    });
+    router.subscribe('onLoad', () => promoteLiveScopes());
   });
 }
