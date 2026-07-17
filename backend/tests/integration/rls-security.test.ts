@@ -722,10 +722,13 @@ const rlsSuiteReady = await (async () => {
     it('drops the count once the entity is marked seen', async () => {
       if (!rolesAvailable || !requiredTablesAvailable || !seenByAvailable) return;
       const seenId = '00000000-0000-4000-a000-0000000000a1';
+      // No ON CONFLICT arbiter: seen_by is partitioned by created_at, so a unique index on
+      // (user_id, entity_id) cannot exist — every unique index on a partitioned table must carry
+      // the partition column. mark-seen dedups with NOT EXISTS for the same reason. A plain insert
+      // is right here anyway: the row is a fixture with a fixed id, dropped again in `finally`.
       await adminDb.execute(sql`
         INSERT INTO seen_by (id, user_id, entity_id, entity_type, channel_id, organization_id, tenant_id, created_at)
         VALUES (${seenId}, ${TEST_USER_A}, ${TEST_ATTACHMENT_A}, 'attachment', ${TEST_ORG_A}, ${TEST_ORG_A}, ${TEST_TENANT_A}, NOW())
-        ON CONFLICT (user_id, entity_id) DO NOTHING
       `);
       try {
         const rows = await queryAsRuntimeRole<UnseenRow>(TEST_TENANT_A, TEST_USER_A, countUnseen);
