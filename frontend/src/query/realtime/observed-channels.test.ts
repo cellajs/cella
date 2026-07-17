@@ -68,7 +68,7 @@ describe('observed-channels', () => {
   it('marks a channel observed while its canonical scope query has an observer, and clears on unsubscribe', () => {
     expect(isObservedChannel('project-1')).toBe(false);
 
-    const unsubscribe = observe(taskKeys.list.scope('org-1', 'project-1'));
+    const unsubscribe = observe(taskKeys.list.home('org-1', 'project-1'));
     expect(isObservedChannel('project-1')).toBe(true);
 
     unsubscribe();
@@ -76,7 +76,7 @@ describe('observed-channels', () => {
   });
 
   it('does not count cached data without observers (prefetching sibling channels stays background)', () => {
-    queryClient.setQueryData([...taskKeys.list.scope('org-1', 'project-2')], []);
+    queryClient.setQueryData([...taskKeys.list.home('org-1', 'project-2')], []);
     expect(isObservedChannel('project-2')).toBe(false);
   });
 
@@ -89,7 +89,7 @@ describe('observed-channels', () => {
   });
 
   it('keeps a channel observed while any of its queries still has an observer', () => {
-    const first = observe(taskKeys.list.scope('org-1', 'project-4'));
+    const first = observe(taskKeys.list.home('org-1', 'project-4'));
     const second = observe(['task', 'list', { projectId: 'project-4' }]);
 
     first();
@@ -118,7 +118,7 @@ describe('isViewingScope with sub-org channels', () => {
 
   it('requires the route org to match, regardless of observation', () => {
     routeMatches = [{ context: { organization: { id: 'org-1' } } }];
-    const unsubscribe = observe(taskKeys.list.scope('org-2', 'project-7'));
+    const unsubscribe = observe(taskKeys.list.home('org-2', 'project-7'));
 
     expect(isViewingScope('org-2', 'project-7')).toBe(false);
 
@@ -135,25 +135,10 @@ describe('isViewingScope with sub-org channels', () => {
     routeMatches = [{ context: { organization: { id: 'org-1' } } }]; // Slug routes and boards name no project.
     expect(isViewingScope('org-1', 'project-8')).toBe(false);
 
-    const unsubscribe = observe(taskKeys.list.scope('org-1', 'project-8'));
+    const unsubscribe = observe(taskKeys.list.home('org-1', 'project-8'));
     expect(isViewingScope('org-1', 'project-8')).toBe(true);
 
     unsubscribe();
     expect(isViewingScope('org-1', 'project-8')).toBe(false);
-  });
-});
-
-describe('registerEntityQueryKeys scope-key guard', () => {
-  it('rejects sub-org-homed entities whose keys cannot carry the channel id', () => {
-    const badKeys = {
-      list: { base: ['task', 'list'], org: () => [], scope: () => [], scopeKeys: ['organizationId'] },
-      detail: { base: ['task', 'detail'], byId: (id: string) => ['task', 'detail', id] },
-    };
-    expect(() => registerEntityQueryKeys(TASK, badKeys)).toThrow(/projectId/);
-  });
-
-  it('accepts createEntityKeys-built keys and org-homed entities', () => {
-    expect(() => registerEntityQueryKeys(TASK, createEntityKeys(TASK))).not.toThrow();
-    expect(() => registerEntityQueryKeys('attachment', createEntityKeys('attachment'))).not.toThrow();
   });
 });

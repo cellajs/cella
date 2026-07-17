@@ -1,4 +1,4 @@
-import { appConfig, type EntityType, hierarchy } from 'shared';
+import type { EntityType } from 'shared';
 
 type StandardEntityKeys<
   E extends EntityType,
@@ -8,14 +8,12 @@ type StandardEntityKeys<
   all: [E];
   list: {
     base: [E, 'list'];
-    /** Org-scoped prefix: prefix-matches all list queries for one org */
+    /** Org-scoped prefix: prefix-matches all list queries for one org. A scan/invalidation prefix, never a data key. */
     org: (organizationId: string) => [E, 'list', string];
     /** List key qualified with filters (default: no org segment) */
     filtered: (filters: LF) => [E, 'list', LF];
-    /** Canonical scope key: args are hierarchy ancestor IDs (root-first) */
-    scope: (...ancestorIds: string[]) => readonly [E, 'list', ...string[]];
-    /** Ancestor ID column keys in root-first order, e.g. ['organizationId', 'projectId'] for task */
-    scopeKeys: readonly string[];
+    /** Canonical home list: one flat list per home channel (org-homed rows: omit homeChannelId) */
+    home: (organizationId: string, homeChannelId?: string) => [E, 'list', string, string];
   };
   detail: {
     base: [E, 'detail'];
@@ -28,10 +26,10 @@ type StandardEntityKeys<
 
 /**
  * True when a list view's filters all sit at their defaults (absent, empty, or equal). The
- * signal to serve the view from the entity's canonical scope query, which live sync keeps
+ * signal to serve the view from the entity's canonical home list, which live sync keeps
  * fresh and splices creates into. Filtered queries can only be invalidated.
  *
- * Only valid for entities whose default list response IS the unfiltered scope: delta rows
+ * Only valid for entities whose default list response IS the unfiltered home list: delta rows
  * must be row-identical to default-list rows. Fork feeds with implicit server-side filters
  * (e.g. draft exclusion) must keep their filtered keys and not adopt this.
  */
@@ -43,31 +41,34 @@ export function isDefaultListView(filters: Record<string, unknown>, defaults: Re
 
 /**
  * Standardized query keys for an entity module. Key hierarchy (prefix-matchable):
- *   [entity, 'list']                              broadest (all queries)
- *   [entity, 'list', organizationId]              all queries for one org
- *   [entity, 'list', organizationId, projectId]  canonical scope: the base list live sync patches (product entities)
- *   [entity, 'list', organizationId, {filters}]  specific filtered query
+ *   [entity, 'list']                                 broadest (all queries)
+ *   [entity, 'list', organizationId]                 all queries for one org (a prefix, never a data key)
+ *   [entity, 'list', organizationId, homeChannelId]  canonical home list: the one list live sync splices into
+ *   [entity, 'list', organizationId, {filters}]      specific filtered query (invalidation-synced)
  *
- * Scope ancestors derived from hierarchy-config: task -> scope(organizationId, projectId), page -> scope().
- * `list.scopeKeys` exposes ancestor ID column names for entity-agnostic scope derivation.
+ * The cache is keyed the way SSE is routed: every row belongs to exactly one canonical home
+ * list, its effective home channel's (deepest non-null ancestor; the org itself for org-homed
+ * rows — see resolve-row-channel). Views derive from the home list via select(). Any list that
+ * spans home channels or applies server-side filters is a filtered key: live sync cannot
+ * splice rows into it and invalidates it instead.
  */
 export function createEntityKeys<
   LF extends object,
   SID extends string | number = string,
   E extends EntityType = EntityType,
 >(entityType: E): StandardEntityKeys<E, LF, SID> {
-  // Derive scope ancestors from hierarchy (reverse to root-first order for key segments)
-  const ancestors = [...hierarchy.getOrderedAncestors(entityType)].reverse();
-  const scopeKeys = Object.freeze(ancestors.map((a) => appConfig.entityIdColumnKeys[a as EntityType]));
-
   return {
     all: [entityType],
     list: {
       base: [entityType, 'list'],
       org: (organizationId: string) => [entityType, 'list', organizationId],
       filtered: (filters: LF) => [entityType, 'list', filters],
-      scope: (...ancestorIds: string[]) => [entityType, 'list', ...ancestorIds] as const,
-      scopeKeys,
+      home: (organizationId: string, homeChannelId?: string) => [
+        entityType,
+        'list',
+        organizationId,
+        homeChannelId ?? organizationId,
+      ],
     },
     detail: {
       base: [entityType, 'detail'],
