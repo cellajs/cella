@@ -6,6 +6,7 @@ import { sendNewsletterOp } from '#/modules/system/operations/send-newsletter';
 import { updateUserOp } from '#/modules/system/operations/update-user';
 import { systemRoutes } from '#/modules/system/system-routes';
 import '#/modules/system/system-module';
+import '#/modules/system/system-listeners';
 import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });

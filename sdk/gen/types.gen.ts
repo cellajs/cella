@@ -113,7 +113,7 @@ export type StreamNotification = {
   kind: 'entity' | 'membership';
   action: 'create' | 'update' | 'delete';
   entityType: 'attachment' | null;
-  resourceType: 'request' | 'membership' | 'inactive_membership' | 'tenant' | null;
+  resourceType: 'request' | 'membership' | 'inactive_membership' | 'tenant' | 'system_role' | null;
   subjectId: string | null;
   organizationId: string | null;
   tenantId: string | null;

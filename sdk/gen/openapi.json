@@ -671,7 +671,7 @@
           },
           "resourceType": {
             "type": ["string", "null"],
-            "enum": ["request", "membership", "inactive_membership", "tenant", null]
+            "enum": ["request", "membership", "inactive_membership", "tenant", "system_role", null]
           },
           "subjectId": {
             "type": ["string", "null"]
