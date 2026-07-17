@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { attachmentsDb } from '../dexie/attachments-db';
+import { attachmentsDb } from '../offline/attachments-db';
 
 // Mock external deps before imports
 vi.mock('shared', async () => ({
@@ -11,31 +11,26 @@ vi.mock('@tanstack/react-query', () => ({
   onlineManager: { isOnline: () => true },
 }));
 
-vi.mock('../dexie/storage-service', () => ({
+vi.mock('../offline/storage-service', () => ({
   attachmentStorage: {
     getStorageUsed: vi.fn().mockResolvedValue(0),
-    hasAnyVariant: vi.fn().mockResolvedValue(null),
     hasVariant: vi.fn().mockResolvedValue(false),
     storeDownloadBlobWithVariant: vi.fn().mockResolvedValue({}),
     evictRawBlob: vi.fn().mockResolvedValue(false),
     getStoredVariants: vi.fn().mockResolvedValue([]),
     deleteBlobs: vi.fn().mockResolvedValue(undefined),
-    clearAll: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
-vi.mock('../dexie/download-queue', async () => {
-  const actual = await vi.importActual('../dexie/download-queue');
-  return actual;
+vi.mock('../file-url', async () => {
+  // Keep the real getVariantKey (pure key lookup the service branches on); stub only the network.
+  const actual = await vi.importActual<typeof import('../file-url')>('../file-url');
+  return { ...actual, getCloudUrl: vi.fn().mockResolvedValue('https://example.com/file.png') };
 });
-
-vi.mock('../file-url', () => ({
-  getPrivateFileUrlById: vi.fn().mockResolvedValue('https://example.com/file.png'),
-  getPublicFileUrl: vi.fn().mockReturnValue('https://cdn.example.com/file.png'),
-}));
 
 vi.mock('../query', () => ({
   findAttachmentInCache: vi.fn().mockReturnValue(null),
+  attachmentQueryKeys: { list: { base: ['attachment', 'list'] }, delete: ['attachment', 'delete'] },
 }));
 
 vi.mock('~/query/basic/flatten', () => ({
@@ -82,9 +77,9 @@ vi.mock('~/modules/user/user-store', () => ({
 vi.mock('~/modules/me/types', () => ({}));
 
 import { bindAppDb } from '~/query/app-db';
-import { downloadQueue } from '../dexie/download-queue';
-import { attachmentStorage } from '../dexie/storage-service';
-import { downloadService } from '../download-service';
+import { downloadQueue } from '../offline/download-queue';
+import { downloadService } from '../offline/download-service';
+import { attachmentStorage } from '../offline/storage-service';
 import { findAttachmentInCache } from '../query';
 import { makeAttachment, makeQueueEntry } from './test-setup';
 
@@ -103,7 +98,7 @@ describe('downloadService.processQueue — failed download retry', () => {
     await attachmentsDb.blobs.clear();
   });
 
-  it('failed entries stay terminal and are not picked up again', async () => {
+  it('processQueue does not pick up failed entries itself (reviving happens on enqueue)', async () => {
     await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'failed', attempts: 1 }));
 
     await downloadService.processQueue();
@@ -113,17 +108,27 @@ describe('downloadService.processQueue — failed download retry', () => {
     expect(entry?.attempts).toBe(1); // no retry attempt added
   });
 
-  it('does NOT reset failed entries when attempts >= 3', async () => {
+  it('re-queues a failed entry when the attachment is seen again and attempts remain', async () => {
+    await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'failed', attempts: 1 }));
+
+    await downloadService.queueForDownload([makeAttachment({ id: 'att-1' })]);
+
+    const entry = await attachmentsDb.downloadQueue.get('att-1');
+    expect(entry?.status).toBe('pending');
+  });
+
+  it('does NOT re-queue a failed entry once attempts reach the cap', async () => {
+    // downloadRetryAttempts is 3 in the test config.
     await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'failed', attempts: 3 }));
 
-    await downloadService.processQueue();
+    await downloadService.queueForDownload([makeAttachment({ id: 'att-1' })]);
 
     const entry = await attachmentsDb.downloadQueue.get('att-1');
     expect(entry?.status).toBe('failed');
     expect(entry?.attempts).toBe(3);
   });
 
-  it('downloaded entries persist (gc no longer runs in hot path)', async () => {
+  it('downloaded entries persist, serving as the dedupe registry', async () => {
     await attachmentsDb.downloadQueue.add(
       makeQueueEntry({ id: 'att-done', status: 'downloaded', organizationId: 'org-1' }),
     );

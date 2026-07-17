@@ -19,16 +19,21 @@ export const parseUploadedAttachments = (
   for (const file of originalFiles) {
     const { size, url, mime, original_name, original_id, user_meta } = file;
 
-    // Keep a locally generated UUID for API writes. Upload IDs are only used
-    // to correlate converted and thumbnail variants back to the original file.
+    // Upload IDs are only used to correlate converted and thumbnail variants back to the original.
     const uploadId = Array.isArray(original_id) ? original_id[0] : original_id;
 
     const filename = original_name || user_meta?.name || 'file';
     const extIndex = filename.lastIndexOf('.');
     const name = extIndex > 0 ? filename.substring(0, extIndex) : filename;
 
+    // Reuse the id minted before upload (`onBeforeFileAdded`, round-tripped as user_meta) so the
+    // row matches the local blob already stored under it. Falling back to a fresh id would
+    // silently orphan that blob, so only do it for uploads that predate the meta.
+    const attachmentId = user_meta?.attachmentId;
+
     // Use createOptimisticEntity to get schema defaults (including placeholder tx)
     const attachment = createOptimisticEntity(zAttachment, {
+      id: attachmentId,
       size: String(size ?? 0),
       contentType: mime ?? 'application/octet-stream',
       filename,

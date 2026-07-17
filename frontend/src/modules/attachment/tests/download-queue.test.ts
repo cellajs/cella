@@ -1,21 +1,21 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { attachmentsDb } from '../dexie/attachments-db';
+import { attachmentsDb } from '../offline/attachments-db';
 
 // Mock external deps
 vi.mock('shared', async () => ({
   appConfig: (await import('./test-setup')).mockAttachmentAppConfig,
 }));
 
-vi.mock('../dexie/storage-service', () => ({
+vi.mock('../offline/storage-service', () => ({
   attachmentStorage: {
     getStoredVariants: vi.fn().mockResolvedValue([]),
   },
 }));
 
 import { bindAppDb } from '~/query/app-db';
-import { downloadQueue } from '../dexie/download-queue';
-import { attachmentStorage } from '../dexie/storage-service';
+import { downloadQueue } from '../offline/download-queue';
+import { attachmentStorage } from '../offline/storage-service';
 import { makeAttachment, makeQueueEntry } from './test-setup';
 
 // Attachment tables live in the per-user appdb; bind one so `attachmentsDb` resolves.
@@ -183,36 +183,52 @@ describe('downloadQueue', () => {
     });
   });
 
-  describe('gc', () => {
-    it('removes downloaded entries', async () => {
+  describe('remove', () => {
+    it('drops entries for deleted attachments', async () => {
       await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'downloaded' }));
-      await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-2', status: 'downloaded' }));
+      await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-2', status: 'pending' }));
 
-      await downloadQueue.gc('org-1');
-
-      const count = await attachmentsDb.downloadQueue.count();
-      expect(count).toBe(0);
-    });
-
-    it('removes skipped entries', async () => {
-      await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'skipped' }));
-
-      await downloadQueue.gc('org-1');
-
-      const count = await attachmentsDb.downloadQueue.count();
-      expect(count).toBe(0);
-    });
-
-    it('preserves pending and failed entries', async () => {
-      await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'pending' }));
-      await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-2', status: 'failed' }));
-      await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-3', status: 'downloaded' }));
-
-      await downloadQueue.gc('org-1');
+      await downloadQueue.remove(['att-1']);
 
       const remaining = await attachmentsDb.downloadQueue.toArray();
-      expect(remaining).toHaveLength(2);
-      expect(remaining.map((e) => e.id).sort()).toEqual(['att-1', 'att-2']);
+      expect(remaining.map((e) => e.id)).toEqual(['att-2']);
+    });
+
+    it('is a no-op for an empty id list', async () => {
+      await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1' }));
+
+      await downloadQueue.remove([]);
+
+      expect(await attachmentsDb.downloadQueue.count()).toBe(1);
+    });
+  });
+
+  describe('enqueue — reviving failed entries', () => {
+    it('resets a failed entry to pending while attempts remain', async () => {
+      await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'failed', attempts: 2 }));
+
+      await downloadQueue.enqueue([makeAttachment({ id: 'att-1' })], 'org-1');
+
+      const entry = await attachmentsDb.downloadQueue.get('att-1');
+      expect(entry?.status).toBe('pending');
+      // Attempts are preserved so the cap still bites on the next failure.
+      expect(entry?.attempts).toBe(2);
+    });
+
+    it('leaves a failed entry alone once attempts reach the cap', async () => {
+      await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'failed', attempts: 3 }));
+
+      await downloadQueue.enqueue([makeAttachment({ id: 'att-1' })], 'org-1');
+
+      expect((await attachmentsDb.downloadQueue.get('att-1'))?.status).toBe('failed');
+    });
+
+    it('leaves downloaded entries untouched (dedupe registry)', async () => {
+      await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'downloaded' }));
+
+      await downloadQueue.enqueue([makeAttachment({ id: 'att-1' })], 'org-1');
+
+      expect((await attachmentsDb.downloadQueue.get('att-1'))?.status).toBe('downloaded');
     });
   });
 });

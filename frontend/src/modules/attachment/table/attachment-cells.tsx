@@ -6,9 +6,10 @@ import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import type { Attachment } from 'sdk';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
-import { getPrivateFileUrlById, getPublicFileUrl } from '~/modules/attachment/file-url';
+import { openAttachmentDialogSearch } from '~/modules/attachment/dialog/params';
+import { getCloudUrl } from '~/modules/attachment/file-url';
 import { useAttachmentUrl } from '~/modules/attachment/hooks/use-attachment-url';
-import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
+import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-upload-status';
 import type { EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
 import { TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -43,11 +44,7 @@ export const ThumbnailCell = ({ row, tabIndex }: ThumbnailCellProps) => {
       to: '.',
       replace: false,
       resetScroll: false,
-      search: (prev) => ({
-        ...prev,
-        attachmentDialogId: id,
-        groupId: groupId || undefined,
-      }),
+      search: openAttachmentDialogSearch(id, groupId),
     });
   };
 
@@ -77,7 +74,7 @@ const SyncStatusBadge = ({ attachmentId }: { attachmentId: string }) => {
     tooltip = t('c:uploading');
   } else if (isPending) {
     icon = <CloudUploadIcon className="size-2.5 text-background" />;
-    tooltip = t('c:pending_sync');
+    tooltip = t('c:pending_upload');
   } else if (isFailed) {
     icon = <CircleAlertIcon className="size-2.5 text-background" />;
     tooltip = t('c:upload_failed');
@@ -130,11 +127,11 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
       data-tooltip="true"
       data-tooltip-content={t('c:download')}
       onClick={() =>
-        (row.public
-          ? Promise.resolve(getPublicFileUrl(row.originalKey))
-          : getPrivateFileUrlById(row.id, 'original', row.tenantId, row.organizationId)
-        )
-          .then((url) => download(url, row.filename))
+        getCloudUrl(row, 'original')
+          .then((url) => {
+            if (!url) throw new Error('No cloud URL for attachment');
+            return download(url, row.filename);
+          })
           .catch(() => toaster(t('error:download_failed'), 'error'))
       }
     >

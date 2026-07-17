@@ -1,6 +1,6 @@
 import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/attachments-carousel';
+import { attachmentDialogContentClassName, attachmentDialogOptions } from '~/modules/attachment/dialog/params';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { getRouter } from '~/routes/_router-instance';
 
 interface OpenAttachmentDialogParams {
   attachmentIndex: number;
@@ -9,41 +9,23 @@ interface OpenAttachmentDialogParams {
 }
 
 /**
- * Opens an attachment dialog with carousel.
+ * Open the attachment carousel imperatively, for callers that already hold resolved items
+ * (BlockNote media). Unlike the URL-driven `AttachmentDialogHandler`, this dialog is not bound to
+ * search params, so it is not deep-linkable and the carousel does not rewrite the URL.
+ *
  * Works with both cloud and local blob URLs.
  */
 export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef }: OpenAttachmentDialogParams) => {
   useDialoger.getState().create(
-    <div className="relative -z-1 flex h-screen grow flex-wrap justify-center p-2">
+    <div className={attachmentDialogContentClassName}>
       <AttachmentsCarousel items={attachments} isDialog itemIndex={attachmentIndex} saveInSearchParams={false} />
     </div>,
-    {
+    attachmentDialogOptions({
       id: 'attachment-dialog',
       triggerRef: triggerRef || {
         current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
       },
-      drawerOnMobile: false,
-      className: 'min-w-full h-dvh max-h-dvh border-0 p-0 rounded-none flex flex-col mt-0',
       headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
-    },
-  );
-};
-
-/**
- * Handler for attachment dialog.
- * It creates and removes an attachment dialog by listening to `attachmentDialogId` in search parameters.
- */
-export const clearAttachmentDialogSearchParams = () => {
-  // Keep this on the router instance rather than `useNavigate()`: `to: '.'` resolves against the
-  // current location here, where a hook would resolve it against the calling component's match.
-  getRouter().navigate({
-    to: '.',
-    replace: true,
-    resetScroll: false,
-    search: (prev) => ({
-      ...prev,
-      attachmentDialogId: undefined,
-      groupId: undefined,
     }),
-  });
+  );
 };

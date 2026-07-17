@@ -2,7 +2,7 @@ import type { EntityTable } from 'dexie';
 import type { UploadTemplateId } from 'shared';
 import { getAppDb } from '~/query/app-db';
 
-export type BlobSource = 'upload' | 'download';
+type BlobSource = 'upload' | 'download';
 export type UploadStatus = 'pending' | 'uploading' | 'uploaded' | 'failed' | 'local-only';
 export type DownloadStatus = 'pending' | 'downloading' | 'downloaded' | 'failed' | 'skipped';
 
@@ -23,36 +23,18 @@ export function makeBlobKey(attachmentId: string, variant: BlobVariant): string 
   return `${attachmentId}:${variant}`;
 }
 
-/**
- * Parse composite key back to attachmentId and variant.
- */
-export function parseBlobKey(compositeKey: string): { attachmentId: string; variant: BlobVariant } | null {
-  const lastColon = compositeKey.lastIndexOf(':');
-  if (lastColon === -1) return null;
-
-  const attachmentId = compositeKey.slice(0, lastColon);
-  const variant = compositeKey.slice(lastColon + 1) as BlobVariant;
-
-  if (!['raw', 'original', 'converted', 'thumbnail'].includes(variant)) return null;
-
-  return { attachmentId, variant };
-}
-
-/** Upload context stored with blob for sync worker to use when re-uploading */
+/** Upload context stored with a blob, used when the upload service re-uploads it. */
 export interface UploadContext {
   templateId: UploadTemplateId;
   public: boolean;
 }
 
 /**
- * Blob storage. One table serves both 'upload' (created locally, pending cloud sync) and
+ * Blob storage. One table serves both 'upload' (created locally, pending cloud upload) and
  * 'download' (fetched from cloud for offline viewing) sources.
  */
 export interface AttachmentBlob {
-  /**
-   * Composite key: `${attachmentId}:${variant}`
-   * Use makeBlobKey() to create, parseBlobKey() to parse.
-   */
+  /** Composite key: `${attachmentId}:${variant}`. Use makeBlobKey() to create. */
   id: string;
 
   /** The attachment ID this blob belongs to */
@@ -67,10 +49,10 @@ export interface AttachmentBlob {
   /** The actual file blob */
   blob: Blob;
 
-  /** Original filename (for sync worker to use during re-upload) */
+  /** Original filename (used by the upload service during re-upload) */
   filename?: string;
 
-  /** Upload context for sync worker (templateId, public flag) */
+  /** Upload context for the upload service (templateId, public flag) */
   uploadContext?: UploadContext;
 
   /** File size in bytes (denormalized for filtering) */
@@ -79,17 +61,18 @@ export interface AttachmentBlob {
   /** MIME type (denormalized for filtering) */
   contentType: string;
 
-  /** How this blob was created: 'upload' (local, may need cloud sync) or 'download' (from cloud). */
+  /** How this blob was created: 'upload' (local, may need uploading) or 'download' (from cloud). */
   source: BlobSource;
 
   /**
-   * Upload status. Note 'uploaded' also covers blobs downloaded from cloud, and 'local-only' means
-   * no cloud is configured (permanent local storage); other states apply only to source='upload'.
+   * Upload status. Note 'uploaded' also covers blobs downloaded from cloud (it effectively means
+   * "exists in cloud"), and 'local-only' means no cloud is configured (permanent local storage);
+   * other states apply only to source='upload'.
    */
   uploadStatus: UploadStatus;
 
   /** Upload retry count (source='upload' only) */
-  syncAttempts?: number;
+  uploadAttempts?: number;
 
   /** Next retry timestamp for exponential backoff (source='upload' only) */
   nextRetryAt?: Date | null;
@@ -102,7 +85,7 @@ export interface AttachmentBlob {
 }
 
 /**
- * Download queue that tracks which attachments to fetch for offline.
+ * Download queue that tracks which attachments to cache locally for offline viewing.
  * Separate from blob storage for clean queue management.
  */
 export interface DownloadQueueEntry {

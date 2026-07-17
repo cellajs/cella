@@ -1,5 +1,5 @@
 import { ErrorBoundary } from 'react-error-boundary';
-import { AttachmentDialogHandler } from '~/modules/attachment/dialog/handler';
+import { AttachmentDialogHandler } from '~/modules/attachment/dialog/attachment-dialog-handler';
 import { DownAlert } from '~/modules/common/alerter/down-alert';
 import { AppContent } from '~/modules/common/app/app-content';
 import { Dialoger } from '~/modules/common/dialoger/provider';

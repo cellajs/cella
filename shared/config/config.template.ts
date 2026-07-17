@@ -257,6 +257,7 @@ export const config = {
     allowedContentTypes: [] as string[],
     excludedContentTypes: ['video/*'] as string[],
     downloadConcurrency: 2,
+    downloadRetryAttempts: 3,
     uploadRetryAttempts: 3,
     uploadRetryDelays: [60000, 300000, 900000] as const,
   },

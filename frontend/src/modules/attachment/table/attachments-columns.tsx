@@ -2,8 +2,8 @@ import { UserIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
-import { DownloadCell, EllipsisCell, ThumbnailCell } from '~/modules/attachment/table/cells';
-import { formatBytes } from '~/modules/attachment/table/helpers';
+import { seenWindowMs } from 'shared';
+import { DownloadCell, EllipsisCell, ThumbnailCell } from '~/modules/attachment/table/attachment-cells';
 import { EditCellInput } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -12,9 +12,9 @@ import { SeenMark } from '~/modules/seen/seen-mark';
 import { UserCell } from '~/modules/user/user-cell';
 import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
+import { formatBytes } from '~/utils/format-bytes';
 
-const seenWindowMs = 90 * 24 * 60 * 60 * 1000;
-
+/** Views are only counted inside the seen ledger's retention window; older rows read 0. */
 const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
   if (!createdAt) return false;
 

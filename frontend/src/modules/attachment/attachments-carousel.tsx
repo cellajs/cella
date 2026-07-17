@@ -6,7 +6,8 @@ import { useCallback, useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { useLatestCallback, useLatestRef } from '~/hooks/use-latest-ref';
-import { clearAttachmentDialogSearchParams, openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
+import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
+import { ATTACHMENT_DIALOG_PARAM, clearAttachmentDialogSearchParams } from '~/modules/attachment/dialog/params';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
 import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
 import { CloseButton } from '~/modules/common/close-button';
@@ -28,9 +29,12 @@ import { cn } from '~/utils/cn';
 export type CarouselItemData = {
   id: string;
   url: string;
-  convertedUrl?: string | null;
   name?: string;
   filename?: string;
+  /**
+   * Content type driving renderer choice. BlockNote passes a block *type* ('image', 'video'…)
+   * rather than a mime type; `AttachmentRender` matches both by substring.
+   */
   contentType?: string;
   convertedContentType?: string | null;
 };
@@ -97,10 +101,7 @@ export function AttachmentsCarousel({
       to: '.',
       replace: true,
       resetScroll: false,
-      search: (prev) => ({
-        ...prev,
-        attachmentDialogId: newItem.id,
-      }),
+      search: (prev) => ({ ...prev, [ATTACHMENT_DIALOG_PARAM]: newItem.id }),
     });
   };
 
@@ -175,7 +176,7 @@ export function AttachmentsCarousel({
       )}
 
       <CarouselContent className="h-full">
-        {items.map(({ id, url, convertedUrl, contentType = 'image', convertedContentType }, idx) => {
+        {items.map(({ id, url, contentType = 'image', convertedContentType }, idx) => {
           return (
             <CarouselItem
               key={id}
@@ -193,8 +194,8 @@ export function AttachmentsCarousel({
                 type={convertedContentType || contentType}
                 imagePanZoom={isDialog}
                 showButtons={currentItemIndex === idx}
-                url={convertedUrl ?? url}
-                altName={`Slide ${idx}`}
+                url={url}
+                altName={i18n.t('c:attachment')}
                 onPanStateToggle={toggleWatchDrag}
               />
             </CarouselItem>

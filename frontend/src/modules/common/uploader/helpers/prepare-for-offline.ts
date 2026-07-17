@@ -1,7 +1,7 @@
 import type { AssemblyResponse } from '@uppy/transloadit';
 import { uploadTemplates } from 'shared/transloadit-config';
-import type { UploadContext, UploadStatus } from '~/modules/attachment/dexie/attachments-db';
-import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
+import type { UploadContext, UploadStatus } from '~/modules/attachment/offline/attachments-db';
+import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
 
@@ -32,9 +32,9 @@ export const prepareFilesForOffline: PrepareFilesForOffline = async (files, toke
     public: tokenQuery.public,
   };
 
-  // Store each file blob locally
+  // Store each file blob locally, under the id its attachment row will be created with.
   for (const file of Object.values(files)) {
-    await attachmentStorage.storeUploadBlob(file, organizationId, uploadStatus, uploadContext);
+    await attachmentStorage.storeUploadBlob(file, organizationId, uploadStatus, uploadContext, file.meta.attachmentId);
   }
 
   // Prepare files for a manual 'complete' event (successfully uploaded files)
