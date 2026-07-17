@@ -8,7 +8,7 @@ import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 /**
  * Email spam limit for endpoints where emails are sent to others. Max 10 requests per hour.
  * Keyed per user when authenticated, so invite flows behind a shared office/NAT IP get their
- * own budget (and rotating IPs does not mint fresh buckets); falls back to IP for anonymous
+ * own budget (and rotating IPs does not create fresh buckets); falls back to IP for anonymous
  * requests (sign up, public requests etc.).
  */
 export const spamLimiter = rateLimiter('success', 'spam', [['userId', 'ip']], {

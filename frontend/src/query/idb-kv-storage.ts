@@ -1,7 +1,7 @@
 import type { StateStorage } from 'zustand/middleware';
 import { type AppDatabase, getAppDb } from '~/query/app-db';
 
-/** Trailing-debounce window: coalesces write bursts (e.g. per-frame resize) into one txn. */
+/** Trailing-debounce window: batches write bursts (e.g. per-frame resize) into one txn. */
 const WRITE_DEBOUNCE_MS = 250;
 
 /** Flush callbacks for every live store, invoked on tab hide for best-effort durability. */

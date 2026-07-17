@@ -10,7 +10,7 @@ import { verifyToken } from './auth';
 import { stripYjsPrefix } from './path-prefix';
 import { checkConnectionRate } from './rate-limiter';
 import { joinCollab, leaveCollab } from '../sync/session-manager';
-import { handleMessage, flushPendingBuffer, discardPendingBuffer } from '../sync/relay';
+import { handleMessage, releaseBufferedMessages, discardPendingBuffer } from '../sync/relay';
 
 /**
  * Reject the upgrade at the HTTP level: no WebSocket handshake is completed.
@@ -26,11 +26,11 @@ function rejectUpgrade(socket: Duplex, code: number, reason: string): void {
   );
 }
 
-/** Apply the result of entity verification: flush buffered messages on success, discard and close on failure. */
+/** Apply the result of entity verification: release buffered messages on success, discard and close on failure. */
 function applyVerifyResult(ws: WebSocket, ctx: DocContext, allowed: boolean): void {
   if (allowed) {
     ctx.verified = true;
-    flushPendingBuffer(ws);
+    releaseBufferedMessages(ws);
     log.debug(`Entity verified for ${ctx.entityType}:${ctx.entityId}`, { userId: ctx.userId });
   } else {
     log.warn(`Entity access denied for ${ctx.entityType}:${ctx.entityId}`);

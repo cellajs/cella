@@ -18,7 +18,7 @@ interface FindUnseenCountsByUserOpts {
   entityTypes: readonly SeenTrackedEntityType[];
   cutoff: string;
   /**
-   * Per-type collection read predicate (same compiler as list endpoints), so badges
+   * Per-type collection read filter (same SQL compiler as list endpoints), so badges
    * only count rows the user can actually fetch. `undefined` value = unrestricted
    * scope for that type; a type absent from the record is counted unrestricted too
    * (callers should pre-drop types whose scope resolved to `none`).

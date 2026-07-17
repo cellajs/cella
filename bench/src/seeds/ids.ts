@@ -11,7 +11,7 @@ const benchUuid = (variant: string, i: number) => `${BENCH_UUID_PREFIX}${variant
 /**
  * Variant byte (UUID group-4) claimed per core entity: the single source shared
  * by the id helpers below and each seed's `idVariant` (which derives its cleanup
- * predicate), so an id and the rows it cleans up can never drift apart.
+ * WHERE clause), so an id and the rows it cleans up can never drift apart.
  *
  * cella core owns the `a*` band; forks must claim the `b*` band so new core and
  * fork entities never collide across upstream syncs.

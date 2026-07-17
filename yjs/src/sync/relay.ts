@@ -19,7 +19,7 @@ const awarenessTimestamps = new WeakMap<WebSocket, number>();
 
 /**
  * Per-client message buffer: queues all sync messages (reads and writes) while entity verification is pending.
- * Once verified, the buffer is flushed. If denied, it's discarded.
+ * Once verified, the buffered messages are released and applied. If denied, they're discarded.
  */
 const pendingBuffers = new WeakMap<WebSocket, { ctx: DocContext; messages: Uint8Array[] }>();
 
@@ -36,8 +36,8 @@ function bufferMessage(ws: WebSocket, ctx: DocContext, rawMessage: Uint8Array): 
   }
 }
 
-/** Flush queued messages after entity verification succeeds. Replays them through handleMessage. */
-export function flushPendingBuffer(ws: WebSocket): void {
+/** Release queued messages after entity verification succeeds. Replays them through handleMessage. */
+export function releaseBufferedMessages(ws: WebSocket): void {
   const buf = pendingBuffers.get(ws);
   if (!buf || buf.messages.length === 0) {
     pendingBuffers.delete(ws);
@@ -49,7 +49,7 @@ export function flushPendingBuffer(ws: WebSocket): void {
 
   for (const raw of messages) {
     handleMessage(ctx, ws, raw).catch((err) => {
-      log.error(`Failed to flush buffered message for ${ctx.entityType}:${ctx.entityId}`, { err: err });
+      log.error(`Failed to apply buffered message for ${ctx.entityType}:${ctx.entityId}`, { err: err });
     });
   }
 }
@@ -92,7 +92,7 @@ export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8A
   const messageType = decoding.readVarUint(decoder);
 
   if (messageType === YMessage.Sync) {
-    // Gate all sync messages (reads + writes) until entity access is verified
+    // Buffer all sync messages (reads + writes) until entity access is verified
     if (!ctx.verified) {
       bufferMessage(ws, ctx, data);
       return;

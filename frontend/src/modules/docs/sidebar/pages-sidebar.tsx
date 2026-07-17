@@ -33,7 +33,7 @@ export function PagesSidebar({ onClose }: PagesSidebarProps) {
     return new Map(pages.map((p) => [p.id, p.parentId && validIds.has(p.parentId) ? p.parentId : null]));
   }, [pages]);
 
-  // Accordion: expanding an id evicts its siblings (same effective parent) from the set
+  // Accordion: expanding an id collapses its siblings (same effective parent, removed from the set)
   const expandExclusive = (next: Set<string>, id: string) => {
     const parent = parentById.get(id) ?? null;
     for (const other of [...next]) if (parentById.get(other) === parent) next.delete(other);

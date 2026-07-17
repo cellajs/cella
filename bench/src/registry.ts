@@ -29,7 +29,7 @@ export interface TableBenchSeed {
    */
   idVariant?: string;
   /**
-   * Explicit cleanup predicate: use only when rows aren't identified by an id
+   * Explicit cleanup WHERE clause: use only when rows aren't identified by an id
    * variant (e.g. `"tenant_id = '...'"`). Prefer `idVariant` for id-based rows.
    */
   cleanupWhere?: string;
@@ -62,7 +62,7 @@ const VARIANT_PATTERN = /^[89ab][0-9a-f]{3}$/;
 
 export const getBenchSeedName = (seed: BenchSeed): string => (seed.kind === 'custom' ? seed.name : seed.table);
 
-/** Derive the cleanup WHERE predicate for a table seed from its `idVariant`, or fall back to an explicit `cleanupWhere`. */
+/** Derive the cleanup WHERE clause for a table seed from its `idVariant`, or fall back to an explicit `cleanupWhere`. */
 export const getBenchSeedCleanupWhere = (seed: TableBenchSeed): string => {
   if (seed.idVariant) return `id::text LIKE '${BENCH_UUID_PREFIX}${seed.idVariant}%'`;
   if (seed.cleanupWhere) return seed.cleanupWhere;

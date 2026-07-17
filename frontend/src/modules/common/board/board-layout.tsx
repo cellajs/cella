@@ -101,7 +101,7 @@ export function BoardLayout({
   }));
 
   // Persisting is debounced at the storage layer (`idbKvStorage`), so a window resize firing
-  // onLayoutChanged ~per frame coalesces into a single write, so no extra throttling is needed here.
+  // onLayoutChanged ~per frame batches into a single write, so no extra throttling is needed here.
   const handleLayoutChanged = useCallback(
     (layout: Record<string, number>) => {
       onLayoutChanged?.(layout);

@@ -53,9 +53,9 @@ export function squashPendingMutation(
 
 /**
  * If a pending create exists for the entity (matched by temp `id`), merge the update `ops` into its
- * variables and return true — the caller then skips the normal update flow. False if none to coalesce.
+ * variables and return true — the caller then skips the normal update flow. False if none to squash into.
  */
-export function coalescePendingCreate(
+export function squashIntoPendingCreate(
   queryClient: QueryClient,
   createMutationKey: readonly unknown[],
   entityId: string,

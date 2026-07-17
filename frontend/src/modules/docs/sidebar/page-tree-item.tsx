@@ -180,7 +180,7 @@ export function buildPageNodeTree(pages: DocPage[]): PageNode[] {
   const validIds = new Set(pages.map((p) => p.id));
   const byParent = new Map<string | null, DocPage[]>();
   for (const p of pages) {
-    // Treat orphans (parent missing from visible set) as roots
+    // Treat parentless pages (parent missing from visible set) as roots
     const key = p.parentId && validIds.has(p.parentId) ? p.parentId : null;
     const list = byParent.get(key);
     if (list) list.push(p);

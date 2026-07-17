@@ -5,7 +5,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { checkConnectivity } from '~/query/offline/connectivity';
 import { isNetworkError } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
-import { flushStores } from '~/utils/flush-stores';
+import { teardownUserState } from '~/utils/teardown-user-state';
 
 /** Fallback messages for common errors, called lazily so i18next is initialized. */
 const getFallbackMessage = (status: number): string | undefined => {
@@ -114,9 +114,9 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
         redirectOptions.search = { redirect: redirectPath };
       }
 
-      // Soft-flush sensitive stores, then go to sign-in. Pass `false` so the appdb (unsynced offline
+      // Close sensitive stores without wiping, then go to sign-in. Pass `false` so the appdb (unsynced offline
       // work) stays on disk: a 401 is involuntary and the same user usually re-auths and recovers it.
-      flushStores(false);
+      teardownUserState(false);
       // Dynamic import breaks circular dep: query-client -> on-error -> router -> route tree -> query-client
       import('~/routes/router').then(({ router: r }) => r.navigate(redirectOptions));
     }

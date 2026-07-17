@@ -30,7 +30,7 @@ import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/invalidation-helpers';
 import { syncStaleTime } from '~/query/basic/sync-stale-config';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import { coalescePendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
+import { squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
 import { mergeServerResponse, syncEntityToCache } from '~/query/offline/update-success-utils';
 import { getRouteOrgId, getRouteTenantId } from '~/query/realtime/sync-priority';
 import { createResourceError } from '~/utils/resource-error';
@@ -210,7 +210,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
     mutationFn: updateAttachmentMutationFn,
     onMutate: async ({ id, ops }: UpdateAttachmentFullVars) => {
       // If there's a pending create for this entity, fold update ops into it
-      if (coalescePendingCreate(queryClient, keys.create, id, ops as Record<string, unknown>)) {
+      if (squashIntoPendingCreate(queryClient, keys.create, id, ops as Record<string, unknown>)) {
         return { coalesced: true };
       }
 

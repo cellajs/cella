@@ -252,7 +252,7 @@ describe('create + edit coalescing', () => {
     const createVars = { id: 'temp-1', name: 'New Task', status: 'todo' };
     cleanups.push(queuePendingMutation(queryClient, createKey, createVars));
 
-    // User edits the description while still offline; coalescePendingCreate merges into the pending create.
+    // User edits the description while still offline; squashIntoPendingCreate merges into the pending create.
     const mutations = queryClient.getMutationCache().findAll({ mutationKey: createKey });
     const pendingCreate = mutations.find((m) => {
       const vars = m.state.variables as { id?: string } | undefined;

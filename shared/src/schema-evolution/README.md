@@ -2,6 +2,12 @@
 
 Schema-evolution lens registry (doba lenses).
 
+**Vocabulary:** a **canonical** field name is the name in the entity's *current*
+schema version; an **alias** is a pre-rename name that old clients may still
+send. During an expand window both are accepted: lens seams normalize alias
+keys to canonical ones before any body access, and writes mirror to the twin
+field so old readers stay fresh.
+
 ## Lens convention: [`define.ts`](./define.ts)
 
 A lens declares a single breaking schema change once; everything else

@@ -1,6 +1,6 @@
 import { MutationObserver, QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { coalescePendingCreate, squashPendingMutation } from '../squash-utils';
+import { squashIntoPendingCreate, squashPendingMutation } from '../squash-utils';
 
 /**
  * Helper: create a mutation that stays "pending" by never resolving its mutationFn.
@@ -140,7 +140,7 @@ describe('squashPendingMutation', () => {
   });
 });
 
-describe('coalescePendingCreate', () => {
+describe('squashIntoPendingCreate', () => {
   let queryClient: QueryClient;
   const createKey = ['task', 'create'] as const;
   const cleanups: (() => void)[] = [];
@@ -158,7 +158,7 @@ describe('coalescePendingCreate', () => {
   });
 
   it('returns false when no pending create exists', () => {
-    const result = coalescePendingCreate(queryClient, createKey, 'entity-1', { name: 'Updated' });
+    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'Updated' });
     expect(result).toBe(false);
   });
 
@@ -166,7 +166,7 @@ describe('coalescePendingCreate', () => {
     const variables = { id: 'entity-1', name: 'Original' };
     cleanups.push(queuePendingMutation(queryClient, createKey, variables));
 
-    const result = coalescePendingCreate(queryClient, createKey, 'entity-1', { description: 'Added' });
+    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { description: 'Added' });
 
     expect(result).toBe(true);
     // Fields merged into existing create variables
@@ -176,7 +176,7 @@ describe('coalescePendingCreate', () => {
   it('ignores creates for different entities', () => {
     cleanups.push(queuePendingMutation(queryClient, createKey, { id: 'entity-2', name: 'Other' }));
 
-    const result = coalescePendingCreate(queryClient, createKey, 'entity-1', { name: 'X' });
+    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'X' });
     expect(result).toBe(false);
   });
 });

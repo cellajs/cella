@@ -98,7 +98,7 @@ export function useGridDimensions(
       notifyRef.current();
     };
 
-    // rAF throttle coalesces rapid scroll / resize calls into one frame.
+    // rAF throttle batches rapid scroll / resize calls into one frame.
     let rafId = 0;
     const scheduleUpdate = (fn: () => void) => {
       cancelAnimationFrame(rafId);

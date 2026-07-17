@@ -215,7 +215,7 @@ export function removeEntityFromListCache(entityId: string, keys: EntityQueryKey
 /**
  * Apply one server-truth row to detail + list caches — the single applicator shared by both
  * realtime paths (seq-range fetches and seq-less single fetches). Tombstones remove; rows
- * already cached update in place; unknown rows insert into their canonical scope lists only.
+ * already cached update in place; unknown rows insert only into their canonical scope list (the base per-scope list that live sync patches).
  * Returns true when the row was new to every scanned list cache, so callers can invalidate
  * filtered lists (object key segments — server-side filters we can't replicate) once per flush.
  */

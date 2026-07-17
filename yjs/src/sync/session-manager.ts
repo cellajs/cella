@@ -115,7 +115,7 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
         }
       }
 
-      // Gate deletion on a final materialization: the durable record must absorb the
+      // Delete only after a final materialization: the durable record must absorb the
       // session before its state is destroyed. Only 'retry' (backend/network down)
       // blocks: reschedule and keep the row. 'permanent' (entity deleted, permission
       // revoked) can never converge, so deletion proceeds.

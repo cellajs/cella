@@ -58,8 +58,8 @@ export function stateToBlocksJson(state: Uint8Array): string | null {
 
 /**
  * Materialize a session's current state into the entity's durable record.
- * Diffs against the session's last materialized content, so cursor-only save
- * windows and seed-only sessions cost nothing. On `retry` the baseline stays
+ * Diffs against the session's last materialized content, so caret-only save
+ * windows and seed-only (never-edited) sessions cost nothing. On `retry` the baseline stays
  * stale so the next save window (or gated cleanup) tries again.
  */
 export async function materializeState(collab: MaterializableSession, state: Uint8Array): Promise<MaterializeResult> {
