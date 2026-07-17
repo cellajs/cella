@@ -312,7 +312,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
   // The Scaleway provider authenticates from SCW_* env (set in childEnv).
   // On both fresh and resume runs that key is the operator bootstrap key.
   while (true) {
-    const code = await runPulumiUpWithHint(ctx.stackName, infraDir, ctx.childEnv)
+    const { code } = await runPulumiUpWithHint(ctx.stackName, infraDir, ctx.childEnv)
     if (code === 0) break
     if (!(await confirm({ message: 'Retry?', default: true }))) {
       await stackLock.release()
