@@ -20,7 +20,10 @@ It deliberately does **not** touch unrelated "context": `AuthContext`,
 `DbContext`, trace/span context, tenant context, Hono request `Context` /
 `ContextVariableMap`, `ContextMenu`, React `createContext`/`useContext`, canvas
 `getContext`, MCP. (The full allow-list is the `IDENTIFIERS` array in the
-script — add fork-specific channel-entity identifiers there before running.)
+script. Add fork-specific channel-entity identifiers via
+`--extra-identifiers <file>` — a fork-owned JSON array of strings, merged into
+the allow-list for the run — never by editing the script, which would conflict
+on the next sync.)
 
 ## Run it
 
@@ -30,6 +33,9 @@ On fork-specific code after pulling the upstream sweep:
 # from the repo root
 pnpm exec tsx cella/migrations/2026-07-channel-entity-rename/context-to-channel.ts inventory frontend/src backend/src   # report only
 pnpm exec tsx cella/migrations/2026-07-channel-entity-rename/context-to-channel.ts rewrite  frontend/src backend/src   # apply
+
+# with fork-specific identifiers (fork-identifiers.json: ["ItemContextModel", "contextBadge", …])
+pnpm exec tsx cella/migrations/2026-07-channel-entity-rename/context-to-channel.ts rewrite frontend/src backend/src --extra-identifiers fork-identifiers.json
 ```
 
 Then, by hand:

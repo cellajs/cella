@@ -25,10 +25,16 @@
  *   pnpm exec tsx cella/migrations/2026-07-channel-entity-rename/context-to-channel.ts inventory <srcDir ...>
  *   pnpm exec tsx cella/migrations/2026-07-channel-entity-rename/context-to-channel.ts rewrite  <srcDir ...>
  *
+ * Fork-specific identifiers go in a JSON array file passed via `--extra-identifiers`
+ * (merged into the allow-list for the run) — never by editing IDENTIFIERS below, which
+ * would conflict on the next sync:
+ *   ... rewrite <srcDir ...> --extra-identifiers fork-identifiers.json
+ *
  * @see README.md
  */
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 /** Whole-identifier allow-list: every "context"/"Context"/"CONTEXT" in these maps to channel. */
 export const IDENTIFIERS: readonly string[] = [
@@ -259,20 +265,25 @@ function toChannel(token: string): string {
   });
 }
 
-const idAlternation = [...IDENTIFIERS].sort((a, b) => b.length - a.length).join('|');
-const ID_RE = new RegExp(`\\b(${idAlternation})\\b`, 'g');
+/** Longest-first word-boundary alternation over an identifier allow-list. */
+export function buildIdRegex(identifiers: readonly string[]): RegExp {
+  const alternation = [...identifiers].sort((a, b) => b.length - a.length).join('|');
+  return new RegExp(`\\b(${alternation})\\b`, 'g');
+}
+
+const ID_RE = buildIdRegex(IDENTIFIERS);
 const stemAlternation = Object.keys(FILE_STEMS)
   .sort((a, b) => b.length - a.length)
   .join('|');
 const STEM_RE = new RegExp(`(${stemAlternation})`, 'g');
 
-export function transform(source: string): string {
+export function transform(source: string, idRe: RegExp = ID_RE): string {
   let out = source;
   out = out.replace(STEM_RE, (m) => FILE_STEMS[m] ?? m);
   out = out.replace(/\.context\(/g, '.channel(');
   out = out.replace(/\bcontext</g, 'channel<'); // entity-hierarchy + evolution-contract method defs
   out = out.replace(/'context'/g, "'channel'"); // EntityKind literal + OpenAPI tag
-  out = out.replace(ID_RE, (m) => toChannel(m));
+  out = out.replace(idRe, (m) => toChannel(m));
   return out;
 }
 
@@ -293,13 +304,29 @@ function walk(dir: string, files: string[]): void {
   }
 }
 
+/** Read `--extra-identifiers <file>` (a JSON array of identifier strings) out of the args. */
+function takeExtraIdentifiers(args: string[]): readonly string[] {
+  const flagIndex = args.indexOf('--extra-identifiers');
+  if (flagIndex === -1) return [];
+  const extrasPath = args[flagIndex + 1];
+  if (!extrasPath) throw new Error('--extra-identifiers requires a path to a JSON array of identifiers');
+  const parsed: unknown = JSON.parse(readFileSync(extrasPath, 'utf8'));
+  if (!Array.isArray(parsed) || !parsed.every((entry) => typeof entry === 'string' && entry.length > 0)) {
+    throw new Error(`${extrasPath} must be a JSON array of non-empty identifier strings`);
+  }
+  args.splice(flagIndex, 2);
+  return parsed;
+}
+
 function main(): void {
-  const mode = process.argv[2];
-  const roots = process.argv.slice(3);
+  const args = process.argv.slice(2);
+  const extraIdentifiers = takeExtraIdentifiers(args);
+  const [mode, ...roots] = args;
   if ((mode !== 'inventory' && mode !== 'rewrite') || roots.length === 0) {
-    throw new Error('usage: context-to-channel.ts <inventory|rewrite> <srcDir ...>');
+    throw new Error('usage: context-to-channel.ts <inventory|rewrite> <srcDir ...> [--extra-identifiers extras.json]');
   }
   const dry = mode === 'inventory';
+  const idRe = extraIdentifiers.length ? buildIdRegex([...IDENTIFIERS, ...extraIdentifiers]) : ID_RE;
 
   const files: string[] = [];
   for (const root of roots) {
@@ -309,11 +336,12 @@ function main(): void {
     else if (CODE_EXT.has(root.slice(root.lastIndexOf('.')))) files.push(root);
   }
 
+  const selfPath = fileURLToPath(import.meta.url);
   let changed = 0;
   for (const file of files) {
-    if (file.endsWith('context-to-channel.ts')) continue; // never rewrite this codemod
+    if (resolve(file) === selfPath) continue; // never rewrite this codemod (rename-proof)
     const src = readFileSync(file, 'utf8');
-    const next = transform(src);
+    const next = transform(src, idRe);
     if (next !== src) {
       changed++;
       if (!dry) writeFileSync(file, next);
@@ -324,6 +352,8 @@ function main(): void {
 }
 
 // Only run when invoked directly (not when imported for its exported helpers/tests).
-if (process.argv[1]?.endsWith('context-to-channel.ts')) {
+// Rename-proof: compares this module's URL to the invoked script path, so a fork's
+// renamed copy still runs instead of silently exiting 0.
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   main();
 }
