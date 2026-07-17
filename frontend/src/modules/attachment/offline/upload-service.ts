@@ -4,8 +4,8 @@ import Transloadit from '@uppy/transloadit';
 // biome-ignore lint/style/noRestrictedImports: runtime token fetcher inside Uppy assembly callback, not eligible for a React Query hook.
 import { getUploadToken } from 'sdk';
 import { reportCriticalError } from '~/lib/tracing';
-import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
-import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
+import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/offline/attachments-db';
+import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { getAppDb } from '~/query/app-db';
 
 /**

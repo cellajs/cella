@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
+import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/offline/attachments-db';
 import { getAppDb } from '~/query/app-db';
 
 interface BlobUploadInfo {

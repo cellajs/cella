@@ -1,8 +1,8 @@
 import type { Attachment } from 'sdk';
-import type { BlobVariant } from '~/modules/attachment/dexie/attachments-db';
-import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
-import { downloadService } from '~/modules/attachment/download-service';
 import { getCloudUrl, getVariantKey } from '~/modules/attachment/file-url';
+import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
+import { downloadService } from '~/modules/attachment/offline/download-service';
+import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 
 /** Result of resolving an attachment URL */

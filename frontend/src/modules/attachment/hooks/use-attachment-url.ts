@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Attachment } from 'sdk';
-import type { BlobVariant } from '~/modules/attachment/dexie/attachments-db';
 import { type ResolveOptions, resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
+import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
 
 interface UseAttachmentUrlResult {
   url: string | null;

@@ -1,7 +1,7 @@
 import type { Attachment } from 'sdk';
 import { getPresignedUrl } from 'sdk/sdk.gen';
 import { appConfig } from 'shared';
-import type { BlobVariant } from '~/modules/attachment/dexie/attachments-db';
+import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
 
 /** Variants that exist as stored cloud keys (BlobVariant minus the local-only 'raw'). */
 export type CloudFileVariant = Exclude<BlobVariant, 'raw'>;

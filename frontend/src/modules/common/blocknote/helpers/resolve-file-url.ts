@@ -1,5 +1,5 @@
-import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { getPrivateFileUrlById, getPublicFileUrl } from '~/modules/attachment/file-url';
+import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 import type { CommonBlockNoteProps } from '~/modules/common/blocknote/types';
 

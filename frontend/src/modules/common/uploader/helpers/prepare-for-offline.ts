@@ -1,7 +1,7 @@
 import type { AssemblyResponse } from '@uppy/transloadit';
 import { uploadTemplates } from 'shared/transloadit-config';
-import type { UploadContext, UploadStatus } from '~/modules/attachment/dexie/attachments-db';
-import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
+import type { UploadContext, UploadStatus } from '~/modules/attachment/offline/attachments-db';
+import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
 

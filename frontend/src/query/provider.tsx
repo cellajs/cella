@@ -1,8 +1,8 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect, useState } from 'react';
 import { appConfig } from 'shared';
-import { downloadService } from '~/modules/attachment/download-service';
-import { uploadService } from '~/modules/attachment/upload-service';
+import { downloadService } from '~/modules/attachment/offline/download-service';
+import { uploadService } from '~/modules/attachment/offline/upload-service';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { initChannelEntityEnrichment } from '~/query/enrichment/init-enrichment';
 // Side-effect import: starts the auth-driven appdb lifecycle + eager kv hydration at root,

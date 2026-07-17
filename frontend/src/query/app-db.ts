@@ -1,7 +1,7 @@
 import type { DehydratedState } from '@tanstack/react-query';
 import { Dexie } from 'dexie';
 import { appConfig } from 'shared';
-import type { AttachmentBlob, DownloadQueueEntry } from '~/modules/attachment/dexie/attachments-db';
+import type { AttachmentBlob, DownloadQueueEntry } from '~/modules/attachment/offline/attachments-db';
 import type { FailedSyncRecord } from '~/query/offline/failed-sync';
 
 type DehydratedQuery = DehydratedState['queries'][number];

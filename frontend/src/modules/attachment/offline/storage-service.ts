@@ -6,7 +6,7 @@ import {
   makeBlobKey,
   type UploadContext,
   type UploadStatus,
-} from '~/modules/attachment/dexie/attachments-db';
+} from '~/modules/attachment/offline/attachments-db';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 
 /** Fallback chain for blob resolution, in lookup order. */

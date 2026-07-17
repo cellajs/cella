@@ -1,4 +1,4 @@
-import type { DownloadQueueEntry } from '../dexie/attachments-db';
+import type { DownloadQueueEntry } from '../offline/attachments-db';
 
 /** Shared mock appConfig for attachment tests */
 export const mockAttachmentAppConfig = {

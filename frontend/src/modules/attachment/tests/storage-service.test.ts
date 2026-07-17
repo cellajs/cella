@@ -1,13 +1,13 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type AttachmentBlob, attachmentsDb } from '../dexie/attachments-db';
+import { type AttachmentBlob, attachmentsDb } from '../offline/attachments-db';
 
 vi.mock('shared', async () => ({
   appConfig: (await import('./test-setup')).mockAttachmentAppConfig,
 }));
 
 import { bindAppDb } from '~/query/app-db';
-import { attachmentStorage } from '../dexie/storage-service';
+import { attachmentStorage } from '../offline/storage-service';
 
 // Attachment tables live in the per-user appdb; bind one so `attachmentsDb` resolves.
 bindAppDb('test-user');

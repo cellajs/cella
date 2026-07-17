@@ -74,3 +74,9 @@ be a no-op.
   stamps, badges, cache, detail and yjs all enforce it upstream via column introspection;
   forks add the column, a publish endpoint (`resolveServerUpdateOps`) and a drafts view,
   and delete their imperative `draft`-column rules. SQL data migration only, no codemod.
+- [2026-07-attachment-offline-layout](./2026-07-attachment-offline-layout/): attachment
+  `dexie/` → `offline/` (with the download/upload services pulled in), descriptive names for the
+  generic dialog/table files, `formatBytes` → `~/utils`, and a dead-code sweep. **Also fixes two
+  upload bugs**: offline uploads created no attachment row (the built-and-tested
+  `useAttachmentCreateMutation` had zero callers), and local blobs never shared an id with their
+  row. Read §3 before pulling if your fork has its own upload flow. Allow-list codemod.

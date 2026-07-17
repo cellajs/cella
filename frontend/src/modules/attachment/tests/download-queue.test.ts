@@ -1,21 +1,21 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { attachmentsDb } from '../dexie/attachments-db';
+import { attachmentsDb } from '../offline/attachments-db';
 
 // Mock external deps
 vi.mock('shared', async () => ({
   appConfig: (await import('./test-setup')).mockAttachmentAppConfig,
 }));
 
-vi.mock('../dexie/storage-service', () => ({
+vi.mock('../offline/storage-service', () => ({
   attachmentStorage: {
     getStoredVariants: vi.fn().mockResolvedValue([]),
   },
 }));
 
 import { bindAppDb } from '~/query/app-db';
-import { downloadQueue } from '../dexie/download-queue';
-import { attachmentStorage } from '../dexie/storage-service';
+import { downloadQueue } from '../offline/download-queue';
+import { attachmentStorage } from '../offline/storage-service';
 import { makeAttachment, makeQueueEntry } from './test-setup';
 
 // Attachment tables live in the per-user appdb; bind one so `attachmentsDb` resolves.

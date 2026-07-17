@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { attachmentsDb } from '../dexie/attachments-db';
+import { attachmentsDb } from '../offline/attachments-db';
 
 // Mock external deps before imports
 vi.mock('shared', async () => ({
@@ -11,7 +11,7 @@ vi.mock('@tanstack/react-query', () => ({
   onlineManager: { isOnline: () => true },
 }));
 
-vi.mock('../dexie/storage-service', () => ({
+vi.mock('../offline/storage-service', () => ({
   attachmentStorage: {
     getStorageUsed: vi.fn().mockResolvedValue(0),
     hasVariant: vi.fn().mockResolvedValue(false),
@@ -77,9 +77,9 @@ vi.mock('~/modules/user/user-store', () => ({
 vi.mock('~/modules/me/types', () => ({}));
 
 import { bindAppDb } from '~/query/app-db';
-import { downloadQueue } from '../dexie/download-queue';
-import { attachmentStorage } from '../dexie/storage-service';
-import { downloadService } from '../download-service';
+import { downloadQueue } from '../offline/download-queue';
+import { downloadService } from '../offline/download-service';
+import { attachmentStorage } from '../offline/storage-service';
 import { findAttachmentInCache } from '../query';
 import { makeAttachment, makeQueueEntry } from './test-setup';
 
@@ -128,7 +128,7 @@ describe('downloadService.processQueue — failed download retry', () => {
     expect(entry?.attempts).toBe(3);
   });
 
-  it('downloaded entries persist (gc no longer runs in hot path)', async () => {
+  it('downloaded entries persist, serving as the dedupe registry', async () => {
     await attachmentsDb.downloadQueue.add(
       makeQueueEntry({ id: 'att-done', status: 'downloaded', organizationId: 'org-1' }),
     );
