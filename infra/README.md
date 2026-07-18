@@ -299,7 +299,7 @@ The infrastructure is organised in 6 phases, deployed in dependency order ([inde
 | 1 | `storage` | Frontend bucket (SPA hosting), public & private upload buckets, boot-diagnostics bucket |
 | 2 | `dns` | CAA records (restrict cert issuance to Let's Encrypt; TLS itself is terminated at the LB) |
 | 3 | `network`, `registry` | VPC, private networks, container registry |
-| 4 | `database` | Managed PostgreSQL 17 |
+| 4 | `database` | Managed PostgreSQL 17 (**17+ required**: the sync engine's draft boundary uses logical-replication row filters with `REPLICA IDENTITY FULL`) |
 | 5 | `secrets`, `compute`, `vm-iam` | Secret Manager, Docker Compose VMs, VM-reader IAM grant |
 | 6 | `loadbalancer` | Scaleway LB with TLS termination, host-header routing, DNS |
 

@@ -1,5 +1,6 @@
 import pc from 'picocolors';
 import { getTableName } from 'drizzle-orm';
+import { publicationRowFilter } from '#/db/utils/publication-filter';
 import { resourceTables } from '#/tables';
 import { entityTables } from '#/tables';
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../../cdc/src/constants';
@@ -7,16 +8,26 @@ import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 interface TableSpec {
   tableName: string;
+  /** Publication row filter (draft boundary), e.g. `published_at IS NOT NULL`. */
+  rowFilter?: string;
 }
 
 /**
  * Publication column lists are incompatible with REPLICA IDENTITY FULL (PG error 42P10).
  * Since the CDC worker needs REPLICA IDENTITY FULL for old-row diffs, we publish all columns.
  * Large columns are still stripped from WS payloads via cdcExcludeColumnLengthThreshold in the activity service.
+ *
+ * Draft-lifecycle product tables get a ROW FILTER (PG 17+, see infra/README): the
+ * replication stream then contains only the synced world — publish edges arrive as
+ * INSERTs, unpublishes as DELETEs, draft edits never arrive (`publication-filter.ts`).
  */
 function buildTableSpecs(): TableSpec[] {
-  const allTables = [...Object.values(entityTables), ...Object.values(resourceTables)];
-  return allTables.map((table) => ({ tableName: getTableName(table) }));
+  const entitySpecs = Object.entries(entityTables).map(([entityType, table]) => ({
+    tableName: getTableName(table),
+    rowFilter: publicationRowFilter(entityType, table),
+  }));
+  const resourceSpecs = Object.values(resourceTables).map((table) => ({ tableName: getTableName(table) }));
+  return [...entitySpecs, ...resourceSpecs];
 }
 
 async function run(): Promise<SideEffectBlock> {
@@ -29,9 +40,11 @@ async function run(): Promise<SideEffectBlock> {
   }
 
   const trackedTableNames = tableSpecs.map((s) => s.tableName);
+  const filteredTables = tableSpecs.filter((s) => s.rowFilter);
 
-  // Build table list for CREATE PUBLICATION without column lists.
-  const tableList = trackedTableNames.join(', ');
+  // Table list for CREATE/ALTER PUBLICATION: no column lists; per-table WHERE for
+  // draft-lifecycle product tables (the draft boundary lives at the source).
+  const tableList = tableSpecs.map((s) => (s.rowFilter ? `${s.tableName} WHERE (${s.rowFilter})` : s.tableName)).join(', ');
 
   const migrationSql = `-- CDC (Change Data Capture) Setup
 -- Sets up PostgreSQL logical replication for the activities CDC worker.
@@ -82,7 +95,10 @@ END $$;
     tag: 'cdc_setup',
     title: 'CDC — publication, replica identity, replication slot',
     sql: migrationSql,
-    notes: [`Tracked tables (${trackedTableNames.length}): ${trackedTableNames.join(', ')}`],
+    notes: [
+      `Tracked tables (${trackedTableNames.length}): ${trackedTableNames.join(', ')}`,
+      `Draft row filters (${filteredTables.length}): ${filteredTables.map((s) => s.tableName).join(', ') || 'none'}`,
+    ],
   };
 }
 

@@ -337,43 +337,21 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
   });
 });
 
-describe('draft lifecycle count deltas (publishedAt)', () => {
+// The publication row filter (`published_at IS NOT NULL`) rewrites draft transitions at
+// decode time: a publish edge arrives as INSERT, an unpublish as DELETE carrying the old
+// (published) row, and draft creates/edits/deletes never arrive at all (the entrance
+// guard in parse-message.ts drops strays — tested in parse-message.test.ts). These tests
+// exercise the events as DELIVERED, so no draft rows appear below.
+describe('draft lifecycle count deltas (publication row filter delivery)', () => {
   const createdAt = '2026-07-01T10:00:00.000Z';
   const publishedAt = '2026-07-04T09:00:00.000Z';
 
-  it('a draft create counts nothing and stamps nothing, but still reserves a seq', () => {
+  it('a publish edge arrives as INSERT: counts as a create and stamps li: from publishedAt', () => {
     const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null },
-      }),
-    ]);
-
-    expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
-    expect(plan.orgSequenceGroups).toHaveLength(1); // drafts keep create-time sequence stamps
-  });
-
-  it('draft-internal edits count nothing', () => {
-    const plan = computeBatchUnifiedDeltas([
-      mockEvent({
-        tableMeta: attachmentEntry(),
-        action: 'update',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, updatedAt: '2026-07-02T10:00:00.000Z', publishedAt: null, deletedAt: null },
-        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: null },
-      }),
-    ]);
-
-    expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
-  });
-
-  it('the publish edge counts as a create and stamps li: from publishedAt', () => {
-    const plan = computeBatchUnifiedDeltas([
-      mockEvent({
-        tableMeta: attachmentEntry(),
-        action: 'update',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, updatedAt: publishedAt, publishedAt, deletedAt: null },
-        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: null },
       }),
     ]);
 
@@ -382,61 +360,36 @@ describe('draft lifecycle count deltas (publishedAt)', () => {
       'es:attachment': 1,
       'li:attachment': Date.parse(publishedAt),
     });
+    expect(plan.orgSequenceGroups).toHaveLength(1);
   });
 
-  it('unpublish counts as a delete and stamps nothing', () => {
+  it('an unpublish arrives as DELETE with the old published row: counts as a delete, stamps nothing', () => {
+    // CDC deletes snapshot the OLD row into rowData (oldRowData is null).
     const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),
-        action: 'update',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: null },
-        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
+        action: 'delete',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
       }),
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1, 'es:attachment': -1 });
   });
 
-  it('hard-deleting a draft counts nothing (it was never counted)', () => {
+  it('publishing a trashed row arrives as INSERT with deletedAt set: counts nothing', () => {
     const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),
-        action: 'delete',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null },
-        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null },
-      }),
-    ]);
-
-    expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
-  });
-
-  it('soft-deleting a draft counts nothing (outside the countable set on both sides)', () => {
-    const plan = computeBatchUnifiedDeltas([
-      mockEvent({
-        tableMeta: attachmentEntry(),
-        action: 'update',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: '2026-07-03T10:00:00.000Z' },
-        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: null },
-      }),
-    ]);
-
-    expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
-  });
-
-  it('publishing a trashed row counts nothing (deletedAt still excludes it)', () => {
-    const plan = computeBatchUnifiedDeltas([
-      mockEvent({
-        tableMeta: attachmentEntry(),
-        action: 'update',
+        action: 'create',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: '2026-07-03T10:00:00.000Z' },
-        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: '2026-07-03T10:00:00.000Z' },
       }),
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
+    expect(plan.orgSequenceGroups).toHaveLength(1); // still sequence-stamped (tombstone is delta-fetchable)
   });
 
-  it('soft-deleting a PUBLISHED row still decrements (the two dimensions compose)', () => {
+  it('soft-deleting a PUBLISHED row stays an UPDATE and still decrements (the two dimensions compose)', () => {
     const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),
@@ -447,5 +400,18 @@ describe('draft lifecycle count deltas (publishedAt)', () => {
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1, 'es:attachment': -1 });
+  });
+
+  it('restoring a PUBLISHED row from trash re-counts it but does not stamp li: (old content)', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: '2026-07-05T10:00:00.000Z' },
+      }),
+    ]);
+
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': 1, 'es:attachment': 1 });
   });
 });

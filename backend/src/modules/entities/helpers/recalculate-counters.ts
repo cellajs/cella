@@ -22,9 +22,10 @@ const livePredicate = (et: EntityType, alias: string) =>
   'deletedAt' in getColumns(getEntityTable(et)) ? ` AND ${alias}.deleted_at IS NULL` : '';
 
 /**
- * Published-rows-only predicate (opt-in `publishedAt` draft lifecycle). CDC counts a row
- * only when live AND published (`isCountableRow` in cdc), so recalculation must exclude
- * unpublished drafts to agree. Empty for tables without the column.
+ * Published-rows-only predicate (opt-in `publishedAt` draft lifecycle). The publication
+ * row filter keeps drafts out of the CDC stream, so CDC never counts them; recalculation
+ * reads the TABLE — which still contains drafts — and must exclude them to agree.
+ * Empty for tables without the column.
  */
 const publishedPredicate = (et: EntityType, alias: string) =>
   'publishedAt' in getColumns(getEntityTable(et)) ? ` AND ${alias}.published_at IS NOT NULL` : '';
@@ -160,9 +161,10 @@ export const recalculateCounters = async (db: DbOrTx) => {
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);
     const frontierKey = `f:${entityType}`;
-    // Unpublished drafts are excluded from frontiers (not delta-fetchable; CDC skips
-    // them too) — but NOT from sequence above: their stamps consumed sequence values.
-    // Tombstones stay included (delta reads return them). No live filter here.
+    // Unpublished drafts are excluded from frontiers (not delta-fetchable; the
+    // publication row filter keeps them from ever reaching CDC). Rows drafted before
+    // the filter era may hold historical seq stamps — harmless orphans, still excluded
+    // here. Tombstones stay included (delta reads return them). No live filter here.
     const frontierPredicate = publishedPredicate(entityType, 't');
 
     // Org node: every stamped countable row rolls up to its organization.
@@ -224,7 +226,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   // of the latest countable-row update, both grouped by the home context key (deepest
   // non-null ancestor, org fallback via COALESCE). Unlike e: counts these are
   // These per-stream signals stay at the home context and do not fan out to ancestors,
-  // matching CDC's stamp scope. Unpublished drafts never stamp, mirroring CDC.
+  // matching CDC's stamp scope. Unpublished drafts never stamp (they never reach CDC).
   // jsonb_strip_nulls drops lu: when no live row was ever updated (updated_at all NULL).
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);

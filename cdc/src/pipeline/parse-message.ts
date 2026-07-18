@@ -1,6 +1,8 @@
 import type { Pgoutput } from 'pg-logical-replication';
+import { hierarchy, isUnpublishedDraft } from 'shared';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { handleDelete, handleInsert, handleUpdate } from '../handlers';
+import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
 import type { TableMeta } from '../types';
 import { tableRegistry } from '../table-registry';
@@ -23,6 +25,37 @@ export interface ParseMessageResult {
   tableMeta: TableMeta;
 }
 
+/** Rate limit for the draft-guard warning (one line per interval, not one per draft edit). */
+const DRAFT_GUARD_WARN_INTERVAL_MS = 60_000;
+let lastDraftGuardWarnAt = 0;
+
+/**
+ * Entrance guard for the draft boundary. The publication row filter
+ * (`published_at IS NOT NULL`, see backend `publication-filter.ts`) keeps draft product
+ * rows out of the replication stream entirely, so a draft row here means a fork
+ * misconfiguration — typically `publishedColumn` was added without regenerating the
+ * publication (`pnpm generate` + `pnpm migrate`). Dropping the event keeps counters
+ * correct (drafts must count nothing); the rate-limited warning makes the gap loud
+ * instead of silently corrupting sequence stamps.
+ *
+ * Uniform across actions because the delete handler snapshots the OLD row into
+ * `rowData`: a true draft hard-delete never arrives (old row fails the filter), while
+ * an unpublish arrives as DELETE with a published old row and passes untouched.
+ */
+function isFilteredDraftEvent(result: ParseMessageResult): boolean {
+  if (result.tableMeta.kind !== 'entity' || !hierarchy.isProduct(result.tableMeta.type)) return false;
+  if (!isUnpublishedDraft(result.rowData)) return false;
+  const now = Date.now();
+  if (now - lastDraftGuardWarnAt > DRAFT_GUARD_WARN_INTERVAL_MS) {
+    lastDraftGuardWarnAt = now;
+    log.warn('Draft product row reached CDC — publication row filter missing? Regenerate migrations (pnpm generate + pnpm migrate).', {
+      entityType: result.tableMeta.type,
+      action: result.activity.action,
+    });
+  }
+  return true;
+}
+
 /**
  * Parse a pgoutput message and return activity + row data for tracked tables.
  */
@@ -38,13 +71,18 @@ export function parseMessage(message: Pgoutput.Message): ParseMessageResult | nu
   if (!tableMeta) return null;
 
   // Dispatch to handlers
-  switch (tag) {
-    case 'insert':
-      return handleInsert(tableMeta, message);
-    case 'update':
-      return handleUpdate(tableMeta, message);
-    case 'delete':
-      return handleDelete(tableMeta, message);
-  }
+  const result = (() => {
+    switch (tag) {
+      case 'insert':
+        return handleInsert(tableMeta, message);
+      case 'update':
+        return handleUpdate(tableMeta, message);
+      case 'delete':
+        return handleDelete(tableMeta, message);
+    }
+  })();
+
+  if (result && isFilteredDraftEvent(result)) return null;
+  return result;
 }
 

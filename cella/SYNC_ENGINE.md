@@ -89,7 +89,7 @@ And distinct terms for *what* a change is about and *where* it is routed:
 | **Channel entity** | A membership-scoped entity that hosts products and carries the permission check (`ChannelEntityType`, e.g. `organization`, `project` in a fork). |
 | **Channel** | A row's home: its deepest non-null channel-entity ancestor id, falling back to its organization (`resolveChannelKey()`). Audience grouping and unseen counts key on it; the sequence does NOT. |
 | **Sequence** | One monotonic counter per organization (`sequence` on the org's `channel_counters` row), shared by ALL product entity types. Row `seq` values are sequence values, stamped post-commit by the CDC worker in WAL order. |
-| **Frontier** | A node's newest sequence position: `f:{type}` (subtree — max seq at or below the node, max-merged at every ancestor) and `fs:{type}` (self — max seq of rows HOMED at the node). The term follows dataflow systems (Timely/Materialize): the boundary up to which change has been incorporated. A view is behind when its **cursor** is behind the frontier; a delta fetch closes the difference. Only moves forward; unpublished drafts never advance it. |
+| **Frontier** | A node's newest sequence position: `f:{type}` (subtree — max seq at or below the node, max-merged at every ancestor) and `fs:{type}` (self — max seq of rows HOMED at the node). The term follows dataflow systems (Timely/Materialize): the boundary up to which change has been incorporated. A view is behind when its **cursor** is behind the frontier; a delta fetch closes the difference. Only moves forward, and every advance is fetchable: drafts never enter the replication stream (publication row filter). |
 | **Path** | Materialized id-path (`path` STORED generated column): root-first ancestor ids slash-joined (`org1/course7/project9`); channel rows append their own id. Any subtree is a path prefix (`pathStartsWith`). |
 | **View** | The client sync unit: `{prefixes, entityTypes, depth, cursor}` — a prefix set plus one org-sequence cursor. Catchup answers views from per-node summaries after prefix authorization (`resolveViewReadStatus`: ok/opaque/forbidden). |
 | **Self view / self stream** | `depth: 'self'`: rows HOMED at the node (exact placement — a channel's own wall). Answered from the self summary family `fs:{type}`/`es:{type}`, maintained at the home node only (the `li:`/`lu:` placement rule). Provable by a direct home-scoped membership. |
@@ -305,9 +305,23 @@ prefix must equal the node's true path — a mismatch (forged, or stale after a 
 answers `opaque` and self-heals on re-declare, never `forbidden` (anti-oracle) — and
 grants then match against TRUE ancestor segments, so a subtree grant at any real ancestor
 proves deeper nodes. Nodes without a counters row fall back to node-id-only proof
-(conservative, and there are no numbers to disclose anyway). Unpublished drafts never
-bump `f:`/`fs:` (they take sequence stamps for the mechanics, but no view can fetch them,
-so their timing is not signaled).
+(conservative, and there are no numbers to disclose anyway).
+
+**Drafts and the stream** (draft-lifecycle product tables, `publishedColumn`): the
+replication stream contains only the synced world — **publish is an insert into it,
+unpublish is a delete from it, drafts never enter**. A PostgreSQL publication row filter
+(`published_at IS NOT NULL`, PG 17+, emitted per opted-in product table by the CDC
+migration) rewrites transitions at decode time: old row fails the filter, new row passes
+→ delivered as INSERT (the publish edge IS the row's sync birth: count +1, `li:` stamp
+from `publishedAt`, sequence stamp, frontier bump); old passes, new fails → delivered as
+DELETE carrying the full old row (count −1, old readers get the ordinary hard-delete
+invalidation); neither passes → silence. Soft-deleting a published row keeps the filter
+true, so tombstones still flow as UPDATEs. Channel tables are never filtered — their
+`publishedAt` (defaultNow) gates invitees, not replication. The CDC entrance guard
+(`parse-message.ts`) drops any draft that reaches the worker anyway (fork
+misconfiguration) with a rate-limited warning, and the dispatch draft veto stays as
+fail-closed defense-in-depth. API reads keep their `publishedRowsPredicate` — the TABLE
+still contains drafts; only the stream does not.
 
 Worked example (a deep fork: org > course > section > project, `elevatedRoles`
 `['admin','staff']`; ° = via a direct/auto-created membership with unconditional home

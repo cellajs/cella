@@ -195,11 +195,15 @@ The engine produces a verdict. Each tier is responsible for *asking* — and eve
 
 One row-lifecycle check runs **before** the engine on every row path: unpublished drafts
 (`publishedAt` null — an opt-in product-table column, see `shared/src/published-rows.ts`) are
-visible to their author alone. SSE dispatch drops them for everyone, collection/delta reads
-exclude them by predicate, the detail read 404s non-authors, the detail cache refuses to serve
-them, and the yjs relay rejects non-author write connections. The engine itself has no draft
-vocabulary — the column is the contract, and every check is introspection-guarded so tables
-without the column are untouched.
+visible to their author alone. The PRIMARY draft boundary sits below all of this: a
+publication row filter keeps draft product rows out of the replication stream entirely
+(publish arrives as INSERT, unpublish as DELETE — see SYNC_ENGINE.md), so the SSE dispatch
+veto is fail-closed defense-in-depth for a misconfigured fork, not the mechanism. The
+API-side checks remain load-bearing because the TABLE still contains drafts:
+collection/delta reads exclude them by predicate, the detail read 404s non-authors, the
+detail cache refuses to serve them, and the yjs relay rejects non-author write
+connections. The engine itself has no draft vocabulary — the column is the contract, and
+every check is introspection-guarded so tables without the column are untouched.
 
 Product `publishedAt` is distinct from channel `publishedAt`, which gates setup, and from
 `publicAt`, which grants non-members read access.

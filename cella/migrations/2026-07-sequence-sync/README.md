@@ -108,9 +108,14 @@ are discarded, so old-domain cursors never meet new-domain values.
 - **Sequencing:** land the in-flight drizzle-baseline squash and the prod Path B
   baseline adoption (`2026-07-drizzle-baseline` guide) BEFORE this migration.
 - Six product modules follow the per-module steps (item, comment, submission, material,
-  label; attachment arrives migrated). Item/comment keep their `publishedAt` draft
-  machinery untouched: drafts still get sequence stamps and stay invisible to dispatch,
-  delta reads, counters, and unseen badges until the publish edge.
+  label; attachment arrives migrated). Item/comment `publishedAt` drafts now live OUTSIDE
+  the replication stream: on regeneration (`pnpm generate` + `pnpm migrate`) the CDC
+  publication gains row filters for both tables (PG 17+), publish edges arrive as
+  INSERTs, unpublishes as DELETEs, and drafts take no sequence stamps at all. Comment
+  `publishedAt` cascades from the host item on publish — those cascade UPDATEs cross the
+  filter and arrive as INSERTs, delivering the item and its comments as one coherent
+  burst (add a fork test for the cascade). No restamp or recalc needed for the filter
+  itself; existing draft rows keep historical stamps as harmless orphans.
 - The elevation fix is your headline, with precise wording: staff with course-only
   memberships are now CORRECT at catchup (their org view answers `opaque` → cached
   lists invalidate and refetch; the old engine silently skipped their gaps). They

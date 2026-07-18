@@ -37,9 +37,11 @@ export type SubscriberAccess = Pick<AppStreamSubscriber, 'userId' | 'isSystemAdm
  * `checkPermission` against the cached row), so over-notifying is never a leak here.
  *
  * Unpublished drafts (`publishedAt` null, see `shared/src/published-rows.ts`) are
- * dropped for EVERYONE, author included: drafts live outside the sync engine, and
- * the publish update is the row's sync birth. Delta reads apply the same exclusion,
- * so a draft seq is never fetchable either.
+ * dropped for EVERYONE, author included. This veto is fail-closed defense-in-depth:
+ * the publication row filter keeps drafts out of the replication stream at the source
+ * (publish arrives as INSERT, unpublish as DELETE), so a draft event here means a
+ * misconfigured fork. Delta reads apply the same exclusion, so a draft is never
+ * fetchable either way.
  *
  * Exported so the parity property test can assert: SQL predicate ≍ checkPermission ≍
  * this function.

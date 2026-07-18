@@ -1,7 +1,7 @@
 import { getTableName } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import format from 'pg-format';
-import { hierarchy, isUnpublishedDraft } from 'shared';
+import { hierarchy } from 'shared';
 import type { AncestorSource } from 'shared';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
@@ -107,13 +107,11 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
       rowData.seq = seq;
       allEntityStamps.push({ tableName: getTableName(tableMeta.table), id: rowData.id, seq });
 
-      // Frontier rollups. Unpublished drafts are excluded: they take a sequence stamp
-      // (uniform stamp-back, stx cleanup) but are invisible to delta reads/dispatch/
-      // counters until the publish edge, so bumping the frontier would only signal activity-timing
-      // no view can ever fetch. Tombstones of PUBLISHED rows still bump (they are
-      // delta-fetchable); the publish edge bumps (row is published); the unpublish edge
-      // does not (detected via count drift, as before).
-      if (isUnpublishedDraft(rowData)) continue;
+      // Frontier rollups. Every stamped event bumps: the publication row filter keeps
+      // drafts out of the stream (publish arrives as INSERT, unpublish as DELETE with
+      // the old row — both delta-fetchable), so the stream IS the synced world and
+      // `count` on messages is exactly fetchable rows. A draft that slips past a
+      // missing filter is dropped at the entrance guard (parse-message.ts).
       // Subtree: f:{type} max-merged at the org and every non-null ancestor.
       const nodes = frontierNodeKeys(tableMeta.type, rowData, activity.organizationId ?? group.orgKey, h);
       const frontierKey = `f:${tableMeta.type}`;

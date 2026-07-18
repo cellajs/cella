@@ -117,15 +117,18 @@ describe('applyBatchUnifiedDeltas', () => {
     expect(executes).toHaveLength(1);
   });
 
-  it('drafts take sequence stamps but never bump frontier rollups', async () => {
+  it('every stamped event bumps frontiers — tombstones of published rows included', async () => {
+    // The publication row filter keeps drafts out of the stream entirely (the entrance
+    // guard in parse-message drops strays before compute/apply — see parse-message tests),
+    // so apply has no draft branch: whatever is stamped is delta-fetchable and bumps.
     upsertReturnValue = { 'sequence': 2 };
 
-    const draftEvent = (id: string) => {
+    const tombstoneEvent = (id: string) => {
       const event = mockEvent(id);
-      (event.result.rowData as Record<string, unknown>).publishedAt = null;
+      (event.result.rowData as Record<string, unknown>).deletedAt = '2026-07-05T10:00:00.000Z';
       return event;
     };
-    const events = [draftEvent('d1'), draftEvent('d2')];
+    const events = [mockEvent('t1'), tombstoneEvent('t2')];
 
     const plan: BatchUnifiedDeltaPlan = {
       orgSequenceGroups: [{ orgKey: 'org-1', count: 2, events }],
@@ -134,12 +137,10 @@ describe('applyBatchUnifiedDeltas', () => {
 
     await applyBatchUnifiedDeltas(plan, syntheticH);
 
-    // Stamps assigned (drafts keep create-time sequence values for their publish edge)...
     expect(events[0].result.rowData.seq).toBe(1);
     expect(events[1].result.rowData.seq).toBe(2);
-    // ...but the ONLY counter upsert is the phase-1 org reservation: no frontier writes.
-    expect(dbOps.filter((op) => op.type === 'upsert')).toHaveLength(1);
-    // Stamp-back still runs.
+    // Phase-1 org reservation + phase-2 frontier writes (org + proj-1) — both events bump.
+    expect(dbOps.filter((op) => op.type === 'upsert')).toHaveLength(3);
     expect(dbOps.filter((op) => op.type === 'execute')).toHaveLength(1);
   });
 

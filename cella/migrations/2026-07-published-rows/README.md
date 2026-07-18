@@ -1,12 +1,19 @@
 # Published-rows lifecycle migration (product-entity drafts)
 
+> **Model update (2026-07, sequence-sync era):** the draft boundary has since moved to
+> the replication layer — a publication row filter (`published_at IS NOT NULL`, PG 17+)
+> keeps drafts out of the CDC stream entirely, so publish arrives as INSERT and
+> unpublish as DELETE (see `cella/SYNC_ENGINE.md` and `cdc/README.md`). The API-side
+> predicates below are unchanged and still load-bearing; CDC-side masking described in
+> this guide no longer exists.
+
 Adds an opt-in draft lifecycle for **product entities**: a nullable `publishedAt`
 timestamp where **NULL = author-only draft, set = published**. While a row is a
-draft it is invisible to every upstream subsystem — SSE dispatch drops it for
-everyone (author included), collection/delta/catchup reads exclude it, `e:`
+draft it is invisible to every upstream subsystem — the replication stream never
+carries it, collection/delta/catchup reads exclude it, `e:`
 counters and `li:`/`lu:` stamps ignore it, unseen badges never count it, the
 detail read 404s for non-authors, the detail cache refuses to serve it to
-non-authors, and yjs rejects non-author write connections. The **publish update
+non-authors, and yjs rejects non-author write connections. The **publish
 is the row's public birth**: it counts as a create, stamps `li:` from
 `publishedAt`, and lights unseen badges (the badge window keys on
 `COALESCE(published_at, created_at)` in both mirrors).
