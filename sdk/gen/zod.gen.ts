@@ -800,6 +800,7 @@ export const zPostAppCatchupBody = z.object({
         organizationId: z.string(),
         prefixes: z.array(z.string().max(512)).min(1).max(64),
         entityTypes: z.array(z.enum(['attachment'])).min(1),
+        depth: z.enum(['self', 'subtree']).optional(),
         cursor: z.int().gte(0),
       }),
     )

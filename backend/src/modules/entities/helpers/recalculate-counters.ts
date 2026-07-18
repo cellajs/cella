@@ -190,6 +190,31 @@ export const recalculateCounters = async (db: DbOrTx) => {
       `,
       );
     }
+
+    // Self family (home node only, deepest non-null ancestor — the legacy per-scope shape):
+    // hws:{type} = MAX(seq) of HOMED rows (drafts excluded, tombstones included);
+    // es:{type}  = COUNT of countable HOMED rows (live AND published).
+    const homeExpr = deepestAncestorExpr(entityType, 't');
+    if (homeExpr) {
+      await upsertChannelCounters(
+        db,
+        `
+        SELECT ${homeExpr}, jsonb_build_object('hws:${entityType}', COALESCE(MAX(t.seq), 0)), NOW()
+        FROM ${tableName} t
+        WHERE ${homeExpr} IS NOT NULL${hwPredicate}
+        GROUP BY ${homeExpr}
+      `,
+      );
+      await upsertChannelCounters(
+        db,
+        `
+        SELECT ${homeExpr}, jsonb_build_object('es:${entityType}', COUNT(*)::int), NOW()
+        FROM ${tableName} t
+        WHERE ${homeExpr} IS NOT NULL${livePredicate(entityType, 't')}${publishedPredicate(entityType, 't')}
+        GROUP BY ${homeExpr}
+      `,
+      );
+    }
   }
 
   // ── Phase 3b: Activity stamps from MAX(published_at/created_at) / MAX(updated_at) ──

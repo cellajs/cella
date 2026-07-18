@@ -33,17 +33,22 @@ export type ViewReadStatus = 'ok' | 'opaque' | 'forbidden';
  * (`resolveCollectionReadFilter`), so catchup answerability mirrors list reads —
  * the four-way parity suite (SQL ≍ engine ≍ dispatch ≍ prefix-catchup) pins this.
  */
+/** View depth: `subtree` covers rows at or below the node; `self` only rows HOMED at it. */
+export type ViewDepth = 'self' | 'subtree';
+
 export function resolveViewReadStatus(
   memberships: MembershipBaseModel[],
   entityType: ProductEntityType,
   organizationId: string,
   actor: Actor,
   prefix: string,
+  depth: ViewDepth = 'subtree',
 ): ViewReadStatus {
   return classifyPrefix(
     prefix,
     organizationId,
     resolveCollectionReadFilter(memberships, entityType, organizationId, actor),
+    depth,
   );
 }
 
@@ -52,11 +57,20 @@ export function resolveViewReadStatus(
  * mirroring `resolveCollectionReadFilterForPolicies`. Lets parity tests exercise deep
  * synthetic hierarchies that cella's own 2-level config structurally cannot reach.
  */
-export function resolveViewReadStatusForPolicies(input: CollectionReadScopeInput, prefix: string): ViewReadStatus {
-  return classifyPrefix(prefix, input.organizationId, resolveCollectionReadFilterForPolicies(input));
+export function resolveViewReadStatusForPolicies(
+  input: CollectionReadScopeInput,
+  prefix: string,
+  depth: ViewDepth = 'subtree',
+): ViewReadStatus {
+  return classifyPrefix(prefix, input.organizationId, resolveCollectionReadFilterForPolicies(input), depth);
 }
 
-function classifyPrefix(prefix: string, organizationId: string, filter: CollectionReadFilter): ViewReadStatus {
+function classifyPrefix(
+  prefix: string,
+  organizationId: string,
+  filter: CollectionReadFilter,
+  depth: ViewDepth,
+): ViewReadStatus {
   const segments = pathSegments(prefix);
   // A prefix must live inside the requested organization (paths are root-first).
   if (segments.length === 0 || segments[0] !== organizationId) return 'forbidden';
@@ -81,8 +95,15 @@ function classifyPrefix(prefix: string, organizationId: string, filter: Collecti
     if (filter.ancestorScopes?.some((scope) => scope.subChannelIds.includes(node))) return 'ok';
   }
 
+  // SELF views (rows homed at the node) are additionally provable by a HOME-scoped
+  // unconditional grant ON the node — the grant shape non-elevated roles produce under
+  // `elevatedRoles` (a course student's course grant covers exactly the course wall).
+  // Self summaries (hws:/es:) describe only homed rows, so nothing beyond the caller's
+  // readable set is disclosed. Subtree views can never accept this proof.
+  if (depth === 'self' && filter.homeScopes?.some((scope) => scope.subChannelIds.includes(node))) return 'ok';
+
   // Anything else with SOME read scope → opaque; nothing at all → forbidden.
-  // (Home-only grants cover rows homed exactly at their level, not the subtree, and
-  // conditional slices cover per-row subsets — neither proves the node.)
+  // (For subtree views, home-only grants cover rows homed exactly at their level, not the
+  // subtree, and conditional slices cover per-row subsets — neither proves the node.)
   return hasNoReadScope(filter) ? 'forbidden' : 'opaque';
 }

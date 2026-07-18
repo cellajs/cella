@@ -2278,6 +2278,10 @@ export type PostAppCatchupData = {
       prefixes: Array<string>;
       entityTypes: Array<'attachment'>;
       /**
+       * View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement — a channel wall). Self views are answerable by direct home-scoped memberships.
+       */
+      depth?: 'self' | 'subtree';
+      /**
        * Org-ledger seq this view has fully ingested (0 = baseline not yet established)
        */
       cursor: number;
@@ -2364,13 +2368,13 @@ export type PostAppCatchupResponses = {
       key: string;
       status: 'ok' | 'opaque' | 'forbidden';
       /**
-       * Per-entityType max org-ledger seq at or below the view prefixes (hw:{type} rollups)
+       * Per-entityType max org-ledger seq over the view prefixes (subtree: hw:{type}; self: hws:{type})
        */
       highWaters?: {
         [key: string]: number;
       };
       /**
-       * Per-entityType live row counts summed over the view prefixes (e:{type} rollups)
+       * Per-entityType live row counts summed over the view prefixes (subtree: e:{type}; self: es:{type})
        */
       counts?: {
         [key: string]: number;

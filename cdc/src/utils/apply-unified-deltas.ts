@@ -107,17 +107,24 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
       rowData.seq = seq;
       allEntityStamps.push({ tableName: getTableName(tableMeta.table), id: rowData.id, seq });
 
-      // High-water rollup: hw:{type} = max ledger seq at the org and every non-null ancestor.
-      // Unpublished drafts are excluded: they take a ledger stamp (uniform stamp-back, stx
-      // cleanup) but are invisible to delta reads/dispatch/counters until the publish edge,
-      // so bumping hw would only signal activity-timing no view can ever fetch. Tombstones
-      // of PUBLISHED rows still bump (they are delta-fetchable); the publish edge bumps
-      // (row is published); the unpublish edge does not (detected via count drift, as before).
+      // High-water rollups. Unpublished drafts are excluded: they take a ledger stamp
+      // (uniform stamp-back, stx cleanup) but are invisible to delta reads/dispatch/
+      // counters until the publish edge, so bumping hw would only signal activity-timing
+      // no view can ever fetch. Tombstones of PUBLISHED rows still bump (they are
+      // delta-fetchable); the publish edge bumps (row is published); the unpublish edge
+      // does not (detected via count drift, as before).
       if (isUnpublishedDraft(rowData)) continue;
+      // Subtree: hw:{type} max-merged at the org and every non-null ancestor.
+      const nodes = hwNodeKeys(tableMeta.type, rowData, activity.organizationId ?? group.orgKey, h);
       const hwKey = `hw:${tableMeta.type}`;
-      for (const node of hwNodeKeys(tableMeta.type, rowData, activity.organizationId ?? group.orgKey, h)) {
+      for (const node of nodes) {
         mergeDelta(phase2Deltas, node, { [hwKey]: seq });
       }
+      // Self: hws:{type} at the HOME node only (deepest non-null ancestor, org fallback) —
+      // answers self views (rows homed at the node), mirroring the li:/lu: placement rule.
+      // hwNodeKeys order is [org, mostSpecific, …, nearRoot], so home is nodes[1] ?? org.
+      const home = nodes[1] ?? nodes[0] ?? group.orgKey;
+      mergeDelta(phase2Deltas, home, { [`hws:${tableMeta.type}`]: seq });
     }
 
     log.trace('Batch ledger stamped', {

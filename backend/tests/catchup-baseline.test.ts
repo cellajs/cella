@@ -22,7 +22,15 @@ describe('Catchup (view-driven, ledger)', async () => {
     tenant = await createTestTenant(call, 'catchup-baseline');
 
     // Seed channel_counters with ledger, hw and count values for the org
-    const counts = { 's:ledger': 50, 's:membership': 3, 'hw:attachment': 42, 'e:attachment': 15, 'm:admin': 1 };
+    const counts = {
+      's:ledger': 50,
+      's:membership': 3,
+      'hw:attachment': 42,
+      'e:attachment': 15,
+      'hws:attachment': 40,
+      'es:attachment': 12,
+      'm:admin': 1,
+    };
     await db
       .insert(channelCountersTable)
       .values({ channelKey: tenant.organization.id, counts })
@@ -77,6 +85,36 @@ describe('Catchup (view-driven, ledger)', async () => {
     expect(answer.status).toBe('ok');
     expect(answer.highWaters).toEqual({ attachment: 42 });
     expect(answer.counts).toEqual({ attachment: 15 });
+  });
+
+  it('answers a SELF view from the hws:/es: family', async () => {
+    const orgId = tenant.organization.id;
+    const result = await call(postAppCatchup, {
+      body: {
+        cursor: '0-0',
+        views: [
+          {
+            key: `${orgId}:attachment:self`,
+            organizationId: orgId,
+            prefixes: [orgId],
+            entityTypes: ['attachment'],
+            depth: 'self',
+            cursor: 39,
+          },
+        ],
+      },
+      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+    });
+
+    expect(result.response.status).toBe(200);
+    const { views } = result.data as AppCatchupResponse;
+    expect(views).toHaveLength(1);
+    expect(views![0]).toMatchObject({
+      key: `${orgId}:attachment:self`,
+      status: 'ok',
+      highWaters: { attachment: 40 },
+      counts: { attachment: 12 },
+    });
   });
 
   it('forbids a view on an org the caller is no part of, without leaking numbers', async () => {

@@ -74,6 +74,8 @@ const statusFor = (
     read?: (channelType: DeepChannelType, role: string) => PermissionValue;
     memberships?: MembershipBaseModel[];
     isSystemAdmin?: boolean;
+    elevatedRoles?: readonly string[];
+    depth?: 'self' | 'subtree';
   } = {},
 ) =>
   resolveViewReadStatusForPolicies(
@@ -83,9 +85,11 @@ const statusFor = (
       entityType: ITEM,
       organizationId: ROOT_ID,
       actor: { userId: 'actor', isSystemAdmin: opts.isSystemAdmin ?? false },
+      elevatedRoles: opts.elevatedRoles,
       topology: deepTopology,
     },
     prefix,
+    opts.depth,
   );
 
 describe('resolveViewReadStatus', () => {
@@ -133,6 +137,34 @@ describe('resolveViewReadStatus', () => {
     const opts = { read: orgMemberOwnRead, memberships: [membership('organization', ROOT_ID, 'member')] };
     expect(statusFor(ROOT_ID, opts)).toBe('opaque');
     expect(statusFor(`${ROOT_ID}/c1`, opts)).toBe('opaque');
+  });
+
+  it('SELF views: a home-scoped grant (non-elevated under elevatedRoles) answers its own node', () => {
+    // Course student read=1 with elevatedRoles configured: the grant is home-scoped —
+    // it covers exactly the course wall (rows homed at c1), which is what a self view asks.
+    const courseStudentRead = (ct: DeepChannelType, role: string): PermissionValue =>
+      ct === 'course' && role === 'student' ? 1 : 0;
+    const opts = {
+      read: courseStudentRead,
+      memberships: [membership('course', 'c1', 'student')],
+      elevatedRoles: ['admin', 'staff'] as const,
+    };
+
+    // Self view on the granted node: provable — homed rows are exactly the grant.
+    expect(statusFor(`${ROOT_ID}/c1`, { ...opts, depth: 'self' })).toBe('ok');
+    // Subtree view on the same node: NOT provable (other projects live below).
+    expect(statusFor(`${ROOT_ID}/c1`, { ...opts, depth: 'subtree' })).toBe('opaque');
+    // Self view on a different course: no grant there.
+    expect(statusFor(`${ROOT_ID}/c2`, { ...opts, depth: 'self' })).toBe('opaque');
+  });
+
+  it('SELF views: subtree-scoped proofs still apply (self ⊂ subtree)', () => {
+    const opts = {
+      read: courseStaffRead,
+      memberships: [membership('course', 'c1', 'staff')],
+      elevatedRoles: ['admin', 'staff'] as const,
+    };
+    expect(statusFor(`${ROOT_ID}/c1`, { ...opts, depth: 'self' })).toBe('ok');
   });
 
   it('no read route at all is forbidden, as is a prefix outside the org', () => {

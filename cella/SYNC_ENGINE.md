@@ -90,7 +90,9 @@ And distinct terms for *what* a change is about and *where* it is routed:
 | **Channel** | A row's home: its deepest non-null channel-entity ancestor id, falling back to its organization (`resolveChannelKey()`). Audience grouping and unseen counts key on it; the ledger does NOT. |
 | **Ledger** | One monotonic counter per organization (`s:ledger` on the org's `channel_counters` row), shared by ALL product entity types. Row `seq` values are ledger values, stamped post-commit by the CDC worker in WAL order. |
 | **Path** | Materialized id-path (`path` STORED generated column): root-first ancestor ids slash-joined (`org1/course7/project9`); channel rows append their own id. Any subtree is a path prefix (`pathStartsWith`). |
-| **View** | The client sync unit: `{prefixes, entityTypes, cursor}` — a prefix set plus one org-ledger cursor. Catchup answers views from per-node summaries (`hw:{type}` max-merge rollups, `e:{type}` counts) after prefix authorization (`resolveViewReadStatus`: ok/opaque/forbidden). |
+| **View** | The client sync unit: `{prefixes, entityTypes, depth, cursor}` — a prefix set plus one org-ledger cursor. Catchup answers views from per-node summaries after prefix authorization (`resolveViewReadStatus`: ok/opaque/forbidden). |
+| **Self view / self stream** | `depth: 'self'`: rows HOMED at the node (exact placement — a channel's own wall). Answered from the self summary family `hws:{type}`/`es:{type}`, maintained at the home node only (the `li:`/`lu:` placement rule). Provable by a direct home-scoped membership. |
+| **Subtree view / subtree feed** | `depth: 'subtree'` (default): rows at or below the node. Answered from the rollup family `hw:{type}`/`e:{type}` (max-merged/counted at every ancestor). Provable only by subtree-scoped grants (elevated role at the node, deepest-level grant, or org-wide read). |
 | **Scope** | Entity type + channel (`{entityType}:{channelId ?? organizationId}`): the live-wire bookkeeping unit the lazy scheduler merges ranges and fetches per. Live scopes are per-view cursors over the shared ledger. |
 
 "Context" is **not** a sync-engine term: it means only the ambient kind (`AuthContext`, request `Context`, the routing context on mutation variables). Anything that routes or scopes a change is a channel — see [the rename migration](./migrations/2026-07-channel-entity-rename/README.md).
@@ -269,6 +271,51 @@ Fallback chain if Phase B doesn't run (SSE fails):
 - Global `refetchOnReconnect: true` refetches stale queries when network returns
 - Pull-to-refresh → `invalidateQueries()` forces full active refetch
 
+
+## Readability × answerability (self, downstream, upstream)
+
+Two different questions, two different leak surfaces:
+
+1. **Row readability** — which rows may this user fetch? Answered per row by the
+   permission engine (`checkPermission` / `buildCollectionReadWhere`), identically in
+   list reads, delta fetches, SSE dispatch and the detail cache. Its three directions:
+   - **Self**: a membership grant covers rows homed at its channel.
+   - **Downstream**: only **elevated roles** (`elevatedRoles` config) reach below their
+     grant level; everyone else's above-home grants are home-scoped.
+   - **Upstream**: no grant reaches upward; upstream reading exists only through
+     auto-created ancestor memberships and their own home-scoped grants.
+2. **Summary answerability** — may the server show this user the aggregate change
+   signal (`hw`/counts) for a view? Rows leak content; summaries leak the EXISTENCE AND
+   TIMING of other people's activity. So `resolveViewReadStatus` demands proof:
+
+> **A direct membership with unconditional read at a node answers that node's SELF view
+> `ok`. A SUBTREE view additionally requires the grant to be subtree-scoped — an elevated
+> role at that node, or the node is the deepest level. Everything readable-but-unproven
+> answers `opaque` (no numbers; live SSE unaffected; catchup falls back to refetch);
+> `forbidden` only without any read scope in the org (anti-oracle: probing prefixes
+> teaches nothing).**
+
+Proof is honored on the prefix's deepest **node id only** — prefixes are client-supplied,
+so claimed ancestry is never trusted (a granted ancestor's deeper nodes answer `opaque`
+until the ancestry-verification upgrade: check the claimed prefix against the channel's
+stored `path`). Unpublished drafts never bump `hw:`/`hws:` (they take ledger stamps for
+the mechanics, but no view can fetch them, so their timing is not signaled).
+
+Worked example (a deep fork: org > course > section > project, `elevatedRoles`
+`['admin','staff']`; ° = via a direct/auto-created membership with unconditional home
+read; ¹ = readable through an ancestor grant but conservatively unproven):
+
+| View | org admin | course staff | section staff | student + own project | student only |
+|---|---|---|---|---|---|
+| course **self** stream | ok | ok | ok° | **ok** | **ok** |
+| course **subtree** feed | ok | **ok** | opaque | opaque | opaque |
+| section **self** stream | ok | opaque¹ | ok | ok° | opaque |
+| section **subtree** feed | ok | opaque¹ | **ok** | opaque | opaque |
+| project stream (leaf: self = subtree) | ok | opaque¹ | opaque¹ | **ok** | opaque |
+
+What the statuses feel like: `ok` = exact gap fetches + count drift checks on catchup;
+`opaque` = identical LIVE behavior (dispatch is per-row filtered and view-agnostic), one
+list refetch on catchup instead of a gap fetch; `forbidden` = the view is dropped.
 
 ## Conflict handling
 

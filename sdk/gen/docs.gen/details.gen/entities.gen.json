@@ -209,13 +209,13 @@
                   "highWaters": {
                     "type": "object",
                     "required": false,
-                    "description": "Per-entityType max org-ledger seq at or below the view prefixes (hw:{type} rollups)",
+                    "description": "Per-entityType max org-ledger seq over the view prefixes (subtree: hw:{type}; self: hws:{type})",
                     "additionalProperties": { "type": "integer", "required": false }
                   },
                   "counts": {
                     "type": "object",
                     "required": false,
-                    "description": "Per-entityType live row counts summed over the view prefixes (e:{type} rollups)",
+                    "description": "Per-entityType live row counts summed over the view prefixes (subtree: e:{type}; self: es:{type})",
                     "additionalProperties": { "type": "integer", "required": false }
                   }
                 }
@@ -321,6 +321,12 @@
                   "minItems": 1,
                   "itemType": "string",
                   "enum": ["attachment"]
+                },
+                "depth": {
+                  "type": "string",
+                  "required": false,
+                  "description": "View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement — a channel wall). Self views are answerable by direct home-scoped memberships.",
+                  "enum": ["self", "subtree"]
                 },
                 "cursor": {
                   "type": "integer",

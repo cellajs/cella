@@ -27,7 +27,7 @@ export async function answerCatchupViews(
 ): Promise<CatchupViewAnswer[]> {
   if (views.length === 0) return [];
 
-  // Authorize every (prefix, entityType) pair per view.
+  // Authorize every (prefix, entityType) pair per view, at the view's depth.
   const statuses = views.map((view) => {
     let sawOpaque = false;
     let sawOk = false;
@@ -39,6 +39,7 @@ export async function answerCatchupViews(
           view.organizationId,
           actor,
           prefix,
+          view.depth ?? 'subtree',
         );
         if (status === 'forbidden') return 'forbidden' as const;
         if (status === 'opaque') sawOpaque = true;
@@ -61,15 +62,17 @@ export async function answerCatchupViews(
     const status = statuses[i];
     if (status !== 'ok') return { key: view.key, status };
 
+    const self = (view.depth ?? 'subtree') === 'self';
     const highWaters: Record<string, number> = {};
     const counts: Record<string, number> = {};
     for (const prefix of view.prefixes) {
       const parsed = countersByNode.get(pathHomeId(prefix));
       if (!parsed) continue;
       for (const entityType of view.entityTypes) {
-        const hw = parsed.highWaters[entityType];
+        // Family per depth: subtree rollups (hw:/e:) or self summaries (hws:/es:).
+        const hw = self ? parsed.selfHighWaters[entityType] : parsed.highWaters[entityType];
         if (hw !== undefined) highWaters[entityType] = Math.max(highWaters[entityType] ?? 0, hw);
-        const count = parsed.entityCounts[entityType];
+        const count = self ? parsed.selfCounts[entityType] : parsed.entityCounts[entityType];
         if (count !== undefined) counts[entityType] = (counts[entityType] ?? 0) + count;
       }
     }

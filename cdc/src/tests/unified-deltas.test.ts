@@ -134,6 +134,7 @@ describe('computeBatchUnifiedDeltas', () => {
     // (rows carry no createdAt here, so the stamp falls back to Date.now())
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
       'e:attachment': 5,
+      'es:attachment': 5,
       'li:attachment': expect.any(Number),
     });
   });
@@ -157,7 +158,7 @@ describe('computeBatchUnifiedDeltas', () => {
     const plan = computeBatchUnifiedDeltas(events);
 
     expect(plan.ledgerGroups).toHaveLength(0);
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2, 'es:attachment': -2 });
   });
 
   it('batch of attachment soft deletes: ledger group and count deltas accumulated', () => {
@@ -181,7 +182,7 @@ describe('computeBatchUnifiedDeltas', () => {
     expect(plan.ledgerGroups).toHaveLength(1);
     expect(plan.ledgerGroups[0].orgKey).toBe('org-1');
     expect(plan.ledgerGroups[0].count).toBe(2);
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2, 'es:attachment': -2 });
   });
 
   it('one ledger group per organization, never duplicated', () => {
@@ -216,6 +217,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
       'e:attachment': 1,
+      'es:attachment': 1,
       'li:attachment': createdAtMs,
     });
   });
@@ -237,6 +239,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
       'e:attachment': 2,
+      'es:attachment': 2,
       'li:attachment': Date.parse(laterCreatedAt),
     });
   });
@@ -269,6 +272,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
       'e:attachment': 1,
+      'es:attachment': 1,
       'li:attachment': Date.parse(publishedAt),
     });
   });
@@ -316,7 +320,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1, 'es:attachment': -1 });
   });
 
   it('restore does not stamp either (remapped create is not a new post)', () => {
@@ -329,7 +333,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': 1, 'es:attachment': 1 });
   });
 });
 
@@ -375,6 +379,7 @@ describe('draft lifecycle count deltas (publishedAt)', () => {
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
       'e:attachment': 1,
+      'es:attachment': 1,
       'li:attachment': Date.parse(publishedAt),
     });
   });
@@ -389,7 +394,7 @@ describe('draft lifecycle count deltas (publishedAt)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1, 'es:attachment': -1 });
   });
 
   it('hard-deleting a draft counts nothing (it was never counted)', () => {
@@ -441,6 +446,6 @@ describe('draft lifecycle count deltas (publishedAt)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1, 'es:attachment': -1 });
   });
 });

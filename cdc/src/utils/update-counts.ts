@@ -32,11 +32,12 @@ export function isActivityStampKey(key: string): boolean {
 
 /**
  * Keys that merge via GREATEST instead of summing: activity stamps (`li:`/`lu:`, epoch ms)
- * and ledger high-water marks (`hw:<type>`, the max org-ledger seq of that entity type at
- * or below the node). Mirrored by the apply_count_deltas PG function.
+ * and ledger high-water marks — `hw:<type>` (subtree: max org-ledger seq of that type at
+ * or below the node) and `hws:<type>` (self: max seq of rows HOMED at the node).
+ * Mirrored by the apply_count_deltas PG function.
  */
 export function isMaxMergeKey(key: string): boolean {
-  return isActivityStampKey(key) || key.startsWith('hw:');
+  return isActivityStampKey(key) || key.startsWith('hw:') || key.startsWith('hws:');
 }
 
 /**
@@ -280,6 +281,7 @@ function getEntityDeltas(
   }
 
   const counterKey = `e:${entityType}`;
+  const selfCountKey = `es:${entityType}`;
 
   if (action === 'create' || action === 'delete') {
     const value = action === 'create' ? 1 : -1;
@@ -289,6 +291,10 @@ function getEntityDeltas(
       if (ancestor.id === organizationId) continue; // org already counted above
       deltas.push({ channelKey: ancestor.id, deltas: { [counterKey]: value } });
     }
+    // Self count: rows HOMED at the node only (deepest non-null ancestor, org fallback) —
+    // the summary a self view is answered from (mirrors the li:/lu: placement rule).
+    const home = resolveDeepestAncestorId(h, entityType, row) ?? organizationId;
+    deltas.push({ channelKey: home, deltas: { [selfCountKey]: value } });
     warnMissingAncestors(h, entityType, row);
     return deltas;
   }
@@ -306,6 +312,13 @@ function getEntityDeltas(
     }
     for (const id of oldIds) {
       if (!newIds.has(id)) deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
+    }
+    // Reparent moves the self count between homes.
+    const oldHome = resolveDeepestAncestorId(h, entityType, oldRow) ?? organizationId;
+    const newHome = resolveDeepestAncestorId(h, entityType, newRow) ?? organizationId;
+    if (oldHome !== newHome) {
+      deltas.push({ channelKey: oldHome, deltas: { [selfCountKey]: -1 } });
+      deltas.push({ channelKey: newHome, deltas: { [selfCountKey]: 1 } });
     }
     return deltas;
   }

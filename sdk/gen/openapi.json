@@ -4759,6 +4759,11 @@
                           },
                           "minItems": 1
                         },
+                        "depth": {
+                          "type": "string",
+                          "enum": ["self", "subtree"],
+                          "description": "View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement — a channel wall). Self views are answerable by direct home-scoped memberships."
+                        },
                         "cursor": {
                           "type": "integer",
                           "minimum": 0,
@@ -4851,14 +4856,14 @@
                             "additionalProperties": {
                               "type": "integer"
                             },
-                            "description": "Per-entityType max org-ledger seq at or below the view prefixes (hw:{type} rollups)"
+                            "description": "Per-entityType max org-ledger seq over the view prefixes (subtree: hw:{type}; self: hws:{type})"
                           },
                           "counts": {
                             "type": "object",
                             "additionalProperties": {
                               "type": "integer"
                             },
-                            "description": "Per-entityType live row counts summed over the view prefixes (e:{type} rollups)"
+                            "description": "Per-entityType live row counts summed over the view prefixes (subtree: e:{type}; self: es:{type})"
                           }
                         },
                         "required": ["key", "status"]

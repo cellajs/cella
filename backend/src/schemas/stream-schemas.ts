@@ -93,6 +93,10 @@ export const catchupViewSchema = z.object({
     .max(64)
     .openapi({ description: 'Materialized id-path prefixes this view covers (root-first ids, slash-joined)' }),
   entityTypes: z.array(z.enum(appConfig.productEntityTypes)).min(1),
+  depth: z.enum(['self', 'subtree']).optional().openapi({
+    description:
+      'View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement — a channel wall). Self views are answerable by direct home-scoped memberships.',
+  }),
   cursor: z.number().int().min(0).openapi({
     description: 'Org-ledger seq this view has fully ingested (0 = baseline not yet established)',
   }),
@@ -138,14 +142,12 @@ export type CatchupChangeSummary = z.infer<typeof catchupChangeSummarySchema>;
 export const catchupViewAnswerSchema = z.object({
   key: z.string().openapi({ description: 'The client-supplied view key, echoed verbatim' }),
   status: z.enum(['ok', 'opaque', 'forbidden']),
-  highWaters: z
-    .record(z.string(), z.number().int())
-    .optional()
-    .openapi({ description: 'Per-entityType max org-ledger seq at or below the view prefixes (hw:{type} rollups)' }),
-  counts: z
-    .record(z.string(), z.number().int())
-    .optional()
-    .openapi({ description: 'Per-entityType live row counts summed over the view prefixes (e:{type} rollups)' }),
+  highWaters: z.record(z.string(), z.number().int()).optional().openapi({
+    description: 'Per-entityType max org-ledger seq over the view prefixes (subtree: hw:{type}; self: hws:{type})',
+  }),
+  counts: z.record(z.string(), z.number().int()).optional().openapi({
+    description: 'Per-entityType live row counts summed over the view prefixes (subtree: e:{type}; self: es:{type})',
+  }),
 });
 
 export type CatchupViewAnswer = z.infer<typeof catchupViewAnswerSchema>;

@@ -121,6 +121,11 @@ are discarded, so old-domain cursors never meet new-domain values.
 - Feeds unlock: a course feed = `pathPrefix: '<orgId>/<courseId>'` on the item list op
   (server) with the existing canonical-list pattern (client). Exact-placement params
   (`courseId` + NULL deeper columns) keep working unchanged for per-level streams.
+- Self vs subtree views: declare `depth: 'self'` for a channel's own wall (course/section
+  streams) — answerable `ok` by DIRECT memberships (students included, via their
+  home-scoped grants); `depth: 'subtree'` (default) for aggregate feeds — `ok` only for
+  subtree-scoped readers (staff at the node, org admins). See "Readability ×
+  answerability" in SYNC_ENGINE.md for the full matrix.
 - Restamp spans items, comments, submissions, materials, labels, attachments jointly.
 
 ## raak notes

@@ -70,5 +70,8 @@ describe('recalculateCounters (ledger + hw)', async () => {
     expect(counts['hw:attachment']).toBe(47);
     // Live count excludes the soft-deleted row.
     expect(counts['e:attachment']).toBe(2);
+    // Self family (attachments are org-homed, so self == subtree at the org node).
+    expect(counts['hws:attachment']).toBe(47);
+    expect(counts['es:attachment']).toBe(2);
   });
 });
