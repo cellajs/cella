@@ -25,6 +25,7 @@ import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/
 import { syncStaleTime } from '~/query/basic/sync-stale-config';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import { removePausedCreates, squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
+import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
 import { mergeServerResponse, syncEntityToCache } from '~/query/offline/update-success-utils';
 import { getRouteOrgId, getRouteTenantId } from '~/query/realtime/sync-priority';
 import { createResourceError } from '~/utils/resource-error';
@@ -187,13 +188,14 @@ export const useAttachmentCreateMutation = (tenantId: string, organizationId: st
     },
   });
 
-  // Inject org context so persisted variables replay correctly after a reload; callers pass just the data.
+  // Inject org context AND stx so persisted variables replay correctly after a reload with
+  // the ORIGINAL mutation id and timestamps (D4); callers pass just the data.
   return {
     ...mutation,
     mutate: (data: CreateAttachmentInput, options?: Parameters<typeof mutation.mutate>[1]) =>
-      mutation.mutate({ tenantId, organizationId, data }, options),
+      mutation.mutate({ tenantId, organizationId, data, stx: createStxForCreate() }, options),
     mutateAsync: (data: CreateAttachmentInput, options?: Parameters<typeof mutation.mutateAsync>[1]) =>
-      mutation.mutateAsync({ tenantId, organizationId, data }, options),
+      mutation.mutateAsync({ tenantId, organizationId, data, stx: createStxForCreate() }, options),
   };
 };
 
@@ -248,7 +250,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
    * into a paused create — the create replays with the merged fields and no update mutation
    * is issued; the optimistic row is patched here since onMutate never runs.
    */
-  const prepareUpdate = ({ id, ops }: UpdateAttachmentVars): UpdateAttachmentVars | null => {
+  const prepareUpdate = ({ id, ops }: UpdateAttachmentVars): UpdateAttachmentFullVars | null => {
     if (squashIntoPendingCreate(queryClient, keys.create, id, ops as Record<string, unknown>)) {
       const cached = findAttachmentInCache(id);
       if (cached) {
@@ -258,18 +260,27 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
       }
       return null;
     }
-    return { id, ops: squashPendingMutation(queryClient, keys.update, id, ops as Record<string, unknown>) };
+    const mergedOps = squashPendingMutation(queryClient, keys.update, id, ops as Record<string, unknown>);
+    // stx minted at intent time and carried in variables (D4): a replay reuses the original
+    // mutation id and HLCs instead of restamping at execution.
+    return {
+      tenantId,
+      organizationId,
+      id,
+      ops: mergedOps,
+      stx: createStxForUpdate(Object.keys(mergedOps)),
+    };
   };
 
   return {
     ...mutation,
     mutate: (vars: UpdateAttachmentVars, options?: Parameters<typeof mutation.mutate>[1]) => {
       const prepared = prepareUpdate(vars);
-      if (prepared) mutation.mutate({ tenantId, organizationId, ...prepared }, options);
+      if (prepared) mutation.mutate(prepared, options);
     },
     mutateAsync: async (vars: UpdateAttachmentVars, options?: Parameters<typeof mutation.mutateAsync>[1]) => {
       const prepared = prepareUpdate(vars);
-      return prepared ? mutation.mutateAsync({ tenantId, organizationId, ...prepared }, options) : undefined;
+      return prepared ? mutation.mutateAsync(prepared, options) : undefined;
     },
   };
 };
@@ -338,12 +349,13 @@ export const useAttachmentDeleteMutation = (tenantId: string, organizationId: st
     ...mutation,
     mutate: (attachments: Attachment[], options?: Parameters<typeof mutation.mutate>[1]) => {
       const remaining = prepareDelete(attachments);
-      if (remaining) mutation.mutate({ tenantId, organizationId, attachments: remaining }, options);
+      if (remaining)
+        mutation.mutate({ tenantId, organizationId, attachments: remaining, stx: createStxForDelete() }, options);
     },
     mutateAsync: async (attachments: Attachment[], options?: Parameters<typeof mutation.mutateAsync>[1]) => {
       const remaining = prepareDelete(attachments);
       return remaining
-        ? mutation.mutateAsync({ tenantId, organizationId, attachments: remaining }, options)
+        ? mutation.mutateAsync({ tenantId, organizationId, attachments: remaining, stx: createStxForDelete() }, options)
         : undefined;
     },
   };

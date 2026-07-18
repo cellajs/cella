@@ -438,9 +438,10 @@ Treat those three as infrastructure intentions rather than working guarantees
 are dehydrated — the state connectivity failures reach via the retry pause boundary.
 
 Idempotency is operation-specific. Attachment create checks the mutation ID against activities
-and can return an existing batch. Update and delete do not perform that check. Because the
-frontend currently generates `stx` inside the mutation function, re-execution can create a new
-mutation ID.
+and can return an existing batch. Update and delete do not perform that check. The hooks mint
+`stx` at intent time and carry it in the mutation variables, so a persisted replay reuses the
+original mutation ID and field timestamps; the mutation functions only generate a fresh `stx`
+for direct calls without one.
 
 ## Resilience
 
