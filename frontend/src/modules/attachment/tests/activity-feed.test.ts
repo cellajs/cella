@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { selectRecentActivity } from '../query';
+import { selectRecentActivity } from '../helpers/activity-feed';
 
 describe('selectRecentActivity (template feed pattern)', () => {
   it('interleaves rows newest-first by publish time, falling back to create time', () => {

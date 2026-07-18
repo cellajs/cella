@@ -3,6 +3,7 @@ import { infiniteQueryOptions, queryOptions, useMutation, useQuery, useQueryClie
 import { type Attachment, type GetAttachmentsData, getAttachment, getAttachments } from 'sdk';
 import { zAttachment } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
+import { selectRecentActivity } from '~/modules/attachment/helpers/activity-feed';
 import {
   type CreateAttachmentInput,
   type CreateAttachmentVars,
@@ -129,19 +130,6 @@ export const attachmentQueryOptions = (tenantId: string, organizationId: string,
 });
 
 export const findAttachmentInCache = createCacheFinder<Attachment>('attachment');
-
-/**
- * Newest-first recency ordering for activity feeds: publish time when the draft lifecycle set
- * one, else create time — the same key unseen tracking uses. Pure, so forks can reuse it over
- * any product entity type.
- */
-export function selectRecentActivity<T extends { createdAt?: string | null; publishedAt?: string | null }>(
-  items: T[],
-  limit: number,
-): T[] {
-  const recencyOf = (item: T) => Date.parse(item.publishedAt ?? item.createdAt ?? '') || 0;
-  return [...items].sort((a, b) => recencyOf(b) - recencyOf(a)).slice(0, limit);
-}
 
 /**
  * Org-level "recent activity" feed — the template proof of the view pattern: an aggregate
