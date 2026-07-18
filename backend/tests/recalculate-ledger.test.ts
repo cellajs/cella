@@ -59,11 +59,13 @@ describe('recalculateCounters (ledger + hw)', async () => {
     await recalculateCounters(db);
 
     const [row] = await db
-      .select({ counts: channelCountersTable.counts })
+      .select({ counts: channelCountersTable.counts, path: channelCountersTable.path })
       .from(channelCountersTable)
       .where(sql`channel_key = ${tenant.organization.id}`);
 
     const counts = row.counts as Record<string, number>;
+    // Path backfill: the org channel's canonical path is its own id.
+    expect(row.path).toBe(tenant.organization.id);
     // Ledger reservation counter: max stamped value across product tables.
     expect(counts['s:ledger']).toBe(47);
     // High-water includes tombstones (they keep their seq for delta reads).

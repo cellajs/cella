@@ -28,6 +28,8 @@ export const findChannelCountersByKeys = async ({ var: { db } }: DbContext, keys
     .select({
       channelKey: channelCountersTable.channelKey,
       counts: channelCountersTable.counts,
+      // Canonical id-path (CDC-maintained): lets catchup verify claimed view ancestry.
+      path: channelCountersTable.path,
     })
     .from(channelCountersTable)
     .where(inArray(channelCountersTable.channelKey, keys));

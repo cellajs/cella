@@ -12,6 +12,7 @@ import { replicationState } from '../services/replication-state';
 import { activityAttrs, cdcAttrs, cdcSpanNames, withSpan } from '../lib/tracing';
 import type { TraceContext } from '../lib/tracing';
 import { applyBatchUnifiedDeltas } from '../utils/apply-unified-deltas';
+import { syncChannelPaths } from '../utils/channel-path-sync';
 import { computeBatchUnifiedDeltas } from '../utils/compute-unified-deltas';
 import { cleanupEmbeddingReferences } from '../utils/embedding-cleanup';
 
@@ -177,6 +178,9 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
 
     // Apply deltas SECOND: only after activities are safely persisted
     await applyBatchUnifiedDeltas(batchPlan);
+
+    // Mirror channel paths onto counters rows (view-ancestry verification source)
+    await syncChannelPaths(events);
 
     const stamped = prepared.map((item) => ({
       ...item,

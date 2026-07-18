@@ -249,6 +249,20 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
+  // ── Phase 3c: Channel path backfill ───────────────────────────────────
+  // Counters rows carry a copy of the channel's canonical id-path (generated column)
+  // so catchup verifies claimed view ancestry without extra queries; CDC maintains it
+  // incrementally, this is the rebuild/backfill.
+  for (const channelType of hierarchy.channelTypes) {
+    await db.execute(
+      sql.raw(`
+      UPDATE channel_counters cc SET path = c.path
+      FROM ${tbl(channelType as EntityType)} c
+      WHERE cc.channel_key = c.id::text AND cc.path IS DISTINCT FROM c.path
+    `),
+    );
+  }
+
   // ── Phase 4: Product counters ─────────────────────────────────────────
   await db.delete(productCountersTable);
 
