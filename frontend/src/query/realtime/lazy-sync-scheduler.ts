@@ -9,6 +9,7 @@ import { propagateEmbeddings } from './propagation';
 import { getSyncTier, isViewingChannel } from './sync-priority';
 import { useSyncStore } from './sync-store';
 import type { AppStreamNotification } from './types';
+import { resolveChannelPath } from './view-declaration';
 
 /** Fixed spread window until the server negotiates one per notification (Piece N-c). */
 const DEFAULT_SYNC_WINDOW_MS = 15_000;
@@ -158,7 +159,7 @@ export async function flushChannelViewNow(
   const entry = dirty.get(entryKey(entityType, organizationId, channelId));
   if (!entry) return 'none';
   dirty.delete(entryKey(entityType, organizationId, channelId));
-  return flushEntry({ ...entry, attempts: MAX_FLUSH_ATTEMPTS - 1 });
+  return flushGroup([{ ...entry, attempts: MAX_FLUSH_ATTEMPTS - 1 }]);
 }
 
 /** Clear all pending work. Called when catchup starts: it recomputes channel-view deltas itself. */
@@ -191,43 +192,92 @@ async function flushDue(): Promise<void> {
     dirty.delete(key); // in-flight ranges leave the map; overlapping re-notifications re-enqueue
     due.push(entry);
   }
-  await Promise.all(due.map(flushEntry));
+  // Covering fetch: every due channel of one (entityType, org) shares ONE bounded fetch —
+  // rows route to their home lists during patching, so N dirty channels never cost N fetches.
+  const groups = new Map<string, DirtyEntry[]>();
+  for (const entry of due) {
+    const groupKey = `${entry.entityType}:${entry.organizationId}`;
+    const group = groups.get(groupKey);
+    if (group) group.push(entry);
+    else groups.set(groupKey, [entry]);
+  }
+  await Promise.all([...groups.values()].map(flushGroup));
   armTimer();
 }
 
-async function flushEntry(entry: DirtyEntry): Promise<'ok' | 'fallback' | 'requeued'> {
-  const { entityType, organizationId, tenantId, channelId } = entry;
+/**
+ * Narrowest path prefix covering every due channel of a group; undefined = whole org (no
+ * narrowing). Paths come from the fork-registered channel-path resolver; any org-level entry
+ * or unresolvable channel widens to the org. The template always widens (its only channel IS
+ * the org), so `pathPrefix` never leaves undefined there.
+ */
+function coveringPathPrefix(entries: DirtyEntry[]): string | undefined {
+  const paths: string[][] = [];
+  for (const entry of entries) {
+    if (!entry.channelId || entry.channelId === entry.organizationId) return undefined;
+    const path = resolveChannelPath(null, entry.channelId);
+    if (!path) return undefined;
+    paths.push(path.split('/'));
+  }
+  let common = paths[0];
+  for (const segments of paths.slice(1)) {
+    let i = 0;
+    while (i < common.length && i < segments.length && common[i] === segments[i]) i++;
+    common = common.slice(0, i);
+  }
+  // A single root segment is the org id: no narrowing.
+  return common.length > 1 ? common.join('/') : undefined;
+}
+
+/** Flush one covering group: fetch the merged range once, then settle every entry from it. */
+async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'requeued'> {
+  const { entityType, organizationId } = entries[0];
+  const tenantId = entries.find((entry) => entry.tenantId)?.tenantId ?? null;
 
   // Offline: fetching fails pointlessly; keep dirty, recheck soon. Catchup owns reconnect.
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-    requeue(entry, OFFLINE_RECHECK_MS);
+    for (const entry of entries) requeue(entry, OFFLINE_RECHECK_MS);
     return 'requeued';
   }
 
+  const fromSeq = Math.min(...entries.map((entry) => entry.fromSeq));
+  const untilSeq = Math.max(...entries.map((entry) => entry.untilSeq));
   const keys = getEntityQueryKeys(entityType);
-  const seqCursor = `${entry.fromSeq},${entry.untilSeq}`;
-  const result = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys);
+  const result = await cacheOps.fetchRangeAndPatch(
+    entityType,
+    organizationId,
+    tenantId,
+    `${fromSeq},${untilSeq}`,
+    keys,
+    coveringPathPrefix(entries),
+  );
 
-  if (result.status === 'error' && entry.attempts + 1 < MAX_FLUSH_ATTEMPTS) {
-    requeue({ ...entry, attempts: entry.attempts + 1 }, RETRY_BASE_MS * 2 ** entry.attempts);
+  if (result.status === 'error' && entries.some((entry) => entry.attempts + 1 < MAX_FLUSH_ATTEMPTS)) {
+    for (const entry of entries)
+      requeue({ ...entry, attempts: entry.attempts + 1 }, RETRY_BASE_MS * 2 ** entry.attempts);
     return 'requeued';
   }
 
   if (result.status === 'ok') {
-    advanceCaughtUp(entry);
-    // Unseen sync: exact badge deltas from the fetched rows (mirrors the server's unseen filters).
-    ingestSyncedRows(entityType, channelId ?? organizationId, result.items as { id: string }[]);
+    // Per-view advance accounting: the fetch covered [fromSeq, untilSeq] for every channel
+    // under the covering prefix, so each due channel advances to the shared upper bound.
+    for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
+    // Unseen sync: exact badge deltas from the fetched rows (each row resolves its own home
+    // channel; the org id is only the fallback for rows without ancestor ids).
+    ingestSyncedRows(entityType, organizationId, result.items as { id: string }[]);
   } else {
-    // Overflow/unsupported/exhausted retries: hand the channel view to react-query and advance the
-    // watermark to prevent a fetch loop. The list refetch owns recovery.
-    const refetchType = isViewingChannel(organizationId, channelId) ? 'active' : 'none';
-    cacheOps.invalidateEntityListForOrg(keys, organizationId, refetchType);
-    advanceCaughtUp(entry);
-    if (entry.hasCreates) invalidateUnseenCounts(entityType);
+    // Overflow/unsupported/exhausted retries: hand the channel views to react-query and advance
+    // the watermark to prevent a fetch loop. The list refetch owns recovery.
+    const anyViewing = entries.some((entry) => isViewingChannel(organizationId, entry.channelId));
+    cacheOps.invalidateEntityListForOrg(keys, organizationId, anyViewing ? 'active' : 'none');
+    for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
+    if (entries.some((entry) => entry.hasCreates)) invalidateUnseenCounts(entityType);
   }
 
   // Propagate after source data settled (fresh rows on ok, invalidated list otherwise).
-  for (const propagation of entry.propagations) propagateEmbeddings(propagation);
+  for (const entry of entries) {
+    for (const propagation of entry.propagations) propagateEmbeddings(propagation);
+  }
 
   return result.status === 'ok' ? 'ok' : 'fallback';
 }

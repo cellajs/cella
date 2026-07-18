@@ -10,10 +10,21 @@ import { useSyncStore } from './sync-store';
  * forks with deeper hierarchies register one that reads `path` off their cached channel rows.
  * An unresolved path skips that grant's view — the org-view baseline still covers the rows.
  */
-let channelPathResolver: (channelType: string, channelId: string) => string | null = () => null;
+let channelPathResolver: (channelType: string | null, channelId: string) => string | null = () => null;
 
-export function registerChannelPathResolver(resolver: (channelType: string, channelId: string) => string | null): void {
+export function registerChannelPathResolver(
+  resolver: (channelType: string | null, channelId: string) => string | null,
+): void {
   channelPathResolver = resolver;
+}
+
+/**
+ * Resolve a channel's canonical path via the registered resolver. `channelType` is null when
+ * the caller only knows the id (the scheduler's covering-prefix computation); fork resolvers
+ * then search their cached channel types.
+ */
+export function resolveChannelPath(channelType: string | null, channelId: string): string | null {
+  return channelPathResolver(channelType, channelId);
 }
 
 /**

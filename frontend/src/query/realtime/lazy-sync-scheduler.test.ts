@@ -24,6 +24,10 @@ const ingestSyncedRows = vi.fn();
 vi.mock('~/modules/seen/unseen-sync', () => ({ ingestSyncedRows: (...a: unknown[]) => ingestSyncedRows(...a) }));
 vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-client' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
+const resolveChannelPath = vi.fn((_channelType: string | null, _channelId: string): string | null => null);
+vi.mock('./view-declaration', () => ({
+  resolveChannelPath: (...a: [string | null, string]) => resolveChannelPath(...a),
+}));
 
 // Node test env has no document/window; stub them (before importing query-client, which attaches
 // online listeners at load) so installListeners wires the promote-on-observe path.
@@ -177,6 +181,46 @@ describe('lazy-sync-scheduler', () => {
     await vi.advanceTimersByTimeAsync(60_000);
 
     expect(fetchRangeAndPatch).not.toHaveBeenCalled();
+  });
+
+  it('covers all due channels of one org with ONE fetch and advances each to the shared bound', async () => {
+    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 0);
+    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
+    enqueueRange({ ...base, channelId: 'proj-b', fromSeq: 9, untilSeq: 12 });
+
+    await flushAllNow();
+
+    // One merged org fetch instead of two per-channel fetches; rows route by home during patch.
+    expect(fetchRangeAndPatch).toHaveBeenCalledTimes(1);
+    expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('5,12');
+    // Per-view advance accounting: both channels advance to the covered upper bound.
+    expect(useSyncStore.getState().getChannelSeq('org-1', 'proj-a', 'attachment')).toBe(12);
+    expect(useSyncStore.getState().getChannelSeq('org-1', 'proj-b', 'attachment')).toBe(12);
+  });
+
+  it('narrows the covering fetch with a pathPrefix when every due channel resolves a path', async () => {
+    resolveChannelPath.mockImplementation((_type, channelId) =>
+      channelId === 'proj-a' ? 'org-1/course-1/proj-a' : 'org-1/course-1/proj-b',
+    );
+    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
+    enqueueRange({ ...base, channelId: 'proj-b', fromSeq: 9, untilSeq: 12 });
+
+    await flushAllNow();
+
+    // Common true ancestor of both projects: the course subtree.
+    expect(fetchRangeAndPatch.mock.calls[0][5]).toBe('org-1/course-1');
+  });
+
+  it('widens to the whole org when any due channel path is unknown', async () => {
+    resolveChannelPath.mockImplementation((_type, channelId) =>
+      channelId === 'proj-a' ? 'org-1/course-1/proj-a' : null,
+    );
+    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
+    enqueueRange({ ...base, channelId: 'proj-b', fromSeq: 9, untilSeq: 12 });
+
+    await flushAllNow();
+
+    expect(fetchRangeAndPatch.mock.calls[0][5]).toBeUndefined();
   });
 
   it('flushes a pending channel view when its channel gains an observer (catch-up-on-open without navigation)', async () => {

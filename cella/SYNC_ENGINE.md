@@ -302,6 +302,12 @@ contiguous ranges per product type and home channel; new notifications never pos
 deadline. It also flushes when navigation enters a channel, a channel gains its first observer,
 the tab hides, or the browser returns online.
 
+At flush time, every due channel of one organization and product type shares a single covering
+fetch: the merged bounded range, narrowed with a `pathPrefix` when a registered channel-path
+resolver can prove a common true ancestor for all due channels (forks; the template always
+fetches org-wide). Returned rows route to their home lists during patching, and each covered
+channel advances to the shared upper bound.
+
 Each channel view records both the newest known position and the successfully ingested position.
 Fetches start after the ingested cursor, so small live gaps repair themselves. Repeated failures
 fall back to targeted invalidation and advance, preventing a range from looping forever.
