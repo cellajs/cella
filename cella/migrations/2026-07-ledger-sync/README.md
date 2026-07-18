@@ -121,6 +121,12 @@ are discarded, so old-domain cursors never meet new-domain values.
 - Feeds unlock: a course feed = `pathPrefix: '<orgId>/<courseId>'` on the item list op
   (server) with the existing canonical-list pattern (client). Exact-placement params
   (`courseId` + NULL deeper columns) keep working unchanged for per-level streams.
+- Verified ancestry: after pulling the follow-up phases, re-run counter recalculation —
+  it backfills `channel_counters.path`, which flips ancestor-granted deep views (staff →
+  a project under their course) from conservative `opaque` to `ok`.
+- Grant-boundary views: wire `deriveGrantBoundaryViews` + `declareSyncView`
+  (frontend `query/realtime/views.ts`) when adding feed surfaces; the re-baseline rule
+  (prefix-set changes reset the cursor) is enforced by the store.
 - Self vs subtree views: declare `depth: 'self'` for a channel's own wall (course/section
   streams) — answerable `ok` by DIRECT memberships (students included, via their
   home-scoped grants); `depth: 'subtree'` (default) for aggregate feeds — `ok` only for

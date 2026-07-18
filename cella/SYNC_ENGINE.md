@@ -295,27 +295,55 @@ Two different questions, two different leak surfaces:
 > `forbidden` only without any read scope in the org (anti-oracle: probing prefixes
 > teaches nothing).**
 
-Proof is honored on the prefix's deepest **node id only** — prefixes are client-supplied,
-so claimed ancestry is never trusted (a granted ancestor's deeper nodes answer `opaque`
-until the ancestry-verification upgrade: check the claimed prefix against the channel's
-stored `path`). Unpublished drafts never bump `hw:`/`hws:` (they take ledger stamps for
-the mechanics, but no view can fetch them, so their timing is not signaled).
+**Ancestry comes from the id, never the claim** (the XACML hierarchical-profile lesson):
+every `channel_counters` row carries the channel's canonical `path` (CDC-maintained,
+recalc-backfilled), so the counters read that answers a view also VERIFIES it. A claimed
+prefix must equal the node's true path — a mismatch (forged, or stale after a reparent)
+answers `opaque` and self-heals on re-declare, never `forbidden` (anti-oracle) — and
+grants then match against TRUE ancestor segments, so a subtree grant at any real ancestor
+proves deeper nodes. Nodes without a counters row fall back to node-id-only proof
+(conservative, and there are no numbers to disclose anyway). Unpublished drafts never
+bump `hw:`/`hws:` (they take ledger stamps for the mechanics, but no view can fetch them,
+so their timing is not signaled).
 
 Worked example (a deep fork: org > course > section > project, `elevatedRoles`
 `['admin','staff']`; ° = via a direct/auto-created membership with unconditional home
-read; ¹ = readable through an ancestor grant but conservatively unproven):
+read; ᵛ = via a subtree grant at a VERIFIED true ancestor):
 
 | View | org admin | course staff | section staff | student + own project | student only |
 |---|---|---|---|---|---|
 | course **self** stream | ok | ok | ok° | **ok** | **ok** |
 | course **subtree** feed | ok | **ok** | opaque | opaque | opaque |
-| section **self** stream | ok | opaque¹ | ok | ok° | opaque |
-| section **subtree** feed | ok | opaque¹ | **ok** | opaque | opaque |
-| project stream (leaf: self = subtree) | ok | opaque¹ | opaque¹ | **ok** | opaque |
+| section **self** stream | ok | okᵛ | ok | ok° | opaque |
+| section **subtree** feed | ok | okᵛ | **ok** | opaque | opaque |
+| project stream (leaf: self = subtree) | ok | okᵛ | okᵛ | **ok** | opaque |
+
+A partial-coverage aggregate ("my 3 of the 5 projects") is a view whose prefix SET is
+the granted nodes — each directly provable, so the union answers `ok`; asking the
+CONTAINER's prefix instead stays `opaque` for partial readers, by design.
 
 What the statuses feel like: `ok` = exact gap fetches + count drift checks on catchup;
 `opaque` = identical LIVE behavior (dispatch is per-row filtered and view-agnostic), one
 list refetch on catchup instead of a gap fetch; `forbidden` = the view is dropped.
+
+**Grant-boundary views.** Views should be declared where grants live — then every
+reader's precise views exist by construction. `deriveGrantBoundaryViews` (client) maps
+grant shapes to provable views: org-wide/elevated grants → subtree views, home-level
+grants → ONE prefix-set subtree view (the partial-coverage aggregate), home-scoped
+grants → self views; conditional grants derive nothing (their rows ride org-view fetches
++ staleness). Registered views (`declareSyncView`) obey the **re-baseline rule** — a
+view's identity is its prefix set + entity types + depth, and any identity change resets
+the cursor to 0, because a grown prefix set has history predating the cursor that a
+delta fetch would silently skip. On catchup, registered `ok` views with unchanged `hw`
+skip every refetch (the precision win); changed views invalidate and advance; row
+ingestion itself rides the org-view delta fetches.
+
+> **Consistency note (Zanzibar's "new enemy" lesson).** Authorization state
+> (memberships) and ledger cursors advance independently; cella approximates
+> snapshot-consistency with per-request membership snapshots, live membership refresh
+> before dispatch, and view answers computed against current grants. A fork needing
+> hard guarantees that permission changes order before content changes should look at
+> Zanzibar-style consistency tokens (zookies) — out of scope here by design.
 
 ## Conflict handling
 

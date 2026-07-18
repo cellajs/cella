@@ -95,6 +95,10 @@ This channel carries **full entity row data**: it is an internal service channel
 
 **Message shape** (`CdcOutboundMessage`): the activity (with id, `seq`, `batchUntilSeq`), the compacted `rowData`, `batchRows` for batches (permission-relevant fields only: id, createdBy, deletedAt, publicAt, channel ids), and trace context. The backend invalidates detail-cache entries by entity id (single `subjectId` or `batchRows` ids). Batches are split per seq channel so **every message describes one contiguous seq range**, the invariant client gap detection relies on.
 
+**Channel path sync**: after deltas apply, channel-entity create/update events mirror the
+row's canonical id-path (STORED generated column) onto its `channel_counters.path`, the
+verified-ancestry source for catchup view authorization. Recalculation backfills it.
+
 **Control messages** bypass the data schema: `health` (pushed every 15 s), `catchup_complete`, and `wal_lag_alert`.
 
 **Drift guard:** `src/tests/wire-contract.type-check.ts` asserts at compile time that the outbound message type satisfies the backend's `CdcMessage` schema type. It runs under `pnpm ts`, so contract drift fails type-checking, not runtime.
