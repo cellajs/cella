@@ -106,8 +106,8 @@ export type CatchupView = z.infer<typeof catchupViewSchema>;
 
 /**
  * Body schema for stream catchup POST requests.
- * `views` is the ledger-sync contract (client-declared views over path prefixes);
- * `seqs` is the legacy per-scope watermark contract, kept while the client migrates.
+ * `views` is the ledger-sync contract: client-declared views over path prefixes with
+ * org-ledger cursors, answered per view after prefix authorization.
  */
 export const streamCatchupBodySchema = z.object({
   cursor: z.string().optional().openapi({

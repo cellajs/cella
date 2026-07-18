@@ -29,6 +29,9 @@ first non-null ancestor id. With nullable ancestors, rows may attach above their
 parent; the deepest non-null ancestor is then the row's effective home. Without nullable
 ancestors this is just the declared parent.
 
-Every site that answers "which context owns this row" shares this rule: CDC seq scoping and
-counter deltas, wire-notification `channelId`, seen-by grouping, and counter recalculation.
-See `resolve-row-channel.ts`, covered by `shared/src/config-builder/tests/resolve-row-channel.test.ts`.
+Every site that answers "which channel is this row's home" shares this rule: CDC counter
+deltas and self-summary placement (`hws:`/`es:`, `li:`/`lu:`), wire-notification `channelId`,
+seen-by grouping, and counter recalculation. (The org LEDGER does not key on it — seq values
+are org-scoped.) The materialized id-path (`row-path.ts`) is the same rule in path form: its
+last segment equals the deepest non-null ancestor, asserted by tests. See
+`resolve-row-channel.ts` + `row-path.ts`, covered by `shared/src/config-builder/tests/`.

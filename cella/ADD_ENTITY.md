@@ -118,7 +118,7 @@ export const notesTable = snakeCase.table(
     // ...entity-specific columns
   },
   (table) => [
-    index('notes_project_seq_index').on(table.projectId, table.seq),   // required for delta sync
+    index('notes_organization_id_seq_index').on(table.organizationId, table.seq), // required for delta sync (org-ledger reads; enforced by delta-index.test)
     index('notes_tenant_id_index').on(table.tenantId),
     foreignKey({
       columns: [table.tenantId, table.organizationId],
@@ -137,7 +137,7 @@ Mandatory columns come from the spread helpers; **do not hand-write them**:
 
 | Provided by | Columns |
 |---|---|
-| `productEntityColumns('<type>')` | `stx` (jsonb, sync metadata), `seq` (bigint, CDC delta cursor), `description`, `keywords`, `createdBy/updatedBy`, `deletedAt/deletedBy` (soft delete) |
+| `productEntityColumns('<type>')` | `stx` (jsonb, sync metadata), `seq` (bigint, org-ledger position, CDC-stamped), `path` (STORED generated id-path), `description`, `keywords`, `createdBy/updatedBy`, `deletedAt/deletedBy` (soft delete) |
 | ↳ `tenantEntityColumns` (nested) | `id` (uuid v7 PK via `generateId`), `entityType` (enum locked to the type), `tenantId` (FK → tenants), `name`, `createdAt`, `updatedAt` |
 
 Conventions: `snakeCase.table(...)` maps camelCase fields → snake_case columns automatically; table name is the pluralized type (`note` → `notes`); ids are plain **UUID v7** (time-ordered, no prefixes). You may replace the explicit `organizationId`/`projectId` columns with `...channelRelationColumns('note')` (emits NOT-NULL ancestor id columns from the hierarchy); see [`attachment-db.ts`](../backend/src/modules/attachment/attachment-db.ts).
@@ -225,19 +225,20 @@ Order matters: param-segment mounts (`/:tenantId/...`) must come after static mo
 
 For the entity to participate in catch-up sync, its list operation `get-notes.ts` must, when `seqCursor` is present:
 
-1. Extend `paginationQuerySchema` so `seqCursor` is accepted (in `note-schema.ts`).
+1. Extend `paginationQuerySchema` so `seqCursor` (org-ledger values) and `pathPrefix`
+   (subtree narrowing for feed loads) are accepted (in `note-schema.ts`).
 2. Order by `asc(<table>.seq)` with an `asc(id)` tiebreak.
 3. **Include tombstones** (skip the `isNull(deletedAt)` filter) so clients can drop deleted rows.
 4. Use `tenantReadIncludingDeleted` instead of `tenantRead`.
 
-Reuse the shared `seqCursorFilters` helper ([`seq-cursor.ts`](../backend/src/utils/seq-cursor.ts)). See [`get-tasks.ts`](../backend/src/modules/task/helpers/get-tasks.ts) for the pattern. The generic client catch-up endpoint (`POST /entities/app/stream`) needs no changes.
+Reuse the shared `seqCursorFilters` + `pathPrefixFilter` helpers ([`seq-cursor.ts`](../backend/src/utils/seq-cursor.ts)). See [`get-attachments.ts`](../backend/src/modules/attachment/operations/get-attachments.ts) for the pattern. The generic client catch-up endpoint (`POST /entities/app/stream`) needs no changes.
 
 ### What the sync engine gives you for free 🟢
 
 Once the table is in `entityTables` (Step 5) and the type is in `productEntityTypes` (Step 2), the entire **Postgres WAL → CDC → SSE → client** pipeline covers the new entity with **no per-entity code**:
 
 - **CDC publication + `REPLICA IDENTITY FULL`**: derived from `entityTables` by the CDC setup migration.
-- **`seq` stamping**: the CDC worker stamps a hierarchy-scoped `seq` on every row generically (parent context resolved via `hierarchy.getParent`).
+- **`seq` stamping**: the CDC worker stamps every row from the org ledger generically (one order per organization, shared by all product types) and rolls `hw:`/`hws:` high-water marks up the hierarchy.
 - **SSE dispatch**: [`entities-listeners.ts`](../backend/src/modules/entities/entities-listeners.ts) loops `appConfig.productEntityTypes` to register `activityBus` listeners; there is one generic `/entities/app/stream`, no per-entity endpoint.
 - **Permission-filtered fan-out**: the dispatcher derives ancestor context ids from the hierarchy and runs `checkPermission('read', ...)` per subscriber.
 

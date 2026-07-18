@@ -74,13 +74,13 @@ The entity taxonomy is defined using `createEntityHierarchy()`. Forks customize 
 createEntityHierarchy(roles).user().channel('organization', ...).product('attachment', ...).build()
 ```
 
-The builder validates that parents exist before children, products have a channel, channel/entity roles are valid, and optional `relatedChannels`/`nullableAncestors` are structurally valid. Public readability is declared and validated separately by `configurePermissions()` in `shared/config/permissions-config.ts`. The resulting frozen `EntityHierarchy` drives schema helpers, permission traversal, count/seq scoping, menu construction, and stream dispatch.
+The builder validates that parents exist before children, products have a channel, channel/entity roles are valid, and optional `relatedChannels`/`nullableAncestors` are structurally valid. Public readability is declared and validated separately by `configurePermissions()` in `shared/config/permissions-config.ts`. The resulting frozen `EntityHierarchy` drives schema helpers, permission traversal, count attribution, id-path materialization, menu construction, and stream dispatch.
 
 Key methods: `getParent()`, `getOrderedAncestors()`, `getRelatedChannels()`, `getNullableAncestors()`, `getChildren()`, and `getOrderedDescendants()`.
 
 ## Sync engine
 
-Cella has a selective approach to sync and offline. Channel entities such as organizations use standard CRUD OpenAPI endpoints. Product entities such as attachments add `stx`, seq-based catchup, offline mutation plumbing, and a notify-then-fetch realtime path. TanStack Query is the client-side merge point for both channel and product entities as well as other resources.
+Cella has a selective approach to sync and offline. Channel entities such as organizations use standard CRUD OpenAPI endpoints. Product entities such as attachments add `stx`, ledger/view-based catchup, offline mutation plumbing, and a notify-then-fetch realtime path. TanStack Query is the client-side merge point for both channel and product entities as well as other resources.
 
 The pipeline flows: **Postgres WAL → CDC worker → WebSocket → ActivityBus → SSE → client**. There is one realtime endpoint:
 

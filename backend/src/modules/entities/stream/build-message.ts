@@ -56,9 +56,9 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   const membership = event.resourceType === 'membership' ? getEventData(event, 'membership') : null;
   const channelType: ChannelEntityType | null = (membership?.channelType as ChannelEntityType | undefined) ?? null;
 
-  // Resolve context ID for seq-cursor and unseen-count grouping: the row's deepest non-null
-  // ancestor. Variable-depth rows group under their effective home. The client buckets
-  // by this id, which must match CDC's seq scope.
+  // Resolve the home channel id for scheduler and unseen-count grouping: the row's deepest
+  // non-null ancestor. Variable-depth rows group under their effective home. Grouping only —
+  // the ledger is org-scoped and does not key on this.
   let channelId: string | null = null;
   if (isProduct && entityType) {
     channelId = resolveDeepestAncestorId(hierarchy, entityType, event as unknown as Record<string, unknown>);

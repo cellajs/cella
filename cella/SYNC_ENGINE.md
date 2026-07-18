@@ -104,13 +104,13 @@ And distinct terms for *what* a change is about and *where* it is routed:
 ### Architecture overview
 - **Logical replication** - CDC Worker receives WAL changes, activities to `activitiesTable`, sends to API
 - **ActivityBus** - Receives CDC messages via WebSocket, emits events to internal handlers
-- **Catchup via POST + delta fetch** - Client POSTs `{ cursor, seqs }` to the stream endpoint; server compares per-scope seqs and returns a gap summary. Client calls registered REST list endpoints with an open-ended `?seqCursor=min` and patches cached rows, including soft-delete tombstones.
-- **Live stream** - One authenticated SSE stream sends lightweight product-entity and membership notifications. Product notifications carry the seq range and a server-suggested `syncWindow`.
-- **Notify + fetch pattern** - SSE product notifications enqueue lazy seq-range fetches (merged per scope, spread across the negotiated window). The app entity cache coalesces detail fetches.
+- **Catchup via POST + delta fetch** - Client POSTs `{ cursor, views }` (its declared views with org-ledger cursors); the server authorizes each prefix and answers from per-node summaries (`hw:`/`e:` rollups, `hws:`/`es:` self families). For `ok` views behind the high-water the client calls registered REST list endpoints with an open-ended `?seqCursor=cursor+1` and patches cached rows, including soft-delete tombstones.
+- **Live stream** - One authenticated SSE stream sends lightweight product-entity and membership notifications. Product notifications carry the path, the ledger range + `count`, and a server-suggested `syncWindow`.
+- **Notify + fetch pattern** - SSE product notifications enqueue lazy ledger-range fetches (merged per scope, spread across the negotiated window). The app entity cache coalesces detail fetches.
 - **React Query as merge point** - Initial/prefetch load and notification-triggered fetches enter same cache
 
 ### Realtime mechanics
-- **Gap detection** - Entity-type sequence numbers (`seq`) detect missed product entity changes
+- **Gap detection** - Org-ledger sequence numbers (`seq`, shared by all product types) detect missed product entity changes; high-water rollups (`hw:`) answer "did anything change below here" at any node
 - **Leader-tab SSE** - One leader tab owns the SSE connection and broadcasts notifications to followers
 - **TTL app entity cache** - Server-side detail cache with request coalescing; hits re-authorize per request
 - **Eagerness tiers** - Client fetches the viewed scope live; background scopes lazily; muted scopes on open
@@ -178,17 +178,19 @@ Synced entity tables have an `stx` JSONB column for transaction metadata. It is 
 ```typescript
 interface StreamNotification {
   kind: 'entity' | 'membership';
-  action: 'create' | 'update' | 'delete';
+  action: 'create' | 'update' | 'delete' | 'moveOut';
   entityType: string | null;                    // Product entity type (null for membership events)
   resourceType: string | null;                  // 'membership' for membership notifications
   subjectId: string | null;
   organizationId: string | null;
   tenantId: string | null;
   channelType: string | null;                   // Channel entity type for membership (e.g., 'project')
-  channelId: string | null;                     // Parent entity ID for unseen count grouping
-  seq: number | null;                           // Per-entityType sequence stamped by CDC worker (entities only)
+  path: string | null;                          // Materialized id-path of the rows (moveOut: the OLD path)
+  channelId: string | null;                     // Home channel ID for unseen count grouping
+  seq: number | null;                           // Org-ledger seq stamped by CDC worker (entities only)
   stx: StxBase | null;                          // Sync transaction metadata (entities only)
-  batchUntilSeq: number | null;                 // Last seq in batch (null = single entity notification)
+  batchUntilSeq: number | null;                 // Last ledger seq in batch (null = single entity notification)
+  count: number | null;                         // Authoritative batch row count (ledger ranges may interleave)
   syncWindow: number | null;                    // Server-suggested lazy-fetch spread window in ms (entities only)
   propagation: PropagationHint | null;          // Embedded entity propagation hint (null = no propagation)
 }
@@ -410,7 +412,7 @@ Idempotency is operation-specific, not a global mutation guarantee. The default 
 
 ### Gap detection (seq + tombstones)
 
-Uses entity-type sequence numbers (`seq`) for **create/update/soft-delete/restore detection**. A soft delete sets `deleted_at`; a restore clears it. Both are updates, so CDC stamps them and delta reads can reconcile the cached row.
+Uses org-ledger sequence numbers (`seq`, one order per organization shared by all product types) for **create/update/soft-delete/restore detection**. A soft delete sets `deleted_at`; a restore clears it. Both are updates, so CDC stamps them and delta reads can reconcile the cached row.
 
 **Sequence architecture:**
 - **`seq`**: Per-row ORG-LEDGER value stamped by the CDC worker after each product-entity create/update. The worker reserves a contiguous range in `channel_counters.counts['s:ledger']` on the org row (one RETURNING upsert per org per batch, all product types share it; WAL order = ledger order) and writes assigned values back to the rows. New rows have their schema default until CDC stamps them.
@@ -422,20 +424,20 @@ Uses entity-type sequence numbers (`seq`) for **create/update/soft-delete/restor
 
 **Two modes of gap detection:**
 
-1. **Catchup (offline/reconnect):** Client compares stored org/child-channel `clientEntitySeq` values with `serverEntitySeq` values from `channel_counters`. For a cached changed scope it reads from `clientEntitySeq + 1` without an upper bound. Tombstones remove entities from cache. The first connection only records a baseline.
+1. **Catchup (offline/reconnect):** Client declares its views with their org-ledger cursors; the server compares each `ok` view's cursor with the `hw:`/`hws:` rollups. For a behind view with cached lists, ONE org-wide read from `cursor + 1` (no upper bound) returns every changed row of that type in the org — child-homed rows included; cache-ops routes them. Tombstones remove entities from cache. The first connection only records baselines.
 
-2. **Live (SSE):** Product create/update notifications include `seq`, scoped to entity type + effective channel (e.g., tasks within a project in a fork). The single-notification path advances its watermark before starting the range fetch; the batch path advances to `batchUntilSeq` only after a successful range fetch. An own create/update echo returns before either update after patching cached `stx`, so catchup may safely see that seq again.
+2. **Live (SSE):** Product create/update notifications carry the rows' path plus a ledger range and `count` (ranges of different paths may interleave — `count` is authoritative). The lazy scheduler tracks per-scope watermarks over the shared ledger; the batch path advances to `batchUntilSeq` only after a successful range fetch. An own create/update echo returns before either update after patching cached `stx`, so catchup may safely see that seq again.
 
 **How it works (scenario):**
 
-An organization has attachments. `seq` is stamped by the CDC worker on product INSERT/UPDATE, including soft-delete updates.
+An organization has attachments. `seq` (an org-ledger value) is stamped by the CDC worker on product INSERT/UPDATE, including soft-delete updates.
 
 ```
 Server timeline (org-123, attachments):      seq
   Attachment A created                        1
   Attachment B created                        2
   Attachment C created                        3
-  ── client goes offline (clientSeq = 3) ──
+  ── client goes offline (view cursor = 3) ──
   Attachment D created                        4
   Attachment B soft-deleted                   5
   Attachment A updated                        6
@@ -443,18 +445,18 @@ Server timeline (org-123, attachments):      seq
   ── client reconnects ──
 ```
 
-Catchup POST returns for this scope:
+The catchup answer for the client's org view:
 ```
-serverSeq: 7
+highWaters: { attachment: 7 }
 ```
 
 Client logic:
 ```
-start       = clientSeq + 1 = 4
-serverSeq > clientSeq → delta fetch with seqCursor=4
+start       = cursor + 1 = 4
+hw > cursor → delta fetch with seqCursor=4
 ```
 
-The delta fetch (`GET /attachments?seqCursor=4`) returns attachments D, B, A, E. Attachment B has `deletedAt` set, so the client removes it from detail and list caches. After ingestion succeeds (or recovery is handed to list invalidation), the client stores `clientSeq = 7`.
+The delta fetch (`GET /attachments?seqCursor=4`) returns attachments D, B, A, E. Attachment B has `deletedAt` set, so the client removes it from detail and list caches. After ingestion succeeds (or recovery is handed to list invalidation), the client stores the view cursor `7`.
 
 **Why tombstones remain:** a reconnecting client can only learn a soft delete from the row returned by its open-ended seq read. Any future hard-purge policy must therefore account for the maximum supported offline/catchup window.
 

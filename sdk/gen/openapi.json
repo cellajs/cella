@@ -4712,7 +4712,7 @@
         "operationId": "postAppCatchup",
         "tags": ["entities", "cella"],
         "summary": "App event catchup",
-        "description": "Fetch missed entity and membership changes since last sync. Send cursor and per-scope seqs in the body.",
+        "description": "Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-ledger cursors) in the body.",
         "x-guard": ["authGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],

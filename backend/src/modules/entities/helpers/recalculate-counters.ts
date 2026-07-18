@@ -78,12 +78,13 @@ const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
  * Safe to run at any time (seed, admin repair, production incident recovery).
  *
  * Context counters (Phases 1–3):
- *   Phase 1 – Organization-level: m:{role}, m:total, m:pending, e:{type} (live rows only)
- *   Phase 2 – Sub-org contexts: same keys for every descendant carrying the FK (full attribution)
- *   Phase 3 – Seq counters: s:{type} via MAX(seq), grouped by deepest non-null ancestor
- *   Phase 3b – Activity stamps: li:{type} via MAX(epoch ms of created_at) and lu:{type} via
- *              MAX(epoch ms of updated_at), live rows only, grouped by deepest non-null
- *              ancestor (home context, no ancestor fan-out)
+ *   Phase 1 – Organization-level: m:{role}, m:total, m:pending, e:{type} (countable rows)
+ *   Phase 2 – Sub-org channels: same keys for every descendant carrying the FK (full attribution)
+ *   Phase 3 – Ledger + high-water: s:ledger via GREATEST(MAX(seq)) across product tables;
+ *             hw:{type} via MAX(seq) at the org and every ancestor level (drafts excluded,
+ *             tombstones included); self family hws:{type}/es:{type} at the home node only
+ *   Phase 3b – Activity stamps: li:{type}/lu:{type} epoch ms at the home node
+ *   Phase 3c – Channel path backfill (verified-ancestry source for catchup views)
  *
  * Product counters (Phase 4):
  *   Phase 4a – viewCount from seen_by (unique user views per entity)

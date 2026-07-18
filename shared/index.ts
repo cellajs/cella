@@ -20,7 +20,7 @@ export {
   createRoleRegistry,
 } from './src/config-builder/entity-hierarchy';
 
-// Row-to-context attribution (shared rule for CDC seq/counters, notifications, recalculation)
+// Row-to-home attribution (shared rule for CDC counters/self summaries, notifications, recalculation)
 export type { AncestorSource, ResolvedAncestor } from './src/config-builder/resolve-row-channel';
 export {
   possibleHomeChannels,
