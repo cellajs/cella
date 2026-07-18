@@ -23,6 +23,10 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
     syncSpanNames.messageProcess,
     { entityType: notification.entityType, action, entityId: subjectId, _trace },
     () => {
+      // Checked before setOrgTenantId creates the entry: an org the sync store has never
+      // seen means the SSE connection is not registered on its channel.
+      const isUnknownOrg = !!organizationId && !useSyncStore.getState().orgs[organizationId];
+
       // Store tenantId in sync store whenever we see it in a notification
       if (organizationId && tenantId) {
         useSyncStore.getState().setOrgTenantId(organizationId, tenantId);
@@ -31,6 +35,13 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       // Membership changes use targeted query invalidation, not the seq sync path.
       if (notification.kind === 'membership') {
         handleMembershipNotification(action, organizationId, channelType);
+        // A self-membership in a NEW org arrives on the user channel; the connection is not
+        // registered on that org channel, so reconnect to re-register and catch up on it.
+        // (Dynamic import: stream-store imports this module for its config.)
+        if (action === 'create' && isUnknownOrg) {
+          console.debug('[handleAppStreamNotification] Membership in unknown org, reconnecting stream');
+          void import('./stream-store').then((m) => m.appStreamManager.reconnect());
+        }
         return;
       }
 

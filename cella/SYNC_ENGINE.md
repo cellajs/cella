@@ -171,7 +171,9 @@ predicates as CDC. Historical sequence stamps on old drafts are ignored.
 
 Dispatch serializes each notification once and uses indexed membership data for permission
 checks. Client scheduling absorbs the remaining fan-out pressure. An SSE connection covers the
-organizations visible when it opens; gaining access to a new organization requires reconnecting.
+organizations visible when it opens, plus a per-user channel that carries self-membership
+events. A membership in a new organization therefore reaches the user live, and the client
+reconnects to register that organization's channel and catch up on its history.
 
 ## Access
 
@@ -501,7 +503,6 @@ The engine does not provide:
 - Serialized merge writes or row-lock-based conflict resolution.
 - Global mutation idempotency.
 - Immediate row recovery for hard deletes. Invalidation and count checks repair them.
-- Automatic SSE coverage for an organization granted after connection. Reconnect is required.
 - Automated lens contraction decisions.
 
 One additional edge remains: publishing and reparenting in the same write arrives as an insert,

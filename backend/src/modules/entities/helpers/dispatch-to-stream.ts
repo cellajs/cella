@@ -93,15 +93,24 @@ const eventRows = (event: AppStreamProductEvent): ActivityBatchRow[] =>
 /**
  * Dispatch activity events to matching app stream subscribers.
  *
- * All events route through org channels:
- * - Membership events → filtered to affected user
+ * Product entity events route through org channels; membership events route through the
+ * subject user's channel:
+ * - Membership events only ever deliver to the affected user, and the user channel reaches
+ *   them even for a membership in an org the connection is not registered on (the new-org
+ *   invite that tells the client to reconnect).
  * - Product entity events → per-ROW read permission (mirrors the API): a subscriber is
  *   pinged iff they can read at least one row the event speaks for.
  */
 export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, AppStreamEvent>({
-  getChannel: (event) => `org:${event.organizationId}`,
+  getChannel: (event) => {
+    if (isMembershipEvent(event)) {
+      const membership = getEventData(event, 'membership');
+      return membership?.userId ? `user:${membership.userId}` : null;
+    }
+    return `org:${event.organizationId}`;
+  },
   shouldReceive: (subscriber, event) => {
-    // For membership events, check if user is the subject
+    // Membership events: the user channel already targets the subject; keep the check as a net.
     if (isMembershipEvent(event)) {
       const membership = getEventData(event, 'membership');
       return membership?.userId === subscriber.userId;

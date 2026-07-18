@@ -43,9 +43,10 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
       cursor,
     };
 
-    // NOTE: If user is added to new org while connected, they won't receive events for that
-    // org until reconnect. Frontend should reconnect stream when membership.created is received.
-    streamSubscriberManager.register(subscriber, orgChannels.slice(1));
+    // The user channel carries self-membership events regardless of org registration: a
+    // membership in a NEW org reaches the user here (org channels are registered at connect
+    // time), and the frontend reconnects to re-register + catch up on that org's history.
+    streamSubscriberManager.register(subscriber, [...orgChannels.slice(1), `user:${user.id}`]);
     log.debug('App stream subscriber registered', {
       subscriberId: subscriber.id,
       orgCount: organizationIds.size,
