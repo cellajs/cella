@@ -111,9 +111,13 @@ are discarded, so old-domain cursors never meet new-domain values.
   label; attachment arrives migrated). Item/comment keep their `publishedAt` draft
   machinery untouched: drafts still get ledger stamps and stay invisible to dispatch,
   delta reads, counters, and unseen badges until the publish edge.
-- The elevation fix is your headline: staff with course-only memberships now catch up
-  precisely via org views. Add a fork regression test asserting a staff member's
-  org-view answer is `status: 'ok'`.
+- The elevation fix is your headline, with precise wording: staff with course-only
+  memberships are now CORRECT at catchup (their org view answers `opaque` → cached
+  lists invalidate and refetch; the old engine silently skipped their gaps). They
+  become PRECISE (`ok`, exact gap fetches) once the fork declares course-prefix views
+  — the wire and authorization already support it. Add a fork regression test
+  asserting a staff member's COURSE-prefix view answers `status: 'ok'` and their
+  org-prefix view answers `opaque`.
 - Feeds unlock: a course feed = `pathPrefix: '<orgId>/<courseId>'` on the item list op
   (server) with the existing canonical-list pattern (client). Exact-placement params
   (`courseId` + NULL deeper columns) keep working unchanged for per-level streams.
