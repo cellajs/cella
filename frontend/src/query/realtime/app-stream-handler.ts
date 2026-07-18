@@ -9,7 +9,7 @@ import * as cacheOps from './cache-ops';
 import { enqueueRange } from './lazy-sync-scheduler';
 import * as membershipOps from './membership-ops';
 import { propagateEmbeddings } from './propagation';
-import { getSyncPriority } from './sync-priority';
+import { getSyncTier } from './sync-priority';
 import type { AppStreamNotification } from './types';
 
 /**
@@ -147,8 +147,10 @@ function handleEntityNotification(
     return;
   }
 
-  // Determine fetch priority based on entityConfig ancestors and current route
-  const priority = getSyncPriority({ entityType, entityId, organizationId });
+  // The two paths without synced rows (hard delete, seq-less fallback) derive their
+  // invalidation/fetch decision from the same tier system the scheduler uses: viewing tier
+  // acts now, background/muted defers to next access.
+  const isViewing = getSyncTier(entityType, organizationId, channelId).min === 0;
 
   switch (action) {
     case 'create':
@@ -172,7 +174,7 @@ function handleEntityNotification(
         break;
       }
 
-      if (priority === 'low') {
+      if (!isViewing) {
         // Mark stale only, refetch on next access
         cacheOps.invalidateEntityDetail(entityId, keys, 'none');
         cacheOps.invalidateEntityListForOrg(keys, organizationId, 'none');
@@ -199,7 +201,7 @@ function handleEntityNotification(
       // so mark the detail stale and invalidate the org-scoped list to reconcile, consistent
       // with the catchup count-integrity invalidation flow. Covers single and batch deletes.
       cacheOps.invalidateEntityDetail(entityId, keys, 'none');
-      cacheOps.invalidateEntityListForOrg(keys, organizationId, priority === 'low' ? 'none' : 'active');
+      cacheOps.invalidateEntityListForOrg(keys, organizationId, isViewing ? 'active' : 'none');
       applyHardDeleteUnseen(entityType, entityId, channelId);
       if (propagation) propagateEmbeddings(propagation);
       break;
@@ -214,5 +216,5 @@ function handleEntityNotification(
       break;
   }
 
-  console.debug(`[handleEntityNotification] ${entityType}:${action} priority=${priority}`);
+  console.debug(`[handleEntityNotification] ${entityType}:${action} viewing=${isViewing}`);
 }
