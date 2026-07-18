@@ -255,9 +255,12 @@ catchup can safely fetch the same position again.
 
 ### Catchup
 
-Before opening SSE, the client posts its cursor and views. The server authorizes each prefix and
-returns view statuses, permitted frontiers and counts, organization membership signals, and any
-embedding hints.
+The client opens SSE first and buffers arriving notifications, then posts its cursor and views
+when the server's `offset` event arrives. The server authorizes each prefix and returns view
+statuses, permitted frontiers and counts, organization membership signals, and any embedding
+hints. After processing, the buffered notifications drain in arrival order and the stream goes
+live — a change committed while catchup reads is either in the answer or in the buffer, never
+lost in a registration window.
 
 - A first connection stores permitted frontiers as baselines. Route loaders own initial data.
 - An `ok` view behind its frontier fetches changed rows once per product type. Child-homed rows

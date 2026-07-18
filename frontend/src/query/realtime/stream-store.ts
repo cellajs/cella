@@ -26,6 +26,7 @@ const BACKOFF_FACTOR = 2;
 const RECONNECT_JITTER_MS = 2_000; // Random 0-2s added to reconnect delay to avoid thundering herd
 const MIN_UPTIME_MS = 10_000; // Connection must stay up 10s before backoff resets
 const HEALTH_URL = `${appConfig.backendUrl}/auth/health`;
+const NOTIFICATION_BUFFER_CAP = 500; // Buffered live notifications while catchup runs; overflow retries catchup once
 
 interface StreamConfig {
   endpoint: string;
@@ -90,8 +91,8 @@ function resolveInitialCatchupGate() {
   initialCatchupResolve = null;
 }
 
-/** Manages SSE connection lifecycle with Zustand store for state. */
-class StreamManager {
+/** Manages SSE connection lifecycle with Zustand store for state. Exported for tests. */
+export class StreamManager {
   private config: StreamConfig;
   private eventSource: EventSource | null = null;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -109,6 +110,15 @@ class StreamManager {
   /** Resolves when the current connect cycle's catchup completes. Reset on each connect(). */
   private catchupResolve: (() => void) | null = null;
 
+  /**
+   * Live notifications received between SSE open and catchup completion (subscribe-then-snapshot).
+   * Drained through `processNotification` in arrival order once catchup resolves, so a change
+   * committed while catchup reads never falls between the snapshot and the stream registration.
+   */
+  private pendingNotifications: Array<{ notification: unknown; eventId: string | undefined }> = [];
+  private buffering = false;
+  private bufferOverflowed = false;
+
   readonly useStore: ReturnType<typeof createStreamStore>;
   private readonly name: string;
 
@@ -122,7 +132,12 @@ class StreamManager {
     return this.eventSource?.readyState === EventSource.OPEN;
   }
 
-  /** Connect to stream (two-phase: catchup -> live SSE). */
+  /**
+   * Connect to stream (subscribe-then-snapshot: SSE opens first and buffers notifications,
+   * catchup runs on the server's `offset` event, then the buffer drains and the stream goes live).
+   * A change committed between the catchup read and SSE registration is therefore either in the
+   * catchup answer or in the buffer — never lost in the registration window.
+   */
   async connect() {
     // Set up reconnect listeners (idempotent, cleaned up in disconnect)
     this.startVisibilityReconnect();
@@ -166,61 +181,111 @@ class StreamManager {
           return;
         }
       }
+    } catch (error) {
+      if (!signal.aborted) this.handleCatchupFailure(error);
+      return;
+    }
 
-      // Phase 1: Fetch and process catchup
+    // Open the firehose first; catchup runs when the server's `offset` event arrives.
+    if (!signal.aborted) this.connectSSE(signal);
+  }
+
+  /**
+   * Run catchup while the already-open EventSource buffers live notifications, then drain the
+   * buffer in arrival order and go live. Buffer overflow means the catchup answer is far behind
+   * the stream; one catchup retry re-reads the newer frontiers (buffered events committed before
+   * that read, so its normal range fetches sweep them). A second overflow is a failure.
+   */
+  private async runCatchupCycle(signal: AbortSignal, eventSource: EventSource) {
+    const { useTabCoordination } = this.config;
+
+    try {
       this.useStore.getState().setState('catching-up');
 
-      const currentCursor = useTabCoordination ? useSyncStore.getState().cursor : this.useStore.getState().cursor;
+      for (let round = 0; ; round++) {
+        const currentCursor = useTabCoordination ? useSyncStore.getState().cursor : this.useStore.getState().cursor;
 
-      console.debug(`[${this.name}] Fetching catchup from offset:`, currentCursor ?? 'null');
-      const newCursor = await this.config.fetchAndProcessCatchup(currentCursor);
-      if (signal.aborted) return;
+        console.debug(`[${this.name}] Fetching catchup from offset:`, currentCursor ?? 'null');
+        const newCursor = await this.config.fetchAndProcessCatchup(currentCursor);
+        if (signal.aborted || this.eventSource !== eventSource) return;
 
-      if (newCursor) {
-        this.useStore.getState().setCursor(newCursor);
-        if (useTabCoordination) {
-          useSyncStore.getState().setCursor(newCursor);
-          useSyncStore.getState().setLastSyncAt(new Date().toISOString());
+        if (newCursor) {
+          this.useStore.getState().setCursor(newCursor);
+          if (useTabCoordination) {
+            useSyncStore.getState().setCursor(newCursor);
+            useSyncStore.getState().setLastSyncAt(new Date().toISOString());
+          }
         }
+
+        console.debug(`[${this.name}] Catchup complete, cursor:`, newCursor);
+
+        if (!this.bufferOverflowed) break;
+        if (round >= 1) throw new Error('Notification buffer overflowed twice during catchup');
+        // Dropped buffered events are covered by re-reading catchup at the newer cursor.
+        this.bufferOverflowed = false;
+        this.pendingNotifications = [];
+        console.debug(`[${this.name}] Notification buffer overflowed, re-running catchup`);
       }
 
-      console.debug(`[${this.name}] Catchup complete, cursor:`, newCursor);
-
       // Signal that catchup is done; paused mutations can now safely resume.
+      // Draining before the gate is unnecessary: drain is idempotent ingestion.
       this.catchupResolve?.();
       this.catchupResolve = null;
       resolveInitialCatchupGate();
 
-      // Reset failure count on catchup success (backoff resets when SSE stays up > MIN_UPTIME_MS)
+      // Drain buffered notifications in arrival order, then go live. Drain is synchronous, so
+      // no new notification can interleave; arrivals after this point process directly.
+      this.buffering = false;
+      const buffered = this.pendingNotifications;
+      this.pendingNotifications = [];
+      for (const { notification, eventId } of buffered) this.applyNotification(notification, eventId);
+
+      // Reset failure count; backoff resets only when connection stays up > MIN_UPTIME_MS (checked in onerror)
       this.consecutiveFailures = 0;
-
-      if (!signal.aborted) this.connectSSE();
+      this.connectedAt = Date.now();
+      this.useStore.getState().setState('live');
     } catch (error) {
-      if (!signal.aborted) {
-        this.consecutiveFailures++;
-        const isPermanentError = this.isPermanentError(error);
-
-        console.error(`[${this.name}] Catchup failed:`, error);
-        reportCriticalError('realtime.catchup_failed', error, {
-          stream: this.name,
-          consecutiveFailures: this.consecutiveFailures,
-        });
-        this.useStore.getState().setState('error');
-
-        // Resolve catchup promise on failure so paused mutations aren't stuck forever
-        this.catchupResolve?.();
-        this.catchupResolve = null;
-        resolveInitialCatchupGate();
-
-        // Open circuit breaker for permanent errors or after max failures
-        if (isPermanentError || this.consecutiveFailures >= MAX_FAILURES) {
-          this.openCircuit(isPermanentError ? 'permanent error detected' : 'max consecutive failures');
-          return;
-        }
-
-        this.scheduleReconnect();
-      }
+      if (signal.aborted || this.eventSource !== eventSource) return;
+      // Catchup failed while SSE is open: close it, the reconnect cycle re-runs both phases.
+      eventSource.close();
+      this.eventSource = null;
+      this.handleCatchupFailure(error);
     }
+  }
+
+  /** Shared failure path for catchup/tab-coordination errors: error state, gate release, circuit/backoff. */
+  private handleCatchupFailure(error: unknown) {
+    this.consecutiveFailures++;
+    const isPermanentError = this.isPermanentError(error);
+
+    console.error(`[${this.name}] Catchup failed:`, error);
+    reportCriticalError('realtime.catchup_failed', error, {
+      stream: this.name,
+      consecutiveFailures: this.consecutiveFailures,
+    });
+    this.useStore.getState().setState('error');
+
+    // Resolve catchup promise on failure so paused mutations aren't stuck forever
+    this.catchupResolve?.();
+    this.catchupResolve = null;
+    resolveInitialCatchupGate();
+
+    // Open circuit breaker for permanent errors or after max failures
+    if (isPermanentError || this.consecutiveFailures >= MAX_FAILURES) {
+      this.openCircuit(isPermanentError ? 'permanent error detected' : 'max consecutive failures');
+      return;
+    }
+
+    this.scheduleReconnect();
+  }
+
+  /** Advance the stream cursor and hand one notification to the app-level processor. */
+  private applyNotification(notification: unknown, eventId: string | undefined) {
+    if (eventId) {
+      this.useStore.getState().setCursor(eventId);
+      if (this.config.useTabCoordination) useSyncStore.getState().setCursor(eventId);
+    }
+    this.config.processNotification(notification);
   }
 
   /** Check if an error is permanent (no point retrying). */
@@ -235,12 +300,16 @@ class StreamManager {
     return message.includes('Access denied') || message.includes('Unauthorized');
   }
 
-  private connectSSE() {
+  private connectSSE(signal: AbortSignal) {
     const { endpoint, withCredentials, useTabCoordination } = this.config;
 
     const sseUrl = new URL(endpoint);
 
     this.useStore.getState().setState('connecting');
+    this.buffering = true;
+    this.bufferOverflowed = false;
+    this.pendingNotifications = [];
+    let catchupStarted = false;
     const eventSource = new EventSource(sseUrl.toString(), { withCredentials });
 
     eventSource.onopen = () => {
@@ -252,13 +321,22 @@ class StreamManager {
         const notification = JSON.parse(e.data);
         const eventId = e.lastEventId || undefined;
 
-        if (eventId) {
-          this.useStore.getState().setCursor(eventId);
-          if (useTabCoordination) useSyncStore.getState().setCursor(eventId);
+        // Followers receive at arrival time in both phases; only local processing is deferred.
+        if (useTabCoordination && isLeader()) broadcastNotification(notification, 'user');
+
+        if (this.buffering) {
+          // Cursor advances at drain time so a crash before drain re-fetches from the old cursor.
+          if (this.bufferOverflowed) return;
+          if (this.pendingNotifications.length >= NOTIFICATION_BUFFER_CAP) {
+            this.bufferOverflowed = true;
+            this.pendingNotifications = [];
+            return;
+          }
+          this.pendingNotifications.push({ notification, eventId });
+          return;
         }
 
-        if (useTabCoordination && isLeader()) broadcastNotification(notification, 'user');
-        this.config.processNotification(notification);
+        this.applyNotification(notification, eventId);
       } catch (error) {
         console.debug(`[${this.name}] Failed to parse message:`, error);
       }
@@ -266,14 +344,11 @@ class StreamManager {
 
     eventSource.addEventListener('offset', (e) => {
       console.debug(`[${this.name}] SSE offset received:`, e.data);
-      if (e.data) {
-        this.useStore.getState().setCursor(e.data);
-        if (useTabCoordination) useSyncStore.getState().setCursor(e.data);
-      }
-      // Reset failure count; backoff resets only when connection stays up > MIN_UPTIME_MS (checked in onerror)
-      this.consecutiveFailures = 0;
-      this.connectedAt = Date.now();
-      this.useStore.getState().setState('live');
+      // The offset value itself is not stored: catchup runs next and its response cursor
+      // (read after this offset was emitted) supersedes it.
+      if (catchupStarted) return;
+      catchupStarted = true;
+      void this.runCatchupCycle(signal, eventSource);
     });
 
     // Application-level error event from the server (typed payload). Distinct from the
@@ -437,6 +512,10 @@ class StreamManager {
     this.stopVisibilityReconnect();
     this.stopLeaderReconnect();
     this.resolvePendingCatchup();
+
+    this.buffering = false;
+    this.bufferOverflowed = false;
+    this.pendingNotifications = [];
 
     this.abortController?.abort();
     this.abortController = null;
