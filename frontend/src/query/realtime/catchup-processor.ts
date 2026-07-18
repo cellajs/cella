@@ -14,9 +14,9 @@ import { getSyncTier, getTenantIdForOrg } from './sync-priority';
  * Process the app stream catchup response (view-driven, org ledger).
  *
  * The client declares one view per (org, entityType) with its org-ledger cursor
- * (`sync-store.getCatchupViews`); the server answers `ok` (with `highWaters`/`counts`
+ * (`sync-store.getCatchupViews`); the server answers `ok` (with `frontiers`/`counts`
  * rollups), `opaque` (readable but not provably all — no numbers), or `forbidden`.
- * For an `ok` view with `hw > cursor` ONE org-wide delta fetch from `cursor + 1`
+ * For an `ok` view with `frontier > cursor` ONE org-wide delta fetch from `cursor + 1`
  * returns every changed row in the org for that type — including rows homed in child
  * channels and tombstones — and cache-ops routes them into the right lists. Child-scope
  * watermarks remain live-path bookkeeping; catchup no longer depends on
@@ -25,7 +25,7 @@ import { getSyncTier, getTenantIdForOrg } from './sync-priority';
  * Invariants preserved from the legacy per-scope engine:
  * - advance-after-ingest: the org cursor advances only after the window drained (ok),
  *   was handed to react-query (invalidate), or was deliberately skipped (nothing cached)
- * - baseline: cursor 0 stores the hw and refetches only when something is cached
+ * - baseline: cursor 0 stores the frontier and refetches only when something is cached
  * - tier folding: background orgs enqueue into the lazy scheduler (advance at flush)
  * - counts are compared server-to-server only (in-session change signal)
  */
@@ -64,28 +64,28 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
         continue;
       }
 
-      const hw = answer.highWaters?.[entityType] ?? 0;
+      const frontier = answer.frontiers?.[entityType] ?? 0;
       const clientCursor = syncStore.getOrgSeq(organizationId, entityType);
 
-      // Baseline (first session for this org view): store the hw, let route loaders /
+      // Baseline (first session for this org view): store the frontier, let route loaders /
       // hydration supply data. With something already cached, refetch it instead.
       if (baselineOnly || clientCursor === 0) {
         if (!baselineOnly && hasAnyCachedList(keys, organizationId)) {
           cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
           console.debug(`[CatchupProcessor] View ${answer.key}: first session → full refetch`);
         }
-        syncStore.setOrgSeq(organizationId, entityType, hw);
+        syncStore.setOrgSeq(organizationId, entityType, frontier);
         continue;
       }
 
-      if (hw <= clientCursor) continue; // caught up
+      if (frontier <= clientCursor) continue; // caught up
 
       const tenantId = syncStore.getOrgTenantId(organizationId) ?? getTenantIdForOrg(organizationId);
 
       // Scope-symmetry guard: with nothing cached there is nothing to patch; mount
       // hydration fetches fresh. Advance so the window is not re-offered forever.
       if (!hasAnyCachedList(keys, organizationId)) {
-        syncStore.setOrgSeq(organizationId, entityType, hw);
+        syncStore.setOrgSeq(organizationId, entityType, frontier);
         console.debug(`[CatchupProcessor] View ${answer.key}: no cached list → skip delta`);
         continue;
       }
@@ -98,10 +98,10 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
           tenantId,
           channelId: null,
           fromSeq: clientCursor + 1,
-          untilSeq: hw,
+          untilSeq: frontier,
           isCreate: false,
         });
-        console.debug(`[CatchupProcessor] View ${answer.key}: delta=${hw - clientCursor} → enqueued`);
+        console.debug(`[CatchupProcessor] View ${answer.key}: delta=${frontier - clientCursor} → enqueued`);
         continue;
       }
 
@@ -112,14 +112,14 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       if (!patched) {
         cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
       }
-      syncStore.setOrgSeq(organizationId, entityType, hw);
+      syncStore.setOrgSeq(organizationId, entityType, frontier);
       console.debug(
-        `[CatchupProcessor] View ${answer.key}: delta=${hw - clientCursor} → ${patched ? 'delta patched' : 'invalidated'}`,
+        `[CatchupProcessor] View ${answer.key}: delta=${frontier - clientCursor} → ${patched ? 'delta patched' : 'invalidated'}`,
       );
     }
 
     // Integrity: counts compared server-to-server per (org, entityType) — a changed
-    // count with matching hw means drift (e.g. failed refetch after invalidation).
+    // count with matching frontier means drift (e.g. failed refetch after invalidation).
     if (!baselineOnly) verifyViewCounts(views);
   }
 
@@ -170,7 +170,7 @@ export function catchupEntityTypes(): string[] {
 
 /**
  * Answers for registered grant-boundary views: precise CHANGE DETECTION on top of the
- * org-view correctness baseline. `ok` + unchanged hw → skip every refetch (the win);
+ * org-view correctness baseline. `ok` + unchanged frontier → skip every refetch (the win);
  * changed → invalidate the affected active lists and advance the view cursor (row
  * ingestion itself rides org-view delta fetches — no per-view range fetch here);
  * `opaque` → staleness fallback; `forbidden` → the grant is gone, drop the view.
@@ -204,18 +204,18 @@ function processRegisteredViewAnswer(
     return;
   }
 
-  const hw = Math.max(0, ...Object.values(answer.highWaters ?? {}));
+  const frontier = Math.max(0, ...Object.values(answer.frontiers ?? {}));
   if (view.cursor === 0) {
-    // Baseline: adopt hw; hydration/route loaders supply the data.
-    syncStore.setViewCursor(answer.key, hw);
-    console.debug(`[CatchupProcessor] View ${answer.key}: baseline → cursor ${hw}`);
+    // Baseline: adopt frontier; hydration/route loaders supply the data.
+    syncStore.setViewCursor(answer.key, frontier);
+    console.debug(`[CatchupProcessor] View ${answer.key}: baseline → cursor ${frontier}`);
     return;
   }
-  if (hw <= view.cursor) return; // unchanged: skip refetches — the precision win
+  if (frontier <= view.cursor) return; // unchanged: skip refetches — the precision win
 
   invalidateTypes();
-  syncStore.setViewCursor(answer.key, hw);
-  console.debug(`[CatchupProcessor] View ${answer.key}: hw ${view.cursor} → ${hw} → invalidated`);
+  syncStore.setViewCursor(answer.key, frontier);
+  console.debug(`[CatchupProcessor] View ${answer.key}: frontier ${view.cursor} → ${frontier} → invalidated`);
 }
 
 /** View keys are `${organizationId}:${entityType}` (see sync-store.getCatchupViews). */

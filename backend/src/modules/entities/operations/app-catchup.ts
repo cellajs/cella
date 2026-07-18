@@ -18,7 +18,7 @@ const dbCtx: DbContext = { var: { db } };
  * pair proves unconditional subtree read; any readable-but-unproven pair makes it
  * `opaque` (no numbers), and no read route at all makes it `forbidden`. Summaries for
  * `ok` views come from one channel_counters read over the prefixes' deepest nodes:
- * `highWaters` = per-type max of `hw:{type}`, `counts` = per-type sum of `e:{type}`.
+ * `frontiers` = per-type max of `f:{type}`, `counts` = per-type sum of `e:{type}`.
  */
 export async function answerCatchupViews(
   memberships: MembershipBaseModel[],
@@ -73,20 +73,20 @@ export async function answerCatchupViews(
     if (status !== 'ok') return { key: view.key, status };
 
     const self = (view.depth ?? 'subtree') === 'self';
-    const highWaters: Record<string, number> = {};
+    const frontiers: Record<string, number> = {};
     const counts: Record<string, number> = {};
     for (const prefix of view.prefixes) {
       const parsed = countersByNode.get(pathHomeId(prefix));
       if (!parsed) continue;
       for (const entityType of view.entityTypes) {
-        // Family per depth: subtree rollups (hw:/e:) or self summaries (hws:/es:).
-        const hw = self ? parsed.selfHighWaters[entityType] : parsed.highWaters[entityType];
-        if (hw !== undefined) highWaters[entityType] = Math.max(highWaters[entityType] ?? 0, hw);
+        // Family per depth: subtree rollups (f:/e:) or self summaries (fs:/es:).
+        const frontier = self ? parsed.selfFrontiers[entityType] : parsed.frontiers[entityType];
+        if (frontier !== undefined) frontiers[entityType] = Math.max(frontiers[entityType] ?? 0, frontier);
         const count = self ? parsed.selfCounts[entityType] : parsed.entityCounts[entityType];
         if (count !== undefined) counts[entityType] = (counts[entityType] ?? 0) + count;
       }
     }
-    return { key: view.key, status, highWaters, counts };
+    return { key: view.key, status, frontiers, counts };
   });
 }
 
@@ -94,7 +94,7 @@ export async function answerCatchupViews(
  * Build app stream catch-up data (ledger sync).
  *
  * Product entity sync is answered per client-declared VIEW (`answerCatchupViews`,
- * prefix-authorized, from `hw:`/`e:` rollups). The per-org `changes` block carries the
+ * prefix-authorized, from `f:`/`e:` rollups). The per-org `changes` block carries the
  * remaining org-level concerns: the `s:membership` screening seq (membership change
  * detection) and embedding propagation hints derived from the views' ledger cursors.
  * A null cursor returns baselines and causes client-side membership query invalidation.
@@ -116,7 +116,7 @@ export async function appCatchupOp(
 
   const organizationIdArray = Array.from(organizationIds);
 
-  // One query for all org counter rows (membership screening seq + hw rollups for hints).
+  // One query for all org counter rows (membership screening seq + frontier rollups for hints).
   const allCounterRows = await findChannelCountersByKeys(dbCtx, organizationIdArray);
   const allCounters = new Map(allCounterRows.map((r) => [r.channelKey, r.counts]));
 
@@ -128,7 +128,7 @@ export async function appCatchupOp(
     };
   }
 
-  // Embedding propagation hints: hw vs the client's org-view cursors.
+  // Embedding propagation hints: frontiers vs the client's org-view cursors.
   await buildPropagationHints(changes, views, allCounters);
 
   // Advance cursor.

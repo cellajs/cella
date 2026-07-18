@@ -13,7 +13,7 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 /**
  * Counter recalculation must agree with CDC's incremental ledger writes:
- * `s:ledger` = max stamped seq across all product tables in the org, `hw:{type}` =
+ * `s:ledger` = max stamped seq across all product tables in the org, `f:{type}` =
  * max seq per (node, type), `e:{type}` = live published rows. This is the repair
  * tool for drift/incident recovery — its output IS the contract.
  */
@@ -44,7 +44,7 @@ describe('recalculateCounters (ledger + hw)', async () => {
     await seedDb.insert(attachmentsTable).values([
       base('recalc:a1', 41) as never,
       base('recalc:a2', 44) as never,
-      // Tombstone keeps its seq: counts exclude it, high-water includes it.
+      // Tombstone keeps its seq: counts exclude it, frontier includes it.
       base('recalc:a3', 47, { deletedAt: '2026-07-10T00:00:00.000Z' }) as never,
     ]);
   });
@@ -55,7 +55,7 @@ describe('recalculateCounters (ledger + hw)', async () => {
     await clearSecurityTestData();
   });
 
-  it('rebuilds s:ledger, hw:attachment and e:attachment from row state', async () => {
+  it('rebuilds s:ledger, f:attachment and e:attachment from row state', async () => {
     await recalculateCounters(db);
 
     const [row] = await db
@@ -68,12 +68,12 @@ describe('recalculateCounters (ledger + hw)', async () => {
     expect(row.path).toBe(tenant.organization.id);
     // Ledger reservation counter: max stamped value across product tables.
     expect(counts['s:ledger']).toBe(47);
-    // High-water includes tombstones (they keep their seq for delta reads).
-    expect(counts['hw:attachment']).toBe(47);
+    // Frontier includes tombstones (they keep their seq for delta reads).
+    expect(counts['f:attachment']).toBe(47);
     // Live count excludes the soft-deleted row.
     expect(counts['e:attachment']).toBe(2);
     // Self family (attachments are org-homed, so self == subtree at the org node).
-    expect(counts['hws:attachment']).toBe(47);
+    expect(counts['fs:attachment']).toBe(47);
     expect(counts['es:attachment']).toBe(2);
   });
 });

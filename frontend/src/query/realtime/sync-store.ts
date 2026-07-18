@@ -174,7 +174,7 @@ export const useSyncStore = create<SyncStoreState>()(
                 entityTypes: [entityType],
                 // Org-view cursor over the org ledger. Only the org slot proves org-WIDE
                 // ingestion (child-scope watermarks cover their own subtree only); 0 means
-                // no baseline yet — catchup stores the hw and route loaders supply data.
+                // no baseline yet — catchup stores the frontier and route loaders supply data.
                 cursor: org.seqs[entityType] ?? 0,
               });
             }

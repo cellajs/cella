@@ -32,12 +32,12 @@ export function isActivityStampKey(key: string): boolean {
 
 /**
  * Keys that merge via GREATEST instead of summing: activity stamps (`li:`/`lu:`, epoch ms)
- * and ledger high-water marks — `hw:<type>` (subtree: max org-ledger seq of that type at
- * or below the node) and `hws:<type>` (self: max seq of rows HOMED at the node).
+ * and ledger frontiers — `f:<type>` (subtree: max org-ledger seq of that type at
+ * or below the node) and `fs:<type>` (self: max seq of rows HOMED at the node).
  * Mirrored by the apply_count_deltas PG function.
  */
 export function isMaxMergeKey(key: string): boolean {
-  return isActivityStampKey(key) || key.startsWith('hw:') || key.startsWith('hws:');
+  return isActivityStampKey(key) || key.startsWith('f:') || key.startsWith('fs:');
 }
 
 /**

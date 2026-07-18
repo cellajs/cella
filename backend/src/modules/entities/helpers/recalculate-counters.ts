@@ -80,9 +80,9 @@ const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
  * Context counters (Phases 1–3):
  *   Phase 1 – Organization-level: m:{role}, m:total, m:pending, e:{type} (countable rows)
  *   Phase 2 – Sub-org channels: same keys for every descendant carrying the FK (full attribution)
- *   Phase 3 – Ledger + high-water: s:ledger via GREATEST(MAX(seq)) across product tables;
- *             hw:{type} via MAX(seq) at the org and every ancestor level (drafts excluded,
- *             tombstones included); self family hws:{type}/es:{type} at the home node only
+ *   Phase 3 – Ledger + frontier: s:ledger via GREATEST(MAX(seq)) across product tables;
+ *             f:{type} via MAX(seq) at the org and every ancestor level (drafts excluded,
+ *             tombstones included); self family fs:{type}/es:{type} at the home node only
  *   Phase 3b – Activity stamps: li:{type}/lu:{type} epoch ms at the home node
  *   Phase 3c – Channel path backfill (verified-ancestry source for catchup views)
  *
@@ -139,11 +139,11 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
-  // ── Phase 3: Org ledger + high-water marks from MAX(seq) ──────────────
+  // ── Phase 3: Org ledger + frontiers from MAX(seq) ──────────────
   // `s:ledger` per org = the max stamped ledger value across ALL product tables (the
-  // reservation counter CDC increments). `hw:{type}` = MAX(seq) per (node, entityType)
-  // at the org and at every ancestor level column, matching CDC's hwNodeKeys rollup.
-  // Tombstones keep their seq, so no live filter: MAX is a high-water mark.
+  // reservation counter CDC increments). `f:{type}` = MAX(seq) per (node, entityType)
+  // at the org and at every ancestor level column, matching CDC's frontierNodeKeys rollup.
+  // Tombstones keep their seq, so no live filter: MAX is a frontier.
   const ledgerMaxes = appConfig.productEntityTypes.map(
     (et) => `COALESCE((SELECT MAX(t.seq) FROM ${tbl(et)} t WHERE t.organization_id = o.id), 0)`,
   );
@@ -159,50 +159,50 @@ export const recalculateCounters = async (db: DbOrTx) => {
 
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);
-    const hwKey = `hw:${entityType}`;
-    // Unpublished drafts are excluded from hw (they are not delta-fetchable; CDC skips
+    const frontierKey = `f:${entityType}`;
+    // Unpublished drafts are excluded from frontiers (not delta-fetchable; CDC skips
     // them too) — but NOT from s:ledger above: their stamps consumed ledger values.
     // Tombstones stay included (delta reads return them). No live filter here.
-    const hwPredicate = publishedPredicate(entityType, 't');
+    const frontierPredicate = publishedPredicate(entityType, 't');
 
     // Org node: every stamped countable row rolls up to its organization.
     await upsertChannelCounters(
       db,
       `
-      SELECT t.organization_id, jsonb_build_object('${hwKey}', COALESCE(MAX(t.seq), 0)), NOW()
+      SELECT t.organization_id, jsonb_build_object('${frontierKey}', COALESCE(MAX(t.seq), 0)), NOW()
       FROM ${tableName} t
-      WHERE t.organization_id IS NOT NULL${hwPredicate}
+      WHERE t.organization_id IS NOT NULL${frontierPredicate}
       GROUP BY t.organization_id
     `,
     );
 
     // Every non-root ancestor level the table carries a FK column for (full rollup,
-    // matching CDC's hwNodeKeys: org + every non-null ancestor).
+    // matching CDC's frontierNodeKeys: org + every non-null ancestor).
     for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
       if (ancestor === 'organization') continue;
       const col = fkCol(ancestor);
       await upsertChannelCounters(
         db,
         `
-        SELECT t.${col}, jsonb_build_object('${hwKey}', COALESCE(MAX(t.seq), 0)), NOW()
+        SELECT t.${col}, jsonb_build_object('${frontierKey}', COALESCE(MAX(t.seq), 0)), NOW()
         FROM ${tableName} t
-        WHERE t.${col} IS NOT NULL${hwPredicate}
+        WHERE t.${col} IS NOT NULL${frontierPredicate}
         GROUP BY t.${col}
       `,
       );
     }
 
     // Self family (home node only, deepest non-null ancestor — the legacy per-scope shape):
-    // hws:{type} = MAX(seq) of HOMED rows (drafts excluded, tombstones included);
+    // fs:{type} = MAX(seq) of HOMED rows (drafts excluded, tombstones included);
     // es:{type}  = COUNT of countable HOMED rows (live AND published).
     const homeExpr = deepestAncestorExpr(entityType, 't');
     if (homeExpr) {
       await upsertChannelCounters(
         db,
         `
-        SELECT ${homeExpr}, jsonb_build_object('hws:${entityType}', COALESCE(MAX(t.seq), 0)), NOW()
+        SELECT ${homeExpr}, jsonb_build_object('fs:${entityType}', COALESCE(MAX(t.seq), 0)), NOW()
         FROM ${tableName} t
-        WHERE ${homeExpr} IS NOT NULL${hwPredicate}
+        WHERE ${homeExpr} IS NOT NULL${frontierPredicate}
         GROUP BY ${homeExpr}
       `,
       );

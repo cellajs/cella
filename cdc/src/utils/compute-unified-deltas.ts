@@ -14,7 +14,7 @@ import { type CountsHierarchy, getCountDeltas, isMaxMergeKey } from './update-co
 export interface BatchUnifiedDeltaPlan {
   /** One per organization: reserves `s:ledger` and stamps its events in WAL order. */
   ledgerGroups: LedgerGroup[];
-  /** All count deltas merged by channelKey (across all events, excluding ledger/hw deltas). */
+  /** All count deltas merged by channelKey (across all events, excluding ledger/frontier deltas). */
   countDeltasByChannelKey: Map<string, Record<string, number>>;
 }
 
@@ -53,11 +53,11 @@ export function resolveChannelKey(
 }
 
 /**
- * The channel-counter nodes a stamped row's high-water mark propagates to: the organization
- * plus every non-null ancestor. This is the rollup set — `hw:{type}` at any node answers
+ * The channel-counter nodes a stamped row's frontier propagates to: the organization
+ * plus every non-null ancestor. This is the rollup set — `f:{type}` at any node answers
  * "did anything of this type change at or below here" with one comparison.
  */
-export function hwNodeKeys(
+export function frontierNodeKeys(
   entityType: string,
   rowData: CdcRowData,
   organizationId: string,
@@ -72,7 +72,7 @@ export function hwNodeKeys(
 
 /**
  * Merge deltas into an existing map entry, summing values for matching keys.
- * Max-merge keys (`li:`/`lu:` stamps, `hw:` high-water marks) keep the max on collision
+ * Max-merge keys (`li:`/`lu:` stamps, `f:` frontiers) keep the max on collision
  * (two posts in one batch must not sum their timestamps or watermarks).
  */
 export function mergeDelta(
@@ -101,7 +101,7 @@ function isStampable(tableMeta: TableMeta, action: ActivityAction, h: CountsHier
  * Compute a unified delta plan for a batch of CDC events.
  * Reserves one org-ledger range per organization (all product entity types share the
  * ledger; WAL order within the batch is preserved), accumulates all count deltas.
- * High-water (`hw:`) deltas are emitted at apply time, once ledger values are assigned.
+ * Frontier (`f:`) deltas are emitted at apply time, once ledger values are assigned.
  */
 export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHierarchy = hierarchy): BatchUnifiedDeltaPlan {
   const countDeltasByChannelKey = new Map<string, Record<string, number>>();

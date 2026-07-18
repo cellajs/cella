@@ -134,7 +134,7 @@ export const catchupChangeSummarySchema = z.object({
 export type CatchupChangeSummary = z.infer<typeof catchupChangeSummarySchema>;
 
 /**
- * Per-view catchup answer. Summaries (`highWaters`, `counts`) are present only for
+ * Per-view catchup answer. Summaries (`frontiers`, `counts`) are present only for
  * `status: 'ok'` views (unconditional read of the whole prefix subtree — see
  * `resolveViewReadStatus`); `opaque` views get no numbers and fall back to normal
  * staleness; `forbidden` views must be dropped by the client.
@@ -142,8 +142,8 @@ export type CatchupChangeSummary = z.infer<typeof catchupChangeSummarySchema>;
 export const catchupViewAnswerSchema = z.object({
   key: z.string().openapi({ description: 'The client-supplied view key, echoed verbatim' }),
   status: z.enum(['ok', 'opaque', 'forbidden']),
-  highWaters: z.record(z.string(), z.number().int()).optional().openapi({
-    description: 'Per-entityType max org-ledger seq over the view prefixes (subtree: hw:{type}; self: hws:{type})',
+  frontiers: z.record(z.string(), z.number().int()).optional().openapi({
+    description: 'Per-entityType max org-ledger seq over the view prefixes (subtree: f:{type}; self: fs:{type})',
   }),
   counts: z.record(z.string(), z.number().int()).optional().openapi({
     description: 'Per-entityType live row counts summed over the view prefixes (subtree: e:{type}; self: es:{type})',

@@ -20,7 +20,7 @@ for (const embedding of appConfig.entityEmbeddings) {
 
 /**
  * Build propagation hints for each org's change summary. Ledger-driven: a source
- * type changed for a client when the org's `hw:{sourceType}` rollup exceeds the
+ * type changed for a client when the org's `f:{sourceType}` rollup exceeds the
  * client's org-view cursor (from the declared views); the changed source ids come
  * from an org-wide `seq > cursor` delta-id read, including soft-delete tombstones
  * (returned as removal hints).
@@ -44,7 +44,7 @@ export async function buildPropagationHints(
 
   for (const [organizationId, scope] of Object.entries(changes)) {
     const hints: CatchupChangeSummary['propagation'] = [];
-    const { highWaters } = parseCounterCounts(orgCounters?.get(organizationId));
+    const { frontiers } = parseCounterCounts(orgCounters?.get(organizationId));
 
     for (const sourceType of sourceTypes) {
       const targets = propagationTargets[sourceType];
@@ -54,8 +54,8 @@ export async function buildPropagationHints(
       // No declared view (source type not synced by this client) or no baseline yet.
       if (clientCursor === undefined || clientCursor === 0) continue;
 
-      const hw = highWaters[sourceType] ?? 0;
-      if (hw <= clientCursor) continue;
+      const frontier = frontiers[sourceType] ?? 0;
+      if (frontier <= clientCursor) continue;
 
       const { updatedIds, deletedIds } = await findChangedEntityDeltaIds(
         dbCtx,

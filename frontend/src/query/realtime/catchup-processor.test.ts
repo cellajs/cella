@@ -77,11 +77,11 @@ const { useSyncStore } = await import('~/query/realtime/sync-store');
 const { processAppCatchup } = await import('./catchup-processor');
 
 /** Views-contract response with one org view answer for attachment. */
-const okViewResponse = (hw: number, count = 1, key = 'org-1:attachment'): PostAppCatchupResponse =>
+const okViewResponse = (frontier: number, count = 1, key = 'org-1:attachment'): PostAppCatchupResponse =>
   ({
     cursor: 'cursor-1',
     changes: {},
-    views: [{ key, status: 'ok', highWaters: { attachment: hw }, counts: { attachment: count } }],
+    views: [{ key, status: 'ok', frontiers: { attachment: frontier }, counts: { attachment: count } }],
   }) as unknown as PostAppCatchupResponse;
 
 describe('catchup processor (view-driven)', () => {
@@ -183,7 +183,7 @@ describe('catchup processor (view-driven)', () => {
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
   });
 
-  it('a baseline view (cursor 0) stores the hw without fetching', async () => {
+  it('a baseline view (cursor 0) stores the frontier without fetching', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
     registerEntityQueryKeys('attachment', keys, deltaFetch);
@@ -211,7 +211,7 @@ describe('catchup processor (view-driven)', () => {
 
     expect(deltaFetch).not.toHaveBeenCalled();
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
-    // Cursor untouched: opaque answers carry no hw to advance to.
+    // Cursor untouched: opaque answers carry no frontier to advance to.
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
   });
 
@@ -237,7 +237,7 @@ describe('catchup processor (view-driven)', () => {
     ).length;
     expect(callsAfterSecond).toBe(callsAfterFirst);
 
-    // Count changed while hw did not: drift → invalidate.
+    // Count changed while frontier did not: drift → invalidate.
     await processAppCatchup(okViewResponse(6, 7));
     const callsAfterThird = invalidateSpy.mock.calls.filter(
       (c) => JSON.stringify(c[0]?.queryKey) === JSON.stringify(keys.list.org('org-1')),
@@ -268,7 +268,7 @@ describe('registered grant-boundary views', () => {
       views: [{ key: 'org-1:attachment:subtree', ...over }],
     }) as unknown as PostAppCatchupResponse;
 
-  it('ok + unchanged hw skips refetches; changed hw invalidates and advances', async () => {
+  it('ok + unchanged frontier skips refetches; changed frontier invalidates and advances', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     registerEntityQueryKeys(
       'attachment',
@@ -280,15 +280,15 @@ describe('registered grant-boundary views', () => {
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
-    await processAppCatchup(answer({ status: 'ok', highWaters: { attachment: 10 } }));
+    await processAppCatchup(answer({ status: 'ok', frontiers: { attachment: 10 } }));
     expect(invalidateSpy).not.toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
 
-    await processAppCatchup(answer({ status: 'ok', highWaters: { attachment: 15 } }));
+    await processAppCatchup(answer({ status: 'ok', frontiers: { attachment: 15 } }));
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
     expect(useSyncStore.getState().getView('org-1:attachment:subtree')?.cursor).toBe(15);
   });
 
-  it('baseline adopts hw without invalidating; forbidden removes the view', async () => {
+  it('baseline adopts frontier without invalidating; forbidden removes the view', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     registerEntityQueryKeys(
       'attachment',
@@ -299,7 +299,7 @@ describe('registered grant-boundary views', () => {
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
-    await processAppCatchup(answer({ status: 'ok', highWaters: { attachment: 33 } }));
+    await processAppCatchup(answer({ status: 'ok', frontiers: { attachment: 33 } }));
     expect(useSyncStore.getState().getView('org-1:attachment:subtree')?.cursor).toBe(33);
     expect(invalidateSpy).not.toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
 

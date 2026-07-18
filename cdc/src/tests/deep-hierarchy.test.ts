@@ -3,7 +3,7 @@ import { createEntityHierarchy, createRoleRegistry } from 'shared';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { EntityTableMeta } from '../types';
-import { computeBatchUnifiedDeltas, hwNodeKeys, resolveChannelKey } from '../utils/compute-unified-deltas';
+import { computeBatchUnifiedDeltas, frontierNodeKeys, resolveChannelKey } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/update-counts';
 import { log } from '../lib/pino';
 
@@ -108,9 +108,9 @@ describe('ledger groups per organization (computeBatchUnifiedDeltas)', () => {
     expect(plan.ledgerGroups[0].events.map((e) => e.result.rowData.id)).toEqual(['i1', 'i2']);
   });
 
-  it('hwNodeKeys rolls a full-depth row up to org + every non-null ancestor', () => {
-    expect(hwNodeKeys('item', fullDepthRow, 'o1', h)).toEqual(['o1', 'p1', 's1', 'c1']);
-    expect(hwNodeKeys('item', courseStreamRow, 'o1', h)).toEqual(['o1', 'c1']);
+  it('frontierNodeKeys rolls a full-depth row up to org + every non-null ancestor', () => {
+    expect(frontierNodeKeys('item', fullDepthRow, 'o1', h)).toEqual(['o1', 'p1', 's1', 'c1']);
+    expect(frontierNodeKeys('item', courseStreamRow, 'o1', h)).toEqual(['o1', 'c1']);
   });
 
   it('an org-less row fails the batch loudly instead of inventing a scope', () => {

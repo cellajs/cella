@@ -5,7 +5,7 @@ import { hierarchy, isUnpublishedDraft } from 'shared';
 import type { AncestorSource } from 'shared';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
-import { type BatchUnifiedDeltaPlan, hwNodeKeys, mergeDelta } from './compute-unified-deltas';
+import { type BatchUnifiedDeltaPlan, frontierNodeKeys, mergeDelta } from './compute-unified-deltas';
 import { isMaxMergeKey } from './update-counts';
 
 // ── Counter upsert ───────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ import { isMaxMergeKey } from './update-counts';
 /**
  * UPSERT a single channel_counters row using the apply_count_deltas PG function.
  * The function merges JSONB deltas with GREATEST(0, existing + delta) per key
- * (max-merge for `li:`/`lu:`/`hw:` keys).
+ * (max-merge for `li:`/`lu:`/`f:` keys).
  *
  * Fixed SQL shape enables PostgreSQL plan caching across repeated executions.
  */
@@ -57,8 +57,8 @@ async function mergedUpsert(
 
 /**
  * Add each source delta into `target` in place, summing on key collision.
- * Max-merge keys (`li:`/`lu:` stamps, `hw:` high-water marks) keep the max
- * (summing two timestamps or watermarks would corrupt them, since
+ * Max-merge keys (`li:`/`lu:` stamps, `f:` frontiers) keep the max
+ * (summing two timestamps or frontiers would corrupt them, since
  * apply_count_deltas only moves those keys forward). Exported for tests.
  */
 export function sumInto(
@@ -80,7 +80,7 @@ export function sumInto(
  * Phase 1 reserves one contiguous org-ledger range per organization
  * (`s:ledger` via RETURNING) and assigns values to events in WAL order —
  * all product entity types share the ledger, so WAL commit order IS ledger
- * order. Phase 2 then writes high-water (`hw:{type}`) marks at every
+ * order. Phase 2 then writes frontier (`f:{type}`) marks at every
  * ancestor node, the remaining count deltas, and the row seq stamp-backs.
  */
 export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: AncestorSource = hierarchy): Promise<void> {
@@ -88,7 +88,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
 
   const handledChannelKeys = new Set<string>();
   const allEntityStamps: Array<{ tableName: string; id: string; seq: number }> = [];
-  /** hw: (and org-row leftovers) accumulated for phase 2, keyed by channel node. */
+  /** f: (and org-row leftovers) accumulated for phase 2, keyed by channel node. */
   const phase2Deltas = new Map<string, Record<string, number>>();
 
   // Phase 1: one sequential RETURNING UPSERT per organization ledger.
@@ -107,24 +107,24 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
       rowData.seq = seq;
       allEntityStamps.push({ tableName: getTableName(tableMeta.table), id: rowData.id, seq });
 
-      // High-water rollups. Unpublished drafts are excluded: they take a ledger stamp
+      // Frontier rollups. Unpublished drafts are excluded: they take a ledger stamp
       // (uniform stamp-back, stx cleanup) but are invisible to delta reads/dispatch/
-      // counters until the publish edge, so bumping hw would only signal activity-timing
+      // counters until the publish edge, so bumping the frontier would only signal activity-timing
       // no view can ever fetch. Tombstones of PUBLISHED rows still bump (they are
       // delta-fetchable); the publish edge bumps (row is published); the unpublish edge
       // does not (detected via count drift, as before).
       if (isUnpublishedDraft(rowData)) continue;
-      // Subtree: hw:{type} max-merged at the org and every non-null ancestor.
-      const nodes = hwNodeKeys(tableMeta.type, rowData, activity.organizationId ?? group.orgKey, h);
-      const hwKey = `hw:${tableMeta.type}`;
+      // Subtree: f:{type} max-merged at the org and every non-null ancestor.
+      const nodes = frontierNodeKeys(tableMeta.type, rowData, activity.organizationId ?? group.orgKey, h);
+      const frontierKey = `f:${tableMeta.type}`;
       for (const node of nodes) {
-        mergeDelta(phase2Deltas, node, { [hwKey]: seq });
+        mergeDelta(phase2Deltas, node, { [frontierKey]: seq });
       }
-      // Self: hws:{type} at the HOME node only (deepest non-null ancestor, org fallback) —
+      // Self: fs:{type} at the HOME node only (deepest non-null ancestor, org fallback) —
       // answers self views (rows homed at the node), mirroring the li:/lu: placement rule.
-      // hwNodeKeys order is [org, mostSpecific, …, nearRoot], so home is nodes[1] ?? org.
+      // frontierNodeKeys order is [org, mostSpecific, …, nearRoot], so home is nodes[1] ?? org.
       const home = nodes[1] ?? nodes[0] ?? group.orgKey;
-      mergeDelta(phase2Deltas, home, { [`hws:${tableMeta.type}`]: seq });
+      mergeDelta(phase2Deltas, home, { [`fs:${tableMeta.type}`]: seq });
     }
 
     log.trace('Batch ledger stamped', {
@@ -135,7 +135,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
     });
   }
 
-  // Phase 2: hw marks + remaining count UPSERTs + bulk entity stamp, all in parallel.
+  // Phase 2: frontier marks + remaining count UPSERTs + bulk entity stamp, all in parallel.
   for (const [channelKey, deltas] of countDeltasByChannelKey) {
     if (handledChannelKeys.has(channelKey)) continue;
     mergeDelta(phase2Deltas, channelKey, deltas);

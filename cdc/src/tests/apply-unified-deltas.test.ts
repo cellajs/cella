@@ -40,7 +40,7 @@ vi.mock('../lib/db', () => {
 
 // Import after mocks are set up
 const { applyBatchUnifiedDeltas, sumInto } = await import('../utils/apply-unified-deltas');
-const { hwNodeKeys } = await import('../utils/compute-unified-deltas');
+const { frontierNodeKeys } = await import('../utils/compute-unified-deltas');
 
 // Synthetic two-level hierarchy: org > project > task (cella's own config has no sub-org product)
 const roles = createRoleRegistry(['admin', 'member'] as const);
@@ -94,7 +94,7 @@ describe('applyBatchUnifiedDeltas', () => {
     expect(events[2].result.rowData.seq).toBe(5);
   });
 
-  it('phase 1 merges ledger + org counts; phase 2 writes hw nodes and the stamp-back', async () => {
+  it('phase 1 merges ledger + org counts; phase 2 writes frontier nodes and the stamp-back', async () => {
     upsertReturnValue = { 's:ledger': 2, 'e:task': 2 };
 
     const events = [mockEvent('t1'), mockEvent('t2')];
@@ -109,7 +109,7 @@ describe('applyBatchUnifiedDeltas', () => {
 
     await applyBatchUnifiedDeltas(plan, syntheticH);
 
-    // Upserts: phase-1 org reservation, phase-2 org hw, phase-2 proj-1 (counts + hw)
+    // Upserts: phase-1 org reservation, phase-2 org frontier, phase-2 proj-1 (counts + frontier)
     const upserts = dbOps.filter((op) => op.type === 'upsert');
     expect(upserts).toHaveLength(3);
     // Stamp-back: one bulk UPDATE for the tasks table
@@ -117,7 +117,7 @@ describe('applyBatchUnifiedDeltas', () => {
     expect(executes).toHaveLength(1);
   });
 
-  it('drafts take ledger stamps but never bump hw rollups', async () => {
+  it('drafts take ledger stamps but never bump frontier rollups', async () => {
     upsertReturnValue = { 's:ledger': 2 };
 
     const draftEvent = (id: string) => {
@@ -137,7 +137,7 @@ describe('applyBatchUnifiedDeltas', () => {
     // Stamps assigned (drafts keep create-time ledger values for their publish edge)...
     expect(events[0].result.rowData.seq).toBe(1);
     expect(events[1].result.rowData.seq).toBe(2);
-    // ...but the ONLY counter upsert is the phase-1 org reservation: no hw writes.
+    // ...but the ONLY counter upsert is the phase-1 org reservation: no frontier writes.
     expect(dbOps.filter((op) => op.type === 'upsert')).toHaveLength(1);
     // Stamp-back still runs.
     expect(dbOps.filter((op) => op.type === 'execute')).toHaveLength(1);
@@ -154,16 +154,16 @@ describe('applyBatchUnifiedDeltas', () => {
   });
 });
 
-describe('hwNodeKeys', () => {
+describe('frontierNodeKeys', () => {
   it('org first, then every non-null ancestor, deduplicated', () => {
-    expect(hwNodeKeys('task', { id: 't1', projectId: 'proj-1', organizationId: 'org-1' }, 'org-1', syntheticH)).toEqual([
+    expect(frontierNodeKeys('task', { id: 't1', projectId: 'proj-1', organizationId: 'org-1' }, 'org-1', syntheticH)).toEqual([
       'org-1',
       'proj-1',
     ]);
   });
 
   it('org-homed row rolls up to the org node only', () => {
-    expect(hwNodeKeys('task', { id: 't1', organizationId: 'org-1' }, 'org-1', syntheticH)).toEqual(['org-1']);
+    expect(frontierNodeKeys('task', { id: 't1', organizationId: 'org-1' }, 'org-1', syntheticH)).toEqual(['org-1']);
   });
 });
 
@@ -186,17 +186,17 @@ describe('sumInto', () => {
     expect(target['lu:task']).toBe(1_753_000_000_000);
   });
 
-  it('max-merges hw: keys (high-water marks only move forward)', () => {
-    const target = { 'hw:task': 40 };
-    sumInto(target, { 'hw:task': 35 });
-    expect(target['hw:task']).toBe(40);
-    sumInto(target, { 'hw:task': 41 });
-    expect(target['hw:task']).toBe(41);
+  it('max-merges f: keys (frontiers only move forward)', () => {
+    const target = { 'f:task': 40 };
+    sumInto(target, { 'f:task': 35 });
+    expect(target['f:task']).toBe(40);
+    sumInto(target, { 'f:task': 41 });
+    expect(target['f:task']).toBe(41);
   });
 
   it('max-merge keys pass through unchanged when absent from target', () => {
     const target: Record<string, number> = { 's:ledger': 1 };
-    sumInto(target, { 'li:task': 1_751_000_000_000, 'hw:task': 7, 'e:task': 1 });
-    expect(target).toEqual({ 's:ledger': 1, 'li:task': 1_751_000_000_000, 'hw:task': 7, 'e:task': 1 });
+    sumInto(target, { 'li:task': 1_751_000_000_000, 'f:task': 7, 'e:task': 1 });
+    expect(target).toEqual({ 's:ledger': 1, 'li:task': 1_751_000_000_000, 'f:task': 7, 'e:task': 1 });
   });
 });

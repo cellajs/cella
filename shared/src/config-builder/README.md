@@ -30,7 +30,7 @@ parent; the deepest non-null ancestor is then the row's effective home. Without 
 ancestors this is just the declared parent.
 
 Every site that answers "which channel is this row's home" shares this rule: CDC counter
-deltas and self-summary placement (`hws:`/`es:`, `li:`/`lu:`), wire-notification `channelId`,
+deltas and self-summary placement (`fs:`/`es:`, `li:`/`lu:`), wire-notification `channelId`,
 seen-by grouping, and counter recalculation. (The org LEDGER does not key on it — seq values
 are org-scoped.) The materialized id-path (`row-path.ts`) is the same rule in path form: its
 last segment equals the deepest non-null ancestor, asserted by tests. See

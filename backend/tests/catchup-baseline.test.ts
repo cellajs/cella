@@ -12,7 +12,7 @@ import { mockFetchRequest, setTestConfig } from './test-utils';
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 // Verifies the view-driven catchup contract end-to-end (ledger sync): membership
-// screening via changes.entitySeqs, product sync via per-view hw:/e: answers.
+// screening via changes.entitySeqs, product sync via per-view f:/e: answers.
 describe('Catchup (view-driven, ledger)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
@@ -21,13 +21,13 @@ describe('Catchup (view-driven, ledger)', async () => {
     mockFetchRequest();
     tenant = await createTestTenant(call, 'catchup-baseline');
 
-    // Seed channel_counters with ledger, hw and count values for the org
+    // Seed channel_counters with ledger, frontier and count values for the org
     const counts = {
       's:ledger': 50,
       's:membership': 3,
-      'hw:attachment': 42,
+      'f:attachment': 42,
       'e:attachment': 15,
-      'hws:attachment': 40,
+      'fs:attachment': 40,
       'es:attachment': 12,
       'm:admin': 1,
     };
@@ -61,7 +61,7 @@ describe('Catchup (view-driven, ledger)', async () => {
     expect(cursor).toBeDefined();
   });
 
-  it('answers an org view with hw and count rollups (org member, unconditional read)', async () => {
+  it('answers an org view with frontier and count rollups (org member, unconditional read)', async () => {
     const orgId = tenant.organization.id;
     const result = await call(postAppCatchup, {
       body: {
@@ -86,11 +86,11 @@ describe('Catchup (view-driven, ledger)', async () => {
     const [answer] = views!;
     expect(answer.key).toBe(`${orgId}:attachment`);
     expect(answer.status).toBe('ok');
-    expect(answer.highWaters).toEqual({ attachment: 42 });
+    expect(answer.frontiers).toEqual({ attachment: 42 });
     expect(answer.counts).toEqual({ attachment: 15 });
   });
 
-  it('answers a SELF view from the hws:/es: family', async () => {
+  it('answers a SELF view from the fs:/es: family', async () => {
     const orgId = tenant.organization.id;
     const result = await call(postAppCatchup, {
       body: {
@@ -115,7 +115,7 @@ describe('Catchup (view-driven, ledger)', async () => {
     expect(views![0]).toMatchObject({
       key: `${orgId}:attachment:self`,
       status: 'ok',
-      highWaters: { attachment: 40 },
+      frontiers: { attachment: 40 },
       counts: { attachment: 12 },
     });
   });
@@ -176,7 +176,7 @@ describe('Catchup (view-driven, ledger)', async () => {
       ['other:attachment', 'forbidden'],
       [`${orgId}:attachment`, 'ok'],
     ]);
-    expect(views![0].highWaters).toBeUndefined();
+    expect(views![0].frontiers).toBeUndefined();
     expect(views![0].counts).toBeUndefined();
   });
 });

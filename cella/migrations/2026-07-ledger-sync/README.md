@@ -10,11 +10,11 @@ organization** shared by all product entity types (reserved via `s:ledger` on th
 `channel_counters` row; WAL order = ledger order). Every channel/product table gains a
 STORED generated **`path`** column (root-first ancestor ids, slash-joined) via
 `channelEntityColumns`/`productEntityColumns` — no write-path changes, reparents update
-it atomically. Per-node summaries got a new family: **`hw:{type}`** high-water marks
+it atomically. Per-node summaries got a new family: **`f:{type}`** frontiers
 max-merged at the org and every non-null ancestor. Catchup is **view-driven**: the
 client declares `{prefixes, entityTypes, cursor}` views, the server authorizes each
 prefix (`resolveViewReadStatus`: ok/opaque/forbidden — node-id-only proof) and answers
-from `hw:`/`e:` rollups. Reparented rows additionally emit **`moveOut`** notifications
+from `f:`/`e:` rollups. Reparented rows additionally emit **`moveOut`** notifications
 to subscribers who lost visibility. The legacy flat-seqs catchup contract,
 `childChannelChanges`, per-scope `s:{entityType}` counters, and the CDC org-signal are
 **gone**.
@@ -49,7 +49,7 @@ fork-owned surfaces must follow:
 ```sh
 pnpm cella                       # pull upstream (expect conflicts on pinned files only)
 pnpm --filter backend generate   # fork-owned drizzle: path columns + side_effects
-                                 # (apply_count_deltas gains the hw:/GREATEST class)
+                                 # (apply_count_deltas gains the f:/GREATEST class)
 ```
 
 Then, per product entity module (copy the attachment template):
@@ -65,7 +65,7 @@ Then, per product entity module (copy the attachment template):
 **Deploy order (per environment):** snapshot DB → `pnpm migrate` (adds path columns,
 regenerated side effects) → deploy backend + CDC → **restamp** (below) → run counter
 recalculation (`pnpm seed counters` or your recalc runbook — it rebuilds `s:ledger`,
-`hw:{type}`, `e:{type}`) → deploy frontend. Old PWA bundles get a graceful 400 on the
+`f:{type}`, `e:{type}`) → deploy frontend. Old PWA bundles get a graceful 400 on the
 old catchup shape and ride the documented fallback chain until the update prompt lands.
 
 ### Restamp (required on populated databases)
@@ -147,7 +147,7 @@ are discarded, so old-domain cursors never meet new-domain values.
 - Yjs: `registerYjsOwnedFields` suppression is untouched — ledger delta rows still skip
   Yjs-owned fields while an editor is active.
 - Embeddings (`label → task.labels`): propagation hints now derive from view cursors vs
-  `hw:label`; behavior is equivalent. The CDC embedding-cleanup path is unchanged.
+  `f:label`; behavior is equivalent. The CDC embedding-cleanup path is unchanged.
 - De-hosted attachments stay de-hosted; `publicat_cascade` and partman retention are
   unaffected (the ledger is not the activity id).
 - Restamp spans tasks, labels, attachments jointly.

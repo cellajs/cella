@@ -4851,12 +4851,12 @@
                             "type": "string",
                             "enum": ["ok", "opaque", "forbidden"]
                           },
-                          "highWaters": {
+                          "frontiers": {
                             "type": "object",
                             "additionalProperties": {
                               "type": "integer"
                             },
-                            "description": "Per-entityType max org-ledger seq over the view prefixes (subtree: hw:{type}; self: hws:{type})"
+                            "description": "Per-entityType max org-ledger seq over the view prefixes (subtree: f:{type}; self: fs:{type})"
                           },
                           "counts": {
                             "type": "object",

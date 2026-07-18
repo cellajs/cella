@@ -13,7 +13,7 @@ import {
  * Answerability of a catchup view prefix for one product entity type.
  *
  * - `ok`: the caller has UNCONDITIONAL read of every row at or below the prefix node —
- *   per-node summaries (`hw:{type}`, `e:{type}`) may be returned; they describe exactly
+ *   per-node summaries (`f:{type}`, `e:{type}`) may be returned; they describe exactly
  *   rows the caller could read anyway.
  * - `opaque`: the caller can read SOME rows under the prefix (conditional slices like
  *   `read:'own'`/public, home-only grants, or grants on descendant channels) but not all —
@@ -110,7 +110,7 @@ function classifyPrefix(
 
   // SELF views (rows homed at the node) accept a HOME-scoped unconditional grant ON THE
   // NODE only — ancestor home-grants cover their own wall, never deeper ones. Self
-  // summaries (hws:/es:) describe only homed rows, so nothing beyond the caller's
+  // summaries (fs:/es:) describe only homed rows, so nothing beyond the caller's
   // readable set is disclosed. Subtree views can never accept this proof.
   if (depth === 'self' && filter.homeScopes?.some((scope) => scope.subChannelIds.includes(node))) return 'ok';
 

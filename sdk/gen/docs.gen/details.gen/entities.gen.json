@@ -206,10 +206,10 @@
                     "required": true,
                     "enum": ["ok", "opaque", "forbidden"]
                   },
-                  "highWaters": {
+                  "frontiers": {
                     "type": "object",
                     "required": false,
-                    "description": "Per-entityType max org-ledger seq over the view prefixes (subtree: hw:{type}; self: hws:{type})",
+                    "description": "Per-entityType max org-ledger seq over the view prefixes (subtree: f:{type}; self: fs:{type})",
                     "additionalProperties": { "type": "integer", "required": false }
                   },
                   "counts": {

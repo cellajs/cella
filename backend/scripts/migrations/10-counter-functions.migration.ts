@@ -5,8 +5,8 @@ import type { SideEffectBlock, SideEffectProducer } from '../types';
  * lets the CDC worker use prepared statements for counter upserts.
  *
  * Increments apply with a floor of 0 (no negative counters). `li:` (last insert) / `lu:`
- * (last update) keys are epoch-ms activity stamps and `hw:`/`hws:` keys are org-ledger
- * high-water marks (subtree/self), not deltas: they merge via GREATEST so the signal only
+ * (last update) keys are epoch-ms activity stamps and `f:`/`fs:` keys are org-ledger
+ * frontiers (subtree/self), not deltas: they merge via GREATEST so the signal only
  * moves forward.
  */
 async function run(): Promise<SideEffectBlock> {
@@ -25,8 +25,8 @@ DECLARE
 BEGIN
   FOR k, v IN SELECT * FROM jsonb_each_text(deltas)
   LOOP
-    IF k LIKE 'li:%' OR k LIKE 'lu:%' OR k LIKE 'hw:%' OR k LIKE 'hws:%' THEN
-      -- Activity stamps (epoch ms) and ledger high-water marks: keep the max,
+    IF k LIKE 'li:%' OR k LIKE 'lu:%' OR k LIKE 'f:%' OR k LIKE 'fs:%' THEN
+      -- Activity stamps (epoch ms) and ledger frontiers: keep the max,
       -- the signal only moves forward
       result := result || jsonb_build_object(
         k, GREATEST(COALESCE((result->>k)::bigint, 0), v::bigint)

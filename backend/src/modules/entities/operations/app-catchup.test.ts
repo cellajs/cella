@@ -7,7 +7,7 @@ import { answerCatchupViews } from './app-catchup';
 
 /**
  * View-driven catchup answers: authorization via resolveViewReadStatus (real app
- * config: organization → attachment), summaries from channel_counters hw:/e: rollups.
+ * config: organization → attachment), summaries from channel_counters f:/e: rollups.
  */
 
 const ORG = 'org-catchup-test';
@@ -29,7 +29,7 @@ beforeAll(async () => {
   await seedDb.execute(
     sql.raw(`
       INSERT INTO channel_counters (channel_key, counts, updated_at)
-      VALUES ('${ORG}', '{"s:ledger": 40, "hw:${productType}": 37, "e:${productType}": 12}'::jsonb, NOW())
+      VALUES ('${ORG}', '{"s:ledger": 40, "f:${productType}": 37, "e:${productType}": 12}'::jsonb, NOW())
       ON CONFLICT (channel_key) DO UPDATE SET counts = EXCLUDED.counts
     `),
   );
@@ -40,13 +40,13 @@ afterAll(async () => {
 });
 
 describe('answerCatchupViews', () => {
-  it('answers an authorized org view with hw/count summaries', async () => {
+  it('answers an authorized org view with frontier/count summaries', async () => {
     const answers = await answerCatchupViews(orgAdmin, { userId: 'actor', isSystemAdmin: false }, [
       { key: 'v1', organizationId: ORG, prefixes: [ORG], entityTypes: [productType], cursor: 30 },
     ]);
 
     expect(answers).toEqual([
-      { key: 'v1', status: 'ok', highWaters: { [productType]: 37 }, counts: { [productType]: 12 } },
+      { key: 'v1', status: 'ok', frontiers: { [productType]: 37 }, counts: { [productType]: 12 } },
     ]);
   });
 

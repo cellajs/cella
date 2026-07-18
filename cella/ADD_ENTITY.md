@@ -238,7 +238,7 @@ Reuse the shared `seqCursorFilters` + `pathPrefixFilter` helpers ([`seq-cursor.t
 Once the table is in `entityTables` (Step 5) and the type is in `productEntityTypes` (Step 2), the entire **Postgres WAL → CDC → SSE → client** pipeline covers the new entity with **no per-entity code**:
 
 - **CDC publication + `REPLICA IDENTITY FULL`**: derived from `entityTables` by the CDC setup migration.
-- **`seq` stamping**: the CDC worker stamps every row from the org ledger generically (one order per organization, shared by all product types) and rolls `hw:`/`hws:` high-water marks up the hierarchy.
+- **`seq` stamping**: the CDC worker stamps every row from the org ledger generically (one order per organization, shared by all product types) and rolls `f:`/`fs:` frontiers up the hierarchy.
 - **SSE dispatch**: [`entities-listeners.ts`](../backend/src/modules/entities/entities-listeners.ts) loops `appConfig.productEntityTypes` to register `activityBus` listeners; there is one generic `/entities/app/stream`, no per-entity endpoint.
 - **Permission-filtered fan-out**: the dispatcher derives ancestor context ids from the hierarchy and runs `checkPermission('read', ...)` per subscriber.
 

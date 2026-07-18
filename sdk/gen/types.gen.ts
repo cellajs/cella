@@ -2368,9 +2368,9 @@ export type PostAppCatchupResponses = {
       key: string;
       status: 'ok' | 'opaque' | 'forbidden';
       /**
-       * Per-entityType max org-ledger seq over the view prefixes (subtree: hw:{type}; self: hws:{type})
+       * Per-entityType max org-ledger seq over the view prefixes (subtree: f:{type}; self: fs:{type})
        */
-      highWaters?: {
+      frontiers?: {
         [key: string]: number;
       };
       /**
