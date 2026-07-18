@@ -46,10 +46,18 @@ async function batchInsert(pool: pg.Pool, table: string, columns: string[], rows
   }
 }
 
+/**
+ * STORED generated columns (present on mock/select shapes, rejected by INSERT — PG 428C9).
+ * Drizzle inserts skip them automatically; this raw-SQL path must filter explicitly.
+ */
+const generatedColumns = new Set(['path']);
+
 export async function insertSeedRows(pool: pg.Pool, seed: TableBenchSeed, rows: Record<string, unknown>[]) {
   if (rows.length === 0) return;
 
-  const columns = Object.keys(rows[0]).map(camelToSnake);
+  const columns = Object.keys(rows[0])
+    .filter((key) => !generatedColumns.has(key))
+    .map(camelToSnake);
   const pgArrays = seed.pgArrayColumns ? new Set(seed.pgArrayColumns) : undefined;
   const seedRows = rows.map((row) => recordToRow(row, columns, pgArrays));
   await batchInsert(pool, seed.table, columns, seedRows);
