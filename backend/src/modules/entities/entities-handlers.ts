@@ -1,6 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { streamSSE } from 'hono/streaming';
 import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
 import { assertSuccess } from '#/core/operation-result';
 import '#/modules/entities/entities-listeners';
 import '#/modules/entities/entities-module';
@@ -22,8 +23,22 @@ app.openapi(entityRoutes.checkSlug, async (ctx) => {
   return result.data.available ? ctx.body(null, 204) : ctx.body(null, 409);
 });
 
+// Subscriber caps: memory/dispatch-CPU backpressure for the single-process stream. The
+// per-user cap leans on leader-tab election (one connection per browser profile); the global
+// cap protects the VM. Both reject with 429 so clients ride their normal reconnect backoff.
+const MAX_STREAMS_PER_USER = 10;
+const MAX_STREAM_SUBSCRIBERS = 5000;
+
 app.openapi(entityRoutes.appStream, async (ctx) => {
   const { user, memberships, isSystemAdmin } = ctx.var;
+
+  if (
+    streamSubscriberManager.size >= MAX_STREAM_SUBSCRIBERS ||
+    streamSubscriberManager.getByChannel(`user:${user.id}`).length >= MAX_STREAMS_PER_USER
+  ) {
+    throw new AppError(429, 'too_many_requests', 'warn', { meta: { reason: 'stream_subscriber_cap' } });
+  }
+
   const organizationIds = new Set(memberships.map((m) => m.organizationId));
   const cursor = await getLatestUserActivityId(organizationIds);
 

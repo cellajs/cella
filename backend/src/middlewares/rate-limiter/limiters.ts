@@ -114,6 +114,28 @@ export const pointsLimiter = (cost = 1) =>
   });
 
 /**
+ * Sync-driven read limiter (backpressure, not throughput): bounds the fan-out read
+ * endpoints — delta list fetches and unseen-count reads — that every SSE notification can
+ * trigger across the whole online audience. Generous by design (the lazy scheduler already
+ * merges and spreads fetches); a 429 here rides the client's existing fetch-failure fallback
+ * (targeted invalidation + backoff). Attach to product list ops and unseen counts.
+ */
+export const syncReadLimiter = rateLimiter('limit', 'syncRead', [['userId', 'ip']], {
+  limits: { points: 5000, duration: 60 * 60, blockDuration: 60 * 5 },
+  description: 'Max 5000 sync-driven reads/hour per user (delta lists, unseen counts)',
+});
+
+/**
+ * SSE connect limiter: bounds stream connection attempts per user. The client's reconnect
+ * backoff (5-30s + circuit breaker) stays far below this; only a runaway reconnect loop or
+ * deliberate abuse reaches it.
+ */
+export const streamConnectLimiter = rateLimiter('limit', 'streamConnect', [['userId', 'ip']], {
+  limits: { points: 240, duration: 60 * 60, blockDuration: 60 * 5 },
+  description: 'Max 240 SSE stream connects/hour per user',
+});
+
+/**
  * Bulk-operation points limiter: cost = length of the request body array.
  * Attach to any route that accepts `{ ids: [...] }` or a top-level array body.
  */
