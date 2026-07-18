@@ -37,6 +37,18 @@ pnpm test # Run tests (excluding ui stories)
 pnpm story # Start storybook
 ```
 
+## Test offline & PWA
+
+Offline and PWA behavior needs a production-style frontend build: the custom Workbox service worker is generated through VitePWA's `injectManifest` strategy and doesn't run under plain `pnpm dev`.
+
+```bash
+# Builds the frontend + service worker and serves it with vite preview
+# (on the port from appConfig.frontendUrl); also starts backend + CDC in dev mode
+pnpm offline
+```
+
+The service worker registers on `localhost` without HTTPS. There is currently no `offline:watch` script — rebuild to pick up frontend changes.
+
 ## Customize & contribute
 
 1. Set your app identity in `shared/config/config.default.ts`: name, urls, enabled modules and third-party keys.

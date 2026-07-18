@@ -15,8 +15,9 @@ export const PUBLISHED_ROW_FILTER = 'published_at IS NOT NULL';
  *
  * ONLY product tables that opt into the draft lifecycle (`publishedColumn`) are
  * filtered: PG rewrites their publish edge into an INSERT and unpublish into a DELETE
- * at decode time (PG15+ row-filter transitions; REPLICA IDENTITY FULL permits filtering
- * on any column), so drafts never reach the worker. CHANNEL tables are never filtered —
+ * at decode time (row-filter transitions are a PG 15 feature; cella documents PG 17+
+ * as its floor — see infra/README; REPLICA IDENTITY FULL permits filtering on any
+ * column), so drafts never reach the worker. CHANNEL tables are never filtered —
  * their `publishedAt` (defaultNow) gates invitees, not readers, and filtering them
  * would also suppress channel-path-sync for channel drafts.
  */

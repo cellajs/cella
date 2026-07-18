@@ -136,7 +136,7 @@ are discarded, so old-domain cursors never meet new-domain values.
   streams) — answerable `ok` by DIRECT memberships (students included, via their
   home-scoped grants); `depth: 'subtree'` (default) for aggregate feeds — `ok` only for
   subtree-scoped readers (staff at the node, org admins). See "Readability ×
-  answerability" in SYNC_ENGINE.md for the full matrix.
+  answerability" (SYNC_ENGINE.md, "Authorization" chapter) for the full matrix.
 - Restamp spans items, comments, submissions, materials, labels, attachments jointly.
 
 ## raak notes

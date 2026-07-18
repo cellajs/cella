@@ -86,7 +86,7 @@ The pipeline flows: **Postgres WAL → CDC worker → WebSocket → ActivityBus 
 
 - **App stream** (`/entities/app/stream`): authenticated, carries permitted product-entity notifications and membership changes. Product and membership payloads share `event: change` and are distinguished by `kind: 'entity' | 'membership'`. One leader tab holds SSE; followers receive notifications through BroadcastChannel.
 
-Sequence numbers are hierarchy-aware: the CDC worker stamps product creates and updates (including soft deletes and restores) and scopes counters to the row's deepest non-null ancestor. See [Sync engine](/docs/page/architecture/sync-engine) for the complete lifecycle, merge semantics, and current implementation limitations.
+All product types share one org-wide sequence: the CDC worker stamps product creates and updates (including soft deletes and restores) in WAL commit order and rolls up frontier/count summaries to the org and every non-null ancestor node, so clients sync path-prefix views at any level. See [Sync engine](/docs/page/architecture/sync-engine) for the complete lifecycle, merge semantics, and current implementation limitations.
 
 ### Schema evolution (WIP)
 
