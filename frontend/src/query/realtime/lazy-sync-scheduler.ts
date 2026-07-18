@@ -143,6 +143,24 @@ export function flushAllNow(): Promise<void> {
   return flushDue();
 }
 
+/**
+ * Awaitable immediate flush of ONE channel view — the foreground catchup path (gap 4a):
+ * catchup enqueues its gap, then awaits this so the mutation-replay gate resolves against a
+ * reconciled cache, while the scheduler stays the only code that fetches seq ranges.
+ * Single attempt: a failure takes the fallback (invalidate + advance) instead of the lazy
+ * retry ladder, mirroring catchup's original inline semantics.
+ */
+export async function flushChannelViewNow(
+  entityType: ProductEntityType,
+  organizationId: string,
+  channelId: string | null,
+): Promise<'ok' | 'fallback' | 'requeued' | 'none'> {
+  const entry = dirty.get(entryKey(entityType, organizationId, channelId));
+  if (!entry) return 'none';
+  dirty.delete(entryKey(entityType, organizationId, channelId));
+  return flushEntry({ ...entry, attempts: MAX_FLUSH_ATTEMPTS - 1 });
+}
+
 /** Clear all pending work. Called when catchup starts: it recomputes channel-view deltas itself. */
 export function resetLazySync(): void {
   dirty.clear();
@@ -177,13 +195,13 @@ async function flushDue(): Promise<void> {
   armTimer();
 }
 
-async function flushEntry(entry: DirtyEntry): Promise<void> {
+async function flushEntry(entry: DirtyEntry): Promise<'ok' | 'fallback' | 'requeued'> {
   const { entityType, organizationId, tenantId, channelId } = entry;
 
   // Offline: fetching fails pointlessly; keep dirty, recheck soon. Catchup owns reconnect.
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     requeue(entry, OFFLINE_RECHECK_MS);
-    return;
+    return 'requeued';
   }
 
   const keys = getEntityQueryKeys(entityType);
@@ -192,7 +210,7 @@ async function flushEntry(entry: DirtyEntry): Promise<void> {
 
   if (result.status === 'error' && entry.attempts + 1 < MAX_FLUSH_ATTEMPTS) {
     requeue({ ...entry, attempts: entry.attempts + 1 }, RETRY_BASE_MS * 2 ** entry.attempts);
-    return;
+    return 'requeued';
   }
 
   if (result.status === 'ok') {
@@ -210,6 +228,8 @@ async function flushEntry(entry: DirtyEntry): Promise<void> {
 
   // Propagate after source data settled (fresh rows on ok, invalidated list otherwise).
   for (const propagation of entry.propagations) propagateEmbeddings(propagation);
+
+  return result.status === 'ok' ? 'ok' : 'fallback';
 }
 
 function advanceCaughtUp(entry: DirtyEntry): void {
