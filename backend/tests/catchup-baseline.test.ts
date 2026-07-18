@@ -33,8 +33,11 @@ describe('Catchup (view-driven, ledger)', async () => {
     };
     await db
       .insert(channelCountersTable)
-      .values({ channelKey: tenant.organization.id, counts })
-      .onConflictDoUpdate({ target: channelCountersTable.channelKey, set: { counts } });
+      .values({ channelKey: tenant.organization.id, counts, path: tenant.organization.id })
+      .onConflictDoUpdate({
+        target: channelCountersTable.channelKey,
+        set: { counts, path: tenant.organization.id },
+      });
   });
 
   afterAll(async () => {
@@ -115,6 +118,31 @@ describe('Catchup (view-driven, ledger)', async () => {
       highWaters: { attachment: 40 },
       counts: { attachment: 12 },
     });
+  });
+
+  it('a claimed prefix that mismatches the verified path answers opaque, no numbers', async () => {
+    const orgId = tenant.organization.id;
+    const result = await call(postAppCatchup, {
+      body: {
+        cursor: '0-0',
+        views: [
+          {
+            // Node id is the org (counters row exists, path = orgId), but the claim
+            // dresses it up as a deeper node: verified path !== claim → opaque.
+            key: 'forged',
+            organizationId: orgId,
+            prefixes: [`${orgId}/fake-course/${orgId}`],
+            entityTypes: ['attachment'],
+            cursor: 0,
+          },
+        ],
+      },
+      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+    });
+
+    expect(result.response.status).toBe(200);
+    const { views } = result.data as AppCatchupResponse;
+    expect(views![0]).toEqual({ key: 'forged', status: 'opaque' });
   });
 
   it('forbids a view on an org the caller is no part of, without leaking numbers', async () => {

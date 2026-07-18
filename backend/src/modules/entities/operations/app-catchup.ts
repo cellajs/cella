@@ -27,11 +27,29 @@ export async function answerCatchupViews(
 ): Promise<CatchupViewAnswer[]> {
   if (views.length === 0) return [];
 
-  // Authorize every (prefix, entityType) pair per view, at the view's depth.
+  // ONE counters read for every requested node, BEFORE classification: the row carries
+  // the node's verified path (ancestry from the id, never the claim) alongside the
+  // numbers. Bounded by the schema caps (256 views × 64 prefixes) plus this hard cap;
+  // nodes beyond it stay unverified (node-id-only proof — conservative, never wider).
+  const nodeKeys = new Set<string>();
+  for (const view of views) {
+    for (const prefix of view.prefixes) {
+      if (nodeKeys.size >= 1024) break;
+      nodeKeys.add(pathHomeId(prefix));
+    }
+  }
+  const counterRows = nodeKeys.size > 0 ? await findChannelCountersByKeys(dbCtx, [...nodeKeys]) : [];
+  const countersByNode = new Map(
+    counterRows.map((r) => [r.channelKey, { ...parseCounterCounts(r.counts), path: r.path }]),
+  );
+
+  // Authorize every (prefix, entityType) pair per view, at the view's depth, against
+  // the verified path when the counters row has one.
   const statuses = views.map((view) => {
     let sawOpaque = false;
     let sawOk = false;
     for (const prefix of view.prefixes) {
+      const truePath = countersByNode.get(pathHomeId(prefix))?.path;
       for (const entityType of view.entityTypes) {
         const status = resolveViewReadStatus(
           memberships,
@@ -40,6 +58,7 @@ export async function answerCatchupViews(
           actor,
           prefix,
           view.depth ?? 'subtree',
+          truePath,
         );
         if (status === 'forbidden') return 'forbidden' as const;
         if (status === 'opaque') sawOpaque = true;
@@ -48,15 +67,6 @@ export async function answerCatchupViews(
     }
     return sawOpaque || !sawOk ? ('opaque' as const) : ('ok' as const);
   });
-
-  // One counters read for all ok views' nodes (a prefix's deepest segment is its node).
-  const nodeKeys = new Set<string>();
-  views.forEach((view, i) => {
-    if (statuses[i] !== 'ok') return;
-    for (const prefix of view.prefixes) nodeKeys.add(pathHomeId(prefix));
-  });
-  const counterRows = nodeKeys.size > 0 ? await findChannelCountersByKeys(dbCtx, [...nodeKeys]) : [];
-  const countersByNode = new Map(counterRows.map((r) => [r.channelKey, parseCounterCounts(r.counts)]));
 
   return views.map((view, i) => {
     const status = statuses[i];

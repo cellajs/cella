@@ -76,6 +76,7 @@ const statusFor = (
     isSystemAdmin?: boolean;
     elevatedRoles?: readonly string[];
     depth?: 'self' | 'subtree';
+    truePath?: string | null;
   } = {},
 ) =>
   resolveViewReadStatusForPolicies(
@@ -90,6 +91,7 @@ const statusFor = (
     },
     prefix,
     opts.depth,
+    opts.truePath,
   );
 
 describe('resolveViewReadStatus', () => {
@@ -165,6 +167,42 @@ describe('resolveViewReadStatus', () => {
       elevatedRoles: ['admin', 'staff'] as const,
     };
     expect(statusFor(`${ROOT_ID}/c1`, { ...opts, depth: 'self' })).toBe('ok');
+  });
+
+  it('VERIFIED ancestry: an ancestor grant proves deeper nodes when the path is true', () => {
+    const opts = { read: courseStaffRead, memberships: [membership('course', 'c1', 'staff')] };
+    const deep = `${ROOT_ID}/c1/s1/p1`;
+
+    // The flipped cell: staff's course grant + verified true path → deep node ok.
+    expect(statusFor(deep, { ...opts, truePath: deep })).toBe('ok');
+    // Unverified (no counters row): node-id-only proof stays conservative.
+    expect(statusFor(deep, { ...opts, truePath: null })).toBe('opaque');
+    // Forged ancestry: the node's true path hangs elsewhere → opaque, self-heals.
+    expect(statusFor(deep, { ...opts, truePath: `${ROOT_ID}/c2/s9/p1` })).toBe('opaque');
+    // Verified path under a DIFFERENT course: no grant on any true ancestor → opaque.
+    const otherDeep = `${ROOT_ID}/c2/s9/p9`;
+    expect(statusFor(otherDeep, { ...opts, truePath: otherDeep })).toBe('opaque');
+  });
+
+  it('VERIFIED ancestry: a mismatch blocks even org-wide readers (cross-org forge guard)', () => {
+    const opts = { read: orgAdminRead, memberships: [membership('organization', ROOT_ID, 'admin')] };
+    // Claim inside this org, but the node truly lives in another org.
+    expect(statusFor(`${ROOT_ID}/c1`, { ...opts, truePath: 'other-org/c1' })).toBe('opaque');
+    // Truthful claim: ok as before.
+    expect(statusFor(`${ROOT_ID}/c1`, { ...opts, truePath: `${ROOT_ID}/c1` })).toBe('ok');
+  });
+
+  it('VERIFIED ancestry: ancestor HOME-grants still never prove deeper self views', () => {
+    const courseStudentRead = (ct: DeepChannelType, role: string): PermissionValue =>
+      ct === 'course' && role === 'student' ? 1 : 0;
+    const opts = {
+      read: courseStudentRead,
+      memberships: [membership('course', 'c1', 'student')],
+      elevatedRoles: ['admin', 'staff'] as const,
+    };
+    const deep = `${ROOT_ID}/c1/s1/p1`;
+    // The student's course home-grant covers the course WALL, not project walls below.
+    expect(statusFor(deep, { ...opts, depth: 'self', truePath: deep })).toBe('opaque');
   });
 
   it('no read route at all is forbidden, as is a prefix outside the org', () => {

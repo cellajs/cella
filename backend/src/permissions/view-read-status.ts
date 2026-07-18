@@ -43,12 +43,14 @@ export function resolveViewReadStatus(
   actor: Actor,
   prefix: string,
   depth: ViewDepth = 'subtree',
+  truePath?: string | null,
 ): ViewReadStatus {
   return classifyPrefix(
     prefix,
     organizationId,
     resolveCollectionReadFilter(memberships, entityType, organizationId, actor),
     depth,
+    truePath,
   );
 }
 
@@ -61,49 +63,57 @@ export function resolveViewReadStatusForPolicies(
   input: CollectionReadScopeInput,
   prefix: string,
   depth: ViewDepth = 'subtree',
+  truePath?: string | null,
 ): ViewReadStatus {
-  return classifyPrefix(prefix, input.organizationId, resolveCollectionReadFilterForPolicies(input), depth);
+  return classifyPrefix(prefix, input.organizationId, resolveCollectionReadFilterForPolicies(input), depth, truePath);
 }
 
+/**
+ * Ancestry comes from the id, never the claim: `truePath` is the node's CDC-maintained
+ * canonical path (`channel_counters.path`). When present, the claimed prefix must equal
+ * it (a mismatch — forged, or stale after a reparent — answers `opaque` and self-heals
+ * on re-declare, never `forbidden`: anti-oracle), and grants are matched against the
+ * TRUE ancestor segments, so a subtree grant at any real ancestor proves the node.
+ * Without it (channel never had activity, or pre-backfill), proof falls back to the
+ * node id alone — conservative, never wider.
+ */
 function classifyPrefix(
   prefix: string,
   organizationId: string,
   filter: CollectionReadFilter,
   depth: ViewDepth,
+  truePath?: string | null,
 ): ViewReadStatus {
   const segments = pathSegments(prefix);
   // A prefix must live inside the requested organization (paths are root-first).
   if (segments.length === 0 || segments[0] !== organizationId) return 'forbidden';
+
+  // Claimed prefix must match the verified path exactly when we have one — BEFORE the
+  // org-wide shortcut: equality also proves the node really lives in this org (a forged
+  // claim could otherwise address another org's node under an org-wide reader).
+  if (truePath != null && truePath !== prefix) return hasNoReadScope(filter) ? 'forbidden' : 'opaque';
 
   // Org-wide unconditional read (org admin, sysadmin): every node in the org is answerable.
   if (filter.subChannelIds === undefined) return 'ok';
 
   const node = segments[segments.length - 1];
   const isOrgPrefix = segments.length === 1;
+  // Verified: every segment is a real ancestor; unverified: only the node id is trusted.
+  const provableIds = truePath != null ? segments : [node];
 
   if (!isOrgPrefix) {
-    // Grants are honored on the prefix's DEEPEST node id only. Prefixes are client-supplied
-    // strings: matching a grant against an intermediate SEGMENT (e.g. "the course id appears
-    // in the path, so the project below must be covered") would let a forged prefix attach an
-    // unrelated node under a granted ancestor and read its summaries. Node ids are safe —
-    // both grants and channel_counters rows key on the real channel id. A caller with an
-    // ancestor grant asking about a deeper node gets `opaque` (correct, just conservative);
-    // verifying claimed ancestry against the channel's stored `path` is a possible upgrade.
-    if (filter.subChannelIds.includes(node)) return 'ok';
-    // Unconditional grant at an intermediate ancestor level held ON the node itself
-    // (e.g. a course-level grant answering the course's own prefix).
-    if (filter.ancestorScopes?.some((scope) => scope.subChannelIds.includes(node))) return 'ok';
+    // Home-level unconditional grant (deepest level: covers its subtree).
+    if (provableIds.some((id) => filter.subChannelIds?.includes(id))) return 'ok';
+    // Unconditional grant at an intermediate ancestor level (subtree-scoped: elevated).
+    if (filter.ancestorScopes?.some((scope) => provableIds.some((id) => scope.subChannelIds.includes(id)))) return 'ok';
   }
 
-  // SELF views (rows homed at the node) are additionally provable by a HOME-scoped
-  // unconditional grant ON the node — the grant shape non-elevated roles produce under
-  // `elevatedRoles` (a course student's course grant covers exactly the course wall).
-  // Self summaries (hws:/es:) describe only homed rows, so nothing beyond the caller's
+  // SELF views (rows homed at the node) accept a HOME-scoped unconditional grant ON THE
+  // NODE only — ancestor home-grants cover their own wall, never deeper ones. Self
+  // summaries (hws:/es:) describe only homed rows, so nothing beyond the caller's
   // readable set is disclosed. Subtree views can never accept this proof.
   if (depth === 'self' && filter.homeScopes?.some((scope) => scope.subChannelIds.includes(node))) return 'ok';
 
   // Anything else with SOME read scope → opaque; nothing at all → forbidden.
-  // (For subtree views, home-only grants cover rows homed exactly at their level, not the
-  // subtree, and conditional slices cover per-row subsets — neither proves the node.)
   return hasNoReadScope(filter) ? 'forbidden' : 'opaque';
 }
