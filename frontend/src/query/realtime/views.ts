@@ -38,7 +38,7 @@ export interface DeriveViewsInput {
 }
 
 /**
- * Derive the view set from the caller's grant shapes — views belong at grant
+ * Derive the view set from the caller's grant shapes. Views belong at grant
  * boundaries, where `resolveViewReadStatus` can prove them `ok`:
  *
  * - org-level unconditional read, subtree-scoped (elevated role, or no elevatedRoles
@@ -47,7 +47,7 @@ export interface DeriveViewsInput {
  *   prefix SET is all granted nodes (the "3-of-5 projects" aggregate)
  * - elevated intermediate grants (staff at course/section) → subtree view per node
  * - home-scoped grants (non-elevated above home, incl. org-level) → SELF view per node
- *   (the channel's own wall — exactly the rows the grant covers)
+ *   (the channel's own wall: exactly the rows the grant covers)
  *
  * Conditional grants (`read:'own'`, public) derive nothing: unprovable summaries; those
  * rows keep riding org-view fetches + staleness. Unknown channel paths skip their grant

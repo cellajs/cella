@@ -48,9 +48,9 @@ export function isDefaultListView(filters: Record<string, unknown>, defaults: Re
  *
  * The cache is keyed the way SSE is routed: every row belongs to exactly one canonical home
  * list, its effective home channel's (deepest non-null ancestor; the org itself for org-homed
- * rows — see resolve-row-channel). Views derive from the home list via select(). Any list that
+ * rows; see resolve-row-channel). Views derive from the home list via select(). Any list that
  * spans home channels or applies server-side filters is a filtered key: live sync cannot
- * splice rows into it and invalidates it instead.
+ * splice rows into it and invalidates it.
  */
 export function createEntityKeys<
   LF extends object,

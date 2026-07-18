@@ -29,7 +29,7 @@ export function seqCursorFilters(seqColumn: Column, raw: string | undefined): SQ
 /**
  * Segment-safe materialized-path prefix filter: matches the node itself and true
  * descendants (`o1/c1` covers `o1/c1` and `o1/c1/p9`, never `o1/c11`). The permission
- * WHERE is always applied separately — this only narrows placement.
+ * WHERE is always applied separately; this only narrows placement.
  */
 export function pathPrefixFilter(pathColumn: Column, prefix: string | undefined): SQL[] {
   if (!prefix) return [];

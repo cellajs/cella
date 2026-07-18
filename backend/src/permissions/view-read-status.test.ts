@@ -123,7 +123,7 @@ describe('resolveViewReadStatus', () => {
     // Org level: staff can read some org rows, not provably all → no summaries.
     expect(statusFor(ROOT_ID, opts)).toBe('opaque');
     // Deeper node under the granted course: covered in truth, but the prefix is
-    // client-supplied — node-id-only proof keeps forged ancestry out (conservative opaque).
+    // client-supplied, so node-id-only proof keeps forged ancestry out (conservative opaque).
     expect(statusFor(`${ROOT_ID}/c1/s1/p1`, opts)).toBe('opaque');
     // A different course: readable-nothing there, but SOME org scope exists → opaque.
     expect(statusFor(`${ROOT_ID}/c2`, opts)).toBe('opaque');
@@ -142,8 +142,8 @@ describe('resolveViewReadStatus', () => {
   });
 
   it('SELF views: a home-scoped grant (non-elevated under elevatedRoles) answers its own node', () => {
-    // Course student read=1 with elevatedRoles configured: the grant is home-scoped —
-    // it covers exactly the course wall (rows homed at c1), which is what a self view asks.
+    // Course student read=1 with elevatedRoles configured: the grant is home-scoped.
+    // It covers exactly the course wall (rows homed at c1), which is what a self view asks.
     const courseStudentRead = (ct: DeepChannelType, role: string): PermissionValue =>
       ct === 'course' && role === 'student' ? 1 : 0;
     const opts = {
@@ -152,7 +152,7 @@ describe('resolveViewReadStatus', () => {
       elevatedRoles: ['admin', 'staff'] as const,
     };
 
-    // Self view on the granted node: provable — homed rows are exactly the grant.
+    // Self view on the granted node: provable because homed rows are exactly the grant.
     expect(statusFor(`${ROOT_ID}/c1`, { ...opts, depth: 'self' })).toBe('ok');
     // Subtree view on the same node: NOT provable (other projects live below).
     expect(statusFor(`${ROOT_ID}/c1`, { ...opts, depth: 'subtree' })).toBe('opaque');

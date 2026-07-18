@@ -10,7 +10,7 @@ import {
 } from 'shared';
 
 /**
- * Materialized id-path as a STORED generated column — the SQL twin of
+ * Materialized id-path as a STORED generated column: the SQL twin of
  * `shared/src/config-builder/row-path.ts`. Root-first ancestor ids slash-joined,
  * null ancestors skipped (variable-depth rows); channel entities append their own id.
  *
@@ -18,7 +18,7 @@ import {
  * a row (or hand-written fork ancestor columns changing) updates it atomically, and the
  * backfill is the ALTER TABLE itself. Every intermediate ancestor is COALESCE-wrapped so
  * one expression serves strict and nullable chains alike; the root ancestor id column
- * (organization) must be non-null — the hierarchy guarantees products an organization
+ * (organization) must be non-null. The hierarchy guarantees products an organization
  * ancestor, and fork channel tables must declare their organization column NOT NULL.
  */
 

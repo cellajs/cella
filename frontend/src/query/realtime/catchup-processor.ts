@@ -15,10 +15,10 @@ import { getSyncTier, getTenantIdForOrg } from './sync-priority';
  *
  * The client declares one view per (org, entityType) with its org-sequence cursor
  * (`sync-store.getCatchupViews`); the server answers `ok` (with `frontiers`/`counts`
- * rollups), `opaque` (readable but not provably all — no numbers), or `forbidden`.
+ * rollups), `opaque` (readable but not provably all, with no numbers), or `forbidden`.
  * For an `ok` view with `frontier > cursor` ONE org-wide delta fetch from `cursor + 1`
- * returns every changed row in the org for that type — including rows homed in child
- * channels and tombstones — and cache-ops routes them into the right lists. Child-scope
+ * returns every changed row in the org for that type (including rows homed in child
+ * channels and tombstones), and cache-ops routes them into the right lists. Child-scope
  * watermarks remain live-path bookkeeping; catchup no longer depends on
  * membership-derived channel discovery (the elevated-reader gap this design removes).
  *
@@ -55,7 +55,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       const keys = getEntityQueryKeys(entityType);
 
       if (answer.status === 'opaque') {
-        // Readable but not provably all: no numbers to compare. Fall back to staleness —
+        // Readable but not provably all: no numbers to compare. Fall back to staleness, so
         // an actively viewed list refetches; background lists follow their mount policy.
         if (!baselineOnly && hasAnyCachedList(keys, organizationId)) {
           cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
@@ -68,7 +68,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       const clientCursor = syncStore.getOrgSeq(organizationId, entityType);
 
       // Baseline (first session for this org view): store the frontier, let route loaders /
-      // hydration supply data. With something already cached, refetch it instead.
+      // hydration supply data. With something already cached, refetch it.
       if (baselineOnly || clientCursor === 0) {
         if (!baselineOnly && hasAnyCachedList(keys, organizationId)) {
           cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
@@ -118,7 +118,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       );
     }
 
-    // Integrity: counts compared server-to-server per (org, entityType) — a changed
+    // Integrity: counts compared server-to-server per (org, entityType). A changed
     // count with matching frontier means drift (e.g. failed refetch after invalidation).
     if (!baselineOnly) verifyViewCounts(views);
   }
@@ -170,9 +170,9 @@ export function catchupEntityTypes(): string[] {
 
 /**
  * Answers for registered grant-boundary views: precise CHANGE DETECTION on top of the
- * org-view correctness baseline. `ok` + unchanged frontier → skip every refetch (the win);
+ * org-view correctness baseline. `ok` + unchanged frontier skips every refetch (the win);
  * changed → invalidate the affected active lists and advance the view cursor (row
- * ingestion itself rides org-view delta fetches — no per-view range fetch here);
+ * ingestion itself rides org-view delta fetches, with no per-view range fetch here);
  * `opaque` → staleness fallback; `forbidden` → the grant is gone, drop the view.
  */
 function processRegisteredViewAnswer(
@@ -211,7 +211,7 @@ function processRegisteredViewAnswer(
     console.debug(`[CatchupProcessor] View ${answer.key}: baseline → cursor ${frontier}`);
     return;
   }
-  if (frontier <= view.cursor) return; // unchanged: skip refetches — the precision win
+  if (frontier <= view.cursor) return; // unchanged: skip refetches, the precision win
 
   invalidateTypes();
   syncStore.setViewCursor(answer.key, frontier);

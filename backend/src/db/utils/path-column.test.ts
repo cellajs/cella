@@ -6,7 +6,7 @@ import { pathColumnExpression } from './path-column';
 
 /**
  * The generated `path` column (SQL) and `row-path.ts` (JS) must produce identical
- * values for every row shape — CDC routing, move-out detection, and client view
+ * values for every row shape. CDC routing, move-out detection, and client view
  * routing all assume the two rules agree.
  */
 

@@ -18,7 +18,7 @@ interface TableSpec {
  * Large columns are still stripped from WS payloads via cdcExcludeColumnLengthThreshold in the activity service.
  *
  * Draft-lifecycle product tables get a ROW FILTER (PG 17+, see infra/README): the
- * replication stream then contains only the synced world — publish edges arrive as
+ * replication stream then contains only the synced world. Publish edges arrive as
  * INSERTs, unpublishes as DELETEs, draft edits never arrive (`publication-filter.ts`).
  */
 function buildTableSpecs(): TableSpec[] {

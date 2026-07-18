@@ -11,7 +11,7 @@ import { timestamp } from 'drizzle-orm/pg-core';
  * the CDC publication gains a row filter for the table on regeneration (`pnpm generate`
  * + `pnpm migrate`, see `publication-filter.ts`) so drafts never enter the replication
  * stream, and API reads, counters, stamps and unseen badges all key on the column via
- * introspection (see `shared/src/published-rows.ts`) — no further wiring is needed.
+ * introspection (see `shared/src/published-rows.ts`); no further wiring is needed.
  * The template ships this helper unused. Do NOT add `published_at` to the immutability
  * trigger lists because publishing mutates it by design.
  */

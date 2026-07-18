@@ -54,7 +54,7 @@ export function resolveChannelKey(
 
 /**
  * The channel-counter nodes a stamped row's frontier propagates to: the organization
- * plus every non-null ancestor. This is the rollup set — `f:{type}` at any node answers
+ * plus every non-null ancestor. This is the rollup set: `f:{type}` at any node answers
  * "did anything of this type change at or below here" with one comparison.
  */
 export function frontierNodeKeys(

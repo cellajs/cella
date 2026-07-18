@@ -24,7 +24,7 @@ const livePredicate = (et: EntityType, alias: string) =>
 /**
  * Published-rows-only predicate (opt-in `publishedAt` draft lifecycle). The publication
  * row filter keeps drafts out of the CDC stream, so CDC never counts them; recalculation
- * reads the TABLE — which still contains drafts — and must exclude them to agree.
+ * reads the TABLE (which still contains drafts) and must exclude them to agree.
  * Empty for tables without the column.
  */
 const publishedPredicate = (et: EntityType, alias: string) =>
@@ -163,7 +163,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
     const frontierKey = `f:${entityType}`;
     // Unpublished drafts are excluded from frontiers (not delta-fetchable; the
     // publication row filter keeps them from ever reaching CDC). Rows drafted before
-    // the filter era may hold historical seq stamps — harmless orphans, still excluded
+    // the filter era may hold historical seq stamps (harmless orphans), still excluded
     // here. Tombstones stay included (delta reads return them). No live filter here.
     const frontierPredicate = publishedPredicate(entityType, 't');
 
@@ -194,7 +194,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
       );
     }
 
-    // Self family (home node only, deepest non-null ancestor — the legacy per-scope shape):
+    // Self family (home node only, deepest non-null ancestor, the legacy per-scope shape):
     // fs:{type} = MAX(seq) of HOMED rows (drafts excluded, tombstones included);
     // es:{type}  = COUNT of countable HOMED rows (live AND published).
     const homeExpr = deepestAncestorExpr(entityType, 't');

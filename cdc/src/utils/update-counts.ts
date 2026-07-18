@@ -31,8 +31,8 @@ export function isActivityStampKey(key: string): boolean {
 }
 
 /**
- * Keys that merge via GREATEST instead of summing: activity stamps (`li:`/`lu:`, epoch ms)
- * and sequence frontiers — `f:<type>` (subtree: max org-sequence position of that type at
+ * Keys that merge via GREATEST, not summing: activity stamps (`li:`/`lu:`, epoch ms)
+ * and sequence frontiers. `f:<type>` (subtree: max org-sequence position of that type at
  * or below the node) and `fs:<type>` (self: max seq of rows HOMED at the node).
  * Mirrored by the apply_count_deltas PG function.
  */
@@ -91,8 +91,8 @@ export function getCountDeltas(
     // Activity stamps (epoch ms) at the home context only (deepest non-null ancestor, org
     // fallback). These per-stream signals stay at the home context and do not propagate to
     // higher ancestors like `e:` deltas. `li:<type>` moves forward when new content enters
-    // the countable set — with the publication row filter a publish edge arrives as INSERT,
-    // so the create IS the publish — and `lu:<type>` moves on countable-row content updates.
+    // the countable set (with the publication row filter a publish edge arrives as INSERT,
+    // so the create IS the publish), and `lu:<type>` moves on countable-row content updates.
     // Deletes, soft-deletes and restores leave both untouched (a restore re-counts the row
     // but is old content, so no stamp); drafts never reach the stream.
     if (h.isProduct(tableMeta.type) && countAction !== null && countAction !== 'delete') {
@@ -120,7 +120,7 @@ export function getCountDeltas(
     // always products (config type), so the publication row filter carries the draft
     // dimension: a publish edge arrives as INSERT (adds every ref), an unpublish as
     // DELETE with the old row (removes them), draft ref edits never arrive. The
-    // deletedAt dimension is not remapped — soft-delete ref cleanup is owned by
+    // deletedAt dimension is not remapped: soft-delete ref cleanup is owned by
     // embedding-cleanup, which rewrites the arrays and emits its own updates.
     for (const embedding of appConfig.entityEmbeddings) {
       if (embedding.hostEntity !== tableMeta.type) continue;
@@ -282,7 +282,7 @@ function getEntityDeltas(
       if (ancestor.id === organizationId) continue; // org already counted above
       deltas.push({ channelKey: ancestor.id, deltas: { [counterKey]: value } });
     }
-    // Self count: rows HOMED at the node only (deepest non-null ancestor, org fallback) —
+    // Self count: rows HOMED at the node only (deepest non-null ancestor, org fallback),
     // the summary a self view is answered from (mirrors the li:/lu: placement rule).
     const home = resolveDeepestAncestorId(h, entityType, row) ?? organizationId;
     deltas.push({ channelKey: home, deltas: { [selfCountKey]: value } });

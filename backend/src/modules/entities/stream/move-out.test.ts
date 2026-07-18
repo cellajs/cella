@@ -12,7 +12,7 @@ import type { AppStreamProductEvent } from './types';
  * Move-out dispatch: exactly the subscribers who could read the OLD location but not
  * the new one receive `action: 'moveOut'` carrying the old path. Base cella's org-only
  * topology cannot lose readability across channels, so the readability difference here
- * is produced through the draft veto — the same canReceiveEntityEvent every fork's
+ * is produced through the draft veto, the same canReceiveEntityEvent every fork's
  * channel differences flow through. In production such an unpublish+move UPDATE no
  * longer occurs (the publication row filter delivers it as a DELETE; see
  * dispatch-mirror.test.ts), but the veto stays as the fail-closed backstop and gives

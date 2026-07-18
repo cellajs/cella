@@ -1,1 +1,0 @@
-ALTER TABLE "channel_counters" ADD COLUMN "path" text;

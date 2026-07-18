@@ -27,7 +27,7 @@ export interface CdcBatchRow {
  * represent visibility for the entire batch.
  *
  * Seq values are org-sequence values (shared across product entity types); a batch group's
- * `seq..batchUntilSeq` range is NOT guaranteed contiguous for its own rows — `count`
+ * `seq..batchUntilSeq` range is NOT guaranteed contiguous for its own rows: `count`
  * carries the actual row count, and per-row seqs ride `batchRows`.
  *
  * `movedFrom` (single) / `batchRows[].movedFrom` carry the OLD row's permission subset
@@ -123,7 +123,7 @@ function batchPathKey({ activity, rowData }: BatchEventInfo): string {
  * Messages are split per (path, entityType) group so each describes one audience and one
  * entity type. Seq values come from the shared org sequence: a group's `seq..batchUntilSeq`
  * range may interleave with other groups' values, so `count` (and per-row seqs in
- * `batchRows`) carry the exact contents — range arithmetic is not row count.
+ * `batchRows`) carry the exact contents: range arithmetic is not row count.
  */
 export function sendBatchMessageToApi(
   events: BatchEventInfo[],

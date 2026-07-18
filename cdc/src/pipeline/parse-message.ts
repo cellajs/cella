@@ -33,10 +33,10 @@ let lastDraftGuardWarnAt = 0;
  * Entrance guard for the draft boundary. The publication row filter
  * (`published_at IS NOT NULL`, see backend `publication-filter.ts`) keeps draft product
  * rows out of the replication stream entirely, so a draft row here means a fork
- * misconfiguration — typically `publishedColumn` was added without regenerating the
+ * misconfiguration. The usual cause: `publishedColumn` was added without regenerating the
  * publication (`pnpm generate` + `pnpm migrate`). Dropping the event keeps counters
  * correct (drafts must count nothing); the rate-limited warning makes the gap loud
- * instead of silently corrupting sequence stamps.
+ * so sequence stamps are not silently corrupted.
  *
  * Uniform across actions because the delete handler snapshots the OLD row into
  * `rowData`: a true draft hard-delete never arrives (old row fails the filter), while

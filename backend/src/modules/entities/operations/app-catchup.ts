@@ -30,7 +30,7 @@ export async function answerCatchupViews(
   // ONE counters read for every requested node, BEFORE classification: the row carries
   // the node's verified path (ancestry from the id, never the claim) alongside the
   // numbers. Bounded by the schema caps (256 views × 64 prefixes) plus this hard cap;
-  // nodes beyond it stay unverified (node-id-only proof — conservative, never wider).
+  // nodes beyond it stay unverified (node-id-only proof: conservative, never wider).
   const nodeKeys = new Set<string>();
   for (const view of views) {
     for (const prefix of view.prefixes) {

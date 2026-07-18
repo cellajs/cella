@@ -131,7 +131,7 @@ const movedRows = (
 
 /**
  * Move-out delivery: when a row's path changed, subscribers who could read the OLD
- * location but not the new one would otherwise never learn the row left — the normal
+ * location but not the new one would otherwise never learn the row left. The normal
  * notification is permission-filtered on the NEW row, and a later delta fetch is
  * permission-filtered too, so no tombstone ever reaches them. For exactly those
  * subscribers this sends an `action: 'moveOut'` notification carrying the old path;

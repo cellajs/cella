@@ -221,7 +221,7 @@ export function removeEntityFromListCache(entityId: string, keys: EntityQueryKey
  * Apply one server-truth row to detail and list caches through the shared applicator for both
  * realtime paths (seq-range fetches and seq-less single fetches). Tombstones remove; rows
  * already cached update in place; unknown rows insert only into their canonical home list
- * (the row's effective home channel — see matchesCanonicalHome).
+ * (the row's effective home channel; see matchesCanonicalHome).
  * Returns true when the row was new to every scanned list cache, so callers can invalidate
  * filtered lists with object key segments, whose server-side filters cannot be replicated, once per flush.
  */
@@ -289,7 +289,7 @@ function applyServerEntity(
   }
 
   // A new row that no home list spliced and no filtered list will refetch stays invisible until
-  // an unrelated refetch — always a key-shape bug (canonical data cached outside keys.list.home).
+  // an unrelated refetch. This is always a key-shape bug (canonical data cached outside keys.list.home).
   if (organizationId && homeChannelId && !seen && !spliced && !sawFilteredList) {
     console.warn(
       `[CacheOps] New ${entityType} row ${entity.id} landed in no list cache — ` +

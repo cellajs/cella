@@ -51,8 +51,8 @@ export function handleUpdate(
 
   // Strip sync-state fields: they always change on every write but aren't user mutations.
   // Must happen before embedding suppression so WAL-diff paths don't see 'stx'/'seq'.
-  // 'path' is a stored generated column derived from the placement columns — the placement
-  // change itself is the user mutation, the path echo is not.
+  // 'path' is a stored generated column derived from the placement columns. The placement
+  // change itself is the user mutation; the path echo is not.
   const syncStateKeys = new Set(['stx', 'seq', 'path']);
   const userChangedFields = changedFields?.filter((k) => !syncStateKeys.has(k)) ?? null;
 

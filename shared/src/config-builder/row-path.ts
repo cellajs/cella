@@ -2,14 +2,14 @@ import type { AncestorSource } from './resolve-row-channel';
 
 /**
  * Materialized id-path rule (sequence sync). A row's path is its ancestor channel ids
- * root-first, slash-joined, skipping null ancestors (variable-depth rows), e.g.
+ * root-first, slash-joined, skipping null ancestors (variable-depth rows). For example,
  * `org1/course7/project9` for a project-homed item whose section level is unset.
  * Channel entities append their own id: a course's path is `org1/course7`.
  *
  * The SQL twin lives in `backend/src/db/utils/path-column.ts` as a STORED generated
  * column; `row-path.test.ts` and the backend path-column test assert the two agree.
  * The LAST path segment always equals `resolveDeepestAncestorId` (products) or the
- * row id (channels) — the pre-path attribution rule, kept equivalent by tests.
+ * row id (channels): the pre-path attribution rule, kept equivalent by tests.
  */
 
 /** Slash-joined non-null ancestor ids, root-first. Null when the root ancestor id is missing. */
@@ -69,7 +69,7 @@ export function pathSegments(path: string): string[] {
   return path.split('/');
 }
 
-/** The deepest (last) segment of a path — equals the row's effective home channel id. */
+/** The deepest (last) segment of a path: equals the row's effective home channel id. */
 export function pathHomeId(path: string): string {
   const segments = pathSegments(path);
   return segments[segments.length - 1] ?? path;

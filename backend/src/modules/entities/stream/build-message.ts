@@ -57,7 +57,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   const channelType: ChannelEntityType | null = (membership?.channelType as ChannelEntityType | undefined) ?? null;
 
   // Resolve the home channel id for scheduler and unseen-count grouping: the row's deepest
-  // non-null ancestor. Variable-depth rows group under their effective home. Grouping only —
+  // non-null ancestor. Variable-depth rows group under their effective home. Grouping only:
   // the org sequence does not key on this.
   let channelId: string | null = null;
   if (isProduct && entityType) {
@@ -113,7 +113,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
 
 /**
  * Move-out notification: the row left `movedFrom.path` (reparent). Sent ONLY to
- * subscribers who could read the old location but not the new one — for them the
+ * subscribers who could read the old location but not the new one. For them the
  * row effectively disappeared, and no delta fetch will return it (permission-filtered),
  * so the notification itself is the removal instruction.
  */

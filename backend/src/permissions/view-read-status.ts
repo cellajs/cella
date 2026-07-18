@@ -12,14 +12,14 @@ import {
 /**
  * Answerability of a catchup view prefix for one product entity type.
  *
- * - `ok`: the caller has UNCONDITIONAL read of every row at or below the prefix node —
- *   per-node summaries (`f:{type}`, `e:{type}`) may be returned; they describe exactly
+ * - `ok`: the caller has UNCONDITIONAL read of every row at or below the prefix node.
+ *   Per-node summaries (`f:{type}`, `e:{type}`) may be returned; they describe exactly
  *   rows the caller could read anyway.
  * - `opaque`: the caller can read SOME rows under the prefix (conditional slices like
- *   `read:'own'`/public, home-only grants, or grants on descendant channels) but not all —
- *   summaries are shared totals over rows they cannot see and would leak change-timing,
+ *   `read:'own'`/public, home-only grants, or grants on descendant channels) but not all.
+ *   Summaries are shared totals over rows they cannot see and would leak change-timing,
  *   so the server answers WITHOUT numbers; the client falls back to normal staleness.
- * - `forbidden`: no read route at all — indistinguishable from a nonexistent prefix.
+ * - `forbidden`: no read route at all, indistinguishable from a nonexistent prefix.
  *
  * Deliberately conservative: `opaque` is returned whenever the caller has ANY read scope
  * in the organization that does not provably cover the node. Opaque discloses nothing,
@@ -30,8 +30,8 @@ export type ViewReadStatus = 'ok' | 'opaque' | 'forbidden';
 /**
  * Resolve whether per-node summaries for `prefix` may be shown to the caller for
  * `entityType`. Built on the SAME scope resolution as collection reads
- * (`resolveCollectionReadFilter`), so catchup answerability mirrors list reads —
- * the four-way parity suite (SQL ≍ engine ≍ dispatch ≍ prefix-catchup) pins this.
+ * (`resolveCollectionReadFilter`), so catchup answerability mirrors list reads.
+ * The four-way parity suite (SQL ≍ engine ≍ dispatch ≍ prefix-catchup) pins this.
  */
 /** View depth: `subtree` covers rows at or below the node; `self` only rows HOMED at it. */
 export type ViewDepth = 'self' | 'subtree';
@@ -71,11 +71,11 @@ export function resolveViewReadStatusForPolicies(
 /**
  * Ancestry comes from the id, never the claim: `truePath` is the node's CDC-maintained
  * canonical path (`channel_counters.path`). When present, the claimed prefix must equal
- * it (a mismatch — forged, or stale after a reparent — answers `opaque` and self-heals
+ * it (a mismatch, whether forged or stale after a reparent, answers `opaque` and self-heals
  * on re-declare, never `forbidden`: anti-oracle), and grants are matched against the
  * TRUE ancestor segments, so a subtree grant at any real ancestor proves the node.
  * Without it (channel never had activity, or pre-backfill), proof falls back to the
- * node id alone — conservative, never wider.
+ * node id alone: conservative, never wider.
  */
 function classifyPrefix(
   prefix: string,
@@ -88,8 +88,8 @@ function classifyPrefix(
   // A prefix must live inside the requested organization (paths are root-first).
   if (segments.length === 0 || segments[0] !== organizationId) return 'forbidden';
 
-  // Claimed prefix must match the verified path exactly when we have one — BEFORE the
-  // org-wide shortcut: equality also proves the node really lives in this org (a forged
+  // Claimed prefix must match the verified path exactly when we have one (BEFORE the
+  // org-wide shortcut): equality also proves the node really lives in this org (a forged
   // claim could otherwise address another org's node under an org-wide reader).
   if (truePath != null && truePath !== prefix) return hasNoReadScope(filter) ? 'forbidden' : 'opaque';
 
@@ -109,7 +109,7 @@ function classifyPrefix(
   }
 
   // SELF views (rows homed at the node) accept a HOME-scoped unconditional grant ON THE
-  // NODE only — ancestor home-grants cover their own wall, never deeper ones. Self
+  // NODE only. Ancestor home-grants cover their own wall, never deeper ones. Self
   // summaries (fs:/es:) describe only homed rows, so nothing beyond the caller's
   // readable set is disclosed. Subtree views can never accept this proof.
   if (depth === 'self' && filter.homeScopes?.some((scope) => scope.subChannelIds.includes(node))) return 'ok';

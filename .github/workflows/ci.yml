@@ -3,12 +3,18 @@ name: CI
 # Deny-by-default: each job opts in to the scopes it actually needs.
 permissions: {}
 
-# CI runs on pull requests only.
+# CI runs in two contexts:
+#   • pull_request: fast feedback while iterating (cheap checks only).
+#   • merge_group: the merge queue. The heavy suites run here, once, when a
+#     PR is enqueued to merge. This is what gates the actual merge to main, so
+#     the branch-protection "required status checks" must live in this context.
 on:
   pull_request:
     branches: [main]
+  merge_group:
 
-# Cancel older runs of the same PR when a new push arrives
+# pull_request: cancel older runs of the same PR when a new push arrives.
+# merge_group: each queue entry has a unique ref, so nothing is cancelled.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -40,7 +46,7 @@ jobs:
             style
             test
 
-  # Runs linting
+  # Runs linting. Cheap: runs on both PR (fast feedback) and merge queue (gate).
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -74,8 +80,9 @@ jobs:
       - name: Run lens checks (append-only / collision / purity / wire completeness)
         run: pnpm --filter shared lens:check
 
-  # Runs all tests (full mode with PostgreSQL)
+  # Runs all tests (full mode with PostgreSQL). Heavy: merge queue only.
   test:
+    if: github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -128,8 +135,9 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
 
-  # Storybook component tests (Vitest browser mode via Playwright).
+  # Storybook component tests (Vitest browser mode via Playwright). Heavy: merge queue only.
   storybook-test:
+    if: github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -168,7 +176,6 @@ jobs:
   # must be accompanied by a `clientCacheVersion` bump (shared/config/config.default.ts)
   # so offline clients wipe stale persisted query data. 
   schema-bust-gate:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -180,8 +187,10 @@ jobs:
           fetch-depth: 0 # need base-branch blobs to diff
 
       - name: Breaking-change gate
+        # pull_request supplies github.base_ref; merge_group does not (the queue
+        # always targets main), so fall back to main.
         env:
-          BASE_REF: ${{ github.base_ref }}
+          BASE_REF: ${{ github.base_ref || 'main' }}
         run: |
           set -euo pipefail
           git fetch --no-tags --depth=1 origin "$BASE_REF"

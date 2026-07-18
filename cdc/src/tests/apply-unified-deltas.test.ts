@@ -119,7 +119,7 @@ describe('applyBatchUnifiedDeltas', () => {
 
   it('every stamped event bumps frontiers — tombstones of published rows included', async () => {
     // The publication row filter keeps drafts out of the stream entirely (the entrance
-    // guard in parse-message drops strays before compute/apply — see parse-message tests),
+    // guard in parse-message drops strays before compute/apply; see parse-message tests),
     // so apply has no draft branch: whatever is stamped is delta-fetchable and bumps.
     upsertReturnValue = { 'sequence': 2 };
 
@@ -139,7 +139,7 @@ describe('applyBatchUnifiedDeltas', () => {
 
     expect(events[0].result.rowData.seq).toBe(1);
     expect(events[1].result.rowData.seq).toBe(2);
-    // Phase-1 org reservation + phase-2 frontier writes (org + proj-1) — both events bump.
+    // Phase-1 org reservation + phase-2 frontier writes (org + proj-1); both events bump.
     expect(dbOps.filter((op) => op.type === 'upsert')).toHaveLength(3);
     expect(dbOps.filter((op) => op.type === 'execute')).toHaveLength(1);
   });

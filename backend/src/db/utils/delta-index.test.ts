@@ -9,7 +9,7 @@ import { entityTables } from '#/tables';
  * .todos/SEQUENCE_SYNC_REWRITE.md (organization-sequence rewrite)): every product entity
  * table must carry a composite `(organization_id, seq)` index so seq-range delta reads
  * are index range scans, not org-wide filters. Forks add product tables in their own
- * modules; this guard fails their test run instead of letting the index silently go missing.
+ * modules; this guard fails their test run so the index cannot silently go missing.
  */
 describe('every product entity table has the (organization_id, seq) delta index', () => {
   const productTables = Object.entries(entityTables).filter(([type]) =>

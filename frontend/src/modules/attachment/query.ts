@@ -94,7 +94,7 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
 };
 
 /**
- * Canonical attachment query: one flat home list per org (keys.list.home — attachments are
+ * Canonical attachment query: one flat home list per org (keys.list.home, since attachments are
  * org-homed), fetching all its attachments. Consumers derive views via select() for groupId
  * filtering. Sync (SSE + delta fetch) keeps it fresh; staleTime follows sync liveness.
  */

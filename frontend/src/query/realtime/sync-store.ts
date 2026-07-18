@@ -57,7 +57,7 @@ interface SyncStoreState {
   /**
    * Register a grant-boundary view. RE-BASELINE RULE: identity = prefix set + entity
    * types + depth; any identity change resets the cursor to 0 (a grown prefix set has
-   * history predating the cursor — a delta fetch would silently skip it).
+   * history predating the cursor, and a delta fetch would silently skip it).
    */
   declareSyncView: (key: string, view: Omit<RegisteredSyncView, 'cursor'>) => void;
   removeSyncView: (key: string) => void;
@@ -174,7 +174,7 @@ export const useSyncStore = create<SyncStoreState>()(
                 entityTypes: [entityType],
                 // Org-view cursor over the org sequence. Only the org slot proves org-WIDE
                 // ingestion (child-channel-view cursors cover their own subtree only); 0 means
-                // no baseline yet — catchup stores the frontier and route loaders supply data.
+                // no baseline yet: catchup stores the frontier and route loaders supply data.
                 cursor: org.seqs[entityType] ?? 0,
               });
             }

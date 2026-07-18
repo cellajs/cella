@@ -9,9 +9,9 @@ import type { RowData } from '../types';
  * (`recalculate-counters.ts`); CDC and recalculation must agree or counters drift on
  * every repair.
  *
- * For PRODUCT tables the published dimension is normally settled upstream — the
+ * For PRODUCT tables the published dimension is normally settled upstream: the
  * publication row filter keeps drafts out of the stream (parse-message.ts guards the
- * misconfig case) — but it stays part of the definition here because CHANNEL tables
+ * misconfig case). It stays part of the definition here because CHANNEL tables
  * carry `publishedAt` unfiltered (invitee gating), and recalculation counts published
  * rows only for both.
  */

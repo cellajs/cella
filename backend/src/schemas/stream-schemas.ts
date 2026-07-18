@@ -139,7 +139,7 @@ export type CatchupChangeSummary = z.infer<typeof catchupChangeSummarySchema>;
 
 /**
  * Per-view catchup answer. Summaries (`frontiers`, `counts`) are present only for
- * `status: 'ok'` views (unconditional read of the whole prefix subtree — see
+ * `status: 'ok'` views (unconditional read of the whole prefix subtree, see
  * `resolveViewReadStatus`); `opaque` views get no numbers and fall back to normal
  * staleness; `forbidden` views must be dropped by the client.
  */

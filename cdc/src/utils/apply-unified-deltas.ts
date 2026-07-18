@@ -78,8 +78,8 @@ export function sumInto(
  * `event.result.rowData.seq` for each stampable event.
  *
  * Phase 1 reserves one contiguous org-sequence range per organization
- * (`sequence` via RETURNING) and assigns values to events in WAL order —
- * all product entity types share the sequence, so WAL commit order IS sequence
+ * (`sequence` via RETURNING) and assigns values to events in WAL order.
+ * All product entity types share the sequence, so WAL commit order IS sequence
  * order. Phase 2 then writes frontier (`f:{type}`) marks at every
  * ancestor node, the remaining count deltas, and the row seq stamp-backs.
  */
@@ -109,7 +109,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
 
       // Frontier rollups. Every stamped event bumps: the publication row filter keeps
       // drafts out of the stream (publish arrives as INSERT, unpublish as DELETE with
-      // the old row — both delta-fetchable), so the stream IS the synced world and
+      // the old row, both delta-fetchable), so the stream IS the synced world and
       // `count` on messages is exactly fetchable rows. A draft that slips past a
       // missing filter is dropped at the entrance guard (parse-message.ts).
       // Subtree: f:{type} max-merged at the org and every non-null ancestor.
@@ -118,8 +118,8 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
       for (const node of nodes) {
         mergeDelta(phase2Deltas, node, { [frontierKey]: seq });
       }
-      // Self: fs:{type} at the HOME node only (deepest non-null ancestor, org fallback) —
-      // answers self views (rows homed at the node), mirroring the li:/lu: placement rule.
+      // Self: fs:{type} at the HOME node only (deepest non-null ancestor, org fallback).
+      // Answers self views (rows homed at the node), mirroring the li:/lu: placement rule.
       // frontierNodeKeys order is [org, mostSpecific, …, nearRoot], so home is nodes[1] ?? org.
       const home = nodes[1] ?? nodes[0] ?? group.orgKey;
       mergeDelta(phase2Deltas, home, { [`fs:${tableMeta.type}`]: seq });

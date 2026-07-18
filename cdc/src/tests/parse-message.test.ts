@@ -12,7 +12,7 @@ const warn = vi.mocked(log.warn);
 
 /**
  * Raw pgoutput rows are snake_case. Base cella's only product is `attachment`
- * (no publishedAt column in its schema) — injecting `published_at: null` simulates
+ * (no publishedAt column in its schema). Injecting `published_at: null` simulates
  * EXACTLY the misconfiguration the guard exists for: a fork added `publishedColumn`
  * but did not regenerate the publication, so draft rows leak into the stream.
  */
