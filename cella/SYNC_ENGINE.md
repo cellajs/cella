@@ -2,6 +2,15 @@
 
 This document explains the reasoning behind the sync engine. It also provides more details on how a mutation travels through the sync pipeline and how clients stay consistent while online and offline.
 
+> **Ledger sync (2026-07).** The engine runs on ONE totally-ordered ledger per
+> organization: every product change of every entity type takes the next org-ledger
+> value (WAL commit order = ledger order). Every channel/product row carries a
+> materialized id-**path** (STORED generated column, root-first ancestor ids), any
+> subtree is a path prefix, and per-node summaries (`hw:{type}` high-water marks +
+> `e:{type}` counts) roll up change state to every ancestor. Clients sync **views**
+> ({prefixes, entityTypes, cursor}); reparented rows emit **moveOut** notifications
+> to subscribers who lost visibility. Design/decisions: `.todos/LEDGER_SYNC_REWRITE.md`.
+
 ## TL;DR
 
 ```text
@@ -15,9 +24,9 @@ Postgres commits
         ▼
 CDC Worker observes WAL
         ▼
-Assign seq = 42
+Assign org-ledger seq = 42 (+ hw: rollups at every ancestor node)
         ▼
-Emit notification
+Emit notification (path + seq range + count)
         ▼
 SSE reaches browsers
         ▼
@@ -76,10 +85,13 @@ And distinct terms for *what* a change is about and *where* it is routed:
 
 | Term | Description |
 |------|-------------|
-| **Product entity** | A synced entity: seq-stamped, streamed, offline-capable (`ProductEntityType`, e.g. `attachment`). |
+| **Product entity** | A synced entity: ledger-stamped, streamed, offline-capable (`ProductEntityType`, e.g. `attachment`). |
 | **Channel entity** | A membership-scoped entity that hosts products and carries the permission check (`ChannelEntityType`, e.g. `organization`, `project` in a fork). |
-| **Channel** | The routing key a change fans out and counts on: a row's deepest non-null channel-entity ancestor id, falling back to its organization (`resolveChannelKey()`). The **org channel** is the root; a **child channel** is a deeper one (e.g. a project). |
-| **Scope** | Entity type + channel (`{entityType}:{channelId ?? organizationId}`). The unit seq watermarks are stored per, and the unit the lazy scheduler merges ranges and fetches per. |
+| **Channel** | A row's home: its deepest non-null channel-entity ancestor id, falling back to its organization (`resolveChannelKey()`). Audience grouping and unseen counts key on it; the ledger does NOT. |
+| **Ledger** | One monotonic counter per organization (`s:ledger` on the org's `channel_counters` row), shared by ALL product entity types. Row `seq` values are ledger values, stamped post-commit by the CDC worker in WAL order. |
+| **Path** | Materialized id-path (`path` STORED generated column): root-first ancestor ids slash-joined (`org1/course7/project9`); channel rows append their own id. Any subtree is a path prefix (`pathStartsWith`). |
+| **View** | The client sync unit: `{prefixes, entityTypes, cursor}` — a prefix set plus one org-ledger cursor. Catchup answers views from per-node summaries (`hw:{type}` max-merge rollups, `e:{type}` counts) after prefix authorization (`resolveViewReadStatus`: ok/opaque/forbidden). |
+| **Scope** | Entity type + channel (`{entityType}:{channelId ?? organizationId}`): the live-wire bookkeeping unit the lazy scheduler merges ranges and fetches per. Live scopes are per-view cursors over the shared ledger. |
 
 "Context" is **not** a sync-engine term: it means only the ambient kind (`AuthContext`, request `Context`, the routing context on mutation variables). Anything that routes or scopes a change is a channel — see [the rename migration](./migrations/2026-07-channel-entity-rename/README.md).
 
@@ -119,7 +131,7 @@ The worker channel is internal-only. The API accepts it only at `/internal/cdc`,
 shared CDC secret, restricts production sources to loopback or the deployment VPC, permits one
 connection, and closes idle peers after 90 seconds. External routing must never expose this path.
 
-**CDC buffering and batching:** `TransactionBuffer` retains transaction boundaries to suppress cascaded child deletes. After commit, `FlushBuffer` can micro-batch surviving events across transactions and groups them by `(type, action)`. Product groups are split again by their effective seq channel (the deepest non-null ancestor, via `resolveChannelKey()`), so every notification describes one contiguous seq range.
+**CDC buffering and batching:** `TransactionBuffer` retains transaction boundaries to suppress cascaded child deletes. After commit, `FlushBuffer` can micro-batch surviving events across transactions and groups them by `(type, action)`. Product groups are split again per `(path, entityType)` so every notification describes one audience; because the org ledger is shared, a group's `seq..batchUntilSeq` range may interleave with other groups' values — the explicit `count` field (never range arithmetic) is authoritative for batch size.
 
 ```
 Postgres WAL
@@ -155,6 +167,7 @@ Clients first branch on `kind`. Membership notifications invalidate membership/c
 | **Single entity** | `seq` set, `batchUntilSeq` null | Range fetch that seq and patch caches; tombstones remove cached entities |
 | **Create/update batch** | `batchUntilSeq` set | Range fetch via `seqCursor=seq,batchUntilSeq`; live rows upsert, tombstones remove |
 | **Hard delete** | `action: 'delete'` | Physical delete (rare, e.g. DB admin); invalidate the scoped list to reconcile; soft deletes arrive as `update` tombstones instead |
+| **Move-out** | `action: 'moveOut'` | The row left `path` (reparent) AND this subscriber cannot read its new location — no delta fetch will ever return it, so the notification itself is the removal: drop from caches + unseen ledger. Subscribers who can read both locations get the normal `update` instead and route the row client-side |
 
 ## Notification format
 Synced entity tables have an `stx` JSONB column for transaction metadata. It is sent on product-entity notifications. A later mutation overwrites the envelope, but the merged `fieldTimestamps` inside it remain part of conflict resolution. Entity `seq` values and `channel_counters` are the current gap-detection state; `activitiesTable` is the append-only audit/cursor history.
@@ -207,29 +220,42 @@ Cella currently exposes one realtime stream: the authenticated app stream. It ca
 | **Scope** | Permitted product entities + membership changes in the user's organizations |
 | **Cursor storage** | Persisted in sync store (survives refresh) |
 
-**How catchup works:**
+**How catchup works (view-driven):**
 
-Before opening SSE, the client POSTs its cursor and flattened seq watermarks to the same endpoint. The backend returns `{ changes, cursor }`, where `changes` is keyed by `organizationId`:
+Before opening SSE, the client POSTs its cursor and its VIEWS — one org-prefix view per
+(org, entityType), `{ key, organizationId, prefixes, entityTypes, cursor }` with the
+org-ledger cursor (`sync-store.getCatchupViews`). The backend authorizes every
+(prefix, entityType) pair (`resolveViewReadStatus`, node-id-only proof on the
+collection-scope engine) and answers `{ views, changes, cursor }`:
+
 ```typescript
-interface CatchupChangeSummary {
-  entitySeqs?: Record<string, number>;
-  entityCounts?: Record<string, number>;
-  childChannelChanges?: Record<string, {
-    entitySeqs?: Record<string, number>;
-    entityCounts?: Record<string, number>;
-  }>;
-  propagation?: PropagationHint[];
+interface CatchupViewAnswer {
+  key: string;                          // echoed client view key
+  status: 'ok' | 'opaque' | 'forbidden';
+  highWaters?: Record<string, number>;  // per-type max hw:{type} over the prefixes (ok only)
+  counts?: Record<string, number>;      // per-type e:{type} sums (ok only)
+}
+interface CatchupChangeSummary {        // per-org block: what is NOT per-view
+  entitySeqs?: Record<string, number>;  // s:membership screening + org ledger value
+  propagation?: PropagationHint[];      // embedding hints from hw vs view cursors
 }
 ```
+
+`ok` (unconditional subtree read proven) returns numbers; `opaque` (readable but not
+provably all — conditional slices, home-only grants, deeper-than-grant prefixes) returns
+NONE and the client falls back to staleness; `forbidden` discloses nothing. Because
+authorization is permission-resolved per prefix — not membership-enumerated — elevated
+readers (e.g. staff on a course without project memberships) catch up precisely.
 
 The client processes catchup in a two-phase sync cycle:
 
 **Phase A (catchup, before SSE opens):**
-- On the first connection (`cursor` absent), stores org and child-channel seq baselines and returns. Route loaders are responsible for initial data.
-- On later connections, compares server and stored seqs. For cached scopes with a positive delta, it fetches from `clientSeq + 1` using open-ended `seqCursor`; a full chunk or failed fetch falls back to active-list invalidation.
+- On the first connection (`cursor` absent), stores view baselines (the hw values) and returns. Route loaders are responsible for initial data.
+- On later connections, for each `ok` view with `hw > cursor` and a cached list, ONE org-wide delta fetch from `cursor + 1` (open-ended `seqCursor`) returns every changed row of that type in the org — child-homed rows included, routed into their lists by cache-ops; a full chunk or failed fetch falls back to active-list invalidation. The cursor advances only after ingest (advance-after-ingest). Background-tier orgs enqueue into the lazy scheduler instead (advance at flush).
+- `opaque` views invalidate cached active lists (staleness fallback); `forbidden` views are dropped.
 - Soft-delete tombstones returned by the delta endpoint remove rows from detail/list caches.
-- Membership member-list invalidation is scoped to organizations whose `s:membership` counter changed. If the response contains any changed scope, channel lists, `me`, and the user's memberships are refreshed.
-- `entityCounts` are compared with the previous server counts seen in this browser session. They are deliberately not compared with permission-filtered cached totals.
+- Membership member-list invalidation is scoped to organizations whose `s:membership` counter changed; channel lists, `me`, and the user's memberships are refreshed.
+- View `counts` are compared with the previous server counts seen in this browser session (drift signal). They are deliberately not compared with permission-filtered cached totals.
 - Embedded propagation runs after all delta fetches.
 
 **Phase B (background sync service, after SSE reaches `live`):**
@@ -312,8 +338,9 @@ Idempotency is operation-specific, not a global mutation guarantee. The default 
 Uses entity-type sequence numbers (`seq`) for **create/update/soft-delete/restore detection**. A soft delete sets `deleted_at`; a restore clears it. Both are updates, so CDC stamps them and delta reads can reconcile the cached row.
 
 **Sequence architecture:**
-- **`seq`**: Per-row sequence stamped by the CDC worker after each product-entity create/update. The worker reserves a range in `channel_counters.counts['s:{entityType}']` and writes assigned values back to the rows. New rows have their schema default until CDC stamps them.
-- **Hierarchy-aware scoping**: The CDC worker uses the row's deepest non-null ancestor ID as the channel key. This equals the declared parent for ordinary hierarchies and supports variable-depth entities whose nearer ancestor can be null.
+- **`seq`**: Per-row ORG-LEDGER value stamped by the CDC worker after each product-entity create/update. The worker reserves a contiguous range in `channel_counters.counts['s:ledger']` on the org row (one RETURNING upsert per org per batch, all product types share it; WAL order = ledger order) and writes assigned values back to the rows. New rows have their schema default until CDC stamps them.
+- **High-water rollups**: every stamp max-merges `hw:{entityType}` at the org and at EVERY non-null ancestor node (`hwNodeKeys`), so "did anything of this type change at or below here" is one comparison at any level.
+- **Hierarchy-aware home**: the row's deepest non-null ancestor ID remains its home channel (audience grouping, unseen counts, activity stamps) — it no longer scopes seq allocation.
 - **Membership detection**: Membership changes are detected via the org-level `s:membership` counter and standard membership invalidation.
 - **Delete detection**: Soft deletes are seq-stamped tombstone rows (`deletedAt != null`) returned by `seqCursor` reads. A physical hard delete has no row to fetch; the live handler invalidates the list, while the in-session server-count signal may detect a missed create/delete. No automatic hard-purge horizon is implemented in this repository.
 - **`seqCursor`**: List query parameter with two forms: `seqCursor=51` means `seq >= 51` and is used by catchup; `seqCursor=51,150` means the inclusive bounded range and is used by live batch notifications.
