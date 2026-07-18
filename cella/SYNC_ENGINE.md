@@ -460,9 +460,11 @@ The first tab to acquire the Web Lock becomes leader, owns SSE, and forwards not
 BroadcastChannel. A follower is promoted when the leader closes. All tabs can mutate.
 
 With `offlineAccess`, tabs share the durable query scope; session mode uses one scope per tab.
-Only leader mutations are selected for paused-mutation dehydration. The shared persister is not a
-single-writer system: a follower query write can replace shared metadata with an empty mutation
-array, so a follower's paused mutation can be lost on refresh.
+Every tab persists its own paused mutations in a per-tab record keyed by its session id, so tab
+writes never overwrite each other's queues. On restore, a tab unions its own record with records
+of dead tabs (liveness via a per-tab Web Lock, with an age fallback), absorbing crashed tabs'
+queued work. Two tabs restoring the same dead record concurrently can double-replay; intent-time
+`stx` makes that resolve idempotently.
 
 ### Detail cache
 
@@ -504,9 +506,9 @@ The engine does not provide:
 - Cross-client causality beyond deterministic scalar HLC ordering.
 - Commutative array conflict resolution.
 - Snapshot consistency between authorization changes and content cursors.
-- An edge-free offline mutation queue: server errors never queue, a follower tab's paused
-  mutations can be lost, and replay regenerates `stx`, so a response-loss double-send resolves
-  by client-minted-id conflict rather than idempotent replay.
+- An edge-free offline mutation queue: server errors never queue, and concurrent tabs restoring
+  the same dead tab's mutation record can double-replay (resolved idempotently via the
+  intent-time `stx` carried in variables).
 - Serialized merge writes or row-lock-based conflict resolution.
 - Global mutation idempotency.
 - Immediate row recovery for hard deletes. Invalidation and count checks repair them.
