@@ -4,7 +4,9 @@ Cella answers one question everywhere: **may this actor perform this action on t
 
 Roles are **scoped to channel entities**, never global. Product entities own no roles at all: they inherit their permissions from ancestor contexts. Ownership is an *implicit* relation derived from the row's `createdBy` column rather than a stored tuple.
 
-Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and knows nothing about roles, policies, or actions. See [Architecture](/docs/page/architecture) for how the two combine into defense in depth.
+Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and knows nothing about
+roles, policies, or actions. See [Multi-tenancy](./RLS.md) for the
+database boundary and how the layers combine.
 
 ## Architecture
 

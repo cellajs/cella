@@ -196,8 +196,8 @@ function handleEntityNotification(
     case 'moveOut':
       // The row left this subscriber's readable scope (reparent): the server sends this
       // ONLY when the new location is not readable here, so no delta fetch will ever
-      // return the row — the notification IS the removal. Same cache treatment as a
-      // tombstone: drop the row from lists/detail and correct the unseen ledger.
+      // return the row. The notification is the removal. Treat it like a tombstone:
+      // drop the row from lists/detail and correct unseen counts.
       cacheOps.removeEntity(entityType, entityId, organizationId);
       applyHardDeleteUnseen(entityType, entityId, channelId);
       break;

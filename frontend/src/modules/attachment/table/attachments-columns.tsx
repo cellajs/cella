@@ -14,7 +14,7 @@ import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
 import { formatBytes } from '~/utils/format-bytes';
 
-/** Views are only counted inside the seen ledger's retention window; older rows read 0. */
+/** Views are only counted inside the unseen-count retention window; older rows read 0. */
 const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
   if (!createdAt) return false;
 

@@ -1,7 +1,17 @@
-# Query Persistence Notes
+# Query implementation notes
 
-The frontend uses a single per-user IndexedDB database named `${appConfig.slug}:${userId}`. It opens only after a real user is known, closes on sign-out, and rebinds on account switch. Consumers resolve the live instance through `getAppDb()` and tolerate `null` while signed out.
+Read [React Client](../../../cella/CLIENT.md) first for the state model, startup sequence,
+and persistence boundaries. This local note records the storage lifecycle used by query code.
 
-The appdb lifecycle is auth-driven rather than route-driven. The user store hydrates from localStorage at boot, so the owner can be known cold or offline before `/me`. On sign-in the app opens `appdb` and eagerly rehydrates app kv stores; on sign-out it closes `appdb`; on account switch it closes, reopens, and rehydrates.
+The frontend uses one IndexedDB database per real user, named `${appConfig.slug}:${userId}`.
+It opens after a user is known, rebinds on account switch, and is unavailable while signed out.
+Consumers resolve the live instance through `getAppDb()` and tolerate `null`.
 
-Eager hydration starts as soon as the owner is known, before `_app beforeLoad`, so `appStorageReady()` can gate stream connection on a populated sync cursor. Impersonation is ephemeral and does not open the impersonated user's durable database.
+The lifecycle is auth-driven rather than route-driven. The bootstrap user store hydrates from
+`localStorage`, allowing `appdb` to open and its per-user Zustand stores to hydrate before the
+authenticated route connects the stream. Explicit sign-out deletes the database. An involuntary
+session loss only closes it, preserving offline work for the same user after reauthentication.
+
+Eager hydration starts before `_app beforeLoad`, so `appStorageReady()` can gate the stream on a
+populated sync cursor. Impersonation is ephemeral and does not open durable storage for the
+impersonated user.

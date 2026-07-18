@@ -1,11 +1,11 @@
 # Lazy sync migration
 
-> **TERMINOLOGY NOTE (2026-07):** written pre-rename — 'scope' here = today's **channel view**; `isViewingScope` is now `isViewingChannel`. 'Ledger' in this doc means the UNSEEN ledger (kept term), not the org sequence.
+> **TERMINOLOGY NOTE (2026-07):** written pre-rename — 'scope' here = today's **channel view**; `isViewingScope` is now `isViewingChannel`.
 
 The sync engine's live path is now **lazy and negotiated** (see `cella/SYNC_ENGINE.md`,
 "Lazy sync scheduling"): notifications enqueue merged seq ranges instead of fetching
 immediately, the server suggests a spread window (`syncWindow`), unseen badges are
-maintained by a client-side ledger instead of per-batch recounts, and catchup hands
+maintained from synced rows instead of per-batch recounts, and catchup hands
 background gaps to the same scheduler. Upstream cella arrives already migrated; forks
 have a few manual touch-points.
 
@@ -46,7 +46,7 @@ Behavior changes to be aware of (intentional, see SYNC_ENGINE.md):
 - Catchup enqueues background gaps lazily; muted scopes get the background tier during
   catchup (one-shot top-up) while live notifications still skip them.
 
-## 3. Unseen ledger — forks with feed filters MUST mirror them
+## 3. Unseen tracking — forks with feed filters MUST mirror them
 
 Badges are now computed from synced rows by `ingestSyncedRows` (`seen-store.ts`), a
 client-side mirror of your server's unseen predicate (`findUnseenCountsByUser`). If your
@@ -65,7 +65,7 @@ excludes `draft` item rows** — add the same filter in `matchesUnseenFilters`
 **unconditional** channel read (no `read: 'own'`-style cells). Base cella, raak (`task`)
 and projectcampus (`attachment`, `item`) all pass. If your fork trips it, either remove
 the type from `seenTrackedEntityTypes` or keep endpoint-based counting for it (revert the
-ledger ingest for that type) — a row-conditional read makes row-count badges silently wrong.
+synced-row ingest for that type) — a row-conditional read makes row-count badges silently wrong.
 
 ## 5. Wire/SDK
 
@@ -101,7 +101,7 @@ on any import you miss; plain grep-rename.
 response IS the unfiltered scope (delta rows row-identical to default-list rows, tombstones
 aside). A feed whose default response is server-filtered — e.g. **projectcampus excludes
 `draft` items** — must keep its filtered key for the default view, or drafts leak into the
-table via splices. Same reasoning as the ledger mirror in step 3. (On the
+table via splices. This follows the same unseen-predicate mirror described in step 3. (On the
 [2026-07-published-rows](../2026-07-published-rows/) lifecycle this concern disappears for
 drafts: delta reads exclude them server-side for everyone, so delta rows ARE row-identical
 to the default list again.)
@@ -112,5 +112,5 @@ to the default list again.)
 pnpm exec biome check --write .
 pnpm ts
 pnpm sdk
-pnpm --filter frontend test   # realtime + seen suites cover the scheduler/ledger
+pnpm --filter frontend test   # realtime + seen suites cover scheduling and unseen tracking
 ```

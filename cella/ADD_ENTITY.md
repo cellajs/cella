@@ -17,10 +17,11 @@ So adding an entity is mostly: **declare it in config, write its table + module,
 - 🟢 **Automatic**: derived from config/hierarchy or resolved from a registry. You add nothing; it "just works" once the entity is declared.
 - 🔴 **Manual**: you write or edit this.
 
-Two entity kinds exist (see [Architecture](./ARCHITECTURE.md) § Data modeling):
+Two entity kinds exist (see [Architecture](./ARCHITECTURE.md#entity-hierarchy-model) § Entity hierarchy model):
 
 - **Channel entity** (`organization`, `workspace`, `project`): has memberships and roles; access via app-layer guards; **no RLS, no `seq`/`stx`**.
-- **Product entity** (`task`, `label`, `attachment`): user-generated content, no memberships; **RLS-protected**, participates in the sync engine (`seq`/`stx`).
+- **Product entity** (`task`, `label`, `attachment`): user-generated content, no memberships;
+  **tenant-scoped reads are RLS-protected**, participates in the sync engine (`seq`/`stx`).
 
 The bulk of this guide covers **product entities**. Channel-entity differences are in [§ Channel entities](#channel-entities).
 
@@ -101,7 +102,7 @@ case 'note':
 Cell values: `1` allowed, `0`/omitted denied, `'own'` = the built-in "actor is creator" row condition. That is the whole set — row conditions are closed (`own` + public read), not a fork extension point.
 
 - **Product entities have no "self" rows**: their context rows are *home* rows where `create` is meaningful. (Channel entities distinguish *elevation* rows on an ancestor, which carry `create`, from *self* rows on the same context, which omit it. See the header comment in `permissions-config.ts`.)
-- **`publicRead('publicSelf')`**: the row is readable by anyone — anonymous included — once its own `publicAt` is set. Every context and product row already carries the column. Publication does **not** cascade: a public parent does not publish its children, because a cross-row rule cannot be evaluated by the collection-read SQL compiler or by CDC dispatch (which only ships the row itself). If you want cascade, propagate `publicAt` down to descendant rows — it is a data concern, not a permission rule. See [Permissions](/docs/page/architecture/permissions).
+- **`publicRead('publicSelf')`**: the row is readable by anyone — anonymous included — once its own `publicAt` is set. Every context and product row already carries the column. Publication does **not** cascade: a public parent does not publish its children, because a cross-row rule cannot be evaluated by the collection-read SQL compiler or by CDC dispatch (which only ships the row itself). If you want cascade, propagate `publicAt` down to descendant rows — it is a data concern, not a permission rule. See [Permissions](./PERMISSIONS.md).
 
 ### Step 4: 🔴 Create the database table
 
@@ -142,7 +143,10 @@ Mandatory columns come from the spread helpers; **do not hand-write them**:
 
 Conventions: `snakeCase.table(...)` maps camelCase fields → snake_case columns automatically; table name is the pluralized type (`note` → `notes`); ids are plain **UUID v7** (time-ordered, no prefixes). You may replace the explicit `organizationId`/`projectId` columns with `...channelRelationColumns('note')` (emits NOT-NULL ancestor id columns from the hierarchy); see [`attachment-db.ts`](../backend/src/modules/attachment/attachment-db.ts).
 
-Which tables get RLS, immutability triggers, the CDC publication, and `REPLICA IDENTITY FULL` is derived from the registry in the next step: 🟢 no per-table wiring for any of those.
+Which tables get RLS, immutability triggers, the CDC publication, and `REPLICA IDENTITY FULL` is
+derived from the registry in the next step: 🟢 no per-table wiring for any of those. Read the
+[RLS extension checklist](./RLS.md#adding-a-tenant-scoped-product-table) before introducing an
+exceptional support or public table.
 
 ### Step 5: 🔴 Register the table
 
@@ -342,6 +346,8 @@ Channel entities do **not** go through the CDC/SSE product pipeline or the wire-
 ## Related docs
 
 - [Architecture](./ARCHITECTURE.md): entity kinds, hierarchy builder, guard chain, data modeling
+- [React Client](./CLIENT.md): canonical queries, persistence, and frontend extension seams
 - [Sync engine](./SYNC_ENGINE.md): the CDC → SSE pipeline product entities plug into
+- [Multi-tenancy](./RLS.md): scoped reads, write safeguards, and the product-table checklist
 - [Schema evolution](./SCHEMA_EVOLUTION.md): the wire/lens system (Step 6) and evolving an entity's shape later
 - [Agent guidelines](./AGENTS.md): routing, guards, permissions, and coding conventions

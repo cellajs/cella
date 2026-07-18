@@ -81,7 +81,7 @@ BEGIN
   FOR k, v IN SELECT * FROM jsonb_each_text(deltas)
   LOOP
     IF k LIKE 'li:%' OR k LIKE 'lu:%' OR k LIKE 'hw:%' OR k LIKE 'hws:%' THEN
-      -- Activity stamps (epoch ms) and ledger high-water marks: keep the max,
+      -- Activity stamps (epoch ms) and sequence frontiers: keep the max,
       -- the signal only moves forward
       result := result || jsonb_build_object(
         k, GREATEST(COALESCE((result->>k)::bigint, 0), v::bigint)

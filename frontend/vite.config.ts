@@ -39,6 +39,28 @@ const isStorybook = process.env.STORYBOOK === 'true';
 const isDev = appConfig.mode === 'development';
 const frontendUrl = new URL(appConfig.frontendUrl);
 
+// Imported repository docs use relative links so they also work on GitHub and in editors. When a
+// target has a docs wrapper, keep navigation inside the site; other repo paths still point to GitHub.
+const repoDocRoutes = {
+  'cella/ARCHITECTURE.md': '/docs/page/architecture',
+  'cella/CLIENT.md': '/docs/page/architecture/client',
+  'cella/RLS.md': '/docs/page/architecture/rls',
+  'cella/SYNC_ENGINE.md': '/docs/page/architecture/sync-engine',
+  'cella/PERMISSIONS.md': '/docs/page/architecture/permissions',
+  'cella/SCHEMA_EVOLUTION.md': '/docs/page/architecture/schema-evolution',
+  'cella/OTEL.md': '/docs/page/architecture/observability',
+  'cella/ADD_ENTITY.md': '/docs/page/guides/new-entity',
+  'cella/TESTING.md': '/docs/page/guides/testing',
+  'cella/RELEASES.md': '/docs/page/guides/releases',
+  'cella/CHANGELOG.md': '/docs/page/changelog',
+  'cella/AGENTS.md': '/docs/page/llms',
+  'cella/QUICKSTART.md': '/docs/page/quickstart',
+  'cdc/README.md': '/docs/page/architecture/cdc',
+  'yjs/README.md': '/docs/page/architecture/yjs',
+  'infra/README.md': '/docs/page/guides/deployment',
+  'bench/README.md': '/docs/page/guides/load-testing',
+} as const;
+
 // Tunnel mode: frontendUrl is the public ngrok origin (no port); Vite still listens locally.
 const devPort = Number(frontendUrl.port) || 3000;
 const isTunneled = frontendUrl.hostname !== 'localhost';
@@ -133,7 +155,7 @@ const viteConfig = {
           // Autolink inline code that names a real repo file to its GitHub blob URL.
           [
             remarkLinkRepoPaths,
-            { repoRoot: path.resolve(__dirname, '..'), repoUrl: appConfig.company.githubUrl },
+            { repoRoot: path.resolve(__dirname, '..'), repoUrl: appConfig.company.githubUrl, docRoutes: repoDocRoutes },
           ],
         ],
         // Heading ids for anchor links + scroll spy. The `spy-` DOM id prefix follows the

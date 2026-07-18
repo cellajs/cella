@@ -50,8 +50,8 @@ be a no-op.
   hits re-authorize via `checkPermission`, and `cacheToken` is removed from the whole
   CDC→SSE→client pipeline (+ `X-Cache-Token` frontend sends). Manual, no script.
 - [2026-07-lazy-sync](./2026-07-lazy-sync/): negotiated lazy sync — notifications enqueue
-  merged seq ranges (client tiers × server `syncWindow`), unseen badges move to a client
-  ledger, catchup folds into the scheduler. Fork steps: `appCache(entityType)` signature,
+  merged seq ranges (client tiers × server `syncWindow`), unseen badges use client-side
+  tracking, catchup folds into the scheduler. Fork steps: `appCache(entityType)` signature,
   verify sub-org viewing detection, mirror feed filters (e.g. `draft`) in `ingestSyncedRows`,
   seen-tracked config invariant. Manual, no script.
 - [2026-07-deprecated-shims](./2026-07-deprecated-shims/): removes the last two

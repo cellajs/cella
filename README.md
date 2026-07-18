@@ -31,9 +31,11 @@
 
 #### Contents
 
-- [Agent guidelines](/cella/AGENTS.md)
-- [Architecture](/cella/ARCHITECTURE.md)
-- [Quickstart](/cella/QUICKSTART.md)
+- [Agent guidelines](./cella/AGENTS.md)
+- [Architecture](./cella/ARCHITECTURE.md)
+- [React Client](./cella/CLIENT.md)
+- [Multi-tenancy](./cella/RLS.md)
+- [Quickstart](./cella/QUICKSTART.md)
 
 ## Requirements
 
@@ -52,4 +54,4 @@ Do **not fork** this repo directly. Use the create CLI to get started:
 pnpm create @cellajs/cella
 ```
 
-Read the [Quickstart](/cella/QUICKSTART.md) so you can build something unique quickly.
+Read the [Quickstart](./cella/QUICKSTART.md) so you can build something unique quickly.

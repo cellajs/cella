@@ -2,7 +2,7 @@
 
 Upstream rewrote the sync engine's addressing layer. **This is a breaking change to the
 sync wire contract and to seq semantics** — read this whole guide before pulling.
-Design rationale and decisions: `.todos/LEDGER_SYNC_REWRITE.md` (historical name); engine reference:
+Design rationale and decisions: `.todos/SEQUENCE_SYNC_REWRITE.md`; engine reference:
 `cella/SYNC_ENGINE.md`.
 
 What changed, in one paragraph: `seq` values are now **one totally-ordered sequence per

@@ -16,42 +16,46 @@ The infrastructure is built around three principles:
 The key resources and how traffic flows between them:
 
 ```
-                          ┌─────────────────────────────────────────┐
-        Users ──▶ DNS ──▶ │           Scaleway Load Balancer        │  TLS termination,
-                          │           (host-header routing)         │  host-header routing
-                          └─────────────────────────────────────────┘
-                              │                              │
-              api.<domain>    │                              │   <domain>
-                              ▼                              ▼
-   ┌───────────────────────────────────────────────────────────┐
-   │                   Private network (VPC)                   │
-   │                                                           │
-   │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-   │  │ backend  │  │ frontend │  │ optional │  │ optional │   │
-   │  │   VM     │  │ VM Caddy │  │ VM (cdc, │  │ VM (yjs, │   │
-   │  │          │  │          │  │  ai …)   │  │  …)      │   │
-   │  └────┬─────┘  └────┬─────┘  └──────────┘  └──────────┘   │
-   │       │             │ reverse-proxy → frontend bucket     │
-   │       ▼             ▼          (SPA static files)         │
-   │  ┌──────────────┐                                         │
-   │  │ PostgreSQL   │           (managed, private)            │
-   │  └──────────────┘                                         │
-   └───────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-                    ┌──────────────────────┐
-                    │  upload buckets      │
-                    │  (public + private)  │
-                    └──────────────────────┘
+                             Users / browsers
+                                     │  https://<domain>
+                                     ▼
+            ┌─────────────────────────────────────────────────┐
+            │             Scaleway Load Balancer              │  TLS termination,
+            │  default    →  frontend VM                      │  one public IP
+            │  /api       →  backend VM                       │
+            │  /yjs, /mcp →  worker VMs                       │
+ ┌──────────┤                                                 ├────────────┐
+ │          └───────┬────────────────┬──────────────────┬─────┘            │
+ │ Private network  │                │                  │  plain HTTP to   │
+ │ (VPC)            │                │                  │  VM private IPs  │
+ │                  ▼                ▼                  ▼                  │
+ │           ┌─────────────┐  ┌─────────────┐ ┌──────────────────────────┐ │
+ │           │ frontend VM │  │ backend VM  │ │  workers: cdc, yjs,      │ │
+ │           │   (Caddy)   │  │             │ │  mcp (run on backend     │ │
+ │           │             │  │             │ │  VM when singleVm)       │ │
+ │           └──────┬──────┘  └──────┬──────┘ └─────────┬────────────────┘ │
+ │                  │                │                  │                  │
+ │                  │                ▼                  ▼                  │
+ │                  │             ┌─────────────────────────┐              │
+ │                  │             │       PostgreSQL        │              │
+ │                  │             │   (managed, private)    │              │
+ │                  │             └─────────────────────────┘              │
+ └──────────────────┼──────────────────────────────────────────────────────┘
+                    │   Caddy reverse-proxies the SPA bucket
+                    ▼   over its public S3 endpoint
+     ┌─────────────────────────────┐
+     │ SPA bucket · upload buckets │◀────── browsers
+     │     (public + private)      │  (direct reads +
+     └─────────────────────────────┘  presigned URLs)
 ```
 
-- **Load balancer:** single public entrypoint. The frontend (SPA proxy) is the default backend; backend, yjs and mcp are reached on the same app origin via registry-declared `lbPathBegin` prefixes (`/api`, `/yjs`, `/mcp`). The LB never rewrites paths, so each service serves itself under its prefix. No shipped service is host-routed after the same-origin migration; host routes remain only for forks that add them.
-- **Private network (VPC):** VMs and db connect over private IPs; only LB is publicly reachable (no SSH).
-- **Frontend:** a Caddy VM behind the LB that reverse-proxies the SPA static-file bucket.
+- **Load balancer:** the single public entrypoint, and **dual-homed**: a public IP terminates TLS on one side, a private-network attachment forwards plain HTTP to VM private IPs on the other. The frontend (SPA proxy) is the default backend; backend, yjs and mcp are reached on the same app origin via registry-declared `lbPathBegin` prefixes (`/api`, `/yjs`, `/mcp`). The LB never rewrites paths, so each service serves itself under its prefix. No shipped service is host-routed after the same-origin migration; host routes remain only for forks that add them.
+- **Private network (VPC):** VMs and db connect over private IPs. Only the LB accepts inbound public traffic — each VM keeps a public IP for egress (image pulls), but drops all inbound, including SSH.
+- **Frontend:** a Caddy VM behind the LB that reverse-proxies the SPA bucket over its public S3 endpoint, adding security headers/CSP and the SPA deep-link fallback.
 - **Backend VM:** the critical API path; replaced one generation at a time with LB overlap.
-- **Optional VMs:** `cdc`, `yjs`, `mcp` run on their own VM when enabled and `singleVm` is disabled.
-- **Database:** managed PostgreSQL reachable only from inside private network.
-- **Buckets:** public and private object storage for uploads, plus frontend SPA bucket.
+- **Worker VMs:** `cdc`, `yjs`, `mcp` each run on their own VM when enabled and `singleVm` is disabled; with `singleVm` on they are co-hosted on the backend VM and no separate worker VMs exist. `cdc` takes no LB route in either mode — it is internal-only.
+- **Database:** managed PostgreSQL reachable only from inside the private network (a break-glass toggle can temporarily expose it, see [Changing infrastructure](#changing-infrastructure)).
+- **Buckets:** object storage sits outside the VPC and is reached over public S3 endpoints: browsers read the public upload bucket directly and use presigned URLs for the private one, the frontend Caddy proxies the SPA bucket, and the backend talks to S3 server-side.
 
 
 ## Deploy flow
@@ -130,10 +134,10 @@ Every deploy is a **create-then-replace**: the image SHA is baked into a new VM 
 
 | `replacementStrategy` | Services | How |
 |----------|----------|-----|
-| **lb-overlap** | backend, frontend, ai, yjs | Record the SHA as `pendingSha`; the Pulumi program materialises the content-addressed pending generation alongside the active one. [tasks/cutover.ts](tasks/cutover.ts) then runs a **level-triggered reconciler**: it reads the live LB server list and drives it toward the desired state with idempotent Scaleway `SetBackendServers` calls: expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It never silently skips the corrective call, so an empty/stale pool (or a same-generation redeploy) is repaired rather than assumed correct. The new generation is promoted to `active` and the old one is reaped by the deploy-service's own final `pulumi up` once the cutover is healthy. No generation is retained, so a deploy never runs two VMs per service. |
+| **lb-overlap** | backend, frontend, yjs, mcp | Record the SHA as `pendingSha`; the Pulumi program materialises the content-addressed pending generation alongside the active one. [tasks/cutover.ts](tasks/cutover.ts) then runs a **level-triggered reconciler**: it reads the live LB server list and drives it toward the desired state with idempotent Scaleway `SetBackendServers` calls: expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It never silently skips the corrective call, so an empty/stale pool (or a same-generation redeploy) is repaired rather than assumed correct. The new generation is promoted to `active` and the old one is reaped by the deploy-service's own final `pulumi up` once the cutover is healthy. No generation is retained, so a deploy never runs two VMs per service. |
 | **exclusive** | cdc | No LB overlap: cdc holds one Postgres replication slot. The Pulumi program materialises only the new generation (the old one is replaced in the same `up`); the new worker contends for the slot the old one releases on drain (handoff is lossless: the slot retains the WAL position). |
 
-**`drainPolicy`** tunes how the old generation leaves the LB: `requests` (HTTP; `onMarkedDownAction: none`, in-flight requests finish) for backend/frontend/ai, or `reconnect` (WebSocket; sessions shed, clients re-dial and resync from durable state) for yjs.
+**`drainPolicy`** tunes how the old generation leaves the LB: `requests` (HTTP; `onMarkedDownAction: none`, in-flight requests finish) for backend/frontend/mcp, or `reconnect` (WebSocket; sessions shed, clients re-dial and resync from durable state) for yjs.
 
 [tasks/cutover.ts](tasks/cutover.ts) contains the pure, unit-tested **level-triggered** reconciler core for the explicit LB-overlap path: it reads the live server list and drives it toward the desired state (expand→health→contract→drain) with idempotent `SetBackendServers` calls, never silently skipping the corrective call. [tasks/deploy-service.ts](tasks/deploy-service.ts) wraps it with Pulumi bookends: record the SHA as `pendingSha` in the **S3 control object** (`control/<stack>.json` in the state bucket, the source of truth the Pulumi program reads), `pulumi up` to materialise the content-addressed generation, run the reconciler, then `promote` it to `active` (the old generation is reaped once the new one is healthy). Internal consumers reach a service over the private network with `@{<svc>.privateIp}`, which resolves to that service's current generation IP baked in at deploy time. The rollout order (the stable service first, e.g. backend before cdc) means a consumer redeployed afterwards always binds the freshly promoted generation. A frontend **content** release is just an S3 upload (no VM cutover); only a Caddy/CSP/cloud-init change replaces the frontend VM.
 
@@ -299,9 +303,9 @@ The infrastructure is organised in 6 phases, deployed in dependency order ([inde
 | 1 | `storage` | Frontend bucket (SPA hosting), public & private upload buckets, boot-diagnostics bucket |
 | 2 | `dns` | CAA records (restrict cert issuance to Let's Encrypt; TLS itself is terminated at the LB) |
 | 3 | `network`, `registry` | VPC, private networks, container registry |
-| 4 | `database` | Managed PostgreSQL 17 (**17+ required**: the sync engine's draft boundary uses logical-replication row filters with `REPLICA IDENTITY FULL`) |
+| 4 | `database` | Managed PostgreSQL 17 — 17+ required: the sync engine's draft boundary uses logical-replication row filters with `REPLICA IDENTITY FULL` |
 | 5 | `secrets`, `compute`, `vm-iam` | Secret Manager, Docker Compose VMs, VM-reader IAM grant |
-| 6 | `loadbalancer` | Scaleway LB with TLS termination, host-header routing, DNS |
+| 6 | `loadbalancer` | Scaleway LB with TLS termination, same-origin path routing, DNS |
 
 
 ### How config flows
