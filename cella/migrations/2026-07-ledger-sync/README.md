@@ -114,7 +114,7 @@ are discarded, so old-domain cursors never meet new-domain values.
 - The elevation fix is your headline, with precise wording: staff with course-only
   memberships are now CORRECT at catchup (their org view answers `opaque` → cached
   lists invalidate and refetch; the old engine silently skipped their gaps). They
-  become PRECISE (`ok`, exact gap fetches) once the fork declares course-prefix views
+  become PRECISE (`ok`, exact delta fetches) once the fork declares course-prefix views
   — the wire and authorization already support it. Add a fork regression test
   asserting a staff member's COURSE-prefix view answers `status: 'ok'` and their
   org-prefix view answers `opaque`.

@@ -6,7 +6,7 @@ import { sourceId } from '~/query/offline/stx-utils';
 import { queryClient } from '~/query/query-client';
 import * as cacheOps from './cache-ops';
 import { propagateEmbeddings } from './propagation';
-import { getSyncTier, isViewingScope } from './sync-priority';
+import { getSyncTier, isViewingChannel } from './sync-priority';
 import { useSyncStore } from './sync-store';
 import type { AppStreamNotification } from './types';
 
@@ -61,8 +61,8 @@ function hashSpread(key: string): number {
 }
 
 /** The negotiated delay: client tier bounds the server-spread slot. */
-function negotiatedDelay(tier: { min: number; max: number }, scopeKey: string, windowMs: number): number {
-  const spread = windowMs > 0 ? hashSpread(`${sourceId}:${scopeKey}`) % windowMs : 0;
+function negotiatedDelay(tier: { min: number; max: number }, channelViewKey: string, windowMs: number): number {
+  const spread = windowMs > 0 ? hashSpread(`${sourceId}:${channelViewKey}`) % windowMs : 0;
   return Math.min(Math.max(tier.min, spread), tier.max);
 }
 
@@ -202,7 +202,7 @@ async function flushEntry(entry: DirtyEntry): Promise<void> {
   } else {
     // Overflow/unsupported/exhausted retries: hand the scope to react-query and advance the
     // watermark to prevent a fetch loop. The list refetch owns recovery.
-    const refetchType = isViewingScope(organizationId, channelId) ? 'active' : 'none';
+    const refetchType = isViewingChannel(organizationId, channelId) ? 'active' : 'none';
     cacheOps.invalidateEntityListForOrg(keys, organizationId, refetchType);
     advanceCaughtUp(entry);
     if (entry.hasCreates) invalidateUnseenCounts(entityType);
@@ -237,7 +237,7 @@ function requeue(entry: DirtyEntry, delayMs: number): void {
 }
 
 /** Flush pending ranges whose scope moved onto the live tier for catch-up on open. */
-function promoteLiveScopes(): void {
+function promoteLiveChannels(): void {
   let changed = false;
   for (const entry of dirty.values()) {
     if (entry.dueAt > Date.now() && getSyncTier(entry.entityType, entry.organizationId, entry.channelId).min === 0) {
@@ -264,12 +264,12 @@ function installListeners(): void {
   // same catch-up-on-open as the route subscription below, but it also covers panels opened
   // without navigation and a notification that landed moments before the view mounted.
   queryClient.getQueryCache().subscribe((event) => {
-    if (event.type === 'observerAdded' && dirty.size > 0) promoteLiveScopes();
+    if (event.type === 'observerAdded' && dirty.size > 0) promoteLiveChannels();
   });
 
   // Navigation flushes pending scopes immediately. Route context promotes org-level scopes.
   // Import lazily to keep the route tree out of the scheduler's importer graphs.
   void import('~/routes/router').then(({ router }) => {
-    router.subscribe('onLoad', () => promoteLiveScopes());
+    router.subscribe('onLoad', () => promoteLiveChannels());
   });
 }

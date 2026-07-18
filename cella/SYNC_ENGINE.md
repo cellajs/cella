@@ -89,12 +89,12 @@ And distinct terms for *what* a change is about and *where* it is routed:
 | **Channel entity** | A membership-scoped entity that hosts products and carries the permission check (`ChannelEntityType`, e.g. `organization`, `project` in a fork). |
 | **Channel** | A row's home: its deepest non-null channel-entity ancestor id, falling back to its organization (`resolveChannelKey()`). Audience grouping and unseen counts key on it; the ledger does NOT. |
 | **Ledger** | One monotonic counter per organization (`s:ledger` on the org's `channel_counters` row), shared by ALL product entity types. Row `seq` values are ledger values, stamped post-commit by the CDC worker in WAL order. |
-| **Frontier** | A node's newest ledger position: `f:{type}` (subtree — max seq at or below the node, max-merged at every ancestor) and `fs:{type}` (self — max seq of rows HOMED at the node). The term follows dataflow systems (Timely/Materialize): the boundary up to which change has been incorporated. A view is behind when its **cursor** is behind the frontier; the gap fetch closes the difference. Only moves forward; unpublished drafts never advance it. |
+| **Frontier** | A node's newest ledger position: `f:{type}` (subtree — max seq at or below the node, max-merged at every ancestor) and `fs:{type}` (self — max seq of rows HOMED at the node). The term follows dataflow systems (Timely/Materialize): the boundary up to which change has been incorporated. A view is behind when its **cursor** is behind the frontier; a delta fetch closes the difference. Only moves forward; unpublished drafts never advance it. |
 | **Path** | Materialized id-path (`path` STORED generated column): root-first ancestor ids slash-joined (`org1/course7/project9`); channel rows append their own id. Any subtree is a path prefix (`pathStartsWith`). |
 | **View** | The client sync unit: `{prefixes, entityTypes, depth, cursor}` — a prefix set plus one org-ledger cursor. Catchup answers views from per-node summaries after prefix authorization (`resolveViewReadStatus`: ok/opaque/forbidden). |
 | **Self view / self stream** | `depth: 'self'`: rows HOMED at the node (exact placement — a channel's own wall). Answered from the self summary family `fs:{type}`/`es:{type}`, maintained at the home node only (the `li:`/`lu:` placement rule). Provable by a direct home-scoped membership. |
 | **Subtree view / subtree feed** | `depth: 'subtree'` (default): rows at or below the node. Answered from the rollup family `f:{type}`/`e:{type}` (max-merged/counted at every ancestor). Provable only by subtree-scoped grants (elevated role at the node, deepest-level grant, or org-wide read). |
-| **Scope** | Entity type + channel (`{entityType}:{channelId ?? organizationId}`): the live-wire bookkeeping unit the lazy scheduler merges ranges and fetches per. Live scopes are per-view cursors over the shared ledger. |
+| **Channel view (live)** | The live-wire bookkeeping unit: a single-prefix view per `{entityType}:{channelId ?? organizationId}` the lazy scheduler merges notification ranges and delta-fetches per. Structurally a view — same cursor-chases-frontier model — managed implicitly from notifications rather than declared. ("Scope" is retired from sync vocabulary; it survives only in the query-key API `list.scope`/`scopeKeys`, the persister storage partitions, and permission "readable scope".) |
 
 "Context" is **not** a sync-engine term: it means only the ambient kind (`AuthContext`, request `Context`, the routing context on mutation variables). Anything that routes or scopes a change is a channel — see [the rename migration](./migrations/2026-07-channel-entity-rename/README.md).
 
@@ -107,14 +107,14 @@ And distinct terms for *what* a change is about and *where* it is routed:
 - **ActivityBus** - Receives CDC messages via WebSocket, emits events to internal handlers
 - **Catchup via POST + delta fetch** - Client POSTs `{ cursor, views }` (its declared views with org-ledger cursors); the server authorizes each prefix and answers from per-node summaries (`f:`/`e:` rollups, `fs:`/`es:` self families). For `ok` views behind the frontier the client calls registered REST list endpoints with an open-ended `?seqCursor=cursor+1` and patches cached rows, including soft-delete tombstones.
 - **Live stream** - One authenticated SSE stream sends lightweight product-entity and membership notifications. Product notifications carry the path, the ledger range + `count`, and a server-suggested `syncWindow`.
-- **Notify + fetch pattern** - SSE product notifications enqueue lazy ledger-range fetches (merged per scope, spread across the negotiated window). The app entity cache coalesces detail fetches.
+- **Notify + fetch pattern** - SSE product notifications enqueue lazy ledger-range fetches (merged per channel view, spread across the negotiated window). The app entity cache coalesces detail fetches.
 - **React Query as merge point** - Initial/prefetch load and notification-triggered fetches enter same cache
 
 ### Realtime mechanics
-- **Gap detection** - Org-ledger sequence numbers (`seq`, shared by all product types) detect missed product entity changes; frontier rollups (`f:`) answer "did anything change below here" at any node
+- **Delta detection** - Org-ledger sequence numbers (`seq`, shared by all product types) detect missed product entity changes; frontier rollups (`f:`) answer "did anything change below here" at any node
 - **Leader-tab SSE** - One leader tab owns the SSE connection and broadcasts notifications to followers
 - **TTL app entity cache** - Server-side detail cache with request coalescing; hits re-authorize per request
-- **Eagerness tiers** - Client fetches the viewed scope live; background scopes lazily; muted scopes on open
+- **Eagerness tiers** - Client fetches the viewed channel live; background channels lazily; muted channels on open
 
 ### Sync mechanics
 - **Catchup before persisted replay** - On startup, restored paused mutations wait for the first catchup attempt before replay. Ordinary online mutations are not gated on stream state.
@@ -325,9 +325,9 @@ A partial-coverage aggregate ("my 3 of the 5 projects") is a view whose prefix S
 the granted nodes — each directly provable, so the union answers `ok`; asking the
 CONTAINER's prefix instead stays `opaque` for partial readers, by design.
 
-What the statuses feel like: `ok` = exact gap fetches + count drift checks on catchup;
+What the statuses feel like: `ok` = exact delta fetches + count drift checks on catchup;
 `opaque` = identical LIVE behavior (dispatch is per-row filtered and view-agnostic), one
-list refetch on catchup instead of a gap fetch; `forbidden` = the view is dropped.
+list refetch on catchup instead of a delta fetch; `forbidden` = the view is dropped.
 
 **Grant-boundary views.** Views should be declared where grants live — then every
 reader's precise views exist by construction. `deriveGrantBoundaryViews` (client) maps
@@ -411,7 +411,7 @@ Idempotency is operation-specific, not a global mutation guarantee. The default 
 
 ## Offline sync
 
-### Gap detection (seq + tombstones)
+### Delta detection (seq + tombstones)
 
 Uses org-ledger sequence numbers (`seq`, one order per organization shared by all product types) for **create/update/soft-delete/restore detection**. A soft delete sets `deleted_at`; a restore clears it. Both are updates, so CDC stamps them and delta reads can reconcile the cached row.
 
@@ -423,7 +423,7 @@ Uses org-ledger sequence numbers (`seq`, one order per organization shared by al
 - **Delete detection**: Soft deletes are seq-stamped tombstone rows (`deletedAt != null`) returned by `seqCursor` reads. A physical hard delete has no row to fetch; the live handler invalidates the list, while the in-session server-count signal may detect a missed create/delete. No automatic hard-purge horizon is implemented in this repository.
 - **`seqCursor`**: List query parameter with two forms: `seqCursor=51` means `seq >= 51` and is used by catchup; `seqCursor=51,150` means the inclusive bounded range and is used by live batch notifications.
 
-**Two modes of gap detection:**
+**Two modes of delta detection:**
 
 1. **Catchup (offline/reconnect):** Client declares its views with their org-ledger cursors; the server compares each `ok` view's cursor with the `f:`/`fs:` rollups. For a behind view with cached lists, ONE org-wide read from `cursor + 1` (no upper bound) returns every changed row of that type in the org — child-homed rows included; cache-ops routes them. Tombstones remove entities from cache. The first connection only records baselines.
 

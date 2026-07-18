@@ -66,7 +66,7 @@ const TIER_ON_OPEN: SyncTier = { min: Number.POSITIVE_INFINITY, max: Number.POSI
  * observes a query carrying the channel ID. This covers slug routes and boards whose routes do not
  * name every rendered channel. See `observed-channels.ts`.
  */
-export function isViewingScope(organizationId: string, channelId: string | null): boolean {
+export function isViewingChannel(organizationId: string, channelId: string | null): boolean {
   const routeOrgId = getRouteOrgId();
   if (!routeOrgId || routeOrgId !== organizationId) return false;
   if (!channelId || channelId === organizationId) return true;
@@ -88,7 +88,7 @@ function isMutedOrArchived(organizationId: string, channelId: string | null): bo
  */
 export function getSyncTier(entityType: string, organizationId: string, channelId: string | null): SyncTier {
   if (!hierarchy.isProduct(entityType)) return TIER_ON_OPEN;
-  if (isViewingScope(organizationId, channelId)) return TIER_VIEWING;
+  if (isViewingChannel(organizationId, channelId)) return TIER_VIEWING;
   if (isMutedOrArchived(organizationId, channelId)) return TIER_ON_OPEN;
   return TIER_BACKGROUND;
 }

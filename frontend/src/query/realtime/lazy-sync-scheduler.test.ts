@@ -14,7 +14,7 @@ vi.mock('./cache-ops', () => ({
 const getSyncTier = vi.fn();
 vi.mock('./sync-priority', () => ({
   getSyncTier: (...a: unknown[]) => getSyncTier(...a),
-  isViewingScope: () => false,
+  isViewingChannel: () => false,
 }));
 const propagateEmbeddings = vi.fn();
 vi.mock('./propagation', () => ({ propagateEmbeddings: (...a: unknown[]) => propagateEmbeddings(...a) }));
