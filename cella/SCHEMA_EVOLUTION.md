@@ -215,7 +215,7 @@ const keyMaps: Record<LensEntityType, Record<string, string>>; // ops + stx time
 
 - DB business logic, CDC, activitiesTable, TTL entity cache, SSE notifications: **newest shape only** (plus the mirrored old column during an expand window).
 - Responses need **no per-request transform in Phase 1**: during expand, the row contains both columns (Drizzle backfill + mirror writes), so responses dual-emit both field names with zero work. Per-version `downgradeEntity` exists only in Phase 2 for peers, applied *after* TTL cache read (canonical cache, no per-version fragmentation).
-- The **frozen envelope** is exempt from lensing and may only change via `apiVersion` bump: `stx`/`ops` wire structure, `StreamNotification`, `CatchupChangeSummary`, counter key formats (`s:ledger`, `f:{type}`/`fs:{type}`, `e:{type}`/`es:{type}`), auth/session contract, SSE/WebSocket protocol. Enforced by the `lens:check` config-collision rule.
+- The **frozen envelope** is exempt from lensing and may only change via `apiVersion` bump: `stx`/`ops` wire structure, `StreamNotification`, `CatchupChangeSummary`, counter key formats (`sequence`, `f:{type}`/`fs:{type}`, `e:{type}`/`es:{type}`), auth/session contract, SSE/WebSocket protocol. Enforced by the `lens:check` config-collision rule.
 
 ### D5: Old schema versions are derived, not snapshotted
 

@@ -1,7 +1,7 @@
 import type { AncestorSource } from './resolve-row-channel';
 
 /**
- * Materialized id-path rule (ledger sync). A row's path is its ancestor channel ids
+ * Materialized id-path rule (sequence sync). A row's path is its ancestor channel ids
  * root-first, slash-joined, skipping null ancestors (variable-depth rows), e.g.
  * `org1/course7/project9` for a project-homed item whose section level is unset.
  * Channel entities append their own id: a course's path is `org1/course7`.

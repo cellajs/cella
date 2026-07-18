@@ -487,7 +487,7 @@ export const appStreamManager = new StreamManager('AppStream', {
   withCredentials: true,
   useTabCoordination: true,
   fetchAndProcessCatchup: async (cursor) => {
-    // View-driven catchup: one org-prefix view per (org, entityType) with its ledger cursor.
+    // View-driven catchup: one org-prefix view per (org, entityType) with its org-sequence cursor.
     // The registry only holds registered product types, so the string[] narrows to the
     // SDK's entity-type enum at runtime by construction.
     const views = useSyncStore.getState().getCatchupViews(catchupEntityTypes());

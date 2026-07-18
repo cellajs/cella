@@ -31,8 +31,8 @@ export const productEntityColumns = <T extends ProductEntityType>(entityType: T)
    */
   publicAt: timestamp('public_at', { mode: 'string' }),
   /**
-   * Org-ledger sequence: one totally-ordered counter per organization, shared across all
-   * product entity types. Stamped post-commit by the CDC worker (WAL commit order = ledger
+   * Org sequence: one totally-ordered counter per organization, shared across all
+   * product entity types. Stamped post-commit by the CDC worker (WAL commit order = sequence
    * order); rows briefly hold the default 0 until stamped. Used for delta sync (`seqCursor`).
    */
   seq: bigint('seq', { mode: 'number' }).notNull().default(0),

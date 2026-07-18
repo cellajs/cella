@@ -32,7 +32,7 @@ export function isActivityStampKey(key: string): boolean {
 
 /**
  * Keys that merge via GREATEST instead of summing: activity stamps (`li:`/`lu:`, epoch ms)
- * and ledger frontiers — `f:<type>` (subtree: max org-ledger seq of that type at
+ * and sequence frontiers — `f:<type>` (subtree: max org-sequence position of that type at
  * or below the node) and `fs:<type>` (self: max seq of rows HOMED at the node).
  * Mirrored by the apply_count_deltas PG function.
  */
@@ -44,7 +44,7 @@ export function isMaxMergeKey(key: string): boolean {
  * Determine count deltas from a CDC event.
  *
  * Membership rows yield `m:<role>` / `m:total` deltas plus an org-level
- * `s:membership` seq bump used for catchup change screening. Inactive
+ * `membership` change-signal bump used for catchup screening. Inactive
  * memberships count as `m:pending` while rejectedAt is null. Entity rows yield
  * `e:<type>` deltas on the org and every non-null ancestor context; updates
  * that change ancestor ids re-credit the counters. Product rows also stamp
@@ -64,17 +64,17 @@ export function getCountDeltas(
 ): CountDelta[] {
   const { action, organizationId } = activity;
 
-  // Memberships (active + inactive): counter deltas plus an org-level membership seq signal.
+  // Memberships (active + inactive): counter deltas plus an org-level membership change signal.
   if (tableMeta.kind === 'resource' && (tableMeta.type === 'membership' || tableMeta.type === 'inactive_membership')) {
     const delta =
       tableMeta.type === 'membership'
         ? getMembershipDelta(action, newRow, oldRow)
         : getInactiveMembershipDelta(action, newRow, oldRow);
     const deltas = delta ? [delta] : [];
-    // Bump the org-level membership seq on every membership / inactive-membership activity so
+    // Bump the org-level membership signal on every membership / inactive-membership activity so
     // catchup can detect membership changes via O(1) counter screening (no activity scan needed).
     // Pending invitations appear in member lists too, so inactive memberships bump it as well.
-    if (organizationId) deltas.push({ channelKey: organizationId, deltas: { 's:membership': 1 } });
+    if (organizationId) deltas.push({ channelKey: organizationId, deltas: { 'membership': 1 } });
     return deltas;
   }
 

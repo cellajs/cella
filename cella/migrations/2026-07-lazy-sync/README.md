@@ -1,5 +1,7 @@
 # Lazy sync migration
 
+> **TERMINOLOGY NOTE (2026-07):** written pre-rename — 'scope' here = today's **channel view**; `isViewingScope` is now `isViewingChannel`. 'Ledger' in this doc means the UNSEEN ledger (kept term), not the org sequence.
+
 The sync engine's live path is now **lazy and negotiated** (see `cella/SYNC_ENGINE.md`,
 "Lazy sync scheduling"): notifications enqueue merged seq ranges instead of fetching
 immediately, the server suggests a spread window (`syncWindow`), unseen badges are

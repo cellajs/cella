@@ -12,18 +12,18 @@ import { mockFetchRequest, setTestConfig } from './test-utils';
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 /**
- * Counter recalculation must agree with CDC's incremental ledger writes:
- * `s:ledger` = max stamped seq across all product tables in the org, `f:{type}` =
+ * Counter recalculation must agree with CDC's incremental sequence writes:
+ * `sequence` = max stamped seq across all product tables in the org, `f:{type}` =
  * max seq per (node, type), `e:{type}` = live published rows. This is the repair
  * tool for drift/incident recovery — its output IS the contract.
  */
-describe('recalculateCounters (ledger + hw)', async () => {
+describe('recalculateCounters (sequence + frontier)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
 
   beforeAll(async () => {
     mockFetchRequest();
-    tenant = await createTestTenant(call, 'recalc-ledger');
+    tenant = await createTestTenant(call, 'recalc-sequence');
 
     const base = (key: string, seq: number, extra: Record<string, unknown> = {}) => {
       // Strip generated/select-only fields; bind to the test tenant/org; audit users
@@ -55,7 +55,7 @@ describe('recalculateCounters (ledger + hw)', async () => {
     await clearSecurityTestData();
   });
 
-  it('rebuilds s:ledger, f:attachment and e:attachment from row state', async () => {
+  it('rebuilds sequence, f:attachment and e:attachment from row state', async () => {
     await recalculateCounters(db);
 
     const [row] = await db
@@ -66,8 +66,8 @@ describe('recalculateCounters (ledger + hw)', async () => {
     const counts = row.counts as Record<string, number>;
     // Path backfill: the org channel's canonical path is its own id.
     expect(row.path).toBe(tenant.organization.id);
-    // Ledger reservation counter: max stamped value across product tables.
-    expect(counts['s:ledger']).toBe(47);
+    // Sequence reservation counter: max stamped value across product tables.
+    expect(counts['sequence']).toBe(47);
     // Frontier includes tombstones (they keep their seq for delta reads).
     expect(counts['f:attachment']).toBe(47);
     // Live count excludes the soft-deleted row.

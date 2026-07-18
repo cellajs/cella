@@ -28,7 +28,7 @@ export {
   resolveNonNullAncestors,
 } from './src/config-builder/resolve-row-channel';
 
-// Materialized id-path rule (ledger sync: routing, move-out, subtree addressing)
+// Materialized id-path rule (sequence sync: routing, move-out, subtree addressing)
 export {
   computeAncestorPath,
   computeChannelPath,

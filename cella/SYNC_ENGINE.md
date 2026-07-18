@@ -2,14 +2,14 @@
 
 This document explains the reasoning behind the sync engine. It also provides more details on how a mutation travels through the sync pipeline and how clients stay consistent while online and offline.
 
-> **Ledger sync (2026-07).** The engine runs on ONE totally-ordered ledger per
-> organization: every product change of every entity type takes the next org-ledger
-> value (WAL commit order = ledger order). Every channel/product row carries a
+> **Sequence sync (2026-07).** The engine runs on ONE totally-ordered sequence per
+> organization: every product change of every entity type takes the next org-sequence
+> value (WAL commit order = sequence order). Every channel/product row carries a
 > materialized id-**path** (STORED generated column, root-first ancestor ids), any
 > subtree is a path prefix, and per-node summaries (`f:{type}` frontiers +
 > `e:{type}` counts) roll up change state to every ancestor. Clients sync **views**
 > ({prefixes, entityTypes, cursor}); reparented rows emit **moveOut** notifications
-> to subscribers who lost visibility. Design/decisions: `.todos/LEDGER_SYNC_REWRITE.md`.
+> to subscribers who lost visibility. Design/decisions: `.todos/LEDGER_SYNC_REWRITE.md` (historical planning doc; 'ledger' there = the org sequence).
 
 ## TL;DR
 
@@ -24,7 +24,7 @@ Postgres commits
         ▼
 CDC Worker observes WAL
         ▼
-Assign org-ledger seq = 42 (+ f: rollups at every ancestor node)
+Assign org-sequence position = 42 (+ f: rollups at every ancestor node)
         ▼
 Emit notification (path + seq range + count)
         ▼
@@ -85,13 +85,13 @@ And distinct terms for *what* a change is about and *where* it is routed:
 
 | Term | Description |
 |------|-------------|
-| **Product entity** | A synced entity: ledger-stamped, streamed, offline-capable (`ProductEntityType`, e.g. `attachment`). |
+| **Product entity** | A synced entity: sequence-stamped, streamed, offline-capable (`ProductEntityType`, e.g. `attachment`). |
 | **Channel entity** | A membership-scoped entity that hosts products and carries the permission check (`ChannelEntityType`, e.g. `organization`, `project` in a fork). |
-| **Channel** | A row's home: its deepest non-null channel-entity ancestor id, falling back to its organization (`resolveChannelKey()`). Audience grouping and unseen counts key on it; the ledger does NOT. |
-| **Ledger** | One monotonic counter per organization (`s:ledger` on the org's `channel_counters` row), shared by ALL product entity types. Row `seq` values are ledger values, stamped post-commit by the CDC worker in WAL order. |
-| **Frontier** | A node's newest ledger position: `f:{type}` (subtree — max seq at or below the node, max-merged at every ancestor) and `fs:{type}` (self — max seq of rows HOMED at the node). The term follows dataflow systems (Timely/Materialize): the boundary up to which change has been incorporated. A view is behind when its **cursor** is behind the frontier; a delta fetch closes the difference. Only moves forward; unpublished drafts never advance it. |
+| **Channel** | A row's home: its deepest non-null channel-entity ancestor id, falling back to its organization (`resolveChannelKey()`). Audience grouping and unseen counts key on it; the sequence does NOT. |
+| **Sequence** | One monotonic counter per organization (`sequence` on the org's `channel_counters` row), shared by ALL product entity types. Row `seq` values are sequence values, stamped post-commit by the CDC worker in WAL order. |
+| **Frontier** | A node's newest sequence position: `f:{type}` (subtree — max seq at or below the node, max-merged at every ancestor) and `fs:{type}` (self — max seq of rows HOMED at the node). The term follows dataflow systems (Timely/Materialize): the boundary up to which change has been incorporated. A view is behind when its **cursor** is behind the frontier; a delta fetch closes the difference. Only moves forward; unpublished drafts never advance it. |
 | **Path** | Materialized id-path (`path` STORED generated column): root-first ancestor ids slash-joined (`org1/course7/project9`); channel rows append their own id. Any subtree is a path prefix (`pathStartsWith`). |
-| **View** | The client sync unit: `{prefixes, entityTypes, depth, cursor}` — a prefix set plus one org-ledger cursor. Catchup answers views from per-node summaries after prefix authorization (`resolveViewReadStatus`: ok/opaque/forbidden). |
+| **View** | The client sync unit: `{prefixes, entityTypes, depth, cursor}` — a prefix set plus one org-sequence cursor. Catchup answers views from per-node summaries after prefix authorization (`resolveViewReadStatus`: ok/opaque/forbidden). |
 | **Self view / self stream** | `depth: 'self'`: rows HOMED at the node (exact placement — a channel's own wall). Answered from the self summary family `fs:{type}`/`es:{type}`, maintained at the home node only (the `li:`/`lu:` placement rule). Provable by a direct home-scoped membership. |
 | **Subtree view / subtree feed** | `depth: 'subtree'` (default): rows at or below the node. Answered from the rollup family `f:{type}`/`e:{type}` (max-merged/counted at every ancestor). Provable only by subtree-scoped grants (elevated role at the node, deepest-level grant, or org-wide read). |
 | **Channel view (live)** | The live-wire bookkeeping unit: a single-prefix view per `{entityType}:{channelId ?? organizationId}` the lazy scheduler merges notification ranges and delta-fetches per. Structurally a view — same cursor-chases-frontier model — managed implicitly from notifications rather than declared. ("Scope" is retired from sync vocabulary; it survives only in the query-key API `list.scope`/`scopeKeys`, the persister storage partitions, and permission "readable scope".) |
@@ -105,13 +105,13 @@ And distinct terms for *what* a change is about and *where* it is routed:
 ### Architecture overview
 - **Logical replication** - CDC Worker receives WAL changes, activities to `activitiesTable`, sends to API
 - **ActivityBus** - Receives CDC messages via WebSocket, emits events to internal handlers
-- **Catchup via POST + delta fetch** - Client POSTs `{ cursor, views }` (its declared views with org-ledger cursors); the server authorizes each prefix and answers from per-node summaries (`f:`/`e:` rollups, `fs:`/`es:` self families). For `ok` views behind the frontier the client calls registered REST list endpoints with an open-ended `?seqCursor=cursor+1` and patches cached rows, including soft-delete tombstones.
-- **Live stream** - One authenticated SSE stream sends lightweight product-entity and membership notifications. Product notifications carry the path, the ledger range + `count`, and a server-suggested `syncWindow`.
-- **Notify + fetch pattern** - SSE product notifications enqueue lazy ledger-range fetches (merged per channel view, spread across the negotiated window). The app entity cache coalesces detail fetches.
+- **Catchup via POST + delta fetch** - Client POSTs `{ cursor, views }` (its declared views with org-sequence cursors); the server authorizes each prefix and answers from per-node summaries (`f:`/`e:` rollups, `fs:`/`es:` self families). For `ok` views behind the frontier the client calls registered REST list endpoints with an open-ended `?seqCursor=cursor+1` and patches cached rows, including soft-delete tombstones.
+- **Live stream** - One authenticated SSE stream sends lightweight product-entity and membership notifications. Product notifications carry the path, the sequence range + `count`, and a server-suggested `syncWindow`.
+- **Notify + fetch pattern** - SSE product notifications enqueue lazy sequence-range fetches (merged per channel view, spread across the negotiated window). The app entity cache coalesces detail fetches.
 - **React Query as merge point** - Initial/prefetch load and notification-triggered fetches enter same cache
 
 ### Realtime mechanics
-- **Delta detection** - Org-ledger sequence numbers (`seq`, shared by all product types) detect missed product entity changes; frontier rollups (`f:`) answer "did anything change below here" at any node
+- **Delta detection** - Org-sequence numbers (`seq`, shared by all product types) detect missed product entity changes; frontier rollups (`f:`) answer "did anything change below here" at any node
 - **Leader-tab SSE** - One leader tab owns the SSE connection and broadcasts notifications to followers
 - **TTL app entity cache** - Server-side detail cache with request coalescing; hits re-authorize per request
 - **Eagerness tiers** - Client fetches the viewed channel live; background channels lazily; muted channels on open
@@ -134,7 +134,7 @@ The worker channel is internal-only. The API accepts it only at `/internal/cdc`,
 shared CDC secret, restricts production sources to loopback or the deployment VPC, permits one
 connection, and closes idle peers after 90 seconds. External routing must never expose this path.
 
-**CDC buffering and batching:** `TransactionBuffer` retains transaction boundaries to suppress cascaded child deletes. After commit, `FlushBuffer` can micro-batch surviving events across transactions and groups them by `(type, action)`. Product groups are split again per `(path, entityType)` so every notification describes one audience; because the org ledger is shared, a group's `seq..batchUntilSeq` range may interleave with other groups' values — the explicit `count` field (never range arithmetic) is authoritative for batch size.
+**CDC buffering and batching:** `TransactionBuffer` retains transaction boundaries to suppress cascaded child deletes. After commit, `FlushBuffer` can micro-batch surviving events across transactions and groups them by `(type, action)`. Product groups are split again per `(path, entityType)` so every notification describes one audience; because the org sequence is shared, a group's `seq..batchUntilSeq` range may interleave with other groups' values — the explicit `count` field (never range arithmetic) is authoritative for batch size.
 
 ```
 Postgres WAL
@@ -173,7 +173,7 @@ Clients first branch on `kind`. Membership notifications invalidate membership/c
 | **Move-out** | `action: 'moveOut'` | The row left `path` (reparent) AND this subscriber cannot read its new location — no delta fetch will ever return it, so the notification itself is the removal: drop from caches + unseen ledger. Subscribers who can read both locations get the normal `update` instead and route the row client-side |
 
 ## Notification format
-Synced entity tables have an `stx` JSONB column for transaction metadata. It is sent on product-entity notifications. A later mutation overwrites the envelope, but the merged `fieldTimestamps` inside it remain part of conflict resolution. Entity `seq` values and `channel_counters` are the current gap-detection state; `activitiesTable` is the append-only audit/cursor history.
+Synced entity tables have an `stx` JSONB column for transaction metadata. It is sent on product-entity notifications. A later mutation overwrites the envelope, but the merged `fieldTimestamps` inside it remain part of conflict resolution. Entity `seq` values and `channel_counters` are the current delta-detection state; `activitiesTable` is the append-only audit/cursor history.
 
 
 ```typescript
@@ -188,10 +188,10 @@ interface StreamNotification {
   channelType: string | null;                   // Channel entity type for membership (e.g., 'project')
   path: string | null;                          // Materialized id-path of the rows (moveOut: the OLD path)
   channelId: string | null;                     // Home channel ID for unseen count grouping
-  seq: number | null;                           // Org-ledger seq stamped by CDC worker (entities only)
+  seq: number | null;                           // Org-sequence position stamped by CDC worker (entities only)
   stx: StxBase | null;                          // Sync transaction metadata (entities only)
-  batchUntilSeq: number | null;                 // Last ledger seq in batch (null = single entity notification)
-  count: number | null;                         // Authoritative batch row count (ledger ranges may interleave)
+  batchUntilSeq: number | null;                 // Last sequence position in batch (null = single entity notification)
+  count: number | null;                         // Authoritative batch row count (sequence ranges may interleave)
   syncWindow: number | null;                    // Server-suggested lazy-fetch spread window in ms (entities only)
   propagation: PropagationHint | null;          // Embedded entity propagation hint (null = no propagation)
 }
@@ -222,14 +222,14 @@ Cella currently exposes one realtime stream: the authenticated app stream. It ca
 | Aspect | Implementation |
 |--------|----------------|
 | **Auth** | Requires authentication (session cookie) |
-| **Scope** | Permitted product entities + membership changes in the user's organizations |
+| **Coverage** | Permitted product entities + membership changes in the user's organizations |
 | **Cursor storage** | Persisted in sync store (survives refresh) |
 
 **How catchup works (view-driven):**
 
 Before opening SSE, the client POSTs its cursor and its VIEWS — one org-prefix view per
 (org, entityType), `{ key, organizationId, prefixes, entityTypes, cursor }` with the
-org-ledger cursor (`sync-store.getCatchupViews`). The backend authorizes every
+org-sequence cursor (`sync-store.getCatchupViews`). The backend authorizes every
 (prefix, entityType) pair (`resolveViewReadStatus`, node-id-only proof on the
 collection-scope engine) and answers `{ views, changes, cursor }`:
 
@@ -241,7 +241,7 @@ interface CatchupViewAnswer {
   counts?: Record<string, number>;      // per-type e:{type} sums (ok only)
 }
 interface CatchupChangeSummary {        // per-org block: what is NOT per-view
-  entitySeqs?: Record<string, number>;  // s:membership screening + org ledger value
+  signals?: { membership?: number };    // bump-only change signals (no sequence claim)
   propagation?: PropagationHint[];      // embedding hints from frontier vs view cursors
 }
 ```
@@ -259,7 +259,7 @@ The client processes catchup in a two-phase sync cycle:
 - On later connections, for each `ok` view with `frontier > cursor` and a cached list, ONE org-wide delta fetch from `cursor + 1` (open-ended `seqCursor`) returns every changed row of that type in the org — child-homed rows included, routed into their lists by cache-ops; a full chunk or failed fetch falls back to active-list invalidation. The cursor advances only after ingest (advance-after-ingest). Background-tier orgs enqueue into the lazy scheduler instead (advance at flush).
 - `opaque` views invalidate cached active lists (staleness fallback); `forbidden` views are dropped.
 - Soft-delete tombstones returned by the delta endpoint remove rows from detail/list caches.
-- Membership member-list invalidation is scoped to organizations whose `s:membership` counter changed; channel lists, `me`, and the user's memberships are refreshed.
+- Membership member-list invalidation is scoped to organizations whose `membership` counter changed; channel lists, `me`, and the user's memberships are refreshed.
 - View `counts` are compared with the previous server counts seen in this browser session (drift signal). They are deliberately not compared with permission-filtered cached totals.
 - Embedded propagation runs after all delta fetches.
 
@@ -306,7 +306,7 @@ answers `opaque` and self-heals on re-declare, never `forbidden` (anti-oracle) �
 grants then match against TRUE ancestor segments, so a subtree grant at any real ancestor
 proves deeper nodes. Nodes without a counters row fall back to node-id-only proof
 (conservative, and there are no numbers to disclose anyway). Unpublished drafts never
-bump `f:`/`fs:` (they take ledger stamps for the mechanics, but no view can fetch them,
+bump `f:`/`fs:` (they take sequence stamps for the mechanics, but no view can fetch them,
 so their timing is not signaled).
 
 Worked example (a deep fork: org > course > section > project, `elevatedRoles`
@@ -342,7 +342,7 @@ skip every refetch (the precision win); changed views invalidate and advance; ro
 ingestion itself rides the org-view delta fetches.
 
 > **Consistency note (Zanzibar's "new enemy" lesson).** Authorization state
-> (memberships) and ledger cursors advance independently; cella approximates
+> (memberships) and sequence cursors advance independently; cella approximates
 > snapshot-consistency with per-request membership snapshots, live membership refresh
 > before dispatch, and view answers computed against current grants. A fork needing
 > hard guarantees that permission changes order before content changes should look at
@@ -413,25 +413,25 @@ Idempotency is operation-specific, not a global mutation guarantee. The default 
 
 ### Delta detection (seq + tombstones)
 
-Uses org-ledger sequence numbers (`seq`, one order per organization shared by all product types) for **create/update/soft-delete/restore detection**. A soft delete sets `deleted_at`; a restore clears it. Both are updates, so CDC stamps them and delta reads can reconcile the cached row.
+Uses org-sequence numbers (`seq`, one order per organization shared by all product types) for **create/update/soft-delete/restore detection**. A soft delete sets `deleted_at`; a restore clears it. Both are updates, so CDC stamps them and delta reads can reconcile the cached row.
 
 **Sequence architecture:**
-- **`seq`**: Per-row ORG-LEDGER value stamped by the CDC worker after each product-entity create/update. The worker reserves a contiguous range in `channel_counters.counts['s:ledger']` on the org row (one RETURNING upsert per org per batch, all product types share it; WAL order = ledger order) and writes assigned values back to the rows. New rows have their schema default until CDC stamps them.
+- **`seq`**: Per-row ORG-SEQUENCE value stamped by the CDC worker after each product-entity create/update. The worker reserves a contiguous range in `channel_counters.counts['sequence']` on the org row (one RETURNING upsert per org per batch, all product types share it; WAL order = sequence order) and writes assigned values back to the rows. New rows have their schema default until CDC stamps them.
 - **Frontier rollups**: every stamp max-merges `f:{entityType}` at the org and at EVERY non-null ancestor node (`frontierNodeKeys`), so "did anything of this type change at or below here" is one comparison at any level.
 - **Hierarchy-aware home**: the row's deepest non-null ancestor ID remains its home channel (audience grouping, unseen counts, activity stamps) — it no longer scopes seq allocation.
-- **Membership detection**: Membership changes are detected via the org-level `s:membership` counter and standard membership invalidation.
+- **Membership detection**: Membership changes are detected via the org-level `membership` counter and standard membership invalidation.
 - **Delete detection**: Soft deletes are seq-stamped tombstone rows (`deletedAt != null`) returned by `seqCursor` reads. A physical hard delete has no row to fetch; the live handler invalidates the list, while the in-session server-count signal may detect a missed create/delete. No automatic hard-purge horizon is implemented in this repository.
 - **`seqCursor`**: List query parameter with two forms: `seqCursor=51` means `seq >= 51` and is used by catchup; `seqCursor=51,150` means the inclusive bounded range and is used by live batch notifications.
 
 **Two modes of delta detection:**
 
-1. **Catchup (offline/reconnect):** Client declares its views with their org-ledger cursors; the server compares each `ok` view's cursor with the `f:`/`fs:` rollups. For a behind view with cached lists, ONE org-wide read from `cursor + 1` (no upper bound) returns every changed row of that type in the org — child-homed rows included; cache-ops routes them. Tombstones remove entities from cache. The first connection only records baselines.
+1. **Catchup (offline/reconnect):** Client declares its views with their org-sequence cursors; the server compares each `ok` view's cursor with the `f:`/`fs:` rollups. For a behind view with cached lists, ONE org-wide read from `cursor + 1` (no upper bound) returns every changed row of that type in the org — child-homed rows included; cache-ops routes them. Tombstones remove entities from cache. The first connection only records baselines.
 
-2. **Live (SSE):** Product create/update notifications carry the rows' path plus a ledger range and `count` (ranges of different paths may interleave — `count` is authoritative). The lazy scheduler tracks per-scope watermarks over the shared ledger; the batch path advances to `batchUntilSeq` only after a successful range fetch. An own create/update echo returns before either update after patching cached `stx`, so catchup may safely see that seq again.
+2. **Live (SSE):** Product create/update notifications carry the rows' path plus a sequence range and `count` (ranges of different paths may interleave — `count` is authoritative). The lazy scheduler tracks per-channel-view cursors over the shared sequence; the batch path advances to `batchUntilSeq` only after a successful range fetch. An own create/update echo returns before either update after patching cached `stx`, so catchup may safely see that seq again.
 
 **How it works (scenario):**
 
-An organization has attachments. `seq` (an org-ledger value) is stamped by the CDC worker on product INSERT/UPDATE, including soft-delete updates.
+An organization has attachments. `seq` (an org-sequence value) is stamped by the CDC worker on product INSERT/UPDATE, including soft-delete updates.
 
 ```
 Server timeline (org-123, attachments):      seq
@@ -490,7 +490,7 @@ if (previous !== undefined && previous !== serverCount && hasCachedList) {
 }
 ```
 
-`entityCounts` comes from the same `counts` JSONB records fetched for `entitySeqs`, so the check adds no database query.
+`entityCounts` comes from the same `counts` JSONB records fetched for view answers, so the check adds no database query.
 
 ### Merge resolution (HLC + array deltas)
 
@@ -726,12 +726,12 @@ Subsequent requests → Cache hit → Return cached enriched data
 Live list syncing is **lazy and negotiated** — both sides get a say in when a client fetches a notified seq range, and the outcome is a pure function:
 
 ```
-delay = clamp(tier.min, hash(sourceId:scope) % syncWindow, tier.max)
+delay = clamp(tier.min, hash(sourceId:channelView) % syncWindow, tier.max)
         ^ client floor   ^ deterministic per-client jitter  ^ client ceiling
 ```
 
-- **Client's say — eagerness tiers** (`getSyncTier`): viewing the scope → `{0,0}` (live, exactly today's behavior); membership `muted`/`archived` → fetch-on-open only; anything else → `{2s,30s}` background. The ceiling is the offline-freshness guarantee: non-muted pages are never more than ~30s stale.
-- **Viewing detection** (`isViewingScope`): the org level reads route context (`getRouteOrgId`); sub-org channels are derived from the query cache (`observed-channels.ts`) — a channel counts as viewed while a mounted view observes a list query scoped to it. The router cannot answer the sub-org question (routes carry slugs via `rewriteUrlToSlug`, and a board renders channels its route never names), so detection asks the layer that already knows: routed pages, board panels, and sheets all register through the queries they observe, with no per-view wiring. Prefetches create no observers (sibling channels stay background); unmounting self-corrects. This rides the `createEntityKeys` key contract — channel-scoped list keys carry the channel id positionally (`scopeKeys`) or as a filter value — which `registerEntityQueryKeys` enforces at module load for hand-rolled keys.
+- **Client's say — eagerness tiers** (`getSyncTier`): viewing the channel → `{0,0}` (live, exactly today's behavior); membership `muted`/`archived` → fetch-on-open only; anything else → `{2s,30s}` background. The ceiling is the offline-freshness guarantee: non-muted pages are never more than ~30s stale.
+- **Viewing detection** (`isViewingChannel`): the org level reads route context (`getRouteOrgId`); sub-org channels are derived from the query cache (`observed-channels.ts`) — a channel counts as viewed while a mounted view observes a list query scoped to it. The router cannot answer the sub-org question (routes carry slugs via `rewriteUrlToSlug`, and a board renders channels its route never names), so detection asks the layer that already knows: routed pages, board panels, and sheets all register through the queries they observe, with no per-view wiring. Prefetches create no observers (sibling channels stay background); unmounting self-corrects. This rides the `createEntityKeys` key contract — channel-scoped list keys carry the channel id positionally (`scopeKeys`) or as a filter value — which `registerEntityQueryKeys` enforces at module load for hand-rolled keys.
 - **Server's say — `syncWindow`** on each product notification: a spread window scaled by the org channel's online audience (~20ms/subscriber) and DB pool pressure, capped at 120s. Same value for every subscriber (rides the serialize-once body); under load the fleet decelerates within seconds — throttling without 429s.
 - **Scheduler** (`lazy-sync-scheduler.ts`): every notification — a single is a width-1 batch — enqueues a dirty range per scope. Contiguous ranges **merge** (a burst becomes ONE fetch), more news never postpones, and the deterministic hash spreads clients evenly instead of stampeding. Flush triggers: due timer, navigating into the scope, a viewed channel gaining its first observer (a panel or sheet opening without navigation), tab hiding (top-up before the user disappears), coming back online.
 - **Known vs caught-up seqs**: every notification records the scope's *known* latest seq (even for muted scopes — powers catch-up-on-open); the *caught-up* seq advances only after a successful flush. Small live gaps self-heal (fetch anchors at caught-up+1). Failures retry with backoff, then fall back to targeted list invalidation + advance so a range can never loop. Catchup resets the scheduler — it recomputes scope deltas itself.

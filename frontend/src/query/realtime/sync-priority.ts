@@ -48,7 +48,7 @@ export function getTenantIdForOrg(organizationId: string): string | null {
 }
 
 /**
- * Eagerness tier for the lazy sync scheduler: how soon this client wants a scope's changes.
+ * Eagerness tier for the lazy sync scheduler: how soon this client wants a channel view's changes.
  * `min` is the floor (0 = live), `max` the ceiling (offline-freshness guarantee); the scheduler
  * clamps the server-spread delay between them. `Infinity` = fetch on open only.
  */
@@ -62,7 +62,7 @@ const TIER_BACKGROUND: SyncTier = { min: 2_000, max: 30_000 };
 const TIER_ON_OPEN: SyncTier = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
 
 /**
- * True when the user is looking at the scope: same org, and (for sub-org scopes) a mounted view
+ * True when the user is looking at the channel view: same org, and (for sub-org channel views) a mounted view
  * observes a query carrying the channel ID. This covers slug routes and boards whose routes do not
  * name every rendered channel. See `observed-channels.ts`.
  */
@@ -94,7 +94,7 @@ export function getSyncTier(entityType: string, organizationId: string, channelI
 }
 
 /**
- * Sync priority by current route: high when the user is viewing the org that scopes this entity,
+ * Sync priority by current route: high when the user is viewing the org that channel views this entity,
  * low otherwise (different org, not in an org route, non-product entity).
  */
 export function getSyncPriority(notification: SyncNotification): SyncPriority {

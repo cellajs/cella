@@ -6,7 +6,7 @@ import { entityTables } from '#/tables';
 
 /**
  * Delta-sync index invariant (see .todos/SYNC_FANOUT_OPTIMIZATION.md opt 1 and
- * .todos/LEDGER_SYNC_REWRITE.md): every product entity table must carry a composite
+ * .todos/LEDGER_SYNC_REWRITE.md (org-sequence rewrite)): every product entity table must carry a composite
  * `(organization_id, seq)` index so seq-range delta reads are index range scans, not
  * org-wide filters. Forks add product tables in their own modules; this guard fails
  * their test run instead of letting the index silently go missing.

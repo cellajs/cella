@@ -125,13 +125,13 @@ describe('isViewingChannel with sub-org channels', () => {
     unsubscribe();
   });
 
-  it('treats org-level scopes as viewed inside the org (base cella behavior unchanged)', () => {
+  it('treats org-level channel views as viewed inside the org (base cella behavior unchanged)', () => {
     routeMatches = [{ context: { organization: { id: 'org-1' } } }];
     expect(isViewingChannel('org-1', null)).toBe(true);
     expect(isViewingChannel('org-1', 'org-1')).toBe(true);
   });
 
-  it('resolves sub-org scopes by observation: slug routes and unrouted board panels both work', () => {
+  it('resolves sub-org channel views by observation: slug routes and unrouted board panels both work', () => {
     routeMatches = [{ context: { organization: { id: 'org-1' } } }]; // Slug routes and boards name no project.
     expect(isViewingChannel('org-1', 'project-8')).toBe(false);
 

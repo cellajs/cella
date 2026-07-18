@@ -138,15 +138,17 @@
             "changes": {
               "type": "object",
               "required": true,
-              "description": "Per-org change summary: { [organizationId]: { entitySeqs?, entityCounts? } }",
+              "description": "Per-org change summary: { [organizationId]: { signals?, propagation? } }",
               "additionalProperties": {
                 "type": "object",
                 "required": false,
                 "properties": {
-                  "entitySeqs": {
+                  "signals": {
                     "type": "object",
                     "required": false,
-                    "additionalProperties": { "type": "integer", "required": false }
+                    "properties": {
+                      "membership": { "type": "integer", "required": false }
+                    }
                   },
                   "propagation": {
                     "type": "array",
@@ -209,7 +211,7 @@
                   "frontiers": {
                     "type": "object",
                     "required": false,
-                    "description": "Per-entityType max org-ledger seq over the view prefixes (subtree: f:{type}; self: fs:{type})",
+                    "description": "Per-entityType newest sequence position over the view prefixes (subtree: f:{type}; self: fs:{type})",
                     "additionalProperties": { "type": "integer", "required": false }
                   },
                   "counts": {
@@ -232,7 +234,7 @@
         "example": {
           "changes": {
             "org-example-id": {
-              "entitySeqs": { "attachment": 1 }
+              "signals": { "membership": 1 }
             }
           },
           "cursor": "d9909rsl2y2ii9vbcsc2ywg7"
@@ -293,7 +295,7 @@
           "views": {
             "type": "array",
             "required": false,
-            "description": "Client-declared views: prefix set + entity types + org-ledger cursor per view",
+            "description": "Client-declared views: prefix set + entity types + org-sequence cursor per view",
             "maxItems": 256,
             "itemType": "object",
             "items": {
@@ -331,7 +333,7 @@
                 "cursor": {
                   "type": "integer",
                   "required": true,
-                  "description": "Org-ledger seq this view has fully ingested (0 = baseline not yet established)",
+                  "description": "Org-sequence position this view has fully ingested (0 = baseline not yet established)",
                   "minimum": 0
                 }
               }

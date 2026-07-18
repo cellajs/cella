@@ -80,7 +80,7 @@ const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
  * Context counters (Phases 1–3):
  *   Phase 1 – Organization-level: m:{role}, m:total, m:pending, e:{type} (countable rows)
  *   Phase 2 – Sub-org channels: same keys for every descendant carrying the FK (full attribution)
- *   Phase 3 – Ledger + frontier: s:ledger via GREATEST(MAX(seq)) across product tables;
+ *   Phase 3 – Sequence + frontier: sequence via GREATEST(MAX(seq)) across product tables;
  *             f:{type} via MAX(seq) at the org and every ancestor level (drafts excluded,
  *             tombstones included); self family fs:{type}/es:{type} at the home node only
  *   Phase 3b – Activity stamps: li:{type}/lu:{type} epoch ms at the home node
@@ -139,19 +139,19 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
-  // ── Phase 3: Org ledger + frontiers from MAX(seq) ──────────────
-  // `s:ledger` per org = the max stamped ledger value across ALL product tables (the
+  // ── Phase 3: Org sequence + frontiers from MAX(seq) ──────────────
+  // `sequence` per org = the max stamped sequence value across ALL product tables (the
   // reservation counter CDC increments). `f:{type}` = MAX(seq) per (node, entityType)
   // at the org and at every ancestor level column, matching CDC's frontierNodeKeys rollup.
   // Tombstones keep their seq, so no live filter: MAX is a frontier.
-  const ledgerMaxes = appConfig.productEntityTypes.map(
+  const sequenceMaxes = appConfig.productEntityTypes.map(
     (et) => `COALESCE((SELECT MAX(t.seq) FROM ${tbl(et)} t WHERE t.organization_id = o.id), 0)`,
   );
-  if (ledgerMaxes.length > 0) {
+  if (sequenceMaxes.length > 0) {
     await upsertChannelCounters(
       db,
       `
-      SELECT o.id, jsonb_build_object('s:ledger', GREATEST(${ledgerMaxes.join(', ')})), NOW()
+      SELECT o.id, jsonb_build_object('sequence', GREATEST(${sequenceMaxes.join(', ')})), NOW()
       FROM organizations o
     `,
     );
@@ -161,7 +161,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
     const tableName = tbl(entityType);
     const frontierKey = `f:${entityType}`;
     // Unpublished drafts are excluded from frontiers (not delta-fetchable; CDC skips
-    // them too) — but NOT from s:ledger above: their stamps consumed ledger values.
+    // them too) — but NOT from sequence above: their stamps consumed sequence values.
     // Tombstones stay included (delta reads return them). No live filter here.
     const frontierPredicate = publishedPredicate(entityType, 't');
 

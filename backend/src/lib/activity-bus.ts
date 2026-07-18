@@ -31,10 +31,10 @@ export interface ActivityEvent extends Omit<ActivityModel, 'type' | 'createdAt'>
   movedFrom?: Record<string, unknown> | null;
   /** Per-row permission fields let dispatch decide visibility per subscriber and row. */
   batchRows?: ActivityBatchRow[] | null;
-  // Sync fields from CDC worker (org-ledger seq values)
+  // Sync fields from CDC worker (org-sequence position values)
   seq: number | null;
   batchUntilSeq: number | null;
-  /** Authoritative row count for batches: the ledger range may interleave with other groups. */
+  /** Authoritative row count for batches: the sequence range may interleave with other groups. */
   count: number | null;
   propagation: PropagationHint | null;
   trace: SyncTraceContext | null;

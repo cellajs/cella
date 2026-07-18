@@ -8,20 +8,20 @@ import { type CountsHierarchy, getCountDeltas, isMaxMergeKey } from './update-co
 // ── Types ────────────────────────────────────────────────────────────────────
 
 /**
- * Plan for a batch of CDC events: one ledger group per organization (needs a RETURNING
- * UPSERT to reserve a contiguous org-ledger range) plus accumulated count deltas.
+ * Plan for a batch of CDC events: one sequence group per organization (needs a RETURNING
+ * UPSERT to reserve a contiguous org-sequence range) plus accumulated count deltas.
  */
 export interface BatchUnifiedDeltaPlan {
-  /** One per organization: reserves `s:ledger` and stamps its events in WAL order. */
-  ledgerGroups: LedgerGroup[];
-  /** All count deltas merged by channelKey (across all events, excluding ledger/frontier deltas). */
+  /** One per organization: reserves `sequence` and stamps its events in WAL order. */
+  orgSequenceGroups: OrgSequenceGroup[];
+  /** All count deltas merged by channelKey (across all events, excluding sequence/frontier deltas). */
   countDeltasByChannelKey: Map<string, Record<string, number>>;
 }
 
-export interface LedgerGroup {
-  /** The organization whose ledger this group reserves from. */
+export interface OrgSequenceGroup {
+  /** The organization whose sequence this group reserves from. */
   orgKey: string;
-  /** Number of stampable events (ledger values to reserve). */
+  /** Number of stampable events (sequence values to reserve). */
   count: number;
   /** Stampable events in WAL order; seq values are assigned after RETURNING. */
   events: PendingEvent[];
@@ -31,13 +31,13 @@ export interface LedgerGroup {
 
 /**
  * Resolve the channel key for a product entity from its row data: the row's deepest non-null
- * ancestor (variable-depth rows scope to their effective home, e.g. a course-stream item with
+ * ancestor (variable-depth rows attribute to their effective home, e.g. a course-stream item with
  * `projectId = null` scopes to its course). Without nullable ancestors this equals the
  * declared parent. Falls back to the activity's org for rows whose ancestor ids are all null.
  * The hierarchy model guarantees every product entity at least an organization, so a row
  * without one is a modeling error, so the group fails loudly without inventing a scope.
  *
- * Under the org ledger this no longer scopes seq allocation; it remains the audience/home
+ * Under the org sequence this no longer scopes seq allocation; it remains the audience/home
  * grouping rule (message grouping fallback, activity stamps, unseen grouping).
  */
 export function resolveChannelKey(
@@ -90,7 +90,7 @@ export function mergeDelta(
   }
 }
 
-/** Check if this event should get a ledger stamp (product entity create/update). */
+/** Check if this event should get a sequence stamp (product entity create/update). */
 function isStampable(tableMeta: TableMeta, action: ActivityAction, h: CountsHierarchy): boolean {
   return tableMeta.kind === 'entity' && h.isProduct(tableMeta.type) && (action === 'create' || action === 'update');
 }
@@ -99,19 +99,19 @@ function isStampable(tableMeta: TableMeta, action: ActivityAction, h: CountsHier
 
 /**
  * Compute a unified delta plan for a batch of CDC events.
- * Reserves one org-ledger range per organization (all product entity types share the
- * ledger; WAL order within the batch is preserved), accumulates all count deltas.
- * Frontier (`f:`) deltas are emitted at apply time, once ledger values are assigned.
+ * Reserves one org-sequence range per organization (all product entity types share the
+ * sequence; WAL order within the batch is preserved), accumulates all count deltas.
+ * Frontier (`f:`) deltas are emitted at apply time, once sequence values are assigned.
  */
 export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHierarchy = hierarchy): BatchUnifiedDeltaPlan {
   const countDeltasByChannelKey = new Map<string, Record<string, number>>();
-  const ledgerGroupMap = new Map<string, LedgerGroup>();
+  const orgSequenceGroupMap = new Map<string, OrgSequenceGroup>();
 
   for (const event of events) {
     const { tableMeta, activity, rowData } = event.result;
     const { action } = activity;
 
-    // Ledger grouping (product entity create/update only): one group per organization.
+    // Sequence grouping (product entity create/update only): one group per organization.
     if (isStampable(tableMeta, action, h)) {
       const orgKey = activity.organizationId;
       if (!orgKey) {
@@ -119,12 +119,12 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHiera
           `No organization for ${tableMeta.type} row ${rowData.id}: the hierarchy model requires an organization ancestor`,
         );
       }
-      const existing = ledgerGroupMap.get(orgKey);
+      const existing = orgSequenceGroupMap.get(orgKey);
       if (existing) {
         existing.count++;
         existing.events.push(event);
       } else {
-        ledgerGroupMap.set(orgKey, { orgKey, count: 1, events: [event] });
+        orgSequenceGroupMap.set(orgKey, { orgKey, count: 1, events: [event] });
       }
     }
 
@@ -135,5 +135,5 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHiera
     }
   }
 
-  return { ledgerGroups: Array.from(ledgerGroupMap.values()), countDeltasByChannelKey };
+  return { orgSequenceGroups: Array.from(orgSequenceGroupMap.values()), countDeltasByChannelKey };
 }

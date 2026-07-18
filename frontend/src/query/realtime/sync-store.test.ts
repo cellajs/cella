@@ -75,19 +75,19 @@ describe('sync-store getCatchupViews', () => {
     ]);
   });
 
-  it('child-scope watermarks never leak into the org-view cursor (they cover their subtree only)', () => {
+  it('child-channel-view cursors never leak into the org-view cursor (they cover their subtree only)', () => {
     const store = useSyncStore.getState();
     store.setOrgTenantId('org-1', 'tenant-1');
     store.setChannelSeq('org-1', 'project-9', 'attachment', 4700);
 
     const views = useSyncStore.getState().getCatchupViews(['attachment']);
-    // Org slot untouched → baseline cursor 0, despite the live child watermark.
+    // Org slot untouched → baseline cursor 0, despite the live child cursor.
     expect(views).toEqual([
       { key: 'org-1:attachment', organizationId: 'org-1', prefixes: ['org-1'], entityTypes: ['attachment'], cursor: 0 },
     ]);
   });
 
-  it('org-homed live scopes (channelId === orgId) share the org slot and drive the cursor', () => {
+  it('org-homed live channel views (channelId === orgId) share the org slot and drive the cursor', () => {
     const store = useSyncStore.getState();
     store.setOrgTenantId('org-1', 'tenant-1');
     store.setChannelSeq('org-1', 'org-1', 'attachment', 88);

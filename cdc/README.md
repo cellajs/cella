@@ -1,6 +1,6 @@
 # cdc: change data capture worker
 
-PostgreSQL logical-replication worker that turns committed WAL into the sync engine's server-side outputs: **activity rows** (append-only audit log and SSE cursor history), **counter and sequence stamps** (`channel_counters` plus per-row `seq` for client gap detection), and **realtime messages** pushed to the API server for SSE fan-out.
+PostgreSQL logical-replication worker that turns committed WAL into the sync engine's server-side outputs: **activity rows** (append-only audit log and SSE cursor history), **counter and sequence stamps** (`channel_counters` plus per-row `seq` for client delta detection), and **realtime messages** pushed to the API server for SSE fan-out.
 
 This document covers the worker itself. For what its outputs mean to clients (notification shapes, catchup, HLC merge), see [Sync engine](/docs/page/architecture/sync-engine).
 
@@ -65,14 +65,14 @@ Each group runs three steps in a fixed order, so a failure cannot leave partial 
 2. **Apply unified deltas** (see below).
 3. **Dispatch** the WebSocket message, then run embedding cleanup for product-entity updates and deletes (stripping deleted embedded ids from host array columns; done here rather than in the user's request to avoid row locks).
 
-### Unified deltas: the org ledger and counters
+### Unified deltas: the org sequence and counters
 
 One pure computation plans everything a group needs; one applier executes the plan in two phases:
 
-- **Phase 1 (sequential):** ONE group per organization reserves a **contiguous org-ledger range** by upserting `channel_counters.counts['s:ledger']` with `RETURNING`, then assigns `baseSeq + i + 1` to each product create/update in WAL order — all product entity types share the ledger, so WAL commit order IS ledger order. A product row without an organization violates the hierarchy model: its group fails loudly (logged, LSN still acknowledged) instead of getting an invented scope.
+- **Phase 1 (sequential):** ONE group per organization reserves a **contiguous org-sequence range** by upserting `channel_counters.counts['sequence']` with `RETURNING`, then assigns `baseSeq + i + 1` to each product create/update in WAL order — all product entity types share the sequence, so WAL commit order IS sequence order. A product row without an organization violates the hierarchy model: its group fails loudly (logged, LSN still acknowledged) instead of getting an invented home.
 - **Phase 2 (parallel):** write frontier rollups — `f:{type}` max-merged at the org and every non-null ancestor node, `fs:{type}` at the home node only (deepest non-null ancestor; unpublished drafts skip both) — plus the remaining count deltas, and stamp assigned `seq` values back onto the rows with one bulk `UPDATE ... FROM VALUES` per table (also clearing `stx.changedFields`).
 
-Counter keys in `channel_counters`: `s:ledger` (the org reservation counter), `f:{type}` / `fs:{type}` subtree/self frontiers (max-merged), `e:{type}` subtree entity counts (credited to the organization and every non-null ancestor; reparent diffs re-credit) and `es:{type}` self counts at the home node (reparents move them), `m:{role}` / `m:total` / `m:pending` membership counts plus an org-level `s:membership` bump for catchup screening, and `li:` / `lu:` last-insert/last-update epoch stamps. Max-merge keys (`f:`/`fs:`/`li:`/`lu:`) keep the max, everything else sums; all land through the `apply_count_deltas` SQL function, which floors counts at zero. Soft-delete and restore transitions are remapped to delete/create so counts stay truthful.
+Counter keys in `channel_counters`: `sequence` (the org reservation counter), `f:{type}` / `fs:{type}` subtree/self frontiers (max-merged), `e:{type}` subtree entity counts (credited to the organization and every non-null ancestor; reparent diffs re-credit) and `es:{type}` self counts at the home node (reparents move them), `m:{role}` / `m:total` / `m:pending` membership counts plus an org-level `membership` bump for catchup screening, and `li:` / `lu:` last-insert/last-update epoch stamps. Max-merge keys (`f:`/`fs:`/`li:`/`lu:`) keep the max, everything else sums; all land through the `apply_count_deltas` SQL function, which floors counts at zero. Soft-delete and restore transitions are remapped to delete/create so counts stay truthful.
 
 ## Delivery semantics
 
@@ -80,7 +80,7 @@ Counter keys in `channel_counters`: `s:ledger` (the org reservation counter), `f
 
 - **Activities are replay-safe.** The activity id is derived deterministically from the LSN, and inserts are `onConflictDoNothing`: replaying an unacknowledged range produces the same rows exactly once.
 - **Counters and seq stamps are not.** Replaying an *already-acknowledged* range would double-count `channel_counters`. That can't happen in normal operation (the slot gates replay to unacknowledged ranges); it takes a manual slot reset or LSN rewind. The repair path is catchup recovery's full counter recalculation.
-- **Ordering.** Within a transaction, WAL order is preserved and org-ledger values are assigned in it. Across transactions the FlushBuffer regroups by `(type, action)`, so delivery to the API is not globally ordered. Client-visible ordering comes from `seq`, not from message arrival.
+- **Ordering.** Within a transaction, WAL order is preserved and org-sequence values are assigned in it. Across transactions the FlushBuffer regroups by `(type, action)`, so delivery to the API is not globally ordered. Client-visible ordering comes from `seq`, not from message arrival.
 - Downstream consumers see duplicate messages after a redelivery; they dedupe on activity id.
 
 ## Catchup mode
@@ -93,7 +93,7 @@ Processed events reach clients indirectly: the worker holds **one server-to-serv
 
 This channel carries **full entity row data**: it is an internal service channel and must never be exposed to browsers or external networks. Defense layers: path isolation (`/internal/cdc` only), shared secret (`CDC_SECRET`, min 16 chars, sent as `x-cdc-secret`), a production source-IP allowlist (loopback/VPC), a single-connection limit (a new worker connection replaces the old), and a 90 s idle timeout.
 
-**Message shape** (`CdcOutboundMessage`): the activity (with id, `seq`, `batchUntilSeq`, `count`), the compacted `rowData`, `movedFrom` old-row subsets for reparented rows (single and per batch row), `batchRows` for batches (permission-relevant fields only: id, createdBy, deletedAt, publicAt, publishedAt, path, channel ids), and trace context. The backend invalidates detail-cache entries by entity id (single `subjectId` or `batchRows` ids). Batches are split per `(path, entityType)` group so every message describes ONE audience; ledger ranges of different groups may interleave, so **`count` — never range arithmetic — is authoritative for batch size**.
+**Message shape** (`CdcOutboundMessage`): the activity (with id, `seq`, `batchUntilSeq`, `count`), the compacted `rowData`, `movedFrom` old-row subsets for reparented rows (single and per batch row), `batchRows` for batches (permission-relevant fields only: id, createdBy, deletedAt, publicAt, publishedAt, path, channel ids), and trace context. The backend invalidates detail-cache entries by entity id (single `subjectId` or `batchRows` ids). Batches are split per `(path, entityType)` group so every message describes ONE audience; sequence ranges of different groups may interleave, so **`count` — never range arithmetic — is authoritative for batch size**.
 
 **Channel path sync**: after deltas apply, channel-entity create/update events mirror the
 row's canonical id-path (STORED generated column) onto its `channel_counters.path`, the

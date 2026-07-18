@@ -1696,7 +1696,7 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
 /**
  * App event catchup
  *
- * Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-ledger cursors) in the body.
+ * Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.
  *
  * **POST /entities/app/stream** ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/app/stream) ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/entities/app/stream) ·· _entities_cella_
  *

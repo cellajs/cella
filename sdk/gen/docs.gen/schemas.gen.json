@@ -387,7 +387,7 @@
         "seq": {
           "type": ["integer", "null"],
           "required": true,
-          "description": "Org-ledger sequence (shared across product entity types)"
+          "description": "Org-sequence position (one order per organization, shared across product entity types)"
         },
         "channelId": {
           "type": ["string", "null"],
@@ -423,12 +423,12 @@
         "batchUntilSeq": {
           "type": ["integer", "null"],
           "required": true,
-          "description": "Last ledger seq for a batched notification — client should fetch range"
+          "description": "Last sequence position for a batched notification — client should fetch range"
         },
         "count": {
           "type": ["integer", "null"],
           "required": true,
-          "description": "Authoritative row count for batches: the ledger range may interleave with other paths"
+          "description": "Authoritative row count for batches: sequence ranges of different paths may interleave"
         },
         "syncWindow": {
           "type": ["integer", "null"],

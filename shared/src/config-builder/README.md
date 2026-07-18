@@ -31,7 +31,7 @@ ancestors this is just the declared parent.
 
 Every site that answers "which channel is this row's home" shares this rule: CDC counter
 deltas and self-summary placement (`fs:`/`es:`, `li:`/`lu:`), wire-notification `channelId`,
-seen-by grouping, and counter recalculation. (The org LEDGER does not key on it — seq values
+seen-by grouping, and counter recalculation. (The org SEQUENCE does not key on it — seq values
 are org-scoped.) The materialized id-path (`row-path.ts`) is the same rule in path form: its
 last segment equals the deepest non-null ancestor, asserted by tests. See
 `resolve-row-channel.ts` + `row-path.ts`, covered by `shared/src/config-builder/tests/`.

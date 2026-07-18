@@ -857,7 +857,7 @@
     "path": "/entities/app/stream",
     "tags": ["entities"],
     "summary": "App event catchup",
-    "description": "Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-ledger cursors) in the body.",
+    "description": "Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,

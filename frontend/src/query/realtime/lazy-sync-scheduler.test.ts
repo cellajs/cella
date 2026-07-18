@@ -73,7 +73,7 @@ describe('lazy-sync-scheduler', () => {
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
   });
 
-  it('flushes viewing-tier scopes immediately (single events keep live behavior)', async () => {
+  it('flushes viewing-tier channel views immediately (single events keep live behavior)', async () => {
     getSyncTier.mockReturnValue(VIEWING);
     enqueueRange({ ...base, fromSeq: 3, untilSeq: 3 });
 
@@ -83,7 +83,7 @@ describe('lazy-sync-scheduler', () => {
     expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('3,3');
   });
 
-  it('records the known seq but never fetches for muted scopes', async () => {
+  it('records the known seq but never fetches for muted channel views', async () => {
     getSyncTier.mockReturnValue(ON_OPEN);
     enqueueRange({ ...base, channelId: 'project-9', fromSeq: 4, untilSeq: 7 });
 
@@ -102,7 +102,7 @@ describe('lazy-sync-scheduler', () => {
     expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('5,8');
   });
 
-  it('org-homed scopes (wire channelId === orgId) share ONE watermark slot with catchup', async () => {
+  it('org-homed channel views (wire channelId === orgId) share ONE watermark slot with catchup', async () => {
     // Catchup advanced the org slot; the live notification carries channelId = orgId.
     useSyncStore.getState().setOrgSeq('org-1', 'attachment', 6);
     enqueueRange({ ...base, channelId: 'org-1', fromSeq: 3, untilSeq: 9 });
@@ -179,11 +179,11 @@ describe('lazy-sync-scheduler', () => {
     expect(fetchRangeAndPatch).not.toHaveBeenCalled();
   });
 
-  it('flushes a pending scope when its channel gains an observer (catch-up-on-open without navigation)', async () => {
+  it('flushes a pending channel view when its channel gains an observer (catch-up-on-open without navigation)', async () => {
     enqueueRange({ ...base, fromSeq: 5, untilSeq: 8 }); // background tier: waits for the spread slot
     expect(fetchRangeAndPatch).not.toHaveBeenCalled();
 
-    // The scope's view mounts: its list query gains an observer and the tier turns live.
+    // The channel view's view mounts: its list query gains an observer and the tier turns live.
     getSyncTier.mockReturnValue(VIEWING);
     const observer = new QueryObserver(queryClient, {
       queryKey: ['attachment', 'list', 'org-1'],

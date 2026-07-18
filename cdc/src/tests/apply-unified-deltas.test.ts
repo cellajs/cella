@@ -73,13 +73,13 @@ describe('applyBatchUnifiedDeltas', () => {
     };
   }
 
-  it('assigns sequential org-ledger values to events from the reserved range', async () => {
-    upsertReturnValue = { 's:ledger': 5 }; // highSeq = 5, count = 3, baseSeq = 2
+  it('assigns sequential org-sequence values to events from the reserved range', async () => {
+    upsertReturnValue = { 'sequence': 5 }; // highSeq = 5, count = 3, baseSeq = 2
 
     const events = [mockEvent('t1'), mockEvent('t2'), mockEvent('t3')];
 
     const plan: BatchUnifiedDeltaPlan = {
-      ledgerGroups: [{ orgKey: 'org-1', count: 3, events }],
+      orgSequenceGroups: [{ orgKey: 'org-1', count: 3, events }],
       countDeltasByChannelKey: new Map([
         ['org-1', { 'e:task': 3 }],
         ['proj-1', { 'e:task': 3 }],
@@ -88,19 +88,19 @@ describe('applyBatchUnifiedDeltas', () => {
 
     await applyBatchUnifiedDeltas(plan, syntheticH);
 
-    // Events should have sequential ledger values: 3, 4, 5
+    // Events should have sequential sequence values: 3, 4, 5
     expect(events[0].result.rowData.seq).toBe(3);
     expect(events[1].result.rowData.seq).toBe(4);
     expect(events[2].result.rowData.seq).toBe(5);
   });
 
-  it('phase 1 merges ledger + org counts; phase 2 writes frontier nodes and the stamp-back', async () => {
-    upsertReturnValue = { 's:ledger': 2, 'e:task': 2 };
+  it('phase 1 merges sequence + org counts; phase 2 writes frontier nodes and the stamp-back', async () => {
+    upsertReturnValue = { 'sequence': 2, 'e:task': 2 };
 
     const events = [mockEvent('t1'), mockEvent('t2')];
 
     const plan: BatchUnifiedDeltaPlan = {
-      ledgerGroups: [{ orgKey: 'org-1', count: 2, events }],
+      orgSequenceGroups: [{ orgKey: 'org-1', count: 2, events }],
       countDeltasByChannelKey: new Map([
         ['org-1', { 'e:task': 2 }],
         ['proj-1', { 'e:task': 2 }],
@@ -117,8 +117,8 @@ describe('applyBatchUnifiedDeltas', () => {
     expect(executes).toHaveLength(1);
   });
 
-  it('drafts take ledger stamps but never bump frontier rollups', async () => {
-    upsertReturnValue = { 's:ledger': 2 };
+  it('drafts take sequence stamps but never bump frontier rollups', async () => {
+    upsertReturnValue = { 'sequence': 2 };
 
     const draftEvent = (id: string) => {
       const event = mockEvent(id);
@@ -128,13 +128,13 @@ describe('applyBatchUnifiedDeltas', () => {
     const events = [draftEvent('d1'), draftEvent('d2')];
 
     const plan: BatchUnifiedDeltaPlan = {
-      ledgerGroups: [{ orgKey: 'org-1', count: 2, events }],
+      orgSequenceGroups: [{ orgKey: 'org-1', count: 2, events }],
       countDeltasByChannelKey: new Map(),
     };
 
     await applyBatchUnifiedDeltas(plan, syntheticH);
 
-    // Stamps assigned (drafts keep create-time ledger values for their publish edge)...
+    // Stamps assigned (drafts keep create-time sequence values for their publish edge)...
     expect(events[0].result.rowData.seq).toBe(1);
     expect(events[1].result.rowData.seq).toBe(2);
     // ...but the ONLY counter upsert is the phase-1 org reservation: no frontier writes.
@@ -145,7 +145,7 @@ describe('applyBatchUnifiedDeltas', () => {
 
   it('handles empty plan', async () => {
     const plan: BatchUnifiedDeltaPlan = {
-      ledgerGroups: [],
+      orgSequenceGroups: [],
       countDeltasByChannelKey: new Map(),
     };
 
@@ -169,9 +169,9 @@ describe('frontierNodeKeys', () => {
 
 describe('sumInto', () => {
   it('sums plain delta keys on collision', () => {
-    const target = { 's:ledger': 2, 'e:task': 1 };
+    const target = { 'sequence': 2, 'e:task': 1 };
     sumInto(target, { 'e:task': 2, 'm:admin': 1 });
-    expect(target).toEqual({ 's:ledger': 2, 'e:task': 3, 'm:admin': 1 });
+    expect(target).toEqual({ 'sequence': 2, 'e:task': 3, 'm:admin': 1 });
   });
 
   it('max-merges li:/lu: keys instead of summing (timestamps must not add up)', () => {
@@ -195,8 +195,8 @@ describe('sumInto', () => {
   });
 
   it('max-merge keys pass through unchanged when absent from target', () => {
-    const target: Record<string, number> = { 's:ledger': 1 };
+    const target: Record<string, number> = { 'sequence': 1 };
     sumInto(target, { 'li:task': 1_751_000_000_000, 'f:task': 7, 'e:task': 1 });
-    expect(target).toEqual({ 's:ledger': 1, 'li:task': 1_751_000_000_000, 'f:task': 7, 'e:task': 1 });
+    expect(target).toEqual({ 'sequence': 1, 'li:task': 1_751_000_000_000, 'f:task': 7, 'e:task': 1 });
   });
 });

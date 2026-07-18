@@ -78,8 +78,8 @@ export function enqueueRange(input: EnqueueInput): void {
 }
 
 /**
- * Enqueue a catchup gap (reconnect/boot top-up). Unlike live notifications, muted scopes are
- * treated as background here: catchup is a one-shot reconciliation, and skipping muted scopes
+ * Enqueue a catchup gap (reconnect/boot top-up). Unlike live notifications, muted channel views are
+ * treated as background here: catchup is a one-shot reconciliation, and skipping muted channel views
  * would leave their persisted caches stale forever (nothing else refetches them). The
  * background spread also de-stampedes the reconnect herd.
  */
@@ -91,10 +91,10 @@ export function enqueueCatchupRange(input: EnqueueInput): void {
 function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }): void {
   const { entityType, organizationId, tenantId, channelId, fromSeq, untilSeq, isCreate, propagation } = input;
   const store = useSyncStore.getState();
-  const scopeId = channelId ?? organizationId;
+  const channelViewId = channelId ?? organizationId;
 
   // Known watermark: free, recorded even for scopes we never fetch (powers catch-up-on-open).
-  store.setKnownSeq(scopeId, entityType, untilSeq);
+  store.setKnownSeq(channelViewId, entityType, untilSeq);
 
   if (!hasEntityQueryKeys(entityType)) return;
 
@@ -143,7 +143,7 @@ export function flushAllNow(): Promise<void> {
   return flushDue();
 }
 
-/** Clear all pending work. Called when catchup starts: it recomputes scope deltas itself. */
+/** Clear all pending work. Called when catchup starts: it recomputes channel-view deltas itself. */
 export function resetLazySync(): void {
   dirty.clear();
   if (timer) {
@@ -200,7 +200,7 @@ async function flushEntry(entry: DirtyEntry): Promise<void> {
     // Unseen sync: exact badge deltas from the fetched rows (mirrors the server's unseen filters).
     ingestSyncedRows(entityType, channelId ?? organizationId, result.items as { id: string }[]);
   } else {
-    // Overflow/unsupported/exhausted retries: hand the scope to react-query and advance the
+    // Overflow/unsupported/exhausted retries: hand the channel view to react-query and advance the
     // watermark to prevent a fetch loop. The list refetch owns recovery.
     const refetchType = isViewingChannel(organizationId, channelId) ? 'active' : 'none';
     cacheOps.invalidateEntityListForOrg(keys, organizationId, refetchType);
@@ -225,7 +225,7 @@ function requeue(entry: DirtyEntry, delayMs: number): void {
   const key = entryKey(entry.entityType, entry.organizationId, entry.channelId);
   const existing = dirty.get(key);
   if (existing) {
-    // A newer notification re-enqueued this scope mid-flight: merge our range back into it.
+    // A newer notification re-enqueued this channel view mid-flight: merge our range back into it.
     existing.fromSeq = Math.min(existing.fromSeq, entry.fromSeq);
     existing.untilSeq = Math.max(existing.untilSeq, entry.untilSeq);
     existing.hasCreates ||= entry.hasCreates;

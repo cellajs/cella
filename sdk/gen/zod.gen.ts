@@ -815,7 +815,11 @@ export const zPostAppCatchupResponse = z.object({
   changes: z.record(
     z.string(),
     z.object({
-      entitySeqs: z.record(z.string(), z.int()).optional(),
+      signals: z
+        .object({
+          membership: z.int().optional(),
+        })
+        .optional(),
       propagation: z
         .array(
           z.object({

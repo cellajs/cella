@@ -694,7 +694,7 @@
           },
           "seq": {
             "type": ["integer", "null"],
-            "description": "Org-ledger sequence (shared across product entity types)"
+            "description": "Org-sequence position (one order per organization, shared across product entity types)"
           },
           "channelId": {
             "type": ["string", "null"],
@@ -713,11 +713,11 @@
           },
           "batchUntilSeq": {
             "type": ["integer", "null"],
-            "description": "Last ledger seq for a batched notification — client should fetch range"
+            "description": "Last sequence position for a batched notification — client should fetch range"
           },
           "count": {
             "type": ["integer", "null"],
-            "description": "Authoritative row count for batches: the ledger range may interleave with other paths"
+            "description": "Authoritative row count for batches: sequence ranges of different paths may interleave"
           },
           "syncWindow": {
             "type": ["integer", "null"],
@@ -4712,7 +4712,7 @@
         "operationId": "postAppCatchup",
         "tags": ["entities", "cella"],
         "summary": "App event catchup",
-        "description": "Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-ledger cursors) in the body.",
+        "description": "Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.",
         "x-guard": ["authGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -4767,13 +4767,13 @@
                         "cursor": {
                           "type": "integer",
                           "minimum": 0,
-                          "description": "Org-ledger seq this view has fully ingested (0 = baseline not yet established)"
+                          "description": "Org-sequence position this view has fully ingested (0 = baseline not yet established)"
                         }
                       },
                       "required": ["key", "organizationId", "prefixes", "entityTypes", "cursor"]
                     },
                     "maxItems": 256,
-                    "description": "Client-declared views: prefix set + entity types + org-ledger cursor per view"
+                    "description": "Client-declared views: prefix set + entity types + org-sequence cursor per view"
                   }
                 }
               }
@@ -4793,10 +4793,12 @@
                       "additionalProperties": {
                         "type": "object",
                         "properties": {
-                          "entitySeqs": {
+                          "signals": {
                             "type": "object",
-                            "additionalProperties": {
-                              "type": "integer"
+                            "properties": {
+                              "membership": {
+                                "type": "integer"
+                              }
                             }
                           },
                           "propagation": {
@@ -4836,7 +4838,7 @@
                           }
                         }
                       },
-                      "description": "Per-org change summary: { [organizationId]: { entitySeqs?, entityCounts? } }"
+                      "description": "Per-org change summary: { [organizationId]: { signals?, propagation? } }"
                     },
                     "views": {
                       "type": "array",
@@ -4856,7 +4858,7 @@
                             "additionalProperties": {
                               "type": "integer"
                             },
-                            "description": "Per-entityType max org-ledger seq over the view prefixes (subtree: f:{type}; self: fs:{type})"
+                            "description": "Per-entityType newest sequence position over the view prefixes (subtree: f:{type}; self: fs:{type})"
                           },
                           "counts": {
                             "type": "object",
@@ -4880,8 +4882,8 @@
                 "example": {
                   "changes": {
                     "org-example-id": {
-                      "entitySeqs": {
-                        "attachment": 1
+                      "signals": {
+                        "membership": 1
                       }
                     }
                   },

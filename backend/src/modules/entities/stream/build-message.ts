@@ -58,7 +58,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
 
   // Resolve the home channel id for scheduler and unseen-count grouping: the row's deepest
   // non-null ancestor. Variable-depth rows group under their effective home. Grouping only —
-  // the ledger is org-scoped and does not key on this.
+  // the org sequence does not key on this.
   let channelId: string | null = null;
   if (isProduct && entityType) {
     channelId = resolveDeepestAncestorId(hierarchy, entityType, event as unknown as Record<string, unknown>);

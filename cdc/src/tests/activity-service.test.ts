@@ -58,8 +58,8 @@ describe('sendBatchMessageToApi', () => {
     expect(log.error).not.toHaveBeenCalled();
   });
 
-  it('accepts non-contiguous ledger seqs within one group and carries the exact count', () => {
-    // Under the shared org ledger a group's range may interleave with other groups'
+  it('accepts non-contiguous sequence positions within one group and carries the exact count', () => {
+    // Under the shared org sequence a group's range may interleave with other groups'
     // values: 10..12 with only 2 rows is legal, and `count` is authoritative.
     const events = [mockBatchEvent(10), mockBatchEvent(12)];
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);

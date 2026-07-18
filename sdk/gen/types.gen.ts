@@ -129,7 +129,7 @@ export type StreamNotification = {
    */
   path: string | null;
   /**
-   * Org-ledger sequence (shared across product entity types)
+   * Org-sequence position (one order per organization, shared across product entity types)
    */
   seq: number | null;
   /**
@@ -141,11 +141,11 @@ export type StreamNotification = {
       [key: string]: unknown;
     } | null);
   /**
-   * Last ledger seq for a batched notification — client should fetch range
+   * Last sequence position for a batched notification — client should fetch range
    */
   batchUntilSeq: number | null;
   /**
-   * Authoritative row count for batches: the ledger range may interleave with other paths
+   * Authoritative row count for batches: sequence ranges of different paths may interleave
    */
   count: number | null;
   /**
@@ -2264,7 +2264,7 @@ export type PostAppCatchupData = {
      */
     cursor?: string;
     /**
-     * Client-declared views: prefix set + entity types + org-ledger cursor per view
+     * Client-declared views: prefix set + entity types + org-sequence cursor per view
      */
     views?: Array<{
       /**
@@ -2282,7 +2282,7 @@ export type PostAppCatchupData = {
        */
       depth?: 'self' | 'subtree';
       /**
-       * Org-ledger seq this view has fully ingested (0 = baseline not yet established)
+       * Org-sequence position this view has fully ingested (0 = baseline not yet established)
        */
       cursor: number;
     }>;
@@ -2327,12 +2327,12 @@ export type PostAppCatchupResponses = {
    */
   200: {
     /**
-     * Per-org change summary: { [organizationId]: { entitySeqs?, entityCounts? } }
+     * Per-org change summary: { [organizationId]: { signals?, propagation? } }
      */
     changes: {
       [key: string]: {
-        entitySeqs?: {
-          [key: string]: number;
+        signals?: {
+          membership?: number;
         };
         propagation?: Array<{
           /**
@@ -2368,7 +2368,7 @@ export type PostAppCatchupResponses = {
       key: string;
       status: 'ok' | 'opaque' | 'forbidden';
       /**
-       * Per-entityType max org-ledger seq over the view prefixes (subtree: f:{type}; self: fs:{type})
+       * Per-entityType newest sequence position over the view prefixes (subtree: f:{type}; self: fs:{type})
        */
       frontiers?: {
         [key: string]: number;

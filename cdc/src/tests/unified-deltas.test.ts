@@ -55,8 +55,8 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.ledgerGroups).toHaveLength(0);
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:admin': 1, 'm:total': 1, 's:membership': 1 });
+    expect(plan.orgSequenceGroups).toHaveLength(0);
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:admin': 1, 'm:total': 1, 'membership': 1 });
   });
 
   it('membership delete: decrements role + total', () => {
@@ -68,7 +68,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:member': -1, 'm:total': -1, 's:membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:member': -1, 'm:total': -1, 'membership': 1 });
   });
 
   it('membership update (role change): swaps role counts', () => {
@@ -81,7 +81,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:member': -1, 'm:admin': 1, 's:membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:member': -1, 'm:admin': 1, 'membership': 1 });
   });
 
   it('inactive membership create (pending): increments pending count', () => {
@@ -93,7 +93,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:pending': 1, 's:membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:pending': 1, 'membership': 1 });
   });
 
   it('inactive membership update (rejected): decrements pending', () => {
@@ -106,7 +106,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:pending': -1, 's:membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:pending': -1, 'membership': 1 });
   });
 });
 
@@ -124,11 +124,11 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    // One ledger group per organization (all product types share the org ledger)
-    expect(plan.ledgerGroups).toHaveLength(1);
-    expect(plan.ledgerGroups[0].orgKey).toBe('org-1');
-    expect(plan.ledgerGroups[0].count).toBe(5);
-    expect(plan.ledgerGroups[0].events).toHaveLength(5);
+    // One sequence group per organization (all product types share the org sequence)
+    expect(plan.orgSequenceGroups).toHaveLength(1);
+    expect(plan.orgSequenceGroups[0].orgKey).toBe('org-1');
+    expect(plan.orgSequenceGroups[0].count).toBe(5);
+    expect(plan.orgSequenceGroups[0].events).toHaveLength(5);
 
     // Count deltas: accumulated across all 5 events on org, plus one activity stamp
     // (rows carry no createdAt here, so the stamp falls back to Date.now())
@@ -157,11 +157,11 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    expect(plan.ledgerGroups).toHaveLength(0);
+    expect(plan.orgSequenceGroups).toHaveLength(0);
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2, 'es:attachment': -2 });
   });
 
-  it('batch of attachment soft deletes: ledger group and count deltas accumulated', () => {
+  it('batch of attachment soft deletes: sequence group and count deltas accumulated', () => {
     const events = [
       mockEvent({
         tableMeta: attachmentEntry(),
@@ -179,13 +179,13 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    expect(plan.ledgerGroups).toHaveLength(1);
-    expect(plan.ledgerGroups[0].orgKey).toBe('org-1');
-    expect(plan.ledgerGroups[0].count).toBe(2);
+    expect(plan.orgSequenceGroups).toHaveLength(1);
+    expect(plan.orgSequenceGroups[0].orgKey).toBe('org-1');
+    expect(plan.orgSequenceGroups[0].count).toBe(2);
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2, 'es:attachment': -2 });
   });
 
-  it('one ledger group per organization, never duplicated', () => {
+  it('one sequence group per organization, never duplicated', () => {
     const events = Array.from({ length: 3 }, (_, i) =>
       mockEvent({
         tableMeta: attachmentEntry(),
@@ -196,7 +196,7 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    const orgKeys = plan.ledgerGroups.map((g) => g.orgKey);
+    const orgKeys = plan.orgSequenceGroups.map((g) => g.orgKey);
     expect(new Set(orgKeys).size).toBe(orgKeys.length);
     expect(orgKeys).toHaveLength(3);
   });
@@ -351,7 +351,7 @@ describe('draft lifecycle count deltas (publishedAt)', () => {
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
-    expect(plan.ledgerGroups).toHaveLength(1); // drafts keep create-time ledger stamps
+    expect(plan.orgSequenceGroups).toHaveLength(1); // drafts keep create-time sequence stamps
   });
 
   it('draft-internal edits count nothing', () => {

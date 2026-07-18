@@ -51,7 +51,7 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   const publishedOnly = publishedRowsPredicate(attachmentsTable);
   if (publishedOnly) filters.push(publishedOnly);
 
-  // Sequence-based delta sync filter (org-ledger values)
+  // Sequence-based delta sync filter (org-sequence values)
   filters.push(...seqCursorFilters(attachmentsTable.seq, seqCursor));
 
   // Subtree placement narrowing (feed loads); the permission WHERE above still applies.

@@ -70,7 +70,7 @@ const entityRoutes = {
     tags: ['entities', 'cella'],
     summary: 'App event catchup',
     description:
-      'Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-ledger cursors) in the body.',
+      'Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.',
     request: {
       body: {
         required: true,

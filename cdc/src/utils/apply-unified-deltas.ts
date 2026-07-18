@@ -77,28 +77,28 @@ export function sumInto(
  * Apply a unified delta plan for a batch of CDC events. Mutates
  * `event.result.rowData.seq` for each stampable event.
  *
- * Phase 1 reserves one contiguous org-ledger range per organization
- * (`s:ledger` via RETURNING) and assigns values to events in WAL order —
- * all product entity types share the ledger, so WAL commit order IS ledger
+ * Phase 1 reserves one contiguous org-sequence range per organization
+ * (`sequence` via RETURNING) and assigns values to events in WAL order —
+ * all product entity types share the sequence, so WAL commit order IS sequence
  * order. Phase 2 then writes frontier (`f:{type}`) marks at every
  * ancestor node, the remaining count deltas, and the row seq stamp-backs.
  */
 export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: AncestorSource = hierarchy): Promise<void> {
-  const { ledgerGroups, countDeltasByChannelKey } = plan;
+  const { orgSequenceGroups, countDeltasByChannelKey } = plan;
 
   const handledChannelKeys = new Set<string>();
   const allEntityStamps: Array<{ tableName: string; id: string; seq: number }> = [];
   /** f: (and org-row leftovers) accumulated for phase 2, keyed by channel node. */
   const phase2Deltas = new Map<string, Record<string, number>>();
 
-  // Phase 1: one sequential RETURNING UPSERT per organization ledger.
-  for (const group of ledgerGroups) {
-    // Merge the ledger reservation with any count deltas for the org row itself.
-    const mergedDeltas = sumInto({ 's:ledger': group.count }, countDeltasByChannelKey.get(group.orgKey));
+  // Phase 1: one sequential RETURNING UPSERT per organization sequence.
+  for (const group of orgSequenceGroups) {
+    // Merge the sequence reservation with any count deltas for the org row itself.
+    const mergedDeltas = sumInto({ 'sequence': group.count }, countDeltasByChannelKey.get(group.orgKey));
     handledChannelKeys.add(group.orgKey);
 
     const counts = await mergedUpsert(group.orgKey, mergedDeltas, true);
-    const highSeq = counts['s:ledger'] ?? group.count;
+    const highSeq = counts['sequence'] ?? group.count;
     const baseSeq = highSeq - group.count;
 
     for (let i = 0; i < group.events.length; i++) {
@@ -107,7 +107,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
       rowData.seq = seq;
       allEntityStamps.push({ tableName: getTableName(tableMeta.table), id: rowData.id, seq });
 
-      // Frontier rollups. Unpublished drafts are excluded: they take a ledger stamp
+      // Frontier rollups. Unpublished drafts are excluded: they take a sequence stamp
       // (uniform stamp-back, stx cleanup) but are invisible to delta reads/dispatch/
       // counters until the publish edge, so bumping the frontier would only signal activity-timing
       // no view can ever fetch. Tombstones of PUBLISHED rows still bump (they are
@@ -127,7 +127,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
       mergeDelta(phase2Deltas, home, { [`fs:${tableMeta.type}`]: seq });
     }
 
-    log.trace('Batch ledger stamped', {
+    log.trace('Batch sequence stamped', {
       orgKey: group.orgKey,
       count: group.count,
       baseSeq: baseSeq + 1,

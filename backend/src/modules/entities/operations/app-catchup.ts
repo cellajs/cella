@@ -91,12 +91,12 @@ export async function answerCatchupViews(
 }
 
 /**
- * Build app stream catch-up data (ledger sync).
+ * Build app stream catch-up data (sequence sync).
  *
  * Product entity sync is answered per client-declared VIEW (`answerCatchupViews`,
  * prefix-authorized, from `f:`/`e:` rollups). The per-org `changes` block carries the
- * remaining org-level concerns: the `s:membership` screening seq (membership change
- * detection) and embedding propagation hints derived from the views' ledger cursors.
+ * remaining org-level concerns: the `membership` change signal (membership change
+ * detection) and embedding propagation hints derived from the views' sequence cursors.
  * A null cursor returns baselines and causes client-side membership query invalidation.
  */
 export async function appCatchupOp(
@@ -116,15 +116,15 @@ export async function appCatchupOp(
 
   const organizationIdArray = Array.from(organizationIds);
 
-  // One query for all org counter rows (membership screening seq + frontier rollups for hints).
+  // One query for all org counter rows (membership signal + frontier rollups for hints).
   const allCounterRows = await findChannelCountersByKeys(dbCtx, organizationIdArray);
   const allCounters = new Map(allCounterRows.map((r) => [r.channelKey, r.counts]));
 
   const changes: AppCatchupResponse['changes'] = {};
   for (const organizationId of organizationIdArray) {
-    const { entitySeqs } = parseCounterCounts(allCounters.get(organizationId));
+    const { membership } = parseCounterCounts(allCounters.get(organizationId));
     changes[organizationId] = {
-      entitySeqs: Object.keys(entitySeqs).length > 0 ? entitySeqs : undefined,
+      signals: membership !== undefined ? { membership } : undefined,
     };
   }
 

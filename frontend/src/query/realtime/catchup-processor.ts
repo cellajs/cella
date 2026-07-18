@@ -11,9 +11,9 @@ import { propagateEmbeddings } from './propagation';
 import { getSyncTier, getTenantIdForOrg } from './sync-priority';
 
 /**
- * Process the app stream catchup response (view-driven, org ledger).
+ * Process the app stream catchup response (view-driven, org sequence).
  *
- * The client declares one view per (org, entityType) with its org-ledger cursor
+ * The client declares one view per (org, entityType) with its org-sequence cursor
  * (`sync-store.getCatchupViews`); the server answers `ok` (with `frontiers`/`counts`
  * rollups), `opaque` (readable but not provably all — no numbers), or `forbidden`.
  * For an `ok` view with `frontier > cursor` ONE org-wide delta fetch from `cursor + 1`
@@ -82,7 +82,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
 
       const tenantId = syncStore.getOrgTenantId(organizationId) ?? getTenantIdForOrg(organizationId);
 
-      // Scope-symmetry guard: with nothing cached there is nothing to patch; mount
+      // Cache-symmetry guard: with nothing cached there is nothing to patch; mount
       // hydration fetches fresh. Advance so the window is not re-offered forever.
       if (!hasAnyCachedList(keys, organizationId)) {
         syncStore.setOrgSeq(organizationId, entityType, frontier);
@@ -124,19 +124,19 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   }
 
   // ── Org-level blocks: membership screening + propagation (legacy `changes`) ─
-  const scopes = Object.keys(changes);
-  for (const organizationId of scopes) {
-    const { entitySeqs, propagation } = changes[organizationId];
+  const orgIds = Object.keys(changes);
+  for (const organizationId of orgIds) {
+    const { signals, propagation } = changes[organizationId];
 
     // Seed the org entry so the NEXT catchup request declares views for it (fresh
     // sessions have no stored orgs yet; membership-derived `changes` names them).
     syncStore.setOrgTenantId(organizationId, syncStore.getOrgTenantId(organizationId) ?? '');
 
-    // Membership change via the s:membership counter; stored after comparison.
-    const serverMembershipSeq = entitySeqs?.membership;
-    if (serverMembershipSeq !== undefined) {
-      const membershipChanged = serverMembershipSeq !== syncStore.getOrgSeq(organizationId, 'membership');
-      syncStore.setOrgSeq(organizationId, 'membership', serverMembershipSeq);
+    // Membership change via the bump-only membership signal; stored after comparison.
+    const serverMembershipSignal = signals?.membership;
+    if (serverMembershipSignal !== undefined) {
+      const membershipChanged = serverMembershipSignal !== syncStore.getOrgSeq(organizationId, 'membership');
+      syncStore.setOrgSeq(organizationId, 'membership', serverMembershipSignal);
       if (membershipChanged && !baselineOnly) membershipOps.invalidateMemberQueries(organizationId);
     }
 
@@ -149,7 +149,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   }
 
   if (baselineOnly) {
-    console.debug(`[CatchupProcessor] Baseline: stored cursors for ${views?.length ?? 0} views, ${scopes.length} orgs`);
+    console.debug(`[CatchupProcessor] Baseline: stored cursors for ${views?.length ?? 0} views, ${orgIds.length} orgs`);
     return;
   }
 

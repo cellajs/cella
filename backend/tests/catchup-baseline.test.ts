@@ -11,9 +11,9 @@ import { mockFetchRequest, setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-// Verifies the view-driven catchup contract end-to-end (ledger sync): membership
-// screening via changes.entitySeqs, product sync via per-view f:/e: answers.
-describe('Catchup (view-driven, ledger)', async () => {
+// Verifies the view-driven catchup contract end-to-end (sequence sync): membership
+// screening via changes.signals, product sync via per-view f:/e: answers.
+describe('Catchup (view-driven, sequence)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
 
@@ -21,10 +21,10 @@ describe('Catchup (view-driven, ledger)', async () => {
     mockFetchRequest();
     tenant = await createTestTenant(call, 'catchup-baseline');
 
-    // Seed channel_counters with ledger, frontier and count values for the org
+    // Seed channel_counters with sequence, frontier and count values for the org
     const counts = {
-      's:ledger': 50,
-      's:membership': 3,
+      sequence: 50,
+      membership: 3,
       'f:attachment': 42,
       'e:attachment': 15,
       'fs:attachment': 40,
@@ -45,7 +45,7 @@ describe('Catchup (view-driven, ledger)', async () => {
     await clearSecurityTestData();
   });
 
-  it('returns membership screening seqs without cursor (baseline)', async () => {
+  it('returns the membership change signal without cursor (baseline)', async () => {
     const result = await call(postAppCatchup, {
       body: {},
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
@@ -56,8 +56,9 @@ describe('Catchup (view-driven, ledger)', async () => {
 
     const orgChanges = changes[tenant.organization.id];
     expect(orgChanges).toBeDefined();
-    expect(orgChanges.entitySeqs!.membership).toBe(3);
-    expect(orgChanges.entitySeqs!.ledger).toBe(50);
+    expect(orgChanges.signals!.membership).toBe(3);
+    // The org sequence value itself is not exposed on the wire (clients never read it).
+    expect(orgChanges).not.toHaveProperty('entitySeqs');
     expect(cursor).toBeDefined();
   });
 

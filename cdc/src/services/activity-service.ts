@@ -26,7 +26,7 @@ export interface CdcBatchRow {
  * so mixed-visibility batches dispatch per subscriber per row. The first row alone cannot
  * represent visibility for the entire batch.
  *
- * Seq values are org-ledger values (shared across product entity types); a batch group's
+ * Seq values are org-sequence values (shared across product entity types); a batch group's
  * `seq..batchUntilSeq` range is NOT guaranteed contiguous for its own rows — `count`
  * carries the actual row count, and per-row seqs ride `batchRows`.
  *
@@ -121,7 +121,7 @@ function batchPathKey({ activity, rowData }: BatchEventInfo): string {
  * Send batch CDC message(s) to the API server.
  *
  * Messages are split per (path, entityType) group so each describes one audience and one
- * entity type. Seq values come from the shared org ledger: a group's `seq..batchUntilSeq`
+ * entity type. Seq values come from the shared org sequence: a group's `seq..batchUntilSeq`
  * range may interleave with other groups' values, so `count` (and per-row seqs in
  * `batchRows`) carry the exact contents — range arithmetic is not row count.
  */
@@ -151,7 +151,7 @@ function sendBatchGroupToApi(
 ): void {
   const first = events[0];
 
-  // Collect seqs for min/max range (create/update batches). Under the org ledger the
+  // Collect seqs for min/max range (create/update batches). Under the org sequence the
   // range brackets this group's rows but may contain other groups' values in between;
   // `count` is authoritative for size.
   const seqs = events.map((e) => e.seq).filter((s): s is number => s !== undefined);

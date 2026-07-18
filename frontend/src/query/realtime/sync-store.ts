@@ -10,7 +10,7 @@ interface OrgSyncState {
   contexts: Record<string, Record<string, number>>;
 }
 
-/** One catchup view request: org-ledger cursor over a prefix set (see streamCatchupBodySchema). */
+/** One catchup view request: org-sequence cursor over a prefix set (see streamCatchupBodySchema). */
 export interface CatchupViewRequest {
   key: string;
   organizationId: string;
@@ -36,7 +36,7 @@ interface SyncStoreState {
   /** Grant-boundary views registered by the app/fork (views.ts), keyed by view key. */
   views: Record<string, RegisteredSyncView>;
   /**
-   * Latest seq the server has mentioned per scope (channelId or orgId), which is the "known" side of the
+   * Latest seq the server has mentioned per channel view (channelId or orgId), which is the "known" side of the
    * known-vs-caught-up split. Recorded from every notification, even for pages the lazy scheduler
    * won't fetch (muted). Deliberately NOT persisted: catchup's counter comparison rebuilds it on
    * boot, and persisting would only risk staleness. Caught-up seqs stay in `orgs` (persisted).
@@ -51,9 +51,9 @@ interface SyncStoreState {
   getOrgSeq: (orgId: string, entityType: string) => number;
   setChannelSeq: (orgId: string, channelId: string, entityType: string, seq: number) => void;
   getChannelSeq: (orgId: string, channelId: string, entityType: string) => number;
-  /** Record the latest server-mentioned seq for a scope (monotonic max-merge). */
-  setKnownSeq: (scopeId: string, entityType: string, seq: number) => void;
-  getKnownSeq: (scopeId: string, entityType: string) => number;
+  /** Record the latest server-mentioned seq for a channel view (monotonic max-merge). */
+  setKnownSeq: (channelViewId: string, entityType: string, seq: number) => void;
+  getKnownSeq: (channelViewId: string, entityType: string) => number;
   /**
    * Register a grant-boundary view. RE-BASELINE RULE: identity = prefix set + entity
    * types + depth; any identity change resets the cursor to 0 (a grown prefix set has
@@ -121,9 +121,9 @@ export const useSyncStore = create<SyncStoreState>()(
           }),
         getOrgSeq: (orgId, entityType) => get().orgs[orgId]?.seqs[entityType] ?? 0,
 
-        // Org-homed scopes arrive with channelId === orgId on the live wire, while catchup
+        // Org-homed channel views arrive with channelId === orgId on the live wire, while catchup
         // reports them at org level. Normalize both to the org slot so live and catchup
-        // share ONE caught-up watermark per scope.
+        // share ONE caught-up cursor per channel view.
         setChannelSeq: (orgId, channelId, entityType, seq) =>
           set((s) => {
             const org = ensureOrg(s.orgs, orgId);
@@ -155,12 +155,12 @@ export const useSyncStore = create<SyncStoreState>()(
           }),
         getView: (key) => get().views[key],
 
-        setKnownSeq: (scopeId, entityType, seq) =>
+        setKnownSeq: (channelViewId, entityType, seq) =>
           set((s) => {
-            s.known[scopeId] ??= {};
-            if (seq > (s.known[scopeId][entityType] ?? 0)) s.known[scopeId][entityType] = seq;
+            s.known[channelViewId] ??= {};
+            if (seq > (s.known[channelViewId][entityType] ?? 0)) s.known[channelViewId][entityType] = seq;
           }),
-        getKnownSeq: (scopeId, entityType) => get().known[scopeId]?.[entityType] ?? 0,
+        getKnownSeq: (channelViewId, entityType) => get().known[channelViewId]?.[entityType] ?? 0,
 
         getCatchupViews: (entityTypes) => {
           const { orgs } = get();
@@ -172,8 +172,8 @@ export const useSyncStore = create<SyncStoreState>()(
                 organizationId: orgId,
                 prefixes: [orgId],
                 entityTypes: [entityType],
-                // Org-view cursor over the org ledger. Only the org slot proves org-WIDE
-                // ingestion (child-scope watermarks cover their own subtree only); 0 means
+                // Org-view cursor over the org sequence. Only the org slot proves org-WIDE
+                // ingestion (child-channel-view cursors cover their own subtree only); 0 means
                 // no baseline yet — catchup stores the frontier and route loaders supply data.
                 cursor: org.seqs[entityType] ?? 0,
               });

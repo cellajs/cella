@@ -27,10 +27,10 @@ const cdcMessageSchema = z.object({
     // Override nullable fields that are always present in CDC messages
     action: activityActionSchema,
     subjectId: z.string().nullable(),
-    // seq: org-ledger sequence stamped by CDC worker (product entities only)
+    // seq: org-sequence position stamped by CDC worker (product entities only)
     seq: z.number().optional(),
     // Batch fields (set by CDC Worker for multi-entity transactions). Under the org
-    // ledger a group's seq..batchUntilSeq range may interleave with other groups;
+    // sequence a group's seq..batchUntilSeq range may interleave with other groups;
     // `count` is the authoritative row count.
     batchUntilSeq: z.number().optional(),
     count: z.number().optional(),

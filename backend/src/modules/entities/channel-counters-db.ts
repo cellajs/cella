@@ -6,7 +6,7 @@ import { maxLength } from '#/db/utils/constraints';
  *
  * One row per channel entity (org, project, etc.) keyed by its ID,
  *
- * - counts: extensible JSONB — s:ledger/s:membership, f:/fs: frontiers,
+ * - counts: extensible JSONB — sequence/membership, f:/fs: frontiers,
  *   e:/es: counts, m: membership breakdown, li:/lu: activity stamps
  * - path: the channel's canonical id-path (CDC-maintained copy of the channel row's
  *   generated column; recalc backfills). Makes the summary row self-describing so

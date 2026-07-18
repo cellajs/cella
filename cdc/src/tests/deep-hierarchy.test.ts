@@ -87,16 +87,16 @@ describe('home channel: deepest non-null ancestor (resolveChannelKey)', () => {
   });
 });
 
-describe('ledger groups per organization (computeBatchUnifiedDeltas)', () => {
-  it('variable-depth rows in one org share ONE ledger group (all depths, one order)', () => {
+describe('sequence groups per organization (computeBatchUnifiedDeltas)', () => {
+  it('variable-depth rows in one org share ONE sequence group (all depths, one order)', () => {
     const plan = computeBatchUnifiedDeltas(
       [mockEvent('create', fullDepthRow), mockEvent('create', { ...courseStreamRow, id: 'i2' })],
       h,
     );
 
-    expect(plan.ledgerGroups).toHaveLength(1);
-    expect(plan.ledgerGroups[0]).toMatchObject({ orgKey: 'o1', count: 2 });
-    expect(plan.ledgerGroups[0].events).toHaveLength(2);
+    expect(plan.orgSequenceGroups).toHaveLength(1);
+    expect(plan.orgSequenceGroups[0]).toMatchObject({ orgKey: 'o1', count: 2 });
+    expect(plan.orgSequenceGroups[0].events).toHaveLength(2);
   });
 
   it('same-org rows preserve WAL order within the group', () => {
@@ -104,8 +104,8 @@ describe('ledger groups per organization (computeBatchUnifiedDeltas)', () => {
       [mockEvent('create', fullDepthRow), mockEvent('create', { ...fullDepthRow, id: 'i2' })],
       h,
     );
-    expect(plan.ledgerGroups).toHaveLength(1);
-    expect(plan.ledgerGroups[0].events.map((e) => e.result.rowData.id)).toEqual(['i1', 'i2']);
+    expect(plan.orgSequenceGroups).toHaveLength(1);
+    expect(plan.orgSequenceGroups[0].events.map((e) => e.result.rowData.id)).toEqual(['i1', 'i2']);
   });
 
   it('frontierNodeKeys rolls a full-depth row up to org + every non-null ancestor', () => {

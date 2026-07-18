@@ -80,7 +80,7 @@ Key methods: `getParent()`, `getOrderedAncestors()`, `getRelatedChannels()`, `ge
 
 ## Sync engine
 
-Cella has a selective approach to sync and offline. Channel entities such as organizations use standard CRUD OpenAPI endpoints. Product entities such as attachments add `stx`, ledger/view-based catchup, offline mutation plumbing, and a notify-then-fetch realtime path. TanStack Query is the client-side merge point for both channel and product entities as well as other resources.
+Cella has a selective approach to sync and offline. Channel entities such as organizations use standard CRUD OpenAPI endpoints. Product entities such as attachments add `stx`, sequence/view-based catchup, offline mutation plumbing, and a notify-then-fetch realtime path. TanStack Query is the client-side merge point for both channel and product entities as well as other resources.
 
 The pipeline flows: **Postgres WAL → CDC worker → WebSocket → ActivityBus → SSE → client**. There is one realtime endpoint:
 
