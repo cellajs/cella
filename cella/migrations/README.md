@@ -53,7 +53,7 @@ be a no-op.
   merged seq ranges (client tiers × server `syncWindow`), unseen badges use client-side
   tracking, catchup folds into the scheduler. Fork steps: `appCache(entityType)` signature,
   verify sub-org viewing detection, mirror feed filters (e.g. `draft`) in `ingestSyncedRows`,
-  seen-tracked config invariant. Manual, no script.
+  seen-tracked configuration requirement. Manual, no script.
 - [2026-07-deprecated-shims](./2026-07-deprecated-shims/): removes the last two
   `@deprecated` compat shims — the `FilterBarContent` alias (→ `FilterBarFilters`,
   or `FilterBarSearch` for search inputs) and the `entities/helpers/get-entity-counts`

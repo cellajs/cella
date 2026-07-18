@@ -59,7 +59,7 @@ That configuration drives permission traversal, schema helpers, navigation, coun
 dispatch. Frontend and backend features are organized into matching modules, which keeps business
 logic discoverable and lets projects retain upstream improvements with less friction.
 
-One invariant matters most when extending the model: every product belongs to a channel, carries
+One structural rule matters most when extending the model: every product belongs to a channel, carries
 its tenant identity, and stays connected to its root channel through database constraints. Change
 the hierarchy and schema together. The worked recipe lives in [New entity](./ADD_ENTITY.md).
 

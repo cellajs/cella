@@ -48,7 +48,7 @@ export const organizationsSeed = async () => {
     return;
   }
 
-  // Create tenants (one organization each, per the 1 tenant = 1 org invariant)
+  // Create tenants (one organization each, matching the one-organization-per-tenant constraint)
   const tenantRecords = Array.from({ length: TENANTS_COUNT }, (_, i) => ({
     name: `Tenant ${i + 1}`,
     createdBy: defaultAdminUser.id,

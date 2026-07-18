@@ -59,7 +59,7 @@ excludes `draft` item rows** — add the same filter in `matchesUnseenFilters`
 > sides already — migrate the `draft` column to it and this mirror is no longer yours to
 > maintain. Only non-draft feed filters still need hand-mirroring.
 
-## 4. Config invariant — may throw at startup
+## 4. Configuration requirement — enforced at startup
 
 `config-validation.ts` now asserts every `seenTrackedEntityTypes` entry has
 **unconditional** channel read (no `read: 'own'`-style cells). Base cella, raak (`task`)

@@ -22,7 +22,7 @@ import { getSyncTier, getTenantIdForOrg } from './sync-priority';
  * watermarks remain live-path bookkeeping; catchup no longer depends on
  * membership-derived channel discovery (the elevated-reader gap this design removes).
  *
- * Invariants preserved from the legacy per-scope engine:
+ * Catchup guarantees retained by the org-sequence engine:
  * - advance-after-ingest: the org cursor advances only after the window drained (ok),
  *   was handed to react-query (invalidate), or was deliberately skipped (nothing cached)
  * - baseline: cursor 0 stores the frontier and refetches only when something is cached

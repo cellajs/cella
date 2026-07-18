@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { entityTables } from '#/tables';
 
 /**
- * Delta-sync index invariant (see .todos/SYNC_FANOUT_OPTIMIZATION.md opt 1 and
+ * Delta-sync index requirement (see .todos/SYNC_FANOUT_OPTIMIZATION.md opt 1 and
  * .todos/SEQUENCE_SYNC_REWRITE.md (organization-sequence rewrite)): every product entity
  * table must carry a composite `(organization_id, seq)` index so seq-range delta reads
  * are index range scans, not org-wide filters. Forks add product tables in their own

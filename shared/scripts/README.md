@@ -1,5 +1,12 @@
 # shared/scripts
 
+## check-doc-style.ts
+
+CI guard for concrete terminology in authored Markdown and MDX. Run via `pnpm docs:style`; exits 1
+with file and line diagnostics when prose should name a more precise rule, constraint, guarantee,
+requirement, contract, precondition, or assumption. `pnpm prose:check` combines this with the
+equivalent source-comment rule and is the CI entry point.
+
 ## check-lenses.ts
 
 CI guard for the schema-evolution lens system in `shared/src/schema-evolution/`. Run via

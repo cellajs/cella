@@ -226,7 +226,7 @@ export type CollectionReadWhere =
 
 A bare `undefined` WHERE would leak the table, which is exactly the bug this shape makes unrepresentable. In the same spirit, the compiled SQL for a row condition emits `false` for an anonymous actor, mirroring the check-form's deny.
 
-## Testing the invariants
+## Testing cross-layer agreement
 
 The load-bearing test is the parity property test in `backend/src/permissions/row-predicates.test.ts`, which runs against a real Postgres. It generates random policies, memberships, and actors, then asserts row-for-row that independent implementations agree: the engine's `getAllDecisions`, the compiled SQL executed against a scratch table, the frontend's `computeCan` + `resolvePermission`, and — under the real app config — SSE dispatch. It covers deep ancestor chains and `elevatedRoles` via a synthetic topology. A deterministic PRNG means failures reproduce.
 

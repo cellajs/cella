@@ -17,9 +17,9 @@ still a single-module behavioural test and still lives beside the source
 
 ## `tests/`: everything cross-cutting
 
-- **`tests/unit/`**: tests that don't belong to a single module. Source-invariant
+- **`tests/unit/`**: tests that don't belong to a single module. Source-shape
   checks that read a file as text and assert on its shape
-  (`loadbalancer`, `compute`, `module-invariants`, `no-unexpected-public`,
+  (`loadbalancer`, `compute`, `resource-contracts`, `no-unexpected-public`,
   `caddyfile`), or that span several modules / packages
   (`runtime-secrets` reads each service's `env.ts`).
 - **`tests/integration/`**: needs a live host or network; excluded from

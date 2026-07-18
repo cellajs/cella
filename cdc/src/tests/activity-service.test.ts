@@ -99,7 +99,7 @@ describe('sendBatchMessageToApi', () => {
     // Each message speaks only for its own context's rows
     expect(orgA?.batchRows.map((row) => row.seq)).toEqual([10, 11]);
     expect(orgB?.batchRows.map((row) => row.seq)).toEqual([5, 6, 7]);
-    // Both ranges are contiguous: the integrity invariant holds per context
+    // Both ranges are contiguous, so the per-context integrity checks pass.
     expect(log.error).not.toHaveBeenCalled();
   });
 

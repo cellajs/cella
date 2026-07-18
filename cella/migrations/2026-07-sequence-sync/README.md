@@ -95,7 +95,7 @@ are discarded, so old-domain cursors never meet new-domain values.
 
 - `pnpm -r ts` and full test suites green (the upstream suites cover the engine; your
   fork parity tests cover your hierarchy).
-- The `(organization_id, seq)` delta-index invariant test passes for every product table
+- The `(organization_id, seq)` delta-index coverage test passes for every product table
   (upstream `delta-index.test.ts` — it will name any fork table missing the index).
 - Manual: `pnpm offline` — post in one tab, verify live sync in a second tab; go
   offline/online and verify catchup; reparent a row (if your fork supports it) and
@@ -148,7 +148,7 @@ are discarded, so old-domain cursors never meet new-domain values.
 - Task/label are project-homed with NOT NULL `projectId`; attachment is variable-home
   (org or project) — all covered by the generated path expression automatically.
 - Replace the per-channel keyset indexes (`tasks_project_seq_index (project_id, seq)`)
-  with the `(organization_id, seq)` convention — the invariant test will flag them.
+  with the `(organization_id, seq)` convention — the index-coverage test will flag them.
 - Yjs: `registerYjsOwnedFields` suppression is untouched — sequence delta rows still skip
   Yjs-owned fields while an editor is active.
 - Embeddings (`label → task.labels`): propagation hints now derive from view cursors vs

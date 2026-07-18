@@ -71,7 +71,7 @@ describe('service registry — singleVM (deployedServices / coHostedServices)', 
   })
 })
 
-describe('service registry — lbRoute invariants', () => {
+describe('service registry — lbRoute contract', () => {
   it('frontend (the app origin) is the default LB backend', () => {
     expect(services.find((s) => s.slug === 'frontend')?.lbRoute).toBe('default')
   })

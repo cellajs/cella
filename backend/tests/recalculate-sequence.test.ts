@@ -67,7 +67,7 @@ describe('recalculateCounters (sequence + frontier)', async () => {
     // Path backfill: the org channel's canonical path is its own id.
     expect(row.path).toBe(tenant.organization.id);
     // Sequence reservation counter: max stamped value across product tables.
-    expect(counts['sequence']).toBe(47);
+    expect(counts.sequence).toBe(47);
     // Frontier includes tombstones (they keep their seq for delta reads).
     expect(counts['f:attachment']).toBe(47);
     // Live count excludes the soft-deleted row.

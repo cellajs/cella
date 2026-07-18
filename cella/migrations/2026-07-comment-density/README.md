@@ -2,7 +2,7 @@
 
 This migration removes detached long-form source comments. Cross-file architecture, operational
 workflows, and failure-mode narratives belong in a canonical README. Source comments retain only
-the invariant needed to modify the adjacent declaration or executable block safely.
+the local requirement needed to modify the adjacent declaration or executable block safely.
 
 Run the placement check after pulling the upstream sweep:
 
@@ -21,7 +21,7 @@ Review each result semantically:
 1. Delete prose that repeats code, test names, or existing documentation.
 2. Move symbol-specific contracts directly above the function, constant, class, type, or
    interface they govern.
-3. Compress an executable-block invariant to at most three prose lines.
+3. Compress an executable-block correctness requirement to at most three prose lines.
 4. Move shared architecture or operator guidance to the nearest existing README and keep a short
    source link only when discovery would otherwise be difficult.
 5. Create a README only when several files share one coherent subsystem and no canonical document

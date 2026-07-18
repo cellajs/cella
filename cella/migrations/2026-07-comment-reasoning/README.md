@@ -1,6 +1,6 @@
 # Comment reasoning cleanup
 
-This migration removes source comments that preserve rejected approaches, change history, or unresolved review discussion. Useful comments are rewritten around the current behavior, invariant, or constraint.
+This migration removes source comments that preserve rejected approaches, change history, or unresolved review discussion. Useful comments are rewritten around the current behavior, guarantee, or constraint.
 
 The repository check covers hand-authored TypeScript, JavaScript, CSS, SQL, YAML, JSONC, Dockerfile, and Caddyfile comments. It excludes generated output, database migrations, localization, and Markdown history.
 

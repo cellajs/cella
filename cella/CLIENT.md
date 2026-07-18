@@ -7,31 +7,38 @@ owns it in memory, realtime updates the same cache, and IndexedDB can restore th
 The central idea is simple: **offline and realtime are durability and delivery around the ordinary
 query cache, not separate application modes.**
 
-## One data path
+## One QueryClient, two entity contracts
 
 ```text
-routes and components
-        │
-        ▼
-feature query options
-        │
-        ▼
-TanStack Query cache ── query/mutation ─▶ generated SDK ── HTTP ─▶ API
-        ▲                                                        │
-        └────────────────── rows and deltas ◀────────────────────┘
-        ▲
-        │ restore/persist
-        ▼
-per-user appdb (IndexedDB)
-
-PostgreSQL change ─▶ API live notification ─▶ registered delta query
-                                                   └─ triggers the same SDK path
+routes, menus, and components
+             │
+             ▼
+one TanStack QueryClient per tab (one shared QueryCache)
+│
+├─ CHANNEL AND CONTEXT
+│  └─ membership notification → invalidate/refetch
+│     └─ [me, memberships] + [organization, list, {filters}]
+│        └─ enrichment: membership → can → ancestorSlugs
+│
+├─ SYNCED PRODUCT
+│  └─ product notification → registered REST delta fetch
+│     ├─ canonical [attachment, list, org, home]
+│     │  ├─ direct realtime patch target
+│     │  └─ select() → local views
+│     └─ filtered [attachment, list, org, {filters}]
+│        └─ update known rows; otherwise invalidate/refetch
+│
+└─ restore/persist selected queries ↔ per-user appdb (IndexedDB)
 ```
 
+Both entity kinds live in the same cache but follow different update contracts. Channel entities
+use conventional queries plus invalidation and refetch; a cache subscriber enriches their rows
+with membership, interface permissions, and ancestor slugs. Synced products additionally register
+a delta fetcher and a canonical home list that realtime can patch. Server-filtered product lists
+are invalidated when the client cannot reproduce their placement rules safely.
+
 The server remains authoritative. IndexedDB is a durable copy of selected client data, not a
-browser database that feature code queries as an alternative backend. Most product create/update
-notifications trigger an ordinary API range fetch; membership and deletion events invalidate or
-remove data through the same query layer.
+browser database that feature code queries as an alternative backend.
 
 That keeps one place to inspect when the interface looks wrong: the TanStack Query cache.
 
