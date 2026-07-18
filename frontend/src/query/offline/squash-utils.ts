@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { type ArrayDelta, isArrayDelta, mergeArrayDeltas } from './array-delta';
 
 type OpsVariables = { id?: string; ops?: Record<string, unknown> };
+type CreateVariables = { id?: string; data?: Array<Record<string, unknown> | undefined> };
 
 // Merge two ops objects: scalar fields are overwritten by `newer`; AWSet deltas are merged via mergeArrayDeltas.
 function mergeOps(older: Record<string, unknown>, newer: Record<string, unknown>): Record<string, unknown> {
@@ -17,10 +18,21 @@ function mergeOps(older: Record<string, unknown>, newer: Record<string, unknown>
   return merged;
 }
 
+/** PAUSED mutations only: in-flight requests must never be squashed away (their ops are on the wire). */
+function isPausedPending(mutation: { state: { status: string; isPaused: boolean } }): boolean {
+  return mutation.state.status === 'pending' && mutation.state.isPaused;
+}
+
 /**
- * Squash pending same-entity mutations by merging their `ops` into the incoming one (newer scalars
- * win; AWSet deltas merge via mergeArrayDeltas), removing the old pending mutations. Returns the
- * merged ops. Call from onMutate before optimistic updates.
+ * Squash PAUSED same-entity update mutations into an update about to be issued: merge their
+ * `ops` under the new ones (newer scalars win; AWSet deltas merge via mergeArrayDeltas) and
+ * remove the old paused mutations. Returns the merged ops.
+ *
+ * Call from the wrapped `mutate()` BEFORE `mutation.mutate(...)` and put the result in the new
+ * mutation's variables: the request then carries the merge, so an offline edit A followed by
+ * edit B replays as one A+B update. (Calling from `onMutate` is wrong twice: the caller is
+ * already a pending cache entry and would squash itself out of the cache, and in-flight
+ * mutations would be removed without cancelling their requests.)
  */
 export function squashPendingMutation(
   queryClient: QueryClient,
@@ -34,7 +46,7 @@ export function squashPendingMutation(
   let mergedOps = { ...newOps };
 
   for (const mutation of mutations) {
-    if (mutation.state.status !== 'pending') continue;
+    if (!isPausedPending(mutation)) continue;
 
     const variables = mutation.state.variables as OpsVariables | undefined;
     if (variables?.id !== entityId) continue;
@@ -52,8 +64,13 @@ export function squashPendingMutation(
 }
 
 /**
- * If a pending create exists for the entity (matched by temp `id`), merge the update `ops` into its
- * variables and return true, causing the caller to skip the normal update flow. False if none exist.
+ * If a PAUSED create exists for the entity, merge scalar update `ops` into the create's row and
+ * return true, so the caller skips issuing an update mutation entirely (the create replays with
+ * the merged fields). Matches both create-variable shapes: a top-level `id` and batch creates
+ * carrying `data: [{ id, ... }]`.
+ *
+ * Array-delta ops always return false: creates carry full arrays while deltas are relative, so
+ * those edits fall through to a normal update (serialized after the create by mutation scope).
  */
 export function squashIntoPendingCreate(
   queryClient: QueryClient,
@@ -61,17 +78,24 @@ export function squashIntoPendingCreate(
   entityId: string,
   ops: Record<string, unknown>,
 ): boolean {
+  if (Object.values(ops).some((value) => isArrayDelta(value))) return false;
+
   const mutationCache = queryClient.getMutationCache();
   const mutations = mutationCache.findAll({ mutationKey: createMutationKey });
 
   for (const mutation of mutations) {
-    if (mutation.state.status !== 'pending') continue;
+    if (!isPausedPending(mutation)) continue;
 
-    const variables = mutation.state.variables as OpsVariables | undefined;
-    if (variables?.id !== entityId) continue;
+    const variables = mutation.state.variables as CreateVariables | undefined;
+    if (!variables) continue;
 
-    // Merge ops into create variables
-    Object.assign(variables, ops);
+    const target =
+      variables.id === entityId
+        ? (variables as Record<string, unknown>)
+        : variables.data?.find((row) => row?.id === entityId);
+    if (!target) continue;
+
+    Object.assign(target, ops);
     return true;
   }
 

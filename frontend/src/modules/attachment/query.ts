@@ -203,20 +203,19 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
 
   const mutation = useMutation({
     mutationKey: keys.update,
+    // Same scope as create/delete: attachment writes serialize, so an update squashed past a
+    // paused create can never replay before it (D6).
+    scope: { id: 'attachment' },
     mutationFn: updateAttachmentMutationFn,
+    // Squash/coalesce happens in the wrapped mutate() below, BEFORE this mutation exists, so
+    // the request variables carry the merge; onMutate keeps only cache work.
     onMutate: async ({ id, ops }: UpdateAttachmentFullVars) => {
-      // If there's a pending create for this entity, fold update ops into it
-      if (squashIntoPendingCreate(queryClient, keys.create, id, ops as Record<string, unknown>)) {
-        return { coalesced: true };
-      }
-
-      const mergedOps = squashPendingMutation(queryClient, keys.update, id, ops as Record<string, unknown>);
       await queryClient.cancelQueries({ queryKey: orgKey });
       await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 
       const previousAttachment = findAttachmentInCache(id);
       if (previousAttachment) {
-        const optimisticAttachment = { ...previousAttachment, ...mergedOps, updatedAt: new Date().toISOString() };
+        const optimisticAttachment = { ...previousAttachment, ...ops, updatedAt: new Date().toISOString() };
         cacheUpdate(orgKey, [optimisticAttachment]);
         queryClient.setQueryData(keys.detail.byId(id), optimisticAttachment);
       }
@@ -243,12 +242,35 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
     },
   });
 
+  /**
+   * Pre-mutation squash/coalesce (D1/D2): runs before the mutation exists, so nothing
+   * self-matches and the REQUEST carries the merge. Returns null when the edit was folded
+   * into a paused create — the create replays with the merged fields and no update mutation
+   * is issued; the optimistic row is patched here since onMutate never runs.
+   */
+  const prepareUpdate = ({ id, ops }: UpdateAttachmentVars): UpdateAttachmentVars | null => {
+    if (squashIntoPendingCreate(queryClient, keys.create, id, ops as Record<string, unknown>)) {
+      const cached = findAttachmentInCache(id);
+      if (cached) {
+        const optimisticAttachment = { ...cached, ...ops, updatedAt: new Date().toISOString() };
+        cacheUpdate(orgKey, [optimisticAttachment]);
+        queryClient.setQueryData(keys.detail.byId(id), optimisticAttachment);
+      }
+      return null;
+    }
+    return { id, ops: squashPendingMutation(queryClient, keys.update, id, ops as Record<string, unknown>) };
+  };
+
   return {
     ...mutation,
-    mutate: (vars: UpdateAttachmentVars, options?: Parameters<typeof mutation.mutate>[1]) =>
-      mutation.mutate({ tenantId, organizationId, ...vars }, options),
-    mutateAsync: (vars: UpdateAttachmentVars, options?: Parameters<typeof mutation.mutateAsync>[1]) =>
-      mutation.mutateAsync({ tenantId, organizationId, ...vars }, options),
+    mutate: (vars: UpdateAttachmentVars, options?: Parameters<typeof mutation.mutate>[1]) => {
+      const prepared = prepareUpdate(vars);
+      if (prepared) mutation.mutate({ tenantId, organizationId, ...prepared }, options);
+    },
+    mutateAsync: async (vars: UpdateAttachmentVars, options?: Parameters<typeof mutation.mutateAsync>[1]) => {
+      const prepared = prepareUpdate(vars);
+      return prepared ? mutation.mutateAsync({ tenantId, organizationId, ...prepared }, options) : undefined;
+    },
   };
 };
 
