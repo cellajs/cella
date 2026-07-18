@@ -124,8 +124,11 @@ export const paginationQuerySchema = z.object({
     .optional()
     .transform((val) => (val ? Number.parseInt(val, 10) : appConfig.requestLimits.default)) // convert to number
     .refine(limitRefine, t('error:invalid_limit', { max: limitMax })),
-  /** Org-sequence delta filter. "51" for open-ended (>= 51), "51,150" for bounded range (>= 51 AND <= 150). */
-  seqCursor: z.string().optional(),
+  /** Org-sequence delta filter: bounded inclusive range "51,150" (seq >= 51 AND <= 150). */
+  seqCursor: z
+    .string()
+    .regex(/^\d+,\d+$/)
+    .optional(),
 });
 
 /** Schema for optional excludeArchived query param (transforms to boolean) */

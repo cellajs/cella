@@ -929,7 +929,10 @@ export const zGetTenantsQuery = z.object({
   order: z.enum(['asc', 'desc']).optional().default('desc'),
   offset: z.string().optional(),
   limit: z.string().optional(),
-  seqCursor: z.string().optional(),
+  seqCursor: z
+    .string()
+    .regex(/^\d+,\d+$/)
+    .optional(),
   status: z.enum(['active', 'suspended', 'archived']).optional(),
 });
 
@@ -1130,7 +1133,10 @@ export const zGetRequestsQuery = z.object({
   order: z.enum(['asc', 'desc']).optional().default('desc'),
   offset: z.string().optional(),
   limit: z.string().optional(),
-  seqCursor: z.string().optional(),
+  seqCursor: z
+    .string()
+    .regex(/^\d+,\d+$/)
+    .optional(),
 });
 
 /**
@@ -1167,7 +1173,10 @@ export const zGetUsersQuery = z.object({
   order: z.enum(['asc', 'desc']).optional().default('desc'),
   offset: z.string().optional(),
   limit: z.string().optional(),
-  seqCursor: z.string().optional(),
+  seqCursor: z
+    .string()
+    .regex(/^\d+,\d+$/)
+    .optional(),
   role: z.enum(['admin']).optional(),
 });
 
@@ -1304,7 +1313,10 @@ export const zGetOrganizationsQuery = z.object({
   order: z.enum(['asc', 'desc']).optional().default('asc'),
   offset: z.string().optional(),
   limit: z.string().optional(),
-  seqCursor: z.string().optional(),
+  seqCursor: z
+    .string()
+    .regex(/^\d+,\d+$/)
+    .optional(),
   relatableUserId: z.string().max(50).optional(),
   role: z.enum(['admin', 'member']).optional(),
   excludeArchived: z.enum(['true', 'false']).optional(),
@@ -1423,7 +1435,10 @@ export const zGetAttachmentsQuery = z.object({
   order: z.enum(['asc', 'desc']).optional().default('desc'),
   offset: z.string().optional(),
   limit: z.string().optional(),
-  seqCursor: z.string().optional(),
+  seqCursor: z
+    .string()
+    .regex(/^\d+,\d+$/)
+    .optional(),
   pathPrefix: z.string().max(512).optional(),
 });
 
@@ -1610,7 +1625,10 @@ export const zGetMembersQuery = z.object({
   order: z.enum(['asc', 'desc']).optional().default('desc'),
   offset: z.string().optional(),
   limit: z.string().optional(),
-  seqCursor: z.string().optional(),
+  seqCursor: z
+    .string()
+    .regex(/^\d+,\d+$/)
+    .optional(),
   entityId: z.string().max(50),
   entityType: z.enum(['organization']),
   role: z.enum(['admin', 'member']).optional(),
@@ -1643,7 +1661,10 @@ export const zGetPendingMembershipsQuery = z.object({
   order: z.enum(['asc', 'desc']).optional().default('desc'),
   offset: z.string().optional(),
   limit: z.string().optional(),
-  seqCursor: z.string().optional(),
+  seqCursor: z
+    .string()
+    .regex(/^\d+,\d+$/)
+    .optional(),
   entityId: z.string().max(50),
   entityType: z.enum(['organization']),
 });

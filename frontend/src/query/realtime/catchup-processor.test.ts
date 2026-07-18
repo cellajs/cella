@@ -118,7 +118,7 @@ describe('catchup processor (view-driven)', () => {
 
     await processAppCatchup(okViewResponse(6));
 
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,6');
+    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,6', undefined);
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
     expect(queryClient.getQueryData(keys.detail.byId('attachment-1'))).toMatchObject({ name: 'fresh' });
     expect(queryClient.getQueryData(keys.list.org('org-1'))).toEqual({
@@ -152,7 +152,7 @@ describe('catchup processor (view-driven)', () => {
 
     // ONE org-wide fetch, no per-channel drill-down needed.
     expect(deltaFetch).toHaveBeenCalledTimes(1);
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '11,12');
+    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '11,12', undefined);
     expect(queryClient.getQueryData(keys.detail.byId('att-proj'))).toMatchObject({ name: 'fresh-proj' });
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
   });
@@ -339,7 +339,7 @@ describe('catchup → scheduler fold', () => {
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
 
     await flushAllNow();
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9');
+    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9', undefined);
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
   });
 
@@ -358,7 +358,7 @@ describe('catchup → scheduler fold', () => {
     await processAppCatchup(okViewResponse(9));
 
     // Awaited before processAppCatchup resolved: the delta is already ingested here.
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9');
+    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9', undefined);
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
   });
 });

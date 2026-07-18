@@ -572,7 +572,8 @@ interface CatchupChangeSummary {
 }
 ```
 
-`seqCursor=51` means `seq >= 51`. `seqCursor=51,150` means the inclusive bounded range.
+`seqCursor=51,150` means the inclusive bounded range; it is the only form. Delta fetches may
+also carry `pathPrefix` to narrow the read to one channel subtree.
 
 ### Code map
 

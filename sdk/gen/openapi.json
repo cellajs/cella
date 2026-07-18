@@ -5390,7 +5390,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",
@@ -6369,7 +6370,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",
@@ -6650,7 +6652,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",
@@ -7561,7 +7564,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",
@@ -8279,7 +8283,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",
@@ -9768,7 +9773,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",
@@ -10033,7 +10039,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",
