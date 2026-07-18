@@ -17,6 +17,7 @@ vi.mock('~/query/realtime/sync-store', () => ({
   },
 }));
 vi.mock('./app-stream-handler', () => ({ handleAppStreamNotification: vi.fn() }));
+vi.mock('./view-declaration', () => ({ declareViewsFromMemberships: vi.fn() }));
 vi.mock('./catchup-processor', () => ({ catchupEntityTypes: () => [], processAppCatchup: vi.fn() }));
 vi.mock('./tab-coordinator', () => ({
   broadcastNotification: vi.fn(),

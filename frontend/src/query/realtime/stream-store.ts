@@ -16,6 +16,7 @@ import {
   useTabCoordinatorStore,
 } from './tab-coordinator';
 import type { AppStreamNotification, StreamState } from './types';
+import { declareViewsFromMemberships } from './view-declaration';
 
 // Circuit breaker & reconnect constants
 const MAX_FAILURES = 3;
@@ -566,9 +567,12 @@ export const appStreamManager = new StreamManager('AppStream', {
   withCredentials: true,
   useTabCoordination: true,
   fetchAndProcessCatchup: async (cursor) => {
-    // View-driven catchup: one org-prefix view per (org, entityType) with its org-sequence cursor.
-    // The registry only holds registered product types, so the string[] narrows to the
-    // SDK's entity-type enum at runtime by construction.
+    // View-driven catchup: one org-prefix view per (org, entityType) with its org-sequence
+    // cursor, PLUS grant-boundary views derived from the cached memberships (precision on
+    // top of the org-view baseline; the template derives none). The registry only holds
+    // registered product types, so the string[] narrows to the SDK's entity-type enum at
+    // runtime by construction.
+    declareViewsFromMemberships();
     const views = useSyncStore.getState().getCatchupViews(catchupEntityTypes());
     const response = await postAppCatchup({
       body: {
