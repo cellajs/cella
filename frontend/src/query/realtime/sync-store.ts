@@ -16,6 +16,16 @@ export interface CatchupViewRequest {
   organizationId: string;
   prefixes: string[];
   entityTypes: string[];
+  depth?: 'self' | 'subtree';
+  cursor: number;
+}
+
+/** A registered grant-boundary view (see views.ts): identity = prefix set + types + depth. */
+export interface RegisteredSyncView {
+  organizationId: string;
+  prefixes: string[];
+  entityTypes: string[];
+  depth: 'self' | 'subtree';
   cursor: number;
 }
 
@@ -23,6 +33,8 @@ interface SyncStoreState {
   cursor: string | null;
   lastSyncAt: string | null;
   orgs: Record<string, OrgSyncState>;
+  /** Grant-boundary views registered by the app/fork (views.ts), keyed by view key. */
+  views: Record<string, RegisteredSyncView>;
   /**
    * Latest seq the server has mentioned per scope (channelId or orgId), which is the "known" side of the
    * known-vs-caught-up split. Recorded from every notification, even for pages the lazy scheduler
@@ -42,7 +54,16 @@ interface SyncStoreState {
   /** Record the latest server-mentioned seq for a scope (monotonic max-merge). */
   setKnownSeq: (scopeId: string, entityType: string, seq: number) => void;
   getKnownSeq: (scopeId: string, entityType: string) => number;
-  /** Build the view-driven catchup body: one org-prefix view per (org, entityType). */
+  /**
+   * Register a grant-boundary view. RE-BASELINE RULE: identity = prefix set + entity
+   * types + depth; any identity change resets the cursor to 0 (a grown prefix set has
+   * history predating the cursor — a delta fetch would silently skip it).
+   */
+  declareSyncView: (key: string, view: Omit<RegisteredSyncView, 'cursor'>) => void;
+  removeSyncView: (key: string) => void;
+  setViewCursor: (key: string, cursor: number) => void;
+  getView: (key: string) => RegisteredSyncView | undefined;
+  /** Build the view-driven catchup body: org views per (org, entityType) + registered views. */
   getCatchupViews: (entityTypes: readonly string[]) => CatchupViewRequest[];
   reset: () => void;
 }
@@ -51,8 +72,14 @@ const initStore = {
   cursor: null as string | null,
   lastSyncAt: null as string | null,
   orgs: {} as Record<string, OrgSyncState>,
+  views: {} as Record<string, RegisteredSyncView>,
   known: {} as Record<string, Record<string, number>>,
 };
+
+/** View identity for the re-baseline rule: prefixes + types + depth (order-insensitive). */
+function viewIdentity(view: Omit<RegisteredSyncView, 'cursor'>): string {
+  return `${[...view.prefixes].sort().join(',')}|${[...view.entityTypes].sort().join(',')}|${view.depth}`;
+}
 
 /** Ensure an org entry exists, creating it with defaults if needed. */
 function ensureOrg(orgs: Record<string, OrgSyncState>, orgId: string, tenantId?: string): OrgSyncState {
@@ -112,6 +139,22 @@ export const useSyncStore = create<SyncStoreState>()(
             ? (get().orgs[orgId]?.seqs[entityType] ?? 0)
             : (get().orgs[orgId]?.contexts[channelId]?.[entityType] ?? 0),
 
+        declareSyncView: (key, view) =>
+          set((s) => {
+            const existing = s.views[key];
+            const cursor = existing && viewIdentity(existing) === viewIdentity(view) ? existing.cursor : 0;
+            s.views[key] = { ...view, cursor };
+          }),
+        removeSyncView: (key) =>
+          set((s) => {
+            delete s.views[key];
+          }),
+        setViewCursor: (key, cursor) =>
+          set((s) => {
+            if (s.views[key]) s.views[key].cursor = cursor;
+          }),
+        getView: (key) => get().views[key],
+
         setKnownSeq: (scopeId, entityType, seq) =>
           set((s) => {
             s.known[scopeId] ??= {};
@@ -136,6 +179,11 @@ export const useSyncStore = create<SyncStoreState>()(
               });
             }
           }
+          // Registered grant-boundary views ride the same request (precision on top of
+          // the org-view correctness baseline).
+          for (const [key, view] of Object.entries(get().views)) {
+            views.push({ key, ...view });
+          }
           return views;
         },
 
@@ -149,6 +197,7 @@ export const useSyncStore = create<SyncStoreState>()(
           cursor: state.cursor,
           lastSyncAt: state.lastSyncAt,
           orgs: state.orgs,
+          views: state.views,
         }),
       },
     ),

@@ -38,6 +38,12 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
     if (!baselineOnly) resetLazySync();
 
     for (const answer of views) {
+      // Registered grant-boundary views (views.ts) take precedence over org-view keys.
+      if (syncStore.getView(answer.key)) {
+        if (!baselineOnly) processRegisteredViewAnswer(answer, syncStore);
+        continue;
+      }
+
       const [organizationId, entityType] = splitViewKey(answer.key);
       if (!organizationId || !entityType || !hasEntityQueryKeys(entityType)) continue;
 
@@ -160,6 +166,56 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
 /** Registered product entity types, for building the catchup views request. */
 export function catchupEntityTypes(): string[] {
   return getRegisteredEntityTypes().filter((entityType) => hasEntityQueryKeys(entityType));
+}
+
+/**
+ * Answers for registered grant-boundary views: precise CHANGE DETECTION on top of the
+ * org-view correctness baseline. `ok` + unchanged hw → skip every refetch (the win);
+ * changed → invalidate the affected active lists and advance the view cursor (row
+ * ingestion itself rides org-view delta fetches — no per-view range fetch here);
+ * `opaque` → staleness fallback; `forbidden` → the grant is gone, drop the view.
+ */
+function processRegisteredViewAnswer(
+  answer: NonNullable<PostAppCatchupResponse['views']>[number],
+  syncStore: ReturnType<typeof useSyncStore.getState>,
+): void {
+  const view = syncStore.getView(answer.key);
+  if (!view) return;
+
+  if (answer.status === 'forbidden') {
+    syncStore.removeSyncView(answer.key);
+    console.debug(`[CatchupProcessor] View ${answer.key}: forbidden → removed`);
+    return;
+  }
+
+  const invalidateTypes = () => {
+    for (const entityType of view.entityTypes) {
+      if (!hasEntityQueryKeys(entityType)) continue;
+      const keys = getEntityQueryKeys(entityType);
+      if (hasAnyCachedList(keys, view.organizationId)) {
+        cacheOps.invalidateEntityListForOrg(keys, view.organizationId, 'active');
+      }
+    }
+  };
+
+  if (answer.status === 'opaque') {
+    invalidateTypes();
+    console.debug(`[CatchupProcessor] View ${answer.key}: opaque → staleness fallback`);
+    return;
+  }
+
+  const hw = Math.max(0, ...Object.values(answer.highWaters ?? {}));
+  if (view.cursor === 0) {
+    // Baseline: adopt hw; hydration/route loaders supply the data.
+    syncStore.setViewCursor(answer.key, hw);
+    console.debug(`[CatchupProcessor] View ${answer.key}: baseline → cursor ${hw}`);
+    return;
+  }
+  if (hw <= view.cursor) return; // unchanged: skip refetches — the precision win
+
+  invalidateTypes();
+  syncStore.setViewCursor(answer.key, hw);
+  console.debug(`[CatchupProcessor] View ${answer.key}: hw ${view.cursor} → ${hw} → invalidated`);
 }
 
 /** View keys are `${organizationId}:${entityType}` (see sync-store.getCatchupViews). */

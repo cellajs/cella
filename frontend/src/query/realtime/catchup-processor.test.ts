@@ -246,6 +246,68 @@ describe('catchup processor (view-driven)', () => {
   });
 });
 
+describe('registered grant-boundary views', () => {
+  afterEach(() => {
+    queryClient.clear();
+    useSyncStore.getState().reset();
+    vi.clearAllMocks();
+  });
+
+  const declare = () =>
+    useSyncStore.getState().declareSyncView('org-1:attachment:subtree', {
+      organizationId: 'org-1',
+      prefixes: ['org-1/c1'],
+      entityTypes: ['attachment'],
+      depth: 'subtree',
+    });
+
+  const answer = (over: Record<string, unknown>): PostAppCatchupResponse =>
+    ({
+      cursor: 'c',
+      changes: {},
+      views: [{ key: 'org-1:attachment:subtree', ...over }],
+    }) as unknown as PostAppCatchupResponse;
+
+  it('ok + unchanged hw skips refetches; changed hw invalidates and advances', async () => {
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    registerEntityQueryKeys(
+      'attachment',
+      keys,
+      vi.fn(async () => ({ items: [], total: 0 })),
+    );
+    declare();
+    useSyncStore.getState().setViewCursor('org-1:attachment:subtree', 10);
+    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    await processAppCatchup(answer({ status: 'ok', highWaters: { attachment: 10 } }));
+    expect(invalidateSpy).not.toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
+
+    await processAppCatchup(answer({ status: 'ok', highWaters: { attachment: 15 } }));
+    expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
+    expect(useSyncStore.getState().getView('org-1:attachment:subtree')?.cursor).toBe(15);
+  });
+
+  it('baseline adopts hw without invalidating; forbidden removes the view', async () => {
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    registerEntityQueryKeys(
+      'attachment',
+      keys,
+      vi.fn(async () => ({ items: [], total: 0 })),
+    );
+    declare();
+    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    await processAppCatchup(answer({ status: 'ok', highWaters: { attachment: 33 } }));
+    expect(useSyncStore.getState().getView('org-1:attachment:subtree')?.cursor).toBe(33);
+    expect(invalidateSpy).not.toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
+
+    await processAppCatchup(answer({ status: 'forbidden' }));
+    expect(useSyncStore.getState().getView('org-1:attachment:subtree')).toBeUndefined();
+  });
+});
+
 describe('catchup → scheduler fold', () => {
   afterEach(() => {
     queryClient.clear();
