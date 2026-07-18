@@ -72,6 +72,51 @@ export function squashPendingMutation(
  * Array-delta ops always return false: creates carry full arrays while deltas are relative, so
  * those edits fall through to a normal update (serialized after the create by mutation scope).
  */
+/**
+ * Cancel PAUSED creates for rows about to be deleted: those rows never reached the server, so
+ * no delete request may be sent for them either (the create would replay on reconnect and the
+ * row would resurrect — or the delete would 404). Removes matching rows from batch-create
+ * `data[]` variables (dropping the whole mutation when no rows remain) and removes matching
+ * top-level-id creates. Returns the ids whose creates were cancelled; the caller keeps those
+ * ids out of the delete request and finishes their deletion cache-side only.
+ */
+export function removePausedCreates(
+  queryClient: QueryClient,
+  createMutationKey: readonly unknown[],
+  ids: string[],
+): string[] {
+  const idSet = new Set(ids);
+  const cancelled: string[] = [];
+  const mutationCache = queryClient.getMutationCache();
+
+  for (const mutation of mutationCache.findAll({ mutationKey: createMutationKey })) {
+    if (!isPausedPending(mutation)) continue;
+
+    const variables = mutation.state.variables as CreateVariables | undefined;
+    if (!variables) continue;
+
+    if (typeof variables.id === 'string' && idSet.has(variables.id)) {
+      cancelled.push(variables.id);
+      mutationCache.remove(mutation);
+      continue;
+    }
+
+    if (Array.isArray(variables.data)) {
+      const kept: typeof variables.data = [];
+      for (const row of variables.data) {
+        const rowId = row && typeof row.id === 'string' ? row.id : undefined;
+        if (rowId && idSet.has(rowId)) cancelled.push(rowId);
+        else kept.push(row);
+      }
+      if (kept.length === variables.data.length) continue;
+      if (kept.length === 0) mutationCache.remove(mutation);
+      else variables.data = kept;
+    }
+  }
+
+  return cancelled;
+}
+
 export function squashIntoPendingCreate(
   queryClient: QueryClient,
   createMutationKey: readonly unknown[],

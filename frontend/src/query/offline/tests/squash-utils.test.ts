@@ -1,6 +1,6 @@
 import { MutationObserver, onlineManager, QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { squashIntoPendingCreate, squashPendingMutation } from '../squash-utils';
+import { removePausedCreates, squashIntoPendingCreate, squashPendingMutation } from '../squash-utils';
 
 /**
  * Helper: create a PAUSED mutation (offline at mutate time, so it pauses before the first
@@ -202,5 +202,76 @@ describe('squashIntoPendingCreate', () => {
 
     const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'X' });
     expect(result).toBe(false);
+  });
+});
+
+describe('removePausedCreates', () => {
+  let queryClient: QueryClient;
+  const createKey = ['task', 'create'] as const;
+  const cleanups: (() => void)[] = [];
+
+  beforeEach(() => {
+    queryClient = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
+  });
+
+  afterEach(() => {
+    for (const fn of cleanups) fn();
+    cleanups.length = 0;
+    onlineManager.setOnline(true);
+    queryClient.clear();
+  });
+
+  it('cancels a whole paused top-level-id create', () => {
+    queuePausedMutation(queryClient, createKey, { id: 'entity-1', name: 'Never sent' });
+
+    const cancelled = removePausedCreates(queryClient, createKey, ['entity-1']);
+
+    expect(cancelled).toEqual(['entity-1']);
+    expect(queryClient.getMutationCache().findAll({ mutationKey: createKey })).toHaveLength(0);
+  });
+
+  it('removes only the matching row from a paused batch create', () => {
+    const variables = {
+      tenantId: 't1',
+      organizationId: 'o1',
+      data: [
+        { id: 'entity-1', name: 'Keep' },
+        { id: 'entity-2', name: 'Delete' },
+      ],
+    };
+    queuePausedMutation(queryClient, createKey, variables);
+
+    const cancelled = removePausedCreates(queryClient, createKey, ['entity-2']);
+
+    expect(cancelled).toEqual(['entity-2']);
+    expect(variables.data).toEqual([{ id: 'entity-1', name: 'Keep' }]);
+    expect(queryClient.getMutationCache().findAll({ mutationKey: createKey })).toHaveLength(1);
+  });
+
+  it('drops the whole batch create when every row is cancelled', () => {
+    queuePausedMutation(queryClient, createKey, {
+      data: [{ id: 'entity-1' }, { id: 'entity-2' }],
+    });
+
+    const cancelled = removePausedCreates(queryClient, createKey, ['entity-1', 'entity-2']);
+
+    expect(cancelled).toEqual(['entity-1', 'entity-2']);
+    expect(queryClient.getMutationCache().findAll({ mutationKey: createKey })).toHaveLength(0);
+  });
+
+  it('leaves IN-FLIGHT creates alone: the row may reach the server, the delete must be sent', () => {
+    cleanups.push(queueInFlightMutation(queryClient, createKey, { id: 'entity-1', name: 'Sending' }));
+
+    const cancelled = removePausedCreates(queryClient, createKey, ['entity-1']);
+
+    expect(cancelled).toEqual([]);
+    expect(
+      queryClient
+        .getMutationCache()
+        .findAll({ mutationKey: createKey })
+        .filter((m) => m.state.status === 'pending'),
+    ).toHaveLength(1);
   });
 });

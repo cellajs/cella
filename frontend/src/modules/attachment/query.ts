@@ -24,7 +24,7 @@ import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/invalidation-helpers';
 import { syncStaleTime } from '~/query/basic/sync-stale-config';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import { squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
+import { removePausedCreates, squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
 import { mergeServerResponse, syncEntityToCache } from '~/query/offline/update-success-utils';
 import { getRouteOrgId, getRouteTenantId } from '~/query/realtime/sync-priority';
 import { createResourceError } from '~/utils/resource-error';
@@ -306,12 +306,46 @@ export const useAttachmentDeleteMutation = (tenantId: string, organizationId: st
     },
   });
 
+  /**
+   * Pre-mutation create cancellation (D3): rows with a paused create never reached the
+   * server — cancel the create, clear their paused updates, finish their deletion
+   * cache-side, and keep them OUT of the delete request. Returns the rows that still need
+   * a server delete, or null when none do (including the empty-selection edge).
+   */
+  const prepareDelete = (attachments: Attachment[]): Attachment[] | null => {
+    const cancelled = new Set(
+      removePausedCreates(
+        queryClient,
+        keys.create,
+        attachments.map((a) => a.id),
+      ),
+    );
+    if (cancelled.size > 0) {
+      const localOnly = attachments.filter((a) => cancelled.has(a.id));
+      removePendingMutations(
+        queryClient,
+        keys.update,
+        localOnly.map((a) => a.id),
+      );
+      cacheRemove(orgKey, localOnly);
+      for (const { id } of localOnly) queryClient.removeQueries({ queryKey: keys.detail.byId(id) });
+    }
+    const remaining = attachments.filter((a) => !cancelled.has(a.id));
+    return remaining.length > 0 ? remaining : null;
+  };
+
   return {
     ...mutation,
-    mutate: (attachments: Attachment[], options?: Parameters<typeof mutation.mutate>[1]) =>
-      mutation.mutate({ tenantId, organizationId, attachments }, options),
-    mutateAsync: (attachments: Attachment[], options?: Parameters<typeof mutation.mutateAsync>[1]) =>
-      mutation.mutateAsync({ tenantId, organizationId, attachments }, options),
+    mutate: (attachments: Attachment[], options?: Parameters<typeof mutation.mutate>[1]) => {
+      const remaining = prepareDelete(attachments);
+      if (remaining) mutation.mutate({ tenantId, organizationId, attachments: remaining }, options);
+    },
+    mutateAsync: async (attachments: Attachment[], options?: Parameters<typeof mutation.mutateAsync>[1]) => {
+      const remaining = prepareDelete(attachments);
+      return remaining
+        ? mutation.mutateAsync({ tenantId, organizationId, attachments: remaining }, options)
+        : undefined;
+    },
   };
 };
 
