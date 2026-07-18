@@ -159,14 +159,18 @@ export const recalculateCounters = async (db: DbOrTx) => {
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);
     const hwKey = `hw:${entityType}`;
+    // Unpublished drafts are excluded from hw (they are not delta-fetchable; CDC skips
+    // them too) — but NOT from s:ledger above: their stamps consumed ledger values.
+    // Tombstones stay included (delta reads return them). No live filter here.
+    const hwPredicate = publishedPredicate(entityType, 't');
 
-    // Org node: every stamped row rolls up to its organization.
+    // Org node: every stamped countable row rolls up to its organization.
     await upsertChannelCounters(
       db,
       `
       SELECT t.organization_id, jsonb_build_object('${hwKey}', COALESCE(MAX(t.seq), 0)), NOW()
       FROM ${tableName} t
-      WHERE t.organization_id IS NOT NULL
+      WHERE t.organization_id IS NOT NULL${hwPredicate}
       GROUP BY t.organization_id
     `,
     );
@@ -181,7 +185,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
         `
         SELECT t.${col}, jsonb_build_object('${hwKey}', COALESCE(MAX(t.seq), 0)), NOW()
         FROM ${tableName} t
-        WHERE t.${col} IS NOT NULL
+        WHERE t.${col} IS NOT NULL${hwPredicate}
         GROUP BY t.${col}
       `,
       );

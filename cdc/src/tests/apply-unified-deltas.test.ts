@@ -117,6 +117,32 @@ describe('applyBatchUnifiedDeltas', () => {
     expect(executes).toHaveLength(1);
   });
 
+  it('drafts take ledger stamps but never bump hw rollups', async () => {
+    upsertReturnValue = { 's:ledger': 2 };
+
+    const draftEvent = (id: string) => {
+      const event = mockEvent(id);
+      (event.result.rowData as Record<string, unknown>).publishedAt = null;
+      return event;
+    };
+    const events = [draftEvent('d1'), draftEvent('d2')];
+
+    const plan: BatchUnifiedDeltaPlan = {
+      ledgerGroups: [{ orgKey: 'org-1', count: 2, events }],
+      countDeltasByChannelKey: new Map(),
+    };
+
+    await applyBatchUnifiedDeltas(plan, syntheticH);
+
+    // Stamps assigned (drafts keep create-time ledger values for their publish edge)...
+    expect(events[0].result.rowData.seq).toBe(1);
+    expect(events[1].result.rowData.seq).toBe(2);
+    // ...but the ONLY counter upsert is the phase-1 org reservation: no hw writes.
+    expect(dbOps.filter((op) => op.type === 'upsert')).toHaveLength(1);
+    // Stamp-back still runs.
+    expect(dbOps.filter((op) => op.type === 'execute')).toHaveLength(1);
+  });
+
   it('handles empty plan', async () => {
     const plan: BatchUnifiedDeltaPlan = {
       ledgerGroups: [],
