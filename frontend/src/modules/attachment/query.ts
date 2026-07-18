@@ -130,6 +130,35 @@ export const attachmentQueryOptions = (tenantId: string, organizationId: string,
 
 export const findAttachmentInCache = createCacheFinder<Attachment>('attachment');
 
+/**
+ * Newest-first recency ordering for activity feeds: publish time when the draft lifecycle set
+ * one, else create time — the same key unseen tracking uses. Pure, so forks can reuse it over
+ * any product entity type.
+ */
+export function selectRecentActivity<T extends { createdAt?: string | null; publishedAt?: string | null }>(
+  items: T[],
+  limit: number,
+): T[] {
+  const recencyOf = (item: T) => Date.parse(item.publishedAt ?? item.createdAt ?? '') || 0;
+  return [...items].sort((a, b) => recencyOf(b) - recencyOf(a)).slice(0, limit);
+}
+
+/**
+ * Org-level "recent activity" feed — the template proof of the view pattern: an aggregate
+ * feed is a SELECT over the canonical home-list query, not an endpoint. Rows from every home
+ * channel in the org interleave by recency, and sync (SSE + covering delta fetches) keeps the
+ * underlying list fresh. Forks with deeper hierarchies get sub-org feeds the same way: the
+ * grant-boundary views declared from memberships provide the change detection, the canonical
+ * queries provide the rows, and a select like this provides the feed.
+ */
+export function useAttachmentActivityFeed(tenantId: string, organizationId: string, limit = 20) {
+  const { data } = useQuery({
+    ...attachmentsCanonicalOptions({ organizationId, tenantId }),
+    select: (data) => selectRecentActivity(data.items, limit),
+  });
+  return data ?? [];
+}
+
 /** Get all attachments matching a groupId, subscribes to canonical query. */
 export function useGroupAttachments(
   tenantId: string | undefined,
