@@ -1,8 +1,12 @@
+import { DownloadIcon } from 'lucide-react';
 import { Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
+import useDownloader from 'react-use-downloader';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { getFileIcon } from '~/modules/attachment/file-placeholder';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { Spinner } from '~/modules/common/spinner';
+import { Button } from '~/modules/ui/button';
 import { lazyNamed } from '~/utils/lazy-named';
 
 const ReactPanZoom = lazyNamed(() => import('~/modules/attachment/render/image'), 'ReactPanZoom');
@@ -13,6 +17,8 @@ const RenderVideo = lazyNamed(() => import('~/modules/attachment/render/video'),
 interface AttachmentRenderProps {
   type: string;
   url: string;
+  /** Used as the save name for non-renderable types (the "download to view" action). */
+  filename?: string;
   altName?: string;
   imagePanZoom?: boolean;
   showButtons?: boolean;
@@ -28,6 +34,7 @@ interface AttachmentRenderProps {
 export const AttachmentRender = ({
   url,
   type,
+  filename,
   altName,
   showButtons,
   imagePanZoom = false,
@@ -35,7 +42,9 @@ export const AttachmentRender = ({
   containerClassName,
   onPanStateToggle,
 }: AttachmentRenderProps) => {
+  const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
+  const { download, isInProgress } = useDownloader();
 
   if (!url) return <Spinner className="mt-[45vh] h-12 w-12" />;
 
@@ -64,7 +73,19 @@ export const AttachmentRender = ({
           />
         )}
         {!['image', 'audio', 'video', 'pdf'].some((k) => type.includes(k)) && (
-          <ContentPlaceholder icon={getFileIcon(type)} title="c:download_to_view" />
+          <ContentPlaceholder icon={getFileIcon(type)} title="c:download_to_view">
+            {/* Actionable: the URL is always fetchable here — a CDN/presigned URL online, or a
+                local blob object URL (which also works offline). */}
+            <Button
+              variant="plain"
+              className="mt-4"
+              disabled={isInProgress}
+              onClick={() => download(url, filename || 'file')}
+            >
+              {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon className="size-4" />}
+              <span className="ml-1">{t('c:download')}</span>
+            </Button>
+          </ContentPlaceholder>
         )}
       </Suspense>
     </div>

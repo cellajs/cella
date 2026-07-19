@@ -21,7 +21,7 @@ type NullableUuid = ReturnType<typeof uuid>;
  *   `nullableAncestors` (variable-depth rows, e.g. a project-scoped entity that may also exist
  *   at a higher level), those stay in the chain for permission/public-read inheritance but
  *   become nullable columns
- * - related contexts (`relatedChannels`) → nullable id columns
+ * - related channels (`relatedChannels`) → nullable id columns
  */
 export type ChannelRelationColumns<E extends string> = EntityIdColumns<
   Exclude<AncestorChannelType<E>, NullableAncestorType<E>> & EntityType,

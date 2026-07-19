@@ -14,7 +14,7 @@ Start these first (bench verifies they are reachable and exits with guidance if 
 ## Commands
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `pnpm bench` | Interactive scenario picker |
 | `pnpm bench <name>` | Run a specific scenario non-interactively |
 | `pnpm bench --all` | Run every scenario in sequence (quiet, one summary at the end) |

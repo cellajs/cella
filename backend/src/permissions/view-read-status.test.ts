@@ -18,7 +18,6 @@ import { resolveViewReadStatusForPolicies } from './view-read-status';
  * `opaque` (no summaries returned); no read route is `forbidden`. Same synthetic
  * deep topology as the row-predicates parity suite.
  */
-
 const ROOT_ID = 'org-1';
 
 const deepRoles = createRoleRegistry(['admin', 'member', 'staff', 'student', 'owner', 'follower'] as const);

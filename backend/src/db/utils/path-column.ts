@@ -21,7 +21,6 @@ import {
  * (organization) must be non-null. The hierarchy guarantees products an organization
  * ancestor, and fork channel tables must declare their organization column NOT NULL.
  */
-
 const toSnake = (key: string) => key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
 
 /**

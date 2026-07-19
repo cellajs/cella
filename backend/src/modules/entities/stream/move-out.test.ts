@@ -18,7 +18,6 @@ import type { AppStreamProductEvent } from './types';
  * dispatch-mirror.test.ts), but the veto stays as the fail-closed backstop and gives
  * these tests a fork-independent readability difference to exercise.
  */
-
 const ORG = 'org-moveout-a';
 
 const membership = (organizationId: string, role: EntityRole, userId: string): MembershipBaseModel =>

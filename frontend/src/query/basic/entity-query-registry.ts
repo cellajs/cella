@@ -53,8 +53,8 @@ const SENTINEL_ID = '__id__';
  * live routing (cache-ops) and viewing detection (observed-channels) depend on: list keys are
  * `[entityType, 'list', ...ids]` with the org and home-channel ids as segments (or filter-object
  * values) past position 1, detail keys carry the entity id. Config-time and deterministic, so a
- * hand-rolled wrong shape fails at module load on the developer's machine instead of silently
- * degrading sync routing and viewing detection at runtime.
+ * hand-rolled wrong shape fails at module load on the developer's machine; it never silently
+ * degrades sync routing and viewing detection at runtime.
  */
 function assertKeyContract(entityType: EntityType, keys: EntityQueryKeys): void {
   const carries = (key: readonly unknown[], id: string) =>

@@ -11,7 +11,7 @@ describe('selectRecentActivity (template feed pattern)', () => {
 
     const feed = selectRecentActivity(items, 10);
 
-    // Publishing an old draft counts as new activity — same recency key as unseen tracking.
+    // Publishing an old draft counts as new activity; same recency key as unseen tracking.
     expect(feed.map((i) => i.id)).toEqual(['published-late', 'recent', 'old']);
   });
 

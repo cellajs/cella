@@ -29,7 +29,7 @@ Cella uses [OpenTelemetry](https://opentelemetry.io/) (OTel) for all three obser
 ## Service overview
 
 | Service | Service name | Auto-instrumentation | Spans | Metrics | SpanStore |
-|---------|-------------|---------------------|-------|---------|-----------|
+| --- | --- | --- | --- | --- | --- |
 | Backend | `{appName}-api` | Yes (HTTP, DB) | `withSpan()`, `startSyncSpan()` | 5 sync instruments | No |
 | CDC | `{appName}-cdc` | No | `withSpan()` + `_trace` propagation | 4 observable gauges | Yes (→ pino debug) |
 | YJS | `{appName}-yjs` | No | None currently | 3 observable gauges | No |
@@ -50,9 +50,9 @@ Every new Node.js worker needs four things: OTel setup, logging, graceful shutdo
 ### 1. OTel setup: `tracing.ts`
 
 ```typescript
-import { appConfig } from 'shared';
-import { createOtelSDK, type OtelSDK } from 'shared/otel';
-import { env } from './env';
+import { appConfig } from "shared";
+import { createOtelSDK, type OtelSDK } from "shared/otel";
+import { env } from "./env";
 
 export const otel: OtelSDK = createOtelSDK({
   serviceName: `${appConfig.name}-myworker`,
@@ -66,13 +66,13 @@ To add local span debugging, pass a `SpanStoreProcessor` (see how CDC does it).
 ### 2. Logging: `pino.ts`
 
 ```typescript
-import { appConfig } from 'shared';
-import { createLogger } from 'shared/pino';
-import { env } from './env';
+import { appConfig } from "shared";
+import { createLogger } from "shared/pino";
+import { env } from "./env";
 
 export const log = createLogger({
-  isProduction: env.NODE_ENV === 'production',
-  isTest: env.NODE_ENV === 'test',
+  isProduction: env.NODE_ENV === "production",
+  isTest: env.NODE_ENV === "test",
   enableOtelTransport: true,
   mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
   serviceName: `${appConfig.slug}-myworker`,
@@ -86,12 +86,12 @@ Whenever `mapleSecretIngestKey` is set, Pino ships structured logs to Maple via 
 In your entry point `index.ts`, wire up lifecycle management:
 
 ```typescript
-import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
-import { otel } from './tracing';
-import { log } from './pino';
+import { setupGracefulShutdown } from "shared/utils/worker-lifecycle";
+import { otel } from "./tracing";
+import { log } from "./pino";
 
 setupGracefulShutdown({
-  name: 'myworker',
+  name: "myworker",
   log,
   cleanup: async () => {
     // Close connections, flush buffers, etc.
@@ -113,13 +113,15 @@ If your worker exposes an HTTP server, add a `GET /health` route. The default (n
 Add observable gauges for key runtime state:
 
 ```typescript
-const meter = otel.meterProvider.getMeter('myworker-health');
+const meter = otel.meterProvider.getMeter("myworker-health");
 
-meter.createObservableGauge('myworker.connections.active', {
-  description: 'Active connections',
-}).addCallback((result) => {
-  result.observe(getConnectionCount());
-});
+meter
+  .createObservableGauge("myworker.connections.active", {
+    description: "Active connections",
+  })
+  .addCallback((result) => {
+    result.observe(getConnectionCount());
+  });
 ```
 
 ## Add tracing
@@ -129,20 +131,22 @@ meter.createObservableGauge('myworker.connections.active', {
 Use `@opentelemetry/api` directly to create spans in any service that has OTel initialized:
 
 ```typescript
-import { trace, SpanStatusCode } from '@opentelemetry/api';
+import { trace, SpanStatusCode } from "@opentelemetry/api";
 
-const tracer = trace.getTracer('my-module');
+const tracer = trace.getTracer("my-module");
 
 async function doWork() {
-  return tracer.startActiveSpan('my.operation', async (span) => {
-    span.setAttribute('key', 'value');
+  return tracer.startActiveSpan("my.operation", async (span) => {
+    span.setAttribute("key", "value");
     try {
       const result = await actualWork();
       span.setStatus({ code: SpanStatusCode.OK });
       return result;
     } catch (error) {
       span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
-      span.recordException(error instanceof Error ? error : new Error(String(error)));
+      span.recordException(
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error;
     } finally {
       span.end();
@@ -187,7 +191,7 @@ This gives full end-to-end visibility from user action → API → database → 
 ## Health endpoints
 
 | Service | Endpoint | Response |
-|---------|----------|----------|
+| --- | --- | --- |
 | Backend | `GET /health` | Full diagnostics: status, uptime, database, CDC health, memory |
 | CDC | `GET /health` | Status, uptime, replication state, WebSocket connection, circuit breakers |
 | YJS | `GET /health` | Status, uptime, connection/document/client counts |

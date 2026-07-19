@@ -64,18 +64,9 @@ export function squashPendingMutation(
 }
 
 /**
- * If a PAUSED create exists for the entity, merge scalar update `ops` into the create's row and
- * return true, so the caller skips issuing an update mutation entirely (the create replays with
- * the merged fields). Matches both create-variable shapes: a top-level `id` and batch creates
- * carrying `data: [{ id, ... }]`.
- *
- * Array-delta ops always return false: creates carry full arrays while deltas are relative, so
- * those edits fall through to a normal update (serialized after the create by mutation scope).
- */
-/**
  * Cancel PAUSED creates for rows about to be deleted: those rows never reached the server, so
  * no delete request may be sent for them either (the create would replay on reconnect and the
- * row would resurrect — or the delete would 404). Removes matching rows from batch-create
+ * row would resurrect, or the delete would 404). Removes matching rows from batch-create
  * `data[]` variables (dropping the whole mutation when no rows remain) and removes matching
  * top-level-id creates. Returns the ids whose creates were cancelled; the caller keeps those
  * ids out of the delete request and finishes their deletion cache-side only.
@@ -117,6 +108,15 @@ export function removePausedCreates(
   return cancelled;
 }
 
+/**
+ * If a PAUSED create exists for the entity, merge scalar update `ops` into the create's row and
+ * return true, so the caller skips issuing an update mutation entirely (the create replays with
+ * the merged fields). Matches both create-variable shapes: a top-level `id` and batch creates
+ * carrying `data: [{ id, ... }]`.
+ *
+ * Array-delta ops always return false: creates carry full arrays while deltas are relative, so
+ * those edits fall through to a normal update (serialized after the create by mutation scope).
+ */
 export function squashIntoPendingCreate(
   queryClient: QueryClient,
   createMutationKey: readonly unknown[],

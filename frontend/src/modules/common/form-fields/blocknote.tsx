@@ -8,7 +8,8 @@ type BaseBlockNoteProps = Omit<
   CommonBlockNoteProps,
   'defaultValue' | 'updateData' | 'filePanel' | 'baseFilePanelProps'
 > & {
-  baseFilePanelProps: BaseUppyFilePanelProps;
+  /** Omit to disable file/media uploads (the editor renders no file panel without it). */
+  baseFilePanelProps?: BaseUppyFilePanelProps;
 };
 type BlocknoteFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   baseBlockNoteProps: BaseBlockNoteProps;
@@ -27,13 +28,21 @@ const BlockNoteContentFormField = <TFieldValues extends FieldValues>({
   disabled,
   autoFocus,
   containerClassName,
-  baseBlockNoteProps: { excludeBlockTypes, ...restBlockNoteProps },
+  baseBlockNoteProps: { excludeBlockTypes, baseFilePanelProps, ...restBlockNoteProps },
 }: BlocknoteFieldProps<TFieldValues>) => {
   return (
     <FormField
       control={control}
       name={name}
       render={({ field: { onChange, value } }) => {
+        const editorProps = {
+          commitOnEveryChange: true,
+          autoFocus,
+          defaultValue: value,
+          excludeBlockTypes,
+          updateData: onChange,
+          ...restBlockNoteProps,
+        };
         return (
           <FormItem name={name} aria-disabled={disabled} className={containerClassName}>
             {typeof label === 'string' && (
@@ -42,14 +51,13 @@ const BlockNoteContentFormField = <TFieldValues extends FieldValues>({
                 {required && <span className="ml-1 opacity-50">*</span>}
               </FormLabel>
             )}
-            <BlockNote
-              commitOnEveryChange
-              autoFocus={autoFocus}
-              defaultValue={value}
-              excludeBlockTypes={excludeBlockTypes}
-              updateData={onChange}
-              {...restBlockNoteProps}
-            />
+            {/* Explicit branch: the editor's filePanel/baseFilePanelProps union cannot be
+                satisfied through a conditional spread (TS widens it to an optional prop). */}
+            {baseFilePanelProps ? (
+              <BlockNote {...editorProps} baseFilePanelProps={baseFilePanelProps} />
+            ) : (
+              <BlockNote {...editorProps} />
+            )}
             <FormMessage />
           </FormItem>
         );

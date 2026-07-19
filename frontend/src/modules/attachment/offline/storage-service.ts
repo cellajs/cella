@@ -225,7 +225,7 @@ class AttachmentStorageService {
       const updates: Partial<AttachmentBlob> = { uploadStatus: status };
 
       // Every failure bumps the attempt count and schedules the next retry slot, error message
-      // or not — the retry selector (upload-service) reads exactly these fields.
+      // or not; the retry selector (upload-service) reads exactly these fields.
       if (status === 'failed') {
         const blob = await attachmentsDb.blobs.get(id);
         if (blob) {

@@ -5,11 +5,9 @@ import { describe, expect, it } from 'vitest';
 import { entityTables } from '#/tables';
 
 /**
- * Delta-sync index requirement (see .todos/SYNC_FANOUT_OPTIMIZATION.md opt 1 and
- * .todos/SEQUENCE_SYNC_REWRITE.md (organization-sequence rewrite)): every product entity
- * table must carry a composite `(organization_id, seq)` index so seq-range delta reads
- * are index range scans, not org-wide filters. Forks add product tables in their own
- * modules; this guard fails their test run so the index cannot silently go missing.
+ * Every product entity table must carry a composite `(organization_id, seq)` index so
+ * seq-range delta reads are index range scans (.todos/SYNC_FANOUT_OPTIMIZATION.md opt 1).
+ * Forks add product tables in their own modules; this guard fails if the index is missing.
  */
 describe('every product entity table has the (organization_id, seq) delta index', () => {
   const productTables = Object.entries(entityTables).filter(([type]) =>

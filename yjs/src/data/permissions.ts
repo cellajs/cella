@@ -2,7 +2,7 @@ import type pg from 'pg';
 import {
   appConfig,
   buildSubject,
-  checkPermission,
+  checkAccess,
   type ChannelEntityIdColumns,
   type ChannelEntityType,
   draftVisibleTo,
@@ -147,10 +147,7 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
 
     // Collaborative editing confers no system-admin bypass. The same stance the backend's
     // materialize endpoint takes, so the relay and the write it triggers agree.
-    const { isAllowed } = checkPermission(memberships, 'update', subject, {
-      userId: ctx.userId,
-      isSystemAdmin: false,
-    });
+    const { isAllowed } = checkAccess({ userId: ctx.userId, isSystemAdmin: false, memberships }, 'update', subject);
     return isAllowed;
   });
 }

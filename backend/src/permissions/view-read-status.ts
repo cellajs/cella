@@ -27,15 +27,15 @@ import {
  */
 export type ViewReadStatus = 'ok' | 'opaque' | 'forbidden';
 
+/** View depth: `subtree` covers rows at or below the node; `self` only rows HOMED at it. */
+export type ViewDepth = 'self' | 'subtree';
+
 /**
  * Resolve whether per-node summaries for `prefix` may be shown to the caller for
  * `entityType`. Built on the SAME scope resolution as collection reads
  * (`resolveCollectionReadFilter`), so catchup answerability mirrors list reads.
  * The four-way parity suite (SQL ≍ engine ≍ dispatch ≍ prefix-catchup) pins this.
  */
-/** View depth: `subtree` covers rows at or below the node; `self` only rows HOMED at it. */
-export type ViewDepth = 'self' | 'subtree';
-
 export function resolveViewReadStatus(
   memberships: MembershipBaseModel[],
   entityType: ProductEntityType,

@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { infiniteQueryOptions, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import i18n from 'i18next';
 import { type Attachment, type GetAttachmentsData, getAttachment, getAttachments } from 'sdk';
 import { zAttachment } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
@@ -15,6 +16,7 @@ import {
   updateAttachmentMutationFn,
 } from '~/modules/attachment/query-mutations';
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { cacheCreate, cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
@@ -132,7 +134,7 @@ export const attachmentQueryOptions = (tenantId: string, organizationId: string,
 export const findAttachmentInCache = createCacheFinder<Attachment>('attachment');
 
 /**
- * Org-level "recent activity" feed — the template proof of the view pattern: an aggregate
+ * Org-level "recent activity" feed, the template proof of the view pattern: an aggregate
  * feed is a SELECT over the canonical home-list query, not an endpoint. Rows from every home
  * channel in the org interleave by recency, and sync (SSE + covering delta fetches) keeps the
  * underlying list fresh. Forks with deeper hierarchies get sub-org feeds the same way: the
@@ -264,7 +266,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
   /**
    * Pre-mutation squash/coalesce (D1/D2): runs before the mutation exists, so nothing
    * self-matches and the REQUEST carries the merge. Returns null when the edit was folded
-   * into a paused create — the create replays with the merged fields and no update mutation
+   * into a paused create: the create replays with the merged fields and no update mutation
    * is issued; the optimistic row is patched here since onMutate never runs.
    */
   const prepareUpdate = ({ id, ops }: UpdateAttachmentVars): UpdateAttachmentFullVars | null => {
@@ -279,7 +281,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
     }
     const mergedOps = squashPendingMutation(queryClient, keys.update, id, ops as Record<string, unknown>);
     // stx minted at intent time and carried in variables (D4): a replay reuses the original
-    // mutation id and HLCs instead of restamping at execution.
+    // mutation id and HLCs, never restamping at execution.
     return {
       tenantId,
       organizationId,
@@ -328,6 +330,22 @@ export const useAttachmentDeleteMutation = (tenantId: string, organizationId: st
       handleError('delete');
       if (context?.deletedAttachments) cacheCreate(orgKey, context.deletedAttachments);
     },
+    onSuccess: (result, variables) => {
+      // Partial rejection (200 + rejectedIds): the backend kept permission-denied rows.
+      // Restore them into the cache NOW so they don't silently reappear on the
+      // next sync, and tell the user. (A full rejection arrives as a 403 via onError.)
+      const rejectedIds = result?.rejectedIds ?? [];
+      if (rejectedIds.length === 0) return;
+      const rejectedSet = new Set(rejectedIds);
+      cacheCreate(
+        orgKey,
+        variables.attachments.filter((a) => rejectedSet.has(a.id)),
+      );
+      toaster(
+        i18n.t('c:resources_delete_denied', { count: rejectedIds.length, total: variables.attachments.length }),
+        'info',
+      );
+    },
     // Error-only: onMutate removed the attachment from all caches, SSE handles other users.
     onSettled: (_data, error) => {
       if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, orgKey);
@@ -336,7 +354,7 @@ export const useAttachmentDeleteMutation = (tenantId: string, organizationId: st
 
   /**
    * Pre-mutation create cancellation (D3): rows with a paused create never reached the
-   * server — cancel the create, clear their paused updates, finish their deletion
+   * server: cancel the create, clear their paused updates, finish their deletion
    * cache-side, and keep them OUT of the delete request. Returns the rows that still need
    * a server delete, or null when none do (including the empty-selection edge).
    */

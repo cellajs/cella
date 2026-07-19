@@ -9,7 +9,7 @@ type UpdateAttachmentFields = UpdateAttachmentData['body']['ops'];
 export type UpdateAttachmentVars = { id: string; ops: UpdateAttachmentFields };
 
 // Offline-replay variable shapes: a persisted mutation must carry tenant/org AND its stx in
-// its variables — the component closure is gone after a reload, and stx minted at execution
+// its variables: the component closure is gone after a reload, and stx minted at execution
 // time would give a replay a NEW mutationId (breaking create idempotency for response-loss
 // double-sends) and replay-time HLCs (letting a Monday-offline edit beat a Tuesday edit by
 // someone else; LWW must arbitrate by intent time). setMutationDefaults reconstructs the
@@ -48,5 +48,7 @@ export async function deleteAttachmentsMutationFn({
 }: DeleteAttachmentVars) {
   const ids = attachments.map((a) => a.id);
   const effectiveStx = stx ?? createStxForDelete();
-  await deleteAttachments({ path: { tenantId, organizationId }, body: { ids, stx: effectiveStx } });
+  // The response carries `rejectedIds` (permission-denied rows the backend kept); the hook's
+  // onSuccess restores those rows into the cache and informs the user.
+  return deleteAttachments({ path: { tenantId, organizationId }, body: { ids, stx: effectiveStx } });
 }

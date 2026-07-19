@@ -12,10 +12,9 @@ import { mockFetchRequest, setTestConfig } from './test-utils';
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 /**
- * Counter recalculation must agree with CDC's incremental sequence writes:
- * `sequence` = max stamped seq across all product tables in the org, `f:{type}` =
- * max seq per (node, type), `e:{type}` = live published rows. This is the repair
- * tool for drift/incident recovery; its output IS the contract.
+ * Counter recalculation (the drift/incident repair tool; its output IS the contract) must
+ * agree with CDC's incremental sequence writes: `sequence` = max stamped seq across the
+ * org's product tables, `f:{type}` = max seq per (node, type), `e:{type}` = live published.
  */
 describe('recalculateCounters (sequence + frontier)', async () => {
   const call = await createAppClient();
