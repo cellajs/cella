@@ -1,7 +1,7 @@
 import { appConfig, isUnpublishedDraft, type SubjectForPermission } from 'shared';
 import { type ActivityBatchRow, getEventData } from '#/lib/activity-bus';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { checkPermission } from '#/permissions';
+import { checkAccess } from '#/permissions';
 import { buildSubject } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
 import type { CursoredSubscriber } from '../stream';
@@ -22,167 +22,76 @@ export interface AppStreamSubscriber extends CursoredSubscriber {
   memberships: MembershipBaseModel[];
 }
 
-/** The membership + admin state a dispatch decision needs (test-friendly subset). */
+/**
+ * The membership + admin state a dispatch decision needs (test-friendly subset).
+ * Structurally an `Access`, so subscribers feed `checkAccess` directly.
+ */
 export type SubscriberAccess = Pick<AppStreamSubscriber, 'userId' | 'isSystemAdmin' | 'memberships'>;
 
 /**
- * SSE must mirror API read visibility: can this subscriber read the event's row?
- *
- * Runs the SAME engine as API reads (`checkPermission`) with the SAME inputs. The
- * event carries the full row (REPLICA IDENTITY FULL), which row conditions and public
- * grants evaluate per subscriber. Rows are self-describing, so no second row is ever
- * needed. Fail-closed on malformed events.
- *
- * The same visibility is re-checked when a cache hit is served (`appCache` re-runs
- * `checkPermission` against the cached row), so over-notifying is never a leak here.
- *
- * Unpublished drafts (`publishedAt` null, see `shared/src/published-rows.ts`) are
- * dropped for EVERYONE, author included. This veto is fail-closed defense-in-depth:
- * the publication row filter keeps drafts out of the replication stream at the source
- * (publish arrives as INSERT, unpublish as DELETE), so a draft event here means a
- * misconfigured fork. Delta reads apply the same exclusion, so a draft is never
- * fetchable either way.
- *
- * Exported so the parity property test can assert: SQL predicate ≍ checkPermission ≍
- * this function.
+ * The permission subject of one event row, subscriber-independent. Returns `null` when the
+ * row is vetoed for everyone, fail-closed: an unpublished draft (`publishedAt` null, see
+ * `shared/src/published-rows.ts` — defense-in-depth behind the publication row filter, the
+ * author included), or a malformed ancestor scope.
  */
-export function canReceiveEntityEvent(subscriber: SubscriberAccess, event: AppStreamProductEvent): boolean {
-  return decideRowRead(subscriber, buildRowReadContext(event));
-}
-
-/**
- * Everything a read decision needs from one event row, built ONCE per row and shared by
- * every subscriber the dispatch loop evaluates. The subject (and the draft/scope veto) are
- * subscriber-independent; rebuilding them per subscriber was pure fan-out overhead.
- */
-interface RowReadContext {
-  /** Draft row or malformed ancestor scope: deny everyone, fail-closed. */
-  vetoed: boolean;
-  subject: SubjectForPermission | null;
-  /** The row's truthy channel levels as [channelType, channelId] — the exact membership lookups the engine makes. */
-  channelLevels: Array<[string, string]>;
-  createdBy: string | null;
-  /** Access-class key → decision. Lives only as long as the event, so it can never go stale. */
-  decisions: Map<string, boolean>;
-}
-
-const buildRowReadContext = (event: AppStreamProductEvent): RowReadContext => {
-  const veto: RowReadContext = {
-    vetoed: true,
-    subject: null,
-    channelLevels: [],
-    createdBy: null,
-    decisions: new Map(),
-  };
+const rowReadSubject = (event: AppStreamProductEvent): SubjectForPermission | null => {
   const row = (event.rowData ?? undefined) as Record<string, unknown> | undefined;
 
-  if (isUnpublishedDraft(row)) return veto;
+  if (isUnpublishedDraft(row)) return null;
 
-  const createdBy = (row?.createdBy as string | null | undefined) ?? null;
   try {
-    const subject = buildSubject(event.entityType, event, {
+    return buildSubject(event.entityType, event, {
       id: event.subjectId ?? undefined,
-      createdBy: createdBy ?? undefined,
+      createdBy: (row?.createdBy as string | null | undefined) ?? undefined,
       row,
     });
-
-    const channelLevels: Array<[string, string]> = [];
-    for (const [channelType, channelId] of Object.entries(subject.channelIds)) {
-      if (channelId) channelLevels.push([channelType, channelId]);
-    }
-    // Channel-entity subjects resolve their own level from subject.id (mirrors getSubjectChannelId)
-    if ((appConfig.channelEntityTypes as readonly string[]).includes(event.entityType) && subject.id) {
-      channelLevels.push([event.entityType, subject.id]);
-    }
-
-    return { vetoed: false, subject, channelLevels, createdBy, decisions: new Map() };
   } catch {
     log.error('Malformed stream event: missing ancestor scope', {
       entityType: event.entityType,
       subjectId: event.subjectId,
     });
-    return veto;
+    return null;
   }
 };
 
-/** The uncached decision: the same engine call the API makes. */
-const decideRowRead = (subscriber: SubscriberAccess, ctx: RowReadContext): boolean => {
-  if (ctx.vetoed || !ctx.subject) return false;
+/**
+ * SSE must mirror API read visibility: which of these subscribers can read the event's row?
+ *
+ * ONE `checkAccess` batch call — the engine collapses subscribers into access classes and
+ * runs the policy walk once per class, with the SAME inputs as API reads. The event carries
+ * the full row (REPLICA IDENTITY FULL), which row conditions and public grants evaluate
+ * per subscriber. Rows are self-describing, so no second row is ever needed.
+ *
+ * Fail-closed on every edge: a vetoed row (see `rowReadSubject`) denies all; a subscriber
+ * whose memberships fail engine validation denies just that subscriber
+ * (`onInvalidMembership: 'deny'`) without poisoning the batch.
+ *
+ * The same visibility is re-checked when a cache hit is served (`appCache` re-runs
+ * `checkAccess` against the cached row), so over-notifying is never a leak here.
+ */
+export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event: AppStreamProductEvent): boolean[] {
+  const subject = rowReadSubject(event);
+  if (!subject) return subscribers.map(() => false);
   try {
-    return checkPermission(subscriber.memberships, 'read', ctx.subject, {
-      userId: subscriber.userId,
-      isSystemAdmin: subscriber.isSystemAdmin,
-    }).isAllowed;
+    const results = checkAccess(subscribers as SubscriberAccess[], 'read', subject, { onInvalidMembership: 'deny' });
+    return results.map((result) => result.isAllowed);
   } catch {
-    log.error('Malformed stream event: permission check failed', {
-      entityType: ctx.subject.entityType,
-      subjectId: ctx.subject.id,
+    log.error('Stream read decision failed; denying all', {
+      entityType: subject.entityType,
+      subjectId: subject.id,
     });
-    return false;
+    return subscribers.map(() => false);
   }
-};
+}
 
 /**
- * A subscriber's access class for one row: the full projection of what the engine's
- * decision reads from the subscriber. Two subscribers with equal keys are
- * indistinguishable to `checkPermission` for this row:
- * - system-admin bit (engine short-circuits to allow),
- * - owner bit (the only place `userId` enters: the `'own'` row condition; `'public'`
- *   reads the row alone),
- * - the sorted set of `channelType:role` pairs whose membership matches one of the
- *   row's channel levels — exactly the `${channelType}:${channelId}` index hits the
- *   engine's policy walk iterates. Grant scoping (`elevatedRoles`, home channel) is a
- *   function of (pair, row), so it cannot split a class.
- * - `!` marks a membership `validateMembership` would reject; the engine fails the WHOLE
- *   check on it (deny), so malformed subscribers must not share a class with clean ones.
+ * Single-subscriber read visibility for one row-scoped event: a batch of one, so the
+ * fan-out path and this predicate cannot drift.
+ *
+ * Exported so the parity property test can assert: SQL predicate ≍ checkAccess ≍ this.
  */
-const classKeyFor = (subscriber: SubscriberAccess, ctx: RowReadContext): string => {
-  const bits = `${subscriber.isSystemAdmin ? 'A' : ''}${subscriber.userId && ctx.createdBy === subscriber.userId ? 'O' : ''}`;
-
-  const pairs: string[] = [];
-  for (const m of subscriber.memberships) {
-    if (!m.channelType || !m.channelId || !m.role || typeof m.role !== 'string') {
-      pairs.push('!');
-      continue;
-    }
-    for (const [channelType, channelId] of ctx.channelLevels) {
-      if (channelType === m.channelType && channelId === m.channelId) {
-        pairs.push(`${m.channelType}:${m.role}`);
-        break;
-      }
-    }
-  }
-  if (pairs.length === 0) return bits;
-  if (pairs.length > 1) pairs.sort();
-  return `${bits}|${pairs.join(',')}`;
-};
-
-/** Class-memoized decision: at most one engine call per distinct access class per row. */
-const decideRowReadCached = (subscriber: SubscriberAccess, ctx: RowReadContext): boolean => {
-  if (ctx.vetoed) return false;
-  const key = classKeyFor(subscriber, ctx);
-  const hit = ctx.decisions.get(key);
-  if (hit !== undefined) return hit;
-  const decision = decideRowRead(subscriber, ctx);
-  ctx.decisions.set(key, decision);
-  return decision;
-};
-
-/**
- * Per-event row contexts, keyed by event identity. The cache dies with the event object,
- * so no invalidation exists — a membership mutation always produces a fresh event.
- */
-const rowContextCache = new WeakMap<object, RowReadContext>();
-const eventRowContextsCache = new WeakMap<object, RowReadContext[]>();
-
-/** `canReceiveEntityEvent` with the per-event class memo, for row-scoped events reused across a subscriber loop. */
-export function canReceiveEntityEventCached(subscriber: SubscriberAccess, event: AppStreamProductEvent): boolean {
-  let ctx = rowContextCache.get(event);
-  if (!ctx) {
-    ctx = buildRowReadContext(event);
-    rowContextCache.set(event, ctx);
-  }
-  return decideRowReadCached(subscriber, ctx);
+export function canReceiveEntityEvent(subscriber: SubscriberAccess, event: AppStreamProductEvent): boolean {
+  return rowReadDecisions([subscriber], event)[0];
 }
 
 /**
@@ -216,7 +125,8 @@ const eventRows = (event: AppStreamProductEvent): ActivityBatchRow[] =>
  *   them even for a membership in an org the connection is not registered on (the new-org
  *   invite that tells the client to reconnect).
  * - Product entity events → per-ROW read permission (mirrors the API): a subscriber is
- *   pinged iff they can read at least one row the event speaks for.
+ *   pinged iff they can read at least one row the event speaks for. Rows are evaluated in
+ *   order; a subscriber leaves the undecided pool at their first readable row.
  */
 export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, AppStreamEvent>({
   getChannel: (event) => {
@@ -226,25 +136,28 @@ export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, A
     }
     return `org:${event.organizationId}`;
   },
-  shouldReceive: (subscriber, event) => {
+  selectEligible: (subscribers, event) => {
     // Membership events: the user channel already targets the subject; keep the check as a net.
     if (isMembershipEvent(event)) {
       const membership = getEventData(event, 'membership');
-      return membership?.userId === subscriber.userId;
+      return membership?.userId ? subscribers.filter((s) => s.userId === membership.userId) : [];
     }
 
-    if (!subscriber.organizationIds.has(event.organizationId)) return false;
+    const eligible: AppStreamSubscriber[] = [];
+    let undecided = subscribers.filter((s) => s.organizationIds.has(event.organizationId));
 
-    // Row contexts (scoped event + subject) are subscriber-independent: build once per
-    // event, then answer each subscriber from the per-row class memo.
-    let rowContexts = eventRowContextsCache.get(event);
-    if (!rowContexts) {
-      rowContexts = eventRows(event).map(({ rowData }) =>
-        buildRowReadContext(rowData === event.rowData ? event : rowScopedEvent(event, rowData)),
-      );
-      eventRowContextsCache.set(event, rowContexts);
+    for (const { rowData } of eventRows(event)) {
+      if (undecided.length === 0) break;
+      const scopedEvent = rowData === event.rowData ? event : rowScopedEvent(event, rowData);
+
+      const decisions = rowReadDecisions(undecided, scopedEvent);
+      const stillUndecided: AppStreamSubscriber[] = [];
+      for (const [index, subscriber] of undecided.entries()) {
+        (decisions[index] ? eligible : stillUndecided).push(subscriber);
+      }
+      undecided = stillUndecided;
     }
-    return rowContexts.some((ctx) => decideRowReadCached(subscriber, ctx));
+    return eligible;
   },
 });
 
@@ -277,19 +190,18 @@ export async function dispatchMoveOuts(event: AppStreamProductEvent): Promise<vo
   const moves = movedRows(event);
   if (moves.length === 0) return;
 
-  const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(`org:${event.organizationId}`);
+  const subscribers = streamSubscriberManager
+    .getByChannel<AppStreamSubscriber>(`org:${event.organizationId}`)
+    .filter((subscriber) => subscriber.organizationIds.has(event.organizationId));
   if (subscribers.length === 0) return;
 
   for (const { rowData, movedFrom } of moves) {
     const oldEvent = rowScopedEvent(event, movedFrom);
     const newEvent = rowData === event.rowData ? event : rowScopedEvent(event, rowData);
 
-    const eligible = subscribers.filter(
-      (subscriber) =>
-        subscriber.organizationIds.has(event.organizationId) &&
-        canReceiveEntityEventCached(subscriber, oldEvent) &&
-        !canReceiveEntityEventCached(subscriber, newEvent),
-    );
+    const canReadOld = rowReadDecisions(subscribers, oldEvent);
+    const canReadNew = rowReadDecisions(subscribers, newEvent);
+    const eligible = subscribers.filter((_, index) => canReadOld[index] && !canReadNew[index]);
     if (eligible.length === 0) continue;
 
     const notification = buildMoveOutNotification(oldEvent, movedFrom);

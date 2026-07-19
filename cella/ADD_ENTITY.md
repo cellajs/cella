@@ -20,8 +20,7 @@ So adding an entity is mostly: **declare it in config, write its table + module,
 Two entity kinds exist (see [Architecture](./ARCHITECTURE.md#entity-hierarchy-model) § Entity hierarchy model):
 
 - **Channel entity** (`organization`, `workspace`, `project`): has memberships and roles; access via app-layer guards; **no RLS, no `seq`/`stx`**.
-- **Product entity** (`task`, `label`, `attachment`): user-generated content, no memberships;
-  **tenant-scoped reads are RLS-protected**, participates in the sync engine (`seq`/`stx`).
+- **Product entity** (`task`, `label`, `attachment`): user-generated content, no memberships; **tenant-scoped reads are RLS-protected**, participates in the sync engine (`seq`/`stx`).
 
 The bulk of this guide covers **product entities**. Channel-entity differences are in [§ Channel entities](#channel-entities).
 
@@ -44,19 +43,19 @@ We add a `note` product entity living inside a `project`.
 ```ts
 export const hierarchy = createEntityHierarchy(roles)
   .user()
-  .channel('organization', { parent: null, roles: ['admin', 'member'] })
-  .channel('workspace', { parent: 'organization', roles: roles.all })
-  .channel('project', { parent: 'organization', roles: roles.all })
-  .product('task', { parent: 'project' })
-  .product('label', { parent: 'project' })
-  .product('note', { parent: 'project' })            // ← new
-  .product('attachment', { parent: 'project' })
+  .channel("organization", { parent: null, roles: ["admin", "member"] })
+  .channel("workspace", { parent: "organization", roles: roles.all })
+  .channel("project", { parent: "organization", roles: roles.all })
+  .product("task", { parent: "project" })
+  .product("label", { parent: "project" })
+  .product("note", { parent: "project" }) // ← new
+  .product("attachment", { parent: "project" })
   .build();
 ```
 
 `.product(name, options)` options:
 
-- **`parent`** (required): the entity's **home context**. Becomes the non-null `<context>Id` column and the most-specific link in its ancestor chain. Products *must* have a home; the builder throws otherwise.
+- **`parent`** (required): the entity's **home context**. Becomes the non-null `<context>Id` column and the most-specific link in its ancestor chain. Products _must_ have a home; the builder throws otherwise.
 - **`relatedChannels`** (optional): non-ancestor context references (nullable id columns).
 
 The builder ([`entity-hierarchy.ts`](../shared/src/config-builder/entity-hierarchy.ts)) validates at construction: parents must be declared **before** children, parents must be contexts, roles must exist, `organization` + `user()` are mandatory. **Order matters**: declare parents earlier in the chain.
@@ -82,10 +81,9 @@ Optional arrays, add only if relevant:
 - `defaultRestrictions.quotas`: per-tenant quota.
 - `requestLimits`: default list page size.
 
-
 ### Step 3: 🔴 Declare access policies
 
-Add a `case` to the `switch` in [`shared/config/permissions-config.ts`](../shared/config/permissions-config.ts). The callback gives you `contexts` (CRUD cells per role×context) and `publicRead`. 
+Add a `case` to the `switch` in [`shared/config/permissions-config.ts`](../shared/config/permissions-config.ts). The callback gives you `contexts` (CRUD cells per role×context) and `publicRead`.
 
 ```ts
 case 'note':
@@ -101,7 +99,7 @@ case 'note':
 
 Cell values: `1` allowed, `0`/omitted denied, `'own'` = the built-in "actor is creator" row condition. That is the whole set — row conditions are closed (`own` + public read), not a fork extension point.
 
-- **Product entities have no "self" rows**: their context rows are *home* rows where `create` is meaningful. (Channel entities distinguish *elevation* rows on an ancestor, which carry `create`, from *self* rows on the same context, which omit it. See the header comment in `permissions-config.ts`.)
+- **Product entities have no "self" rows**: their context rows are _home_ rows where `create` is meaningful. (Channel entities distinguish _elevation_ rows on an ancestor, which carry `create`, from _self_ rows on the same context, which omit it. See the header comment in `permissions-config.ts`.)
 - **`publicRead('publicSelf')`**: the row is readable by anyone — anonymous included — once its own `publicAt` is set. Every context and product row already carries the column. Publication does **not** cascade: a public parent does not publish its children, because a cross-row rule cannot be evaluated by the collection-read SQL compiler or by CDC dispatch (which only ships the row itself). If you want cascade, propagate `publicAt` down to descendant rows — it is a data concern, not a permission rule. See [Permissions](./PERMISSIONS.md).
 
 ### Step 4: 🔴 Create the database table
@@ -110,23 +108,28 @@ Colocated with the module: `backend/src/modules/note/note-db.ts`. (Tables are di
 
 ```ts
 export const notesTable = snakeCase.table(
-  'notes',
+  "notes",
   {
-    ...productEntityColumns('note'),   // id, entityType, tenantId, name, stx, description,
-                                       // keywords, createdBy/updatedBy, deletedAt/By, seq, ...
+    ...productEntityColumns("note"), // id, entityType, tenantId, name, stx, description,
+    // keywords, createdBy/updatedBy, deletedAt/By, seq, ...
     organizationId: uuid().notNull(),
-    projectId: uuid().notNull().references(() => projectsTable.id, { onDelete: 'cascade' }),
+    projectId: uuid()
+      .notNull()
+      .references(() => projectsTable.id, { onDelete: "cascade" }),
     // ...entity-specific columns
   },
   (table) => [
-    index('notes_organization_id_seq_index').on(table.organizationId, table.seq), // required for delta sync (org-sequence reads; enforced by delta-index.test)
-    index('notes_tenant_id_index').on(table.tenantId),
+    index("notes_organization_id_seq_index").on(
+      table.organizationId,
+      table.seq,
+    ), // required for delta sync (org-sequence reads; enforced by delta-index.test)
+    index("notes_tenant_id_index").on(table.tenantId),
     foreignKey({
       columns: [table.tenantId, table.organizationId],
       foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
-    }).onDelete('cascade'),
-    tenantSelectPolicy('notes', table),   // RLS SELECT (fail-closed on app.tenant_id)
-    ...writeThroughPolicies('notes'),     // RLS INSERT/UPDATE/DELETE (required under FORCE RLS)
+    }).onDelete("cascade"),
+    tenantSelectPolicy("notes", table), // RLS SELECT (fail-closed on app.tenant_id)
+    ...writeThroughPolicies("notes"), // RLS INSERT/UPDATE/DELETE (required under FORCE RLS)
   ],
 );
 
@@ -137,23 +140,20 @@ export type InsertNoteModel = typeof notesTable.$inferInsert;
 Mandatory columns come from the spread helpers; **do not hand-write them**:
 
 | Provided by | Columns |
-|---|---|
+| --- | --- |
 | `productEntityColumns('<type>')` | `stx` (jsonb, sync metadata), `seq` (bigint, org-sequence position, CDC-stamped), `path` (STORED generated id-path), `description`, `keywords`, `createdBy/updatedBy`, `deletedAt/deletedBy` (soft delete) |
 | ↳ `tenantEntityColumns` (nested) | `id` (uuid v7 PK via `generateId`), `entityType` (enum locked to the type), `tenantId` (FK → tenants), `name`, `createdAt`, `updatedAt` |
 
 Conventions: `snakeCase.table(...)` maps camelCase fields → snake_case columns automatically; table name is the pluralized type (`note` → `notes`); ids are plain **UUID v7** (time-ordered, no prefixes). You may replace the explicit `organizationId`/`projectId` columns with `...channelRelationColumns('note')` (emits NOT-NULL ancestor id columns from the hierarchy); see [`attachment-db.ts`](../backend/src/modules/attachment/attachment-db.ts).
 
-Which tables get RLS, immutability triggers, the CDC publication, and `REPLICA IDENTITY FULL` is
-derived from the registry in the next step: 🟢 no per-table wiring for any of those. Read the
-[RLS extension checklist](./RLS.md#adding-a-tenant-scoped-product-table) before introducing an
-exceptional support or public table.
+Which tables get RLS, immutability triggers, the CDC publication, and `REPLICA IDENTITY FULL` is derived from the registry in the next step: 🟢 no per-table wiring for any of those. Read the [RLS extension checklist](./RLS.md#adding-a-tenant-scoped-product-table) before introducing an exceptional support or public table.
 
 ### Step 5: 🔴 Register the table
 
 Add the table to the `entityTables` map in [`backend/src/tables.ts`](../backend/src/tables.ts):
 
 ```ts
-import { notesTable } from '#/modules/note/note-db';
+import { notesTable } from "#/modules/note/note-db";
 // ...
 export const entityTables = {
   // ...
@@ -183,7 +183,7 @@ This is the single registration point for the schema-evolution lens seams (`norm
 The canonical file set for a product entity module at `backend/src/modules/note/`, following `task`:
 
 | File | Role |
-|---|---|
+| --- | --- |
 | `note-db.ts` | Drizzle table (Step 4). |
 | `note-schema.ts` | Zod schemas + `evolutionContract.product` (Step 6). |
 | `note-routes.ts` | OpenAPI route defs via `createXRoute(...)`, each carrying the guard chain. |
@@ -218,9 +218,9 @@ OpenAPI is 🟢 mostly automatic: routes are OpenAPI-native, mounting the handle
 Two edits in [`backend/src/routes.ts`](../backend/src/routes.ts), import and mount under the tenant-scoped prefix:
 
 ```ts
-import { noteHandlers } from '#/modules/note/note-handlers';
+import { noteHandlers } from "#/modules/note/note-handlers";
 // ...
-baseApp.route('/:tenantId/:organizationId/notes', noteHandlers);
+baseApp.route("/:tenantId/:organizationId/notes", noteHandlers);
 ```
 
 Order matters: param-segment mounts (`/:tenantId/...`) must come after static mounts so they cannot shadow static paths (see the comment in the file).
@@ -229,8 +229,7 @@ Order matters: param-segment mounts (`/:tenantId/...`) must come after static mo
 
 For the entity to participate in catch-up sync, its list operation `get-notes.ts` must, when `seqCursor` is present:
 
-1. Extend `paginationQuerySchema` so `seqCursor` (org-sequence values) and `pathPrefix`
-   (subtree narrowing for feed loads) are accepted (in `note-schema.ts`).
+1. Extend `paginationQuerySchema` so `seqCursor` (org-sequence values) and `pathPrefix` (subtree narrowing for feed loads) are accepted (in `note-schema.ts`).
 2. Order by `asc(<table>.seq)` with an `asc(id)` tiebreak.
 3. **Include tombstones** (skip the `isNull(deletedAt)` filter) so clients can drop deleted rows.
 4. Use `tenantReadIncludingDeleted` instead of `tenantRead`.
@@ -244,7 +243,7 @@ Once the table is in `entityTables` (Step 5) and the type is in `productEntityTy
 - **CDC publication + `REPLICA IDENTITY FULL`**: derived from `entityTables` by the CDC setup migration.
 - **`seq` stamping**: the CDC worker stamps every row from the org sequence generically (one order per organization, shared by all product types) and rolls `f:`/`fs:` frontiers up the hierarchy.
 - **SSE dispatch**: [`entities-listeners.ts`](../backend/src/modules/entities/entities-listeners.ts) loops `appConfig.productEntityTypes` to register `activityBus` listeners; there is one generic `/entities/app/stream`, no per-entity endpoint.
-- **Permission-filtered fan-out**: the dispatcher derives ancestor context ids from the hierarchy and runs `checkPermission('read', ...)` per subscriber.
+- **Permission-filtered fan-out**: the dispatcher derives ancestor context ids from the hierarchy and runs ONE `checkAccess(subscribers, 'read', …)` batch call per event row; the engine collapses subscribers into access classes.
 
 See [Sync engine](./SYNC_ENGINE.md) for the full pipeline.
 

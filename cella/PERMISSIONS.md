@@ -2,11 +2,9 @@
 
 Cella answers one question everywhere: **may this actor perform this action on this subject?** The answer comes from a single decision engine in `shared/src/permissions/`, computed from the actor's memberships, a static role × context policy matrix, and the subject's own row data. The engine is tier-neutral and ORM-free, so the backend, the frontend, and the standalone Yjs relay all reach the same verdict from the same code — the relay authorizes without a backend round-trip.
 
-Roles are **scoped to channel entities**, never global. Product entities own no roles at all: they inherit their permissions from ancestor contexts. Ownership is an *implicit* relation derived from the row's `createdBy` column rather than a stored tuple.
+Roles are **scoped to channel entities**, never global. Product entities own no roles at all: they inherit their permissions from ancestor contexts. Ownership is an _implicit_ relation derived from the row's `createdBy` column rather than a stored tuple.
 
-Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and knows nothing about
-roles, policies, or actions. See [Multi-tenancy](./RLS.md) for the
-database boundary and how the layers combine.
+Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and knows nothing about roles, policies, or actions. See [Multi-tenancy](./RLS.md) for the database boundary and how the layers combine.
 
 ## Architecture
 
@@ -68,7 +66,7 @@ The engine **never loads rows**. Callers resolve whatever row data a decision ne
 ## Vocabulary
 
 | Term | Meaning |
-|------|---------|
+| --- | --- |
 | **Channel entity** | Owns roles and memberships (`organization` in the template). Orders as `[self, ...ancestors]`. |
 | **Product entity** | Owns no roles; inherits from ancestor contexts (`attachment`). Orders as `[...ancestors]`. Must have a context parent. |
 | **User entity** | Carries no policies at all; `configurePermissions` filters it out. |
@@ -85,12 +83,12 @@ Two files, both fork-facing. They must change together — the hierarchy defines
 **`shared/config/hierarchy-config.ts`** — a fluent builder, not an object literal:
 
 ```ts
-export const roles = createRoleRegistry(['admin', 'member'] as const);
+export const roles = createRoleRegistry(["admin", "member"] as const);
 
 export const hierarchy = createEntityHierarchy(roles)
   .user()
-  .channel('organization', { parent: null, roles: roles.all })
-  .product('attachment', { parent: 'organization' })
+  .channel("organization", { parent: null, roles: roles.all })
+  .product("attachment", { parent: "organization" })
   .build();
 ```
 
@@ -101,42 +99,64 @@ export const { accessPolicies, publicReadGrants } = configurePermissions(
   appConfig.entityTypes,
   ({ subject, contexts }) => {
     switch (subject.name) {
-      case 'organization':
+      case "organization":
         contexts.organization.admin({ read: 1, update: 1, delete: 1 });
         contexts.organization.member({ read: 1, update: 0, delete: 0 });
         break;
-      case 'attachment':
-        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-        contexts.organization.member({ create: 1, read: 1, update: 'own', delete: 'own' });
+      case "attachment":
+        contexts.organization.admin({
+          create: 1,
+          read: 1,
+          update: 1,
+          delete: 1,
+        });
+        contexts.organization.member({
+          create: 1,
+          read: 1,
+          update: "own",
+          delete: "own",
+        });
         break;
     }
   },
 );
 ```
 
-Any action you omit defaults to `0`. `'own'` is the built-in owner condition: the engine reads the config cell verbatim (the name *is* the value), so it only ever sees `0 | 1 | 'own'`.
+Any action you omit defaults to `0`. `'own'` is the built-in owner condition: the engine reads the config cell verbatim (the name _is_ the value), so it only ever sees `0 | 1 | 'own'`.
 
-Missing actions and missing role/context rows both deny by default, so policies only need to declare
-grants. Public-read declarations are collected separately because they are membership-independent.
+Missing actions and missing role/context rows both deny by default, so policies only need to declare grants. Public-read declarations are collected separately because they are membership-independent.
 
-For channel entities, note the two row kinds: **elevation** rows sit on an *ancestor* context and say what a parent's member may do to the child (this is where `create` lives); **self** rows sit on the same context and say what the entity's own members may do to it (`create` is meaningless there). Product entities have only *home* rows, where `create` grants making the product inside that context.
+For channel entities, note the two row kinds: **elevation** rows sit on an _ancestor_ context and say what a parent's member may do to the child (this is where `create` lives); **self** rows sit on the same context and say what the entity's own members may do to it (`create` is meaningless there). Product entities have only _home_ rows, where `create` grants making the product inside that context.
 
 ## The decision
 
-`getAllDecisions(policies, memberships, subject, options)` is the core; `checkPermission` is the bound entry point every tier actually calls — it injects the configured `publicReadGrants` and `elevatedRoles`. Subjects and decisions are batchable, and batching is meaningfully faster than looping.
+`getAllDecisions(policies, memberships, subject, options)` is the core; `checkAccess` is the bound entry point every tier actually calls — it injects the configured `publicReadGrants` and `elevatedRoles`. One function, three shapes with one semantics:
+
+```ts
+checkAccess(access, action, subject); // → PermissionResult — the request-path check
+checkAccess(access, action, subjects); // → BatchPermissionResult — one actor, many rows (list splitting)
+checkAccess(accesses, action, subject, options?); // → PermissionResult[] — many actors, one row (stream fan-out)
+```
+
+The many-actors form is engine-collapsed: accesses are grouped into **access classes** (admin bit, one bit per row condition the subject's policies actually reference, roles held at the subject's channel levels) and the policy walk runs once per class, so cost scales with distinct classes — not with subscribers. The class-key invariant (equal keys ⇒ equal decisions) is property-tested in `resolve-access.test.ts` against synthetic policies the template itself never ships. `options.onInvalidMembership: 'deny'` lets fan-out callers fail-close a single corrupt access instead of throwing away the batch.
 
 ```ts
 export type SubjectForPermission = {
   entityType: ChannelEntityType | ProductEntityType;
   id?: string;
   createdBy?: string | null;
-  channelIds: ChannelScope;              // Partial<Record<ChannelEntityType, string | null>>
-  row?: Record<string, unknown>;         // for row conditions + publicSelf
+  channelIds: ChannelScope; // Partial<Record<ChannelEntityType, string | null>>
+  row?: Record<string, unknown>; // for row conditions + publicSelf
 };
 
-export interface PermissionDecision<T extends PermissionMembership = PermissionMembership> {
+export interface PermissionDecision<
+  T extends PermissionMembership = PermissionMembership,
+> {
   subject: { entityType; id?; channelIds };
-  actions: Record<EntityActionType, { enabled: boolean; grantedBy: GrantSource[] }>;
+  actions: Record<
+    EntityActionType,
+    { enabled: boolean; grantedBy: GrantSource[] }
+  >;
   can: Record<EntityActionType, boolean>;
   membership: T | null;
 }
@@ -146,7 +166,7 @@ Ancestor scope is **explicitly tri-state**, and the distinction is load-bearing:
 
 Boundary code that starts from DB rows, route params, or CDC events uses `buildSubject()` to turn column-shaped input (`{ organizationId: 'org_x' }`) into this domain shape. Internals read `subject.channelIds.organization`, never a DB column name.
 
-`grantedBy` is not decoration. It records *why* an action was allowed, which is what makes "why can this user delete?" answerable, and it is what the audit path reads.
+`grantedBy` is not decoration. It records _why_ an action was allowed, which is what makes "why can this user delete?" answerable, and it is what the audit path reads.
 
 ## Widening: row conditions and public read
 
@@ -155,73 +175,72 @@ Two mechanisms widen access beyond the policy matrix, and both read the row's ow
 A **row condition** (`shared/src/permissions/row-conditions.ts`) qualifies a grant per row. A cell of `1` grants the action on every row the context scope reaches; a condition cell grants it only on rows the condition matches. Because the set is closed, a condition is just its **name** — the name determines the rule, so there is no descriptor to carry:
 
 ```ts
-export type RowConditionName = 'own' | 'public';   // this union IS the contract
+export type RowConditionName = "own" | "public"; // this union IS the contract
 
-export const matchesRowCondition = (name: RowConditionName, row, actor): boolean => {
+export const matchesRowCondition = (
+  name: RowConditionName,
+  row,
+  actor,
+): boolean => {
   switch (name) {
-    case 'own':    return !!actor.userId && row.createdBy === actor.userId; // anonymous never matches
-    case 'public': return !!row.publicAt;                                   // actor-independent
+    case "own":
+      return !!actor.userId && row.createdBy === actor.userId; // anonymous never matches
+    case "public":
+      return !!row.publicAt; // actor-independent
   }
 };
 ```
 
 The name is the single source of truth. Three paths map it to behaviour through an exhaustive `switch` — `matchesRowCondition` (JS, in `shared/`), `compileRowConditionSql` (Drizzle, in `backend/`), and the frontend `resolvePermission` (`action-helpers.ts`) — so their forms **cannot drift**: TypeScript's exhaustiveness makes adding a name a compile error in every one of them, and the parity property test proves the paths agree. The `shared/`→`backend/` split is why `shared/` emits only the name and the backend compiles the SQL: `shared/` is ORM-free.
 
-**Public read** (`shared/src/permissions/public-read.ts`) makes rows readable by *any* actor, anonymous included, independent of memberships. One rule: the row's own `publicAt` is set. Declared per subject with `publicRead('publicSelf')`, it widens `read` and nothing else. It is *not* a policy cell — it grants with no membership — but it resolves through the same `'public'` row condition, so it rides the same switches and the same parity test.
+**Public read** (`shared/src/permissions/public-read.ts`) makes rows readable by _any_ actor, anonymous included, independent of memberships. One rule: the row's own `publicAt` is set. Declared per subject with `publicRead('publicSelf')`, it widens `read` and nothing else. It is _not_ a policy cell — it grants with no membership — but it resolves through the same `'public'` row condition, so it rides the same switches and the same parity test.
 
-## The actor
+## The access
 
-Every check takes an explicit `Actor`. It is a discriminated union, not an optional `userId`, and that shape is load-bearing:
+Every `checkAccess` call takes an explicit `Access` — the actor AND their memberships in one object:
 
 ```ts
-export type Actor = { userId: string; isSystemAdmin?: boolean } | { anonymous: true };
+export type Access<T extends PermissionMembership = PermissionMembership> =
+  | { userId: string; isSystemAdmin?: boolean; memberships: T[] }
+  | { anonymous: true };
 ```
 
-An optional actor is how permission bugs get in. A caller that simply forgets it still compiles, and every rule that reads the actor — `'own'`, and any fork condition — then silently fails **closed**: a denial nobody notices, in a path nobody tested. Anonymity has to be *stated*, not achieved by omission, and `{ anonymous: true }` cannot be produced by accident.
+Two hazards are closed by this shape, and both produced real bugs under the old split signature. An optional actor is how permission bugs get in: a caller that simply forgets it still compiles, and every rule that reads the actor — `'own'`, and any fork condition — then silently fails **closed**: a denial nobody notices, in a path nobody tested. Anonymity has to be _stated_, not achieved by omission, and `{ anonymous: true }` cannot be produced by accident — nor can it carry memberships, which would be a contradiction. And because memberships and identity travel together, a call site can no longer pair one user's memberships with another user's actor.
 
-On the backend, handlers never assemble one by hand: `actorFrom(ctx)` reads the guard-populated `userId` and `isSystemAdmin` straight off the request context.
+On the backend, handlers never assemble one by hand: `accessFrom(ctx)` reads the guard-populated `userId`, `isSystemAdmin` and `memberships` straight off the request context, yielding a stated `{ anonymous: true }` when no user is signed in.
+
+The compiled-predicate paths (the SQL twin: `compileRowConditionSql`, collection scopes, catchup reads) keep the membership-less `Actor` union and `actorFrom(ctx)` — memberships enter those paths as SQL scope, not as an engine argument.
 
 ## Enforcement paths
 
-The engine produces a verdict. Each tier is responsible for *asking* — and every one of them now asks with the same inputs.
+The engine produces a verdict. Each tier is responsible for _asking_ — and every one of them now asks with the same inputs.
 
 | Path | Entry point | What it checks |
-|------|-------------|----------------|
-| **Guard chain** | `authGuard` → `tenantGuard` → `orgGuard` | Coarse gate only: authenticated, in-tenant, and a member of the org *or* a system admin. It does **not** consult `accessPolicies`. |
-| **Single row** | `getValidProductEntity`, `getValidChannelEntity`, `canCreateEntity`, `splitByPermission` | Loads the row, passes it as `subject.row` via `buildSubjectFromEntity`, runs the engine. `splitByPermission` powers bulk ops and 403s only when *nothing* is allowed. |
+| --- | --- | --- |
+| **Guard chain** | `authGuard` → `tenantGuard` → `orgGuard` | Coarse gate only: authenticated, in-tenant, and a member of the org _or_ a system admin. It does **not** consult `accessPolicies`. |
+| **Single row** | `getValidProductEntity`, `getValidChannelEntity`, `canCreateEntity`, `splitByPermission` | Loads the row, passes it as `subject.row` via `buildSubjectFromEntity`, runs the engine. `splitByPermission` powers bulk ops and 403s only when _nothing_ is allowed. |
 | **Collection read** | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Turns the actor's access into a readable scope, then compiles it — unconditional grants, row conditions, and the public grant — into one Drizzle `SQL` predicate. Set-based, so it never materializes rows to reject them. |
-| **SSE dispatch** | `canReceiveEntityEvent` | Runs the engine per event row. Notified rows are fetchable by seq, so over-notifying is a data leak, not just noise. |
+| **SSE dispatch** | `rowReadDecisions` (`canReceiveEntityEvent` is its batch-of-1) | ONE `checkAccess` fan-out call per event row over the channel's subscribers; the engine collapses them into access classes. Notified rows are fetchable by seq, so over-notifying is a data leak, not just noise. |
 | **Catchup views** | `resolveViewReadStatus` | Classifies a client-declared view prefix `ok`/`opaque`/`forbidden` on top of `resolveCollectionReadFilter`. Answers a DIFFERENT question than row reads: may the caller see the subtree's aggregate change signal (`f:`/counts)? Rows leak content; summaries leak the existence and timing of others' activity — so `ok` requires PROOF (org-wide read; a subtree-scoped grant on the node OR on any VERIFIED true ancestor — the counters row carries the channel's canonical path, and claimed prefixes must equal it; or, for `self` views, a home-scoped grant on the node), `opaque` discloses nothing, and `forbidden` appears only with no read scope in the org. See "Authorization: readability × answerability" in SYNC_ENGINE.md for the worked matrix. |
 | **Yjs relay** | `canEditEntity` on WS upgrade | Reads the entity row and memberships over raw `pg` (table/column names derived via `toTableName`/`toColumnName`), then runs the same engine. |
 | **Postgres RLS** | `tenantRead` / `tenantContext` | Tenant isolation only. Not a permission layer. |
 
-One row-lifecycle check runs **before** the engine on every row path: unpublished drafts
-(`publishedAt` null — an opt-in product-table column, see `shared/src/published-rows.ts`) are
-visible to their author alone. The PRIMARY draft boundary sits below all of this: a
-publication row filter keeps draft product rows out of the replication stream entirely
-(publish arrives as INSERT, unpublish as DELETE — see SYNC_ENGINE.md), so the SSE dispatch
-veto is fail-closed defense-in-depth for a misconfigured fork, not the mechanism. The
-API-side checks remain load-bearing because the TABLE still contains drafts:
-collection/delta reads exclude them by predicate, the detail read 404s non-authors, the
-detail cache refuses to serve them, and the yjs relay rejects non-author write
-connections. The engine itself has no draft vocabulary — the column is the contract, and
-every check is introspection-guarded so tables without the column are untouched.
+One row-lifecycle check runs **before** the engine on every row path: unpublished drafts (`publishedAt` null — an opt-in product-table column, see `shared/src/published-rows.ts`) are visible to their author alone. The PRIMARY draft boundary sits below all of this: a publication row filter keeps draft product rows out of the replication stream entirely (publish arrives as INSERT, unpublish as DELETE — see SYNC_ENGINE.md), so the SSE dispatch veto is fail-closed defense-in-depth for a misconfigured fork, not the mechanism. The API-side checks remain load-bearing because the TABLE still contains drafts: collection/delta reads exclude them by predicate, the detail read 404s non-authors, the detail cache refuses to serve them, and the yjs relay rejects non-author write connections. The engine itself has no draft vocabulary — the column is the contract, and every check is introspection-guarded so tables without the column are untouched.
 
-Product `publishedAt` is distinct from channel `publishedAt`, which gates setup, and from
-`publicAt`, which grants non-members read access.
+Product `publishedAt` is distinct from channel `publishedAt`, which gates setup, and from `publicAt`, which grants non-members read access.
 
 Two rules keep these honest, and both were once broken:
 
-- **The system-admin bypass applies everywhere**, including collection reads. A sysadmin passes `orgGuard` with *no membership*, so a membership-only scope resolver hands them an empty list while single-row reads of the very same rows succeed.
+- **The system-admin bypass applies everywhere**, including collection reads. A sysadmin passes `orgGuard` with _no membership_, so a membership-only scope resolver hands them an empty list while single-row reads of the very same rows succeed.
 - **Public rows appear in lists.** A grant that only the single-row path honours is worse than no grant at all: the row is fetchable by id and pushed over SSE, but silently absent from every collection.
 
 The collection path returns a deliberate **tri-state**, so that "no restriction" can never be confused with "no rows":
 
 ```ts
 export type CollectionReadWhere =
-  | { kind: 'all' }             // org-wide read: no scope restriction
-  | { kind: 'none' }            // no readable scope: return [] without querying
-  | { kind: 'where'; where: SQL };
+  | { kind: "all" } // org-wide read: no scope restriction
+  | { kind: "none" } // no readable scope: return [] without querying
+  | { kind: "where"; where: SQL };
 ```
 
 A bare `undefined` WHERE would leak the table, which is exactly the bug this shape makes unrepresentable. In the same spirit, the compiled SQL for a row condition emits `false` for an anonymous actor, mirroring the check-form's deny.
@@ -230,16 +249,16 @@ A bare `undefined` WHERE would leak the table, which is exactly the bug this sha
 
 The load-bearing test is the parity property test in `backend/src/permissions/row-predicates.test.ts`, which runs against a real Postgres. It generates random policies, memberships, and actors, then asserts row-for-row that independent implementations agree: the engine's `getAllDecisions`, the compiled SQL executed against a scratch table, the frontend's `computeCan` + `resolvePermission`, and — under the real app config — SSE dispatch. It covers deep ancestor chains and `elevatedRoles` via a synthetic topology. A deterministic PRNG means failures reproduce.
 
-That test is what lets the SQL compiler exist at all: two hand-written implementations of the same rule *will* drift, so the drift is pinned rather than trusted. `topology.ts` / `resolve-topology.ts` exist as the seam that makes this possible — they let tests drive the engine on a synthetic hierarchy without module mocks, so a two-level template config can still exercise deep-chain behavior.
+That test is what lets the SQL compiler exist at all: two hand-written implementations of the same rule _will_ drift, so the drift is pinned rather than trusted. `topology.ts` / `resolve-topology.ts` exist as the seam that makes this possible — they let tests drive the engine on a synthetic hierarchy without module mocks, so a two-level template config can still exercise deep-chain behavior.
 
-**The scenario space is the test.** It varies `isSystemAdmin` and public read grants, and it must keep doing so: for a long time it pinned `isSystemAdmin: false` and generated no public rows, and *both* of the divergences listed above lived comfortably underneath it, green. A parity test only pins the axes it actually varies. If you add a dimension to the permission model, add it here in the same commit, and confirm the test goes red when you remove the fix.
+**The scenario space is the test.** It varies `isSystemAdmin` and public read grants, and it must keep doing so: for a long time it pinned `isSystemAdmin: false` and generated no public rows, and _both_ of the divergences listed above lived comfortably underneath it, green. A parity test only pins the axes it actually varies. If you add a dimension to the permission model, add it here in the same commit, and confirm the test goes red when you remove the fix.
 
 The rest of the suite covers grant attribution, `'own'` denial when the actor or `createdBy` is absent, public read for anonymous actors, policy completeness, the `null`-vs-`undefined` scope distinction, and a perf floor (100 entities under 10 ms; batch at least 2× a loop).
 
 ## Behavior
 
 | Scenario | Outcome |
-|----------|---------|
+| --- | --- |
 | Org admin acts on a product in their org | Allowed unconditionally, `grantedBy: membership` |
 | Member with `update: 'own'` edits a row they created | Allowed, `grantedBy: relation` (`own`) |
 | Member with `update: 'own'` edits someone else's row | Denied. The UI optimistically enables the control; the backend rejects on save |

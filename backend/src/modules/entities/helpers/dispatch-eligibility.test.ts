@@ -2,7 +2,7 @@ import { appConfig, type EntityRole } from 'shared';
 import { describe, expect, it } from 'vitest';
 import {
   canReceiveEntityEvent,
-  canReceiveEntityEventCached,
+  rowReadDecisions,
   rowScopedEvent,
   type SubscriberAccess,
 } from '#/modules/entities/helpers/dispatch-to-stream';
@@ -10,14 +10,14 @@ import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
 /**
- * The class memo must be a pure cache: for every (subscriber, row) the memoized decision
- * equals the direct engine decision. The risk surface is the class KEY — a key too coarse
- * silently shares a decision between subscribers the engine would treat differently.
- * Deterministic cases pin the known splitting dimensions (admin bit, owner bit, malformed
- * memberships); the seeded sweep hunts for unknown ones.
+ * The batch eligibility path (`rowReadDecisions`, engine-side access-class collapse) must
+ * agree with the single-subscriber predicate (`canReceiveEntityEvent`, a batch of one) on
+ * every (subscriber, row). The engine's own class-key invariant is property-tested in
+ * shared (`resolve-access.test.ts`) with synthetic policies; these tests pin the dispatch
+ * wiring: veto propagation, per-row any-of composition, and per-subscriber isolation.
  */
 
-const ORGS = ['org-cm-a', 'org-cm-b', 'org-cm-c'];
+const ORGS = ['org-el-a', 'org-el-b', 'org-el-c'];
 const USERS = ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'];
 
 const nullAncestorScopes = Object.fromEntries(
@@ -46,7 +46,7 @@ const attachmentRow = (id: string, organizationId: string, extra: Record<string,
 
 const attachmentEvent = (organizationId: string, overrides: Record<string, unknown>): AppStreamProductEvent =>
   ({
-    id: 'activity-classmemo',
+    id: 'activity-eligibility',
     type: 'attachment.created',
     action: 'create',
     entityType: 'attachment',
@@ -65,66 +65,71 @@ const attachmentEvent = (organizationId: string, overrides: Record<string, unkno
     ...overrides,
   }) as unknown as AppStreamProductEvent;
 
-/** The pre-memo per-subscriber evaluation, verbatim: scoped event derived inside the loop. */
-const legacyDecision = (subscriber: SubscriberAccess, event: AppStreamProductEvent): boolean => {
+const scopedRows = (event: AppStreamProductEvent): AppStreamProductEvent[] => {
   const rows = event.batchRows?.length ? event.batchRows : [{ rowData: event.rowData as Record<string, unknown> }];
-  return rows.some(({ rowData }) =>
-    canReceiveEntityEvent(subscriber, rowData === event.rowData ? event : rowScopedEvent(event, rowData)),
-  );
+  return rows.map(({ rowData }) => (rowData === event.rowData ? event : rowScopedEvent(event, rowData)));
 };
 
-/** The memoized evaluation with scoped events hoisted and SHARED across subscribers, as dispatch now does. */
-const memoizedDecider = (event: AppStreamProductEvent): ((subscriber: SubscriberAccess) => boolean) => {
-  const rows = event.batchRows?.length ? event.batchRows : [{ rowData: event.rowData as Record<string, unknown> }];
-  const scoped = rows.map(({ rowData }) => (rowData === event.rowData ? event : rowScopedEvent(event, rowData)));
-  return (subscriber) => scoped.some((scopedEvent) => canReceiveEntityEventCached(subscriber, scopedEvent));
+/** The dispatch any-of composition over batch rows, order-preserving, as selectEligible does. */
+const batchDecisions = (subscribers: SubscriberAccess[], event: AppStreamProductEvent): boolean[] => {
+  const results = subscribers.map(() => false);
+  let undecided = subscribers.map((_, index) => index);
+  for (const scopedEvent of scopedRows(event)) {
+    if (undecided.length === 0) break;
+    const decisions = rowReadDecisions(
+      undecided.map((index) => subscribers[index]),
+      scopedEvent,
+    );
+    undecided = undecided.filter((subscriberIndex, position) => {
+      if (decisions[position]) {
+        results[subscriberIndex] = true;
+        return false;
+      }
+      return true;
+    });
+  }
+  return results;
 };
 
-describe('dispatch class memo: deterministic splits', () => {
-  it('a malformed membership denies its holder without poisoning the clean subscriber sharing the row', () => {
+/** The per-subscriber evaluation: independent batch-of-1 checks, no cross-subscriber sharing. */
+const singleDecision = (subscriber: SubscriberAccess, event: AppStreamProductEvent): boolean =>
+  scopedRows(event).some((scopedEvent) => canReceiveEntityEvent(subscriber, scopedEvent));
+
+describe('dispatch batch eligibility: deterministic splits', () => {
+  it('a malformed membership denies its holder without poisoning others in the SAME batch call', () => {
     const event = attachmentEvent(ORGS[0], { rowData: attachmentRow('att-1', ORGS[0]) });
-    const decide = memoizedDecider(event);
 
     const clean: SubscriberAccess = {
       userId: 'user-1',
       isSystemAdmin: false,
       memberships: [membership(ORGS[0], 'member', 'user-1')],
     };
-    // Same granting membership PLUS a malformed one: the engine fails the whole check on it.
+    // Same granting membership PLUS a malformed one: the engine fail-closes just this access.
     const broken: SubscriberAccess = {
       userId: 'user-2',
       isSystemAdmin: false,
       memberships: [membership(ORGS[0], 'member', 'user-2'), membership(ORGS[1], 'member', 'user-2', true)],
     };
 
-    // Order matters for the poison scenario: evaluate broken FIRST so a shared class would
-    // cache its deny and wrongly deny the clean subscriber (and vice versa on second pass).
-    expect(decide(broken)).toBe(false);
-    expect(decide(clean)).toBe(true);
-    expect(decide(broken)).toBe(false);
-
-    expect(legacyDecision(clean, event)).toBe(true);
-    expect(legacyDecision(broken, event)).toBe(false);
+    // broken FIRST: were classes shared naively, its deny would leak onto clean.
+    expect(batchDecisions([broken, clean], event)).toEqual([false, true]);
+    expect(singleDecision(clean, event)).toBe(true);
+    expect(singleDecision(broken, event)).toBe(false);
   });
 
-  it('system admin and memberless subscriber never share a class', () => {
+  it('system admin and memberless subscriber resolve differently in one batch', () => {
     const event = attachmentEvent(ORGS[0], { rowData: attachmentRow('att-2', ORGS[0]) });
-    const decide = memoizedDecider(event);
 
     const admin: SubscriberAccess = { userId: 'user-1', isSystemAdmin: true, memberships: [] };
     const nobody: SubscriberAccess = { userId: 'user-2', isSystemAdmin: false, memberships: [] };
 
-    expect(decide(admin)).toBe(true);
-    expect(decide(nobody)).toBe(false);
-    expect(decide(admin)).toBe(legacyDecision(admin, event));
-    expect(decide(nobody)).toBe(legacyDecision(nobody, event));
+    expect(batchDecisions([admin, nobody], event)).toEqual([true, false]);
   });
 
-  it('draft rows deny every class, author and admin included', () => {
+  it('draft rows deny every subscriber, author and admin included', () => {
     const event = attachmentEvent(ORGS[0], {
       rowData: attachmentRow('att-draft', ORGS[0], { createdBy: 'user-1', publishedAt: null }),
     });
-    const decide = memoizedDecider(event);
 
     const author: SubscriberAccess = {
       userId: 'user-1',
@@ -133,10 +138,7 @@ describe('dispatch class memo: deterministic splits', () => {
     };
     const admin: SubscriberAccess = { userId: 'user-2', isSystemAdmin: true, memberships: [] };
 
-    for (const subscriber of [author, admin]) {
-      expect(decide(subscriber)).toBe(false);
-      expect(decide(subscriber)).toBe(legacyDecision(subscriber, event));
-    }
+    expect(batchDecisions([author, admin], event)).toEqual([false, false]);
   });
 
   it('batch rows: readable non-representative row still reaches only its readers', () => {
@@ -148,7 +150,6 @@ describe('dispatch class memo: deterministic splits', () => {
         { seq: 2, rowData: attachmentRow('att-b', ORGS[0]) },
       ],
     });
-    const decide = memoizedDecider(event);
 
     const orgAMember: SubscriberAccess = {
       userId: 'user-1',
@@ -161,10 +162,7 @@ describe('dispatch class memo: deterministic splits', () => {
       memberships: [membership(ORGS[2], 'member', 'user-2')],
     };
 
-    expect(decide(orgAMember)).toBe(true);
-    expect(decide(orgCMember)).toBe(false);
-    expect(decide(orgAMember)).toBe(legacyDecision(orgAMember, event));
-    expect(decide(orgCMember)).toBe(legacyDecision(orgCMember, event));
+    expect(batchDecisions([orgAMember, orgCMember], event)).toEqual([true, false]);
   });
 });
 
@@ -179,8 +177,8 @@ const mulberry32 = (seed: number) => {
   };
 };
 
-describe('dispatch class memo: randomized parity sweep', () => {
-  it('memoized decision === direct engine decision for every subscriber, across 300 random events', () => {
+describe('dispatch batch eligibility: randomized parity sweep', () => {
+  it('batch decision === independent single decision for every subscriber, across 300 random events', () => {
     const SEED = 0xce11a;
     const random = mulberry32(SEED);
     const pick = <T>(items: T[]): T => items[Math.floor(random() * items.length)];
@@ -215,16 +213,11 @@ describe('dispatch class memo: randomized parity sweep', () => {
         };
       });
 
-      const decide = memoizedDecider(event);
-      // Two passes: the first fills the memo, the second must serve identical hits.
-      for (let pass = 0; pass < 2; pass++) {
-        for (const [index, subscriber] of subscribers.entries()) {
-          const direct = legacyDecision(subscriber, event);
-          const memoized = decide(subscriber);
-          expect(memoized, `seed=0x${SEED.toString(16)} iteration=${iteration} subscriber=${index} pass=${pass}`).toBe(
-            direct,
-          );
-        }
+      const batch = batchDecisions(subscribers, event);
+      for (const [index, subscriber] of subscribers.entries()) {
+        expect(batch[index], `seed=0x${SEED.toString(16)} iteration=${iteration} subscriber=${index}`).toBe(
+          singleDecision(subscriber, event),
+        );
       }
     }
   });

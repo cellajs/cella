@@ -1,6 +1,7 @@
 import { accessPolicies, elevatedRoles, publicReadGrants } from '../../config/permissions-config';
 import type { EntityActionType } from '../../types';
 import { getAllDecisions } from './permission-manager/check';
+import { type EngineAccess, getDecisionsForAccesses } from './permission-manager/resolve-access';
 import type {
   PermissionCheckOptions,
   PermissionDecision,
@@ -9,7 +10,8 @@ import type {
 } from './permission-manager/types';
 
 /**
- * Who is acting.
+ * Who is acting, for tiers that compile predicates rather than run the JS engine (the SQL
+ * twin: `compileRowConditionSql`, collection scopes, catchup reads).
  *
  * The discriminated union makes the actor state explicit. An optional `userId` is
  * how permission bugs get in: a caller that simply forgets it still compiles, and every rule
@@ -20,9 +22,23 @@ import type {
  */
 export type Actor = { userId: string; isSystemAdmin?: boolean } | { anonymous: true };
 
-/** Actor → engine options. System admins bypass every check; anonymous actors carry no id. */
-const actorOptions = (actor: Actor): PermissionCheckOptions =>
-  'anonymous' in actor ? {} : { userId: actor.userId, isSystemAdmin: actor.isSystemAdmin === true };
+/**
+ * Who is asking, WITH what they hold: the one input object of {@link checkAccess}.
+ *
+ * Memberships and actor travel together by construction — the old `(memberships, …, actor)`
+ * signature let a call site pair one user's memberships with another user's actor, a bug no
+ * type could catch. An anonymous access carries no memberships at all: anonymity and
+ * membership are contradictory, so the shape forbids the combination outright.
+ */
+export type Access<T extends PermissionMembership = PermissionMembership> =
+  | { userId: string; isSystemAdmin?: boolean; memberships: T[] }
+  | { anonymous: true };
+
+/** Access → engine access. System admins bypass every check; anonymous actors hold nothing. */
+const toEngineAccess = <T extends PermissionMembership>(access: Access<T>): EngineAccess<T> =>
+  'anonymous' in access
+    ? { memberships: [] }
+    : { memberships: access.memberships, userId: access.userId, isSystemAdmin: access.isSystemAdmin === true };
 
 /**
  * Permission result containing membership and whether the action is allowed.
@@ -44,51 +60,94 @@ export interface BatchPermissionResult<T extends PermissionMembership = Permissi
   decisions: Map<string, PermissionDecision<T>>;
 }
 
-/**
- * The one authorization entry point shared by every tier (backend handlers, yjs relay), so the
- * decision is computed by a single engine. Public read grants and `elevatedRoles` are injected
- * here; callers only supply the {@link Actor}. Allowed if the entity OR an ancestor matches a grant.
- *
- * Overloaded on the entity arg: a single entity returns `PermissionResult`; an array returns
- * `BatchPermissionResult` (`{ results: Map<id, …>, decisions }`).
- */
-export function checkPermission<T extends PermissionMembership>(
-  memberships: T[],
-  action: EntityActionType,
-  entity: SubjectForPermission,
-  actor: Actor,
-): PermissionResult<T>;
-export function checkPermission<T extends PermissionMembership>(
-  memberships: T[],
-  action: EntityActionType,
-  entities: SubjectForPermission[],
-  actor: Actor,
-): BatchPermissionResult<T>;
-export function checkPermission<T extends PermissionMembership>(
-  memberships: T[],
-  action: EntityActionType,
-  entityOrEntities: SubjectForPermission | SubjectForPermission[],
-  actor: Actor,
-): PermissionResult<T> | BatchPermissionResult<T> {
-  const isSingle = !Array.isArray(entityOrEntities);
+/** Options accepted by the many-accesses form. */
+export interface CheckAccessBatchOptions {
+  /**
+   * `'throw'` (default) surfaces a malformed membership like the single-access form;
+   * `'deny'` fail-closes just that access and keeps resolving the rest (stream fan-out).
+   */
+  onInvalidMembership?: 'throw' | 'deny';
+}
 
-  const options: PermissionCheckOptions = {
+/**
+ * The one authorization entry point shared by every JS tier (backend handlers, yjs relay,
+ * stream dispatch), so the decision is computed by a single engine. Public read grants and
+ * `elevatedRoles` are injected here; callers only supply {@link Access} objects.
+ * Allowed if the entity OR an ancestor matches a grant.
+ *
+ * Three shapes, one semantics:
+ * - `checkAccess(access, action, subject)` → `PermissionResult` — the request-path check.
+ * - `checkAccess(access, action, subjects[])` → `BatchPermissionResult` — one actor, many
+ *   rows (list splitting).
+ * - `checkAccess(accesses[], action, subject, options?)` → `PermissionResult[]` — many
+ *   actors, one row (stream fan-out). The engine collapses accesses into equivalence
+ *   classes internally and runs the policy walk once per class, so cost scales with
+ *   distinct access classes, not with actors.
+ *
+ * The SQL twin (`compileRowConditionSql`, collection scopes) is the one deliberate second
+ * form — Postgres cannot call this function — and stays pinned by the row-predicate parity
+ * tests.
+ */
+export function checkAccess<T extends PermissionMembership>(
+  access: Access<T>,
+  action: EntityActionType,
+  subject: SubjectForPermission,
+): PermissionResult<T>;
+export function checkAccess<T extends PermissionMembership>(
+  access: Access<T>,
+  action: EntityActionType,
+  subjects: SubjectForPermission[],
+): BatchPermissionResult<T>;
+export function checkAccess<T extends PermissionMembership>(
+  accesses: Access<T>[],
+  action: EntityActionType,
+  subject: SubjectForPermission,
+  options?: CheckAccessBatchOptions,
+): PermissionResult<T>[];
+export function checkAccess<T extends PermissionMembership>(
+  accessOrAccesses: Access<T> | Access<T>[],
+  action: EntityActionType,
+  subjectOrSubjects: SubjectForPermission | SubjectForPermission[],
+  options?: CheckAccessBatchOptions,
+): PermissionResult<T> | BatchPermissionResult<T> | PermissionResult<T>[] {
+  // Many accesses × one subject: engine-side class collapse.
+  if (Array.isArray(accessOrAccesses)) {
+    if (Array.isArray(subjectOrSubjects)) {
+      throw new Error('[Permission] checkAccess: many accesses × many subjects is not a supported shape');
+    }
+    const decisions = getDecisionsForAccesses(
+      accessPolicies,
+      accessOrAccesses.map(toEngineAccess),
+      subjectOrSubjects,
+      { publicGrants: publicReadGrants, elevatedRoles, onInvalidMembership: options?.onInvalidMembership },
+    );
+    return decisions.map((decision) => ({ isAllowed: decision.can[action], membership: decision.membership }));
+  }
+
+  const engineAccess = toEngineAccess(accessOrAccesses);
+  const engineOptions: PermissionCheckOptions = {
     publicGrants: publicReadGrants,
     elevatedRoles,
-    ...actorOptions(actor),
+    userId: engineAccess.userId,
+    isSystemAdmin: engineAccess.isSystemAdmin,
   };
 
-  if (isSingle) {
-    const { can, membership } = getAllDecisions(accessPolicies, memberships, entityOrEntities, options);
+  // One access × one subject: the request-path check.
+  if (!Array.isArray(subjectOrSubjects)) {
+    const { can, membership } = getAllDecisions(
+      accessPolicies,
+      engineAccess.memberships,
+      subjectOrSubjects,
+      engineOptions,
+    );
     return { isAllowed: can[action], membership };
   }
 
-  const decisions = getAllDecisions(accessPolicies, memberships, entityOrEntities, options);
+  // One access × many subjects: list splitting.
+  const decisions = getAllDecisions(accessPolicies, engineAccess.memberships, subjectOrSubjects, engineOptions);
   const results = new Map<string, PermissionResult<T>>();
-
   for (const [id, decision] of decisions) {
     results.set(id, { isAllowed: decision.can[action], membership: decision.membership });
   }
-
   return { results, decisions };
 }

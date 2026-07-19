@@ -4,8 +4,8 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
 import { resolveEntities } from '#/modules/entities/entities-queries';
-import { checkPermission } from '#/permissions';
-import { actorFrom } from '#/permissions/actor';
+import { checkAccess } from '#/permissions';
+import { accessFrom } from '#/permissions/actor';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 /**
@@ -21,8 +21,6 @@ export const splitByPermission = async (
   entityType: ChannelEntityType | ProductEntityType,
   ids: string[],
 ) => {
-  const memberships = ctx.var.memberships;
-
   // Resolve entities (includes createdBy for implicit owner relation)
   // Auto-wrap in tenantRead when called outside an RLS context (bare baseDb)
   const entities =
@@ -38,7 +36,7 @@ export const splitByPermission = async (
       entity as { id: string; createdBy?: string | null } & Partial<ChannelEntityIdColumns>,
     ),
   );
-  const { results } = checkPermission(memberships, action, subjects, actorFrom(ctx));
+  const { results } = checkAccess(accessFrom(ctx), action, subjects);
 
   // Partition into allowed and disallowed
   const allowedIds: string[] = [];
