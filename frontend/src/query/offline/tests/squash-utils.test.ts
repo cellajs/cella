@@ -4,7 +4,7 @@ import { removePausedCreates, squashIntoPendingCreate, squashPendingMutation } f
 
 /**
  * Helper: create a PAUSED mutation (offline at mutate time, so it pauses before the first
- * attempt) — the only state squash/coalesce may touch.
+ * attempt); the only state squash/coalesce may touch.
  */
 function queuePausedMutation(
   queryClient: QueryClient,

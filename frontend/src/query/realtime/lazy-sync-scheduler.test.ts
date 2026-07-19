@@ -190,7 +190,7 @@ describe('lazy-sync-scheduler', () => {
 
     await flushAllNow();
 
-    // One merged org fetch instead of two per-channel fetches; rows route by home during patch.
+    // One merged org fetch covers both channels; rows route by home during patch.
     expect(fetchRangeAndPatch).toHaveBeenCalledTimes(1);
     expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('5,12');
     // Per-view advance accounting: both channels advance to the covered upper bound.

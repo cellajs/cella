@@ -44,7 +44,7 @@ const frontendUrl = new URL(appConfig.frontendUrl);
 const repoDocRoutes = {
   'cella/ARCHITECTURE.md': '/docs/page/architecture',
   'cella/CLIENT.md': '/docs/page/architecture/client',
-  'cella/RLS.md': '/docs/page/architecture/rls',
+  'cella/multi_tenancy.md': '/docs/page/architecture/multi_tenancy',
   'cella/SYNC_ENGINE.md': '/docs/page/architecture/sync-engine',
   'cella/PERMISSIONS.md': '/docs/page/architecture/permissions',
   'cella/SCHEMA_EVOLUTION.md': '/docs/page/architecture/schema-evolution',

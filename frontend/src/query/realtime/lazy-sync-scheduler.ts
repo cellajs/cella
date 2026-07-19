@@ -145,10 +145,10 @@ export function flushAllNow(): Promise<void> {
 }
 
 /**
- * Awaitable immediate flush of ONE channel view — the foreground catchup path (gap 4a):
+ * Awaitable immediate flush of ONE channel view, the foreground catchup path (gap 4a):
  * catchup enqueues its gap, then awaits this so the mutation-replay gate resolves against a
  * reconciled cache, while the scheduler stays the only code that fetches seq ranges.
- * Single attempt: a failure takes the fallback (invalidate + advance) instead of the lazy
+ * Single attempt: a failure takes the fallback (invalidate + advance), not the lazy
  * retry ladder, mirroring catchup's original inline semantics.
  */
 export async function flushChannelViewNow(
@@ -192,7 +192,7 @@ async function flushDue(): Promise<void> {
     dirty.delete(key); // in-flight ranges leave the map; overlapping re-notifications re-enqueue
     due.push(entry);
   }
-  // Covering fetch: every due channel of one (entityType, org) shares ONE bounded fetch —
+  // Covering fetch: every due channel of one (entityType, org) shares ONE bounded fetch;
   // rows route to their home lists during patching, so N dirty channels never cost N fetches.
   const groups = new Map<string, DirtyEntry[]>();
   for (const entry of due) {

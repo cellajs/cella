@@ -38,13 +38,12 @@ function getTabSessionId(): string {
 //
 // Paused mutations persist in PER-TAB records (`{scope}:mut:{tabSessionId}`), not in the
 // shared meta record: the meta record is rewritten by EVERY tab's flush, so mutations stored
-// there let a follower flush clobber the leader's queue — and the old leader-only dehydration
+// there let a follower flush clobber the leader's queue, and the old leader-only dehydration
 // gate meant a follower's own paused work was never persisted at all. Each tab now persists
 // exactly the paused mutations in its own cache; on restore, a tab unions its OWN record, the
 // legacy shared-record array, and records of DEAD tabs (absorbed and removed). Liveness comes
 // from a per-tab Web Lock held for the tab's lifetime, with a record-age fallback where the
 // locks API is unavailable.
-
 const MUTATION_LOCK_PREFIX = `${appConfig.slug}-mutation-owner:`;
 
 const mutationRecordPrefix = (scope: string) => `${scope}:mut:`;

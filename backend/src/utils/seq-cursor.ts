@@ -5,8 +5,8 @@ import { eq, gte, like, lte, or } from 'drizzle-orm';
  * Parse a seqCursor string into gte/lte boundaries.
  *
  * One format: "51,150" maps to { gte: 51, lte: 150 } (inclusive bounded range). Every
- * consumer knows its upper bound — catchup from the view answer's frontier, live from the
- * notification's batch end — so the historical open-ended single-value form is gone.
+ * consumer knows its upper bound (catchup from the view answer's frontier, live from the
+ * notification's batch end), so the historical open-ended single-value form is gone.
  */
 export function parseSeqCursor(raw: string | undefined): { gte?: number; lte?: number } | undefined {
   if (!raw) return undefined;

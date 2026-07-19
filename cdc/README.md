@@ -81,7 +81,7 @@ Counter keys in `channel_counters`: `sequence` (the org reservation counter), `f
 **At-least-once.** The slot only advances on acknowledgement, and acknowledgement happens after processing: a crash in between redelivers the events. The consequences:
 
 - **Activities are replay-safe.** The activity id is derived deterministically from the LSN, and inserts are `onConflictDoNothing`: replaying an unacknowledged range produces the same rows exactly once.
-- **Counters and seq stamps are not.** Replaying an *already-acknowledged* range would double-count `channel_counters`. That can't happen in normal operation (the slot gates replay to unacknowledged ranges); it takes a manual slot reset or LSN rewind. The repair path is catchup recovery's full counter recalculation.
+- **Counters and seq stamps are not.** Replaying an _already-acknowledged_ range would double-count `channel_counters`. That can't happen in normal operation (the slot gates replay to unacknowledged ranges); it takes a manual slot reset or LSN rewind. The repair path is catchup recovery's full counter recalculation.
 - **Ordering.** Within a transaction, WAL order is preserved and org-sequence values are assigned in it. Across transactions the FlushBuffer regroups by `(type, action)`, so delivery to the API is not globally ordered. Client-visible ordering comes from `seq`, not from message arrival.
 - Downstream consumers see duplicate messages after a redelivery; they dedupe on activity id.
 
@@ -97,9 +97,7 @@ This channel carries **full entity row data**: it is an internal service channel
 
 **Message shape** (`CdcOutboundMessage`): the activity (with id, `seq`, `batchUntilSeq`, `count`), the compacted `rowData`, `movedFrom` old-row subsets for reparented rows (single and per batch row), `batchRows` for batches (permission-relevant fields only: id, createdBy, deletedAt, publicAt, publishedAt, path, channel ids), and trace context. The backend invalidates detail-cache entries by entity id (single `subjectId` or `batchRows` ids). Batches are split per `(path, entityType)` group so every message describes ONE audience; sequence ranges of different groups may interleave, so **`count` — never range arithmetic — is authoritative for batch size**.
 
-**Channel path sync**: after deltas apply, channel-entity create/update events mirror the
-row's canonical id-path (STORED generated column) onto its `channel_counters.path`, the
-verified-ancestry source for catchup view authorization. Recalculation backfills it.
+**Channel path sync**: after deltas apply, channel-entity create/update events mirror the row's canonical id-path (STORED generated column) onto its `channel_counters.path`, the verified-ancestry source for catchup view authorization. Recalculation backfills it.
 
 **Control messages** bypass the data schema: `health` (pushed every 15 s), `catchup_complete`, and `wal_lag_alert`.
 
@@ -111,8 +109,8 @@ verified-ancestry source for catchup view authorization. Recalculation backfills
 
 ## Constraints
 
-- **Adding a tracked table takes two coupled steps**: add it to the backend's `entityTables`/`resourceTables` maps *and* re-run the CDC migration, which regenerates the publication and sets `REPLICA IDENTITY FULL` from those maps. Miss the registry and events are silently dropped at parse; miss the publication and no WAL events arrive at all. There is no `FOR ALL TABLES`: the list is explicit.
-- **`REPLICA IDENTITY FULL` is mandatory** on every tracked table. Delete row data and the changed-field fallback both read the old tuple. It is also why the publication carries all columns: Postgres rejects publication column lists on tables with replica identity FULL. Row *filters* are the opposite — FULL identity is what allows them to reference any column (the draft filter above).
+- **Adding a tracked table takes two coupled steps**: add it to the backend's `entityTables`/`resourceTables` maps _and_ re-run the CDC migration, which regenerates the publication and sets `REPLICA IDENTITY FULL` from those maps. Miss the registry and events are silently dropped at parse; miss the publication and no WAL events arrive at all. There is no `FOR ALL TABLES`: the list is explicit.
+- **`REPLICA IDENTITY FULL` is mandatory** on every tracked table. Delete row data and the changed-field fallback both read the old tuple. It is also why the publication carries all columns: Postgres rejects publication column lists on tables with replica identity FULL. Row _filters_ are the opposite — FULL identity is what allows them to reference any column (the draft filter above).
 - **Large columns are stripped in-process, not in the publication.** Anything downstream of the handlers must tolerate their absence from `rowData`.
 - **`stx` and `seq` are load-bearing columns** on product tables: `stx.changedFields` drives update detection and the worker writes `seq` back. Renaming or dropping them breaks the pipeline.
 - **One consumer per slot.** A second worker contends and sits in the takeover retry loop; the backend likewise accepts a single worker connection.
@@ -124,7 +122,7 @@ verified-ancestry source for catchup view authorization. Recalculation backfills
 Validated in `src/env.ts` (loads the backend's `.env`):
 
 | Variable | Purpose |
-|----------|---------|
+| --- | --- |
 | `DATABASE_CDC_URL` | Postgres connection for replication + writes; the role needs `REPLICATION` |
 | `DATABASE_SSL_CA` | Base64 PEM CA to verify Postgres TLS; required in production |
 | `API_WS_URL` | Backend WebSocket endpoint (defaults to `ws://localhost:{backendPort}/internal/cdc`) |

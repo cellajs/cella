@@ -13,13 +13,12 @@ import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
  * Dispatch-shaped benchmark for the engine's access-class collapse, sized after the
  * measured constraint in .todos/SYNC_FANOUT_OPTIMIZATION.md: one busy org, thousands of
  * subscribers on `org:<id>`, single-row and CDC-collapsed batch events. Compares
- * per-subscriber eligibility (independent `checkAccess` batch-of-1 calls — no collapse)
+ * per-subscriber eligibility (independent `checkAccess` batch-of-1 calls, no collapse)
  * against the batch path dispatch actually uses (`rowReadDecisions`: one `checkAccess`
  * call per row, one policy walk per access class). Absolute numbers are
  * hardware-dependent; the printed table is the deliverable, the assertions only guard the
  * direction.
  */
-
 const ORG = 'org-perf-hot';
 const OTHER_ORGS = ['org-perf-b', 'org-perf-c'];
 
@@ -196,7 +195,7 @@ describe('dispatch batch eligibility: fan-out benchmark', () => {
         `${scenario.name}: per-subscriber ${singleMs.toFixed(2)}ms → batch ${batchMs.toFixed(2)}ms (${(singleMs / batchMs).toFixed(1)}x)`,
       );
 
-      // Direction guard only — loose enough to survive CI noise.
+      // Direction guard only, loose enough to survive CI noise.
       expect(batchMs).toBeLessThan(singleMs);
     }
 

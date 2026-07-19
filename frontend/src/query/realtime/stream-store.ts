@@ -137,7 +137,7 @@ export class StreamManager {
    * Connect to stream (subscribe-then-snapshot: SSE opens first and buffers notifications,
    * catchup runs on the server's `offset` event, then the buffer drains and the stream goes live).
    * A change committed between the catchup read and SSE registration is therefore either in the
-   * catchup answer or in the buffer — never lost in the registration window.
+   * catchup answer or in the buffer; never lost in the registration window.
    */
   async connect() {
     // Set up reconnect listeners (idempotent, cleaned up in disconnect)

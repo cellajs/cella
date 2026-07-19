@@ -4,7 +4,7 @@ Cella answers one question everywhere: **may this actor perform this action on t
 
 Roles are **scoped to channel entities**, never global. Product entities own no roles at all: they inherit their permissions from channels. Ownership is an _implicit_ relation derived from the row's `createdBy` column rather than a stored tuple.
 
-Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and knows nothing about roles, policies, or actions. See [Multi-tenancy](./RLS.md) for the database boundary and how the layers combine.
+Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and knows nothing about roles, policies, or actions. See [Multi-tenancy](./multi_tenancy.md) for the database boundary and how the layers combine.
 
 ## Architecture
 
@@ -158,7 +158,7 @@ Boundary code that starts from DB rows, route params, or CDC events uses `buildS
 
 `grantedBy` is not decoration. It records _why_ an action was allowed, which is what makes "why can this user delete?" answerable — through the debug formatters (`formatPermissionDecision`, `formatBatchPermissionSummary`) and the full `decisions` map batch callers get back.
 
-## Widening: row conditions and public read
+## Row conditions
 
 Two mechanisms widen access beyond the policy matrix, and both read the row's own columns. There are exactly two rules — `own` and `public` — and that set is **closed**, not a fork extension point: every rule must be evaluable in all three forms (JS, compiled SQL, frontend) _and_ by dispatch from the row alone, which rules out cross-row and fork-defined conditions.
 

@@ -12,11 +12,10 @@ import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 /**
  * The batch eligibility path (`rowReadDecisions`, engine-side access-class collapse) must
  * agree with the single-subscriber predicate (`canReceiveEntityEvent`, a batch of one) on
- * every (subscriber, row). The engine's own class-key invariant is property-tested in
+ * every (subscriber, row). The engine's own class-key guarantee is property-tested in
  * shared (`resolve-access.test.ts`) with synthetic policies; these tests pin the dispatch
  * wiring: veto propagation, per-row any-of composition, and per-subscriber isolation.
  */
-
 const ORGS = ['org-el-a', 'org-el-b', 'org-el-c'];
 const USERS = ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'];
 

@@ -112,7 +112,7 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
   }, [error, t]);
 
   // Local-first: a stored blob (downloaded earlier, or local-only pending upload) saves
-  // without the network — that is the point of keeping it. Cloud is the fallback.
+  // without the network; that is the point of keeping it. Cloud is the fallback.
   const handleDownload = async () => {
     try {
       const local = await attachmentStorage.createBlobUrlWithVariant(row.id, 'original', true);

@@ -16,7 +16,7 @@ export const actorFrom = (ctx: AuthContext): Actor => ({
 });
 
 /**
- * The full access for a `checkAccess` call — actor AND memberships in one object, from the
+ * The full access for a `checkAccess` call: actor AND memberships in one object, from the
  * guard-populated context. Handlers must not assemble accesses by hand: pairing one user's
  * memberships with another's identity is exactly the mismatch this helper closes off.
  * A context without a signed-in user yields a stated `{ anonymous: true }`.

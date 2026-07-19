@@ -31,7 +31,7 @@ doba provides the migration chain executor, bidirectional migrations, graph path
 Until the first lens ships and proves itself, breaking schema changes are handled by a simpler, throwaway escape hatch:
 
 1. **`appConfig.clientCacheVersion`** ([shared/config/config.default.ts](../shared/config/config.default.ts)): a string token, colocated with `apiVersion`/`cookieVersion` in the VERSIONING section. Bump it (e.g. `'v1' → 'v2'`) in the **same PR** as any breaking change to a cached entity's wire shape.
-2. **Client wipe, mutations preserved**: on boot, [frontend/src/query/persister.ts](../frontend/src/query/persister.ts) compares the persisted version to `appConfig.clientCacheVersion`. On mismatch it wipes cached query data (product records + bundled context queries) but **keeps queued mutations**, which replay against the fresh cache. A missing version (pre-feature build) seeds without wiping. Session scopes are wiped wholesale.
+2. **Client wipe, mutations preserved**: on boot, [frontend/src/query/persister.ts](../frontend/src/query/persister.ts) compares the persisted version to `appConfig.clientCacheVersion`. On mismatch it wipes cached query data (product records + bundled channel queries) but **keeps queued mutations**, which replay against the fresh cache. A missing version (pre-feature build) seeds without wiping. Session scopes are wiped wholesale.
 3. **Mutation salvage**: kept mutations replay; any that 4xx are quarantined to the `failed_sync` Dexie table ([frontend/src/query/offline/failed-sync.ts](../frontend/src/query/offline/failed-sync.ts)) rather than dropped (non-blocking, JSON-exportable).
 4. **CI gate**: `schema-bust-gate` in [.github/workflows/ci.yml](../.github/workflows/ci.yml) runs oasdiff on the committed `backend/openapi.cache.json` (base vs head). A breaking diff **fails the PR** unless `clientCacheVersion` was bumped in the same PR. Couple with a `feat!` PR title so release-please cuts a major. The gate is PR-time only: it never blocks the release/deploy jobs.
 
@@ -288,12 +288,12 @@ The lens system covers both entity classes under a **three-tier contract**; the 
 | **Channel entities** (`organization`; `user` follows the same plain-REST pattern, add when first needed) | plain `PUT`, full-body partial (drizzle-zod); no ops, no stx, no HLC | bundled into the single Dexie meta record (`channelQueries`), no seq | **Tier 2, reduced derivation**: body-schema widening + `normalizeBody` + cache/mutation migration + dual-emit reads. No key maps, no `fieldTimestamps` rewriting, no mirror-write LWW logic: no per-field merge exists on this path. |
 | **Non-entity surface** (auth/session, stx/ops envelope, SSE notifications, catchup summaries, counter formats) | frozen envelope (D4) | n/a | **Tier 3, excluded**: changes only via `apiVersion` |
 
-Why Tier 2 matters for Phase 1 (not just Phase 2 optics): context mutations _are_ queued offline (`networkMode: 'offlineFirst'` is global; `shouldDehydrateMutation` persists any paused mutation regardless of entity type). An org rename queued under an old bundle must replay correctly against a new server. Both entity classes share one lens ordinal, one telemetry chain, and the same CI guards, so what a peer or 3rd party consumes is uniform: **every resource** is version-tolerant under the same rules, and the protocol advertises `apiVersion` — the standard industry split (Stripe's model: payload down-migration per consumer version, transport/auth versioned as a whole).
+Why Tier 2 matters for Phase 1 (not just Phase 2 optics): channel mutations _are_ queued offline (`networkMode: 'offlineFirst'` is global; `shouldDehydrateMutation` persists any paused mutation regardless of entity type). An org rename queued under an old bundle must replay correctly against a new server. Both entity classes share one lens ordinal, one telemetry chain, and the same CI guards, so what a peer or 3rd party consumes is uniform: **every resource** is version-tolerant under the same rules, and the protocol advertises `apiVersion` — the standard industry split (Stripe's model: payload down-migration per consumer version, transport/auth versioned as a whole).
 
 Boundary notes:
 
 - **Membership**: rides on channel entities via enrichment and has its own table/wire shape; treat its fields as frozen-envelope-adjacent until a concrete need arises. Enrichment output (`membership`, `can`, `ancestorSlugs`) is computed, not stored, so cache migration never touches it.
-- **Channel entities stay on plain PUT by design**: moving them onto ops+stx was considered and rejected — it would drag them into CDC/seq/catchup scope for no user-visible gain and contradicts the deliberately lightweight context design (SYNC_ENGINE.md). The factory aligns the **schema/tolerance layer**, not the **merge layer**.
+- **Channel entities stay on plain PUT by design**: moving them onto ops+stx was considered and rejected — it would drag them into CDC/seq/catchup scope for no user-visible gain and contradicts the deliberately lightweight channel design (SYNC_ENGINE.md). The factory aligns the **schema/tolerance layer**, not the **merge layer**.
 - **Full-API tolerance was rejected**: lensing the frozen envelope would mean transforming the sync protocol itself per consumer version — the exact trap Cambria hit patch-lensing Automerge internals (D4, [Prior art](#prior-art)).
 
 ---
@@ -320,7 +320,7 @@ export const attachmentContract = evolutionContract.product("attachment", {
 // attachmentContract.resolveUpdateOps(entity, ops, stx) - entity-bound runtime seam (update)
 // attachmentContract.resolveServerUpdateOps(entity, ops) - trusted-server update seam
 
-// Context (plain) entity: organization-schema.ts
+// Channel (plain) entity: organization-schema.ts
 export const organizationContract = evolutionContract.channel("organization", {
   createItem: z.object({
     id: validTempIdSchema,
@@ -335,13 +335,13 @@ export const organizationContract = evolutionContract.channel("organization", {
 // organizationContract.normalizeBody(body)                 - entity-bound runtime seam
 ```
 
-- **One widener**: `widenBodySchema(entityType, zodObject)` ([lens-seam.ts](../backend/src/core/schema-evolution/lens-seam.ts)) is applied to every derived schema — create bodies, product ops shapes ([update-schema.ts](../backend/src/core/schema-evolution/update-schema.ts)), and context partial bodies. One implementation of the lens alias derivation.
+- **One widener**: `widenBodySchema(entityType, zodObject)` ([lens-seam.ts](../backend/src/core/schema-evolution/lens-seam.ts)) is applied to every derived schema — create bodies, product ops shapes ([update-schema.ts](../backend/src/core/schema-evolution/update-schema.ts)), and channel partial bodies. One implementation of the lens alias derivation.
 - **One runtime normalizer core**: `normalizeBody(entityType, body)` (a thin `normalizeOps` wrapper) for plain bodies; every create/update operation calls its contract-bound seam first thing.
 - **`createItem` stays a module-assembled ZodObject** rather than being derived from a shared field source: create schemas carry picks, defaults, and batch refines that a raw-shape union can't express without reinventing drizzle-zod. The update shape is still declared exactly once (in `updateOps`/`updateBody`, adjacent to `createItem` in the same call).
 - **Typed by construction**: the factories are generic over the raw shapes (`z.ZodObject<S>` parameters, not a `ZodObject<ZodRawShape>` constraint, which would collapse inference to `Record<string, unknown>` and silently degrade the generated SDK).
 - **Completeness is CI-enforced**: `lens:check` rule 4 asserts every `appConfig` product/channel entity type calls its contract factory in `backend/src/modules` — a (fork) entity can never silently miss the seams.
 
-Update _semantics_ stay divergent by design: product updates merge per-field (HLC/AWSet over `{ ops, stx }`), context updates stay full-body-partial PUT with server-authoritative last-write. Likewise create vs update keep different _shapes_ (full vs partial, create-only fields): the factory aligns their _source and derivation_, not their contracts.
+Update _semantics_ stay divergent by design: product updates merge per-field (HLC/AWSet over `{ ops, stx }`), channel updates stay full-body-partial PUT with server-authoritative last-write. Likewise create vs update keep different _shapes_ (full vs partial, create-only fields): the factory aligns their _source and derivation_, not their contracts.
 
 ---
 
@@ -397,7 +397,7 @@ Phase 1 deliberately has **no response-side transform**:
 
 Seam: [frontend/src/query/persister.ts](../frontend/src/query/persister.ts) `migrateScopeToCurrent`. Product entities are per-query Dexie records; the meta record holds `mutations` + `channelQueries` and a dedicated **`schemaVersion`** pointer field (the global lens ordinal; see D3 for why not the `buster` slot).
 
-- Pointer behind the bundle → **migration pass before hydration**: every persisted product-entity query record maps through `migrateCachedEntity()` (includes stx key rewrite); `channelQueries` rows and `meta.mutations` variables are rewritten via the same engine (`entityTypeOf` in [cache-migration.ts](../frontend/src/query/cache-migration.ts) recognizes both product and context types).
+- Pointer behind the bundle → **migration pass before hydration**: every persisted product-entity query record maps through `migrateCachedEntity()` (includes stx key rewrite); `channelQueries` rows and `meta.mutations` variables are rewritten via the same engine (`entityTypeOf` in [cache-migration.ts](../frontend/src/query/cache-migration.ts) recognizes both product and channel types).
 - Writes are **chunked** (200 rows per Dexie transaction) with the pointer advanced atomically in the final meta write → crash-resume re-runs idempotently (migrations are idempotent by construction: renaming an already-renamed field is a no-op).
 - Pointer ahead of the bundle (another tab migrated forward, or a rollback deploy) → the bundle **marks itself stale, restores nothing, never writes** — not "backward-migrate or wipe". The common case is a stale tab beside a newer tab (a wipe would destroy the newer tab's migrated cache); a genuine rollback is rare, is a no-op within an expand window, and recovers on the next forward deploy. The PWA update flow replaces the stale bundle.
 - **Session scopes** (`s-<uuid>`): wiped on pointer mismatch instead of migrated (they're allowed to be cold; avoids migrating dozens of orphaned scopes).

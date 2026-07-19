@@ -13,13 +13,12 @@ import { getAllDecisions } from './check';
 import { getDecisionsForAccesses, type EngineAccess } from './resolve-access';
 
 /**
- * THE invariant that lets `checkAccess` collapse accesses into classes: for every access,
- * the batch decision must equal the mapped single decision — over policies the template
+ * THE guarantee that lets `checkAccess` collapse accesses into classes: for every access,
+ * the batch decision must equal the mapped single decision, over policies the template
  * itself never ships (row conditions, public read, guest roles, deep hierarchies,
  * `elevatedRoles`). This is the property the dispatch fan-out ultimately rides on; it
  * lives HERE because only the engine's own tests can inject synthetic policies.
  */
-
 const ORGS = ['org1', 'org2'];
 const PROJECTS = ['proj1', 'proj2', 'proj3'];
 const WORKSPACES = ['ws1', 'ws2'];

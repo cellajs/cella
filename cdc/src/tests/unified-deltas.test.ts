@@ -338,10 +338,8 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
 });
 
 // The publication row filter (`published_at IS NOT NULL`) rewrites draft transitions at
-// decode time: a publish edge arrives as INSERT, an unpublish as DELETE carrying the old
-// (published) row, and draft creates/edits/deletes never arrive at all (the entrance
-// guard in parse-message.ts drops strays, tested in parse-message.test.ts). These tests
-// exercise the events as DELIVERED, so no draft rows appear below.
+// decode time: publish arrives as INSERT, unpublish as DELETE carrying the old row, plain
+// draft edits never arrive (parse-message.ts guard). These tests exercise events AS DELIVERED.
 describe('draft lifecycle count deltas (publication row filter delivery)', () => {
   const createdAt = '2026-07-01T10:00:00.000Z';
   const publishedAt = '2026-07-04T09:00:00.000Z';
