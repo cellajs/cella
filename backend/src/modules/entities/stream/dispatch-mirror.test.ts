@@ -221,6 +221,47 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
     expect(member.received).toHaveLength(1);
   });
 
+  it('delivers a self-membership in an unregistered org through the user channel', async () => {
+    // Connected while a member of ORG_A only: the connection has no ORG_B channel, so the
+    // new-org invite can only arrive via the user channel. The bystander shares the org
+    // channel but must not receive someone else's membership event.
+    const joiner = fakeSubscriber([membership(ORG_A, 'member', 'joiner-user')], 'joiner-user', [ORG_A], ORG_A);
+    const bystander = fakeSubscriber([membership(ORG_A, 'member', 'bystander-user')], 'bystander-user', [ORG_A], ORG_A);
+    streamSubscriberManager.register(joiner.subscriber, ['user:joiner-user']);
+    streamSubscriberManager.register(bystander.subscriber, ['user:bystander-user']);
+
+    const membershipEvent = {
+      id: 'activity-membership-1',
+      type: 'membership.created',
+      action: 'create',
+      entityType: null,
+      resourceType: 'membership',
+      tableName: 'memberships',
+      subjectId: 'mem-new-org',
+      tenantId: 'tenant-1',
+      organizationId: ORG_B,
+      rowData: {
+        id: 'mem-new-org',
+        userId: 'joiner-user',
+        channelType: 'organization',
+        channelId: ORG_B,
+        organizationId: ORG_B,
+        role: 'member',
+      },
+      seq: null,
+      batchUntilSeq: null,
+      propagation: null,
+      trace: null,
+      stx: null,
+    } as unknown as ActivityEvent;
+
+    await dispatchToAppStream(membershipEvent as AppStreamEvent);
+
+    expect(joiner.received).toHaveLength(1);
+    expect(joiner.received[0]).toMatchObject({ kind: 'membership', action: 'create' });
+    expect(bystander.received).toHaveLength(0);
+  });
+
   it('does not ping anyone for a batch with no readable rows', async () => {
     const { subscriber, received } = fakeSubscriber(
       [membership(ORG_A, 'member', 'moved-user')],

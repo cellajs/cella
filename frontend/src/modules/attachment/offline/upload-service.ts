@@ -3,9 +3,11 @@ import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
 // biome-ignore lint/style/noRestrictedImports: runtime token fetcher inside Uppy assembly callback, not eligible for a React Query hook.
 import { getUploadToken } from 'sdk';
+import { appConfig } from 'shared';
 import { reportCriticalError } from '~/lib/tracing';
 import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/offline/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
+import { isUploadCandidate } from '~/modules/attachment/offline/upload-retry';
 import { getAppDb } from '~/query/app-db';
 
 /**
@@ -51,7 +53,7 @@ class AttachmentUploadService {
     this.processing = true;
 
     try {
-      const pending = await attachmentsDb.blobs.where('uploadStatus').equals('pending').toArray();
+      const pending = await this.selectUploadCandidates();
       if (pending.length === 0) return;
 
       // Group by organization for batch processing
@@ -71,6 +73,14 @@ class AttachmentUploadService {
     } finally {
       this.processing = false;
     }
+  }
+
+  /** Blobs eligible for an upload attempt now (see isUploadCandidate). */
+  private async selectUploadCandidates(): Promise<AttachmentBlob[]> {
+    const retryLimit = appConfig.localBlobStorage?.uploadRetryAttempts ?? 3;
+    const now = Date.now();
+    const candidates = await attachmentsDb.blobs.where('uploadStatus').anyOf('pending', 'failed').toArray();
+    return candidates.filter((blob) => isUploadCandidate(blob, retryLimit, now));
   }
 
   /** Check if cloud upload is available for an organization. */
@@ -101,7 +111,7 @@ class AttachmentUploadService {
         await this.uploadBlob(blob);
       } catch (error) {
         console.error(`[UploadService] Failed to upload blob ${blob.id}:`, error);
-        await attachmentStorage.updateUploadStatus(blob.id, 'failed');
+        await attachmentStorage.markFailed(blob.id, error instanceof Error ? error.message : 'Upload failed');
       }
     }
   }

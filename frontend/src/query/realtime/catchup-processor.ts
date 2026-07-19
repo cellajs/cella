@@ -5,7 +5,7 @@ import { getEntityQueryKeys, getRegisteredEntityTypes, hasEntityQueryKeys } from
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
-import { enqueueCatchupRange, resetLazySync } from './lazy-sync-scheduler';
+import { enqueueCatchupRange, flushChannelViewNow, resetLazySync } from './lazy-sync-scheduler';
 import * as membershipOps from './membership-ops';
 import { propagateEmbeddings } from './propagation';
 import { getSyncTier, getTenantIdForOrg } from './sync-priority';
@@ -90,32 +90,26 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
         continue;
       }
 
+      // ONE fetch path: every gap goes through the scheduler. Background orgs advance at
+      // their negotiated flush; the viewing org is flushed immediately AND awaited so the
+      // mutation-replay gate (waitForActiveCatchup) resolves against a reconciled cache.
+      enqueueCatchupRange({
+        entityType: entityType as ProductEntityType,
+        organizationId,
+        tenantId,
+        channelId: null,
+        fromSeq: clientCursor + 1,
+        untilSeq: frontier,
+        isCreate: false,
+      });
+
       if (getSyncTier(entityType, organizationId, null).min > 0) {
-        // Background org: hand the gap to the lazy scheduler (advances at flush).
-        enqueueCatchupRange({
-          entityType: entityType as ProductEntityType,
-          organizationId,
-          tenantId,
-          channelId: null,
-          fromSeq: clientCursor + 1,
-          untilSeq: frontier,
-          isCreate: false,
-        });
         console.debug(`[CatchupProcessor] View ${answer.key}: delta=${frontier - clientCursor} → enqueued`);
         continue;
       }
 
-      // Viewing org: reconcile inline for the mutation-replay gate (waitForActiveCatchup).
-      const patched =
-        (await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, String(clientCursor + 1), keys))
-          .status === 'ok';
-      if (!patched) {
-        cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-      }
-      syncStore.setOrgSeq(organizationId, entityType, frontier);
-      console.debug(
-        `[CatchupProcessor] View ${answer.key}: delta=${frontier - clientCursor} → ${patched ? 'delta patched' : 'invalidated'}`,
-      );
+      const outcome = await flushChannelViewNow(entityType as ProductEntityType, organizationId, null);
+      console.debug(`[CatchupProcessor] View ${answer.key}: delta=${frontier - clientCursor} → ${outcome}`);
     }
 
     // Integrity: counts compared server-to-server per (org, entityType). A changed

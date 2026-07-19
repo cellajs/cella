@@ -59,6 +59,11 @@ class StreamSubscriberManager {
     this.subscribers.delete(id);
   }
 
+  /** Total registered subscribers (across all streams). */
+  get size(): number {
+    return this.subscribers.size;
+  }
+
   /**
    * Get subscribers on a channel - O(1) lookup.
    */

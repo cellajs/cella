@@ -46,15 +46,16 @@ vi.mock('./membership-ops', () => ({
 
 vi.mock('./sync-priority', () => ({
   getTenantIdForOrg: vi.fn(() => null),
-  // Viewing tier by default: catchup reconciles inline, preserving the original test behavior.
+  // Viewing tier by default: catchup flushes inline through the scheduler (gap 4a fold).
   getSyncTier: vi.fn(() => ({ min: 0, max: 0 })),
+  isViewingChannel: () => true,
 }));
 
-const enqueueCatchupRange = vi.fn();
-vi.mock('./lazy-sync-scheduler', () => ({
-  resetLazySync: vi.fn(),
-  enqueueCatchupRange: (...a: unknown[]) => enqueueCatchupRange(...a),
-}));
+// The REAL scheduler runs (it is the consolidated fetch path); mock its outward boundaries.
+vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: vi.fn() }));
+vi.mock('~/modules/seen/unseen-sync', () => ({ ingestSyncedRows: vi.fn() }));
+vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-source' }));
+vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
 
 vi.stubGlobal('window', {
   addEventListener: vi.fn(),
@@ -74,7 +75,11 @@ const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
 const { useSyncStore } = await import('~/query/realtime/sync-store');
+const { flushAllNow, resetLazySync } = await import('./lazy-sync-scheduler');
 const { processAppCatchup } = await import('./catchup-processor');
+
+// The real scheduler holds module state (dirty map, timer); clear it between tests.
+afterEach(() => resetLazySync());
 
 /** Views-contract response with one org view answer for attachment. */
 const okViewResponse = (frontier: number, count = 1, key = 'org-1:attachment'): PostAppCatchupResponse =>
@@ -113,7 +118,7 @@ describe('catchup processor (view-driven)', () => {
 
     await processAppCatchup(okViewResponse(6));
 
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5');
+    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,6', undefined);
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
     expect(queryClient.getQueryData(keys.detail.byId('attachment-1'))).toMatchObject({ name: 'fresh' });
     expect(queryClient.getQueryData(keys.list.org('org-1'))).toEqual({
@@ -147,7 +152,7 @@ describe('catchup processor (view-driven)', () => {
 
     // ONE org-wide fetch, no per-channel drill-down needed.
     expect(deltaFetch).toHaveBeenCalledTimes(1);
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '11');
+    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '11,12', undefined);
     expect(queryClient.getQueryData(keys.detail.byId('att-proj'))).toMatchObject({ name: 'fresh-proj' });
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
   });
@@ -315,7 +320,7 @@ describe('catchup → scheduler fold', () => {
     vi.clearAllMocks();
   });
 
-  it('enqueues background orgs lazily and does NOT advance their cursor inline', async () => {
+  it('enqueues background orgs lazily and advances their cursor only at flush', async () => {
     const { getSyncTier } = await import('./sync-priority');
     vi.mocked(getSyncTier).mockReturnValue({ min: 2000, max: 30_000 });
 
@@ -323,26 +328,22 @@ describe('catchup → scheduler fold', () => {
     const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
     registerEntityQueryKeys('attachment', keys, deltaFetch);
 
+    useSyncStore.getState().setOrgTenantId('org-1', 'tenant-1');
     useSyncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
     await processAppCatchup(okViewResponse(9));
 
-    expect(deltaFetch).not.toHaveBeenCalled();
-    expect(enqueueCatchupRange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        entityType: 'attachment',
-        organizationId: 'org-1',
-        channelId: null,
-        fromSeq: 5,
-        untilSeq: 9,
-      }),
-    );
     // Advance-at-flush: the scheduler owns the cursor for enqueued ranges.
+    expect(deltaFetch).not.toHaveBeenCalled();
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
+
+    await flushAllNow();
+    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9', undefined);
+    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
   });
 
-  it('still reconciles viewing orgs inline (mutation-replay gate)', async () => {
+  it('still reconciles viewing orgs inline through the scheduler flush (mutation-replay gate)', async () => {
     const { getSyncTier } = await import('./sync-priority');
     vi.mocked(getSyncTier).mockReturnValue({ min: 0, max: 0 });
 
@@ -356,8 +357,8 @@ describe('catchup → scheduler fold', () => {
 
     await processAppCatchup(okViewResponse(9));
 
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5');
-    expect(enqueueCatchupRange).not.toHaveBeenCalled();
+    // Awaited before processAppCatchup resolved: the delta is already ingested here.
+    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9', undefined);
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
   });
 });

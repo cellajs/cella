@@ -26,11 +26,16 @@ interface ResolvedAttachmentsResult {
 }
 
 /** Build CarouselItemData with metadata from cache */
-function buildItemData(item: Partial<CarouselItemData> & { id: string }, url: string): CarouselItemData {
+function buildItemData(
+  item: Partial<CarouselItemData> & { id: string },
+  url: string,
+  isLocal: boolean,
+): CarouselItemData {
   const cached = findAttachmentInCache(item.id);
   return {
     id: item.id,
     url,
+    isLocal,
     name: item.name ?? cached?.name ?? item.filename ?? 'Attachment',
     filename: item.filename ?? cached?.filename,
     contentType: item.contentType ?? cached?.contentType,
@@ -87,7 +92,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
 
         // Already has URL, use directly.
         if (item.url) {
-          resolved.push(buildItemData(item, item.url));
+          resolved.push(buildItemData(item, item.url, item.url.startsWith('blob:')));
           continue;
         }
 
@@ -95,7 +100,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
         const existingUrl = blobUrlsRef.current.get(item.id);
         if (existingUrl) {
           newBlobUrls.set(item.id, existingUrl);
-          resolved.push(buildItemData(item, existingUrl));
+          resolved.push(buildItemData(item, existingUrl, true));
           continue;
         }
 
@@ -108,7 +113,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
           const result = await resolveAttachmentUrl(item.id, meta, { preferredVariant: 'converted' });
           if (result) {
             if (result.isLocal) newBlobUrls.set(item.id, result.url);
-            resolved.push(buildItemData(item, result.url));
+            resolved.push(buildItemData(item, result.url, result.isLocal));
           } else {
             // Make the otherwise-silent failure diagnosable: cachedMeta/itemKey tell us whether this
             // is a cache miss (both false) or a no-cloud-key resource whose local blob is gone.

@@ -110,11 +110,15 @@ export type { ActionPermissionState, EntityCanMap } from './src/permissions';
 
 // Permission engine (tier-neutral decision logic, shared by backend + yjs)
 export {
+  type Access,
   type Actor,
   buildSubject,
   buildSubjectFromEntity,
   type BatchPermissionResult,
-  checkPermission,
+  checkAccess,
+  checkAccessBatch,
+  checkAccessFanout,
+  type CheckAccessFanoutOptions,
   formatBatchPermissionSummary,
   formatPermissionDecision,
   getAllDecisions,

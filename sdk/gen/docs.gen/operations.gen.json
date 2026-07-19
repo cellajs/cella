@@ -796,7 +796,7 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["syncReadLimiter"],
       "xCache": []
     },
     "tagsByKind": {
@@ -842,7 +842,7 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["streamConnectLimiter"],
       "xCache": []
     },
     "tagsByKind": {
@@ -1452,7 +1452,7 @@
     "hasExample": true,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["syncReadLimiter"],
       "xCache": []
     },
     "tagsByKind": {

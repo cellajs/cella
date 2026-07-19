@@ -1,17 +1,9 @@
 import type { GetMyMembershipsResponse } from 'sdk';
-import { hierarchy, type ProductEntityType } from 'shared';
+import { hierarchy } from 'shared';
 import { queryClient } from '~/query/query-client';
 import { isObservedChannel } from '~/query/realtime/observed-channels';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import { getRouter } from '~/routes/-router-instance';
-
-type SyncPriority = 'high' | 'medium' | 'low';
-
-interface SyncNotification {
-  entityType: ProductEntityType;
-  entityId: string;
-  organizationId: string | null;
-}
 
 /** Get the current org ID from the router's matched route context, if user is within an org layout. */
 export function getRouteOrgId(): string | null {
@@ -83,34 +75,14 @@ function isMutedOrArchived(organizationId: string, channelId: string | null): bo
 }
 
 /**
- * The client's say in sync timing (see .todos/SYNC_FANOUT_SOLUTION.md, Piece N): viewing the
+ * The client's say in sync timing (see cella/SYNC_ENGINE.md, Scheduling): viewing the
  * scope → live; muted/archived → fetch on open only; anything else → soon-ish background.
+ * This is the ONLY priority system: paths without synced rows (hard delete, seq-less
+ * fallback) derive their invalidation behavior from the viewing tier too.
  */
 export function getSyncTier(entityType: string, organizationId: string, channelId: string | null): SyncTier {
   if (!hierarchy.isProduct(entityType)) return TIER_ON_OPEN;
   if (isViewingChannel(organizationId, channelId)) return TIER_VIEWING;
   if (isMutedOrArchived(organizationId, channelId)) return TIER_ON_OPEN;
   return TIER_BACKGROUND;
-}
-
-/**
- * Sync priority by current route: high when the user is viewing the org that channel views this entity,
- * low otherwise (different org, not in an org route, non-product entity).
- */
-export function getSyncPriority(notification: SyncNotification): SyncPriority {
-  const { entityType, organizationId } = notification;
-
-  // Only product entities have sync priority logic
-  if (!hierarchy.isProduct(entityType)) return 'low';
-
-  const routeOrgId = getRouteOrgId();
-
-  // Not in an org route -> low priority
-  if (!routeOrgId) return 'low';
-
-  // Different org -> low priority
-  if (organizationId && routeOrgId !== organizationId) return 'low';
-
-  // User is in matching org context
-  return 'high';
 }

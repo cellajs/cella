@@ -12,7 +12,6 @@ import { initMutationDefaults } from '~/query/mutation-registry';
 import { cleanupOrphanedSessions, persister, sessionPersister } from '~/query/persister';
 import { markCacheRestored, queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-store';
-import { useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 
 /**
  * Init mutation defaults BEFORE cache restoration: stores the queryClient so entity modules can
@@ -41,9 +40,6 @@ if (import.meta.hot) {
 export function QueryClientProvider({ children }: { children: React.ReactNode }) {
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const isLeader = useTabCoordinatorStore((state) => state.isLeader);
-  const isReady = useTabCoordinatorStore((state) => state.isReady);
-  const isActive = useTabCoordinatorStore((state) => state.isActive);
 
   // Disable offline access if PWA is not enabled in the config
   useEffect(() => {
@@ -111,10 +107,12 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
       persistOptions={{
         persister: activePersister,
         dehydrateOptions: {
-          // Public routes (!isActive): always persist. App routes: only leader persists after ready.
-          // Only paused mutations are persisted; they're the offline replay queue. Active/streaming
-          // mutations (e.g. AI chat SSE) can hold non-cloneable data (ReadableStream) and must be skipped.
-          shouldDehydrateMutation: (mutation) => mutation.state.isPaused && (!isActive || (isReady && isLeader)),
+          // Every tab dehydrates ITS OWN paused mutations; the persister writes them to a
+          // per-tab record, so tabs never overwrite each other's queues (the old leader-only
+          // gate silently dropped a follower's paused work on refresh). Only paused mutations
+          // are persisted; they're the offline replay queue. Active/streaming mutations (e.g.
+          // AI chat SSE) can hold non-cloneable data (ReadableStream) and must be skipped.
+          shouldDehydrateMutation: (mutation) => mutation.state.isPaused,
           shouldDehydrateQuery: (query) => query.state.status === 'success' && query.meta?.persist !== false,
         },
       }}

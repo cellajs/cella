@@ -224,12 +224,14 @@ class AttachmentStorageService {
     try {
       const updates: Partial<AttachmentBlob> = { uploadStatus: status };
 
-      if (status === 'failed' && error) {
+      // Every failure bumps the attempt count and schedules the next retry slot, error message
+      // or not; the retry selector (upload-service) reads exactly these fields.
+      if (status === 'failed') {
         const blob = await attachmentsDb.blobs.get(id);
         if (blob) {
           const attempts = blob.uploadAttempts ?? 0;
           updates.uploadAttempts = attempts + 1;
-          updates.lastError = error;
+          updates.lastError = error ?? blob.lastError ?? 'Upload failed';
 
           // Exponential backoff using config
           const config = appConfig.localBlobStorage;

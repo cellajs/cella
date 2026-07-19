@@ -88,7 +88,7 @@ describe('configureWidePermissions', () => {
   });
 });
 
-describe('checkPermission', () => {
+describe('engine decisions (getAllDecisions)', () => {
   const { accessPolicies: policies } = configureWidePermissions(({ subject, contexts }) => {
     switch (subject.name) {
       case 'organization':

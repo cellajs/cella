@@ -2,42 +2,29 @@
 
 Schema-evolution lens registry (doba lenses).
 
-**Vocabulary:** a **canonical** field name is the name in the entity's *current*
-schema version; an **alias** is a pre-rename name that old clients may still
-send. During an expand window both are accepted: lens seams normalize alias
-keys to canonical ones before any body access, and writes mirror to the twin
-field so old readers stay fresh.
+**Vocabulary:** a **canonical** field name is the name in the entity's _current_ schema version; an **alias** is a pre-rename name that old clients may still send. During an expand window both are accepted: lens seams normalize alias keys to canonical ones before any body access, and writes mirror to the twin field so old readers stay fresh.
 
 ## Lens convention: [`define.ts`](./define.ts)
 
-A lens declares a single breaking schema change once; everything else
-(widened wire schemas, ops/stx key maps, cache-row migrations, versioned
-OpenAPI specs) is derived from that declaration.
+A lens declares a single breaking schema change once; everything else (widened wire schemas, ops/stx key maps, cache-row migrations, versioned OpenAPI specs) is derived from that declaration.
 
-Lens modules are frozen once shipped and appended in date order to
-`lens-list.ts`. The global schema version is the lens count.
+Lens modules are frozen once shipped and appended in date order to `lens-list.ts`. The global schema version is the lens count.
 
 ## Append point: [`lens-list.ts`](./lens-list.ts)
 
-The designated append point for schema evolution: append-only, never reorder
-or remove existing entries. A lens's index + 1 is its global schema ordinal.
+The designated append point for schema evolution: append-only, never reorder or remove existing entries. A lens's index + 1 is its global schema ordinal.
 
 ## Engine: [`engine.ts`](./engine.ts)
 
-The doba facade: the only module that imports `dobajs`, keeping the
-dependency swappable (vendoring escape hatch) and the integration
-concentrated in one place.
+The doba facade: the only module that imports `dobajs`, keeping the dependency swappable (vendoring escape hatch) and the integration concentrated in one place.
 
-Builds, per lens-capable entity type (product and context):
-- a doba migration registry over derived version nodes (cache-row migration,
-  Phase 2 peer downgrade), lazily, only when that entity has lenses;
-- key maps for `ops` and `stx.fieldTimestamps` (server normalize seam,
-  queued-mutation rewrite).
+Builds, per lens-capable entity type (product and channel):
 
-With an empty lens list (`currentSchemaVersion === 0`) every export is a safe
-passthrough no-op.
+- a doba migration registry over derived version nodes (cache-row migration, Phase 2 peer downgrade), lazily, only when that entity has lenses;
+- key maps for `ops` and `stx.fieldTimestamps` (server normalize seam, queued-mutation rewrite).
+
+With an empty lens list (`currentSchemaVersion === 0`) every export is a safe passthrough no-op.
 
 ## Barrel: [`index.ts`](./index.ts)
 
-Public entry point re-exporting the registry, config, definitions, and engine
-functions listed above.
+Public entry point re-exporting the registry, config, definitions, and engine functions listed above.

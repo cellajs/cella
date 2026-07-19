@@ -77,6 +77,14 @@
             "name": "passkeyChallenge",
             "description": "Max 30 passkey challenges/hour per IP"
           },
+          "syncReadLimiter": {
+            "name": "syncRead",
+            "description": "Max 5000 sync-driven reads/hour per user (delta lists, unseen counts)"
+          },
+          "streamConnectLimiter": {
+            "name": "streamConnect",
+            "description": "Max 240 SSE stream connects/hour per user"
+          },
           "pointsLimiter": {
             "name": "points",
             "description": "Consumes 1 API point(s) per request against per-tenant hourly budget"
@@ -4546,7 +4554,7 @@
         "summary": "Get unseen counts",
         "description": "Returns the number of unseen product entities per parent channel entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.",
         "x-guard": ["authGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["syncReadLimiter"],
         "x-cache": [],
         "responses": {
           "200": {
@@ -4672,7 +4680,7 @@
         "summary": "App event SSE stream",
         "description": "SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.",
         "x-guard": ["authGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["streamConnectLimiter"],
         "x-cache": [],
         "responses": {
           "200": {
@@ -5382,7 +5390,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",
@@ -6361,7 +6370,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",
@@ -6642,7 +6652,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",
@@ -7553,7 +7564,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",
@@ -8203,7 +8215,7 @@
         "summary": "Get attachments",
         "description": "Returns a paginated list of attachments for the organization.",
         "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["syncReadLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -8271,7 +8283,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",
@@ -9760,7 +9773,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",
@@ -10025,7 +10039,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
             },
             "required": false,
             "name": "seqCursor",

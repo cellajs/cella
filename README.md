@@ -10,10 +10,9 @@
  *    ░▒▓█████▓▒░     ___ ___| | | __ _
  *    ░▒▓█   █▓▒░    / __/ _ \ | |/ _` |
  *    ░▒▓█   █▓▒░   | (_|  __/ | | (_| |
- *    ░▒▓█████▓▒░    \___\___|_|_|\__,_|                            
+ *    ░▒▓█████▓▒░    \___\___|_|_|\__,_|
  *
  -->
-
 
 <h1><b>Cella</b></h1>
 <p>
@@ -34,7 +33,7 @@
 - [Agent guidelines](./cella/AGENTS.md)
 - [Architecture](./cella/ARCHITECTURE.md)
 - [React Client](./cella/CLIENT.md)
-- [Multi-tenancy](./cella/RLS.md)
+- [Multi-tenancy](./cella/multi_tenancy.md)
 - [Quickstart](./cella/QUICKSTART.md)
 
 ## Requirements

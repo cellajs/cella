@@ -125,7 +125,7 @@ describe('Attachment seq reads', async () => {
 
   it('B1: seqCursor reads are seq-ascending; a capped response is a clean prefix', async () => {
     // sort/order params must NOT override seq ordering on seq reads
-    const result = await listAttachments({ seqCursor: '1', limit: '2', sort: 'createdAt', order: 'desc' });
+    const result = await listAttachments({ seqCursor: '1,999999', limit: '2', sort: 'createdAt', order: 'desc' });
 
     expect(result.status).toBe(200);
     // Rows in seq order are 10, 20, 30 (tombstone), 40, 50. The capped response
@@ -135,7 +135,7 @@ describe('Attachment seq reads', async () => {
 
   it('B2: seqCursor reads include tombstones; normal reads never do', async () => {
     // Delta read: tombstones flow through so client caches can drop soft-deleted rows
-    const delta = await listAttachments({ seqCursor: '1', limit: '100' });
+    const delta = await listAttachments({ seqCursor: '1,999999', limit: '100' });
     expect(delta.items.map((a) => a.seq)).toEqual([10, 20, 30, 40, 50]);
     const tombstone = delta.items.find((a) => a.seq === 30);
     expect(tombstone?.deletedAt).not.toBeNull();

@@ -26,7 +26,7 @@ import { seedDb } from '#/db/db';
 import { canReceiveEntityEvent } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { checkPermission } from './check-permission';
+import { checkAccess } from './check-permission';
 import { resolveCollectionReadFilter, resolveCollectionReadFilterForPolicies } from './collection-scope';
 import { buildCollectionReadWhere } from './row-predicates';
 
@@ -712,7 +712,7 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
       for (const row of ROWS) {
         // Same subject shape dispatch builds: ancestor scope + the row itself
         const subject = rowSubject(row);
-        const engineAllowed = checkPermission(memberships, 'read', subject, actor).isAllowed;
+        const engineAllowed = checkAccess({ userId, isSystemAdmin, memberships }, 'read', subject).isAllowed;
         const dispatchAllowed = canReceiveEntityEvent({ userId, isSystemAdmin, memberships }, dispatchEvent(row));
 
         expect(dispatchAllowed, `${label} → row ${row.id} dispatch-vs-engine`).toBe(engineAllowed);
