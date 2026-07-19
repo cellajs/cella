@@ -125,7 +125,7 @@ Membership identity columns are similarly protected, and the activity log is app
 
 Deeper ancestor IDs are not automatically part of the shared product immutability trigger. Support
 tables such as `yjs_documents` also do not automatically receive product triggers. Their foreign
-keys, query scope, update privileges, and extra invariants remain the owning module's responsibility.
+keys, query scope, update privileges, and extra constraints remain the owning module's responsibility.
 
 ## Database roles
 

@@ -9,7 +9,7 @@ import { appTitle } from '~/utils/app-title';
 export const Route = createFileRoute('/_app/$tenantId/$organizationSlug/organization/settings')({
   staticData: { isAuth: true, navTab: { id: 'settings', label: 'c:settings', requires: 'update' } },
   beforeLoad: ({ context }) => {
-    // Same grant the tab's `requires: 'update'` hides on — direct URLs get the same gate.
+    // Same grant the tab's `requires: 'update'` hides on; direct URLs get the same gate.
     requireEntityAction(
       context.organization,
       'organization',

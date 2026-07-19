@@ -34,7 +34,7 @@ function OrganizationSettings({ organization }: { organization: EnrichedOrganiza
   const { tenantId } = useOrganizationLayoutContext();
 
   // The settings ROUTE requires `can.organization.update`; the danger zone is gated on its
-  // own action — update and delete are distinct grants in the can map, and a fork may split
+  // own action. Update and delete are distinct grants in the can map, and a fork may split
   // them even though the template's admin role holds both.
   const resolveCan = useResolveCan();
   const canDelete = resolveCan(organization.can?.organization?.delete, organization.createdBy);

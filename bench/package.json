@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
-    "nanoid": "^5.1.16",
+    "nanoid": "^6.0.0",
     "ora": "^9.4.1",
     "pg": "^8.22.0",
     "pg-format": "^1.0.4",
@@ -25,7 +25,7 @@
     "@types/pg-format": "^1.0.5",
     "artillery": "^2.0.33",
     "artillery-plugin-ensure": "^1.27.0",
-    "tsx": "^4.23.0",
+    "tsx": "^4.23.1",
     "typescript": "^6.0.3"
   }
 }

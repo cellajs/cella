@@ -36,19 +36,19 @@
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1081.0",
+    "@aws-sdk/client-s3": "^3.1090.0",
     "@inquirer/core": "^11.2.1",
     "@inquirer/prompts": "^8.5.1",
-    "@pulumi/pulumi": "^3.251.0",
+    "@pulumi/pulumi": "^3.253.0",
     "@pulumi/random": "^4.21.0",
-    "@pulumiverse/scaleway": "^1.52.0",
+    "@pulumiverse/scaleway": "^1.53.0",
     "shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "26.1.1",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "tsup": "^8.5.1",
-    "tsx": "^4.23.0",
+    "tsx": "^4.23.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   }

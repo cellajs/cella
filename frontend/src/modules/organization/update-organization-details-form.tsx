@@ -40,8 +40,8 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
   const { mutate, isPending } = useOrganizationUpdateMutation();
 
   // Inline media become real org-scoped attachment rows (persistAttachments), so the file
-  // panel follows `can.attachment.create` like the attachments table's upload button —
-  // reaching this form via an organization UPDATE grant does not imply attachment CREATE.
+  // panel follows `can.attachment.create` like the attachments table's upload button.
+  // Reaching this form via an organization UPDATE grant does not imply attachment CREATE.
   const canUploadAttachments = organization.can?.attachment?.create === true;
 
   const formOptions: UseFormProps<FormValues> = {

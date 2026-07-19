@@ -6,10 +6,9 @@ import { enrichWithPermissions } from '~/query/enrichment/permissions';
 import type { EnrichableEntity } from '~/query/enrichment/types';
 
 /**
- * Route-level permission guards. Nav gating (tab `requires` grants, `isSystemAdmin` links)
- * only hides LINKS — a direct URL still renders the page and leaves enforcement to the
- * backend. These guards give routes the same `can`-derived answer in `beforeLoad`, so a
- * denied visitor is redirected instead of being shown affordances every request would 403.
+ * Route-level permission guards. Nav gating only hides LINKS; a direct URL still renders the
+ * page and leaves enforcement to the backend. These guards give routes the same `can`-derived
+ * answer in `beforeLoad`, so a denied visitor is redirected before reaching a 403 affordance.
  */
 
 /** Throw a redirect unless the current user is a system admin (system panel surfaces). */
@@ -22,7 +21,7 @@ export function requireSystemAdmin(): void {
  * Throw a redirect unless the user may perform `action` on `entityType` at this channel
  * entity. Permissions come from the SAME derivation the cache enrichment uses
  * (`enrichWithPermissions`: membership + accessPolicies, system-admin bypass), with `'own'`
- * resolved against the entity's creator — so route guards can never disagree with the
+ * resolved against the entity's creator, so route guards can never disagree with the
  * affordances the page renders.
  */
 export function requireEntityAction(

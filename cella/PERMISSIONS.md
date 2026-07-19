@@ -217,7 +217,7 @@ One row-lifecycle check runs **before** the engine on every row path: unpublishe
 
 Product `publishedAt` is distinct from channel `publishedAt`, which gates setup, and from `publicAt`, which grants non-members read access.
 
-Two invariants bind every path: **the system-admin bypass applies to collection reads too** (a sysadmin passes `orgGuard` with no membership, so scope resolution must not be membership-only), and **any grant the single-row path honours must appear in lists and over SSE** — a row fetchable by id but absent from collections is worse than no grant.
+Two rules bind every path: **the system-admin bypass applies to collection reads too** (a sysadmin passes `orgGuard` with no membership, so scope resolution must not be membership-only), and **any grant the single-row path honours must appear in lists and over SSE** — a row fetchable by id but absent from collections is worse than no grant.
 
 The collection path returns a deliberate **tri-state**, so that "no restriction" can never be confused with "no rows":
 
@@ -230,7 +230,7 @@ export type CollectionReadWhere =
 
 A bare `undefined` WHERE would leak the table, which is exactly the bug this shape makes unrepresentable. In the same spirit, the compiled SQL for a row condition emits `false` for an anonymous actor, mirroring the check-form's deny.
 
-## Testing cross-layer agreement
+## Testing & consistency
 
 The load-bearing test is the parity property test in `backend/src/permissions/row-predicates.test.ts`, which runs against a real Postgres. It generates random policies, memberships, and actors, then asserts row-for-row that independent implementations agree: the engine's `getAllDecisions`, the compiled SQL executed against a scratch table, the frontend's `computeCan` + `resolvePermission`, and — under the real app config — SSE dispatch. A deterministic PRNG means failures reproduce. This test is what lets the SQL compiler exist at all: two hand-written implementations of the same rule _will_ drift, so the drift is pinned rather than trusted. The `topology.ts` / `resolve-topology.ts` seam lets it drive the engine on a synthetic hierarchy without module mocks, so the two-level template config still exercises deep ancestor chains and `elevatedRoles`.
 
