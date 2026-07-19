@@ -104,18 +104,8 @@ export const { accessPolicies, publicReadGrants } = configurePermissions(
         contexts.organization.member({ read: 1, update: 0, delete: 0 });
         break;
       case "attachment":
-        contexts.organization.admin({
-          create: 1,
-          read: 1,
-          update: 1,
-          delete: 1,
-        });
-        contexts.organization.member({
-          create: 1,
-          read: 1,
-          update: "own",
-          delete: "own",
-        });
+        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+        contexts.organization.member({ create: 1, read: 1, update: "own", delete: "own" });
         break;
     }
   },
@@ -170,9 +160,9 @@ Boundary code that starts from DB rows, route params, or CDC events uses `buildS
 
 ## Widening: row conditions and public read
 
-Two mechanisms widen access beyond the policy matrix, and both read the row's own columns. There are exactly two rules — `own` and `public` — and that set is **closed**: it is not a fork extension point. The reasoning is in Constraints; the mechanism is here.
+Two mechanisms widen access beyond the policy matrix, and both read the row's own columns. There are exactly two rules — `own` and `public` — and that set is **closed**, not a fork extension point: every rule must be evaluable in all three forms (JS, compiled SQL, frontend) _and_ by dispatch from the row alone, which rules out cross-row and fork-defined conditions.
 
-A **row condition** (`shared/src/permissions/row-conditions.ts`) qualifies a grant per row. A cell of `1` grants the action on every row the channel scope reaches; a condition cell grants it only on rows the condition matches. Because the set is closed, a condition is just its **name** — the name determines the rule, so there is no descriptor to carry:
+A **row condition** (`shared/src/permissions/row-conditions.ts`) qualifies a grant per row: a cell of `1` grants the action on every row the channel scope reaches; a condition cell grants it only on rows the condition matches. Because the set is closed, a condition is just its **name**:
 
 ```ts
 export type RowConditionName = "own" | "public"; // this union IS the contract
@@ -211,7 +201,7 @@ The compiled-predicate paths (the SQL twin: `compileRowConditionSql`, collection
 
 ## Enforcement paths
 
-The engine produces a verdict. Each tier is responsible for _asking_ — and every one of them now asks with the same inputs.
+The engine produces a verdict. Each tier is responsible for _asking_ — and every one of them asks with the same inputs.
 
 | Path | Entry point | What it checks |
 | --- | --- | --- |
@@ -219,7 +209,7 @@ The engine produces a verdict. Each tier is responsible for _asking_ — and eve
 | **Single row** | `getValidProductEntity`, `getValidChannelEntity`, `canCreateEntity`, `splitByPermission` | Loads the row, passes it as `subject.row` via `buildSubjectFromEntity`, runs the engine (`canCreateEntity` is the exception: the entity doesn't exist yet, so the subject describes the would-be placement, no row). `splitByPermission` powers bulk ops and 403s only when _nothing_ is allowed. |
 | **Collection read** | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Turns the actor's access into a readable scope, then compiles it — unconditional grants, row conditions, and the public grant — into one Drizzle `SQL` predicate. Set-based, so it never materializes rows to reject them. |
 | **SSE dispatch** | `rowReadDecisions` (`canReceiveEntityEvent` is its batch-of-1) | ONE `checkAccessFanout` call per event row over the channel's subscribers; the engine collapses them into access classes. Notified rows are fetchable by seq, so over-notifying is a data leak, not just noise. |
-| **Catchup views** | `resolveViewReadStatus` | Classifies a client-declared view prefix `ok`/`opaque`/`forbidden` on top of `resolveCollectionReadFilter`. Answers a DIFFERENT question than row reads: may the caller see the subtree's aggregate change signal (`f:`/counts)? Rows leak content; summaries leak the existence and timing of others' activity — so `ok` requires PROOF (org-wide read; a subtree-scoped grant on the node OR on any VERIFIED true ancestor — the counters row carries the channel's canonical path, and claimed prefixes must equal it; or, for `self` views, a home-scoped grant on the node), `opaque` discloses nothing, and `forbidden` appears only with no read scope in the org. See "Authorization: readability × answerability" in SYNC_ENGINE.md for the worked matrix. |
+| **Catchup views** | `resolveViewReadStatus` | Classifies a client-declared view prefix `ok`/`opaque`/`forbidden` — a DIFFERENT question than row reads: may the caller see the subtree's aggregate change signal (`f:`/counts)? Summaries leak the existence and timing of others' activity, so `ok` requires proof of a grant on the node or a verified ancestor (claimed prefixes must equal the counters row's canonical path). See "Authorization: readability × answerability" in SYNC_ENGINE.md for the worked matrix. |
 | **Yjs relay** | `canEditEntity` on WS upgrade | Reads the entity row and memberships over raw `pg` (table/column names derived via `toTableName`/`toColumnName`), then runs the same engine. |
 | **Postgres RLS** | `tenantRead` / `tenantContext` | Tenant isolation only. Not a permission layer. |
 
@@ -227,10 +217,7 @@ One row-lifecycle check runs **before** the engine on every row path: unpublishe
 
 Product `publishedAt` is distinct from channel `publishedAt`, which gates setup, and from `publicAt`, which grants non-members read access.
 
-Two rules keep these honest, and both were once broken:
-
-- **The system-admin bypass applies everywhere**, including collection reads. A sysadmin passes `orgGuard` with _no membership_, so a membership-only scope resolver hands them an empty list while single-row reads of the very same rows succeed.
-- **Public rows appear in lists.** A grant that only the single-row path honours is worse than no grant at all: the row is fetchable by id and pushed over SSE, but silently absent from every collection.
+Two invariants bind every path: **the system-admin bypass applies to collection reads too** (a sysadmin passes `orgGuard` with no membership, so scope resolution must not be membership-only), and **any grant the single-row path honours must appear in lists and over SSE** — a row fetchable by id but absent from collections is worse than no grant.
 
 The collection path returns a deliberate **tri-state**, so that "no restriction" can never be confused with "no rows":
 
@@ -245,11 +232,9 @@ A bare `undefined` WHERE would leak the table, which is exactly the bug this sha
 
 ## Testing cross-layer agreement
 
-The load-bearing test is the parity property test in `backend/src/permissions/row-predicates.test.ts`, which runs against a real Postgres. It generates random policies, memberships, and actors, then asserts row-for-row that independent implementations agree: the engine's `getAllDecisions`, the compiled SQL executed against a scratch table, the frontend's `computeCan` + `resolvePermission`, and — under the real app config — SSE dispatch. It covers deep ancestor chains and `elevatedRoles` via a synthetic topology. A deterministic PRNG means failures reproduce.
+The load-bearing test is the parity property test in `backend/src/permissions/row-predicates.test.ts`, which runs against a real Postgres. It generates random policies, memberships, and actors, then asserts row-for-row that independent implementations agree: the engine's `getAllDecisions`, the compiled SQL executed against a scratch table, the frontend's `computeCan` + `resolvePermission`, and — under the real app config — SSE dispatch. A deterministic PRNG means failures reproduce. This test is what lets the SQL compiler exist at all: two hand-written implementations of the same rule _will_ drift, so the drift is pinned rather than trusted. The `topology.ts` / `resolve-topology.ts` seam lets it drive the engine on a synthetic hierarchy without module mocks, so the two-level template config still exercises deep ancestor chains and `elevatedRoles`.
 
-That test is what lets the SQL compiler exist at all: two hand-written implementations of the same rule _will_ drift, so the drift is pinned rather than trusted. `topology.ts` / `resolve-topology.ts` exist as the seam that makes this possible — they let tests drive the engine on a synthetic hierarchy without module mocks, so a two-level template config can still exercise deep-chain behavior.
-
-**The scenario space is the test.** It varies `isSystemAdmin` and public read grants, and it must keep doing so: for a long time it pinned `isSystemAdmin: false` and generated no public rows, and _both_ of the divergences listed above lived comfortably underneath it, green. A parity test only pins the axes it actually varies. If you add a dimension to the permission model, add it here in the same commit, and confirm the test goes red when you remove the fix.
+**The scenario space is the test.** A parity test only pins the axes it actually varies (`isSystemAdmin` and public read grants are axes, not constants). If you add a dimension to the permission model, add it here in the same commit, and confirm the test goes red when you remove the fix.
 
 The rest of the suite covers grant attribution, `'own'` denial when the actor or `createdBy` is absent, public read for anonymous actors, policy completeness, the `null`-vs-`undefined` scope distinction, and a perf floor (`check.perf.test.ts`: 100 entities under 10 ms; a stable membership array must meaningfully beat rebuilding its index per call). The fan-out collapse has its own benchmark in `backend/…/dispatch-eligibility.perf.test.ts`.
 
