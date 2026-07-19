@@ -10,7 +10,7 @@ import { validateSubject } from './validation';
 /**
  * One actor's inputs to a decision, engine-shaped: the memberships plus the two actor
  * fields the engine reads. Anonymous actors are expressed as `{ memberships: [] }` with
- * no `userId`; the `checkAccess` wrapper maps its public `Access` union onto this.
+ * no `userId`; the `checkAccess*` wrappers map their public `Access` union onto this.
  */
 export interface EngineAccess<T extends PermissionMembership = PermissionMembership> {
   memberships: T[];
@@ -21,7 +21,7 @@ export interface EngineAccess<T extends PermissionMembership = PermissionMembers
 export interface ResolveAccessOptions extends PermissionCheckOptions {
   /**
    * What to do when an access's memberships fail `validateMembership`:
-   * - `'throw'` (default): surface the error, matching the single-access path — a malformed
+   * - `'throw'` (default): surface the error, matching the single-access path; a malformed
    *   membership in a request context is a bug to crash on.
    * - `'deny'`: fail-close JUST that access (all actions denied) and keep resolving the rest.
    *   For fan-out callers (stream dispatch) where one corrupt subscriber must not poison the
@@ -47,7 +47,7 @@ const deniedDecision = <T extends PermissionMembership>(subject: SubjectForPermi
  *
  * - the system-admin bit (short-circuits to allow-all),
  * - one bit per row condition the subject's policy table actually references, evaluated
- *   through the same `matchesRowCondition` the walk uses — a fork adding a condition to
+ *   through the same `matchesRowCondition` the walk uses; a fork adding a condition to
  *   `row-conditions.ts` is keyed automatically, because the key builder enumerates the
  *   POLICY INDEX, not a hardcoded condition list,
  * - the roles held at each of the subject's channel levels, read from the same
@@ -58,7 +58,7 @@ const deniedDecision = <T extends PermissionMembership>(subject: SubjectForPermi
  * Equal keys ⇒ `checkWithIndices` cannot distinguish the accesses; the property test in
  * `resolve-access.test.ts` pins this against mapped single checks over synthetic policies.
  *
- * The memo lives only for this call — no cross-call state, nothing to invalidate. The
+ * The memo lives only for this call; no cross-call state, nothing to invalidate. The
  * shared class decision is re-personalized per access (`membership` is the access's own).
  */
 export function getDecisionsForAccesses<T extends PermissionMembership>(

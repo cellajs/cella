@@ -1,8 +1,8 @@
 # Permissions: contextual RBAC
 
-Cella answers one question everywhere: **may this actor perform this action on this subject?** The answer comes from a single decision engine in `shared/src/permissions/`, computed from the actor's memberships, a static role × context policy matrix, and the subject's own row data. The engine is tier-neutral and ORM-free, so the backend, the frontend, and the standalone Yjs relay all reach the same verdict from the same code — the relay authorizes without a backend round-trip.
+Cella answers one question everywhere: **may this actor perform this action on this subject?** The answer comes from a single decision engine in `shared/src/permissions/`, computed from the actor's memberships, a static role × channel policy matrix, and the subject's own row data. The engine is tier-neutral and ORM-free, so the backend, the frontend, and the standalone Yjs relay all reach the same verdict from the same code — the relay authorizes without a backend round-trip.
 
-Roles are **scoped to channel entities**, never global. Product entities own no roles at all: they inherit their permissions from ancestor contexts. Ownership is an _implicit_ relation derived from the row's `createdBy` column rather than a stored tuple.
+Roles are **scoped to channel entities**, never global. Product entities own no roles at all: they inherit their permissions from channels. Ownership is an _implicit_ relation derived from the row's `createdBy` column rather than a stored tuple.
 
 Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and knows nothing about roles, policies, or actions. See [Multi-tenancy](./RLS.md) for the database boundary and how the layers combine.
 
@@ -18,7 +18,7 @@ Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and 
 │  │   hierarchy-config.ts         │  │   permissions-config.ts             │  │
 │  │                               │  │                                     │  │
 │  │ createEntityHierarchy(roles)  │  │ configurePermissions(types, cb)     │  │
-│  │   .user()                     │  │   subject × context × role → cell   │  │
+│  │   .user()                     │  │   subject × channel × role → cell   │  │
 │  │   .channel(name, {parent,     │  │   cell = 0 | 1 | 'own'              │  │
 │  │             roles})           │  │   publicRead(mode)                  │  │
 │  │   .product(name, {parent})    │  │   elevatedRoles                     │  │
@@ -33,7 +33,7 @@ Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and 
 │      │                                                          │            │
 │      │  getAllDecisions(policies, memberships, subject, opts)   │            │
 │      │                                                          │            │
-│      │  1. order contexts   most-specific → root                │            │
+│      │  1. order channels   most-specific → root                │            │
 │      │       channel entity → [self, ...ancestors]              │            │
 │      │       product entity → [...ancestors]                    │            │
 │      │  2. system admin?    allow every action, short-circuit   │            │
@@ -68,9 +68,9 @@ The engine **never loads rows**. Callers resolve whatever row data a decision ne
 | Term | Meaning |
 | --- | --- |
 | **Channel entity** | Owns roles and memberships (`organization` in the template). Orders as `[self, ...ancestors]`. |
-| **Product entity** | Owns no roles; inherits from ancestor contexts (`attachment`). Orders as `[...ancestors]`. Must have a context parent. |
+| **Product entity** | Owns no roles; inherits from channels (`attachment`). Orders as `[...ancestors]`. Must have a channel parent. |
 | **User entity** | Carries no policies at all; `configurePermissions` filters it out. |
-| **Membership** | The engine reads only `{ channelType, channelId, role }`. Explicit `user → context` relation. |
+| **Membership** | The engine reads only `{ channelType, channelId, role }`. Explicit `user → channel` relation. |
 | **Subject** | What is being acted on: entity type, optional id, `channelIds` scope, and optionally `row`. |
 | **Policy cell** | `0` (deny), `1` (allow), or a row-condition name (`'own'` — allow on qualifying rows). |
 | **Action** | `create`, `read`, `update`, `delete` (`appConfig.entityActions`). |
@@ -78,7 +78,7 @@ The engine **never loads rows**. Callers resolve whatever row data a decision ne
 
 ## Configuration
 
-Two files, both fork-facing. They must change together — the hierarchy defines what contexts exist, the policies must then cover every role in every one of them.
+Two files, both fork-facing. They must change together — the hierarchy defines what channels exist, the policies must then cover every role in every one of them.
 
 **`shared/config/hierarchy-config.ts`** — a fluent builder, not an object literal:
 
@@ -124,21 +124,21 @@ export const { accessPolicies, publicReadGrants } = configurePermissions(
 
 Any action you omit defaults to `0`. `'own'` is the built-in owner condition: the engine reads the config cell verbatim (the name _is_ the value), so it only ever sees `0 | 1 | 'own'`.
 
-Missing actions and missing role/context rows both deny by default, so policies only need to declare grants. Public-read declarations are collected separately because they are membership-independent.
+Missing actions and missing role/channel rows both deny by default, so policies only need to declare grants. Public-read declarations are collected separately because they are membership-independent.
 
-For channel entities, note the two row kinds: **elevation** rows sit on an _ancestor_ context and say what a parent's member may do to the child (this is where `create` lives); **self** rows sit on the same context and say what the entity's own members may do to it (`create` is meaningless there). Product entities have only _home_ rows, where `create` grants making the product inside that context.
+For channel entities, note the two row kinds: **elevation** rows sit on an _ancestor_ channel and say what a parent's member may do to the child (this is where `create` lives); **self** rows sit on the same channel and say what the entity's own members may do to it (`create` is meaningless there). Product entities have only _home_ rows, where `create` grants making the product inside that channel.
 
 ## The decision
 
-`getAllDecisions(policies, memberships, subject, options)` is the core; `checkAccess` is the bound entry point every tier actually calls — it injects the configured `publicReadGrants` and `elevatedRoles`. One function, three shapes with one semantics:
+`getAllDecisions(policies, memberships, subject, options)` is the core; the **`checkAccess*` family** is the bound surface every tier actually calls — three named projections of the same engine, all injecting the configured `publicReadGrants` and `elevatedRoles`. The name at the call site tells you the shape:
 
 ```ts
 checkAccess(access, action, subject); // → PermissionResult — the request-path check
-checkAccess(access, action, subjects); // → BatchPermissionResult — one actor, many rows (list splitting)
-checkAccess(accesses, action, subject, options?); // → PermissionResult[] — many actors, one row (stream fan-out)
+checkAccessBatch(access, action, subjects); // → BatchPermissionResult — one actor, many rows (list splitting)
+checkAccessFanout(accesses, action, subject, options?); // → PermissionResult[] — many actors, one row (stream fan-out)
 ```
 
-The many-actors form is engine-collapsed: accesses are grouped into **access classes** (admin bit, one bit per row condition the subject's policies actually reference, roles held at the subject's channel levels) and the policy walk runs once per class, so cost scales with distinct classes — not with subscribers. The class-key invariant (equal keys ⇒ equal decisions) is property-tested in `resolve-access.test.ts` against synthetic policies the template itself never ships. `options.onInvalidMembership: 'deny'` lets fan-out callers fail-close a single corrupt access instead of throwing away the batch.
+`checkAccessFanout` is engine-collapsed: accesses are grouped into **access classes** (admin bit, one bit per row condition the subject's policies actually reference, roles held at the subject's channel levels) and the policy walk runs once per class, so cost scales with distinct classes — not with subscribers. The class-key guarantee (equal keys ⇒ equal decisions) is property-tested in `resolve-access.test.ts` against synthetic policies the template itself never ships. `options.onInvalidMembership: 'deny'` lets fan-out callers fail-close a single corrupt access instead of throwing away the batch.
 
 ```ts
 export type SubjectForPermission = {
@@ -162,7 +162,7 @@ export interface PermissionDecision<
 }
 ```
 
-Ancestor scope is **explicitly tri-state**, and the distinction is load-bearing: `undefined` means a required scope was omitted and throws `MissingScopeError`; `null` means deliberately not scoped to that ancestor; a string means scoped to a concrete context id. Silently treating a missing scope as "unscoped" would be a permission bypass, so it is a hard error — surfaced as HTTP 400 `missing_scope` on the backend and WS close `4400` in the relay.
+Ancestor scope is **explicitly tri-state**, and the distinction is load-bearing: `undefined` means a required scope was omitted and throws `MissingScopeError`; `null` means deliberately not scoped to that ancestor; a string means scoped to a concrete channel id. Silently treating a missing scope as "unscoped" would be a permission bypass, so it is a hard error — surfaced as HTTP 400 `missing_scope` on the backend and WS close `4400` in the relay.
 
 Boundary code that starts from DB rows, route params, or CDC events uses `buildSubject()` to turn column-shaped input (`{ organizationId: 'org_x' }`) into this domain shape. Internals read `subject.channelIds.organization`, never a DB column name.
 
@@ -172,7 +172,7 @@ Boundary code that starts from DB rows, route params, or CDC events uses `buildS
 
 Two mechanisms widen access beyond the policy matrix, and both read the row's own columns. There are exactly two rules — `own` and `public` — and that set is **closed**: it is not a fork extension point. The reasoning is in Constraints; the mechanism is here.
 
-A **row condition** (`shared/src/permissions/row-conditions.ts`) qualifies a grant per row. A cell of `1` grants the action on every row the context scope reaches; a condition cell grants it only on rows the condition matches. Because the set is closed, a condition is just its **name** — the name determines the rule, so there is no descriptor to carry:
+A **row condition** (`shared/src/permissions/row-conditions.ts`) qualifies a grant per row. A cell of `1` grants the action on every row the channel scope reaches; a condition cell grants it only on rows the condition matches. Because the set is closed, a condition is just its **name** — the name determines the rule, so there is no descriptor to carry:
 
 ```ts
 export type RowConditionName = "own" | "public"; // this union IS the contract
@@ -197,7 +197,7 @@ The name is the single source of truth. Three paths map it to behaviour through 
 
 ## The access
 
-Every `checkAccess` call takes an explicit `Access` — the actor AND their memberships in one object:
+Every `checkAccess*` call takes an explicit `Access` — the actor AND their memberships in one object:
 
 ```ts
 export type Access<T extends PermissionMembership = PermissionMembership> =
@@ -220,7 +220,7 @@ The engine produces a verdict. Each tier is responsible for _asking_ — and eve
 | **Guard chain** | `authGuard` → `tenantGuard` → `orgGuard` | Coarse gate only: authenticated, in-tenant, and a member of the org _or_ a system admin. It does **not** consult `accessPolicies`. |
 | **Single row** | `getValidProductEntity`, `getValidChannelEntity`, `canCreateEntity`, `splitByPermission` | Loads the row, passes it as `subject.row` via `buildSubjectFromEntity`, runs the engine. `splitByPermission` powers bulk ops and 403s only when _nothing_ is allowed. |
 | **Collection read** | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Turns the actor's access into a readable scope, then compiles it — unconditional grants, row conditions, and the public grant — into one Drizzle `SQL` predicate. Set-based, so it never materializes rows to reject them. |
-| **SSE dispatch** | `rowReadDecisions` (`canReceiveEntityEvent` is its batch-of-1) | ONE `checkAccess` fan-out call per event row over the channel's subscribers; the engine collapses them into access classes. Notified rows are fetchable by seq, so over-notifying is a data leak, not just noise. |
+| **SSE dispatch** | `rowReadDecisions` (`canReceiveEntityEvent` is its batch-of-1) | ONE `checkAccessFanout` call per event row over the channel's subscribers; the engine collapses them into access classes. Notified rows are fetchable by seq, so over-notifying is a data leak, not just noise. |
 | **Catchup views** | `resolveViewReadStatus` | Classifies a client-declared view prefix `ok`/`opaque`/`forbidden` on top of `resolveCollectionReadFilter`. Answers a DIFFERENT question than row reads: may the caller see the subtree's aggregate change signal (`f:`/counts)? Rows leak content; summaries leak the existence and timing of others' activity — so `ok` requires PROOF (org-wide read; a subtree-scoped grant on the node OR on any VERIFIED true ancestor — the counters row carries the channel's canonical path, and claimed prefixes must equal it; or, for `self` views, a home-scoped grant on the node), `opaque` discloses nothing, and `forbidden` appears only with no read scope in the org. See "Authorization: readability × answerability" in SYNC_ENGINE.md for the worked matrix. |
 | **Yjs relay** | `canEditEntity` on WS upgrade | Reads the entity row and memberships over raw `pg` (table/column names derived via `toTableName`/`toColumnName`), then runs the same engine. |
 | **Postgres RLS** | `tenantRead` / `tenantContext` | Tenant isolation only. Not a permission layer. |

@@ -1,7 +1,7 @@
 import { appConfig, isUnpublishedDraft, type SubjectForPermission } from 'shared';
 import { type ActivityBatchRow, getEventData } from '#/lib/activity-bus';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { checkAccess } from '#/permissions';
+import { checkAccessFanout } from '#/permissions';
 import { buildSubject } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
 import type { CursoredSubscriber } from '../stream';
@@ -24,14 +24,14 @@ export interface AppStreamSubscriber extends CursoredSubscriber {
 
 /**
  * The membership + admin state a dispatch decision needs (test-friendly subset).
- * Structurally an `Access`, so subscribers feed `checkAccess` directly.
+ * Structurally an `Access`, so subscribers feed `checkAccessFanout` directly.
  */
 export type SubscriberAccess = Pick<AppStreamSubscriber, 'userId' | 'isSystemAdmin' | 'memberships'>;
 
 /**
  * The permission subject of one event row, subscriber-independent. Returns `null` when the
  * row is vetoed for everyone, fail-closed: an unpublished draft (`publishedAt` null, see
- * `shared/src/published-rows.ts` — defense-in-depth behind the publication row filter, the
+ * `shared/src/published-rows.ts`; defense-in-depth behind the publication row filter, the
  * author included), or a malformed ancestor scope.
  */
 const rowReadSubject = (event: AppStreamProductEvent): SubjectForPermission | null => {
@@ -57,7 +57,7 @@ const rowReadSubject = (event: AppStreamProductEvent): SubjectForPermission | nu
 /**
  * SSE must mirror API read visibility: which of these subscribers can read the event's row?
  *
- * ONE `checkAccess` batch call — the engine collapses subscribers into access classes and
+ * ONE `checkAccessFanout` call: the engine collapses subscribers into access classes and
  * runs the policy walk once per class, with the SAME inputs as API reads. The event carries
  * the full row (REPLICA IDENTITY FULL), which row conditions and public grants evaluate
  * per subscriber. Rows are self-describing, so no second row is ever needed.
@@ -73,7 +73,9 @@ export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event
   const subject = rowReadSubject(event);
   if (!subject) return subscribers.map(() => false);
   try {
-    const results = checkAccess(subscribers as SubscriberAccess[], 'read', subject, { onInvalidMembership: 'deny' });
+    const results = checkAccessFanout(subscribers as SubscriberAccess[], 'read', subject, {
+      onInvalidMembership: 'deny',
+    });
     return results.map((result) => result.isAllowed);
   } catch {
     log.error('Stream read decision failed; denying all', {

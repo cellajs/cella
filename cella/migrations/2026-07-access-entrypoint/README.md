@@ -1,11 +1,11 @@
-# One permission entry point: `checkPermission` → `checkAccess`
+# One permission surface: `checkPermission` → the `checkAccess*` family
 
-Upstream collapsed the permission engine's public surface to a **single rich entry point**. `checkPermission(memberships, action, subject, actor)` is gone; every JS-tier check now goes through:
+Upstream collapsed the permission engine's public surface to **one named family over one engine**. `checkPermission(memberships, action, subject, actor)` is gone; every JS-tier check now goes through one of three named projections — the name at the call site tells you the shape, and greps like `checkAccessFanout` find every fan-out site:
 
 ```ts
-checkAccess(access, action, subject); // → PermissionResult
-checkAccess(access, action, subjects); // → BatchPermissionResult (one actor, many rows)
-checkAccess(accesses, action, subject, options?); // → PermissionResult[] (many actors, one row)
+checkAccess(access, action, subject); // → PermissionResult (the request-path check)
+checkAccessBatch(access, action, subjects); // → BatchPermissionResult (one actor, many rows)
+checkAccessFanout(accesses, action, subject, options?); // → PermissionResult[] (many actors, one row)
 ```
 
 with the actor and their memberships fused into one object:
@@ -16,7 +16,7 @@ export type Access<T extends PermissionMembership = PermissionMembership> =
   | { anonymous: true };
 ```
 
-**No permission semantics change for existing call shapes.** A single-access `checkAccess` call computes exactly what `checkPermission` computed, via the same `getAllDecisions` core. What's new: the many-accesses form collapses actors into access classes inside the engine (SSE dispatch rides this), and `{ anonymous: true }` can no longer carry memberships — anonymity and membership were contradictory, now the type forbids it.
+**No permission semantics change for existing call shapes.** A single-access `checkAccess` call computes exactly what `checkPermission` computed, via the same `getAllDecisions` core; the three functions are thin projections of that one engine with the same injected config, so "one entry point" holds at the semantic level. What's new: `checkAccessFanout` collapses actors into access classes inside the engine (SSE dispatch rides this), and `{ anonymous: true }` can no longer carry memberships — anonymity and membership were contradictory, now the type forbids it.
 
 The compiled-SQL paths are **untouched**: `Actor`, `actorFrom(ctx)`, `compileRowConditionSql`, `resolveCollectionReadFilter`, `buildCollectionReadWhere`, `resolveViewReadStatus` keep their signatures. Only call sites of `checkPermission` itself migrate.
 
@@ -45,9 +45,16 @@ Pull, run `pnpm ts`, and fix every `checkPermission` error mechanically:
 + const { isAllowed } = checkAccess({ userId, isSystemAdmin: false, memberships }, 'update', subject);
 ```
 
-**3. Batch-subjects callers** (cf. `splitByPermission`): same swap, subjects array stays the second-to-last arg — `checkAccess(access, action, subjects)` returns the same `{ results, decisions }` shape.
+**3. Batch-subjects callers** (cf. `splitByPermission`): swap to the named batch form — `checkAccessBatch(access, action, subjects)` returns the same `{ results, decisions }` shape:
 
-**4. Test mocks** — `vi.mock('#/permissions', …)` doubles of `checkPermission` rename to `checkAccess`; `actorFrom` doubles used on engine paths rename to `accessFrom` and must return an access-shaped object (add `memberships: []`).
+```diff
+- const { results } = checkPermission(memberships, action, subjects, actorFrom(ctx));
++ const { results } = checkAccessBatch(accessFrom(ctx), action, subjects);
+```
+
+**4. Fan-out callers** (dispatch-shaped fork code): `checkAccessFanout(accesses, action, subject, { onInvalidMembership: 'deny' })` — one call per row over many actors, engine-collapsed.
+
+**5. Test mocks** — `vi.mock('#/permissions', …)` doubles of `checkPermission` rename to whichever family member the code under test calls (`checkAccess` / `checkAccessBatch` / `checkAccessFanout`); `actorFrom` doubles used on engine paths rename to `accessFrom` and must return an access-shaped object (add `memberships: []`).
 
 ## SSE dispatcher: `shouldReceive` → `selectEligible`
 
@@ -69,4 +76,4 @@ If your fork defines its own dispatcher config or overrides the app-stream one, 
 
 ## Gates
 
-`pnpm ts` finds every call site (the old name no longer exists — there is no deprecation alias). Then biome, then backend + shared test suites. The engine invariant backing the class collapse is `shared/src/permissions/permission-manager/resolve-access.test.ts`; run it if you touch `resolve-access.ts`, `check.ts`, or `row-conditions.ts`.
+`pnpm ts` finds every call site (the old name no longer exists — there is no deprecation alias). Then biome, then backend + shared test suites. The engine guarantee backing the class collapse is `shared/src/permissions/permission-manager/resolve-access.test.ts`; run it if you touch `resolve-access.ts`, `check.ts`, or `row-conditions.ts`.

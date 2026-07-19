@@ -55,10 +55,10 @@ export const hierarchy = createEntityHierarchy(roles)
 
 `.product(name, options)` options:
 
-- **`parent`** (required): the entity's **home context**. Becomes the non-null `<context>Id` column and the most-specific link in its ancestor chain. Products _must_ have a home; the builder throws otherwise.
-- **`relatedChannels`** (optional): non-ancestor context references (nullable id columns).
+- **`parent`** (required): the entity's **home channel**. Becomes the non-null `<channel>Id` column and the most-specific link in its ancestor chain. Products _must_ have a home; the builder throws otherwise.
+- **`relatedChannels`** (optional): non-ancestor channel references (nullable id columns).
 
-The builder ([`entity-hierarchy.ts`](../shared/src/config-builder/entity-hierarchy.ts)) validates at construction: parents must be declared **before** children, parents must be contexts, roles must exist, `organization` + `user()` are mandatory. **Order matters**: declare parents earlier in the chain.
+The builder ([`entity-hierarchy.ts`](../shared/src/config-builder/entity-hierarchy.ts)) validates at construction: parents must be declared **before** children, parents must be channels, roles must exist, `organization` + `user()` are mandatory. **Order matters**: declare parents earlier in the chain.
 
 ### Step 2: 🔴 Register entity metadata in `appConfig`
 
@@ -66,7 +66,7 @@ Add the type to the string-literal arrays in [`shared/config/config.default.ts`]
 
 ```ts
 entityTypes:        ['user', 'organization', 'workspace', 'project', 'task', 'label', 'note', 'attachment'] as const,
-productEntityTypes: ['task', 'label', 'note', 'attachment'] as const,   // (channelEntityTypes if a context)
+productEntityTypes: ['task', 'label', 'note', 'attachment'] as const,   // (channelEntityTypes if a channel)
 entityIdColumnKeys: {
   // ...existing...
   note: 'noteId',        // must be exactly `${type}Id`
@@ -75,7 +75,7 @@ entityIdColumnKeys: {
 
 Optional arrays, add only if relevant:
 
-- `seenTrackedEntityTypes`: opt in to unseen-count badges (grouped by parent context).
+- `seenTrackedEntityTypes`: opt in to unseen-count badges (grouped by parent channel).
 - `entityEmbeddings`: only if the entity is embedded as an id-array inside another entity (like `label` inside `task.labels`).
 - `menuStructure`: for channel entities that appear in the user menu.
 - `defaultRestrictions.quotas`: per-tenant quota.
@@ -243,7 +243,7 @@ Once the table is in `entityTables` (Step 5) and the type is in `productEntityTy
 - **CDC publication + `REPLICA IDENTITY FULL`**: derived from `entityTables` by the CDC setup migration.
 - **`seq` stamping**: the CDC worker stamps every row from the org sequence generically (one order per organization, shared by all product types) and rolls `f:`/`fs:` frontiers up the hierarchy.
 - **SSE dispatch**: [`entities-listeners.ts`](../backend/src/modules/entities/entities-listeners.ts) loops `appConfig.productEntityTypes` to register `activityBus` listeners; there is one generic `/entities/app/stream`, no per-entity endpoint.
-- **Permission-filtered fan-out**: the dispatcher derives ancestor context ids from the hierarchy and runs ONE `checkAccess(subscribers, 'read', …)` batch call per event row; the engine collapses subscribers into access classes.
+- **Permission-filtered fan-out**: the dispatcher derives ancestor channel ids from the hierarchy and runs ONE `checkAccessFanout(subscribers, 'read', …)` call per event row; the engine collapses subscribers into access classes.
 
 See [Sync engine](./SYNC_ENGINE.md) for the full pipeline.
 
@@ -276,7 +276,7 @@ Also add the entity's `types.ts`, `search-params-schemas.ts`, and its table/UI c
 
 Self-registration only runs if `query.ts` is **imported eagerly** before the SSE stream connects. The eager entry point is [`frontend/src/list-queries-config.tsx`](../frontend/src/list-queries-config.tsx):
 
-- Add the module's canonical query import there, and add the entity to `buildEntitySyncQueries` (the map that pushes a product's canonical query to sync when its parent context loads, e.g. `notesCanonicalOptions` under `project`).
+- Add the module's canonical query import there, and add the entity to `buildEntitySyncQueries` (the map that pushes a product's canonical query to sync when its parent channel loads, e.g. `notesCanonicalOptions` under `project`).
 
 Then add the file-based route under `frontend/src/routes/_app/.../` (e.g. a `notes.tsx` tab). `routeTree.gen.ts` regenerates automatically.
 
@@ -296,7 +296,7 @@ A channel entity (has memberships + roles) differs from the product recipe:
 
 - **Step 1**: use `.channel('name', { parent, roles, relatedChannels? })`. `roles` must be non-empty and from the role registry.
 - **Step 2**: register under `channelEntityTypes` (not `productEntityTypes`).
-- **Step 3**: policies distinguish **elevation** rows (on an ancestor context, carrying `create`) from **self** rows (on the same context, omitting `create`). See the `project`/`workspace` cases and the header comment in [`permissions-config.ts`](../shared/config/permissions-config.ts).
+- **Step 3**: policies distinguish **elevation** rows (on an ancestor channel, carrying `create`) from **self** rows (on the same channel, omitting `create`). See the `project`/`workspace` cases and the header comment in [`permissions-config.ts`](../shared/config/permissions-config.ts).
 - **Step 4**: use `...channelEntityColumns('name')` (adds `slug`, thumbnails, etc.). Add a `unique(tenantId, id)` compound constraint so the table can be a composite-FK target. **No `tenantSelectPolicy`/`writeThroughPolicies`, no `seq`/`stx`**: channel entities have no RLS and no sync layer (offline read only; access is guard-enforced).
 - **Frontend**: register in `channelEntityListQueriesByType` and add a `menu-config.tsx` section (+ `menuStructure` in `config.default.ts`) rather than `buildEntitySyncQueries`.
 
@@ -308,7 +308,7 @@ Channel entities do **not** go through the CDC/SSE product pipeline or the wire-
 
 - **Public read**: `publicRead('publicSelf')` in Step 3. Set the row's `publicAt` to publish it; it then appears for anonymous actors on single-row reads, in list endpoints, and over SSE alike.
 - **Drafts (author-only until published)**: spread `...publishedColumn` ([`published-column.ts`](../backend/src/db/utils/published-column.ts)) into the table, then re-run `pnpm generate` + `pnpm migrate` — the CDC publication gains a row filter (`published_at IS NOT NULL`, PG 17+) so drafts never enter the replication stream (publish arrives as INSERT, unpublish as DELETE). `publishedAt` null = author-only draft, excluded from API reads, counters, stamps and badges via introspection — no further wiring. Fork adds a publish endpoint (`resolveServerUpdateOps`) and a drafts view; see [2026-07-published-rows](./migrations/2026-07-published-rows/).
-- **Unseen-count badges**: add the type to `seenTrackedEntityTypes` (Step 2); tracking in [`app-stream-handler.ts`](../frontend/src/query/realtime/app-stream-handler.ts) and the `seen` module then covers it automatically, grouping badges by the parent context.
+- **Unseen-count badges**: add the type to `seenTrackedEntityTypes` (Step 2); tracking in [`app-stream-handler.ts`](../frontend/src/query/realtime/app-stream-handler.ts) and the `seen` module then covers it automatically, grouping badges by the parent channel.
 - **Embedded id-arrays**: if the entity is referenced as an id array on another entity (like `label` in `task.labels`), add an `entityEmbeddings` entry (Step 2) so CDC ref-counting, cache patching, and cascade suppression handle it.
 
 ---

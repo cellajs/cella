@@ -4,7 +4,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
 import { resolveEntities } from '#/modules/entities/entities-queries';
-import { checkAccess } from '#/permissions';
+import { checkAccessBatch } from '#/permissions';
 import { accessFrom } from '#/permissions/actor';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
@@ -36,7 +36,7 @@ export const splitByPermission = async (
       entity as { id: string; createdBy?: string | null } & Partial<ChannelEntityIdColumns>,
     ),
   );
-  const { results } = checkAccess(accessFrom(ctx), action, subjects);
+  const { results } = checkAccessBatch(accessFrom(ctx), action, subjects);
 
   // Partition into allowed and disallowed
   const allowedIds: string[] = [];

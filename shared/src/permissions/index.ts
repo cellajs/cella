@@ -46,7 +46,9 @@ export {
   type Actor,
   type BatchPermissionResult,
   checkAccess,
-  type CheckAccessBatchOptions,
+  checkAccessBatch,
+  checkAccessFanout,
+  type CheckAccessFanoutOptions,
   type PermissionResult,
 } from './check-permission';
 export { type EngineAccess, getDecisionsForAccesses, type ResolveAccessOptions } from './permission-manager/resolve-access';
