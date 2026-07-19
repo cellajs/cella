@@ -51,9 +51,9 @@ Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and 
 │   │ Backend    │ │ SSE dispatch │ │ Yjs relay     │ │ Frontend       │       │
 │   │ routes     │ │              │ │               │ │                │       │
 │   │ single row │ │ per event    │ │ WS upgrade,   │ │ computeCan →   │       │
-│   │ + compiled │ │ row, gates   │ │ no backend    │ │ can-map, drives│       │
-│   │ SQL for    │ │ cacheToken   │ │ round-trip    │ │ UI affordances │       │
-│   │ list reads │ │ issuance     │ │               │ │ (never trusted)│       │
+│   │ + compiled │ │ row, class-  │ │ no backend    │ │ can-map, drives│       │
+│   │ SQL for    │ │ collapsed    │ │ round-trip    │ │ UI affordances │       │
+│   │ list reads │ │ fan-out      │ │               │ │ (never trusted)│       │
 │   └────────────┘ └──────────────┘ └───────────────┘ └────────────────┘       │
 │                                                                              │
 │  Postgres RLS (app.tenant_id) — separate layer, tenant isolation only.       │
@@ -166,7 +166,7 @@ Ancestor scope is **explicitly tri-state**, and the distinction is load-bearing:
 
 Boundary code that starts from DB rows, route params, or CDC events uses `buildSubject()` to turn column-shaped input (`{ organizationId: 'org_x' }`) into this domain shape. Internals read `subject.channelIds.organization`, never a DB column name.
 
-`grantedBy` is not decoration. It records _why_ an action was allowed, which is what makes "why can this user delete?" answerable, and it is what the audit path reads.
+`grantedBy` is not decoration. It records _why_ an action was allowed, which is what makes "why can this user delete?" answerable — through the debug formatters (`formatPermissionDecision`, `formatBatchPermissionSummary`) and the full `decisions` map batch callers get back.
 
 ## Widening: row conditions and public read
 
@@ -184,7 +184,7 @@ export const matchesRowCondition = (
 ): boolean => {
   switch (name) {
     case "own":
-      return !!actor.userId && row.createdBy === actor.userId; // anonymous never matches
+      return !!actor.userId && !!row.createdBy && row.createdBy === actor.userId; // anonymous never matches
     case "public":
       return !!row.publicAt; // actor-independent
   }
@@ -205,8 +205,6 @@ export type Access<T extends PermissionMembership = PermissionMembership> =
   | { anonymous: true };
 ```
 
-Two hazards are closed by this shape, and both produced real bugs under the old split signature. An optional actor is how permission bugs get in: a caller that simply forgets it still compiles, and every rule that reads the actor — `'own'`, and any fork condition — then silently fails **closed**: a denial nobody notices, in a path nobody tested. Anonymity has to be _stated_, not achieved by omission, and `{ anonymous: true }` cannot be produced by accident — nor can it carry memberships, which would be a contradiction. And because memberships and identity travel together, a call site can no longer pair one user's memberships with another user's actor.
-
 On the backend, handlers never assemble one by hand: `accessFrom(ctx)` reads the guard-populated `userId`, `isSystemAdmin` and `memberships` straight off the request context, yielding a stated `{ anonymous: true }` when no user is signed in.
 
 The compiled-predicate paths (the SQL twin: `compileRowConditionSql`, collection scopes, catchup reads) keep the membership-less `Actor` union and `actorFrom(ctx)` — memberships enter those paths as SQL scope, not as an engine argument.
@@ -218,7 +216,7 @@ The engine produces a verdict. Each tier is responsible for _asking_ — and eve
 | Path | Entry point | What it checks |
 | --- | --- | --- |
 | **Guard chain** | `authGuard` → `tenantGuard` → `orgGuard` | Coarse gate only: authenticated, in-tenant, and a member of the org _or_ a system admin. It does **not** consult `accessPolicies`. |
-| **Single row** | `getValidProductEntity`, `getValidChannelEntity`, `canCreateEntity`, `splitByPermission` | Loads the row, passes it as `subject.row` via `buildSubjectFromEntity`, runs the engine. `splitByPermission` powers bulk ops and 403s only when _nothing_ is allowed. |
+| **Single row** | `getValidProductEntity`, `getValidChannelEntity`, `canCreateEntity`, `splitByPermission` | Loads the row, passes it as `subject.row` via `buildSubjectFromEntity`, runs the engine (`canCreateEntity` is the exception: the entity doesn't exist yet, so the subject describes the would-be placement, no row). `splitByPermission` powers bulk ops and 403s only when _nothing_ is allowed. |
 | **Collection read** | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Turns the actor's access into a readable scope, then compiles it — unconditional grants, row conditions, and the public grant — into one Drizzle `SQL` predicate. Set-based, so it never materializes rows to reject them. |
 | **SSE dispatch** | `rowReadDecisions` (`canReceiveEntityEvent` is its batch-of-1) | ONE `checkAccessFanout` call per event row over the channel's subscribers; the engine collapses them into access classes. Notified rows are fetchable by seq, so over-notifying is a data leak, not just noise. |
 | **Catchup views** | `resolveViewReadStatus` | Classifies a client-declared view prefix `ok`/`opaque`/`forbidden` on top of `resolveCollectionReadFilter`. Answers a DIFFERENT question than row reads: may the caller see the subtree's aggregate change signal (`f:`/counts)? Rows leak content; summaries leak the existence and timing of others' activity — so `ok` requires PROOF (org-wide read; a subtree-scoped grant on the node OR on any VERIFIED true ancestor — the counters row carries the channel's canonical path, and claimed prefixes must equal it; or, for `self` views, a home-scoped grant on the node), `opaque` discloses nothing, and `forbidden` appears only with no read scope in the org. See "Authorization: readability × answerability" in SYNC_ENGINE.md for the worked matrix. |
@@ -253,7 +251,7 @@ That test is what lets the SQL compiler exist at all: two hand-written implement
 
 **The scenario space is the test.** It varies `isSystemAdmin` and public read grants, and it must keep doing so: for a long time it pinned `isSystemAdmin: false` and generated no public rows, and _both_ of the divergences listed above lived comfortably underneath it, green. A parity test only pins the axes it actually varies. If you add a dimension to the permission model, add it here in the same commit, and confirm the test goes red when you remove the fix.
 
-The rest of the suite covers grant attribution, `'own'` denial when the actor or `createdBy` is absent, public read for anonymous actors, policy completeness, the `null`-vs-`undefined` scope distinction, and a perf floor (100 entities under 10 ms; batch at least 2× a loop).
+The rest of the suite covers grant attribution, `'own'` denial when the actor or `createdBy` is absent, public read for anonymous actors, policy completeness, the `null`-vs-`undefined` scope distinction, and a perf floor (`check.perf.test.ts`: 100 entities under 10 ms; a stable membership array must meaningfully beat rebuilding its index per call). The fan-out collapse has its own benchmark in `backend/…/dispatch-eligibility.perf.test.ts`.
 
 ## Behavior
 
