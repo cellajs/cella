@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { infiniteQueryOptions, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import i18n from 'i18next';
 import { type Attachment, type GetAttachmentsData, getAttachment, getAttachments } from 'sdk';
 import { zAttachment } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
@@ -15,6 +16,7 @@ import {
   updateAttachmentMutationFn,
 } from '~/modules/attachment/query-mutations';
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { cacheCreate, cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
@@ -327,6 +329,22 @@ export const useAttachmentDeleteMutation = (tenantId: string, organizationId: st
     onError: (_err, _attachments, context) => {
       handleError('delete');
       if (context?.deletedAttachments) cacheCreate(orgKey, context.deletedAttachments);
+    },
+    onSuccess: (result, variables) => {
+      // Partial rejection (200 + rejectedIds): the backend kept permission-denied rows.
+      // Restore them into the cache NOW instead of letting them silently reappear on the
+      // next sync, and tell the user. (A full rejection arrives as a 403 via onError.)
+      const rejectedIds = result?.rejectedIds ?? [];
+      if (rejectedIds.length === 0) return;
+      const rejectedSet = new Set(rejectedIds);
+      cacheCreate(
+        orgKey,
+        variables.attachments.filter((a) => rejectedSet.has(a.id)),
+      );
+      toaster(
+        i18n.t('c:resources_delete_denied', { count: rejectedIds.length, total: variables.attachments.length }),
+        'info',
+      );
     },
     // Error-only: onMutate removed the attachment from all caches, SSE handles other users.
     onSettled: (_data, error) => {

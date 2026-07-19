@@ -48,5 +48,7 @@ export async function deleteAttachmentsMutationFn({
 }: DeleteAttachmentVars) {
   const ids = attachments.map((a) => a.id);
   const effectiveStx = stx ?? createStxForDelete();
-  await deleteAttachments({ path: { tenantId, organizationId }, body: { ids, stx: effectiveStx } });
+  // The response carries `rejectedIds` (permission-denied rows the backend kept); the hook's
+  // onSuccess restores those rows and informs the user instead of discarding the result.
+  return deleteAttachments({ path: { tenantId, organizationId }, body: { ids, stx: effectiveStx } });
 }

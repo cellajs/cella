@@ -10,6 +10,7 @@ import { openAttachmentDialogSearch } from '~/modules/attachment/dialog/params';
 import { getCloudUrl } from '~/modules/attachment/file-url';
 import { useAttachmentUrl } from '~/modules/attachment/hooks/use-attachment-url';
 import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-upload-status';
+import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import type { EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
 import { TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -110,11 +111,26 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
     toaster(t('error:download_failed'), 'error');
   }, [error, t]);
 
-  // Check if blob is uploaded to cloud
-  const { isUploaded, hasLocalBlob } = useBlobUploadStatus(row.id);
-  const canDownload = !hasLocalBlob || isUploaded;
-
-  if (!canDownload) return <div className="w-full text-center text-muted">-</div>;
+  // Local-first: a stored blob (downloaded earlier, or local-only pending upload) saves
+  // without the network — that is the point of keeping it. Cloud is the fallback.
+  const handleDownload = async () => {
+    try {
+      const local = await attachmentStorage.createBlobUrlWithVariant(row.id, 'original', true);
+      if (local) {
+        try {
+          await download(local.url, row.filename);
+        } finally {
+          URL.revokeObjectURL(local.url);
+        }
+        return;
+      }
+      const url = await getCloudUrl(row, 'original');
+      if (!url) throw new Error('No cloud URL for attachment');
+      await download(url, row.filename);
+    } catch {
+      toaster(t('error:download_failed'), 'error');
+    }
+  };
 
   return (
     <Button
@@ -126,14 +142,7 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
       aria-label="Download"
       data-tooltip="true"
       data-tooltip-content={t('c:download')}
-      onClick={() =>
-        getCloudUrl(row, 'original')
-          .then((url) => {
-            if (!url) throw new Error('No cloud URL for attachment');
-            return download(url, row.filename);
-          })
-          .catch(() => toaster(t('error:download_failed'), 'error'))
-      }
+      onClick={handleDownload}
     >
       {isInProgress ? <Spinner className="size-4 text-foreground/80" noDelay /> : <DownloadIcon />}
     </Button>
@@ -143,9 +152,14 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
 interface EllipsisCellProps {
   row: Attachment;
   tabIndex: number;
+  /** Row-resolved delete permission ('own' already collapsed by the column hook). */
+  canDelete: boolean;
 }
 
-export const EllipsisCell = ({ row, tabIndex }: EllipsisCellProps) => {
+export const EllipsisCell = ({ row, tabIndex, canDelete }: EllipsisCellProps) => {
+  // Delete is the only option; without it there is no menu to offer.
+  if (!canDelete) return null;
+
   const ellipsisOptions: EllipsisOption<Attachment>[] = [
     {
       label: i18n.t('c:delete'),
