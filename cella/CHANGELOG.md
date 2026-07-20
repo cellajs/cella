@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.5.0](https://github.com/cellajs/cella/compare/0.4.1...0.5.0) (2026-07-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* Sequence sync ([#917](https://github.com/cellajs/cella/issues/917))
+
+### 🎉 New features
+
+* **infra:** add "Reset database" CLI task ([#908](https://github.com/cellajs/cella/issues/908)) ([38ef7f6](https://github.com/cellajs/cella/commit/38ef7f6bb21e5218f7e49fd3ae3f2c08933af9bb))
+* per-org feature flags, config-driven default org tab, declarative navTab gating ([#911](https://github.com/cellajs/cella/issues/911)) ([d25fa49](https://github.com/cellajs/cella/commit/d25fa49c59fa8cf0badb31ba47a7d8e6d9ac35c7))
+* self-heal orphaned deletes in the apply retry loop ([#914](https://github.com/cellajs/cella/issues/914)) ([c566867](https://github.com/cellajs/cella/commit/c566867687a6b0a3ad53c1256ef1ad60b6ecfe0f))
+* Sequence sync ([#917](https://github.com/cellajs/cella/issues/917)) ([bb841b0](https://github.com/cellajs/cella/commit/bb841b027fc2bbaa59ac6c6a53bbb5e9e23f1354))
+* **system:** send security email on system role changes via CDC ([#910](https://github.com/cellajs/cella/issues/910)) ([c03eefd](https://github.com/cellajs/cella/commit/c03eefd688c892359bd84226702c12385321d086))
+
+
+### 🐞 Bug fixes
+
+* release and deploy pipeline fix ([#920](https://github.com/cellajs/cella/issues/920)) ([c01ebcc](https://github.com/cellajs/cella/commit/c01ebcce960ff3ad48e333e81ab75a7c8ebf5c3d))
+* repair silently-failing side-effect migrations, add migrate-time verification ([#905](https://github.com/cellajs/cella/issues/905)) ([38310cd](https://github.com/cellajs/cella/commit/38310cdb1fbf03d68a6f63c48d1e3d478bdf175b))
+* **sync:** derive sub-org viewing from observed queries, not route params ([#912](https://github.com/cellajs/cella/issues/912)) ([ecdd670](https://github.com/cellajs/cella/commit/ecdd6704c47dfac9c3dbef26f14dcd39a1249314))
+* **test:** drop the impossible ON CONFLICT arbiter on partitioned seen_by ([#909](https://github.com/cellajs/cella/issues/909)) ([aebe4c3](https://github.com/cellajs/cella/commit/aebe4c3dad9891d54f40d832460b6a1fd6ec4bbd))
+
+
+### 🔧 Small improvements
+
+* **attachment:** rework the frontend attachment module ([#906](https://github.com/cellajs/cella/issues/906)) ([59f4998](https://github.com/cellajs/cella/commit/59f4998015a39335da8305aadec3f035bb0f13c2))
+* filename fixes to ignore files in routes ([c0b480c](https://github.com/cellajs/cella/commit/c0b480cbf6ea8a7b6f172e335a7f963b60587067))
+* filename fixes to ignore files in routes ([c52a9cc](https://github.com/cellajs/cella/commit/c52a9cc20c73d5a79e42c23db5432be20a446aef))
+* **query:** key canonical lists by home channel, replacing ances… ([#915](https://github.com/cellajs/cella/issues/915)) ([373510e](https://github.com/cellajs/cella/commit/373510e4c338627bdb86799a0da365be72659485))
+* replace ambiguous jargon in comments with plain naming ([#903](https://github.com/cellajs/cella/issues/903)) ([4045677](https://github.com/cellajs/cella/commit/4045677a7cf827f12a12e2be03acfc2fae8d31a0))
+
 ## [0.4.1](https://github.com/cellajs/cella/compare/0.4.0...0.4.1) (2026-07-17)
 
 ### 🎉 New features
