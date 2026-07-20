@@ -34,81 +34,13 @@ env:
 
 jobs:
   # -------------------------------------------------------------------------
-  # Release gate: heavy security + e2e checks too expensive to run on every
-  # feature PR. Gates every PRODUCTION deploy: the `release: published` event
-  # (always production) or a manual production dispatch. Skipped for staging
-  # dispatches. If it fails, `setup` is skipped and the whole deploy halts, so
-  # a bad release is published but never rolled out (same as the old chained
-  # release-gate → deploy-production ordering).
-  # -------------------------------------------------------------------------
-  release-gate:
-    if: ${{ github.event_name == 'release' || inputs.environment == 'production' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    permissions:
-      contents: read
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Security audit (high+ severity)
-        run: pnpm audit --audit-level=high
-
-      - name: Create .env files
-        run: |
-          cp ./backend/.env.example ./backend/.env
-          cp ./frontend/.env.example ./frontend/.env
-
-      - name: Install Playwright browsers
-        run: cd frontend && pnpm exec playwright install
-
-      - name: Generate OpenAPI spec
-        run: pnpm sdk
-
-      - name: Run database migrations
-        run: pnpm --filter backend push
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
-
-      - name: Run tests (full mode)
-        run: pnpm test:full
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
-
-  # -------------------------------------------------------------------------
-  # Determine environment and detect which services changed
+  # Determine environment and detect which services changed. The heavy test +
+  # storybook suites already ran as required checks on the release-please PR
+  # (see .github/workflows/ci.yml), so deploy assumes validated code and goes
+  # straight to build + rollout. A manual workflow_dispatch bypasses those
+  # checks by design.
   # -------------------------------------------------------------------------
   setup:
-    # Wait on the gate. `skipped` (staging dispatch, gate did not run) is an
-    # acceptable predecessor; only a real gate failure halts the deploy.
-    needs: [release-gate]
-    if: ${{ !cancelled() && (needs.release-gate.result == 'success' || needs.release-gate.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
