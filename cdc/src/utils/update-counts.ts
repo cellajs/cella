@@ -1,9 +1,9 @@
-import { appConfig, hierarchy, isUnpublishedDraft, resolveDeepestAncestorId, resolveNonNullAncestors } from 'shared';
+import { appConfig, hierarchy, resolveDeepestAncestorId, resolveNonNullAncestors } from 'shared';
 import type { ActivityAction, AncestorSource, EntityType } from 'shared';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
 import type { CdcRowData } from '../types';
-import { isCountableRow, isPublishTransition, isUnpublishTransition } from './countability';
+import { isCountableRow } from './countability';
 import { log } from '../lib/pino';
 
 export interface CountDelta {
@@ -31,19 +31,29 @@ export function isActivityStampKey(key: string): boolean {
 }
 
 /**
+ * Keys that merge via GREATEST, not summing: activity stamps (`li:`/`lu:`, epoch ms)
+ * and sequence frontiers. `f:<type>` (subtree: max org-sequence position of that type at
+ * or below the node) and `fs:<type>` (self: max seq of rows HOMED at the node).
+ * Mirrored by the apply_count_deltas PG function.
+ */
+export function isMaxMergeKey(key: string): boolean {
+  return isActivityStampKey(key) || key.startsWith('f:') || key.startsWith('fs:');
+}
+
+/**
  * Determine count deltas from a CDC event.
  *
  * Membership rows yield `m:<role>` / `m:total` deltas plus an org-level
- * `s:membership` seq bump used for catchup change screening. Inactive
+ * `membership` change-signal bump used for catchup screening. Inactive
  * memberships count as `m:pending` while rejectedAt is null. Entity rows yield
  * `e:<type>` deltas on the org and every non-null ancestor context; updates
  * that change ancestor ids re-credit the counters. Product rows also stamp
  * `li:<type>` (last insert) / `lu:<type>` (last update) epoch ms at their home
  * context only.
  *
- * Only COUNTABLE rows participate: live AND published (`isCountableRow`).
- * Unpublished drafts (opt-in `publishedAt` lifecycle) are invisible to every
- * counter and stamp until their publish edge, which counts as a create.
+ * Only COUNTABLE rows participate: live AND published (`isCountableRow`). Draft
+ * product rows never arrive here (publication row filter + entrance guard); the
+ * publish edge arrives as a plain INSERT and counts as a create.
  */
 export function getCountDeltas(
   tableMeta: TableMeta,
@@ -54,41 +64,40 @@ export function getCountDeltas(
 ): CountDelta[] {
   const { action, organizationId } = activity;
 
-  // Memberships (active + inactive): counter deltas plus an org-level membership seq signal.
+  // Memberships (active + inactive): counter deltas plus an org-level membership change signal.
   if (tableMeta.kind === 'resource' && (tableMeta.type === 'membership' || tableMeta.type === 'inactive_membership')) {
     const delta =
       tableMeta.type === 'membership'
         ? getMembershipDelta(action, newRow, oldRow)
         : getInactiveMembershipDelta(action, newRow, oldRow);
     const deltas = delta ? [delta] : [];
-    // Bump the org-level membership seq on every membership / inactive-membership activity so
+    // Bump the org-level membership signal on every membership / inactive-membership activity so
     // catchup can detect membership changes via O(1) counter screening (no activity scan needed).
     // Pending invitations appear in member lists too, so inactive memberships bump it as well.
-    if (organizationId) deltas.push({ channelKey: organizationId, deltas: { 's:membership': 1 } });
+    if (organizationId) deltas.push({ channelKey: organizationId, deltas: { 'membership': 1 } });
     return deltas;
   }
 
   // Entities: track entity type counts on org + non-null ancestor contexts.
-  // The count action derives from countable-set edges (live AND published), unifying
-  // soft-delete/restore and publish/unpublish: crossing into the set counts as create,
-  // crossing out as delete, moving inside it is a plain update (ancestor re-credit),
-  // and moving outside it (draft edits, trash edits) counts nothing. Counter
-  // recalculation applies the same two predicates in SQL and must agree.
+  // The count action derives from countable-set edges (live AND published): crossing
+  // into the set counts as create, crossing out as delete, moving inside it is a plain
+  // update (ancestor re-credit), and moving outside it (trash edits; draft channel rows
+  // on forks that use them) counts nothing. Counter recalculation applies the same two
+  // predicates in SQL and must agree.
   if (tableMeta.kind === 'entity' && organizationId) {
     const countAction = deriveCountAction(action, newRow, oldRow);
     const deltas = countAction ? getEntityDeltas(countAction, organizationId, tableMeta.type, newRow, oldRow, h) : [];
 
     // Activity stamps (epoch ms) at the home context only (deepest non-null ancestor, org
     // fallback). These per-stream signals stay at the home context and do not propagate to
-    // higher ancestors like `e:` deltas. `li:<type>` moves forward when a row enters the
-    // countable set as new content (a published INSERT or a publish edge), and `lu:<type>`
-    // moves on countable-row
-    // content updates. Deletes, soft-deletes, restores, unpublishes and draft edits leave
-    // both untouched (a restore re-counts the row but is old content, so no stamp).
+    // higher ancestors like `e:` deltas. `li:<type>` moves forward when new content enters
+    // the countable set (with the publication row filter a publish edge arrives as INSERT,
+    // so the create IS the publish), and `lu:<type>` moves on countable-row content updates.
+    // Deletes, soft-deletes and restores leave both untouched (a restore re-counts the row
+    // but is old content, so no stamp); drafts never reach the stream.
     if (h.isProduct(tableMeta.type) && countAction !== null && countAction !== 'delete') {
-      const publishEdge = action === 'update' && isPublishTransition(newRow, oldRow);
       const stampKey =
-        (action === 'create' || publishEdge) && countAction === 'create'
+        action === 'create' && countAction === 'create'
           ? `li:${tableMeta.type}`
           : countAction === 'update'
             ? `lu:${tableMeta.type}`
@@ -107,10 +116,11 @@ export function getCountDeltas(
       }
     }
 
-    // Embedding counters: track e:<hostEntity> counts per embedded entity ID. The draft
-    // dimension mirrors the countable set (draft hosts never bump embedding counters;
-    // a publish edge adds every ref, an unpublish removes them), while the deletedAt
-    // dimension is not remapped. Soft-delete ref cleanup is owned by
+    // Embedding counters: track e:<hostEntity> counts per embedded entity ID. Hosts are
+    // always products (config type), so the publication row filter carries the draft
+    // dimension: a publish edge arrives as INSERT (adds every ref), an unpublish as
+    // DELETE with the old row (removes them), draft ref edits never arrive. The
+    // deletedAt dimension is not remapped: soft-delete ref cleanup is owned by
     // embedding-cleanup, which rewrites the arrays and emits its own updates.
     for (const embedding of appConfig.entityEmbeddings) {
       if (embedding.hostEntity !== tableMeta.type) continue;
@@ -118,31 +128,22 @@ export function getCountDeltas(
       const counterKey = `e:${embedding.hostEntity}`;
 
       if (action === 'delete') {
-        if (isUnpublishedDraft(oldRow ?? newRow)) continue; // draft refs were never counted
         const ids = getArrayValue(oldRow ?? newRow, col);
         for (const id of ids) {
           deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
         }
       } else if (action === 'create') {
-        if (isUnpublishedDraft(newRow)) continue; // counted when the row is published
         const ids = getArrayValue(newRow, col);
         for (const id of ids) {
           deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
         }
       } else if (action === 'update' && oldRow) {
-        if (isPublishTransition(newRow, oldRow)) {
-          for (const id of getArrayValue(newRow, col)) deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
-        } else if (isUnpublishTransition(newRow, oldRow)) {
-          for (const id of getArrayValue(oldRow, col)) deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
-        } else if (!isUnpublishedDraft(newRow)) {
-          const oldIds = getArrayValue(oldRow, col);
-          const newIds = getArrayValue(newRow, col);
-          const added = newIds.filter((id) => !oldIds.includes(id));
-          const removed = oldIds.filter((id) => !newIds.includes(id));
-          for (const id of added) deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
-          for (const id of removed) deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
-        }
-        // Draft ref edits do not count until the row is published.
+        const oldIds = getArrayValue(oldRow, col);
+        const newIds = getArrayValue(newRow, col);
+        const added = newIds.filter((id) => !oldIds.includes(id));
+        const removed = oldIds.filter((id) => !newIds.includes(id));
+        for (const id of added) deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
+        for (const id of removed) deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
       }
     }
 
@@ -158,7 +159,7 @@ export function getCountDeltas(
  * Map a WAL action onto the countable set (`isCountableRow`): creates and deletes count
  * only when the row is (or was) in the set; an update counts by its countable-set edge:
  * enter = create (restore, publish), leave = delete (soft-delete, unpublish), stay
- * inside = update, stay outside = nothing (draft edits, trash edits). `null` = the
+ * inside = update, stay outside = nothing (trash edits). `null` = the
  * event is invisible to counters and stamps.
  */
 function deriveCountAction(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): ActivityAction | null {
@@ -271,6 +272,7 @@ function getEntityDeltas(
   }
 
   const counterKey = `e:${entityType}`;
+  const selfCountKey = `es:${entityType}`;
 
   if (action === 'create' || action === 'delete') {
     const value = action === 'create' ? 1 : -1;
@@ -280,6 +282,10 @@ function getEntityDeltas(
       if (ancestor.id === organizationId) continue; // org already counted above
       deltas.push({ channelKey: ancestor.id, deltas: { [counterKey]: value } });
     }
+    // Self count: rows HOMED at the node only (deepest non-null ancestor, org fallback),
+    // the summary a self view is answered from (mirrors the li:/lu: placement rule).
+    const home = resolveDeepestAncestorId(h, entityType, row) ?? organizationId;
+    deltas.push({ channelKey: home, deltas: { [selfCountKey]: value } });
     warnMissingAncestors(h, entityType, row);
     return deltas;
   }
@@ -297,6 +303,13 @@ function getEntityDeltas(
     }
     for (const id of oldIds) {
       if (!newIds.has(id)) deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
+    }
+    // Reparent moves the self count between homes.
+    const oldHome = resolveDeepestAncestorId(h, entityType, oldRow) ?? organizationId;
+    const newHome = resolveDeepestAncestorId(h, entityType, newRow) ?? organizationId;
+    if (oldHome !== newHome) {
+      deltas.push({ channelKey: oldHome, deltas: { [selfCountKey]: -1 } });
+      deltas.push({ channelKey: newHome, deltas: { [selfCountKey]: 1 } });
     }
     return deltas;
   }

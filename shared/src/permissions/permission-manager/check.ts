@@ -16,10 +16,10 @@ import type {
 import { validateMembership, validateSubject } from './validation';
 
 /** Membership index: Map from `${channelType}:${channelId}` to memberships */
-type MembershipIndex<T extends PermissionMembership> = Map<string, T[]>;
+export type MembershipIndex<T extends PermissionMembership> = Map<string, T[]>;
 
 /** Policy index: Map from `${channelType}:${role}` to permissions */
-type PolicyIndex = Map<string, EntityActionPermissions>;
+export type PolicyIndex = Map<string, EntityActionPermissions>;
 
 /** Builds a Map indexing memberships by `${channelType}:${channelId}` for O(1) lookup. */
 const buildMembershipIndex = <T extends PermissionMembership>(memberships: T[]): MembershipIndex<T> => {
@@ -50,7 +50,7 @@ const buildMembershipIndex = <T extends PermissionMembership>(memberships: T[]):
  */
 const membershipIndexMemo = new WeakMap<object, MembershipIndex<PermissionMembership>>();
 
-const getMembershipIndex = <T extends PermissionMembership>(memberships: T[]): MembershipIndex<T> => {
+export const getMembershipIndex = <T extends PermissionMembership>(memberships: T[]): MembershipIndex<T> => {
   const cached = membershipIndexMemo.get(memberships);
   if (cached) return cached as MembershipIndex<T>;
 
@@ -64,7 +64,10 @@ const getMembershipIndex = <T extends PermissionMembership>(memberships: T[]): M
  * Builds a Map indexing policies by `${channelType}:${role}` for O(1) lookup.
  * Uses policies for a specific entityType (subject.entityType).
  */
-const buildPolicyIndex = (policies: AccessPolicies, entityType: ChannelEntityType | ProductEntityType): PolicyIndex => {
+export const buildPolicyIndex = (
+  policies: AccessPolicies,
+  entityType: ChannelEntityType | ProductEntityType,
+): PolicyIndex => {
   const index: PolicyIndex = new Map();
   const subjectPolicies = policies[entityType] ?? [];
   for (const p of subjectPolicies) {
@@ -94,7 +97,7 @@ const getOrBuildPolicyIndex = (
  * - If `subject.entityType === channelType` and subject has `id`: returns `subject.id`
  * - Otherwise: returns `subject.channelIds[channelType]` (e.g., subject.channelIds.organization)
  */
-const getSubjectChannelId = (
+export const getSubjectChannelId = (
   subject: SubjectForPermission,
   channelType: ChannelEntityType,
 ): string | null | undefined => {
@@ -112,7 +115,7 @@ const getSubjectChannelId = (
  * built-in `'own'`), the engine evaluates that condition's check-form (`matchesRowCondition`)
  * against the subject's row fields to determine the grant.
  */
-const checkWithIndices = <T extends PermissionMembership>(
+export const checkWithIndices = <T extends PermissionMembership>(
   membershipIndex: MembershipIndex<T>,
   policyIndex: PolicyIndex,
   subject: SubjectForPermission,

@@ -2,8 +2,8 @@ import type { Context, MiddlewareHandler } from 'hono';
 import { draftVisibleTo, type ProductEntityType } from 'shared';
 import type { Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
-import { checkPermission } from '#/permissions';
-import { actorFrom } from '#/permissions/actor';
+import { checkAccess } from '#/permissions';
+import { accessFrom } from '#/permissions/actor';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { coalesce, isInFlight } from '#/utils/request-coalescing';
 import { entityCache } from './app-entity-cache';
@@ -88,10 +88,10 @@ function callerCanRead(ctx: Context<Env>, entityType: ProductEntityType, cached:
           ? ((createdBy as { id: string }).id ?? null)
           : ((createdBy as string | null | undefined) ?? null),
     } as { id: string; createdBy?: string | null };
-    const actor = actorFrom(ctx);
-    if (!draftVisibleTo(authRow, 'anonymous' in actor ? undefined : actor.userId)) return false;
+    const access = accessFrom(ctx as never);
+    if (!draftVisibleTo(authRow, 'anonymous' in access ? undefined : access.userId)) return false;
     const subject = buildSubjectFromEntity(entityType, authRow);
-    return checkPermission(ctx.var.memberships, 'read', subject, actor).isAllowed;
+    return checkAccess(access, 'read', subject).isAllowed;
   } catch {
     // Unexpected row shape → don't serve from cache; the handler re-authorizes authoritatively.
     return false;

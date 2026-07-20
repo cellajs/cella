@@ -16,6 +16,8 @@ const allEventTypes = new Set<ActivityEventType>(activityEventTypes);
 export interface ActivityBatchRow {
   seq?: number;
   rowData: Record<string, unknown>;
+  /** Old-row permission subset when this row's path changed (move-out), else absent. */
+  movedFrom?: Record<string, unknown> | null;
 }
 
 /**
@@ -25,11 +27,15 @@ export interface ActivityBatchRow {
 export interface ActivityEvent extends Omit<ActivityModel, 'type' | 'createdAt'> {
   type: ActivityEventType;
   rowData: unknown;
+  /** Old-row permission subset when the row's path changed (move-out), else null. */
+  movedFrom?: Record<string, unknown> | null;
   /** Per-row permission fields let dispatch decide visibility per subscriber and row. */
   batchRows?: ActivityBatchRow[] | null;
-  // Sync fields from CDC worker
+  // Sync fields from CDC worker (org-sequence position values)
   seq: number | null;
   batchUntilSeq: number | null;
+  /** Authoritative row count for batches: the sequence range may interleave with other groups. */
+  count: number | null;
   propagation: PropagationHint | null;
   trace: SyncTraceContext | null;
 }

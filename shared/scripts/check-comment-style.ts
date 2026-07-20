@@ -3,7 +3,7 @@
  * Audit modes report lower-confidence wording and detached long-form comment blocks.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
@@ -12,9 +12,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..');
 const audit = process.argv.includes('--audit');
 const placement = process.argv.includes('--placement');
+const concreteLanguageOnly = process.argv.includes('--concrete-language');
 const requestedRoots = process.argv
   .slice(2)
-  .filter((arg) => arg !== '--audit' && arg !== '--placement');
+  .filter((arg) => arg !== '--audit' && arg !== '--placement' && arg !== '--concrete-language');
 
 const sourceExtensions = new Set([
   '.cjs',
@@ -60,7 +61,13 @@ const requiredRules: Rule[] = [
   {
     name: 'contrast-history',
     pattern: /\b(?:instead|rather than|as opposed to)\b/i,
-    message: 'state the current behavior or invariant directly',
+    message: 'state the current behavior or local constraint directly',
+  },
+  {
+    name: 'concrete-language',
+    pattern: /\binvariants?\b/i,
+    message:
+      'name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption',
   },
   {
     name: 'change-history',
@@ -92,13 +99,18 @@ const auditRules: Rule[] = [
   },
 ];
 
+const activeRequiredRules = concreteLanguageOnly
+  ? requiredRules.filter((rule) => rule.name === 'concrete-language')
+  : requiredRules;
+
 function trackedFiles(): string[] {
   return execFileSync('git', ['ls-files', '-co', '--exclude-standard'], {
     cwd: repoRoot,
     encoding: 'utf8',
   })
     .split('\n')
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((file) => existsSync(join(repoRoot, file)));
 }
 
 function isRequested(file: string): boolean {
@@ -270,7 +282,7 @@ for (const file of trackedFiles().filter(isSource)) {
   const comments = typedExtensions.has(extension) ? typedComments(file, source) : regexComments(file, source);
   for (const comment of comments) {
     const location = lineAndColumn(source, comment.offset);
-    for (const rule of requiredRules) {
+    for (const rule of activeRequiredRules) {
       if (rule.pattern.test(comment.text)) {
         failures.push(`${file}:${location.line}:${location.column} [${rule.name}] ${rule.message}`);
       }
@@ -289,13 +301,17 @@ for (const file of trackedFiles().filter(isSource)) {
     if (hasDirectDeclarationOwner(file, source, comment)) continue;
     const location = lineAndColumn(source, comment.offset);
     placementFailures.push(
-      `${file}:${location.line}:${location.column} [detached-long-comment] ${lineCount} prose lines; move shared context to a README or attach a concise invariant to a declaration`,
+      [
+        `${file}:${location.line}:${location.column} [detached-long-comment] ${lineCount} prose lines;`,
+        'move shared context to a README or attach a concise local constraint to a declaration',
+      ].join(' '),
     );
   }
 }
 
 if (failures.length > 0) {
-  console.error(`[comments:check] ${failures.length} violation(s):`);
+  const label = concreteLanguageOnly ? 'comments:language' : 'comments:check';
+  console.error(`[${label}] ${failures.length} violation(s):`);
   for (const failure of failures) console.error(`  ${failure}`);
 }
 
@@ -310,10 +326,11 @@ if (placement && placementFailures.length > 0) {
 }
 
 if (failures.length > 0 || placementFailures.length > 0) process.exit(1);
-console.log(
-  placement
-    ? '[comments:placement] OK, long comments are local to declarations or executable code.'
+const successMessage = placement
+  ? '[comments:placement] OK, long comments are local to declarations or executable code.'
+  : concreteLanguageOnly
+    ? '[comments:language] OK, source comments use concrete language.'
     : audit
-    ? `[comments:audit] OK, ${findings.length} lower-confidence marker(s) require review.`
-    : '[comments:check] OK, source comments follow the required style.',
-);
+      ? `[comments:audit] OK, ${findings.length} lower-confidence marker(s) require review.`
+      : '[comments:check] OK, source comments follow the required style.';
+console.log(successMessage);

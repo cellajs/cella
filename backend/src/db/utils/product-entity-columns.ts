@@ -1,6 +1,7 @@
 import { bigint, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { ProductEntityType } from 'shared';
 import { maxLength } from '#/db/utils/constraints';
+import { productPathColumn } from '#/db/utils/path-column';
 import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
 import { usersTable } from '#/modules/user/user-db';
 import { stxColumns } from './stx-columns';
@@ -29,6 +30,11 @@ export const productEntityColumns = <T extends ProductEntityType>(entityType: T)
    * descendants. Publication is data, not a permission rule.
    */
   publicAt: timestamp('public_at', { mode: 'string' }),
-  /** Sequence number within (parent context, entityType) scope. Set by CDC worker, used for delta sync. */
+  /**
+   * Org sequence: one totally-ordered counter per organization, shared across all
+   * product entity types. Stamped post-commit by the CDC worker (WAL commit order = sequence
+   * order); rows briefly hold the default 0 until stamped. Used for delta sync (`seqCursor`).
+   */
   seq: bigint('seq', { mode: 'number' }).notNull().default(0),
+  ...productPathColumn(entityType),
 });

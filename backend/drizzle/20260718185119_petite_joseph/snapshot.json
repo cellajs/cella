@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "af2f79a5-abfc-4be5-9e7e-5076118d195b",
+  "id": "2dba4a4e-2d90-46cc-9d83-cab3102b0fa4",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -504,6 +504,22 @@
       "generated": null,
       "identity": null,
       "name": "seq",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "\"organization_id\"::text",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "path",
       "entityType": "columns",
       "schema": "public",
       "table": "attachments"
@@ -1471,6 +1487,19 @@
       "table": "channel_counters"
     },
     {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "path",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "channel_counters"
+    },
+    {
       "type": "timestamp",
       "typeSchema": null,
       "notNull": true,
@@ -2051,6 +2080,22 @@
       "generated": null,
       "identity": null,
       "name": "public_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "organizations"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "\"id\"::text",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "path",
       "entityType": "columns",
       "schema": "public",
       "table": "organizations"

@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
 import { authGuard, tenantGuard } from '#/middlewares/guard';
-import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
+import { singlePointsLimiter, streamConnectLimiter } from '#/middlewares/rate-limiter/limiters';
 import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
 import { mockStreamResponse } from '#/modules/me/me-mocks';
 import { appCatchupResponseSchema, errorResponseRefs, streamCatchupBodySchema, tenantOnlyParamSchema } from '#/schemas';
@@ -43,6 +43,7 @@ const entityRoutes = {
     method: 'get',
     path: '/app/stream',
     xGuard: [authGuard],
+    xRateLimiter: [streamConnectLimiter],
     tags: ['entities', 'cella'],
     summary: 'App event SSE stream',
     description:
@@ -70,7 +71,7 @@ const entityRoutes = {
     tags: ['entities', 'cella'],
     summary: 'App event catchup',
     description:
-      'Fetch missed entity and membership changes since last sync. Send cursor and per-scope seqs in the body.',
+      'Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.',
     request: {
       body: {
         required: true,

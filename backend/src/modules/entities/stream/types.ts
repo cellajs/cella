@@ -31,8 +31,12 @@ export interface CursoredSubscriber extends BaseStreamSubscriber {
 export interface DispatcherConfig<T extends CursoredSubscriber, E extends ActivityEvent = ActivityEvent> {
   /** Get channel from event (return null to skip dispatch) */
   getChannel: (event: E) => string | null;
-  /** Filter function to check if subscriber should receive event */
-  shouldReceive: (subscriber: T, event: E) => boolean;
+  /**
+   * Select which of the channel's subscribers receive the event, as ONE batch call: the
+   * eligibility engine collapses subscribers into access classes per event, which a
+   * per-subscriber callback shape would defeat.
+   */
+  selectEligible: (subscribers: T[], event: E) => T[];
   /** Optional: transform notification before sending (e.g., sign cache token per subscriber) */
   transformNotification?: (notification: StreamNotification, subscriber: T) => StreamNotification;
 }

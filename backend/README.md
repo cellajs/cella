@@ -5,3 +5,5 @@ Hono-based API server with PostgreSQL (Drizzle ORM). Handles authentication, ent
 ## Related docs
 
 - [Architecture overview](../cella/ARCHITECTURE.md)
+- [Permissions](../cella/PERMISSIONS.md)
+- [Multi-tenancy](../cella/multi_tenancy.md)

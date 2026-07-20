@@ -11,6 +11,8 @@ import { pickPermissionRowData } from '../utils/permission-row-data';
 export interface CdcBatchRow {
   seq?: number;
   rowData: CdcRowData;
+  /** Old-row permission subset when this row's path changed (move-out), else absent. */
+  movedFrom?: CdcRowData | null;
 }
 
 /**
@@ -20,15 +22,24 @@ export interface CdcBatchRow {
  * Keep both in sync: a field added here needs a matching field there, or the backend
  * will reject the message at runtime.
  *
- * `batchRows` carries per-row permission fields (context ids, createdBy, publicAt) so
- * mixed-visibility batches dispatch per subscriber per row. The first row alone cannot
+ * `batchRows` carries per-row permission fields (context ids, path, createdBy, publicAt)
+ * so mixed-visibility batches dispatch per subscriber per row. The first row alone cannot
  * represent visibility for the entire batch.
+ *
+ * Seq values are org-sequence values (shared across product entity types); a batch group's
+ * `seq..batchUntilSeq` range is NOT guaranteed contiguous for its own rows: `count`
+ * carries the actual row count, and per-row seqs ride `batchRows`.
+ *
+ * `movedFrom` (single) / `batchRows[].movedFrom` carry the OLD row's permission subset
+ * when a row's materialized path changed, so dispatch can deliver a move-out to
+ * subscribers who could read the old location but not the new one.
  *
  * @see backend/src/lib/cdc-websocket.ts
  */
 export interface CdcOutboundMessage {
-  activity: InsertActivityModel & { id?: string; seq?: number; batchUntilSeq?: number };
+  activity: InsertActivityModel & { id?: string; seq?: number; batchUntilSeq?: number; count?: number };
   rowData: CdcRowData;
+  movedFrom?: CdcRowData | null;
   batchRows?: CdcBatchRow[];
   _trace: TraceContext;
 }
@@ -75,8 +86,10 @@ export function sendMessageToApi(
   rowData: CdcRowData,
   traceContext: TraceContext,
   seq?: number,
+  movedFrom?: CdcRowData | null,
 ): void {
   const payload = buildActivityPayload(activity, rowData, traceContext, seq);
+  if (movedFrom) payload.movedFrom = movedFrom;
   if (!wsClient.send(payload)) {
     log.warn('Failed to send message to API');
   }
@@ -87,19 +100,19 @@ export interface BatchEventInfo {
   activity: InsertActivityModel & { id: string };
   rowData: CdcRowData;
   seq?: number;
+  movedFrom?: CdcRowData | null;
 }
 
 /**
- * The seq-context key of a batch event, mirroring seq allocation: seqs are counters per
- * (channelKey, entityType); see {@link computeBatchUnifiedDeltas}. Only product entities
- * carry seqs. Resource events (no entityType) and non-product entities (user, organization)
- * have no seq context; grouping them by org matches their dispatch channel.
+ * The audience-grouping key of a batch event: the row's materialized path when present
+ * (product rows), else the deepest-ancestor channel key, else the org. One message per
+ * (path, entityType) group keeps notifications one-audience and lets the client route
+ * by path prefix. Resource events (no entityType) and non-product entities group by org.
  */
-function batchChannelKey({ activity, rowData }: BatchEventInfo): string {
-  // Only product entities carry seqs and need channel-key grouping. Resources (no entityType)
-  // and non-product entities (user, organization) have no seq context: group by org, or 'none'.
+function batchPathKey({ activity, rowData }: BatchEventInfo): string {
   if (activity.entityType && isProductEntity(activity.entityType)) {
-    return resolveChannelKey(activity.entityType, rowData, activity);
+    const path = typeof rowData.path === 'string' && rowData.path ? rowData.path : null;
+    return `${path ?? resolveChannelKey(activity.entityType, rowData, activity)}\0${activity.entityType}`;
   }
   return activity.organizationId ?? 'none';
 }
@@ -107,11 +120,10 @@ function batchChannelKey({ activity, rowData }: BatchEventInfo): string {
 /**
  * Send batch CDC message(s) to the API server.
  *
- * Seqs are per-context counters, so one message can only describe one seq context: a
- * transaction batch spanning contexts (e.g. one bulk create with mixed placements) is
- * split into one message per seq context. The same channelKey used for seq allocation
- * defines each group and its contiguous seq..batchUntilSeq range. Single-context batches
- * send exactly one message.
+ * Messages are split per (path, entityType) group so each describes one audience and one
+ * entity type. Seq values come from the shared org sequence: a group's `seq..batchUntilSeq`
+ * range may interleave with other groups' values, so `count` (and per-row seqs in
+ * `batchRows`) carry the exact contents: range arithmetic is not row count.
  */
 export function sendBatchMessageToApi(
   events: BatchEventInfo[],
@@ -121,7 +133,7 @@ export function sendBatchMessageToApi(
 
   const groups = new Map<string, BatchEventInfo[]>();
   for (const event of events) {
-    const key = batchChannelKey(event);
+    const key = batchPathKey(event);
     const group = groups.get(key);
     if (group) group.push(event);
     else groups.set(key, [event]);
@@ -132,35 +144,29 @@ export function sendBatchMessageToApi(
   }
 }
 
-/** Send one per-context batch group as a single message, using the first event as representative. */
+/** Send one per-path batch group as a single message, using the first event as representative. */
 function sendBatchGroupToApi(
   events: BatchEventInfo[],
   traceContext: TraceContext,
 ): void {
   const first = events[0];
 
-  // Collect seqs for min/max range (create/update batches)
+  // Collect seqs for min/max range (create/update batches). Under the org sequence the
+  // range brackets this group's rows but may contain other groups' values in between;
+  // `count` is authoritative for size.
   const seqs = events.map((e) => e.seq).filter((s): s is number => s !== undefined);
   const batchUntilSeq = seqs.length > 0 ? Math.max(...seqs) : undefined;
   const minSeq = seqs.length > 0 ? Math.min(...seqs) : undefined;
 
-  // Within one seq context the range is contiguous by construction (ranges are reserved
-  // per context, and the per-context split above matches that grouping). A gap means
-  // seq allocation itself is broken.
-  if (minSeq !== undefined && batchUntilSeq !== undefined && batchUntilSeq - minSeq + 1 !== seqs.length) {
-    log.error('Non-contiguous seqs within one seq context — sync integrity at risk', {
-      minSeq, batchUntilSeq, seqCount: seqs.length, expected: batchUntilSeq - minSeq + 1,
-    });
-  }
-
   const base = buildActivityPayload(first.activity, first.rowData, traceContext, minSeq);
-  const activity = { ...base.activity, batchUntilSeq };
+  const activity = { ...base.activity, batchUntilSeq, count: events.length };
 
   // Per-row permission fields: dispatch decides per subscriber across ALL rows of the
   // batch (the representative first row alone would mis-dispatch mixed-visibility batches)
   const batchRows: CdcBatchRow[] = events.map((event) => ({
     seq: event.seq,
     rowData: pickPermissionRowData(event.rowData) as CdcRowData,
+    ...(event.movedFrom ? { movedFrom: event.movedFrom } : {}),
   }));
 
   // The backend invalidates each row's detail-cache entry from batchRows, so a later detail

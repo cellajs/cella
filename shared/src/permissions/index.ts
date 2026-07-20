@@ -41,5 +41,15 @@ export type { PermissionTopology, TopologyHierarchy } from './permission-manager
 export { buildSubject, buildSubjectFromEntity } from './build-subject';
 export { validateAncestorScope } from './validate-ancestor-scope';
 export { MissingScopeError } from './missing-scope-error';
-export { type Actor, type BatchPermissionResult, checkPermission, type PermissionResult } from './check-permission';
+export {
+  type Access,
+  type Actor,
+  type BatchPermissionResult,
+  checkAccess,
+  checkAccessBatch,
+  checkAccessFanout,
+  type CheckAccessFanoutOptions,
+  type PermissionResult,
+} from './check-permission';
+export { type EngineAccess, getDecisionsForAccesses, type ResolveAccessOptions } from './permission-manager/resolve-access';
 export { toColumnName, toTableName } from './schema-naming';

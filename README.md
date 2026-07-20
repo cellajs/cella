@@ -10,10 +10,9 @@
  *    ░▒▓█████▓▒░     ___ ___| | | __ _
  *    ░▒▓█   █▓▒░    / __/ _ \ | |/ _` |
  *    ░▒▓█   █▓▒░   | (_|  __/ | | (_| |
- *    ░▒▓█████▓▒░    \___\___|_|_|\__,_|                            
+ *    ░▒▓█████▓▒░    \___\___|_|_|\__,_|
  *
  -->
-
 
 <h1><b>Cella</b></h1>
 <p>
@@ -31,13 +30,16 @@
 
 #### Contents
 
-- [Agent guidelines](/cella/AGENTS.md)
-- [Architecture](/cella/ARCHITECTURE.md)
-- [Quickstart](/cella/QUICKSTART.md)
+- [Agent guidelines](./cella/AGENTS.md)
+- [Architecture](./cella/ARCHITECTURE.md)
+- [React Client](./cella/CLIENT.md)
+- [Multi-tenancy](./cella/multi_tenancy.md)
+- [Quickstart](./cella/QUICKSTART.md)
 
 ## Requirements
 
 - Nodejs 24.x. Check `node -v`. (Recommend: [Volta](https://docs.volta.sh/guide/)).
+- PostgreSQL 17+. The sync engine depends on logical replication row filters with `REPLICA IDENTITY FULL` (draft boundary) — the bundled docker compose already runs PG 17.
 - Make sure you can work with [Docker](https://docs.docker.com/get-docker/). (Recommend: [OrbStack](https://orbstack.dev/)).
 - Ideally you work with [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and have the [gh cli](https://cli.github.com/) installed.
 
@@ -51,4 +53,4 @@ Do **not fork** this repo directly. Use the create CLI to get started:
 pnpm create @cellajs/cella
 ```
 
-Read the [Quickstart](/cella/QUICKSTART.md) so you can build something unique quickly.
+Read the [Quickstart](./cella/QUICKSTART.md) so you can build something unique quickly.

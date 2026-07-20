@@ -122,6 +122,10 @@
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
+                  "path": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": { "type": "string", "required": true, "maxLength": 255 },
                   "groupId": {
@@ -161,20 +165,20 @@
         "example": {
           "items": [
             {
-              "id": "043315eb-ed4a-44ea-9cb4-a6c0fe212f50",
-              "tenantId": "leyvjb",
+              "id": "96fe8559-2b8e-4671-ab17-b41ee456f6f2",
+              "tenantId": "qh9hmi",
               "entityType": "attachment",
               "name": "vice.mar",
               "description": null,
-              "keywords": "concedo quae arca",
+              "keywords": "magni deleniti quisquam",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "vice.mar",
-              "contentType": "image/gif",
+              "contentType": "application/x-csh",
               "convertedContentType": null,
-              "size": "5109236",
-              "originalKey": "uploads/weg2q4gqa3vx9cfyey6mqh9h/vice.mar",
+              "size": "1072844",
+              "originalKey": "uploads/gy3a9lhe0ctrmzc53x7z222y/vice.mar",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-11-21T01:19:53.533Z",
@@ -184,29 +188,30 @@
               "deletedAt": null,
               "deletedBy": null,
               "publicAt": null,
-              "seq": 318,
+              "seq": 193,
               "stx": {
-                "mutationId": "897a617f-1449-4760-95cc-9f521e3f100f",
-                "sourceId": "db238d10-af2a-44b7-a00b-63f20bc295d2",
+                "mutationId": "db238d10-af2a-44b7-a00b-63f20bc295d2",
+                "sourceId": "966a04b5-5092-46e5-aef7-3b6c996a20eb",
                 "fieldTimestamps": {}
               },
-              "organizationId": "966a04b5-5092-46e5-aef7-3b6c996a20eb"
+              "organizationId": "043315eb-ed4a-44ea-9cb4-a6c0fe212f50",
+              "path": "043315eb-ed4a-44ea-9cb4-a6c0fe212f50"
             },
             {
-              "id": "65b1a01e-b422-4db6-8339-b813cf84d752",
-              "tenantId": "t5nr6k",
+              "id": "c2ac3827-d82b-4e19-b35e-9d906125ba7c",
+              "tenantId": "auxcwu",
               "entityType": "attachment",
               "name": "bah_oof_truthfully.css",
               "description": null,
-              "keywords": "appello depono ultio",
+              "keywords": "vallum infit terra",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "bah_oof_truthfully.css",
-              "contentType": "audio/aac",
+              "contentType": "image/svg+xml",
               "convertedContentType": null,
-              "size": "1633382",
-              "originalKey": "uploads/qv4k6bwmvl0e44bpmhsyauxc/bah_oof_truthfully.css",
+              "size": "9756698",
+              "originalKey": "uploads/vzac8qx1h9s6vzhgvcj0rs3x/bah_oof_truthfully.css",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-10-29T04:35:17.725Z",
@@ -216,13 +221,14 @@
               "deletedAt": null,
               "deletedBy": null,
               "publicAt": null,
-              "seq": 447,
+              "seq": 415,
               "stx": {
-                "mutationId": "de8ccfef-453b-4f07-b4c2-ef77d580cc1e",
-                "sourceId": "d9017e5b-49fb-41c3-acc0-f3df8449a148",
+                "mutationId": "d9017e5b-49fb-41c3-acc0-f3df8449a148",
+                "sourceId": "c7c8981c-d73a-47bf-9e99-126641d43cb8",
                 "fieldTimestamps": {}
               },
-              "organizationId": "c7c8981c-d73a-47bf-9e99-126641d43cb8"
+              "organizationId": "65b1a01e-b422-4db6-8339-b813cf84d752",
+              "path": "65b1a01e-b422-4db6-8339-b813cf84d752"
             }
           ],
           "total": 2
@@ -293,7 +299,8 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "seqCursor": { "type": "string", "required": false }
+          "seqCursor": { "type": "string", "required": false },
+          "pathPrefix": { "type": "string", "required": false, "maxLength": 512 }
         }
       }
     }
@@ -421,6 +428,10 @@
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
+                  "path": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": { "type": "string", "required": true, "maxLength": 255 },
                   "groupId": {
@@ -471,20 +482,20 @@
         "example": {
           "data": [
             {
-              "id": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2",
-              "tenantId": "fz7rau",
+              "id": "6f3c4dff-2fe7-47a8-afb8-a8a44c41b543",
+              "tenantId": "akf4ov",
               "entityType": "attachment",
               "name": "ugh_besides.svgz",
               "description": null,
-              "keywords": "vulgo vinum atavus",
+              "keywords": "voveo quis adaugeo",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "ugh_besides.svgz",
-              "contentType": "video/webm",
+              "contentType": "font/ttf",
               "convertedContentType": null,
-              "size": "9148253",
-              "originalKey": "uploads/hhoizpinjn9as93qcb6pakf4/ugh_besides.svgz",
+              "size": "3980524",
+              "originalKey": "uploads/3h55lgj31d63n9apx99a5auv/ugh_besides.svgz",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-04-18T21:12:59.543Z",
@@ -494,29 +505,30 @@
               "deletedAt": null,
               "deletedBy": null,
               "publicAt": null,
-              "seq": 348,
+              "seq": 385,
               "stx": {
-                "mutationId": "efa0a617-2297-4810-b621-a44be44424dd",
-                "sourceId": "25f82c13-8ca8-4877-b51a-dbdbf08b9af3",
+                "mutationId": "25f82c13-8ca8-4877-b51a-dbdbf08b9af3",
+                "sourceId": "691ea12d-93d0-4a05-89eb-59fada054211",
                 "fieldTimestamps": {}
               },
-              "organizationId": "691ea12d-93d0-4a05-89eb-59fada054211"
+              "organizationId": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2",
+              "path": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2"
             },
             {
-              "id": "7a21be26-ba4e-4e7e-b27d-369703e5ea44",
-              "tenantId": "8r85na",
+              "id": "3c32a472-30f5-492f-925e-fbf3260196c1",
+              "tenantId": "a54hj9",
               "entityType": "attachment",
               "name": "instead_volleyball.jpe",
               "description": null,
-              "keywords": "derelinquo attollo autem",
+              "keywords": "adversus voco vos",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "instead_volleyball.jpe",
-              "contentType": "application/json",
+              "contentType": "image/tiff",
               "convertedContentType": null,
-              "size": "9478414",
-              "originalKey": "uploads/bl6y4dvzpz75e03ldr2ga54h/instead_volleyball.jpe",
+              "size": "1974477",
+              "originalKey": "uploads/v1itpc9wztvbcy21q04oq81k/instead_volleyball.jpe",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-02-24T16:36:46.247Z",
@@ -526,13 +538,14 @@
               "deletedAt": null,
               "deletedBy": null,
               "publicAt": null,
-              "seq": 276,
+              "seq": 79,
               "stx": {
-                "mutationId": "41ffc3e0-8db5-44ef-8dd4-5f10b01ab309",
-                "sourceId": "c5fd1fb3-1ba5-42c2-9db0-9b47a24f941b",
+                "mutationId": "c5fd1fb3-1ba5-42c2-9db0-9b47a24f941b",
+                "sourceId": "1cc76d33-0afc-40f8-b565-ad527c313a69",
                 "fieldTimestamps": {}
               },
-              "organizationId": "1cc76d33-0afc-40f8-b565-ad527c313a69"
+              "organizationId": "7a21be26-ba4e-4e7e-b27d-369703e5ea44",
+              "path": "7a21be26-ba4e-4e7e-b27d-369703e5ea44"
             }
           ],
           "rejectedIds": []
@@ -658,6 +671,10 @@
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
+                  "path": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": { "type": "string", "required": true, "maxLength": 255 },
                   "groupId": {
@@ -708,20 +725,20 @@
         "example": {
           "data": [
             {
-              "id": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2",
-              "tenantId": "fz7rau",
+              "id": "6f3c4dff-2fe7-47a8-afb8-a8a44c41b543",
+              "tenantId": "akf4ov",
               "entityType": "attachment",
               "name": "ugh_besides.svgz",
               "description": null,
-              "keywords": "vulgo vinum atavus",
+              "keywords": "voveo quis adaugeo",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "ugh_besides.svgz",
-              "contentType": "video/webm",
+              "contentType": "font/ttf",
               "convertedContentType": null,
-              "size": "9148253",
-              "originalKey": "uploads/hhoizpinjn9as93qcb6pakf4/ugh_besides.svgz",
+              "size": "3980524",
+              "originalKey": "uploads/3h55lgj31d63n9apx99a5auv/ugh_besides.svgz",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-04-18T21:12:59.543Z",
@@ -731,29 +748,30 @@
               "deletedAt": null,
               "deletedBy": null,
               "publicAt": null,
-              "seq": 348,
+              "seq": 385,
               "stx": {
-                "mutationId": "efa0a617-2297-4810-b621-a44be44424dd",
-                "sourceId": "25f82c13-8ca8-4877-b51a-dbdbf08b9af3",
+                "mutationId": "25f82c13-8ca8-4877-b51a-dbdbf08b9af3",
+                "sourceId": "691ea12d-93d0-4a05-89eb-59fada054211",
                 "fieldTimestamps": {}
               },
-              "organizationId": "691ea12d-93d0-4a05-89eb-59fada054211"
+              "organizationId": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2",
+              "path": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2"
             },
             {
-              "id": "7a21be26-ba4e-4e7e-b27d-369703e5ea44",
-              "tenantId": "8r85na",
+              "id": "3c32a472-30f5-492f-925e-fbf3260196c1",
+              "tenantId": "a54hj9",
               "entityType": "attachment",
               "name": "instead_volleyball.jpe",
               "description": null,
-              "keywords": "derelinquo attollo autem",
+              "keywords": "adversus voco vos",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "instead_volleyball.jpe",
-              "contentType": "application/json",
+              "contentType": "image/tiff",
               "convertedContentType": null,
-              "size": "9478414",
-              "originalKey": "uploads/bl6y4dvzpz75e03ldr2ga54h/instead_volleyball.jpe",
+              "size": "1974477",
+              "originalKey": "uploads/v1itpc9wztvbcy21q04oq81k/instead_volleyball.jpe",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-02-24T16:36:46.247Z",
@@ -763,13 +781,14 @@
               "deletedAt": null,
               "deletedBy": null,
               "publicAt": null,
-              "seq": 276,
+              "seq": 79,
               "stx": {
-                "mutationId": "41ffc3e0-8db5-44ef-8dd4-5f10b01ab309",
-                "sourceId": "c5fd1fb3-1ba5-42c2-9db0-9b47a24f941b",
+                "mutationId": "c5fd1fb3-1ba5-42c2-9db0-9b47a24f941b",
+                "sourceId": "1cc76d33-0afc-40f8-b565-ad527c313a69",
                 "fieldTimestamps": {}
               },
-              "organizationId": "1cc76d33-0afc-40f8-b565-ad527c313a69"
+              "organizationId": "7a21be26-ba4e-4e7e-b27d-369703e5ea44",
+              "path": "7a21be26-ba4e-4e7e-b27d-369703e5ea44"
             }
           ],
           "rejectedIds": []
@@ -1184,6 +1203,10 @@
               "minimum": -9007199254740991,
               "maximum": 9007199254740991
             },
+            "path": {
+              "type": ["string", "null"],
+              "required": true
+            },
             "public": { "type": "boolean", "required": true },
             "bucketName": { "type": "string", "required": true, "maxLength": 255 },
             "groupId": {
@@ -1217,20 +1240,20 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
-          "tenantId": "qnt152",
+          "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
+          "tenantId": "t58r8f",
           "entityType": "attachment",
           "name": "rightfully_lest_noted.mp3",
           "description": null,
-          "keywords": "vereor strenuus verecundia",
+          "keywords": "universe explicabo aliquid",
           "public": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "rightfully_lest_noted.mp3",
-          "contentType": "video/mp4",
+          "contentType": "text/calendar",
           "convertedContentType": null,
-          "size": "7611296",
-          "originalKey": "uploads/fkyy8dwkbmpkeuemouu8t58r/rightfully_lest_noted.mp3",
+          "size": "6077039",
+          "originalKey": "uploads/enhqurk6hu54pnfytf99mpmu/rightfully_lest_noted.mp3",
           "convertedKey": null,
           "thumbnailKey": null,
           "createdAt": "2024-10-12T12:26:26.417Z",
@@ -1240,13 +1263,14 @@
           "deletedAt": null,
           "deletedBy": null,
           "publicAt": null,
-          "seq": 123,
+          "seq": 246,
           "stx": {
-            "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
-            "sourceId": "e036cee3-625c-452e-ab1a-be9390460217",
+            "mutationId": "e036cee3-625c-452e-ab1a-be9390460217",
+            "sourceId": "0841e0bb-2810-4252-8874-9789e1db3e97",
             "fieldTimestamps": {}
           },
-          "organizationId": "0841e0bb-2810-4252-8874-9789e1db3e97"
+          "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
+          "path": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
         }
       },
       {
@@ -1419,6 +1443,10 @@
               "minimum": -9007199254740991,
               "maximum": 9007199254740991
             },
+            "path": {
+              "type": ["string", "null"],
+              "required": true
+            },
             "public": { "type": "boolean", "required": true },
             "bucketName": { "type": "string", "required": true, "maxLength": 255 },
             "groupId": {
@@ -1452,20 +1480,20 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
-          "tenantId": "qnt152",
+          "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
+          "tenantId": "t58r8f",
           "entityType": "attachment",
           "name": "rightfully_lest_noted.mp3",
           "description": null,
-          "keywords": "vereor strenuus verecundia",
+          "keywords": "universe explicabo aliquid",
           "public": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "rightfully_lest_noted.mp3",
-          "contentType": "video/mp4",
+          "contentType": "text/calendar",
           "convertedContentType": null,
-          "size": "7611296",
-          "originalKey": "uploads/fkyy8dwkbmpkeuemouu8t58r/rightfully_lest_noted.mp3",
+          "size": "6077039",
+          "originalKey": "uploads/enhqurk6hu54pnfytf99mpmu/rightfully_lest_noted.mp3",
           "convertedKey": null,
           "thumbnailKey": null,
           "createdAt": "2024-10-12T12:26:26.417Z",
@@ -1475,13 +1503,14 @@
           "deletedAt": null,
           "deletedBy": null,
           "publicAt": null,
-          "seq": 123,
+          "seq": 246,
           "stx": {
-            "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
-            "sourceId": "e036cee3-625c-452e-ab1a-be9390460217",
+            "mutationId": "e036cee3-625c-452e-ab1a-be9390460217",
+            "sourceId": "0841e0bb-2810-4252-8874-9789e1db3e97",
             "fieldTimestamps": {}
           },
-          "organizationId": "0841e0bb-2810-4252-8874-9789e1db3e97"
+          "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
+          "path": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
         }
       },
       {

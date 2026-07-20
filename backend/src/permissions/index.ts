@@ -2,7 +2,9 @@ export { buildSubject } from './build-subject';
 export { canCreateEntity } from './can-create';
 export {
   type BatchPermissionResult,
-  checkPermission,
+  checkAccess,
+  checkAccessBatch,
+  checkAccessFanout,
   type PermissionResult,
 } from './check-permission';
 export {

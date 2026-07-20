@@ -37,6 +37,11 @@ export type CarouselItemData = {
    */
   contentType?: string;
   convertedContentType?: string | null;
+  /**
+   * URL is a local blob object URL. `blob:` URLs fail the CDN check, so without this flag the
+   * toolbar's affordances would vanish exactly when the file is available offline.
+   */
+  isLocal?: boolean;
 };
 
 interface CarouselPropsBase {
@@ -155,7 +160,9 @@ export function AttachmentsCarousel({
             </Button>
           )}
 
-          {isCDNUrl(currentItem.url) && (
+          {/* Download works for local blob URLs too (same-document fetch, works offline).
+              Open-in-new-tab above stays CDN-only: top-level blob navigation is browser-dependent. */}
+          {(isCDNUrl(currentItem.url) || currentItem.isLocal) && (
             <Button
               variant="ghost"
               size="icon"
@@ -176,7 +183,7 @@ export function AttachmentsCarousel({
       )}
 
       <CarouselContent className="h-full">
-        {items.map(({ id, url, contentType = 'image', convertedContentType }, idx) => {
+        {items.map(({ id, url, filename, contentType = 'image', convertedContentType }, idx) => {
           return (
             <CarouselItem
               key={id}
@@ -195,6 +202,7 @@ export function AttachmentsCarousel({
                 imagePanZoom={isDialog}
                 showButtons={currentItemIndex === idx}
                 url={url}
+                filename={filename}
                 altName={i18n.t('c:attachment')}
                 onPanStateToggle={toggleWatchDrag}
               />

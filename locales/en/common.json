@@ -448,6 +448,7 @@
   "reset_resource": "Reset {{resource}}",
   "resource_handle": "{{resource}} handle",
   "resource_handle.text": "A unique handle for {{resource}} URL",
+  "resources_delete_denied": "{{count}} of {{total}} could not be deleted: missing permission.",
   "resource_logo": "{{resource}} logo",
   "resource_request": "Get into {{resource}}",
   "resource_required": "{{resource}} required",

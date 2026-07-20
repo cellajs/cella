@@ -43,7 +43,7 @@ export const OrganizationAttachmentsComponent = () => {
   const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
   return (
     <Suspense>
-      <AttachmentsTable canUpload={true} key={data.id} channelEntity={data} />
+      <AttachmentsTable key={data.id} channelEntity={data} />
     </Suspense>
   );
 };

@@ -65,6 +65,8 @@ const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'crea
 
 export const attachmentListQuerySchema = paginationQuerySchema.extend({
   sort: attachmentSortKeys.default('createdAt').optional(),
+  /** Materialized id-path prefix: restrict to rows at or below this subtree node. */
+  pathPrefix: z.string().max(512).optional(),
 });
 
 /** Selectable stored-file variants. Mirrors the frontend `BlobVariant`. */

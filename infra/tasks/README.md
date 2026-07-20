@@ -2,38 +2,18 @@
 
 ## Cutover: [`cutover.ts`](./cutover.ts)
 
-`sequenceCutover` re-points traffic to a newly provisioned VM generation. Every
-side effect (health probe, LB server-list writes) is passed in as a function
-on the plan, so the sequencer itself is pure and the unit tests assert exact
-step order without touching the network.
+`sequenceCutover` re-points traffic to a newly provisioned VM generation. Every side effect (health probe, LB server-list writes) is passed in as a function on the plan, so the sequencer itself is pure and the unit tests assert exact step order without touching the network.
 
 Two strategies:
 
-- **lb-overlap**: health-gate the new generation, expand the LB backend to
-  `[old, new]`, contract to `[new]`, then drain. With `healthAfterExpand`, the
-  order is expand → health-gate → contract instead, for services where CI must
-  probe health through the public LB rather than a direct new-generation
-  address.
-- **exclusive**: health-gate only, no LB. Used by `cdc`, which holds a single
-  Postgres replication slot that permits exactly one consumer, so the old
-  generation must release the slot before the new one acquires it. The new
-  generation only reports `/health` healthy once it holds the slot, so
-  "destroy old, then poll new healthy" confirms the handoff; that ordering is
-  orchestrated by `deploy-service.ts` around its `pulumi up` bookends, after
-  `sequenceCutover` returns.
+- **lb-overlap**: health-gate the new generation, expand the LB backend to `[old, new]`, contract to `[new]`, then drain. With `healthAfterExpand`, the order is expand → health-gate → contract instead, for services where CI must probe health through the public LB rather than a direct new-generation address.
+- **exclusive**: health-gate only, no LB. Used by `cdc`, which holds a single Postgres replication slot that permits exactly one consumer, so the old generation must release the slot before the new one acquires it. The new generation only reports `/health` healthy once it holds the slot, so "destroy old, then poll new healthy" confirms the handoff; that ordering is orchestrated by `deploy-service.ts` around its `pulumi up` bookends, after `sequenceCutover` returns.
 
-An unhealthy new generation aborts before any LB mutation. With
-`healthAfterExpand`, a health-gate failure after expansion leaves the LB in
-the overlap state for manual diagnosis rather than rolling back automatically.
+An unhealthy new generation aborts before any LB mutation. With `healthAfterExpand`, a health-gate failure after expansion leaves the LB in the overlap state for manual diagnosis rather than rolling back automatically.
 
-The live Scaleway effects (`createLbSetServers`, `createLbGetServers`) call
-the zoned Load Balancer API v1 (`PUT`/`GET
-/lb/v1/zones/{zone}/backends/{backendId}/servers`); they run only in a real
-deploy, unit tests inject fakes instead.
+The live Scaleway effects (`createLbSetServers`, `createLbGetServers`) call the zoned Load Balancer API v1 (`PUT`/`GET /lb/v1/zones/{zone}/backends/{backendId}/servers`); they run only in a real deploy, unit tests inject fakes instead.
 
-The CLI entry point (the `isMain` guard at the bottom of `cutover.ts`) wires
-these effects and is invoked by `.github/workflows/deploy.yml`, which wraps it
-with the `pulumi up` create/destroy bookends:
+The CLI entry point (the `isMain` guard at the bottom of `cutover.ts`) wires these effects and is invoked by `.github/workflows/deploy.yml`, which wraps it with the `pulumi up` create/destroy bookends:
 
 ```
 tsx infra/tasks/cutover.ts --service backend --sha <git-sha> \
@@ -47,30 +27,12 @@ tsx infra/tasks/cutover.ts --service backend --sha <git-sha> \
 
 ## Database reset: [`reset-database.ts`](./reset-database.ts)
 
-`sequenceDatabaseReset` deletes and recreates the app's logical database over the
-Scaleway RDB API, then re-grants both roles. Like the cutover sequencer it is
-pure — every side effect (instance lookup, backup, delete, create, grant, the
-operator confirmation) arrives on the plan, so the unit tests assert exact step
-order and every guard without touching the network. The live wiring is in
-[`cli/actions/reset-database.ts`](../cli/actions/reset-database.ts) ("Reset
-database" in `pnpm infra`).
+`sequenceDatabaseReset` deletes and recreates the app's logical database over the Scaleway RDB API, then re-grants both roles. Like the cutover sequencer it is pure — every side effect (instance lookup, backup, delete, create, grant, the operator confirmation) arrives on the plan, so the unit tests assert exact step order and every guard without touching the network. The live wiring is in [`cli/actions/reset-database.ts`](../cli/actions/reset-database.ts) ("Reset database" in `pnpm infra`).
 
-The order is the safety property, and the tests pin it: the operator's typed
-`<database>@<instance>` confirmation and a backup reporting `ready` both precede
-the delete. Everything before the delete is a guard and fails harmlessly;
-everything after is recovery-critical and rethrows as `ResetIrrecoverableError`,
-carrying the backup id and printing the `scw rdb backup restore` command — plus
-the two `privilege set` calls, because a restore does not bring privileges back.
+The order is the safety property, and the tests pin it: the operator's typed `<database>@<instance>` confirmation and a backup reporting `ready` both precede the delete. Everything before the delete is a guard and fails harmlessly; everything after is recovery-critical and rethrows as `ResetIrrecoverableError`, carrying the backup id and printing the `scw rdb backup restore` command — plus the two `privilege set` calls, because a restore does not bring privileges back.
 
-The API surface (`lib/scaleway/scaleway-rdb.ts`) was captured from the live API
-with `scw --debug` rather than read from docs: a wrong verb or body on a
-destructive call is not something to discover in production. The tests assert
-each URL and method for that reason.
+The API surface (`lib/scaleway/scaleway-rdb.ts`) was captured from the live API with `scw --debug` rather than read from docs: a wrong verb or body on a destructive call is not something to discover in production. The tests assert each URL and method for that reason.
 
-Two steps are deliberately not automated — `migrate` is `restart: 'no'` in
-compose, cloud-init is first-boot only, and the boot-replay unit merely cats a
-log, so no reboot re-runs migrations. `serialConsoleSteps()` prints them.
+Two steps are deliberately not automated — `migrate` is `restart: 'no'` in compose, cloud-init is first-boot only, and the boot-replay unit merely cats a log, so no reboot re-runs migrations. `serialConsoleSteps()` prints them.
 
-Scaleway deletes a database that is actively in use, including one holding a
-logical replication slot, which PostgreSQL itself refuses. There is no platform
-interlock; the confirmation is the only one.
+Scaleway deletes a database that is actively in use, including one holding a logical replication slot, which PostgreSQL itself refuses. There is no platform interlock; the confirmation is the only one.

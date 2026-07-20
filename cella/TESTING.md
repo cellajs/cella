@@ -20,7 +20,7 @@ Requirements:
 ### Variants
 
 | Command | What it does |
-|---|---|
+| --- | --- |
 | `pnpm test` | Everything, with coverage summary (alias for `test:full`) |
 | `pnpm test:full:verbose` | Same, but prints passing test output too |
 | `pnpm test:core` | Skips integration tests (backend, yjs, cdc); rarely needed: `pnpm test` is fast enough for day-to-day (`test:core:verbose` for full output) |
@@ -45,9 +45,9 @@ Packages that don't touch the database (`shared`, `infra`, `sdk`, most of `front
 
 **Placement.** Two patterns are in use; pick based on scope:
 
-- *Unit tests*: colocate with the code they cover: either `some-module.test.ts` next to the source file, or a `tests/` folder inside the module directory when there are several files (e.g. [backend/src/lib/tests/](../backend/src/lib/tests/)).
-- *Route/API-level tests*: in the package's top-level `tests/` folder (e.g. [backend/tests/sign-in/](../backend/tests/sign-in/), [backend/tests/security/](../backend/tests/security/)).
-- *Integration tests*: in `tests/integration/`; these are the only tests excluded in `core` mode. Reserve this for tests that need more than the test database (CDC replication slots, spun-up WebSocket servers, RLS verification against real roles).
+- _Unit tests_: colocate with the code they cover: either `some-module.test.ts` next to the source file, or a `tests/` folder inside the module directory when there are several files (e.g. [backend/src/lib/tests/](../backend/src/lib/tests/)).
+- _Route/API-level tests_: in the package's top-level `tests/` folder (e.g. [backend/tests/sign-in/](../backend/tests/sign-in/), [backend/tests/security/](../backend/tests/security/)).
+- _Integration tests_: in `tests/integration/`; these are the only tests excluded in `core` mode. Reserve this for tests that need more than the test database (CDC replication slots, spun-up WebSocket servers, RLS verification against real roles).
 
 Coverage automatically excludes `*.test.ts`, `tests/**` folders and mocks, so placement doesn't affect coverage numbers.
 
@@ -72,6 +72,6 @@ pnpm sdk
 pnpm test:storybook
 ```
 
- Use `pnpm story` when you want the interactive Storybook dev server in a browser; it does not run the Vitest browser tests by itself.
+Use `pnpm story` when you want the interactive Storybook dev server in a browser; it does not run the Vitest browser tests by itself.
 
 Every story is render-tested in headless Chromium, and stories with `play` functions get their interactions exercised. When you add a frontend component story, it becomes a test automatically.

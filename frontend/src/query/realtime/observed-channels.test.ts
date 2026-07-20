@@ -23,7 +23,7 @@ vi.mock('shared', () => ({
 
 // Sub-org channels are absent from the route context, so viewing detection uses the query cache.
 let routeMatches: { context?: Record<string, unknown> }[] = [];
-vi.mock('~/routes/_router-instance', () => ({
+vi.mock('~/routes/-router-instance', () => ({
   getRouter: () => ({ state: { matches: routeMatches } }),
 }));
 
@@ -43,7 +43,7 @@ const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
 const { isObservedChannel } = await import('./observed-channels');
-const { isViewingScope } = await import('./sync-priority');
+const { isViewingChannel } = await import('./sync-priority');
 
 // The synthetic 'task' type exists only in this file's shared mock, hence the casts.
 const TASK = 'task' as EntityType;
@@ -110,7 +110,7 @@ describe('observed-channels', () => {
   });
 });
 
-describe('isViewingScope with sub-org channels', () => {
+describe('isViewingChannel with sub-org channels', () => {
   afterEach(() => {
     queryClient.clear();
     routeMatches = [];
@@ -120,25 +120,25 @@ describe('isViewingScope with sub-org channels', () => {
     routeMatches = [{ context: { organization: { id: 'org-1' } } }];
     const unsubscribe = observe(taskKeys.list.home('org-2', 'project-7'));
 
-    expect(isViewingScope('org-2', 'project-7')).toBe(false);
+    expect(isViewingChannel('org-2', 'project-7')).toBe(false);
 
     unsubscribe();
   });
 
-  it('treats org-level scopes as viewed inside the org (base cella behavior unchanged)', () => {
+  it('treats org-level channel views as viewed inside the org (base cella behavior unchanged)', () => {
     routeMatches = [{ context: { organization: { id: 'org-1' } } }];
-    expect(isViewingScope('org-1', null)).toBe(true);
-    expect(isViewingScope('org-1', 'org-1')).toBe(true);
+    expect(isViewingChannel('org-1', null)).toBe(true);
+    expect(isViewingChannel('org-1', 'org-1')).toBe(true);
   });
 
-  it('resolves sub-org scopes by observation: slug routes and unrouted board panels both work', () => {
+  it('resolves sub-org channel views by observation: slug routes and unrouted board panels both work', () => {
     routeMatches = [{ context: { organization: { id: 'org-1' } } }]; // Slug routes and boards name no project.
-    expect(isViewingScope('org-1', 'project-8')).toBe(false);
+    expect(isViewingChannel('org-1', 'project-8')).toBe(false);
 
     const unsubscribe = observe(taskKeys.list.home('org-1', 'project-8'));
-    expect(isViewingScope('org-1', 'project-8')).toBe(true);
+    expect(isViewingChannel('org-1', 'project-8')).toBe(true);
 
     unsubscribe();
-    expect(isViewingScope('org-1', 'project-8')).toBe(false);
+    expect(isViewingChannel('org-1', 'project-8')).toBe(false);
   });
 });

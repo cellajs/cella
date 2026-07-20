@@ -26,11 +26,11 @@ export function classifyPermissionError(stderr: string): PermissionHint {
 
 /** URNs whose DELETE failed because the live object is already gone (HTTP 404
  *  from the provider). Pruning such an entry from state is safe by construction:
- *  the delete's goal — resource gone — is already true, so `pulumi state delete`
+ *  the delete's goal (resource gone) is already true, so `pulumi state delete`
  *  completes what the operation would have done. Matches the single-line
  *  diagnostic and the multierror form where the 404 detail is on the following
  *  bullet line; only `deleting` operations qualify (a 404 on update/read means
- *  drift on a resource that should exist — a different repair). Pure. */
+ *  drift on a resource that should exist, which is a different repair). Pure. */
 export function parseOrphanedDeletes(output: string): string[] {
   const urns = new Set<string>()
   const lines = output.split('\n')
@@ -72,7 +72,7 @@ export interface PulumiUpResult {
  *  On non-zero exit, prints a permission hint when stderr indicates one. */
 export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJS.ProcessEnv): Promise<PulumiUpResult> {
   console.info(`\n→ pulumi up (base infra)\n  $ pulumi up --stack ${stack} --yes --non-interactive`)
-  // stdout is teed rather than inherited so the Diagnostics section reaches
+  // stdout is teed, not inherited, so the Diagnostics section reaches
   // parseOrphanedDeletes; with --non-interactive pulumi already uses the plain
   // (non-TTY) display, so piping does not change what the operator sees.
   const child = spawn('pulumi', ['up', '--stack', stack, '--yes', '--non-interactive'], {

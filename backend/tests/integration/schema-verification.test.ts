@@ -202,11 +202,11 @@ describe('Schema verification', () => {
   // ── Composite foreign keys ─────────────────────────────────────────────
 
   describe('Composite foreign keys (tenant_id, organization_id)', () => {
-    it.each(
-      orgScopedProductTables,
-    )('should have composite FK (tenant_id, organization_id) → organizations on %s', async (tableName) => {
-      const rows = getRows<{ constraint_name: string; column_name: string }>(
-        await adminDb.execute(sql`
+    it.each(orgScopedProductTables)(
+      'should have composite FK (tenant_id, organization_id) → organizations on %s',
+      async (tableName) => {
+        const rows = getRows<{ constraint_name: string; column_name: string }>(
+          await adminDb.execute(sql`
             SELECT kcu.constraint_name, kcu.column_name
             FROM information_schema.key_column_usage kcu
             JOIN information_schema.table_constraints tc
@@ -220,11 +220,12 @@ describe('Schema verification', () => {
               AND kcu.table_name = ${tableName}
               AND kcu2.table_name = 'organizations'
           `),
-      );
+        );
 
-      const columns = rows.map((r) => r.column_name);
-      expect(columns, `Missing composite FK on ${tableName}`).toContain('tenant_id');
-      expect(columns, `Missing composite FK on ${tableName}`).toContain('organization_id');
-    });
+        const columns = rows.map((r) => r.column_name);
+        expect(columns, `Missing composite FK on ${tableName}`).toContain('tenant_id');
+        expect(columns, `Missing composite FK on ${tableName}`).toContain('organization_id');
+      },
+    );
   });
 });

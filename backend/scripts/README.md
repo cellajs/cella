@@ -12,5 +12,5 @@ Development and build scripts for the backend.
 ## Folders
 
 - **migrations/** - Migration generator scripts (CDC setup, activity triggers)
-- **seeds/** - Seed data scripts organized by entity: user, organizations, `data` for product entities. 
+- **seeds/** - Seed data scripts organized by entity: user, organizations, `data` for product entities.
 - **drizzle-studio/** - Scripts to start/stop Drizzle Studio on a specific port

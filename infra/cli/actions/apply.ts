@@ -135,7 +135,7 @@ export async function runApply(context: InfraContext): Promise<void> {
     // A delete that 404s means the live object is already gone (deleted
     // out-of-band or cascade-deleted by Scaleway) and only the state entry
     // remains. Pruning it completes what the delete would have done, so offer
-    // that and re-converge instead of wedging the apply one resource at a time.
+    // that and re-converge, which keeps the apply from wedging one resource at a time.
     const orphans = parseOrphanedDeletes(output)
     if (orphans.length > 0) {
       console.warn(`\n${warningMark} ${orphans.length} resource(s) failed to delete because the live object no longer exists:`)

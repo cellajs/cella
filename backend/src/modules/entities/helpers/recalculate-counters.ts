@@ -22,9 +22,10 @@ const livePredicate = (et: EntityType, alias: string) =>
   'deletedAt' in getColumns(getEntityTable(et)) ? ` AND ${alias}.deleted_at IS NULL` : '';
 
 /**
- * Published-rows-only predicate (opt-in `publishedAt` draft lifecycle). CDC counts a row
- * only when live AND published (`isCountableRow` in cdc), so recalculation must exclude
- * unpublished drafts to agree. Empty for tables without the column.
+ * Published-rows-only predicate (opt-in `publishedAt` draft lifecycle). The publication
+ * row filter keeps drafts out of the CDC stream, so CDC never counts them; recalculation
+ * reads the TABLE (which still contains drafts) and must exclude them to agree.
+ * Empty for tables without the column.
  */
 const publishedPredicate = (et: EntityType, alias: string) =>
   'publishedAt' in getColumns(getEntityTable(et)) ? ` AND ${alias}.published_at IS NOT NULL` : '';
@@ -78,12 +79,13 @@ const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
  * Safe to run at any time (seed, admin repair, production incident recovery).
  *
  * Context counters (Phases 1–3):
- *   Phase 1 – Organization-level: m:{role}, m:total, m:pending, e:{type} (live rows only)
- *   Phase 2 – Sub-org contexts: same keys for every descendant carrying the FK (full attribution)
- *   Phase 3 – Seq counters: s:{type} via MAX(seq), grouped by deepest non-null ancestor
- *   Phase 3b – Activity stamps: li:{type} via MAX(epoch ms of created_at) and lu:{type} via
- *              MAX(epoch ms of updated_at), live rows only, grouped by deepest non-null
- *              ancestor (home context, no ancestor fan-out)
+ *   Phase 1 – Organization-level: m:{role}, m:total, m:pending, e:{type} (countable rows)
+ *   Phase 2 – Sub-org channels: same keys for every descendant carrying the FK (full attribution)
+ *   Phase 3 – Sequence + frontier: sequence via GREATEST(MAX(seq)) across product tables;
+ *             f:{type} via MAX(seq) at the org and every ancestor level (drafts excluded,
+ *             tombstones included); self family fs:{type}/es:{type} at the home node only
+ *   Phase 3b – Activity stamps: li:{type}/lu:{type} epoch ms at the home node
+ *   Phase 3c – Channel path backfill (verified-ancestry source for catchup views)
  *
  * Product counters (Phase 4):
  *   Phase 4a – viewCount from seen_by (unique user views per entity)
@@ -138,24 +140,84 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
-  // ── Phase 3: Seq counters from MAX(seq) ───────────────────────────────
-  // Grouped by the deepest non-null ancestor, the same scope CDC stamps seqs from.
-  // Tombstones keep their seq, so no live filter: MAX is a high-water mark.
-  for (const entityType of appConfig.productEntityTypes) {
-    const tableName = tbl(entityType);
-    const seqKey = `s:${entityType}`;
-    const ctxExpr = deepestAncestorExpr(entityType, 't');
-    if (!ctxExpr) continue;
-
+  // ── Phase 3: Org sequence + frontiers from MAX(seq) ──────────────
+  // `sequence` per org = the max stamped sequence value across ALL product tables (the
+  // reservation counter CDC increments). `f:{type}` = MAX(seq) per (node, entityType)
+  // at the org and at every ancestor level column, matching CDC's frontierNodeKeys rollup.
+  // Tombstones keep their seq, so no live filter: MAX is a frontier.
+  const sequenceMaxes = appConfig.productEntityTypes.map(
+    (et) => `COALESCE((SELECT MAX(t.seq) FROM ${tbl(et)} t WHERE t.organization_id = o.id), 0)`,
+  );
+  if (sequenceMaxes.length > 0) {
     await upsertChannelCounters(
       db,
       `
-      SELECT ${ctxExpr}, jsonb_build_object('${seqKey}', COALESCE(MAX(t.seq), 0)), NOW()
-      FROM ${tableName} t
-      WHERE ${ctxExpr} IS NOT NULL
-      GROUP BY ${ctxExpr}
+      SELECT o.id, jsonb_build_object('sequence', GREATEST(${sequenceMaxes.join(', ')})), NOW()
+      FROM organizations o
     `,
     );
+  }
+
+  for (const entityType of appConfig.productEntityTypes) {
+    const tableName = tbl(entityType);
+    const frontierKey = `f:${entityType}`;
+    // Unpublished drafts are excluded from frontiers (not delta-fetchable; the
+    // publication row filter keeps them from ever reaching CDC). Rows drafted before
+    // the filter era may hold historical seq stamps (harmless orphans), still excluded
+    // here. Tombstones stay included (delta reads return them). No live filter here.
+    const frontierPredicate = publishedPredicate(entityType, 't');
+
+    // Org node: every stamped countable row rolls up to its organization.
+    await upsertChannelCounters(
+      db,
+      `
+      SELECT t.organization_id, jsonb_build_object('${frontierKey}', COALESCE(MAX(t.seq), 0)), NOW()
+      FROM ${tableName} t
+      WHERE t.organization_id IS NOT NULL${frontierPredicate}
+      GROUP BY t.organization_id
+    `,
+    );
+
+    // Every non-root ancestor level the table carries a FK column for (full rollup,
+    // matching CDC's frontierNodeKeys: org + every non-null ancestor).
+    for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
+      if (ancestor === 'organization') continue;
+      const col = fkCol(ancestor);
+      await upsertChannelCounters(
+        db,
+        `
+        SELECT t.${col}, jsonb_build_object('${frontierKey}', COALESCE(MAX(t.seq), 0)), NOW()
+        FROM ${tableName} t
+        WHERE t.${col} IS NOT NULL${frontierPredicate}
+        GROUP BY t.${col}
+      `,
+      );
+    }
+
+    // Self family (home node only, deepest non-null ancestor, the legacy per-scope shape):
+    // fs:{type} = MAX(seq) of HOMED rows (drafts excluded, tombstones included);
+    // es:{type}  = COUNT of countable HOMED rows (live AND published).
+    const homeExpr = deepestAncestorExpr(entityType, 't');
+    if (homeExpr) {
+      await upsertChannelCounters(
+        db,
+        `
+        SELECT ${homeExpr}, jsonb_build_object('fs:${entityType}', COALESCE(MAX(t.seq), 0)), NOW()
+        FROM ${tableName} t
+        WHERE ${homeExpr} IS NOT NULL${frontierPredicate}
+        GROUP BY ${homeExpr}
+      `,
+      );
+      await upsertChannelCounters(
+        db,
+        `
+        SELECT ${homeExpr}, jsonb_build_object('es:${entityType}', COUNT(*)::int), NOW()
+        FROM ${tableName} t
+        WHERE ${homeExpr} IS NOT NULL${livePredicate(entityType, 't')}${publishedPredicate(entityType, 't')}
+        GROUP BY ${homeExpr}
+      `,
+      );
+    }
   }
 
   // ── Phase 3b: Activity stamps from MAX(published_at/created_at) / MAX(updated_at) ──
@@ -164,7 +226,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   // of the latest countable-row update, both grouped by the home context key (deepest
   // non-null ancestor, org fallback via COALESCE). Unlike e: counts these are
   // These per-stream signals stay at the home context and do not fan out to ancestors,
-  // matching CDC's stamp scope. Unpublished drafts never stamp, mirroring CDC.
+  // matching CDC's stamp scope. Unpublished drafts never stamp (they never reach CDC).
   // jsonb_strip_nulls drops lu: when no live row was ever updated (updated_at all NULL).
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);
@@ -187,6 +249,20 @@ export const recalculateCounters = async (db: DbOrTx) => {
       WHERE ${ctxExpr} IS NOT NULL${livePredicate(entityType, 't')}${publishedPredicate(entityType, 't')}
       GROUP BY ${ctxExpr}
     `,
+    );
+  }
+
+  // ── Phase 3c: Channel path backfill ───────────────────────────────────
+  // Counters rows carry a copy of the channel's canonical id-path (generated column)
+  // so catchup verifies claimed view ancestry without extra queries; CDC maintains it
+  // incrementally, this is the rebuild/backfill.
+  for (const channelType of hierarchy.channelTypes) {
+    await db.execute(
+      sql.raw(`
+      UPDATE channel_counters cc SET path = c.path
+      FROM ${tbl(channelType as EntityType)} c
+      WHERE cc.channel_key = c.id::text AND cc.path IS DISTINCT FROM c.path
+    `),
     );
   }
 

@@ -8,6 +8,8 @@ interface Options {
   repoUrl: string;
   /** Branch the blob URLs point at. */
   branch?: string;
+  /** Repo-relative source documents that have a first-class route in the docs site. */
+  docRoutes?: Readonly<Record<string, string>>;
 }
 
 type MdNode = { type: string; value?: string; url?: string; children?: MdNode[] };
@@ -18,7 +20,7 @@ const PATH_RE = /^([\w.][\w./-]*\.(?:tsx?|jsx?|mjs|cjs|json|ya?ml|css|md|sh|toml
 const DIR_RE = /^([\w.][\w./-]*)\/$/;
 
 /** Links verified repository paths in inline code and imported repository-document links. */
-export function remarkLinkRepoPaths({ repoRoot, repoUrl, branch = 'main' }: Options) {
+export function remarkLinkRepoPaths({ repoRoot, repoUrl, branch = 'main', docRoutes = {} }: Options) {
   const root = repoUrl.replace(/\/+$/, '');
   const base = `${root}/blob/${branch}/`;
 
@@ -53,6 +55,8 @@ export function remarkLinkRepoPaths({ repoRoot, repoUrl, branch = 'main' }: Opti
       const rel = path.relative(repoRoot, abs).replaceAll(path.sep, '/');
       // Stay inside the repo and never introduce a dead link.
       if (rel.startsWith('..') || !existsSync(abs)) return null;
+      const docsRoute = docRoutes[rel];
+      if (docsRoute) return `${docsRoute}${hash ? `#${hash}` : ''}`;
       return `${base}${rel}${hash ? `#${hash}` : ''}`;
     };
 

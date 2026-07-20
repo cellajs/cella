@@ -5,8 +5,9 @@ import type { SideEffectBlock, SideEffectProducer } from '../types';
  * lets the CDC worker use prepared statements for counter upserts.
  *
  * Increments apply with a floor of 0 (no negative counters). `li:` (last insert) / `lu:`
- * (last update) keys are epoch-ms activity stamps, not deltas: they merge via GREATEST so
- * the signal only moves forward.
+ * (last update) keys are epoch-ms activity stamps and `f:`/`fs:` keys are org-sequence
+ * frontiers (subtree/self), not deltas: they merge via GREATEST so the signal only
+ * moves forward.
  */
 async function run(): Promise<SideEffectBlock> {
   const migrationSql = `-- Counter Functions Setup
@@ -24,8 +25,9 @@ DECLARE
 BEGIN
   FOR k, v IN SELECT * FROM jsonb_each_text(deltas)
   LOOP
-    IF k LIKE 'li:%' OR k LIKE 'lu:%' THEN
-      -- Activity stamps (epoch ms): keep the max, the signal only moves forward
+    IF k LIKE 'li:%' OR k LIKE 'lu:%' OR k LIKE 'f:%' OR k LIKE 'fs:%' THEN
+      -- Activity stamps (epoch ms) and sequence frontiers: keep the max,
+      -- the signal only moves forward
       result := result || jsonb_build_object(
         k, GREATEST(COALESCE((result->>k)::bigint, 0), v::bigint)
       );

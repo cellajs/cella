@@ -2,7 +2,6 @@ import { sql } from 'drizzle-orm';
 import { postAppCatchup } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { activitiesTable } from '#/modules/activities/activities-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import type { AppCatchupResponse } from '#/schemas';
 import { defaultHeaders } from './fixtures';
@@ -12,10 +11,9 @@ import { mockFetchRequest, setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-const legacyProductDeleteActivityId = '00000000-00000001';
-
-// Verifies baseline catchup entitySeqs and entityCounts for first-connect sync.
-describe('Catchup baseline', async () => {
+// Verifies the view-driven catchup contract end-to-end (sequence sync): membership
+// screening via changes.signals, product sync via per-view f:/e: answers.
+describe('Catchup (view-driven, sequence)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
 
@@ -23,126 +21,163 @@ describe('Catchup baseline', async () => {
     mockFetchRequest();
     tenant = await createTestTenant(call, 'catchup-baseline');
 
-    // Seed channel_counters with known seq and count values for the org
+    // Seed channel_counters with sequence, frontier and count values for the org
+    const counts = {
+      sequence: 50,
+      membership: 3,
+      'f:attachment': 42,
+      'e:attachment': 15,
+      'fs:attachment': 40,
+      'es:attachment': 12,
+      'm:admin': 1,
+    };
     await db
       .insert(channelCountersTable)
-      .values({
-        channelKey: tenant.organization.id,
-        counts: { 's:task': 42, 's:attachment': 7, 'e:task': 100, 'e:attachment': 15, 'm:admin': 1 },
-      })
+      .values({ channelKey: tenant.organization.id, counts, path: tenant.organization.id })
       .onConflictDoUpdate({
         target: channelCountersTable.channelKey,
-        set: { counts: { 's:task': 42, 's:attachment': 7, 'e:task': 100, 'e:attachment': 15, 'm:admin': 1 } },
+        set: { counts, path: tenant.organization.id },
       });
-
-    await db.insert(activitiesTable).values({
-      id: legacyProductDeleteActivityId,
-      tenantId: tenant.tenantId,
-      userId: tenant.user.id,
-      entityType: 'attachment',
-      resourceType: null,
-      action: 'delete',
-      tableName: 'attachments',
-      type: 'attachment.deleted',
-      subjectId: '00000000-0000-4000-a000-00000000d311',
-      organizationId: tenant.organization.id,
-    });
   });
 
   afterAll(async () => {
-    await db.delete(activitiesTable).where(sql`id = ${legacyProductDeleteActivityId}`);
     await db.delete(channelCountersTable).where(sql`channel_key = ${tenant.organization.id}`);
     await clearSecurityTestData();
   });
 
-  it('returns entitySeqs and entityCounts without cursor (baseline)', async () => {
+  it('returns the membership change signal without cursor (baseline)', async () => {
     const result = await call(postAppCatchup, {
       body: {},
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
 
     expect(result.response.status).toBe(200);
-    expect(result.data).toBeDefined();
-
     const { changes, cursor } = result.data as AppCatchupResponse;
 
-    // Should have an entry for the tenant's org
     const orgChanges = changes[tenant.organization.id];
     expect(orgChanges).toBeDefined();
-
-    // Should include entitySeqs (s: keys from channel_counters)
-    expect(orgChanges.entitySeqs).toBeDefined();
-    expect(orgChanges.entitySeqs!.task).toBe(42);
-    expect(orgChanges.entitySeqs!.attachment).toBe(7);
-
-    // Should include entityCounts (e: keys from channel_counters)
-    expect(orgChanges.entityCounts).toBeDefined();
-    expect(orgChanges.entityCounts!.task).toBe(100);
-    expect(orgChanges.entityCounts!.attachment).toBe(15);
-
-    // Should return a cursor (or null if no activities exist)
+    expect(orgChanges.signals!.membership).toBe(3);
+    // The org sequence value itself is not exposed on the wire (clients never read it).
+    expect(orgChanges).not.toHaveProperty('entitySeqs');
     expect(cursor).toBeDefined();
   });
 
-  it('returns empty changes when seqs match (reconnect fast path)', async () => {
+  it('answers an org view with frontier and count rollups (org member, unconditional read)', async () => {
+    const orgId = tenant.organization.id;
     const result = await call(postAppCatchup, {
       body: {
         cursor: '0-0',
-        seqs: {
-          [`${tenant.organization.id}:s:task`]: 42,
-          [`${tenant.organization.id}:s:attachment`]: 7,
-        },
+        views: [
+          {
+            key: `${orgId}:attachment`,
+            organizationId: orgId,
+            prefixes: [orgId],
+            entityTypes: ['attachment'],
+            cursor: 40,
+          },
+        ],
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
 
     expect(result.response.status).toBe(200);
-    expect(result.data).toBeDefined();
-
-    const { changes } = result.data as AppCatchupResponse;
-
-    // Org is pruned when seqs match and there are no deletes.
-    expect(changes[tenant.organization.id]).toBeUndefined();
+    const { views } = result.data as AppCatchupResponse;
+    expect(views).toBeDefined();
+    expect(views).toHaveLength(1);
+    const [answer] = views!;
+    expect(answer.key).toBe(`${orgId}:attachment`);
+    expect(answer.status).toBe('ok');
+    expect(answer.frontiers).toEqual({ attachment: 42 });
+    expect(answer.counts).toEqual({ attachment: 15 });
   });
 
-  it('does not report product delete activities when seqs match', async () => {
-    const result = await call(postAppCatchup, {
-      body: {
-        cursor: '00000000-00000000',
-        seqs: {
-          [`${tenant.organization.id}:s:task`]: 42,
-          [`${tenant.organization.id}:s:attachment`]: 7,
-        },
-      },
-      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-    });
-
-    expect(result.response.status).toBe(200);
-
-    const { changes } = result.data as AppCatchupResponse;
-    expect(changes[tenant.organization.id]).toBeUndefined();
-  });
-
-  it('returns org changes when seqs differ (reconnect with delta)', async () => {
+  it('answers a SELF view from the fs:/es: family', async () => {
+    const orgId = tenant.organization.id;
     const result = await call(postAppCatchup, {
       body: {
         cursor: '0-0',
-        seqs: {
-          [`${tenant.organization.id}:s:task`]: 30, // behind server (42)
-          [`${tenant.organization.id}:s:attachment`]: 7, // matches
-        },
+        views: [
+          {
+            key: `${orgId}:attachment:self`,
+            organizationId: orgId,
+            prefixes: [orgId],
+            entityTypes: ['attachment'],
+            depth: 'self',
+            cursor: 39,
+          },
+        ],
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
 
     expect(result.response.status).toBe(200);
-    expect(result.data).toBeDefined();
+    const { views } = result.data as AppCatchupResponse;
+    expect(views).toHaveLength(1);
+    expect(views![0]).toMatchObject({
+      key: `${orgId}:attachment:self`,
+      status: 'ok',
+      frontiers: { attachment: 40 },
+      counts: { attachment: 12 },
+    });
+  });
 
-    const { changes } = result.data as AppCatchupResponse;
+  it('a claimed prefix that mismatches the verified path answers opaque, no numbers', async () => {
+    const orgId = tenant.organization.id;
+    const result = await call(postAppCatchup, {
+      body: {
+        cursor: '0-0',
+        views: [
+          {
+            // Node id is the org (counters row exists, path = orgId), but the claim
+            // dresses it up as a deeper node: verified path !== claim → opaque.
+            key: 'forged',
+            organizationId: orgId,
+            prefixes: [`${orgId}/fake-course/${orgId}`],
+            entityTypes: ['attachment'],
+            cursor: 0,
+          },
+        ],
+      },
+      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+    });
 
-    // Org is present when the task seq differs.
-    const orgChanges = changes[tenant.organization.id];
-    expect(orgChanges).toBeDefined();
-    expect(orgChanges.entitySeqs!.task).toBe(42);
+    expect(result.response.status).toBe(200);
+    const { views } = result.data as AppCatchupResponse;
+    expect(views![0]).toEqual({ key: 'forged', status: 'opaque' });
+  });
+
+  it('forbids a view on an org the caller is no part of, without leaking numbers', async () => {
+    const orgId = tenant.organization.id;
+    const result = await call(postAppCatchup, {
+      body: {
+        cursor: '0-0',
+        views: [
+          {
+            key: 'other:attachment',
+            organizationId: 'a0000000-0000-4000-a000-000000000001',
+            prefixes: ['a0000000-0000-4000-a000-000000000001'],
+            entityTypes: ['attachment'],
+            cursor: 0,
+          },
+          {
+            key: `${orgId}:attachment`,
+            organizationId: orgId,
+            prefixes: [orgId],
+            entityTypes: ['attachment'],
+            cursor: 42,
+          },
+        ],
+      },
+      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+    });
+
+    expect(result.response.status).toBe(200);
+    const { views } = result.data as AppCatchupResponse;
+    expect(views!.map((v) => [v.key, v.status])).toEqual([
+      ['other:attachment', 'forbidden'],
+      [`${orgId}:attachment`, 'ok'],
+    ]);
+    expect(views![0].frontiers).toBeUndefined();
+    expect(views![0].counts).toBeUndefined();
   });
 });

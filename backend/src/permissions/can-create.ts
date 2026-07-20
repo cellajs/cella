@@ -1,8 +1,8 @@
 import type { SubjectForPermission } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { checkPermission } from '#/permissions';
-import { actorFrom } from '#/permissions/actor';
+import { checkAccess } from '#/permissions';
+import { accessFrom } from '#/permissions/actor';
 import { validateAncestorScope } from '#/permissions/validate-ancestor-scope';
 
 /**
@@ -15,15 +15,13 @@ import { validateAncestorScope } from '#/permissions/validate-ancestor-scope';
  * Omitting a required ancestor (undefined) throws a 400 error to prevent silent fallback to a broader scope.
  */
 export const canCreateEntity = (ctx: AuthContext, entity: SubjectForPermission) => {
-  const memberships = ctx.var.memberships;
-
   const { entityType } = entity;
 
   // Enforce that all ancestor context IDs are explicitly provided (null = intentional, undefined = missing)
   validateAncestorScope(entity);
 
   // Permission check (system admin bypass is handled inside)
-  const { isAllowed } = checkPermission(memberships, 'create', entity, actorFrom(ctx));
+  const { isAllowed } = checkAccess(accessFrom(ctx), 'create', entity);
 
   // Deny if not allowed
   if (!isAllowed) {

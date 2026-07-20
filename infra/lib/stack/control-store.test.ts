@@ -222,7 +222,7 @@ describe('acquireLock / releaseLock', () => {
   })
 })
 
-describe('ledger transitions', () => {
+describe('rollout transitions', () => {
   it('setPending records the deploy intent without touching pointers', () => {
     const active = { id: 'aa11', sha: 'abc', seq: 3 }
     const next = setPending({ seq: 3, active }, 'def')

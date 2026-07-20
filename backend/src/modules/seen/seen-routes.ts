@@ -1,6 +1,6 @@
 import { createXRoute } from '#/core/x-routes';
 import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, syncReadLimiter } from '#/middlewares/rate-limiter/limiters';
 import { seenBatchBodySchema, seenBatchResponseSchema, unseenCountsResponseSchema } from '#/modules/seen/seen-schema';
 import { errorResponseRefs, tenantOrgParamSchema } from '#/schemas';
 
@@ -42,6 +42,7 @@ const seenRoutes = {
     method: 'get',
     path: '/counts',
     xGuard: [authGuard],
+    xRateLimiter: [syncReadLimiter],
     tags: ['seen', 'cella'],
     summary: 'Get unseen counts',
     description:

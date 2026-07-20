@@ -51,3 +51,42 @@ describe('attachmentStorage.hasVariant', () => {
     expect(await attachmentStorage.hasVariant('does-not-exist', 'original')).toBe(false);
   });
 });
+
+describe('attachmentStorage.updateUploadStatus failure bookkeeping', () => {
+  beforeEach(async () => {
+    await attachmentsDb.blobs.clear();
+  });
+
+  afterEach(async () => {
+    await attachmentsDb.blobs.clear();
+  });
+
+  it('bumps attempts and schedules the retry slot even WITHOUT an error message', async () => {
+    await attachmentsDb.blobs.add(makeBlob({ id: 'att-2:original', uploadStatus: 'uploading', uploadAttempts: 0 }));
+
+    // The service's catch-path historically called this without an error argument; the
+    // bookkeeping the retry selector reads must still be written.
+    await attachmentStorage.updateUploadStatus('att-2:original', 'failed');
+
+    const blob = await attachmentsDb.blobs.get('att-2:original');
+    expect(blob?.uploadStatus).toBe('failed');
+    expect(blob?.uploadAttempts).toBe(1);
+    expect(blob?.nextRetryAt).toBeInstanceOf(Date);
+    expect(blob?.lastError).toBeTruthy();
+  });
+
+  it('accumulates attempts across consecutive failures with growing backoff', async () => {
+    await attachmentsDb.blobs.add(makeBlob({ id: 'att-3:original', uploadStatus: 'pending', uploadAttempts: 0 }));
+
+    await attachmentStorage.markFailed('att-3:original', 'first');
+    const afterFirst = await attachmentsDb.blobs.get('att-3:original');
+    await attachmentStorage.markFailed('att-3:original', 'second');
+    const afterSecond = await attachmentsDb.blobs.get('att-3:original');
+
+    expect(afterFirst?.uploadAttempts).toBe(1);
+    expect(afterSecond?.uploadAttempts).toBe(2);
+    expect(afterSecond?.lastError).toBe('second');
+    if (!afterFirst?.nextRetryAt || !afterSecond?.nextRetryAt) throw new Error('nextRetryAt was not written');
+    expect(new Date(afterSecond.nextRetryAt).getTime()).toBeGreaterThan(new Date(afterFirst.nextRetryAt).getTime());
+  });
+});

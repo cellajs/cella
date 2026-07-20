@@ -12,20 +12,20 @@ import type { CursoredSubscriber, DispatcherConfig } from './types';
  * @example
  * const dispatchToOrgSubscribers = createStreamDispatcher<OrgStreamSubscriber>({
  *   getChannel: (event) => event.organizationId ? orgChannel(event.organizationId) : null,
- *   shouldReceive: canReceiveOrgEvent,
+ *   selectEligible: (subscribers, event) => subscribers.filter((s) => canReceiveOrgEvent(s, event)),
  * });
  */
 export function createStreamDispatcher<T extends CursoredSubscriber, E extends ActivityEvent = ActivityEvent>(
   config: DispatcherConfig<T, E>,
 ): (event: E) => Promise<void> {
-  const { getChannel, shouldReceive, transformNotification } = config;
+  const { getChannel, selectEligible, transformNotification } = config;
 
   return async (event: E): Promise<void> => {
     const channel = getChannel(event);
     if (!channel) return;
 
     const subscribers = streamSubscriberManager.getByChannel<T>(channel);
-    const eligible = subscribers.filter((s) => shouldReceive(s, event));
+    const eligible = subscribers.length ? selectEligible(subscribers, event) : subscribers;
     if (eligible.length === 0) return;
 
     log.trace('Dispatching stream event', {

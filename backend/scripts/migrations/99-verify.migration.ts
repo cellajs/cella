@@ -6,6 +6,7 @@ import {
   immutableKeysTriggerName,
 } from '#/db/immutability-triggers';
 import { entityTables, resourceTables } from '#/tables';
+import { publicationRowFilter } from '#/db/utils/publication-filter';
 import { CDC_PUBLICATION_NAME } from '../../../cdc/src/constants';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 import { partitionConfigs } from './10-partman.migration';
@@ -39,6 +40,10 @@ async function run(): Promise<SideEffectBlock> {
     'apply_count_deltas',
   ];
   const publicationTableCount = [...Object.values(entityTables), ...Object.values(resourceTables)].map(getTableName).length;
+  // Draft-lifecycle product tables carry a publication row filter (the draft boundary).
+  const rowFilteredCount = Object.entries(entityTables).filter(([entityType, table]) =>
+    publicationRowFilter(entityType, table),
+  ).length;
 
   const triggerChecks = expectedTriggers
     .map(
@@ -128,6 +133,8 @@ ${partitionChecks}
     missing := array_append(missing, 'publication:${CDC_PUBLICATION_NAME}');
   ELSIF (SELECT count(DISTINCT tablename) FROM pg_publication_tables WHERE pubname = '${CDC_PUBLICATION_NAME}') <> ${publicationTableCount} THEN
     missing := array_append(missing, 'publication-tables:${CDC_PUBLICATION_NAME}');
+  ELSIF (SELECT count(*) FROM pg_publication_tables WHERE pubname = '${CDC_PUBLICATION_NAME}' AND rowfilter IS NOT NULL) <> ${rowFilteredCount} THEN
+    missing := array_append(missing, 'publication-rowfilters:${CDC_PUBLICATION_NAME}');
   END IF;
 
   IF array_length(missing, 1) > 0 THEN

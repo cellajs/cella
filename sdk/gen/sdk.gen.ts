@@ -1696,13 +1696,13 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
 /**
  * App event catchup
  *
- * Fetch missed entity and membership changes since last sync. Send cursor and per-scope seqs in the body.
+ * Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.
  *
  * **POST /entities/app/stream** ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/app/stream) ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/entities/app/stream) ·· _entities_cella_
  *
  * @param {postAppCatchupData} options
  * @param {string=} options.body.cursor - `string` (optional)
- * @param {object=} options.body.seqs - `object` (optional)
+ * @param {any[]=} options.body.views - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const postAppCatchup = <ThrowOnError extends boolean = true>(
@@ -2846,6 +2846,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
  * @param {string=} options.query.seqcursor - `string` (optional)
+ * @param {string=} options.query.pathprefix - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const getAttachments = <ThrowOnError extends boolean = true>(

@@ -796,7 +796,7 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["syncReadLimiter"],
       "xCache": []
     },
     "tagsByKind": {
@@ -842,7 +842,7 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["streamConnectLimiter"],
       "xCache": []
     },
     "tagsByKind": {
@@ -857,7 +857,7 @@
     "path": "/entities/app/stream",
     "tags": ["entities"],
     "summary": "App event catchup",
-    "description": "Fetch missed entity and membership changes since last sync. Send cursor and per-scope seqs in the body.",
+    "description": "Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
@@ -1452,7 +1452,7 @@
     "hasExample": true,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["syncReadLimiter"],
       "xCache": []
     },
     "tagsByKind": {

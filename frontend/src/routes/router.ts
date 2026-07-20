@@ -29,7 +29,7 @@ const router = createRouter({
 });
 
 // Publish the instance here for consumers that need it outside React. Registration at the
-// render site keeps the invariant that whoever creates the router also publishes it.
+// render site makes ownership explicit: the code that creates the router also publishes it.
 setRouter(router);
 
 /** Get the deepest boundary from a route match array (e.g. 'app' or 'public') */
