@@ -272,24 +272,29 @@ The backend image ships a bundled, production-safe seed runner ([backend/scripts
 
 3. Open the app, request a magic link for `you@example.com`, and sign in.
 
-**Alternative: break-glass from your laptop.** If you'd rather not use the serial console, temporarily expose the database, run the seed locally against `DATABASE_ADMIN_URL`, then close the endpoint again. This is heavier (two bootstrap-key `pulumi up` runs to open and re-close the RDB public endpoint) and briefly exposes the DB, so prefer the serial-console path:
+**Alternative: break-glass from your laptop.** If you'd rather not use the serial console, temporarily expose the database with the CLI, run the seed locally against `DATABASE_ADMIN_URL`, then close it again. This briefly exposes the DB (ACL-locked to your IP), so prefer the serial-console path:
 
-1. Open the DB public endpoint locked to your IP (bootstrap-owned RDB, see [Changing infrastructure](#changing-infrastructure)):
-
-   ```bash
-   cd infra
-   pulumi config set infra:dbPublicEndpoint true
-   pulumi config set infra:dbPublicAcl "<your.ip>/32"
-   # then Apply infra change (pnpm infra → Apply infra change) with a bootstrap key
-   ```
-
-2. Run the seed locally against the admin connection string:
+1. Expose the DB, locked to your IP (needs a bootstrap key):
 
    ```bash
-   ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<admin connection string>' pnpm --filter backend seed:production init
+   pnpm infra   # → "Expose database publicly"
    ```
 
-3. **Close the endpoint again**: unset `infra:dbPublicEndpoint`/`infra:dbPublicAcl` and re-run Apply infra change, then revoke the bootstrap key.
+   It detects your public IP, defaults the ACL to `<your.ip>/32` (refusing open ranges), converges with a bootstrap key, and prints the admin connection string.
+
+2. Run the seed locally against the printed connection string:
+
+   ```bash
+   ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<printed connection string>' pnpm --filter backend seed:production init
+   ```
+
+3. **Close the endpoint again**, then revoke the bootstrap key:
+
+   ```bash
+   pnpm infra   # → "Stop public DB exposure"
+   ```
+
+These two modes are general-purpose break-glass for any scoped operator task against the live database (data inspection, one-off migrations, debugging), not only seeding.
 
 ## Architecture reference
 

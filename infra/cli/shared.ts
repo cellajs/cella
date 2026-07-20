@@ -12,7 +12,7 @@ import { maskedSecret } from './prompts/masked-secret'
 type AppConfigType = typeof AppConfig
 
 /** Infra CLI operation modes */
-export type CliMode = 'resume' | 'rotate' | 'rotate-passphrase' | 'apply' | 'preview' | 'secrets' | 'reset-database' | 'unlock'
+export type CliMode = 'resume' | 'rotate' | 'rotate-passphrase' | 'apply' | 'preview' | 'secrets' | 'reset-database' | 'expose-db' | 'unexpose-db' | 'unlock'
 
 /**
  * Context for the infra CLI, including stack information and state. Passed to each service handler to provide necessary information about the current infra status and configuration.
