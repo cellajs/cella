@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.2](https://github.com/cellajs/cella/compare/0.5.1...0.5.2) (2026-07-20)
+
+
+### 🏗️ Build & deps
+
+* gate heavy suites on the release PR instead of a deploy-time release-gate ([#925](https://github.com/cellajs/cella/issues/925)) ([e667ae2](https://github.com/cellajs/cella/commit/e667ae2687b7647fa81c288519524ac00b72ff1b))
+
+
+### 🧹 Chores
+
+* remove hidden true from feat branch types ([#926](https://github.com/cellajs/cella/issues/926)) ([25fcd43](https://github.com/cellajs/cella/commit/25fcd432d86abc48b3ea3e4e4310ecf99136f5e9))
+
 ## [0.5.1](https://github.com/cellajs/cella/compare/0.5.0...0.5.1) (2026-07-20)
 
 
