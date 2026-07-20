@@ -3,18 +3,18 @@ name: CI
 # Deny-by-default: each job opts in to the scopes it actually needs.
 permissions: {}
 
-# CI runs in two contexts:
-#   • pull_request: fast feedback while iterating (cheap checks only).
-#   • merge_group: the merge queue. The heavy suites run here, once, when a
-#     PR is enqueued to merge. This is what gates the actual merge to main, so
-#     the branch-protection "required status checks" must live in this context.
+# CI runs on pull_request only (there is no merge queue). Two tiers of checks:
+#   • Every PR: cheap checks (lint, pr-title, schema-bust-gate) for fast feedback.
+#   • Release PR only: the heavy suites (test, storybook-test) run on the
+#     release-please PR. That PR is what you merge to cut the release + deploy,
+#     so gating its merge gates production. On feature PRs these jobs are
+#     skipped, which a required status check treats as a pass, so the heavy
+#     suites run once per release batch instead of on every feature PR.
 on:
   pull_request:
     branches: [main]
-  merge_group:
 
-# pull_request: cancel older runs of the same PR when a new push arrives.
-# merge_group: each queue entry has a unique ref, so nothing is cancelled.
+# Cancel older runs of the same PR when a new push arrives.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -80,9 +80,9 @@ jobs:
       - name: Run lens checks (append-only / collision / purity / wire completeness)
         run: pnpm --filter shared lens:check
 
-  # Runs all tests (full mode with PostgreSQL). Heavy: merge queue only.
+  # Runs all tests (full mode with PostgreSQL). Heavy: runs on the release PR only.
   test:
-    if: github.event_name == 'merge_group'
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--branches--main')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -135,9 +135,9 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
 
-  # Storybook component tests (Vitest browser mode via Playwright). Heavy: merge queue only.
+  # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR only.
   storybook-test:
-    if: github.event_name == 'merge_group'
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--branches--main')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -187,8 +187,7 @@ jobs:
           fetch-depth: 0 # need base-branch blobs to diff
 
       - name: Breaking-change gate
-        # pull_request supplies github.base_ref; merge_group does not (the queue
-        # always targets main), so fall back to main.
+        # pull_request always supplies github.base_ref; keep a main fallback for safety.
         env:
           BASE_REF: ${{ github.base_ref || 'main' }}
         run: |
