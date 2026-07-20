@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.1](https://github.com/cellajs/cella/compare/0.5.0...0.5.1) (2026-07-20)
+
+
+### 🐞 Bug fixes
+
+* **bench:** make artillery run on Node 24 ([#923](https://github.com/cellajs/cella/issues/923)) ([cce6a82](https://github.com/cellajs/cella/commit/cce6a826ef75a02260a99821dd58cda9d1413237))
+* **frontend:** rename multi_tenancy.md to MULTI_TENANCY.md so MDX transforms it ([#921](https://github.com/cellajs/cella/issues/921)) ([d8a3659](https://github.com/cellajs/cella/commit/d8a365934f4e0359a4e59903d5cee824936fbd3f))
+* **frontend:** strip text/background color styles on paste in blocknote ([#924](https://github.com/cellajs/cella/issues/924)) ([bab68d7](https://github.com/cellajs/cella/commit/bab68d7d0fe0de1a76309352ff55e02d8f86b230))
+
 ## [0.5.0](https://github.com/cellajs/cella/compare/0.4.1...0.5.0) (2026-07-20)
 
 
