@@ -9,7 +9,7 @@ permissions: {}
 #     release-please PR. That PR is what you merge to cut the release + deploy,
 #     so gating its merge gates production. On feature PRs these jobs are
 #     skipped, which a required status check treats as a pass, so the heavy
-#     suites run once per release batch instead of on every feature PR.
+#     suites run only on the release PR, once per release batch.
 on:
   pull_request:
     branches: [main]

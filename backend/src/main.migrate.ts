@@ -18,10 +18,21 @@ try {
   await pgMigrate(migrationDb, migrateConfig);
 
   console.info(pc.green(`${timestamp()} [migrate] ✓ Migrations complete`));
+
+  // Provision the system admin from ADMIN_EMAIL. Idempotent: the seed skips when
+  // the users table is already populated, so this no-ops on every deploy after
+  // the first and only seeds a fresh database (e.g. a new prod, or after a
+  // database reset). Lazy import keeps the seed's mock helpers out of the
+  // migrate path until this point.
+  console.info(`${timestamp()} [migrate] Seeding system admin (idempotent)...`);
+  const { initSeed } = await import('../scripts/seeds/00-init.seed');
+  await initSeed();
+  console.info(pc.green(`${timestamp()} [migrate] ✓ Admin seed complete`));
+
   process.exit(0);
 } catch (error) {
   const msg = error instanceof Error ? error.message : String(error);
-  console.error(pc.red(`${timestamp()} [migrate] ✗ Migration failed: ${msg}`));
+  console.error(pc.red(`${timestamp()} [migrate] ✗ Migrate companion failed: ${msg}`));
   // Drizzle wraps the underlying pg/driver error as `cause`; its message holds
   // the real reason (TLS identity mismatch, auth failure, missing role, …),
   // which the top-level message omits. Surface it so a failed migrate on a
@@ -37,7 +48,7 @@ try {
   // The OTel transport batches with a 5s schedule; wait past it so the export
   // actually leaves before the one-shot container exits.
   const { baseLog } = await import('#/lib/pino');
-  baseLog.fatal('Migration failed', { err: error });
+  baseLog.fatal('Migrate companion failed', { err: error });
   await new Promise((resolve) => setTimeout(resolve, 6000));
   process.exit(1);
 }
