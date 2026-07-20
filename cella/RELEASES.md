@@ -26,9 +26,9 @@ This keeps day-to-day PRs fast and gates only the irreversible publish. Add rele
 
 Versioning is per package via [release-please-config.json](../.github/release-please-config.json) and [release-please-manifest.json](../.github/release-please-manifest.json):
 
-| Package | Path | Tag prefix | Published |
-| --- | --- | --- | --- |
-| `cella` (the template) | `.` | `v*` | GitHub Release only |
+| Package                | Path | Tag prefix | Published           |
+| ---------------------- | ---- | ---------- | ------------------- |
+| `cella` (the template) | `.`  | `v*`       | GitHub Release only |
 
 The scaffolder (`@cellajs/create-cella`) lives in its own repo, [cellajs/create-cella](https://github.com/cellajs/create-cella), with its own release automation. **Add another releasable package by adding one entry to both files; no workflow changes.**
 
@@ -53,7 +53,7 @@ While on `0.x` (`bump-minor-pre-major`), breaking changes bump the minor and fea
 
 [release.yml](../.github/workflows/release.yml) needs a few secrets/settings. An org-wide Github App is ideal because it can be set up once and cover all repos.
 
-**GitHub App token**: release-please opens the release PR with a dedicated GitHub App token so the PR *triggers* the required CI/`pr-title` checks.
+**GitHub App token**: release-please opens the release PR with a dedicated GitHub App token so the PR _triggers_ the required CI/`pr-title` checks.
 
 1. Create a GitHub App (org/account → Developer settings → GitHub Apps → New), disable the webhook, grant repo permissions `Contents: Read and write` and `Pull requests: Read and write`.
 2. Generate a private key (`.pem`) and note the numeric **Client ID**.
@@ -63,5 +63,6 @@ While on `0.x` (`bump-minor-pre-major`), breaking changes bump the minor and fea
 **npm publishing**: the `cella` template is GitHub-Release-only and needs no npm auth. The scaffolder `@cellajs/create-cella` is published from its own repo ([cellajs/create-cella](https://github.com/cellajs/create-cella)); its npm Trusted Publisher / `NPM_TOKEN` setup lives there.
 
 **Repo settings:**
+
 - `main` ruleset: squash-merge only, linear history, require `pr-title`, `lint`, `test`, `test-cella-cli`. Do **not** require `release-gate` (it runs at release time, not on PRs).
 - "Allow GitHub Actions to create and approve pull requests" can stay **disabled**: the App, not Actions, creates the release PR.

@@ -1,4 +1,4 @@
-import { jsonb, snakeCase, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { jsonb, snakeCase, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { maxLength } from '#/db/utils/constraints';
 
 /**
@@ -6,15 +6,19 @@ import { maxLength } from '#/db/utils/constraints';
  *
  * One row per channel entity (org, project, etc.) keyed by its ID,
  *
- * - counts: extensible JSONB for entity counts, membership role breakdown,
- *   and entity-type seqs (s:{type} keys, managed by the CDC worker)
+ * - counts: extensible JSONB holding sequence/membership, f:/fs: frontiers,
+ *   e:/es: counts, m: membership breakdown, li:/lu: activity stamps
+ * - path: the channel's canonical id-path (CDC-maintained copy of the channel row's
+ *   generated column; recalc backfills). Makes the summary row self-describing so
+ *   catchup verifies claimed view ancestry with no extra query.
  *
- * The CDC worker increments counts['s:{entityType}'] and stamps entity.seq after processing WAL events.
- * Backend reads counts for catchup gap detection and entity count display.
+ * The CDC worker maintains counts and path after processing WAL events. Backend reads
+ * them for catchup view answers and entity count display.
  */
 export const channelCountersTable = snakeCase.table('channel_counters', {
   channelKey: varchar('channel_key', { length: maxLength.id }).primaryKey(),
   counts: jsonb().$type<Record<string, number>>().notNull().default({}),
+  path: text('path'),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 

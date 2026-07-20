@@ -3,7 +3,7 @@ import { createEntityHierarchy, createRoleRegistry } from 'shared';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { EntityTableMeta } from '../types';
-import { computeBatchUnifiedDeltas, resolveChannelKey } from '../utils/compute-unified-deltas';
+import { computeBatchUnifiedDeltas, frontierNodeKeys, resolveChannelKey } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/update-counts';
 import { log } from '../lib/pino';
 
@@ -62,7 +62,7 @@ beforeEach(() => {
 
 // ── Seq scope ────────────────────────────────────────────────────────────────
 
-describe('seq scope: deepest non-null ancestor (resolveChannelKey)', () => {
+describe('home channel: deepest non-null ancestor (resolveChannelKey)', () => {
   const activity = (organizationId: string | null = 'o1') =>
     ({ organizationId }) as unknown as ActivityWithoutId;
 
@@ -87,29 +87,33 @@ describe('seq scope: deepest non-null ancestor (resolveChannelKey)', () => {
   });
 });
 
-describe('seq groups per effective home (computeBatchUnifiedDeltas)', () => {
-  it('groups variable-depth rows under their own contexts, with org signals', () => {
+describe('sequence groups per organization (computeBatchUnifiedDeltas)', () => {
+  it('variable-depth rows in one org share ONE sequence group (all depths, one order)', () => {
     const plan = computeBatchUnifiedDeltas(
       [mockEvent('create', fullDepthRow), mockEvent('create', { ...courseStreamRow, id: 'i2' })],
       h,
     );
 
-    expect(plan.seqGroups).toHaveLength(2);
-    const byCtx = new Map(plan.seqGroups.map((g) => [g.channelKey, g]));
-    expect(byCtx.get('p1')).toMatchObject({ seqKey: 's:item', count: 1, orgSignal: { orgKey: 'o1' } });
-    expect(byCtx.get('c1')).toMatchObject({ seqKey: 's:item', count: 1, orgSignal: { orgKey: 'o1' } });
+    expect(plan.orgSequenceGroups).toHaveLength(1);
+    expect(plan.orgSequenceGroups[0]).toMatchObject({ orgKey: 'o1', count: 2 });
+    expect(plan.orgSequenceGroups[0].events).toHaveLength(2);
   });
 
-  it('same-context rows share one group and seq range', () => {
+  it('same-org rows preserve WAL order within the group', () => {
     const plan = computeBatchUnifiedDeltas(
       [mockEvent('create', fullDepthRow), mockEvent('create', { ...fullDepthRow, id: 'i2' })],
       h,
     );
-    expect(plan.seqGroups).toHaveLength(1);
-    expect(plan.seqGroups[0]).toMatchObject({ channelKey: 'p1', count: 2 });
+    expect(plan.orgSequenceGroups).toHaveLength(1);
+    expect(plan.orgSequenceGroups[0].events.map((e) => e.result.rowData.id)).toEqual(['i1', 'i2']);
   });
 
-  it('a contextless row fails the batch loudly instead of inventing a scope', () => {
+  it('frontierNodeKeys rolls a full-depth row up to org + every non-null ancestor', () => {
+    expect(frontierNodeKeys('item', fullDepthRow, 'o1', h)).toEqual(['o1', 'p1', 's1', 'c1']);
+    expect(frontierNodeKeys('item', courseStreamRow, 'o1', h)).toEqual(['o1', 'c1']);
+  });
+
+  it('an org-less row fails the batch loudly instead of inventing a scope', () => {
     expect(() => computeBatchUnifiedDeltas([mockEvent('create', { id: 'i1' }, null, null)], h)).toThrow(/organization ancestor/);
   });
 });
@@ -125,11 +129,12 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
         { channelKey: 'p1', deltas: { 'e:item': 1 } },
         { channelKey: 's1', deltas: { 'e:item': 1 } },
         { channelKey: 'c1', deltas: { 'e:item': 1 } },
-        // Activity stamps stay at the home context and never fan out to higher ancestors.
+        // Home-scoped signals stay at the home context and never fan out to higher ancestors.
+        { channelKey: 'p1', deltas: { 'es:item': 1 } },
         { channelKey: 'p1', deltas: { 'li:item': expect.any(Number) } },
       ]),
     );
-    expect(deltas).toHaveLength(5);
+    expect(deltas).toHaveLength(6);
   });
 
   it('course-stream create bumps only org and course; stamps the course', () => {
@@ -138,10 +143,11 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
       expect.arrayContaining([
         { channelKey: 'o1', deltas: { 'e:item': 1 } },
         { channelKey: 'c1', deltas: { 'e:item': 1 } },
+        { channelKey: 'c1', deltas: { 'es:item': 1 } },
         { channelKey: 'c1', deltas: { 'li:item': expect.any(Number) } },
       ]),
     );
-    expect(deltas).toHaveLength(3);
+    expect(deltas).toHaveLength(4);
   });
 
   it('the stamp carries the row createdAt as epoch ms at the home key', () => {
@@ -160,9 +166,11 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
         { channelKey: 'o1', deltas: { 'e:item': -1 } },
         { channelKey: 's1', deltas: { 'e:item': -1 } },
         { channelKey: 'c1', deltas: { 'e:item': -1 } },
+        // Self count leaves the old home.
+        { channelKey: 's1', deltas: { 'es:item': -1 } },
       ]),
     );
-    expect(deltas).toHaveLength(3);
+    expect(deltas).toHaveLength(4);
   });
 
   it('batch merge: two rows at different depths accumulate per context', () => {
@@ -172,9 +180,9 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
     );
     // Activity stamps land at each row's home context only; org and section stay stamp-free
     expect(plan.countDeltasByChannelKey.get('o1')).toEqual({ 'e:item': 2 });
-    expect(plan.countDeltasByChannelKey.get('c1')).toEqual({ 'e:item': 2, 'li:item': expect.any(Number) });
+    expect(plan.countDeltasByChannelKey.get('c1')).toEqual({ 'e:item': 2, 'es:item': 1, 'li:item': expect.any(Number) });
     expect(plan.countDeltasByChannelKey.get('s1')).toEqual({ 'e:item': 1 });
-    expect(plan.countDeltasByChannelKey.get('p1')).toEqual({ 'e:item': 1, 'li:item': expect.any(Number) });
+    expect(plan.countDeltasByChannelKey.get('p1')).toEqual({ 'e:item': 1, 'es:item': 1, 'li:item': expect.any(Number) });
   });
 });
 
@@ -185,16 +193,22 @@ describe('reparent updates re-credit the ancestor diff', () => {
       expect.arrayContaining([
         { channelKey: 'p2', deltas: { 'e:item': 1 } },
         { channelKey: 'p1', deltas: { 'e:item': -1 } },
+        // Self count moves between homes.
+        { channelKey: 'p1', deltas: { 'es:item': -1 } },
+        { channelKey: 'p2', deltas: { 'es:item': 1 } },
         { channelKey: 'p2', deltas: { 'lu:item': expect.any(Number) } },
       ]),
     );
-    expect(deltas).toHaveLength(3);
+    expect(deltas).toHaveLength(5);
   });
 
   it('re-attach deeper (section → project): only the project is credited', () => {
     const deltas = getCountDeltas(itemMeta(), itemActivity('update'), fullDepthRow, sectionRow, h);
     expect(deltas).toEqual([
       { channelKey: 'p1', deltas: { 'e:item': 1 } },
+      // Home moved section → project: self count follows.
+      { channelKey: 's1', deltas: { 'es:item': -1 } },
+      { channelKey: 'p1', deltas: { 'es:item': 1 } },
       { channelKey: 'p1', deltas: { 'lu:item': expect.any(Number) } },
     ]);
   });
@@ -210,10 +224,12 @@ describe('reparent updates re-credit the ancestor diff', () => {
         { channelKey: 'p1', deltas: { 'e:item': -1 } },
         { channelKey: 's1', deltas: { 'e:item': -1 } },
         { channelKey: 'c1', deltas: { 'e:item': -1 } },
+        { channelKey: 'p1', deltas: { 'es:item': -1 } },
+        { channelKey: 'p2', deltas: { 'es:item': 1 } },
         { channelKey: 'p2', deltas: { 'lu:item': expect.any(Number) } },
       ]),
     );
-    expect(deltas).toHaveLength(7);
+    expect(deltas).toHaveLength(9);
   });
 
   it('no ancestor change → only the lu stamp at the home context', () => {
@@ -241,9 +257,10 @@ describe('soft-delete / restore transitions on variable-depth rows', () => {
       expect.arrayContaining([
         { channelKey: 'o1', deltas: { 'e:item': -1 } },
         { channelKey: 'c1', deltas: { 'e:item': -1 } },
+        { channelKey: 'c1', deltas: { 'es:item': -1 } },
       ]),
     );
-    expect(deltas).toHaveLength(2);
+    expect(deltas).toHaveLength(3);
   });
 
   it('restore counts the row again on the same set', () => {
@@ -258,9 +275,10 @@ describe('soft-delete / restore transitions on variable-depth rows', () => {
       expect.arrayContaining([
         { channelKey: 'o1', deltas: { 'e:item': 1 } },
         { channelKey: 'c1', deltas: { 'e:item': 1 } },
+        { channelKey: 'c1', deltas: { 'es:item': 1 } },
       ]),
     );
-    expect(deltas).toHaveLength(2);
+    expect(deltas).toHaveLength(3);
   });
 });
 

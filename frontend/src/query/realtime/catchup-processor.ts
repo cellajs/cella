@@ -1,238 +1,222 @@
 import type { PostAppCatchupResponse } from 'sdk';
 import type { ProductEntityType } from 'shared';
 import { seenKeys } from '~/modules/seen/helpers';
-import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import { getEntityQueryKeys, getRegisteredEntityTypes, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
-import { enqueueCatchupRange, resetLazySync } from './lazy-sync-scheduler';
+import { enqueueCatchupRange, flushChannelViewNow, resetLazySync } from './lazy-sync-scheduler';
 import * as membershipOps from './membership-ops';
 import { propagateEmbeddings } from './propagation';
 import { getSyncTier, getTenantIdForOrg } from './sync-priority';
 
 /**
- * Process app stream catchup response. For each org: store org-level and child-channel entitySeqs,
- * and use server/client seq deltas to fetch only changed entities via `seqCursor` (falling back to
- * list invalidation on first session or when delta is too large). Soft-deleted product entities are
- * returned by the seq fetch as tombstones and removed by cache-ops.
+ * Process the app stream catchup response (view-driven, org sequence).
+ *
+ * The client declares one view per (org, entityType) with its org-sequence cursor
+ * (`sync-store.getCatchupViews`); the server answers `ok` (with `frontiers`/`counts`
+ * rollups), `opaque` (readable but not provably all, with no numbers), or `forbidden`.
+ * For an `ok` view with `frontier > cursor` ONE org-wide delta fetch from `cursor + 1`
+ * returns every changed row in the org for that type (including rows homed in child
+ * channels and tombstones), and cache-ops routes them into the right lists. Child-scope
+ * watermarks remain live-path bookkeeping; catchup no longer depends on
+ * membership-derived channel discovery (the elevated-reader gap this design removes).
+ *
+ * Catchup guarantees retained by the org-sequence engine:
+ * - advance-after-ingest: the org cursor advances only after the window drained (ok),
+ *   was handed to react-query (invalidate), or was deliberately skipped (nothing cached)
+ * - baseline: cursor 0 stores the frontier and refetches only when something is cached
+ * - tier folding: background orgs enqueue into the lazy scheduler (advance at flush)
+ * - counts are compared server-to-server only (in-session change signal)
  */
 export async function processAppCatchup(response: PostAppCatchupResponse, baselineOnly = false): Promise<void> {
-  const { changes } = response;
+  const { changes, views } = response;
   const syncStore = useSyncStore.getState();
-  const scopes = Object.keys(changes);
 
-  if (scopes.length === 0) return;
+  // ── Views: product entity sync per (org, entityType) ──────────────────────
+  if (views?.length) {
+    if (!baselineOnly) resetLazySync();
 
-  // Baseline mode: store seqs for future catchup comparison, skip delta/invalidation.
-  // Used on first connect: route loaders provide fresh data, catchup just establishes the seq baseline.
-  if (baselineOnly) {
-    for (const [organizationId, scope] of Object.entries(changes)) {
-      if (scope.entitySeqs) {
-        for (const [entityType, seq] of Object.entries(scope.entitySeqs)) {
-          syncStore.setOrgSeq(organizationId, entityType, seq);
-        }
+    for (const answer of views) {
+      // Registered grant-boundary views (views.ts) take precedence over org-view keys.
+      if (syncStore.getView(answer.key)) {
+        if (!baselineOnly) processRegisteredViewAnswer(answer, syncStore);
+        continue;
       }
-      if (scope.childChannelChanges) {
-        for (const [channelId, channelData] of Object.entries(scope.childChannelChanges)) {
-          if (!channelData.entitySeqs) continue;
-          for (const [entityType, seq] of Object.entries(channelData.entitySeqs)) {
-            syncStore.setChannelSeq(organizationId, channelId, entityType, seq);
-          }
-        }
+
+      const [organizationId, entityType] = splitViewKey(answer.key);
+      if (!organizationId || !entityType || !hasEntityQueryKeys(entityType)) continue;
+
+      if (answer.status === 'forbidden') {
+        console.debug(`[CatchupProcessor] View ${answer.key}: forbidden → dropped`);
+        continue;
       }
+
+      const keys = getEntityQueryKeys(entityType);
+
+      if (answer.status === 'opaque') {
+        // Readable but not provably all: no numbers to compare. Fall back to staleness, so
+        // an actively viewed list refetches; background lists follow their mount policy.
+        if (!baselineOnly && hasAnyCachedList(keys, organizationId)) {
+          cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
+        }
+        console.debug(`[CatchupProcessor] View ${answer.key}: opaque → staleness fallback`);
+        continue;
+      }
+
+      const frontier = answer.frontiers?.[entityType] ?? 0;
+      const clientCursor = syncStore.getOrgSeq(organizationId, entityType);
+
+      // Baseline (first session for this org view): store the frontier, let route loaders /
+      // hydration supply data. With something already cached, refetch it.
+      if (baselineOnly || clientCursor === 0) {
+        if (!baselineOnly && hasAnyCachedList(keys, organizationId)) {
+          cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
+          console.debug(`[CatchupProcessor] View ${answer.key}: first session → full refetch`);
+        }
+        syncStore.setOrgSeq(organizationId, entityType, frontier);
+        continue;
+      }
+
+      if (frontier <= clientCursor) continue; // caught up
+
+      const tenantId = syncStore.getOrgTenantId(organizationId) ?? getTenantIdForOrg(organizationId);
+
+      // Cache-symmetry guard: with nothing cached there is nothing to patch; mount
+      // hydration fetches fresh. Advance so the window is not re-offered forever.
+      if (!hasAnyCachedList(keys, organizationId)) {
+        syncStore.setOrgSeq(organizationId, entityType, frontier);
+        console.debug(`[CatchupProcessor] View ${answer.key}: no cached list → skip delta`);
+        continue;
+      }
+
+      // ONE fetch path: every gap goes through the scheduler. Background orgs advance at
+      // their negotiated flush; the viewing org is flushed immediately AND awaited so the
+      // mutation-replay gate (waitForActiveCatchup) resolves against a reconciled cache.
+      enqueueCatchupRange({
+        entityType: entityType as ProductEntityType,
+        organizationId,
+        tenantId,
+        channelId: null,
+        fromSeq: clientCursor + 1,
+        untilSeq: frontier,
+        isCreate: false,
+      });
+
+      if (getSyncTier(entityType, organizationId, null).min > 0) {
+        console.debug(`[CatchupProcessor] View ${answer.key}: delta=${frontier - clientCursor} → enqueued`);
+        continue;
+      }
+
+      const outcome = await flushChannelViewNow(entityType as ProductEntityType, organizationId, null);
+      console.debug(`[CatchupProcessor] View ${answer.key}: delta=${frontier - clientCursor} → ${outcome}`);
     }
-    console.debug(`[CatchupProcessor] Baseline: stored seqs for ${scopes.length} orgs`);
-    return;
+
+    // Integrity: counts compared server-to-server per (org, entityType). A changed
+    // count with matching frontier means drift (e.g. failed refetch after invalidation).
+    if (!baselineOnly) verifyViewCounts(views);
   }
 
-  console.debug(`[CatchupProcessor] App catchup: ${scopes.length} orgs`);
+  // ── Org-level blocks: membership screening + propagation (legacy `changes`) ─
+  const orgIds = Object.keys(changes);
+  for (const organizationId of orgIds) {
+    const { signals, propagation } = changes[organizationId];
 
-  // Catchup recomputes every scope's delta itself; stale lazy-scheduler entries from before
-  // the disconnect would double-fetch ranges this pass already covers.
-  resetLazySync();
+    // Seed the org entry so the NEXT catchup request declares views for it (fresh
+    // sessions have no stored orgs yet; membership-derived `changes` names them).
+    syncStore.setOrgTenantId(organizationId, syncStore.getOrgTenantId(organizationId) ?? '');
 
-  for (const organizationId of scopes) {
-    const { entitySeqs, childChannelChanges } = changes[organizationId];
-    // Resolve tenantId: prefer sync store (persisted, no cache dependency), fall back to query cache
-    const tenantId = syncStore.getOrgTenantId(organizationId) ?? getTenantIdForOrg(organizationId);
-
-    // Detect membership change via the s:membership seq counter (set BEFORE Step 1 overwrites it).
-    // Scopes member-list invalidation to orgs that actually had a membership change.
-    const serverMembershipSeq = entitySeqs?.membership;
-    const membershipChanged =
-      serverMembershipSeq !== undefined && serverMembershipSeq !== syncStore.getOrgSeq(organizationId, 'membership');
-
-    // Step 1: Snapshot client org-level seqs. Server seqs are stored immediately ONLY for
-    // entity types this pipeline does not ingest (no registered query keys, e.g. membership:
-    // handled via Step 5/6 invalidation). Ingestable types advance their cursor after Step 2/3
-    // resolves, so a failed delta fetch never silently skips its seq window (advance-after-ingest).
-    const entityTypesWithChildChannelData = new Set<string>();
-    const clientOrgSeqs = new Map<string, number>();
-
-    if (entitySeqs) {
-      for (const [entityType, serverEntitySeq] of Object.entries(entitySeqs)) {
-        clientOrgSeqs.set(entityType, syncStore.getOrgSeq(organizationId, entityType));
-        if (!hasEntityQueryKeys(entityType)) syncStore.setOrgSeq(organizationId, entityType, serverEntitySeq);
-      }
+    // Membership change via the bump-only membership signal; stored after comparison.
+    const serverMembershipSignal = signals?.membership;
+    if (serverMembershipSignal !== undefined) {
+      const membershipChanged = serverMembershipSignal !== syncStore.getOrgSeq(organizationId, 'membership');
+      syncStore.setOrgSeq(organizationId, 'membership', serverMembershipSignal);
+      if (membershipChanged && !baselineOnly) membershipOps.invalidateMemberQueries(organizationId);
     }
 
-    // Step 2: Child-context delta processing (precise, per-child-context)
-    if (childChannelChanges) {
-      for (const [channelId, channelData] of Object.entries(childChannelChanges)) {
-        if (!channelData.entitySeqs) continue;
-
-        for (const [entityType, serverChannelSeq] of Object.entries(channelData.entitySeqs)) {
-          if (!hasEntityQueryKeys(entityType)) continue;
-          entityTypesWithChildChannelData.add(entityType);
-
-          const clientChannelSeq = syncStore.getChannelSeq(organizationId, channelId, entityType);
-          if (serverChannelSeq === clientChannelSeq) continue; // Skip unchanged context/entityType
-
-          const keys = getEntityQueryKeys(entityType);
-
-          if (clientChannelSeq === 0) {
-            // First session for this child context -> full refetch for org's entity type
-            cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-            console.debug(`[CatchupProcessor] Context ${channelId}: ${entityType} first session → full refetch`);
-          } else {
-            const channelDelta = serverChannelSeq - clientChannelSeq;
-            if (channelDelta > 0) {
-              // Scope-symmetry guard: a cursor is only authoritative for scopes with a cached
-              // list; with nothing cached there is nothing to patch. Mount hydration fetches
-              // fresh and resets the cursor (see e.g. tasksCanonicalOptions).
-              if (!hasAnyCachedList(keys, organizationId)) {
-                console.debug(`[CatchupProcessor] Context ${channelId}: ${entityType} no cached list → skip delta`);
-              } else if (getSyncTier(entityType, organizationId, channelId).min > 0) {
-                // Hand background gaps to the lazy scheduler, which spreads and merges them with
-                // live notifications. A successful flush advances the caught-up seq, so continue
-                // before the advance below.
-                enqueueCatchupRange({
-                  entityType: entityType as ProductEntityType,
-                  organizationId,
-                  tenantId,
-                  channelId,
-                  fromSeq: clientChannelSeq + 1,
-                  untilSeq: serverChannelSeq,
-                  isCreate: false,
-                });
-                console.debug(
-                  `[CatchupProcessor] Context ${channelId}: ${entityType} delta=${channelDelta} → enqueued`,
-                );
-                continue;
-              } else {
-                // Reconcile viewing scopes inline. Paused-mutation replay waits for catchup
-                // completion (waitForActiveCatchup) and must see fresh on-screen data.
-                const seqCursor = String(clientChannelSeq + 1);
-                const patched =
-                  (await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys)).status ===
-                  'ok';
-                if (!patched) {
-                  cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-                }
-                console.debug(
-                  `[CatchupProcessor] Context ${channelId}: ${entityType} delta=${channelDelta} → ${patched ? 'delta patched' : 'invalidated'}`,
-                );
-              }
-            }
-          }
-
-          // Store child-context seq after ingest/invalidate/skip: a fetchRangeAndPatch
-          // success means the range fully drained; invalidation hands recovery to react-query;
-          // a skipped uncached scope is re-established by hydration itself.
-          syncStore.setChannelSeq(organizationId, channelId, entityType, serverChannelSeq);
-        }
-      }
-    }
-
-    // Step 3: Org-level fallback for entity types WITHOUT child-context data
-    // (e.g., org-scoped attachments where channel_key = organization_id).
-    // Org seqs for ingestable types are stored here after the delta fetch resolves,
-    // never before, so a failed fetch retries the same window on the next catchup.
-    if (entitySeqs) {
-      for (const [entityType, serverEntitySeq] of Object.entries(entitySeqs)) {
-        if (!hasEntityQueryKeys(entityType)) continue; // Stored in Step 1
-        if (entityTypesWithChildChannelData.has(entityType)) {
-          // Fully handled at child-context level, advance the org-level screening seq.
-          syncStore.setOrgSeq(organizationId, entityType, serverEntitySeq);
-          continue;
-        }
-
-        const clientEntitySeq = clientOrgSeqs.get(entityType) ?? 0;
-        if (serverEntitySeq === clientEntitySeq) continue;
-
-        const entityDelta = serverEntitySeq - clientEntitySeq;
-
-        if (entityDelta > 0) {
-          const keys = getEntityQueryKeys(entityType);
-
-          if (clientEntitySeq === 0) {
-            cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-            console.debug(`[CatchupProcessor] Org ${organizationId}: ${entityType} first session → full refetch`);
-          } else if (!hasAnyCachedList(keys, organizationId)) {
-            // Scope-symmetry guard: nothing cached to patch, hydration re-establishes the cursor.
-            console.debug(`[CatchupProcessor] Org ${organizationId}: ${entityType} no cached list → skip delta`);
-          } else if (getSyncTier(entityType, organizationId, null).min > 0) {
-            // Background org scope: lazy-scheduled; caught-up seq advances at flush, not here.
-            enqueueCatchupRange({
-              entityType: entityType as ProductEntityType,
-              organizationId,
-              tenantId,
-              channelId: null,
-              fromSeq: clientEntitySeq + 1,
-              untilSeq: serverEntitySeq,
-              isCreate: false,
-            });
-            console.debug(`[CatchupProcessor] Org ${organizationId}: ${entityType} delta=${entityDelta} → enqueued`);
-            continue;
-          } else {
-            // Viewing scope: reconcile inline for the mutation-replay gate (waitForActiveCatchup).
-            const seqCursor = String(clientEntitySeq + 1);
-            const patched =
-              (await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys)).status ===
-              'ok';
-            if (!patched) {
-              cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-            }
-            console.debug(
-              `[CatchupProcessor] Org ${organizationId}: ${entityType} delta=${entityDelta} → ${patched ? 'delta patched' : 'invalidated'}`,
-            );
-          }
-        }
-
-        // Advance-after-ingest: reached only when the window was drained, handed to
-        // react-query via invalidation, or deliberately skipped (nothing cached).
-        syncStore.setOrgSeq(organizationId, entityType, serverEntitySeq);
-      }
-    }
-
-    // Step 4: Propagate embedded entity changes (e.g., label rename -> patch task.labels)
-    // Must run AFTER all delta-fetches so fresh source data is in cache.
-    const { propagation } = changes[organizationId];
-    if (propagation?.length) {
+    // Propagation AFTER delta fetches so fresh source data is in cache.
+    if (!baselineOnly && propagation?.length) {
       for (const hint of propagation) {
         propagateEmbeddings(hint);
       }
     }
-
-    // Step 5: Invalidate org-scoped member queries only when membership actually changed
-    // (detected via the s:membership seq counter), so entity-only changes don't refetch member lists.
-    if (membershipChanged) membershipOps.invalidateMemberQueries(organizationId);
   }
 
-  // Step 6: Refresh memberships (getMyMemberships, invalidate channel lists, refresh current user).
-  // Uses fetchQuery so React Query dedupes with getMenuData's ensureQueryData (sync service),
-  // preventing double fetches on app init.
+  if (baselineOnly) {
+    console.debug(`[CatchupProcessor] Baseline: stored cursors for ${views?.length ?? 0} views, ${orgIds.length} orgs`);
+    return;
+  }
+
+  // Refresh memberships (getMyMemberships, invalidate channel lists, refresh current user).
   membershipOps.invalidateChannelList(null);
   membershipOps.fetchMemberships();
   membershipOps.refreshMe();
 
-  // Step 7: Compare server entity counts with cached totals to catch drift
-  // where seqs matched but the cache is stale (e.g. a failed refetch after invalidation). Org + child level.
-  verifyCacheIntegrity(changes);
-
-  // Step 8: Reconcile unseen counts. Synced-row deltas cannot see what happened while
+  // Reconcile unseen counts. Synced-row deltas cannot see what happened while
   // disconnected (other-device seen-marks, missed windows); an exact recount re-anchors them.
   queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
+}
+
+/** Registered product entity types, for building the catchup views request. */
+export function catchupEntityTypes(): string[] {
+  return getRegisteredEntityTypes().filter((entityType) => hasEntityQueryKeys(entityType));
+}
+
+/**
+ * Answers for registered grant-boundary views: precise CHANGE DETECTION on top of the
+ * org-view correctness baseline. `ok` + unchanged frontier skips every refetch (the win);
+ * changed → invalidate the affected active lists and advance the view cursor (row
+ * ingestion itself rides org-view delta fetches, with no per-view range fetch here);
+ * `opaque` → staleness fallback; `forbidden` → the grant is gone, drop the view.
+ */
+function processRegisteredViewAnswer(
+  answer: NonNullable<PostAppCatchupResponse['views']>[number],
+  syncStore: ReturnType<typeof useSyncStore.getState>,
+): void {
+  const view = syncStore.getView(answer.key);
+  if (!view) return;
+
+  if (answer.status === 'forbidden') {
+    syncStore.removeSyncView(answer.key);
+    console.debug(`[CatchupProcessor] View ${answer.key}: forbidden → removed`);
+    return;
+  }
+
+  const invalidateTypes = () => {
+    for (const entityType of view.entityTypes) {
+      if (!hasEntityQueryKeys(entityType)) continue;
+      const keys = getEntityQueryKeys(entityType);
+      if (hasAnyCachedList(keys, view.organizationId)) {
+        cacheOps.invalidateEntityListForOrg(keys, view.organizationId, 'active');
+      }
+    }
+  };
+
+  if (answer.status === 'opaque') {
+    invalidateTypes();
+    console.debug(`[CatchupProcessor] View ${answer.key}: opaque → staleness fallback`);
+    return;
+  }
+
+  const frontier = Math.max(0, ...Object.values(answer.frontiers ?? {}));
+  if (view.cursor === 0) {
+    // Baseline: adopt frontier; hydration/route loaders supply the data.
+    syncStore.setViewCursor(answer.key, frontier);
+    console.debug(`[CatchupProcessor] View ${answer.key}: baseline → cursor ${frontier}`);
+    return;
+  }
+  if (frontier <= view.cursor) return; // unchanged: skip refetches, the precision win
+
+  invalidateTypes();
+  syncStore.setViewCursor(answer.key, frontier);
+  console.debug(`[CatchupProcessor] View ${answer.key}: frontier ${view.cursor} → ${frontier} → invalidated`);
+}
+
+/** View keys are `${organizationId}:${entityType}` (see sync-store.getCatchupViews). */
+function splitViewKey(key: string): [string | undefined, string | undefined] {
+  const idx = key.lastIndexOf(':');
+  if (idx <= 0) return [undefined, undefined];
+  return [key.slice(0, idx), key.slice(idx + 1)];
 }
 
 /**
@@ -246,62 +230,34 @@ function hasAnyCachedList(keys: ReturnType<typeof getEntityQueryKeys>, organizat
 }
 
 /**
- * Server counts last seen by THIS session, keyed by `${orgId}:${entityType}:${channelId ?? ''}`.
+ * Server counts last seen by THIS session, keyed by `${orgId}:${entityType}`.
  * Counts are compared server-to-server (change signal), never against the client's caches:
  * cached lists are predicate-filtered per user, so equality with shared counts is
  * meaningless (a member who can't see every row would mismatch forever).
  */
 const lastSeenServerCounts = new Map<string, number>();
 
-/**
- * Verify cache freshness from server-reported entity counts: a count that CHANGED since
- * the last catchup means rows were created or deleted while this client was not watching.
- * Invalidates the affected lists. Checks child-context counts (precise) first, then
- * org-level counts for entity types not covered by child contexts. In-session signal
- * only; across reloads the entitySeqs screening remains the primary catchup mechanism.
- */
-function verifyCacheIntegrity(changes: PostAppCatchupResponse['changes']): void {
-  for (const [organizationId, scope] of Object.entries(changes)) {
-    // Collect all count checks: child-context scoped entries take priority over org-level
-    const checks = new Map<string, { serverCount: number; channelId?: string }>();
+/** In-session count drift check per ok view; first sight records without comparing. */
+function verifyViewCounts(views: NonNullable<PostAppCatchupResponse['views']>): void {
+  for (const answer of views) {
+    if (answer.status !== 'ok' || !answer.counts) continue;
+    const [organizationId, entityType] = splitViewKey(answer.key);
+    if (!organizationId || !entityType || !hasEntityQueryKeys(entityType)) continue;
 
-    // Child-context counts (precise, per-project), added first so they win.
-    if (scope.childChannelChanges) {
-      for (const [channelId, channelData] of Object.entries(scope.childChannelChanges)) {
-        if (!channelData.entityCounts) continue;
-        for (const [entityType, serverCount] of Object.entries(channelData.entityCounts)) {
-          checks.set(`${entityType}:${channelId}`, { serverCount, channelId });
-        }
-      }
-    }
+    const serverCount = answer.counts[entityType];
+    if (serverCount === undefined) continue;
 
-    // Org-level counts (fallback for entity types without child-context data)
-    if (scope.entityCounts) {
-      for (const [entityType, serverCount] of Object.entries(scope.entityCounts)) {
-        // Skip if already covered by child-context checks
-        if ([...checks.keys()].some((k) => k.startsWith(`${entityType}:`))) continue;
-        checks.set(entityType, { serverCount });
-      }
-    }
+    const countKey = `${organizationId}:${entityType}`;
+    const previous = lastSeenServerCounts.get(countKey);
+    lastSeenServerCounts.set(countKey, serverCount);
+    if (previous === undefined || previous === serverCount) continue;
 
-    for (const [key, { serverCount, channelId }] of checks) {
-      const entityType = key.split(':')[0];
-      if (!hasEntityQueryKeys(entityType)) continue;
+    const keys = getEntityQueryKeys(entityType);
+    if (!hasAnyCachedList(keys, organizationId)) continue;
 
-      const countKey = `${organizationId}:${entityType}:${channelId ?? ''}`;
-      const previous = lastSeenServerCounts.get(countKey);
-      lastSeenServerCounts.set(countKey, serverCount);
-      // First sight (nothing to compare) or unchanged → no signal
-      if (previous === undefined || previous === serverCount) continue;
-
-      const keys = getEntityQueryKeys(entityType);
-      if (!hasAnyCachedList(keys, organizationId)) continue;
-
-      cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-      const scope = channelId ? `context ${channelId}` : `org ${organizationId}`;
-      console.debug(
-        `[CatchupProcessor] Integrity: ${entityType} in ${scope} count changed — ${previous} → ${serverCount} → invalidated`,
-      );
-    }
+    cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
+    console.debug(
+      `[CatchupProcessor] Integrity: ${entityType} in org ${organizationId} count changed — ${previous} → ${serverCount} → invalidated`,
+    );
   }
 }

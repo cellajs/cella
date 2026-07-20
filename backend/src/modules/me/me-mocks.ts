@@ -98,7 +98,7 @@ export const mockStreamResponse = (key = 'stream:default') =>
     return {
       changes: {
         'org-example-id': {
-          entitySeqs: { attachment: 1 },
+          signals: { membership: 1 },
         },
       },
       cursor,

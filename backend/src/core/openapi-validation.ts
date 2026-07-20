@@ -1,6 +1,6 @@
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
 
-/** Validate generated OpenAPI document invariants before exposing or caching the spec. */
+/** Validate the generated OpenAPI document before exposing or caching the spec. */
 const validateOpenApiDocument = (doc: Record<string, unknown>) => {
   validateSchemaTags(doc);
 };

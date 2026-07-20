@@ -221,7 +221,7 @@ export function removeEntityFromListCache(entityId: string, keys: EntityQueryKey
  * Apply one server-truth row to detail and list caches through the shared applicator for both
  * realtime paths (seq-range fetches and seq-less single fetches). Tombstones remove; rows
  * already cached update in place; unknown rows insert only into their canonical home list
- * (the row's effective home channel — see matchesCanonicalHome).
+ * (the row's effective home channel; see matchesCanonicalHome).
  * Returns true when the row was new to every scanned list cache, so callers can invalidate
  * filtered lists with object key segments, whose server-side filters cannot be replicated, once per flush.
  */
@@ -289,7 +289,7 @@ function applyServerEntity(
   }
 
   // A new row that no home list spliced and no filtered list will refetch stays invisible until
-  // an unrelated refetch — always a key-shape bug (canonical data cached outside keys.list.home).
+  // an unrelated refetch. This is always a key-shape bug (canonical data cached outside keys.list.home).
   if (organizationId && homeChannelId && !seen && !spliced && !sawFilteredList) {
     console.warn(
       `[CacheOps] New ${entityType} row ${entity.id} landed in no list cache — ` +
@@ -343,7 +343,8 @@ export async function fetchEntityAndUpdateList(
  * callers may advance their sync cursor); false when unavailable, failed, or the window overflows
  * one response. Callers then fall back to full list invalidation and react-query owns recovery.
  *
- * seqCursor: "51" (open-ended, catchup) or "51,150" (bounded range, batch notifications).
+ * seqCursor is the bounded inclusive range "51,150"; `pathPrefix` optionally narrows the
+ * fetch to one channel subtree (forwarded to the registered deltaFetch).
  *
  * Result statuses drive the caller's recovery policy: 'ok' (patched; `items` are the fetched
  * rows, e.g. for unseen-count accounting), 'overflow'/'unsupported' (fall back to list
@@ -360,6 +361,7 @@ export async function fetchRangeAndPatch(
   tenantId: string | null,
   seqCursor: string,
   keys: EntityQueryKeys,
+  pathPrefix?: string,
 ): Promise<RangeFetchResult> {
   if (!tenantId && organizationId) {
     console.debug(`[CacheOps] No tenantId for ${entityType} delta fetch, falling back to invalidation`);
@@ -370,7 +372,7 @@ export async function fetchRangeAndPatch(
   if (!deltaFetch) return { status: 'unsupported', items: [] };
 
   try {
-    const { items } = await deltaFetch(organizationId, tenantId, seqCursor);
+    const { items } = await deltaFetch(organizationId, tenantId, seqCursor, pathPrefix);
 
     // Overflow guard: registrars request SYNC_CHUNK_SIZE, so a full response means the seq
     // window may exceed what one fetch returns. Patching a truncated window would silently

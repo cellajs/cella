@@ -13,9 +13,19 @@ export {
   createRoleRegistry,
 } from './entity-hierarchy';
 
-// Row-to-context attribution (shared rule for CDC seq/counters, notifications, recalculation)
+// Row-to-home attribution (shared rule for CDC counters/self summaries, notifications, recalculation)
 export type { AncestorSource, ResolvedAncestor } from './resolve-row-channel';
 export { possibleHomeChannels, resolveDeepestAncestorId, resolveNonNullAncestors } from './resolve-row-channel';
+
+// Materialized id-path rule (sequence sync: routing, move-out, subtree addressing)
+export {
+  computeAncestorPath,
+  computeChannelPath,
+  computeProductPath,
+  pathHomeId,
+  pathSegments,
+  pathStartsWith,
+} from './row-path';
 
 // Utility functions
 export { hasKey, identityRecord, mergeDeep, recordFromKeys } from './utils';

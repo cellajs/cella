@@ -105,8 +105,8 @@ function checkCollisions() {
   }
 }
 
-// ── 2b. Contract invariant (1.3): contract requires a prior expand on the same field ──
-function checkContractInvariant() {
+// ── 2b. Expand-before-contract rule (1.3): contract requires a prior expand on the same field ──
+function checkExpandBeforeContract() {
   for (let i = 0; i < lenses.length; i++) {
     const lens = lenses[i];
     if (lens.phase !== 'contract') continue;
@@ -121,7 +121,7 @@ function checkContractInvariant() {
       );
     if (!hasExpand) {
       failures.push(
-        `Contract invariant: lens "${lens.id}" contracts ${lens.entityType} without a preceding expand lens on the same field.`,
+        `Expand-before-contract violation: lens "${lens.id}" contracts ${lens.entityType} without a preceding expand lens on the same field.`,
       );
     }
   }
@@ -168,7 +168,7 @@ function checkContractCompleteness() {
 const files = datedLensFiles();
 checkAppendOnly(files);
 checkCollisions();
-checkContractInvariant();
+checkExpandBeforeContract();
 checkPurity(files);
 checkContractCompleteness();
 

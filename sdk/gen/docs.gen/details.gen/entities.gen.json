@@ -138,39 +138,16 @@
             "changes": {
               "type": "object",
               "required": true,
-              "description": "Per-org change summary: { [organizationId]: { entitySeqs?, entityCounts? } }",
+              "description": "Per-org change summary: { [organizationId]: { signals?, propagation? } }",
               "additionalProperties": {
                 "type": "object",
                 "required": false,
                 "properties": {
-                  "entitySeqs": {
+                  "signals": {
                     "type": "object",
                     "required": false,
-                    "additionalProperties": { "type": "integer", "required": false }
-                  },
-                  "entityCounts": {
-                    "type": "object",
-                    "required": false,
-                    "additionalProperties": { "type": "integer", "required": false }
-                  },
-                  "childChannelChanges": {
-                    "type": "object",
-                    "required": false,
-                    "additionalProperties": {
-                      "type": "object",
-                      "required": false,
-                      "properties": {
-                        "entitySeqs": {
-                          "type": "object",
-                          "required": false,
-                          "additionalProperties": { "type": "integer", "required": false }
-                        },
-                        "entityCounts": {
-                          "type": "object",
-                          "required": false,
-                          "additionalProperties": { "type": "integer", "required": false }
-                        }
-                      }
+                    "properties": {
+                      "membership": { "type": "integer", "required": false }
                     }
                   },
                   "propagation": {
@@ -213,6 +190,39 @@
                 }
               }
             },
+            "views": {
+              "type": "array",
+              "required": false,
+              "description": "Per-view answers for client-declared views (same order as the request)",
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "required": true,
+                    "description": "The client-supplied view key, echoed verbatim"
+                  },
+                  "status": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["ok", "opaque", "forbidden"]
+                  },
+                  "frontiers": {
+                    "type": "object",
+                    "required": false,
+                    "description": "Per-entityType newest sequence position over the view prefixes (subtree: f:{type}; self: fs:{type})",
+                    "additionalProperties": { "type": "integer", "required": false }
+                  },
+                  "counts": {
+                    "type": "object",
+                    "required": false,
+                    "description": "Per-entityType live row counts summed over the view prefixes (subtree: e:{type}; self: es:{type})",
+                    "additionalProperties": { "type": "integer", "required": false }
+                  }
+                }
+              }
+            },
             "cursor": {
               "type": ["string", "null"],
               "required": true,
@@ -224,7 +234,7 @@
         "example": {
           "changes": {
             "org-example-id": {
-              "entitySeqs": { "attachment": 1 }
+              "signals": { "membership": 1 }
             }
           },
           "cursor": "d9909rsl2y2ii9vbcsc2ywg7"
@@ -282,11 +292,52 @@
             "required": false,
             "description": "Last activity cursor received by the client (LSN-based). Omit on first sync."
           },
-          "seqs": {
-            "type": "object",
+          "views": {
+            "type": "array",
             "required": false,
-            "description": "Client-side sequence numbers per scope: { \"organizationId:s:attachment\": 42 }",
-            "additionalProperties": { "type": "integer", "required": false }
+            "description": "Client-declared views: prefix set + entity types + org-sequence cursor per view",
+            "maxItems": 256,
+            "itemType": "object",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Client-chosen stable view key, echoed back verbatim to correlate responses",
+                  "maxLength": 512
+                },
+                "organizationId": { "type": "string", "required": true },
+                "prefixes": {
+                  "type": "array",
+                  "required": true,
+                  "description": "Materialized id-path prefixes this view covers (root-first ids, slash-joined)",
+                  "minItems": 1,
+                  "maxItems": 64,
+                  "itemType": "string",
+                  "maxLength": 512
+                },
+                "entityTypes": {
+                  "type": "array",
+                  "required": true,
+                  "minItems": 1,
+                  "itemType": "string",
+                  "enum": ["attachment"]
+                },
+                "depth": {
+                  "type": "string",
+                  "required": false,
+                  "description": "View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement — a channel wall). Self views are answerable by direct home-scoped memberships.",
+                  "enum": ["self", "subtree"]
+                },
+                "cursor": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "Org-sequence position this view has fully ingested (0 = baseline not yet established)",
+                  "minimum": 0
+                }
+              }
+            }
           }
         },
         "required": true,

@@ -9,10 +9,10 @@ vi.mock('./app-entity-cache', () => ({
     set: (...a: unknown[]) => entityCacheSet(...a),
   },
 }));
-const checkPermission = vi.fn();
-vi.mock('#/permissions', () => ({ checkPermission: (...a: unknown[]) => checkPermission(...a) }));
-const actorFrom = vi.fn((): Record<string, unknown> => ({}));
-vi.mock('#/permissions/actor', () => ({ actorFrom: () => actorFrom() }));
+const checkAccess = vi.fn();
+vi.mock('#/permissions', () => ({ checkAccess: (...a: unknown[]) => checkAccess(...a) }));
+const accessFrom = vi.fn((): Record<string, unknown> => ({}));
+vi.mock('#/permissions/actor', () => ({ accessFrom: () => accessFrom() }));
 const buildSubjectFromEntity = vi.fn((..._a: unknown[]) => ({}));
 vi.mock('#/permissions/build-subject', () => ({
   buildSubjectFromEntity: (...a: unknown[]) => buildSubjectFromEntity(...a),
@@ -46,7 +46,7 @@ describe('appCache — per-request authorization on cache hit', () => {
   });
 
   it('serves the cached row and skips the handler when the caller is allowed', async () => {
-    checkPermission.mockReturnValue({ isAllowed: true });
+    checkAccess.mockReturnValue({ isAllowed: true });
     const ctx = mockCtx();
     const next = vi.fn();
 
@@ -58,7 +58,7 @@ describe('appCache — per-request authorization on cache hit', () => {
   });
 
   it('normalizes the enriched createdBy object back to the raw id for the permission subject', async () => {
-    checkPermission.mockReturnValue({ isAllowed: true });
+    checkAccess.mockReturnValue({ isAllowed: true });
 
     await appCache('attachment')(mockCtx() as never, vi.fn());
 
@@ -66,7 +66,7 @@ describe('appCache — per-request authorization on cache hit', () => {
   });
 
   it('falls through to the handler (never a stale serve) when the caller is NOT allowed', async () => {
-    checkPermission.mockReturnValue({ isAllowed: false });
+    checkAccess.mockReturnValue({ isAllowed: false });
     const ctx = mockCtx();
     const next = vi.fn();
 
@@ -86,11 +86,11 @@ describe('appCache — draft veto on cache hit (publishedAt lifecycle)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     entityCacheGet.mockReturnValue(cachedDraft);
-    checkPermission.mockReturnValue({ isAllowed: true });
+    checkAccess.mockReturnValue({ isAllowed: true });
   });
 
   it('serves a cached draft to its author', async () => {
-    actorFrom.mockReturnValue({ userId: 'user-1', isSystemAdmin: false });
+    accessFrom.mockReturnValue({ userId: 'user-1', isSystemAdmin: false, memberships: [] });
     const ctx = mockCtx();
     const next = vi.fn();
 
@@ -101,7 +101,7 @@ describe('appCache — draft veto on cache hit (publishedAt lifecycle)', () => {
   });
 
   it('falls through for a non-author even though the engine allows the read', async () => {
-    actorFrom.mockReturnValue({ userId: 'user-2', isSystemAdmin: false });
+    accessFrom.mockReturnValue({ userId: 'user-2', isSystemAdmin: false, memberships: [] });
     const ctx = mockCtx();
     const next = vi.fn();
 
@@ -112,7 +112,7 @@ describe('appCache — draft veto on cache hit (publishedAt lifecycle)', () => {
   });
 
   it('falls through for a system admin too — author-only means author-only', async () => {
-    actorFrom.mockReturnValue({ userId: 'admin-user', isSystemAdmin: true });
+    accessFrom.mockReturnValue({ userId: 'admin-user', isSystemAdmin: true, memberships: [] });
     const ctx = mockCtx();
     const next = vi.fn();
 

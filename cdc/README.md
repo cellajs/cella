@@ -1,12 +1,14 @@
 # cdc: change data capture worker
 
-PostgreSQL logical-replication worker that turns committed WAL into the sync engine's server-side outputs: **activity rows** (append-only audit log and SSE cursor history), **counter and sequence stamps** (`channel_counters` plus per-row `seq` for client gap detection), and **realtime messages** pushed to the API server for SSE fan-out.
+PostgreSQL logical-replication worker that turns committed WAL into the sync engine's server-side outputs: **activity rows** (append-only audit log and SSE cursor history), **counter and sequence stamps** (`channel_counters` plus per-row `seq` for client delta detection), and **realtime messages** pushed to the API server for SSE fan-out.
 
 This document covers the worker itself. For what its outputs mean to clients (notification shapes, catchup, HLC merge), see [Sync engine](/docs/page/architecture/sync-engine).
 
 ## Replication session
 
 The worker consumes the `cdc_pub` publication through the `cdc_slot` slot using the **pgoutput** plugin (protocol v1, via `pg-logical-replication`). Both are created by the CDC migration (`backend/scripts/migrations/10-cdc.migration.ts`), which regenerates the publication's table list and replica identities from the backend table maps; the worker's own `ensureReplicationSlot()` at boot is a best-effort fallback.
+
+Draft-lifecycle product tables carry a **publication row filter** (`WHERE published_at IS NOT NULL`, PG 17+, emitted from `backend/src/db/utils/publication-filter.ts`): the stream contains only the synced world. Postgres rewrites filter transitions at decode time — a publish edge (old row fails, new passes) is delivered as **INSERT**, an unpublish (old passes, new fails) as **DELETE** carrying the full old row, and draft creates/edits/deletes are never delivered at all. Soft-deleting a published row keeps matching, so tombstones still flow as UPDATEs. Channel tables are never filtered (their `publishedAt` gates invitees, and filtering would suppress channel-path-sync). Filter changes apply at decode time for new transactions — no slot reset or worker restart needed. A draft that arrives anyway (fork added `publishedColumn` without regenerating the publication) is dropped by the entrance guard in `parse-message.ts` with a rate-limited warning.
 
 Acknowledgement is **manual** (`acknowledge: { auto: false }`): the slot only advances after events are fully processed (see delivery semantics below). Standby heartbeats are acknowledged when Postgres requests a reply, so an idle worker doesn't time out. The worker keeps no durable state of its own — everything needed to resume lives in the slot's restart position, and whatever was not yet acknowledged is simply redelivered.
 
@@ -65,22 +67,22 @@ Each group runs three steps in a fixed order, so a failure cannot leave partial 
 2. **Apply unified deltas** (see below).
 3. **Dispatch** the WebSocket message, then run embedding cleanup for product-entity updates and deletes (stripping deleted embedded ids from host array columns; done here rather than in the user's request to avoid row locks).
 
-### Unified deltas: seq ranges and counters
+### Unified deltas: the org sequence and counters
 
 One pure computation plans everything a group needs; one applier executes the plan in two phases:
 
-- **Phase 1 (sequential):** for every context + entity-type group of product creates/updates, reserve a **contiguous seq range** by upserting `channel_counters.counts['s:{entityType}']` with `RETURNING`, then assign `baseSeq + i + 1` to each row in WAL order. The context key is the row's **deepest non-null ancestor**, falling back to the organization when nearer ancestor ids are all null. A product row without even an organization violates the hierarchy model: its group fails loudly (logged, LSN still acknowledged) instead of getting an invented scope.
-- **Phase 2 (parallel):** apply the remaining count deltas and stamp assigned `seq` values back onto the rows with one bulk `UPDATE ... FROM VALUES` per table (also clearing `stx.changedFields`).
+- **Phase 1 (sequential):** ONE group per organization reserves a **contiguous org-sequence range** by upserting `channel_counters.counts['sequence']` with `RETURNING`, then assigns `baseSeq + i + 1` to each product create/update in WAL order — all product entity types share the sequence, so WAL commit order IS sequence order. A product row without an organization violates the hierarchy model: its group fails loudly (logged, LSN still acknowledged) instead of getting an invented home.
+- **Phase 2 (parallel):** write frontier rollups — `f:{type}` max-merged at the org and every non-null ancestor node, `fs:{type}` at the home node only (deepest non-null ancestor); every stamped event bumps — the publication row filter keeps unfetchable rows out of the stream — plus the remaining count deltas, and stamp assigned `seq` values back onto the rows with one bulk `UPDATE ... FROM VALUES` per table (also clearing `stx.changedFields`).
 
-Counter keys in `channel_counters`: `e:{type}` entity counts (credited to the organization and every non-null ancestor; reparent diffs re-credit), `m:{role}` / `m:total` / `m:pending` membership counts plus an org-level `s:membership` bump for catchup screening, and `li:` / `lu:` last-insert/last-update epoch stamps (merged with max, not sum). All land through the `apply_count_deltas` SQL function, which floors counts at zero. Soft-delete and restore transitions are remapped to delete/create so counts stay truthful.
+Counter keys in `channel_counters`: `sequence` (the org reservation counter), `f:{type}` / `fs:{type}` subtree/self frontiers (max-merged), `e:{type}` subtree entity counts (credited to the organization and every non-null ancestor; reparent diffs re-credit) and `es:{type}` self counts at the home node (reparents move them), `m:{role}` / `m:total` / `m:pending` membership counts plus an org-level `membership` bump for catchup screening, and `li:` / `lu:` last-insert/last-update epoch stamps. Max-merge keys (`f:`/`fs:`/`li:`/`lu:`) keep the max, everything else sums; all land through the `apply_count_deltas` SQL function, which floors counts at zero. Soft-delete and restore transitions are remapped to delete/create so counts stay truthful.
 
 ## Delivery semantics
 
 **At-least-once.** The slot only advances on acknowledgement, and acknowledgement happens after processing: a crash in between redelivers the events. The consequences:
 
 - **Activities are replay-safe.** The activity id is derived deterministically from the LSN, and inserts are `onConflictDoNothing`: replaying an unacknowledged range produces the same rows exactly once.
-- **Counters and seq stamps are not.** Replaying an *already-acknowledged* range would double-count `channel_counters`. That can't happen in normal operation (the slot gates replay to unacknowledged ranges); it takes a manual slot reset or LSN rewind. The repair path is catchup recovery's full counter recalculation.
-- **Ordering.** Within a transaction, WAL order is preserved and seq values are assigned in it. Across transactions the FlushBuffer regroups by `(type, action)`, so delivery to the API is not globally ordered. Client-visible ordering comes from `seq`, not from message arrival.
+- **Counters and seq stamps are not.** Replaying an _already-acknowledged_ range would double-count `channel_counters`. That can't happen in normal operation (the slot gates replay to unacknowledged ranges); it takes a manual slot reset or LSN rewind. The repair path is catchup recovery's full counter recalculation.
+- **Ordering.** Within a transaction, WAL order is preserved and org-sequence values are assigned in it. Across transactions the FlushBuffer regroups by `(type, action)`, so delivery to the API is not globally ordered. Client-visible ordering comes from `seq`, not from message arrival.
 - Downstream consumers see duplicate messages after a redelivery; they dedupe on activity id.
 
 ## Catchup mode
@@ -93,7 +95,9 @@ Processed events reach clients indirectly: the worker holds **one server-to-serv
 
 This channel carries **full entity row data**: it is an internal service channel and must never be exposed to browsers or external networks. Defense layers: path isolation (`/internal/cdc` only), shared secret (`CDC_SECRET`, min 16 chars, sent as `x-cdc-secret`), a production source-IP allowlist (loopback/VPC), a single-connection limit (a new worker connection replaces the old), and a 90 s idle timeout.
 
-**Message shape** (`CdcOutboundMessage`): the activity (with id, `seq`, `batchUntilSeq`), the compacted `rowData`, `batchRows` for batches (permission-relevant fields only: id, createdBy, deletedAt, publicAt, context ids), a `cacheToken` for single-entity product messages (null on batches — the backend invalidates detail-cache entries from `batchRows` instead), and trace context. Batches are split per seq context so **every message describes one contiguous seq range**, the invariant client gap detection relies on.
+**Message shape** (`CdcOutboundMessage`): the activity (with id, `seq`, `batchUntilSeq`, `count`), the compacted `rowData`, `movedFrom` old-row subsets for reparented rows (single and per batch row), `batchRows` for batches (permission-relevant fields only: id, createdBy, deletedAt, publicAt, publishedAt, path, channel ids), and trace context. The backend invalidates detail-cache entries by entity id (single `subjectId` or `batchRows` ids). Batches are split per `(path, entityType)` group so every message describes ONE audience; sequence ranges of different groups may interleave, so **`count` — never range arithmetic — is authoritative for batch size**.
+
+**Channel path sync**: after deltas apply, channel-entity create/update events mirror the row's canonical id-path (STORED generated column) onto its `channel_counters.path`, the verified-ancestry source for catchup view authorization. Recalculation backfills it.
 
 **Control messages** bypass the data schema: `health` (pushed every 15 s), `catchup_complete`, and `wal_lag_alert`.
 
@@ -105,8 +109,8 @@ This channel carries **full entity row data**: it is an internal service channel
 
 ## Constraints
 
-- **Adding a tracked table takes two coupled steps**: add it to the backend's `entityTables`/`resourceTables` maps *and* re-run the CDC migration, which regenerates the publication and sets `REPLICA IDENTITY FULL` from those maps. Miss the registry and events are silently dropped at parse; miss the publication and no WAL events arrive at all. There is no `FOR ALL TABLES`: the list is explicit.
-- **`REPLICA IDENTITY FULL` is mandatory** on every tracked table. Delete row data and the changed-field fallback both read the old tuple. It is also why the publication carries all columns: Postgres rejects publication column lists on tables with replica identity FULL.
+- **Adding a tracked table takes two coupled steps**: add it to the backend's `entityTables`/`resourceTables` maps _and_ re-run the CDC migration, which regenerates the publication and sets `REPLICA IDENTITY FULL` from those maps. Miss the registry and events are silently dropped at parse; miss the publication and no WAL events arrive at all. There is no `FOR ALL TABLES`: the list is explicit.
+- **`REPLICA IDENTITY FULL` is mandatory** on every tracked table. Delete row data and the changed-field fallback both read the old tuple. It is also why the publication carries all columns: Postgres rejects publication column lists on tables with replica identity FULL. Row _filters_ are the opposite — FULL identity is what allows them to reference any column (the draft filter above).
 - **Large columns are stripped in-process, not in the publication.** Anything downstream of the handlers must tolerate their absence from `rowData`.
 - **`stx` and `seq` are load-bearing columns** on product tables: `stx.changedFields` drives update detection and the worker writes `seq` back. Renaming or dropping them breaks the pipeline.
 - **One consumer per slot.** A second worker contends and sits in the takeover retry loop; the backend likewise accepts a single worker connection.
@@ -118,7 +122,7 @@ This channel carries **full entity row data**: it is an internal service channel
 Validated in `src/env.ts` (loads the backend's `.env`):
 
 | Variable | Purpose |
-|----------|---------|
+| --- | --- |
 | `DATABASE_CDC_URL` | Postgres connection for replication + writes; the role needs `REPLICATION` |
 | `DATABASE_SSL_CA` | Base64 PEM CA to verify Postgres TLS; required in production |
 | `API_WS_URL` | Backend WebSocket endpoint (defaults to `ws://localhost:{backendPort}/internal/cdc`) |

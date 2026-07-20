@@ -5,6 +5,15 @@ import { remarkLinkRepoPaths } from './remark-link-repo-paths';
 const repoRoot = path.resolve(__dirname, '../..');
 const repoUrl = 'https://github.com/cellajs/cella';
 const transform = remarkLinkRepoPaths({ repoRoot, repoUrl });
+const docsTransform = remarkLinkRepoPaths({
+  repoRoot,
+  repoUrl,
+  docRoutes: {
+    'cella/ARCHITECTURE.md': '/docs/page/architecture',
+    'cella/CLIENT.md': '/docs/page/architecture/client',
+    'cella/ADD_ENTITY.md': '/docs/page/guides/new-entity',
+  },
+});
 
 type Node = { type: string; value?: string; url?: string; children?: Node[] };
 
@@ -76,9 +85,9 @@ describe('relative markdown links in repo docs', () => {
   const link = (url: string): Node => ({ type: 'link', url, children: [{ type: 'text', value: 'x' }] });
 
   /** The first inline link node after running the plugin with the given source file. */
-  function runLink(url: string, file: { path?: string }): Node {
+  function runLink(url: string, file: { path?: string }, activeTransform = transform): Node {
     const tree = para(link(url));
-    transform(tree as never, file);
+    activeTransform(tree as never, file);
     return firstInline(tree);
   }
 
@@ -93,6 +102,18 @@ describe('relative markdown links in repo docs', () => {
     expect(runLink('./ARCHITECTURE.md#anchor', repoDocFile).url).toBe(
       `${repoUrl}/blob/main/cella/ARCHITECTURE.md#anchor`,
     );
+  });
+
+  it('maps repository docs with first-class pages to internal docs routes', () => {
+    expect(runLink('./ARCHITECTURE.md#entity-hierarchy-model', repoDocFile, docsTransform).url).toBe(
+      '/docs/page/architecture#entity-hierarchy-model',
+    );
+    expect(runLink('./CLIENT.md', repoDocFile, docsTransform).url).toBe('/docs/page/architecture/client');
+    expect(runLink('./ADD_ENTITY.md', repoDocFile, docsTransform).url).toBe('/docs/page/guides/new-entity');
+  });
+
+  it('keeps using GitHub for repository docs without a first-class page', () => {
+    expect(runLink('./SECURITY.md', repoDocFile, docsTransform).url).toBe(`${repoUrl}/blob/main/cella/SECURITY.md`);
   });
 
   it('leaves unresolvable or out-of-repo relative links untouched', () => {

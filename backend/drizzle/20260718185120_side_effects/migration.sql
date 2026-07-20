@@ -80,8 +80,9 @@ DECLARE
 BEGIN
   FOR k, v IN SELECT * FROM jsonb_each_text(deltas)
   LOOP
-    IF k LIKE 'li:%' OR k LIKE 'lu:%' THEN
-      -- Activity stamps (epoch ms): keep the max, the signal only moves forward
+    IF k LIKE 'li:%' OR k LIKE 'lu:%' OR k LIKE 'f:%' OR k LIKE 'fs:%' THEN
+      -- Activity stamps (epoch ms) and sequence frontiers: keep the max,
+      -- the signal only moves forward
       result := result || jsonb_build_object(
         k, GREATEST(COALESCE((result->>k)::bigint, 0), v::bigint)
       );
@@ -961,6 +962,8 @@ BEGIN
     missing := array_append(missing, 'publication:cdc_pub');
   ELSIF (SELECT count(DISTINCT tablename) FROM pg_publication_tables WHERE pubname = 'cdc_pub') <> 8 THEN
     missing := array_append(missing, 'publication-tables:cdc_pub');
+  ELSIF (SELECT count(*) FROM pg_publication_tables WHERE pubname = 'cdc_pub' AND rowfilter IS NOT NULL) <> 0 THEN
+    missing := array_append(missing, 'publication-rowfilters:cdc_pub');
   END IF;
 
   IF array_length(missing, 1) > 0 THEN

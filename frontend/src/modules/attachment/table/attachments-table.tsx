@@ -37,10 +37,13 @@ function selectDefaultViewRows({ items }: { items: Attachment[] }) {
 export interface AttachmentsTableProps {
   channelEntity: EnrichedChannelEntity;
   isSheet?: boolean;
+  /** Override for special contexts; defaults to the caller's create permission on the channel. */
   canUpload?: boolean;
 }
 
-function AttachmentsTable({ channelEntity, canUpload = true, isSheet = false }: AttachmentsTableProps) {
+function AttachmentsTable({ channelEntity, canUpload, isSheet = false }: AttachmentsTableProps) {
+  // Create has no row to resolve 'own' against, so only an unconditional grant shows upload.
+  const allowUpload = canUpload ?? channelEntity.can?.attachment?.create === true;
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
@@ -150,7 +153,7 @@ function AttachmentsTable({ channelEntity, canUpload = true, isSheet = false }: 
         setColumns={setColumns}
         clearSelection={clearSelection}
         isSheet={isSheet}
-        canUpload={canUpload}
+        canUpload={allowUpload}
         queryKey={isDefaultView ? canonicalOptions.queryKey : queryOptions.queryKey}
       />
       <DataTable<Attachment>

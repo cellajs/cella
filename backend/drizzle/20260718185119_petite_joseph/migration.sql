@@ -31,6 +31,7 @@ CREATE TABLE "attachments" (
 	"deleted_by" uuid,
 	"public_at" timestamp,
 	"seq" bigint DEFAULT 0 NOT NULL,
+	"path" text GENERATED ALWAYS AS ("organization_id"::text) STORED,
 	"public" boolean DEFAULT false NOT NULL,
 	"bucket_name" varchar(255) NOT NULL,
 	"group_id" uuid,
@@ -133,6 +134,7 @@ CREATE TABLE "domains" (
 CREATE TABLE "channel_counters" (
 	"channel_key" varchar(50) PRIMARY KEY,
 	"counts" jsonb DEFAULT '{}' NOT NULL,
+	"path" text,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -192,6 +194,7 @@ CREATE TABLE "organizations" (
 	"updated_by" uuid,
 	"published_at" timestamp DEFAULT now(),
 	"public_at" timestamp,
+	"path" text GENERATED ALWAYS AS ("id"::text) STORED,
 	"short_name" varchar(255),
 	"country" varchar(255),
 	"timezone" varchar(255),

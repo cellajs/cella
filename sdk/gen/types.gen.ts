@@ -111,7 +111,10 @@ export type StreamNotification = {
    * Discriminant for the notification: product-entity sync vs membership change
    */
   kind: 'entity' | 'membership';
-  action: 'create' | 'update' | 'delete';
+  /**
+   * Change kind; moveOut = the row left this path (reparent) and is no longer readable there
+   */
+  action: 'create' | 'update' | 'delete' | 'moveOut';
   entityType: 'attachment' | null;
   resourceType: 'request' | 'membership' | 'inactive_membership' | 'tenant' | 'system_role' | null;
   subjectId: string | null;
@@ -122,7 +125,11 @@ export type StreamNotification = {
    */
   channelType: 'organization' | null;
   /**
-   * Per-entityType sequence number used for gap detection in sync
+   * Materialized id-path of the affected rows (root-first ancestor ids); moveOut carries the OLD path
+   */
+  path: string | null;
+  /**
+   * Org-sequence position (one order per organization, shared across product entity types)
    */
   seq: number | null;
   /**
@@ -134,9 +141,13 @@ export type StreamNotification = {
       [key: string]: unknown;
     } | null);
   /**
-   * Last seq for a batched notification — client should fetch range
+   * Last sequence position for a batched notification — client should fetch range
    */
   batchUntilSeq: number | null;
+  /**
+   * Authoritative row count for batches: sequence ranges of different paths may interleave
+   */
+  count: number | null;
   /**
    * Server-suggested spread window (ms) for the lazy delta fetch — scales with channel audience and load; the client clamps it between its eagerness tier bounds
    */
@@ -414,6 +425,7 @@ export type Organization = {
     } | null);
   publishedAt: string | null;
   publicAt: string | null;
+  path: string | null;
   shortName: string | null;
   country: string | null;
   timezone: string | null;
@@ -476,6 +488,7 @@ export type Attachment = {
   deletedBy: string | null;
   publicAt: string | null;
   seq: number;
+  path: string | null;
   public: boolean;
   bucketName: string;
   groupId: string | null;
@@ -2251,11 +2264,28 @@ export type PostAppCatchupData = {
      */
     cursor?: string;
     /**
-     * Client-side sequence numbers per scope: { "organizationId:s:attachment": 42 }
+     * Client-declared views: prefix set + entity types + org-sequence cursor per view
      */
-    seqs?: {
-      [key: string]: number;
-    };
+    views?: Array<{
+      /**
+       * Client-chosen stable view key, echoed back verbatim to correlate responses
+       */
+      key: string;
+      organizationId: string;
+      /**
+       * Materialized id-path prefixes this view covers (root-first ids, slash-joined)
+       */
+      prefixes: Array<string>;
+      entityTypes: Array<'attachment'>;
+      /**
+       * View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement — a channel wall). Self views are answerable by direct home-scoped memberships.
+       */
+      depth?: 'self' | 'subtree';
+      /**
+       * Org-sequence position this view has fully ingested (0 = baseline not yet established)
+       */
+      cursor: number;
+    }>;
   };
   path?: never;
   query?: never;
@@ -2297,25 +2327,12 @@ export type PostAppCatchupResponses = {
    */
   200: {
     /**
-     * Per-org change summary: { [organizationId]: { entitySeqs?, entityCounts? } }
+     * Per-org change summary: { [organizationId]: { signals?, propagation? } }
      */
     changes: {
       [key: string]: {
-        entitySeqs?: {
-          [key: string]: number;
-        };
-        entityCounts?: {
-          [key: string]: number;
-        };
-        childChannelChanges?: {
-          [key: string]: {
-            entitySeqs?: {
-              [key: string]: number;
-            };
-            entityCounts?: {
-              [key: string]: number;
-            };
-          };
+        signals?: {
+          membership?: number;
         };
         propagation?: Array<{
           /**
@@ -2341,6 +2358,28 @@ export type PostAppCatchupResponses = {
         }>;
       };
     };
+    /**
+     * Per-view answers for client-declared views (same order as the request)
+     */
+    views?: Array<{
+      /**
+       * The client-supplied view key, echoed verbatim
+       */
+      key: string;
+      status: 'ok' | 'opaque' | 'forbidden';
+      /**
+       * Per-entityType newest sequence position over the view prefixes (subtree: f:{type}; self: fs:{type})
+       */
+      frontiers?: {
+        [key: string]: number;
+      };
+      /**
+       * Per-entityType live row counts summed over the view prefixes (subtree: e:{type}; self: es:{type})
+       */
+      counts?: {
+        [key: string]: number;
+      };
+    }>;
     /**
      * Last activity ID (use as offset for next request)
      */
@@ -3919,6 +3958,7 @@ export type GetAttachmentsData = {
     offset?: string;
     limit?: string;
     seqCursor?: string;
+    pathPrefix?: string;
   };
   url: '/{tenantId}/{organizationId}/attachments';
 };

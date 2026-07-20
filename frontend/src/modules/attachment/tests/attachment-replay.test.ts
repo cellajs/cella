@@ -69,6 +69,28 @@ describe('attachment offline-replay mutation functions', () => {
     for (const item of body) expect(item.stx.mutationId).toEqual(expect.any(String));
   });
 
+  it('replay reuses the stx persisted in variables: same mutationId and HLCs, no restamp (D4)', async () => {
+    updateAttachment.mockClear();
+    const persistedStx = {
+      mutationId: 'original-mutation-id',
+      sourceId: 'tab-1',
+      fieldTimestamps: { name: '1710500000123:0001:abcde' },
+    };
+    await updateAttachmentMutationFn({ ...ctx, id: 'att-1', ops: { name: 'Renamed' }, stx: persistedStx });
+
+    // Idempotency + intent-time LWW: the replayed request is byte-identical to the original.
+    expect(lastBody(updateAttachment).stx).toEqual(persistedStx);
+  });
+
+  it('create replay reuses persisted stx across every item', async () => {
+    createAttachments.mockClear();
+    const persistedStx = { mutationId: 'create-mid', sourceId: 'tab-1', fieldTimestamps: {} };
+    await createAttachmentsMutationFn({ ...ctx, data: [{ id: 'x', filename: 'x.png' }] as never, stx: persistedStx });
+
+    const body = createAttachments.mock.lastCall?.[0].body as Array<{ stx: { mutationId: string } }>;
+    expect(body[0].stx).toEqual(persistedStx);
+  });
+
   it('REGRESSION: without injected context the persisted request loses tenant/org', async () => {
     // The exact bug the fix prevents: before the hook injected context, a mutation persisted as
     // `{ id, ops }` replayed through the default function with tenant/org undefined, producing a broken request.

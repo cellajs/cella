@@ -89,6 +89,10 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "path": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "shortName": {
                     "type": ["string", "null"],
                     "required": true,
@@ -277,6 +281,7 @@
               "id": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
               "tenantId": "fyc7n2",
               "entityType": "organization",
+              "path": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
               "name": "Conroy, Kerluke and Rowe",
               "slug": "conroy-kerluke-and-rowe",
               "shortName": "Conroy,",
@@ -330,6 +335,7 @@
               "id": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
               "tenantId": "dwpxxb",
               "entityType": "organization",
+              "path": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
               "name": "Lemke, Bode and Reichel-Klocko",
               "slug": "lemke-bode-and-reichel-klocko",
               "shortName": "Lemke,",
@@ -644,6 +650,10 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "path": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "shortName": {
                     "type": ["string", "null"],
                     "required": true,
@@ -821,6 +831,7 @@
               "id": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
               "tenantId": "6eo7z7",
               "entityType": "organization",
+              "path": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
               "name": "Anderson - Ferry",
               "slug": "anderson-ferry",
               "shortName": "Anderson",
@@ -874,6 +885,7 @@
               "id": "772a771f-c150-465e-9635-46594859fc3d",
               "tenantId": "yzrul7",
               "entityType": "organization",
+              "path": "772a771f-c150-465e-9635-46594859fc3d",
               "name": "Wiegand, Harber and Stark-Abshire",
               "slug": "wiegand-harber-and-stark-abshire",
               "shortName": "Wiegand,",
@@ -1088,6 +1100,10 @@
               "type": ["string", "null"],
               "required": true
             },
+            "path": {
+              "type": ["string", "null"],
+              "required": true
+            },
             "shortName": {
               "type": ["string", "null"],
               "required": true,
@@ -1259,6 +1275,7 @@
           "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "tenantId": "d1lgzb",
           "entityType": "organization",
+          "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "name": "Spencer, Pouros and Bergnaum",
           "slug": "spencer-pouros-and-bergnaum",
           "shortName": "Spencer,",
@@ -1455,6 +1472,10 @@
               "type": ["string", "null"],
               "required": true
             },
+            "path": {
+              "type": ["string", "null"],
+              "required": true
+            },
             "shortName": {
               "type": ["string", "null"],
               "required": true,
@@ -1626,6 +1647,7 @@
           "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "tenantId": "d1lgzb",
           "entityType": "organization",
+          "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "name": "Spencer, Pouros and Bergnaum",
           "slug": "spencer-pouros-and-bergnaum",
           "shortName": "Spencer,",

@@ -38,11 +38,11 @@ sdk
 
 ## Exports
 
-| Import path | Description |
-|-------------|-------------|
-| `sdk` | All generated SDK functions |
+| Import path  | Description                                   |
+| ------------ | --------------------------------------------- |
+| `sdk`        | All generated SDK functions                   |
 | `sdk/client` | HTTP client, `createClient`, config utilities |
-| `sdk/*` | Wildcard, e.g. `sdk/types.gen`, `sdk/zod.gen` |
+| `sdk/*`      | Wildcard, e.g. `sdk/types.gen`, `sdk/zod.gen` |
 
 ## Scripts
 

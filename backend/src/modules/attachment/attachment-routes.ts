@@ -3,7 +3,12 @@ import { createXRoute } from '#/core/x-routes';
 import { appCache } from '#/middlewares/entity-cache';
 import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { httpCache } from '#/middlewares/http-cache';
-import { bulkPointsLimiter, presignedUrlLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
+import {
+  bulkPointsLimiter,
+  presignedUrlLimiter,
+  singlePointsLimiter,
+  syncReadLimiter,
+} from '#/middlewares/rate-limiter/limiters';
 import {
   attachmentCreateManyStxBodySchema,
   attachmentCreateResponseSchema,
@@ -36,6 +41,8 @@ const attachmentRoutes = {
     method: 'get',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
+    // Sync-driven read backpressure on the delta path (template pattern for fork product lists)
+    xRateLimiter: [syncReadLimiter],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Get attachments',
     description: 'Returns a paginated list of attachments for the organization.',

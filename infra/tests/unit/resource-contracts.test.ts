@@ -15,7 +15,7 @@ const secrets = read('secrets.ts')
 const configuredSecret = read('configured-secret.ts')
 const vmReaderSecret = readInfra('lib/scaleway/vm-reader-secret.ts')
 
-// Static checks pin security contracts that are brittle in live renders.
+// Source-shape checks pin security contracts that are brittle in live renders.
 // Scope: TLS, CAA, DB privacy, public registry leaks, and secret handling.
 describe('loadbalancer resource', () => {
   it('HTTPS frontend on port 443 is defined', () => {

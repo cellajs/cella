@@ -1,46 +1,44 @@
-import { getTableName } from 'drizzle-orm';
-import { hierarchy, resolveDeepestAncestorId } from 'shared';
+import { hierarchy, resolveDeepestAncestorId, resolveNonNullAncestors } from 'shared';
 import type { ActivityAction, AncestorSource } from 'shared';
 import type { PendingEvent, TableMeta } from '../types';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData } from '../types';
-import { type CountsHierarchy, getCountDeltas, isActivityStampKey } from './update-counts';
+import { type CountsHierarchy, getCountDeltas, isMaxMergeKey } from './update-counts';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 /**
- * Plan for a batch of CDC events: seq groups that need RETURNING,
- * accumulated count deltas, and entity stamp data.
+ * Plan for a batch of CDC events: one sequence group per organization (needs a RETURNING
+ * UPSERT to reserve a contiguous org-sequence range) plus accumulated count deltas.
  */
 export interface BatchUnifiedDeltaPlan {
-  /** Seq groups: each needs a sequential UPSERT with RETURNING to reserve a seq range. */
-  seqGroups: SeqGroup[];
-  /** All count deltas merged by channelKey (across all events, excluding seq deltas). */
+  /** One per organization: reserves `sequence` and stamps its events in WAL order. */
+  orgSequenceGroups: OrgSequenceGroup[];
+  /** All count deltas merged by channelKey (across all events, excluding sequence/frontier deltas). */
   countDeltasByChannelKey: Map<string, Record<string, number>>;
-  /** Entity rows to stamp with assigned seq values (bulk UPDATE ... FROM VALUES). */
-  entityStamps: Array<{ tableName: string; id: string; seq: number }>;
 }
 
-export interface SeqGroup {
-  channelKey: string;
-  seqKey: string;
+export interface OrgSequenceGroup {
+  /** The organization whose sequence this group reserves from. */
+  orgKey: string;
+  /** Number of stampable events (sequence values to reserve). */
   count: number;
-  /** Org key for signaling (null if ctx === org or no org). */
-  orgSignal: { orgKey: string; seqKey: string; count: number } | null;
-  /** Events in this group, for assigning seq values after RETURNING. */
+  /** Stampable events in WAL order; seq values are assigned after RETURNING. */
   events: PendingEvent[];
-  tableName: string;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Resolve the context key for a product entity from its row data: the row's deepest non-null
- * ancestor (variable-depth rows scope to their effective home, e.g. a course-stream item with
+ * Resolve the channel key for a product entity from its row data: the row's deepest non-null
+ * ancestor (variable-depth rows attribute to their effective home, e.g. a course-stream item with
  * `projectId = null` scopes to its course). Without nullable ancestors this equals the
  * declared parent. Falls back to the activity's org for rows whose ancestor ids are all null.
  * The hierarchy model guarantees every product entity at least an organization, so a row
  * without one is a modeling error, so the group fails loudly without inventing a scope.
+ *
+ * Under the org sequence this no longer scopes seq allocation; it remains the audience/home
+ * grouping rule (message grouping fallback, activity stamps, unseen grouping).
  */
 export function resolveChannelKey(
   entityType: string,
@@ -55,22 +53,44 @@ export function resolveChannelKey(
 }
 
 /**
- * Merge deltas into an existing map entry, summing values for matching keys.
- * `li:`/`lu:` keys are epoch-ms activity stamps, not deltas: collisions keep the max
- * (two posts in one batch must not sum their timestamps).
+ * The channel-counter nodes a stamped row's frontier propagates to: the organization
+ * plus every non-null ancestor. This is the rollup set: `f:{type}` at any node answers
+ * "did anything of this type change at or below here" with one comparison.
  */
-function mergeDelta(map: Map<string, Record<string, number>>, channelKey: string, deltas: Record<string, number>): void {
+export function frontierNodeKeys(
+  entityType: string,
+  rowData: CdcRowData,
+  organizationId: string,
+  h: AncestorSource = hierarchy,
+): string[] {
+  const nodes = [organizationId];
+  for (const ancestor of resolveNonNullAncestors(h, entityType, rowData)) {
+    if (ancestor.id !== organizationId) nodes.push(ancestor.id);
+  }
+  return nodes;
+}
+
+/**
+ * Merge deltas into an existing map entry, summing values for matching keys.
+ * Max-merge keys (`li:`/`lu:` stamps, `f:` frontiers) keep the max on collision
+ * (two posts in one batch must not sum their timestamps or watermarks).
+ */
+export function mergeDelta(
+  map: Map<string, Record<string, number>>,
+  channelKey: string,
+  deltas: Record<string, number>,
+): void {
   const existing = map.get(channelKey);
   if (existing) {
     for (const [k, v] of Object.entries(deltas)) {
-      existing[k] = isActivityStampKey(k) ? Math.max(existing[k] ?? 0, v) : (existing[k] ?? 0) + v;
+      existing[k] = isMaxMergeKey(k) ? Math.max(existing[k] ?? 0, v) : (existing[k] ?? 0) + v;
     }
   } else {
     map.set(channelKey, { ...deltas });
   }
 }
 
-/** Check if this event should get a seq stamp (product entity create/update). */
+/** Check if this event should get a sequence stamp (product entity create/update). */
 function isStampable(tableMeta: TableMeta, action: ActivityAction, h: CountsHierarchy): boolean {
   return tableMeta.kind === 'entity' && h.isProduct(tableMeta.type) && (action === 'create' || action === 'update');
 }
@@ -79,39 +99,32 @@ function isStampable(tableMeta: TableMeta, action: ActivityAction, h: CountsHier
 
 /**
  * Compute a unified delta plan for a batch of CDC events.
- * Reserves seq ranges per (channelKey, entityType), accumulates all count deltas.
+ * Reserves one org-sequence range per organization (all product entity types share the
+ * sequence; WAL order within the batch is preserved), accumulates all count deltas.
+ * Frontier (`f:`) deltas are emitted at apply time, once sequence values are assigned.
  */
 export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHierarchy = hierarchy): BatchUnifiedDeltaPlan {
   const countDeltasByChannelKey = new Map<string, Record<string, number>>();
-  const seqGroupMap = new Map<string, SeqGroup>();
-  const entityStamps: BatchUnifiedDeltaPlan['entityStamps'] = [];
+  const orgSequenceGroupMap = new Map<string, OrgSequenceGroup>();
 
   for (const event of events) {
     const { tableMeta, activity, rowData } = event.result;
     const { action } = activity;
 
-    // Seq grouping (product entity create/update only)
+    // Sequence grouping (product entity create/update only): one group per organization.
     if (isStampable(tableMeta, action, h)) {
-      const entityType = tableMeta.type;
-      const ctxKey = resolveChannelKey(entityType, rowData, activity, h);
-      const groupKey = `${ctxKey}\0${entityType}`;
-
-      const existing = seqGroupMap.get(groupKey);
+      const orgKey = activity.organizationId;
+      if (!orgKey) {
+        throw new Error(
+          `No organization for ${tableMeta.type} row ${rowData.id}: the hierarchy model requires an organization ancestor`,
+        );
+      }
+      const existing = orgSequenceGroupMap.get(orgKey);
       if (existing) {
         existing.count++;
         existing.events.push(event);
       } else {
-        const sKey = `s:${entityType}`;
-        seqGroupMap.set(groupKey, {
-          channelKey: ctxKey,
-          seqKey: sKey,
-          count: 1,
-          orgSignal: activity.organizationId && ctxKey !== activity.organizationId
-            ? { orgKey: activity.organizationId, seqKey: sKey, count: 0 }
-            : null,
-          events: [event],
-          tableName: getTableName(tableMeta.table),
-        });
+        orgSequenceGroupMap.set(orgKey, { orgKey, count: 1, events: [event] });
       }
     }
 
@@ -122,13 +135,5 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHiera
     }
   }
 
-  // Finalize seq groups: set correct counts for org signals
-  const seqGroups = Array.from(seqGroupMap.values());
-  for (const group of seqGroups) {
-    if (group.orgSignal) {
-      group.orgSignal.count = group.count;
-    }
-  }
-
-  return { seqGroups, countDeltasByChannelKey, entityStamps };
+  return { orgSequenceGroups: Array.from(orgSequenceGroupMap.values()), countDeltasByChannelKey };
 }

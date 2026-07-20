@@ -9,7 +9,7 @@ import * as cacheOps from './cache-ops';
 import { enqueueRange } from './lazy-sync-scheduler';
 import * as membershipOps from './membership-ops';
 import { propagateEmbeddings } from './propagation';
-import { getSyncPriority } from './sync-priority';
+import { getSyncTier } from './sync-priority';
 import type { AppStreamNotification } from './types';
 
 /**
@@ -23,6 +23,10 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
     syncSpanNames.messageProcess,
     { entityType: notification.entityType, action, entityId: subjectId, _trace },
     () => {
+      // Checked before setOrgTenantId creates the entry: an org the sync store has never
+      // seen means the SSE connection is not registered on its channel.
+      const isUnknownOrg = !!organizationId && !useSyncStore.getState().orgs[organizationId];
+
       // Store tenantId in sync store whenever we see it in a notification
       if (organizationId && tenantId) {
         useSyncStore.getState().setOrgTenantId(organizationId, tenantId);
@@ -31,6 +35,13 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       // Membership changes use targeted query invalidation, not the seq sync path.
       if (notification.kind === 'membership') {
         handleMembershipNotification(action, organizationId, channelType);
+        // A self-membership in a NEW org arrives on the user channel; the connection is not
+        // registered on that org channel, so reconnect to re-register and catch up on it.
+        // (Dynamic import: stream-store imports this module for its config.)
+        if (action === 'create' && isUnknownOrg) {
+          console.debug('[handleAppStreamNotification] Membership in unknown org, reconnecting stream');
+          void import('./stream-store').then((m) => m.appStreamManager.reconnect());
+        }
         return;
       }
 
@@ -136,8 +147,10 @@ function handleEntityNotification(
     return;
   }
 
-  // Determine fetch priority based on entityConfig ancestors and current route
-  const priority = getSyncPriority({ entityType, entityId, organizationId });
+  // The two paths without synced rows (hard delete, seq-less fallback) derive their
+  // invalidation/fetch decision from the same tier system the scheduler uses: viewing tier
+  // acts now, background/muted defers to next access.
+  const isViewing = getSyncTier(entityType, organizationId, channelId).min === 0;
 
   switch (action) {
     case 'create':
@@ -161,7 +174,7 @@ function handleEntityNotification(
         break;
       }
 
-      if (priority === 'low') {
+      if (!isViewing) {
         // Mark stale only, refetch on next access
         cacheOps.invalidateEntityDetail(entityId, keys, 'none');
         cacheOps.invalidateEntityListForOrg(keys, organizationId, 'none');
@@ -188,11 +201,20 @@ function handleEntityNotification(
       // so mark the detail stale and invalidate the org-scoped list to reconcile, consistent
       // with the catchup count-integrity invalidation flow. Covers single and batch deletes.
       cacheOps.invalidateEntityDetail(entityId, keys, 'none');
-      cacheOps.invalidateEntityListForOrg(keys, organizationId, priority === 'low' ? 'none' : 'active');
+      cacheOps.invalidateEntityListForOrg(keys, organizationId, isViewing ? 'active' : 'none');
       applyHardDeleteUnseen(entityType, entityId, channelId);
       if (propagation) propagateEmbeddings(propagation);
       break;
+
+    case 'moveOut':
+      // The row left this subscriber's readable scope (reparent): the server sends this
+      // ONLY when the new location is not readable here, so no delta fetch will ever
+      // return the row. The notification is the removal. Treat it like a tombstone:
+      // drop the row from lists/detail and correct unseen counts.
+      cacheOps.removeEntity(entityType, entityId, organizationId);
+      applyHardDeleteUnseen(entityType, entityId, channelId);
+      break;
   }
 
-  console.debug(`[handleEntityNotification] ${entityType}:${action} priority=${priority}`);
+  console.debug(`[handleEntityNotification] ${entityType}:${action} viewing=${isViewing}`);
 }

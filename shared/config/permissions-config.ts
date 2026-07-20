@@ -24,7 +24,8 @@ export const { accessPolicies, publicReadGrants } = configurePermissions(
         break;
       case 'attachment':
         contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-        contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
+        // 'own': members manage what they created; admins manage everything
+        contexts.organization.member({ create: 1, read: 1, update: 'own', delete: 'own' });
         break;
     }
   },

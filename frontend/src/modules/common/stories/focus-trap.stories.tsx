@@ -417,8 +417,8 @@ export const ShouldHandleMiddleElementFocus: Story = {
     const container = canvasElement.querySelector<HTMLElement>('[data-focus-guard]')!.parentElement!;
 
     await step('interior buttons stay natively tabbable (tabindex 0)', async () => {
-      // Real Tab between interior elements can't be simulated headless. Assert the invariant that enables native
-      // mid-trap tabbing: every child button stays in the natural tab order and the trap never
+      // Real Tab between interior elements can't be simulated headless. Assert the condition that
+      // enables native mid-trap tabbing: every child button stays in the natural tab order and the trap never
       // rewrites their tabindex while active.
       for (const btn of buttons) expect(btn.tabIndex).toBe(0);
     });

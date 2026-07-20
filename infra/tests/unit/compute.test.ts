@@ -5,13 +5,13 @@ import { describe, expect, it } from 'vitest'
 const computeSource = readFileSync(resolve(__dirname, '../../resources/compute.ts'), 'utf-8')
 const composeEnvSource = readFileSync(resolve(__dirname, '../../resources/compose-env.ts'), 'utf-8')
 const generationsSource = readFileSync(resolve(__dirname, '../../resources/generations.ts'), 'utf-8')
-// Most invariants are about the compute stack as a whole, independent of which
+// Most checks cover the compute stack as a whole, independent of which
 // of the three files a pattern lives in.
 const source = computeSource + composeEnvSource + generationsSource
 
 // Static checks pin structural compute contracts without rendering Pulumi.
 // Scope: closed ingress, VM reader credentials, immutable generations, registry wiring.
-describe('compute module source invariants', () => {
+describe('compute module source contracts', () => {
   it('SecurityGroup defaults to drop on ingress', () => {
     expect(source).toMatch(/inboundDefaultPolicy:\s*['"]drop['"]/)
   })

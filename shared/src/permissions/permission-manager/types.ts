@@ -87,7 +87,7 @@ export interface PermissionCheckOptions {
   /** The acting user's ID. Required when evaluating `'own'` policies (implicit owner relation). */
   userId?: string;
   /**
-   * Subject-level public read grants to evaluate. The `checkPermission` wrapper injects the
+   * Subject-level public read grants to evaluate. The `checkAccess*` wrappers inject the
    * configured grants; pass explicitly only when driving the engine with synthetic policies
    * (tests).
    *
@@ -98,7 +98,7 @@ export interface PermissionCheckOptions {
    * Grant scoping for PRODUCT subjects: roles listed here have subtree-scoped grants
    * (their context and everything below); all other roles speak only for rows HOMED at
    * their grant's context level. `undefined` (default) keeps every grant subtree-scoped
-   *. The template behavior. Injected by the `checkPermission` wrapper like `publicGrants`.
+   *. The template behavior. Injected by the `checkAccess*` wrappers like `publicGrants`.
    *
    * @see shared/config/permissions-config.ts
    */

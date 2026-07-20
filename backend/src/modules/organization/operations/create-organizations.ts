@@ -26,7 +26,7 @@ export async function createOrganizationsOp(ctx: AuthContext, rawItems: CreateOr
   // Count existing organizations in tenant
   const existingOrgsCount = await countOrgsInTenant(ctx, tenantId);
 
-  // 1 tenant = 1 organization. A hard structural invariant (unique index on
+  // 1 tenant = 1 organization. A hard structural constraint (unique index on
   // organizations.tenant_id is the backstop), so it binds system admins too, unlike the soft
   // per-tenant org quota below: a tenant holds at most one org, and a batch creates at most one.
   const tenantOrgSlots = Math.max(0, 1 - existingOrgsCount);
@@ -35,7 +35,7 @@ export async function createOrganizationsOp(ctx: AuthContext, rawItems: CreateOr
   const orgQuota = ctx.var.tenant.restrictions.quotas.organization;
   const quotaSlots = orgQuota === 0 ? items.length : orgQuota - existingOrgsCount;
 
-  // The 1:1 invariant clamps everyone (incl. system admins) down to the single remaining slot.
+  // The 1:1 constraint limits everyone (incl. system admins) to the single remaining slot.
   const availableSlots = Math.min(isSystemAdmin ? items.length : quotaSlots, tenantOrgSlots);
 
   // No slots: the tenant already has its one org, or (non-admins) the soft quota is exhausted.

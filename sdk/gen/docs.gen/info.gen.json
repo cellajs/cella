@@ -63,6 +63,11 @@
           "name": "passkeyChallenge",
           "description": "Max 30 passkey challenges/hour per IP"
         },
+        "syncReadLimiter": {
+          "name": "syncRead",
+          "description": "Max 5000 sync-driven reads/hour per user (delta lists, unseen counts)"
+        },
+        "streamConnectLimiter": { "name": "streamConnect", "description": "Max 240 SSE stream connects/hour per user" },
         "pointsLimiter": {
           "name": "points",
           "description": "Consumes 1 API point(s) per request against per-tenant hourly budget"

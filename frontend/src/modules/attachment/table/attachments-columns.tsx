@@ -2,7 +2,7 @@ import { UserIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
-import { seenWindowMs } from 'shared';
+import { resolvePermission, seenWindowMs } from 'shared';
 import { DownloadCell, EllipsisCell, ThumbnailCell } from '~/modules/attachment/table/attachment-cells';
 import { EditCellInput } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
@@ -10,11 +10,12 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { EnrichedChannelEntity } from '~/modules/entities/types';
 import { SeenMark } from '~/modules/seen/seen-mark';
 import { UserCell } from '~/modules/user/user-cell';
+import { useUserStore } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
 import { formatBytes } from '~/utils/format-bytes';
 
-/** Views are only counted inside the seen ledger's retention window; older rows read 0. */
+/** Views are only counted inside the unseen-count retention window; older rows read 0. */
 const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
   if (!createdAt) return false;
 
@@ -32,6 +33,11 @@ export const useColumns = (channelEntity: EnrichedChannelEntity, isSheet: boolea
   // owner check per row on save. Per-entity affordances resolve `'own'` via
   // `useResolveCan` (~/modules/entities/use-resolve-can); this table-level case is the exception.
   const canUpdate = !!channelEntity.can?.attachment?.update;
+
+  // Per-row delete resolves 'own' against the row's creator (resolvePermission is what
+  // useResolveCan wraps; used directly here so the memo can depend on plain values).
+  const deleteState = channelEntity.can?.attachment?.delete;
+  const userId = useUserStore((state) => state.user?.id);
 
   const columns: ColumnOrColumnGroup<Attachment>[] = useMemo(
     () => [
@@ -80,7 +86,13 @@ export const useColumns = (channelEntity: EnrichedChannelEntity, isSheet: boolea
         name: '',
         maxBreakpoint: 'sm',
         width: 32,
-        renderCell: ({ row, tabIndex }) => <EllipsisCell row={row} tabIndex={tabIndex} />,
+        renderCell: ({ row, tabIndex }) => (
+          <EllipsisCell
+            row={row}
+            tabIndex={tabIndex}
+            canDelete={resolvePermission(deleteState, row.createdBy?.id ?? null, userId)}
+          />
+        ),
       },
       {
         key: 'filename',
@@ -164,7 +176,7 @@ export const useColumns = (channelEntity: EnrichedChannelEntity, isSheet: boolea
           row.updatedBy && <UserCell compactable user={row.updatedBy} tabIndex={tabIndex} />,
       },
     ],
-    [canUpdate, isSheet],
+    [canUpdate, deleteState, userId, isSheet],
   );
 
   return columns;

@@ -1,29 +1,12 @@
 # ChannelEntity rename migration
 
-Renames the **channel entity** concept (membership-scoped entities that host
-products — `organization`, `project`, …) to **channel entity**, unifying
-vocabulary with the sync engine's stream channels (routing keys like `org:abc`
-are already root channel-entity ids). Upstream cella arrives already migrated;
-this runs the same sweep on fork-specific code so a `cella-cli pull` sees
-identical renames on both sides and conflicts stay minimal.
+Renames the **context entity** concept (membership-scoped entities that host products — `organization`, `project`, …) to **channel entity**, unifying vocabulary with the sync engine's stream channels (routing keys like `org:abc` are already root channel-entity ids). Upstream cella arrives already migrated; this runs the same sweep on fork-specific code so a `cella-cli pull` sees identical renames on both sides and conflicts stay minimal.
 
 ## What it changes
 
-`context-to-channel.ts` rewrites an explicit **allow-list** of identifiers
-(word-boundary matched, case preserving — `ContextEntityType→ChannelEntityType`,
-`contextType→channelType`, `context_counters→channel_counters`, …), the
-`'context'` entity-kind / OpenAPI-tag string literal, the `.context()`
-builder/contract method → `.channel()`, and the kebab stems of renamed files in
-import paths.
+`context-to-channel.ts` rewrites an explicit **allow-list** of identifiers (word-boundary matched, case preserving — `ContextEntityType→ChannelEntityType`, `contextType→channelType`, `context_counters→channel_counters`, …), the `'context'` entity-kind / OpenAPI-tag string literal, the `.context()` builder/contract method → `.channel()`, and the kebab stems of renamed files in import paths.
 
-It deliberately does **not** touch unrelated "context": `AuthContext`,
-`DbContext`, trace/span context, tenant context, Hono request `Context` /
-`ContextVariableMap`, `ContextMenu`, React `createContext`/`useContext`, canvas
-`getContext`, MCP. (The full allow-list is the `IDENTIFIERS` array in the
-script. Add fork-specific channel-entity identifiers via
-`--extra-identifiers <file>` — a fork-owned JSON array of strings, merged into
-the allow-list for the run — never by editing the script, which would conflict
-on the next sync.)
+It deliberately does **not** touch unrelated "context": `AuthContext`, `DbContext`, trace/span context, tenant context, Hono request `Context` / `ContextVariableMap`, `ContextMenu`, React `createContext`/`useContext`, canvas `getContext`, MCP. (The full allow-list is the `IDENTIFIERS` array in the script. Add fork-specific channel-entity identifiers via `--extra-identifiers <file>` — a fork-owned JSON array of strings, merged into the allow-list for the run — never by editing the script, which would conflict on the next sync.)
 
 ## Run it
 
@@ -40,11 +23,10 @@ pnpm exec tsx cella/migrations/2026-07-channel-entity-rename/context-to-channel.
 
 Then, by hand:
 
-1. **Rename files** (the codemod already rewrote the import paths that point at
-   them, so do these with `git mv`):
+1. **Rename files** (the codemod already rewrote the import paths that point at them, so do these with `git mv`):
 
    | old | new |
-   |---|---|
+   | --- | --- |
    | `shared/src/config-builder/resolve-row-context.ts` | `…/resolve-row-channel.ts` |
    | `shared/src/config-builder/tests/resolve-row-context.test.ts` | `…/resolve-row-channel.test.ts` |
    | `cdc/src/utils/context-columns.ts` | `…/channel-columns.ts` |
@@ -61,26 +43,13 @@ Then, by hand:
 
    Fork-added `*context*` files follow the same pattern.
 
-2. **i18n keys** — the codemod skips JSON: rename `features.context_entities` /
-   `entity_buckets.context_entities` → `channel_entities` in your locales (and
-   any fork keys), updating the display copy too.
+2. **i18n keys** — the codemod skips JSON: rename `features.context_entities` / `entity_buckets.context_entities` → `channel_entities` in your locales (and any fork keys), updating the display copy too.
 
-3. **Docs / prose** — the codemod only touches identifiers; sweep "context
-   entity" → "channel entity" prose in your own docs.
+3. **Docs / prose** — the codemod only touches identifiers; sweep "context entity" → "channel entity" prose in your own docs.
 
 4. **Regenerate the SDK**: `pnpm sdk`.
 
-5. **DB migration** — the schema *sources* now emit `channel_*` (columns
-   `context_type/context_id → channel_type/channel_id`, table
-   `context_counters → channel_counters`, `context_key → channel_key`, indexes +
-   constraints, plus the RLS / immutability / counter-function / unlogged SQL).
-   Run `pnpm generate` and answer **"rename"** to the drizzle-kit
-   column/table/index prompts (renames, not drop+create — the stored values are
-   entity-type names, so no row rewrite), then apply (`pnpm migrate`, or wipe a
-   local dev DB with `docker compose -f backend/compose.yaml down -v` and
-   `pnpm seed`). Postgres `RENAME` follows object OIDs, so
-   policies/triggers survive; function bodies that name the tables in text are
-   re-emitted by the same `pnpm generate`.
+5. **DB migration** — the schema _sources_ now emit `channel_*` (columns `context_type/context_id → channel_type/channel_id`, table `context_counters → channel_counters`, `context_key → channel_key`, indexes + constraints, plus the RLS / immutability / counter-function / unlogged SQL). Run `pnpm generate` and answer **"rename"** to the drizzle-kit column/table/index prompts (renames, not drop+create — the stored values are entity-type names, so no row rewrite), then apply (`pnpm migrate`, or wipe a local dev DB with `docker compose -f backend/compose.yaml down -v` and `pnpm seed`). Postgres `RENAME` follows object OIDs, so policies/triggers survive; function bodies that name the tables in text are re-emitted by the same `pnpm generate`.
 
 ## Gates
 
@@ -89,6 +58,4 @@ pnpm exec biome check --write .
 pnpm ts
 ```
 
-Backend integration tests fail until the DB migration is applied (they insert
-`channel_type` into a DB whose schema still has `context_type`). The codemod is
-idempotent: `inventory` on already-migrated code reports zero changes.
+Backend integration tests fail until the DB migration is applied (they insert `channel_type` into a DB whose schema still has `context_type`). The codemod is idempotent: `inventory` on already-migrated code reports zero changes.

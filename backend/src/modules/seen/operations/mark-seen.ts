@@ -19,7 +19,7 @@ export const trackedEntityTypes = appConfig.seenTrackedEntityTypes;
 const trackedEntityTypeSet = new Set<string>(trackedEntityTypes);
 
 /** 90-day rolling window; older entities are ignored for seen/unseen tracking. Single source in
- * `shared` so the client-side unseen ledger mirrors the same window. */
+ * `shared` so client-side unseen tracking uses the same window. */
 export { seenWindowMs };
 
 /** Type guard: narrows a product entity type to a seen-tracked entity type */

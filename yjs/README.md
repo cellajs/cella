@@ -125,17 +125,17 @@ The sweep deliberately queries pool-direct **without RLS context** (it must see 
 
 ## Durability
 
-The durability model has three layers. The **Y.Doc** is the live truth while a session runs: every connected client holds a complete copy. The **relay's Postgres row** provides session continuity (3 s debounced save, kept 5 min after the last leave). The **entity's `description` column** is the durable record. Since the relay itself materializes it, the record converges **by construction**: no client has to survive, flush, or behave for typed content to reach the database. The remaining loss window is the relay's own 3 s save debounce, and only when clients *and* relay die inside it.
+The durability model has three layers. The **Y.Doc** is the live truth while a session runs: every connected client holds a complete copy. The **relay's Postgres row** provides session continuity (3 s debounced save, kept 5 min after the last leave). The **entity's `description` column** is the durable record. Since the relay itself materializes it, the record converges **by construction**: no client has to survive, flush, or behave for typed content to reach the database. The remaining loss window is the relay's own 3 s save debounce, and only when clients _and_ relay die inside it.
 
 | Scenario | How it's handled | Worst case |
-|----------|------------------|------------|
+| --- | --- | --- |
 | Two people type in the same paragraph | Character-level CRDT merge; both edits survive | None |
 | **Type, then refresh/close/kill the tab instantly** | Irrelevant to durability: the relay materializes within ~3 s regardless of any client's fate | None |
 | Author closes the editor normally | Cache-only optimistic summary renders instantly; the relay's materialization lands via SSE moments later | None |
 | Network drops mid-session | Editor falls back to solo mode (REST + offline queue); the relay materializes whatever the session had | None |
 | Backend down while people edit | Materialization retries every save window; session cleanup is **blocked** until the durable record absorbs the session | Summary lags until the backend recovers; content is never lost |
-| Relay restarts mid-session | Clients hold complete docs, reconnect, re-push; the boot sweep materializes crash-orphaned sessions | ≤3 s window lost only if relay *and* all clients die together |
-| Relay unreachable for one user while others collaborate | That user edits solo via REST; the collab session's next materialization supersedes their description version | Known rarity: solo edits made *during* an active collab session don't enter the shared doc |
+| Relay restarts mid-session | Clients hold complete docs, reconnect, re-push; the boot sweep materializes crash-orphaned sessions | ≤3 s window lost only if relay _and_ all clients die together |
+| Relay unreachable for one user while others collaborate | That user edits solo via REST; the collab session's next materialization supersedes their description version | Known rarity: solo edits made _during_ an active collab session don't enter the shared doc |
 | Untrusted media URL injected into the Y.Doc | Backend sanitizes (blanks the URL) and persists; materialization never wedges on validation | Offending media renders empty |
 | Entity deleted / permission revoked mid-session | Materialization returns permanent-failure; cleanup proceeds without resurrecting | None |
 | SSE update arrives while someone is editing | Yjs-owned fields are stripped from incoming SSE writes while an editor is registered | None |
@@ -144,7 +144,7 @@ The durability model has three layers. The **Y.Doc** is the live truth while a s
 
 ## Constraints
 
-- **Live collaboration is process-local.** Sessions, pending state, and peer broadcast all live in one process's memory. Two clients connected to *different* relay instances for the same entity do not see each other's edits live, and their debounced saves overwrite each other (last write wins). The code guarantees safety of the durable record across instances (idempotent materialization, HLC LWW, `ON CONFLICT` seeding), not live convergence. **Run a single instance, or route all connections for an entity to the same instance (sticky/entity-affinity routing).**
+- **Live collaboration is process-local.** Sessions, pending state, and peer broadcast all live in one process's memory. Two clients connected to _different_ relay instances for the same entity do not see each other's edits live, and their debounced saves overwrite each other (last write wins). The code guarantees safety of the durable record across instances (idempotent materialization, HLC LWW, `ON CONFLICT` seeding), not live convergence. **Run a single instance, or route all connections for an entity to the same instance (sticky/entity-affinity routing).**
 - **One doc per entity.** The room key and the `yjs_documents` unique key are both entity type + id; nothing supports multiple docs per entity.
 - **No server-side history.** Storage is a merged snapshot; anything needing per-edit history must live client-side.
 - **Fragment and schema lockstep.** The Y.Doc fragment name (`document-store`) and the server-side BlockNote schema must match the frontend editor binding and the shared schema configs, or seeds stop round-tripping.
@@ -162,7 +162,7 @@ The HTTP server starts before backend readiness checks so the platform sees the 
 Worker-side knobs only: client-side knobs (connection grace, solo-fallback timeout, token TTL/refresh, token circuit breaker) live in the frontend and are covered in [Sync engine](/docs/page/architecture/sync-engine).
 
 | Knob | Value | Where |
-|------|-------|-------|
+| --- | --- | --- |
 | State save + materialize debounce | 3 s | `src/constants.ts` |
 | Doc grace after last leave (also the materialize-retry interval) | 5 min | `src/constants.ts` |
 | Awareness rate limit | 2/s per client | `src/constants.ts` |
@@ -175,7 +175,7 @@ Worker-side knobs only: client-side knobs (connection grace, solo-fallback timeo
 Validated in `src/env.ts` (loads the backend's `.env`):
 
 | Variable | Purpose |
-|----------|---------|
+| --- | --- |
 | `DATABASE_URL` | Postgres connection (RLS-scoped reads + `yjs_documents` writes) |
 | `DATABASE_SSL_CA` | Base64 PEM CA to verify Postgres TLS; required in production |
 | `YJS_SECRET` | HMAC secret for WS tokens and the `x-yjs-secret` materialize header (min 16 chars) |

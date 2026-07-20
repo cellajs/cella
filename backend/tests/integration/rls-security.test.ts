@@ -916,7 +916,7 @@ const rlsSuiteReady = await (async () => {
     });
   });
 
-  // ---- CDC seq stamping invariant ----
+  // ---- CDC seq stamping under FORCE RLS ----
   // Regression test: the CDC worker runs as admin_role (no app.tenant_id set)
   // and must be able to UPDATE seq on product entity rows under FORCE RLS.
   // Without BYPASSRLS on the connecting role, the tenant SELECT policy hides

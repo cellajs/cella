@@ -55,8 +55,8 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.seqGroups).toHaveLength(0);
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:admin': 1, 'm:total': 1, 's:membership': 1 });
+    expect(plan.orgSequenceGroups).toHaveLength(0);
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:admin': 1, 'm:total': 1, 'membership': 1 });
   });
 
   it('membership delete: decrements role + total', () => {
@@ -68,7 +68,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:member': -1, 'm:total': -1, 's:membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:member': -1, 'm:total': -1, 'membership': 1 });
   });
 
   it('membership update (role change): swaps role counts', () => {
@@ -81,7 +81,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:member': -1, 'm:admin': 1, 's:membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:member': -1, 'm:admin': 1, 'membership': 1 });
   });
 
   it('inactive membership create (pending): increments pending count', () => {
@@ -93,7 +93,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:pending': 1, 's:membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:pending': 1, 'membership': 1 });
   });
 
   it('inactive membership update (rejected): decrements pending', () => {
@@ -106,7 +106,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:pending': -1, 's:membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:pending': -1, 'membership': 1 });
   });
 });
 
@@ -124,20 +124,17 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    // One seq group for (org-1, attachment)
-    expect(plan.seqGroups).toHaveLength(1);
-    expect(plan.seqGroups[0].channelKey).toBe('org-1');
-    expect(plan.seqGroups[0].seqKey).toBe('s:attachment');
-    expect(plan.seqGroups[0].count).toBe(5);
-    expect(plan.seqGroups[0].events).toHaveLength(5);
-
-    // ctx === org → no separate org signal
-    expect(plan.seqGroups[0].orgSignal).toBeNull();
+    // One sequence group per organization (all product types share the org sequence)
+    expect(plan.orgSequenceGroups).toHaveLength(1);
+    expect(plan.orgSequenceGroups[0].orgKey).toBe('org-1');
+    expect(plan.orgSequenceGroups[0].count).toBe(5);
+    expect(plan.orgSequenceGroups[0].events).toHaveLength(5);
 
     // Count deltas: accumulated across all 5 events on org, plus one activity stamp
     // (rows carry no createdAt here, so the stamp falls back to Date.now())
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
       'e:attachment': 5,
+      'es:attachment': 5,
       'li:attachment': expect.any(Number),
     });
   });
@@ -160,11 +157,11 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    expect(plan.seqGroups).toHaveLength(0);
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2 });
+    expect(plan.orgSequenceGroups).toHaveLength(0);
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2, 'es:attachment': -2 });
   });
 
-  it('batch of attachment soft deletes: seq group and count deltas accumulated', () => {
+  it('batch of attachment soft deletes: sequence group and count deltas accumulated', () => {
     const events = [
       mockEvent({
         tableMeta: attachmentEntry(),
@@ -182,14 +179,13 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    expect(plan.seqGroups).toHaveLength(1);
-    expect(plan.seqGroups[0].channelKey).toBe('org-1');
-    expect(plan.seqGroups[0].seqKey).toBe('s:attachment');
-    expect(plan.seqGroups[0].count).toBe(2);
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2 });
+    expect(plan.orgSequenceGroups).toHaveLength(1);
+    expect(plan.orgSequenceGroups[0].orgKey).toBe('org-1');
+    expect(plan.orgSequenceGroups[0].count).toBe(2);
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2, 'es:attachment': -2 });
   });
 
-  it('no channelKey is duplicated across seq groups', () => {
+  it('one sequence group per organization, never duplicated', () => {
     const events = Array.from({ length: 3 }, (_, i) =>
       mockEvent({
         tableMeta: attachmentEntry(),
@@ -200,8 +196,9 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    const seqChannelKeys = plan.seqGroups.map((g) => g.channelKey);
-    expect(new Set(seqChannelKeys).size).toBe(seqChannelKeys.length);
+    const orgKeys = plan.orgSequenceGroups.map((g) => g.orgKey);
+    expect(new Set(orgKeys).size).toBe(orgKeys.length);
+    expect(orgKeys).toHaveLength(3);
   });
 });
 
@@ -220,6 +217,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
       'e:attachment': 1,
+      'es:attachment': 1,
       'li:attachment': createdAtMs,
     });
   });
@@ -241,6 +239,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
       'e:attachment': 2,
+      'es:attachment': 2,
       'li:attachment': Date.parse(laterCreatedAt),
     });
   });
@@ -273,6 +272,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
       'e:attachment': 1,
+      'es:attachment': 1,
       'li:attachment': Date.parse(publishedAt),
     });
   });
@@ -320,7 +320,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1, 'es:attachment': -1 });
   });
 
   it('restore does not stamp either (remapped create is not a new post)', () => {
@@ -333,109 +333,61 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': 1, 'es:attachment': 1 });
   });
 });
 
-describe('draft lifecycle count deltas (publishedAt)', () => {
+// The publication row filter (`published_at IS NOT NULL`) rewrites draft transitions at
+// decode time: publish arrives as INSERT, unpublish as DELETE carrying the old row, plain
+// draft edits never arrive (parse-message.ts guard). These tests exercise events AS DELIVERED.
+describe('draft lifecycle count deltas (publication row filter delivery)', () => {
   const createdAt = '2026-07-01T10:00:00.000Z';
   const publishedAt = '2026-07-04T09:00:00.000Z';
 
-  it('a draft create counts nothing and stamps nothing, but still reserves a seq', () => {
+  it('a publish edge arrives as INSERT: counts as a create and stamps li: from publishedAt', () => {
     const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null },
-      }),
-    ]);
-
-    expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
-    expect(plan.seqGroups).toHaveLength(1); // drafts keep create-time seqs
-  });
-
-  it('draft-internal edits count nothing', () => {
-    const plan = computeBatchUnifiedDeltas([
-      mockEvent({
-        tableMeta: attachmentEntry(),
-        action: 'update',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, updatedAt: '2026-07-02T10:00:00.000Z', publishedAt: null, deletedAt: null },
-        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: null },
-      }),
-    ]);
-
-    expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
-  });
-
-  it('the publish edge counts as a create and stamps li: from publishedAt', () => {
-    const plan = computeBatchUnifiedDeltas([
-      mockEvent({
-        tableMeta: attachmentEntry(),
-        action: 'update',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, updatedAt: publishedAt, publishedAt, deletedAt: null },
-        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: null },
       }),
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
       'e:attachment': 1,
+      'es:attachment': 1,
       'li:attachment': Date.parse(publishedAt),
     });
+    expect(plan.orgSequenceGroups).toHaveLength(1);
   });
 
-  it('unpublish counts as a delete and stamps nothing', () => {
-    const plan = computeBatchUnifiedDeltas([
-      mockEvent({
-        tableMeta: attachmentEntry(),
-        action: 'update',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: null },
-        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
-      }),
-    ]);
-
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1 });
-  });
-
-  it('hard-deleting a draft counts nothing (it was never counted)', () => {
+  it('an unpublish arrives as DELETE with the old published row: counts as a delete, stamps nothing', () => {
+    // CDC deletes snapshot the OLD row into rowData (oldRowData is null).
     const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),
         action: 'delete',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null },
-        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null },
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1, 'es:attachment': -1 });
   });
 
-  it('soft-deleting a draft counts nothing (outside the countable set on both sides)', () => {
+  it('publishing a trashed row arrives as INSERT with deletedAt set: counts nothing', () => {
     const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),
-        action: 'update',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: '2026-07-03T10:00:00.000Z' },
-        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: null },
-      }),
-    ]);
-
-    expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
-  });
-
-  it('publishing a trashed row counts nothing (deletedAt still excludes it)', () => {
-    const plan = computeBatchUnifiedDeltas([
-      mockEvent({
-        tableMeta: attachmentEntry(),
-        action: 'update',
+        action: 'create',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: '2026-07-03T10:00:00.000Z' },
-        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt: null, deletedAt: '2026-07-03T10:00:00.000Z' },
       }),
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toBeUndefined();
+    expect(plan.orgSequenceGroups).toHaveLength(1); // still sequence-stamped (tombstone is delta-fetchable)
   });
 
-  it('soft-deleting a PUBLISHED row still decrements (the two dimensions compose)', () => {
+  it('soft-deleting a PUBLISHED row stays an UPDATE and still decrements (the two dimensions compose)', () => {
     const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),
@@ -445,6 +397,19 @@ describe('draft lifecycle count deltas (publishedAt)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1, 'es:attachment': -1 });
+  });
+
+  it('restoring a PUBLISHED row from trash re-counts it but does not stamp li: (old content)', () => {
+    const plan = computeBatchUnifiedDeltas([
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: '2026-07-05T10:00:00.000Z' },
+      }),
+    ]);
+
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': 1, 'es:attachment': 1 });
   });
 });

@@ -1,15 +1,19 @@
+import { getTableName } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import format from 'pg-format';
+import { hierarchy } from 'shared';
+import type { AncestorSource } from 'shared';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
-import type { BatchUnifiedDeltaPlan } from './compute-unified-deltas';
-import { isActivityStampKey } from './update-counts';
+import { type BatchUnifiedDeltaPlan, frontierNodeKeys, mergeDelta } from './compute-unified-deltas';
+import { isMaxMergeKey } from './update-counts';
 
 // ── Counter upsert ───────────────────────────────────────────────────────────
 
 /**
  * UPSERT a single channel_counters row using the apply_count_deltas PG function.
- * The function merges JSONB deltas with GREATEST(0, existing + delta) per key.
+ * The function merges JSONB deltas with GREATEST(0, existing + delta) per key
+ * (max-merge for `li:`/`lu:`/`f:` keys).
  *
  * Fixed SQL shape enables PostgreSQL plan caching across repeated executions.
  */
@@ -53,9 +57,9 @@ async function mergedUpsert(
 
 /**
  * Add each source delta into `target` in place, summing on key collision.
- * `li:`/`lu:` keys are epoch-ms activity stamps, not deltas: collisions keep the max
- * (summing two timestamps would jump far into the future and never heal, since
- * apply_count_deltas only moves stamp keys forward). Exported for tests.
+ * Max-merge keys (`li:`/`lu:` stamps, `f:` frontiers) keep the max
+ * (summing two timestamps or frontiers would corrupt them, since
+ * apply_count_deltas only moves those keys forward). Exported for tests.
  */
 export function sumInto(
   target: Record<string, number>,
@@ -63,7 +67,7 @@ export function sumInto(
 ): Record<string, number> {
   if (source) {
     for (const [k, v] of Object.entries(source)) {
-      target[k] = isActivityStampKey(k) ? Math.max(target[k] ?? 0, v) : (target[k] ?? 0) + v;
+      target[k] = isMaxMergeKey(k) ? Math.max(target[k] ?? 0, v) : (target[k] ?? 0) + v;
     }
   }
   return target;
@@ -72,50 +76,71 @@ export function sumInto(
 /**
  * Apply a unified delta plan for a batch of CDC events. Mutates
  * `event.result.rowData.seq` for each stampable event.
+ *
+ * Phase 1 reserves one contiguous org-sequence range per organization
+ * (`sequence` via RETURNING) and assigns values to events in WAL order.
+ * All product entity types share the sequence, so WAL commit order IS sequence
+ * order. Phase 2 then writes frontier (`f:{type}`) marks at every
+ * ancestor node, the remaining count deltas, and the row seq stamp-backs.
  */
-export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan): Promise<void> {
-  const { seqGroups, countDeltasByChannelKey, entityStamps: _stamps } = plan;
+export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: AncestorSource = hierarchy): Promise<void> {
+  const { orgSequenceGroups, countDeltasByChannelKey } = plan;
 
   const handledChannelKeys = new Set<string>();
   const allEntityStamps: Array<{ tableName: string; id: string; seq: number }> = [];
+  /** f: (and org-row leftovers) accumulated for phase 2, keyed by channel node. */
+  const phase2Deltas = new Map<string, Record<string, number>>();
 
-  // Phase 1: Sequential UPSERT per seq group (need RETURNING for each)
-  for (const group of seqGroups) {
-    // Merge seq deltas with any count deltas for this channelKey
-    const mergedDeltas = sumInto({ [group.seqKey]: group.count }, countDeltasByChannelKey.get(group.channelKey));
-    handledChannelKeys.add(group.channelKey);
+  // Phase 1: one sequential RETURNING UPSERT per organization sequence.
+  for (const group of orgSequenceGroups) {
+    // Merge the sequence reservation with any count deltas for the org row itself.
+    const mergedDeltas = sumInto({ 'sequence': group.count }, countDeltasByChannelKey.get(group.orgKey));
+    handledChannelKeys.add(group.orgKey);
 
-    const counts = await mergedUpsert(group.channelKey, mergedDeltas, true);
-    const highSeq = counts[group.seqKey] ?? group.count;
+    const counts = await mergedUpsert(group.orgKey, mergedDeltas, true);
+    const highSeq = counts['sequence'] ?? group.count;
     const baseSeq = highSeq - group.count;
 
     for (let i = 0; i < group.events.length; i++) {
       const seq = baseSeq + i + 1;
-      const entityId = group.events[i].result.rowData.id;
-      group.events[i].result.rowData.seq = seq;
-      allEntityStamps.push({ tableName: group.tableName, id: entityId, seq });
+      const { tableMeta, activity, rowData } = group.events[i].result;
+      rowData.seq = seq;
+      allEntityStamps.push({ tableName: getTableName(tableMeta.table), id: rowData.id, seq });
+
+      // Frontier rollups. Every stamped event bumps: the publication row filter keeps
+      // drafts out of the stream (publish arrives as INSERT, unpublish as DELETE with
+      // the old row, both delta-fetchable), so the stream IS the synced world and
+      // `count` on messages is exactly fetchable rows. A draft that slips past a
+      // missing filter is dropped at the entrance guard (parse-message.ts).
+      // Subtree: f:{type} max-merged at the org and every non-null ancestor.
+      const nodes = frontierNodeKeys(tableMeta.type, rowData, activity.organizationId ?? group.orgKey, h);
+      const frontierKey = `f:${tableMeta.type}`;
+      for (const node of nodes) {
+        mergeDelta(phase2Deltas, node, { [frontierKey]: seq });
+      }
+      // Self: fs:{type} at the HOME node only (deepest non-null ancestor, org fallback).
+      // Answers self views (rows homed at the node), mirroring the li:/lu: placement rule.
+      // frontierNodeKeys order is [org, mostSpecific, …, nearRoot], so home is nodes[1] ?? org.
+      const home = nodes[1] ?? nodes[0] ?? group.orgKey;
+      mergeDelta(phase2Deltas, home, { [`fs:${tableMeta.type}`]: seq });
     }
 
-    // Org signal: merge with any count deltas for the org
-    if (group.orgSignal) {
-      const orgMerged = sumInto({ [group.orgSignal.seqKey]: group.orgSignal.count }, countDeltasByChannelKey.get(group.orgSignal.orgKey));
-      handledChannelKeys.add(group.orgSignal.orgKey);
-      await mergedUpsert(group.orgSignal.orgKey, orgMerged);
-    }
-
-    log.trace('Batch seq stamped', {
-      entityType: group.seqKey.replace('s:', ''),
+    log.trace('Batch sequence stamped', {
+      orgKey: group.orgKey,
       count: group.count,
       baseSeq: baseSeq + 1,
       highSeq,
     });
   }
 
-  // Phase 2: Remaining count UPSERTs + bulk entity stamp, all in parallel
-  const phase2: Promise<void>[] = [];
-
+  // Phase 2: frontier marks + remaining count UPSERTs + bulk entity stamp, all in parallel.
   for (const [channelKey, deltas] of countDeltasByChannelKey) {
     if (handledChannelKeys.has(channelKey)) continue;
+    mergeDelta(phase2Deltas, channelKey, deltas);
+  }
+
+  const phase2: Promise<void>[] = [];
+  for (const [channelKey, deltas] of phase2Deltas) {
     phase2.push(mergedUpsert(channelKey, deltas));
   }
 

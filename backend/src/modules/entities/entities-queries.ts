@@ -28,6 +28,8 @@ export const findChannelCountersByKeys = async ({ var: { db } }: DbContext, keys
     .select({
       channelKey: channelCountersTable.channelKey,
       counts: channelCountersTable.counts,
+      // Canonical id-path (CDC-maintained): lets catchup verify claimed view ancestry.
+      path: channelCountersTable.path,
     })
     .from(channelCountersTable)
     .where(inArray(channelCountersTable.channelKey, keys));
@@ -157,7 +159,7 @@ export const DELETE_ENUMERATE_CAP = 200;
 /**
  * Scan product entity delete activities after a cursor (app stream), capped at
  * `DELETE_ENUMERATE_CAP + 1` so the caller can detect overflow and fall back to list invalidation.
- * Membership changes are excluded here and detected via the `s:membership` seq counter, so
+ * Membership changes are excluded here and detected via the `membership` seq counter, so
  * membership churn never consumes the delete budget.
  */
 export const findDeleteActivities = async (

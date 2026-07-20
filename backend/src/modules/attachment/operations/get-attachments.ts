@@ -13,14 +13,14 @@ import { actorFrom } from '#/permissions/actor';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getOrderColumn } from '#/utils/order-column';
-import { seqCursorFilters } from '#/utils/seq-cursor';
+import { pathPrefixFilter, seqCursorFilters } from '#/utils/seq-cursor';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
 type GetAttachmentsInput = z.infer<typeof attachmentListQuerySchema>;
 
 export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsInput) {
   const organizationId = ctx.var.organization.id;
-  const { q, sort, order, limit, offset, seqCursor } = input;
+  const { q, sort, order, limit, offset, seqCursor, pathPrefix } = input;
 
   // Resolve the caller's readable scope (unconditional grants + row-conditional slices,
   // e.g. `read: 'own'`) and compile it to a single row predicate. Attachments live
@@ -51,8 +51,11 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   const publishedOnly = publishedRowsPredicate(attachmentsTable);
   if (publishedOnly) filters.push(publishedOnly);
 
-  // Sequence-based delta sync filter
+  // Sequence-based delta sync filter (org-sequence values)
   filters.push(...seqCursorFilters(attachmentsTable.seq, seqCursor));
+
+  // Subtree placement narrowing (feed loads); the permission WHERE above still applies.
+  filters.push(...pathPrefixFilter(attachmentsTable.path, pathPrefix));
 
   if (q?.trim()) {
     const queryToken = prepareStringForILikeFilter(q.trim());
@@ -82,7 +85,7 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   // Where `total` comes from: delta reads discard it; an org-wide read with no search maps
   // to the pre-computed `e:attachment` channel counter; anything narrower needs COUNT(*).
   const isDelta = !!seqCursor;
-  const counterEligible = !isDelta && scopeWhere.kind === 'all' && !q?.trim();
+  const counterEligible = !isDelta && scopeWhere.kind === 'all' && !q?.trim() && !pathPrefix;
 
   const { rawItems, total } = await read(ctx, async (readCtx) => {
     const { db } = readCtx.var;

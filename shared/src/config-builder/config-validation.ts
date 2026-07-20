@@ -42,7 +42,7 @@ void _productTypesMatch1;
 void _productTypesMatch2;
 
 
-// The unseen ledger requires unconditional channel reads for tracked types.
+// Unseen tracking requires unconditional channel reads for tracked types.
 // Conditional visibility must keep endpoint-based counting.
 for (const entityType of appConfig.seenTrackedEntityTypes) {
   for (const policy of getSubjectPolicies(entityType as ProductEntityType, accessPolicies)) {

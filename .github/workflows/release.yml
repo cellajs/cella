@@ -2,8 +2,13 @@ name: Release
 
 # release-please maintains a "release PR" per package from Conventional Commits.
 # Merging that PR bumps the version, updates the CHANGELOG, creates the git tag
-# and publishes the GitHub Release. When a release is cut, the `release-gate` job
-# runs heavy security + e2e checks before production deploy starts.
+# and publishes the GitHub Release. Publishing that Release triggers the Deploy
+# workflow (deploy.yml, `on: release`), which runs the heavy release-gate and
+# then rolls out to production.
+#
+# This workflow only ever runs release-please bookkeeping, so every push to main
+# produces a small, uniform run. The heavy gate + production deploy live in the
+# separate Deploy action, which appears only when a release is actually cut.
 #
 # Add a new releasable package by adding an entry to .github/release-please-config.json
 # and .github/release-please-manifest.json. No workflow changes needed.
@@ -24,8 +29,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    outputs:
-      releases-created: ${{ steps.release.outputs.releases_created }}
     steps:
       # Mint a short-lived token from the cella release GitHub App. Using an App
       # token (not the default GITHUB_TOKEN) lets the release PR be created AND
@@ -44,78 +47,3 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           config-file: .github/release-please-config.json
           manifest-file: .github/release-please-manifest.json
-
-  # Release-only gate: heavy security + e2e checks that we don't want on every
-  # feature PR. Production deploy is called only after this passes.
-  # Runs only when a release was actually cut this push.
-  release-gate:
-    needs: release-please
-    if: ${{ needs.release-please.outputs.releases-created == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    permissions:
-      contents: read
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version: 24
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Security audit (high+ severity)
-        run: pnpm audit --audit-level=high
-
-      - name: Create .env files
-        run: |
-          cp ./backend/.env.example ./backend/.env
-          cp ./frontend/.env.example ./frontend/.env
-
-      - name: Install Playwright browsers
-        run: cd frontend && pnpm exec playwright install
-
-      - name: Generate OpenAPI spec
-        run: pnpm sdk
-
-      - name: Run database migrations
-        run: pnpm --filter backend push
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
-
-      - name: Run tests (full mode)
-        run: pnpm test:full
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
-
-  deploy-production:
-    needs: [release-please, release-gate]
-    if: ${{ always() && needs.release-please.outputs.releases-created == 'true' && needs.release-gate.result == 'success' }}
-    permissions:
-      contents: read
-      deployments: write
-    uses: ./.github/workflows/deploy.yml
-    with:
-      environment: production
-    secrets: inherit

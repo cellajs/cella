@@ -14,7 +14,7 @@ vi.mock('./cache-ops', () => ({
 const getSyncTier = vi.fn();
 vi.mock('./sync-priority', () => ({
   getSyncTier: (...a: unknown[]) => getSyncTier(...a),
-  isViewingScope: () => false,
+  isViewingChannel: () => false,
 }));
 const propagateEmbeddings = vi.fn();
 vi.mock('./propagation', () => ({ propagateEmbeddings: (...a: unknown[]) => propagateEmbeddings(...a) }));
@@ -24,6 +24,10 @@ const ingestSyncedRows = vi.fn();
 vi.mock('~/modules/seen/unseen-sync', () => ({ ingestSyncedRows: (...a: unknown[]) => ingestSyncedRows(...a) }));
 vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-client' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
+const resolveChannelPath = vi.fn((_channelType: string | null, _channelId: string): string | null => null);
+vi.mock('./view-declaration', () => ({
+  resolveChannelPath: (...a: [string | null, string]) => resolveChannelPath(...a),
+}));
 
 // Node test env has no document/window; stub them (before importing query-client, which attaches
 // online listeners at load) so installListeners wires the promote-on-observe path.
@@ -73,7 +77,7 @@ describe('lazy-sync-scheduler', () => {
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
   });
 
-  it('flushes viewing-tier scopes immediately (single events keep live behavior)', async () => {
+  it('flushes viewing-tier channel views immediately (single events keep live behavior)', async () => {
     getSyncTier.mockReturnValue(VIEWING);
     enqueueRange({ ...base, fromSeq: 3, untilSeq: 3 });
 
@@ -83,7 +87,7 @@ describe('lazy-sync-scheduler', () => {
     expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('3,3');
   });
 
-  it('records the known seq but never fetches for muted scopes', async () => {
+  it('records the known seq but never fetches for muted channel views', async () => {
     getSyncTier.mockReturnValue(ON_OPEN);
     enqueueRange({ ...base, channelId: 'project-9', fromSeq: 4, untilSeq: 7 });
 
@@ -102,7 +106,7 @@ describe('lazy-sync-scheduler', () => {
     expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('5,8');
   });
 
-  it('org-homed scopes (wire channelId === orgId) share ONE watermark slot with catchup', async () => {
+  it('org-homed channel views (wire channelId === orgId) share ONE watermark slot with catchup', async () => {
     // Catchup advanced the org slot; the live notification carries channelId = orgId.
     useSyncStore.getState().setOrgSeq('org-1', 'attachment', 6);
     enqueueRange({ ...base, channelId: 'org-1', fromSeq: 3, untilSeq: 9 });
@@ -179,11 +183,51 @@ describe('lazy-sync-scheduler', () => {
     expect(fetchRangeAndPatch).not.toHaveBeenCalled();
   });
 
-  it('flushes a pending scope when its channel gains an observer (catch-up-on-open without navigation)', async () => {
+  it('covers all due channels of one org with ONE fetch and advances each to the shared bound', async () => {
+    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 0);
+    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
+    enqueueRange({ ...base, channelId: 'proj-b', fromSeq: 9, untilSeq: 12 });
+
+    await flushAllNow();
+
+    // One merged org fetch covers both channels; rows route by home during patch.
+    expect(fetchRangeAndPatch).toHaveBeenCalledTimes(1);
+    expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('5,12');
+    // Per-view advance accounting: both channels advance to the covered upper bound.
+    expect(useSyncStore.getState().getChannelSeq('org-1', 'proj-a', 'attachment')).toBe(12);
+    expect(useSyncStore.getState().getChannelSeq('org-1', 'proj-b', 'attachment')).toBe(12);
+  });
+
+  it('narrows the covering fetch with a pathPrefix when every due channel resolves a path', async () => {
+    resolveChannelPath.mockImplementation((_type, channelId) =>
+      channelId === 'proj-a' ? 'org-1/course-1/proj-a' : 'org-1/course-1/proj-b',
+    );
+    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
+    enqueueRange({ ...base, channelId: 'proj-b', fromSeq: 9, untilSeq: 12 });
+
+    await flushAllNow();
+
+    // Common true ancestor of both projects: the course subtree.
+    expect(fetchRangeAndPatch.mock.calls[0][5]).toBe('org-1/course-1');
+  });
+
+  it('widens to the whole org when any due channel path is unknown', async () => {
+    resolveChannelPath.mockImplementation((_type, channelId) =>
+      channelId === 'proj-a' ? 'org-1/course-1/proj-a' : null,
+    );
+    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
+    enqueueRange({ ...base, channelId: 'proj-b', fromSeq: 9, untilSeq: 12 });
+
+    await flushAllNow();
+
+    expect(fetchRangeAndPatch.mock.calls[0][5]).toBeUndefined();
+  });
+
+  it('flushes a pending channel view when its channel gains an observer (catch-up-on-open without navigation)', async () => {
     enqueueRange({ ...base, fromSeq: 5, untilSeq: 8 }); // background tier: waits for the spread slot
     expect(fetchRangeAndPatch).not.toHaveBeenCalled();
 
-    // The scope's view mounts: its list query gains an observer and the tier turns live.
+    // The channel view's view mounts: its list query gains an observer and the tier turns live.
     getSyncTier.mockReturnValue(VIEWING);
     const observer = new QueryObserver(queryClient, {
       queryKey: ['attachment', 'list', 'org-1'],

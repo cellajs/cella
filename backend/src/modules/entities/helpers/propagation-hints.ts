@@ -2,7 +2,8 @@ import { appConfig, type EntityType } from 'shared';
 import type { DbContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
 import { findChangedEntityDeltaIds } from '#/modules/entities/entities-queries';
-import type { AppCatchupResponse, CatchupChangeSummary } from '#/schemas';
+import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
+import type { AppCatchupResponse, CatchupChangeSummary, CatchupView } from '#/schemas';
 
 const dbCtx: DbContext = { var: { db } };
 
@@ -18,37 +19,50 @@ for (const embedding of appConfig.entityEmbeddings) {
 }
 
 /**
- * Build propagation hints for each org's change summary.
- * Source entity changes, including soft-delete tombstones, tell the client which
- * host entity types need to refetch embedded data.
+ * Build propagation hints for each org's change summary. Sequence-driven: a source
+ * type changed for a client when the org's `f:{sourceType}` rollup exceeds the
+ * client's org-view cursor (from the declared views); the changed source ids come
+ * from an org-wide `seq > cursor` delta-id read, including soft-delete tombstones
+ * (returned as removal hints).
  */
 export async function buildPropagationHints(
   changes: AppCatchupResponse['changes'],
-  clientSeqs?: Record<string, number>,
+  views?: CatchupView[],
+  orgCounters?: Map<string, Record<string, number> | null>,
 ): Promise<void> {
   const sourceTypes = Object.keys(propagationTargets) as EntityType[];
-  if (sourceTypes.length === 0) return;
+  if (sourceTypes.length === 0 || !views?.length) return;
+
+  // Org-view cursors per (org, sourceType) from the declared views.
+  const cursorFor = new Map<string, number>();
+  for (const view of views) {
+    for (const entityType of view.entityTypes) {
+      const key = `${view.organizationId}:${entityType}`;
+      cursorFor.set(key, Math.min(cursorFor.get(key) ?? Number.POSITIVE_INFINITY, view.cursor));
+    }
+  }
 
   for (const [organizationId, scope] of Object.entries(changes)) {
     const hints: CatchupChangeSummary['propagation'] = [];
+    const { frontiers } = parseCounterCounts(orgCounters?.get(organizationId));
 
     for (const sourceType of sourceTypes) {
       const targets = propagationTargets[sourceType];
       if (!targets?.length) continue;
 
-      const serverSeq = scope.entitySeqs?.[sourceType];
-      const clientSeq = clientSeqs?.[`${organizationId}:s:${sourceType}`] ?? 0;
-      const seqDelta = (serverSeq ?? 0) - clientSeq;
+      const clientCursor = cursorFor.get(`${organizationId}:${sourceType}`);
+      // No declared view (source type not synced by this client) or no baseline yet.
+      if (clientCursor === undefined || clientCursor === 0) continue;
 
-      if (seqDelta <= 0) continue;
+      const frontier = frontiers[sourceType] ?? 0;
+      if (frontier <= clientCursor) continue;
 
-      let updatedIds: string[] = [];
-      let deletedIds: string[] = [];
-      if (seqDelta > 0 && clientSeq > 0) {
-        const changes = await findChangedEntityDeltaIds(dbCtx, sourceType, organizationId, clientSeq);
-        updatedIds = changes.updatedIds;
-        deletedIds = changes.deletedIds;
-      }
+      const { updatedIds, deletedIds } = await findChangedEntityDeltaIds(
+        dbCtx,
+        sourceType,
+        organizationId,
+        clientCursor,
+      );
 
       for (const target of targets) {
         if (updatedIds.length > 0 || deletedIds.length > 0) {

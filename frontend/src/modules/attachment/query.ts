@@ -1,8 +1,10 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { infiniteQueryOptions, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import i18n from 'i18next';
 import { type Attachment, type GetAttachmentsData, getAttachment, getAttachments } from 'sdk';
 import { zAttachment } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
+import { selectRecentActivity } from '~/modules/attachment/helpers/activity-feed';
 import {
   type CreateAttachmentInput,
   type CreateAttachmentVars,
@@ -14,6 +16,7 @@ import {
   updateAttachmentMutationFn,
 } from '~/modules/attachment/query-mutations';
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { cacheCreate, cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
@@ -24,7 +27,8 @@ import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/invalidation-helpers';
 import { syncStaleTime } from '~/query/basic/sync-stale-config';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import { squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
+import { removePausedCreates, squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
+import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
 import { mergeServerResponse, syncEntityToCache } from '~/query/offline/update-success-utils';
 import { getRouteOrgId, getRouteTenantId } from '~/query/realtime/sync-priority';
 import { createResourceError } from '~/utils/resource-error';
@@ -42,10 +46,10 @@ const keys = {
       ['attachment', 'list', organizationId, filters] as const,
   },
 };
-registerEntityQueryKeys('attachment', keys, (organizationId, tenantId, seqCursor) => {
+registerEntityQueryKeys('attachment', keys, (organizationId, tenantId, seqCursor, pathPrefix) => {
   return getAttachments({
     path: { tenantId: tenantId!, organizationId: organizationId! },
-    query: { seqCursor, limit: String(SYNC_CHUNK_SIZE) },
+    query: { seqCursor, pathPrefix, limit: String(SYNC_CHUNK_SIZE) },
   });
 });
 export const attachmentQueryKeys = keys;
@@ -94,7 +98,7 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
 };
 
 /**
- * Canonical attachment query: one flat home list per org (keys.list.home — attachments are
+ * Canonical attachment query: one flat home list per org (keys.list.home, since attachments are
  * org-homed), fetching all its attachments. Consumers derive views via select() for groupId
  * filtering. Sync (SSE + delta fetch) keeps it fresh; staleTime follows sync liveness.
  */
@@ -128,6 +132,22 @@ export const attachmentQueryOptions = (tenantId: string, organizationId: string,
 });
 
 export const findAttachmentInCache = createCacheFinder<Attachment>('attachment');
+
+/**
+ * Org-level "recent activity" feed, the template proof of the view pattern: an aggregate
+ * feed is a SELECT over the canonical home-list query, not an endpoint. Rows from every home
+ * channel in the org interleave by recency, and sync (SSE + covering delta fetches) keeps the
+ * underlying list fresh. Forks with deeper hierarchies get sub-org feeds the same way: the
+ * grant-boundary views declared from memberships provide the change detection, the canonical
+ * queries provide the rows, and a select like this provides the feed.
+ */
+export function useAttachmentActivityFeed(tenantId: string, organizationId: string, limit = 20) {
+  const { data } = useQuery({
+    ...attachmentsCanonicalOptions({ organizationId, tenantId }),
+    select: (data) => selectRecentActivity(data.items, limit),
+  });
+  return data ?? [];
+}
 
 /** Get all attachments matching a groupId, subscribes to canonical query. */
 export function useGroupAttachments(
@@ -187,13 +207,14 @@ export const useAttachmentCreateMutation = (tenantId: string, organizationId: st
     },
   });
 
-  // Inject org context so persisted variables replay correctly after a reload; callers pass just the data.
+  // Inject org context AND stx so persisted variables replay correctly after a reload with
+  // the ORIGINAL mutation id and timestamps (D4); callers pass just the data.
   return {
     ...mutation,
     mutate: (data: CreateAttachmentInput, options?: Parameters<typeof mutation.mutate>[1]) =>
-      mutation.mutate({ tenantId, organizationId, data }, options),
+      mutation.mutate({ tenantId, organizationId, data, stx: createStxForCreate() }, options),
     mutateAsync: (data: CreateAttachmentInput, options?: Parameters<typeof mutation.mutateAsync>[1]) =>
-      mutation.mutateAsync({ tenantId, organizationId, data }, options),
+      mutation.mutateAsync({ tenantId, organizationId, data, stx: createStxForCreate() }, options),
   };
 };
 
@@ -203,20 +224,19 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
 
   const mutation = useMutation({
     mutationKey: keys.update,
+    // Same scope as create/delete: attachment writes serialize, so an update squashed past a
+    // paused create can never replay before it (D6).
+    scope: { id: 'attachment' },
     mutationFn: updateAttachmentMutationFn,
+    // Squash/coalesce happens in the wrapped mutate() below, BEFORE this mutation exists, so
+    // the request variables carry the merge; onMutate keeps only cache work.
     onMutate: async ({ id, ops }: UpdateAttachmentFullVars) => {
-      // If there's a pending create for this entity, fold update ops into it
-      if (squashIntoPendingCreate(queryClient, keys.create, id, ops as Record<string, unknown>)) {
-        return { coalesced: true };
-      }
-
-      const mergedOps = squashPendingMutation(queryClient, keys.update, id, ops as Record<string, unknown>);
       await queryClient.cancelQueries({ queryKey: orgKey });
       await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 
       const previousAttachment = findAttachmentInCache(id);
       if (previousAttachment) {
-        const optimisticAttachment = { ...previousAttachment, ...mergedOps, updatedAt: new Date().toISOString() };
+        const optimisticAttachment = { ...previousAttachment, ...ops, updatedAt: new Date().toISOString() };
         cacheUpdate(orgKey, [optimisticAttachment]);
         queryClient.setQueryData(keys.detail.byId(id), optimisticAttachment);
       }
@@ -243,12 +263,44 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
     },
   });
 
+  /**
+   * Pre-mutation squash/coalesce (D1/D2): runs before the mutation exists, so nothing
+   * self-matches and the REQUEST carries the merge. Returns null when the edit was folded
+   * into a paused create: the create replays with the merged fields and no update mutation
+   * is issued; the optimistic row is patched here since onMutate never runs.
+   */
+  const prepareUpdate = ({ id, ops }: UpdateAttachmentVars): UpdateAttachmentFullVars | null => {
+    if (squashIntoPendingCreate(queryClient, keys.create, id, ops as Record<string, unknown>)) {
+      const cached = findAttachmentInCache(id);
+      if (cached) {
+        const optimisticAttachment = { ...cached, ...ops, updatedAt: new Date().toISOString() };
+        cacheUpdate(orgKey, [optimisticAttachment]);
+        queryClient.setQueryData(keys.detail.byId(id), optimisticAttachment);
+      }
+      return null;
+    }
+    const mergedOps = squashPendingMutation(queryClient, keys.update, id, ops as Record<string, unknown>);
+    // stx minted at intent time and carried in variables (D4): a replay reuses the original
+    // mutation id and HLCs, never restamping at execution.
+    return {
+      tenantId,
+      organizationId,
+      id,
+      ops: mergedOps,
+      stx: createStxForUpdate(Object.keys(mergedOps)),
+    };
+  };
+
   return {
     ...mutation,
-    mutate: (vars: UpdateAttachmentVars, options?: Parameters<typeof mutation.mutate>[1]) =>
-      mutation.mutate({ tenantId, organizationId, ...vars }, options),
-    mutateAsync: (vars: UpdateAttachmentVars, options?: Parameters<typeof mutation.mutateAsync>[1]) =>
-      mutation.mutateAsync({ tenantId, organizationId, ...vars }, options),
+    mutate: (vars: UpdateAttachmentVars, options?: Parameters<typeof mutation.mutate>[1]) => {
+      const prepared = prepareUpdate(vars);
+      if (prepared) mutation.mutate(prepared, options);
+    },
+    mutateAsync: async (vars: UpdateAttachmentVars, options?: Parameters<typeof mutation.mutateAsync>[1]) => {
+      const prepared = prepareUpdate(vars);
+      return prepared ? mutation.mutateAsync(prepared, options) : undefined;
+    },
   };
 };
 
@@ -278,18 +330,69 @@ export const useAttachmentDeleteMutation = (tenantId: string, organizationId: st
       handleError('delete');
       if (context?.deletedAttachments) cacheCreate(orgKey, context.deletedAttachments);
     },
+    onSuccess: (result, variables) => {
+      // Partial rejection (200 + rejectedIds): the backend kept permission-denied rows.
+      // Restore them into the cache NOW so they don't silently reappear on the
+      // next sync, and tell the user. (A full rejection arrives as a 403 via onError.)
+      const rejectedIds = result?.rejectedIds ?? [];
+      if (rejectedIds.length === 0) return;
+      const rejectedSet = new Set(rejectedIds);
+      cacheCreate(
+        orgKey,
+        variables.attachments.filter((a) => rejectedSet.has(a.id)),
+      );
+      toaster(
+        i18n.t('c:resources_delete_denied', { count: rejectedIds.length, total: variables.attachments.length }),
+        'info',
+      );
+    },
     // Error-only: onMutate removed the attachment from all caches, SSE handles other users.
     onSettled: (_data, error) => {
       if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, orgKey);
     },
   });
 
+  /**
+   * Pre-mutation create cancellation (D3): rows with a paused create never reached the
+   * server: cancel the create, clear their paused updates, finish their deletion
+   * cache-side, and keep them OUT of the delete request. Returns the rows that still need
+   * a server delete, or null when none do (including the empty-selection edge).
+   */
+  const prepareDelete = (attachments: Attachment[]): Attachment[] | null => {
+    const cancelled = new Set(
+      removePausedCreates(
+        queryClient,
+        keys.create,
+        attachments.map((a) => a.id),
+      ),
+    );
+    if (cancelled.size > 0) {
+      const localOnly = attachments.filter((a) => cancelled.has(a.id));
+      removePendingMutations(
+        queryClient,
+        keys.update,
+        localOnly.map((a) => a.id),
+      );
+      cacheRemove(orgKey, localOnly);
+      for (const { id } of localOnly) queryClient.removeQueries({ queryKey: keys.detail.byId(id) });
+    }
+    const remaining = attachments.filter((a) => !cancelled.has(a.id));
+    return remaining.length > 0 ? remaining : null;
+  };
+
   return {
     ...mutation,
-    mutate: (attachments: Attachment[], options?: Parameters<typeof mutation.mutate>[1]) =>
-      mutation.mutate({ tenantId, organizationId, attachments }, options),
-    mutateAsync: (attachments: Attachment[], options?: Parameters<typeof mutation.mutateAsync>[1]) =>
-      mutation.mutateAsync({ tenantId, organizationId, attachments }, options),
+    mutate: (attachments: Attachment[], options?: Parameters<typeof mutation.mutate>[1]) => {
+      const remaining = prepareDelete(attachments);
+      if (remaining)
+        mutation.mutate({ tenantId, organizationId, attachments: remaining, stx: createStxForDelete() }, options);
+    },
+    mutateAsync: async (attachments: Attachment[], options?: Parameters<typeof mutation.mutateAsync>[1]) => {
+      const remaining = prepareDelete(attachments);
+      return remaining
+        ? mutation.mutateAsync({ tenantId, organizationId, attachments: remaining, stx: createStxForDelete() }, options)
+        : undefined;
+    },
   };
 };
 
