@@ -30,17 +30,19 @@ const isUserSeeded = async () => {
 };
 
 /**
- * Seed an admin user for first-time app access. ADMIN_EMAIL takes precedence when set, otherwise
- * falls back to the fixture default (admin-test@cellajs.com); ADMIN_EMAIL is required in production.
+ * Seed an admin user for first-time app access. Uses ADMIN_EMAIL, which is required in production:
+ * a missing value throws and fails the migrate companion, so production is never left without an
+ * admin. Outside production it falls back to the fixture default (admin-test@cellajs.com). Idempotent:
+ * skips when the users table is already populated.
  */
 export const initSeed = async () => {
-  // Determine admin email: env var takes precedence, then fixture default
-  const adminEmail = env.ADMIN_EMAIL ?? defaultAdminUser.email;
-
-  // In production, ADMIN_EMAIL is required
+  // ADMIN_EMAIL is required in production: throw when it is missing.
   if (isProduction && !env.ADMIN_EMAIL) {
-    return console.error('ADMIN_EMAIL environment variable is required for production seeding.');
+    throw new Error('ADMIN_EMAIL is required for production seeding.');
   }
+
+  // Determine admin email: env var takes precedence, then fixture default (non-production only)
+  const adminEmail = env.ADMIN_EMAIL ?? defaultAdminUser.email;
 
   // Records already exist → skip seeding
   if (await isUserSeeded()) return console.warn('Users table is not empty → skip seeding');
