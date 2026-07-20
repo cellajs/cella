@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.5](https://github.com/cellajs/cella/compare/0.5.4...0.5.5) (2026-07-20)
+
+
+### 🎉 New features
+
+* **infra:** expose/unexpose database publicly via the infra CLI ([#932](https://github.com/cellajs/cella/issues/932)) ([bb1b97e](https://github.com/cellajs/cella/commit/bb1b97e1456f14ccb86142c521210eab5542e640))
+
 ## [0.5.4](https://github.com/cellajs/cella/compare/0.5.3...0.5.4) (2026-07-20)
 
 
