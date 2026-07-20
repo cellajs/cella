@@ -146,7 +146,7 @@ Mandatory columns come from the spread helpers; **do not hand-write them**:
 
 Conventions: `snakeCase.table(...)` maps camelCase fields → snake_case columns automatically; table name is the pluralized type (`note` → `notes`); ids are plain **UUID v7** (time-ordered, no prefixes). You may replace the explicit `organizationId`/`projectId` columns with `...channelRelationColumns('note')` (emits NOT-NULL ancestor id columns from the hierarchy); see [`attachment-db.ts`](../backend/src/modules/attachment/attachment-db.ts).
 
-Which tables get RLS, immutability triggers, the CDC publication, and `REPLICA IDENTITY FULL` is derived from the registry in the next step: 🟢 no per-table wiring for any of those. Read the [RLS extension checklist](./multi_tenancy.md#adding-tables) before introducing an exceptional support or public table.
+Which tables get RLS, immutability triggers, the CDC publication, and `REPLICA IDENTITY FULL` is derived from the registry in the next step: 🟢 no per-table wiring for any of those. Read the [RLS extension checklist](./MULTI_TENANCY.md#adding-tables) before introducing an exceptional support or public table.
 
 ### Step 5: 🔴 Register the table
 
@@ -347,6 +347,6 @@ Channel entities do **not** go through the CDC/SSE product pipeline or the wire-
 - [Architecture](./ARCHITECTURE.md): entity kinds, hierarchy builder, guard chain, data modeling
 - [React Client](./CLIENT.md): canonical queries, persistence, and frontend extension seams
 - [Sync engine](./SYNC_ENGINE.md): the CDC → SSE pipeline product entities plug into
-- [Multi-tenancy](./multi_tenancy.md): scoped reads, write safeguards, and the product-table checklist
+- [Multi-tenancy](./MULTI_TENANCY.md): scoped reads, write safeguards, and the product-table checklist
 - [Schema evolution](./SCHEMA_EVOLUTION.md): the wire/lens system (Step 6) and evolving an entity's shape later
 - [Agent guidelines](./AGENTS.md): routing, guards, permissions, and coding conventions
