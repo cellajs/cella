@@ -5,6 +5,9 @@ Cella is a TypeScript template to collaborative web apps with sync engine for of
 
  Cella is an implementation-ready template with quite some modules and a default entity config. The base config lives in [shared/config/config.default.ts](../shared/config/config.default.ts), with entity hierarchy and roles defined in [shared/config/hierarchy-config.ts](../shared/config/hierarchy-config.ts). Those feed into `appConfig`, which is the main merged runtime config object exposed by shared. Each fork will typically change the underlying config, hierarchy and permissions, so it is important to write entity-agnostic code rather than hardcoding assumptions about the default entity set and their roles. 
 
+## Before you finish
+**Always run `pnpm check` at the repo root after any code change, and only report the work done once it passes clean.** `pnpm check` runs `sdk` regen + typecheck + `lint:fix` — it is the single gate for "is this change sound?". Also run `pnpm generate` if you touched DB schemas. Never claim a change is complete without a clean `pnpm check`; if it fails, fix it or say so explicitly.
+
 ## Architecture
 See [Architecture](/docs/page/architecture) for tech stack, file structure, data modeling, security, and sync/offline design.
 
