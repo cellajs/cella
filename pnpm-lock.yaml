@@ -11,6 +11,11 @@ overrides:
   esbuild@>=0.27.3 <0.28.1: ^0.28.1
   protobufjs@>=8.0.0 <8.4.1: 8.6.5
 
+packageExtensionsChecksum: sha256-EbkdiE+4yJTKyGo02FtjbCIAUmI46E1GxzTUU97RFSE=
+
+patchedDependencies:
+  artillery@2.0.33: c417c250791ed794a3adeac0c699c5c328a924d252303b01cc82858bb1c75fb5
+
 importers:
 
   .:
@@ -370,7 +375,7 @@ importers:
         version: 1.0.5
       artillery:
         specifier: ^2.0.33
-        version: 2.0.33(@types/node@26.1.1)(supports-color@8.1.1)
+        version: 2.0.33(patch_hash=c417c250791ed794a3adeac0c699c5c328a924d252303b01cc82858bb1c75fb5)(@types/node@26.1.1)(supports-color@8.1.1)
       artillery-plugin-ensure:
         specifier: ^1.27.0
         version: 1.27.0
@@ -12781,7 +12786,9 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@artilleryio/sketches-js@2.1.1': {}
+  '@artilleryio/sketches-js@2.1.1':
+    dependencies:
+      protobufjs: 7.6.5
 
   '@asamuzakjp/css-color@3.2.0':
     dependencies:
@@ -19461,7 +19468,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  artillery@2.0.33(@types/node@26.1.1)(supports-color@8.1.1):
+  artillery@2.0.33(patch_hash=c417c250791ed794a3adeac0c699c5c328a924d252303b01cc82858bb1c75fb5)(@types/node@26.1.1)(supports-color@8.1.1):
     dependencies:
       '@artilleryio/int-commons': 2.24.0
       '@artilleryio/int-core': 2.28.0(supports-color@8.1.1)
@@ -19503,6 +19510,7 @@ snapshots:
       debug: 4.4.3(supports-color@8.1.1)
       dotenv: 16.6.1
       driftless: 2.0.3
+      esbuild: 0.28.1
       esbuild-wasm: 0.19.12
       eventemitter3: 5.0.4
       fs-extra: 11.3.5
