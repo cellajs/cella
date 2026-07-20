@@ -64,5 +64,5 @@ While on `0.x` (`bump-minor-pre-major`), breaking changes bump the minor and fea
 
 **Repo settings:**
 
-- `main` ruleset: squash-merge only, linear history, require `pr-title`, `lint`, `test`, `storybook-test`, `schema-bust-gate`. `test` and `storybook-test` run for real only on the release PR and `skip` (pass) on feature PRs, so keeping them required is what blocks merging a release PR whose heavy suites fail.
+- `main` ruleset: squash-merge only, linear history, require `lint`, `test`, `storybook-test`, `schema-bust-gate`. `test` and `storybook-test` run for real only on the release PR and `skip` (pass) on feature PRs, so keeping them required is what blocks merging a release PR whose heavy suites fail.
 - "Allow GitHub Actions to create and approve pull requests" can stay **disabled**: the App, not Actions, creates the release PR.
