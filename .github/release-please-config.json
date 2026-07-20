@@ -12,11 +12,11 @@
     { "type": "refactor", "section": "🔧 Small improvements" },
     { "type": "revert", "section": "⏪ Reverts" },
     { "type": "docs", "section": "📖 Documentation" },
-    { "type": "build", "section": "🏗️ Build & deps", "hidden": true },
-    { "type": "ci", "section": "🏗️ Build & deps", "hidden": true },
-    { "type": "chore", "section": "🧹 Chores", "hidden": true },
-    { "type": "style", "section": "🎨 Styles", "hidden": true },
-    { "type": "test", "section": "🧪 Tests", "hidden": true }
+    { "type": "build", "section": "🏗️ Build & deps" },
+    { "type": "ci", "section": "🏗️ Build & deps" },
+    { "type": "chore", "section": "🧹 Chores" },
+    { "type": "style", "section": "🎨 Styles" },
+    { "type": "test", "section": "🧪 Tests" }
   ],
   "packages": {
     ".": {
