@@ -11,6 +11,7 @@ import { infraDir } from '../lib/utils/paths'
 import { runApply } from './actions/apply'
 import { runPreview } from './actions/preview'
 import { runResetDatabase } from './actions/reset-database'
+import { runExposeDatabase, runUnexposeDatabase } from './actions/db-exposure'
 import { runRotatePassphrase } from './actions/rotate-passphrase'
 import { runSecrets } from './actions/secrets'
 import { runSetup } from './actions/setup'
@@ -105,6 +106,8 @@ const mode: CliMode =
           { name: 'Preview', value: 'preview', description: 'Read-only `pulumi preview`. Validates auth & shows drift; makes no changes.' },
           { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete operator-managed runtime secrets in Scaleway Secret Manager.' },
           { name: 'Reset database', value: 'reset-database', description: 'DESTRUCTIVE: delete + recreate the app database empty (backup first, roles re-granted), then migrate/seed on the serial console. Pre-production, or with services quiesced.' },
+          { name: 'Expose database publicly', value: 'expose-db', description: 'Add a scoped, temporary public DB endpoint (ACL-restricted to your IP) for prototyping/debugging. Prints the admin connection string. Remember to close it.' },
+          { name: 'Stop public DB exposure', value: 'unexpose-db', description: 'Remove the public DB endpoint and ACL, returning the database to private-only access.' },
           { name: 'Unlock', value: 'unlock', description: 'Clear a stale stack lock left by an interrupted apply/deploy. Use only when no run is actually in progress.' },
         ],
       })
@@ -132,6 +135,16 @@ if (mode === 'secrets') {
 
 if (mode === 'reset-database') {
   await runResetDatabase(context)
+  process.exit(0)
+}
+
+if (mode === 'expose-db') {
+  await runExposeDatabase(context)
+  process.exit(0)
+}
+
+if (mode === 'unexpose-db') {
+  await runUnexposeDatabase(context)
   process.exit(0)
 }
 
