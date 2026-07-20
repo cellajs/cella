@@ -33,7 +33,7 @@
 - [Agent guidelines](./cella/AGENTS.md)
 - [Architecture](./cella/ARCHITECTURE.md)
 - [React Client](./cella/CLIENT.md)
-- [Multi-tenancy](./cella/multi_tenancy.md)
+- [Multi-tenancy](./cella/MULTI_TENANCY.md)
 - [Quickstart](./cella/QUICKSTART.md)
 
 ## Requirements

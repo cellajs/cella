@@ -91,7 +91,7 @@ The permission engine lives in `shared/`, so the API and optional Yjs relay make
 
 Row-level security (RLS) is intentionally narrower. It blocks cross-tenant product reads but does not replace application authorization, especially for writes. Channel entities and memberships remain application-authorized and do not use RLS.
 
-Read [Permissions](./PERMISSIONS.md) for contextual roles and row conditions. Read [Multi-tenancy](./multi_tenancy.md) for database scope, write boundaries, and extension rules.
+Read [Permissions](./PERMISSIONS.md) for contextual roles and row conditions. Read [Multi-tenancy](./MULTI_TENANCY.md) for database scope, write boundaries, and extension rules.
 
 ## Contracts and operations
 
@@ -127,7 +127,7 @@ Cella is a flat-root monorepo. The top-level folders reveal the service boundari
 | [React Client](./CLIENT.md) | TanStack Query, IndexedDB, Zustand, startup, and tabs |
 | [Sync engine](./SYNC_ENGINE.md) | Realtime delivery, catchup, offline writes, and guarantees |
 | [Permissions](./PERMISSIONS.md) | Roles, contextual grants, public reads, and row conditions |
-| [Multi-tenancy](./multi_tenancy.md) | Database visibility, write safeguards, and PostgreSQL roles |
+| [Multi-tenancy](./MULTI_TENANCY.md) | Database visibility, write safeguards, and PostgreSQL roles |
 | [Schema evolution](./SCHEMA_EVOLUTION.md) | Changing cached wire shapes across old clients |
 | [Observability](./OTEL.md) | Traces, logs, metrics, health, and shutdown |
 | [CDC worker](../cdc/README.md) | Logical replication and ordered side effects |
