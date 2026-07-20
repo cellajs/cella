@@ -1,5 +1,5 @@
 import { codeBlockOptions } from '@blocknote/code-block';
-import { BlockNoteSchema, createCodeBlockSpec, type Dictionary } from '@blocknote/core';
+import { BlockNoteSchema, createCodeBlockSpec, type Dictionary, defaultStyleSpecs } from '@blocknote/core';
 import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import { codeBlockConfig } from 'shared/utils/blocknote-schema-configs';
@@ -22,9 +22,14 @@ import type {
  *  Basic Configuration
  */
 
+// Drop the color inline styles so pasted content cannot carry hardcoded text/background
+// colors that render invisible against the app theme. The toolbar already hides the color
+// picker (textColorSelect: false), so only bold/italic/underline/strike/code stay reachable.
+const { textColor: _textColor, backgroundColor: _backgroundColor, ...safeStyleSpecs } = defaultStyleSpecs;
+
 // Base custom schema: block/inline configs are shared with the Yjs relay's
 // server-side seeder (shared/blocknote-schema-configs); only renders live here.
-export const customSchema = BlockNoteSchema.create().extend({
+export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs }).extend({
   blockSpecs: {
     checklistItem: checklistItemBlock(),
     notify: notifyBlock(), // Adds Notify block
