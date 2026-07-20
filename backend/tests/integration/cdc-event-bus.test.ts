@@ -131,7 +131,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     });
   });
 
-  it('should stamp attachments.seq and bump channel_counters.s:attachment on UPDATE', async () => {
+  it('should stamp attachments.seq and bump channel_counters.f:attachment on UPDATE', async () => {
     const attachment = {
       ...mockAttachment('cdc-seq-test-attachment'),
       tenantId: testOrg.tenantId,
@@ -143,9 +143,11 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     await db.insert(attachmentsTable).values(attachment);
 
     const counterKey = sql`${testOrg.id}::varchar`;
+    // f:attachment is the attachment frontier (MAX org-sequence position of the type in the
+    // org subtree); it advances by 1 with every stamp and equals the just-stamped row's seq.
     const readCounter = async () => {
       const [row] = await db
-        .select({ s: sql<number>`(${channelCountersTable.counts}->>'s:attachment')::int` })
+        .select({ s: sql<number>`(${channelCountersTable.counts}->>'f:attachment')::int` })
         .from(channelCountersTable)
         .where(eq(channelCountersTable.channelKey, counterKey));
       return row?.s ?? 0;
@@ -195,8 +197,8 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     expect(stamped!.seq, 'seq should be stamped by CDC').toBeGreaterThan(0);
 
     const afterCounter = await readCounter();
-    expect(afterCounter, 'organization s:attachment should advance').toBe(beforeCounter + 1);
-    expect(stamped!.seq, 'attachment.seq should equal new s:attachment').toBe(afterCounter);
+    expect(afterCounter, 'organization f:attachment frontier should advance').toBe(beforeCounter + 1);
+    expect(stamped!.seq, 'attachment.seq should equal new f:attachment frontier').toBe(afterCounter);
 
     // changedFields should be stripped from stx as part of the stamp
     const stx = stamped!.stx as { changedFields?: unknown } | null;
