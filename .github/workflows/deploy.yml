@@ -4,9 +4,11 @@ name: Deploy
 permissions: {}
 
 on:
-  # A published GitHub Release (cut by release-please when the release PR is
-  # merged) triggers a production deploy. The release-gate job below runs the
-  # heavy security + e2e checks first; the rollout proceeds only if it passes.
+  # A published GitHub Release (cut by release-please when its release PR is
+  # merged, see .github/workflows/release.yml) is the only automatic path to a
+  # production deploy. The event runs on the release tag ref (refs/tags/<version>);
+  # print-deploy-env's isAllowedProductionRef accepts tag refs. `inputs.environment`
+  # is empty on this event, so the `|| 'production'` fallbacks below select prod.
   release:
     types: [published]
 
@@ -32,12 +34,15 @@ env:
 
 jobs:
   # -------------------------------------------------------------------------
-  # Release gate: heavy security + e2e checks we deliberately keep off every
-  # feature PR. Runs on a published release and blocks the rollout unless it is
-  # green. Skipped for manual workflow_dispatch (operator takes responsibility).
+  # Release gate: heavy security + e2e checks too expensive to run on every
+  # feature PR. Gates every PRODUCTION deploy: the `release: published` event
+  # (always production) or a manual production dispatch. Skipped for staging
+  # dispatches. If it fails, `setup` is skipped and the whole deploy halts, so
+  # a bad release is published but never rolled out (same as the old chained
+  # release-gate → deploy-production ordering).
   # -------------------------------------------------------------------------
   release-gate:
-    if: github.event_name == 'release'
+    if: ${{ github.event_name == 'release' || inputs.environment == 'production' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -100,10 +105,10 @@ jobs:
   # Determine environment and detect which services changed
   # -------------------------------------------------------------------------
   setup:
+    # Wait on the gate. `skipped` (staging dispatch, gate did not run) is an
+    # acceptable predecessor; only a real gate failure halts the deploy.
     needs: [release-gate]
-    # Proceed when the gate passed (release event) or was skipped (manual
-    # dispatch). A failed gate leaves this (and the whole rollout) skipped.
-    if: ${{ always() && (needs.release-gate.result == 'success' || needs.release-gate.result == 'skipped') }}
+    if: ${{ !cancelled() && (needs.release-gate.result == 'success' || needs.release-gate.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

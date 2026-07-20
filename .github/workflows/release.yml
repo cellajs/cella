@@ -2,13 +2,12 @@ name: Release
 
 # release-please maintains a "release PR" per package from Conventional Commits.
 # Merging that PR bumps the version, updates the CHANGELOG, creates the git tag
-# and publishes the GitHub Release. Publishing that Release triggers the Deploy
-# workflow (deploy.yml, `on: release`), which runs the heavy release-gate and
-# then rolls out to production.
+# and publishes the GitHub Release.
 #
-# This workflow only ever runs release-please bookkeeping, so every push to main
-# produces a small, uniform run. The heavy gate + production deploy live in the
-# separate Deploy action, which appears only when a release is actually cut.
+# Publishing that Release fires a `release: published` event, which the Deploy
+# workflow (.github/workflows/deploy.yml) listens for. That is the ONLY automatic
+# path to a production deploy. Nothing in this file deploys. A normal feature
+# merge to main just refreshes the release PR and does nothing else.
 #
 # Add a new releasable package by adding an entry to .github/release-please-config.json
 # and .github/release-please-manifest.json. No workflow changes needed.
@@ -30,9 +29,11 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      # Mint a short-lived token from the cella release GitHub App. Using an App
-      # token (not the default GITHUB_TOKEN) lets the release PR be created AND
-      # makes it trigger the CI/pr-title checks required for merge.
+      # Mint a short-lived token from the cella release GitHub App. An App token
+      # (not the default GITHUB_TOKEN) is required for two reasons: the release PR
+      # it opens triggers the CI/pr-title checks required for merge, AND the
+      # Release it publishes fires the `release: published` event that starts the
+      # deploy. Events produced by GITHUB_TOKEN never trigger further workflows.
       - name: Generate app token
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
