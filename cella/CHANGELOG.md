@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.4](https://github.com/cellajs/cella/compare/0.5.3...0.5.4) (2026-07-20)
+
+
+### 🐞 Bug fixes
+
+* sw catches all api requests ([#930](https://github.com/cellajs/cella/issues/930)) ([3d6aae8](https://github.com/cellajs/cella/commit/3d6aae89cca5a4d181f5b4d4094c4c3de7657e17))
+
 ## [0.5.3](https://github.com/cellajs/cella/compare/0.5.2...0.5.3) (2026-07-20)
 
 
