@@ -221,7 +221,7 @@
   "integrations.title": "Integrations",
   "pricing.text": "How to build a dedicated & sustainable community around CellaJS? Membership perhaps.",
   "pricing.title": "Pricing (conceptual)",
-  "selective_sync.text": "Many modern, collaborative web apps need a <strong>UI that is instant</strong>, a <strong>real-time sync</strong> to show live data and <strong>the ability to work while offline</strong>. But building this yourself is hard.",
+  "selective_sync.text": "Modern, collaborative web apps need a <strong>UI that is instant</strong>, a <strong>real-time sync</strong> to show live data and <strong>they need to work offline</strong>. Building this is hard work.",
   "selective_sync.title": "A selective sync engine",
   "entity_buckets.channel_entities": "Channel entities",
   "entity_buckets.product_entities": "Product entities",

@@ -35,7 +35,17 @@ precacheAndRoute(self.__WB_MANIFEST);
 // SPA navigations (e.g. a reload on /docs) don't match any precache URL; serve
 // the precached app shell so every route loads offline. generateSW does this
 // automatically. InjectManifest workers must register it themselves.
-registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')));
+//
+// Under the same-origin config the backend is a path prefix on the app origin, so
+// full-page navigations to it (OAuth redirects, file downloads) are same-origin and
+// match this route. Deny the backend prefix so those navigations reach the network
+// and follow their real 3xx response. Cross-origin backends never match a
+// NavigationRoute, so an empty denylist is the correct no-op there.
+const apiPathPrefix = new URL(__BACKEND_URL__, self.location.origin).pathname.replace(/\/+$/, '');
+const navigationDenylist = apiPathPrefix
+  ? [new RegExp(`^${apiPathPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`)]
+  : [];
+registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: navigationDenylist }));
 
 // Cache runtime docs data after its first visit so the section works offline.
 // Stale-while-revalidate refreshes these non-content-hashed files after each deploy.

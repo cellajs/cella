@@ -267,12 +267,12 @@ viteConfig.plugins?.push(
       theme_color: '#222222',
       icons: [
         {
-          src: '/static/common/icons/faviicon-192x192.png',
+          src: '/static/common/icons/favicon-192x192.png',
           sizes: '192x192',
           type: 'image/png',
         },
         {
-          src: '/static/common/icons/faviicon-512x512.png',
+          src: '/static/common/icons/favicon-512x512.png',
           sizes: '512x512',
           type: 'image/png',
           purpose: 'any',
