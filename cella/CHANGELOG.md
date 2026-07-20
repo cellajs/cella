@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.3](https://github.com/cellajs/cella/compare/0.5.2...0.5.3) (2026-07-20)
+
+
+### 🎉 New features
+
+* seed system admin from ADMIN_EMAIL in the migrate companion ([#928](https://github.com/cellajs/cella/issues/928)) ([4b4a5a1](https://github.com/cellajs/cella/commit/4b4a5a1b4cccc098fd92a0ba705514e950d36e92))
+
 ## [0.5.2](https://github.com/cellajs/cella/compare/0.5.1...0.5.2) (2026-07-20)
 
 
