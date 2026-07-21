@@ -11,7 +11,7 @@ import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
 /**
  * Dispatch-shaped benchmark for the engine's access-class collapse, sized after the
- * measured constraint in .todos/SYNC_FANOUT_OPTIMIZATION.md: one busy org, thousands of
+ * measured hot-org constraint: one busy org, thousands of
  * subscribers on `org:<id>`, single-row and CDC-collapsed batch events. Compares
  * per-subscriber eligibility (independent `checkAccess` batch-of-1 calls, no collapse)
  * against the batch path dispatch actually uses (`rowReadDecisions`: one `checkAccess`

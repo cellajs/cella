@@ -48,7 +48,7 @@ Backend enforces everything: org admins get full CRUD, members create/read ( `sh
 
 ## Known gaps
 
-The full analysis is in `.todos/ATTACHMENTS_REFACTOR.md`; what is still open, in rough order of user impact:
+What is still open, in rough order of user impact:
 
 - **Failed uploads are a dead end.** `processPendingUploads` only selects `pending`, so a `failed` blob is never retried and no UI offers retry or discard. The backoff bookkeeping it would need (`nextRetryAt`, `uploadAttempts`, `localBlobStorage.uploadRetryAttempts`) is written on every failure and read by nobody. Downloads got their retry (see above); uploads still need theirs.
 - **Delete affordances ignore permissions.** Members see delete buttons the backend will reject; only inline rename checks `can.attachment.update`, and the upload button is gated by a route-level hardcoded `canUpload = true`. The backend's `splitByPermission` returns `rejectedIds` that the frontend discards, so a denied row disappears optimistically and returns on next sync.

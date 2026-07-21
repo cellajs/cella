@@ -33,7 +33,7 @@ export const attachmentsTable = snakeCase.table(
   (table) => [
     index('attachments_organization_id_index').on(table.organizationId),
     // Delta-sync reads filter organization_id + a seq range and order by seq: this composite
-    // turns the SSE fan-out stampede's list reads into an index range scan (see .todos/SYNC_FANOUT_OPTIMIZATION.md).
+    // turns the SSE fan-out stampede's list reads into an index range scan.
     index('attachments_organization_id_seq_index').on(table.organizationId, table.seq),
     index('attachments_tenant_id_index').on(table.tenantId),
     index('attachments_created_by_index').on(table.createdBy),
