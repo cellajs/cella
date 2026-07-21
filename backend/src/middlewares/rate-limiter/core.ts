@@ -52,7 +52,8 @@ export const slowOptions = {
  *   identifier or a fallback chain (see {@link RateLimitKeyPart}).
  * @param opts - Optional configuration: limits, name, and description.
  * @returns Middleware handler for rate limiting.
- * @link https://github.com/animir/node-rate-limiter-flexible#readme
+ *
+ * @see https://github.com/animir/node-rate-limiter-flexible#readme
  */
 export const rateLimiter = (
   mode: RateLimitMode,
