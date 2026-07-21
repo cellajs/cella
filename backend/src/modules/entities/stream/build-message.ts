@@ -8,19 +8,19 @@ import type { AppStreamEvent, AppStreamMembershipEvent } from './types';
 /** ~20ms of client spread per online org subscriber: 10 users → near-instant, 3000 → ~60s. */
 const SPREAD_MS_PER_SUBSCRIBER = 20;
 /** Never let a client lag more than this behind by server suggestion (client tiers cap lower). */
-const MAX_SYNC_WINDOW_MS = 120_000;
+const MAX_SPREAD_WINDOW_MS = 120_000;
 
 /**
  * The server's say in sync timing (RTCP-style): a spread window scaled by the org channel's
  * online audience and DB pool pressure. Identical for every subscriber, so it rides in the
  * shared (serialize-once) notification body; each client picks a deterministic slot in it.
  */
-function computeSyncWindow(organizationId: string | null): number | null {
+function computeSpreadWindow(organizationId: string | null): number | null {
   if (!organizationId) return null;
   const audience = streamSubscriberManager.getByChannel(`org:${organizationId}`).length;
   if (audience <= 1) return 0;
   const pressure = Math.min(dbPoolPressure(), 2);
-  return Math.min(Math.round(audience * SPREAD_MS_PER_SUBSCRIBER * (1 + pressure)), MAX_SYNC_WINDOW_MS);
+  return Math.min(Math.round(audience * SPREAD_MS_PER_SUBSCRIBER * (1 + pressure)), MAX_SPREAD_WINDOW_MS);
 }
 
 /**
@@ -56,7 +56,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   const membership = event.resourceType === 'membership' ? getEventData(event, 'membership') : null;
   const channelType: ChannelEntityType | null = (membership?.channelType as ChannelEntityType | undefined) ?? null;
 
-  // Resolve the home channel id for scheduler and unseen-count grouping: the row's deepest
+  // Resolve the home channel id for fetch prioritizer and unseen-count grouping: the row's deepest
   // non-null ancestor. Variable-depth rows group under their effective home. Grouping only:
   // the org sequence does not key on this.
   let channelId: string | null = null;
@@ -106,7 +106,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     stx,
     batchUntilSeq: event.batchUntilSeq ?? null,
     count: isProduct ? (event.count ?? null) : null,
-    syncWindow: isProduct ? computeSyncWindow(event.organizationId) : null,
+    spreadWindow: isProduct ? computeSpreadWindow(event.organizationId) : null,
     propagation,
   };
 }

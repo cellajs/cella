@@ -13,7 +13,7 @@ import { isMaxMergeKey } from './update-counts';
 /**
  * UPSERT a single channel_counters row using the apply_count_deltas PG function.
  * The function merges JSONB deltas with GREATEST(0, existing + delta) per key
- * (max-merge for `li:`/`lu:`/`f:` keys).
+ * (max-merge for `e:li:`/`e:lu:`/`e:f:` keys).
  *
  * Fixed SQL shape enables PostgreSQL plan caching across repeated executions.
  */
@@ -57,7 +57,7 @@ async function mergedUpsert(
 
 /**
  * Add each source delta into `target` in place, summing on key collision.
- * Max-merge keys (`li:`/`lu:` stamps, `f:` frontiers) keep the max
+ * Max-merge keys (`e:li:`/`e:lu:` stamps, `e:f:` frontiers) keep the max
  * (summing two timestamps or frontiers would corrupt them, since
  * apply_count_deltas only moves those keys forward). Exported for tests.
  */
@@ -80,7 +80,7 @@ export function sumInto(
  * Phase 1 reserves one contiguous org-sequence range per organization
  * (`sequence` via RETURNING) and assigns values to events in WAL order.
  * All product entity types share the sequence, so WAL commit order IS sequence
- * order. Phase 2 then writes frontier (`f:{type}`) marks at every
+ * order. Phase 2 then writes frontier (`e:f:{type}`) marks at every
  * ancestor node, the remaining count deltas, and the row seq stamp-backs.
  */
 export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: AncestorSource = hierarchy): Promise<void> {
@@ -88,7 +88,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
 
   const handledChannelKeys = new Set<string>();
   const allEntityStamps: Array<{ tableName: string; id: string; seq: number }> = [];
-  /** f: (and org-row leftovers) accumulated for phase 2, keyed by channel node. */
+  /** e:f: (and org-row leftovers) accumulated for phase 2, keyed by channel node. */
   const phase2Deltas = new Map<string, Record<string, number>>();
 
   // Phase 1: one sequential RETURNING UPSERT per organization sequence.
@@ -112,17 +112,17 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
       // the old row, both delta-fetchable), so the stream IS the synced world and
       // `count` on messages is exactly fetchable rows. A draft that slips past a
       // missing filter is dropped at the entrance guard (parse-message.ts).
-      // Subtree: f:{type} max-merged at the org and every non-null ancestor.
+      // Subtree: e:f:{type} max-merged at the org and every non-null ancestor.
       const nodes = frontierNodeKeys(tableMeta.type, rowData, activity.organizationId ?? group.orgKey, h);
-      const frontierKey = `f:${tableMeta.type}`;
+      const frontierKey = `e:f:${tableMeta.type}`;
       for (const node of nodes) {
         mergeDelta(phase2Deltas, node, { [frontierKey]: seq });
       }
-      // Self: fs:{type} at the HOME node only (deepest non-null ancestor, org fallback).
-      // Answers self views (rows homed at the node), mirroring the li:/lu: placement rule.
+      // Self: e:f:h:{type} at the HOME node only (deepest non-null ancestor, org fallback).
+      // Answers self views (rows homed at the node), mirroring the e:li:h:/e:lu:h: placement rule.
       // frontierNodeKeys order is [org, mostSpecific, …, nearRoot], so home is nodes[1] ?? org.
       const home = nodes[1] ?? nodes[0] ?? group.orgKey;
-      mergeDelta(phase2Deltas, home, { [`fs:${tableMeta.type}`]: seq });
+      mergeDelta(phase2Deltas, home, { [`e:f:h:${tableMeta.type}`]: seq });
     }
 
     log.trace('Batch sequence stamped', {

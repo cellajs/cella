@@ -181,7 +181,9 @@ export const useOrganizationDeleteMutation = () => {
   });
 };
 
-/** Fetch organizations for table export. Bypasses cache; returns flat items. */
+/**
+ * Fetch organizations for table export. Bypasses cache; returns flat items.
+ */
 export const fetchOrganizationsForExport = async (params: {
   limit: number;
   offset?: number;

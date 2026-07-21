@@ -53,7 +53,7 @@ Tells the tracking table the baseline is already applied — which for your data
 
 1. **Back up first.** Path B edits migration bookkeeping; a mistake here is recoverable only from a backup. On Scaleway RDB, take a snapshot.
 
-2. **Mark the baseline applied**, without running it. Read the folder name off disk rather than copying it from this README — a later upstream regenerate changes it:
+2. **Mark the baseline applied**, without running it. Read the folder name off disk rather than copying it from this document — a later upstream regenerate changes it:
 
    ```sh
    BASELINE=$(ls backend/drizzle | grep -v side_effects)

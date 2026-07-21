@@ -2,7 +2,7 @@
 
 Upstream rewrote the sync engine's addressing layer. **This is a breaking change to the sync wire contract and to seq semantics** — read this whole guide before pulling. Engine reference: `cella/SYNC_ENGINE.md`.
 
-What changed, in one paragraph: `seq` values are now **one totally-ordered sequence per organization** shared by all product entity types (reserved via `sequence` on the org's `channel_counters` row; WAL order = sequence order). Every channel/product table gains a STORED generated **`path`** column (root-first ancestor ids, slash-joined) via `channelEntityColumns`/`productEntityColumns` — no write-path changes, reparents update it atomically. Per-node summaries got a new family: **`f:{type}`** frontiers max-merged at the org and every non-null ancestor. Catchup is **view-driven**: the client declares `{prefixes, entityTypes, cursor}` views, the server authorizes each prefix (`resolveViewReadStatus`: ok/opaque/forbidden — node-id-only proof) and answers from `f:`/`e:` rollups. Reparented rows additionally emit **`moveOut`** notifications to subscribers who lost visibility. The legacy flat-seqs catchup contract, `childChannelChanges`, per-scope `s:{entityType}` counters, and the CDC org-signal are **gone**.
+What changed, in one paragraph: `seq` values are now **one totally-ordered sequence per organization** shared by all product entity types (reserved via `sequence` on the org's `channel_counters` row; WAL order = sequence order). Every channel/product table gains a STORED generated **`path`** column (root-first ancestor ids, slash-joined) via `channelEntityColumns`/`productEntityColumns` — no write-path changes, reparents update it atomically. Per-node summaries got a new family: **`e:f:{type}`** frontiers max-merged at the org and every non-null ancestor. Catchup is **view-driven**: the client declares `{prefixes, entityTypes, cursor}` views, the server authorizes each prefix (`resolveViewReadStatus`: ok/opaque/forbidden — node-id-only proof) and answers from `e:f:`/`e:c:` rollups. Reparented rows additionally emit **`moveOut`** notifications to subscribers who lost visibility. The legacy flat-seqs catchup contract, `childChannelChanges`, per-scope `s:{entityType}` counters, and the CDC org-signal are **gone**.
 
 Two engine bugs this closes (relevant if your fork hit them): elevated readers without child memberships were invisible to membership-derived catchup discovery, and nobody was told when a row LEFT their readable subtree (reparent) — dispatch only evaluated the new row.
 
@@ -31,7 +31,7 @@ Then, per product entity module (copy the attachment template):
 - `operations/get-<entities>.ts`: destructure `pathPrefix`; add `filters.push(...pathPrefixFilter(<table>.path, pathPrefix))` (from `#/utils/seq-cursor`) after the seqCursor filters; exclude `pathPrefix` reads from counter-based totals (see `counterEligible` in `get-attachments.ts`).
 - `<entity>-mocks.ts`: add `path` (use `computeProductPath(hierarchy, '<type>', row)`).
 
-**Deploy order (per environment):** snapshot DB → `pnpm migrate` (adds path columns, regenerated side effects) → deploy backend + CDC → **restamp** (below) → run counter recalculation (`pnpm seed counters` or your recalc runbook — it rebuilds `sequence`, `f:{type}`, `e:{type}`) → deploy frontend. Old PWA bundles get a graceful 400 on the old catchup shape and ride the documented fallback chain until the update prompt lands.
+**Deploy order (per environment):** snapshot DB → `pnpm migrate` (adds path columns, regenerated side effects) → deploy backend + CDC → **restamp** (below) → run counter recalculation (`pnpm seed counters` or your recalc runbook — it rebuilds `sequence`, `e:f:{type}`, `e:c:{type}`) → deploy frontend. Old PWA bundles get a graceful 400 on the old catchup shape and ride the documented fallback chain until the update prompt lands.
 
 ### Restamp (required on populated databases)
 
@@ -76,6 +76,6 @@ With MULTIPLE product tables, number them jointly (union the tables in `ordered`
 - Task/label are project-homed with NOT NULL `projectId`; attachment is variable-home (org or project) — all covered by the generated path expression automatically.
 - Replace the per-channel keyset indexes (`tasks_project_seq_index (project_id, seq)`) with the `(organization_id, seq)` convention — the index-coverage test will flag them.
 - Yjs: `registerYjsOwnedFields` suppression is untouched — sequence delta rows still skip Yjs-owned fields while an editor is active.
-- Embeddings (`label → task.labels`): propagation hints now derive from view cursors vs `f:label`; behavior is equivalent. The CDC embedding-cleanup path is unchanged.
+- Embeddings (`label → task.labels`): propagation hints now derive from view cursors vs `e:f:label`; behavior is equivalent. The CDC embedding-cleanup path is unchanged.
 - De-hosted attachments stay de-hosted; `publicat_cascade` and partman retention are unaffected (the sequence is not the activity id).
 - Restamp spans tasks, labels, attachments jointly.

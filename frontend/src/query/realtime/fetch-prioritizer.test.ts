@@ -36,7 +36,7 @@ vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn(
 vi.stubGlobal('navigator', { onLine: true });
 
 const { queryClient } = await import('~/query/query-client');
-const { enqueueRange, flushAllNow, resetLazySync } = await import('./lazy-sync-scheduler');
+const { enqueueRange, flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
 
 const BACKGROUND = { min: 2_000, max: 30_000 };
 const VIEWING = { min: 0, max: 0 };
@@ -50,7 +50,7 @@ const base = {
   isCreate: false,
 };
 
-describe('lazy-sync-scheduler', () => {
+describe('fetch-prioritizer', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
@@ -60,7 +60,7 @@ describe('lazy-sync-scheduler', () => {
   });
 
   afterEach(() => {
-    resetLazySync();
+    resetFetchPrioritizer();
     vi.clearAllMocks();
     vi.useRealTimers();
   });

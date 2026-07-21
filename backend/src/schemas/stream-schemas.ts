@@ -66,12 +66,12 @@ export const streamNotificationSchema = z
       .int()
       .nullable()
       .describe('Authoritative row count for batches: sequence ranges of different paths may interleave'),
-    syncWindow: z
+    spreadWindow: z
       .number()
       .int()
       .nullable()
       .describe(
-        'Server-suggested spread window (ms) for the lazy delta fetch — scales with channel audience and load; the client clamps it between its eagerness tier bounds',
+        'Server-suggested spread window (ms) for the lazy delta fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds',
       ),
     propagation: propagationHintSchema
       .nullable()

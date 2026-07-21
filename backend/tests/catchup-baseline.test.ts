@@ -25,11 +25,11 @@ describe('Catchup (view-driven, sequence)', async () => {
     const counts = {
       sequence: 50,
       membership: 3,
-      'f:attachment': 42,
-      'e:attachment': 15,
-      'fs:attachment': 40,
-      'es:attachment': 12,
-      'm:admin': 1,
+      'e:f:attachment': 42,
+      'e:c:attachment': 15,
+      'e:f:h:attachment': 40,
+      'e:c:h:attachment': 12,
+      'm:c:admin': 1,
     };
     await db
       .insert(channelCountersTable)

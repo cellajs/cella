@@ -46,12 +46,12 @@ vi.mock('./membership-ops', () => ({
 
 vi.mock('./sync-priority', () => ({
   getTenantIdForOrg: vi.fn(() => null),
-  // Viewing tier by default: catchup flushes inline through the scheduler (gap 4a fold).
+  // Viewing tier by default: catchup flushes inline through the fetch prioritizer (gap 4a fold).
   getSyncTier: vi.fn(() => ({ min: 0, max: 0 })),
   isViewingChannel: () => true,
 }));
 
-// The REAL scheduler runs (it is the consolidated fetch path); mock its outward boundaries.
+// The REAL fetch prioritizer runs (it is the consolidated fetch path); mock its outward boundaries.
 vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: vi.fn() }));
 vi.mock('~/modules/seen/unseen-sync', () => ({ ingestSyncedRows: vi.fn() }));
 vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-source' }));
@@ -75,11 +75,11 @@ const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
 const { useSyncStore } = await import('~/query/realtime/sync-store');
-const { flushAllNow, resetLazySync } = await import('./lazy-sync-scheduler');
+const { flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
 const { processAppCatchup } = await import('./catchup-processor');
 
-// The real scheduler holds module state (dirty map, timer); clear it between tests.
-afterEach(() => resetLazySync());
+// The real fetch prioritizer holds module state (dirty map, timer); clear it between tests.
+afterEach(() => resetFetchPrioritizer());
 
 /** Views-contract response with one org view answer for attachment. */
 const okViewResponse = (frontier: number, count = 1, key = 'org-1:attachment'): PostAppCatchupResponse =>
@@ -313,7 +313,7 @@ describe('registered grant-boundary views', () => {
   });
 });
 
-describe('catchup → scheduler fold', () => {
+describe('catchup → fetch prioritizer fold', () => {
   afterEach(() => {
     queryClient.clear();
     useSyncStore.getState().reset();
@@ -334,7 +334,7 @@ describe('catchup → scheduler fold', () => {
 
     await processAppCatchup(okViewResponse(9));
 
-    // Advance-at-flush: the scheduler owns the cursor for enqueued ranges.
+    // Advance-at-flush: the fetch prioritizer owns the cursor for enqueued ranges.
     expect(deltaFetch).not.toHaveBeenCalled();
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
 
@@ -343,7 +343,7 @@ describe('catchup → scheduler fold', () => {
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
   });
 
-  it('still reconciles viewing orgs inline through the scheduler flush (mutation-replay gate)', async () => {
+  it('still reconciles viewing orgs inline through the fetch prioritizer flush (mutation-replay gate)', async () => {
     const { getSyncTier } = await import('./sync-priority');
     vi.mocked(getSyncTier).mockReturnValue({ min: 0, max: 0 });
 

@@ -102,7 +102,7 @@ export const zStreamNotification = z.object({
   stx: zStxBase.and(z.record(z.string(), z.unknown())).nullable(),
   batchUntilSeq: z.int().nullable(),
   count: z.int().nullable(),
-  syncWindow: z.int().nullable(),
+  spreadWindow: z.int().nullable(),
   propagation: z
     .object({
       sourceType: z.string(),

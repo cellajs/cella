@@ -83,7 +83,7 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   const read = seqCursor ? tenantReadIncludingDeleted : tenantRead;
 
   // Where `total` comes from: delta reads discard it; an org-wide read with no search maps
-  // to the pre-computed `e:attachment` channel counter; anything narrower needs COUNT(*).
+  // to the pre-computed `e:c:attachment` channel counter; anything narrower needs COUNT(*).
   const isDelta = !!seqCursor;
   const counterEligible = !isDelta && scopeWhere.kind === 'all' && !q?.trim() && !pathPrefix;
 

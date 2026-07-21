@@ -29,7 +29,7 @@ beforeAll(async () => {
   await seedDb.execute(
     sql.raw(`
       INSERT INTO channel_counters (channel_key, counts, updated_at)
-      VALUES ('${ORG}', '{"sequence": 40, "f:${productType}": 37, "e:${productType}": 12}'::jsonb, NOW())
+      VALUES ('${ORG}', '{"sequence": 40, "e:f:${productType}": 37, "e:c:${productType}": 12}'::jsonb, NOW())
       ON CONFLICT (channel_key) DO UPDATE SET counts = EXCLUDED.counts
     `),
   );

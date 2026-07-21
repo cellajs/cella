@@ -149,9 +149,9 @@ export type StreamNotification = {
    */
   count: number | null;
   /**
-   * Server-suggested spread window (ms) for the lazy delta fetch — scales with channel audience and load; the client clamps it between its eagerness tier bounds
+   * Server-suggested spread window (ms) for the lazy delta fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds
    */
-  syncWindow: number | null;
+  spreadWindow: number | null;
   /**
    * Embedded entity propagation hint for cross-entity cache invalidation
    */

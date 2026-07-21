@@ -20,7 +20,7 @@ for (const embedding of appConfig.entityEmbeddings) {
 
 /**
  * Build propagation hints for each org's change summary. Sequence-driven: a source
- * type changed for a client when the org's `f:{sourceType}` rollup exceeds the
+ * type changed for a client when the org's `e:f:{sourceType}` rollup exceeds the
  * client's org-view cursor (from the declared views); the changed source ids come
  * from an org-wide `seq > cursor` delta-id read, including soft-delete tombstones
  * (returned as removal hints).

@@ -10,8 +10,8 @@ export interface CountDelta {
   /** Context key (organizationId or sub-context id): the row to update */
   channelKey: string;
   /**
-   * Key-value deltas: e.g. { 'm:admin': 1, 'm:total': 1 } or { 'e:attachment': -1 }.
-   * `li:<type>` / `lu:<type>` keys carry an epoch-ms activity stamp that merges via max.
+   * Key-value deltas: e.g. { 'm:c:admin': 1, 'm:c:total': 1 } or { 'e:c:attachment': -1 }.
+   * `e:li:h:<type>` / `e:lu:h:<type>` keys carry an epoch-ms activity stamp that merges via max.
    */
   deltas: Record<string, number>;
 }
@@ -22,33 +22,33 @@ export type CountsHierarchy = AncestorSource & {
 };
 
 /**
- * `li:<type>` (last insert) / `lu:<type>` (last update) keys carry epoch-ms activity
+ * `e:li:h:<type>` (last insert) / `e:lu:h:<type>` (last update) keys carry epoch-ms activity
  * stamps that merge via max and never sum. Mirrored by the
  * apply_count_deltas PG function.
  */
 export function isActivityStampKey(key: string): boolean {
-  return key.startsWith('li:') || key.startsWith('lu:');
+  return key.startsWith('e:li:') || key.startsWith('e:lu:');
 }
 
 /**
- * Keys that merge via GREATEST, not summing: activity stamps (`li:`/`lu:`, epoch ms)
- * and sequence frontiers. `f:<type>` (subtree: max org-sequence position of that type at
- * or below the node) and `fs:<type>` (self: max seq of rows HOMED at the node).
- * Mirrored by the apply_count_deltas PG function.
+ * Keys that merge via GREATEST, not summing: activity stamps (`e:li:`/`e:lu:`, epoch ms)
+ * and sequence frontiers `e:f:<type>` (subtree: max org-sequence position of that type at
+ * or below the node) and `e:f:h:<type>` (self: max seq of rows HOMED at the node). The
+ * `e:f:` prefix covers both frontier families. Mirrored by the apply_count_deltas PG function.
  */
 export function isMaxMergeKey(key: string): boolean {
-  return isActivityStampKey(key) || key.startsWith('f:') || key.startsWith('fs:');
+  return isActivityStampKey(key) || key.startsWith('e:f:');
 }
 
 /**
  * Determine count deltas from a CDC event.
  *
- * Membership rows yield `m:<role>` / `m:total` deltas plus an org-level
+ * Membership rows yield `m:c:<role>` / `m:c:total` deltas plus an org-level
  * `membership` change-signal bump used for catchup screening. Inactive
- * memberships count as `m:pending` while rejectedAt is null. Entity rows yield
- * `e:<type>` deltas on the org and every non-null ancestor context; updates
+ * memberships count as `m:c:pending` while rejectedAt is null. Entity rows yield
+ * `e:c:<type>` deltas on the org and every non-null ancestor context; updates
  * that change ancestor ids re-credit the counters. Product rows also stamp
- * `li:<type>` (last insert) / `lu:<type>` (last update) epoch ms at their home
+ * `e:li:h:<type>` (last insert) / `e:lu:h:<type>` (last update) epoch ms at their home
  * context only.
  *
  * Only COUNTABLE rows participate: live AND published (`isCountableRow`). Draft
@@ -90,22 +90,22 @@ export function getCountDeltas(
 
     // Activity stamps (epoch ms) at the home context only (deepest non-null ancestor, org
     // fallback). These per-stream signals stay at the home context and do not propagate to
-    // higher ancestors like `e:` deltas. `li:<type>` moves forward when new content enters
+    // higher ancestors like `e:c:` deltas. `e:li:h:<type>` moves forward when new content enters
     // the countable set (with the publication row filter a publish edge arrives as INSERT,
-    // so the create IS the publish), and `lu:<type>` moves on countable-row content updates.
+    // so the create IS the publish), and `e:lu:h:<type>` moves on countable-row content updates.
     // Deletes, soft-deletes and restores leave both untouched (a restore re-counts the row
     // but is old content, so no stamp); drafts never reach the stream.
     if (h.isProduct(tableMeta.type) && countAction !== null && countAction !== 'delete') {
       const stampKey =
         action === 'create' && countAction === 'create'
-          ? `li:${tableMeta.type}`
+          ? `e:li:h:${tableMeta.type}`
           : countAction === 'update'
-            ? `lu:${tableMeta.type}`
+            ? `e:lu:h:${tableMeta.type}`
             : null;
       if (stampKey) {
-        // li: prefers publishedAt so CDC and recalculation stamp the same instant on
-        // draft-lifecycle tables (createdAt elsewhere); lu: is always updatedAt.
-        const stampSource = stampKey.startsWith('li:')
+        // e:li:h: prefers publishedAt so CDC and recalculation stamp the same instant on
+        // draft-lifecycle tables (createdAt elsewhere); e:lu:h: is always updatedAt.
+        const stampSource = stampKey.startsWith('e:li:')
           ? (getStringValue(newRow, 'publishedAt') ?? getStringValue(newRow, 'createdAt'))
           : getStringValue(newRow, 'updatedAt');
         const parsedMs = stampSource ? Date.parse(stampSource) : Number.NaN;
@@ -116,7 +116,7 @@ export function getCountDeltas(
       }
     }
 
-    // Embedding counters: track e:<hostEntity> counts per embedded entity ID. Hosts are
+    // Embedding counters: track e:c:<hostEntity> counts per embedded entity ID. Hosts are
     // always products (config type), so the publication row filter carries the draft
     // dimension: a publish edge arrives as INSERT (adds every ref), an unpublish as
     // DELETE with the old row (removes them), draft ref edits never arrive. The
@@ -125,7 +125,7 @@ export function getCountDeltas(
     for (const embedding of appConfig.entityEmbeddings) {
       if (embedding.hostEntity !== tableMeta.type) continue;
       const col = embedding.hostColumn;
-      const counterKey = `e:${embedding.hostEntity}`;
+      const counterKey = `e:c:${embedding.hostEntity}`;
 
       if (action === 'delete') {
         const ids = getArrayValue(oldRow ?? newRow, col);
@@ -199,25 +199,25 @@ function getMembershipDelta(
 
   if (action === 'create') {
     const role = getStringValue(newRow, 'role');
-    return role ? { channelKey: channelId, deltas: { [`m:${role}`]: 1, 'm:total': 1 } } : null;
+    return role ? { channelKey: channelId, deltas: { [`m:c:${role}`]: 1, 'm:c:total': 1 } } : null;
   }
 
   if (action === 'delete') {
     const role = getStringValue(newRow, 'role');
-    return role ? { channelKey: channelId, deltas: { [`m:${role}`]: -1, 'm:total': -1 } } : null;
+    return role ? { channelKey: channelId, deltas: { [`m:c:${role}`]: -1, 'm:c:total': -1 } } : null;
   }
 
   if (action === 'update' && oldRow) {
     const oldRole = getStringValue(oldRow, 'role');
     const newRole = getStringValue(newRow, 'role');
     if (oldRole && newRole && oldRole !== newRole) {
-      return { channelKey: channelId, deltas: { [`m:${oldRole}`]: -1, [`m:${newRole}`]: 1 } };
+      return { channelKey: channelId, deltas: { [`m:c:${oldRole}`]: -1, [`m:c:${newRole}`]: 1 } };
     }
   }
 
   return null;
 }
-/** Inactive membership m:pending delta; only rows with rejectedAt null count as pending. */
+/** Inactive membership m:c:pending delta; only rows with rejectedAt null count as pending. */
 function getInactiveMembershipDelta(
   action: ActivityAction,
   newRow: CdcRowData,
@@ -228,23 +228,23 @@ function getInactiveMembershipDelta(
 
   if (action === 'create') {
     if (newRow.rejectedAt != null) return null;
-    return { channelKey: channelId, deltas: { 'm:pending': 1 } };
+    return { channelKey: channelId, deltas: { 'm:c:pending': 1 } };
   }
 
   if (action === 'delete') {
     const rejectedAt = newRow.rejectedAt ?? oldRow?.rejectedAt;
     if (rejectedAt != null) return null;
-    return { channelKey: channelId, deltas: { 'm:pending': -1 } };
+    return { channelKey: channelId, deltas: { 'm:c:pending': -1 } };
   }
 
   if (action === 'update' && oldRow) {
     const wasNull = oldRow.rejectedAt == null;
     const isNull = newRow.rejectedAt == null;
     if (wasNull && !isNull) {
-      return { channelKey: channelId, deltas: { 'm:pending': -1 } };
+      return { channelKey: channelId, deltas: { 'm:c:pending': -1 } };
     }
     if (!wasNull && isNull) {
-      return { channelKey: channelId, deltas: { 'm:pending': 1 } };
+      return { channelKey: channelId, deltas: { 'm:c:pending': 1 } };
     }
   }
 
@@ -271,8 +271,8 @@ function getEntityDeltas(
     return [];
   }
 
-  const counterKey = `e:${entityType}`;
-  const selfCountKey = `es:${entityType}`;
+  const counterKey = `e:c:${entityType}`;
+  const selfCountKey = `e:c:h:${entityType}`;
 
   if (action === 'create' || action === 'delete') {
     const value = action === 'create' ? 1 : -1;
@@ -283,7 +283,7 @@ function getEntityDeltas(
       deltas.push({ channelKey: ancestor.id, deltas: { [counterKey]: value } });
     }
     // Self count: rows HOMED at the node only (deepest non-null ancestor, org fallback),
-    // the summary a self view is answered from (mirrors the li:/lu: placement rule).
+    // the summary a self view is answered from (mirrors the e:li:h:/e:lu:h: placement rule).
     const home = resolveDeepestAncestorId(h, entityType, row) ?? organizationId;
     deltas.push({ channelKey: home, deltas: { [selfCountKey]: value } });
     warnMissingAncestors(h, entityType, row);

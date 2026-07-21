@@ -37,7 +37,7 @@ interface SyncStoreState {
   views: Record<string, RegisteredSyncView>;
   /**
    * Latest seq the server has mentioned per channel view (channelId or orgId), which is the "known" side of the
-   * known-vs-caught-up split. Recorded from every notification, even for pages the lazy scheduler
+   * known-vs-caught-up split. Recorded from every notification, even for pages the fetch prioritizer
    * won't fetch (muted). Deliberately NOT persisted: catchup's counter comparison rebuilds it on
    * boot, and persisting would only risk staleness. Caught-up seqs stay in `orgs` (persisted).
    */

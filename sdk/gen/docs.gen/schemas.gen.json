@@ -447,10 +447,10 @@
           "required": true,
           "description": "Authoritative row count for batches: sequence ranges of different paths may interleave"
         },
-        "syncWindow": {
+        "spreadWindow": {
           "type": ["integer", "null"],
           "required": true,
-          "description": "Server-suggested spread window (ms) for the lazy delta fetch — scales with channel audience and load; the client clamps it between its eagerness tier bounds"
+          "description": "Server-suggested spread window (ms) for the lazy delta fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds"
         },
         "propagation": {
           "type": ["object", "null"],
@@ -512,7 +512,7 @@
         "fieldTimestamps": {}
       },
       "batchUntilSeq": null,
-      "syncWindow": null,
+      "spreadWindow": null,
       "propagation": null
     }
   },

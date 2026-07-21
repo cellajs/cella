@@ -5,7 +5,7 @@ import { getEntityQueryKeys, getRegisteredEntityTypes, hasEntityQueryKeys } from
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
-import { enqueueCatchupRange, flushChannelViewNow, resetLazySync } from './lazy-sync-scheduler';
+import { enqueueCatchupRange, flushChannelViewNow, resetFetchPrioritizer } from './fetch-prioritizer';
 import * as membershipOps from './membership-ops';
 import { propagateEmbeddings } from './propagation';
 import { getSyncTier, getTenantIdForOrg } from './sync-priority';
@@ -26,7 +26,7 @@ import { getSyncTier, getTenantIdForOrg } from './sync-priority';
  * - advance-after-ingest: the org cursor advances only after the window drained (ok),
  *   was handed to react-query (invalidate), or was deliberately skipped (nothing cached)
  * - baseline: cursor 0 stores the frontier and refetches only when something is cached
- * - tier folding: background orgs enqueue into the lazy scheduler (advance at flush)
+ * - tier folding: background orgs enqueue into the fetch prioritizer (advance at flush)
  * - counts are compared server-to-server only (in-session change signal)
  */
 export async function processAppCatchup(response: PostAppCatchupResponse, baselineOnly = false): Promise<void> {
@@ -35,7 +35,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
 
   // ── Views: product entity sync per (org, entityType) ──────────────────────
   if (views?.length) {
-    if (!baselineOnly) resetLazySync();
+    if (!baselineOnly) resetFetchPrioritizer();
 
     for (const answer of views) {
       // Registered grant-boundary views (views.ts) take precedence over org-view keys.
@@ -90,7 +90,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
         continue;
       }
 
-      // ONE fetch path: every gap goes through the scheduler. Background orgs advance at
+      // ONE fetch path: every gap goes through the fetch prioritizer. Background orgs advance at
       // their negotiated flush; the viewing org is flushed immediately AND awaited so the
       // mutation-replay gate (waitForActiveCatchup) resolves against a reconciled cache.
       enqueueCatchupRange({

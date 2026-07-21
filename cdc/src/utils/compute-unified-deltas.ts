@@ -54,7 +54,7 @@ export function resolveChannelKey(
 
 /**
  * The channel-counter nodes a stamped row's frontier propagates to: the organization
- * plus every non-null ancestor. This is the rollup set: `f:{type}` at any node answers
+ * plus every non-null ancestor. This is the rollup set: `e:f:{type}` at any node answers
  * "did anything of this type change at or below here" with one comparison.
  */
 export function frontierNodeKeys(
@@ -72,7 +72,7 @@ export function frontierNodeKeys(
 
 /**
  * Merge deltas into an existing map entry, summing values for matching keys.
- * Max-merge keys (`li:`/`lu:` stamps, `f:` frontiers) keep the max on collision
+ * Max-merge keys (`e:li:`/`e:lu:` stamps, `e:f:` frontiers) keep the max on collision
  * (two posts in one batch must not sum their timestamps or watermarks).
  */
 export function mergeDelta(
@@ -101,7 +101,7 @@ function isStampable(tableMeta: TableMeta, action: ActivityAction, h: CountsHier
  * Compute a unified delta plan for a batch of CDC events.
  * Reserves one org-sequence range per organization (all product entity types share the
  * sequence; WAL order within the batch is preserved), accumulates all count deltas.
- * Frontier (`f:`) deltas are emitted at apply time, once sequence values are assigned.
+ * Frontier (`e:f:`) deltas are emitted at apply time, once sequence values are assigned.
  */
 export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHierarchy = hierarchy): BatchUnifiedDeltaPlan {
   const countDeltasByChannelKey = new Map<string, Record<string, number>>();

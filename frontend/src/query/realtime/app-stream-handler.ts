@@ -6,7 +6,7 @@ import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic/entity-q
 import { sourceId } from '~/query/offline/stx-utils';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
-import { enqueueRange } from './lazy-sync-scheduler';
+import { enqueueRange } from './fetch-prioritizer';
 import * as membershipOps from './membership-ops';
 import { propagateEmbeddings } from './propagation';
 import { getSyncTier } from './sync-priority';
@@ -51,7 +51,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
         return console.error('Unknown entityType in app stream notification:', entityType);
 
       // Create/update batches enqueue a merged, spread seq range for lazy fetching.
-      // The scheduler flushes viewing-tier scopes immediately. The range fetch also handles
+      // The fetch prioritizer flushes viewing-tier scopes immediately. The range fetch also handles
       // soft-delete tombstones; unseen counts recount once per merged flush, not per batch
       // (a batch's width is never "new for you": drafts, own rows). Hard-delete batches must
       // not enqueue because deleted rows leave no tombstone to fetch. They fall through to
@@ -65,7 +65,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
           fromSeq: seq,
           untilSeq: notification.batchUntilSeq,
           isCreate: action === 'create',
-          syncWindowMs: notification.syncWindow ?? undefined,
+          spreadWindowMs: notification.spreadWindow ?? undefined,
           propagation: notification.propagation ?? undefined,
         });
         return;
@@ -86,7 +86,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
         notification.channelId ?? null,
         keys,
         notification.propagation,
-        notification.syncWindow ?? null,
+        notification.spreadWindow ?? null,
       );
     },
   );
@@ -134,7 +134,7 @@ function handleEntityNotification(
   channelId: string | null,
   keys: EntityQueryKeys,
   propagation?: AppStreamNotification['propagation'],
-  syncWindow?: number | null,
+  spreadWindow?: number | null,
 ): void {
   // Echo prevention for create/update: skip data fetch for own mutations,
   // but still patch stx metadata so subsequent mutations read fresh versions.
@@ -148,7 +148,7 @@ function handleEntityNotification(
   }
 
   // The two paths without synced rows (hard delete, seq-less fallback) derive their
-  // invalidation/fetch decision from the same tier system the scheduler uses: viewing tier
+  // invalidation/fetch decision from the same tier system the fetch prioritizer uses: viewing tier
   // acts now, background/muted defers to next access.
   const isViewing = getSyncTier(entityType, organizationId, channelId).min === 0;
 
@@ -167,7 +167,7 @@ function handleEntityNotification(
           fromSeq: seq,
           untilSeq: seq,
           isCreate: action === 'create',
-          syncWindowMs: syncWindow ?? undefined,
+          spreadWindowMs: spreadWindow ?? undefined,
           propagation: propagation ?? undefined,
         });
         // Unseen accounting happens at flush time: unseen-sync counts the fetched rows.

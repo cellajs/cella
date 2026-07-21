@@ -40,8 +40,8 @@ export function getTenantIdForOrg(organizationId: string): string | null {
 }
 
 /**
- * Eagerness tier for the lazy sync scheduler: how soon this client wants a channel view's changes.
- * `min` is the floor (0 = live), `max` the ceiling (offline-freshness guarantee); the scheduler
+ * Priority tier for the fetch prioritizer: how soon this client wants a channel view's changes.
+ * `min` is the floor (0 = live), `max` the ceiling (offline-freshness guarantee); the fetch prioritizer
  * clamps the server-spread delay between them. `Infinity` = fetch on open only.
  */
 export interface SyncTier {

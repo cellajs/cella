@@ -56,7 +56,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
     ]);
 
     expect(plan.orgSequenceGroups).toHaveLength(0);
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:admin': 1, 'm:total': 1, 'membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:admin': 1, 'm:c:total': 1, 'membership': 1 });
   });
 
   it('membership delete: decrements role + total', () => {
@@ -68,7 +68,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:member': -1, 'm:total': -1, 'membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:member': -1, 'm:c:total': -1, 'membership': 1 });
   });
 
   it('membership update (role change): swaps role counts', () => {
@@ -81,7 +81,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:member': -1, 'm:admin': 1, 'membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:member': -1, 'm:c:admin': 1, 'membership': 1 });
   });
 
   it('inactive membership create (pending): increments pending count', () => {
@@ -93,7 +93,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:pending': 1, 'membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:pending': 1, 'membership': 1 });
   });
 
   it('inactive membership update (rejected): decrements pending', () => {
@@ -106,7 +106,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:pending': -1, 'membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:pending': -1, 'membership': 1 });
   });
 });
 
@@ -133,9 +133,9 @@ describe('computeBatchUnifiedDeltas', () => {
     // Count deltas: accumulated across all 5 events on org, plus one activity stamp
     // (rows carry no createdAt here, so the stamp falls back to Date.now())
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
-      'e:attachment': 5,
-      'es:attachment': 5,
-      'li:attachment': expect.any(Number),
+      'e:c:attachment': 5,
+      'e:c:h:attachment': 5,
+      'e:li:h:attachment': expect.any(Number),
     });
   });
 
@@ -158,7 +158,7 @@ describe('computeBatchUnifiedDeltas', () => {
     const plan = computeBatchUnifiedDeltas(events);
 
     expect(plan.orgSequenceGroups).toHaveLength(0);
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2, 'es:attachment': -2 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:c:attachment': -2, 'e:c:h:attachment': -2 });
   });
 
   it('batch of attachment soft deletes: sequence group and count deltas accumulated', () => {
@@ -182,7 +182,7 @@ describe('computeBatchUnifiedDeltas', () => {
     expect(plan.orgSequenceGroups).toHaveLength(1);
     expect(plan.orgSequenceGroups[0].orgKey).toBe('org-1');
     expect(plan.orgSequenceGroups[0].count).toBe(2);
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -2, 'es:attachment': -2 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:c:attachment': -2, 'e:c:h:attachment': -2 });
   });
 
   it('one sequence group per organization, never duplicated', () => {
@@ -202,11 +202,11 @@ describe('computeBatchUnifiedDeltas', () => {
   });
 });
 
-describe('activity stamps (li:{type} / lu:{type})', () => {
+describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
   const createdAt = '2026-07-01T10:00:00.000Z';
   const createdAtMs = Date.parse(createdAt);
 
-  it('attachment create stamps li:attachment with the row createdAt at the home key', () => {
+  it('attachment create stamps e:li:h:attachment with the row createdAt at the home key', () => {
     const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),
@@ -216,9 +216,9 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
-      'e:attachment': 1,
-      'es:attachment': 1,
-      'li:attachment': createdAtMs,
+      'e:c:attachment': 1,
+      'e:c:h:attachment': 1,
+      'e:li:h:attachment': createdAtMs,
     });
   });
 
@@ -238,9 +238,9 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
-      'e:attachment': 2,
-      'es:attachment': 2,
-      'li:attachment': Date.parse(laterCreatedAt),
+      'e:c:attachment': 2,
+      'e:c:h:attachment': 2,
+      'e:li:h:attachment': Date.parse(laterCreatedAt),
     });
   });
 
@@ -255,7 +255,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
     ]);
     const after = Date.now();
 
-    const stamp = plan.countDeltasByChannelKey.get('org-1')?.['li:attachment'];
+    const stamp = plan.countDeltasByChannelKey.get('org-1')?.['e:li:h:attachment'];
     expect(stamp).toBeGreaterThanOrEqual(before);
     expect(stamp).toBeLessThanOrEqual(after);
   });
@@ -271,13 +271,13 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
-      'e:attachment': 1,
-      'es:attachment': 1,
-      'li:attachment': Date.parse(publishedAt),
+      'e:c:attachment': 1,
+      'e:c:h:attachment': 1,
+      'e:li:h:attachment': Date.parse(publishedAt),
     });
   });
 
-  it('genuine update stamps lu:attachment with the row updatedAt, not li:', () => {
+  it('genuine update stamps e:lu:h:attachment with the row updatedAt, not e:li:h:', () => {
     const updatedAt = '2026-07-05T10:00:00.000Z';
     const plan = computeBatchUnifiedDeltas([
       mockEvent({
@@ -289,7 +289,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
-      'lu:attachment': Date.parse(updatedAt),
+      'e:lu:h:attachment': Date.parse(updatedAt),
     });
   });
 
@@ -305,7 +305,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
     ]);
     const after = Date.now();
 
-    const stamp = plan.countDeltasByChannelKey.get('org-1')?.['lu:attachment'];
+    const stamp = plan.countDeltasByChannelKey.get('org-1')?.['e:lu:h:attachment'];
     expect(stamp).toBeGreaterThanOrEqual(before);
     expect(stamp).toBeLessThanOrEqual(after);
   });
@@ -320,7 +320,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1, 'es:attachment': -1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:c:attachment': -1, 'e:c:h:attachment': -1 });
   });
 
   it('restore does not stamp either (remapped create is not a new post)', () => {
@@ -333,7 +333,7 @@ describe('activity stamps (li:{type} / lu:{type})', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': 1, 'es:attachment': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:c:attachment': 1, 'e:c:h:attachment': 1 });
   });
 });
 
@@ -354,9 +354,9 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
-      'e:attachment': 1,
-      'es:attachment': 1,
-      'li:attachment': Date.parse(publishedAt),
+      'e:c:attachment': 1,
+      'e:c:h:attachment': 1,
+      'e:li:h:attachment': Date.parse(publishedAt),
     });
     expect(plan.orgSequenceGroups).toHaveLength(1);
   });
@@ -371,7 +371,7 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1, 'es:attachment': -1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:c:attachment': -1, 'e:c:h:attachment': -1 });
   });
 
   it('publishing a trashed row arrives as INSERT with deletedAt set: counts nothing', () => {
@@ -397,7 +397,7 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': -1, 'es:attachment': -1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:c:attachment': -1, 'e:c:h:attachment': -1 });
   });
 
   it('restoring a PUBLISHED row from trash re-counts it but does not stamp li: (old content)', () => {
@@ -410,6 +410,6 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:attachment': 1, 'es:attachment': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:c:attachment': 1, 'e:c:h:attachment': 1 });
   });
 });
