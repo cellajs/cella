@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.6](https://github.com/cellajs/cella/compare/0.5.5...0.5.6) (2026-07-21)
+
+
+### 🔧 Small improvements
+
+* **frontend:** consolidate the offline-mutation template into shared primitives ([#934](https://github.com/cellajs/cella/issues/934)) ([1027ac8](https://github.com/cellajs/cella/commit/1027ac868fe2da15c4aea0a6a195ffc9cb168bbd))
+
 ## [0.5.5](https://github.com/cellajs/cella/compare/0.5.4...0.5.5) (2026-07-20)
 
 
