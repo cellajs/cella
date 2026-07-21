@@ -92,6 +92,17 @@ export async function ensureReplicationSlot(): Promise<void> {
 }
 
 /**
+ * Guards {@link recreateReplicationSlot} to a single execution per worker
+ * lifetime. The self-heal is a one-time boot fixup for a slot created ahead of
+ * its publication; once done, a recurring stale-publication error is a genuine
+ * fault, not the transient boot condition. Without this latch the retry loop
+ * would drop and recreate the slot on every iteration, discarding accumulated
+ * WAL each time. A restart clears it, which is the only sanctioned way to arm a
+ * second attempt.
+ */
+let slotRecreationAttempted = false;
+
+/**
  * Drop and recreate the replication slot at the current WAL position to clear a
  * stale start position (see {@link isStalePublicationError}). A slot created
  * before its publication decodes a WAL window in which the publication is
@@ -99,10 +110,34 @@ export async function ensureReplicationSlot(): Promise<void> {
  * past the publication lets decoding succeed. Any walsender still pinning the
  * slot (the just-failed stream) is terminated first so the drop is not blocked.
  * The skipped WAL is recovered by the sync engine's sequence catch-up.
+ *
+ * Two guards keep this destructive action from firing when unwanted. It runs at
+ * most once per worker lifetime ({@link slotRecreationAttempted}), and only
+ * after confirming the publication actually exists now: the stale-slot error and
+ * a genuinely missing publication (wrong name, migration not yet run, publication
+ * dropped) raise the same message, but recreating the slot only helps the former.
+ * When the publication is absent the loop backs off without touching the slot so
+ * the attempt is preserved for once it appears.
+ *
  * Best-effort: a failure is logged and the retry loop tries again.
  */
 async function recreateReplicationSlot(): Promise<void> {
+  if (slotRecreationAttempted) {
+    log.warn(`Skipping slot recreation for '${CDC_SLOT_NAME}': already attempted once this worker lifetime`);
+    return;
+  }
   try {
+    const publicationCheck = await cdcDb.execute(
+      sql`SELECT 1 FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`,
+    );
+    if (publicationCheck.rows.length === 0) {
+      log.warn(
+        `Publication '${CDC_PUBLICATION_NAME}' does not exist; not recreating slot '${CDC_SLOT_NAME}'. Backing off until it appears.`,
+      );
+      return;
+    }
+
+    slotRecreationAttempted = true;
     log.warn(`Recreating replication slot '${CDC_SLOT_NAME}' to clear a stale start position`);
     await cdcDb.execute(sql`
       SELECT pg_terminate_backend(active_pid) FROM pg_replication_slots
