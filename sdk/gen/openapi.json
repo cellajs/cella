@@ -106,7 +106,7 @@
         "required": false,
         "kind": "middleware",
         "values": {
-          "appCache": {
+          "productCache": {
             "name": "app",
             "description": "Entity-keyed detail cache with per-request read authorization"
           },
@@ -671,7 +671,7 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": ["entity", "membership"],
+            "enum": ["product", "membership"],
             "description": "Discriminant for the notification: product-entity sync vs membership change"
           },
           "action": {
@@ -679,7 +679,7 @@
             "enum": ["create", "update", "delete", "moveOut"],
             "description": "Change kind; moveOut = the row left this path (reparent) and is no longer readable there"
           },
-          "entityType": {
+          "productType": {
             "type": ["string", "null"],
             "enum": ["attachment", null]
           },
@@ -773,7 +773,7 @@
         "required": [
           "kind",
           "action",
-          "entityType",
+          "productType",
           "resourceType",
           "subjectId",
           "organizationId",
@@ -790,9 +790,9 @@
         ],
         "description": "Realtime notification delivered via SSE for entity and membership changes.",
         "example": {
-          "kind": "entity",
+          "kind": "product",
           "action": "update",
-          "entityType": "attachment",
+          "productType": "attachment",
           "resourceType": null,
           "subjectId": "e781e15e-ec97-4ad0-aa42-418ee4c50d02",
           "organizationId": "3a9fc6f0-5cf3-491b-a437-8e8c3a3796f6",
@@ -8994,7 +8994,7 @@
         "description": "Returns a single attachment by ID. Served from the CDC-invalidated entity detail cache.",
         "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
-        "x-cache": ["appCache"],
+        "x-cache": ["productCache"],
         "parameters": [
           {
             "schema": {

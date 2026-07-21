@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the boundaries: the cache store and the permission engine.
-const entityCacheGet = vi.fn();
-const entityCacheSet = vi.fn();
-vi.mock('./app-entity-cache', () => ({
-  entityCache: {
-    get: (...a: unknown[]) => entityCacheGet(...a),
-    set: (...a: unknown[]) => entityCacheSet(...a),
+const productCacheGet = vi.fn();
+const productCacheSet = vi.fn();
+vi.mock('./app-product-cache', () => ({
+  productCache: {
+    get: (...a: unknown[]) => productCacheGet(...a),
+    set: (...a: unknown[]) => productCacheSet(...a),
   },
 }));
 const checkAccess = vi.fn();
@@ -18,7 +18,7 @@ vi.mock('#/permissions/build-subject', () => ({
   buildSubjectFromEntity: (...a: unknown[]) => buildSubjectFromEntity(...a),
 }));
 
-const { appCache } = await import('./presets');
+const { productCache } = await import('./presets');
 
 // The cached detail response enriches `createdBy` into a user object, the case that would
 // break an `own` grant if fed to the permission subject verbatim.
@@ -39,10 +39,10 @@ const mockCtx = () => ({
   json: vi.fn((d: unknown) => d),
 });
 
-describe('appCache — per-request authorization on cache hit', () => {
+describe('productCache — per-request authorization on cache hit', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    entityCacheGet.mockReturnValue(cachedAttachment);
+    productCacheGet.mockReturnValue(cachedAttachment);
   });
 
   it('serves the cached row and skips the handler when the caller is allowed', async () => {
@@ -50,7 +50,7 @@ describe('appCache — per-request authorization on cache hit', () => {
     const ctx = mockCtx();
     const next = vi.fn();
 
-    await appCache('attachment')(ctx as never, next);
+    await productCache('attachment')(ctx as never, next);
 
     expect(next).not.toHaveBeenCalled();
     expect(ctx.json).toHaveBeenCalledWith(cachedAttachment);
@@ -60,7 +60,7 @@ describe('appCache — per-request authorization on cache hit', () => {
   it('normalizes the enriched createdBy object back to the raw id for the permission subject', async () => {
     checkAccess.mockReturnValue({ isAllowed: true });
 
-    await appCache('attachment')(mockCtx() as never, vi.fn());
+    await productCache('attachment')(mockCtx() as never, vi.fn());
 
     expect(buildSubjectFromEntity).toHaveBeenCalledWith('attachment', expect.objectContaining({ createdBy: 'user-1' }));
   });
@@ -70,14 +70,14 @@ describe('appCache — per-request authorization on cache hit', () => {
     const ctx = mockCtx();
     const next = vi.fn();
 
-    await appCache('attachment')(ctx as never, next);
+    await productCache('attachment')(ctx as never, next);
 
     expect(next).toHaveBeenCalledOnce();
     expect(ctx.json).not.toHaveBeenCalled();
   });
 });
 
-describe('appCache — draft veto on cache hit (publishedAt lifecycle)', () => {
+describe('productCache — draft veto on cache hit (publishedAt lifecycle)', () => {
   // An author-cached draft: the handler ran for the author and the enriched response
   // was cached; a later hit by anyone else must not serve it, even when the engine
   // would allow the read (the engine has no draft vocabulary).
@@ -85,7 +85,7 @@ describe('appCache — draft veto on cache hit (publishedAt lifecycle)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    entityCacheGet.mockReturnValue(cachedDraft);
+    productCacheGet.mockReturnValue(cachedDraft);
     checkAccess.mockReturnValue({ isAllowed: true });
   });
 
@@ -94,7 +94,7 @@ describe('appCache — draft veto on cache hit (publishedAt lifecycle)', () => {
     const ctx = mockCtx();
     const next = vi.fn();
 
-    await appCache('attachment')(ctx as never, next);
+    await productCache('attachment')(ctx as never, next);
 
     expect(next).not.toHaveBeenCalled();
     expect(ctx.json).toHaveBeenCalledWith(cachedDraft);
@@ -105,7 +105,7 @@ describe('appCache — draft veto on cache hit (publishedAt lifecycle)', () => {
     const ctx = mockCtx();
     const next = vi.fn();
 
-    await appCache('attachment')(ctx as never, next);
+    await productCache('attachment')(ctx as never, next);
 
     expect(next).toHaveBeenCalledOnce();
     expect(ctx.json).not.toHaveBeenCalled();
@@ -116,7 +116,7 @@ describe('appCache — draft veto on cache hit (publishedAt lifecycle)', () => {
     const ctx = mockCtx();
     const next = vi.fn();
 
-    await appCache('attachment')(ctx as never, next);
+    await productCache('attachment')(ctx as never, next);
 
     expect(next).toHaveBeenCalledOnce();
     expect(ctx.json).not.toHaveBeenCalled();

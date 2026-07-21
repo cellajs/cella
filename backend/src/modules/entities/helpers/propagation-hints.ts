@@ -9,12 +9,12 @@ const dbCtx: DbContext = { var: { db } };
 
 type PropagationTarget = { targetType: string; field: string };
 
-/** Source entity type to host entity types that embed it, derived from entityEmbeddings config. */
+/** Source entity type to host entity types that embed it, derived from productEmbeddings config. */
 const propagationTargets: Partial<Record<EntityType, PropagationTarget[]>> = {};
-for (const embedding of appConfig.entityEmbeddings) {
-  const source = embedding.embeddedEntity as EntityType;
+for (const embedding of appConfig.productEmbeddings) {
+  const source = embedding.embeddedProduct as EntityType;
   const targets = propagationTargets[source] ?? [];
-  targets.push({ targetType: embedding.hostEntity, field: embedding.hostColumn });
+  targets.push({ targetType: embedding.hostProduct, field: embedding.hostColumn });
   propagationTargets[source] = targets;
 }
 

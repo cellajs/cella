@@ -360,7 +360,7 @@
           "type": "string",
           "required": true,
           "description": "Discriminant for the notification: product-entity sync vs membership change",
-          "enum": ["entity", "membership"]
+          "enum": ["product", "membership"]
         },
         "action": {
           "type": "string",
@@ -368,7 +368,7 @@
           "description": "Change kind; moveOut = the row left this path (reparent) and is no longer readable there",
           "enum": ["create", "update", "delete", "moveOut"]
         },
-        "entityType": {
+        "productType": {
           "type": ["string", "null"],
           "required": true,
           "enum": ["attachment", null]
@@ -496,9 +496,9 @@
     },
     "description": "Realtime notification delivered via SSE for entity and membership changes.",
     "example": {
-      "kind": "entity",
+      "kind": "product",
       "action": "update",
-      "entityType": "attachment",
+      "productType": "attachment",
       "resourceType": null,
       "subjectId": "e781e15e-ec97-4ad0-aa42-418ee4c50d02",
       "organizationId": "3a9fc6f0-5cf3-491b-a437-8e8c3a3796f6",

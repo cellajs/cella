@@ -116,16 +116,16 @@ export function getCountDeltas(
       }
     }
 
-    // Embedding counters: track e:c:<hostEntity> counts per embedded entity ID. Hosts are
+    // Embedding counters: track e:c:<hostProduct> counts per embedded entity ID. Hosts are
     // always products (config type), so the publication row filter carries the draft
     // dimension: a publish edge arrives as INSERT (adds every ref), an unpublish as
     // DELETE with the old row (removes them), draft ref edits never arrive. The
     // deletedAt dimension is not remapped: soft-delete ref cleanup is owned by
     // embedding-cleanup, which rewrites the arrays and emits its own updates.
-    for (const embedding of appConfig.entityEmbeddings) {
-      if (embedding.hostEntity !== tableMeta.type) continue;
+    for (const embedding of appConfig.productEmbeddings) {
+      if (embedding.hostProduct !== tableMeta.type) continue;
       const col = embedding.hostColumn;
-      const counterKey = `e:c:${embedding.hostEntity}`;
+      const counterKey = `e:c:${embedding.hostProduct}`;
 
       if (action === 'delete') {
         const ids = getArrayValue(oldRow ?? newRow, col);

@@ -100,7 +100,7 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
         viewCount: sql<number>`coalesce(${productCountersTable.viewCount}, 0)`.as('view_count'),
       })
       .from(attachmentsTable)
-      .leftJoin(productCountersTable, eq(productCountersTable.entityId, attachmentsTable.id))
+      .leftJoin(productCountersTable, eq(productCountersTable.productId, attachmentsTable.id))
       .leftJoin(createdByUser, eq(createdByUser.id, attachmentsTable.createdBy))
       .leftJoin(updatedByUser, eq(updatedByUser.id, attachmentsTable.updatedBy))
       .where(whereClause)

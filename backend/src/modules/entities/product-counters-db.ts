@@ -8,8 +8,8 @@ import { appConfig } from 'shared';
  * Incremented atomically via UPSERT when mark-seen events occur.
  */
 export const productCountersTable = snakeCase.table('product_counters', {
-  entityId: uuid().notNull().primaryKey(),
-  entityType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
+  productId: uuid().notNull().primaryKey(),
+  productType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
   viewCount: integer().notNull().default(0),
   lastViewedAt: timestamp('last_viewed_at', { mode: 'string' }),
 });

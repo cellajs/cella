@@ -28,11 +28,11 @@ export function noteUnseenReconciled(): void {
  * `findUnseenCountsByUser`; forks add theirs in `matchesUnseenFilters` (helpers.ts).
  */
 export function ingestSyncedRows(
-  entityType: ProductEntityType,
+  productType: ProductEntityType,
   fallbackChannelId: string,
   rows: { id: string; [key: string]: unknown }[],
 ): void {
-  if (!isSeenTracked(entityType)) return;
+  if (!isSeenTracked(productType)) return;
   const cutoff = Date.now() - seenWindowMs;
 
   for (const row of rows) {
@@ -44,33 +44,33 @@ export function ingestSyncedRows(
       (typeof row.createdAt === 'string' ? row.createdAt : undefined);
     const recencyAt = recencySource ? Date.parse(recencySource) : Number.NaN;
     if (Number.isNaN(recencyAt) || recencyAt <= cutoff) continue;
-    if (!matchesUnseenFilters(entityType, row)) continue;
+    if (!matchesUnseenFilters(productType, row)) continue;
 
-    const channelId = resolveDeepestAncestorId(hierarchy, entityType, row) ?? fallbackChannelId;
+    const channelId = resolveDeepestAncestorId(hierarchy, productType, row) ?? fallbackChannelId;
     const seen = isSeenLocally(row.id);
 
     if (typeof row.deletedAt === 'string' && row.deletedAt.length > 0) {
       // Decrement only rows the current count can include: counted here, or in the server
       // baseline (recency before the last recount).
       if (!seen && (countedIds.has(row.id) || recencyAt <= lastReconcileAt))
-        applyUnseenDelta(channelId, entityType, -1);
+        applyUnseenDelta(channelId, productType, -1);
       countedIds.delete(row.id);
     } else if (recencyAt > lastReconcileAt && !seen && !countedIds.has(row.id)) {
       countedIds.add(row.id);
-      applyUnseenDelta(channelId, entityType, 1);
+      applyUnseenDelta(channelId, productType, 1);
     }
   }
 }
 
 /** Removal without a tombstone row: a locally-seen entity nets 0 (total −1, seen −1); an unseen one decrements. */
 export function applyUnfetchableRemovalUnseen(
-  entityType: ProductEntityType,
+  productType: ProductEntityType,
   entityId: string,
   channelId: string | null,
 ): void {
-  if (!isSeenTracked(entityType)) return;
+  if (!isSeenTracked(productType)) return;
   countedIds.delete(entityId);
   if (isSeenLocally(entityId)) return;
-  if (channelId) applyUnseenDelta(channelId, entityType, -1);
+  if (channelId) applyUnseenDelta(channelId, productType, -1);
   else queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
 }

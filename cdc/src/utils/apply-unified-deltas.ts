@@ -87,7 +87,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
   const { orgSequenceGroups, countDeltasByChannelKey } = plan;
 
   const handledChannelKeys = new Set<string>();
-  const allEntityStamps: Array<{ tableName: string; id: string; seq: number }> = [];
+  const allProductStamps: Array<{ tableName: string; id: string; seq: number }> = [];
   /** e:f: (and org-row leftovers) accumulated for phase 2, keyed by channel node. */
   const phase2Deltas = new Map<string, Record<string, number>>();
 
@@ -105,7 +105,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
       const seq = baseSeq + i + 1;
       const { tableMeta, activity, rowData } = group.events[i].result;
       rowData.seq = seq;
-      allEntityStamps.push({ tableName: getTableName(tableMeta.table), id: rowData.id, seq });
+      allProductStamps.push({ tableName: getTableName(tableMeta.table), id: rowData.id, seq });
 
       // Frontier rollups. Every stamped event bumps: the publication row filter keeps
       // drafts out of the stream, publishes arrive as INSERTs, and every event in this
@@ -145,9 +145,9 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
   }
 
   // Bulk entity seq stamp: one UPDATE ... FROM VALUES per table
-  if (allEntityStamps.length > 0) {
+  if (allProductStamps.length > 0) {
     const byTable = new Map<string, Array<{ id: string; seq: number }>>();
-    for (const stamp of allEntityStamps) {
+    for (const stamp of allProductStamps) {
       const list = byTable.get(stamp.tableName);
       if (list) list.push(stamp);
       else byTable.set(stamp.tableName, [stamp]);

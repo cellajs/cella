@@ -58,10 +58,10 @@ export const useColumns = (channelEntity: EnrichedChannelEntity, isSheet: boolea
         renderCell: ({ row }) => (
           <>
             <SeenMark
-              entityId={row.id}
+              productId={row.id}
               tenantId={channelEntity.tenantId}
               organizationId={channelEntity.id}
-              entityType="attachment"
+              productType="attachment"
             />
             <span className="truncate font-medium">{row.name || '-'}</span>
           </>

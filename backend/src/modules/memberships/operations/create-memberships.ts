@@ -5,7 +5,7 @@ import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
+import { getMembershipEntityIds, insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
 import {
   countMembershipsByChannel,
   countPendingInvitesByChannel,
@@ -159,7 +159,7 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
       createdBy: user.id,
       channelType: entityType,
       tenantId: ctx.var.tenantId,
-      ...getBaseMembershipEntityId(entity),
+      ...getMembershipEntityIds(entity),
       channelId: entity.id,
     }));
 
@@ -208,7 +208,7 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
       role,
       entityType,
       inactiveMembershipId: newUserInactiveMembershipIdsByEmail.get(email)!,
-      ...getBaseMembershipEntityId(entity),
+      ...getMembershipEntityIds(entity),
       channelId: entity.id,
     };
   });
@@ -232,7 +232,7 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
       channelType: entityType,
       tokenId: tokensByEmail.get(email)!,
       tenantId: ctx.var.tenantId,
-      ...getBaseMembershipEntityId(entity),
+      ...getMembershipEntityIds(entity),
       channelId: entity.id,
     }));
 

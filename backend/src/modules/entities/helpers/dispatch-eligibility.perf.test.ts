@@ -2,7 +2,7 @@ import { appConfig, type EntityRole } from 'shared';
 import { describe, expect, it } from 'vitest';
 import {
   type AppStreamSubscriber,
-  canReceiveEntityEvent,
+  canReceiveProductEvent,
   rowReadDecisions,
   rowScopedEvent,
 } from '#/modules/entities/helpers/dispatch-to-stream';
@@ -104,7 +104,7 @@ const perSubscriberFilter = (
   return subscribers.filter(
     (subscriber) =>
       subscriber.organizationIds.has(event.organizationId) &&
-      scoped.some((scopedEvent) => canReceiveEntityEvent(subscriber, scopedEvent)),
+      scoped.some((scopedEvent) => canReceiveProductEvent(subscriber, scopedEvent)),
   );
 };
 

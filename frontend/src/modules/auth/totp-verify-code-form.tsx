@@ -58,10 +58,10 @@ export function TotpConfirmationForm({ onSubmit, onCancel, label, isPending }: P
                   disabled={isPending}
                   inputMode="numeric"
                   containerClassName="justify-center"
-                  maxLength={appConfig.totpConfig.digits}
+                  maxLength={appConfig.totp.digits}
                 >
                   <InputOTPGroup>
-                    {Array.from({ length: appConfig.totpConfig.digits }).map((_, index) => (
+                    {Array.from({ length: appConfig.totp.digits }).map((_, index) => (
                       <InputOTPSlot
                         // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length OTP slots, never reordered.
                         key={index}

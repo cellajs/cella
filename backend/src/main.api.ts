@@ -12,7 +12,7 @@ import process from 'node:process';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { scheduleDbMaintenance } from '#/lib/db-maintenance';
 import { otel } from '#/lib/tracing';
-import { registerCacheInvalidation } from '#/middlewares/entity-cache/cache-invalidation';
+import { registerCacheInvalidation } from '#/middlewares/product-cache/cache-invalidation';
 import { baseApp as app } from '#/routes';
 import { timestamp } from '#/utils/console';
 import { env } from './env';

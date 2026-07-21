@@ -13,8 +13,8 @@ import { idbKvStorage } from '~/query/idb-kv-storage';
 interface SeenBatch {
   tenantId: string;
   organizationId: string;
-  entityType: ProductEntityType;
-  entityIds: Set<string>;
+  productType: ProductEntityType;
+  productIds: Set<string>;
 }
 
 const FLUSH_INTERVAL_MS = appConfig.mode === 'development' ? 10 * 1000 : 60 * 1000;
@@ -22,7 +22,7 @@ const FLUSH_INTERVAL_MS = appConfig.mode === 'development' ? 10 * 1000 : 60 * 10
 /** Cap on persisted flushed IDs, evicting oldest first (Sets iterate in insertion order). Evicted IDs may be re-sent; markSeen skips duplicates. */
 const FLUSHED_IDS_MAX = 10_000;
 
-const batchKey = (organizationId: string, entityType: ProductEntityType) => `${organizationId}:${entityType}`;
+const batchKey = (organizationId: string, productType: ProductEntityType) => `${organizationId}:${productType}`;
 
 // Mutable module state: nothing renders from the queue, and per-mark immutable clones are
 // exactly the scroll-time overhead the delta batcher exists to avoid.
@@ -34,12 +34,12 @@ interface SeenStoreState {
   flushedIds: Set<string>;
 
   /** Record an entity as seen and queue it for the next flush. */
-  markEntitySeen: (
+  markProductSeen: (
     tenantId: string,
     organizationId: string,
     channelId: string,
-    entityType: ProductEntityType,
-    entityId: string,
+    productType: ProductEntityType,
+    productId: string,
   ) => void;
   /** Start the periodic flush interval */
   startFlushInterval: () => void;
@@ -62,18 +62,18 @@ export const useSeenStore = create<SeenStoreState>()(
       (set, get) => ({
         flushedIds: new Set(),
 
-        markEntitySeen: (tenantId, organizationId, channelId, entityType, entityId) => {
-          if (!isSeenTracked(entityType)) return;
-          if (get().flushedIds.has(entityId)) return; // server already told in an earlier session
+        markProductSeen: (tenantId, organizationId, channelId, productType, productId) => {
+          if (!isSeenTracked(productType)) return;
+          if (get().flushedIds.has(productId)) return; // server already told in an earlier session
 
-          const key = batchKey(organizationId, entityType);
-          const batch = pending.get(key) ?? { tenantId, organizationId, entityType, entityIds: new Set() };
-          if (batch.entityIds.has(entityId)) return; // session dedup
-          batch.entityIds.add(entityId);
+          const key = batchKey(organizationId, productType);
+          const batch = pending.get(key) ?? { tenantId, organizationId, productType, productIds: new Set() };
+          if (batch.productIds.has(productId)) return; // session dedup
+          batch.productIds.add(productId);
           pending.set(key, batch);
 
-          applyUnseenDelta(channelId, entityType, -1);
-          if (isDebugMode) console.debug('[SeenStore] queued:', entityType, entityId.slice(0, 8));
+          applyUnseenDelta(channelId, productType, -1);
+          if (isDebugMode) console.debug('[SeenStore] queued:', productType, productId.slice(0, 8));
         },
 
         startFlushInterval: () => {
@@ -94,30 +94,33 @@ export const useSeenStore = create<SeenStoreState>()(
           if (isDebugMode)
             console.debug(
               '[SeenStore] flushing',
-              batches.map((b) => `${b.entityType}(${b.entityIds.size})`),
+              batches.map((b) => `${b.productType}(${b.productIds.size})`),
             );
 
           for (const batch of batches) {
-            const { tenantId, organizationId, entityType } = batch;
+            const { tenantId, organizationId, productType } = batch;
             try {
-              const entityIds = [...batch.entityIds];
-              await markSeen({ path: { tenantId, organizationId }, body: { entityIds, entityType } });
+              const productIds = [...batch.productIds];
+              await markSeen({
+                path: { tenantId, organizationId },
+                body: { entityIds: productIds, entityType: productType },
+              });
 
               const flushedIds = new Set(get().flushedIds);
-              for (const id of entityIds) flushedIds.add(id);
+              for (const id of productIds) flushedIds.add(id);
               for (const id of flushedIds) {
                 if (flushedIds.size <= FLUSHED_IDS_MAX) break;
                 flushedIds.delete(id);
               }
               set({ flushedIds });
             } catch (error) {
-              reportCriticalError('seen.flush_failed', error, { entityType });
-              const requeued = pending.get(batchKey(organizationId, entityType));
-              if (requeued) for (const id of batch.entityIds) requeued.entityIds.add(id);
-              else pending.set(batchKey(organizationId, entityType), batch);
+              reportCriticalError('seen.flush_failed', error, { productType });
+              const requeued = pending.get(batchKey(organizationId, productType));
+              if (requeued) for (const id of batch.productIds) requeued.productIds.add(id);
+              else pending.set(batchKey(organizationId, productType), batch);
             }
           }
-          // No refetch needed: markEntitySeen already patched unseen counts, and SSE covers external changes.
+          // No refetch needed: markProductSeen already patched unseen counts, and SSE covers external changes.
         },
 
         reset: () => {
@@ -149,7 +152,7 @@ export const useSeenStore = create<SeenStoreState>()(
  */
 export function isSeenLocally(entityId: string): boolean {
   if (useSeenStore.getState().flushedIds.has(entityId)) return true;
-  for (const batch of pending.values()) if (batch.entityIds.has(entityId)) return true;
+  for (const batch of pending.values()) if (batch.productIds.has(entityId)) return true;
   return false;
 }
 
@@ -157,7 +160,7 @@ export function isSeenLocally(entityId: string): boolean {
 export const setupSeenBeaconFlush = () => {
   const handler = () => {
     for (const batch of pending.values()) {
-      const body = JSON.stringify({ entityIds: [...batch.entityIds], entityType: batch.entityType });
+      const body = JSON.stringify({ entityIds: [...batch.productIds], entityType: batch.productType });
       navigator.sendBeacon(
         `/api/${batch.tenantId}/${batch.organizationId}/seen`,
         new Blob([body], { type: 'application/json' }),

@@ -7,12 +7,12 @@ import { channelIdColumnKeys } from '../utils/channel-columns';
 import { log } from '../lib/pino';
 import { RESOURCE_LIMITS } from '../constants';
 
-/** Reverse lookup: targetType → source types that embed into it (from entityEmbeddings) */
+/** Reverse lookup: targetType → source types that embed into it (from productEmbeddings) */
 const softCascadeTargets = new Map<string, Set<string>>();
-for (const { embeddedEntity, hostEntity } of appConfig.entityEmbeddings) {
-  const sources = softCascadeTargets.get(hostEntity) ?? new Set<string>();
-  sources.add(embeddedEntity);
-  softCascadeTargets.set(hostEntity, sources);
+for (const { embeddedProduct, hostProduct } of appConfig.productEmbeddings) {
+  const sources = softCascadeTargets.get(hostProduct) ?? new Set<string>();
+  sources.add(embeddedProduct);
+  softCascadeTargets.set(hostProduct, sources);
 }
 
 const { transactionTimeoutMs } = RESOURCE_LIMITS.buffers;
@@ -152,7 +152,7 @@ export class TransactionBuffer {
     let surviving = events;
 
     // Soft cascade suppression: if tx contains DELETEs of source type A and UPDATEs of target type B,
-    // and A→B is a known embedding relationship (entityEmbeddings), suppress the B updates.
+    // and A→B is a known embedding relationship (productEmbeddings), suppress the B updates.
     if (surviving.length > 1 && softCascadeTargets.size > 0) {
       surviving = this.suppressSoftCascades(surviving);
     }

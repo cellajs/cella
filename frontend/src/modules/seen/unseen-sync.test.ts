@@ -57,8 +57,8 @@ describe('unseen count deltas from synced rows', () => {
 
   it('does not count rows outside the seen window or rows this client already saw', async () => {
     vi.advanceTimersByTime(10);
-    useSeenStore.getState().markEntitySeen('tenant-1', CHANNEL, CHANNEL, 'attachment', 'seen-1');
-    await settle(); // markEntitySeen itself queued a -1 (5 → 4)
+    useSeenStore.getState().markProductSeen('tenant-1', CHANNEL, CHANNEL, 'attachment', 'seen-1');
+    await settle(); // markProductSeen itself queued a -1 (5 → 4)
 
     ingestSyncedRows('attachment', CHANNEL, [
       row('ancient', { createdAt: daysAgo(120) }), // outside 90-day window
@@ -102,7 +102,7 @@ describe('unseen count deltas from synced rows', () => {
     await settle();
     expect(counts()[CHANNEL].attachment).toBe(4);
 
-    useSeenStore.getState().markEntitySeen('tenant-1', CHANNEL, CHANNEL, 'attachment', 'gone-2');
+    useSeenStore.getState().markProductSeen('tenant-1', CHANNEL, CHANNEL, 'attachment', 'gone-2');
     await settle(); // view-mark −1 (4 → 3)
     applyUnfetchableRemovalUnseen('attachment', 'gone-2', CHANNEL); // seen → net 0
     await settle();

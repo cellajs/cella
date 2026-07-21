@@ -7,11 +7,11 @@ export const seenKeys = {
 
 /** Whether an entity type is configured for seen tracking */
 export const isSeenTracked = (entityType: string): boolean =>
-  (appConfig.seenTrackedEntityTypes as readonly string[]).includes(entityType);
+  (appConfig.seenTrackedProductTypes as readonly string[]).includes(entityType);
 
 /** Context types that group seen counts, derived from hierarchy parents of tracked entity types */
 export const seenGroupingChannelTypes = new Set(
-  appConfig.seenTrackedEntityTypes.map((t) => hierarchy.getParent(t)).filter(Boolean),
+  appConfig.seenTrackedProductTypes.map((t) => hierarchy.getParent(t)).filter(Boolean),
 );
 
 /**

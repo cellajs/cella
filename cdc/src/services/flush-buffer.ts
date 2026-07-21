@@ -1,7 +1,7 @@
 import type { PendingEvent } from '../types';
 import { log } from '../lib/pino';
 import { RESOURCE_LIMITS } from '../constants';
-import { cdcMetrics } from './cdc-metrics';
+import { metrics } from './cdc-metrics';
 
 /**
  * Cross-transaction micro-batching buffer. Accumulates surviving events
@@ -117,7 +117,7 @@ export class FlushBuffer {
       // Ack the highest LSN: implicitly covers all prior LSNs
       await this.acknowledgeLsn(lsn);
 
-      cdcMetrics.recordFlush(events.length, performance.now() - flushStart);
+      metrics.recordFlush(events.length, performance.now() - flushStart);
 
       if (events.length > 1) {
         log.trace('Flush buffer batch processed', {

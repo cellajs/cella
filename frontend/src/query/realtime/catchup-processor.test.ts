@@ -6,7 +6,7 @@ vi.mock('shared', () => ({
     slug: 'test',
     channelEntityTypes: ['organization', 'project'],
     entityIdColumnKeys: { organization: 'organizationId', project: 'projectId' },
-    seenTrackedEntityTypes: [],
+    seenTrackedProductTypes: [],
   },
   hierarchy: {
     getOrderedAncestors: (entityType: string) => {

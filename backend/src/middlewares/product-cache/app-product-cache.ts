@@ -1,7 +1,7 @@
 import type { EntityType } from 'shared';
 import { TTLCache } from '#/lib/ttl-cache';
 import { log } from '#/utils/logger';
-import { entityCacheMetrics } from './metrics';
+import { productCacheMetrics } from './metrics';
 
 /** Cache TTL: 10 minutes. */
 const cacheTtl = 10 * 60 * 1000;
@@ -17,7 +17,7 @@ const cacheConfig = {
 /** Enriched entity response, keyed by entity. */
 type CacheValue = Record<string, unknown>;
 
-/** Main cache: entityKey to enriched entity data. */
+/** Main cache: productKey to enriched entity data. */
 const cache = new TTLCache<CacheValue>({
   maxSize: cacheConfig.maxSize,
   defaultTtl: cacheConfig.defaultTtl,
@@ -29,19 +29,19 @@ const cache = new TTLCache<CacheValue>({
 });
 
 /** Build entity key. */
-function entityKey(entityType: EntityType, entityId: string): string {
+function productKey(entityType: EntityType, entityId: string): string {
   return `${entityType}:${entityId}`;
 }
 
 /**
  * Entity cache service.
  * Entity-keyed store of enriched detail responses. CDC invalidates an entry by entity id on
- * change; the next fetch re-enriches. Access is authorized per request by the appCache middleware.
+ * change; the next fetch re-enriches. Access is authorized per request by the productCache middleware.
  */
-export const entityCache = {
+export const productCache = {
   /**
    * Set enriched entity data in cache.
-   * Called by the appCache middleware after the handler fetches and enriches from DB.
+   * Called by the productCache middleware after the handler fetches and enriches from DB.
    */
   set(key: string, data: Record<string, unknown>, ttlMs?: number): void {
     cache.set(key, data, ttlMs ?? cacheConfig.defaultTtl);
@@ -55,11 +55,11 @@ export const entityCache = {
     const data = cache.get(key);
 
     if (data === undefined) {
-      entityCacheMetrics.recordMiss();
+      productCacheMetrics.recordMiss();
       return undefined;
     }
 
-    entityCacheMetrics.recordHit();
+    productCacheMetrics.recordHit();
     return data;
   },
 
@@ -67,13 +67,13 @@ export const entityCache = {
    * Invalidate cache entry by entity type and ID.
    * Removes entity data from cache so the next fetch re-enriches.
    */
-  invalidateByEntity(entityType: EntityType, entityId: string): boolean {
-    const key = entityKey(entityType, entityId);
+  invalidateProduct(entityType: EntityType, entityId: string): boolean {
+    const key = productKey(entityType, entityId);
     const existed = cache.has(key);
 
     if (existed) {
       cache.delete(key);
-      entityCacheMetrics.recordInvalidation(1);
+      productCacheMetrics.recordInvalidation(1);
       return true;
     }
 

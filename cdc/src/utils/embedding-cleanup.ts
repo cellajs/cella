@@ -19,43 +19,43 @@ interface ResolvedEmbedding {
 }
 
 /**
- * Map entityEmbeddings config → Drizzle column references at module init.
+ * Map productEmbeddings config → Drizzle column references at module init.
  * Throws on misconfiguration so problems surface at startup, not at runtime.
  */
 function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]> {
   const map = new Map<ProductEntityType, ResolvedEmbedding[]>();
 
-  for (const { embeddedEntity, hostEntity, hostColumn: hostColumnName } of appConfig.entityEmbeddings) {
-    const hostTable = getEntityTable(hostEntity as Parameters<typeof getEntityTable>[0]);
+  for (const { embeddedProduct, hostProduct, hostColumn: hostColumnName } of appConfig.productEmbeddings) {
+    const hostTable = getEntityTable(hostProduct as Parameters<typeof getEntityTable>[0]);
     // getColumns returns literal-keyed columns; widen for runtime string lookup
     const columns = getColumns(hostTable) as Record<string, AnyPgColumn>;
 
     const hostColumn = columns[hostColumnName];
-    if (!hostColumn) throw new Error(`entityEmbeddings: column "${hostColumnName}" not found on "${hostEntity}" table`);
+    if (!hostColumn) throw new Error(`productEmbeddings: column "${hostColumnName}" not found on "${hostProduct}" table`);
 
-    const parentType = hierarchy.getParent(embeddedEntity);
-    if (!parentType) throw new Error(`entityEmbeddings: "${embeddedEntity}" has no parent context — cleanup requires a scoping column`);
+    const parentType = hierarchy.getParent(embeddedProduct);
+    if (!parentType) throw new Error(`productEmbeddings: "${embeddedProduct}" has no parent context — cleanup requires a scoping column`);
 
     const parentColumnName = appConfig.entityIdColumnKeys[parentType];
     const parentColumn = columns[parentColumnName];
-    if (!parentColumn) throw new Error(`entityEmbeddings: column "${parentColumnName}" not found on "${hostEntity}" table`);
+    if (!parentColumn) throw new Error(`productEmbeddings: column "${parentColumnName}" not found on "${hostProduct}" table`);
 
     const resolved: ResolvedEmbedding = { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn };
-    const list = map.get(embeddedEntity);
+    const list = map.get(embeddedProduct);
     if (list) list.push(resolved);
-    else map.set(embeddedEntity, [resolved]);
+    else map.set(embeddedProduct, [resolved]);
   }
 
   return map;
 }
 
 /** Pre-resolved embedding lookups, keyed by embedded entity type. */
-const embeddingsByEntity = resolveEmbeddings();
+const embeddingsByProduct = resolveEmbeddings();
 
 /**
  * Strip deleted embedded-entity IDs from host-entity array columns.
  *
- * Driven by `appConfig.entityEmbeddings`: adding a new embedding relationship
+ * Driven by `appConfig.productEmbeddings`: adding a new embedding relationship
  * (e.g. tags on attachments) requires zero changes here.
  *
  * Handles both delete-style events (`action === 'delete'`, including unpublishes) and
@@ -67,11 +67,11 @@ const embeddingsByEntity = resolveEmbeddings();
  * parent-scoping filter limits the UPDATE scope.
  */
 export async function cleanupEmbeddingReferences(
-  embeddedEntityType: ProductEntityType,
+  embeddedProductType: ProductEntityType,
   action: EmbeddingCleanupAction,
   events: { result: { rowData: CdcRowData; oldRowData?: CdcRowData | null } }[],
 ): Promise<void> {
-  const embeddings = embeddingsByEntity.get(embeddedEntityType);
+  const embeddings = embeddingsByProduct.get(embeddedProductType);
   if (!embeddings) return;
 
   // Hard delete: every event is a removal. Soft delete: only events that flip deletedAt.

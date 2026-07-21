@@ -90,7 +90,7 @@ const accessOptions = <T extends PermissionMembership>(engineAccess: EngineAcces
 
 /**
  * May this actor perform this action on this subject? The request-path check: guards,
- * detail reads, the yjs relay, and dispatch's `canReceiveEntityEvent` all land here.
+ * detail reads, the yjs relay, and dispatch's `canReceiveProductEvent` all land here.
  */
 export function checkAccess<T extends PermissionMembership>(
   access: Access<T>,

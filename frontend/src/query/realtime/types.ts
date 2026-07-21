@@ -26,10 +26,10 @@ export interface StreamTraceContext {
 }
 
 /**
- * Product-entity notification for the seq sync path. `entityType` is
- * non-null when `kind === 'entity'`.
+ * Product-entity notification for the seq sync path. `productType` is
+ * non-null when `kind === 'product'`.
  */
-export type EntityNotification = StreamNotification & { kind: 'entity'; entityType: ProductEntityType };
+export type EntityNotification = StreamNotification & { kind: 'product'; productType: ProductEntityType };
 
 /** Membership notification for the query-invalidation path. */
 export type MembershipNotification = StreamNotification & { kind: 'membership'; resourceType: 'membership' };

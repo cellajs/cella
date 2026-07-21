@@ -23,8 +23,8 @@ export const seenByTable = snakeCase.table(
   {
     id: uuid().notNull().$defaultFn(generateId),
     userId: uuid().notNull(),
-    entityId: uuid().notNull(),
-    entityType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
+    productId: uuid().notNull(),
+    productType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
     /** Parent channel entity ID for grouping (e.g., projectId for tasks). Falls back to organizationId. */
     channelId: uuid().notNull(),
     organizationId: uuid().notNull(),
@@ -39,11 +39,11 @@ export const seenByTable = snakeCase.table(
     // every
     // unique index. Rare concurrent-flush races can leave duplicate rows; readers use
     // EXISTS/NOT EXISTS (dup-safe) and counter recalculation counts DISTINCT users.
-    index('seen_by_user_entity_index').on(table.userId, table.entityId),
-    // Index for unseen count query: COUNT(*) WHERE userId AND channelId AND entityType
-    index('seen_by_user_channel_type_index').on(table.userId, table.channelId, table.entityType),
+    index('seen_by_user_product_index').on(table.userId, table.productId),
+    // Index for unseen count query: COUNT(*) WHERE userId AND channelId AND productType
+    index('seen_by_user_channel_type_index').on(table.userId, table.channelId, table.productType),
     // Index for entity-level queries
-    index('seen_by_entity_id_index').on(table.entityId),
+    index('seen_by_product_id_index').on(table.productId),
     index('seen_by_tenant_id_index').on(table.tenantId),
     foreignKey({
       columns: [table.userId],

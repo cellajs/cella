@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { MOCK_REF_DATE, mockNanoid, mockPaginated, mockUuid, withFakerSeed } from '#/mocks';
-import type { MeAuthDataResponse, MeResponse, UploadTokenResponse } from '#/modules/me/types';
+import type { MeAuthResponse, MeResponse, UploadTokenResponse } from '#/modules/me/types';
 import { mockInactiveMembershipResponse } from '#/modules/memberships/memberships-mocks';
 import { mockUserResponse } from '#/modules/user/user-mocks';
 import { mockChannelEntityBase } from '#/schemas/entity-base-mocks';
@@ -19,7 +19,7 @@ export const mockMeResponse = (key = 'me:default'): MeResponse =>
  * Generates a mock MeAuthData response.
  * Used for getMyAuth endpoint example.
  */
-export const mockMeAuthDataResponse = (key = 'me-auth:default'): MeAuthDataResponse =>
+export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
   withFakerSeed(key, () => {
     const sessionCreatedAt = faker.date.past({ refDate: MOCK_REF_DATE });
     const sessionExpiresAt = new Date(sessionCreatedAt.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days later

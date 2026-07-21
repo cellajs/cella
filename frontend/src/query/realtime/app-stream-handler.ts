@@ -21,7 +21,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
 
   withSpanSync(
     syncSpanNames.messageProcess,
-    { entityType: notification.entityType, action, entityId: subjectId, _trace },
+    { entityType: notification.productType, action, entityId: subjectId, _trace },
     () => {
       // Checked before setOrgTenantId creates the entry: an org the sync store has never
       // seen means the SSE connection is not registered on its channel.
@@ -45,8 +45,8 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
         return;
       }
 
-      // kind === 'entity', so entityType is narrowed to a product entity type.
-      const entityType = notification.entityType;
+      // kind === 'product', so productType is narrowed to a product entity type.
+      const entityType = notification.productType;
       if (!isProductEntity(entityType))
         return console.error('Unknown entityType in app stream notification:', entityType);
 

@@ -29,8 +29,8 @@ function computeSpreadWindow(organizationId: string | null): number | null {
  * single source of the `kind` discriminant, used both to shape the wire notification
  * and to branch dispatch/handling on either end.
  */
-export function appNotificationKind(event: Pick<ActivityEvent, 'entityType'>): 'entity' | 'membership' {
-  return isProductEntity(event.entityType) ? 'entity' : 'membership';
+export function appNotificationKind(event: Pick<ActivityEvent, 'entityType'>): 'product' | 'membership' {
+  return isProductEntity(event.entityType) ? 'product' : 'membership';
 }
 
 /** Type-guard form of {@link appNotificationKind}: narrows an app-stream event to the membership member. */
@@ -68,15 +68,15 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
 
   // Derive propagation hint for source entity types (e.g., label → task.labels).
   // For batch events, propagation is pre-set by the CDC worker. For single entity
-  // events, derive from entityEmbeddings config without DB queries.
+  // events, derive from productEmbeddings config without DB queries.
   let propagation = event.propagation;
   if (!propagation && entityType) {
-    const embedding = appConfig.entityEmbeddings.find((e) => e.embeddedEntity === entityType);
+    const embedding = appConfig.productEmbeddings.find((e) => e.embeddedProduct === entityType);
     if (embedding) {
       const isDelete = event.action === 'delete';
       propagation = {
-        sourceType: embedding.embeddedEntity,
-        targetType: embedding.hostEntity,
+        sourceType: embedding.embeddedProduct,
+        targetType: embedding.hostProduct,
         field: embedding.hostColumn,
         update: isDelete ? [] : [event.subjectId!],
         remove: isDelete ? [event.subjectId!] : [],
@@ -94,7 +94,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     // everything else on this stream is a membership change (query invalidation).
     kind: appNotificationKind(event),
     action: event.action,
-    entityType: isProduct ? entityType : null,
+    productType: isProduct ? entityType : null,
     resourceType: event.resourceType,
     subjectId: event.subjectId,
     organizationId: event.organizationId,

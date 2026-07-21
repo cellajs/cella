@@ -201,7 +201,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
     );
 
     expect(member.received).toHaveLength(1);
-    expect(member.received[0]).toMatchObject({ action: 'delete', entityType: 'attachment' });
+    expect(member.received[0]).toMatchObject({ action: 'delete', productType: 'attachment' });
     expect(otherOrg.received).toHaveLength(0);
   });
 

@@ -8,7 +8,7 @@ import { nanoidTenant } from 'shared/utils/nanoid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb, type Tx } from '#/db/db';
 import { membershipImmutableColumns } from '#/db/immutability-triggers';
-import { seenWindowMs, trackedEntityTypes } from '#/modules/seen/operations/mark-seen';
+import { seenWindowMs, trackedProductTypes } from '#/modules/seen/operations/mark-seen';
 import { findUnseenCountsByUser } from '#/modules/seen/seen-queries';
 import { entityTables } from '#/tables';
 
@@ -669,13 +669,13 @@ const rlsSuiteReady = await (async () => {
     // (tenantRead sets app.tenant_id); a context-less baseDb read silently returns zero and the
     // unseen badge breaks. These lock that behaviour in. Org A holds exactly one in-window
     // attachment (TEST_ATTACHMENT_A) and User A has no seen_by rows initially.
-    type UnseenRow = { channelId: string; entityType: string; unseenCount: number };
+    type UnseenRow = { channelId: string; productType: string; unseenCount: number };
     const cutoff = () => new Date(Date.now() - seenWindowMs).toISOString();
     const countUnseen = (tx: NodePgTx) =>
       findUnseenCountsByUser({ var: { db: tx } } as Parameters<typeof findUnseenCountsByUser>[0], {
         userId: TEST_USER_A,
         channelIds: [TEST_ORG_A],
-        entityTypes: trackedEntityTypes,
+        productTypes: trackedProductTypes,
         cutoff: cutoff(),
       });
 
@@ -684,7 +684,7 @@ const rlsSuiteReady = await (async () => {
       const rows = await queryAsRuntimeRole<UnseenRow>(TEST_TENANT_A, TEST_USER_A, countUnseen);
       const orgA = rows.find((r) => r.channelId === TEST_ORG_A);
       expect(orgA).toBeDefined();
-      expect(orgA?.entityType).toBe('attachment');
+      expect(orgA?.productType).toBe('attachment');
       expect(orgA?.unseenCount).toBe(1);
     });
 
@@ -700,9 +700,9 @@ const rlsSuiteReady = await (async () => {
       if (!rolesAvailable || !requiredTablesAvailable || !seenByAvailable) return;
       const seenId = '00000000-0000-4000-a000-0000000000a1';
       // `seen_by` is partitioned by `created_at`, so it cannot have a unique arbiter on
-      // `(user_id, entity_id)`. This fixed-id fixture is removed in `finally`.
+      // `(user_id, product_id)`. This fixed-id fixture is removed in `finally`.
       await adminDb.execute(sql`
-        INSERT INTO seen_by (id, user_id, entity_id, entity_type, channel_id, organization_id, tenant_id, created_at)
+        INSERT INTO seen_by (id, user_id, product_id, product_type, channel_id, organization_id, tenant_id, created_at)
         VALUES (${seenId}, ${TEST_USER_A}, ${TEST_ATTACHMENT_A}, 'attachment', ${TEST_ORG_A}, ${TEST_ORG_A}, ${TEST_TENANT_A}, NOW())
       `);
       try {

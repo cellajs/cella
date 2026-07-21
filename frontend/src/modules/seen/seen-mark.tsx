@@ -6,8 +6,8 @@ type SeenMeta = {
   tenantId: string;
   organizationId: string;
   channelId: string;
-  entityType: ProductEntityType;
-  entityId: string;
+  productType: ProductEntityType;
+  productId: string;
 };
 
 const elementMeta = new WeakMap<Element, SeenMeta>();
@@ -23,7 +23,7 @@ function getSharedObserver(): IntersectionObserver {
   if (!sharedObserver) {
     sharedObserver = new IntersectionObserver(
       (entries) => {
-        const markEntitySeen = useSeenStore.getState().markEntitySeen;
+        const markProductSeen = useSeenStore.getState().markProductSeen;
 
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
@@ -31,19 +31,19 @@ function getSharedObserver(): IntersectionObserver {
           const meta = elementMeta.get(entry.target);
           if (!meta) continue;
 
-          if (markedIds.has(meta.entityId)) {
+          if (markedIds.has(meta.productId)) {
             sharedObserver?.unobserve(entry.target);
             continue;
           }
 
-          console.debug('[SeenMark] intersected:', meta.entityType, meta.entityId.slice(0, 8));
+          console.debug('[SeenMark] intersected:', meta.productType, meta.productId.slice(0, 8));
 
           try {
-            markEntitySeen(meta.tenantId, meta.organizationId, meta.channelId, meta.entityType, meta.entityId);
+            markProductSeen(meta.tenantId, meta.organizationId, meta.channelId, meta.productType, meta.productId);
           } catch (err) {
-            console.error('[SeenMark] markEntitySeen threw:', err);
+            console.error('[SeenMark] markProductSeen threw:', err);
           }
-          markedIds.add(meta.entityId);
+          markedIds.add(meta.productId);
           sharedObserver?.unobserve(entry.target);
         }
       },
@@ -68,13 +68,13 @@ function releaseObserver() {
 }
 
 interface SeenMarkProps {
-  entityId: string;
+  productId: string;
   tenantId: string;
   /** Organization ID for the POST API route. */
   organizationId: string;
   /** Parent channel entity ID for badge grouping (e.g., projectId for tasks). Defaults to organizationId. */
   channelId?: string;
-  entityType: ProductEntityType;
+  productType: ProductEntityType;
 }
 
 /**
@@ -84,13 +84,13 @@ interface SeenMarkProps {
  * @example
  * ```tsx
  * // In a column's renderCell (attachment: organizationId is the badge context):
- * <SeenMark entityId={row.id} tenantId={tenantId} organizationId={organizationId} entityType="attachment" />
+ * <SeenMark productId={row.id} tenantId={tenantId} organizationId={organizationId} productType="attachment" />
  *
  * // Task badge groups by project, so pass channelId:
- * <SeenMark entityId={task.id} tenantId={task.tenantId} organizationId={task.organizationId} channelId={task.projectId} entityType="task" />
+ * <SeenMark productId={task.id} tenantId={task.tenantId} organizationId={task.organizationId} channelId={task.projectId} productType="task" />
  * ```
  */
-export function SeenMark({ entityId, tenantId, organizationId, channelId, entityType }: SeenMarkProps) {
+export function SeenMark({ productId, tenantId, organizationId, channelId, productType }: SeenMarkProps) {
   const resolvedChannelId = channelId ?? organizationId;
   const elementRef = useRef<HTMLSpanElement>(null);
 
@@ -108,19 +108,19 @@ export function SeenMark({ entityId, tenantId, organizationId, channelId, entity
 
       elementRef.current = node;
 
-      if (node && !markedIds.has(entityId)) {
-        elementMeta.set(node, { tenantId, organizationId, channelId: resolvedChannelId, entityType, entityId });
+      if (node && !markedIds.has(productId)) {
+        elementMeta.set(node, { tenantId, organizationId, channelId: resolvedChannelId, productType, productId });
         getSharedObserver().observe(node);
       }
     },
-    [entityId, tenantId, organizationId, resolvedChannelId, entityType],
+    [productId, tenantId, organizationId, resolvedChannelId, productType],
   );
 
   // Already seen this session.
-  if (markedIds.has(entityId)) return null;
+  if (markedIds.has(productId)) return null;
 
   // Invisible overlay that inherits parent cell dimensions for intersection detection
   return (
-    <span ref={refCallback} data-entity-id={entityId} aria-hidden className="pointer-events-none absolute inset-0" />
+    <span ref={refCallback} data-entity-id={productId} aria-hidden className="pointer-events-none absolute inset-0" />
   );
 }

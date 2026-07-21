@@ -52,7 +52,7 @@ export const findChannelCountersByKeys = async ({ var: { db } }: DbContext, keys
  *                 ancestor). These stamps do not propagate to higher ancestors like
  *                 e:c: deltas are; they are per-stream signals.
  */
-export const getEntityCountsSelect = (entityType: ChannelEntityType) => {
+export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
   const children = hierarchy.getOrderedDescendants(entityType);
   const productChildren = children.filter((child) => hierarchy.isProduct(child));
   const col = '"channel_counters"."counts"';
@@ -91,8 +91,8 @@ export const getEntityCountsSelect = (entityType: ChannelEntityType) => {
  * Fetches aggregated counts for a specific entity from channelCountersTable.
  * Single LEFT JOIN on pre-computed JSONB, no COUNT(*) subqueries.
  */
-export const getEntityCounts = async ({ var: { db } }: DbContext, entityType: ChannelEntityType, entityId: string) => {
-  const { countsSelect } = getEntityCountsSelect(entityType);
+export const getChannelCounts = async ({ var: { db } }: DbContext, entityType: ChannelEntityType, entityId: string) => {
+  const { countsSelect } = getChannelCountsSelect(entityType);
 
   const [counts] = await db
     .select(countsSelect)

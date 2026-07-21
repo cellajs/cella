@@ -2,7 +2,7 @@ import { and, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm'
 import type { EntityRole, OrganizationFlags } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
-import { getEntityCountsSelect } from '#/modules/entities/entities-queries';
+import { getChannelCountsSelect } from '#/modules/entities/entities-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationFlagsSelect } from '#/modules/organization/helpers/select';
 import { organizationsTable } from '#/modules/organization/organization-db';
@@ -114,7 +114,7 @@ export const getOrganizationsList = async ({ var: { db } }: DbContext, opts: Get
   // System admins see all orgs they have RLS access to (via createdBy or membership)
   // They use LEFT JOIN since they may not have a membership row for every org.
   // Regular users use INNER JOIN on memberships (only see orgs they're members of).
-  const countData = includeCounts ? getEntityCountsSelect(entityType) : null;
+  const countData = includeCounts ? getChannelCountsSelect(entityType) : null;
   const { createdBy: _cb, updatedBy: _mb, ...orgCols } = getColumns(organizationsTable);
   const selectShape = {
     ...orgCols,

@@ -11,7 +11,7 @@ import { createActivity } from '../services/create-activity';
 /** 
  * Columns that hold embedded entity ID arrays (e.g. task.labels).
  */
-const embeddingColumns: Set<string> = new Set(appConfig.entityEmbeddings.map((e) => e.hostColumn));
+const embeddingColumns: Set<string> = new Set(appConfig.productEmbeddings.map((e) => e.hostColumn));
 
 /**
  * Read changedFields from stx metadata if the backend persisted it.

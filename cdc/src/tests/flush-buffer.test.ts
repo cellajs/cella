@@ -3,7 +3,7 @@ import { mockPendingEvent } from './factories';
 
 // Mock cdc-metrics to avoid db/env import chain
 vi.mock('../services/cdc-metrics', () => ({
-  cdcMetrics: { recordFlush: vi.fn() },
+  metrics: { recordFlush: vi.fn() },
 }));
 
 import { FlushBuffer } from '../services/flush-buffer';

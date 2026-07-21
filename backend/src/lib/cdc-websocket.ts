@@ -6,7 +6,7 @@ import { isValidEventType } from 'shared';
 import { type WebSocket, WebSocketServer } from 'ws';
 import { env } from '#/env';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
-import { entityCache } from '#/middlewares/entity-cache';
+import { productCache } from '#/middlewares/product-cache/app-product-cache';
 import { activityActionSchema, activitySchema } from '#/modules/activities/activities-schema';
 import { log } from '#/utils/logger';
 
@@ -302,10 +302,10 @@ class CdcWebSocketServer {
         if (message.batchRows?.length) {
           for (const row of message.batchRows) {
             const id = row.rowData.id;
-            if (typeof id === 'string') entityCache.invalidateByEntity(entityType, id);
+            if (typeof id === 'string') productCache.invalidateProduct(entityType, id);
           }
         } else if (message.activity.subjectId) {
-          entityCache.invalidateByEntity(entityType, message.activity.subjectId);
+          productCache.invalidateProduct(entityType, message.activity.subjectId);
         }
       }
 
@@ -345,7 +345,7 @@ class CdcWebSocketServer {
       const catchupDurationMs = message.catchupDurationMs ?? 0;
 
       // Clear entity caches after counter recalculation.
-      entityCache.clear();
+      productCache.clear();
 
       log.info('CDC catchup complete — entity caches cleared', {
         eventsProcessed,

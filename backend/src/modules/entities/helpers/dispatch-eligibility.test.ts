@@ -1,7 +1,7 @@
 import { appConfig, type EntityRole } from 'shared';
 import { describe, expect, it } from 'vitest';
 import {
-  canReceiveEntityEvent,
+  canReceiveProductEvent,
   rowReadDecisions,
   rowScopedEvent,
   type SubscriberAccess,
@@ -11,7 +11,7 @@ import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
 /**
  * The batch eligibility path (`rowReadDecisions`, engine-side access-class collapse) must
- * agree with the single-subscriber predicate (`canReceiveEntityEvent`, a batch of one) on
+ * agree with the single-subscriber predicate (`canReceiveProductEvent`, a batch of one) on
  * every (subscriber, row). The engine's own class-key guarantee is property-tested in
  * shared (`resolve-access.test.ts`) with synthetic policies; these tests pin the dispatch
  * wiring: veto propagation, per-row any-of composition, and per-subscriber isolation.
@@ -92,7 +92,7 @@ const batchDecisions = (subscribers: SubscriberAccess[], event: AppStreamProduct
 
 /** The per-subscriber evaluation: independent batch-of-1 checks, no cross-subscriber sharing. */
 const singleDecision = (subscriber: SubscriberAccess, event: AppStreamProductEvent): boolean =>
-  scopedRows(event).some((scopedEvent) => canReceiveEntityEvent(subscriber, scopedEvent));
+  scopedRows(event).some((scopedEvent) => canReceiveProductEvent(subscriber, scopedEvent));
 
 describe('dispatch batch eligibility: deterministic splits', () => {
   it('a malformed membership denies its holder without poisoning others in the SAME batch call', () => {

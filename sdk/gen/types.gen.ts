@@ -110,12 +110,12 @@ export type StreamNotification = {
   /**
    * Discriminant for the notification: product-entity sync vs membership change
    */
-  kind: 'entity' | 'membership';
+  kind: 'product' | 'membership';
   /**
    * Change kind; moveOut = the row left this path (reparent) and is no longer readable there
    */
   action: 'create' | 'update' | 'delete' | 'moveOut';
-  entityType: 'attachment' | null;
+  productType: 'attachment' | null;
   resourceType: 'request' | 'membership' | 'inactive_membership' | 'tenant' | 'system_role' | null;
   subjectId: string | null;
   organizationId: string | null;

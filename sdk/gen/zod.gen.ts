@@ -88,9 +88,9 @@ export const zStxBase = z.object({
  * Realtime notification delivered via SSE for entity and membership changes.
  */
 export const zStreamNotification = z.object({
-  kind: z.enum(['entity', 'membership']),
+  kind: z.enum(['product', 'membership']),
   action: z.enum(['create', 'update', 'delete', 'moveOut']),
-  entityType: z.enum(['attachment']).nullable(),
+  productType: z.enum(['attachment']).nullable(),
   resourceType: z.enum(['request', 'membership', 'inactive_membership', 'tenant', 'system_role']).nullable(),
   subjectId: z.string().nullable(),
   organizationId: z.string().nullable(),

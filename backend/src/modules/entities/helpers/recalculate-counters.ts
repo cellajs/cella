@@ -89,7 +89,7 @@ const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
  *
  * Product counters (Phase 4):
  *   Phase 4a – viewCount from seen_by (unique user views per entity)
- *   Phase 4b – Array-ref counters via appConfig.entityEmbeddings
+ *   Phase 4b – Array-ref counters via appConfig.productEmbeddings
  */
 export const recalculateCounters = async (db: DbOrTx) => {
   // ── Phase 1: Organization-level counters ──────────────────────────────
@@ -272,20 +272,20 @@ export const recalculateCounters = async (db: DbOrTx) => {
   // 4a: viewCount from seen_by (unique user views, 90-day window via pg_partman)
   await db.execute(
     sql.raw(`
-    INSERT INTO product_counters (entity_id, entity_type, view_count, last_viewed_at)
-    SELECT sb.entity_id, sb.entity_type, COUNT(DISTINCT sb.user_id)::int, MAX(sb.created_at)
+    INSERT INTO product_counters (product_id, product_type, view_count, last_viewed_at)
+    SELECT sb.product_id, sb.product_type, COUNT(DISTINCT sb.user_id)::int, MAX(sb.created_at)
     FROM seen_by sb
-    GROUP BY sb.entity_id, sb.entity_type
-    ON CONFLICT (entity_id) DO UPDATE SET
+    GROUP BY sb.product_id, sb.product_type
+    ON CONFLICT (product_id) DO UPDATE SET
       view_count = EXCLUDED.view_count,
       last_viewed_at = EXCLUDED.last_viewed_at
   `),
   );
 
   // 4b: Array-ref counters → channel_counters (e.g. label usage from tasks.labels[])
-  for (const ref of appConfig.entityEmbeddings) {
-    const src = tbl(ref.hostEntity as EntityType);
-    const key = `e:c:${ref.hostEntity}`;
+  for (const ref of appConfig.productEmbeddings) {
+    const src = tbl(ref.hostProduct as EntityType);
+    const key = `e:c:${ref.hostProduct}`;
 
     await upsertChannelCounters(
       db,

@@ -56,8 +56,8 @@ export const MenuSheet = () => {
               organizationId: sourceItem.membership.organizationId || sourceItem.id,
             },
             body: { displayOrder: newOrder },
-            entityId: sourceItem.id,
-            entityType: sourceItem.entityType,
+            channelId: sourceItem.id,
+            channelType: sourceItem.entityType,
           });
         },
       }),

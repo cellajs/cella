@@ -1553,7 +1553,7 @@
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
-      "xCache": ["appCache"]
+      "xCache": ["productCache"]
     },
     "tagsByKind": {
       "module": ["attachments"],

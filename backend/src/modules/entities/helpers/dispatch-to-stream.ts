@@ -66,7 +66,7 @@ const rowReadSubject = (event: AppStreamProductEvent): SubjectForPermission | nu
  * whose memberships fail engine validation denies just that subscriber
  * (`onInvalidMembership: 'deny'`) without poisoning the batch.
  *
- * The same visibility is re-checked when a cache hit is served (`appCache` re-runs
+ * The same visibility is re-checked when a cache hit is served (`productCache` re-runs
  * `checkAccess` against the cached row), so over-notifying is never a leak here.
  */
 export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event: AppStreamProductEvent): boolean[] {
@@ -92,7 +92,7 @@ export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event
  *
  * Exported so the parity property test can assert: SQL predicate ≍ checkAccess ≍ this.
  */
-export function canReceiveEntityEvent(subscriber: SubscriberAccess, event: AppStreamProductEvent): boolean {
+export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppStreamProductEvent): boolean {
   return rowReadDecisions([subscriber], event)[0];
 }
 

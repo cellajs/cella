@@ -36,7 +36,7 @@ function percentile(sorted: number[], p: number): number {
   return sorted[Math.max(0, idx)];
 }
 
-class CdcMetrics {
+class Metrics {
   private buckets: Bucket[] = [];
   private walLagBytes: number | null = null;
   private walSlotActive: boolean | null = null;
@@ -243,4 +243,4 @@ export interface MetricsSnapshot {
   slotStatus: string | null;
 }
 
-export const cdcMetrics = new CdcMetrics();
+export const metrics = new Metrics();

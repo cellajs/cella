@@ -7,7 +7,7 @@ import { baseDb as db } from '#/db/db';
 import { decryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 
-const { intervalInSeconds, digits, gracePeriodInSeconds } = appConfig.totpConfig;
+const { intervalInSeconds, digits, gracePeriodInSeconds } = appConfig.totp;
 
 /** Verifies a TOTP `otp` against a Base32 `secret` using the configured interval, digits, and grace period. */
 export const signInWithTotp = (otp: string, secret: string): boolean => {

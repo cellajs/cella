@@ -88,7 +88,10 @@
       "required": false,
       "kind": "middleware",
       "values": {
-        "appCache": { "name": "app", "description": "Entity-keyed detail cache with per-request read authorization" },
+        "productCache": {
+          "name": "app",
+          "description": "Entity-keyed detail cache with per-request read authorization"
+        },
         "httpCache": { "name": "http", "description": "HTTP private cache: max-age=3600s" }
       }
     },

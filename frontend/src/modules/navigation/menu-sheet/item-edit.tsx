@@ -34,8 +34,8 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
         tenantId: item.tenantId,
         organizationId: item.membership.organizationId,
       },
-      entityId: item.id,
-      entityType: item.entityType,
+      channelId: item.id,
+      channelType: item.entityType,
     };
 
     if (key === 'archived') updatedMembership.body = { archived: !item.membership.archived };

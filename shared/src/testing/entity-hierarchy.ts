@@ -3,14 +3,14 @@ import { appConfig } from '../config-builder/app-config';
 import type { ChannelEntityType, EntityIdColumnKey, EntityType } from '../../types';
 import { toColumnName, toTableName } from '../permissions';
 
-export interface TestEntityChannelColumn {
+export interface TestChannelColumn {
   channelType: ChannelEntityType;
   id: string;
   idKey: EntityIdColumnKey<ChannelEntityType>;
   columnName: string;
 }
 
-export interface TestEntityChannelRow {
+export interface TestChannelRow {
   channelType: ChannelEntityType;
   id: string;
   tableName: string;
@@ -24,8 +24,8 @@ export interface TestEntityHierarchyPlan {
   entityType: EntityType;
   channelIdsByType: Partial<Record<ChannelEntityType, string>>;
   channelIdColumns: Record<string, string>;
-  sqlChannelColumns: TestEntityChannelColumn[];
-  seedChannelRows: TestEntityChannelRow[];
+  sqlChannelColumns: TestChannelColumn[];
+  seedChannelRows: TestChannelRow[];
 }
 
 export interface BuildTestEntityHierarchyPlanOptions {
@@ -52,7 +52,7 @@ export const buildTestEntityHierarchyPlan = ({
   const setChannelId = (channelType: ChannelEntityType, id: string) => {
     channelIdsByType[channelType] = id;
   };
-  const seedChannelRows: TestEntityChannelRow[] = [];
+  const seedChannelRows: TestChannelRow[] = [];
   let generatedIndex = 0;
 
   for (const channelType of [...ancestors].reverse()) {

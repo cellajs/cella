@@ -28,12 +28,12 @@ const propagationHintSchema = z.object({
 export const streamNotificationSchema = z
   .object({
     kind: z
-      .enum(['entity', 'membership'])
+      .enum(['product', 'membership'])
       .describe('Discriminant for the notification: product-entity sync vs membership change'),
     action: z
       .enum([...activityActions, 'moveOut'] as const)
       .describe('Change kind; moveOut = the row left this path (reparent) and is no longer readable there'),
-    entityType: z.enum(appConfig.productEntityTypes).nullable(),
+    productType: z.enum(appConfig.productEntityTypes).nullable(),
     resourceType: z.enum(appConfig.resourceTypes).nullable(),
     subjectId: z.string().nullable(),
     organizationId: z.string().nullable(),

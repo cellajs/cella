@@ -17,7 +17,7 @@ export type EntityCan = EntityCanMap;
 export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: NonNullable<T[P]> };
 
 /** Fields added by the frontend cache enrichment pipeline (membership, permissions, ancestor slugs) */
-export type EntityEnrichment = {
+export type ChannelEntityEnrichment = {
   /** Parent organization ID - used by sub-context-entities (e.g. workspace) in forks */
   organizationId?: string;
   /** Membership data - populated via cache enrichment from myMemberships */
@@ -29,4 +29,4 @@ export type EntityEnrichment = {
 };
 
 /** API base + frontend cache enrichment. Use `ChannelEntityBase` from `sdk` for base fields only. */
-export type EnrichedChannelEntity = ChannelEntityBase & EntityEnrichment;
+export type EnrichedChannelEntity = ChannelEntityBase & ChannelEntityEnrichment;

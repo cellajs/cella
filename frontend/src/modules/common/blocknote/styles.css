@@ -380,7 +380,7 @@ li:has(.is-focused) {
   border-collapse: collapse;
 }
 
-/* Heading sizes - defaults from Blocknote are too big */
+/* Heading sizes - defaults from BlockNote are too big */
 [data-content-type="heading"] {
   --level: 1.8rem;
 }
