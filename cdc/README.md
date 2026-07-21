@@ -1,139 +1,155 @@
-# cdc: change data capture worker
+# CDC worker
 
-PostgreSQL logical-replication worker that turns committed WAL into the sync engine's server-side outputs: **activity rows** (append-only audit log and SSE cursor history), **counter and sequence stamps** (`channel_counters` plus per-row `seq` for client delta detection), and **realtime messages** pushed to the API server for SSE fan-out.
+The CDC worker turns committed PostgreSQL changes into the server-side outputs used by the sync engine:
 
-This document covers the worker itself. For what its outputs mean to clients (notification shapes, catchup, HLC merge), see [Sync engine](/docs/page/architecture/sync-engine).
+- append-only activity rows for audit history and app-stream recovery;
+- organization sequences and `channel_counters` for client delta detection; and
+- realtime messages sent to the API for SSE fan-out.
 
-## Replication session
+This document covers the worker. For notification shapes, client catch-up, and HLC merging, see the [sync engine documentation](/docs/page/architecture/sync-engine).
 
-The worker consumes the `cdc_pub` publication through the `cdc_slot` slot using the **pgoutput** plugin (protocol v1, via `pg-logical-replication`). Both are created by the CDC migration (`backend/scripts/migrations/10-cdc.migration.ts`), which regenerates the publication's table list and replica identities from the backend table maps; the worker's own `ensureReplicationSlot()` at boot is a best-effort fallback.
-
-Draft-lifecycle product tables carry a **publication row filter** (`WHERE published_at IS NOT NULL`, PG 17+, emitted from `backend/src/db/utils/publication-filter.ts`): the stream contains only the synced world. Postgres rewrites filter transitions at decode time — a publish edge (old row fails, new passes) is delivered as **INSERT**, an unpublish (old passes, new fails) as **DELETE** carrying the full old row, and draft creates/edits/deletes are never delivered at all. Soft-deleting a published row keeps matching, so tombstones still flow as UPDATEs. Channel tables are never filtered (their `publishedAt` gates invitees, and filtering would suppress channel-path-sync). Filter changes apply at decode time for new transactions — no slot reset or worker restart needed. A draft that arrives anyway (fork added `publishedColumn` without regenerating the publication) is dropped by the entrance guard in `parse-message.ts` with a rate-limited warning.
-
-Acknowledgement is **manual** (`acknowledge: { auto: false }`): the slot only advances after events are fully processed (see delivery semantics below). Standby heartbeats are acknowledged when Postgres requests a reply, so an idle worker doesn't time out. The worker keeps no durable state of its own — everything needed to resume lives in the slot's restart position, and whatever was not yet acknowledged is simply redelivered.
-
-**Slot takeover (rolling deploys).** Only one consumer can hold a slot. When a new worker generation boots while the old one still holds `cdc_slot`, the subscribe loop retries fast (12 attempts at 500 ms) for a sub-second cutover, then settles to a gentle 5 s cadence for steady-state reconnects. On PG error `55006` (object in use) it joins `pg_replication_slots` with `pg_stat_activity` and logs which walsender holds the slot (`application_name`, `client_addr`).
-
-**Backpressure.** While the WebSocket to the API is down, LSN acknowledgements are held. WAL then accumulates against the slot and Postgres retains it until the worker catches up: the slot is the durable buffer; there is no in-worker queue to overflow. Slot lag is polled every 10 s from `pg_replication_slots`: at 1 GB the worker warns, at 2 GB it reports unhealthy, and both thresholds emit a `wal_lag_alert` control message.
-
-## Pipeline stages
+## How it fits
 
 ```text
-Postgres WAL: pgoutput plugin, slot cdc_slot, publication cdc_pub
+Postgres WAL (`cdc_pub` / `cdc_slot`)
+        │
         ▼
-parse              table-registry lookup → insert/update/delete handler
+parse and normalize rows
         ▼
-TransactionBuffer  per-transaction buffering, cascade suppression
+buffer transaction → suppress cascade noise
         ▼
-FlushBuffer        50 ms cross-transaction micro-batch, grouped (type, action)
+micro-batch events by type and action
         ▼
-processEvents      1. persist activities (idempotent)
-                   2. apply unified deltas (seq ranges + counters)
-                   3. dispatch WebSocket message (+ embedding cleanup)
+persist activities → update sequences and counters → notify API
         ▼
-acknowledge highest processed LSN → replication slot advances
+acknowledge the highest processed LSN
 ```
 
-### Table registry
+The API receives the worker's WebSocket messages through `/internal/cdc`, publishes them to its ActivityBus, and fans them out to clients over SSE. Clients use sequence values for ordering; WebSocket arrival order is not authoritative.
 
-Built once at startup from the backend's `entityTables` and `resourceTables` (imported via `#/tables`; the worker is deliberately coupled to the backend's Drizzle schema). Each entry carries the kind (entity or resource), the entity/resource type, and a precomputed snake_case → camelCase column map for O(1) row conversion. WAL events for tables not in the registry are dropped at parse time.
+## Normal event flow
 
-### Handlers
+### Read published changes
 
-The `insert`, `update`, and `delete` handlers are **pure transforms** (no database writes), each producing `{ activity, rowData, oldRowData }`:
+The worker consumes the `cdc_pub` publication through the `cdc_slot` logical-replication slot using PostgreSQL's `pgoutput` plugin. The CDC migration (`backend/scripts/migrations/10-cdc.migration.ts`) builds the publication and replica identities from the backend's entity and resource table maps. At startup, `ensureReplicationSlot()` provides a best-effort slot fallback.
 
-- **Changed-field detection**: product-entity updates trust `stx.changedFields`, written by the backend sync engine inside the same transaction. Other tables fall back to diffing the WAL old/new tuples. Sync-state keys (`stx`, `seq`) are stripped from the diff so the worker's own stamp-backs don't loop.
-- **Skips**: no-op updates, updates to already-soft-deleted rows, and the worker's own embedding-cleanup writes (only embedding columns changed, no `updatedAt`) are dropped.
-- **Deletes** read the `old` tuple; this is why every tracked table needs `REPLICA IDENTITY FULL`.
-- **Large-column stripping**: after change detection, columns whose Drizzle varchar length is ≥ 10 000 (descriptions, summaries, keywords) are stripped from `rowData` so they never accumulate in buffers. Downstream consumers must not rely on them being present.
+Draft-lifecycle product tables use the publication filter `WHERE published_at IS NOT NULL` (PostgreSQL 17+), so the stream contains only synced rows:
 
-### TransactionBuffer: cascade suppression
+- publishing a draft appears as an insert;
+- unpublishing a row appears as a delete containing the old row;
+- draft-only changes do not appear; and
+- soft-deleting a published row remains an update, so its tombstone still syncs.
 
-Events are buffered between BEGIN and COMMIT so each transaction can be filtered as a unit (events outside a transaction pass through immediately):
+Channel tables are not filtered because their `publishedAt` field has different semantics and filtering them would break channel-path synchronization. Filter changes apply to newly decoded transactions without resetting the slot.
 
-- A channel-entity DELETE (e.g. an organization) registers its id; child deletes referencing it are dropped **inline while streaming**, so memory stays bounded no matter how large the cascade.
-- On commit, a second pass catches children that appeared in WAL before their parent, and soft-cascade suppression drops embedding-propagation updates paired with a source delete in the same transaction. Clients get one parent-delete notification instead of thousands of child echoes.
-- Safety valves: a transaction with no COMMIT after 30 s is force-flushed unfiltered, and a BEGIN while another transaction is active flushes the previous one.
+### Parse and batch
 
-### FlushBuffer: micro-batching
+At startup, the worker builds a registry from the backend's `entityTables` and `resourceTables`. The registry identifies each table and precomputes its snake_case-to-camelCase column map. Tables missing from the registry are ignored.
 
-Surviving events accumulate across transactions and flush on the first of: **100 events** (the primary trigger under load), a **50 ms** window timer (the low-traffic deadline), or a 20 000-event hard cap. Each flush groups events by `type:action` (e.g. `attachment:update`) and hands the groups to `processEvents`. After all groups settle, the buffer **acknowledges only the highest LSN**, implicitly covering everything before it.
+Insert, update, and delete handlers are pure transforms that produce `{ activity, rowData, oldRowData }`:
 
-### processEvents: ordered side effects
+- Product updates use `stx.changedFields`; other tables compare old and new WAL tuples.
+- `stx` and `seq` are excluded from diffs so worker stamp-backs do not loop.
+- No-op updates, already-soft-deleted row updates, and embedding-cleanup-only writes are ignored.
+- Deletes use the old tuple, which is why tracked tables require `REPLICA IDENTITY FULL`.
+- Varchar columns of at least 10,000 characters are removed after change detection to keep buffers small. Downstream code must tolerate their absence from `rowData`.
 
-Each group runs three steps in a fixed order, so a failure cannot leave partial side effects:
+`TransactionBuffer` holds events from `BEGIN` through `COMMIT`. It suppresses child deletes from channel-entity cascades and embedding-propagation updates paired with a source delete, preventing one logical deletion from producing thousands of client events.
 
-1. **Persist activities.** Multi-row insert with retry (3 attempts, exponential backoff) and `onConflictDoNothing`; a failing batch falls back to per-row inserts. If persistence permanently fails, the whole group is skipped (no deltas, no WS message) and the per-table **circuit breaker** records the failure (3 consecutive failures → open, 60 s cooldown → half-open probe). An open circuit skips that table's events so one poisoned table can't stall the stream.
-2. **Apply unified deltas** (see below).
-3. **Dispatch** the WebSocket message, then run embedding cleanup for product-entity updates and deletes (stripping deleted embedded ids from host array columns; done here rather than in the user's request to avoid row locks).
+Surviving events enter `FlushBuffer` and flush on the first of these limits:
 
-### Unified deltas: the org sequence and counters
+| Trigger | Limit |
+| --- | --- |
+| Normal load | 100 events |
+| Low traffic | 50 ms |
+| Hard cap | 20,000 events |
 
-One pure computation plans everything a group needs; one applier executes the plan in two phases:
+Each flush groups events by type and action, such as `attachment:update`. WAL order is preserved within a transaction, but cross-transaction grouping can reorder API messages. Clients therefore order changes by `seq`, not arrival time.
 
-- **Phase 1 (sequential):** ONE group per organization reserves a **contiguous org-sequence range** by upserting `channel_counters.counts['sequence']` with `RETURNING`, then assigns `baseSeq + i + 1` to each product create/update in WAL order — all product entity types share the sequence, so WAL commit order IS sequence order. A product row without an organization violates the hierarchy model: its group fails loudly (logged, LSN still acknowledged) instead of getting an invented home.
-- **Phase 2 (parallel):** write frontier rollups — `f:{type}` max-merged at the org and every non-null ancestor node, `fs:{type}` at the home node only (deepest non-null ancestor); every stamped event bumps — the publication row filter keeps unfetchable rows out of the stream — plus the remaining count deltas, and stamp assigned `seq` values back onto the rows with one bulk `UPDATE ... FROM VALUES` per table (also clearing `stx.changedFields`).
+### Persist, stamp, and publish
 
-Counter keys in `channel_counters`: `sequence` (the org reservation counter), `f:{type}` / `fs:{type}` subtree/self frontiers (max-merged), `e:{type}` subtree entity counts (credited to the organization and every non-null ancestor; reparent diffs re-credit) and `es:{type}` self counts at the home node (reparents move them), `m:{role}` / `m:total` / `m:pending` membership counts plus an org-level `membership` bump for catchup screening, and `li:` / `lu:` last-insert/last-update epoch stamps. Max-merge keys (`f:`/`fs:`/`li:`/`lu:`) keep the max, everything else sums; all land through the `apply_count_deltas` SQL function, which floors counts at zero. Soft-delete and restore transitions are remapped to delete/create so counts stay truthful.
+Each group performs side effects in this order:
 
-## Delivery semantics
+1. **Persist activities.** Activity IDs derive from the LSN, and duplicate inserts are ignored.
+2. **Apply unified deltas.** The worker reserves sequence values, updates counters and frontiers, and stamps product rows.
+3. **Publish.** It sends the WebSocket message, then removes deleted embedded IDs from host rows where needed.
 
-**At-least-once.** The slot only advances on acknowledgement, and acknowledgement happens after processing: a crash in between redelivers the events. The consequences:
+After every group settles, the worker acknowledges the highest processed LSN, which also covers all earlier events.
 
-- **Activities are replay-safe.** The activity id is derived deterministically from the LSN, and inserts are `onConflictDoNothing`: replaying an unacknowledged range produces the same rows exactly once.
-- **Counters and seq stamps are not.** Replaying an _already-acknowledged_ range would double-count `channel_counters`. That can't happen in normal operation (the slot gates replay to unacknowledged ranges); it takes a manual slot reset or LSN rewind. The repair path is catchup recovery's full counter recalculation.
-- **Ordering.** Within a transaction, WAL order is preserved and org-sequence values are assigned in it. Across transactions the FlushBuffer regroups by `(type, action)`, so delivery to the API is not globally ordered. Client-visible ordering comes from `seq`, not from message arrival.
-- Downstream consumers see duplicate messages after a redelivery; they dedupe on activity id.
+### Sequences and counters
 
-## Catchup mode
+For each organization, groups reserve a contiguous range from `channel_counters.counts['sequence']`. Product creates and updates receive sequence values in WAL order, and all product entity types share this sequence.
 
-When the worker starts against a backlog (or falls behind), replaying WAL at full speed would hammer counters and flood the API. Lag is measured from each BEGIN's commit timestamp; catchup mode **enters above 10 s** lag and **exits after 3 consecutive transactions under 2 s** (hysteresis, so it doesn't flap). During catchup, seeded inserts (ids prefixed `00000000-` or `gen-`) are dropped. On exit the worker runs **post-catchup recovery**: it recalculates every counter from the source tables (this doubles as the repair path for any counter drift) and sends a `catchup_complete` control message so the backend busts its entity cache.
+After sequence reservation, independent updates run in parallel: frontier and count deltas are applied, assigned sequence values are written back with a bulk update, and `stx.changedFields` is cleared. Soft-delete and restore transitions are treated as delete and create so counts remain accurate.
 
-## Fan-out channel
+Counter keys use these families:
 
-Processed events reach clients indirectly: the worker holds **one server-to-server WebSocket** to the backend's `/internal/cdc` endpoint, which feeds the ActivityBus → SSE fan-out. Reconnects use exponential backoff with jitter (1 s → 30 s cap), with a 30 s ping.
+| Keys | Meaning |
+| --- | --- |
+| `sequence` | Organization sequence reservation |
+| `e:f:{type}`, `e:f:h:{type}` | Subtree and home-node sequence frontiers |
+| `e:c:{type}`, `e:c:h:{type}` | Subtree and home-node entity counts |
+| `m:c:{role}`, `m:c:total`, `m:c:pending` | Membership counts |
+| `membership` | Change counter used to detect missed membership updates after reconnecting |
+| `e:li:h:{type}`, `e:lu:h:{type}` | Last-insert and last-update timestamps |
 
-This channel carries **full entity row data**: it is an internal service channel and must never be exposed to browsers or external networks. Defense layers: path isolation (`/internal/cdc` only), shared secret (`CDC_SECRET`, min 16 chars, sent as `x-cdc-secret`), a production source-IP allowlist (loopback/VPC), a single-connection limit (a new worker connection replaces the old), and a 90 s idle timeout.
+Frontier and timestamp keys are max-merged; count keys are summed and floored at zero by `apply_count_deltas`. Reparenting moves self counts and re-credits ancestor counts.
 
-**Message shape** (`CdcOutboundMessage`): the activity (with id, `seq`, `batchUntilSeq`, `count`), the compacted `rowData`, `movedFrom` old-row subsets for reparented rows (single and per batch row), `batchRows` for batches (permission-relevant fields only: id, createdBy, deletedAt, publicAt, publishedAt, path, channel ids), and trace context. The backend invalidates detail-cache entries by entity id (single `subjectId` or `batchRows` ids). Batches are split per `(path, entityType)` group so every message describes ONE audience; sequence ranges of different groups may interleave, so **`count` — never range arithmetic — is authoritative for batch size**.
+## Internal API channel
 
-**Channel path sync**: after deltas apply, channel-entity create/update events mirror the row's canonical id-path (STORED generated column) onto its `channel_counters.path`, the verified-ancestry source for catchup view authorization. Recalculation backfills it.
+The worker maintains one server-to-server WebSocket to `/internal/cdc`, with a 30-second ping. The channel carries entity row data and must never be exposed to browsers or external networks. It is protected by:
 
-**Control messages** bypass the data schema: `health` (pushed every 15 s), `catchup_complete`, and `wal_lag_alert`.
+- the isolated internal path;
+- `CDC_SECRET` in the `x-cdc-secret` header;
+- a production source-IP allowlist;
+- a single-connection limit; and
+- a 90-second idle timeout.
 
-**Drift guard:** `src/tests/wire-contract.type-check.ts` asserts at compile time that the outbound message type satisfies the backend's `CdcMessage` schema type. It runs under `pnpm ts`, so contract drift fails type-checking, not runtime.
+`CdcOutboundMessage` contains the activity, compacted row data, previous location data for reparented rows, permission-relevant batch rows, and trace context. Batches are split by `(path, entityType)` so each message has one audience. Sequence ranges may interleave across groups, so `count`, not range arithmetic, defines batch size.
 
-## Health
+After channel-entity creates and updates, the worker copies the row's canonical generated path to `channel_counters.path`. Catch-up authorization uses this path to verify ancestry, and counter recalculation backfills it.
 
-`GET /health` on `CDC_HEALTH_PORT` returns 204; `GET /health?depth=full` returns a JSON snapshot. Status degrades on: replication stopped, acknowledgements paused (WS down), slot lag ≥ 2 GB, or open circuit breakers. The same snapshot is pushed to the backend every 15 s over the WebSocket.
+Control messages (`health`, `catchup_complete`, and `wal_lag_alert`) bypass the data-message schema. `src/tests/wire-contract.type-check.ts` verifies at type-check time that the worker's outbound type satisfies the backend's `CdcMessage` schema.
 
-## Constraints
+## Failure and recovery
 
-- **Adding a tracked table takes two coupled steps**: add it to the backend's `entityTables`/`resourceTables` maps _and_ re-run the CDC migration, which regenerates the publication and sets `REPLICA IDENTITY FULL` from those maps. Miss the registry and events are silently dropped at parse; miss the publication and no WAL events arrive at all. There is no `FOR ALL TABLES`: the list is explicit.
-- **`REPLICA IDENTITY FULL` is mandatory** on every tracked table. Delete row data and the changed-field fallback both read the old tuple. It is also why the publication carries all columns: Postgres rejects publication column lists on tables with replica identity FULL. Row _filters_ are the opposite — FULL identity is what allows them to reference any column (the draft filter above).
-- **Large columns are stripped in-process, not in the publication.** Anything downstream of the handlers must tolerate their absence from `rowData`.
-- **`stx` and `seq` are load-bearing columns** on product tables: `stx.changedFields` drives update detection and the worker writes `seq` back. Renaming or dropping them breaks the pipeline.
-- **One consumer per slot.** A second worker contends and sits in the takeover retry loop; the backend likewise accepts a single worker connection.
-- **WAL retention is the safety margin.** Postgres needs `wal_level=logical`, slot/sender headroom, and a sane `max_slot_wal_keep_size` (dev is preconfigured in `compose.yaml`; production is provisioned by the infra stack). If the slot is dropped or overflows to `wal_status='lost'`, unacknowledged changes are gone: recovery is a counter recalculation plus accepting the audit gap. The DB role needs the `REPLICATION` attribute.
-- **Everything downstream must tolerate at-least-once**: duplicate messages and conflict-ignored activity inserts are normal after a crash.
+Acknowledgement is manual. The worker advances the slot only after processing, so a crash can redeliver unacknowledged changes. The replication slot is the durable buffer; the worker has no durable queue of its own. It still acknowledges requested standby heartbeats while idle.
 
-## Environment
+Delivery is therefore **at least once**. Activity inserts are replay-safe, but WebSocket messages may repeat and consumers deduplicate them by activity ID. Counter and sequence writes are not idempotent; if an already-applied range is replayed, a full counter recalculation is the repair path.
 
-Validated in `src/env.ts` (loads the backend's `.env`):
+| Situation | Behavior |
+| --- | --- |
+| Activity persistence fails | Retry the batch three times, then try individual rows. If persistence still fails, skip counters and notification. Three consecutive failures open a per-table circuit for 60 seconds before a half-open probe. |
+| The API WebSocket is unavailable | Pause acknowledgements and retain WAL behind the slot. Reconnect with exponential backoff from 1 to 30 seconds. Slot lag is checked every 10 seconds; 1 GB warns, while 2 GB also reports unhealthy. Both thresholds send `wal_lag_alert`. |
+| The worker falls more than 10 seconds behind | Enter catch-up mode and ignore seeded inserts (`00000000-` or `gen-` IDs). Exit after three transactions below 2 seconds, recalculate counters, and send `catchup_complete` so the backend invalidates its entity cache. |
+| A rolling deployment contends for the slot | Retry takeover 12 times at 500 ms, then every 5 seconds. PostgreSQL error `55006` logs the walsender holding the slot. |
+| A transaction never commits | Flush it unfiltered after 30 seconds. A new `BEGIN` also flushes any transaction already in progress. |
+| Unexpected data reaches the pipeline | Drop draft rows with a rate-limited warning. Log and skip product groups without an organization; their LSN is still acknowledged. |
+| The slot is manually rewound or reset | Replayed counter and sequence writes can be applied twice; run a full counter recalculation. |
+| The slot is dropped or becomes `lost` | Unacknowledged changes are gone. Counters can be recalculated, but the activity history retains a gap. |
+
+## Operational constraints
+
+- **Adding a tracked table requires two changes:** add it to the backend's entity or resource table map, then rerun the CDC migration so the publication and replica identity are regenerated. Missing the registry drops events at parse time; missing the publication means no events arrive.
+- **`REPLICA IDENTITY FULL` is mandatory.** Deletes and fallback change detection need the old tuple. PostgreSQL therefore cannot use publication column lists for these tables; large columns are stripped in the worker instead.
+- **`stx` and `seq` are part of the protocol.** Product update detection reads `stx.changedFields`, and the worker writes `seq` back to product rows.
+- **Only one worker may consume the slot.** The backend also accepts only one CDC connection.
+- **WAL retention is the recovery margin.** PostgreSQL needs `wal_level=logical`, replication slot/sender capacity, a suitable `max_slot_wal_keep_size`, and a role with `REPLICATION`.
+
+## Health and configuration
+
+`GET /health` on `CDC_HEALTH_PORT` returns 204. `GET /health?depth=full` returns a JSON snapshot. Health degrades if replication stops, acknowledgements pause, slot lag reaches 2 GB, or a circuit breaker opens. The same snapshot is sent to the backend every 15 seconds.
+
+Environment values are validated in `src/env.ts`, which loads the backend's `.env`:
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_CDC_URL` | Postgres connection for replication + writes; the role needs `REPLICATION` |
-| `DATABASE_SSL_CA` | Base64 PEM CA to verify Postgres TLS; required in production |
-| `API_WS_URL` | Backend WebSocket endpoint (defaults to `ws://localhost:{backendPort}/internal/cdc`) |
-| `CDC_SECRET` | Shared secret for the internal channel (min 16 chars) |
-| `CDC_HEALTH_PORT` | Health server port (default 4001) |
+| `DATABASE_CDC_URL` | PostgreSQL replication and write connection; the role needs `REPLICATION` |
+| `DATABASE_SSL_CA` | Base64 PEM CA for PostgreSQL TLS; required in production |
+| `API_WS_URL` | Backend WebSocket endpoint |
+| `CDC_SECRET` | Internal-channel shared secret; minimum 16 characters |
+| `CDC_HEALTH_PORT` | Health server port; default 4001 |
 | `MAPLE_SECRET_INGEST_KEY` | Optional telemetry ingest key |
-| `NODE_ENV` / `PINO_LOG_LEVEL` / `DEBUG` | Runtime mode, log level, Drizzle query logging |
+| `NODE_ENV`, `PINO_LOG_LEVEL`, `DEBUG` | Runtime mode and logging |
 
-Read directly from `process.env` (not in the schema): `CDC_SLOT_NAME` (default `cdc_slot`) and `RELEASE_SHA` (health version header). Tuning constants (flush window, retry/backoff, catchup thresholds, WAL-lag thresholds) live in `src/constants.ts`.
-
-## Related docs
-
-- [Architecture overview](/docs/page/architecture)
-- [Sync engine](/docs/page/architecture/sync-engine)
+`CDC_SLOT_NAME` (default `cdc_slot`) and `RELEASE_SHA` are read directly from `process.env`. Flush, retry, catch-up, and WAL-lag thresholds live in `src/constants.ts`.

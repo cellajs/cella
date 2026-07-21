@@ -2,7 +2,7 @@ import { mockActivity } from '../../../backend/src/modules/activities/activities
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent, EntityTableMeta, ResourceTableMeta } from '../types';
-import type { BatchEventInfo } from '../services/activity-service';
+import type { BatchEvent } from '../services/activity-service';
 
 const DEFAULT_ENTITY: NonNullable<InsertActivityModel['entityType']> = 'attachment';
 const DEFAULT_TABLE = 'attachments';
@@ -74,8 +74,8 @@ export function mockPendingEvent(overrides: {
   };
 }
 
-/** BatchEventInfo for activity-service tests */
-export function mockBatchEvent(seq: number, subjectId = `entity-${seq}`): BatchEventInfo {
+/** BatchEvent for activity-service tests */
+export function mockBatchEvent(seq: number, subjectId = `entity-${seq}`): BatchEvent {
   const activity = mockCdcActivity({ subjectId });
   return {
     activity: { ...activity, id: `act-${seq}` } as InsertActivityModel & { id: string },

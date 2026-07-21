@@ -6,8 +6,8 @@ import type { Attachment } from 'sdk';
 import type { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import type { Member } from '~/modules/memberships/types';
 
-// Extendable Blocknote types interface
-export interface ExtendableBlocknoteTypes {
+// Extendable BlockNote types interface
+export interface ExtendableBlockNoteTypes {
   SlashKeys: DefaultSuggestionItem['key'] | 'notify' | 'checklistItem';
 }
 
@@ -19,7 +19,7 @@ export type CustomBlockTypes = CustomBlock['type'] | 'emoji';
 export type CustomBlockFileTypes = Extract<CustomBlockTypes, 'file' | 'image' | 'audio' | 'video'>;
 export type CustomBlockRegularTypes = Exclude<CustomBlockTypes, CustomBlockFileTypes>;
 
-export type SlashItemKeys = ExtendableBlocknoteTypes['SlashKeys'];
+export type SlashItemKeys = ExtendableBlockNoteTypes['SlashKeys'];
 export interface CustomFormatToolBarConfig {
   blockTypeSelect?: boolean;
   blockStyleSelect?: boolean;

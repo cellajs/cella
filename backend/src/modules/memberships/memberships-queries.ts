@@ -309,7 +309,7 @@ interface FindMemberPreviewsByChannelsOpts {
  * Member previews for a set of contexts in ONE batched query: the first `limit` members
  * per context with the given role, ordered by membership createdAt (oldest first).
  * Powers `include=members` on channel entity list endpoints; overflow counts come from
- * the pre-computed `m:{role}` counters, so previews never need a second query.
+ * the pre-computed `m:c:{role}` counters, so previews never need a second query.
  */
 export const findMemberPreviewsByChannels = async (
   ctx: DbContext,

@@ -12,9 +12,9 @@ import { mockStxBase } from './sync-transaction-mocks';
  */
 export const mockStreamNotification = (key = 'stream-notification:default') =>
   withFakerSeed(key, () => ({
-    kind: 'entity' as const,
+    kind: 'product' as const,
     action: faker.helpers.arrayElement(['create', 'update', 'delete'] as const),
-    entityType: 'attachment' as const,
+    productType: 'attachment' as const,
     resourceType: null,
     subjectId: mockUuid(),
     organizationId: mockUuid(),
@@ -24,6 +24,6 @@ export const mockStreamNotification = (key = 'stream-notification:default') =>
     seq: faker.number.int({ min: 1, max: 500 }),
     stx: mockStxBase(`${key}:stx`),
     batchUntilSeq: null,
-    syncWindow: null,
+    spreadWindow: null,
     propagation: null,
   }));

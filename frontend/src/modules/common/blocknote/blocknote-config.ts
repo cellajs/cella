@@ -9,7 +9,7 @@ import {
 } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
 import { getSlashNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
-import { baseBlocknoteTypeToKeys } from '~/modules/common/blocknote/type-to-keys';
+import { baseBlockNoteTypeToKeys } from '~/modules/common/blocknote/type-to-keys';
 import type {
   CommonBlockNoteProps,
   CustomBlockNoteEditor,
@@ -83,7 +83,7 @@ export const getSlashMenuItems = (
   ];
 
   // Filter heading keys based on allowed headingLevels
-  const { heading, ...restTypeToKeys } = { ...baseBlocknoteTypeToKeys };
+  const { heading, ...restTypeToKeys } = { ...baseBlockNoteTypeToKeys };
   const filteredHeading = heading.filter((key) => {
     const match = key.match(/(?:_)?(\d)$/);
     const level = match ? Number.parseInt(match[1], 10) : 1;

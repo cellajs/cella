@@ -10,12 +10,12 @@ import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import type {
   DeleteMembership,
-  EntityMembershipChannelProp,
   InfiniteMemberQueryData,
   InviteMember,
   Member,
   MemberChannelProp,
   MemberQueryData,
+  MembershipChannelProp,
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { useUserStore } from '~/modules/user/user-store';
@@ -153,13 +153,13 @@ export const useInviteMemberMutation = () =>
   });
 
 export const useMemberUpdateMutation = () =>
-  useMutation<Membership, ApiError, MutationUpdateMembership, EntityMembershipChannelProp>({
+  useMutation<Membership, ApiError, MutationUpdateMembership, MembershipChannelProp>({
     mutationKey: memberQueryKeys.update(),
     mutationFn: async ({ path, body }) => {
       return await updateMembership({ body, path });
     },
     onMutate: async (variables) => {
-      const { entityId, entityType, path, body } = variables;
+      const { channelId, channelType, path, body } = variables;
       const { tenantId, organizationId, id } = path;
       const membershipInfo = { id, ...body };
 
@@ -167,17 +167,17 @@ export const useMemberUpdateMutation = () =>
       const context = {
         queryChannel: [] as MemberChannelProp[],
         toastMessage: t('c:success.update_item', { item: t('c:membership') }),
-        entityType,
+        channelType,
       };
 
       // Set toast message based on what was updated
       if (body?.archived !== undefined) {
         context.toastMessage = t(`c:success.${body.archived ? 'archived' : 'restore'}_resource`, {
-          resource: t(`c:${entityType}`),
+          resource: t(`c:${channelType}`),
         });
       } else if (body?.muted !== undefined) {
         context.toastMessage = t(`c:success.${body.muted ? 'mute' : 'unmute'}_resource`, {
-          resource: t(`c:${entityType}`),
+          resource: t(`c:${channelType}`),
         });
       } else if (body?.role) {
         context.toastMessage = t('c:success.update_item', { item: t('c:role') });
@@ -188,7 +188,12 @@ export const useMemberUpdateMutation = () =>
       updateMyMembershipCache(membershipInfo);
 
       // Get affected queries
-      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, organizationId });
+      const similarKey = memberQueryKeys.list.similarMembers({
+        entityId: channelId,
+        entityType: channelType,
+        tenantId,
+        organizationId,
+      });
       // Cancel all affected queries
       await queryClient.cancelQueries({ queryKey: similarKey });
       const queries = getSimilarQueries<Member>(similarKey);
@@ -213,14 +218,19 @@ export const useMemberUpdateMutation = () =>
     },
     onSuccess: async (
       updatedMembership,
-      { entityId, entityType, path: { tenantId, organizationId } },
+      { channelId, channelType, path: { tenantId, organizationId } },
       { toastMessage },
     ) => {
       // Update myMemberships cache; the global subscriber enriches entity lists.
       updateMyMembershipCache(updatedMembership);
 
       // Get affected queries
-      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, organizationId });
+      const similarKey = memberQueryKeys.list.similarMembers({
+        entityId: channelId,
+        entityType: channelType,
+        tenantId,
+        organizationId,
+      });
       //Cancel all affected queries
       const queries = getSimilarQueries<Member>(similarKey);
 
@@ -244,7 +254,7 @@ export const useMemberUpdateMutation = () =>
       }
 
       // Invalidate entity queries to ensure counts and data are fresh
-      invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
+      invalidateOnMembershipChange(queryClient, channelType, channelId, organizationId);
 
       toaster(toastMessage, 'success');
     },

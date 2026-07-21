@@ -20,7 +20,7 @@ export function registerChannelPathResolver(
 
 /**
  * Resolve a channel's canonical path via the registered resolver. `channelType` is null when
- * the caller only knows the id (the scheduler's covering-prefix computation); fork resolvers
+ * the caller only knows the id (the fetch prioritizer's covering-prefix computation); fork resolvers
  * then search their cached channel types.
  */
 export function resolveChannelPath(channelType: string | null, channelId: string): string | null {

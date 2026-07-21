@@ -1,6 +1,6 @@
 import { and, count, getColumns, gt, inArray, isNotNull, isNull, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import type { SeenTrackedEntityType } from 'shared';
+import type { SeenTrackedProductType } from 'shared';
 import { appConfig, hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
 import { seenByTable } from '#/modules/seen/seen-by-db';
@@ -15,7 +15,7 @@ type OrgScopedEntityTable = AnyPgTable & {
 interface FindUnseenCountsByUserOpts {
   userId: string;
   channelIds: string[];
-  entityTypes: readonly SeenTrackedEntityType[];
+  productTypes: readonly SeenTrackedProductType[];
   cutoff: string;
   /**
    * Per-type collection read filter (same SQL compiler as list endpoints), so badges
@@ -23,7 +23,7 @@ interface FindUnseenCountsByUserOpts {
    * scope for that type; a type absent from the record is counted unrestricted too
    * (callers should pre-drop types whose scope resolved to `none`).
    */
-  scopeWhereByType?: Partial<Record<SeenTrackedEntityType, SQL | undefined>>;
+  scopeWhereByType?: Partial<Record<SeenTrackedProductType, SQL | undefined>>;
 }
 
 /**
@@ -47,19 +47,19 @@ interface FindUnseenCountsByUserOpts {
  */
 export const findUnseenCountsByUser = async (
   ctx: DbContext,
-  { userId, channelIds, entityTypes, cutoff, scopeWhereByType }: FindUnseenCountsByUserOpts,
+  { userId, channelIds, productTypes, cutoff, scopeWhereByType }: FindUnseenCountsByUserOpts,
 ) => {
   const { db } = ctx.var;
-  const rows: { channelId: string; entityType: SeenTrackedEntityType; unseenCount: number }[] = [];
+  const rows: { channelId: string; productType: SeenTrackedProductType; unseenCount: number }[] = [];
 
-  for (const entityType of entityTypes) {
-    const entityTable = getEntityTable(entityType);
+  for (const productType of productTypes) {
+    const entityTable = getEntityTable(productType);
     const orgTable = entityTable as OrgScopedEntityTable;
     const columns = getColumns(entityTable) as Record<string, PgColumn | undefined>;
 
     // Home context id: deepest non-null ancestor, falling back to org (matches mark-seen).
     const ancestorColumns = hierarchy
-      .getOrderedAncestors(entityType)
+      .getOrderedAncestors(productType)
       .map((ancestor) => columns[appConfig.entityIdColumnKeys[ancestor]])
       .filter((column): column is PgColumn => Boolean(column));
     const channelIdColumn: SQL<string> = ancestorColumns.length
@@ -74,18 +74,18 @@ export const findUnseenCountsByUser = async (
     const filters: SQL[] = [
       inArray(channelIdColumn, channelIds),
       gt(recencyColumn, cutoff),
-      sql`NOT EXISTS (SELECT 1 FROM ${seenByTable} WHERE ${seenByTable.userId} = ${userId} AND ${seenByTable.entityId} = ${orgTable.id})`,
+      sql`NOT EXISTS (SELECT 1 FROM ${seenByTable} WHERE ${seenByTable.userId} = ${userId} AND ${seenByTable.productId} = ${orgTable.id})`,
     ];
     if (columns.deletedAt) filters.push(isNull(columns.deletedAt));
     // Feed parity: unpublished drafts are hidden from every feed, so they are never unseen.
     if (columns.publishedAt) filters.push(isNotNull(columns.publishedAt));
-    const scopeWhere = scopeWhereByType?.[entityType];
+    const scopeWhere = scopeWhereByType?.[productType];
     if (scopeWhere) filters.push(scopeWhere);
 
     const entityRows = await db
       .select({
         channelId: channelIdColumn,
-        entityType: sql<SeenTrackedEntityType>`${entityType}`,
+        productType: sql<SeenTrackedProductType>`${productType}`,
         unseenCount: count(),
       })
       .from(entityTable)

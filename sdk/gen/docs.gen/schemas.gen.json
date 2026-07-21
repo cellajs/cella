@@ -114,7 +114,11 @@
           "type": ["string", "null"],
           "required": true
         },
-        "public": { "type": "boolean", "required": true },
+        "public": {
+          "type": "boolean",
+          "required": true,
+          "description": "When true, served directly from the CDN without a presigned URL."
+        },
         "bucketName": { "type": "string", "required": true, "maxLength": 255 },
         "groupId": {
           "type": ["string", "null"],
@@ -122,22 +126,35 @@
           "format": "uuid"
         },
         "filename": { "type": "string", "required": true, "maxLength": 255 },
-        "contentType": { "type": "string", "required": true, "maxLength": 255 },
+        "contentType": {
+          "type": "string",
+          "required": true,
+          "description": "MIME type of the uploaded file (e.g. image/png).",
+          "maxLength": 255
+        },
         "convertedContentType": {
           "type": ["string", "null"],
           "required": true,
+          "description": "MIME type of the server-converted variant; null when none.",
           "maxLength": 255
         },
         "size": { "type": "string", "required": true, "maxLength": 255 },
-        "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
+        "originalKey": {
+          "type": "string",
+          "required": true,
+          "description": "Storage object key for the original uploaded file.",
+          "maxLength": 2048
+        },
         "convertedKey": {
           "type": ["string", "null"],
           "required": true,
+          "description": "Storage object key for the converted variant; null when none.",
           "maxLength": 2048
         },
         "thumbnailKey": {
           "type": ["string", "null"],
           "required": true,
+          "description": "Storage object key for the generated thumbnail; null when none.",
           "maxLength": 2048
         },
         "organizationId": { "type": "string", "required": true, "format": "uuid" },
@@ -343,7 +360,7 @@
           "type": "string",
           "required": true,
           "description": "Discriminant for the notification: product-entity sync vs membership change",
-          "enum": ["entity", "membership"]
+          "enum": ["product", "membership"]
         },
         "action": {
           "type": "string",
@@ -351,7 +368,7 @@
           "description": "Change kind; moveOut = the row left this path (reparent) and is no longer readable there",
           "enum": ["create", "update", "delete", "moveOut"]
         },
-        "entityType": {
+        "productType": {
           "type": ["string", "null"],
           "required": true,
           "enum": ["attachment", null]
@@ -430,10 +447,10 @@
           "required": true,
           "description": "Authoritative row count for batches: sequence ranges of different paths may interleave"
         },
-        "syncWindow": {
+        "spreadWindow": {
           "type": ["integer", "null"],
           "required": true,
-          "description": "Server-suggested spread window (ms) for the lazy delta fetch — scales with channel audience and load; the client clamps it between its eagerness tier bounds"
+          "description": "Server-suggested spread window (ms) for the lazy delta fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds"
         },
         "propagation": {
           "type": ["object", "null"],
@@ -479,9 +496,9 @@
     },
     "description": "Realtime notification delivered via SSE for entity and membership changes.",
     "example": {
-      "kind": "entity",
+      "kind": "product",
       "action": "update",
-      "entityType": "attachment",
+      "productType": "attachment",
       "resourceType": null,
       "subjectId": "e781e15e-ec97-4ad0-aa42-418ee4c50d02",
       "organizationId": "3a9fc6f0-5cf3-491b-a437-8e8c3a3796f6",
@@ -495,7 +512,7 @@
         "fieldTimestamps": {}
       },
       "batchUntilSeq": null,
-      "syncWindow": null,
+      "spreadWindow": null,
       "propagation": null
     }
   },

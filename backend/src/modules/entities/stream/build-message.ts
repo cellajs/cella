@@ -8,19 +8,19 @@ import type { AppStreamEvent, AppStreamMembershipEvent } from './types';
 /** ~20ms of client spread per online org subscriber: 10 users → near-instant, 3000 → ~60s. */
 const SPREAD_MS_PER_SUBSCRIBER = 20;
 /** Never let a client lag more than this behind by server suggestion (client tiers cap lower). */
-const MAX_SYNC_WINDOW_MS = 120_000;
+const MAX_SPREAD_WINDOW_MS = 120_000;
 
 /**
  * The server's say in sync timing (RTCP-style): a spread window scaled by the org channel's
  * online audience and DB pool pressure. Identical for every subscriber, so it rides in the
  * shared (serialize-once) notification body; each client picks a deterministic slot in it.
  */
-function computeSyncWindow(organizationId: string | null): number | null {
+function computeSpreadWindow(organizationId: string | null): number | null {
   if (!organizationId) return null;
   const audience = streamSubscriberManager.getByChannel(`org:${organizationId}`).length;
   if (audience <= 1) return 0;
   const pressure = Math.min(dbPoolPressure(), 2);
-  return Math.min(Math.round(audience * SPREAD_MS_PER_SUBSCRIBER * (1 + pressure)), MAX_SYNC_WINDOW_MS);
+  return Math.min(Math.round(audience * SPREAD_MS_PER_SUBSCRIBER * (1 + pressure)), MAX_SPREAD_WINDOW_MS);
 }
 
 /**
@@ -29,8 +29,8 @@ function computeSyncWindow(organizationId: string | null): number | null {
  * single source of the `kind` discriminant, used both to shape the wire notification
  * and to branch dispatch/handling on either end.
  */
-export function appNotificationKind(event: Pick<ActivityEvent, 'entityType'>): 'entity' | 'membership' {
-  return isProductEntity(event.entityType) ? 'entity' : 'membership';
+export function appNotificationKind(event: Pick<ActivityEvent, 'entityType'>): 'product' | 'membership' {
+  return isProductEntity(event.entityType) ? 'product' : 'membership';
 }
 
 /** Type-guard form of {@link appNotificationKind}: narrows an app-stream event to the membership member. */
@@ -56,7 +56,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   const membership = event.resourceType === 'membership' ? getEventData(event, 'membership') : null;
   const channelType: ChannelEntityType | null = (membership?.channelType as ChannelEntityType | undefined) ?? null;
 
-  // Resolve the home channel id for scheduler and unseen-count grouping: the row's deepest
+  // Resolve the home channel id for fetch prioritizer and unseen-count grouping: the row's deepest
   // non-null ancestor. Variable-depth rows group under their effective home. Grouping only:
   // the org sequence does not key on this.
   let channelId: string | null = null;
@@ -68,15 +68,15 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
 
   // Derive propagation hint for source entity types (e.g., label → task.labels).
   // For batch events, propagation is pre-set by the CDC worker. For single entity
-  // events, derive from entityEmbeddings config without DB queries.
+  // events, derive from productEmbeddings config without DB queries.
   let propagation = event.propagation;
   if (!propagation && entityType) {
-    const embedding = appConfig.entityEmbeddings.find((e) => e.embeddedEntity === entityType);
+    const embedding = appConfig.productEmbeddings.find((e) => e.embeddedProduct === entityType);
     if (embedding) {
       const isDelete = event.action === 'delete';
       propagation = {
-        sourceType: embedding.embeddedEntity,
-        targetType: embedding.hostEntity,
+        sourceType: embedding.embeddedProduct,
+        targetType: embedding.hostProduct,
         field: embedding.hostColumn,
         update: isDelete ? [] : [event.subjectId!],
         remove: isDelete ? [event.subjectId!] : [],
@@ -94,7 +94,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     // everything else on this stream is a membership change (query invalidation).
     kind: appNotificationKind(event),
     action: event.action,
-    entityType: isProduct ? entityType : null,
+    productType: isProduct ? entityType : null,
     resourceType: event.resourceType,
     subjectId: event.subjectId,
     organizationId: event.organizationId,
@@ -106,7 +106,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     stx,
     batchUntilSeq: event.batchUntilSeq ?? null,
     count: isProduct ? (event.count ?? null) : null,
-    syncWindow: isProduct ? computeSyncWindow(event.organizationId) : null,
+    spreadWindow: isProduct ? computeSpreadWindow(event.organizationId) : null,
     propagation,
   };
 }

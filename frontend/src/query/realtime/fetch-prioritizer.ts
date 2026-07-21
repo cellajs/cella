@@ -12,7 +12,7 @@ import type { AppStreamNotification } from './types';
 import { resolveChannelPath } from './view-declaration';
 
 /** Fixed spread window until the server negotiates one per notification (Piece N-c). */
-const DEFAULT_SYNC_WINDOW_MS = 15_000;
+const DEFAULT_SPREAD_WINDOW_MS = 15_000;
 /** Transient fetch errors retry with exponential backoff before falling back to invalidation. */
 const MAX_FLUSH_ATTEMPTS = 3;
 const RETRY_BASE_MS = 2_000;
@@ -27,7 +27,7 @@ export interface EnqueueInput {
   fromSeq: number;
   untilSeq: number;
   isCreate: boolean;
-  syncWindowMs?: number;
+  spreadWindowMs?: number;
   propagation?: AppStreamNotification['propagation'];
 }
 
@@ -110,7 +110,7 @@ function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }
   const anchoredFrom = caughtUp > 0 ? caughtUp + 1 : fromSeq;
 
   const key = entryKey(entityType, organizationId, channelId);
-  const dueAt = Date.now() + negotiatedDelay(tier, key, input.syncWindowMs ?? DEFAULT_SYNC_WINDOW_MS);
+  const dueAt = Date.now() + negotiatedDelay(tier, key, input.spreadWindowMs ?? DEFAULT_SPREAD_WINDOW_MS);
 
   const existing = dirty.get(key);
   if (existing) {
@@ -147,7 +147,7 @@ export function flushAllNow(): Promise<void> {
 /**
  * Awaitable immediate flush of ONE channel view, the foreground catchup path (gap 4a):
  * catchup enqueues its gap, then awaits this so the mutation-replay gate resolves against a
- * reconciled cache, while the scheduler stays the only code that fetches seq ranges.
+ * reconciled cache, while the fetch prioritizer stays the only code that fetches seq ranges.
  * Single attempt: a failure takes the fallback (invalidate + advance), not the lazy
  * retry ladder, mirroring catchup's original inline semantics.
  */
@@ -163,7 +163,7 @@ export async function flushChannelViewNow(
 }
 
 /** Clear all pending work. Called when catchup starts: it recomputes channel-view deltas itself. */
-export function resetLazySync(): void {
+export function resetFetchPrioritizer(): void {
   dirty.clear();
   if (timer) {
     clearTimeout(timer);
@@ -338,7 +338,7 @@ function installListeners(): void {
   });
 
   // Navigation flushes pending scopes immediately. Route context promotes org-level scopes.
-  // Import lazily to keep the route tree out of the scheduler's importer graphs.
+  // Import lazily to keep the route tree out of the fetch prioritizer's importer graphs.
   void import('~/routes/router').then(({ router }) => {
     router.subscribe('onLoad', () => promoteLiveChannels());
   });

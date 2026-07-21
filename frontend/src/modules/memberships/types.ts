@@ -20,17 +20,17 @@ export type MemberQueryData = QueryData<Member>;
 export type InfiniteMemberQueryData = InfiniteQueryData<Member>;
 export type MemberChannelProp = ChannelQueryProp<Member, string | null>;
 
-export type EntityMembershipChannelProp = {
+export type MembershipChannelProp = {
   queryChannel: MemberChannelProp[];
   toastMessage: string;
-  entityType?: ChannelEntityType;
+  channelType?: ChannelEntityType;
 };
 
 export type InviteMember = MutationData<MembershipInviteData> & { channelEntity: EnrichedChannelEntity };
 
 export type MutationUpdateMembership = MutationData<UpdateMembershipData> & {
-  entityId: string;
-  entityType: ChannelEntityType;
+  channelId: string;
+  channelType: ChannelEntityType;
 };
 
 export type DeleteMembership = MutationData<DeleteMembershipsData> & {

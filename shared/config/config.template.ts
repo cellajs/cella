@@ -24,7 +24,7 @@ export const config = {
    * Product entity types tracked for seen/unseen counts.
    * Unseen counts are grouped by the parent channel entity of each tracked type.
    */
-  seenTrackedEntityTypes: ['attachment'] as const,
+  seenTrackedProductTypes: ['attachment'] as const,
 
   /** Maps entity types to their ID column names - must match entityTypes */
   entityIdColumnKeys: {
@@ -40,12 +40,12 @@ export const config = {
   resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant'] as const,
 
   /**
-   * Entity embeddings: declares which entities are embedded as ID arrays inside
-   * other entities. Forks extend when adding new embedding relationships.
+   * Product embeddings: declares which product entities are embedded as ID arrays inside
+   * other product entities. Forks extend when adding new embedding relationships.
    */
-  entityEmbeddings: [] as readonly {
-    readonly embeddedEntity: (typeof productEntityTypes)[number];
-    readonly hostEntity: (typeof productEntityTypes)[number];
+  productEmbeddings: [] as readonly {
+    readonly embeddedProduct: (typeof productEntityTypes)[number];
+    readonly hostProduct: (typeof productEntityTypes)[number];
     readonly hostColumn: string;
   }[],
 
@@ -185,7 +185,7 @@ export const config = {
   maxSessionsPerUser: 10,
 
   /** TOTP configuration for MFA */
-  totpConfig: {
+  totp: {
     intervalInSeconds: 30,
     gracePeriodInSeconds: 60,
     digits: 6,

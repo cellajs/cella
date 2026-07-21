@@ -62,7 +62,7 @@ export type {
   OrganizationFlags,
   ProductEntityType,
   RootChannelType,
-  SeenTrackedEntityType,
+  SeenTrackedProductType,
   RelatableChannelEntityType,
   RelatedChannelType,
   ResourceType,

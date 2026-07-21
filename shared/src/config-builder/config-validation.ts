@@ -44,7 +44,7 @@ void _productTypesMatch2;
 
 // Unseen tracking requires unconditional channel reads for tracked types.
 // Conditional visibility must keep endpoint-based counting.
-for (const entityType of appConfig.seenTrackedEntityTypes) {
+for (const entityType of appConfig.seenTrackedProductTypes) {
   for (const policy of getSubjectPolicies(entityType as ProductEntityType, accessPolicies)) {
     if (isRowCondition(policy.permissions.read)) {
       throw new Error(

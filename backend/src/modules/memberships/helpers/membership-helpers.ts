@@ -52,7 +52,7 @@ interface InsertMultipleProps<T> {
  * Maps a channel entity to its ancestor channel IDs, keyed by `appConfig.entityIdColumnKeys`
  * (e.g. `{ organizationId, projectId }`).
  */
-export const getBaseMembershipEntityId = <T extends ChannelEntityType>(entity: EntityModel<T>) => {
+export const getMembershipEntityIds = <T extends ChannelEntityType>(entity: EntityModel<T>) => {
   return appConfig.channelEntityTypes.reduce(
     (acc, channelEntityType) => {
       const entityFieldIdName = appConfig.entityIdColumnKeys[channelEntityType];
@@ -108,7 +108,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
     const createdBy = info.createdBy ?? userId;
 
     // Get organizationId: prefer entity.organizationId if present, else entity.id (organization)
-    const targetEntitiesIdColumnKeys = getBaseMembershipEntityId(entity);
+    const targetEntitiesIdColumnKeys = getMembershipEntityIds(entity);
 
     // Compute incremental order per user: start from global max, then +orderGap per assignment.
     // For users with no existing memberships, seed so the first assignment lands on `defaultOrder`.

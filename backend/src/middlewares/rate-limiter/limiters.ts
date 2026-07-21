@@ -116,7 +116,7 @@ export const pointsLimiter = (cost = 1) =>
 /**
  * Sync-driven read limiter (backpressure, not throughput): bounds the fan-out read
  * endpoints (delta list fetches and unseen-count reads) that every SSE notification can
- * trigger across the whole online audience. Generous by design (the lazy scheduler already
+ * trigger across the whole online audience. Generous by design (the fetch prioritizer already
  * merges and spreads fetches); a 429 here rides the client's existing fetch-failure fallback
  * (targeted invalidation + backoff). Attach to product list ops and unseen counts.
  */

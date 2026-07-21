@@ -1,7 +1,7 @@
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { getEntityCounts } from '#/modules/entities/entities-queries';
+import { getChannelCounts } from '#/modules/entities/entities-queries';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { withOrganizationFlagDefaults } from '#/modules/organization/helpers/select';
@@ -49,7 +49,7 @@ export async function updateOrganizationOp(
 
   log.info('Organization updated', { organizationId: updatedOrganizationRecord.id });
 
-  const counts = await getEntityCounts(ctx, organization.entityType, organization.id);
+  const counts = await getChannelCounts(ctx, organization.entityType, organization.id);
 
   const included = {
     ...(membership && { membership: toMembershipBase(membership) }),

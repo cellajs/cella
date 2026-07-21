@@ -1,7 +1,7 @@
 import type { MembershipBase } from 'sdk';
 import { appConfig, type ChannelEntityType } from 'shared';
 import type { AncestorSlugs } from '~/modules/entities/types';
-import type { EnrichableEntity } from '~/query/enrichment/types';
+import type { EnrichableChannelEntity } from '~/query/enrichment/types';
 import { getField } from '~/utils/get-field';
 
 /** entityType -> entityId -> slug */
@@ -21,10 +21,10 @@ function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | nul
  * isn't indexed (rewriteUrlToSlug fixes the URL later). Returns the original reference if unchanged.
  */
 export function enrichWithAncestorSlugs(
-  item: EnrichableEntity,
+  item: EnrichableChannelEntity,
   ancestors: readonly ChannelEntityType[],
   slugIndex: SlugIndex,
-): EnrichableEntity {
+): EnrichableChannelEntity {
   if (ancestors.length === 0) return item;
 
   const membership: MembershipBase | null = item.membership ?? null;

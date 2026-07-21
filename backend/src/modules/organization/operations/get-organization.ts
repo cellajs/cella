@@ -1,6 +1,6 @@
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { getEntityCounts } from '#/modules/entities/entities-queries';
+import { getChannelCounts } from '#/modules/entities/entities-queries';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { withOrganizationFlagDefaults } from '#/modules/organization/helpers/select';
 import { withAuditUser } from '#/modules/user/helpers/audit-user';
@@ -29,7 +29,7 @@ export async function getOrganizationOp(
   const includeMembership = include.includes('membership');
 
   const [counts, organizationWithAudit] = await Promise.all([
-    includeCounts ? getEntityCounts(ctx, organization.entityType, organization.id) : undefined,
+    includeCounts ? getChannelCounts(ctx, organization.entityType, organization.id) : undefined,
     withAuditUser(ctx, organization, user),
   ]);
 

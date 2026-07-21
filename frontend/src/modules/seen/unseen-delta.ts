@@ -11,7 +11,7 @@ import { queryClient } from '~/query/query-client';
  * fire per frame during scroll. Deltas accumulate and apply as a single `setQueryData`
  * per idle callback. Counts clamp at 0; the periodic exact recount absorbs residual drift.
  */
-const pendingDeltas: { channelId: string; entityType: ProductEntityType; delta: number }[] = [];
+const pendingDeltas: { channelId: string; productType: ProductEntityType; delta: number }[] = [];
 let flushScheduled = false;
 
 /** Max delay before forcing a flush when the browser never goes idle */
@@ -23,8 +23,8 @@ const scheduleIdle =
     : (cb: () => void) => setTimeout(cb, MAX_DELAY_MS);
 
 /** Queue a ± adjustment to a channel's unseen count */
-export function applyUnseenDelta(channelId: string, entityType: ProductEntityType, delta: number) {
-  pendingDeltas.push({ channelId, entityType, delta });
+export function applyUnseenDelta(channelId: string, productType: ProductEntityType, delta: number) {
+  pendingDeltas.push({ channelId, productType, delta });
   if (flushScheduled) return;
   flushScheduled = true;
   scheduleIdle(flushDeltas);
@@ -39,12 +39,12 @@ function flushDeltas() {
     if (!old) return old;
     const updated = { ...old };
 
-    for (const { channelId, entityType, delta } of batch) {
-      const next = Math.max(0, (updated[channelId]?.[entityType] ?? 0) + delta);
+    for (const { channelId, productType, delta } of batch) {
+      const next = Math.max(0, (updated[channelId]?.[productType] ?? 0) + delta);
       if (next > 0) {
-        updated[channelId] = { ...updated[channelId], [entityType]: next };
+        updated[channelId] = { ...updated[channelId], [productType]: next };
       } else if (updated[channelId]) {
-        const { [entityType]: _, ...rest } = updated[channelId];
+        const { [productType]: _, ...rest } = updated[channelId];
         if (Object.keys(rest).length === 0) delete updated[channelId];
         else updated[channelId] = rest;
       }

@@ -14,7 +14,7 @@ const tbl = (et: EntityType) => getTableName(getEntityTable(et));
 const fkCol = (et: string) => `${et.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`)}_id`;
 
 /**
- * Live-rows-only predicate for soft-deleting tables. CDC decrements e: counters on
+ * Live-rows-only predicate for soft-deleting tables. CDC decrements e:c: counters on
  * soft-delete transitions (and re-increments on restore), so recalculation must exclude
  * tombstones to agree.
  */
@@ -45,18 +45,18 @@ export const deepestAncestorExpr = (et: string, alias: string, h: AncestorSource
 const countPair = (key: string, from: string, where: string) =>
   `'${key}', COALESCE((SELECT COUNT(*) FROM ${from} WHERE ${where}), 0)`;
 
-/** Build JSONB pairs for membership counts: m:{role}…, m:total, m:pending */
+/** Build JSONB pairs for membership counts: m:c:{role}…, m:c:total, m:c:pending */
 const membershipPairs = (alias: string, fk: string, ctxType: string, ctxRoles: readonly string[]) => [
   ...ctxRoles.map((r) =>
     countPair(
-      `m:${r}`,
+      `m:c:${r}`,
       'memberships cm',
       `cm.${fk} = ${alias}.id AND cm.channel_type = '${ctxType}' AND cm.role = '${r}'`,
     ),
   ),
-  countPair('m:total', 'memberships cm', `cm.${fk} = ${alias}.id AND cm.channel_type = '${ctxType}'`),
+  countPair('m:c:total', 'memberships cm', `cm.${fk} = ${alias}.id AND cm.channel_type = '${ctxType}'`),
   countPair(
-    'm:pending',
+    'm:c:pending',
     'inactive_memberships im',
     `im.${fk} = ${alias}.id AND im.channel_type = '${ctxType}' AND im.rejected_at IS NULL`,
   ),
@@ -79,17 +79,17 @@ const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
  * Safe to run at any time (seed, admin repair, production incident recovery).
  *
  * Context counters (Phases 1–3):
- *   Phase 1 – Organization-level: m:{role}, m:total, m:pending, e:{type} (countable rows)
+ *   Phase 1 – Organization-level: m:c:{role}, m:c:total, m:c:pending, e:c:{type} (countable rows)
  *   Phase 2 – Sub-org channels: same keys for every descendant carrying the FK (full attribution)
  *   Phase 3 – Sequence + frontier: sequence via GREATEST(MAX(seq)) across product tables;
- *             f:{type} via MAX(seq) at the org and every ancestor level (drafts excluded,
- *             tombstones included); self family fs:{type}/es:{type} at the home node only
- *   Phase 3b – Activity stamps: li:{type}/lu:{type} epoch ms at the home node
+ *             e:f:{type} via MAX(seq) at the org and every ancestor level (drafts excluded,
+ *             tombstones included); self family e:f:h:{type}/e:c:h:{type} at the home node only
+ *   Phase 3b – Activity stamps: e:li:h:{type}/e:lu:h:{type} epoch ms at the home node
  *   Phase 3c – Channel path backfill (verified-ancestry source for catchup views)
  *
  * Product counters (Phase 4):
  *   Phase 4a – viewCount from seen_by (unique user views per entity)
- *   Phase 4b – Array-ref counters via appConfig.entityEmbeddings
+ *   Phase 4b – Array-ref counters via appConfig.productEmbeddings
  */
 export const recalculateCounters = async (db: DbOrTx) => {
   // ── Phase 1: Organization-level counters ──────────────────────────────
@@ -99,7 +99,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
       .getOrderedDescendants('organization')
       .map((et) =>
         countPair(
-          `e:${et}`,
+          `e:c:${et}`,
           `${tbl(et as EntityType)} e`,
           `e.organization_id = o.id${livePredicate(et as EntityType, 'e')}${publishedPredicate(et as EntityType, 'e')}`,
         ),
@@ -124,7 +124,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
       ...membershipPairs('ctx', fk, ctxType, hierarchy.getRoles(ctxType)),
       ...descendants.map((et) =>
         countPair(
-          `e:${et}`,
+          `e:c:${et}`,
           `${tbl(et as EntityType)} ce`,
           `ce.${fk} = ctx.id${livePredicate(et as EntityType, 'ce')}${publishedPredicate(et as EntityType, 'ce')}`,
         ),
@@ -142,7 +142,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
 
   // ── Phase 3: Org sequence + frontiers from MAX(seq) ──────────────
   // `sequence` per org = the max stamped sequence value across ALL product tables (the
-  // reservation counter CDC increments). `f:{type}` = MAX(seq) per (node, entityType)
+  // reservation counter CDC increments). `e:f:{type}` = MAX(seq) per (node, entityType)
   // at the org and at every ancestor level column, matching CDC's frontierNodeKeys rollup.
   // Tombstones keep their seq, so no live filter: MAX is a frontier.
   const sequenceMaxes = appConfig.productEntityTypes.map(
@@ -160,7 +160,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
 
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);
-    const frontierKey = `f:${entityType}`;
+    const frontierKey = `e:f:${entityType}`;
     // Unpublished drafts are excluded from frontiers (not delta-fetchable; the
     // publication row filter keeps them from ever reaching CDC). Rows drafted before
     // the filter era may hold historical seq stamps (harmless orphans), still excluded
@@ -194,15 +194,15 @@ export const recalculateCounters = async (db: DbOrTx) => {
       );
     }
 
-    // Self family (home node only, deepest non-null ancestor, the legacy per-scope shape):
-    // fs:{type} = MAX(seq) of HOMED rows (drafts excluded, tombstones included);
-    // es:{type}  = COUNT of countable HOMED rows (live AND published).
+    // Self family (home node only, deepest non-null ancestor):
+    // e:f:h:{type} = MAX(seq) of HOMED rows (drafts excluded, tombstones included);
+    // e:c:h:{type} = COUNT of countable HOMED rows (live AND published).
     const homeExpr = deepestAncestorExpr(entityType, 't');
     if (homeExpr) {
       await upsertChannelCounters(
         db,
         `
-        SELECT ${homeExpr}, jsonb_build_object('fs:${entityType}', COALESCE(MAX(t.seq), 0)), NOW()
+        SELECT ${homeExpr}, jsonb_build_object('e:f:h:${entityType}', COALESCE(MAX(t.seq), 0)), NOW()
         FROM ${tableName} t
         WHERE ${homeExpr} IS NOT NULL${frontierPredicate}
         GROUP BY ${homeExpr}
@@ -211,7 +211,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
       await upsertChannelCounters(
         db,
         `
-        SELECT ${homeExpr}, jsonb_build_object('es:${entityType}', COUNT(*)::int), NOW()
+        SELECT ${homeExpr}, jsonb_build_object('e:c:h:${entityType}', COUNT(*)::int), NOW()
         FROM ${tableName} t
         WHERE ${homeExpr} IS NOT NULL${livePredicate(entityType, 't')}${publishedPredicate(entityType, 't')}
         GROUP BY ${homeExpr}
@@ -221,18 +221,18 @@ export const recalculateCounters = async (db: DbOrTx) => {
   }
 
   // ── Phase 3b: Activity stamps from MAX(published_at/created_at) / MAX(updated_at) ──
-  // li:{type} = epoch ms of the latest countable row born in the context's own stream
-  // (publish time on draft-lifecycle tables, created_at elsewhere), lu:{type} = epoch ms
+  // e:li:h:{type} = epoch ms of the latest countable row born in the context's own stream
+  // (publish time on draft-lifecycle tables, created_at elsewhere), e:lu:h:{type} = epoch ms
   // of the latest countable-row update, both grouped by the home context key (deepest
-  // non-null ancestor, org fallback via COALESCE). Unlike e: counts these are
-  // These per-stream signals stay at the home context and do not fan out to ancestors,
+  // non-null ancestor, org fallback via COALESCE). Unlike e:c: counts, these per-stream
+  // signals stay at the home context and do not fan out to ancestors,
   // matching CDC's stamp scope. Unpublished drafts never stamp (they never reach CDC).
-  // jsonb_strip_nulls drops lu: when no live row was ever updated (updated_at all NULL).
+  // jsonb_strip_nulls drops e:lu:h: when no live row was ever updated (updated_at all NULL).
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);
     const ctxExpr = deepestAncestorExpr(entityType, 't');
     if (!ctxExpr) continue;
-    // COALESCE mirrors CDC's li: stamp source (publishedAt ?? createdAt).
+    // COALESCE mirrors CDC's e:li:h: stamp source (publishedAt ?? createdAt).
     const liSource =
       'publishedAt' in getColumns(getEntityTable(entityType))
         ? 'COALESCE(t.published_at, t.created_at)'
@@ -242,8 +242,8 @@ export const recalculateCounters = async (db: DbOrTx) => {
       db,
       `
       SELECT ${ctxExpr}, jsonb_strip_nulls(jsonb_build_object(
-        'li:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(${liSource})) * 1000)::bigint,
-        'lu:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(t.updated_at)) * 1000)::bigint
+        'e:li:h:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(${liSource})) * 1000)::bigint,
+        'e:lu:h:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(t.updated_at)) * 1000)::bigint
       )), NOW()
       FROM ${tableName} t
       WHERE ${ctxExpr} IS NOT NULL${livePredicate(entityType, 't')}${publishedPredicate(entityType, 't')}
@@ -272,20 +272,20 @@ export const recalculateCounters = async (db: DbOrTx) => {
   // 4a: viewCount from seen_by (unique user views, 90-day window via pg_partman)
   await db.execute(
     sql.raw(`
-    INSERT INTO product_counters (entity_id, entity_type, view_count, last_viewed_at)
-    SELECT sb.entity_id, sb.entity_type, COUNT(DISTINCT sb.user_id)::int, MAX(sb.created_at)
+    INSERT INTO product_counters (product_id, product_type, view_count, last_viewed_at)
+    SELECT sb.product_id, sb.product_type, COUNT(DISTINCT sb.user_id)::int, MAX(sb.created_at)
     FROM seen_by sb
-    GROUP BY sb.entity_id, sb.entity_type
-    ON CONFLICT (entity_id) DO UPDATE SET
+    GROUP BY sb.product_id, sb.product_type
+    ON CONFLICT (product_id) DO UPDATE SET
       view_count = EXCLUDED.view_count,
       last_viewed_at = EXCLUDED.last_viewed_at
   `),
   );
 
   // 4b: Array-ref counters → channel_counters (e.g. label usage from tasks.labels[])
-  for (const ref of appConfig.entityEmbeddings) {
-    const src = tbl(ref.hostEntity as EntityType);
-    const key = `e:${ref.hostEntity}`;
+  for (const ref of appConfig.productEmbeddings) {
+    const src = tbl(ref.hostProduct as EntityType);
+    const key = `e:c:${ref.hostProduct}`;
 
     await upsertChannelCounters(
       db,

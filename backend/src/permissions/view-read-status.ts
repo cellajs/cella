@@ -13,7 +13,7 @@ import {
  * Answerability of a catchup view prefix for one product entity type.
  *
  * - `ok`: the caller has UNCONDITIONAL read of every row at or below the prefix node.
- *   Per-node summaries (`f:{type}`, `e:{type}`) may be returned; they describe exactly
+ *   Per-node summaries (`e:f:{type}`, `e:c:{type}`) may be returned; they describe exactly
  *   rows the caller could read anyway.
  * - `opaque`: the caller can read SOME rows under the prefix (conditional slices like
  *   `read:'own'`/public, home-only grants, or grants on descendant channels) but not all.

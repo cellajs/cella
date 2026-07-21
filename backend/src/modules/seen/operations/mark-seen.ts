@@ -1,6 +1,6 @@
 import { and, eq, getColumns, gt, inArray, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import type { ProductEntityType, SeenTrackedEntityType } from 'shared';
+import type { ProductEntityType, SeenTrackedProductType } from 'shared';
 import { appConfig, hierarchy, possibleHomeChannels, seenWindowMs } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { AuthContext } from '#/core/context';
@@ -14,38 +14,38 @@ type OrgScopedEntityTable = AnyPgTable & {
   createdAt: PgColumn;
 };
 
-/** Product entity types tracked for seen/unseen, configured in appConfig.seenTrackedEntityTypes. */
-export const trackedEntityTypes = appConfig.seenTrackedEntityTypes;
-const trackedEntityTypeSet = new Set<string>(trackedEntityTypes);
+/** Product entity types tracked for seen/unseen, configured in appConfig.seenTrackedProductTypes. */
+export const trackedProductTypes = appConfig.seenTrackedProductTypes;
+const trackedProductTypeSet = new Set<string>(trackedProductTypes);
 
 /** 90-day rolling window; older entities are ignored for seen/unseen tracking. Single source in
  * `shared` so client-side unseen tracking uses the same window. */
 export { seenWindowMs };
 
 /** Type guard: narrows a product entity type to a seen-tracked entity type */
-export function isTrackedEntityType(entityType: string): entityType is SeenTrackedEntityType {
-  return trackedEntityTypeSet.has(entityType);
+export function isTrackedProductType(productType: string): productType is SeenTrackedProductType {
+  return trackedProductTypeSet.has(productType);
 }
 
 /** Context types that group unseen counts: every context a tracked row can have as its effective home */
-export const groupingChannelTypes = new Set(trackedEntityTypes.flatMap((t) => possibleHomeChannels(hierarchy, t)));
+export const groupingChannelTypes = new Set(trackedProductTypes.flatMap((t) => possibleHomeChannels(hierarchy, t)));
 
-export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityType: ProductEntityType) {
+export async function markSeenOp(ctx: AuthContext, entityIds: string[], productType: ProductEntityType) {
   const user = ctx.var.user;
   const organization = ctx.var.organization;
 
   log.debug(
-    `markSeen: ${entityType} x${entityIds.length} for org ${organization.id.slice(0, 8)} by ${user.id.slice(0, 8)}`,
+    `markSeen: ${productType} x${entityIds.length} for org ${organization.id.slice(0, 8)} by ${user.id.slice(0, 8)}`,
   );
 
   // Only configured tracked entity types are accepted
-  if (!isTrackedEntityType(entityType)) {
-    log.debug(`markSeen: skipping non-tracked type "${entityType}"`);
+  if (!isTrackedProductType(productType)) {
+    log.debug(`markSeen: skipping non-tracked type "${productType}"`);
     return { newCount: 0 };
   }
 
-  // After narrowing, entityType is SeenTrackedEntityType and a valid key of entityTables.
-  const entityTable = getEntityTable(entityType);
+  // After narrowing, productType is SeenTrackedProductType and a valid key of entityTables.
+  const entityTable = getEntityTable(productType);
 
   // Narrow to org-scoped table shape (all org-scoped product tables have these columns)
   const orgTable = entityTable as OrgScopedEntityTable;
@@ -55,7 +55,7 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
   // variable-depth row with a null parent column falls through to the next ancestor). Must
   // match the notification channelId (build-message) or unseen badges land under the wrong key.
   const ancestorColumns = hierarchy
-    .getOrderedAncestors(entityType)
+    .getOrderedAncestors(productType)
     .map((ancestor) => (columns as Record<string, PgColumn | undefined>)[appConfig.entityIdColumnKeys[ancestor]])
     .filter((column): column is PgColumn => Boolean(column));
   const channelIdColumn = ancestorColumns.length
@@ -90,7 +90,7 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
 
     // Single-roundtrip CTE that:
     // 1. Bulk-inserts seen_by rows, skipping already-seen ones via NOT EXISTS. seen_by is
-    //    partitioned by created_at, so a (user_id, entity_id) unique arbiter cannot exist;
+    //    partitioned by created_at, so a (user_id, product_id) unique arbiter cannot exist;
     //    a concurrent flush of the same entity can rarely slip through as a duplicate row,
     //    which readers tolerate (EXISTS semantics) and counter recalculation corrects.
     // 2. Upserts product_counters only for newly inserted rows (increments view_count)
@@ -98,29 +98,29 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
     const values = sql.join(
       vIds.map(
         (entityId) =>
-          sql`(${generateId()}::uuid, ${user.id}::uuid, ${entityId}::uuid, ${entityType}, ${ctxIdMap.get(entityId) ?? organization.id}::uuid, ${organization.id}::uuid, ${organization.tenantId}, now())`,
+          sql`(${generateId()}::uuid, ${user.id}::uuid, ${entityId}::uuid, ${productType}, ${ctxIdMap.get(entityId) ?? organization.id}::uuid, ${organization.id}::uuid, ${organization.tenantId}, now())`,
       ),
       sql`, `,
     );
 
     const result = await db.execute(sql`
-      WITH candidate (id, user_id, entity_id, entity_type, channel_id, organization_id, tenant_id, created_at) AS (
+      WITH candidate (id, user_id, product_id, product_type, channel_id, organization_id, tenant_id, created_at) AS (
         VALUES ${values}
       ),
       inserted AS (
-        INSERT INTO seen_by (id, user_id, entity_id, entity_type, channel_id, organization_id, tenant_id, created_at)
-        SELECT c.id, c.user_id, c.entity_id, c.entity_type, c.channel_id, c.organization_id, c.tenant_id, c.created_at
+        INSERT INTO seen_by (id, user_id, product_id, product_type, channel_id, organization_id, tenant_id, created_at)
+        SELECT c.id, c.user_id, c.product_id, c.product_type, c.channel_id, c.organization_id, c.tenant_id, c.created_at
         FROM candidate c
         WHERE NOT EXISTS (
-          SELECT 1 FROM seen_by sb WHERE sb.user_id = c.user_id AND sb.entity_id = c.entity_id
+          SELECT 1 FROM seen_by sb WHERE sb.user_id = c.user_id AND sb.product_id = c.product_id
         )
-        RETURNING entity_id
+        RETURNING product_id
       ),
       counters AS (
-        INSERT INTO product_counters (entity_id, entity_type, view_count, last_viewed_at)
-        SELECT entity_id, ${entityType}, 1, now()
+        INSERT INTO product_counters (product_id, product_type, view_count, last_viewed_at)
+        SELECT product_id, ${productType}, 1, now()
         FROM inserted
-        ON CONFLICT (entity_id) DO UPDATE SET
+        ON CONFLICT (product_id) DO UPDATE SET
           view_count = product_counters.view_count + 1,
           last_viewed_at = now()
       )

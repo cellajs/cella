@@ -1,11 +1,12 @@
-import type { PostAppCatchupResponse } from 'sdk';
-import type { ProductEntityType } from 'shared';
+import type { GetMyMembershipsResponse, PostAppCatchupResponse } from 'sdk';
+import { appConfig, type ProductEntityType } from 'shared';
+import { meKeys } from '~/modules/me/query';
 import { seenKeys } from '~/modules/seen/helpers';
 import { getEntityQueryKeys, getRegisteredEntityTypes, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
-import { enqueueCatchupRange, flushChannelViewNow, resetLazySync } from './lazy-sync-scheduler';
+import { enqueueCatchupRange, flushChannelViewNow, resetFetchPrioritizer } from './fetch-prioritizer';
 import * as membershipOps from './membership-ops';
 import { propagateEmbeddings } from './propagation';
 import { getSyncTier, getTenantIdForOrg } from './sync-priority';
@@ -26,7 +27,7 @@ import { getSyncTier, getTenantIdForOrg } from './sync-priority';
  * - advance-after-ingest: the org cursor advances only after the window drained (ok),
  *   was handed to react-query (invalidate), or was deliberately skipped (nothing cached)
  * - baseline: cursor 0 stores the frontier and refetches only when something is cached
- * - tier folding: background orgs enqueue into the lazy scheduler (advance at flush)
+ * - tier folding: background orgs enqueue into the fetch prioritizer (advance at flush)
  * - counts are compared server-to-server only (in-session change signal)
  */
 export async function processAppCatchup(response: PostAppCatchupResponse, baselineOnly = false): Promise<void> {
@@ -35,7 +36,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
 
   // ── Views: product entity sync per (org, entityType) ──────────────────────
   if (views?.length) {
-    if (!baselineOnly) resetLazySync();
+    if (!baselineOnly) resetFetchPrioritizer();
 
     for (const answer of views) {
       // Registered grant-boundary views (views.ts) take precedence over org-view keys.
@@ -90,7 +91,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
         continue;
       }
 
-      // ONE fetch path: every gap goes through the scheduler. Background orgs advance at
+      // ONE fetch path: every gap goes through the fetch prioritizer. Background orgs advance at
       // their negotiated flush; the viewing org is flushed immediately AND awaited so the
       // mutation-replay gate (waitForActiveCatchup) resolves against a reconciled cache.
       enqueueCatchupRange({
@@ -148,13 +149,36 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   }
 
   // Refresh memberships (getMyMemberships, invalidate channel lists, refresh current user).
+  const membershipChannelsBefore = membershipChannelKeys();
   membershipOps.invalidateChannelList(null);
-  membershipOps.fetchMemberships();
+  await membershipOps.fetchMemberships();
   membershipOps.refreshMe();
+
+  // Drop product caches for any org where a channel membership vanished (channel deletion or
+  // plain removal). Coarse per org: still-visible rows refetch permission-scoped on next
+  // mount, detail-by-id self-heals via GC / 403. The org list prefix covers home and filtered
+  // lists alike. Runs only on an actual loss, so unchanged catchups touch nothing.
+  const membershipChannelsAfter = membershipChannelKeys();
+  const orgsWithLostChannel = new Set(
+    [...membershipChannelsBefore].filter((key) => !membershipChannelsAfter.has(key)).map((key) => key.split(':')[0]),
+  );
+  for (const organizationId of orgsWithLostChannel) {
+    for (const entityType of appConfig.productEntityTypes) {
+      if (hasEntityQueryKeys(entityType)) {
+        queryClient.removeQueries({ queryKey: getEntityQueryKeys(entityType).list.org(organizationId) });
+      }
+    }
+  }
 
   // Reconcile unseen counts. Synced-row deltas cannot see what happened while
   // disconnected (other-device seen-marks, missed windows); an exact recount re-anchors them.
   queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
+}
+
+/** Channel identities the caller currently has membership in, as `${organizationId}:${channelId}`. */
+function membershipChannelKeys(): Set<string> {
+  const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
+  return new Set((data?.items ?? []).map((m) => `${m.organizationId}:${m.channelId}`));
 }
 
 /** Registered product entity types, for building the catchup views request. */

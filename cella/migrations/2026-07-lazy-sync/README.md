@@ -2,7 +2,7 @@
 
 > **TERMINOLOGY NOTE (2026-07):** written pre-rename — 'scope' here = today's **channel view**; `isViewingScope` is now `isViewingChannel`.
 
-The sync engine's live path is now **lazy and negotiated** (see `cella/SYNC_ENGINE.md`, "Lazy sync scheduling"): notifications enqueue merged seq ranges instead of fetching immediately, the server suggests a spread window (`syncWindow`), unseen badges are maintained from synced rows instead of per-batch recounts, and catchup hands background gaps to the same scheduler. Upstream cella arrives already migrated; forks have a few manual touch-points.
+The sync engine's live path is now **lazy and negotiated** (see `cella/SYNC_ENGINE.md`, "Fetch prioritization"): notifications enqueue merged seq ranges instead of fetching immediately, the server suggests a spread window (`spreadWindow`), unseen badges are maintained from synced rows instead of per-batch recounts, and catchup hands background gaps to the same fetch prioritizer. Upstream cella arrives already migrated; forks have a few manual touch-points.
 
 Pull order: apply [2026-07-batch-cache-removal](../2026-07-batch-cache-removal/) and [2026-07-detail-cache-tokenless](../2026-07-detail-cache-tokenless/) first if you haven't — this migration builds on both.
 
@@ -16,9 +16,9 @@ grep -rn "appCache(" backend/src
 
 Change each product detail route to e.g. `xCache: [appCache('task')]`. Known counts: **raak 3** (attachment/task/label), **projectcampus 1** (attachment — and consider adding the other 5 product detail routes while you're here; the cache is free to adopt now). `pnpm ts` fails on any site you miss.
 
-## 2. Lazy scheduler — automatic, but verify two fork seams
+## 2. Fetch prioritizer — automatic, but verify two fork seams
 
-The scheduler arrives via pull with no per-entity work. Verify:
+The fetch prioritizer arrives via pull with no per-entity work. Verify:
 
 - **Viewing detection for sub-org pages** (`isViewingScope` in `sync-priority.ts`): derived from the query cache — a channel counts as "viewed" while a mounted view observes a list query scoped to it (`observed-channels.ts`). Nothing to wire: slug routes, board panels rendering channels the route never names, and sheets all register through their own queries. One requirement, checked at startup: channel-scoped list keys must carry the channel id (scope segment or filter value). `createEntityKeys` keys always do; `registerEntityQueryKeys` throws at module load for hand-rolled keys that cannot.
 - **Muted/archived tiers** read the membership flags from the `['me','memberships']` query cache — works out of the box if your fork kept the standard membership shape.
@@ -41,7 +41,7 @@ Badges are now computed from synced rows by `ingestSyncedRows` (`seen-store.ts`)
 
 ## 5. Wire/SDK
 
-`StreamNotification` gained a nullable `syncWindow` field (additive). Run `pnpm sdk`. Old clients ignore it; without it the scheduler uses a fixed 15s window.
+`StreamNotification` gained a nullable `spreadWindow` field (additive). Run `pnpm sdk`. Old clients ignore it; without it the fetch prioritizer uses a fixed 15s window.
 
 ## 6. Default table views: canonical query + stripped URLs (optional, recommended)
 

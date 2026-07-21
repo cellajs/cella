@@ -14,7 +14,7 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 /**
  * Counter recalculation (the drift/incident repair tool; its output IS the contract) must
  * agree with CDC's incremental sequence writes: `sequence` = max stamped seq across the
- * org's product tables, `f:{type}` = max seq per (node, type), `e:{type}` = live published.
+ * org's product tables, `e:f:{type}` = max seq per (node, type), `e:c:{type}` = live published.
  */
 describe('recalculateCounters (sequence + frontier)', async () => {
   const call = await createAppClient();
@@ -68,11 +68,11 @@ describe('recalculateCounters (sequence + frontier)', async () => {
     // Sequence reservation counter: max stamped value across product tables.
     expect(counts.sequence).toBe(47);
     // Frontier includes tombstones (they keep their seq for delta reads).
-    expect(counts['f:attachment']).toBe(47);
+    expect(counts['e:f:attachment']).toBe(47);
     // Live count excludes the soft-deleted row.
-    expect(counts['e:attachment']).toBe(2);
+    expect(counts['e:c:attachment']).toBe(2);
     // Self family (attachments are org-homed, so self == subtree at the org node).
-    expect(counts['fs:attachment']).toBe(47);
-    expect(counts['es:attachment']).toBe(2);
+    expect(counts['e:f:h:attachment']).toBe(47);
+    expect(counts['e:c:h:attachment']).toBe(2);
   });
 });

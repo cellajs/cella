@@ -19,7 +19,7 @@ export type RelatableChannelEntityType = (typeof hierarchy.relatableChannelTypes
 export type ResourceType = (typeof appConfig.resourceTypes)[number];
 
 /** Product entity types tracked for seen/unseen counts */
-export type SeenTrackedEntityType = (typeof appConfig.seenTrackedEntityTypes)[number];
+export type SeenTrackedProductType = (typeof appConfig.seenTrackedProductTypes)[number];
 
 // App configuration types
 
@@ -168,14 +168,14 @@ export type EntityActionType = (typeof appConfig.entityActions)[number];
 
 // Embedding propagation types
 
-/** Single entity embedding relationship derived from config */
-type EntityEmbedding = (typeof appConfig.entityEmbeddings)[number];
+/** Single product embedding relationship derived from config */
+type ProductEmbedding = (typeof appConfig.productEmbeddings)[number];
 
-/** Hint describing which target entities need cache updates when a source entity changes */
+/** Hint describing which target products need cache updates when a source product changes */
 export type PropagationHint = {
-  sourceType: EntityEmbedding['embeddedEntity'];
-  targetType: EntityEmbedding['hostEntity'];
-  field: EntityEmbedding['hostColumn'];
+  sourceType: ProductEmbedding['embeddedProduct'];
+  targetType: ProductEmbedding['hostProduct'];
+  field: ProductEmbedding['hostColumn'];
   update: string[];
   remove: string[];
 };

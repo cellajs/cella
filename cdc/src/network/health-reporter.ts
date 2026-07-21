@@ -1,4 +1,4 @@
-import { cdcMetrics } from '../services/cdc-metrics';
+import { metrics } from '../services/cdc-metrics';
 import { replicationState } from '../services/replication-state';
 import { wsClient } from './websocket-client';
 
@@ -14,8 +14,8 @@ function push(): void {
       replicationStatus: replicationState.status,
       lastLsn: replicationState.lastLsn,
       messagesSent: wsClient.messagesSent,
-      slotActive: cdcMetrics.slotActive,
-      lagBytes: cdcMetrics.lagBytes,
+      slotActive: metrics.slotActive,
+      lagBytes: metrics.lagBytes,
       lastEventAt: replicationState.lastEventAt?.toISOString() ?? null,
       catchingUp: replicationState.catchingUp,
     },

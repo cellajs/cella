@@ -106,7 +106,7 @@
         "required": false,
         "kind": "middleware",
         "values": {
-          "appCache": {
+          "productCache": {
             "name": "app",
             "description": "Entity-keyed detail cache with per-request read authorization"
           },
@@ -671,7 +671,7 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": ["entity", "membership"],
+            "enum": ["product", "membership"],
             "description": "Discriminant for the notification: product-entity sync vs membership change"
           },
           "action": {
@@ -679,7 +679,7 @@
             "enum": ["create", "update", "delete", "moveOut"],
             "description": "Change kind; moveOut = the row left this path (reparent) and is no longer readable there"
           },
-          "entityType": {
+          "productType": {
             "type": ["string", "null"],
             "enum": ["attachment", null]
           },
@@ -732,9 +732,9 @@
             "type": ["integer", "null"],
             "description": "Authoritative row count for batches: sequence ranges of different paths may interleave"
           },
-          "syncWindow": {
+          "spreadWindow": {
             "type": ["integer", "null"],
-            "description": "Server-suggested spread window (ms) for the lazy delta fetch — scales with channel audience and load; the client clamps it between its eagerness tier bounds"
+            "description": "Server-suggested spread window (ms) for the lazy delta fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds"
           },
           "propagation": {
             "type": ["object", "null"],
@@ -773,7 +773,7 @@
         "required": [
           "kind",
           "action",
-          "entityType",
+          "productType",
           "resourceType",
           "subjectId",
           "organizationId",
@@ -785,14 +785,14 @@
           "stx",
           "batchUntilSeq",
           "count",
-          "syncWindow",
+          "spreadWindow",
           "propagation"
         ],
         "description": "Realtime notification delivered via SSE for entity and membership changes.",
         "example": {
-          "kind": "entity",
+          "kind": "product",
           "action": "update",
-          "entityType": "attachment",
+          "productType": "attachment",
           "resourceType": null,
           "subjectId": "e781e15e-ec97-4ad0-aa42-418ee4c50d02",
           "organizationId": "3a9fc6f0-5cf3-491b-a437-8e8c3a3796f6",
@@ -806,7 +806,7 @@
             "fieldTimestamps": {}
           },
           "batchUntilSeq": null,
-          "syncWindow": null,
+          "spreadWindow": null,
           "propagation": null
         },
         "x-tags": ["data", "entities", "cella"]
@@ -2024,7 +2024,8 @@
             "type": ["string", "null"]
           },
           "public": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "When true, served directly from the CDN without a presigned URL."
           },
           "bucketName": {
             "type": "string",
@@ -2040,11 +2041,13 @@
           },
           "contentType": {
             "type": "string",
-            "maxLength": 255
+            "maxLength": 255,
+            "description": "MIME type of the uploaded file (e.g. image/png)."
           },
           "convertedContentType": {
             "type": ["string", "null"],
-            "maxLength": 255
+            "maxLength": 255,
+            "description": "MIME type of the server-converted variant; null when none."
           },
           "size": {
             "type": "string",
@@ -2052,15 +2055,18 @@
           },
           "originalKey": {
             "type": "string",
-            "maxLength": 2048
+            "maxLength": 2048,
+            "description": "Storage object key for the original uploaded file."
           },
           "convertedKey": {
             "type": ["string", "null"],
-            "maxLength": 2048
+            "maxLength": 2048,
+            "description": "Storage object key for the converted variant; null when none."
           },
           "thumbnailKey": {
             "type": ["string", "null"],
-            "maxLength": 2048
+            "maxLength": 2048,
+            "description": "Storage object key for the generated thumbnail; null when none."
           },
           "organizationId": {
             "type": "string",
@@ -8482,7 +8488,8 @@
                     },
                     "contentType": {
                       "type": "string",
-                      "maxLength": 255
+                      "maxLength": 255,
+                      "description": "MIME type of the uploaded file (e.g. image/png)."
                     },
                     "size": {
                       "type": "string",
@@ -8490,14 +8497,16 @@
                     },
                     "originalKey": {
                       "type": "string",
-                      "maxLength": 2048
+                      "maxLength": 2048,
+                      "description": "Storage object key for the original uploaded file."
                     },
                     "bucketName": {
                       "type": "string",
                       "maxLength": 255
                     },
                     "public": {
-                      "type": "boolean"
+                      "type": "boolean",
+                      "description": "When true, served directly from the CDN without a presigned URL."
                     },
                     "groupId": {
                       "type": ["string", "null"],
@@ -8505,15 +8514,18 @@
                     },
                     "convertedContentType": {
                       "type": ["string", "null"],
-                      "maxLength": 255
+                      "maxLength": 255,
+                      "description": "MIME type of the server-converted variant; null when none."
                     },
                     "convertedKey": {
                       "type": ["string", "null"],
-                      "maxLength": 2048
+                      "maxLength": 2048,
+                      "description": "Storage object key for the converted variant; null when none."
                     },
                     "thumbnailKey": {
                       "type": ["string", "null"],
-                      "maxLength": 2048
+                      "maxLength": 2048,
+                      "description": "Storage object key for the generated thumbnail; null when none."
                     },
                     "stx": {
                       "$ref": "#/components/schemas/StxBase"
@@ -8982,7 +8994,7 @@
         "description": "Returns a single attachment by ID. Served from the CDC-invalidated entity detail cache.",
         "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
-        "x-cache": ["appCache"],
+        "x-cache": ["productCache"],
         "parameters": [
           {
             "schema": {

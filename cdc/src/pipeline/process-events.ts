@@ -4,8 +4,8 @@ import { isProductEntity } from 'shared';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 
-import { type BatchEventInfo, generateActivityId, sendBatchMessageToApi, sendMessageToApi } from '../services/activity-service';
-import { cdcMetrics } from '../services/cdc-metrics';
+import { type BatchEvent, generateActivityId, sendBatchMessageToApi, sendMessageToApi } from '../services/activity-service';
+import { metrics } from '../services/cdc-metrics';
 import { circuitBreaker } from '../services/circuit-breaker';
 import { withRetry } from '../services/retry';
 import { replicationState } from '../services/replication-state';
@@ -21,7 +21,7 @@ import type { ParseMessageResult } from './parse-message';
 
 /** An event prepared for persistence + dispatch: activity with a generated id, its row data, and seq. */
 interface PreparedEvent {
-  activityWithId: BatchEventInfo['activity'];
+  activityWithId: BatchEvent['activity'];
   seq: number | undefined;
   lsn: string;
   rowData: CdcRowData;
@@ -36,7 +36,7 @@ interface PreparedEvent {
 function prepareActivity(
   parseResult: ParseMessageResult,
   lsn: string,
-): { activityWithId: BatchEventInfo['activity']; seq: number | undefined } {
+): { activityWithId: BatchEvent['activity']; seq: number | undefined } {
   const activityId = generateActivityId(lsn);
   const activityWithId = { ...parseResult.activity, id: activityId };
   const seq = typeof parseResult.rowData.seq === 'number' ? parseResult.rowData.seq : undefined;
@@ -49,7 +49,7 @@ function prepareActivity(
  * Returns false if persistence failed (caller should skip deltas).
  */
 async function persistActivities(
-  infos: Array<{ activityWithId: BatchEventInfo['activity']; lsn: string }>,
+  infos: Array<{ activityWithId: BatchEvent['activity']; lsn: string }>,
   tableName: string,
 ): Promise<boolean> {
   if (infos.length === 1) {
@@ -119,7 +119,7 @@ async function persistActivities(
 /** Forward stamped events to the API server: one batch payload, or a single payload. */
 function dispatchToApi(stamped: PreparedEvent[], traceCtx: TraceContext): void {
   if (stamped.length > 1) {
-    const batchInfos: BatchEventInfo[] = stamped.map(({ activityWithId, rowData, seq, movedFrom }) => ({
+    const batchInfos: BatchEvent[] = stamped.map(({ activityWithId, rowData, seq, movedFrom }) => ({
       activity: activityWithId,
       rowData,
       seq,
@@ -209,7 +209,7 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
       await cleanupEmbeddingReferences(tableMeta.type, action, events);
     }
 
-    cdcMetrics.recordProcessing(events.length, performance.now() - startMs);
+    metrics.recordProcessing(events.length, performance.now() - startMs);
 
     if (isBatch) {
       log.trace(`Batch processed`, {

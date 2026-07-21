@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useSearchParams } from '~/hooks/use-search-params';
-import { BaseEntityGrid, EntityGridBar, EntityGridTile } from '~/modules/entities/entity-grid';
+import { BaseEntityGrid, ChannelEntityGridTile, EntityGridBar } from '~/modules/entities/entity-grid';
 import { organizationsListQueryOptions } from './query';
 
 type OrgSearch = Parameters<typeof organizationsListQueryOptions>[0];
@@ -15,7 +15,7 @@ interface Props {
 }
 
 // Optionally set a custom tile
-const tileComponent = EntityGridTile;
+const tileComponent = ChannelEntityGridTile;
 
 /**
  * Display a grid of organization tiles.

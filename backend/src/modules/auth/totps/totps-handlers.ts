@@ -40,8 +40,8 @@ app.openapi(authTotpsRoutes.generateTotpKey, async (ctx) => {
     appConfig.slug,
     user.email,
     secretBytes,
-    appConfig.totpConfig.intervalInSeconds,
-    appConfig.totpConfig.digits,
+    appConfig.totp.intervalInSeconds,
+    appConfig.totp.digits,
   );
 
   return ctx.json({ totpUri, manualKey }, 200);

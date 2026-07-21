@@ -241,7 +241,7 @@ Reuse the shared `seqCursorFilters` + `pathPrefixFilter` helpers ([`seq-cursor.t
 Once the table is in `entityTables` (Step 5) and the type is in `productEntityTypes` (Step 2), the entire **Postgres WAL → CDC → SSE → client** pipeline covers the new entity with **no per-entity code**:
 
 - **CDC publication + `REPLICA IDENTITY FULL`**: derived from `entityTables` by the CDC setup migration.
-- **`seq` stamping**: the CDC worker stamps every row from the org sequence generically (one order per organization, shared by all product types) and rolls `f:`/`fs:` frontiers up the hierarchy.
+- **`seq` stamping**: the CDC worker stamps every row from the org sequence generically (one order per organization, shared by all product types) and rolls `e:f:`/`e:f:h:` frontiers up the hierarchy.
 - **SSE dispatch**: [`entities-listeners.ts`](../backend/src/modules/entities/entities-listeners.ts) loops `appConfig.productEntityTypes` to register `activityBus` listeners; there is one generic `/entities/app/stream`, no per-entity endpoint.
 - **Permission-filtered fan-out**: the dispatcher derives ancestor channel ids from the hierarchy and runs ONE `checkAccessFanout(subscribers, 'read', …)` call per event row; the engine collapses subscribers into access classes.
 
@@ -339,14 +339,3 @@ Channel entities do **not** go through the CDC/SSE product pipeline or the wire-
 - Frontend query-key scopes, SSE dispatch, offline persistence, cache migration, sync priority, catch-up, unseen counts (once opted in)
 
 **Verify** with `pnpm check` (types + OpenAPI/SDK regen + lint) and `pnpm test`. See [Quickstart](./QUICKSTART.md) for the dev loop and [Testing](./TESTING.md) for tests.
-
----
-
-## Related docs
-
-- [Architecture](./ARCHITECTURE.md): entity kinds, hierarchy builder, guard chain, data modeling
-- [React Client](./CLIENT.md): canonical queries, persistence, and frontend extension seams
-- [Sync engine](./SYNC_ENGINE.md): the CDC → SSE pipeline product entities plug into
-- [Multi-tenancy](./MULTI_TENANCY.md): scoped reads, write safeguards, and the product-table checklist
-- [Schema evolution](./SCHEMA_EVOLUTION.md): the wire/lens system (Step 6) and evolving an entity's shape later
-- [Agent guidelines](./AGENTS.md): routing, guards, permissions, and coding conventions

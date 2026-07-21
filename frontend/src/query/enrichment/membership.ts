@@ -1,6 +1,6 @@
 import type { MembershipBase } from 'sdk';
 import { findMembership } from '~/query/enrichment/helpers';
-import type { EnrichableEntity } from '~/query/enrichment/types';
+import type { EnrichableChannelEntity } from '~/query/enrichment/types';
 
 /** Fields that affect enrichment; update when MembershipBase gains new meaningful fields. */
 const comparedKeys: (keyof MembershipBase)[] = ['archived', 'muted', 'displayOrder', 'role'];
@@ -16,7 +16,10 @@ function hasMembershipChanged(a: MembershipBase | null, b: MembershipBase | null
  * Enrich an item with its membership from the cached memberships array.
  * Returns the original reference when nothing changed.
  */
-export function enrichWithMembership(item: EnrichableEntity, memberships: MembershipBase[]): EnrichableEntity {
+export function enrichWithMembership(
+  item: EnrichableChannelEntity,
+  memberships: MembershipBase[],
+): EnrichableChannelEntity {
   const existing = item.membership ?? null;
   const resolved = findMembership(memberships, item.id) ?? existing;
 

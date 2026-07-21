@@ -58,8 +58,11 @@ export function invalidateMemberships(): void {
  * with any in-flight getMyMemberships request (e.g., from getMenuData's ensureQueryData).
  * Preferred over invalidateQueries during catchup to avoid redundant fetches on app init.
  */
-export function fetchMemberships(): void {
-  queryClient.fetchQuery({ queryKey: meKeys.memberships, queryFn: async ({ signal }) => getMyMemberships({ signal }) });
+export function fetchMemberships(): Promise<unknown> {
+  return queryClient.fetchQuery({
+    queryKey: meKeys.memberships,
+    queryFn: async ({ signal }) => getMyMemberships({ signal }),
+  });
 }
 
 /**

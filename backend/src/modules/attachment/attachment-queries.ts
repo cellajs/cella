@@ -102,7 +102,7 @@ export const findAttachmentViewCount = async (ctx: DbContext, { entityId }: Find
   const [counters] = await db
     .select({ viewCount: productCountersTable.viewCount })
     .from(productCountersTable)
-    .where(eq(productCountersTable.entityId, entityId))
+    .where(eq(productCountersTable.productId, entityId))
     .limit(1);
   return counters?.viewCount ?? 0;
 };

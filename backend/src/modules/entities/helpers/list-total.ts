@@ -6,7 +6,7 @@ import { getOrgEntityCount } from '#/modules/entities/entities-queries';
  * Sources for a product list's `total`; the caller picks one:
  * - `pageLength`: delta reads discard `total` → report the page, no second query.
  * - `counter`: org-wide unfiltered read (`kind:'all'`, no `q`, not delta) → the O(1)
- *   `e:{entityType}` channel counter (CDC-maintained, eventually consistent; fine here).
+ *   `e:c:{entityType}` channel counter (CDC-maintained, eventually consistent; fine here).
  * - `exact`: anything narrower (search / row-scoped) → the exact `COUNT(*)`.
  */
 export type ListTotalSource =

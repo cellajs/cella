@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { appCache } from '#/middlewares/entity-cache';
 import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { httpCache } from '#/middlewares/http-cache';
+import { productCache } from '#/middlewares/product-cache';
 import {
   bulkPointsLimiter,
   presignedUrlLimiter,
@@ -107,7 +107,7 @@ const attachmentRoutes = {
     method: 'get',
     path: '/{id}',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    xCache: [appCache('attachment')],
+    xCache: [productCache('attachment')],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Get attachment',
     description: 'Returns a single attachment by ID. Served from the CDC-invalidated entity detail cache.',

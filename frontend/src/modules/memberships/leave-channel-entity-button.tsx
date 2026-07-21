@@ -14,23 +14,23 @@ import { queryClient } from '~/query/query-client';
 import { invalidateMemberships } from '~/query/realtime/membership-ops';
 import { cn } from '~/utils/cn';
 
-export type LeaveEntityButtonProps = {
+export type LeaveChannelEntityButtonProps = {
   channelEntity: ChannelEntityBase;
   redirectPath?: string;
   buttonProps?: ButtonProps;
   callback?: (args: CallbackArgs) => void;
 };
 
-export const LeaveEntityButton = ({
+export const LeaveChannelEntityButton = ({
   channelEntity,
   buttonProps,
   redirectPath = appConfig.defaultRedirectPath,
   callback,
-}: LeaveEntityButtonProps) => {
+}: LeaveChannelEntityButtonProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { mutate: leaveEntity } = useMutation({
+  const { mutate: leaveChannelEntity } = useMutation({
     mutationFn: async () => {
       const entityId = channelEntity.id;
       return await deleteMyMembership({ query: { entityId, entityType: channelEntity.entityType } });
@@ -56,7 +56,7 @@ export const LeaveEntityButton = ({
       toaster(t('c:action.offline.text'), 'warning');
       return;
     }
-    leaveEntity();
+    leaveChannelEntity();
   };
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLButtonElement> = (e) => {

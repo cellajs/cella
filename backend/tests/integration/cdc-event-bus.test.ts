@@ -147,7 +147,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     // org subtree); it advances by 1 with every stamp and equals the just-stamped row's seq.
     const readCounter = async () => {
       const [row] = await db
-        .select({ s: sql<number>`(${channelCountersTable.counts}->>'f:attachment')::int` })
+        .select({ s: sql<number>`(${channelCountersTable.counts}->>'e:f:attachment')::int` })
         .from(channelCountersTable)
         .where(eq(channelCountersTable.channelKey, counterKey));
       return row?.s ?? 0;

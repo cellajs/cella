@@ -2,7 +2,7 @@ import { useMountedState } from '~/hooks/use-mounted-state';
 import { Skeleton } from '~/modules/ui/skeleton';
 
 interface EntityGridSkeletonProps {
-  /** Approximate height of each tile in px (default: 180, matching EntityGridTile) */
+  /** Approximate height of each tile in px (default: 180, matching ChannelEntityGridTile) */
   tileHeight?: number;
 }
 

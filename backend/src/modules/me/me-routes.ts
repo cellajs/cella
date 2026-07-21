@@ -22,7 +22,7 @@ import {
   paginationSchema,
 } from '#/schemas';
 import {
-  mockMeAuthDataResponse,
+  mockMeAuthResponse,
   mockMeResponse,
   mockPaginatedInvitationsResponse,
   mockUploadTokenResponse,
@@ -140,7 +140,7 @@ const meRoutes = {
     responses: {
       200: {
         description: 'User sign-up info',
-        content: { 'application/json': { schema: meAuthDataSchema, example: mockMeAuthDataResponse() } },
+        content: { 'application/json': { schema: meAuthDataSchema, example: mockMeAuthResponse() } },
       },
       ...errorResponseRefs,
     },

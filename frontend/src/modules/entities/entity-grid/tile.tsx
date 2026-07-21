@@ -13,14 +13,14 @@ import { numberToColorClass } from '~/utils/number-to-color-class';
  * Structural tile entity: any channel entity whose optional `included.counts`
  * carries a membership total fits, without coupling to a concrete entity type.
  */
-type TileEntity = EnrichedChannelEntity & {
+type ChannelTileEntity = EnrichedChannelEntity & {
   included?: { counts?: { membership: { total: number } } };
 };
 
 /**
  * Tile component to display an entity in a grid layout.
  */
-export const EntityGridTile = ({ entity }: { entity: TileEntity }) => {
+export const ChannelEntityGridTile = ({ entity }: { entity: ChannelTileEntity }) => {
   const { to, params, search } = getChannelEntityRoute(entity);
   const counts = entity.included?.counts;
   return (

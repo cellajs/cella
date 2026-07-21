@@ -21,7 +21,7 @@ export type MeSession = Omit<SessionModel, 'expiresAt'> & {
 };
 
 /** MeAuthData response type */
-export interface MeAuthDataResponse {
+export interface MeAuthResponse {
   enabledOAuth: EnabledOAuthProvider[];
   hasTotp: boolean;
   sessions: MeSession[];

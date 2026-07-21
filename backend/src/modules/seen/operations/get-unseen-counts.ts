@@ -1,9 +1,9 @@
 import { getColumns, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
-import { appConfig, hierarchy, type SeenTrackedEntityType } from 'shared';
+import { appConfig, hierarchy, type SeenTrackedProductType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
-import { groupingChannelTypes, seenWindowMs, trackedEntityTypes } from '#/modules/seen/operations/mark-seen';
+import { groupingChannelTypes, seenWindowMs, trackedProductTypes } from '#/modules/seen/operations/mark-seen';
 import { findUnseenCountsByUser } from '#/modules/seen/seen-queries';
 import { actorFrom } from '#/permissions/actor';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
@@ -11,15 +11,15 @@ import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
 
 /** Sub-context column for the read predicate: the parent-level id column, org fallback. */
-const subChannelColumn = (entityType: SeenTrackedEntityType): PgColumn => {
-  const table = getEntityTable(entityType);
+const subChannelColumn = (productType: SeenTrackedProductType): PgColumn => {
+  const table = getEntityTable(productType);
   const columns = getColumns(table) as Record<string, PgColumn | undefined>;
-  const parent = hierarchy.getParent(entityType);
+  const parent = hierarchy.getParent(productType);
   const parentColumn = parent
     ? columns[appConfig.entityIdColumnKeys[parent as keyof typeof appConfig.entityIdColumnKeys]]
     : undefined;
   const column = parentColumn ?? columns.organizationId;
-  if (!column) throw new Error(`[Seen] No sub-context column for "${entityType}"`);
+  if (!column) throw new Error(`[Seen] No sub-context column for "${productType}"`);
   return column;
 };
 
@@ -32,12 +32,12 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
   // Counts are grouped by the caller's org memberships, so no memberships means nothing to
   // count, including for system admins. Their bypass widens rows within an org, not the set
   // of orgs they are counted against.
-  if (memberships.length === 0 || new Set(trackedEntityTypes).size === 0) {
+  if (memberships.length === 0 || new Set(trackedProductTypes).size === 0) {
     return {};
   }
 
   // Any tracked type with no parent groups by org → org ids join the context id set.
-  const needsOrgFallback = trackedEntityTypes.some((t) => !hierarchy.getParent(t));
+  const needsOrgFallback = trackedProductTypes.some((t) => !hierarchy.getParent(t));
 
   // Group the user's context ids by ORG (mirror rule: read scopes are org-scoped, so the
   // count runs per org with that org's predicate). Entity tables have FORCE ROW LEVEL
@@ -61,20 +61,20 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
   // list endpoints) so badges only count rows this user can actually fetch. The seen
   // counter is a change signal that must mirror the feed, never a wider number.
   for (const [organizationId, { tenantId, channelIds }] of orgGroups) {
-    const scopeWhereByType: Partial<Record<SeenTrackedEntityType, SQL | undefined>> = {};
-    const readableTypes: SeenTrackedEntityType[] = [];
+    const scopeWhereByType: Partial<Record<SeenTrackedProductType, SQL | undefined>> = {};
+    const readableTypes: SeenTrackedProductType[] = [];
 
-    for (const entityType of trackedEntityTypes) {
-      const readFilter = resolveCollectionReadFilter(memberships, entityType, organizationId, actor);
+    for (const productType of trackedProductTypes) {
+      const readFilter = resolveCollectionReadFilter(memberships, productType, organizationId, actor);
       const scopeWhere = buildCollectionReadWhere(
         readFilter,
-        getEntityTable(entityType),
-        subChannelColumn(entityType),
+        getEntityTable(productType),
+        subChannelColumn(productType),
         actor,
       );
       if (scopeWhere.kind === 'none') continue;
-      readableTypes.push(entityType);
-      if (scopeWhere.kind === 'where') scopeWhereByType[entityType] = scopeWhere.where;
+      readableTypes.push(productType);
+      if (scopeWhere.kind === 'where') scopeWhereByType[productType] = scopeWhere.where;
     }
     if (readableTypes.length === 0) continue;
 
@@ -82,7 +82,7 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
       findUnseenCountsByUser(readCtx, {
         userId: user.id,
         channelIds: [...channelIds],
-        entityTypes: readableTypes,
+        productTypes: readableTypes,
         cutoff: windowCutoff,
         scopeWhereByType,
       }),
@@ -91,7 +91,7 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
     for (const row of unseenRows) {
       if (row.unseenCount <= 0) continue;
       if (!results[row.channelId]) results[row.channelId] = {};
-      results[row.channelId][row.entityType] = row.unseenCount;
+      results[row.channelId][row.productType] = row.unseenCount;
     }
   }
 

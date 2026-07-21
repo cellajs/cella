@@ -6,7 +6,7 @@ import { checkAccess } from '#/permissions';
 import { accessFrom } from '#/permissions/actor';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { coalesce, isInFlight } from '#/utils/request-coalescing';
-import { entityCache } from './app-entity-cache';
+import { productCache as productCacheStore } from './app-product-cache';
 
 /**
  * Entity-keyed detail cache middleware.
@@ -17,10 +17,10 @@ import { entityCache } from './app-entity-cache';
  * handler runs once (coalesced) and its enriched result is cached. CDC invalidates the entry by
  * entity id on change (see cdc-websocket `handleMessage`), so the next fetch re-enriches.
  */
-export const appCache = (entityType: ProductEntityType): MiddlewareHandler<Env> =>
+export const productCache = (entityType: ProductEntityType): MiddlewareHandler<Env> =>
   xMiddleware(
     {
-      functionName: 'appCache',
+      functionName: 'productCache',
       type: 'x-cache',
       name: 'app',
       description: 'Entity-keyed detail cache with per-request read authorization',
@@ -33,7 +33,7 @@ export const appCache = (entityType: ProductEntityType): MiddlewareHandler<Env> 
       }
 
       const key = `${entityType}:${id}`;
-      const cached = entityCache.get(key);
+      const cached = productCacheStore.get(key);
 
       // Enriched hit: re-authorize this caller against the cached row, then serve.
       if (isEnriched(cached)) {
@@ -50,7 +50,7 @@ export const appCache = (entityType: ProductEntityType): MiddlewareHandler<Env> 
       // Coalesce concurrent misses on the same entity; a waiter re-checks the cache after.
       if (isInFlight(key)) {
         await coalesce(key, () => Promise.resolve());
-        const coalesced = entityCache.get(key);
+        const coalesced = productCacheStore.get(key);
         if (isEnriched(coalesced) && callerCanRead(ctx, entityType, coalesced)) {
           ctx.header('X-Cache', 'COALESCED');
           return ctx.json(coalesced);
@@ -60,8 +60,8 @@ export const appCache = (entityType: ProductEntityType): MiddlewareHandler<Env> 
       ctx.header('X-Cache', 'MISS');
       await coalesce(key, async () => {
         await next();
-        const entityData = ctx.get('entityCacheData');
-        if (entityData) entityCache.set(key, entityData);
+        const entityData = ctx.get('productCacheData');
+        if (entityData) productCacheStore.set(key, entityData);
       });
     },
   );
@@ -78,7 +78,7 @@ function isEnriched(value: Record<string, unknown> | null | undefined): value is
  * normalize it back to the raw id the permission subject expects; every other field the
  * check needs (channel ids, publicAt, publishedAt) is already present on the response.
  */
-function callerCanRead(ctx: Context<Env>, entityType: ProductEntityType, cached: Record<string, unknown>): boolean {
+function callerCanRead(ctx: Context<Env>, productType: ProductEntityType, cached: Record<string, unknown>): boolean {
   try {
     const createdBy = cached.createdBy;
     const authRow = {
@@ -90,7 +90,7 @@ function callerCanRead(ctx: Context<Env>, entityType: ProductEntityType, cached:
     } as { id: string; createdBy?: string | null };
     const access = accessFrom(ctx as never);
     if (!draftVisibleTo(authRow, 'anonymous' in access ? undefined : access.userId)) return false;
-    const subject = buildSubjectFromEntity(entityType, authRow);
+    const subject = buildSubjectFromEntity(productType, authRow);
     return checkAccess(access, 'read', subject).isAllowed;
   } catch {
     // Unexpected row shape → don't serve from cache; the handler re-authorizes authoritatively.

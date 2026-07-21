@@ -11,7 +11,7 @@ import {
 } from '~/query/enrichment/helpers';
 import { enrichWithMembership } from '~/query/enrichment/membership';
 import { enrichWithPermissions } from '~/query/enrichment/permissions';
-import type { EnrichableEntity, InfiniteData } from '~/query/enrichment/types';
+import type { EnrichableChannelEntity, InfiniteData } from '~/query/enrichment/types';
 import { queryClient } from '~/query/query-client';
 
 /** Re-entrancy guard: prevents the subscriber from reacting to its own cache writes */
@@ -48,12 +48,12 @@ function getExtendedAncestors(entityType: ChannelEntityType): readonly ChannelEn
  * Order matters: membership must run before permissions and ancestor-slugs (they read item.membership).
  */
 function enrichItem(
-  item: EnrichableEntity,
+  item: EnrichableChannelEntity,
   memberships: MembershipBase[],
   entityType: ChannelEntityType,
   ancestors: readonly ChannelEntityType[],
   slugIndex: SlugIndex,
-): EnrichableEntity {
+): EnrichableChannelEntity {
   let result = enrichWithMembership(item, memberships);
   result = enrichWithPermissions(result, entityType);
   result = enrichWithAncestorSlugs(result, ancestors, slugIndex);
@@ -130,7 +130,7 @@ function enrichEntityType(entityType: ChannelEntityType, memberships: Membership
 
   const ancestors = getExtendedAncestors(entityType);
   for (const query of cache.findAll({ queryKey: [entityType, 'detail'] })) {
-    const data = (query.state.data ?? null) as EnrichableEntity | null;
+    const data = (query.state.data ?? null) as EnrichableChannelEntity | null;
     if (!data?.id) continue;
     const enriched = enrichItem(data, memberships, entityType, ancestors, slugIndex);
     if (enriched !== data) setCacheData(query.queryKey, enriched);

@@ -1,12 +1,12 @@
 import { type ChannelEntityType, isProductEntity, type ProductEntityType } from 'shared';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
-import { applyHardDeleteUnseen } from '~/modules/seen/unseen-sync';
+import { applyUnfetchableRemovalUnseen } from '~/modules/seen/unseen-sync';
 import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline/stx-utils';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
-import { enqueueRange } from './lazy-sync-scheduler';
+import { enqueueRange } from './fetch-prioritizer';
 import * as membershipOps from './membership-ops';
 import { propagateEmbeddings } from './propagation';
 import { getSyncTier } from './sync-priority';
@@ -21,7 +21,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
 
   withSpanSync(
     syncSpanNames.messageProcess,
-    { entityType: notification.entityType, action, entityId: subjectId, _trace },
+    { entityType: notification.productType, action, entityId: subjectId, _trace },
     () => {
       // Checked before setOrgTenantId creates the entry: an org the sync store has never
       // seen means the SSE connection is not registered on its channel.
@@ -45,13 +45,13 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
         return;
       }
 
-      // kind === 'entity', so entityType is narrowed to a product entity type.
-      const entityType = notification.entityType;
+      // kind === 'product', so productType is narrowed to a product entity type.
+      const entityType = notification.productType;
       if (!isProductEntity(entityType))
         return console.error('Unknown entityType in app stream notification:', entityType);
 
       // Create/update batches enqueue a merged, spread seq range for lazy fetching.
-      // The scheduler flushes viewing-tier scopes immediately. The range fetch also handles
+      // The fetch prioritizer flushes viewing-tier scopes immediately. The range fetch also handles
       // soft-delete tombstones; unseen counts recount once per merged flush, not per batch
       // (a batch's width is never "new for you": drafts, own rows). Hard-delete batches must
       // not enqueue because deleted rows leave no tombstone to fetch. They fall through to
@@ -65,7 +65,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
           fromSeq: seq,
           untilSeq: notification.batchUntilSeq,
           isCreate: action === 'create',
-          syncWindowMs: notification.syncWindow ?? undefined,
+          spreadWindowMs: notification.spreadWindow ?? undefined,
           propagation: notification.propagation ?? undefined,
         });
         return;
@@ -86,7 +86,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
         notification.channelId ?? null,
         keys,
         notification.propagation,
-        notification.syncWindow ?? null,
+        notification.spreadWindow ?? null,
       );
     },
   );
@@ -134,7 +134,7 @@ function handleEntityNotification(
   channelId: string | null,
   keys: EntityQueryKeys,
   propagation?: AppStreamNotification['propagation'],
-  syncWindow?: number | null,
+  spreadWindow?: number | null,
 ): void {
   // Echo prevention for create/update: skip data fetch for own mutations,
   // but still patch stx metadata so subsequent mutations read fresh versions.
@@ -147,8 +147,8 @@ function handleEntityNotification(
     return;
   }
 
-  // The two paths without synced rows (hard delete, seq-less fallback) derive their
-  // invalidation/fetch decision from the same tier system the scheduler uses: viewing tier
+  // The two paths without synced rows (delete-style removal, seq-less fallback) derive their
+  // invalidation/fetch decision from the same tier system the fetch prioritizer uses: viewing tier
   // acts now, background/muted defers to next access.
   const isViewing = getSyncTier(entityType, organizationId, channelId).min === 0;
 
@@ -167,7 +167,7 @@ function handleEntityNotification(
           fromSeq: seq,
           untilSeq: seq,
           isCreate: action === 'create',
-          syncWindowMs: syncWindow ?? undefined,
+          spreadWindowMs: spreadWindow ?? undefined,
           propagation: propagation ?? undefined,
         });
         // Unseen accounting happens at flush time: unseen-sync counts the fetched rows.
@@ -196,13 +196,14 @@ function handleEntityNotification(
       break;
 
     case 'delete':
-      // Physical hard delete, rare except for DB admin cases. Product soft deletes are 'update' events
-      // reconciled via seq-range tombstones; a hard delete leaves no row or tombstone to fetch,
-      // so mark the detail stale and invalidate the org-scoped list to reconcile, consistent
-      // with the catchup count-integrity invalidation flow. Covers single and batch deletes.
+      // Delete-style events cover physical deletes and rows leaving a filtered publication
+      // through unpublish. Neither leaves a sync-visible row or tombstone to fetch, so mark
+      // the detail stale and invalidate the org-scoped list to reconcile, consistent with
+      // the catchup count-integrity invalidation flow. Product soft deletes remain 'update'
+      // events reconciled through sequence-range tombstones. Covers single and batch deletes.
       cacheOps.invalidateEntityDetail(entityId, keys, 'none');
       cacheOps.invalidateEntityListForOrg(keys, organizationId, isViewing ? 'active' : 'none');
-      applyHardDeleteUnseen(entityType, entityId, channelId);
+      applyUnfetchableRemovalUnseen(entityType, entityId, channelId);
       if (propagation) propagateEmbeddings(propagation);
       break;
 
@@ -212,7 +213,7 @@ function handleEntityNotification(
       // return the row. The notification is the removal. Treat it like a tombstone:
       // drop the row from lists/detail and correct unseen counts.
       cacheOps.removeEntity(entityType, entityId, organizationId);
-      applyHardDeleteUnseen(entityType, entityId, channelId);
+      applyUnfetchableRemovalUnseen(entityType, entityId, channelId);
       break;
   }
 

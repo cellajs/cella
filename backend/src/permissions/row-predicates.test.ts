@@ -23,7 +23,7 @@ import {
 import { configureAccessPolicies } from 'shared/testing/policies';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { seedDb } from '#/db/db';
-import { canReceiveEntityEvent } from '#/modules/entities/helpers/dispatch-to-stream';
+import { canReceiveProductEvent } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkAccess } from './check-permission';
@@ -713,7 +713,7 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
         // Same subject shape dispatch builds: ancestor scope + the row itself
         const subject = rowSubject(row);
         const engineAllowed = checkAccess({ userId, isSystemAdmin, memberships }, 'read', subject).isAllowed;
-        const dispatchAllowed = canReceiveEntityEvent({ userId, isSystemAdmin, memberships }, dispatchEvent(row));
+        const dispatchAllowed = canReceiveProductEvent({ userId, isSystemAdmin, memberships }, dispatchEvent(row));
 
         expect(dispatchAllowed, `${label} → row ${row.id} dispatch-vs-engine`).toBe(engineAllowed);
         expect(fromSql.has(row.id), `${label} → row ${row.id} sql-vs-engine`).toBe(engineAllowed);

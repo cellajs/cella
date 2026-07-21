@@ -18,7 +18,7 @@ const dbCtx: DbContext = { var: { db } };
  * pair proves unconditional subtree read; any readable-but-unproven pair makes it
  * `opaque` (no numbers), and no read route at all makes it `forbidden`. Summaries for
  * `ok` views come from one channel_counters read over the prefixes' deepest nodes:
- * `frontiers` = per-type max of `f:{type}`, `counts` = per-type sum of `e:{type}`.
+ * `frontiers` = per-type max of `e:f:{type}`, `counts` = per-type sum of `e:c:{type}`.
  */
 export async function answerCatchupViews(
   memberships: MembershipBaseModel[],

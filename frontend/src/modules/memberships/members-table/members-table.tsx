@@ -83,8 +83,8 @@ function MembersTable({ channelEntity, isSheet = false, children }: MembersTable
           organizationId,
         },
         body: { role: changedRows[index].membership.role },
-        entityId,
-        entityType,
+        channelId: entityId,
+        channelType: entityType,
       };
 
       updateMemberMembership.mutateAsync(updatedMembership);

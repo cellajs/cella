@@ -1,5 +1,5 @@
 import type { FieldValues } from 'react-hook-form';
-import { BlockNote } from '~/modules/common/blocknote/block-note-editor';
+import { BlockNote } from '~/modules/common/blocknote/blocknote-editor';
 import type { BaseUppyFilePanelProps, CommonBlockNoteProps } from '~/modules/common/blocknote/types';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
@@ -11,7 +11,7 @@ type BaseBlockNoteProps = Omit<
   /** Omit to disable file/media uploads (the editor renders no file panel without it). */
   baseFilePanelProps?: BaseUppyFilePanelProps;
 };
-type BlocknoteFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
+type BlockNoteFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   baseBlockNoteProps: BaseBlockNoteProps;
   autoFocus?: boolean;
   containerClassName?: string;
@@ -29,7 +29,7 @@ const BlockNoteContentFormField = <TFieldValues extends FieldValues>({
   autoFocus,
   containerClassName,
   baseBlockNoteProps: { excludeBlockTypes, baseFilePanelProps, ...restBlockNoteProps },
-}: BlocknoteFieldProps<TFieldValues>) => {
+}: BlockNoteFieldProps<TFieldValues>) => {
   return (
     <FormField
       control={control}

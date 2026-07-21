@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import { type ChannelEntityType, hierarchy, roles, type EntityType as SharedEntityType } from 'shared';
 import type z from 'zod';
 import type { DbContext } from '#/core/context';
@@ -40,34 +40,34 @@ export const findChannelCountersByKeys = async ({ var: { db } }: DbContext, keys
  * Reads pre-computed counts from JSONB without running COUNT(*) subqueries.
  *
  * JSONB key conventions:
- *   m:{role}  → membership count by role (e.g. m:admin, m:member)
- *   m:pending → pending invitations count
- *   m:total   → total active members
- *   e:{type}  → child entity count (e.g. e:attachment; countable rows must be live AND
- *               published on draft-lifecycle tables)
- *   li:{type} → epoch ms of the latest countable row born in the context's OWN stream
- *               (publish time on draft-lifecycle tables, else created time)
- *   lu:{type} → epoch ms of the latest countable-row content update in that stream
- *               (product types only). Stamped at the home context (deepest non-null
- *               ancestor). These stamps do not propagate to higher ancestors like
- *               e: deltas are; they are per-stream signals.
+ *   m:c:{role}  → membership count by role (e.g. m:c:admin, m:c:member)
+ *   m:c:pending → pending invitations count
+ *   m:c:total   → total active members
+ *   e:c:{type}  → child entity count (e.g. e:c:attachment; countable rows must be live AND
+ *                 published on draft-lifecycle tables)
+ *   e:li:h:{type} → epoch ms of the latest countable row born in the context's OWN stream
+ *                 (publish time on draft-lifecycle tables, else created time)
+ *   e:lu:h:{type} → epoch ms of the latest countable-row content update in that stream
+ *                 (product types only). Stamped at the home context (deepest non-null
+ *                 ancestor). These stamps do not propagate to higher ancestors like
+ *                 e:c: deltas are; they are per-stream signals.
  */
-export const getEntityCountsSelect = (entityType: ChannelEntityType) => {
+export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
   const children = hierarchy.getOrderedDescendants(entityType);
   const productChildren = children.filter((child) => hierarchy.isProduct(child));
   const col = '"channel_counters"."counts"';
 
   // Build membership JSON: { admin: N, member: N, ..., pending: N, total: N }
-  const roleJsonPairs = roles.all.map((role) => `'${role}', ${jsonbIntRaw(col, `m:${role}`)}`).join(', ');
+  const roleJsonPairs = roles.all.map((role) => `'${role}', ${jsonbIntRaw(col, `m:c:${role}`)}`).join(', ');
 
   // Build entity JSON: { attachment: N, ... }
-  const entityJsonPairs = children.map((entity) => `'${entity}', ${jsonbIntRaw(col, `e:${entity}`)}`).join(', ');
+  const entityJsonPairs = children.map((entity) => `'${entity}', ${jsonbIntRaw(col, `e:c:${entity}`)}`).join(', ');
 
   // Build activity JSON over product descendants only: { attachment: { created: epochMs | null, updated: epochMs | null }, ... }
   const activityJsonPairs = productChildren
     .map(
       (entity) =>
-        `'${entity}', json_build_object('created', (${col}->>'li:${entity}')::bigint, 'updated', (${col}->>'lu:${entity}')::bigint)`,
+        `'${entity}', json_build_object('created', (${col}->>'e:li:h:${entity}')::bigint, 'updated', (${col}->>'e:lu:h:${entity}')::bigint)`,
     )
     .join(', ');
 
@@ -75,8 +75,8 @@ export const getEntityCountsSelect = (entityType: ChannelEntityType) => {
     membership: sql<z.infer<typeof membershipCountSchema>>`
       json_build_object(
         ${sql.raw(roleJsonPairs)},
-        'pending', ${sql.raw(jsonbIntRaw(col, 'm:pending'))},
-        'total', ${sql.raw(jsonbIntRaw(col, 'm:total'))}
+        'pending', ${sql.raw(jsonbIntRaw(col, 'm:c:pending'))},
+        'total', ${sql.raw(jsonbIntRaw(col, 'm:c:total'))}
       )`,
     entities: sql<Record<(typeof children)[number], number>>`json_build_object(${sql.raw(entityJsonPairs)})`,
     activity: sql<
@@ -91,8 +91,8 @@ export const getEntityCountsSelect = (entityType: ChannelEntityType) => {
  * Fetches aggregated counts for a specific entity from channelCountersTable.
  * Single LEFT JOIN on pre-computed JSONB, no COUNT(*) subqueries.
  */
-export const getEntityCounts = async ({ var: { db } }: DbContext, entityType: ChannelEntityType, entityId: string) => {
-  const { countsSelect } = getEntityCountsSelect(entityType);
+export const getChannelCounts = async ({ var: { db } }: DbContext, entityType: ChannelEntityType, entityId: string) => {
+  const { countsSelect } = getChannelCountsSelect(entityType);
 
   const [counts] = await db
     .select(countsSelect)
@@ -119,10 +119,10 @@ export const getEntityCounts = async ({ var: { db } }: DbContext, entityType: Ch
 
 /**
  * Reads a single pre-computed entity count from channelCountersTable.
- * Used for quota checks: reads `e:{entityType}` from the org's counter row.
+ * Used for quota checks: reads `e:c:{entityType}` from the org's counter row.
  *
  * Draft-lifecycle tables (opt-in `publishedAt`) fall back to a direct COUNT over live
- * rows INCLUDING drafts: the `e:` counter tracks published rows only, but a quota must
+ * rows INCLUDING drafts: the `e:c:` counter tracks published rows only, but a quota must
  * bound total storage, not published visibility. This prevents drafts from stockpiling for free.
  */
 export const getOrgEntityCount = async (ctx: DbContext, orgId: string, entityType: EntityType) => {
@@ -138,7 +138,7 @@ export const getOrgEntityCount = async (ctx: DbContext, orgId: string, entityTyp
     return row?.count ?? 0;
   }
 
-  const key = `e:${entityType}`;
+  const key = `e:c:${entityType}`;
   const [row] = await db
     .select({ count: sql<number>`coalesce((${channelCountersTable.counts}->>${key})::int, 0)` })
     .from(channelCountersTable)
@@ -147,46 +147,6 @@ export const getOrgEntityCount = async (ctx: DbContext, orgId: string, entityTyp
 };
 
 // Activity queries
-
-/**
- * Max delete rows to enumerate per catchup before falling back to list invalidation.
- * The delete scan requests `CAP + 1` rows so the caller can detect overflow (more deletes
- * than we are willing to enumerate) and tell the client to invalidate the whole list without
- * removing entities one id at a time.
- */
-export const DELETE_ENUMERATE_CAP = 200;
-
-/**
- * Scan product entity delete activities after a cursor (app stream), capped at
- * `DELETE_ENUMERATE_CAP + 1` so the caller can detect overflow and fall back to list invalidation.
- * Membership changes are excluded here and detected via the `membership` seq counter, so
- * membership churn never consumes the delete budget.
- */
-export const findDeleteActivities = async (
-  { var: { db } }: DbContext,
-  cursor: string,
-  organizationIds: string[],
-  productEntityTypes: SharedEntityType[],
-) => {
-  return db
-    .select({
-      id: activitiesTable.id,
-      organizationId: activitiesTable.organizationId,
-      subjectId: activitiesTable.subjectId,
-      entityType: activitiesTable.entityType,
-    })
-    .from(activitiesTable)
-    .where(
-      and(
-        gt(activitiesTable.id, cursor),
-        inArray(activitiesTable.organizationId, organizationIds),
-        inArray(activitiesTable.entityType, productEntityTypes),
-        sql`${activitiesTable.action} = 'delete'`,
-      ),
-    )
-    .orderBy(activitiesTable.id)
-    .limit(DELETE_ENUMERATE_CAP + 1);
-};
 
 /** Get the latest activity ID relevant to a user's organizations. */
 export const findLatestUserActivityId = async (

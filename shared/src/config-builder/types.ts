@@ -103,9 +103,9 @@ export interface CompanyConfig {
   coordinates: { lat: number; lng: number };
 }
 
-export interface MenuStructureItem {
-  entityType: string;
-  subentityType: string | null;
+export interface MenuStructureItem<C extends string = string> {
+  entityType: C;
+  subentityType: C | null;
   /**
    * When a subentity membership is created, an associated membership on the parent entity is
    * auto-created. By default it gets the least-privileged fitting role (`member` when the parent
@@ -120,7 +120,7 @@ export interface ConfigStringArrays {
   entityTypes: readonly string[];
   channelEntityTypes: readonly string[];
   productEntityTypes: readonly string[];
-  seenTrackedEntityTypes: readonly string[];
+  seenTrackedProductTypes: readonly string[];
   entityActions: readonly string[];
   resourceTypes: readonly string[];
   systemRoles: readonly string[];
@@ -138,16 +138,16 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   entityTypes: T['entityTypes'];
   channelEntityTypes: T['channelEntityTypes'];
   productEntityTypes: T['productEntityTypes'];
-  seenTrackedEntityTypes: T['seenTrackedEntityTypes'];
+  seenTrackedProductTypes: T['seenTrackedProductTypes'];
   entityIdColumnKeys: { readonly [K in T['entityTypes'][number] & string]: `${K}Id` };
   entityActions: T['entityActions'];
   resourceTypes: T['resourceTypes'];
-  entityEmbeddings: readonly {
-    readonly embeddedEntity: T['productEntityTypes'][number] & string;
-    readonly hostEntity: T['productEntityTypes'][number] & string;
+  productEmbeddings: readonly {
+    readonly embeddedProduct: T['productEntityTypes'][number] & string;
+    readonly hostProduct: T['productEntityTypes'][number] & string;
     readonly hostColumn: string;
   }[];
-  menuStructure: readonly MenuStructureItem[];
+  menuStructure: readonly MenuStructureItem<T['channelEntityTypes'][number] & string>[];
   defaultRestrictions: {
     quotas: Record<string, number>;
     rateLimits: { apiPointsPerHour: number };
@@ -204,7 +204,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   // Authentication
   enabledAuthStrategies: readonly BaseAuthStrategies[];
   enabledOAuthProviders: readonly BaseOAuthProviders[];
-  totpConfig: TotpConfig;
+  totp: TotpConfig;
   /** Per-user concurrent regular-session cap; oldest beyond it are evicted on sign-in. */
   maxSessionsPerUser: number;
 

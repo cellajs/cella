@@ -1,5 +1,5 @@
 import { circuitBreaker } from "../services/circuit-breaker";
-import { cdcMetrics, type MetricsSnapshot } from "../services/cdc-metrics";
+import { metrics, type MetricsSnapshot } from "../services/cdc-metrics";
 import { replicationState } from "../services/replication-state";
 import { RESOURCE_LIMITS } from "../constants";
 import { wsClient } from "./websocket-client";
@@ -51,7 +51,7 @@ export function getHealthResponse(): {
   else if (replStatus === "paused" || !wsConnected) status = "degraded";
 
   // Check WAL lag threshold for unhealthy status
-  const lagBytes = cdcMetrics.lagBytes;
+  const lagBytes = metrics.lagBytes;
   if (
     lagBytes !== null &&
     lagBytes >= unhealthyBytes &&
@@ -73,9 +73,9 @@ export function getHealthResponse(): {
       status: replStatus,
       lastLsn: replicationState.lastLsn,
       pausedAt: replicationState.replicationPausedAt?.toISOString() ?? null,
-      slotActive: cdcMetrics.slotActive,
-      slotStatus: cdcMetrics.slotStatus,
-      lagBytes: cdcMetrics.lagBytes,
+      slotActive: metrics.slotActive,
+      slotStatus: metrics.slotStatus,
+      lagBytes: metrics.lagBytes,
       lastEventAt: replicationState.lastEventAt?.toISOString() ?? null,
     },
     catchup: replicationState.catchingUp
@@ -95,7 +95,7 @@ export function getHealthResponse(): {
       lastMessageAt: wsClient.lastMessageAt?.toISOString() ?? null,
     },
     circuitBreakers: circuitStatus,
-    metrics: cdcMetrics.getSnapshot(),
+    metrics: metrics.getSnapshot(),
   };
 
   const httpStatus = status === "unhealthy" ? 503 : 200;

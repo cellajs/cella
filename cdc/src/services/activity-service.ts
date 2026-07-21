@@ -96,7 +96,7 @@ export function sendMessageToApi(
 }
 
 /** Payload shape for a batch event (persist-only, no individual WS send). */
-export interface BatchEventInfo {
+export interface BatchEvent {
   activity: InsertActivityModel & { id: string };
   rowData: CdcRowData;
   seq?: number;
@@ -109,7 +109,7 @@ export interface BatchEventInfo {
  * (path, entityType) group keeps notifications one-audience and lets the client route
  * by path prefix. Resource events (no entityType) and non-product entities group by org.
  */
-function batchPathKey({ activity, rowData }: BatchEventInfo): string {
+function batchPathKey({ activity, rowData }: BatchEvent): string {
   if (activity.entityType && isProductEntity(activity.entityType)) {
     const path = typeof rowData.path === 'string' && rowData.path ? rowData.path : null;
     return `${path ?? resolveChannelKey(activity.entityType, rowData, activity)}\0${activity.entityType}`;
@@ -126,12 +126,12 @@ function batchPathKey({ activity, rowData }: BatchEventInfo): string {
  * `batchRows`) carry the exact contents: range arithmetic is not row count.
  */
 export function sendBatchMessageToApi(
-  events: BatchEventInfo[],
+  events: BatchEvent[],
   traceContext: TraceContext,
 ): void {
   if (events.length === 0) return;
 
-  const groups = new Map<string, BatchEventInfo[]>();
+  const groups = new Map<string, BatchEvent[]>();
   for (const event of events) {
     const key = batchPathKey(event);
     const group = groups.get(key);
@@ -146,7 +146,7 @@ export function sendBatchMessageToApi(
 
 /** Send one per-path batch group as a single message, using the first event as representative. */
 function sendBatchGroupToApi(
-  events: BatchEventInfo[],
+  events: BatchEvent[],
   traceContext: TraceContext,
 ): void {
   const first = events[0];

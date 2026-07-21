@@ -1,7 +1,7 @@
 import { isProductEntity } from 'shared';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import { log } from '#/utils/logger';
-import { entityCache } from './app-entity-cache';
+import { productCache } from './app-product-cache';
 
 let isRegistered = false;
 
@@ -18,7 +18,7 @@ function handleActivityEvent(event: ActivityEvent): void {
     return;
   }
 
-  const invalidated = entityCache.invalidateByEntity(entityType, subjectId);
+  const invalidated = productCache.invalidateProduct(entityType, subjectId);
 
   if (invalidated) {
     log.debug('Entity cache invalidated', {
@@ -35,7 +35,7 @@ function handleActivityEvent(event: ActivityEvent): void {
  *
  * @example
  * ```typescript
- * import { registerCacheInvalidation } from '#/middlewares/entity-cache/cache-invalidation';
+ * import { registerCacheInvalidation } from '#/middlewares/product-cache/cache-invalidation';
  *
  * // In server startup
  * registerCacheInvalidation();

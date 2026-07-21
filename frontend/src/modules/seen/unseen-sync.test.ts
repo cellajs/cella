@@ -6,7 +6,7 @@ vi.stubGlobal('navigator', { onLine: true });
 const { queryClient } = await import('~/query/query-client');
 const { seenKeys } = await import('./helpers');
 const { useSeenStore } = await import('./seen-store');
-const { applyHardDeleteUnseen, ingestSyncedRows, noteUnseenReconciled } = await import('./unseen-sync');
+const { applyUnfetchableRemovalUnseen, ingestSyncedRows, noteUnseenReconciled } = await import('./unseen-sync');
 
 // Base config tracks 'attachment'; rows are attachment-shaped (org-homed → channelId = orgId).
 const CHANNEL = 'org-1';
@@ -57,8 +57,8 @@ describe('unseen count deltas from synced rows', () => {
 
   it('does not count rows outside the seen window or rows this client already saw', async () => {
     vi.advanceTimersByTime(10);
-    useSeenStore.getState().markEntitySeen('tenant-1', CHANNEL, CHANNEL, 'attachment', 'seen-1');
-    await settle(); // markEntitySeen itself queued a -1 (5 → 4)
+    useSeenStore.getState().markProductSeen('tenant-1', CHANNEL, CHANNEL, 'attachment', 'seen-1');
+    await settle(); // markProductSeen itself queued a -1 (5 → 4)
 
     ingestSyncedRows('attachment', CHANNEL, [
       row('ancient', { createdAt: daysAgo(120) }), // outside 90-day window
@@ -97,14 +97,14 @@ describe('unseen count deltas from synced rows', () => {
     expect(counts()[CHANNEL].attachment).toBe(6);
   });
 
-  it('hard delete decrements unseen rows and nets zero for locally-seen ones', async () => {
-    applyHardDeleteUnseen('attachment', 'gone-1', CHANNEL); // unseen → −1
+  it('unfetchable removal decrements unseen rows and nets zero for locally-seen ones', async () => {
+    applyUnfetchableRemovalUnseen('attachment', 'gone-1', CHANNEL); // unseen → −1
     await settle();
     expect(counts()[CHANNEL].attachment).toBe(4);
 
-    useSeenStore.getState().markEntitySeen('tenant-1', CHANNEL, CHANNEL, 'attachment', 'gone-2');
+    useSeenStore.getState().markProductSeen('tenant-1', CHANNEL, CHANNEL, 'attachment', 'gone-2');
     await settle(); // view-mark −1 (4 → 3)
-    applyHardDeleteUnseen('attachment', 'gone-2', CHANNEL); // seen → net 0
+    applyUnfetchableRemovalUnseen('attachment', 'gone-2', CHANNEL); // seen → net 0
     await settle();
     expect(counts()[CHANNEL].attachment).toBe(3);
   });

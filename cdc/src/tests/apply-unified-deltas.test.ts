@@ -81,8 +81,8 @@ describe('applyBatchUnifiedDeltas', () => {
     const plan: BatchUnifiedDeltaPlan = {
       orgSequenceGroups: [{ orgKey: 'org-1', count: 3, events }],
       countDeltasByChannelKey: new Map([
-        ['org-1', { 'e:task': 3 }],
-        ['proj-1', { 'e:task': 3 }],
+        ['org-1', { 'e:c:task': 3 }],
+        ['proj-1', { 'e:c:task': 3 }],
       ]),
     };
 
@@ -95,15 +95,15 @@ describe('applyBatchUnifiedDeltas', () => {
   });
 
   it('phase 1 merges sequence + org counts; phase 2 writes frontier nodes and the stamp-back', async () => {
-    upsertReturnValue = { 'sequence': 2, 'e:task': 2 };
+    upsertReturnValue = { 'sequence': 2, 'e:c:task': 2 };
 
     const events = [mockEvent('t1'), mockEvent('t2')];
 
     const plan: BatchUnifiedDeltaPlan = {
       orgSequenceGroups: [{ orgKey: 'org-1', count: 2, events }],
       countDeltasByChannelKey: new Map([
-        ['org-1', { 'e:task': 2 }],
-        ['proj-1', { 'e:task': 2 }],
+        ['org-1', { 'e:c:task': 2 }],
+        ['proj-1', { 'e:c:task': 2 }],
       ]),
     };
 
@@ -170,34 +170,34 @@ describe('frontierNodeKeys', () => {
 
 describe('sumInto', () => {
   it('sums plain delta keys on collision', () => {
-    const target = { 'sequence': 2, 'e:task': 1 };
-    sumInto(target, { 'e:task': 2, 'm:admin': 1 });
-    expect(target).toEqual({ 'sequence': 2, 'e:task': 3, 'm:admin': 1 });
+    const target = { 'sequence': 2, 'e:c:task': 1 };
+    sumInto(target, { 'e:c:task': 2, 'm:c:admin': 1 });
+    expect(target).toEqual({ 'sequence': 2, 'e:c:task': 3, 'm:c:admin': 1 });
   });
 
   it('max-merges li:/lu: keys instead of summing (timestamps must not add up)', () => {
-    const target = { 'li:task': 1_751_000_000_000, 'lu:task': 1_751_000_000_000 };
+    const target = { 'e:li:h:task': 1_751_000_000_000, 'e:lu:h:task': 1_751_000_000_000 };
     // Older stamps lose
-    sumInto(target, { 'li:task': 1_750_000_000_000, 'lu:task': 1_750_000_000_000 });
-    expect(target['li:task']).toBe(1_751_000_000_000);
-    expect(target['lu:task']).toBe(1_751_000_000_000);
+    sumInto(target, { 'e:li:h:task': 1_750_000_000_000, 'e:lu:h:task': 1_750_000_000_000 });
+    expect(target['e:li:h:task']).toBe(1_751_000_000_000);
+    expect(target['e:lu:h:task']).toBe(1_751_000_000_000);
     // Newer stamps win
-    sumInto(target, { 'li:task': 1_752_000_000_000, 'lu:task': 1_753_000_000_000 });
-    expect(target['li:task']).toBe(1_752_000_000_000);
-    expect(target['lu:task']).toBe(1_753_000_000_000);
+    sumInto(target, { 'e:li:h:task': 1_752_000_000_000, 'e:lu:h:task': 1_753_000_000_000 });
+    expect(target['e:li:h:task']).toBe(1_752_000_000_000);
+    expect(target['e:lu:h:task']).toBe(1_753_000_000_000);
   });
 
   it('max-merges f: keys (frontiers only move forward)', () => {
-    const target = { 'f:task': 40 };
-    sumInto(target, { 'f:task': 35 });
-    expect(target['f:task']).toBe(40);
-    sumInto(target, { 'f:task': 41 });
-    expect(target['f:task']).toBe(41);
+    const target = { 'e:f:task': 40 };
+    sumInto(target, { 'e:f:task': 35 });
+    expect(target['e:f:task']).toBe(40);
+    sumInto(target, { 'e:f:task': 41 });
+    expect(target['e:f:task']).toBe(41);
   });
 
   it('max-merge keys pass through unchanged when absent from target', () => {
     const target: Record<string, number> = { 'sequence': 1 };
-    sumInto(target, { 'li:task': 1_751_000_000_000, 'f:task': 7, 'e:task': 1 });
-    expect(target).toEqual({ 'sequence': 1, 'li:task': 1_751_000_000_000, 'f:task': 7, 'e:task': 1 });
+    sumInto(target, { 'e:li:h:task': 1_751_000_000_000, 'e:f:task': 7, 'e:c:task': 1 });
+    expect(target).toEqual({ 'sequence': 1, 'e:li:h:task': 1_751_000_000_000, 'e:f:task': 7, 'e:c:task': 1 });
   });
 });

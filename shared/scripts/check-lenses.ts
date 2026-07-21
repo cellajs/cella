@@ -35,7 +35,7 @@ const RESERVED_FIELDS = new Set<string>([
   'role',
   'rejectedAt',
   // Declared entity-embedding host columns
-  ...appConfig.entityEmbeddings.map((e) => e.hostColumn),
+  ...appConfig.productEmbeddings.map((e) => e.hostColumn),
 ]);
 
 const failures: string[] = [];

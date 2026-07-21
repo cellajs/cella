@@ -9,7 +9,7 @@ import { inactiveMembershipSchema } from '#/modules/memberships/memberships-sche
 import { enabledOAuthProvidersEnum, userSchema } from '#/modules/user/user-schema';
 import { booleanTransformSchema } from '#/schemas';
 import { channelEntityBaseSchema } from '#/schemas/entity-base';
-import { mockMeAuthDataResponse, mockMeResponse, mockUploadTokenResponse } from './me-mocks';
+import { mockMeAuthResponse, mockMeResponse, mockUploadTokenResponse } from './me-mocks';
 
 export const sessionSchema = createSelectSchema(sessionsTable)
   .omit({ secret: true })
@@ -35,7 +35,7 @@ export const meAuthDataSchema = z
   })
   .openapi('MeAuthData', {
     description: 'Authentication metadata for the current user session.',
-    example: mockMeAuthDataResponse(),
+    example: mockMeAuthResponse(),
     'x-tags': schemaTags('data', 'me', 'cella'),
   });
 
@@ -65,7 +65,7 @@ export const uploadTokenSchema = z
   });
 
 // Re-export types from types.ts for convenience
-export type { MeAuthDataResponse, MeResponse, UploadTokenResponse } from './types';
+export type { MeAuthResponse, MeResponse, UploadTokenResponse } from './types';
 
 export const uploadTokenQuerySchema = z.object({
   public: booleanTransformSchema,
