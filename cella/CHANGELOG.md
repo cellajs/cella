@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.5.7](https://github.com/cellajs/cella/compare/0.5.6...0.5.7) (2026-07-21)
+
+
+### 🎉 New features
+
+* infra expose db ([#936](https://github.com/cellajs/cella/issues/936)) ([5e83ccb](https://github.com/cellajs/cella/commit/5e83ccb9e3177fddbb51aefd103f46d024a78a67))
+
+
+### 🐞 Bug fixes
+
+* **cdc:** guard replication-slot self-heal against unwanted recreation ([#939](https://github.com/cellajs/cella/issues/939)) ([51e718e](https://github.com/cellajs/cella/commit/51e718efe0108238abfcd079ff26033899716ae8))
+
+
+### 🧹 Chores
+
+* code styling alignment query.ts ([#940](https://github.com/cellajs/cella/issues/940)) ([5f721bf](https://github.com/cellajs/cella/commit/5f721bffeacfba3d12ede078e5b5abe0dec5fcac))
+* **docs:** drop references to gitignored .todos/ planning files ([#938](https://github.com/cellajs/cella/issues/938)) ([e1aaea2](https://github.com/cellajs/cella/commit/e1aaea2d6c0559ee8abda4f27282dba000e56092))
+* rewriting and renaming ([#941](https://github.com/cellajs/cella/issues/941)) ([9f434ff](https://github.com/cellajs/cella/commit/9f434ffc73435fa91fa23d21e61ed6fea2a89339))
+
 ## [0.5.6](https://github.com/cellajs/cella/compare/0.5.5...0.5.6) (2026-07-21)
 
 
