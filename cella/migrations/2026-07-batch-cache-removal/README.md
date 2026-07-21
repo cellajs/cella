@@ -37,7 +37,7 @@ The codemod surface is small and manual (no script — usually 1–6 sites).
 
 2. **Remove any copied batch-cache wiring.** If your fork attached `batchCache()` to a route or called `entityCache.reserveBatch` / `resolveBatchToken`, delete it — those exports are gone.
 
-3. **Audit seq indexes (recommended, related follow-up).** The upstream removal is paired with a `seq`-index push (see [.todos/SYNC_FANOUT_OPTIMIZATION.md](../../../.todos/SYNC_FANOUT_OPTIMIZATION.md)). Confirm every product-entity table has a `(<channel-or-org-id>, seq)` index — both raak and projectcampus were missing it on `attachments`.
+3. **Audit seq indexes (recommended, related follow-up).** The upstream removal is paired with a `seq`-index push. Confirm every product-entity table has a `(<channel-or-org-id>, seq)` index — both raak and projectcampus were missing it on `attachments`.
 
 ## Gates
 

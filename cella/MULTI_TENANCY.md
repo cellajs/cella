@@ -20,9 +20,8 @@ The two layers cover independent failures:
 | Application scope and RLS both fail | Cross-tenant isolation can fail |
 
 RLS must not be load-bearing for an authorization decision. A user-facing API or worker path should
-produce the same allow or deny result when connected through a test role that bypasses RLS. The
-planned parity suite and related hardening are tracked in
-[RLS defense-in-depth follow-up](../.todos/RLS_DEFENSE_IN_DEPTH.md).
+produce the same allow or deny result when connected through a test role that bypasses RLS. A
+parity suite and related hardening are the planned defense-in-depth follow-up.
 
 ## Responsibilities by layer
 

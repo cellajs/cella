@@ -6,8 +6,6 @@ Upstream reworked the frontend attachment module. Three kinds of change, in risi
 2. **Dead-code removal** (compiler-enforced; a fork that used a removed export must decide).
 3. **Two behaviour fixes** in the upload path — offline uploads now actually create the attachment row, and local blobs are keyed by the attachment id. **Read §3 before pulling if your fork has its own upload flow.**
 
-Analysis behind the change: `.todos/ATTACHMENTS_REFACTOR.md`.
-
 ---
 
 ## Does my fork need to do anything?
