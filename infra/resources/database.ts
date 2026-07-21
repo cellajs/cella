@@ -196,10 +196,17 @@ export const connectionStringCdc = buildConnectionString(adminUser.name, adminPa
 /**
  * Admin connection over the opt-in public endpoint, when enabled.
  * Returns an empty string when `infra:dbPublicEndpoint` is false.
+ *
+ * Scaleway's public load-balancer endpoint populates `ip` (and `port`) but
+ * leaves `hostname` empty; only the private-network endpoint carries a DNS
+ * hostname. Prefer the hostname when present, fall back to the IP, so the DSN
+ * resolves as soon as the endpoint is live. `sslmode=require` (no hostname
+ * verification) makes connecting by IP fine.
  */
 export const connectionStringAdminPublic = pulumi
   .all([adminUser.name, adminPassword, instance.loadBalancer, database.name])
   .apply(([u, p, lb, db]) => {
-    if (!dbPublicEndpoint || !lb?.hostname) return ''
-    return formatPostgresUrl(u, p, lb.hostname, lb.port, db)
+    const publicHost = lb?.hostname || lb?.ip
+    if (!dbPublicEndpoint || !publicHost) return ''
+    return formatPostgresUrl(u, p, publicHost, lb.port, db)
   })

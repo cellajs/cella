@@ -143,7 +143,7 @@ app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
 });
 
 app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
-  const { targetUserId } = ctx.req.valid('query');
+  const { targetUserId } = ctx.req.valid('json');
 
   const user = await findAuthUserById(ctx, { userId: targetUserId });
 

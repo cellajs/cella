@@ -31,9 +31,10 @@ async function detectPublicIp(): Promise<string | undefined> {
   }
 }
 
-/** Set one plaintext stack config key, exiting on failure. */
-function pulumiConfigSet(env: NodeJS.ProcessEnv, stack: string, key: string, value: string): void {
-  const result = spawnSync('pulumi', ['config', 'set', key, value, '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' })
+/** Set one stack config key, exiting on failure. `secret` encrypts the value. */
+function pulumiConfigSet(env: NodeJS.ProcessEnv, stack: string, key: string, value: string, opts: { secret?: boolean } = {}): void {
+  const args = ['config', 'set', ...(opts.secret ? ['--secret'] : []), key, value, '--stack', stack]
+  const result = spawnSync('pulumi', args, { cwd: infraDir, env, stdio: 'inherit' })
   if (result.status !== 0) {
     console.error(`${crossMark} pulumi config set ${key} failed (exit ${result.status}).`)
     process.exit(result.status ?? 1)
@@ -173,7 +174,9 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
 
   const { env, stack } = await convergePublicEndpoint(context, 'expose-db', (e, s) => {
     pulumiConfigSet(e, s, DB_ENDPOINT_KEY, 'true')
-    pulumiConfigSet(e, s, DB_ACL_KEY, acl)
+    // Encrypt the ACL: it records the operator's source IP and should not sit in
+    // plaintext in the committed stack config.
+    pulumiConfigSet(e, s, DB_ACL_KEY, acl, { secret: true })
   })
 
   const dsn = readPublicDsn(env, stack)

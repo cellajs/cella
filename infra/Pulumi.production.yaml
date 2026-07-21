@@ -1,3 +1,6 @@
 encryptionsalt: v1:OB3eX2/Cavo=:v1:zUWCmiHoqAtbw5w9:nUhV6Y7FbTkk7Ok5ad1LipqvR6L/4Q==
 config:
   infra:bootstrapComplete: "2026-06-20T05:30:28.418Z"
+  infra:dbPublicEndpoint: "true"
+  infra:dbPublicAcl:
+    secure: v1:4NElyxWQQyAOU1sV:M4U73BkOH3C/S++nm+PjP4ErxBjZboNntKU2f7IXjA==

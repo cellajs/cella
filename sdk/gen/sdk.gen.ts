@@ -363,7 +363,7 @@ import {
   zSignInWithTotpBody,
   zSignInWithTotpResponse,
   zSignOutResponse,
-  zStartImpersonationQuery,
+  zStartImpersonationBody,
   zStartImpersonationResponse,
   zStopImpersonationResponse,
   zSystemInviteBody,
@@ -536,22 +536,22 @@ export const getTokenData = <ThrowOnError extends boolean = true>(
  *
  * Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.
  *
- * **GET /auth/impersonation/start** ·· [startImpersonation](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/impersonation/start) ·· [startImpersonation](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/impersonation/start) ·· _auth_cella_
+ * **POST /auth/impersonation/start** ·· [startImpersonation](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/impersonation/start) ·· [startImpersonation](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/impersonation/start) ·· _auth_cella_
  *
  * @param {startImpersonationData} options
- * @param {string} options.query.targetuserid - `string`
+ * @param {string=} options.body.targetUserId - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
  */
 export const startImpersonation = <ThrowOnError extends boolean = true>(
   options: Options<StartImpersonationData, ThrowOnError>,
 ): RequestResult<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).post<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'>({
     requestValidator: async (data) =>
       await z
         .object({
-          body: z.never().optional(),
+          body: zStartImpersonationBody,
           path: z.never().optional(),
-          query: zStartImpersonationQuery,
+          query: z.never().optional(),
         })
         .parseAsync(data),
     responseValidator: async (data) => await zStartImpersonationResponse.parseAsync(data),
@@ -565,6 +565,10 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(
     ],
     url: '/auth/impersonation/start',
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 
 /**
@@ -572,7 +576,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(
  *
  * Ends impersonation by clearing the current impersonation session and restoring the admin context.
  *
- * **GET /auth/impersonation/stop** ·· [stopImpersonation](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/impersonation/stop) ·· [stopImpersonation](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/impersonation/stop) ·· _auth_cella_
+ * **POST /auth/impersonation/stop** ·· [stopImpersonation](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/impersonation/stop) ·· [stopImpersonation](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/impersonation/stop) ·· _auth_cella_
  *
  * @param {stopImpersonationData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
@@ -580,7 +584,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(
 export const stopImpersonation = <ThrowOnError extends boolean = true>(
   options?: Options<StopImpersonationData, ThrowOnError>,
 ): RequestResult<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'>({
+  (options?.client ?? client).post<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'>({
     requestValidator: async (data) =>
       await z
         .object({

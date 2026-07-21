@@ -299,10 +299,13 @@
       }
     ],
     "request": {
-      "query": {
+      "body": {
+        "type": "object",
         "properties": {
-          "targetUserId": { "type": "string", "required": true }
-        }
+          "targetUserId": { "type": "string", "required": true, "maxLength": 50 }
+        },
+        "required": true,
+        "contentType": "application/json"
       }
     }
   },

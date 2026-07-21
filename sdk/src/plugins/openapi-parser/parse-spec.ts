@@ -48,20 +48,24 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
   const operations: GenOperationSummary[] = [];
   const tagMap = new Map<string, { description?: string; count: number; kind?: string }>();
   const tagDetailsMap = new Map<string, GenOperationDetail[]>();
+  // Count operations dropped by a hidden-kind tag so the overview can report the documented/hidden split.
+  let hiddenOperationCount = 0;
 
   // Extract extension definitions from info
   const extensionDefs = (spec.info?.['x-extensions'] ?? []) as GenExtensionDefinition[];
 
-  // Build tag kind map and collect module tags for the tag sidebar.
-  // Schema-kind tags are collected separately to drive the schemas page buckets.
+  // Split tags by kind: module tags feed the sidebar, schema tags feed the schemas page buckets,
+  // hidden tags drop their operations (see openapi-tag-registry for the kind semantics).
   const tagKindMap = new Map<string, string>();
   const excludedTags = new Set<string>();
+  const hiddenTags = new Set<string>();
   const schemaKindTags: { name: string; description: string; isDefault: boolean }[] = [];
   if (spec.tags) {
     for (const tag of spec.tags as readonly OpenApiTag[]) {
       if (tag.kind) tagKindMap.set(tag.name, tag.kind);
       if (tag.kind && tag.kind !== 'module') {
         excludedTags.add(tag.name);
+        if (tag.kind === 'hidden') hiddenTags.add(tag.name);
         if (tag.kind === 'schema') {
           schemaKindTags.push({
             name: tag.name,
@@ -104,6 +108,12 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
         // Keeps the SDK a stable superset while the docs reflect the effective config.
         const service = op['x-service' as `x-${string}`];
         if (typeof service === 'string' && disabledServices.has(service)) continue;
+
+        // Hidden-tagged operations stay in openapi.json and the SDK but drop from docs and search.
+        if ((op.tags ?? []).some((t: string) => hiddenTags.has(t))) {
+          hiddenOperationCount++;
+          continue;
+        }
 
         // Strip excluded tags (e.g., ownership tags) from operation tags
         const opTags = (op.tags ?? []).filter((t: string) => !excludedTags.has(t));
@@ -367,6 +377,9 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     version: specInfo.version ?? '',
     description: specInfo.description ?? '',
     openapiVersion: spec.openapi ?? '',
+    // documented = emitted to the docs; hidden = dropped by a hidden-kind tag. Service-disabled ops count as neither.
+    documentedOperationCount: operations.length,
+    hiddenOperationCount,
     extensions: extensionDefs,
   };
 
