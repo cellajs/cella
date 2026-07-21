@@ -1,15 +1,20 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import type { ChannelEntityType } from 'shared';
+import { isQueued } from '~/query/offline/mutation-queue';
 import { getEntityQueryKeys } from './entity-query-registry';
 
 /**
- * Remove pending update mutations for entities about to be deleted.
- * Prevents stale updates from firing after the entity is deleted.
+ * Remove QUEUED (offline-parked) update mutations for entities about to be deleted, so a stale
+ * offline edit does not replay after the delete. Active (in-flight) updates are left in the mutation
+ * cache: removing one does not cancel its request but does drop it from the scope queue, which would
+ * let the delete start alongside it and defeat same-scope serialization. Those stay queued and the
+ * delete serializes behind them.
  */
 export function removePendingMutations(queryClient: QueryClient, updateKey: QueryKey, ids: string[]): void {
   const idSet = new Set(ids);
   const mutationCache = queryClient.getMutationCache();
   for (const mutation of mutationCache.findAll({ mutationKey: updateKey })) {
+    if (!isQueued(mutation)) continue;
     const vars = mutation.state.variables as { id?: string } | undefined;
     if (vars?.id && idSet.has(vars.id)) {
       mutationCache.remove(mutation);

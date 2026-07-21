@@ -44,8 +44,16 @@ export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], a
       if (!hasMatch) return data;
     }
 
-    // Adjust total based on the action
-    const totalAdjustment = action === 'create' ? items.length : action === 'remove' ? -items.length : 0;
+    // Adjust total by how many items actually change membership: creates count only rows not
+    // already present (updateArrayItems dedupes); removes count only rows actually present. Using
+    // items.length would drift `total` when the input partially overlaps this query.
+    const existingIds = new Set(data.pages.flatMap((page) => page.items).map(({ id }) => id));
+    const totalAdjustment =
+      action === 'create'
+        ? items.filter(({ id }) => !existingIds.has(id)).length
+        : action === 'remove'
+          ? -items.filter(({ id }) => existingIds.has(id)).length
+          : 0;
 
     // Update items in each page and adjust the total
     const pages = data.pages.map((page) => ({
@@ -71,8 +79,16 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
       if (!data.items.some((existing) => updateIds.has(existing.id))) return data;
     }
 
-    // Adjust total based on the action
-    const totalAdjustment = action === 'create' ? items.length : action === 'remove' ? -items.length : 0;
+    // Adjust total by how many items actually change membership: creates count only rows not
+    // already present (updateArrayItems dedupes); removes count only rows actually present. Using
+    // items.length would drift `total` when the input partially overlaps this query.
+    const existingIds = new Set(data.items.map(({ id }) => id));
+    const totalAdjustment =
+      action === 'create'
+        ? items.filter(({ id }) => !existingIds.has(id)).length
+        : action === 'remove'
+          ? -items.filter(({ id }) => existingIds.has(id)).length
+          : 0;
 
     // Update items and adjust the total
     return {

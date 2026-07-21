@@ -63,45 +63,60 @@ describe('offline reconciliation lifecycle', () => {
     queryClient.clear();
   });
 
+  // Minimal stx carrying a timestamp for each supplied field.
+  const stxFor = (keys: string[]) => ({
+    mutationId: `m-${keys.join('-')}`,
+    sourceId: 's',
+    fieldTimestamps: Object.fromEntries(keys.map((k) => [k, `t-${k}`])),
+  });
+
   it('squash accumulates fields from sequential edits to same entity', () => {
     const mutationKey = ['test', 'update'] as const;
 
     // Simulate 3 offline edits to the same entity, each changing different fields
     // First edit: no pending, returns as-is.
-    const fields1 = squashPendingMutation(queryClient, mutationKey, entityId, { name: 'Edit 1' });
-    expect(fields1).toEqual({ name: 'Edit 1' });
+    const r1 = squashPendingMutation(queryClient, mutationKey, entityId, { name: 'Edit 1' }, stxFor(['name']));
+    expect(r1.ops).toEqual({ name: 'Edit 1' });
 
     // Queue first mutation as pending
-    cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: fields1 }));
+    cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: r1.ops, stx: r1.stx }));
 
     // Second edit: squashes with first.
-    const fields2 = squashPendingMutation(queryClient, mutationKey, entityId, { description: 'Edit 2' });
-    expect(fields2).toEqual({ name: 'Edit 1', description: 'Edit 2' });
+    const r2 = squashPendingMutation(
+      queryClient,
+      mutationKey,
+      entityId,
+      { description: 'Edit 2' },
+      stxFor(['description']),
+    );
+    expect(r2.ops).toEqual({ name: 'Edit 1', description: 'Edit 2' });
+    // Inherited field keeps its original intent timestamp; the new field carries its own.
+    expect(r2.stx.fieldTimestamps).toEqual({ name: 't-name', description: 't-description' });
 
     // Queue second mutation
-    cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: fields2 }));
+    cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: r2.ops, stx: r2.stx }));
 
     // Third edit: squashes with accumulated.
-    const fields3 = squashPendingMutation(queryClient, mutationKey, entityId, { status: 'done' });
-    expect(fields3).toEqual({ name: 'Edit 1', description: 'Edit 2', status: 'done' });
+    const r3 = squashPendingMutation(queryClient, mutationKey, entityId, { status: 'done' }, stxFor(['status']));
+    expect(r3.ops).toEqual({ name: 'Edit 1', description: 'Edit 2', status: 'done' });
   });
 
   it('squash uses latest value when same field is edited multiple times', () => {
     const mutationKey = ['test', 'update'] as const;
 
     // First edit: name = 'Draft 1'
-    const fields1 = squashPendingMutation(queryClient, mutationKey, entityId, { name: 'Draft 1' });
-    cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: fields1 }));
+    const r1 = squashPendingMutation(queryClient, mutationKey, entityId, { name: 'Draft 1' }, stxFor(['name']));
+    cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: r1.ops, stx: r1.stx }));
 
     // Second edit: name = 'Draft 2' (overrides)
-    const fields2 = squashPendingMutation(queryClient, mutationKey, entityId, { name: 'Draft 2' });
-    expect(fields2).toEqual({ name: 'Draft 2' });
+    const r2 = squashPendingMutation(queryClient, mutationKey, entityId, { name: 'Draft 2' }, stxFor(['name']));
+    expect(r2.ops).toEqual({ name: 'Draft 2' });
 
-    cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: fields2 }));
+    cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: r2.ops, stx: r2.stx }));
 
     // Third edit: name = 'Final' (overrides again)
-    const fields3 = squashPendingMutation(queryClient, mutationKey, entityId, { name: 'Final' });
-    expect(fields3).toEqual({ name: 'Final' });
+    const r3 = squashPendingMutation(queryClient, mutationKey, entityId, { name: 'Final' }, stxFor(['name']));
+    expect(r3.ops).toEqual({ name: 'Final' });
 
     // Result: only 1 mutation queued with the final value
   });
