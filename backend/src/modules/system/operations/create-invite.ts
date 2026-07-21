@@ -71,18 +71,20 @@ export async function createInviteOp(ctx: AuthContext, emails: string[]) {
     return { data: [] as never[], rejectedIds, invitesSentCount: 0 };
   }
 
-  // Generate token and store hashed
-  const newToken = nanoid(40);
-  const hashedToken = hashToken(newToken);
-
-  // Create new tokens for recipients
-  const tokens = recipientEmails.map((email) => ({
-    secret: hashedToken,
-    type: 'invitation' as const,
-    email,
-    createdBy: user.id,
-    expiresAt: createDate(new TimeSpan(7, 'd')),
-  }));
+  // Mint a distinct token per recipient. Each secret is an independent random value, so one recipient's
+  // link never authenticates another's invitation and consuming one leaves the others untouched.
+  const rawByEmail = new Map<string, string>();
+  const tokens = recipientEmails.map((email) => {
+    const raw = nanoid(40);
+    rawByEmail.set(email, raw);
+    return {
+      secret: hashToken(raw),
+      type: 'invitation' as const,
+      email,
+      createdBy: user.id,
+      expiresAt: createDate(new TimeSpan(7, 'd')),
+    };
+  });
 
   const insertedTokens = await insertTokens(ctx, { tokens });
 
@@ -94,7 +96,7 @@ export async function createInviteOp(ctx: AuthContext, emails: string[]) {
     email,
     lng,
     name: slugFromEmail(email),
-    inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${newToken}`,
+    inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${rawByEmail.get(email)}`,
   }));
 
   const staticProps = { senderName, senderThumbnailUrl };

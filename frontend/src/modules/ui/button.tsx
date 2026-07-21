@@ -34,7 +34,7 @@ export const buttonVariants = cva(
         none: 'border-none bg-transparent shadow-none',
       },
       soft: {
-        true: 'soft-bg soft-border hover:soft-bg-hover border text-(--intent-color) shadow-none',
+        true: 'soft-bg soft-border hover:soft-bg-hover soft-text border shadow-none',
         false: '',
       },
       size: {

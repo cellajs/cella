@@ -480,8 +480,8 @@ export const zGetTokenDataResponse = z.object({
   inactiveMembershipId: z.string().optional(),
 });
 
-export const zStartImpersonationQuery = z.object({
-  targetUserId: z.string(),
+export const zStartImpersonationBody = z.object({
+  targetUserId: z.string().max(50),
 });
 
 /**

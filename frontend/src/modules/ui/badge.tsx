@@ -21,7 +21,7 @@ export const badgeVariants = cva(
         warning: 'border-transparent bg-warning text-warning-foreground [--intent-color:var(--warning)]',
       },
       soft: {
-        true: 'soft-bg soft-border text-(--intent-color) shadow-none',
+        true: 'soft-bg soft-border soft-text shadow-none',
         false: '',
       },
       size: {

@@ -2,7 +2,7 @@ import { LogicalReplicationService, type Pgoutput, PgoutputPlugin } from 'pg-log
 import { sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 
-import { CDC_SLOT_NAME, RESOURCE_LIMITS } from '../constants';
+import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME, RESOURCE_LIMITS } from '../constants';
 import { buildVerifiedSsl, cdcDb, stripSslParams } from '../lib/db';
 import { env } from '../env';
 import { log } from '../lib/pino';
@@ -11,6 +11,7 @@ import { replicationState } from '../services/replication-state';
 import { wsClient } from '../network/websocket-client';
 
 import { handleDataMessage } from './handle-message';
+import { isStalePublicationError } from './replication-errors';
 
 const { reconnection, slotTakeover } = RESOURCE_LIMITS;
 
@@ -87,6 +88,34 @@ export async function ensureReplicationSlot(): Promise<void> {
     }
   } catch (error) {
     log.warn('Could not verify/create replication slot', { err: error, slotName: CDC_SLOT_NAME });
+  }
+}
+
+/**
+ * Drop and recreate the replication slot at the current WAL position to clear a
+ * stale start position (see {@link isStalePublicationError}). A slot created
+ * before its publication decodes a WAL window in which the publication is
+ * absent, so every subscribe fails and the slot never advances; recreating it
+ * past the publication lets decoding succeed. Any walsender still pinning the
+ * slot (the just-failed stream) is terminated first so the drop is not blocked.
+ * The skipped WAL is recovered by the sync engine's sequence catch-up.
+ * Best-effort: a failure is logged and the retry loop tries again.
+ */
+async function recreateReplicationSlot(): Promise<void> {
+  try {
+    log.warn(`Recreating replication slot '${CDC_SLOT_NAME}' to clear a stale start position`);
+    await cdcDb.execute(sql`
+      SELECT pg_terminate_backend(active_pid) FROM pg_replication_slots
+      WHERE slot_name = ${CDC_SLOT_NAME} AND active_pid IS NOT NULL
+    `);
+    await cdcDb.execute(sql`
+      SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})
+      WHERE EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME})
+    `);
+    await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
+    log.info(`Replication slot '${CDC_SLOT_NAME}' recreated at current WAL position`);
+  } catch (error) {
+    log.warn('Could not recreate replication slot', { err: error, slotName: CDC_SLOT_NAME });
   }
 }
 
@@ -178,6 +207,15 @@ export async function subscribeWithReconnect(service: LogicalReplicationService,
         ...(slotHolder && { slotHolder }),
       });
       replicationState.markStopped();
+      // Self-heal a slot created before its publication (e.g. after a database
+      // reset recreated the slot ahead of the migration's publication):
+      // reposition it past the publication so the next subscribe can decode.
+      // Only the stale-publication error triggers this, so it never interferes
+      // with the slot-takeover handoff (a distinct object_in_use error).
+      if (isStalePublicationError(error)) {
+        log.warn(`Slot '${CDC_SLOT_NAME}' predates publication '${CDC_PUBLICATION_NAME}', recreating to self-heal`);
+        await recreateReplicationSlot();
+      }
       await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
     }
   }

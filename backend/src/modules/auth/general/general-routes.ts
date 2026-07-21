@@ -41,14 +41,16 @@ const authGeneralRoutes = {
    */
   startImpersonation: createXRoute({
     operationId: 'startImpersonation',
-    method: 'get',
+    method: 'post',
     path: '/impersonation/start',
     xGuard: [authGuard, sysAdminGuard],
     tags: ['auth', 'cella'],
     summary: 'Start impersonating',
     description:
       'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
-    request: { query: z.object({ targetUserId: z.string() }) },
+    request: {
+      body: { required: true, content: { 'application/json': { schema: z.object({ targetUserId: validIdSchema }) } } },
+    },
     responses: {
       204: {
         description: 'Impersonating',
@@ -62,7 +64,7 @@ const authGeneralRoutes = {
    */
   stopImpersonation: createXRoute({
     operationId: 'stopImpersonation',
-    method: 'get',
+    method: 'post',
     path: '/impersonation/stop',
     xGuard: [authGuard],
     tags: ['auth', 'cella'],

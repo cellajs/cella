@@ -1,9 +1,9 @@
 import { onModuleRegister } from 'shared/module-registry';
 
-// Bridge shared module registry to OpenAPI tag registry
-onModuleRegister(({ name, owner, description, scope }) => {
+// Bridge module registry to tag registry; a `hidden` module becomes a hidden-kind tag.
+onModuleRegister(({ name, owner, description, scope, hidden }) => {
   if (scope.includes('backend')) {
-    registerTag({ tag: name, kind: 'module', parent: owner, description });
+    registerTag({ tag: name, kind: hidden ? 'hidden' : 'module', parent: owner, description });
   }
 });
 
@@ -15,8 +15,8 @@ export interface OpenApiTag {
   summary?: string;
   /** Parent tag name for hierarchical grouping (OpenAPI 3.2.0). */
   parent?: string;
-  /** Machine-readable category (OpenAPI 3.2.0). */
-  kind?: 'module' | 'owner' | 'schema' | 'entity';
+  /** Category (OpenAPI 3.2.0): `module`=sidebar group, `owner`/`entity`=annotation, `schema`=schema bucket, `hidden`=drop from docs. */
+  kind?: 'module' | 'owner' | 'schema' | 'entity' | 'hidden';
   /** Link to external documentation. */
   externalDocs?: { url: string; description?: string };
   /** For schema-kind tags: marks the fallback bucket when a component schema has no `x-tags`. */
@@ -84,4 +84,11 @@ registerTag({
   tag: 'product',
   kind: 'entity',
   description: 'Operations on product entities (content entities without membership, e.g. tasks, pages, attachments).',
+});
+
+// Per-operation hide: a route adds `'internal'` to its `tags` to drop from docs while staying in the SDK.
+registerTag({
+  tag: 'internal',
+  kind: 'hidden',
+  description: 'Operations hidden from the public API reference.',
 });

@@ -72,6 +72,10 @@ export interface GenInfoSummary {
   version: string;
   description: string;
   openapiVersion: string;
+  /** Operations emitted to the docs (excludes hidden and service-disabled). */
+  documentedOperationCount: number;
+  /** Operations dropped from the docs by a hidden-kind tag; still present in openapi.json and the SDK. */
+  hiddenOperationCount: number;
   /** Custom OpenAPI extensions defined by the backend */
   extensions: GenExtensionDefinition[];
 }

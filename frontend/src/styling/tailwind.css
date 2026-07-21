@@ -95,6 +95,15 @@
   background-color: color-mix(in srgb, var(--intent-color) 10%, var(--background));
 }
 
+/* Intent-colored text for soft variants. In dark mode the intent tokens are too dark to
+   read on the tinted fill, so lift them toward white to restore contrast. */
+@utility soft-text {
+  color: var(--intent-color);
+  .dark & {
+    color: color-mix(in oklch, var(--intent-color), white 35%);
+  }
+}
+
 @utility soft-bg-hover {
   background-color: color-mix(in srgb, var(--intent-color) 15%, var(--background));
 }

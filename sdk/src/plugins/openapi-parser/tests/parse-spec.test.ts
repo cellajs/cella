@@ -27,8 +27,41 @@ describe('parseOpenApiSpec', () => {
       version: '1.0.0',
       description: '',
       openapiVersion: '3.1.0',
+      documentedOperationCount: 0,
+      hiddenOperationCount: 0,
       extensions: [],
     });
+  });
+
+  it('drops hidden-tagged operations from the docs while counting the documented/hidden split', () => {
+    const spec: OpenApiSpec = {
+      openapi: '3.1.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      tags: [
+        { name: 'users', description: 'User operations', kind: 'module' },
+        { name: 'internal', kind: 'hidden' },
+      ] as OpenApiTag[],
+      paths: {
+        '/users': {
+          get: { operationId: 'getUsers', tags: ['users'], responses: { '200': { description: 'OK' } } },
+        },
+        '/internal/ping': {
+          get: {
+            operationId: 'internalPing',
+            tags: ['users', 'internal'],
+            responses: { '200': { description: 'OK' } },
+          },
+        },
+      },
+    };
+
+    const result = parseOpenApiSpec(spec);
+
+    // Hidden operation is absent from the docs data and the sidebar count.
+    expect(result.operations.map((o) => o.id)).toEqual(['getUsers']);
+    expect(result.tags).toEqual([{ name: 'users', description: 'User operations', count: 1, kind: 'module' }]);
+    expect(result.info.documentedOperationCount).toBe(1);
+    expect(result.info.hiddenOperationCount).toBe(1);
   });
 
   it('extracts operation summaries correctly', () => {

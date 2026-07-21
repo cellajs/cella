@@ -48,7 +48,7 @@ const refreshIdentityCaches = async () => {
  * Start impersonating the given user and refresh local identity state.
  */
 export const startImpersonationFlow = async (targetUserId: string) => {
-  await startImpersonation({ query: { targetUserId } });
+  await startImpersonation({ body: { targetUserId } });
   useUIStore.getState().setImpersonating(true);
   await refreshIdentityCaches();
 };
