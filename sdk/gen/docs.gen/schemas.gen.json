@@ -114,7 +114,11 @@
           "type": ["string", "null"],
           "required": true
         },
-        "public": { "type": "boolean", "required": true },
+        "public": {
+          "type": "boolean",
+          "required": true,
+          "description": "When true, served directly from the CDN without a presigned URL."
+        },
         "bucketName": { "type": "string", "required": true, "maxLength": 255 },
         "groupId": {
           "type": ["string", "null"],
@@ -122,22 +126,35 @@
           "format": "uuid"
         },
         "filename": { "type": "string", "required": true, "maxLength": 255 },
-        "contentType": { "type": "string", "required": true, "maxLength": 255 },
+        "contentType": {
+          "type": "string",
+          "required": true,
+          "description": "MIME type of the uploaded file (e.g. image/png).",
+          "maxLength": 255
+        },
         "convertedContentType": {
           "type": ["string", "null"],
           "required": true,
+          "description": "MIME type of the server-converted variant; null when none.",
           "maxLength": 255
         },
         "size": { "type": "string", "required": true, "maxLength": 255 },
-        "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
+        "originalKey": {
+          "type": "string",
+          "required": true,
+          "description": "Storage object key for the original uploaded file.",
+          "maxLength": 2048
+        },
         "convertedKey": {
           "type": ["string", "null"],
           "required": true,
+          "description": "Storage object key for the converted variant; null when none.",
           "maxLength": 2048
         },
         "thumbnailKey": {
           "type": ["string", "null"],
           "required": true,
+          "description": "Storage object key for the generated thumbnail; null when none.",
           "maxLength": 2048
         },
         "organizationId": { "type": "string", "required": true, "format": "uuid" },

@@ -1,14 +1,24 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
-import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
+import { createInsertSchema, createSelectSchema, describeFields } from '#/db/utils/drizzle-schema';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { mockAttachmentResponse } from './attachment-mocks';
 
-const attachmentInsertSchema = createInsertSchema(attachmentsTable);
-const attachmentSelectSchema = createSelectSchema(attachmentsTable);
+// Attachment-specific field docs, applied to both generated schemas so they reach every CRUD surface.
+const attachmentFieldDescriptions = {
+  contentType: 'MIME type of the uploaded file (e.g. image/png).',
+  convertedContentType: 'MIME type of the server-converted variant; null when none.',
+  public: 'When true, served directly from the CDN without a presigned URL.',
+  originalKey: 'Storage object key for the original uploaded file.',
+  convertedKey: 'Storage object key for the converted variant; null when none.',
+  thumbnailKey: 'Storage object key for the generated thumbnail; null when none.',
+} as const;
+
+const attachmentInsertSchema = describeFields(createInsertSchema(attachmentsTable), attachmentFieldDescriptions);
+const attachmentSelectSchema = describeFields(createSelectSchema(attachmentsTable), attachmentFieldDescriptions);
 
 export const attachmentSchema = z
   .object({

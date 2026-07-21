@@ -2024,7 +2024,8 @@
             "type": ["string", "null"]
           },
           "public": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "When true, served directly from the CDN without a presigned URL."
           },
           "bucketName": {
             "type": "string",
@@ -2040,11 +2041,13 @@
           },
           "contentType": {
             "type": "string",
-            "maxLength": 255
+            "maxLength": 255,
+            "description": "MIME type of the uploaded file (e.g. image/png)."
           },
           "convertedContentType": {
             "type": ["string", "null"],
-            "maxLength": 255
+            "maxLength": 255,
+            "description": "MIME type of the server-converted variant; null when none."
           },
           "size": {
             "type": "string",
@@ -2052,15 +2055,18 @@
           },
           "originalKey": {
             "type": "string",
-            "maxLength": 2048
+            "maxLength": 2048,
+            "description": "Storage object key for the original uploaded file."
           },
           "convertedKey": {
             "type": ["string", "null"],
-            "maxLength": 2048
+            "maxLength": 2048,
+            "description": "Storage object key for the converted variant; null when none."
           },
           "thumbnailKey": {
             "type": ["string", "null"],
-            "maxLength": 2048
+            "maxLength": 2048,
+            "description": "Storage object key for the generated thumbnail; null when none."
           },
           "organizationId": {
             "type": "string",
@@ -8482,7 +8488,8 @@
                     },
                     "contentType": {
                       "type": "string",
-                      "maxLength": 255
+                      "maxLength": 255,
+                      "description": "MIME type of the uploaded file (e.g. image/png)."
                     },
                     "size": {
                       "type": "string",
@@ -8490,14 +8497,16 @@
                     },
                     "originalKey": {
                       "type": "string",
-                      "maxLength": 2048
+                      "maxLength": 2048,
+                      "description": "Storage object key for the original uploaded file."
                     },
                     "bucketName": {
                       "type": "string",
                       "maxLength": 255
                     },
                     "public": {
-                      "type": "boolean"
+                      "type": "boolean",
+                      "description": "When true, served directly from the CDN without a presigned URL."
                     },
                     "groupId": {
                       "type": ["string", "null"],
@@ -8505,15 +8514,18 @@
                     },
                     "convertedContentType": {
                       "type": ["string", "null"],
-                      "maxLength": 255
+                      "maxLength": 255,
+                      "description": "MIME type of the server-converted variant; null when none."
                     },
                     "convertedKey": {
                       "type": ["string", "null"],
-                      "maxLength": 2048
+                      "maxLength": 2048,
+                      "description": "Storage object key for the converted variant; null when none."
                     },
                     "thumbnailKey": {
                       "type": ["string", "null"],
-                      "maxLength": 2048
+                      "maxLength": 2048,
+                      "description": "Storage object key for the generated thumbnail; null when none."
                     },
                     "stx": {
                       "$ref": "#/components/schemas/StxBase"

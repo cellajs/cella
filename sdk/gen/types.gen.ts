@@ -489,15 +489,33 @@ export type Attachment = {
   publicAt: string | null;
   seq: number;
   path: string | null;
+  /**
+   * When true, served directly from the CDN without a presigned URL.
+   */
   public: boolean;
   bucketName: string;
   groupId: string | null;
   filename: string;
+  /**
+   * MIME type of the uploaded file (e.g. image/png).
+   */
   contentType: string;
+  /**
+   * MIME type of the server-converted variant; null when none.
+   */
   convertedContentType: string | null;
   size: string;
+  /**
+   * Storage object key for the original uploaded file.
+   */
   originalKey: string;
+  /**
+   * Storage object key for the converted variant; null when none.
+   */
   convertedKey: string | null;
+  /**
+   * Storage object key for the generated thumbnail; null when none.
+   */
   thumbnailKey: string | null;
   organizationId: string;
   viewCount?: number;
@@ -4009,14 +4027,32 @@ export type CreateAttachmentsData = {
     id: string;
     name?: string;
     filename: string;
+    /**
+     * MIME type of the uploaded file (e.g. image/png).
+     */
     contentType: string;
     size: string;
+    /**
+     * Storage object key for the original uploaded file.
+     */
     originalKey: string;
     bucketName: string;
+    /**
+     * When true, served directly from the CDN without a presigned URL.
+     */
     public?: boolean;
     groupId?: string | null;
+    /**
+     * MIME type of the server-converted variant; null when none.
+     */
     convertedContentType?: string | null;
+    /**
+     * Storage object key for the converted variant; null when none.
+     */
     convertedKey?: string | null;
+    /**
+     * Storage object key for the generated thumbnail; null when none.
+     */
     thumbnailKey?: string | null;
     stx: StxBase;
   }>;
