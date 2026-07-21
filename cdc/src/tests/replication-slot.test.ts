@@ -105,3 +105,72 @@ describe('subscribeWithReconnect — replication slot lifecycle', () => {
     expect(execute).toHaveBeenCalledTimes(3);
   });
 });
+
+/** A service whose subscribe() rejects `failures` times with the stale-publication decode error, then blocks. */
+function makeStaleService(failures: number): LogicalReplicationService {
+  let calls = 0;
+  return {
+    subscribe: vi.fn(() => {
+      calls += 1;
+      if (calls <= failures) return Promise.reject(Object.assign(new Error('publication "cdc_pub" does not exist'), { code: '42704' }));
+      return new Promise(() => {}); // never resolves: subscribed and streaming
+    }),
+  } as unknown as LogicalReplicationService;
+}
+
+describe('subscribeWithReconnect — stale-publication self-heal guards', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    execute.mockReset();
+    // The self-heal latch is module-global; a fresh module instance per test arms it from clean.
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('recreates the slot only after confirming the publication exists', async () => {
+    const { subscribeWithReconnect } = await import('../pipeline/replication');
+    // Slot exists and publication exists, so the self-heal proceeds to drop and recreate.
+    execute.mockResolvedValue({ rows: [{ x: 1 }] });
+    const service = makeStaleService(1);
+
+    void subscribeWithReconnect(service, plugin);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // ensure(slot) + publication check + terminate + drop + create = 5 statements.
+    expect(execute).toHaveBeenCalledTimes(5);
+  });
+
+  it('does not touch the slot when the publication is missing', async () => {
+    const { subscribeWithReconnect } = await import('../pipeline/replication');
+    execute.mockResolvedValueOnce({ rows: [{ x: 1 }] }); // ensure: slot exists
+    execute.mockResolvedValueOnce({ rows: [] }); // publication check: missing
+    execute.mockResolvedValue({ rows: [{ x: 1 }] }); // any later attempt
+    const service = makeStaleService(1);
+
+    void subscribeWithReconnect(service, plugin);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // ensure(slot) + publication check only; no terminate/drop/create against a slot we cannot heal.
+    expect(execute).toHaveBeenCalledTimes(2);
+  });
+
+  it('recreates at most once per worker lifetime despite repeated stale errors', async () => {
+    const { subscribeWithReconnect } = await import('../pipeline/replication');
+    execute.mockResolvedValue({ rows: [{ x: 1 }] }); // slot + publication both present throughout
+    const service = makeStaleService(3);
+
+    void subscribeWithReconnect(service, plugin);
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs);
+    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs);
+    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs);
+
+    // Attempt 1: ensure + (pub-check + terminate + drop + create) = 5.
+    // Attempts 2 and 3: ensure only, recreation latched off = +1 each.
+    // Attempt 4: ensure, then subscribe takes hold = +1. Total 8, with exactly one recreate sequence.
+    expect(execute).toHaveBeenCalledTimes(8);
+  });
+});
