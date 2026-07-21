@@ -62,8 +62,12 @@ export function ingestSyncedRows(
   }
 }
 
-/** Hard delete (no tombstone row to ingest): a locally-seen entity nets 0 (total −1, seen −1); an unseen one decrements. */
-export function applyHardDeleteUnseen(entityType: ProductEntityType, entityId: string, channelId: string | null): void {
+/** Removal without a tombstone row: a locally-seen entity nets 0 (total −1, seen −1); an unseen one decrements. */
+export function applyUnfetchableRemovalUnseen(
+  entityType: ProductEntityType,
+  entityId: string,
+  channelId: string | null,
+): void {
   if (!isSeenTracked(entityType)) return;
   countedIds.delete(entityId);
   if (isSeenLocally(entityId)) return;

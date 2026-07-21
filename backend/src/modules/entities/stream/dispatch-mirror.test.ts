@@ -181,7 +181,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
   it('an unpublish arrives as DELETE with the old published row: old readers get the delete', async () => {
     // The publication row filter rewrites unpublish (published → draft) into a DELETE
     // whose rowData is the OLD published row (REPLICA IDENTITY FULL). Readers of that
-    // row receive the ordinary hard-delete invalidation, an upgrade over the pre-filter
+    // row receive the ordinary delete-style invalidation, an upgrade over the pre-filter
     // model, where unpublish notified nobody and surfaced only as count drift.
     const member = fakeSubscriber([membership(ORG_A, 'member', 'member-user')], 'member-user', [ORG_A], ORG_A);
     const otherOrg = fakeSubscriber([membership(ORG_B, 'member', 'other-user')], 'other-user', [ORG_B], ORG_B);

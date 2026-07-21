@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import { type ChannelEntityType, hierarchy, roles, type EntityType as SharedEntityType } from 'shared';
 import type z from 'zod';
 import type { DbContext } from '#/core/context';
@@ -147,46 +147,6 @@ export const getOrgEntityCount = async (ctx: DbContext, orgId: string, entityTyp
 };
 
 // Activity queries
-
-/**
- * Max delete rows to enumerate per catchup before falling back to list invalidation.
- * The delete scan requests `CAP + 1` rows so the caller can detect overflow (more deletes
- * than we are willing to enumerate) and tell the client to invalidate the whole list without
- * removing entities one id at a time.
- */
-export const DELETE_ENUMERATE_CAP = 200;
-
-/**
- * Scan product entity delete activities after a cursor (app stream), capped at
- * `DELETE_ENUMERATE_CAP + 1` so the caller can detect overflow and fall back to list invalidation.
- * Membership changes are excluded here and detected via the `membership` seq counter, so
- * membership churn never consumes the delete budget.
- */
-export const findDeleteActivities = async (
-  { var: { db } }: DbContext,
-  cursor: string,
-  organizationIds: string[],
-  productEntityTypes: SharedEntityType[],
-) => {
-  return db
-    .select({
-      id: activitiesTable.id,
-      organizationId: activitiesTable.organizationId,
-      subjectId: activitiesTable.subjectId,
-      entityType: activitiesTable.entityType,
-    })
-    .from(activitiesTable)
-    .where(
-      and(
-        gt(activitiesTable.id, cursor),
-        inArray(activitiesTable.organizationId, organizationIds),
-        inArray(activitiesTable.entityType, productEntityTypes),
-        sql`${activitiesTable.action} = 'delete'`,
-      ),
-    )
-    .orderBy(activitiesTable.id)
-    .limit(DELETE_ENUMERATE_CAP + 1);
-};
 
 /** Get the latest activity ID relevant to a user's organizations. */
 export const findLatestUserActivityId = async (

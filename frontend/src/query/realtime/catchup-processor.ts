@@ -1,5 +1,6 @@
-import type { PostAppCatchupResponse } from 'sdk';
-import type { ProductEntityType } from 'shared';
+import type { GetMyMembershipsResponse, PostAppCatchupResponse } from 'sdk';
+import { appConfig, type ProductEntityType } from 'shared';
+import { meKeys } from '~/modules/me/query';
 import { seenKeys } from '~/modules/seen/helpers';
 import { getEntityQueryKeys, getRegisteredEntityTypes, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
@@ -148,13 +149,36 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   }
 
   // Refresh memberships (getMyMemberships, invalidate channel lists, refresh current user).
+  const membershipChannelsBefore = membershipChannelKeys();
   membershipOps.invalidateChannelList(null);
-  membershipOps.fetchMemberships();
+  await membershipOps.fetchMemberships();
   membershipOps.refreshMe();
+
+  // Drop product caches for any org where a channel membership vanished (channel deletion or
+  // plain removal). Coarse per org: still-visible rows refetch permission-scoped on next
+  // mount, detail-by-id self-heals via GC / 403. The org list prefix covers home and filtered
+  // lists alike. Runs only on an actual loss, so unchanged catchups touch nothing.
+  const membershipChannelsAfter = membershipChannelKeys();
+  const orgsWithLostChannel = new Set(
+    [...membershipChannelsBefore].filter((key) => !membershipChannelsAfter.has(key)).map((key) => key.split(':')[0]),
+  );
+  for (const organizationId of orgsWithLostChannel) {
+    for (const entityType of appConfig.productEntityTypes) {
+      if (hasEntityQueryKeys(entityType)) {
+        queryClient.removeQueries({ queryKey: getEntityQueryKeys(entityType).list.org(organizationId) });
+      }
+    }
+  }
 
   // Reconcile unseen counts. Synced-row deltas cannot see what happened while
   // disconnected (other-device seen-marks, missed windows); an exact recount re-anchors them.
   queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
+}
+
+/** Channel identities the caller currently has membership in, as `${organizationId}:${channelId}`. */
+function membershipChannelKeys(): Set<string> {
+  const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
+  return new Set((data?.items ?? []).map((m) => `${m.organizationId}:${m.channelId}`));
 }
 
 /** Registered product entity types, for building the catchup views request. */

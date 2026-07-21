@@ -77,7 +77,7 @@ function isMutedOrArchived(organizationId: string, channelId: string | null): bo
 /**
  * The client's say in sync timing (see cella/SYNC_ENGINE.md, Scheduling): viewing the
  * scope → live; muted/archived → fetch on open only; anything else → soon-ish background.
- * This is the ONLY priority system: paths without synced rows (hard delete, seq-less
+ * This is the ONLY priority system: paths without synced rows (delete-style removal, seq-less
  * fallback) derive their invalidation behavior from the viewing tier too.
  */
 export function getSyncTier(entityType: string, organizationId: string, channelId: string | null): SyncTier {

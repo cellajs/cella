@@ -108,10 +108,10 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
       allEntityStamps.push({ tableName: getTableName(tableMeta.table), id: rowData.id, seq });
 
       // Frontier rollups. Every stamped event bumps: the publication row filter keeps
-      // drafts out of the stream (publish arrives as INSERT, unpublish as DELETE with
-      // the old row, both delta-fetchable), so the stream IS the synced world and
-      // `count` on messages is exactly fetchable rows. A draft that slips past a
-      // missing filter is dropped at the entrance guard (parse-message.ts).
+      // drafts out of the stream, publishes arrive as INSERTs, and every event in this
+      // sequence group is delta-fetchable. Unpublishes arrive as unstamped DELETEs and
+      // use delete-style invalidation. A draft that slips past a missing filter is
+      // dropped at the entrance guard (parse-message.ts).
       // Subtree: e:f:{type} max-merged at the org and every non-null ancestor.
       const nodes = frontierNodeKeys(tableMeta.type, rowData, activity.organizationId ?? group.orgKey, h);
       const frontierKey = `e:f:${tableMeta.type}`;

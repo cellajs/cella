@@ -1,7 +1,7 @@
 import { type ChannelEntityType, isProductEntity, type ProductEntityType } from 'shared';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
-import { applyHardDeleteUnseen } from '~/modules/seen/unseen-sync';
+import { applyUnfetchableRemovalUnseen } from '~/modules/seen/unseen-sync';
 import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline/stx-utils';
 import { useSyncStore } from '~/query/realtime/sync-store';
@@ -147,7 +147,7 @@ function handleEntityNotification(
     return;
   }
 
-  // The two paths without synced rows (hard delete, seq-less fallback) derive their
+  // The two paths without synced rows (delete-style removal, seq-less fallback) derive their
   // invalidation/fetch decision from the same tier system the fetch prioritizer uses: viewing tier
   // acts now, background/muted defers to next access.
   const isViewing = getSyncTier(entityType, organizationId, channelId).min === 0;
@@ -196,13 +196,14 @@ function handleEntityNotification(
       break;
 
     case 'delete':
-      // Physical hard delete, rare except for DB admin cases. Product soft deletes are 'update' events
-      // reconciled via seq-range tombstones; a hard delete leaves no row or tombstone to fetch,
-      // so mark the detail stale and invalidate the org-scoped list to reconcile, consistent
-      // with the catchup count-integrity invalidation flow. Covers single and batch deletes.
+      // Delete-style events cover physical deletes and rows leaving a filtered publication
+      // through unpublish. Neither leaves a sync-visible row or tombstone to fetch, so mark
+      // the detail stale and invalidate the org-scoped list to reconcile, consistent with
+      // the catchup count-integrity invalidation flow. Product soft deletes remain 'update'
+      // events reconciled through sequence-range tombstones. Covers single and batch deletes.
       cacheOps.invalidateEntityDetail(entityId, keys, 'none');
       cacheOps.invalidateEntityListForOrg(keys, organizationId, isViewing ? 'active' : 'none');
-      applyHardDeleteUnseen(entityType, entityId, channelId);
+      applyUnfetchableRemovalUnseen(entityType, entityId, channelId);
       if (propagation) propagateEmbeddings(propagation);
       break;
 
@@ -212,7 +213,7 @@ function handleEntityNotification(
       // return the row. The notification is the removal. Treat it like a tombstone:
       // drop the row from lists/detail and correct unseen counts.
       cacheOps.removeEntity(entityType, entityId, organizationId);
-      applyHardDeleteUnseen(entityType, entityId, channelId);
+      applyUnfetchableRemovalUnseen(entityType, entityId, channelId);
       break;
   }
 

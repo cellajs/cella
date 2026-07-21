@@ -58,9 +58,9 @@ const embeddingsByEntity = resolveEmbeddings();
  * Driven by `appConfig.entityEmbeddings`: adding a new embedding relationship
  * (e.g. tags on attachments) requires zero changes here.
  *
- * Handles both hard deletes (`action === 'delete'`) and soft deletes (an UPDATE that
- * sets `deletedAt`). Soft delete keeps the row, so without this the host arrays would
- * keep dangling references to tombstoned entities.
+ * Handles both delete-style events (`action === 'delete'`, including unpublishes) and
+ * soft deletes (an UPDATE that sets `deletedAt`). Soft delete keeps the row, so without
+ * this the host arrays would keep dangling references to tombstoned entities.
  *
  * Runs in CDC (not in the user request) to avoid row locks during delete handlers.
  * The GIN index on the host column ensures fast containment checks, and the
