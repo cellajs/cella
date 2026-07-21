@@ -1,6 +1,6 @@
 {
   "name": "cella",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "license": "MIT",
   "repository": "https://github.com/cellajs/cella",
   "description": "Cella is a TypeScript template to build collaborative web apps with sync engine. MIT licensed.",
