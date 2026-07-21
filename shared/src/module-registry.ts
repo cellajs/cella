@@ -7,6 +7,8 @@ export interface ModuleConfig {
   scope: ModuleScope[];
   /** When true, the module is opt-in at scaffold time; its folder is removed if deselected. */
   optional?: boolean;
+  /** When true, the module's operations drop from the generated docs and search, but stay in openapi.json and the SDK. */
+  hidden?: boolean;
 }
 
 const modules: ModuleConfig[] = [];

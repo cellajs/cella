@@ -171,6 +171,11 @@
       "kind": "entity"
     },
     {
+      "name": "internal",
+      "description": "Operations hidden from the public API reference.",
+      "kind": "hidden"
+    },
+    {
       "name": "attachments",
       "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) linked to\n    entities such as organizations or users. Files are uploaded directly by the client, while the API handles\n    metadata registration, linking, access, and preview utilities.",
       "parent": "cella",
@@ -2472,7 +2477,7 @@
       }
     },
     "/auth/impersonation/start": {
-      "get": {
+      "post": {
         "security": [
           {
             "cookieAuth": []
@@ -2485,16 +2490,23 @@
         "x-guard": ["authGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "targetUserId",
-            "in": "query"
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "targetUserId": {
+                    "type": "string",
+                    "maxLength": 50
+                  }
+                },
+                "required": ["targetUserId"]
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "204": {
             "description": "Impersonating",
@@ -2530,7 +2542,7 @@
       }
     },
     "/auth/impersonation/stop": {
-      "get": {
+      "post": {
         "security": [
           {
             "cookieAuth": []

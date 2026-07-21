@@ -17,6 +17,14 @@ const app = new OpenAPIHono<Env>();
 // so every downstream log (including error handling) carries context.
 app.use('*', (ctx, next) => runWithLogContext(ctx, () => next()));
 
+// The invoke-token URL carries a single-use secret in its path. Force `no-referrer` on that route so
+// the token never rides a same-origin Referer into the app shell. Registered before secureHeaders so
+// it runs after it on unwind and wins over the global strict-origin-when-cross-origin default.
+app.use('*', async (ctx, next) => {
+  await next();
+  if (ctx.req.path.includes('/invoke-token/')) ctx.res.headers.set('Referrer-Policy', 'no-referrer');
+});
+
 // Secure headers
 app.use(
   '*',

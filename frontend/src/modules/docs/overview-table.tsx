@@ -27,13 +27,15 @@ export function OverviewTable() {
     { key: 'version', label: t('c:version'), value: info.version },
     { key: 'description', label: t('c:description'), value: info.description },
     { key: 'openapiVersion', label: t('c:docs.openapi_version'), value: info.openapiVersion },
+    { key: 'documentedOps', label: t('c:docs.documented_operations'), value: String(info.documentedOperationCount) },
+    { key: 'hiddenOps', label: t('c:docs.hidden_operations'), value: String(info.hiddenOperationCount) },
   ];
 
   const columns: ColumnOrColumnGroup<InfoRow>[] = [
     {
       key: 'label',
       name: '',
-      width: 160,
+      width: 200,
       renderCell: ({ row }) => <span className="font-medium">{row.label}</span>,
     },
     {

@@ -147,6 +147,8 @@
   "docs.no_examples_defined": "No examples defined",
   "docs.no_pages_yet": "No pages yet",
   "docs.no_response_body": "No response body",
+  "docs.documented_operations": "Documented operations",
+  "docs.hidden_operations": "Hidden operations",
   "docs.no_responses_defined": "No responses defined",
   "docs.on_this_page": "On this page",
   "docs.openapi_json": "OpenAPI JSON",
