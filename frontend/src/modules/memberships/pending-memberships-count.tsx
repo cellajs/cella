@@ -28,7 +28,7 @@ export const PendingMembershipsCount = ({ channel }: { channel: EnrichedChannel 
 
   // Open pending memberships sheet
   const openSheet = () => {
-    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
 
     createSheet(
       <div className="container">

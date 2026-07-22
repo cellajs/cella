@@ -66,7 +66,7 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
 
     const onSuccess = (updatedUser: User) => {
       const message = isSelf ? t('c:success.profile_updated') : t('c:success.update_item', { item: t('c:user') });
-      toaster(message, 'success');
+      toaster.success(message);
 
       form.reset(updatedUser);
       if (isSheet) useSheeter.getState().remove(formContainerId);

@@ -71,7 +71,7 @@ export function SignInStep() {
         setSignedIn(true);
         navigate({ to: appConfig.defaultRedirectPath, replace: true });
       } catch {
-        toaster(t('error:passkey_verification_failed'), 'error');
+        toaster.error(t('error:passkey_verification_failed'));
       }
     };
 

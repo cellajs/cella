@@ -41,7 +41,7 @@ function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action 
           disabled={isDisabled}
           onClick={() => {
             if (isDisabled) {
-              toaster(t('c:action.offline.text'), 'warning');
+              toaster.warning(t('c:action.offline.text'));
               return;
             }
             // Close the nav sheet on navigation unless the user pinned it open

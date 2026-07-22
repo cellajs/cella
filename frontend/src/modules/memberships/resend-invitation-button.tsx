@@ -33,7 +33,7 @@ export const ResendInvitationButton = ({ resendData, wrapperClassName, buttonPro
     mutationFn: (body) => resendInvitationWithToken({ body }),
     onSuccess: () => {
       useDialoger.getState().remove();
-      toaster(t('c:success.resend_invitation'), 'success');
+      toaster.success(t('c:success.resend_invitation'));
       callback?.({ status: 'success' });
     },
     onError: (error) => {
@@ -47,7 +47,7 @@ export const ResendInvitationButton = ({ resendData, wrapperClassName, buttonPro
   });
 
   const resendInvitationClick = () => {
-    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
 
     setDisabledResend(true);
     resend(resendData);

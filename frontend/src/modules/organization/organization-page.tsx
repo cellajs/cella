@@ -40,8 +40,8 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
     mutate(
       { path: { tenantId: organization.tenantId, id: organization.id }, body: { bannerUrl } },
       {
-        onSuccess: () => toaster(t('c:success.upload_cover'), 'success'),
-        onError: () => toaster(t('error:image_upload_failed'), 'error'),
+        onSuccess: () => toaster.success(t('c:success.upload_cover')),
+        onError: () => toaster.error(t('error:image_upload_failed')),
       },
     );
   };

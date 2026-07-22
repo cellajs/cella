@@ -44,7 +44,7 @@ export function PasskeyStrategy({ email, type }: PasskeyStrategyProps) {
       if (type === 'mfa' && error instanceof ApiError) {
         navigate({ to: '/error', search: { error: error.type, severity: error.severity } });
       }
-      if (type === 'authentication') toaster(t('error:passkey_verification_failed'), 'error');
+      if (type === 'authentication') toaster.error(t('error:passkey_verification_failed'));
     },
   });
 

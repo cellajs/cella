@@ -291,9 +291,8 @@ const attachmentDeleteOptions = (
       keys,
       organizationId: variables.organizationId,
     });
-    toaster(
+    toaster.info(
       i18n.t('c:resources_delete_denied', { count: rejectedIds.length, total: variables.attachments.length }),
-      'info',
     );
   },
   onSettled: (_data, error, variables) => {

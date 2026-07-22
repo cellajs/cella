@@ -25,7 +25,7 @@ export function MfaPage() {
   const handleCancelMfa = async () => {
     try {
       await signOut();
-      toaster(t('c:success.cancel_mfa'), 'success');
+      toaster.success(t('c:success.cancel_mfa'));
     } catch (error) {
       console.error('Failed to retrieve data:', error);
     } finally {

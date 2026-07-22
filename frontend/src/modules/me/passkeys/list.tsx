@@ -22,9 +22,9 @@ export function PasskeysList() {
   const hasPasskey = passkeys.length > 0;
 
   const handleUnlinkPasskey = (id: string) => {
-    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
     if (user.mfaRequired && passkeys.length <= 1)
-      return toaster(t('c:unlink_mfa_last', { method: 'the last passkey' }), 'info');
+      return toaster.info(t('c:unlink_mfa_last', { method: 'the last passkey' }));
     deletePasskey({ path: { id } });
   };
   return (

@@ -72,7 +72,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         onSuccess: (updatedOrganization) => {
           if (isSheet) useSheeter.getState().remove(formContainerId);
           form.reset(body);
-          toaster(t('c:success.update_resource', { resource: t('c:organization') }), 'success');
+          toaster.success(t('c:success.update_resource', { resource: t('c:organization') }));
           callback?.({ data: updatedOrganization, status: 'success' });
         },
       },

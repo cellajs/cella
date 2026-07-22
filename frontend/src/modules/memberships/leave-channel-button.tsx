@@ -36,7 +36,7 @@ export const LeaveChannelButton = ({
       return await deleteMyMembership({ query: { entityId, entityType: channel.entityType } });
     },
     onSuccess: () => {
-      toaster(t('c:success.you_left_entity', { entity: channel.entityType }), 'success');
+      toaster.success(t('c:success.you_left_entity', { entity: channel.entityType }));
       navigate({ to: redirectPath, replace: true });
 
       // Directly remove entity from list cache so menu updates immediately
@@ -53,7 +53,7 @@ export const LeaveChannelButton = ({
 
   const handleLeave = () => {
     if (!onlineManager.isOnline()) {
-      toaster(t('c:action.offline.text'), 'warning');
+      toaster.warning(t('c:action.offline.text'));
       return;
     }
     leaveChannel();

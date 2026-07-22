@@ -115,16 +115,16 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
     // Show user-facing feedback based on close code
     switch (event.code) {
       case YJS_CLOSE.TOKEN_INVALID:
-        toaster(i18n.t('error:sync_token_expired.text'), 'warning');
+        toaster.warning(i18n.t('error:sync_token_expired.text'));
         break;
       case YJS_CLOSE.ACCESS_DENIED:
-        toaster(i18n.t('error:no_permission_for_sync.text'), 'warning');
+        toaster.warning(i18n.t('error:no_permission_for_sync.text'));
         break;
       case YJS_CLOSE.BACKEND_UNAVAILABLE:
-        toaster(i18n.t('error:sync_unavailable.text'), 'warning');
+        toaster.warning(i18n.t('error:sync_unavailable.text'));
         break;
       default:
-        toaster(i18n.t('error:sync_failed.text'), 'warning');
+        toaster.warning(i18n.t('error:sync_failed.text'));
     }
 
     // Clear token for this entity type so collaborative mode is disabled until refresh

@@ -35,7 +35,7 @@ export const TotpStrategy = ({
       useAuthStore.getState().setSignedIn(true);
       navigate({ to: appConfig.defaultRedirectPath, replace: true });
     },
-    onError: () => toaster(t('error:totp_verification_failed'), 'error'),
+    onError: () => toaster.error(t('error:totp_verification_failed')),
   });
 
   return (

@@ -20,7 +20,7 @@ export const useAttachmentsUploadDialog = (tenantId: string, organizationId: str
       useUploader.getState().remove();
 
       if (attachments.length === 0) {
-        toaster(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }), 'error');
+        toaster.error(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }));
         return;
       }
 

@@ -44,7 +44,7 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
         onSuccess: (result) => {
           setVerifyResult(result);
           if (result.success) {
-            toaster(t('c:success.domain_verified'), 'success');
+            toaster.success(t('c:success.domain_verified'));
           }
         },
       },
@@ -91,7 +91,7 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
                   { path: { tenantId, id: domain.id } },
                   {
                     onSuccess: () => {
-                      toaster(t('c:success.delete_resource', { resource: t('c:domain') }), 'success');
+                      toaster.success(t('c:success.delete_resource', { resource: t('c:domain') }));
                     },
                   },
                 );

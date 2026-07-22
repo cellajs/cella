@@ -25,7 +25,7 @@ export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
   const stopImpersonation = async () => {
     await stopImpersonationFlow();
     navigate({ to: appConfig.defaultRedirectPath, replace: true });
-    toaster(t('c:success.stopped_impersonation'), 'success');
+    toaster.success(t('c:success.stopped_impersonation'));
   };
 
   if (!impersonating) return null;

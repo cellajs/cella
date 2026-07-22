@@ -69,7 +69,7 @@ export const RequestsTableBar = ({
                 count: args.data.length,
                 resources: t('c:request_other').toLowerCase(),
               });
-        toaster(message, 'success');
+        toaster.success(message);
       }
       clearSelection();
     };

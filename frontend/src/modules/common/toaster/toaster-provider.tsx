@@ -13,7 +13,7 @@ export const ToasterProvider = () => {
 
   useEffect(() => {
     if (!toast) return;
-    toaster(toast.message, toast.severity);
+    toaster[toast.severity](toast.message);
     clearToast();
   }, [toast]);
 

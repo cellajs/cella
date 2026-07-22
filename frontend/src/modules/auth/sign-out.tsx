@@ -25,10 +25,10 @@ export function SignOut() {
       try {
         teardownUserState();
         if (!force) await signOut();
-        toaster(t('c:success.signed_out'), 'success');
+        toaster.success(t('c:success.signed_out'));
       } catch (error) {
         console.error('Sign out error:', error);
-        toaster(t('c:already_signed_out'), 'warning');
+        toaster.warning(t('c:already_signed_out'));
       }
       // Force full page reload to ensure clean state
       window.location.href = appConfig.aboutUrl;

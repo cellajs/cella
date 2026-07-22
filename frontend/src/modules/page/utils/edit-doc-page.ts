@@ -30,7 +30,7 @@ export async function editDocPage(slug: string, ops: DocEditOps): Promise<void> 
       throw new Error(detail?.error ?? `Request failed (${res.status})`);
     }
   } catch (err) {
-    toaster(err instanceof Error ? err.message : 'Failed to save page', 'error');
+    toaster.error(err instanceof Error ? err.message : 'Failed to save page');
     throw err;
   }
 }

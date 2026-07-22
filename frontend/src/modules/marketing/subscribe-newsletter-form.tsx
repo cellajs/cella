@@ -24,7 +24,7 @@ export function SubscribeNewsletterForm() {
       { email, type: 'newsletter', message: null },
       {
         onSuccess: () => {
-          toaster(t('c:success.newsletter_sign_up', { appName: appConfig.name }), 'success');
+          toaster.success(t('c:success.newsletter_sign_up', { appName: appConfig.name }));
           formRef.current?.reset();
         },
       },

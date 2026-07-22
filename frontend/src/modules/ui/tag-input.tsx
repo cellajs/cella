@@ -138,7 +138,7 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
 
       for (const newTag of splitValues) {
         const errorMessage = newTagValidation(newTag);
-        if (errorMessage) return toaster(errorMessage, 'warning');
+        if (errorMessage) return toaster.warning(errorMessage);
 
         setTags((prevTags) => [...prevTags, newTag]);
         onTagAdd?.(newTag);
@@ -162,7 +162,7 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
       const newTag = inputValue.trim();
 
       const errorMessage = newTagValidation(newTag);
-      if (errorMessage) return toaster(errorMessage, 'warning');
+      if (errorMessage) return toaster.warning(errorMessage);
 
       setTags([...tags, newTag]);
       onTagAdd?.(newTag);
@@ -186,7 +186,7 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
       e.preventDefault();
 
       const errorMessage = newTagValidation(trimmedInput);
-      if (errorMessage) return toaster(errorMessage, 'warning');
+      if (errorMessage) return toaster.warning(errorMessage);
 
       setTags([...tags, trimmedInput]);
       onTagAdd?.(trimmedInput);

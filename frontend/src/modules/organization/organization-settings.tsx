@@ -50,7 +50,7 @@ function OrganizationSettings({ organization }: { organization: EnrichedOrganiza
         organizations={[organization]}
         callback={({ status }: CallbackArgs<Organization[]>) => {
           if (status === 'success') {
-            toaster(t('c:success.delete_resource', { resource: t('c:organization') }), 'success');
+            toaster.success(t('c:success.delete_resource', { resource: t('c:organization') }));
             navigate({ to: appConfig.defaultRedirectPath, replace: true });
           }
         }}

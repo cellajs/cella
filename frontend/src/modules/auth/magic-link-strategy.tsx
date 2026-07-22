@@ -21,7 +21,7 @@ export function MagicLinkStrategy({ email }: { email?: string }) {
       setMagicLinkMode('signin');
       setStep('magicLinkSent', targetEmail);
     },
-    onError: () => toaster(t('error:reported_try_later'), 'error'),
+    onError: () => toaster.error(t('error:reported_try_later')),
   });
 
   if (!targetEmail) return null;

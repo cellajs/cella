@@ -32,7 +32,7 @@ export const Export = <R extends Record<string, any>>({
   const mode = uiStore.getState().mode;
 
   const exportDefault = async (type: 'csv' | 'pdf') => {
-    if (!isOnline) return toaster(t('c:action.offline.text'), 'warning');
+    if (!isOnline) return toaster.warning(t('c:action.offline.text'));
     const rows = await fetchAllRows(fetchRows);
     const filenameWithExtension = `${filename}.${type}`;
 
@@ -41,12 +41,12 @@ export const Export = <R extends Record<string, any>>({
   };
 
   const exportSelected = async (type: 'csv' | 'pdf') => {
-    if (!selectedRows) return toaster(t('error:no_selected_rows'), 'warning');
+    if (!selectedRows) return toaster.warning(t('error:no_selected_rows'));
     const filenameWithExtension = `${filename}.${type}`;
 
     if (type === 'csv') return exportToCsv(columns, selectedRows, filenameWithExtension);
 
-    if (!isOnline) toaster(t('c:action.offline.text'), 'warning');
+    if (!isOnline) toaster.warning(t('c:action.offline.text'));
     return exportToPdf(columns, selectedRows, filenameWithExtension, getRouter().state.location.pathname, mode);
   };
 

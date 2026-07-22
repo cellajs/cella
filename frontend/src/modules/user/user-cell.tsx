@@ -56,7 +56,7 @@ export const UserCell = ({
       onClick={(e) => {
         if (!onlineManager.isOnline()) {
           e.preventDefault();
-          return toaster(t('c:action.offline.text'), 'warning');
+          return toaster.warning(t('c:action.offline.text'));
         }
         if (e.metaKey || e.ctrlKey) return;
         e.preventDefault();

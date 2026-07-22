@@ -44,7 +44,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className }: MenuSheetItemProp
     <Link
       disabled={!canAccess}
       onClick={() => {
-        if (!canAccess) toaster(t('c:show_archived.offline.text'), 'warning');
+        if (!canAccess) toaster.warning(t('c:show_archived.offline.text'));
       }}
       data-subitem={isSubitem}
       aria-label={item.name}

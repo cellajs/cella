@@ -108,7 +108,7 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
 
   useEffect(() => {
     if (!error) return;
-    toaster(t('error:download_failed'), 'error');
+    toaster.error(t('error:download_failed'));
   }, [error, t]);
 
   // Local-first: a stored blob (downloaded earlier, or local-only pending upload) saves
@@ -128,7 +128,7 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
       if (!url) throw new Error('No cloud URL for attachment');
       await download(url, row.filename);
     } catch {
-      toaster(t('error:download_failed'), 'error');
+      toaster.error(t('error:download_failed'));
     }
   };
 

@@ -15,10 +15,10 @@ interface Props {
 async function handleStartImpersonation(targetUserId: string) {
   try {
     await startImpersonationFlow(targetUserId);
-    toaster(i18n.t('c:success.impersonated'), 'success');
+    toaster.success(i18n.t('c:success.impersonated'));
     getRouter().navigate({ to: appConfig.defaultRedirectPath, replace: true });
   } catch (error) {
-    toaster(i18n.t('error:impersonation_failed'), 'error');
+    toaster.error(i18n.t('error:impersonation_failed'));
     console.error(error);
   }
 }

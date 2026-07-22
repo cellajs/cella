@@ -29,7 +29,7 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   const removeSheet = sheeter.getState().remove;
 
   const toggleFocus = () => {
-    toaster(focusView ? t('c:left_focus.text') : t('c:entered_focus.text'), 'success');
+    toaster.success(focusView ? t('c:left_focus.text') : t('c:entered_focus.text'));
     setFocusView(!focusView);
     removeSheet();
     setNavSheetOpen(null);

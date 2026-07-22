@@ -14,7 +14,7 @@ export function useUntrustedMediaWarning() {
   return (document: CustomBlockNoteEditor['document']) => {
     const hasUntrustedMedia = hasUntrustedMediaUrls(document);
     if (hasUntrustedMedia && !hasWarnedRef.current) {
-      toaster(i18n.t('error:untrusted_media_url'), 'warning');
+      toaster.warning(i18n.t('error:untrusted_media_url'));
       hasWarnedRef.current = true;
     } else if (!hasUntrustedMedia) {
       hasWarnedRef.current = false;
