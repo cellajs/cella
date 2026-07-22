@@ -4,7 +4,7 @@ import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
-import { getValidChannelEntity } from '#/permissions/get-channel-entity';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
@@ -36,7 +36,7 @@ export async function updateMembershipOp(ctx: AuthContext, membershipId: string,
     throw new AppError(400, 'invalid_role', 'warn', { entityType: updatedType });
   }
 
-  await getValidChannelEntity(ctx, membershipToUpdate.channelId, updatedType, role ? 'update' : 'read');
+  await getValidChannel(ctx, membershipToUpdate.channelId, updatedType, role ? 'update' : 'read');
 
   if (archived !== undefined && archived !== membershipToUpdate.archived) {
     const relevantOrders = memberships

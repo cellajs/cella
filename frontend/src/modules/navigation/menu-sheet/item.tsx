@@ -10,7 +10,7 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { seenGroupingChannelTypes } from '~/modules/seen/helpers';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { useUIStore } from '~/modules/ui/ui-store';
-import { getChannelEntityRoute, pageTopHashNav } from '~/utils/channel-entity-route';
+import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 
 interface MenuSheetItemProps {
@@ -38,7 +38,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className }: MenuSheetItemProp
   const showBadge = unseenCount > 0 && !item.membership.muted;
 
   // Build route path for the entity
-  const { to, params, search } = getChannelEntityRoute(item, isSubitem);
+  const { to, params, search } = getChannelRoute(item, isSubitem);
 
   return (
     <Link

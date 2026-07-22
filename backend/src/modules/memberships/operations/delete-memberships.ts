@@ -2,7 +2,7 @@ import type { ChannelEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteMembershipsByIds, findMembershipsByUserIdsAndChannel } from '#/modules/memberships/memberships-queries';
-import { getValidChannelEntity } from '#/permissions/get-channel-entity';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 
 interface DeleteMembershipsInput {
@@ -14,7 +14,7 @@ interface DeleteMembershipsInput {
 export async function deleteMembershipsOp(ctx: AuthContext, input: DeleteMembershipsInput) {
   const { ids, entityId, entityType } = input;
 
-  const { entity } = await getValidChannelEntity(ctx, entityId, entityType, 'delete');
+  const { entity } = await getValidChannel(ctx, entityId, entityType, 'delete');
 
   const membershipIds = Array.isArray(ids) ? ids : [ids];
 

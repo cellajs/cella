@@ -12,7 +12,7 @@ import type { EntityModel } from '#/tables';
 /**
  * Result type for product entity validation including the can object.
  */
-export interface ValidProductEntityResult<K extends ProductEntityType> {
+export interface ValidProductResult<K extends ProductEntityType> {
   entity: EntityModel<K>;
 }
 
@@ -21,12 +21,12 @@ export interface ValidProductEntityResult<K extends ProductEntityType> {
  * (system-admin bypass handled inside `checkPermission`). Returns the resolved entity; throws 404 if
  * not found, 403 if not allowed.
  */
-export const getValidProductEntity = async <K extends ProductEntityType>(
+export const getValidProduct = async <K extends ProductEntityType>(
   ctx: AuthContext,
   id: string,
   entityType: K,
   action: Exclude<EntityActionType, 'create'>,
-): Promise<ValidProductEntityResult<K>> => {
+): Promise<ValidProductResult<K>> => {
   // Auto-wrap in tenantRead when called outside an RLS context (bare baseDb)
   // Skip tenantRead for tenant-less entities (e.g. pages) where tenantId is not set
   const entity =

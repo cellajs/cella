@@ -34,7 +34,7 @@ export type UserBase = {
 /**
  * Base schema for entities with memberships (e.g. organization).
  */
-export type ChannelEntityBase = {
+export type ChannelBase = {
   id: string;
   name: string;
   createdAt: string;
@@ -49,7 +49,7 @@ export type ChannelEntityBase = {
 /**
  * Base schema for content entities with creator tracking (e.g. page, attachment).
  */
-export type ProductEntityBase = {
+export type ProductBase = {
   id: string;
   name: string;
   createdAt: string;
@@ -1883,7 +1883,7 @@ export type GetMyInvitationsResponses = {
    */
   200: {
     items: Array<{
-      entity: ChannelEntityBase;
+      entity: ChannelBase;
       inactiveMembership: InactiveMembership;
     }>;
     total: number;
@@ -4516,7 +4516,7 @@ export type HandleMembershipInvitationResponses = {
   /**
    * Invitation was accepted
    */
-  200: ChannelEntityBase;
+  200: ChannelBase;
 };
 
 export type HandleMembershipInvitationResponse =

@@ -52,7 +52,7 @@ const rootColumnName = toColumnName(rootIdKey);
 const baseColumns = {
   id: varchar('id').primaryKey(),
   createdBy: varchar('created_by'),
-  // Public readability, denormalized onto the row exactly as `productEntityColumns` carries it.
+  // Public readability, denormalized onto the row exactly as `productColumns` carries it.
   publicAt: varchar('public_at'),
   [rootIdKey]: varchar(rootColumnName).notNull(),
 };

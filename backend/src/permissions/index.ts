@@ -15,8 +15,8 @@ export {
   hasNoReadScope,
   resolveCollectionReadFilter,
 } from './collection-scope';
-export { getValidChannelEntity, type ValidChannelEntityResult } from './get-channel-entity';
-export { getValidProductEntity, type ValidProductEntityResult } from './get-product-entity';
+export { getValidChannel, type ValidChannelResult } from './get-valid-channel';
+export { getValidProduct, type ValidProductResult } from './get-valid-product';
 export { buildCollectionReadWhere, type CollectionReadWhere, compileRowConditionSql } from './row-predicates';
 export { splitByPermission } from './split-by-permission';
 export { validateAncestorScope } from './validate-ancestor-scope';

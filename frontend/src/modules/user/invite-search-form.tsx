@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { toaster } from '~/modules/common/toaster/toaster';
-import type { EnrichedChannelEntity } from '~/modules/entities/types';
+import type { EnrichedChannel } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -12,28 +12,28 @@ import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite
 import { UserCombobox } from '~/modules/user/user-combobox';
 
 interface Props {
-  channelEntity?: EnrichedChannelEntity;
+  channel?: EnrichedChannel;
   dialog?: boolean;
 }
 
 /**
  * Invite members by searching for users which are already in the system
  */
-export function InviteSearchForm({ channelEntity, dialog: isDialog }: Props) {
+export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
   const { t } = useTranslation();
 
-  const form = useInviteFormDraft(channelEntity?.id);
+  const form = useInviteFormDraft(channel?.id);
   const { mutate: invite, isPending } = useInviteMemberMutation();
 
-  if (!channelEntity) return null;
+  if (!channel) return null;
 
   const onSubmit = (values: InviteFormValues) => {
     invite(
       {
         body: values,
-        path: { tenantId: channelEntity.tenantId, organizationId: channelEntity.organizationId || channelEntity.id },
-        query: { entityId: channelEntity.id, entityType: channelEntity.entityType },
-        channelEntity,
+        path: { tenantId: channel.tenantId, organizationId: channel.organizationId || channel.id },
+        query: { entityId: channel.id, entityType: channel.entityType },
+        channel,
       },
       {
         onSuccess: ({ invitesSentCount, rejectedIds }, { body: { emails } }) => {
@@ -60,7 +60,7 @@ export function InviteSearchForm({ channelEntity, dialog: isDialog }: Props) {
           name="emails"
           render={({ field: { onChange, value } }) => (
             <FormItem>
-              <UserCombobox value={value} onValueChange={onChange} channelEntity={channelEntity} />
+              <UserCombobox value={value} onValueChange={onChange} channel={channel} />
               <FormMessage />
             </FormItem>
           )}

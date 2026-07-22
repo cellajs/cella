@@ -20,11 +20,11 @@ import {
   validTempIdSchema,
   validUrlSchema,
 } from '#/schemas';
-import { channelEntityIncludedSchema } from '#/schemas/channel-entity-included';
+import { channelIncludedSchema } from '#/schemas/channel-included';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { mockOrganizationResponse } from './organization-mocks';
 
-const organizationIncludedSchema = channelEntityIncludedSchema('organization');
+const organizationIncludedSchema = channelIncludedSchema('organization');
 
 /** Flag keys come from the fork-owned config, so the wire contract stays strictly typed per fork.
  *  Built loose then cast: with zero flags (cella default) `keyof OrganizationFlags` is `never`. */

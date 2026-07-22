@@ -2,13 +2,13 @@ import { ChevronDownIcon, UserIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase } from 'sdk';
-import { appConfig, type ChannelEntityType } from 'shared';
+import { type ChannelEntityType, isChannelEntity } from 'shared';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import type { EnrichedChannelEntity } from '~/modules/entities/types';
+import type { EnrichedChannel } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { ComboboxGroup, ComboboxItem, ComboboxSeparator } from '~/modules/ui/combobox';
 
-type SearchBlockResult = EnrichedChannelEntity | UserBase;
+type SearchBlockResult = EnrichedChannel | UserBase;
 
 type SearchBlockProps = {
   results: SearchBlockResult[];
@@ -17,11 +17,9 @@ type SearchBlockProps = {
   hideSeparator?: boolean;
 };
 
-const channelEntities: readonly string[] = appConfig.channelEntityTypes;
-
 export const SearchResultBlock = ({ results, entityType, hideSeparator = false }: SearchBlockProps) => {
   const { t } = useTranslation();
-  const isChannel = channelEntities.includes(entityType);
+  const isChannel = isChannelEntity(entityType);
   const [collapsed, setCollapsed] = useState(false);
 
   if (!results.length) return null;

@@ -1,6 +1,6 @@
 import { Outlet } from '@tanstack/react-router';
 import { ErrorBoundary } from 'react-error-boundary';
-import { usePageChannelEntityKey } from '~/hooks/use-page-channel-entity-key';
+import { usePageChannelKey } from '~/hooks/use-page-channel-key';
 import { Alerter } from '~/modules/common/alerter/alerter';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { FocusTarget } from '~/modules/navigation/focus-bridge';
@@ -12,8 +12,8 @@ import { getSkipPageEnter } from '~/utils/nav-transition';
 export const AppContent = () => {
   // Curtain over the content area that briefly holds the background then reveals, masking scroll-to-header
   // travel on entity navigation. Skipped on same-base forward nav (org -> org), which has no scroll delta.
-  const channelEntityKey = usePageChannelEntityKey();
-  const showCurtain = !!channelEntityKey && !getSkipPageEnter();
+  const channelKey = usePageChannelKey();
+  const showCurtain = !!channelKey && !getSkipPageEnter();
 
   return (
     <ErrorBoundary
@@ -30,7 +30,7 @@ export const AppContent = () => {
           <Alerter mode="app" />
           <Outlet />
         </main>
-        {showCurtain && <div key={channelEntityKey} className="page-enter-curtain" aria-hidden />}
+        {showCurtain && <div key={channelKey} className="page-enter-curtain" aria-hidden />}
       </div>
     </ErrorBoundary>
   );

@@ -426,7 +426,7 @@
         },
         "x-tags": ["base", "users", "cella"]
       },
-      "ChannelEntityBase": {
+      "ChannelBase": {
         "type": "object",
         "properties": {
           "id": {
@@ -483,7 +483,7 @@
         },
         "x-tags": ["base", "entities", "cella"]
       },
-      "ProductEntityBase": {
+      "ProductBase": {
         "type": "object",
         "properties": {
           "id": {
@@ -4110,7 +4110,7 @@
                         "type": "object",
                         "properties": {
                           "entity": {
-                            "$ref": "#/components/schemas/ChannelEntityBase"
+                            "$ref": "#/components/schemas/ChannelBase"
                           },
                           "inactiveMembership": {
                             "$ref": "#/components/schemas/InactiveMembership"
@@ -9680,7 +9680,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChannelEntityBase"
+                  "$ref": "#/components/schemas/ChannelBase"
                 },
                 "example": {
                   "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",

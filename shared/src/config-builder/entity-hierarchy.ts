@@ -33,14 +33,14 @@ interface ProductEntry {
 }
 type EntityEntry = UserEntry | ChannelEntry | ProductEntry;
 
-export interface ChannelEntityView<R extends string = string> {
+export interface ChannelView<R extends string = string> {
   readonly kind: 'channel';
   readonly parent: string | null;
   readonly roles: readonly R[];
   readonly relatedChannels?: readonly string[];
 }
 
-export interface ProductEntityView {
+export interface ProductView {
   readonly kind: 'product';
   readonly parent: string;
   readonly relatedChannels?: readonly string[];
@@ -49,7 +49,7 @@ export interface ProductEntityView {
 
 export interface UserEntityView { readonly kind: 'user' }
 
-export type EntityView = UserEntityView | ChannelEntityView | ProductEntityView;
+export type EntityView = UserEntityView | ChannelView | ProductView;
 
 // Hierarchy Builder
 
@@ -454,15 +454,15 @@ export class EntityHierarchy<
   }
 
   /** Get product entity view. */
-  getProductConfig(entityType: string): ProductEntityView | undefined {
+  getProductConfig(entityType: string): ProductView | undefined {
     const config = this.getConfig(entityType);
     return config?.kind === 'product' ? config : undefined;
   }
 
   /** Get channel entity view. */
-  getChannelConfig(entityType: string): ChannelEntityView<RoleFromRegistry<TRoles>> | undefined {
+  getChannelConfig(entityType: string): ChannelView<RoleFromRegistry<TRoles>> | undefined {
     const config = this.getConfig(entityType);
-    return config?.kind === 'channel' ? (config as ChannelEntityView<RoleFromRegistry<TRoles>>) : undefined;
+    return config?.kind === 'channel' ? (config as ChannelView<RoleFromRegistry<TRoles>>) : undefined;
   }
 
   hasAncestor(entityType: string, ancestor: string): boolean {

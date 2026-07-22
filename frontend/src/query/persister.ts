@@ -15,12 +15,12 @@ const ORPHAN_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 // Query classification
 
-const productEntitySet = new Set<string>(appConfig.productEntityTypes);
+const productSet = new Set<string>(appConfig.productEntityTypes);
 
 function isProductQuery(queryKey: unknown): boolean {
   const key = queryKey as unknown[];
   const entity = Array.isArray(key) ? key[0] : undefined;
-  return typeof entity === 'string' && productEntitySet.has(entity);
+  return typeof entity === 'string' && productSet.has(entity);
 }
 
 // Session ID management

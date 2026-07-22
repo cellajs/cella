@@ -3,7 +3,7 @@ import type { ChannelEntityType, EntityActionType, EntityType } from 'shared';
 import { appConfig, resolvePermission } from 'shared';
 import { useUserStore } from '~/modules/user/user-store';
 import { enrichWithPermissions } from '~/query/enrichment/permissions';
-import type { EnrichableChannelEntity } from '~/query/enrichment/types';
+import type { EnrichableChannel } from '~/query/enrichment/types';
 
 /**
  * Route-level permission guards. Nav gating only hides LINKS; a direct URL still renders the
@@ -25,7 +25,7 @@ export function requireSystemAdmin(): void {
  * affordances the page renders.
  */
 export function requireEntityAction(
-  entity: EnrichableChannelEntity & { createdBy?: string | { id: string } | null },
+  entity: EnrichableChannel & { createdBy?: string | { id: string } | null },
   channelType: ChannelEntityType,
   entityType: EntityType,
   action: EntityActionType,

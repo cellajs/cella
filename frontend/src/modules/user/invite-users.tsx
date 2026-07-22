@@ -11,7 +11,7 @@ import { AnimatedArrow } from '~/modules/common/animated-arrow';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
-import type { EnrichedChannelEntity } from '~/modules/entities/types';
+import type { EnrichedChannel } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { InviteBulkEmailForm } from '~/modules/user/invite-bulk-email-form';
 import { InviteEmailForm } from '~/modules/user/invite-email-form';
@@ -41,14 +41,14 @@ export function useInviteFormDraft(entityId?: string, entityType?: ChannelEntity
 }
 
 interface InviteUsersProps {
-  channelEntity?: EnrichedChannelEntity;
+  channel?: EnrichedChannel;
   dialog?: boolean;
   mode?: 'search' | 'email' | 'bulk' | null;
   children?: React.ReactNode;
 }
 
 // When no entity type, it's a system invite
-export function InviteUsers({ channelEntity, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) {
+export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) {
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(baseMode);
@@ -158,15 +158,15 @@ export function InviteUsers({ channelEntity, dialog: isDialog, mode: baseMode, c
               )}
             </AlertBanner>
             {inviteMode === 'email' ? (
-              <InviteEmailForm channelEntity={channelEntity} dialog={isDialog}>
+              <InviteEmailForm channel={channel} dialog={isDialog}>
                 {children}
               </InviteEmailForm>
             ) : inviteMode === 'bulk' ? (
-              <InviteBulkEmailForm channelEntity={channelEntity} dialog={isDialog}>
+              <InviteBulkEmailForm channel={channel} dialog={isDialog}>
                 {children}
               </InviteBulkEmailForm>
             ) : (
-              <InviteSearchForm channelEntity={channelEntity} dialog={isDialog} />
+              <InviteSearchForm channel={channel} dialog={isDialog} />
             )}
           </motion.div>
         )}

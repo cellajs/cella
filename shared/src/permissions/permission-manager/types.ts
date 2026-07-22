@@ -2,46 +2,32 @@ import type { ChannelEntityType, EntityActionType, EntityIdColumns, EntityRole, 
 import type { PublicReadGrants, PublicReadMode } from '../public-read';
 import type { PermissionTopology } from './topology';
 
-export type ChannelEntityIdColumns = EntityIdColumns<ChannelEntityType, string | null>;
+/** Database-shaped channel ID columns, such as `organizationId`. */
+export type ChannelIdColumns = EntityIdColumns<ChannelEntityType, string | null>;
 
-export type ChannelScope = Partial<Record<ChannelEntityType, string | null>>;
+/** Ancestor channel IDs by type. `null` marks an intentionally unused level. */
+export type AncestorChannelIds = Partial<Record<ChannelEntityType, string | null>>;
 
+/** Channel IDs resolved during permission evaluation. */
 export type ResolvedChannelIds = Partial<Record<ChannelEntityType, string>>;
 
-/**
- * Minimal structural shape the permission engine needs from a membership.
- *
- * The engine only reads `channelType`, `channelId` and `role`. Backend and fork models
- * (e.g. `MembershipBaseModel`) extend this freely with extra fields the engine ignores,
- * so both tiers can pass their own model with zero change.
- */
+/** Membership fields read by the permission engine. Tier models may include extra fields. */
 export interface PermissionMembership {
   channelType: ChannelEntityType;
   channelId: string;
   role: EntityRole;
 }
 
-/**
- * Subject (entity) for permission evaluation.
- *
- * In Zanzibar terms, this represents the "object" being accessed. The `createdBy` field
- * enables an implicit "owner" relation: when a policy uses `'own'`, the engine checks
- * `subject.createdBy === options.userId` to determine if the actor is the owner.
- */
+/** Entity evaluated by the permission engine. */
 export type SubjectForPermission = {
   entityType: ChannelEntityType | ProductEntityType;
   id?: string;
-  /** The user who created this entity. Enables the built-in `own` row condition. */
+  /** Creator ID used by the built-in `own` condition. */
   createdBy?: string | null;
-  /** Ancestor context IDs keyed by channel entity type. `null` means explicitly not scoped to that context. */
-  channelIds: ChannelScope;
+  channelIds: AncestorChannelIds;
   /**
-   * Additional row fields for row-condition evaluation and public read grants. Only needed
-   * when a policy uses a rule that reads columns beyond `createdBy`.
-   *
-   * Every rule reads THIS row only. The engine never loads rows, and no rule may depend on
-   * another row: that is what keeps the check-form, the compiled SQL, and stream dispatch
-   * able to reach the same verdict from the same data.
+   * Same-row fields used by row conditions and public read grants. Keeping rules row-local
+   * lets JavaScript checks, compiled SQL, and stream dispatch produce the same decision.
    *
    * @see row-conditions.ts
    * @see public-read.ts
@@ -49,11 +35,7 @@ export type SubjectForPermission = {
   row?: Record<string, unknown>;
 };
 
-/**
- * Source that granted an action: a context membership, a row condition (`relation` is the
- * condition's name, e.g. `'own'`), a public read grant, or the system-admin bypass (which
- * grants every action regardless of membership).
- */
+/** Source that granted an action. */
 export type GrantSource =
   | { type: 'membership'; channelType: ChannelEntityType; channelId: string; role: EntityRole }
   | { type: 'relation'; relation: string }
@@ -76,40 +58,27 @@ export interface PermissionDecision<T extends PermissionMembership = PermissionM
   membership: T | null;
 }
 
-/**
- * Options for permission checks.
- *
- * In Zanzibar terms, `userId` is the "subject" (actor) of the permission check.
- * Combined with `SubjectForPermission.createdBy`, this enables the implicit "owner" relation.
- */
+/** Optional controls for permission evaluation. */
 export interface PermissionCheckOptions {
   isSystemAdmin?: boolean;
-  /** The acting user's ID. Required when evaluating `'own'` policies (implicit owner relation). */
+  /** Acting user ID. Required by `own` conditions. */
   userId?: string;
   /**
-   * Subject-level public read grants to evaluate. The `checkAccess*` wrappers inject the
-   * configured grants; pass explicitly only when driving the engine with synthetic policies
-   * (tests).
+   * Public read grants. The `checkAccess*` wrappers inject configured grants; direct callers
+   * only pass these for synthetic policies.
    *
    * @see public-read.ts
    */
   publicGrants?: PublicReadGrants;
   /**
-   * Grant scoping for PRODUCT subjects: roles listed here have subtree-scoped grants
-   * (their context and everything below); all other roles speak only for rows HOMED at
-   * their grant's context level. `undefined` (default) keeps every grant subtree-scoped
-   *. The template behavior. Injected by the `checkAccess*` wrappers like `publicGrants`.
+   * Roles with subtree-wide grants for product subjects. Other roles grant only at a row's
+   * home channel. `undefined` treats every role as subtree-wide.
    *
    * @see shared/config/permissions-config.ts
    */
   elevatedRoles?: readonly string[];
-  /**
-   * Override the hierarchy/action topology the engine reads (defaults to the app's config).
-   * Tests use this to exercise a synthetic hierarchy.
-   *
-   * @see shared/src/testing/wide-fixture.ts
-   */
+  /** Hierarchy and actions override for synthetic topologies. */
   topology?: PermissionTopology;
-  /** When `true`, emit debug logging of the decision tree. Off by default to keep the engine quiet. */
+  /** Emit the decision tree to debug logging. */
   debug?: boolean;
 }

@@ -4,10 +4,8 @@ import { MissingScopeError } from './missing-scope-error';
 import type { SubjectForPermission } from './permission-manager/types';
 
 /**
- * Validates that all ancestor context IDs are explicitly provided on the subject.
- *
- * `null` means "intentionally not scoped to this context" (e.g., org-level attachment);
- * `undefined` means the caller forgot to provide scope.
+ * Validates that every ancestor ID is present. `null` marks an unused ancestor; `undefined`
+ * is missing.
  *
  * @throws MissingScopeError if any ancestor context ID is undefined (missing)
  */

@@ -11,7 +11,7 @@ import type { EntityModel } from '#/tables';
 /**
  * Result type for channel entity validation including the can object.
  */
-export interface ValidChannelEntityResult<T extends ChannelEntityType> {
+export interface ValidChannelResult<T extends ChannelEntityType> {
   entity: EntityModel<T>;
   membership: MembershipBaseModel | null;
 }
@@ -26,13 +26,13 @@ export interface ValidChannelEntityResult<T extends ChannelEntityType> {
  *
  * @param ctx - Context with memberships and isSystemAdmin set by the guard chain.
  */
-export const getValidChannelEntity = async <T extends ChannelEntityType>(
+export const getValidChannel = async <T extends ChannelEntityType>(
   ctx: AuthContext,
   entityId: string,
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
   bySlug = false,
-): Promise<ValidChannelEntityResult<T>> => {
+): Promise<ValidChannelResult<T>> => {
   // Step 1: Resolve target entity by ID (or slug when bySlug is true)
   const entity = await resolveEntity(ctx, entityType, entityId, bySlug);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });

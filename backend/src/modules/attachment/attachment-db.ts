@@ -2,7 +2,7 @@ import { boolean, foreignKey, index, snakeCase, uuid, varchar } from 'drizzle-or
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { channelRelationColumns } from '#/db/utils/channel-relation-columns';
 import { maxLength } from '#/db/utils/constraints';
-import { productEntityColumns } from '#/db/utils/product-entity-columns';
+import { productColumns } from '#/db/utils/product-columns';
 import { organizationsTable } from '#/modules/organization/organization-db';
 
 /**
@@ -12,9 +12,9 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 export const attachmentsTable = snakeCase.table(
   'attachments',
   {
-    ...productEntityColumns('attachment'),
+    ...productColumns('attachment'),
     // S3 bucket visibility (public vs private bucket), not a permission grant. Unrelated to the
-    // permission `publicAt` (from productEntityColumns) which grants non-member read. Named `public`
+    // permission `publicAt` (from productColumns) which grants non-member read. Named `public`
     // for historical reasons; a rename to e.g. `isInPublicBucket` is deferred to a future attachment
     // migration to avoid a standalone data migration here.
     public: boolean().notNull().default(false),

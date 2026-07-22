@@ -29,7 +29,7 @@ vi.mock('~/query/basic/entity-query-registry', () => ({
   registerEntityQueryKeys: mockRegisterEntityQueryKeys,
 }));
 
-const { initChannelEntityEnrichment } = await import('~/query/enrichment/init-enrichment');
+const { initChannelEnrichment } = await import('~/query/enrichment/init-enrichment');
 
 describe('ancestor slug enrichment', () => {
   let unsubscribe: (() => void) | undefined;
@@ -44,7 +44,7 @@ describe('ancestor slug enrichment', () => {
   });
 
   it('enriches child entity with ancestor slug when parent is in cache', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
 
@@ -67,7 +67,7 @@ describe('ancestor slug enrichment', () => {
   });
 
   it('does not set ancestorSlugs for root channel entities', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [makeMembership('org-1')],
@@ -81,7 +81,7 @@ describe('ancestor slug enrichment', () => {
   });
 
   it('falls back to ancestor ID when parent slug is not in cache, then updates when parent loads', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [
@@ -105,7 +105,7 @@ describe('ancestor slug enrichment', () => {
   });
 
   it('enriches project with workspace slug from menu parent via membership.workspaceId', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
     queryClient.setQueryData(['workspace', 'list'], makeInfiniteData([{ id: 'ws-1', slug: 'my-workspace' } as any]));
@@ -135,7 +135,7 @@ describe('ancestor slug enrichment', () => {
   });
 
   it('updates project workspace slug when workspace list cache loads later', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [
@@ -166,7 +166,7 @@ describe('ancestor slug enrichment', () => {
   });
 
   it('preserves reference when ancestor slugs have not changed', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
 

@@ -3,7 +3,7 @@ import { MOCK_REF_DATE, mockNanoid, mockPaginated, mockUuid, withFakerSeed } fro
 import type { MeAuthResponse, MeResponse, UploadTokenResponse } from '#/modules/me/types';
 import { mockInactiveMembershipResponse } from '#/modules/memberships/memberships-mocks';
 import { mockUserResponse } from '#/modules/user/user-mocks';
-import { mockChannelEntityBase } from '#/schemas/entity-base-mocks';
+import { mockChannelBase } from '#/schemas/entity-base-mocks';
 
 /**
  * Generates a mock Me response (current user with system role).
@@ -79,7 +79,7 @@ export const mockUploadTokenResponse = (key = 'upload-token:default'): UploadTok
  */
 export const mockPendingInvitationResponse = (key = 'pending-invitation:default') =>
   withFakerSeed(key, () => ({
-    entity: mockChannelEntityBase(`${key}:entity`),
+    entity: mockChannelBase(`${key}:entity`),
     inactiveMembership: mockInactiveMembershipResponse(`${key}:inactive-membership`),
   }));
 

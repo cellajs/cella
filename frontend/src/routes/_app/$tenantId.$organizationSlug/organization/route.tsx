@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { OrganizationRouteComponent } from '~/modules/organization/route-components';
 import { createErrorComponent } from '~/routes/-route-utils';
-import { channelEntityRouteConfig } from '~/routes-config';
+import { channelRouteConfig } from '~/routes-config';
 import { appTitle } from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
@@ -11,13 +11,9 @@ import { noDirectAccess } from '~/utils/no-direct-access';
 export const Route = createFileRoute('/_app/$tenantId/$organizationSlug/organization')({
   staticData: { isAuth: true, floatingNavButtons: { left: 'menu' } },
   beforeLoad: ({ matches }) => {
-    // Default tab comes from channelEntityRouteConfig, so direct visits and entity links agree on the
+    // Default tab comes from channelRouteConfig, so direct visits and entity links agree on the
     // organization's canonical landing surface (forks change it in routes-config, a pinned file)
-    noDirectAccess(
-      matches,
-      '/_app/$tenantId/$organizationSlug/organization',
-      channelEntityRouteConfig.organization.path,
-    );
+    noDirectAccess(matches, '/_app/$tenantId/$organizationSlug/organization', channelRouteConfig.organization.path);
   },
   head: ({ match }) => ({ meta: [{ title: appTitle(match.context.organization?.name) }] }),
   errorComponent: createErrorComponent('app'),

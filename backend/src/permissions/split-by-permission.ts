@@ -1,4 +1,4 @@
-import type { ChannelEntityIdColumns, ChannelEntityType, EntityActionType, ProductEntityType } from 'shared';
+import type { ChannelEntityType, ChannelIdColumns, EntityActionType, ProductEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -31,10 +31,7 @@ export const splitByPermission = async (
   // Check permissions for all entities in a single batch operation. Each entity doubles as
   // `row`, so row conditions and public read grants evaluate from real row data.
   const subjects = entities.map((entity) =>
-    buildSubjectFromEntity(
-      entityType,
-      entity as { id: string; createdBy?: string | null } & Partial<ChannelEntityIdColumns>,
-    ),
+    buildSubjectFromEntity(entityType, entity as { id: string; createdBy?: string | null } & Partial<ChannelIdColumns>),
   );
   const { results } = checkAccessBatch(accessFrom(ctx), action, subjects);
 

@@ -4,14 +4,14 @@ import { type ChannelEntityType, hierarchy } from 'shared';
 import { enrichWithAncestorSlugs, type SlugIndex } from '~/query/enrichment/ancestor-slugs';
 import {
   getCachedMemberships,
-  getChannelEntityKeys,
+  getChannelKeys,
   getMenuParentTypes,
   getRegisteredChannelEntities,
   isMenuParentOf,
 } from '~/query/enrichment/helpers';
 import { enrichWithMembership } from '~/query/enrichment/membership';
 import { enrichWithPermissions } from '~/query/enrichment/permissions';
-import type { EnrichableChannelEntity, InfiniteData } from '~/query/enrichment/types';
+import type { EnrichableChannel, InfiniteData } from '~/query/enrichment/types';
 import { queryClient } from '~/query/query-client';
 
 /** Re-entrancy guard: prevents the subscriber from reacting to its own cache writes */
@@ -48,12 +48,12 @@ function getExtendedAncestors(entityType: ChannelEntityType): readonly ChannelEn
  * Order matters: membership must run before permissions and ancestor-slugs (they read item.membership).
  */
 function enrichItem(
-  item: EnrichableChannelEntity,
+  item: EnrichableChannel,
   memberships: MembershipBase[],
   entityType: ChannelEntityType,
   ancestors: readonly ChannelEntityType[],
   slugIndex: SlugIndex,
-): EnrichableChannelEntity {
+): EnrichableChannel {
   let result = enrichWithMembership(item, memberships);
   result = enrichWithPermissions(result, entityType);
   result = enrichWithAncestorSlugs(result, ancestors, slugIndex);
@@ -130,7 +130,7 @@ function enrichEntityType(entityType: ChannelEntityType, memberships: Membership
 
   const ancestors = getExtendedAncestors(entityType);
   for (const query of cache.findAll({ queryKey: [entityType, 'detail'] })) {
-    const data = (query.state.data ?? null) as EnrichableChannelEntity | null;
+    const data = (query.state.data ?? null) as EnrichableChannel | null;
     if (!data?.id) continue;
     const enriched = enrichItem(data, memberships, entityType, ancestors, slugIndex);
     if (enriched !== data) setCacheData(query.queryKey, enriched);
@@ -170,7 +170,7 @@ function runEnrichment(entityType: ChannelEntityType) {
   }
 }
 
-export function initChannelEntityEnrichment(): () => void {
+export function initChannelEnrichment(): () => void {
   return queryClient.getQueryCache().subscribe((event) => {
     if (event.type !== 'updated' || isEnriching) return;
 
@@ -188,7 +188,7 @@ export function initChannelEntityEnrichment(): () => void {
     const entityType = typeof queryKey[0] === 'string' ? queryKey[0] : null;
     if (!entityType) return;
 
-    const entry = getChannelEntityKeys(entityType);
+    const entry = getChannelKeys(entityType);
     if (!entry) return;
 
     // Only enrich on list or detail updates

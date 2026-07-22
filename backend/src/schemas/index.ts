@@ -43,7 +43,7 @@ export {
   validUuidSchema,
 } from './common-schemas';
 export { membershipCountSchema } from './count-schemas';
-export { channelEntityBaseSchema, productEntityBaseSchema } from './entity-base';
+export { channelBaseSchema, productBaseSchema } from './entity-base';
 export {
   type ErrorCode,
   errorResponseRefs,

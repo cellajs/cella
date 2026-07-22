@@ -1,6 +1,6 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import { isChannelEntity, appConfig } from 'shared';
-import type { ChannelEntityIdColumns } from 'shared';
+import type { ChannelIdColumns } from 'shared';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
 import { channelIdColumnKeys } from '../utils/channel-columns';
@@ -203,7 +203,7 @@ export class TransactionBuffer {
 
     // Check all channel entity ID columns on this activity
     for (const idColumn of channelIdColumnKeys) {
-      const value = (activity as Partial<ChannelEntityIdColumns>)[idColumn];
+      const value = (activity as Partial<ChannelIdColumns>)[idColumn];
       if (typeof value === 'string' && deletedChannelIds.has(value)) {
         return true;
       }

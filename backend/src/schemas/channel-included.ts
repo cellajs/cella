@@ -8,7 +8,7 @@ import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
  * Factory for channel entity included schemas.
  * Builds a strictly-typed included schema scoped to the entity's hierarchy children.
  */
-export const channelEntityIncludedSchema = (entityType: ChannelEntityType) => {
+export const channelIncludedSchema = (entityType: ChannelEntityType) => {
   const descendants = hierarchy.getOrderedDescendants(entityType);
   const entityCountSchema = z.object(recordFromKeys(descendants, () => z.number()));
 

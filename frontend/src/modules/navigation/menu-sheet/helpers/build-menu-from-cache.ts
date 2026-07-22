@@ -1,5 +1,5 @@
 import { appConfig, type ChannelEntityType } from 'shared';
-import { channelEntityListQueriesByType } from '~/list-queries-config';
+import { channelListQueriesByType } from '~/list-queries-config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { queryClient } from '~/query/query-client';
@@ -12,10 +12,10 @@ const menuEntityTypes = Array.from(
 
 /**
  * Builds the user menu from cached entity data. Assumes entity lists were already enriched with
- * memberships by the cache subscriber (initChannelEntityEnrichment). Used by useMenu + getMenuData.
+ * memberships by the cache subscriber (initChannelEnrichment). Used by useMenu + getMenuData.
  */
 export function buildMenuFromCache(userId: string): UserMenu {
-  const registry = channelEntityListQueriesByType;
+  const registry = channelListQueriesByType;
   const byType = new Map<ChannelEntityType, UserMenuItem[]>();
 
   for (const entityType of menuEntityTypes) {

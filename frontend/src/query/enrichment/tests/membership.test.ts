@@ -29,7 +29,7 @@ vi.mock('~/query/basic/entity-query-registry', () => ({
   registerEntityQueryKeys: mockRegisterEntityQueryKeys,
 }));
 
-const { initChannelEntityEnrichment } = await import('~/query/enrichment/init-enrichment');
+const { initChannelEnrichment } = await import('~/query/enrichment/init-enrichment');
 
 describe('membership enrichment', () => {
   let unsubscribe: (() => void) | undefined;
@@ -48,7 +48,7 @@ describe('membership enrichment', () => {
       items: [makeMembership('org-1'), makeMembership('org-2')],
     });
 
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1' }, { id: 'org-2' }]));
 
@@ -60,7 +60,7 @@ describe('membership enrichment', () => {
   });
 
   it('enriches all entity lists when memberships update', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1' }]));
 
@@ -74,7 +74,7 @@ describe('membership enrichment', () => {
   });
 
   it('updates membership when it changes', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [makeMembership('org-1', { role: 'member' })],
@@ -96,7 +96,7 @@ describe('membership enrichment', () => {
   it('preserves reference when nothing changed', () => {
     const membership = makeMembership('org-1');
 
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], { items: [membership] });
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1' }]));
@@ -110,7 +110,7 @@ describe('membership enrichment', () => {
   });
 
   it('preserves direct membership when not in memberships cache', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     const membership = makeMembership('org-fallback', { role: 'guest' });
 
@@ -129,7 +129,7 @@ describe('membership enrichment', () => {
   });
 
   it('does not enrich non-context-entity queries', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [makeMembership('org-1')],
@@ -142,7 +142,7 @@ describe('membership enrichment', () => {
   });
 
   it('handles entities without matching membership gracefully', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [makeMembership('org-1')],
@@ -169,7 +169,7 @@ describe('enrichment timing guarantee', () => {
   });
 
   it('cache is enriched synchronously after setQueryData', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [makeMembership('org-1', { role: 'admin' }), makeMembership('org-2', { role: 'member' })],
@@ -186,7 +186,7 @@ describe('enrichment timing guarantee', () => {
   });
 
   it('getMenuData pattern: memberships first, then entities, then sync read', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [makeMembership('org-a'), makeMembership('org-b')],
@@ -213,7 +213,7 @@ describe('enrichment timing guarantee', () => {
   });
 
   it('membership update re-enriches existing entity lists synchronously', () => {
-    unsubscribe = initChannelEntityEnrichment();
+    unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [makeMembership('org-1', { role: 'member', archived: false })],

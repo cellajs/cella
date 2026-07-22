@@ -22,7 +22,7 @@ import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 type AttachmentsTableBarProps = AttachmentsTableProps & BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>;
 
 export const AttachmentsTableBar = ({
-  channelEntity,
+  channel,
   selected,
   searchVars,
   setSearch,
@@ -35,7 +35,7 @@ export const AttachmentsTableBar = ({
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
-  const { open } = useAttachmentsUploadDialog(channelEntity.tenantId, channelEntity.id);
+  const { open } = useAttachmentsUploadDialog(channel.tenantId, channel.id);
   const resolveCan = useResolveCan();
 
   const deleteButtonRef = useRef(null);
@@ -50,7 +50,7 @@ export const AttachmentsTableBar = ({
   // Honest bulk delete: act only on the rows this user may delete ('own' resolves per row);
   // the badge shows that count when it differs from the selection. The backend's rejectedIds
   // path stays as the net for stale client-side permissions.
-  const deletable = selected.filter((row) => resolveCan(channelEntity.can?.attachment?.delete, row.createdBy));
+  const deletable = selected.filter((row) => resolveCan(channel.can?.attachment?.delete, row.createdBy));
 
   // Drop selected rows on search
   const onSearch = (searchString: string) => {

@@ -7,7 +7,7 @@ import { DownloadCell, EllipsisCell, ThumbnailCell } from '~/modules/attachment/
 import { EditCellInput } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { EnrichedChannelEntity } from '~/modules/entities/types';
+import type { EnrichedChannel } from '~/modules/entities/types';
 import { SeenMark } from '~/modules/seen/seen-mark';
 import { UserCell } from '~/modules/user/user-cell';
 import { useUserStore } from '~/modules/user/user-store';
@@ -25,18 +25,18 @@ const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
   return Date.now() - createdTime > seenWindowMs;
 };
 
-export const useColumns = (channelEntity: EnrichedChannelEntity, isSheet: boolean) => {
+export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
   const { t } = useTranslation();
 
   // Deliberately optimistic and table-scoped: `!!` enables inline edit for both `true` (admin) and
   // `'own'` because there is no single row here to resolve it against. The backend enforces the
   // owner check per row on save. Per-entity affordances resolve `'own'` via
   // `useResolveCan` (~/modules/entities/use-resolve-can); this table-level case is the exception.
-  const canUpdate = !!channelEntity.can?.attachment?.update;
+  const canUpdate = !!channel.can?.attachment?.update;
 
   // Per-row delete resolves 'own' against the row's creator (resolvePermission is what
   // useResolveCan wraps; used directly here so the memo can depend on plain values).
-  const deleteState = channelEntity.can?.attachment?.delete;
+  const deleteState = channel.can?.attachment?.delete;
   const userId = useUserStore((state) => state.user?.id);
 
   const columns: ColumnOrColumnGroup<Attachment>[] = useMemo(
@@ -59,8 +59,8 @@ export const useColumns = (channelEntity: EnrichedChannelEntity, isSheet: boolea
           <>
             <SeenMark
               productId={row.id}
-              tenantId={channelEntity.tenantId}
-              organizationId={channelEntity.id}
+              tenantId={channel.tenantId}
+              organizationId={channel.id}
               productType="attachment"
             />
             <span className="truncate font-medium">{row.name || '-'}</span>

@@ -9,7 +9,7 @@ import { stxColumns } from './stx-columns';
 /**
  * Creates base columns shared by all product entities.
  */
-export const productEntityColumns = <T extends ProductEntityType>(entityType: T) => ({
+export const productColumns = <T extends ProductEntityType>(entityType: T) => ({
   ...tenantEntityColumns(entityType),
   name: varchar({ length: maxLength.field }).notNull().default(`New ${entityType}`), // Override default name
   ...stxColumns,

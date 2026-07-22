@@ -13,7 +13,7 @@ export function getRegisteredChannelEntities(): { type: ChannelEntityType; keys:
 }
 
 /** Get registered query keys for a channel entity type, or null if not registered */
-export function getChannelEntityKeys(entityType: string): { type: ChannelEntityType; keys: EntityQueryKeys } | null {
+export function getChannelKeys(entityType: string): { type: ChannelEntityType; keys: EntityQueryKeys } | null {
   if (!hierarchy.isChannel(entityType)) return null;
   const keys = getEntityQueryKeys(entityType);
   return { type: entityType as ChannelEntityType, keys };

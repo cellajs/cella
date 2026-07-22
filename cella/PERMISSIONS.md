@@ -135,7 +135,7 @@ export type SubjectForPermission = {
   entityType: ChannelEntityType | ProductEntityType;
   id?: string;
   createdBy?: string | null;
-  channelIds: ChannelScope; // Partial<Record<ChannelEntityType, string | null>>
+  channelIds: AncestorChannelIds; // Partial<Record<ChannelEntityType, string | null>>
   row?: Record<string, unknown>; // for row conditions + publicSelf
 };
 
@@ -206,7 +206,7 @@ The engine produces a verdict. Each tier is responsible for _asking_ — and eve
 | Path | Entry point | What it checks |
 | --- | --- | --- |
 | **Guard chain** | `authGuard` → `tenantGuard` → `orgGuard` | Coarse gate only: authenticated, in-tenant, and a member of the org _or_ a system admin. It does **not** consult `accessPolicies`. |
-| **Single row** | `getValidProductEntity`, `getValidChannelEntity`, `canCreateEntity`, `splitByPermission` | Loads the row, passes it as `subject.row` via `buildSubjectFromEntity`, runs the engine (`canCreateEntity` is the exception: the entity doesn't exist yet, so the subject describes the would-be placement, no row). `splitByPermission` powers bulk ops and 403s only when _nothing_ is allowed. |
+| **Single row** | `getValidProduct`, `getValidChannel`, `canCreateEntity`, `splitByPermission` | Loads the row, passes it as `subject.row` via `buildSubjectFromEntity`, runs the engine (`canCreateEntity` is the exception: the entity doesn't exist yet, so the subject describes the would-be placement, no row). `splitByPermission` powers bulk ops and 403s only when _nothing_ is allowed. |
 | **Collection read** | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Turns the actor's access into a readable scope, then compiles it — unconditional grants, row conditions, and the public grant — into one Drizzle `SQL` predicate. Set-based, so it never materializes rows to reject them. |
 | **SSE dispatch** | `rowReadDecisions` (`canReceiveProductEvent` is its batch-of-1) | ONE `checkAccessFanout` call per event row over the channel's subscribers; the engine collapses them into access classes. Notified rows are fetchable by seq, so over-notifying is a data leak, not just noise. |
 | **Catchup views** | `resolveViewReadStatus` | Classifies a client-declared view prefix `ok`/`opaque`/`forbidden` — a DIFFERENT question than row reads: may the caller see the subtree's aggregate change signal (`e:f:`/counts)? Summaries leak the existence and timing of others' activity, so `ok` requires proof of a grant on the node or a verified ancestor (claimed prefixes must equal the counters row's canonical path). See "Authorization: readability × answerability" in SYNC_ENGINE.md for the worked matrix. |

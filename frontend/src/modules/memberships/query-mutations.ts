@@ -5,7 +5,7 @@ import { deleteMemberships, membershipInvite, updateMembership } from 'sdk';
 import { appConfig, type ChannelEntityType } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';
-import type { EnrichedChannelEntity } from '~/modules/entities/types';
+import type { EnrichedChannel } from '~/modules/entities/types';
 import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import type {
@@ -119,8 +119,8 @@ export const useInviteMemberMutation = () =>
   useMutation<MembershipInviteResponse, ApiError, InviteMember, undefined>({
     mutationKey: memberQueryKeys.update(),
     mutationFn: ({ body, path, query }) => membershipInvite({ body, path, query }),
-    onSuccess: ({ invitesSentCount }, { channelEntity }) => {
-      const { id: entityId, entityType, organizationId } = channelEntity;
+    onSuccess: ({ invitesSentCount }, { channel }) => {
+      const { id: entityId, entityType, organizationId } = channel;
 
       if (invitesSentCount) {
         // If the entity is not an organization but belongs to one, update its cache too
@@ -355,12 +355,12 @@ const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount
 
 /** Variables for changing a user's role on a channel entity from an entity table */
 type ChangeEntityRoleVariables = {
-  entity: EnrichedChannelEntity;
+  entity: EnrichedChannel;
   role: MembershipBase['role'];
 };
 
 type ChangeEntityRoleResult = {
-  entity: EnrichedChannelEntity;
+  entity: EnrichedChannel;
   membership: MembershipBase;
   wasNew: boolean;
 };

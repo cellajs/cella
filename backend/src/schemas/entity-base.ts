@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { channelEntityTypeSchema, productEntityTypeSchema } from '#/schemas';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
-import { mockChannelEntityBase, mockProductEntityBase } from './entity-base-mocks';
+import { mockChannelBase, mockProductBase } from './entity-base-mocks';
 
 /**
  * Core fields shared by all entities (id, name, timestamps).
@@ -26,11 +26,11 @@ const auditShape = {
  * Base schema for channel entities, including common fields. Exported separately to avoid circular dependencies.
  *
  * `included` is not part of the base schema to avoid circular dependencies.
- * Channel entity response schemas add `included: channelEntityIncludedSchema` explicitly.
- * Import `channelEntityIncludedSchema` directly from its channel entity included schema module.
+ * Channel entity response schemas add `included: channelIncludedSchema` explicitly.
+ * Import `channelIncludedSchema` directly from its channel entity included schema module.
  * See organizationSchema for reference.
  */
-export const channelEntityBaseSchema = z
+export const channelBaseSchema = z
   .object({
     ...entityCoreShape,
     tenantId: z.string(),
@@ -39,16 +39,16 @@ export const channelEntityBaseSchema = z
     thumbnailUrl: z.string().nullable(),
     bannerUrl: z.string().nullable(),
   })
-  .openapi('ChannelEntityBase', {
+  .openapi('ChannelBase', {
     description: 'Base schema for entities with memberships (e.g. organization).',
-    example: mockChannelEntityBase(),
+    example: mockChannelBase(),
     'x-tags': schemaTags('base', 'entities', 'cella'),
   });
 
 /**
  * Base schema for product entities, including common fields. Exported separately to avoid circular dependencies.
  */
-export const productEntityBaseSchema = z
+export const productBaseSchema = z
   .object({
     ...entityCoreShape,
     description: z.string().nullable(),
@@ -56,8 +56,8 @@ export const productEntityBaseSchema = z
     entityType: productEntityTypeSchema,
     keywords: z.string(),
   })
-  .openapi('ProductEntityBase', {
+  .openapi('ProductBase', {
     description: 'Base schema for content entities with creator tracking (e.g. page, attachment).',
-    example: mockProductEntityBase(),
+    example: mockProductBase(),
     'x-tags': schemaTags('base', 'entities', 'cella'),
   });

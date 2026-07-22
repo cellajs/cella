@@ -28,8 +28,8 @@ export { formatBatchPermissionSummary, formatPermissionDecision } from './permis
 export { validateMembership, validateSubject } from './permission-manager/validation';
 export type {
   ActionAttribution,
-  ChannelEntityIdColumns,
-  ChannelScope,
+  AncestorChannelIds,
+  ChannelIdColumns,
   GrantSource,
   PermissionCheckOptions,
   PermissionDecision,

@@ -15,13 +15,12 @@ import type {
 } from './types';
 import { validateMembership, validateSubject } from './validation';
 
-/** Membership index: Map from `${channelType}:${channelId}` to memberships */
+/** Memberships keyed by `${channelType}:${channelId}`. */
 export type MembershipIndex<T extends PermissionMembership> = Map<string, T[]>;
 
-/** Policy index: Map from `${channelType}:${role}` to permissions */
+/** Permissions keyed by `${channelType}:${role}`. */
 export type PolicyIndex = Map<string, EntityActionPermissions>;
 
-/** Builds a Map indexing memberships by `${channelType}:${channelId}` for O(1) lookup. */
 const buildMembershipIndex = <T extends PermissionMembership>(memberships: T[]): MembershipIndex<T> => {
   const index: MembershipIndex<T> = new Map();
   for (const m of memberships) {
@@ -37,19 +36,13 @@ const buildMembershipIndex = <T extends PermissionMembership>(memberships: T[]):
 };
 
 /**
- * Per-array memo of the validated membership index, keyed by the memberships array's identity.
- *
- * The index is a pure function of the array's contents, and every membership-update path
- * REPLACES the array and never mutates it in place. HTTP requests read a fresh array after
- * cache invalidation, and an SSE subscriber's `memberships` is reassigned on membership events.
- * So a stable reference always maps to the same index, and the WeakMap frees the entry once the
- * array is unreferenced (disconnect / cache expiry). This turns the per-event dispatch fan-out
- * from N index builds into N O(1) lookups (and skips re-validating an already-validated array).
- *
- * Contract: do not mutate a memberships array in place after passing it to a permission check.
+ * Validated indexes cached by array identity. Membership update paths replace arrays, making a
+ * stable reference safe to reuse; the WeakMap releases entries with their arrays. Callers must
+ * not mutate a memberships array after passing it to a permission check.
  */
 const membershipIndexMemo = new WeakMap<object, MembershipIndex<PermissionMembership>>();
 
+/** Returns a validated membership index, memoized by input identity. */
 export const getMembershipIndex = <T extends PermissionMembership>(memberships: T[]): MembershipIndex<T> => {
   const cached = membershipIndexMemo.get(memberships);
   if (cached) return cached as MembershipIndex<T>;
@@ -60,10 +53,7 @@ export const getMembershipIndex = <T extends PermissionMembership>(memberships: 
   return index;
 };
 
-/**
- * Builds a Map indexing policies by `${channelType}:${role}` for O(1) lookup.
- * Uses policies for a specific entityType (subject.entityType).
- */
+/** Indexes one entity type's policies by channel type and role. */
 export const buildPolicyIndex = (
   policies: AccessPolicies,
   entityType: ChannelEntityType | ProductEntityType,
@@ -76,9 +66,6 @@ export const buildPolicyIndex = (
   return index;
 };
 
-/**
- * Gets or creates a policy index for an entity type from the cache.
- */
 const getOrBuildPolicyIndex = (
   policies: AccessPolicies,
   entityType: ChannelEntityType | ProductEntityType,
@@ -92,11 +79,7 @@ const getOrBuildPolicyIndex = (
   return index;
 };
 
-/**
- * Extracts the context ID from subject for a given channelType:
- * - If `subject.entityType === channelType` and subject has `id`: returns `subject.id`
- * - Otherwise: returns `subject.channelIds[channelType]` (e.g., subject.channelIds.organization)
- */
+/** Resolves a channel subject's own ID before consulting its ancestor IDs. */
 export const getSubjectChannelId = (
   subject: SubjectForPermission,
   channelType: ChannelEntityType,
@@ -108,12 +91,8 @@ export const getSubjectChannelId = (
 };
 
 /**
- * Internal function to check permissions for a single subject using pre-built indices.
- * This is the core logic shared by both single and batch permission checks.
- *
- * Supports row-conditional grants: when a policy value is a row-condition name (e.g. the
- * built-in `'own'`), the engine evaluates that condition's check-form (`matchesRowCondition`)
- * against the subject's row fields to determine the grant.
+ * Evaluates one subject against prebuilt membership and policy indexes. Named row conditions
+ * are matched against the subject's row fields.
  */
 export const checkWithIndices = <T extends PermissionMembership>(
   membershipIndex: MembershipIndex<T>,
@@ -128,18 +107,15 @@ export const checkWithIndices = <T extends PermissionMembership>(
   elevatedRoles?: readonly string[],
   debug?: boolean,
 ): PermissionDecision<T> => {
-  // Primary context is orderedChannels[0]; the hierarchy guarantees the array is never empty.
   const primaryChannel = orderedChannels[0];
   if (primaryChannel === undefined) throw new Error('checkSubject: orderedChannels must not be empty');
 
-  // Resolve primary context membership (used by both system admin and normal flow)
   const primaryChannelId = getSubjectChannelId(subject, primaryChannel);
   const primaryMemberships = primaryChannelId
     ? (membershipIndex.get(`${primaryChannel}:${primaryChannelId}`) ?? [])
     : [];
   const resolvedMembership = primaryMemberships[0] ?? null;
 
-  // If system admin, grant all permissions immediately (but still return membership if exists)
   if (isSystemAdmin) {
     const allGranted = createActionRecord(
       (): ActionAttribution => ({
@@ -161,24 +137,18 @@ export const checkWithIndices = <T extends PermissionMembership>(
 
   const actions = createActionRecord((): ActionAttribution => ({ enabled: false, grantedBy: [] }));
 
-  // Collect resolved context IDs for debugging
   const channelIds: ResolvedChannelIds = {};
 
-  // Row fields + actor for row-condition evaluation, built once per subject
   const conditionRow: RowForCondition = { ...subject.row, createdBy: subject.createdBy };
   const conditionActor: ConditionActor = { userId };
 
-  // Grant scoping (elevatedRoles): product subjects only. Context subjects keep full
-  // elevation semantics (e.g. members of a parent context may still discover child
-  // contexts). The subject's HOME is the most specific context with an id; non-elevated
-  // roles speak only for rows homed at their own grant level.
+  // Non-elevated roles grant product access only at the row's home channel. Channel subjects
+  // retain ancestor elevation semantics.
   const isProductSubject = (subject.entityType as string) !== primaryChannel;
   const homeChannel =
     elevatedRoles && isProductSubject ? orderedChannels.find((ct) => getSubjectChannelId(subject, ct)) : undefined;
 
-  // Walk through each context level (most specific first, then ancestors)
   for (const channelType of orderedChannels) {
-    // Strict: context in hierarchy must have roles defined
     const channelRoles = getRoles(channelType);
     if (channelRoles.length === 0) {
       throw new Error(
@@ -188,36 +158,28 @@ export const checkWithIndices = <T extends PermissionMembership>(
 
     const subjectChannelId = getSubjectChannelId(subject, channelType);
     if (!subjectChannelId) {
-      // This can be valid for optional context levels - log warning in debug mode
       if (debug) {
         console.warn(`[Permission] ${subject.entityType}:${subject.id} missing context ID for ${channelType}`);
       }
       continue;
     }
 
-    // Track resolved context ID for debugging
     channelIds[channelType] = subjectChannelId;
 
-    // Find all memberships the user has in this specific context instance
     const matchingMemberships = membershipIndex.get(`${channelType}:${subjectChannelId}`) ?? [];
 
     for (const m of matchingMemberships) {
       const permissions = policyIndex.get(`${channelType}:${m.role}`);
-      // Missing policy rows deny every action, matching omitted actions, computeCan and
-      // collection-scope resolution. Policies only need to declare grants.
+      // Missing policy rows deny by default, like omitted actions.
       if (!permissions) continue;
 
-      // Grant scope: applies to EVERY action of the grant, including create (a target
-      // placement's home decides which grants may create there) and 'own' conditions.
       if (elevatedRoles && isProductSubject && !elevatedRoles.includes(m.role) && channelType !== homeChannel) {
         continue;
       }
 
-      // Attribute each granted action to this membership
       for (const action of entityActions) {
         const policyValue = permissions[action];
 
-        // Unconditional grant
         if (policyValue === 1) {
           actions[action].enabled = true;
           actions[action].grantedBy.push({
@@ -229,8 +191,7 @@ export const checkWithIndices = <T extends PermissionMembership>(
           continue;
         }
 
-        // Row-conditional grant: allowed only when the row satisfies the condition for this
-        // actor (e.g. built-in `own`: actor created the row). Attributed by condition name.
+        // Attribute satisfied conditional grants by condition name.
         if (isRowCondition(policyValue) && matchesRowCondition(policyValue, conditionRow, conditionActor)) {
           actions[action].enabled = true;
           actions[action].grantedBy.push({ type: 'relation', relation: policyValue });
@@ -239,16 +200,13 @@ export const checkWithIndices = <T extends PermissionMembership>(
     }
   }
 
-  // Subject-level public read grant: rows readable by any actor (anonymous included) when
-  // the row's own `publicAt` is set. Membership-independent, so it is evaluated outside the
-  // policy walk: but through the same `'public'` row condition the SQL compiler uses.
+  // Public reads are membership-independent but use the same row condition as the SQL compiler.
   const publicMode = publicGrants?.[subject.entityType];
   if (publicMode && matchesRowCondition('public', conditionRow, conditionActor)) {
     actions.read.enabled = true;
     actions.read.grantedBy.push({ type: 'public', mode: publicMode });
   }
 
-  // Derive simple `can` map from actions table
   const can = createActionRecord((action) => actions[action].enabled);
 
   return {
@@ -262,8 +220,6 @@ export const checkWithIndices = <T extends PermissionMembership>(
 /**
  * Checks all permissions for one or more subjects. A single subject returns a
  * `PermissionDecision`; an array returns a `Map` keyed by subject.id.
- *
- * @see README.md
  */
 export function getAllDecisions<T extends PermissionMembership>(
   policies: AccessPolicies,
@@ -290,8 +246,7 @@ export function getAllDecisions<T extends PermissionMembership>(
   const publicGrants = options?.publicGrants;
   const elevatedRoles = options?.elevatedRoles;
   const debug = options?.debug === true;
-  // Topology defaults to the app's real config; tests override it to drive the engine on a
-  // synthetic hierarchy (see shared/src/testing/wide-fixture.ts). No override → unchanged behavior.
+  // Tests may inject a synthetic topology; production defaults to the app configuration.
   const { hierarchy: topoHierarchy, entityActions, getRoles } = resolveTopology(options?.topology);
 
   const results = new Map<string, PermissionDecision<T>>();
@@ -300,29 +255,21 @@ export function getAllDecisions<T extends PermissionMembership>(
     return isSingle ? results.get(subjects.id ?? '_idx:0')! : results;
   }
 
-  // Validate subjects (against the topology hierarchy, which may be synthetic).
   subjectArray.forEach((subject, i) => validateSubject(subject, i, topoHierarchy));
 
-  // Validated membership index, memoized per array identity (see membershipIndexMemo) and reused
-  // across events for a stable subscriber/request array.
   const membershipIndex = getMembershipIndex(memberships);
 
-  // Cache for policy indices by entity type
   const policyIndexCache = new Map<ChannelEntityType | ProductEntityType, PolicyIndex>();
 
-  // Cache for relevant contexts by entity type
   const channelCache = new Map<ChannelEntityType | ProductEntityType, ChannelEntityType[]>();
 
-  // Ordered contexts for an entity type (most specific → root), cached.
-  // For channel entities (e.g., project): [project, organization] (includes self and ancestors)
-  // For product entities (e.g., attachment): [organization] (just ancestors)
-  // The first element [0] is always the primary context used for membership capture.
+  // Channel subjects include themselves before their ancestors; product subjects contain only
+  // ancestors. The first entry is the primary channel used for membership capture.
   const resolveOrderedChannels = (entityType: ChannelEntityType | ProductEntityType): ChannelEntityType[] => {
     let orderedChannels = channelCache.get(entityType);
     if (!orderedChannels) {
       const ancestors = topoHierarchy.getOrderedAncestors(entityType) as ChannelEntityType[];
-      // isChannel (unlike the entity-guards type guard) returns plain boolean, so cast the
-      // context-branch result: a true isChannel means entityType is a context by construction.
+      // isChannel returns boolean, so TypeScript cannot narrow entityType.
       orderedChannels = (
         topoHierarchy.isChannel(entityType) ? [entityType, ...ancestors] : [...ancestors]
       ) as ChannelEntityType[];
@@ -333,10 +280,8 @@ export function getAllDecisions<T extends PermissionMembership>(
 
   for (const subject of subjectArray) {
     const orderedChannels = resolveOrderedChannels(subject.entityType);
-    // Get or build policy index for this entity type
     const policyIndex = getOrBuildPolicyIndex(policies, subject.entityType, policyIndexCache);
 
-    // Perform the permission check using pre-built indices
     const decision = checkWithIndices(
       membershipIndex,
       policyIndex,
@@ -355,12 +300,10 @@ export function getAllDecisions<T extends PermissionMembership>(
     results.set(key, decision);
   }
 
-  // Return single decision or full map based on input type
   if (isSingle) {
     const key = subjects.id ?? '_idx:0';
     const decision = results.get(key);
 
-    // Should never happen
     if (!decision) throw new Error(`[Permission] Check failed for subject ${subjects.entityType}:${subjects.id}`);
 
     if (debug) console.debug(formatPermissionDecision(decision));

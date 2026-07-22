@@ -8,7 +8,7 @@ import { usersTable } from '#/modules/user/user-db';
 /**
  * Creates base columns shared by all channel entities.
  */
-export const channelEntityColumns = <T extends ChannelEntityType>(entityType: T) => ({
+export const channelColumns = <T extends ChannelEntityType>(entityType: T) => ({
   ...tenantEntityColumns(entityType),
   slug: varchar({ length: maxLength.field }).unique().notNull(),
   thumbnailUrl: varchar({ length: maxLength.url }),

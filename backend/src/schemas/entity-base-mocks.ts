@@ -11,10 +11,10 @@ const mockEntityCore = () => ({
 });
 
 /**
- * Generates a mock ChannelEntityBase response.
+ * Generates a mock ChannelBase response.
  * Channel entities have memberships (e.g., organization).
  */
-export const mockChannelEntityBase = (key = 'context-entity:default') =>
+export const mockChannelBase = (key = 'context-entity:default') =>
   withFakerSeed(key, () => {
     const name = faker.company.name();
     return {
@@ -29,10 +29,10 @@ export const mockChannelEntityBase = (key = 'context-entity:default') =>
   });
 
 /**
- * Generates a mock ProductEntityBase response.
+ * Generates a mock ProductBase response.
  * Product entities are content-related with createdBy/updatedBy.
  */
-export const mockProductEntityBase = (key = 'product-entity:default') =>
+export const mockProductBase = (key = 'product-entity:default') =>
   withFakerSeed(key, () => ({
     ...mockEntityCore(),
     name: faker.lorem.sentence({ min: 2, max: 5 }),

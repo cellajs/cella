@@ -1,14 +1,11 @@
 import { CheckIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  LeaveChannelEntityButton,
-  type LeaveChannelEntityButtonProps,
-} from '~/modules/memberships/leave-channel-entity-button';
+import { LeaveChannelButton, type LeaveChannelButtonProps } from '~/modules/memberships/leave-channel-button';
 import { Button } from '~/modules/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 
-function LeaveOrgButton(props: LeaveChannelEntityButtonProps) {
+function LeaveOrgButton(props: LeaveChannelButtonProps) {
   const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(false);
 
@@ -20,7 +17,7 @@ function LeaveOrgButton(props: LeaveChannelEntityButtonProps) {
           <span className="ml-1 max-xs:hidden">{t('c:joined')}</span>
         </PopoverTrigger>
         <PopoverContent className="pointer w-44 rounded-lg p-1" finalFocus={false} sideOffset={4} align="end">
-          <LeaveChannelEntityButton {...props} />
+          <LeaveChannelButton {...props} />
         </PopoverContent>
       </Popover>
     </div>

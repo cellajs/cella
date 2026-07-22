@@ -7,7 +7,7 @@ import type {
 } from 'sdk';
 import type { ChannelEntityType } from 'shared';
 import type z from 'zod';
-import type { EnrichedChannelEntity } from '~/modules/entities/types';
+import type { EnrichedChannel } from '~/modules/entities/types';
 import type { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
 import type { ChannelQueryProp, InfiniteQueryData, MutationData, QueryData } from '~/query/types';
 
@@ -26,7 +26,7 @@ export type MembershipChannelProp = {
   channelType?: ChannelEntityType;
 };
 
-export type InviteMember = MutationData<MembershipInviteData> & { channelEntity: EnrichedChannelEntity };
+export type InviteMember = MutationData<MembershipInviteData> & { channel: EnrichedChannel };
 
 export type MutationUpdateMembership = MutationData<UpdateMembershipData> & {
   channelId: string;

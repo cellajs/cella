@@ -1,4 +1,17 @@
 {
   "schemaVersion": 1,
-  "migrations": []
+  "migrations": [
+    {
+      "id": "20260722T0902-drop-entity-suffix-renames",
+      "version": "next",
+      "title": "Drop redundant Entity suffix from single-family identifiers",
+      "kind": "codemod",
+      "forkBreaking": true,
+      "clientCacheBump": false,
+      "script": "cella/migrations/20260722T0902-drop-entity-suffix-renames/drop-entity-suffix-renames.ts",
+      "roots": ["backend/src", "backend/tests", "backend/scripts", "frontend/src", "shared", "cdc/src", "yjs/src"],
+      "requires": ["pnpm sdk", "pnpm check"],
+      "summary": "ChannelEntityBase->ChannelBase, ProductEntityBase->ProductBase, getValid*Entity->getValid*, EnrichedChannelEntity->EnrichedChannel, bare channelEntity->channel and the rest of the single-family Entity identifiers (48 ids + 9 files). Allow-list codemod; internal rename, no wire-shape change."
+    }
+  ]
 }

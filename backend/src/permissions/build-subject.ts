@@ -1,4 +1,4 @@
-import type { ChannelEntityIdColumns, ChannelEntityType, ProductEntityType, SubjectForPermission } from 'shared';
+import type { ChannelEntityType, ChannelIdColumns, ProductEntityType, SubjectForPermission } from 'shared';
 import {
   MissingScopeError,
   buildSubject as sharedBuildSubject,
@@ -31,7 +31,7 @@ const translateMissingScope = (e: unknown): never => {
  */
 export const buildSubject = (
   entityType: ChannelEntityType | ProductEntityType,
-  ancestorChannelIds: Partial<ChannelEntityIdColumns>,
+  ancestorChannelIds: Partial<ChannelIdColumns>,
   options?: {
     id?: string;
     createdBy?: string | null;
@@ -47,7 +47,7 @@ export const buildSubject = (
 
 export const buildSubjectFromEntity = (
   entityType: ChannelEntityType | ProductEntityType,
-  entity: { id: string; createdBy?: string | null } & Partial<ChannelEntityIdColumns>,
+  entity: { id: string; createdBy?: string | null } & Partial<ChannelIdColumns>,
 ): SubjectForPermission => {
   try {
     return sharedBuildSubjectFromEntity(entityType, entity);

@@ -2,10 +2,10 @@ import { Link } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { UserIcon } from 'lucide-react';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import type { EnrichedChannelEntity } from '~/modules/entities/types';
+import type { EnrichedChannel } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardFooter } from '~/modules/ui/card';
-import { getChannelEntityRoute, pageTopHashNav } from '~/utils/channel-entity-route';
+import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
@@ -13,15 +13,15 @@ import { numberToColorClass } from '~/utils/number-to-color-class';
  * Structural tile entity: any channel entity whose optional `included.counts`
  * carries a membership total fits, without coupling to a concrete entity type.
  */
-type ChannelTileEntity = EnrichedChannelEntity & {
+type ChannelTileEntity = EnrichedChannel & {
   included?: { counts?: { membership: { total: number } } };
 };
 
 /**
  * Tile component to display an entity in a grid layout.
  */
-export const ChannelEntityGridTile = ({ entity }: { entity: ChannelTileEntity }) => {
-  const { to, params, search } = getChannelEntityRoute(entity);
+export const ChannelGridTile = ({ entity }: { entity: ChannelTileEntity }) => {
+  const { to, params, search } = getChannelRoute(entity);
   const counts = entity.included?.counts;
   return (
     <Card className="overflow-hidden px-0 pt-0 shadow-xs transition sm:px-0 sm:pt-0 [&:has(.tile-link:active)]:translate-y-[.05rem] [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background [&:has(.tile-link:hover)]:shadow-sm">
