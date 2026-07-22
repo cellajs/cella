@@ -28,3 +28,4 @@ export { mockPaginated } from './mock-paginated';
 export { mockPastIsoDate } from './mock-past-iso-date';
 export { mockStx } from './mock-stx';
 export { MOCK_REF_DATE, mockTimestamps } from './mock-timestamps';
+export { buildInsertableProduct, type ProductMockFn, productMocksByType } from './product-mock-registry';

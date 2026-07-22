@@ -4,8 +4,8 @@ import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shar
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from './fixtures';
 import { cleanupEntityHierarchy, seedEntityHierarchy } from './hierarchy-helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
@@ -58,61 +58,32 @@ describe('Attachment seq reads', async () => {
 
     // Insert order is descending seq, so createdAt order disagrees with seq order.
     // B1 would pass accidentally if the endpoint sorted by createdAt.
-    const baseAttachment = {
-      tenantId: tenant.tenantId,
-      ...plan.channelIdColumns,
-      bucketName: 'attachments',
-      contentType: 'image/png',
-      size: '1000',
-      stx: mockStxBase(),
-      createdBy: tenant.user.id,
-    };
+    const makeRow = (id: string, seq: number, key: string, extra: Record<string, unknown> = {}) =>
+      // Audit users beyond createdBy are nulled: the mock's random ids reference no users rows.
+      buildInsertableProduct(
+        'attachment',
+        {
+          id,
+          tenantId: tenant.tenantId,
+          ...plan.channelIdColumns,
+          createdBy: tenant.user.id,
+          updatedBy: null,
+          deletedBy: null,
+          seq,
+          ...extra,
+        },
+        key,
+      );
     const rows = [
-      {
-        ...baseAttachment,
-        id: attachmentIds.seq50,
-        name: 'seq 50',
-        filename: 'seq50.png',
-        originalKey: 'k/50',
-        seq: 50,
-      },
-      {
-        ...baseAttachment,
-        id: attachmentIds.seq40,
-        name: 'seq 40',
-        filename: 'seq40.png',
-        originalKey: 'k/40',
-        seq: 40,
-      },
-      {
-        ...baseAttachment,
-        id: attachmentIds.seq30Deleted,
-        name: 'seq 30 tombstone',
-        filename: 'seq30.png',
-        originalKey: 'k/30',
-        seq: 30,
-        deletedAt: daysAgo(1),
-      },
-      {
-        ...baseAttachment,
-        id: attachmentIds.seq20,
-        name: 'seq 20',
-        filename: 'seq20.png',
-        originalKey: 'k/20',
-        seq: 20,
-      },
-      {
-        ...baseAttachment,
-        id: attachmentIds.seq10,
-        name: 'seq 10',
-        filename: 'seq10.png',
-        originalKey: 'k/10',
-        seq: 10,
-      },
+      makeRow(attachmentIds.seq50, 50, 'seq50'),
+      makeRow(attachmentIds.seq40, 40, 'seq40'),
+      makeRow(attachmentIds.seq30Deleted, 30, 'seq30', { deletedAt: daysAgo(1) }),
+      makeRow(attachmentIds.seq20, 20, 'seq20'),
+      makeRow(attachmentIds.seq10, 10, 'seq10'),
     ];
     for (const row of rows) {
-      // Cast: `...plan.channelIdColumns` is a config-derived Record<string,string>, which widens
-      // the row type; the runtime shape matches the attachment insert (organization/project ids).
+      // Cast: buildInsertableProduct returns a config-derived Record<string,unknown>; the runtime
+      // shape matches the attachment insert (mock scalars + organization/project ancestor ids).
       await db.insert(attachmentsTable).values(row as typeof attachmentsTable.$inferInsert);
     }
   });
