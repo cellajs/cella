@@ -739,35 +739,37 @@
           "propagation": {
             "type": ["object", "null"],
             "properties": {
-              "sourceType": {
+              "embeddedProduct": {
                 "type": "string",
-                "description": "Entity type that triggered the propagation (e.g. label)"
+                "enum": ["attachment"],
+                "description": "Product type whose change triggered the propagation (e.g. label)"
               },
-              "targetType": {
+              "hostProduct": {
                 "type": "string",
-                "description": "Entity type whose cache should be invalidated (e.g. task)"
+                "enum": ["attachment"],
+                "description": "Host product type whose cache should be patched (e.g. task)"
               },
-              "field": {
+              "hostColumn": {
                 "type": "string",
-                "description": "Field on the target entity that references the source (e.g. labels)"
+                "description": "Column on the host product that embeds the changed product (e.g. labels)"
               },
               "update": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 },
-                "description": "Target entity IDs that need cache refresh"
+                "description": "Host product IDs that need cache refresh"
               },
               "remove": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 },
-                "description": "Target entity IDs that need the source reference removed"
+                "description": "Host product IDs that need the embedded reference removed"
               }
             },
-            "required": ["sourceType", "targetType", "field", "update", "remove"],
-            "description": "Embedded entity propagation hint for cross-entity cache invalidation"
+            "required": ["embeddedProduct", "hostProduct", "hostColumn", "update", "remove"],
+            "description": "Embedded-product propagation hint for cross-product cache invalidation"
           }
         },
         "required": [
@@ -4832,34 +4834,36 @@
                             "items": {
                               "type": "object",
                               "properties": {
-                                "sourceType": {
+                                "embeddedProduct": {
                                   "type": "string",
-                                  "description": "Entity type that triggered the propagation (e.g. label)"
+                                  "enum": ["attachment"],
+                                  "description": "Product type whose change triggered the propagation (e.g. label)"
                                 },
-                                "targetType": {
+                                "hostProduct": {
                                   "type": "string",
-                                  "description": "Entity type whose cache should be invalidated (e.g. task)"
+                                  "enum": ["attachment"],
+                                  "description": "Host product type whose cache should be patched (e.g. task)"
                                 },
-                                "field": {
+                                "hostColumn": {
                                   "type": "string",
-                                  "description": "Field on the target entity that references the source (e.g. labels)"
+                                  "description": "Column on the host product that embeds the changed product (e.g. labels)"
                                 },
                                 "update": {
                                   "type": "array",
                                   "items": {
                                     "type": "string"
                                   },
-                                  "description": "Target entity IDs that need cache refresh"
+                                  "description": "Host product IDs that need cache refresh"
                                 },
                                 "remove": {
                                   "type": "array",
                                   "items": {
                                     "type": "string"
                                   },
-                                  "description": "Target entity IDs that need the source reference removed"
+                                  "description": "Host product IDs that need the embedded reference removed"
                                 }
                               },
-                              "required": ["sourceType", "targetType", "field", "update", "remove"]
+                              "required": ["embeddedProduct", "hostProduct", "hostColumn", "update", "remove"]
                             }
                           }
                         }

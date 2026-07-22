@@ -7,12 +7,12 @@ import { channelIdColumnKeys } from '../utils/channel-columns';
 import { log } from '../lib/pino';
 import { RESOURCE_LIMITS } from '../constants';
 
-/** Reverse lookup: targetType → source types that embed into it (from productEmbeddings) */
-const softCascadeTargets = new Map<string, Set<string>>();
+/** Reverse lookup: hostProduct → embedded products that embed into it (from productEmbeddings) */
+const embeddedByHostProduct = new Map<string, Set<string>>();
 for (const { embeddedProduct, hostProduct } of appConfig.productEmbeddings) {
-  const sources = softCascadeTargets.get(hostProduct) ?? new Set<string>();
-  sources.add(embeddedProduct);
-  softCascadeTargets.set(hostProduct, sources);
+  const embedded = embeddedByHostProduct.get(hostProduct) ?? new Set<string>();
+  embedded.add(embeddedProduct);
+  embeddedByHostProduct.set(hostProduct, embedded);
 }
 
 const { transactionTimeoutMs } = RESOURCE_LIMITS.buffers;
@@ -151,9 +151,9 @@ export class TransactionBuffer {
 
     let surviving = events;
 
-    // Soft cascade suppression: if tx contains DELETEs of source type A and UPDATEs of target type B,
-    // and A→B is a known embedding relationship (productEmbeddings), suppress the B updates.
-    if (surviving.length > 1 && softCascadeTargets.size > 0) {
+    // Soft cascade suppression: if tx contains DELETEs of embedded product A and UPDATEs of host
+    // product B, and A→B is a known embedding relationship (productEmbeddings), suppress the B updates.
+    if (surviving.length > 1 && embeddedByHostProduct.size > 0) {
       surviving = this.suppressSoftCascades(surviving);
     }
 
@@ -214,8 +214,8 @@ export class TransactionBuffer {
 
   /**
    * Suppress embedding-propagation updates triggered by deletes in the same transaction.
-   * Handles cases where a host entity array is updated synchronously alongside
-   * an embedded entity delete (the client handles this via propagateEmbeddings); acts
+   * Handles cases where a host product array is updated synchronously alongside
+   * an embedded-product delete (the client handles this via propagateEmbeddings); acts
    * as a generic safeguard against soft cascade duplication.
    */
   private suppressSoftCascades(events: PendingEvent[]): PendingEvent[] {
@@ -234,8 +234,8 @@ export class TransactionBuffer {
     for (const event of events) {
       const { activity } = event.result;
       if (activity.action === 'update' && activity.entityType) {
-        const sourceTypes = softCascadeTargets.get(activity.entityType);
-        if (sourceTypes && [...sourceTypes].some((s) => deleteTypes.has(s))) {
+        const embeddedTypes = embeddedByHostProduct.get(activity.entityType);
+        if (embeddedTypes && [...embeddedTypes].some((s) => deleteTypes.has(s))) {
           softSuppressedCount++;
           continue;
         }

@@ -157,31 +157,33 @@
                     "items": {
                       "type": "object",
                       "properties": {
-                        "sourceType": {
+                        "embeddedProduct": {
                           "type": "string",
                           "required": true,
-                          "description": "Entity type that triggered the propagation (e.g. label)"
+                          "description": "Product type whose change triggered the propagation (e.g. label)",
+                          "enum": ["attachment"]
                         },
-                        "targetType": {
+                        "hostProduct": {
                           "type": "string",
                           "required": true,
-                          "description": "Entity type whose cache should be invalidated (e.g. task)"
+                          "description": "Host product type whose cache should be patched (e.g. task)",
+                          "enum": ["attachment"]
                         },
-                        "field": {
+                        "hostColumn": {
                           "type": "string",
                           "required": true,
-                          "description": "Field on the target entity that references the source (e.g. labels)"
+                          "description": "Column on the host product that embeds the changed product (e.g. labels)"
                         },
                         "update": {
                           "type": "array",
                           "required": true,
-                          "description": "Target entity IDs that need cache refresh",
+                          "description": "Host product IDs that need cache refresh",
                           "itemType": "string"
                         },
                         "remove": {
                           "type": "array",
                           "required": true,
-                          "description": "Target entity IDs that need the source reference removed",
+                          "description": "Host product IDs that need the embedded reference removed",
                           "itemType": "string"
                         }
                       }

@@ -105,9 +105,9 @@ export const zStreamNotification = z.object({
   spreadWindow: z.int().nullable(),
   propagation: z
     .object({
-      sourceType: z.string(),
-      targetType: z.string(),
-      field: z.string(),
+      embeddedProduct: z.enum(['attachment']),
+      hostProduct: z.enum(['attachment']),
+      hostColumn: z.string(),
       update: z.array(z.string()),
       remove: z.array(z.string()),
     })
@@ -823,9 +823,9 @@ export const zPostAppCatchupResponse = z.object({
       propagation: z
         .array(
           z.object({
-            sourceType: z.string(),
-            targetType: z.string(),
-            field: z.string(),
+            embeddedProduct: z.enum(['attachment']),
+            hostProduct: z.enum(['attachment']),
+            hostColumn: z.string(),
             update: z.array(z.string()),
             remove: z.array(z.string()),
           }),

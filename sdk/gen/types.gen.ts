@@ -153,27 +153,27 @@ export type StreamNotification = {
    */
   spreadWindow: number | null;
   /**
-   * Embedded entity propagation hint for cross-entity cache invalidation
+   * Embedded-product propagation hint for cross-product cache invalidation
    */
   propagation: {
     /**
-     * Entity type that triggered the propagation (e.g. label)
+     * Product type whose change triggered the propagation (e.g. label)
      */
-    sourceType: string;
+    embeddedProduct: 'attachment';
     /**
-     * Entity type whose cache should be invalidated (e.g. task)
+     * Host product type whose cache should be patched (e.g. task)
      */
-    targetType: string;
+    hostProduct: 'attachment';
     /**
-     * Field on the target entity that references the source (e.g. labels)
+     * Column on the host product that embeds the changed product (e.g. labels)
      */
-    field: string;
+    hostColumn: string;
     /**
-     * Target entity IDs that need cache refresh
+     * Host product IDs that need cache refresh
      */
     update: Array<string>;
     /**
-     * Target entity IDs that need the source reference removed
+     * Host product IDs that need the embedded reference removed
      */
     remove: Array<string>;
   } | null;
@@ -2354,23 +2354,23 @@ export type PostAppCatchupResponses = {
         };
         propagation?: Array<{
           /**
-           * Entity type that triggered the propagation (e.g. label)
+           * Product type whose change triggered the propagation (e.g. label)
            */
-          sourceType: string;
+          embeddedProduct: 'attachment';
           /**
-           * Entity type whose cache should be invalidated (e.g. task)
+           * Host product type whose cache should be patched (e.g. task)
            */
-          targetType: string;
+          hostProduct: 'attachment';
           /**
-           * Field on the target entity that references the source (e.g. labels)
+           * Column on the host product that embeds the changed product (e.g. labels)
            */
-          field: string;
+          hostColumn: string;
           /**
-           * Target entity IDs that need cache refresh
+           * Host product IDs that need cache refresh
            */
           update: Array<string>;
           /**
-           * Target entity IDs that need the source reference removed
+           * Host product IDs that need the embedded reference removed
            */
           remove: Array<string>;
         }>;
