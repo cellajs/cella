@@ -66,7 +66,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
 
   const stx = (isProduct && event.stx) || null;
 
-  // Derive propagation hint for source entity types (e.g., label → task.labels).
+  // Derive propagation hint for embedded product types (e.g., label → task.labels).
   // For batch events, propagation is pre-set by the CDC worker. For single entity
   // events, derive from productEmbeddings config without DB queries.
   let propagation = event.propagation;
@@ -75,9 +75,9 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     if (embedding) {
       const isDelete = event.action === 'delete';
       propagation = {
-        sourceType: embedding.embeddedProduct,
-        targetType: embedding.hostProduct,
-        field: embedding.hostColumn,
+        embeddedProduct: embedding.embeddedProduct,
+        hostProduct: embedding.hostProduct,
+        hostColumn: embedding.hostColumn,
         update: isDelete ? [] : [event.subjectId!],
         remove: isDelete ? [event.subjectId!] : [],
       };

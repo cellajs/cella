@@ -4,13 +4,17 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { mockStreamNotification } from './stream-mocks';
 import { stxBaseSchema } from './sync-transaction-schemas';
 
-/** Reusable schema for embedded entity propagation hints */
+/** Reusable schema for embedded-product propagation hints */
 const propagationHintSchema = z.object({
-  sourceType: z.string().describe('Entity type that triggered the propagation (e.g. label)'),
-  targetType: z.string().describe('Entity type whose cache should be invalidated (e.g. task)'),
-  field: z.string().describe('Field on the target entity that references the source (e.g. labels)'),
-  update: z.array(z.string()).describe('Target entity IDs that need cache refresh'),
-  remove: z.array(z.string()).describe('Target entity IDs that need the source reference removed'),
+  embeddedProduct: z
+    .enum(appConfig.productEntityTypes)
+    .describe('Product type whose change triggered the propagation (e.g. label)'),
+  hostProduct: z
+    .enum(appConfig.productEntityTypes)
+    .describe('Host product type whose cache should be patched (e.g. task)'),
+  hostColumn: z.string().describe('Column on the host product that embeds the changed product (e.g. labels)'),
+  update: z.array(z.string()).describe('Host product IDs that need cache refresh'),
+  remove: z.array(z.string()).describe('Host product IDs that need the embedded reference removed'),
 });
 
 /**
@@ -75,7 +79,7 @@ export const streamNotificationSchema = z
       ),
     propagation: propagationHintSchema
       .nullable()
-      .describe('Embedded entity propagation hint for cross-entity cache invalidation'),
+      .describe('Embedded-product propagation hint for cross-product cache invalidation'),
   })
   .openapi('StreamNotification', {
     description: 'Realtime notification delivered via SSE for entity and membership changes.',
@@ -131,7 +135,7 @@ export const streamCatchupBodySchema = z.object({
 export const catchupChangeSummarySchema = z.object({
   /** Org-level change signals: bump-only counters, no sequence semantics claimed. */
   signals: z.object({ membership: z.number().int().optional() }).optional(),
-  /** Embedded entity propagation hints (source entity changes that require target cache patching) */
+  /** Embedded-product propagation hints (embedded-product changes that require host cache patching) */
   propagation: z.array(propagationHintSchema).optional(),
 });
 

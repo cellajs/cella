@@ -12,6 +12,18 @@
       "roots": ["backend/src", "backend/tests", "backend/scripts", "frontend/src", "shared", "cdc/src", "yjs/src"],
       "requires": ["pnpm sdk", "pnpm check"],
       "summary": "ChannelEntityBase->ChannelBase, ProductEntityBase->ProductBase, getValid*Entity->getValid*, EnrichedChannelEntity->EnrichedChannel, bare channelEntity->channel and the rest of the single-family Entity identifiers (48 ids + 9 files). Allow-list codemod; internal rename, no wire-shape change."
+    },
+    {
+      "id": "20260722T1906-embedding-propagation-rename",
+      "version": "next",
+      "title": "Rename embedding propagation contract to embedded/host product",
+      "kind": "manual",
+      "forkBreaking": true,
+      "clientCacheBump": true,
+      "script": null,
+      "roots": ["backend/src", "frontend/src", "shared", "cdc/src"],
+      "requires": ["pnpm sdk", "pnpm check"],
+      "summary": "PropagationHint fields sourceType->embeddedProduct, targetType->hostProduct, field->hostColumn on StreamNotification.propagation + catchup propagation; propagationTargets->hostsByEmbeddedProduct; product-type wire fields tightened to z.enum(productEntityTypes). Manual (field names too generic to codemod); forks bump clientCacheVersion."
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { appConfig, type EntityType } from 'shared';
+import { appConfig, type ProductEntityType } from 'shared';
 import type { DbContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
 import { findChangedEntityDeltaIds } from '#/modules/entities/entities-queries';
@@ -7,21 +7,20 @@ import type { AppCatchupResponse, CatchupChangeSummary, CatchupView } from '#/sc
 
 const dbCtx: DbContext = { var: { db } };
 
-type PropagationTarget = { targetType: string; field: string };
+type EmbeddingHost = { hostProduct: ProductEntityType; hostColumn: string };
 
-/** Source entity type to host entity types that embed it, derived from productEmbeddings config. */
-const propagationTargets: Partial<Record<EntityType, PropagationTarget[]>> = {};
+/** Embedded product type to the host products that embed it, derived from productEmbeddings config. */
+const hostsByEmbeddedProduct: Partial<Record<ProductEntityType, EmbeddingHost[]>> = {};
 for (const embedding of appConfig.productEmbeddings) {
-  const source = embedding.embeddedProduct as EntityType;
-  const targets = propagationTargets[source] ?? [];
-  targets.push({ targetType: embedding.hostProduct, field: embedding.hostColumn });
-  propagationTargets[source] = targets;
+  const hosts = hostsByEmbeddedProduct[embedding.embeddedProduct] ?? [];
+  hosts.push({ hostProduct: embedding.hostProduct, hostColumn: embedding.hostColumn });
+  hostsByEmbeddedProduct[embedding.embeddedProduct] = hosts;
 }
 
 /**
- * Build propagation hints for each org's change summary. Sequence-driven: a source
- * type changed for a client when the org's `e:f:{sourceType}` rollup exceeds the
- * client's org-view cursor (from the declared views); the changed source ids come
+ * Build propagation hints for each org's change summary. Sequence-driven: an embedded
+ * product changed for a client when the org's `e:f:{embeddedProduct}` rollup exceeds the
+ * client's org-view cursor (from the declared views); the changed product ids come
  * from an org-wide `seq > cursor` delta-id read, including soft-delete tombstones
  * (returned as removal hints).
  */
@@ -30,10 +29,10 @@ export async function buildPropagationHints(
   views?: CatchupView[],
   orgCounters?: Map<string, Record<string, number> | null>,
 ): Promise<void> {
-  const sourceTypes = Object.keys(propagationTargets) as EntityType[];
-  if (sourceTypes.length === 0 || !views?.length) return;
+  const embeddedProducts = Object.keys(hostsByEmbeddedProduct) as ProductEntityType[];
+  if (embeddedProducts.length === 0 || !views?.length) return;
 
-  // Org-view cursors per (org, sourceType) from the declared views.
+  // Org-view cursors per (org, embeddedProduct) from the declared views.
   const cursorFor = new Map<string, number>();
   for (const view of views) {
     for (const entityType of view.entityTypes) {
@@ -46,30 +45,30 @@ export async function buildPropagationHints(
     const hints: CatchupChangeSummary['propagation'] = [];
     const { frontiers } = parseCounterCounts(orgCounters?.get(organizationId));
 
-    for (const sourceType of sourceTypes) {
-      const targets = propagationTargets[sourceType];
-      if (!targets?.length) continue;
+    for (const embeddedProduct of embeddedProducts) {
+      const hosts = hostsByEmbeddedProduct[embeddedProduct];
+      if (!hosts?.length) continue;
 
-      const clientCursor = cursorFor.get(`${organizationId}:${sourceType}`);
-      // No declared view (source type not synced by this client) or no baseline yet.
+      const clientCursor = cursorFor.get(`${organizationId}:${embeddedProduct}`);
+      // No declared view (embedded product not synced by this client) or no baseline yet.
       if (clientCursor === undefined || clientCursor === 0) continue;
 
-      const frontier = frontiers[sourceType] ?? 0;
+      const frontier = frontiers[embeddedProduct] ?? 0;
       if (frontier <= clientCursor) continue;
 
       const { updatedIds, deletedIds } = await findChangedEntityDeltaIds(
         dbCtx,
-        sourceType,
+        embeddedProduct,
         organizationId,
         clientCursor,
       );
 
-      for (const target of targets) {
+      for (const host of hosts) {
         if (updatedIds.length > 0 || deletedIds.length > 0) {
           hints.push({
-            sourceType,
-            targetType: target.targetType,
-            field: target.field,
+            embeddedProduct,
+            hostProduct: host.hostProduct,
+            hostColumn: host.hostColumn,
             update: updatedIds,
             remove: deletedIds,
           });

@@ -240,9 +240,9 @@ The exact count endpoint is used for baselines and reconciliation after stalenes
 
 ### Embeddings
 
-In a rich app, products are likely to embed other products. The server includes changed source IDs in live notifications and catchup responses so the client can patch cached hosts without fetching every host row. The relationship is configured in `appConfig.entityEmbeddings`, and an `updatedAt` guard prevents an older source from replacing a newer embedded copy.
+In a rich app, products are likely to embed other products. The server includes changed embedded-product IDs in live notifications and catchup responses so the client can patch cached host products without fetching every host row. The relationship is configured in `appConfig.productEmbeddings`, and an `updatedAt` guard prevents an older embedded product from replacing a newer embedded copy.
 
-Live propagation runs after the source range fetch; catchup propagation runs after all range fetches for the organization. A same-tab echo returns before propagation, so that mutation must also update embedded hosts or wait for later reconciliation. The template ships with no embedding relationships configured.
+Live propagation runs after the embedded-product range fetch; catchup propagation runs after all range fetches for the organization. A same-tab echo returns before propagation, so that mutation must also update host products or wait for later reconciliation. The template ships with no embedding relationships configured.
 
 ## Writes
 
@@ -348,9 +348,9 @@ interface StxBase {
 }
 
 interface PropagationHint {
-  sourceType: string;
-  targetType: string;
-  field: string;
+  embeddedProduct: string;
+  hostProduct: string;
+  hostColumn: string;
   update: string[];
   remove: string[];
 }

@@ -433,7 +433,7 @@ The race this closes: an old-bundle tab persisting old-shape rows after a new-bu
 
 1. **`lens:check`** ([shared/scripts/check-lenses.ts](../shared/scripts/check-lenses.ts)), in root `pnpm check` and the CI lint job (with `fetch-depth: 0` for the history compare):
    1. **Append-only**: any committed lens module differing from its first-commit blob fails.
-   2. **Config-collision**: every lens `delta` field name is checked against reserved surfaces — the frozen envelope (D4), CDC counter field reads, `appConfig.entityEmbeddings[].hostColumn`, `propagationTargets` — plus contract-requires-prior-expand.
+   2. **Config-collision**: every lens `delta` field name is checked against reserved surfaces — the frozen envelope (D4), CDC counter field reads, `appConfig.productEmbeddings[].hostColumn`, `hostsByEmbeddedProduct` — plus contract-requires-prior-expand.
    3. **Purity**: no `await`, no value-dependent logic beyond declared `custom` converters, no dynamic key access from input data.
    4. **Contract completeness**: every configured product/channel entity type must call its `evolutionContract` factory in `backend/src/modules`.
 2. **oasdiff gate** (`schema-bust-gate` in ci.yml): breaking OpenAPI diff fails the PR unless `clientCacheVersion` was bumped. ❌ Still needs the "or a lens module was added" pass condition before lens #1 (see [Remaining work](#remaining-work)).

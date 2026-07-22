@@ -171,11 +171,11 @@ export type EntityActionType = (typeof appConfig.entityActions)[number];
 /** Single product embedding relationship derived from config */
 type ProductEmbedding = (typeof appConfig.productEmbeddings)[number];
 
-/** Hint describing which target products need cache updates when a source product changes */
+/** Hint describing which host products need cache updates when an embedded product changes */
 export type PropagationHint = {
-  sourceType: ProductEmbedding['embeddedProduct'];
-  targetType: ProductEmbedding['hostProduct'];
-  field: ProductEmbedding['hostColumn'];
+  embeddedProduct: ProductEmbedding['embeddedProduct'];
+  hostProduct: ProductEmbedding['hostProduct'];
+  hostColumn: ProductEmbedding['hostColumn'];
   update: string[];
   remove: string[];
 };

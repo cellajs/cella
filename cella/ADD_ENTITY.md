@@ -76,7 +76,7 @@ entityIdColumnKeys: {
 Optional arrays, add only if relevant:
 
 - `seenTrackedEntityTypes`: opt in to unseen-count badges (grouped by parent channel).
-- `entityEmbeddings`: only if the entity is embedded as an id-array inside another entity (like `label` inside `task.labels`).
+- `productEmbeddings`: only if the entity is embedded as an id-array inside another entity (like `label` inside `task.labels`).
 - `menuStructure`: for channel entities that appear in the user menu.
 - `defaultRestrictions.quotas`: per-tenant quota.
 - `requestLimits`: default list page size.
@@ -309,7 +309,7 @@ Channel entities do **not** go through the CDC/SSE product pipeline or the wire-
 - **Public read**: `publicRead('publicSelf')` in Step 3. Set the row's `publicAt` to publish it; it then appears for anonymous actors on single-row reads, in list endpoints, and over SSE alike.
 - **Drafts (author-only until published)**: spread `...publishedColumn` ([`published-column.ts`](../backend/src/db/utils/published-column.ts)) into the table, then re-run `pnpm generate` + `pnpm migrate` — the CDC publication gains a row filter (`published_at IS NOT NULL`, PG 17+) so drafts never enter the replication stream (publish arrives as INSERT, unpublish as DELETE). `publishedAt` null = author-only draft, excluded from API reads, counters, stamps and badges via introspection — no further wiring. Fork adds a publish endpoint (`resolveServerUpdateOps`) and a drafts view; see [2026-07-published-rows](./migrations/2026-07-published-rows/).
 - **Unseen-count badges**: add the type to `seenTrackedEntityTypes` (Step 2); tracking in [`app-stream-handler.ts`](../frontend/src/query/realtime/app-stream-handler.ts) and the `seen` module then covers it automatically, grouping badges by the parent channel.
-- **Embedded id-arrays**: if the entity is referenced as an id array on another entity (like `label` in `task.labels`), add an `entityEmbeddings` entry (Step 2) so CDC ref-counting, cache patching, and cascade suppression handle it.
+- **Embedded id-arrays**: if the entity is referenced as an id array on another entity (like `label` in `task.labels`), add a `productEmbeddings` entry (Step 2) so CDC ref-counting, cache patching, and cascade suppression handle it.
 
 ---
 

@@ -192,7 +192,6 @@ export const syncPageItems: SyncPageItem[] = [
   { id: 'yjs_collaboration', category: 'realtime', layers: ['yjs', 'client'] },
   { id: 'embedded_propagation', category: 'realtime', layers: ['client'] },
   { id: 'multi_tab', category: 'realtime', layers: ['client'] },
-  { id: 'public_private', category: 'realtime', layers: ['api', 'client'] },
   { id: 'cdc_batching', category: 'realtime', layers: ['cdc'] },
   { id: 'activity_bus', category: 'realtime', layers: ['api'] },
   { id: 'seen_unseen', category: 'realtime', layers: ['api', 'client'] },
@@ -211,7 +210,6 @@ export const syncPageItems: SyncPageItem[] = [
   { id: 'text_merge', category: 'consistency', layers: ['yjs'] },
   { id: 'canonical_queries', category: 'consistency', layers: ['client'] },
   { id: 'cache_integrity', category: 'consistency', layers: ['client', 'api'] },
-  { id: 'cache_token', category: 'consistency', layers: ['cdc', 'api'] },
   { id: 'ttl_cache', category: 'consistency', layers: ['api'] },
 
   // Resilience & graceful degradation
