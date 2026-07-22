@@ -20,8 +20,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@blocknote/core": "^0.51.4",
-    "@blocknote/server-util": "^0.51.4",
+    "@blocknote/core": "^0.52.1",
+    "@blocknote/server-util": "^0.52.1",
     "@dotenv-run/core": "^1.3.8",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/auto-instrumentations-node": "^0.78.0",
