@@ -1,5 +1,5 @@
 import type { QueryKey } from '@tanstack/react-query';
-import type { ChannelEntityBase } from 'sdk';
+import type { ChannelBase } from 'sdk';
 import type { EntityType } from 'shared';
 import type {
   ArbitraryEntityQueryData,
@@ -104,7 +104,7 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
  */
 export const changeArbitraryQueryData = (
   queryKey: QueryKey,
-  items: EntityIdAndType[] | ChannelEntityBase[],
+  items: EntityIdAndType[] | ChannelBase[],
   action: QueryDataActions,
   entityType: EntityType,
   keyToOperateIn?: string,

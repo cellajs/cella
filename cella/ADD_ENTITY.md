@@ -209,7 +209,7 @@ xGuard: [authGuard, tenantGuard, orgGuard],
 - `tenantReadIncludingDeleted(ctx, fn)`: read-only, includes soft-deleted (for `seqCursor` delta sync).
 - `tenantContext(ctx, fn)`: read-write, for mutations.
 
-Write permission checks use `canCreateEntity` / `getValidProductEntity`; read scoping uses `resolveCollectionReadFilter` (from [`backend/src/permissions/`](../backend/src/permissions/)).
+Write permission checks use `canCreateEntity` / `getValidProduct`; read scoping uses `resolveCollectionReadFilter` (from [`backend/src/permissions/`](../backend/src/permissions/)).
 
 OpenAPI is 🟢 mostly automatic: routes are OpenAPI-native, mounting the handlers app registers the paths, and `registerModule` bridges to the tag registry. You only add `.openapi('Note', {...})` schema names and `tags`.
 

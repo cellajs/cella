@@ -7,7 +7,7 @@ export {
   generateMockEntityChannelIdColumns,
   type MockChannelIdColumns,
   type MockEntityChannelIdColumns,
-} from './mock-channel-entity-id-columns';
+} from './mock-channel-id-columns';
 export { generateMockEntityCounts, type MockEntityCounts } from './mock-entity-counts';
 export { generateMockFullCounts } from './mock-full-counts';
 export { mockMany } from './mock-many';
@@ -28,3 +28,4 @@ export { mockPaginated } from './mock-paginated';
 export { mockPastIsoDate } from './mock-past-iso-date';
 export { mockStx } from './mock-stx';
 export { MOCK_REF_DATE, mockTimestamps } from './mock-timestamps';
+export { buildInsertableProduct, type ProductMockFn, productMocksByType } from './product-mock-registry';

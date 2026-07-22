@@ -2,35 +2,29 @@ import { appConfig } from '../config-builder/app-config';
 import { hierarchy } from '../../config/hierarchy-config';
 import type { ChannelEntityType, ProductEntityType } from '../../types';
 import { generateId } from '../utils/entity-id';
-import type { ChannelEntityIdColumns, ChannelScope, SubjectForPermission } from './permission-manager/types';
+import type { AncestorChannelIds, ChannelIdColumns, SubjectForPermission } from './permission-manager/types';
 import { validateAncestorScope } from './validate-ancestor-scope';
 
 /**
- * Build a permission subject from an entity type and ancestor context ID columns. Extracts the
- * relevant ancestor ID columns (e.g. `organizationId`, `projectId`) per the hierarchy, validates all
- * required ancestors are present, and returns a `SubjectForPermission` with domain-shaped
- * `channelIds`. Extra input properties are ignored.
- *
- * The `undefined` vs `null` distinction is preserved:
- * - `undefined` on the input → omitted → `validateAncestorScope` throws
- * - `null` on the input → set on the subject → "intentionally not scoped to this context"
+ * Builds a permission subject from database-shaped ancestor ID columns, ignoring unrelated
+ * properties. `null` marks an unused ancestor; `undefined` fails validation.
  *
  * @throws MissingScopeError if any required ancestor context ID is missing (undefined)
  */
 export const buildSubject = (
   entityType: ChannelEntityType | ProductEntityType,
-  ancestorChannelIds: Partial<ChannelEntityIdColumns>,
+  ancestorChannelIds: Partial<ChannelIdColumns>,
   options?: {
     id?: string;
     createdBy?: string | null;
     row?: Record<string, unknown>;
   },
 ): SubjectForPermission => {
-  const channelIds: ChannelScope = {};
+  const channelIds: AncestorChannelIds = {};
 
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
     const idKey = appConfig.entityIdColumnKeys[ancestor];
-    const value = ancestorChannelIds[idKey as keyof ChannelEntityIdColumns];
+    const value = ancestorChannelIds[idKey as keyof ChannelIdColumns];
     if (value !== undefined) {
       channelIds[ancestor] = value;
     }
@@ -49,17 +43,10 @@ export const buildSubject = (
   return subject;
 };
 
-/**
- * Build a subject from a resolved DB row.
- *
- * The row is passed through as `row`, so every row-derived rule. `'own'`, public read, and
- * any fork condition: evaluates from real data. Omitting it would fail those grants closed
- * on every single-row check, which is exactly the bug this shape prevents.
- */
+/** Builds a subject from a resolved DB row and exposes the full row to row-derived rules. */
 export const buildSubjectFromEntity = (
   entityType: ChannelEntityType | ProductEntityType,
-  // Accepts the whole row: extra columns are exactly what row-derived rules read.
-  entity: { id: string; createdBy?: string | null } & Partial<ChannelEntityIdColumns> & Record<string, unknown>,
+  entity: { id: string; createdBy?: string | null } & Partial<ChannelIdColumns> & Record<string, unknown>,
 ): SubjectForPermission =>
   buildSubject(entityType, entity, {
     id: entity.id,

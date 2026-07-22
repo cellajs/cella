@@ -19,7 +19,7 @@ import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { EnrichedChannelEntity } from '~/modules/entities/types';
+import type { EnrichedChannel } from '~/modules/entities/types';
 import { isDefaultListView } from '~/query/basic/create-query-keys';
 
 const LIMIT = appConfig.requestLimits.attachments;
@@ -35,19 +35,19 @@ function selectDefaultViewRows({ items }: { items: Attachment[] }) {
 }
 
 export interface AttachmentsTableProps {
-  channelEntity: EnrichedChannelEntity;
+  channel: EnrichedChannel;
   isSheet?: boolean;
   /** Override for special contexts; defaults to the caller's create permission on the channel. */
   canUpload?: boolean;
 }
 
-function AttachmentsTable({ channelEntity, canUpload, isSheet = false }: AttachmentsTableProps) {
+function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTableProps) {
   // Create has no row to resolve 'own' against, so only an unconditional grant shows upload.
-  const allowUpload = canUpload ?? channelEntity.can?.attachment?.create === true;
+  const allowUpload = canUpload ?? channel.can?.attachment?.create === true;
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  const updateAttachment = useAttachmentUpdateMutation(channelEntity.tenantId, channelEntity.id);
+  const updateAttachment = useAttachmentUpdateMutation(channel.tenantId, channel.id);
 
   // Table state
   const { q, sort, order } = search;
@@ -55,7 +55,7 @@ function AttachmentsTable({ channelEntity, canUpload, isSheet = false }: Attachm
 
   // Build columns
   const [selected, setSelected] = useState<Attachment[]>([]);
-  const columnsFromHook = useColumns(channelEntity, isSheet);
+  const columnsFromHook = useColumns(channel, isSheet);
   const [hiddenOverrides, setHiddenOverrides] = useState<Record<string, boolean>>({});
   const columns = useMemo(
     () =>
@@ -83,8 +83,8 @@ function AttachmentsTable({ channelEntity, canUpload, isSheet = false }: Attachm
   const isDefaultView = isDefaultListView({ q, sort, order }, attachmentsSearchDefaults);
 
   const canonicalOptions = attachmentsCanonicalOptions({
-    tenantId: channelEntity.tenantId,
-    organizationId: channelEntity.id,
+    tenantId: channel.tenantId,
+    organizationId: channel.id,
   });
   const canonical = useQuery({
     ...canonicalOptions,
@@ -93,8 +93,8 @@ function AttachmentsTable({ channelEntity, canUpload, isSheet = false }: Attachm
   });
 
   const queryOptions = attachmentsListQueryOptions({
-    tenantId: channelEntity.tenantId,
-    organizationId: channelEntity.id,
+    tenantId: channel.tenantId,
+    organizationId: channel.id,
     q,
     sort,
     order,
@@ -145,7 +145,7 @@ function AttachmentsTable({ channelEntity, canUpload, isSheet = false }: Attachm
   return (
     <>
       <AttachmentsTableBar
-        channelEntity={channelEntity}
+        channel={channel}
         selected={selected}
         searchVars={{ ...search, limit }}
         setSearch={setSearch}

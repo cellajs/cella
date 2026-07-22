@@ -42,10 +42,10 @@ export const getMembershipOrderOffset = (channelId: string): number => {
 };
 
 /** Minimal channel entity interface for membership creation */
-type ChannelEntity = { id: string; tenantId: string };
+type ChannelRef = { id: string; tenantId: string };
 
 /** Override IDs for channel entity columns (organizationId, workspaceId, etc.) */
-type ChannelEntityIdOverrides = Partial<MockChannelIdColumns>;
+type ChannelIdOverrides = Partial<MockChannelIdColumns>;
 
 /**
  * Mock membership linking a user to a channel entity (any type). Nulls all channel-entity ID columns,
@@ -53,29 +53,29 @@ type ChannelEntityIdOverrides = Partial<MockChannelIdColumns>;
  */
 export const mockChannelMembership = <T extends ChannelEntityType>(
   channelType: T,
-  channelEntity: ChannelEntity,
+  channel: ChannelRef,
   user: UserModel | { id: string },
-  overrideIds?: ChannelEntityIdOverrides,
+  overrideIds?: ChannelIdOverrides,
 ): InsertMembershipModel => {
   const userId = user.id;
 
   // Initialize all channel entity ID columns to null (nullable FK columns)
-  const channelEntityColumns = Object.fromEntries(
+  const channelColumns = Object.fromEntries(
     appConfig.channelEntityTypes.map((type) => [appConfig.entityIdColumnKeys[type], null]),
   );
 
   return {
     id: mockUuid(),
     userId,
-    tenantId: channelEntity.tenantId, // Use channel entity's tenant for RLS isolation
+    tenantId: channel.tenantId, // Use channel entity's tenant for RLS isolation
     channelType,
-    channelId: channelEntity.id, // Denormalized primary channel entity ID
-    ...channelEntityColumns,
-    [appConfig.entityIdColumnKeys[channelType]]: channelEntity.id, // Set the correct channel entity ID
+    channelId: channel.id, // Denormalized primary channel entity ID
+    ...channelColumns,
+    [appConfig.entityIdColumnKeys[channelType]]: channel.id, // Set the correct channel entity ID
     ...overrideIds,
     // Pick from the context's own role vocabulary (e.g. course → staff/student/guest)
     role: faker.helpers.arrayElement(hierarchy.getRoles(channelType)),
-    displayOrder: getMembershipOrderOffset(channelEntity.id) * 10,
+    displayOrder: getMembershipOrderOffset(channel.id) * 10,
     createdAt: mockPastIsoDate(),
     createdBy: userId,
   } as InsertMembershipModel;
@@ -110,14 +110,14 @@ export const mockMembership = (key = 'membership:default'): MembershipModel =>
     const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockUuid();
-    const channelEntityColumns = generateMockChannelIdColumns();
+    const channelColumns = generateMockChannelIdColumns();
 
     return {
       id: mockUuid(),
       channelType: 'organization' as const,
       channelId: mockUuid(),
       userId,
-      ...channelEntityColumns,
+      ...channelColumns,
       role: faker.helpers.arrayElement(roles.all),
       displayOrder: faker.number.int({ min: 1, max: 100 }),
       muted: false,
@@ -143,7 +143,7 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
     const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockUuid();
-    const channelEntityColumns = generateMockChannelIdColumns();
+    const channelColumns = generateMockChannelIdColumns();
     const tokenId = mockUuid();
 
     return {
@@ -158,7 +158,7 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
       remindedAt: null,
       createdAt,
       createdBy: mockUuid(),
-      ...channelEntityColumns,
+      ...channelColumns,
       tenantId: 'test01', // Default test tenant
     };
   });

@@ -8,8 +8,8 @@ import { normalizeOpenApiDocument, validateOpenApiDocument } from '#/core/openap
 import { getExtensionValueMetadata } from '#/core/x-middleware';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { errorResponses, productEntityBaseSchema, registerAllErrorResponses } from '#/schemas';
-import { channelEntityBaseSchema } from '#/schemas/entity-base';
+import { errorResponses, productBaseSchema, registerAllErrorResponses } from '#/schemas';
+import { channelBaseSchema } from '#/schemas/entity-base';
 import { streamNotificationSchema } from '#/schemas/stream-schemas';
 import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
@@ -56,8 +56,8 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   // Register base schemas (not auto-registered as they're only used for extending other schemas)
   registry.register('UserMinimalBase', userMinimalBaseSchema);
   registry.register('UserBase', userBaseSchema);
-  registry.register('ChannelEntityBase', channelEntityBaseSchema);
-  registry.register('ProductEntityBase', productEntityBaseSchema);
+  registry.register('ChannelBase', channelBaseSchema);
+  registry.register('ProductBase', productBaseSchema);
   registry.register('MembershipBase', membershipBaseSchema);
   registry.register('StxBase', stxBaseSchema);
   registry.register('StreamNotification', streamNotificationSchema);

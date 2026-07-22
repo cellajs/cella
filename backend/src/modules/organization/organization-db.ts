@@ -1,6 +1,6 @@
 import { boolean, index, json, jsonb, snakeCase, unique, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, type Language, type OrganizationFlags } from 'shared';
-import { channelEntityColumns } from '#/db/utils/channel-entity-columns';
+import { channelColumns } from '#/db/utils/channel-columns';
 import { maxLength } from '#/db/utils/constraints';
 
 const languagesEnum = appConfig.languages;
@@ -12,7 +12,7 @@ const languagesEnum = appConfig.languages;
 export const organizationsTable = snakeCase.table(
   'organizations',
   {
-    ...channelEntityColumns('organization'),
+    ...channelColumns('organization'),
     shortName: varchar({ length: maxLength.field }),
     country: varchar({ length: maxLength.field }),
     timezone: varchar({ length: maxLength.field }),

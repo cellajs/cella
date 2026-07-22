@@ -22,8 +22,8 @@ const mockEventWithData = (key: string): ActivityEvent =>
   }) as ActivityEvent;
 
 import { eq, sql } from 'drizzle-orm';
+import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { mockAttachment } from '#/modules/attachment/attachment-mocks';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { mockChannelMembership } from '#/modules/memberships/memberships-mocks';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
@@ -132,15 +132,20 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
   });
 
   it('should stamp attachments.seq and bump channel_counters.f:attachment on UPDATE', async () => {
-    const attachment = {
-      ...mockAttachment('cdc-seq-test-attachment'),
-      tenantId: testOrg.tenantId,
-      organizationId: testOrg.id,
-      createdBy: testUser.id,
-      updatedBy: testUser.id,
-      seq: 0,
-    };
-    await db.insert(attachmentsTable).values(attachment);
+    const attachmentId = crypto.randomUUID();
+    const attachment = buildInsertableProduct(
+      'attachment',
+      {
+        id: attachmentId,
+        tenantId: testOrg.tenantId,
+        organizationId: testOrg.id,
+        createdBy: testUser.id,
+        updatedBy: testUser.id,
+        seq: 0,
+      },
+      'cdc-seq-test-attachment',
+    );
+    await db.insert(attachmentsTable).values(attachment as never);
 
     const counterKey = sql`${testOrg.id}::varchar`;
     // f:attachment is the attachment frontier (MAX org-sequence position of the type in the
@@ -156,7 +161,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
       const [row] = await db
         .select({ seq: attachmentsTable.seq, stx: attachmentsTable.stx })
         .from(attachmentsTable)
-        .where(eq(attachmentsTable.id, attachment.id));
+        .where(eq(attachmentsTable.id, attachmentId));
       return row;
     };
 
@@ -179,7 +184,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
       UPDATE attachments
       SET name = 'cdc-seq-test-updated',
           stx = jsonb_set(stx, '{changedFields}', '["summary","updatedAt"]'::jsonb)
-      WHERE id = ${attachment.id}
+      WHERE id = ${attachmentId}
     `);
 
     // Poll for CDC to stamp the row (counter UPSERT + entity stamp)

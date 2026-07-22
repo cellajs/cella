@@ -17,7 +17,7 @@ const { applyUnfetchableRemovalUnseen, ingestSyncedRows, noteUnseenReconciled } 
 const TRACKED = appConfig.seenTrackedProductTypes[0];
 const ANCESTORS = hierarchy.getOrderedAncestors(TRACKED); // deepest → root
 const ancestorId = Object.fromEntries(ANCESTORS.map((type) => [type, `ch-${type}`]));
-const CHANNEL = ancestorId[ANCESTORS[0]]; // deepest ancestor id, the home channel
+const CHANNEL = ancestorId[ANCESTORS[0]]; // deepest ancestor id (the home channel)
 const ORG = ancestorId[ANCESTORS[ANCESTORS.length - 1]]; // root ancestor (organization) id
 // A product type that is not seen-tracked, for the negative control below.
 const UNTRACKED = appConfig.productEntityTypes.find((type) => !isSeenTracked(type));
@@ -41,7 +41,7 @@ const settle = () => vi.advanceTimersByTimeAsync(5_100);
 describe('unseen count deltas from synced rows', () => {
   // Positive control: ingestSyncedRows/applyUnfetchableRemovalUnseen early-return for any product
   // type isSeenTracked doesn't cover. If the tracked type ever stops being tracked, every "count
-  // did not change" assertion below would pass vacuously. Fail here first.
+  // did not change" assertion below would pass vacuously. This guard fails loudly first.
   beforeAll(() => {
     expect(isSeenTracked(TRACKED)).toBe(true);
   });

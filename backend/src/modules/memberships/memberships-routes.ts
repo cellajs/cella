@@ -22,8 +22,8 @@ import {
   tenantOrgParamSchema,
   validIdSchema,
 } from '#/schemas';
-import { channelEntityBaseSchema } from '#/schemas/entity-base';
-import { mockChannelEntityBase } from '#/schemas/entity-base-mocks';
+import { channelBaseSchema } from '#/schemas/entity-base';
+import { mockChannelBase } from '#/schemas/entity-base-mocks';
 import {
   mockMembershipInviteResponse,
   mockMembershipResponse,
@@ -143,7 +143,7 @@ const membershipRoutes = {
     responses: {
       200: {
         description: 'Invitation was accepted',
-        content: { 'application/json': { schema: channelEntityBaseSchema, example: mockChannelEntityBase() } },
+        content: { 'application/json': { schema: channelBaseSchema, example: mockChannelBase() } },
       },
       ...errorResponseRefs,
     },

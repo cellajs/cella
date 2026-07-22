@@ -1,10 +1,10 @@
 // Entity hierarchy builder
 export type {
-  ChannelEntityView,
+  ChannelView,
   EntityHierarchy,
   EntityKind,
   EntityView,
-  ProductEntityView,
+  ProductView,
   RoleFromRegistry,
   UserEntityView,
 } from './entity-hierarchy';

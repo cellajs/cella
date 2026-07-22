@@ -11,7 +11,7 @@ const MEMBERSHIP_CHANNEL_ID_COLUMNS = appConfig.channelEntityTypes.map((type) =>
 const BASE_MEMBERSHIP_COLUMNS = ['tenant_id', 'channel_id', 'channel_type', ...MEMBERSHIP_CHANNEL_ID_COLUMNS] as const;
 
 /** Product entities with a parent org (tasks, labels, attachments). */
-export const productEntityImmutableColumns = [...BASE_ENTITY_COLUMNS, 'organization_id'] as const;
+export const productImmutableColumns = [...BASE_ENTITY_COLUMNS, 'organization_id'] as const;
 
 /** Active memberships include user_id. */
 export const membershipImmutableColumns = [...BASE_MEMBERSHIP_COLUMNS, 'user_id'] as const;
@@ -75,9 +75,9 @@ CREATE TRIGGER ${triggerName}
 export const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', BASE_ENTITY_COLUMNS);
 
 /** Product entities with a parent include organization_id. */
-export const productEntityImmutabilityFunctionSQL = buildFunctionSQL(
+export const productImmutabilityFunctionSQL = buildFunctionSQL(
   'product_entity_immutable_keys',
-  productEntityImmutableColumns,
+  productImmutableColumns,
 );
 
 export const membershipImmutabilityFunctionSQL = buildFunctionSQL(
@@ -126,7 +126,7 @@ $$ LANGUAGE plpgsql;`;
 
 // Table to function mapping
 
-const channelEntityConfigs: TableImmutabilityConfig[] = appConfig.channelEntityTypes.map((t) => ({
+const channelConfigs: TableImmutabilityConfig[] = appConfig.channelEntityTypes.map((t) => ({
   tableName: getTableName(entityTables[t]),
   functionName: 'base_entity_immutable_keys',
 }));
@@ -155,7 +155,7 @@ const adminOnlyWriteConfigs: TableImmutabilityConfig[] = [
 
 /** Every table that has a BEFORE UPDATE immutable-keys trigger. */
 export const allImmutabilityTables: TableImmutabilityConfig[] = [
-  ...channelEntityConfigs,
+  ...channelConfigs,
   ...productWithParentConfigs,
   ...membershipConfigs,
   ...appendOnlyConfigs,
@@ -173,7 +173,7 @@ export const allAdminOnlyWriteTables: TableImmutabilityConfig[] = adminOnlyWrite
  */
 export const allImmutabilityFunctionsSQL: string[] = [
   baseEntityImmutabilityFunctionSQL,
-  productEntityImmutabilityFunctionSQL,
+  productImmutabilityFunctionSQL,
   membershipImmutabilityFunctionSQL,
   inactiveMembershipImmutabilityFunctionSQL,
   appendOnlyImmutabilityFunctionSQL,
@@ -182,7 +182,7 @@ export const allImmutabilityFunctionsSQL: string[] = [
 
 // Combined SQL output
 
-const baseEntityTables = channelEntityConfigs;
+const baseEntityTables = channelConfigs;
 const names = (configs: TableImmutabilityConfig[]) => configs.map((c) => c.tableName).join(', ');
 
 /**

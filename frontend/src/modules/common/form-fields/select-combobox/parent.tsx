@@ -1,8 +1,8 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import type { FieldValues } from 'react-hook-form';
-import type { ChannelEntityBase } from 'sdk';
+import type { ChannelBase } from 'sdk';
 import type { ChannelEntityType } from 'shared';
-import { channelEntityListQueriesByType } from '~/list-queries-config';
+import { channelListQueriesByType } from '~/list-queries-config';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/ui/combobox';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
@@ -12,7 +12,7 @@ import { flattenInfiniteData } from '~/query/basic/flatten';
 type SelectParentProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   parentType: ChannelEntityType;
   options?: ComboboxSelectProps['options'];
-  onSelect?: (item: ChannelEntityBase) => void;
+  onSelect?: (item: ChannelBase) => void;
 };
 
 /**
@@ -31,11 +31,11 @@ export const SelectParentFormField = <TFieldValues extends FieldValues>({
   const { user } = useUserStore();
 
   // Fetch entities using proper query
-  const queryFactory = channelEntityListQueriesByType[parentType];
+  const queryFactory = channelListQueriesByType[parentType];
   // biome-ignore lint/suspicious/noExplicitAny: queryFactory returns heterogeneous query options based on parentType
   const query = useInfiniteQuery((queryFactory as any)({ userId: user.id }));
   // biome-ignore lint/suspicious/noExplicitAny: queryFactory is heterogeneous, data shape is unknown
-  const items = flattenInfiniteData<ChannelEntityBase>(query.data as any);
+  const items = flattenInfiniteData<ChannelBase>(query.data as any);
 
   const options =
     opts ??

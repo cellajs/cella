@@ -1,4 +1,4 @@
 export { EntityGridBar, type EntityGridSortOption } from './entity-grid-bar';
 export { BaseEntityGrid } from './grid';
 export { EntityGridSkeleton } from './skeleton';
-export { ChannelEntityGridTile } from './tile';
+export { ChannelGridTile } from './tile';

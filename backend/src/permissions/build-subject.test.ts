@@ -1,4 +1,4 @@
-import { appConfig, type ChannelEntityIdColumns, hierarchy } from 'shared';
+import { appConfig, type ChannelIdColumns, hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { AppError } from '#/core/error';
 import { buildSubject } from '#/permissions/build-subject';
@@ -78,8 +78,8 @@ describe('buildSubject', () => {
 
   describe('ignores irrelevant input properties', () => {
     it('does not copy non-ancestor properties from input columns', () => {
-      const ancestorChannelIds: Partial<ChannelEntityIdColumns> = fullAncestorChannelIds();
-      // Extra properties exist on the runtime object but aren't in ChannelEntityIdColumns
+      const ancestorChannelIds: Partial<ChannelIdColumns> = fullAncestorChannelIds();
+      // Extra properties exist on the runtime object but aren't in ChannelIdColumns
       (ancestorChannelIds as Record<string, string>).tenantId = 'should-not-appear';
       (ancestorChannelIds as Record<string, string>).randomProp = 'nope';
       const subject = buildSubject(productWithAncestors, ancestorChannelIds);

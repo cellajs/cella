@@ -19,8 +19,8 @@ const sumCounts = (counts: Record<string, number> | undefined) => {
  * Hook to get unseen count for one or more channel entity IDs.
  * Uses `select` so the component only re-renders when its derived count actually changes.
  */
-export function useUnseenCount(channelEntityIds: string | string[] | undefined) {
-  const ids = !channelEntityIds ? [] : Array.isArray(channelEntityIds) ? channelEntityIds : [channelEntityIds];
+export function useUnseenCount(channelIds: string | string[] | undefined) {
+  const ids = !channelIds ? [] : Array.isArray(channelIds) ? channelIds : [channelIds];
 
   const { data } = useQuery({
     ...unseenCountsQueryOptions(),

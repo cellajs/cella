@@ -5,7 +5,7 @@ import { timestamp } from 'drizzle-orm/pg-core';
  *
  * NULL = author-only draft; set = published. Deliberately nullable with NO default because
  * the null state is meaningful, unlike the channel-entity `publishedAt`
- * (`channel-entity-columns.ts`), which defaults to now and gates invitees, not readers.
+ * (`channel-columns.ts`), which defaults to now and gates invitees, not readers.
  *
  * Spread into a product table (`...publishedColumn`) to opt that entity into drafts:
  * the CDC publication gains a row filter for the table on regeneration (`pnpm generate`

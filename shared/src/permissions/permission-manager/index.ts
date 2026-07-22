@@ -3,8 +3,8 @@ export { formatBatchPermissionSummary, formatPermissionDecision } from './format
 export { validateMembership, validateSubject } from './validation';
 export type {
   ActionAttribution,
-  ChannelEntityIdColumns,
-  ChannelScope,
+  AncestorChannelIds,
+  ChannelIdColumns,
   GrantSource,
   PermissionCheckOptions,
   PermissionDecision,

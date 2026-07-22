@@ -32,7 +32,7 @@ export const zUserBase = z.object({
 /**
  * Base schema for entities with memberships (e.g. organization).
  */
-export const zChannelEntityBase = z.object({
+export const zChannelBase = z.object({
   id: z.string(),
   name: z.string(),
   createdAt: z.string(),
@@ -47,7 +47,7 @@ export const zChannelEntityBase = z.object({
 /**
  * Base schema for content entities with creator tracking (e.g. page, attachment).
  */
-export const zProductEntityBase = z.object({
+export const zProductBase = z.object({
   id: z.string(),
   name: z.string(),
   createdAt: z.string(),
@@ -716,7 +716,7 @@ export const zGetMyAuthResponse = zMeAuthData;
 export const zGetMyInvitationsResponse = z.object({
   items: z.array(
     z.object({
-      entity: zChannelEntityBase,
+      entity: zChannelBase,
       inactiveMembership: zInactiveMembership,
     }),
   ),
@@ -1611,7 +1611,7 @@ export const zHandleMembershipInvitationPath = z.object({
 /**
  * Invitation was accepted
  */
-export const zHandleMembershipInvitationResponse = zChannelEntityBase;
+export const zHandleMembershipInvitationResponse = zChannelBase;
 
 export const zGetMembersPath = z.object({
   tenantId: z.string().max(50),

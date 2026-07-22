@@ -17,7 +17,7 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
     .map(([, table]) => getTableName(table));
 
   // Channel entity and membership tables use application-layer guards for access control.
-  const channelEntityTableNames = appConfig.channelEntityTypes.map((entityType) => {
+  const channelTableNames = appConfig.channelEntityTypes.map((entityType) => {
     const table = entityTables[entityType as keyof typeof entityTables];
     if (!table) throw new Error(`No table found for channel entity type: ${entityType}`);
     return getTableName(table);
@@ -29,20 +29,20 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
   // emit grants for nonexistent tables because one failed statement rolls back the whole
   // grant block (see the exception handler below).
   const noRlsCandidates = ['pages'];
-  const noRlsProductEntityNames = noRlsCandidates.filter((name) => (entityTableNames as string[]).includes(name));
+  const noRlsProductNames = noRlsCandidates.filter((name) => (entityTableNames as string[]).includes(name));
 
   // Only product entity tables + yjs_documents still use RLS (excluding pages)
   const additionalRlsTables = [getTableName(yjsDocumentsTable)];
   const rlsTables = [
-    ...entityTableNames.filter((t) => !channelEntityTableNames.includes(t) && !noRlsProductEntityNames.includes(t)),
+    ...entityTableNames.filter((t) => !channelTableNames.includes(t) && !noRlsProductNames.includes(t)),
     ...additionalRlsTables,
   ];
 
   // Tables without RLS but needing grants (auth, system, channel entities, memberships, pages, etc.)
   const fullCrudTables = [
-    ...channelEntityTableNames,
+    ...channelTableNames,
     ...membershipTableNames,
-    ...noRlsProductEntityNames,
+    ...noRlsProductNames,
     'users',
     'sessions',
     'user_counters',

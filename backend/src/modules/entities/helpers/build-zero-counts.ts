@@ -2,7 +2,7 @@ import { type ChannelEntityType, hierarchy, recordFromKeys, roles } from 'shared
 
 /**
  * Zero-initialized counts for a newly created channel entity (create responses, no prior data).
- * Shape matches `channelEntityIncludedSchema`: { membership, entities, activity }.
+ * Shape matches `channelIncludedSchema`: { membership, entities, activity }.
  */
 export const buildZeroCounts = (entityType: ChannelEntityType, creatorRole = 'admin') => {
   const descendants = hierarchy.getOrderedDescendants(entityType);

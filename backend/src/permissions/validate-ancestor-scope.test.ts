@@ -1,4 +1,4 @@
-import { appConfig, type ChannelScope, hierarchy, type SubjectForPermission } from 'shared';
+import { type AncestorChannelIds, appConfig, hierarchy, type SubjectForPermission } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { AppError } from '#/core/error';
 import { validateAncestorScope } from '#/permissions/validate-ancestor-scope';
@@ -17,17 +17,17 @@ const expectAppError = (fn: () => void, type: string) => {
 /** Build a raw subject (without validation) for testing validateAncestorScope itself */
 const buildRawSubject = (
   entityType: SubjectForPermission['entityType'],
-  overrides?: Partial<Record<keyof ChannelScope, string | null | undefined>>,
+  overrides?: Partial<Record<keyof AncestorChannelIds, string | null | undefined>>,
 ): SubjectForPermission => {
   const ancestors = hierarchy.getOrderedAncestors(entityType);
-  const channelIds: Partial<Record<keyof ChannelScope, string | null | undefined>> = {};
+  const channelIds: Partial<Record<keyof AncestorChannelIds, string | null | undefined>> = {};
   for (const ancestor of ancestors) {
     channelIds[ancestor] = `test-${ancestor}-id`;
   }
   if (overrides) Object.assign(channelIds, overrides);
   const subject: SubjectForPermission = {
     entityType,
-    channelIds: channelIds as ChannelScope,
+    channelIds: channelIds as AncestorChannelIds,
   };
   return subject;
 };

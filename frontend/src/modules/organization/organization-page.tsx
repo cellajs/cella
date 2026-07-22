@@ -57,7 +57,7 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
           organization.membership && (
             <Suspense>
               <LeaveOrgButton
-                channelEntity={organization}
+                channel={organization}
                 buttonProps={{
                   size: 'xs',
                   variant: 'ghost',

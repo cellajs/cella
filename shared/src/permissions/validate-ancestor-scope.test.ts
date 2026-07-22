@@ -1,14 +1,14 @@
 import { hierarchy, MissingScopeError, validateAncestorScope } from 'shared';
 import { describe, expect, it } from 'vitest';
-import type { ChannelScope, SubjectForPermission } from 'shared';
+import type { AncestorChannelIds, SubjectForPermission } from 'shared';
 
 /** Build a raw subject (without validation) for testing validateAncestorScope itself */
 const buildRawSubject = (
   entityType: SubjectForPermission['entityType'],
-  overrides?: Partial<Record<keyof ChannelScope, string | null | undefined>>,
+  overrides?: Partial<Record<keyof AncestorChannelIds, string | null | undefined>>,
 ): SubjectForPermission => {
   const ancestors = hierarchy.getOrderedAncestors(entityType);
-  const channelIds: Partial<Record<keyof ChannelScope, string | null | undefined>> = {};
+  const channelIds: Partial<Record<keyof AncestorChannelIds, string | null | undefined>> = {};
   for (const ancestor of ancestors) {
     channelIds[ancestor] = `test-${ancestor}-id`;
   }
@@ -16,7 +16,7 @@ const buildRawSubject = (
   return {
     entityType,
     id: 'test-id',
-    channelIds: channelIds as ChannelScope,
+    channelIds: channelIds as AncestorChannelIds,
   };
 };
 

@@ -24,7 +24,7 @@ export function createActivity(
 
   // Derive channel entity IDs from hierarchy ancestors. Declared-nullable ancestors may
   // legitimately be null (variable-depth rows, e.g. a course-stream item): no warning.
-  const channelEntityIds: Record<string, string | null> = {};
+  const channelIds: Record<string, string | null> = {};
   if (subjectType) {
     const nullableAncestors = hierarchy.getNullableAncestors(subjectType);
     for (const ancestor of hierarchy.getOrderedAncestors(subjectType)) {
@@ -33,7 +33,7 @@ export function createActivity(
       if (!value && !nullableAncestors.includes(ancestor)) {
         log.warn(`Missing ancestor "${colKey}" for ${subjectType}`, { id: getRowValue(row, 'id') });
       }
-      channelEntityIds[colKey] = value ?? null;
+      channelIds[colKey] = value ?? null;
     }
   }
 
@@ -58,10 +58,10 @@ export function createActivity(
     tableName: getTableName(tableMeta.table),
     type: `${subjectType}.${actionToVerb(action)}`,
     subjectId: rawSubjectId,
-    // Default context IDs to null, overridden by channelEntityIds for entities with hierarchy ancestors
+    // Default context IDs to null, overridden by channelIds for entities with hierarchy ancestors
     ...defaultChannelIds,
     createdAt: new Date().toISOString(),
-    ...channelEntityIds,
+    ...channelIds,
     changedFields: null,
     stx: extractStxData(row),
     ...activityPatch,

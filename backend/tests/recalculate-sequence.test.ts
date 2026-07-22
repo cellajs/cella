@@ -2,8 +2,8 @@ import { sql } from 'drizzle-orm';
 import { appConfig, hierarchy } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db, seedDb } from '#/db/db';
+import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { mockAttachment } from '#/modules/attachment/attachment-mocks';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { recalculateCounters } from '#/modules/entities/helpers/recalculate-counters';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
@@ -21,11 +21,11 @@ describe('recalculateCounters (sequence + frontier)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
 
-  // The seeded product's home node (where the self family e:f:h:/e:c:h: rolls up) is the
-  // deepest ancestor, derived from config: the organization when the product is org-homed (base
-  // Cella), or a deeper channel such as a shared project when a fork homes it lower. Ids for
-  // ancestors below the organization are generated; all three rows share them so the self
-  // counters land at a single, assertable node.
+  // The seeded product's home node (where the self family e:f:h:/e:c:h: rolls up) is the deepest
+  // ancestor, derived from config: the organization when the product is org-homed (base Cella), or
+  // a deeper channel such as a shared project when a fork homes it lower. Ids for ancestors below
+  // the organization are generated; all three rows share them so the self counters land at a
+  // single, assertable node.
   const PRODUCT = 'attachment';
   const ANCESTORS = hierarchy.getOrderedAncestors(PRODUCT); // deepest → root
   const deeperAncestorIds = Object.fromEntries(
@@ -47,21 +47,22 @@ describe('recalculateCounters (sequence + frontier)', async () => {
     mockFetchRequest();
     tenant = await createTestTenant(call, 'recalc-sequence');
 
-    const base = (key: string, seq: number, extra: Record<string, unknown> = {}) => {
-      // Strip generated/select-only fields; bind to the test tenant and the product's ancestor
-      // columns; audit users nulled (mock ids have no users rows and the columns are nullable FKs).
-      const { path: _path, ...row } = mockAttachment(key) as unknown as Record<string, unknown>;
-      return {
-        ...row,
-        tenantId: tenant.tenantId,
-        ...ancestorColumns(tenant.organization.id),
-        createdBy: null,
-        updatedBy: null,
-        deletedBy: null,
-        seq,
-        ...extra,
-      };
-    };
+    const base = (key: string, seq: number, extra: Record<string, unknown> = {}) =>
+      // Insert-ready mock row bound to the test tenant and the product's ancestor columns; audit
+      // users nulled (mock ids have no users rows and the columns are nullable FKs).
+      buildInsertableProduct(
+        PRODUCT,
+        {
+          tenantId: tenant.tenantId,
+          ...ancestorColumns(tenant.organization.id),
+          createdBy: null,
+          updatedBy: null,
+          deletedBy: null,
+          seq,
+          ...extra,
+        },
+        key,
+      );
 
     await seedDb.insert(attachmentsTable).values([
       base('recalc:a1', 41) as never,

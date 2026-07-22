@@ -3,7 +3,6 @@ import type { EntityActionType } from '../../../types';
 import { createActionRecord } from '../action-helpers';
 import type { GrantSource, PermissionDecision, PermissionMembership } from './types';
 
-/** Format a grant source for debug output. */
 const formatGrant = (g: GrantSource): string => {
   if (g.type === 'membership') return `${g.channelType}:${g.channelId}/${g.role}`;
   if (g.type === 'public') return `public:${g.mode}`;
@@ -11,10 +10,7 @@ const formatGrant = (g: GrantSource): string => {
   return `relation:${g.relation}`;
 };
 
-/**
- * Formats a PermissionDecision for debug logging.
- * Output shows the full decision tree: subject, contexts, and per-action attribution.
- */
+/** Formats a decision tree for debug logging. */
 export const formatPermissionDecision = <T extends PermissionMembership>(decision: PermissionDecision<T>): string => {
   const lines = [
     `[Permission Check] entity=${decision.subject.entityType} id=${decision.subject.id}`,
@@ -37,16 +33,12 @@ export const formatPermissionDecision = <T extends PermissionMembership>(decisio
   return lines.join('\n');
 };
 
-/**
- * Formats a batch permission check summary for debug logging.
- * Output shows aggregated counts per entity type and action.
- */
+/** Formats per-entity and per-action decision counts for debug logging. */
 export const formatBatchPermissionSummary = <T extends PermissionMembership>(
   decisions: Map<string, PermissionDecision<T>>,
 ): string => {
   if (decisions.size === 0) return '[Batch Permission] No subjects checked';
 
-  // Group by entity type
   const byType = new Map<
     string,
     { granted: Record<EntityActionType, number>; denied: Record<EntityActionType, number> }

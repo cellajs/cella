@@ -5,12 +5,12 @@ import { resetConnectivityCache } from '~/query/offline/connectivity';
 import { mutationRetry } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
 
-const productEntitySet = new Set<string>(appConfig.productEntityTypes);
+const productSet = new Set<string>(appConfig.productEntityTypes);
 
 /** Product entity type encoded in a query/mutation key, or undefined. */
 function entityTypeOf(key: unknown): ProductEntityType | undefined {
   const head = Array.isArray(key) ? key[0] : undefined;
-  return typeof head === 'string' && productEntitySet.has(head) ? (head as ProductEntityType) : undefined;
+  return typeof head === 'string' && productSet.has(head) ? (head as ProductEntityType) : undefined;
 }
 
 // Lazy import to break circular dependency: query-client -> on-error -> teardown-user-state -> query-client

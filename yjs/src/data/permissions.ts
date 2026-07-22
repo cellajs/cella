@@ -3,7 +3,7 @@ import {
   appConfig,
   buildSubject,
   checkAccess,
-  type ChannelEntityIdColumns,
+  type ChannelIdColumns,
   type ChannelEntityType,
   draftVisibleTo,
   hierarchy,
@@ -65,7 +65,7 @@ export async function loadMemberships(client: pg.PoolClient, userId: string): Pr
 }
 
 /** Entity row carrying just the ancestor scope and ownership columns the permission engine needs. */
-export interface EntityScopeRow extends Partial<ChannelEntityIdColumns> {
+export interface EntityScopeRow extends Partial<ChannelIdColumns> {
   id: string;
   createdBy?: string | null;
   tenantId?: string | null;

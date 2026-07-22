@@ -1,3 +1,0 @@
-# The codemod writes its run report next to itself (see README); it is a per-run
-# artifact for review, never an input — keep it out of both upstream and fork trees.
-icon-report-*.json

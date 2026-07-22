@@ -4,7 +4,7 @@ import { getChannelCounts } from '#/modules/entities/entities-queries';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { withOrganizationFlagDefaults } from '#/modules/organization/helpers/select';
 import { withAuditUser } from '#/modules/user/helpers/audit-user';
-import { getValidChannelEntity } from '#/permissions';
+import { getValidChannel } from '#/permissions';
 
 export async function getOrganizationOp(
   ctx: AuthContext,
@@ -15,7 +15,7 @@ export async function getOrganizationOp(
   const user = ctx.var.user;
   const { bySlug, include } = opts;
 
-  const { entity, membership } = await getValidChannelEntity(ctx, id, 'organization', 'read', bySlug);
+  const { entity, membership } = await getValidChannel(ctx, id, 'organization', 'read', bySlug);
   // Rows store organizationFlags sparse; merge config defaults under the stored bag
   const organization = withOrganizationFlagDefaults(entity);
 

@@ -7,11 +7,11 @@ export { hierarchy, roles } from './config/config.default';
 
 // Entity hierarchy types and builder functions
 export type {
-  ChannelEntityView,
+  ChannelView,
   EntityHierarchy,
   EntityKind,
   EntityView,
-  ProductEntityView,
+  ProductView,
   RoleFromRegistry,
   UserEntityView,
 } from './src/config-builder/entity-hierarchy';
@@ -132,8 +132,8 @@ export {
 } from './src/permissions';
 export type {
   ActionAttribution,
-  ChannelEntityIdColumns,
-  ChannelScope,
+  AncestorChannelIds,
+  ChannelIdColumns,
   GrantSource,
   PermissionCheckOptions,
   PermissionDecision,

@@ -2,14 +2,14 @@ import type { ChannelEntityType } from 'shared';
 import { attachmentsCanonicalOptions } from '~/modules/attachment/query';
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
-import type { BuildEntitySyncQueriesParams, ChannelEntityListQueryMap, EntitySyncQueryOptions } from '~/query/types';
+import type { BuildEntitySyncQueriesParams, ChannelListQueryMap, EntitySyncQueryOptions } from '~/query/types';
 
 /**
  * Maps channel entity types to their list query options (used for menu generation).
  */
-export const channelEntityListQueriesByType = {
+export const channelListQueriesByType = {
   organization: (params) => organizationsListQueryOptions(params),
-} satisfies ChannelEntityListQueryMap;
+} satisfies ChannelListQueryMap;
 
 /** Returns query options to sync for a given entity. React Query handles staleness. */
 export const buildEntitySyncQueries = ({

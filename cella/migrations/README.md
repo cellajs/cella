@@ -1,31 +1,61 @@
 # Migrations
 
-When an upstream cella change rewrites a pattern across the codebase (a codemod sweep), upstream code arrives already migrated, but fork-specific code still uses the old pattern. Each folder here ships the tooling to run the same sweep on a fork after pulling the change.
+When an upstream cella change rewrites a pattern across the codebase (a codemod sweep, a schema
+shift, a renamed contract), upstream code arrives already migrated, but fork-specific code still
+uses the old pattern. This folder ships the tooling and instructions to replay each such change on
+a fork after pulling it.
 
-## Layout
+## How it is structured
 
-One folder per migration, named `<yyyy-mm>-<slug>`, containing a `README.md` with run instructions and whatever the sweep needs (codemod script, data files). Scripts are run with `pnpm exec tsx` from the repo root and take the target directory as an argument, so forks can point them at their own code.
+Three moving parts:
 
-## For forks
+- **One folder per migration**, named `<YYYYMMDDThhmm>-<slug>` (UTC, minute precision). The
+  timestamp is the stable id and the sort key: it orders migrations chronologically even under high
+  merge activity, where a date alone collides. Each folder holds a `README.md` (from
+  [`_TEMPLATE.md`](./_TEMPLATE.md)) and whatever the sweep needs (codemod script, data files, SQL).
+- **[`manifest.json`](./manifest.json)** — the machine-readable index. One entry per folder,
+  carrying its `version` (the cella release it ships in), `kind`, fork-breaking flag, codemod path,
+  scan roots, and follow-up commands. This is what lets a tool or agent compute the pending set
+  instead of eyeballing a prose list. Version lives here, never in the folder name, so a folder is
+  never renamed after forks have run it.
+- **[`run.ts`](./run.ts)** — the planner. It diffs `manifest.json` against the fork's applied-set
+  and prints the migrations still to run, in order.
 
-After pulling an upstream change that references a migration, run it per the folder's README, then run the repo gates (`pnpm ts`, biome). Migrations are idempotent where possible: running one against already-migrated code should be a no-op.
+The applied-set is a fork-owned file, `cella.migrations.json` at the repo root, listing the ids a
+fork has already run. Pending is a plain set difference (all declared ids minus applied ids), so it
+works the same whether the fork tracks releases or a branch.
 
-## Migrations
+## For forks: applying migrations
 
-- [2026-07-comment-density](./2026-07-comment-density/): moves detached long-form source comments to declarations or canonical READMEs, removes duplicated test preambles, and adds a placement check for fork-specific code.
-- [2026-07-comment-reasoning](./2026-07-comment-reasoning/): removes source-comment change history, rejected alternatives, unresolved review discussion, and vague jargon. Ships a reusable comment checker and a wider audit for fork-specific code.
-- [2026-07-icon-conventions](./2026-07-icon-conventions/): icons to the runtime-only convention with class-based rem sizing (`icon-*` utilities, never lucide's px `size` prop), modern `*Icon` names, strokeWidth via `LucideProvider`.
-- [2026-07-permission-actor](./2026-07-permission-actor/): required `Actor` on every permission check, system-admin + public-read parity in collection reads, and public read collapsed to a single row-local `publicAt` mode. **Widens access** — audit `'own'` cells on channel-entity and `create` rows _before_ pulling.
-- [2026-07-row-condition-names](./2026-07-row-condition-names/): collapses the row-condition model to a `RowConditionName = 'own' | 'public'` union — drops the `RowPredicate`/`RowCondition` descriptor, replaces `rowPredicateMatches`/`own`/`publicRow` with `matchesRowCondition(name, …)`, and narrows `ActionPermissionState` to the closed name union. **Shape-only, no semantic change** and fully compiler-enforced; config surface (`read: 'own'`, `publicRead`) unchanged. In-sync forks get it for free; no script.
-- [2026-07-access-entrypoint](./2026-07-access-entrypoint/): one permission surface — `checkPermission(memberships, action, subject, actor)` becomes the `checkAccess*` family (`checkAccess` / `checkAccessBatch` / `checkAccessFanout`, three named projections of one engine) with a fused `Access` object (`accessFrom(ctx)` on the backend); SSE dispatcher `shouldReceive` becomes batch `selectEligible` so the engine collapses subscribers into access classes. **No grant semantics change**; compiler-driven, no script.
-- [2026-07-batch-cache-removal](./2026-07-batch-cache-removal/): removes the unused batch cache machinery (`batchCache` middleware, `batchReservations`, batch token index); fork-breaking on the frontend `DeltaFetchFn` (drops the 4th `options`/`cacheToken` param on every `registerEntityQueryKeys` delta-fetch). Manual, no script.
-- [2026-07-detail-cache-tokenless](./2026-07-detail-cache-tokenless/): drops the single-entity cache token — `appCache()` → `appCache(entityType)` on every product detail route, cache hits re-authorize via `checkPermission`, and `cacheToken` is removed from the whole CDC→SSE→client pipeline (+ `X-Cache-Token` frontend sends). Manual, no script.
-- [2026-07-lazy-sync](./2026-07-lazy-sync/): negotiated lazy sync — notifications enqueue merged seq ranges (client tiers × server `spreadWindow`), unseen badges use client-side tracking, catchup folds into the fetch prioritizer. Fork steps: `appCache(entityType)` signature, verify sub-org viewing detection, mirror feed filters (e.g. `draft`) in `ingestSyncedRows`, seen-tracked configuration requirement. Manual, no script.
-- [2026-07-deprecated-shims](./2026-07-deprecated-shims/): removes the last two `@deprecated` compat shims — the `FilterBarContent` alias (→ `FilterBarFilters`, or `FilterBarSearch` for search inputs) and the `entities/helpers/get-entity-counts` re-export file (→ import from `entities/entities-queries`). Manual, no script.
-- [2026-07-search-defaults](./2026-07-search-defaults/): list routes declare their default view once (`<name>SearchDefaults`) and keep it out of the URL — zod `.default()` rehydrates on read, a `stripSearchParams` middleware strips on write. **Fork-breaking**: the `defaultValues` option is gone from `useSearchParams` (its mount effect was the inverse of the middleware). Read each default off your own generated schema — they differ per endpoint. Manual, no script.
-- [2026-07-channel-entity-rename](./2026-07-channel-entity-rename/): renames the "channel entity" concept to "channel entity" (`ContextEntityType→ChannelEntityType`, builder `.context()→.channel()`, `context_type/context_id→channel_type/channel_id`, `context_counters→channel_counters`, …). Allow-list codemod; also needs file renames, i18n keys, SDK regen, and a DB rename migration — see the folder README.
-- [2026-07-drizzle-baseline](./2026-07-drizzle-baseline/): squashes `backend/drizzle/` from 28 folders to a `CREATE TABLE` baseline plus the combined side-effects folder. **Read before running `pnpm migrate` after the pull** — the drizzle v1 migrator matches applied migrations by folder name, so an existing DB tries to replay the baseline and fails on `relation "…" already exists`. Local dev DBs destroy the volume and reseed; DBs with data mark the baseline applied and migrate the side-effects only. SQL only, no codemod.
-- [2026-07-published-rows](./2026-07-published-rows/): opt-in draft lifecycle for product entities — nullable `publishedAt` (NULL = author-only draft). Dispatch, reads, counters, stamps, badges, cache, detail and yjs all enforce it upstream via column introspection; forks add the column, a publish endpoint (`resolveServerUpdateOps`) and a drafts view, and delete their imperative `draft`-column rules. SQL data migration only, no codemod.
-- [2026-07-attachment-offline-layout](./2026-07-attachment-offline-layout/): attachment `dexie/` → `offline/` (with the download/upload services pulled in), descriptive names for the generic dialog/table files, `formatBytes` → `~/utils`, and a dead-code sweep. **Also fixes two upload bugs**: offline uploads created no attachment row (the built-and-tested `useAttachmentCreateMutation` had zero callers), and local blobs never shared an id with their row. Read §3 before pulling if your fork has its own upload flow. Allow-list codemod.
-- [2026-07-entity-product-channel](./2026-07-entity-product-channel/): sharpens loosely-named `entity` identifiers to `product` or `channel` where they were constrained to one entity family (product embeddings, seen/unseen tracking, product cache, product-sync notification, CDC product stamps; channel enrichment, channel counts, channel route config/tile/leave-button). Allow-list old->new codemod; also needs file/directory renames, the ambiguous `entityType`/`entityId`/`'entity'` field/literal renames (seen store + notification wire), a `seen_by` column rename DB migration, and SDK regen. See the folder README.
-- [2026-07-counter-key-namespace](./2026-07-counter-key-namespace/): renames the `channel_counters.counts` JSONB keys to a uniform `<domain>:<metric>:[h:]<type|role>` grammar (`f:`→`e:f:`, `fs:`→`e:f:h:`, `e:`→`e:c:`, `es:`→`e:c:h:`, `li:`/`lu:`→`e:li:h:`/`e:lu:h:`, `m:`→`m:c:`). Internal only (keys never reach clients, reprojected in `parse-counter-counts.ts`), so no `clientCacheVersion`/lens bump — but a frozen-envelope CDC↔backend contract: deploy both together, then run counter recalculation to rebuild under the new keys. Forks update their key-construction/read sites and regenerate the counter function migration. SQL/manual, no codemod.
+After a `cella sync` pull, from the repo root:
+
+```sh
+pnpm exec tsx cella/migrations/run.ts          # print the pending plan, in order
+```
+
+Work the list top to bottom. For each migration: run its codemod (or follow the manual steps in its
+`README.md`), run the follow-ups it lists (`pnpm generate`, `pnpm sdk`, …), gate on `pnpm check`,
+then record it as applied:
+
+```sh
+pnpm exec tsx cella/migrations/run.ts mark <id>
+```
+
+The [`migrate` skill](../skills/migrate/SKILL.md) drives this whole loop with an agent; `run.ts
+--json` feeds it the plan. Codemods are idempotent where possible: rerunning one against
+already-migrated code should be a no-op.
+
+## For maintainers: authoring a migration
+
+Ship the migration in the same PR as the breaking change:
+
+1. Create `cella/migrations/<YYYYMMDDThhmm>-<slug>/README.md` from [`_TEMPLATE.md`](./_TEMPLATE.md)
+   (`date -u +%Y%m%dT%H%M` for the prefix). Add the codemod / SQL / data files it needs.
+2. Add an entry to [`manifest.json`](./manifest.json). Set `version` to the target release, or
+   `"next"` if unknown; backfill the real version when the release is cut.
+3. Keep codemods entity-agnostic and driven by allow-lists or explicit maps, so forks extend them
+   via a flag (e.g. `--extra-renames`) rather than editing the shipped script, which would conflict
+   on the next sync.
+
+A `forkBreaking: true` change without a migration folder is the thing this system exists to
+prevent; treat it like a missing `clientCacheVersion` bump.

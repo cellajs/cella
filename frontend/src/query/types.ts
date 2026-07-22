@@ -34,8 +34,8 @@ export type QueryOrgContext = { tenantId: string; organizationId: string };
 export type QueryOptionsWithKey = { queryKey: readonly unknown[] };
 
 // biome-ignore lint/suspicious/noExplicitAny: Query factories have different parameter shapes per entity type.
-export type ChannelEntityListQueryFactory = (...args: any[]) => QueryOptionsWithKey;
-export type ChannelEntityListQueryMap = Partial<Record<ChannelEntityType, ChannelEntityListQueryFactory>>;
+export type ChannelListQueryFactory = (...args: any[]) => QueryOptionsWithKey;
+export type ChannelListQueryMap = Partial<Record<ChannelEntityType, ChannelListQueryFactory>>;
 
 /** Structural query shape used by the sync service for both standard and infinite queries. */
 export type EntitySyncQueryOptions = QueryOptionsWithKey & { getNextPageParam?: unknown };

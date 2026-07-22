@@ -8,7 +8,7 @@ import { userSelect } from '#/modules/user/helpers/select';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
-import { channelEntityBaseSchema } from '#/schemas/entity-base';
+import { channelBaseSchema } from '#/schemas/entity-base';
 import { getEntityTable } from '#/tables';
 import { pick } from '#/utils/pick';
 
@@ -127,12 +127,12 @@ export const findPendingInvitations = async (ctx: DbContext, { userId }: FindPen
     appConfig.channelEntityTypes.map((entityType) => {
       const entityTable = getEntityTable(entityType);
       const cols = getColumns(entityTable);
-      const keys = Object.keys(channelEntityBaseSchema.shape) as (keyof typeof channelEntityBaseSchema.shape)[];
-      const channelEntityBaseSelect = pick(cols, keys);
+      const keys = Object.keys(channelBaseSchema.shape) as (keyof typeof channelBaseSchema.shape)[];
+      const channelBaseSelect = pick(cols, keys);
 
       return db
         .select({
-          entity: channelEntityBaseSelect,
+          entity: channelBaseSelect,
           inactiveMembership: inactiveMembershipsTable,
         })
         .from(inactiveMembershipsTable)

@@ -5,7 +5,7 @@ import { tenantContext } from '#/db/tenant-context';
 import { updateAttachment } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentUpdateStxBodySchema } from '#/modules/attachment/attachment-schema';
 import { withAuditUser, withAuditUserLite } from '#/modules/user/helpers/audit-user';
-import { getValidProductEntity } from '#/permissions/get-product-entity';
+import { getValidProduct } from '#/permissions/get-valid-product';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
@@ -23,7 +23,7 @@ export async function updateAttachmentOp(
 
   // Single tenantContext wraps permission check + write to avoid double-transaction pool pressure
   const updatedAttachmentRecord = await tenantContext(ctx, async (txCtx) => {
-    const { entity } = await getValidProductEntity(txCtx, id, 'attachment', 'update');
+    const { entity } = await getValidProduct(txCtx, id, 'attachment', 'update');
 
     const resolved = attachmentContract.resolveUpdateOps(entity, rawOps, stx);
 

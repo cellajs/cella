@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import type { ChannelEntityIdColumns } from 'shared';
+import type { ChannelIdColumns } from 'shared';
 
 /**
  * ID column keys for every channel entity type (e.g. `['organizationId']`),
@@ -12,4 +12,4 @@ import type { ChannelEntityIdColumns } from 'shared';
  */
 export const channelIdColumnKeys = appConfig.channelEntityTypes.map(
   (type) => appConfig.entityIdColumnKeys[type],
-) as ReadonlyArray<keyof ChannelEntityIdColumns>;
+) as ReadonlyArray<keyof ChannelIdColumns>;

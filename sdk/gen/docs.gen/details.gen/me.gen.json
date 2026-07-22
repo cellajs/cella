@@ -837,7 +837,7 @@
                         "required": true
                       }
                     },
-                    "ref": "#/components/schemas/ChannelEntityBase"
+                    "ref": "#/components/schemas/ChannelBase"
                   },
                   "inactiveMembership": {
                     "type": "object",

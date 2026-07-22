@@ -14,7 +14,7 @@ import {
   insertTokens,
   stampInactiveMembershipsReminded,
 } from '#/modules/memberships/memberships-queries';
-import { getValidChannelEntity } from '#/permissions/get-channel-entity';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug-from-email';
@@ -46,7 +46,7 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
     throw new AppError(400, 'invalid_role', 'warn', { entityType });
   }
 
-  const { entity } = await getValidChannelEntity(ctx, entityId, entityType, 'update');
+  const { entity } = await getValidChannel(ctx, entityId, entityType, 'update');
 
   const { slug: entitySlug, name: entityName } = entity;
 
