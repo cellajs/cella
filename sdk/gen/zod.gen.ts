@@ -1439,7 +1439,6 @@ export const zGetAttachmentsQuery = z.object({
     .string()
     .regex(/^\d+,\d+$/)
     .optional(),
-  pathPrefix: z.string().max(512).optional(),
 });
 
 /**

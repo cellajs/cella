@@ -3976,7 +3976,6 @@ export type GetAttachmentsData = {
     offset?: string;
     limit?: string;
     seqCursor?: string;
-    pathPrefix?: string;
   };
   url: '/{tenantId}/{organizationId}/attachments';
 };

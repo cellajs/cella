@@ -497,8 +497,8 @@ export class StreamManager {
     let wasLeader = useTabCoordinatorStore.getState().isLeader;
     this.leaderUnsubscribe = useTabCoordinatorStore.subscribe((s) => {
       if (s.isLeader && !wasLeader && !this.isConnected()) {
-        console.debug(`[${this.name}] Became leader, attempting reconnect...`);
-        this.attemptReconnect();
+        console.debug(`[${this.name}] Became leader, reconnecting...`);
+        this.reconnect();
       }
       wasLeader = s.isLeader;
     });

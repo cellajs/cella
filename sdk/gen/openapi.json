@@ -8307,15 +8307,6 @@
             "required": false,
             "name": "seqCursor",
             "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 512
-            },
-            "required": false,
-            "name": "pathPrefix",
-            "in": "query"
           }
         ],
         "responses": {

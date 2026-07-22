@@ -71,6 +71,7 @@ frontend/stats.html
 *storybook.log
 storybook-static
 .locales-cache
+.dev-session-cookie
 
 # GeoIP databases (downloaded at build/dev time, not committed)
 backend/geoip/*.mmdb

@@ -2,6 +2,7 @@ import { QueryObserver } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-config';
 import { useSyncStore } from '~/query/realtime/sync-store';
 
 // Mock the boundaries: fetch/invalidate, tiers, propagation, unseen recount, router.
@@ -55,7 +56,9 @@ describe('fetch-prioritizer', () => {
     vi.useFakeTimers();
     registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
     useSyncStore.getState().reset();
-    fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [] });
+    setSyncDeliveryTrusted(true);
+    // reachedSeq Infinity = full delivery (reaches any untilSeq) unless a test overrides it.
+    fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: Number.POSITIVE_INFINITY });
     getSyncTier.mockReturnValue(BACKGROUND);
   });
 
@@ -198,7 +201,17 @@ describe('fetch-prioritizer', () => {
     expect(useSyncStore.getState().getChannelSeq('org-1', 'proj-b', 'attachment')).toBe(12);
   });
 
-  it('narrows the covering fetch with a pathPrefix when every due channel resolves a path', async () => {
+  it('scopes the covering fetch to the channel id for a single viewed channel (no path lookup)', async () => {
+    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
+
+    await flushAllNow();
+
+    // The common case: one channel is its own scope, resolved without touching the path resolver.
+    expect(fetchRangeAndPatch.mock.calls[0][5]).toBe('proj-a');
+    expect(resolveChannelPath).not.toHaveBeenCalled();
+  });
+
+  it('narrows the covering fetch to the least-common-ancestor channel id when due channels diverge', async () => {
     resolveChannelPath.mockImplementation((_type, channelId) =>
       channelId === 'proj-a' ? 'org-1/course-1/proj-a' : 'org-1/course-1/proj-b',
     );
@@ -207,8 +220,8 @@ describe('fetch-prioritizer', () => {
 
     await flushAllNow();
 
-    // Common true ancestor of both projects: the course subtree.
-    expect(fetchRangeAndPatch.mock.calls[0][5]).toBe('org-1/course-1');
+    // Common true ancestor of both projects: the course channel id (the leaf of the shared path).
+    expect(fetchRangeAndPatch.mock.calls[0][5]).toBe('course-1');
   });
 
   it('widens to the whole org when any due channel path is unknown', async () => {
@@ -221,6 +234,29 @@ describe('fetch-prioritizer', () => {
     await flushAllNow();
 
     expect(fetchRangeAndPatch.mock.calls[0][5]).toBeUndefined();
+  });
+
+  it('short delivery: keeps the cursor honest, invalidates the view, and degrades sync trust', async () => {
+    fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: 0 });
+    useSyncStore.getState().setChannelSeq('org-1', 'proj-a', 'attachment', 3);
+    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 4, untilSeq: 7 });
+
+    await flushAllNow();
+
+    expect(useSyncStore.getState().getChannelSeq('org-1', 'proj-a', 'attachment')).toBe(3); // not advanced
+    expect(invalidateEntityListForOrg).toHaveBeenCalled();
+    expect(isSyncDeliveryTrusted()).toBe(false);
+  });
+
+  it('full delivery advances and stays trusted', async () => {
+    fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [{ id: 'x', seq: 7 }], reachedSeq: 7 });
+    useSyncStore.getState().setChannelSeq('org-1', 'proj-a', 'attachment', 3);
+    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 4, untilSeq: 7 });
+
+    await flushAllNow();
+
+    expect(useSyncStore.getState().getChannelSeq('org-1', 'proj-a', 'attachment')).toBe(7);
+    expect(isSyncDeliveryTrusted()).toBe(true);
   });
 
   it('flushes a pending channel view when its channel gains an observer (catch-up-on-open without navigation)', async () => {
