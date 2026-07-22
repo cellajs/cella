@@ -24,13 +24,10 @@ export function classifyPermissionError(stderr: string): PermissionHint {
     : { kind: 'ci-grantable', resource }
 }
 
-/** URNs whose DELETE failed because the live object is already gone (HTTP 404
- *  from the provider). Pruning such an entry from state is safe by construction:
- *  the delete's goal (resource gone) is already true, so `pulumi state delete`
- *  completes what the operation would have done. Matches the single-line
- *  diagnostic and the multierror form where the 404 detail is on the following
- *  bullet line; only `deleting` operations qualify (a 404 on update/read means
- *  drift on a resource that should exist, which is a different repair). Pure. */
+/**
+ * Extracts delete URNs whose provider returned not-found, making state pruning safe.
+ * Update/read failures remain excluded because those resources should still exist.
+ */
 export function parseOrphanedDeletes(output: string): string[] {
   const urns = new Set<string>()
   const lines = output.split('\n')

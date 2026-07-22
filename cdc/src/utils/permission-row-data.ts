@@ -2,15 +2,8 @@ import { appConfig } from 'shared';
 import type { CdcRowData } from '../types';
 
 /**
- * Row columns the API's SSE dispatch needs to evaluate read visibility per subscriber
- * ("SSE mirrors the API"): identity/audit basics, every context id column, the public
- * marker (`publicAt`, read by `publicRead` grants), and the draft marker (`publishedAt`,
- * read by the published-row lifecycle; see `shared/src/published-rows.ts`).
- *
- * Forks that evaluate extra row fields at dispatch beyond these conventions must add
- * those columns to the base list here so batch rows carry them on the wire.
- *
- * Limits per-row batch data on the wire to permission evaluation fields, never content.
+ * Permission-only row fields carried for per-subscriber SSE visibility checks.
+ * Fork-specific permission inputs must be added here; content never belongs in batch metadata.
  */
 const permissionRowKeys: Set<string> = (() => {
   const keys = new Set<string>(['id', 'createdBy', 'deletedAt', 'publicAt', 'publishedAt', 'path']);

@@ -1,12 +1,7 @@
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { DocRenderMode } from '~/modules/page/content';
 
-/**
- * Editing docs pages writes back to the md/mdx source files, only possible while the Vite dev
- * server runs; a production build bundles the content with no filesystem to write, so the pages
- * table stays read-only. Callers gate their editing UI on this.
- * @see vite/docs-editor.ts
- */
+/** Whether the Vite development server can persist page edits to MDX source files. */
 export const canEditDocs = import.meta.env.DEV;
 
 /** Edit ops accepted by the dev write-back endpoint; mirror `DocEditOps` server-side. */

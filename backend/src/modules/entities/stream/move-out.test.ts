@@ -9,14 +9,9 @@ import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamProductEvent } from './types';
 
 /**
- * Move-out dispatch: exactly the subscribers who could read the OLD location but not
- * the new one receive `action: 'moveOut'` carrying the old path. Base cella's org-only
- * topology cannot lose readability across channels, so the readability difference here
- * is produced through the draft veto, the same canReceiveProductEvent every fork's
- * channel differences flow through. In production such an unpublish+move UPDATE no
- * longer occurs (the publication row filter delivers it as a DELETE; see
- * dispatch-mirror.test.ts), but the veto stays as the fail-closed backstop and gives
- * these tests a fork-independent readability difference to exercise.
+ * Verifies that only subscribers losing read access receive `moveOut` with the old path.
+ * The draft veto creates a fork-independent visibility difference through the same permission
+ * path used by deeper fork topologies.
  */
 const ORG = 'org-moveout-a';
 

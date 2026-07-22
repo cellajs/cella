@@ -24,10 +24,8 @@ export const useAttachmentsUploadDialog = (tenantId: string, organizationId: str
         return;
       }
 
-      // The mutation provides the optimistic row, the SSE-race-safe upsert, and offline replay. While
-      // offline the mutation pauses with the row already in cache and fires on reconnect. A
-      // direct call rejects offline, leaving bytes that upload later with no attachment row to
-      // attach them to. Errors surface via the mutation's own onError toast.
+      // Use the mutation for optimistic cache insertion, SSE-safe upsert, and offline replay.
+      // Direct requests could upload bytes without creating the attachment row.
       createAttachments.mutate(attachments);
     };
 

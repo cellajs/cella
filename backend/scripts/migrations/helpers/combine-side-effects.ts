@@ -17,17 +17,9 @@ function sectionRule(tag: string, title: string): string {
 }
 
 /**
- * Collect SQL from every side-effect producer and write it as ONE combined migration.
- *
- * The collector is generic over `producers`: it knows nothing about what any block does, so
- * adding or removing a producer never touches this file. Blocks are concatenated in the order
- * given (discovery = filename order) and separated by `--> statement-breakpoint` so the migrator
- * runs each as its own statement with producer-specific transaction boundaries
- * layout, and applied in the same single transaction.
- *
- * Change detection is delegated to `upsertMigration`: identical combined SQL → no new folder;
- * any change → one fresh timestamped `*_side_effects` folder that re-runs the whole (idempotent)
- * set. Empty blocks are omitted so a fork that disabled a feature produces no dead SQL.
+ * Combines ordered, non-empty side-effect blocks into one transactional migration.
+ * Statement breakpoints preserve producer boundaries, while `upsertMigration` creates a new
+ * timestamped folder only when the combined SQL changes.
  */
 export async function generateSideEffects(producers: SideEffectProducer[]): Promise<void> {
   console.info('');

@@ -6,14 +6,9 @@ import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env'
 export type EnsureResult = 'exists' | 'created'
 
 /**
- * Guard against the wrong-project trap: Scaleway Object Storage pins an API
- * key to its `default_project_id`: bucket creation lands there and buckets in
- * other projects are unreachable regardless of IAM grants (bucket policies
- * cannot bridge projects either). A bootstrap key created as a Personal API
- * Key defaults to the ORG's default project, so without this check the state
- * bucket silently lands where the project-scoped CI key can never reach it.
- * Returns the error message, or undefined when aligned. Pure decision core;
- * the IAM lookup lives in {@link keyPreferredProject}.
+ * Reports when an API key's preferred project would place the state bucket outside CI reach.
+ * Scaleway Object Storage follows `default_project_id` regardless of cross-project IAM grants.
+ * The IAM lookup lives in `keyPreferredProject`.
  */
 export function keyProjectMismatch(keyProjectId: string, expectedProjectId: string, accessKey: string): string | undefined {
   if (keyProjectId === expectedProjectId) return undefined

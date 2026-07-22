@@ -173,15 +173,7 @@ async function buildLocalesCache(userOptions: LocalesHMROptions = {}) {
 
 /**
  * Watches locale assets, rebuilds the merged cache, and emits `i18next-hmr:update`.
- *
- * Client-side integration required:
- * ```ts
- * if (import.meta.hot) {
- *   import.meta.hot.on('i18next-hmr:update', () => {
- *     i18n.reloadResources();
- *   });
- * }
- * ```
+ * Clients listen for that event and reload i18next resources.
  */
 export function localesHMR(userOptions: LocalesHMROptions = {}): Plugin {
   const options = resolveOptions(userOptions);

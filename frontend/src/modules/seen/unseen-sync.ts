@@ -4,14 +4,8 @@ import { isSeenLocally } from '~/modules/seen/seen-store';
 import { applyUnseenDelta } from '~/modules/seen/unseen-delta';
 import { queryClient } from '~/query/query-client';
 
-/*
- * Exact unseen-count deltas derived from synced rows, valid between two exact server recounts.
- *
- * `countedIds` holds rows counted (+1) since the last recount, so a row appearing in several
- * synced ranges (created, then updated) counts once. Rows whose recency (publish time on
- * draft-lifecycle rows, else created time) predates `lastReconcileAt` are already in the
- * server's counts and are never re-counted.
- */
+// Track each newly synced row once between exact unseen recounts.
+// Rows older than the last recount are already represented by the server count.
 const countedIds = new Set<string>();
 // Session start doubles as the first recount point: a persisted counts cache may restore before the first refetch.
 let lastReconcileAt = Date.now();

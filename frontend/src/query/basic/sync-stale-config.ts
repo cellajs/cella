@@ -5,12 +5,8 @@ const syncLiveStaleTime = Number.POSITIVE_INFINITY;
 const syncFallbackStaleTime = 5 * 60 * 1000;
 
 /**
- * Low-level mirror of the app sync stream's "live" state.
- *
- * Kept here (in `query/basic`) so `syncStaleTime` can read stream liveness WITHOUT importing
- * the high-level `query/realtime` layer. The realtime stream store pushes updates via
- * `setSyncStreamLive`, inverting what would otherwise be a `query/basic` -> `query/realtime`
- * import (a circular dependency that surfaces as a module-init TDZ during Vite HMR).
+ * Mirror stream liveness below the realtime layer so stale-time logic avoids a circular import.
+ * The realtime store pushes state through `setSyncStreamLive`.
  */
 let syncStreamLive = false;
 

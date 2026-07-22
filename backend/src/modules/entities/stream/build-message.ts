@@ -84,7 +84,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     }
   }
 
-  // Materialized id-path of the affected rows (message groups are per path, so the
+  // Stored ID path of the affected rows (message groups are per path, so the
   // representative row's path speaks for the whole batch).
   const rowData = event.rowData as Record<string, unknown> | null;
   const path = isProduct && rowData && typeof rowData.path === 'string' ? rowData.path : null;

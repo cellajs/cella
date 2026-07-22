@@ -35,11 +35,8 @@ const DEFAULT_EXPANDED = true;
 const noopMutate = () => {};
 
 /**
- * Index of the MDX docs content (`src/content/docs`); rows come from the build-time content
- * collection. In dev ({@link canEditDocs}) the table is editable (see pages-columns.tsx): edits
- * apply optimistically and the dev server writes them back to the md/mdx frontmatter
- * (vite/docs-editor.ts), then triggers a reload that reconciles the table with the files on disk.
- * In production the content is bundled, so the table is read-only.
+ * Render the build-time MDX index; development edits persist to frontmatter and reconcile on reload.
+ * Bundled production content remains read-only.
  */
 function PagesTable() {
   const { t } = useTranslation();

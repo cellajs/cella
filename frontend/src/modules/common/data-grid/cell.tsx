@@ -91,18 +91,8 @@ function Cell<R, SR>({
   }
 
   function handleMouseDown(event: MouseEvent<HTMLDivElement>) {
-    // Suppress the browser's native focus-on-mousedown scroll. The cell is
-    // `tabIndex`'d for roving-tabindex keyboard nav and also has `scroll-mt-32`
-    // (so keyboard navigation keeps the focused cell out from under the page's
-    // sticky header). Together these cause a visible "page jumps after first
-    // click" when clicking a cell near the top edge of the viewport; the UA
-    // honors scroll-margin-top during the implicit focus scroll.
-    //
-    // Focus the cell ourselves *synchronously* with `preventScroll: true`. The
-    // browser's implicit focus then sees an already-focused element and becomes
-    // a no-op (no scroll). We deliberately do NOT call `event.preventDefault()`
-    // here: that would also cancel the subsequent `dragstart` event and break
-    // any pragmatic-dnd row-drag wiring on the cell.
+    // Focus synchronously without scrolling so the cell's scroll margin cannot jump the page.
+    // Keep the mousedown default: cancelling it would also suppress row drag events.
     event.currentTarget.focus({ preventScroll: true });
     onMouseDown?.(event);
     if (!handleMouseEvent(event, onCellMouseDown)) {
@@ -191,11 +181,8 @@ interface MergedCellContentProps<R, SR> {
 }
 
 /**
- * Host-cell content when other columns are merged into this column (`modes.*.merge`).
- * Slot wrappers carry `data-is-compact` so columns reuse their existing
- * `in-data-[is-compact=true]:hidden` classes for icon-only rendering, and
- * `data-tile-slot="<side>"` as a styling hook. Empty slots collapse entirely;
- * `placeholderValue` is suppressed inside slots (a cell full of `-` is noise).
+ * Render columns merged into a host cell with compact and side styling hooks.
+ * Empty slots collapse and suppress placeholder noise.
  */
 function MergedCellContent<R, SR>({
   column,

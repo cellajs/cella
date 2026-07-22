@@ -98,11 +98,8 @@ export const env = createEnv({
 
     MODE: z.enum(['api', 'mcp-worker', 'cdc', 'migrate']).default('api'),
 
-    // When true, the API server applies pending migrations + ensures DB roles
-    // on boot, before binding the port. Production sets this to 'false' so the
-    // serve path stays fast and migrations run as a separate one-shot
-    // (MODE=migrate) before the app rolls. Defaults to 'true' so local dev and
-    // tests keep their single-command boot behaviour.
+    // Apply migrations and roles before binding the API port.
+    // Production uses separate migrate mode; local development and tests default to boot-time setup.
     RUN_MIGRATIONS_ON_BOOT: z
       .string()
       .default('true')

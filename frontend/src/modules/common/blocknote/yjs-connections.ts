@@ -12,10 +12,7 @@ import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
 const GRACE_PERIOD_MS = 30_000;
 const MAX_BACKOFF_MS = 30_000;
 
-// Safety-net circuit breaker: after this many consecutive token failures
-// we stop retrying and show a toast. Normally the server rejects at HTTP
-// level (no WS upgrade), so y-websocket's exponential backoff works, but
-// this guards against edge cases (e.g. mismatched secrets).
+// Stop repeated token failures after the WebSocket backoff safety threshold and notify the user.
 const MAX_TOKEN_FAILURES = 5;
 
 /**

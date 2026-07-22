@@ -66,14 +66,9 @@ export const generateMockEntityChannelIdColumns = <E extends ProductEntityType>(
 const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t) === null) as ChannelEntityType;
 
 /**
- * Generates the channel entity id columns a product entity carries in a create-request body, derived
- * from the hierarchy but excluding the root context (e.g. 'organization'), which is supplied by the
- * route path and not the body. In cella's default hierarchy this yields an empty object, so
- * cella-origin request-body mocks are unchanged; forks that add deeper context relations (e.g. a
- * 'project') get those ids automatically, keeping security/API tests fork-agnostic.
- *
- * The non-root ancestor ids are required (they are always populated), so this satisfies create-body
- * schemas where deeper ancestors (e.g. `projectId`) are mandatory.
+ * Generates required non-root ancestor and related-channel IDs for create-body mocks.
+ * The route supplies the root ID; hierarchy-derived values keep fork tests aligned when deeper
+ * contexts are added.
  */
 export const generateMockEntityBodyChannelIdColumns = <E extends ProductEntityType>(
   entityType: E,

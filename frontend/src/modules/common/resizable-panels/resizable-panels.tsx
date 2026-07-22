@@ -287,10 +287,7 @@ function resolveLayout(
     }
   }
 
-  // ─── Growing side (A2, O1, O2) ──────────────────────────────────────
-  // No max-width cap: grower absorbs all freed pixels to keep total
-  // panel sum constant. The viewport clamp in redistributePanels
-  // prevents any panel from exceeding the visible area after drag ends.
+  // Let the growing panel absorb freed pixels; final redistribution clamps it to viewport.
   if (growPanel) {
     let growDelta = totalFreed;
 
@@ -815,10 +812,7 @@ export function ResizablePanelGroup({
     return changed;
   };
 
-  // ─── ResizeObserver: redistribute on container or parent resize ─────────
-  // Observes both the container (for autoFill mode resizes) and the parent
-  // scroll container (for overflow mode where the container has a fixed
-  // min-width and doesn't resize when the window shrinks).
+  // Observe the container for auto-fill and its parent for fixed-min-width overflow resizing.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;

@@ -115,10 +115,8 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
         }
       }
 
-      // Delete only after the durable record accepts the session's final blocks.
-      // Only 'retry' (backend/network down)
-      // blocks: reschedule and keep the row. 'permanent' (entity deleted, permission
-      // revoked) can never converge, so deletion proceeds.
+        // Delete after final blocks persist, or after a permanent failure that cannot converge.
+        // Retry transient backend failures while retaining the session row.
       if (finalState && finalState.length > 0) {
         const result = await materializeState(collab, finalState);
         if (result === 'retry') {

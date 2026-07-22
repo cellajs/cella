@@ -10,11 +10,8 @@ export type JsxEmailComponent<TProps extends BaseProps<any>> = React.FC<Readonly
 
 export type PlainTextOptions = HtmlToTextOptions;
 
-// `plainText` is the only render option this fork acts on. `disableDefaultStyle`,
-// `inlineCss`, `minify` and `pretty` are kept for API parity with jsx-email but
-// are inert here: this fork dropped the inline/minify/pretty plugins, and
-// per-component default styling is controlled by each component's own
-// `disableDefaultStyle` prop (see `BaseProps`).
+// Only `plainText` affects rendering; the remaining options preserve jsx-email API parity.
+// Components control default styling through their own `disableDefaultStyle` prop.
 export interface RenderOptions {
   disableDefaultStyle?: boolean;
   inlineCss?: boolean;

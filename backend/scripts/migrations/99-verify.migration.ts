@@ -14,19 +14,9 @@ import { classifyRlsTables } from './10-rls.migration';
 import { unloggedTables } from './10-unlogged.migration';
 
 /**
- * Verification block that always runs last in the combined side-effect migration.
- * (99- filename prefix), asserting that the earlier blocks achieved their end state.
- *
- * Why this exists: every side-effect block runs inside its own guards, and a failure
- * that slips through (or a block that silently rolls back) leaves shipped databases
- * where triggers or partitioning were simply absent while the migration reported success.
- * Because the migrator applies everything in one transaction, a failed assertion here
- * rolls back the ENTIRE migration and surfaces the real problem at migrate time.
- *
- * Each assertion honors the same precondition as the block it verifies (roles present,
- * pg_partman installed), so environments that legitimately skip a feature still pass.
- * The SQL is generated from the same TS sources as the producers, so the assertions
- * evolve in lockstep with the blocks they check.
+ * Builds the final assertions for the combined side-effect migration, causing any missing
+ * end state to roll back the transaction. Assertions share producer preconditions and
+ * derive expected state from the same TypeScript sources.
  */
 async function run(): Promise<SideEffectBlock> {
   const { rlsTables, fullCrudTables, readOnlyTables } = classifyRlsTables();

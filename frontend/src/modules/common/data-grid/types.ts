@@ -10,12 +10,7 @@ export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 /** Placement of a merged column relative to the host cell content (Base UI positioning vocabulary) */
 export type TileSide = 'top' | 'right' | 'bottom' | 'left';
 
-/**
- * Named display modes that trigger per-column overrides.
- * - 'compact': user density toggle (the grid's `isCompact` prop)
- * - 'mobile': viewport-driven, active on the xs breakpoint
- * When both are active, 'mobile' takes precedence per overridden property.
- */
+/** Column display modes; mobile overrides compact properties when both are active. */
 export type GridMode = 'compact' | 'mobile';
 
 /** Which display modes are currently active */
@@ -88,12 +83,7 @@ export interface Column<TRow, TSummaryRow = unknown> {
   readonly name: string | ReactElement;
   /** A unique key to distinguish each column */
   readonly key: string;
-  /**
-   * Reactive hide flag for non-breakpoint conditions (e.g. a user column-visibility
-   * toggle, or `isSheet`). When true the column is excluded from the grid, same as
-   * a failing `minBreakpoint`/`maxBreakpoint`. Filtered inside the grid; consumers
-   * pass the full column list and toggle this flag.
-   */
+  /** Reactively exclude this column independently of breakpoint visibility. */
   readonly hidden?: boolean;
   /**
    * Column width. If not specified, it will be determined automatically based on grid width and specified widths of other columns
@@ -130,12 +120,7 @@ export interface Column<TRow, TSummaryRow = unknown> {
   readonly sortable?: Maybe<boolean>;
   /** Enable dragging of the column */
   readonly draggable?: Maybe<boolean>;
-  /**
-   * Mark this column's cells as the row drag handle (drag source) for row
-   * reordering. Combine with DataGrid `onRowReorder` to enable.
-   * If no column is marked, no row dragging is possible; drop targets are
-   * still active per-cell so other columns can be dragged onto.
-   */
+  /** Mark cells as row drag sources; drop targets remain active on every column. */
   readonly rowDragHandle?: Maybe<boolean>;
   /** Sets descending as the column's initial sort order. */
   readonly sortDescendingFirst?: Maybe<boolean>;
@@ -158,32 +143,18 @@ export interface Column<TRow, TSummaryRow = unknown> {
    */
   readonly maxBreakpoint?: BreakpointKey;
 
-  /**
-   * Enable text wrapping in cells.
-   * - number: Max visible lines (CSS line-clamp). Row height auto-adjusts per row based on content.
-   * - true: Unlimited wrapping (equivalent to a high line cap, e.g. 10).
-   * Pair with a base `rowHeight`; the grid computes `max(rowHeight, lines * lineHeight)` per row.
-   * @default undefined (single-line truncation)
-   */
+  /** Wrap to a numeric line cap or effectively unlimited lines, expanding beyond base row height. */
   readonly wrapText?: Maybe<number | boolean>;
   /** Overrides the default newline-counting heuristic for variable row height. */
   readonly estimateLines?: (row: TRow) => number;
   /**
-   * Per-mode overrides (see `GridMode`). Each mode can override widths and/or
-   * declare a `merge` rule folding this column into a host cell. When both modes
-   * are active, `mobile` wins per overridden property. A merge rule whose host is
-   * not currently a grid column is inactive; the column falls back to normal visibility.
-   * @example modes: { compact: { width: 50 }, mobile: { merge: { into: 'summary', side: 'left' } } }
+   * Override widths or merge into a host per display mode; mobile properties win over compact.
+   * Missing hosts disable their merge and restore normal visibility.
    */
   readonly modes?: Maybe<Partial<Record<GridMode, ColumnModeOverrides>>>;
   /** Options for cell editing */
   readonly editorOptions?: Maybe<{
-    /**
-     * The kind of editor this cell opens. Drives the cell's hover cursor so the
-     * affordance matches the interaction: a text I-beam for free-text editors,
-     * a pointer for editors that open a picker (select, drawer, popover…).
-     * @default 'text'
-     */
+    /** Select a text or picker cursor for the cell editor affordance. */
     readonly editorType?: Maybe<'text' | 'select'>;
     /**
      * Also render the cell content while editing. Enable when the editor renders
@@ -447,23 +418,10 @@ export interface ColumnWidth {
 
 export type ColumnWidths = ReadonlyMap<string, ColumnWidth>;
 
-/**
- * Cell selection mode governs cell focus & range selection.
- * Independent of row selection (which is driven by `selectedRows`/`onSelectedRowsChange`
- * and the optional checkbox column).
- * - 'none': No cell focus, keyboard navigation disabled
- * - 'cell': Single cell focus (keyboard nav, copy/paste single cell), default
- * - 'cell-range': Multi-cell range selection (Shift+Click/Arrow, range copy/paste)
- */
+/** Cell focus mode: disabled, one navigable cell, or a Shift-extended copy/paste range. */
 export type CellSelectionMode = 'none' | 'cell' | 'cell-range';
 
-/**
- * Row selection mode governs what clicking a row body does.
- * The checkbox column (if present) always operates as multi-select regardless of this prop.
- * - 'none': Clicking a row body does not change row selection (default)
- * - 'single': Clicking a row body selects only that row (replaces selection)
- * - 'multi': Clicking a row body toggles it; Shift+click extends a range
- */
+/** Row-body selection: disabled, replacement single-select, or toggle/range multi-select. */
 export type RowSelectionMode = 'none' | 'single' | 'multi';
 
 export type ResizedWidth = number | 'max-content';

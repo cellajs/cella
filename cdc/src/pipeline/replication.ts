@@ -41,10 +41,8 @@ export function createReplicationService(): LogicalReplicationService {
     {
       connectionString: connectionUrl.toString(),
       application_name: `${appConfig.slug}-cdc-worker`,
-      // Verified TLS, consistent with cdcDb: the replication stream carries full
-      // row data and must not silently downgrade. buildVerifiedSsl pins the cert
-      // identity check to the dialed host so the Scaleway RDB cert's SANs are
-      // honored (returns undefined outside production, where TLS is not required).
+// Match the query connection's verified TLS for full-row replication data.
+// Certificate identity is pinned to the dialed host in production.
       ssl: buildVerifiedSsl(env.DATABASE_CDC_URL),
     },
     {
@@ -92,34 +90,16 @@ export async function ensureReplicationSlot(): Promise<void> {
 }
 
 /**
- * Guards {@link recreateReplicationSlot} to a single execution per worker
- * lifetime. The self-heal is a one-time boot fixup for a slot created ahead of
- * its publication; once done, a recurring stale-publication error is a genuine
- * fault, not the transient boot condition. Without this latch the retry loop
- * would drop and recreate the slot on every iteration, discarding accumulated
- * WAL each time. A restart clears it, which is the only sanctioned way to arm a
- * second attempt.
+ * Limits stale-slot recovery to one attempt per worker lifetime.
+ * This prevents the retry loop from repeatedly discarding WAL; restarting arms another attempt.
  */
 let slotRecreationAttempted = false;
 
 /**
- * Drop and recreate the replication slot at the current WAL position to clear a
- * stale start position (see {@link isStalePublicationError}). A slot created
- * before its publication decodes a WAL window in which the publication is
- * absent, so every subscribe fails and the slot never advances; recreating it
- * past the publication lets decoding succeed. Any walsender still pinning the
- * slot (the just-failed stream) is terminated first so the drop is not blocked.
- * The skipped WAL is recovered by the sync engine's sequence catch-up.
- *
- * Two guards keep this destructive action from firing when unwanted. It runs at
- * most once per worker lifetime ({@link slotRecreationAttempted}), and only
- * after confirming the publication actually exists now: the stale-slot error and
- * a genuinely missing publication (wrong name, migration not yet run, publication
- * dropped) raise the same message, but recreating the slot only helps the former.
- * When the publication is absent the loop backs off without touching the slot so
- * the attempt is preserved for once it appears.
- *
- * Best-effort: a failure is logged and the retry loop tries again.
+ * Recreates a slot whose WAL start predates its publication, after terminating its sender.
+ * The sync sequence recovers skipped WAL. This runs once per worker and only after confirming
+ * the publication exists, distinguishing a stale slot from a missing publication.
+ * Failures are logged for the normal retry loop.
  */
 async function recreateReplicationSlot(): Promise<void> {
   if (slotRecreationAttempted) {
@@ -158,14 +138,8 @@ async function recreateReplicationSlot(): Promise<void> {
 const PG_OBJECT_IN_USE = '55006';
 
 /**
- * Best-effort lookup of the connection currently holding the replication slot.
- *
- * "replication slot is active for PID N" alone is hard to act on: the PID is a
- * Postgres walsender, not a host process. The holder's application_name and
- * backend_start usually identify the competing worker at a glance, such as the
- * outgoing worker of a rolling deploy or a stray local process that never shut down.
- * Returns null when the slot is free or the lookup fails; diagnostics must
- * never break the retry loop.
+ * Describes the worker connection holding the replication slot for actionable diagnostics.
+ * Returns null when free or unavailable so diagnostic lookup never breaks retries.
  */
 async function describeSlotHolder(): Promise<Record<string, unknown> | null> {
   try {
@@ -213,13 +187,8 @@ export function setupBackpressure(): void {
  * Subscribe to the replication slot with automatic reconnection.
  */
 export async function subscribeWithReconnect(service: LogicalReplicationService, plugin: PgoutputPlugin): Promise<never> {
-  // During a rolling deploy the new worker contends for the slot the old worker
-  // still holds, so subscribe() rejects until the old worker releases it. For the
-  // first `slotTakeover.maxAttempts` retries (the handoff window) retry at the
-  // tightened `slotTakeover.retryDelayMs` so the takeover is sub-second; after
-  // that, settle to the normal `reconnection` cadence so a steady-state reconnect
-  // does not hammer Postgres. A first boot with no old worker acquires the slot
-  // immediately, so the fast cadence only ever applies under real contention.
+  // Retry quickly during a rolling-deploy slot handoff, then use the normal cadence.
+  // This keeps takeover fast without hammering Postgres during sustained contention.
   let attempt = 0;
   while (true) {
     try {
@@ -242,11 +211,8 @@ export async function subscribeWithReconnect(service: LogicalReplicationService,
         ...(slotHolder && { slotHolder }),
       });
       replicationState.markStopped();
-      // Self-heal a slot created before its publication (e.g. after a database
-      // reset recreated the slot ahead of the migration's publication):
-      // reposition it past the publication so the next subscribe can decode.
-      // Only the stale-publication error triggers this, so it never interferes
-      // with the slot-takeover handoff (a distinct object_in_use error).
+      // Reposition a slot whose start predates its publication so decoding can proceed.
+      // The distinct stale-publication error keeps this out of normal slot handoff.
       if (isStalePublicationError(error)) {
         log.warn(`Slot '${CDC_SLOT_NAME}' predates publication '${CDC_PUBLICATION_NAME}', recreating to self-heal`);
         await recreateReplicationSlot();

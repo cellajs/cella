@@ -12,11 +12,8 @@ interface PartitionConfig {
   retention: string | null;
 }
 
-// The conversion clones the live table from the catalog (LIKE + captured PK/FK/index DDL),
-// so there is no hardcoded copy of the schema to drift. tests/partman-parity.test.ts still
-// asserts the structural preconditions against the Drizzle schemas: the table exists, its PK
-// includes the partition column, and the control column is NOT NULL (pg_partman requirement).
-// Exported for that test.
+// Catalog cloning avoids a duplicate schema definition. The parity test verifies each table,
+// partition-column PK, and required non-null control column against Drizzle metadata.
 export const partitionConfigs: PartitionConfig[] = [
   { name: 'sessions', partitionColumn: 'expires_at', interval: '1 week', retention: '30 days' },
   { name: 'tokens', partitionColumn: 'expires_at', interval: '1 week', retention: '30 days' },
@@ -26,25 +23,10 @@ export const partitionConfigs: PartitionConfig[] = [
 ];
 
 /**
- * Convert one table to a partitioned table, entirely catalog-driven:
- *
- *   1. Guards: PK must include the partition column; no extra UNIQUE constraints (a unique
- *      index on a partitioned table must include the partition column, so any other unique
- *      cannot be carried over, so fail loudly to preserve the guarantee).
- *   2. Capture PK / FK / index / trigger definitions from the catalog. They reference the
- *      table by its original name, which the new partitioned table takes over, so they
- *      replay verbatim once the old table (and its schema-wide index names) is dropped.
- *   3. Clone via LIKE (defaults, NOT NULL, CHECKs; PK/FK/indexes come from step 2).
- *   4. Register with pg_partman (creates child + default partitions), configure retention.
- *   5. Copy data (LIKE guarantees identical column order; pre-window rows land in the
- *      DEFAULT partition, reaped by retention like any other partition).
- *   6. Drop the old table, then replay PK, FKs, indexes, and triggers.
- *
- * Index/PK creation happens strictly AFTER the old table is dropped: index names are
- * schema-wide and renaming a table does NOT rename its indexes, so creating them any
- * earlier collides with the originals (the bug that silently disabled partitioning).
- *
- * Idempotent: skips (and only refreshes retention config) if the table is already partitioned.
+ * Generates an idempotent, catalog-driven conversion to a pg_partman table.
+ * Constraints, indexes, and triggers are captured and replayed after the source table is
+ * dropped because their schema-wide names would otherwise collide. Existing partitions
+ * only receive refreshed retention settings.
  */
 function generateTablePartitionSql(config: PartitionConfig): string {
   const retentionSql = `

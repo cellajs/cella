@@ -1,21 +1,10 @@
 const inFlight = new Map<string, Promise<unknown>>();
 
 /**
- * Coalesce concurrent requests for the same key.
- * Uses the singleflight pattern: first request executes the fetcher, and
- * concurrent requests wait for the same promise.
- *
- * @param key - Unique identifier for the request (e.g., 'attachment:abc:5')
- * @param fetcher - Async function to fetch the data
- * @returns The fetched data
- *
- * @example
- * ```typescript
- * // 100 concurrent requests for same entity = 1 DB query
- * const data = await coalesce(`attachment:${id}:${version}`, async () => {
- *   return await db.query.attachmentsTable.findFirst({ where: eq(id, attachmentId) });
- * });
- * ```
+ * Shares one in-flight fetch among concurrent callers using the same key.
+ * @param key Request identity.
+ * @param fetcher Work executed by the first caller.
+ * @returns The shared result.
  */
 export async function coalesce<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   // If already fetching, wait for that promise

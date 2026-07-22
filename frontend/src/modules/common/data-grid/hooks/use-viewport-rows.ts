@@ -1,12 +1,7 @@
 import { useMemo } from 'react';
 import { floor, max, min } from '../utils/grid-utils';
 
-/**
- * Rows rendered while the layout is not yet measured (a single pre-paint render
- * pass). Bounded so a large cached dataset doesn't render every row component
- * on first paint; the real overscan window replaces it as soon as the layout
- * effect commits its first measurement.
- */
+/** Bound the pre-measurement row set until the real overscan window is available. */
 const UNMEASURED_ROW_COUNT = 30;
 
 interface ViewportRowsArgs<R> {

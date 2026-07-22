@@ -66,18 +66,9 @@ interface RefContext {
 }
 
 /**
- * Resolve a BlockNote block's file reference. The reference alone determines how; no public/private
- * flag needed:
- * - a **UUID attachment id** (no slashes) → private media: local blob first, else a presigned URL
- *   by id + variant (permission-checked server-side);
- * - a **slashed cloud key** → public media, straight from the CDN.
- *
- * Returns `''` for anything unresolvable, which renders an empty `src` and prevents a
- * request at a bogus URL.
- *
- * A local hit returns an object URL this function cannot revoke because it has no lifecycle to
- * hang that on, and BlockNote embeds the result in static HTML. Callers that re-resolve often
- * should track and revoke `blob:` results themselves.
+ * Resolves slashed public keys through the CDN and private attachment IDs through local storage
+ * or a presigned URL. Unresolvable values return an empty string. Callers repeatedly resolving
+ * local blobs must revoke returned object URLs themselves.
  */
 export async function resolveBlockNoteFileRef(ref: string, ctx: RefContext = {}): Promise<string> {
   if (!ref.length) return '';

@@ -53,18 +53,9 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
 const embeddingsByProduct = resolveEmbeddings();
 
 /**
- * Strip deleted embedded-entity IDs from host-entity array columns.
- *
- * Driven by `appConfig.productEmbeddings`: adding a new embedding relationship
- * (e.g. tags on attachments) requires zero changes here.
- *
- * Handles both delete-style events (`action === 'delete'`, including unpublishes) and
- * soft deletes (an UPDATE that sets `deletedAt`). Soft delete keeps the row, so without
- * this the host arrays would keep dangling references to tombstoned entities.
- *
- * Runs in CDC (not in the user request) to avoid row locks during delete handlers.
- * The GIN index on the host column ensures fast containment checks, and the
- * parent-scoping filter limits the UPDATE scope.
+ * Removes deleted or unpublished embedded IDs from configured host arrays.
+ * CDC performs the indexed, parent-scoped cleanup outside request handlers to avoid row locks;
+ * configuration supplies every embedding relationship.
  */
 export async function cleanupEmbeddingReferences(
   embeddedProductType: ProductEntityType,

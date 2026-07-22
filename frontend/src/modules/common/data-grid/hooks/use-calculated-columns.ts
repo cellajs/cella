@@ -87,10 +87,8 @@ export function useCalculatedColumns<R, SR>({
       return true;
     };
 
-    // Resolve merge rules up front: a rule is only valid when its host resolves
-    // to a real grid column right now (visible at this breakpoint, not merged
-    // away itself). Invalid rules deactivate, and the column falls back to
-    // its normal visibility rules below.
+    // Activate merges only when the host is currently visible and not itself merged.
+    // Invalid rules fall back to normal column visibility.
     const validMerges = new Map<string, ColumnMergeRule>();
     {
       const gridKeys = new Set<string>();

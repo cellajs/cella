@@ -59,10 +59,8 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
       return data.id;
     }
 
-    // Skip reopening if same trigger was just closed (popover dismiss raced with button onClick).
-    // Programmatic openers opt out; they don't have a click-to-toggle race to debounce, and the
-    // guard otherwise breaks them under React StrictMode (mount → cleanup → mount runs `create`
-    // twice with the same id within the 300ms window).
+    // Suppress click-trigger reopen races immediately after dismissal.
+    // Programmatic openers bypass this guard so StrictMode remounts remain valid.
     if (!data.programmatic) {
       const { lastRemovedTriggerId, lastRemovedAt } = get();
       if (lastRemovedTriggerId === data.triggerId && Date.now() - lastRemovedAt < 300) {

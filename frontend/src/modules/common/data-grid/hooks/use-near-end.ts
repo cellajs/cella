@@ -17,13 +17,8 @@ interface UseNearEndOptions {
 }
 
 /**
- * Reports whether the rendered viewport is near the end of the row dataset
- * (infinite scroll / load more) as level-triggered state, not a one-shot event.
- * The consumer pairs it with its own query state (isFetching, hasNextPage) and
- * re-evaluates when that state changes, so a load opportunity that can't be
- * acted on immediately (e.g. a background refetch is in flight) is retried once
- * it can be. A fired-and-dropped event here can stop infinite scroll
- * permanently.
+ * Reports near-end state as a level trigger for infinite scrolling.
+ * Consumers can retry deferred loads when query state changes, avoiding dropped one-shot events.
  */
 export function useNearEnd({
   totalRows,

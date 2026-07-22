@@ -9,11 +9,8 @@ const { isSeenTracked, seenKeys } = await import('./helpers');
 const { useSeenStore } = await import('./seen-store');
 const { applyUnfetchableRemovalUnseen, ingestSyncedRows, noteUnseenReconciled } = await import('./unseen-sync');
 
-// The sample seen-tracked product type and its home context are derived from config, so this
-// spec is identical across forks: base Cella tracks an org-homed 'attachment', a fork may track a
-// deeper-homed type such as 'task'. A row's home channel (the node `resolveDeepestAncestorId`
-// groups badges by) is the id of its deepest non-null ancestor; the row also carries every
-// further ancestor id (e.g. the non-nullable organization), matching how real synced rows look.
+// Derive tracked type and effective home from config so the fixture works across fork hierarchies.
+// Rows include the chosen deepest ancestor and all required parents like real sync payloads.
 const TRACKED = appConfig.seenTrackedProductTypes[0];
 const ANCESTORS = hierarchy.getOrderedAncestors(TRACKED); // deepest → root
 const ancestorId = Object.fromEntries(ANCESTORS.map((type) => [type, `ch-${type}`]));

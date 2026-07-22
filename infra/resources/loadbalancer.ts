@@ -37,12 +37,8 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   const appHost = serviceHost('frontend')
   const appIsAtApex = appHost === dnsZone
 
-  // Public hosts: one DNS record + cert per unique HOSTNAME, not per service.
-  // Under the same-origin model every path-routed service shares the app host,
-  // so a per-service loop would emit duplicate records. `base` names the Pulumi
-  // resources and the first service carrying a host claims it: the default (app)
-  // service goes first, so the shared app host keeps its `app-*` URNs. A fork
-  // running host-routed services gets one host (and one base name) per service.
+// Create DNS and certificates per unique hostname, not per service.
+// The first service claims resource naming, preserving app URNs for shared same-origin hosts.
 
   interface PublicHost {
     host: string
@@ -122,10 +118,8 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     }, { dependsOn: [apexDns] })
   }
 
-  // Let's Encrypt certificates: gated on the DNS record being publicly
-  // resolvable (not merely created) before Scaleway runs the ACME validation,
-  // and gated after on `ready` status so an issuance failure surfaces AT the
-  // cert with its ACME detail before the frontend attach.
+// Wait for public DNS resolution before ACME, then for certificate readiness before attachment.
+// This surfaces issuance failures with certificate-level detail.
 
   const certs = new Map<string, scaleway.loadbalancers.Certificate>()
   const certGates: CertReadyGate[] = []
@@ -155,15 +149,9 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     certGates.push(new CertReadyGate('apex-cert-ready', { certificateId: apexCert.id }, { dependsOn: [apexCert] }))
   }
 
-  // LB Backends: each targets the private IPs of its service's active VM
-  // generation(s). Pulumi sets the initial list, then ignores live changes so
-  // tasks/cutover.ts can perform explicit expand→health→contract handoff via
-  // Scaleway SetBackendServers without Pulumi fighting drift. Health checks hit
-  // the app's own `/health` (no ingress hop): a crashed generation is correctly
-  // marked down.
-  // `onMarkedDownAction` follows the service's drainPolicy: HTTP services let
-  // in-flight requests finish ('none'); WebSocket services shed sessions so
-  // clients reconnect to the new generation ('shutdown_sessions').
+  // Pulumi seeds backend IPs, then cutover owns live expand/health/contract changes.
+  // Direct app health checks mark crashed generations down. Drain policy preserves HTTP requests
+  // or closes WebSockets so clients reconnect to the new generation.
 
   const backends = new Map<ServiceName, scaleway.loadbalancers.Backend>()
   for (const service of lbServices) {
@@ -218,12 +206,8 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     })
   }
 
-  // Path-begin routes (same-origin model): `https://<any host>/<prefix>...`
-  // reaches the service's backend; everything else falls through to the
-  // default backend (the app origin / SPA proxy). Scaleway routes match on
-  // exactly ONE criterion (host or path) and do NOT strip the prefix. Each
-  // service also serves itself under its `lbPathBegin` (registry-declared;
-  // validated in compose/infrastructure.ts).
+// Same-origin path routes preserve their prefix and otherwise fall through to the app backend.
+// Scaleway routes match one criterion, so service prefixes are registry-declared and validated.
   for (const service of lbServices) {
     if (!service.lbPathBegin) continue
     new scaleway.loadbalancers.Route(`${baseName(service.slug)}-path-route`, {
@@ -243,11 +227,8 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
         type: 'redirect',
         redirects: [{
           type: 'location',
-          // Preserve the original path and query so deep links (e.g. /static/logo/logo.png)
-          // survive the apex→www redirect. Scaleway supports {{host}}, {{path}} and {{query}}
-          // placeholders; {{path}} does NOT include the leading slash, so it must be added
-          // literally, matching Scaleway's documented format `https://{{host}}/{{path}}?{{query}}`.
-          // Omitting it yields a garbled redirect like `https://www.example.comauth/authenticate`.
+// Preserve path and query through the apex-to-www redirect.
+// Scaleway's `{{path}}` omits the leading slash, which must be added literally.
           target: `https://${appHost}/{{path}}?{{query}}`,
           code: 301,
         }],

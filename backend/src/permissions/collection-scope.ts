@@ -174,11 +174,8 @@ const resolveScopes = (
       continue;
     }
 
-    // Any non-root ancestor grant (home context or, in deep chains, an intermediate
-    // level like course/courseSection) → scope to those ids within this organization.
-    // Each grant is later filtered by its OWN level's id column; on tables with
-    // denormalized ancestor columns an intermediate id covers every row physically
-    // below it. Single-row checks walk the same chain; see getAllDecisions.
+    // Scope non-root grants by their own denormalized ancestor ID column.
+    // Intermediate grants thereby cover every physically nested row, matching single-row checks.
     if (
       membership.organizationId === organizationId &&
       membership.channelId &&
@@ -198,30 +195,17 @@ const resolveScopes = (
     }
   }
 
-  // Public read grants are membership-independent, so they are added outside the membership walk.
-  // a caller with no membership scope at all can still read public rows. Modelled as an
-  // org-wide conditional slice (`publicAt IS NOT NULL`), which means it rides the exact same
-  // compile path as policy row conditions and needs no special case downstream.
+  // Add membership-independent public reads as an organization-wide conditional scope.
+  // It compiles through the same path as policy row conditions.
   if (publicGrants?.[entityType]) addConditional('public', null);
 
   return acc;
 };
 
 /**
- * Result of resolving the effective scope filter for a collection read.
- *
- * Unconditional scope (rows readable outright):
- * - `subChannelIds === undefined` → no sub-context filter (org-wide read, e.g. org admin).
- * - `subChannelIds === []` → no unconditional scope.
- * - `subChannelIds === [..]` → restrict rows to these sub-context ids.
- *
- * Conditional scopes (`conditionalScopes`): additional rows readable where a row
- * condition matches (OR-ed with the unconditional scope). Empty for callers whose roles
- * carry no row-conditional read grants, existing call sites that only consume
- * `subChannelIds` keep their exact previous behavior.
- *
- * A read is empty only when `subChannelIds` is `[]` AND `conditionalScopes`,
- * `ancestorScopes` and `homeScopes` are all empty.
+ * Effective collection-read scopes, combined with OR semantics.
+ * Undefined `subChannelIds` means organization-wide access, an empty array means no
+ * unconditional access, and IDs restrict it. A read is empty only when every scope is empty.
  */
 export interface CollectionReadFilter {
   subChannelIds: string[] | undefined;
@@ -396,10 +380,8 @@ export const resolveCollectionReadFilterForPolicies = ({
   publicGrants,
   topology,
 }: CollectionReadScopeInput): CollectionReadFilter => {
-  // System admins read every row the organization contains. This mirrors the engine's own
-  // short-circuit (`getAllDecisions` grants all actions before consulting memberships): a
-  // sysadmin passes `orgGuard` with NO membership, so without this they would resolve to an
-  // empty scope and get an empty list while single-row reads of the same rows succeed.
+  // Match the engine's administrator short-circuit with organization-wide collection access.
+  // Administrators may pass the guard without a membership.
   if (!('anonymous' in actor) && actor.isSystemAdmin) {
     // An explicitly requested sub-context still narrows the read. Sysadmin widens
     // WHO can read, never WHAT a placement-filtered list returns.
@@ -442,11 +424,8 @@ export const resolveCollectionReadFilterForPolicies = ({
   const isIntermediate = (channelType: ChannelEntityType | undefined): boolean =>
     channelType !== undefined && channelType !== homeChannel && channelType !== rootChannel;
 
-  // `requested` narrowing stays strictly home-level (pre-deep-chain semantics):
-  // Intermediate-level entries are dropped here. A requested-id read widened by an
-  // intermediate grant would leak rows outside the requested set unless every caller
-  // also ANDs its own placement filter. Deep-chain list ops therefore skip `requested`
-  // and apply placement as an explicit filter on top of the aggregate WHERE.
+  // Restrict requested IDs only at home level; intermediate grants could otherwise widen the set.
+  // Deep-chain callers apply placement explicitly above the aggregate predicate.
   const conditionalScopesFor = (ids: string[]): ConditionalScope[] => {
     const remaining = ids.filter((id) => !unconditionallyReadable(id));
     if (remaining.length === 0) return [];

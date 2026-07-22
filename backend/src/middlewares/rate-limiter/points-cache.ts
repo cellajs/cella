@@ -23,17 +23,10 @@ const cache = new LRUCache<PointsEntry>({
 });
 
 /**
- * Try the in-memory fast path for a points-budget key.
- * Used by `limit` mode for API budgets; brute-force limiters always use the DB.
- *
- * Fast-path consumes are not written to the DB immediately; they accrue as debt
- * (`consumed - flushed`) that {@link takeDebt} settles in bulk on the next DB trip.
- * Without that settlement the DB count stays near zero and the budget is never
- * enforced. The remaining imprecision is multi-process: each process can run
- * up to `threshold × budget` locally before its first flush.
- *
- * @returns `'allow'` if the request can proceed without DB,
- *          `'check-db'` if the DB path should be used
+ * Attempts the in-memory points-budget fast path.
+ * Local consumption accrues as debt settled by `takeDebt`; each process can consume up to
+ * the configured threshold before its first database flush.
+ * @returns Whether to allow locally or check the database.
  */
 export function tryFastConsume(key: string, cost: number, budget: number): 'allow' | 'check-db' {
   const now = Date.now();

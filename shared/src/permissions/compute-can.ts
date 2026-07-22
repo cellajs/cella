@@ -44,16 +44,8 @@ function computeEntityPermissions(
 }
 
 /**
- * Frontend `can` map for a channel entity and all its hierarchy descendants, derived from the
- * membership baked onto the channel entity. `'own'` grants are preserved (see {@link ActionStates}).
- * Returns `{}` when no membership is given.
- *
- * @example
- * ```ts
- * const can = computeCan('organization', membership, policies);
- * // can.organization.update → true
- * // can.attachment.update → 'own' (member can only update own attachments)
- * ```
+ * Builds the frontend permission map for a channel and its descendants from one membership.
+ * Row conditions remain unresolved; missing membership returns an empty map.
  */
 export const computeCan = (
   channelType: ChannelEntityType,

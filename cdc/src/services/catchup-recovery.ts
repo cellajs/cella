@@ -7,15 +7,8 @@ import { replicationState } from './replication-state';
 import { wsClient } from '../network/websocket-client';
 
 /**
- * Run post-catchup recovery after the CDC worker finishes replaying old WAL.
- *
- * 1. Recalculate all counters from source data (activities are already persisted,
- *    entity seq stamps are already applied, but counter UPSERTs were skipped).
- * 2. Send a control message to the backend to bust entity caches.
- * 3. Reset catchup state.
- *
- * This runs between the last catchup flush and the first live event, so the
- * pipeline is effectively paused during recovery.
+ * Recalculates skipped counters, invalidates backend caches, and resets catchup state.
+ * Recovery runs after the final replay flush and before the first live event.
  */
 export async function runPostCatchupRecovery(): Promise<void> {
   const startMs = performance.now();

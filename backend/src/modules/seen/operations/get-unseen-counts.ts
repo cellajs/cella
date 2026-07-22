@@ -28,10 +28,8 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
   const memberships = ctx.var.memberships;
   const actor = actorFrom(ctx);
 
-  // Set() widens the fixed-length config tuple so an empty fork config is a real runtime check.
-  // Counts are grouped by the caller's org memberships, so no memberships means nothing to
-  // count, including for system admins. Their bypass widens rows within an org, not the set
-  // of orgs they are counted against.
+  // No memberships means no badge contexts, including for administrators.
+  // Administrator bypass widens rows inside a membership organization, not the organization set.
   if (memberships.length === 0 || new Set(trackedProductTypes).size === 0) {
     return {};
   }

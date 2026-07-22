@@ -7,16 +7,8 @@ type UseDebounceOptions<T> = {
 };
 
 /**
- * Debounces a value by `delay`. `options.immediateValue` bypasses the debounce and applies
- * instantly when the value matches it. This can delay showing a spinner while hiding it at once.
- *
- * @example
- * // Regular debounce for search input
- * const debouncedSearch = useDebounce(searchTerm, 300);
- *
- * @example
- * // Loading state: delay showing spinner, hide instantly
- * const isLoading = useDebounce(isLoadingRaw, 200, { immediateValue: false });
+ * Debounces a value while allowing one matching value to apply immediately.
+ * This can delay showing a loading state while hiding it at once.
  */
 export function useDebounce<T>(value: T, delay = 1000, options?: UseDebounceOptions<T>): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);

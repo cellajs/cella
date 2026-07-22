@@ -88,13 +88,9 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], productT
 
     log.debug(`markSeen: ${vIds.length}/${entityIds.length} valid entities`);
 
-    // Single-roundtrip CTE that:
-    // 1. Bulk-inserts seen_by rows, skipping already-seen ones via NOT EXISTS. seen_by is
-    //    partitioned by created_at, so a (user_id, product_id) unique arbiter cannot exist;
-    //    a concurrent flush of the same entity can rarely slip through as a duplicate row,
-    //    which readers tolerate (EXISTS semantics) and counter recalculation corrects.
-    // 2. Upserts product_counters only for newly inserted rows (increments view_count)
-    // 3. Returns the count of genuinely new seen rows
+    // Insert unseen rows, increment counters only for inserted candidates, and return their count.
+    // Partitioning prevents a unique user/product arbiter, so concurrent duplicates are tolerated
+    // by EXISTS-based reads and corrected by counter recalculation.
     const values = sql.join(
       vIds.map(
         (entityId) =>

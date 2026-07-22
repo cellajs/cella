@@ -131,12 +131,9 @@ export const config = {
     chatSupport: false as boolean,
   },
 
-  // Three independent version tokens. Bump the relevant one in the SAME PR as the change it guards:
-  // - apiVersion: API contract / frozen-envelope version (wire structure).
-  // - cookieVersion: session cookie name; bump to invalidate all sessions.
-  // - clientCacheVersion: persisted client query-cache shape; bump on a breaking change to a cached
-  //   entity so clients wipe stale cache (queued mutations survive). CI's schema-bust gate enforces
-  //   this when no schema-evolution lens covers the change.
+  // apiVersion guards the API envelope; cookieVersion invalidates all sessions.
+  // clientCacheVersion clears incompatible cached entities while preserving queued mutations.
+  // Bump the relevant token with its change; CI requires cache bumps not covered by an evolution lens.
 
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.

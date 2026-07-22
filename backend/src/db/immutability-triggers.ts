@@ -99,20 +99,9 @@ END;
 $$ LANGUAGE plpgsql;`;
 
 /**
- * Blocks every write from the application's runtime role, so the table can only be changed over
- * the admin connection.
- *
- * For privilege-bearing tables the table GRANT is not a sufficient control on its own: it lives in
- * the one layer Scaleway's coarse per-database privilege API can overwrite (`permission=all`
- * re-grants in bulk), and a single reconcile would silently hand the app role write access. This
- * trigger is independent of grants, so it still refuses the write.
- *
- * Denies `runtime_role` specifically so seeds and migrations can run as `postgres` locally and
- * `admin_role` in production. Referential actions are unaffected because an `ON DELETE CASCADE`
- * runs as the referencing table's owner, not as the caller, so deleting a user still cascades
- * into `system_roles`.
- *
- * `COALESCE(NEW, OLD)` because NEW is null on DELETE and OLD is null on INSERT.
+ * Blocks runtime-role writes even if provider reconciliation restores table privileges.
+ * Admin operations and owner-executed referential actions remain allowed. `COALESCE(NEW, OLD)`
+ * supports INSERT, UPDATE, and DELETE triggers.
  */
 export const adminOnlyWriteFunctionSQL = `
 CREATE OR REPLACE FUNCTION admin_only_write_row() RETURNS TRIGGER AS $$

@@ -11,13 +11,9 @@ import { maskedSecret } from '../prompts/masked-secret'
 import { acquireStackLockOrExit, confirmPassphraseStored, envOr, type InfraContext, promptRequiredInput, promptStackName, pulumiLoginAndSelect, resolveVerifiedPassphrase } from '../shared'
 
 /**
- * Rotate the stack's Pulumi passphrase: verify the current one, generate a new
- * one (shown once), re-encrypt state via `pulumi stack change-secrets-provider
- * passphrase` (old passphrase in env, new one piped on stdin: supported since
- * pulumi v3.44.0), verify the rewritten stack yaml, and sync the new value to
- * the GitHub Environment. Runs under the stack lock so a CI deploy cannot read
- * state mid-re-encryption. Touches no Scaleway resources, so any key with
- * state-bucket access works: no bootstrap key needed.
+ * Rotates and verifies the Pulumi passphrase, then synchronizes it to the GitHub environment.
+ * The stack lock prevents CI reads during state re-encryption. No Scaleway resources are touched,
+ * so state-bucket access is sufficient.
  */
 export async function runRotatePassphrase(context: InfraContext): Promise<void> {
   if (!context.stackYaml || !/^encryptionsalt:/m.test(context.stackYaml)) {

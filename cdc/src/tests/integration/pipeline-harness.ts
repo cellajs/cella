@@ -32,14 +32,9 @@ export interface CdcPipelineHarness {
 }
 
 /**
- * Start the CDC pipeline in-process (slot, service, backpressure, WS client, subscribe) and
- * wait until it is streaming, skipping the production reconnect loop so teardown is
- * deterministic. Assumes a downstream WS server is already listening at `API_WS_URL`.
- *
- * Shared by the CDC backpressure suite and the backend full-flow suite, which point the
- * worker at different WS servers (a stub vs. the real `/internal/cdc` endpoint). CDC modules
- * parse env at import time, so callers that set env at runtime must `import()` this module
- * after configuring env.
+ * Starts the in-process CDC pipeline without the reconnect loop and waits for streaming.
+ * A downstream WebSocket server must already be listening. Import after runtime environment
+ * setup because CDC modules parse configuration at load time.
  */
 export async function startCdcPipeline(): Promise<CdcPipelineHarness> {
   // Drop a leftover slot from a previous run; bail if one is actively held.

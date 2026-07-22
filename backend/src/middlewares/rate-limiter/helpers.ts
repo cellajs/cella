@@ -21,14 +21,9 @@ type RateLimiterOptions = {
 const limiterRegistry = new Map<string, RateLimiterDrizzle | RateLimiterMemory>();
 
 /**
- * Get instance of rate limiter with correct store.
- * Uses RateLimiterDrizzle with a Drizzle-managed schema - no async table creation needed.
- * Instances are memoized by keyPrefix so all consumers sharing a prefix share one warm cache.
- *
- * Resilience features:
- * - `insuranceLimiter`: RateLimiterMemory fallback when DB is unreachable (fail-open with memory safety net)
- * - `inMemoryBlockOnConsumed`: Once a key exceeds its points budget, subsequent requests are rejected
- *   in-memory without hitting the DB, reducing DB pressure from blocked keys
+ * Returns a prefix-memoized Drizzle limiter with no runtime table creation.
+ * An in-memory insurance limiter covers database outages, while locally remembered blocks
+ * prevent rejected keys from repeatedly hitting the database.
  */
 export const getRateLimiterInstance = (options: RateLimiterOptions) => {
   const keyPrefix = options.keyPrefix ?? '';
@@ -95,10 +90,8 @@ export const extractIdentifiers = async (
   for (const identifier of identifiersToExtract) {
     switch (identifier) {
       case 'email': {
-        // Extract email from JSON body only – use Hono's cached json() so the body stays available for the handler.
-        // Normalize the same way handlers/schemas do before use (validEmailSchema lowercases and
-        // trims), otherwise `Victim@x.com` and `victim@x.com` occupy separate buckets while mail
-        // is delivered to one inbox. Runs before zod validation, so also guard the type.
+        // Use Hono's cached body and normalize email exactly like validation so aliases share a bucket.
+        // This runs before Zod, so guard the input type.
         if (ctx.req.header('content-type')?.includes('application/json')) {
           try {
             const body = (await ctx.req.json()) as { email?: unknown };

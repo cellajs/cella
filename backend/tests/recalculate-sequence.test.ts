@@ -21,11 +21,8 @@ describe('recalculateCounters (sequence + frontier)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
 
-  // The seeded product's home node (where the self family e:f:h:/e:c:h: rolls up) is the deepest
-  // ancestor, derived from config: the organization when the product is org-homed (base Cella), or
-  // a deeper channel such as a shared project when a fork homes it lower. Ids for ancestors below
-  // the organization are generated; all three rows share them so the self counters land at a
-  // single, assertable node.
+  // Derive the seeded product's effective home from fork hierarchy.
+  // Shared generated ancestor IDs make all rows roll into one assertable self-counter node.
   const PRODUCT = 'attachment';
   const ANCESTORS = hierarchy.getOrderedAncestors(PRODUCT); // deepest → root
   const deeperAncestorIds = Object.fromEntries(

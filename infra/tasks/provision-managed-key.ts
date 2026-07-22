@@ -35,18 +35,9 @@ function runtimeSecretById(id: string): RuntimeSecretDefinition {
 }
 
 /**
- * Mint (or rotate) a managed key's scoped Scaleway IAM key and write each half
- * it needs into the runtime-secret container Pulumi already created.
- *
- * Pulumi owns the containers (resources/secrets.ts), so this NEVER creates one
- * out-of-band: that would make the next `pulumi up` fail with "secret already
- * exists". It verifies every target container exists BEFORE minting, so a
- * missing container aborts before an IAM key is minted.
- *
- * Each write uses `disablePrevious: true`, so a re-mint immediately supersedes
- * the prior value (the next VM boot/deploy picks it up). Minting itself is
- * idempotent at the IAM layer: `provisionScopedKey` reuses the `<slug>-<suffix>`
- * application and purges orphan keys before minting a fresh one.
+ * Mints or rotates a scoped IAM key into Pulumi-owned runtime-secret containers.
+ * Every target is verified before key creation, avoiding orphan credentials and out-of-band
+ * containers. New versions disable prior values; the named IAM application is reused.
  */
 export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Promise<ProvisionManagedKeyResult> {
   const { definition } = opts

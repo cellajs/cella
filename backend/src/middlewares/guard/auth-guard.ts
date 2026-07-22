@@ -11,20 +11,9 @@ import { updateLastSeenAt } from '../update-last-seen';
 import { getMembershipCache, getSessionCache, setMembershipCache, setSessionCache } from './auth-cache';
 
 /**
- * Middleware to ensure that the user is authenticated by checking the session cookie.
- * It also sets `user` and `memberships` in the context for further use.
- * If no valid session is found, it responds with a 401 error.
- *
- * Uses two in-memory TTL caches:
- * - Session cache (1 min TTL, keyed by sessionId): user + isSystemAdmin
- * - Membership cache (5 min TTL, keyed by userId): memberships array
- *   (actively invalidated on membership changes, long TTL is a safety net)
- *
- * Fetches memberships/system role in a short-lived RLS transaction that completes
- * before calling next(). This avoids holding a transaction open for long-lived
- * requests (SSE streams, etc.). Sets baseDb on context; downstream guards
- * (tenantGuard, crossTenantGuard) also set baseDb; product entity handlers
- * create their own RLS read transactions via tenantRead().
+ * Authenticates the session and populates the user, memberships, and base database context.
+ * Session and membership lookups use short TTL caches. The RLS lookup transaction ends before
+ * `next()` so long-lived requests do not retain it; handlers open their own scoped reads.
  */
 export const authGuard = xMiddleware(
   {

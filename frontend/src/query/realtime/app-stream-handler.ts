@@ -50,12 +50,8 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       if (!isProductEntity(entityType))
         return console.error('Unknown entityType in app stream notification:', entityType);
 
-      // Create/update batches enqueue a merged, spread seq range for lazy fetching.
-      // The fetch prioritizer flushes viewing-tier scopes immediately. The range fetch also handles
-      // soft-delete tombstones; unseen counts recount once per merged flush, not per batch
-      // (a batch's width is never "new for you": drafts, own rows). Hard-delete batches must
-      // not enqueue because deleted rows leave no tombstone to fetch. They fall through to
-      // the delete branch's invalidation below.
+      // Merge create/update ranges for prioritized lazy fetch, including soft-delete tombstones.
+      // Recount unseen once per flush. Hard deletes have no fetchable row and use invalidation below.
       if (action !== 'delete' && notification.batchUntilSeq && seq != null && organizationId) {
         enqueueRange({
           entityType,
@@ -136,11 +132,8 @@ function handleEntityNotification(
   propagation?: AppStreamNotification['propagation'],
   spreadWindow?: number | null,
 ): void {
-  // Echo prevention for create/update: skip data fetch for own mutations,
-  // but still patch stx metadata so subsequent mutations read fresh versions.
-  // Deletes are excluded: the row's stx reflects its last writer, not the deleter,
-  // so an unrelated user (the creator) would otherwise short-circuit and skip the removal.
-  // Delete invalidation is idempotent, so a self-echo on delete is harmless.
+  // Own create/update echoes skip fetching but still refresh STX metadata.
+  // Deletes always invalidate because row STX identifies the last writer, not necessarily the deleter.
   if (action !== 'delete' && stx?.sourceId === sourceId) {
     cacheOps.patchEntityStxInCache(entityType, entityId, stx, organizationId);
     console.debug('[handleEntityNotification] Echo — patched stx, skipped data fetch:', stx.mutationId);
@@ -196,11 +189,8 @@ function handleEntityNotification(
       break;
 
     case 'delete':
-      // Delete-style events cover physical deletes and rows leaving a filtered publication
-      // through unpublish. Neither leaves a sync-visible row or tombstone to fetch, so mark
-      // the detail stale and invalidate the org-scoped list to reconcile, consistent with
-      // the catchup count-integrity invalidation flow. Product soft deletes remain 'update'
-      // events reconciled through sequence-range tombstones. Covers single and batch deletes.
+      // Physical deletes and unpublishes leave no fetchable tombstone, so invalidate detail and list.
+      // Soft deletes remain updates reconciled through sequence ranges.
       cacheOps.invalidateEntityDetail(entityId, keys, 'none');
       cacheOps.invalidateEntityListForOrg(keys, organizationId, isViewing ? 'active' : 'none');
       applyUnfetchableRemovalUnseen(entityType, entityId, channelId);
@@ -208,10 +198,8 @@ function handleEntityNotification(
       break;
 
     case 'moveOut':
-      // The row left this subscriber's readable scope (reparent): the server sends this
-      // ONLY when the new location is not readable here, so no delta fetch will ever
-      // return the row. The notification is the removal. Treat it like a tombstone:
-      // drop the row from lists/detail and correct unseen counts.
+      // A move-out is the removal because this subscriber cannot fetch the new location.
+      // Drop cached row data and correct unseen counts.
       cacheOps.removeEntity(entityType, entityId, organizationId);
       applyUnfetchableRemovalUnseen(entityType, entityId, channelId);
       break;

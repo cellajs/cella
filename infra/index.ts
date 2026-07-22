@@ -59,10 +59,8 @@ export const computeGenerationMetadata = compute.computeGenerationMetadata
 
 import * as lb from './resources/loadbalancer'
 
-// Public URL per LB-exposed service slug (e.g. { backend: 'https://api...', ... }).
-// Empty object when no domain / compute. Consumers (CI summary, docs) read
-// slugs from this map, so a new service
-// needs no export added here.
+// Map load-balanced service slugs to public URLs; empty without domain or compute.
+// Consumers discover new services from the map without new exports.
 export const serviceDomainUrls = lb.serviceDomainUrls
 export const lbId = lb.lbId
 export const lbBackendIds = lb.lbBackendIds

@@ -47,12 +47,8 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
 
   const memberships = await baseDb.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
-  // Synthesized worker context, carries exactly what the update pipeline reads
-  // (user, memberships, tenant/org scope, base db). Session-bound vars don't apply here.
-  //
-  // `isSystemAdmin: false` is deliberate and matches the relay's own check: collaborative
-  // editing confers no system-admin bypass. The relay credits the window's last editor and
-  // authorizes the persisted update as that user, not as an operator.
+  // Build only the worker context consumed by the update pipeline.
+  // Persist as the last editor without a system-administrator bypass, matching relay authorization.
   const ctx = {
     var: {
       user,

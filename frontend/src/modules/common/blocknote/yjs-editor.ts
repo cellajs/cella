@@ -13,12 +13,7 @@ export function getYjsOwnedFields(entityType: ProductEntityType): string[] {
   return yjsOwnedFields.get(entityType) ?? ['description'];
 }
 
-/**
- * Registry of entities with active Yjs editors, used by SSE cache ops to suppress
- * description-derived field updates while the local editor has a more recent
- * Y.Doc state. Plain module state: consumers only do imperative lookups,
- * nothing subscribes reactively.
- */
+/** Track active Yjs editors so stream updates cannot overwrite newer local document state. */
 const activeYjsEditors = new Map<ProductEntityType, Set<string>>();
 
 export function registerActiveYjsEditor(entityType: ProductEntityType, entityId: string): void {

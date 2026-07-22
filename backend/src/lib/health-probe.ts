@@ -2,14 +2,9 @@ import { appConfig } from 'shared';
 import type { ProbeResult } from '#/lib/health-helpers';
 
 /**
- * Active health probes for sibling workers (yjs, ai).
- *
- * Each probe hits the worker's own `/health?depth=full` over the real network
- * path, so it catches not just process death but config/IP/ingress faults that
- * a self-report could never surface (this is exactly the failure mode that took
- * CDC down). Results are cached briefly so the backend's `/health` stays cheap
- * even under frequent polling, and every probe is bounded by a short timeout so
- * a hung worker can't stall the endpoint.
+ * Probes sibling workers through their real network path to include routing and config faults.
+ * Short caching keeps backend health checks cheap, and a timeout prevents stalled workers from
+ * blocking the endpoint.
  */
 const PROBE_TIMEOUT_MS = 2_000;
 const PROBE_CACHE_TTL_MS = 10_000;

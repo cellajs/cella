@@ -37,10 +37,7 @@ function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi
       definitions.map((definition, index) => ({
         id: definition.id,
         secretName: definition.secretName,
-        // Pulumi's scaleway Secret `.id` is the composite `<region>/<uuid>`.
-        // The Secret Manager access URL the VM builds already carries the
-        // region in its path, so emit ONLY the bare uuid here. Otherwise the
-        // VM requests `/secrets/<region>/<uuid>/...` and every read 404s.
+// Strip the region from Pulumi's composite secret ID because the access URL already contains it.
         secretId: (ids[index] ?? '').split('/').pop(),
         envVar: definition.envVar,
         required: definition.required,
@@ -166,12 +163,8 @@ function currentGenBindingIp(slug: ServiceName): pulumi.Output<string> {
   return ip.address.apply((addr) => addr.split('/')[0] ?? addr)
 }
 
-// Compute base image. `compute.image` is a Scaleway marketplace LABEL ('docker'
-// with Docker + compose preinstalled and current) or a literal image UUID to pin a
-// specific image. The provider's instance `image` accepts either directly, so
-// there is no plan-time getImage lookup: the boot agent ships as a registry
-// container pulled at first boot (no baked golden image). `ignoreChanges:['image']`
-// keeps a label that resolves to a rotated UUID from churning live generations.
+// Accept a Scaleway marketplace label or pinned image UUID without a plan-time lookup.
+// The boot agent is pulled at startup, so resolved image rotation is ignored.
 const computeImageId: pulumi.Input<string> = infra.computeImage
 
 function createGenerationVm(svc: ServiceDefinition, generation: Generation): GenerationInstance {
@@ -201,14 +194,9 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     cloudInit: buildCloudInit(serviceConfig, generation.sha),
     ipIds: [ip.id],
   }, {
-    // A generation VM is immutable: cloud-init AND the baked image are part of
-    // the generation's identity, fixed at creation. A new cloud-init or a
-    // re-baked compute image is a NEW generation (new resource name), never an
-    // in-place replacement of a live VM. Without ignoring `image`, re-baking the
-    // golden image (which rotates the UUID behind the stable name resolved by
-    // getImage latest:true) makes the base `pulumi up` diff every running
-    // generation on `image` and destructively replace them, bypassing the
-    // LB-overlap cutover. The vm-reader IAM grant must exist before first boot.
+    // Generation VMs keep their initial cloud-init and image; changes create a content-addressed
+    // generation through the rollout path. Ignoring provider image UUID drift prevents destructive
+    // in-place replacement outside load-balancer cutover.
     dependsOn: [vmReaderPolicy],
     ignoreChanges: ['cloudInit', 'image'],
   })

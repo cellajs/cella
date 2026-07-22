@@ -38,13 +38,7 @@ interface FocusBridgeProps {
   className?: string;
 }
 
-/**
- * Keyboard-only skip link that bridges focus between the sidebar nav and the open sheet panel.
- * Invisible by default, becomes visible on focus (Tab). Follows the WAI "skip navigation" pattern.
- *
- * Each target uses a stable element ID so focus lands reliably regardless of
- * portaled content, Radix focus management, or ScrollArea nesting.
- */
+/** Keyboard skip link between sidebar and sheet, using stable IDs across portals and focus managers. */
 export function FocusBridge({ direction, className }: FocusBridgeProps) {
   const { t } = useTranslation();
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);

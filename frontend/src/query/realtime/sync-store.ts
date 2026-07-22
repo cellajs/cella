@@ -36,10 +36,8 @@ interface SyncStoreState {
   /** Grant-boundary views registered by the app/fork (views.ts), keyed by view key. */
   views: Record<string, RegisteredSyncView>;
   /**
-   * Latest seq the server has mentioned per channel view (channelId or orgId), which is the "known" side of the
-   * known-vs-caught-up split. Recorded from every notification, even for pages the fetch prioritizer
-   * won't fetch (muted). Deliberately NOT persisted: catchup's counter comparison rebuilds it on
-   * boot, and persisting would only risk staleness. Caught-up seqs stay in `orgs` (persisted).
+   * Track non-persisted server-known sequence per view, including muted notifications.
+   * Catchup rebuilds this side; persisted organization state holds caught-up sequences.
    */
   known: Record<string, Record<string, number>>;
 

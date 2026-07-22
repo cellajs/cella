@@ -42,16 +42,9 @@ const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
 };
 
 /**
- * Enforce `appConfig.maxSessionsPerUser` by hard-deleting the oldest active regular sessions beyond
- * the cap. Called just before inserting a new session, so `cap - 1` leaves room for it. Concurrent
- * sign-ins can transiently overshoot by one without harm. Only `regular` sessions count: `mfa`
- * challenges and admin `impersonation` sessions are excluded.
- *
- * The two-step select-then-delete is deliberate: the PK is `(id, expiresAt)` on a partitioned table,
- * and pairing both columns in the delete lets PostgreSQL prune directly to the right partition. The
- * same trick the expired-row cleanup in {@link validateSession} uses.
- *
- * Exported for direct unit testing of the cap; production callers reach it via {@link setUserSession}.
+ * Evicts oldest active regular sessions before inserting one, leaving MFA and impersonation alone.
+ * Selecting both partition-key columns before deletion lets PostgreSQL prune the target partition.
+ * Concurrent sign-ins may transiently exceed the cap by one.
  */
 export const evictExcessSessions = async (userId: string): Promise<void> => {
   const excess = await db

@@ -161,12 +161,7 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   onColumnResize?: Maybe<(column: CalculatedColumn<R, SR>, width: number) => void>;
   /** Callback triggered when columns are reordered */
   onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;
-  /**
-   * Enable row drag-and-drop reordering. The cells of the column flagged
-   * `rowDragHandle: true` become drag sources; every cell becomes a drop
-   * target with top/bottom drop indicators.
-   * Pair with `enableDragAutoScroll` for long, scrollable lists.
-   */
+  /** Enable handle-column row reordering with per-cell drop targets and indicators. */
   onRowReorder?: Maybe<(fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => void>;
   /**
    * Optional: when provided, the middle 50% of each row becomes a "reparent"
@@ -175,13 +170,8 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
    */
   onRowReparent?: Maybe<(fromIdx: number, toIdx: number) => void>;
   /**
-   * Optional per-zone drop validation. Called on every drag move; must be fast.
-   * If the cursor's natural zone is blocked but another zone is allowed, the
-   * drop indicator falls back to the nearest allowed zone. If all three zones
-   * are blocked, no indicator is shown and `onDrop` is suppressed.
-   *
-   * Use this for tree-structured constraints (max depth, cycle prevention)
-   * without coupling the grid to your row shape.
+   * Validate drop zones on every drag move, falling back to the nearest allowed zone.
+   * Returning no valid zone suppresses its indicator and drop callback.
    */
   canDropRow?: Maybe<(args: { fromIdx: number; toIdx: number; zone: 'top' | 'bottom' | 'center' }) => boolean>;
   /**
@@ -204,21 +194,11 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   enableStickyHeader?: Maybe<boolean>;
   /** Vertical auto-scroll of the viewport during pragmatic-dnd drag. Opt-in; only for row-drag tables. @default false */
   enableDragAutoScroll?: Maybe<boolean>;
-  /**
-   * Cell selection mode (focus + range).
-   * - 'none': no cell focus
-   * - 'cell': single cell focus (default)
-   * - 'cell-range': multi-cell range with Shift+Click/Arrow
-   * @default 'cell'
-   */
+  /** Cell selection: none, one focused cell by default, or a Shift-extended range. */
   cellSelectionMode?: Maybe<CellSelectionMode>;
   /**
-   * Row selection mode for clicking the row body.
-   * The checkbox column (if present) always operates as multi-select regardless of this prop.
-   * - 'none': clicking a row body does not change row selection (default)
-   * - 'single': clicking a row body selects only that row
-   * - 'multi': clicking a row body toggles it; Shift+click extends a range
-   * @default 'none'
+   * Row-body selection: none by default, single, or toggle/range multi-select.
+   * Checkbox columns remain multi-select independently.
    */
   rowSelectionMode?: Maybe<RowSelectionMode>;
   /**
@@ -235,12 +215,8 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
    * Infinite scroll support
    */
   /**
-   * Level-triggered near-end signal: called with true while rendered rows are
-   * within `nearEndThreshold` rows of the dataset end, with false when they
-   * leave the zone, and with false on unmount. This is state, not a one-shot event;
-   * pair it with query state (isFetching, hasNextPage) to decide when to load
-   * more; re-evaluating on your own state changes is what makes a load
-   * opportunity retryable.
+   * Report level-triggered near-end state, including false on exit and unmount.
+   * Combine with query state so blocked load opportunities can retry.
    */
   onNearEndChange?: Maybe<(nearEnd: boolean) => void>;
   /**
@@ -258,12 +234,7 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   rowClass?: Maybe<(row: NoInfer<R>, rowIdx: number) => Maybe<string>>;
   /** Custom class name for the header row */
   headerRowClass?: Maybe<string>;
-  /**
-   * Enable compact mode (user density toggle). Activates each column's
-   * `modes.compact` overrides (widths and/or merge rules) and sets
-   * `data-is-compact="true"` on the grid root for CSS-based content hiding.
-   * @default false
-   */
+  /** Enable compact column overrides and the root compact-data styling hook. */
   isCompact?: Maybe<boolean>;
   /** Hide the header row entirely */
   hideHeader?: Maybe<boolean>;
@@ -274,15 +245,9 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
 }
 
 /**
- * Low-level grid engine: virtualization, cell/row selection, editing, keyboard
- * navigation, copy/paste, column widths & layout, sticky header, drag-reorder,
- * and per-mode column merging. For query-backed tables (loading skeleton, error
- * and empty states, infinite scroll) use the `DataTable` wrapper, which forwards
- * engine props here untouched.
- *
- * @example
- *
- * <DataGrid columns={columns} rows={rows} />
+ * Low-level virtualized grid with selection, editing, keyboard, layout, and drag support.
+ * Query-backed tables should use the `DataTable` wrapper for loading, error, empty, and
+ * infinite-scroll states.
  */
 export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridProps<R, SR, K>) {
   const {
@@ -361,10 +326,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     : (rawHeaderRowHeight ?? (typeof baseRowHeight === 'number' ? baseRowHeight : 35));
   const renderRow = renderers?.renderRow ?? defaultRenderRow;
   const userRenderCell = renderers?.renderCell ?? defaultRenderCell;
-  // Wrap the row-DnD callbacks in latest-refs so consumers can pass plain
-  // (non-memoized) functions without invalidating `rowDragConfig` (and, by
-  // extension, `renderCell` → every `Row.memo` → every `RowDragCell`) on each
-  // parent render. The grid does the same for cell mouse handlers below.
+  // Keep row-drag config stable when consumers pass non-memoized callbacks.
+  // Latest refs avoid invalidating every memoized row and drag cell.
   const onRowReorderLatest = useLatestCallback(onRowReorder ?? (() => {}));
   const onRowReparentLatest = useLatestCallback(onRowReparent ?? (() => {}));
   const canDropRowLatest = useLatestCallback(canDropRow ?? (() => true));
@@ -434,10 +397,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const [columnWidthsInternal, setColumnWidthsInternal] = useState((): ColumnWidths => columnWidthsRaw ?? new Map());
   const [isColumnResizing, setColumnResizing] = useState(false);
   const shouldFocusCellRef = useRef(false);
-  // When true, the next focus effect should skip scrollIntoView. Set on EDIT→SELECT
-  // close, where the cell hasn't moved. Calling scrollIntoView there would honor
-  // `scroll-mt-32` and visibly jump the page after the editor closes near the
-  // viewport edge.
+  // Skip scrolling when an editor closes onto the same cell; its sticky-header margin would
+  // otherwise jump the page near viewport edges.
   const skipScrollOnFocusRef = useRef(false);
   const [previousRowIdx, setPreviousRowIdx] = useState(-1);
   const [selectedCellRangeInternal, setSelectedCellRangeInternal] = useState<CellRange | null>(null);
@@ -497,10 +458,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   // while a pragmatic-dnd drag is in progress.
   useDragAutoScroll(gridRef, enableDragAutoScroll);
 
-  // wrapText turns the fixed height into a per-row function (multi-line content).
-  // Merged host cells with occupied top/bottom slots add constant extra height
-  // (virtualization needs heights up front, without rendering). Mobile scales rows
-  // up for touch targets. DataGrid owns this breakpoint-specific scaling.
+  // Calculate row heights before virtualization for wrapped and merged content.
+  // Mobile applies the grid-owned touch-target scaling.
   const rowHeight = useMemo(() => {
     const slotExtra = computeMergedSlotExtraHeight(columns);
     const mobileScale = isMobileBreakpoint ? 1.2 : 1;
@@ -624,13 +583,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       const row = rows[position.rowIdx];
       setSelectedPosition({ ...position, mode: 'EDIT', row, originalRow: row });
     } else if (samePosition) {
-      // Avoid re-renders if the selected cell state is the same.
-      // Only scroll into view when a caller explicitly asked for cell focus
-      // (keyboard / programmatic paths). Mouse callers (Cell.handleMouseDown)
-      // omit `shouldFocusCell` because the cell was just clicked; it is by
-      // definition under the cursor, and our cells have `scroll-mt-32` for
-      // sticky-header avoidance, which would otherwise jump the page on every
-      // re-click of an already-selected cell near the viewport edge.
+      // Reuse unchanged selection and scroll only for explicit keyboard/programmatic focus.
+      // Mouse-selected cells are already visible, and scrolling would apply their sticky-header margin.
       if (options?.shouldFocusCell === true) {
         scrollIntoView(getCellToScroll(gridRef.current!));
       }
@@ -661,10 +615,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       }
     }
 
-    // Bridge cell click to row selection when rowSelectionMode is enabled.
-    // The checkbox column also bridges here so clicks that land on the cell
-    // padding (around the checkbox) still toggle the row. The checkbox button
-    // itself stops mousedown propagation to avoid a double-toggle race.
+    // Route cell-padding clicks through row selection, including around checkboxes.
+    // The checkbox button stops propagation to prevent a double toggle.
     if (rowSelectionMode !== 'none' && effectiveOnSelectedRowsChange && isDataCellPosition(position)) {
       const row = rows[position.rowIdx];
       if (row !== undefined && isRowSelectionDisabled?.(row) !== true) {
@@ -1139,10 +1091,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
     const closeEditor = (shouldFocusCell: boolean) => {
       shouldFocusCellRef.current = shouldFocusCell;
-      // The cell didn't move while the editor was open, so suppress the scroll
-      // half of the focus effect. Without this, closing the editor near the
-      // viewport edge re-runs scrollIntoView on the cell and the page jumps
-      // (the cell's `scroll-mt-32` for sticky-header avoidance is honored).
+      // The edited cell did not move, so refocus without applying its sticky-header scroll margin.
       skipScrollOnFocusRef.current = true;
       setSelectedPosition(({ idx, rowIdx }) => ({ idx, rowIdx, mode: 'SELECT' }));
     };
@@ -1153,15 +1102,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         // on click), skip to avoid firing onRowsChange twice for the same edit.
         if (editCommittedRef.current) return;
         editCommittedRef.current = true;
-        // flushSync so `onRowsChange` runs (and any optimistic cache update inside
-        // it) before we close the editor. Without it, `commitEditorChanges` could
-        // be called before the cell state flips to SELECT and `onRowChange` fires
-        // a second time.
-        //
-        // Closing in the same flush keeps the editor lifecycle deterministic: no
-        // arbitrary timer to "wait for the parent to re-render" (TanStack Query's
-        // optimistic updates notify subscribers synchronously, so the parent's
-        // next render already sees the committed row).
+        // Flush the optimistic update and editor close together so re-entrant commits cannot
+        // fire `onRowChange` twice and the next parent render sees the committed row.
         flushSync(() => {
           updateRow(column, selectedPosition.rowIdx, row);
           closeEditor(shouldFocusCell);

@@ -41,19 +41,9 @@ export function isMaxMergeKey(key: string): boolean {
 }
 
 /**
- * Determine count deltas from a CDC event.
- *
- * Membership rows yield `m:c:<role>` / `m:c:total` deltas plus an org-level
- * `membership` change-signal bump used for catchup screening. Inactive
- * memberships count as `m:c:pending` while rejectedAt is null. Entity rows yield
- * `e:c:<type>` deltas on the org and every non-null ancestor context; updates
- * that change ancestor ids re-credit the counters. Product rows also stamp
- * `e:li:h:<type>` (last insert) / `e:lu:h:<type>` (last update) epoch ms at their home
- * context only.
- *
- * Only COUNTABLE rows participate: live AND published (`isCountableRow`). Draft
- * product rows never arrive here (publication row filter + entrance guard); the
- * publish edge arrives as a plain INSERT and counts as a create.
+ * Derives membership and entity counter changes from a CDC event.
+ * Entity deltas apply to the organization and populated ancestors, while product activity
+ * stamps apply only at home context. Only live, published rows participate.
  */
 export function getCountDeltas(
   tableMeta: TableMeta,
@@ -78,23 +68,14 @@ export function getCountDeltas(
     return deltas;
   }
 
-  // Entities: track entity type counts on org + non-null ancestor contexts.
-  // The count action derives from countable-set edges (live AND published): crossing
-  // into the set counts as create, crossing out as delete, moving inside it is a plain
-  // update (ancestor re-credit), and moving outside it (trash edits; draft channel rows
-  // on forks that use them) counts nothing. Counter recalculation applies the same two
-  // predicates in SQL and must agree.
+  // Count live, published entity-set edges across organization and populated ancestors.
+  // Reparents inside the set re-credit contexts; changes outside it do nothing, matching SQL repair.
   if (tableMeta.kind === 'entity' && organizationId) {
     const countAction = deriveCountAction(action, newRow, oldRow);
     const deltas = countAction ? getEntityDeltas(countAction, organizationId, tableMeta.type, newRow, oldRow, h) : [];
 
-    // Activity stamps (epoch ms) at the home context only (deepest non-null ancestor, org
-    // fallback). These per-stream signals stay at the home context and do not propagate to
-    // higher ancestors like `e:c:` deltas. `e:li:h:<type>` moves forward when new content enters
-    // the countable set (with the publication row filter a publish edge arrives as INSERT,
-    // so the create IS the publish), and `e:lu:h:<type>` moves on countable-row content updates.
-    // Deletes, soft-deletes and restores leave both untouched (a restore re-counts the row
-    // but is old content, so no stamp); drafts never reach the stream.
+    // Stamp creates/publishes and content updates only at the effective home context.
+    // Deletes and restores leave activity time unchanged; drafts never reach this stream.
     if (h.isProduct(tableMeta.type) && countAction !== null && countAction !== 'delete') {
       const stampKey =
         action === 'create' && countAction === 'create'
@@ -116,12 +97,8 @@ export function getCountDeltas(
       }
     }
 
-    // Embedding counters: track e:c:<hostProduct> counts per embedded entity ID. Hosts are
-    // always products (config type), so the publication row filter carries the draft
-    // dimension: a publish edge arrives as INSERT (adds every ref), an unpublish as
-    // DELETE with the old row (removes them), draft ref edits never arrive. The
-    // deletedAt dimension is not remapped: soft-delete ref cleanup is owned by
-    // embedding-cleanup, which rewrites the arrays and emits its own updates.
+  // Count host references per embedded ID. Publication filtering supplies draft edges;
+  // embedding cleanup rewrites soft-deleted references and emits their updates.
     for (const embedding of appConfig.productEmbeddings) {
       if (embedding.hostProduct !== tableMeta.type) continue;
       const col = embedding.hostColumn;
@@ -290,10 +267,8 @@ function getEntityDeltas(
     return deltas;
   }
 
-  // Plain update: ancestor ids may have changed (reparent / re-attach at another
-  // depth), so diff old vs new and re-credit. The caller guarantees an 'update' here
-  // is a countable→countable edge (both rows live and published); set-crossing edges
-  // were already remapped to delete/create.
+  // Re-credit ancestor differences for updates within the countable set.
+  // Set-crossing changes already map to create or delete.
   if (action === 'update' && oldRow) {
     const oldIds = new Set(resolveNonNullAncestors(h, entityType, oldRow).map((a) => a.id));
     const newIds = new Set(resolveNonNullAncestors(h, entityType, newRow).map((a) => a.id));

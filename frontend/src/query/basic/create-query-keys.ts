@@ -25,13 +25,8 @@ type StandardEntityKeys<
 };
 
 /**
- * True when a list view's filters all sit at their defaults (absent, empty, or equal). The
- * signal to serve the view from the entity's canonical home list, which live sync keeps
- * fresh and splices creates into. Filtered queries can only be invalidated.
- *
- * Only valid for entities whose default list response IS the unfiltered home list: delta rows
- * must be row-identical to default-list rows. Fork feeds with implicit server-side filters
- * (e.g. draft exclusion) must keep their filtered keys and not adopt this.
+ * Identify default-filter views eligible for the live canonical home list.
+ * Do not use when a feed's default response has implicit server filters absent from delta rows.
  */
 export function isDefaultListView(filters: Record<string, unknown>, defaults: Record<string, unknown>): boolean {
   return Object.entries(filters).every(
@@ -40,17 +35,9 @@ export function isDefaultListView(filters: Record<string, unknown>, defaults: Re
 }
 
 /**
- * Standardized query keys for an entity module. Key hierarchy (prefix-matchable):
- *   [entity, 'list']                                 broadest (all queries)
- *   [entity, 'list', organizationId]                 all queries for one org (a prefix, never a data key)
- *   [entity, 'list', organizationId, homeChannelId]  canonical home list: the one list live sync splices into
- *   [entity, 'list', organizationId, {filters}]      specific filtered query (invalidation-synced)
- *
- * The cache is keyed the way SSE is routed: every row belongs to exactly one canonical home
- * list, its effective home channel's (deepest non-null ancestor; the org itself for org-homed
- * rows; see resolve-row-channel). Views derive from the home list via select(). Any list that
- * spans home channels or applies server-side filters is a filtered key: live sync cannot
- * splice rows into it and invalidates it.
+ * Creates prefix-matchable entity keys with one canonical list per effective home channel.
+ * Live sync splices that home list; cross-home or server-filtered lists use filtered keys and
+ * invalidate because their predicates cannot be evaluated locally.
  */
 export function createEntityKeys<
   LF extends object,

@@ -64,14 +64,9 @@ export interface CutoverResult {
 }
 
 /**
- * Run a single service's cutover. Every release provisions a new VM generation
- * (`vm-<svc>-<gen>`) with the image SHA baked into its cloud-init; deploy.yml
- * runs this controller through tasks/deploy-service.ts, which wraps it with
- * `pulumi up` create/destroy bookends. The new generation VM therefore already
- * exists; this gates it healthy and re-points traffic. Every side effect
- * (health probe, LB writes) is passed in via `plan`, so this function stays
- * pure and the unit tests can assert exact step order. See
- * infra/tasks/README.md for the lb-overlap vs exclusive strategy design.
+ * Health-gates a provisioned service generation and moves traffic according to its cutover plan.
+ * Injected probes and load-balancer writes keep sequencing deterministic and testable.
+ * @see infra/tasks/README.md
  */
 export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult> {
   const sleep = plan.sleep ?? defaultSleep
@@ -104,12 +99,8 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
     const normalize = (ips: string[]) => [...ips].sort().join(',')
     return normalize(actual) === normalize(expected)
   }
-  // Level-triggered reconcile: the desired final state is `[new]`, reached only
-  // after the new generation is health-verified; the safe intermediate state is
-  // the overlap `[old, new]`. Drive the live list toward desired with idempotent
-  // SetBackendServers calls; an empty, stale, or unexpected live pool (including
-  // old == new on an idempotent redeploy) is always reconciled
-  // correct.
+  // Reconcile any live pool through safe `[old, new]` overlap to the verified `[new]` state.
+  // Idempotent server updates also correct empty, stale, or same-generation pools.
   const overlap = [...new Set([...plan.oldIps, ...plan.newIps])]
   let live = plan.getServers ? await plan.getServers() : plan.oldIps
   record(`observed LB server list: ${live.join(',') || '<empty>'}`)

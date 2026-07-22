@@ -124,10 +124,8 @@ describe('sendBatchMessageToApi', () => {
   });
 
   it('groups non-product entities (user) by org instead of demanding a channel ancestor', () => {
-    // A user has no organization ancestor and its activity carries no organizationId. Before the
-    // fix, batching ≥2 user rows (e.g. seeding) called resolveChannelKey and threw
-    // "the hierarchy model requires an organization ancestor". Non-product entities have no seq
-    // context and must group by org (here 'none'), like resources.
+    // Non-product user batches lack sequence context and organization ancestry.
+    // They group under the resource fallback without resolving a product home.
     const asUser = (seq: number): ReturnType<typeof mockBatchEvent> => {
       const event = mockBatchEvent(seq, `user-${seq}`);
       return {

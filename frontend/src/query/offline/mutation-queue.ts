@@ -25,13 +25,8 @@ export function isPending(mutation: MutationLike): boolean {
 }
 
 /**
- * Coalescing (folding later intent into a queued mutation, or cancelling a queued create) is only
- * safe while offline. A queued mutation is paused because connectivity is down, so it has not
- * committed a server change; merging or cancelling cannot lose one. Once back online we issue
- * separate, scope-serialized mutations and let backend idempotency + field-timestamp LWW arbitrate.
- *
- * Checked synchronously immediately before the merge, so the window where connectivity returns
- * between this check and the merge is a single synchronous block.
+ * Coalesce or cancel only offline-paused mutations that cannot yet have committed remotely.
+ * Online intent stays separate and scope-serialized for backend idempotency and LWW handling.
  */
 export function canCoalesce(): boolean {
   return !onlineManager.isOnline();

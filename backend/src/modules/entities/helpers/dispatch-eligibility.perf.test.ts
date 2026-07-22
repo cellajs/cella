@@ -10,14 +10,9 @@ import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
 /**
- * Dispatch-shaped benchmark for the engine's access-class collapse, sized after the
- * measured hot-org constraint: one busy org, thousands of
- * subscribers on `org:<id>`, single-row and CDC-collapsed batch events. Compares
- * per-subscriber eligibility (independent `checkAccess` batch-of-1 calls, no collapse)
- * against the batch path dispatch actually uses (`rowReadDecisions`: one `checkAccess`
- * call per row, one policy walk per access class). Absolute numbers are
- * hardware-dependent; the printed table is the deliverable, the assertions only guard the
- * direction.
+ * Compares independent subscriber checks with dispatch's access-class collapse under a
+ * hot-organization workload. Timings are hardware-dependent; assertions guard only the
+ * expected performance direction.
  */
 const ORG = 'org-perf-hot';
 const OTHER_ORGS = ['org-perf-b', 'org-perf-c'];
@@ -152,10 +147,8 @@ interface Scenario {
 }
 
 describe('dispatch batch eligibility: fan-out benchmark', () => {
-  // Sized to keep the direction visible while staying well under the CI test budget: the
-  // full suite runs this with V8 coverage instrumentation on a 2-core runner, where the
-  // original 5000×200 sizing timed out. Absolute numbers scale with the machine; the printed
-  // table is the deliverable, the assertions only guard correctness + direction.
+  // Keep the performance direction visible under instrumented two-core CI.
+  // Timings remain informational; assertions cover correctness and regression direction.
   const hot2000 = makeSubscribers(2000, ORG);
   const hot1200 = makeSubscribers(1200, ORG);
   // Registered on the channel (connect-time), but membership moved: worst case, every
@@ -165,10 +158,8 @@ describe('dispatch batch eligibility: fan-out benchmark', () => {
     organizationIds: new Set([ORG]),
   }));
 
-  // How many of the hot roster end up eligible is fork-dependent (read:1 admits every member,
-  // read:'own' admits only rows the reader authored), so the scenarios assert the fork-agnostic
-  // facts: the batch path matches the per-subscriber baseline exactly, the reader scenarios admit
-  // someone, and the non-member scenario admits nobody.
+  // Eligibility count depends on fork policies, so assert batch/baseline parity plus universal
+  // reader and non-member expectations.
   const scenarios: Scenario[] = [
     {
       name: 'single row × 2000 readers',
@@ -204,10 +195,8 @@ describe('dispatch batch eligibility: fan-out benchmark', () => {
         `${scenario.name}: per-subscriber ${singleMs.toFixed(2)}ms → batch ${batchMs.toFixed(2)}ms (${(singleMs / batchMs).toFixed(1)}x)`,
       );
 
-      // Direction guard, tolerant to CI timing noise: the batch path collapses per-subscriber
-      // policy walks into one decision per row, so it must never be dramatically slower than
-      // the per-subscriber baseline. Exact ratios are hardware-dependent (see the printed
-      // table); this only trips on a real collapse regression, not on sampling jitter.
+      // Access-class collapse should not be materially slower than per-subscriber checks.
+      // A broad tolerance absorbs CI sampling noise while retaining a regression guard.
       expect(batchMs).toBeLessThan(singleMs * 1.5);
     }
 

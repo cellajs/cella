@@ -51,27 +51,8 @@ function isSelfOrDescendantOf<T>(
 }
 
 /**
- * Owns expansion state and provides reorder/reparent/canDrop handlers for a
- * tree-style `<DataTable>`. Pair with {@link TreeProvider} and
- * {@link ExpandToggleColumn} so consumers don't have to wire toggle state,
- * drop validation, and displayOrder math themselves.
- *
- * Usage:
- * ```tsx
- * const tree = useTreeRows<Page>({ rowHeight: 60, maxDepth: 3, mutate });
- * const { data: rows } = useInfiniteQuery({ ...opts, select: tree.buildRows });
- * return (
- *   <TreeProvider value={tree.context}>
- *     <DataTable
- *       rows={rows}
- *       rowHeight={tree.rowHeight}
- *       canDropRow={(args) => tree.canDrop(rows, args)}
- *       onRowReorder={(f, t, e) => tree.onReorder(rows, f, t, e)}
- *       onRowReparent={(f, t) => tree.onReparent(rows, f, t)}
- *     />
- *   </TreeProvider>
- * );
- * ```
+ * Owns expansion, drop validation, reordering, and reparenting for a tree data table.
+ * Pair its context with `TreeProvider` and `ExpandToggleColumn`.
  */
 export function useTreeRows<T>(opts: UseTreeRowsOptions<T>) {
   const [toggledIds, setToggledIds] = useState<Set<string>>(new Set());

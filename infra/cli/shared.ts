@@ -50,15 +50,9 @@ export const envOr = async (envName: string | string[], prompt: () => Promise<st
 }
 
 /**
- * Resolve the Pulumi passphrase, verified against the stack's `encryptionsalt`.
- *
- * A stale `PULUMI_CONFIG_PASSPHRASE` exported in the shell otherwise wins
- * silently and surfaces later as a confusing `incorrect passphrase` deep inside
- * `pulumi`. This checks the env value up front: if it decrypts the stack it is
- * used without a prompt; if it is set but wrong, we warn and prompt anyway;
- * and we keep prompting until a passphrase verifies. When the stack has no
- * `encryptionsalt` (a brand-new stack with nothing encrypted yet) there is
- * nothing to verify against, so we fall back to env-or-single-prompt.
+ * Resolves and verifies the Pulumi passphrase against existing stack encryption metadata.
+ * An invalid environment value falls back to repeated prompts; a new unencrypted stack accepts
+ * the environment or one prompt without verification.
  */
 export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<string> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml)

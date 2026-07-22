@@ -50,11 +50,8 @@ const instance = new scaleway.databases.Instance('main-postgres', {
     pnId: privateNetworkId,
     enableIpam: true,
   },
-  // Required for CDC: Scaleway PG-17 uses its own setting keys for logical
-  // replication. `rdb.enable_logical_replication` flips wal_level to logical
-  // under the hood; `hot_standby_feedback` + `sync_replication_slots` are
-  // required to keep slots alive across Scaleway's internal HA failovers.
-  // (Raw wal_level / max_wal_senders / max_replication_slots are not user-settable.)
+  // Scaleway exposes only vendor settings for PostgreSQL logical replication.
+  // Feedback and synchronized slots preserve CDC across managed HA failovers.
   settings: {
     'rdb.enable_logical_replication': 'true',
     hot_standby_feedback: 'on',
@@ -194,14 +191,8 @@ export const connectionStringRuntime = buildConnectionString(runtimeUser.name, r
 export const connectionStringCdc = buildConnectionString(adminUser.name, adminPassword)
 
 /**
- * Admin connection over the opt-in public endpoint, when enabled.
- * Returns an empty string when `infra:dbPublicEndpoint` is false.
- *
- * Scaleway's public load-balancer endpoint populates `ip` (and `port`) but
- * leaves `hostname` empty; only the private-network endpoint carries a DNS
- * hostname. Prefer the hostname when present, fall back to the IP, so the DSN
- * resolves as soon as the endpoint is live. `sslmode=require` (no hostname
- * verification) makes connecting by IP fine.
+ * Builds the optional public admin DSN, preferring endpoint hostname and falling back to IP.
+ * Disabled or unavailable endpoints return an empty string; required TLS permits the IP form.
  */
 export const connectionStringAdminPublic = pulumi
   .all([adminUser.name, adminPassword, instance.loadBalancer, database.name])

@@ -3,16 +3,9 @@ import { ySyncPluginKey, yUndoPluginKey } from 'y-prosemirror';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
 /**
- * Fix Yjs UndoManager after TipTap mount/unmount cycles.
- *
- * React StrictMode (dev) and editability changes trigger unmount→remount of the
- * EditorView. The yUndoPlugin's `view.destroy()` calls `undoManager.destroy()`,
- * which unsubscribes it from Y.Doc's `afterTransaction` event. On remount, the
- * destroyed UndoManager is reused from the plugin state and can't capture new
- * changes. This hook re-subscribes the UndoManager after each mount so CMD+Z
- * keeps working.
- *
- * No-op when `enabled` is false (non-collaborative editors don't use yUndoPlugin).
+ * Restores Yjs undo tracking after TipTap view remounts reuse a destroyed UndoManager.
+ * It re-subscribes the manager to Y.Doc transactions after each collaborative mount and
+ * does nothing for non-collaborative editors.
  */
 export function useYjsUndoManagerFix(editor: CustomBlockNoteEditor, enabled: boolean) {
   useEffect(() => {

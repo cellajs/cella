@@ -134,10 +134,8 @@ const viteConfig = {
       // Non-route helper files living in src/routes (router instance, shared utils, types, generated tree)
       routeFileIgnorePattern: '(router\\.ts|route-utils\\.tsx|types\\.ts|routeTree\\.gen\\.ts)$',
     }),
-    // Docs content: compiles src/content/docs md/mdx to React components with a `frontmatter`
-    // named export (consumed by ~/modules/page/content.ts). Must run before react() so the compiled
-    // JSX is plain JS by the time react() sees it. Repo docs (cella/*.md, package READMEs) are also
-    // compilable so a thin .mdx wrapper can import them as the page body.
+    // Compile content and repository Markdown to React plus frontmatter before the React plugin.
+    // Thin MDX pages can therefore import canonical repository docs.
     {
       enforce: 'pre' as const,
       ...mdx({
@@ -158,16 +156,12 @@ const viteConfig = {
             { repoRoot: path.resolve(__dirname, '..'), repoUrl: appConfig.company.githubUrl, docRoutes: repoDocRoutes },
           ],
         ],
-        // Heading ids for anchor links + scroll spy. The `spy-` DOM id prefix follows the
-        // spy store convention (hooks/use-scroll-spy-store.ts); the slug part is
-        // github-slugger, so URL hashes match GitHub's anchors for the same markdown.
-        // Must stay in sync with the heading extraction in vite/docs-frontmatter.ts.
+      // Generate GitHub-compatible heading slugs with the scroll-spy's DOM prefix.
+      // Keep aligned with frontmatter heading extraction.
         rehypePlugins: [
           [rehypeSlug, { prefix: 'spy-' }],
-          // Syntax highlighting at build time (Node): no runtime highlighter shipped
-          // and none of the CSP/WASM constraints that force the runtime CodeViewer onto
-          // Shiki's JS engine. Same github theme pair; dual-theme output picks light/dark
-          // via CSS vars keyed off the `.dark` class (styling/tailwind.css).
+      // Highlight Markdown at build time with dual GitHub themes selected by CSS variables.
+      // No runtime highlighter or CSP/WASM handling is required.
           [
             rehypeShiki,
             {

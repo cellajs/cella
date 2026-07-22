@@ -1,19 +1,9 @@
 import { defineServices } from '../compose/infrastructure'
 
 /**
- * The fork-owned service registry: the single place a fork adds, removes, or
- * resizes a deployable service. Run `pnpm --filter infra compose:synth` after
- * editing to regenerate `infra/compose.gen.yml` (the file Docker reads).
- *
- * Data only: `infrastructure.ts` owns the compose machinery (ports,
- * healthcheck shape, shared env) and expands
- * each entry below into a full Compose block at synth time. Field docs come from
- * `AppServiceConfig` (hover any field). The backend is a normal service entry,
- * so a fork controls its image, sizing, and env like any other service; cella
- * adds the one-shot migrate companion via `runMigrate`.
- *
- * Removing an entry removes the service everywhere it is derived: VM, LB
- * backend, DNS record, cert, compose profile, and release SHA config.
+ * Fork-owned registry synthesized into Compose and deployment resources.
+ * Entry presence controls the service's VM, routing, certificate, profile, and release
+ * metadata. Run `pnpm --filter infra compose:synth` after editing.
  */
 export const appServices = defineServices({
   backend: {
@@ -50,10 +40,8 @@ export const appServices = defineServices({
     port: 4001,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
-    // cdc holds a single PostgreSQL replication slot, so it MUST cut over
-    // exclusively (two active consumers would double-consume it). The new
-    // generation boots warm and contends for the slot the old one releases on
-    // drain. No lbRoute → internal-only, reached over the private network.
+    // CDC must cut over exclusively because it owns one PostgreSQL replication slot.
+    // It is internal-only and reached through the private network.
     replacementStrategy: 'exclusive',
     instanceType: 'DEV1-S',
     // singleVM: fold into the backend process in-process (holds the same slot).

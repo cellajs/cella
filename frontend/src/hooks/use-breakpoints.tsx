@@ -100,24 +100,14 @@ function useBreakpointState(enableReactivity = true) {
   return sortedBreakpoints.indexOf(breakpointState);
 }
 
-/**
- * Returns true when the viewport is below `breakpoint` (strict less-than); exact inverse of
- * `useBreakpointAbove` for the same breakpoint. `enableReactivity` re-renders on resize (default true).
- * @example
- * const isMobile = useBreakpointBelow('sm'); // true when viewport < 768px
- */
+/** Returns whether the viewport is strictly below `breakpoint`; optionally reactive to resize. */
 export function useBreakpointBelow(breakpoint: keyof typeof breakpoints, enableReactivity = true) {
   const currentIndex = useBreakpointState(enableReactivity);
   const targetIndex = sortedBreakpoints.indexOf(breakpoint as string);
   return currentIndex < targetIndex;
 }
 
-/**
- * Returns true when the viewport is at or above `breakpoint`; exact inverse of `useBreakpointBelow`
- * for the same breakpoint. `enableReactivity` re-renders on resize (default true).
- * @example
- * const isDesktop = useBreakpointAbove('xl'); // true when viewport >= 1280px
- */
+/** Returns whether the viewport is at or above `breakpoint`; optionally reactive to resize. */
 export function useBreakpointAbove(breakpoint: keyof typeof breakpoints, enableReactivity = true) {
   const currentIndex = useBreakpointState(enableReactivity);
   const targetIndex = sortedBreakpoints.indexOf(breakpoint as string);

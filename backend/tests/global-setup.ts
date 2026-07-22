@@ -51,18 +51,11 @@ export default async function globalSetup() {
     process.exit(1);
   }
 
-  // Re-apply immutability triggers after all migrations.
-  // The immutability migration runs before the RLS migration that creates
-  // runtime_role, so its role-check guard skips trigger creation. Here we
-  // apply all functions + triggers directly from the source definition.
+  // Reapply source-defined immutability triggers after migrations create `runtime_role`.
   await pool.query(immutabilityTriggersSQL);
 
-  // Ensure RLS roles exist (idempotent) before any test module is evaluated.
-  // The RLS test suites gate themselves at module-load time on the presence of
-  // `runtime_role`; on a fresh database those roles would otherwise only be
-  // created later in the suites' own `beforeAll`, causing the whole suite to be
-  // skipped on the first run (e.g. in CI). Creating them here guarantees the
-  // guard sees them. Grants/ownership are still applied per-suite in `beforeAll`.
+  // Create RLS roles before test-module gates inspect them on a fresh database.
+  // Individual suites still apply grants and ownership in their setup.
   await pool.query(`
     DO $$
     BEGIN

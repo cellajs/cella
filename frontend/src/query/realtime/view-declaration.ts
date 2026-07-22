@@ -5,10 +5,8 @@ import { deriveGrantBoundaryViews } from '~/query/realtime/views';
 import { useSyncStore } from './sync-store';
 
 /**
- * Canonical path lookup for sub-org channels, from cached channel data. The template's only
- * channel is the organization (root, path = org id), so the default resolver knows nothing;
- * forks with deeper hierarchies register one that reads `path` off their cached channel rows.
- * An unresolved path skips that grant's view; the org-view baseline still covers the rows.
+ * Resolve cached sub-organization channel paths through a fork registration.
+ * Unknown paths skip precise grant views while organization baselines retain coverage.
  */
 let channelPathResolver: (channelType: string | null, channelId: string) => string | null = () => null;
 
@@ -28,15 +26,8 @@ export function resolveChannelPath(channelType: string | null, channelId: string
 }
 
 /**
- * Declare grant-boundary views from the cached memberships (runs right before each catchup
- * request is built; catchup is the only consumer of the view registry, so deriving at that
- * moment is always fresh, and `declareSyncView`'s re-baseline rule fires exactly when a grant
- * set changed while offline).
- *
- * Precision on top of the baseline: a derived view that is exactly the org subtree is NOT
- * declared; the built-in org view per (org, entityType) already covers it, which keeps the
- * template's catchup requests byte-identical to before (org-homed products derive only
- * org-wide views). Views for grants that disappeared are removed.
+ * Rebuilds grant-boundary views from current membership cache before each catchup request.
+ * Built-in organization views absorb equivalent derived views; disappeared grants remove theirs.
  */
 export function declareViewsFromMemberships(): void {
   const data = queryClient.getQueryData<GetMyMembershipsResponse>(['me', 'memberships']);

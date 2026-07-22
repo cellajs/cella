@@ -28,10 +28,8 @@ const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
 export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
   const { t } = useTranslation();
 
-  // Deliberately optimistic and table-scoped: `!!` enables inline edit for both `true` (admin) and
-  // `'own'` because there is no single row here to resolve it against. The backend enforces the
-  // owner check per row on save. Per-entity affordances resolve `'own'` via
-  // `useResolveCan` (~/modules/entities/use-resolve-can); this table-level case is the exception.
+  // Allow table editing for unconditional and owner grants; the backend resolves ownership per row.
+  // Per-entity affordances use `useResolveCan` for a precise decision.
   const canUpdate = !!channel.can?.attachment?.update;
 
   // Per-row delete resolves 'own' against the row's creator (resolvePermission is what

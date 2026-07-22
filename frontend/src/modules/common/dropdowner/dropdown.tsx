@@ -8,10 +8,8 @@ import { Popover, PopoverContent } from '~/modules/ui/popover';
 export const DropdownerDropdown = ({ dropdown }: { dropdown: InternalDropdown }) => {
   const triggerEl = dropdown.triggerRef?.current;
 
-  // Popover content mounts in a portal at <body>. When inner content auto-focuses
-  // (e.g. base-ui Combobox focusing its input) before the positioner has placed
-  // the popup, the browser scrolls the document to reveal the focus target,
-  // jumping the page. Snapshot scroll on mount and restore it next frame.
+  // Portaled content may autofocus before positioning and scroll the document.
+  // Restore the pre-mount scroll position on the next frame.
   useLayoutEffect(() => {
     const scroller = document.scrollingElement ?? document.documentElement;
     const { scrollTop, scrollLeft } = scroller;

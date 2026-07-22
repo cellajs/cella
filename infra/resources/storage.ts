@@ -2,11 +2,8 @@ import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tagsAsMap, isProduction, infra, serviceUrl, ciDeployApplicationId, vmReaderApplicationId, operatorApplicationId } from '../pulumi-context'
 
-// Optional operator application (from SCW_OPERATOR_APPLICATION_ID) granted full
-// S3 access alongside the CI deploy app, so a key under it can read & refresh
-// buckets. Bucket policies are deny-by-default, so without this only the CI app
-// (and public GetObject) can touch them. One Sid per bucket, omitted when unset
-// so existing forks see no policy change.
+// Optionally grant the operator application S3 access alongside CI in deny-by-default policies.
+// Omit its statement when unset so existing forks keep their policy unchanged.
 const operatorAccess = (bucketName: pulumi.Input<string>) =>
   operatorApplicationId
     ? [{
@@ -29,11 +26,8 @@ const deployAccess = (bucketName: pulumi.Input<string>) => ({
   Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
 })
 
-// Days before stale, content-hashed frontend chunks under `assets/` are
-// expired by Object Storage. Must outlive any reasonable open browser tab on
-// a previous bundle (a tab may lazy-load a chunk it hasn't fetched yet).
-// Entry files (index.html, sw.js, manifest, etc.) live at the bucket root,
-// outside this prefix, so they are not touched by this rule.
+// Expire stale hashed assets only after old browser tabs are unlikely to lazy-load them.
+// Root entry files stay outside this lifecycle prefix.
 const assetRetentionDays = infra.assetRetentionDays
 
 // Frontend static files bucket (website hosting)
@@ -46,26 +40,16 @@ const frontendBucket = new scaleway.object.Bucket('frontend-bucket', {
   versioning: { enabled: true },
   lifecycleRules: [
     {
-      // On a versioned bucket, `expiration` never deletes data. It stamps a
-      // delete marker and demotes the object to a noncurrent version, which
-      // keeps its original key (there is no special prefix for noncurrent
-      // versions). Actual deletion happens here, bucket-wide: noncurrent
-      // versions (expired assets/ chunks and overwritten entry files alike)
-      // are purged after 30 days, and delete markers with no versions left
-      // behind them are removed.
+      // Versioned expiration creates delete markers, so purge noncurrent objects bucket-wide
+      // after 30 days and remove markers once no versions remain.
       id: 'cleanup-old-versions',
       enabled: true,
       noncurrentVersionExpiration: { noncurrentDays: 30 },
       expiration: { expiredObjectDeleteMarker: true },
     },
     {
-      // Prune stale, content-hashed chunks. Because filenames are immutable
-      // (content-hashed), "not modified in N days" means "absent from the
-      // current index.html and past the open-tab window".
-      // A rollback redeploy rebuilds identical hashes and re-uploads any
-      // missing chunk, so expiring old assets never breaks rollback.
-      // On this versioned bucket the rule only files a delete marker; the
-      // cleanup-old-versions rule above performs the actual deletion.
+      // Expire immutable chunks after the open-tab window; rollback reuploads identical hashes.
+      // Versioning creates a marker here, while the old-version rule performs deletion.
       id: 'expire-stale-assets',
       enabled: true,
       expiration: { days: assetRetentionDays },

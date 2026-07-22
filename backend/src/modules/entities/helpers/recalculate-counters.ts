@@ -75,21 +75,9 @@ const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
   );
 
 /**
- * Recalculate all channel_counters and product_counters from actual database state.
- * Safe to run at any time (seed, admin repair, production incident recovery).
- *
- * Context counters (Phases 1–3):
- *   Phase 1 – Organization-level: m:c:{role}, m:c:total, m:c:pending, e:c:{type} (countable rows)
- *   Phase 2 – Sub-org channels: same keys for every descendant carrying the FK (full attribution)
- *   Phase 3 – Sequence + frontier: sequence via GREATEST(MAX(seq)) across product tables;
- *             e:f:{type} via MAX(seq) at the org and every ancestor level (drafts excluded,
- *             tombstones included); self family e:f:h:{type}/e:c:h:{type} at the home node only
- *   Phase 3b – Activity stamps: e:li:h:{type}/e:lu:h:{type} epoch ms at the home node
- *   Phase 3c – Channel path backfill (verified-ancestry source for catchup views)
- *
- * Product counters (Phase 4):
- *   Phase 4a – viewCount from seen_by (unique user views per entity)
- *   Phase 4b – Array-ref counters via appConfig.productEmbeddings
+ * Rebuilds channel and product counters from database state for seeding or repair.
+ * It recomputes context counts, frontiers, activity stamps, and paths before product
+ * view and embedding counters.
  */
 export const recalculateCounters = async (db: DbOrTx) => {
   // ── Phase 1: Organization-level counters ──────────────────────────────
@@ -140,11 +128,8 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
-  // ── Phase 3: Org sequence + frontiers from MAX(seq) ──────────────
-  // `sequence` per org = the max stamped sequence value across ALL product tables (the
-  // reservation counter CDC increments). `e:f:{type}` = MAX(seq) per (node, entityType)
-  // at the org and at every ancestor level column, matching CDC's frontierNodeKeys rollup.
-  // Tombstones keep their seq, so no live filter: MAX is a frontier.
+  // Rebuild organization sequence and per-node entity frontiers from maximum stamped sequence.
+  // Tombstones remain part of the frontier, matching CDC rollup.
   const sequenceMaxes = appConfig.productEntityTypes.map(
     (et) => `COALESCE((SELECT MAX(t.seq) FROM ${tbl(et)} t WHERE t.organization_id = o.id), 0)`,
   );
@@ -161,10 +146,8 @@ export const recalculateCounters = async (db: DbOrTx) => {
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);
     const frontierKey = `e:f:${entityType}`;
-    // Unpublished drafts are excluded from frontiers (not delta-fetchable; the
-    // publication row filter keeps them from ever reaching CDC). Rows drafted before
-    // the filter era may hold historical seq stamps (harmless orphans), still excluded
-    // here. Tombstones stay included (delta reads return them). No live filter here.
+    // Exclude unpublished drafts because they are not delta-fetchable; retain tombstones.
+    // This also ignores any stale sequence values on draft rows.
     const frontierPredicate = publishedPredicate(entityType, 't');
 
     // Org node: every stamped countable row rolls up to its organization.
@@ -220,14 +203,8 @@ export const recalculateCounters = async (db: DbOrTx) => {
     }
   }
 
-  // ── Phase 3b: Activity stamps from MAX(published_at/created_at) / MAX(updated_at) ──
-  // e:li:h:{type} = epoch ms of the latest countable row born in the context's own stream
-  // (publish time on draft-lifecycle tables, created_at elsewhere), e:lu:h:{type} = epoch ms
-  // of the latest countable-row update, both grouped by the home context key (deepest
-  // non-null ancestor, org fallback via COALESCE). Unlike e:c: counts, these per-stream
-  // signals stay at the home context and do not fan out to ancestors,
-  // matching CDC's stamp scope. Unpublished drafts never stamp (they never reach CDC).
-  // jsonb_strip_nulls drops e:lu:h: when no live row was ever updated (updated_at all NULL).
+  // Rebuild home-only activity stamps from latest publish/create and update times.
+  // They do not fan out to ancestors; null update maxima are omitted from JSON.
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);
     const ctxExpr = deepestAncestorExpr(entityType, 't');
@@ -252,10 +229,8 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
-  // ── Phase 3c: Channel path backfill ───────────────────────────────────
-  // Counters rows carry a copy of the channel's canonical id-path (generated column)
-  // so catchup verifies claimed view ancestry without extra queries; CDC maintains it
-  // incrementally, this is the rebuild/backfill.
+  // Canonical channel paths let catchup verify ancestry without extra queries.
+  // CDC maintains the same values incrementally.
   for (const channelType of hierarchy.channelTypes) {
     await db.execute(
       sql.raw(`

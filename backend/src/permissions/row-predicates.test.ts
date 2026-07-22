@@ -266,14 +266,8 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
       const fromSql = await sqlReadableIds(scenario);
       expect(fromSql, label).toEqual(fromEngine);
 
-      // Engine ⊆⊇ compute-can: per single membership, the frontend-resolved state must
-      // match the engine's decision for every row in that membership's scope.
-      //
-      // This leg is membership-only by construction: `computeCan` derives a can-map from ONE
-      // membership's policy row, so it models neither the system-admin bypass (the frontend has
-      // `computeSystemAdminCan` for that) nor membership-independent public grants. Both sides
-      // are therefore evaluated with neither, which keeps the comparison meaningful and
-      // non-trivial.
+      // Compare frontend and engine decisions per membership and in-scope row.
+      // Both sides omit system-admin and public grants because `computeCan` models one membership.
       for (const m of scenario.memberships) {
         const canMap = computeCan(m.channelType as ChannelEntityType, m, scenario.policies);
         const state = canMap.attachment?.read ?? false;

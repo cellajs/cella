@@ -51,13 +51,7 @@ function DialogContent({
     container?: HTMLElement | null;
     initialFocus?: DialogPrimitive.Popup.Props['initialFocus'];
     finalFocus?: DialogPrimitive.Popup.Props['finalFocus'];
-    /**
-     * Scroll behavior when the content is taller than the screen:
-     * - `false` (default, inside scroll): the popup stays on screen and scrolls internally,
-     *   so the popup is the scroll container (sticky children stick to the popup).
-     * - `true` (outside scroll): the popup grows and the viewport scrolls around it
-     *   (sticky children stick to the viewport).
-     */
+    /** Scroll tall content inside the popup by default, or outside through the viewport. */
     outsideScroll?: boolean;
   }) {
   return (

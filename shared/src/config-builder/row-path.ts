@@ -1,17 +1,9 @@
 import type { AncestorSource } from './resolve-row-channel';
 
 /**
- * Slash-joined non-null ancestor ids, root-first. Null when the root ancestor id is missing.
- *
- * Materialized id-path rule (sequence sync). A row's path is its ancestor channel ids
- * root-first, slash-joined, skipping null ancestors (variable-depth rows). For example,
- * `org1/course7/project9` for a project-homed item whose section level is unset.
- * Channel entities append their own id: a course's path is `org1/course7`.
- *
- * The SQL twin lives in `backend/src/db/utils/path-column.ts` as a STORED generated
- * column; `row-path.test.ts` and the backend path-column test assert the two agree.
- * The LAST path segment always equals `resolveDeepestAncestorId` (products) or the
- * row id (channels): the pre-path attribution rule, kept equivalent by tests.
+ * Builds a root-first path from populated ancestor IDs, optionally appending a channel row's ID.
+ * Returns null without the root. Tests keep this aligned with the backend generated-column SQL
+ * and the deepest-ancestor attribution rule.
  */
 export function computeAncestorPath(
   hierarchy: AncestorSource,

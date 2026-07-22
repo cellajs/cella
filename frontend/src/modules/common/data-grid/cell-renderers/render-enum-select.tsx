@@ -6,12 +6,7 @@ import { Popover, PopoverContent } from '~/modules/ui/popover';
 import type { RenderEditCellProps } from '../types';
 
 /**
- * Recommended `editorOptions` for any column using `RenderEnumSelect`.
- * - `commitOnOutsideClick: false`: the popover is portaled, so the grid's
- *   window-level outside-click handler would otherwise treat its own popover
- *   as "outside" and double-commit. Committing on item select avoids that race.
- * - `displayCellContent: true`: keep the cell content visible underneath
- *   the popover/drawer while the editor is mounted.
+ * Enum-editor defaults avoid double commits from its portaled popover and keep cell content visible.
  */
 export const enumSelectEditorOptions = {
   editorType: 'select',
@@ -41,16 +36,8 @@ type Props<TRow, TValue extends string> = Pick<RenderEditCellProps<TRow>, 'onRow
 };
 
 /**
- * Enum-select editor: popover (desktop) / drawer (mobile). Uses base-ui directly,
- * not the dropdowner store, so `EditCell` fully owns the lifecycle (commit/dismiss
- * via `onRowChange`/`onClose`, no extra coordination layer).
- *
- * Two usage modes:
- * - **Flat field** (`field`): top-level row fields.
- * - **Custom** (`currentValue` + `setValue`): nested/derived fields, e.g.
- *   `currentValue={row.membership?.role}` + `setValue={(r, v) => ({ ...r, membership: { ...r.membership, role: v } })}`.
- *
- * Always pair the column with `editorOptions: enumSelectEditorOptions`.
+ * Responsive enum editor supporting flat fields and custom nested value accessors.
+ * `EditCell` owns its Base UI lifecycle; pair the column with `enumSelectEditorOptions`.
  */
 export function RenderEnumSelect<TRow extends { id: string }, TValue extends string>({
   row,
@@ -125,10 +112,7 @@ export function RenderEnumSelect<TRow extends { id: string }, TValue extends str
           anchor={anchor}
           align="start"
           className="z-301 p-0"
-          // Skip base-ui's focus restoration: the cell DOM the popover is
-          // anchored to gets replaced when the editor closes, so restoring
-          // there focuses a detached node. EditCell already restores focus
-          // to the new cell via `shouldFocusCell=true`.
+          // Skip restoration to the replaced anchor cell; EditCell focuses its new cell instance.
           finalFocus={false}
           style={{ width }}
         >

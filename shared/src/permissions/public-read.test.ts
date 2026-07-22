@@ -5,16 +5,9 @@ import type { SubjectForPermission } from './permission-manager/types';
 import { matchesRowCondition } from './row-conditions';
 
 /**
- * Public read grants (`publicRead`): subject-level, membership-independent read access derived
- * from the row's own `publicAt`, evaluated for anonymous actors (no memberships, no userId) and
- * members alike.
- *
- * There is exactly one mode. A grant derived from ANOTHER row would be unenforceable in the two
- * paths that must agree with the engine. The collection-read SQL compiler and CDC stream
- * dispatch, which only ever ships the row itself. Cascading publication is a data concern.
- *
- * Runs against the wide fixture (organization → workspace/project, project → task/label/attachment),
- * not a fork's app config.
+ * Verifies membership-independent public reads from the row's own `publicAt` across the wide
+ * synthetic topology. Parent-derived publication remains outside the permission engine because
+ * SQL and stream dispatch evaluate row-local data.
  */
 const NOW = '2026-07-06T12:00:00Z';
 

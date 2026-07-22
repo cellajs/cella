@@ -1,11 +1,6 @@
 import { type UseMutationOptions, useMutation } from '@tanstack/react-query';
 
-/**
- * Result of preparing public input into durable mutation variables:
- *   - `run`: issue the mutation with `vars`;
- *   - `coalesced`: the intent was folded into a queued mutation, issue nothing;
- *   - `noop`: nothing to send (e.g. an all-local selection was cancelled cache-side).
- */
+/** Prepared durable mutation: run with variables, already coalesced, or nothing to send. */
 export type PreparedVars<TVars> = { kind: 'run'; vars: TVars } | { kind: 'coalesced' } | { kind: 'noop' };
 
 /**
@@ -22,12 +17,8 @@ interface Mutatable<TData, TVars> {
 }
 
 /**
- * Wrap a mutation's `mutate`/`mutateAsync` with a preparation step that turns public input into
- * durable variables exactly once, before the mutation runs. Pure (no React), so it is unit-testable
- * with a fake mutation.
- *
- * `mutate` issues nothing for `coalesced`/`noop`. `mutateAsync` resolves immediately with COALESCED
- * for those, so callers that await (e.g. to close a dialog) never hang on coalesced or empty work.
+ * Prepare public input into durable variables once before mutation execution.
+ * Coalesced and empty async calls resolve immediately; synchronous calls issue nothing.
  */
 export function buildPreparedHandlers<TData, TVars, TInput>(
   mutation: Mutatable<TData, TVars>,

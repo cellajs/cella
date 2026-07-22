@@ -43,10 +43,7 @@ export function useMenuKeyNav(containerRef: RefObject<HTMLElement | null>) {
     // lands on the first item and does not skip every -1 element.
     applyRovingTabindex(initialItems, 0);
 
-    // Pull focus to the first menuitem after both FocusTrap and FloatingFocusManager
-    // have run their own focus effects. Without this, focus stays on the popup
-    // wrapper (Base UI's default initial focus target) and arrow keys do nothing
-    // because nothing in the menu has focus to receive them.
+    // Focus the first item after competing focus managers settle so arrow navigation has a target.
     const focusTimer = window.setTimeout(() => {
       const items = getMenuItems(container);
       if (items.length > 0 && !items.includes(document.activeElement as HTMLElement)) {

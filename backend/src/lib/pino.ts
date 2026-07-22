@@ -2,12 +2,8 @@ import { appConfig } from 'shared';
 import { createLog, createLogger } from 'shared/pino';
 import { env } from '#/env';
 
-// Sensitive fields to redact from logs (auth tokens, credentials).
-// fast-redact (used by pino) does NOT support a recursive `**` wildcard, so each
-// sensitive key is listed at the root (event meta is spread at the log root) and
-// one level deep via `*.` (e.g. session.token). `code` is deliberately NOT
-// redacted: it is logged legitimately as a websocket close code (cdc-websocket.ts),
-// not as an OAuth authorization code.
+// fast-redact lacks recursive wildcards, so sensitive keys are listed at root and one level deep.
+// Keep `code` visible because it represents WebSocket close codes in logs.
 const sensitiveKeys = [
   'secret', // Session secrets, token secrets, TOTP secrets
   'credentialId', // Passkey credentials

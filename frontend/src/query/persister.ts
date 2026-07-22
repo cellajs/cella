@@ -34,16 +34,9 @@ function getTabSessionId(): string {
   return id;
 }
 
-// Per-tab mutation ownership (D5)
-//
-// Paused mutations persist in PER-TAB records (`{scope}:mut:{tabSessionId}`), not in the
-// shared meta record: the meta record is rewritten by EVERY tab's flush, so mutations stored
-// there let a follower flush clobber the leader's queue, and the old leader-only dehydration
-// gate meant a follower's own paused work was never persisted at all. Each tab now persists
-// exactly the paused mutations in its own cache; on restore, a tab unions its OWN record, the
-// legacy shared-record array, and records of DEAD tabs (absorbed and removed). Liveness comes
-// from a per-tab Web Lock held for the tab's lifetime, with a record-age fallback where the
-// locks API is unavailable.
+// Persist paused mutations per tab so one tab cannot overwrite another's queue.
+// Restore combines the current record, shared compatibility data, and records whose tab lock is
+// dead; record age supplies the fallback when Web Locks are unavailable.
 const MUTATION_LOCK_PREFIX = `${appConfig.slug}-mutation-owner:`;
 
 const mutationRecordPrefix = (scope: string) => `${scope}:mut:`;
@@ -72,12 +65,7 @@ async function liveTabSessionIds(): Promise<Set<string> | null> {
 
 // Persister factory
 
-/**
- * Throttle interval for IDB writes. PersistQueryClientProvider fires on every
- * cache event (added/removed/updated) with no built-in throttle, which causes
- * excessive dehydrate + IDB write cycles during high-frequency updates like
- * virtual scroll re-renders. This batches writes to at most one per interval.
- */
+/** Throttle full-cache dehydration and IndexedDB persistence to one write per interval. */
 const PERSIST_THROTTLE_MS = 1000;
 
 /** In-memory change trackers per persister, reset on owner (DB) rebind. */
@@ -117,12 +105,7 @@ export function createIDBPersister(scope = 'rq') {
     resetTracker();
   }
 
-  /**
-   * Cache-bust on a breaking schema change: wipe cached query DATA (product
-   * records + bundled context queries) but KEEP queued mutations so offline
-   * edits replay (and quarantine to failed_sync if they then 4xx). Advances the
-   * stored clientCacheVersion.
-   */
+  /** Clear incompatible query data while retaining queued mutations, then advance cache version. */
   async function bustQueriesKeepMutations(db: AppDatabase) {
     await db.transaction('rw', db.queries, db.meta, async () => {
       const ids = await db.queries.where('scope').equals(scope).primaryKeys();
@@ -139,11 +122,8 @@ export function createIDBPersister(scope = 'rq') {
   const MIGRATION_CHUNK_SIZE = 200;
 
   /**
-   * Boot-time lens migration: rewrite cached product entity rows, bundled
-   * context queries, and queued mutation variables from the persisted schema
-   * ordinal up to the bundle's currentSchemaVersion, locally with no refetch.
-   * Chunked; the pointer only advances in the final meta transaction, so a
-   * crash mid-pass resumes idempotently.
+   * Migrate cached rows, context queries, and mutation variables locally in restart-safe chunks.
+   * Advance the schema pointer only in the final metadata transaction.
    */
   async function migrateScopeToCurrent(db: AppDatabase, fromVersion: number) {
     const records = await db.queries.where('scope').equals(scope).toArray();
@@ -337,10 +317,8 @@ export function createIDBPersister(scope = 'rq') {
           meta = (await db.meta.get(scope)) ?? meta;
         }
 
-        // Lens boot migration: a persisted schema ordinal behind the bundle is
-        // rewritten locally (cached rows + queued mutations, no refetch). A
-        // missing ordinal seeds as current; genuinely old caches are covered by
-        // the clientCacheVersion bust above.
+        // Upgrade cached rows and queued mutations locally when their lens ordinal trails the bundle.
+        // Missing ordinals seed current; cache-version busting covers older formats.
         const pointer = meta.schemaVersion ?? currentSchemaVersion;
         if (pointer !== currentSchemaVersion) {
           if (scope.startsWith(SESSION_KEY_PREFIX)) {
@@ -383,10 +361,8 @@ export function createIDBPersister(scope = 'rq') {
           (meta.channelQueries ?? []).map((q) => [q.queryHash, q.state.dataUpdatedAt]),
         );
 
-        // Mutation union: legacy shared-record array (pre-per-tab-records bundles) + this
-        // tab's OWN record (the tab session id survives refresh via sessionStorage) + records
-        // of DEAD tabs, which are absorbed into this tab and removed. Records of live tabs
-        // stay theirs. Without the locks API, "dead" falls back to the orphan age threshold.
+        // Restore shared compatibility data, this tab's record, and orphaned tab records.
+        // Live tabs retain ownership; age substitutes for lock liveness when needed.
         const prefix = mutationRecordPrefix(scope);
         const mutationRecords = (await db.meta.where('key').startsWith(prefix).toArray()) ?? [];
         const live = await liveTabSessionIds();

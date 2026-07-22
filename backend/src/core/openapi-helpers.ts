@@ -1,17 +1,5 @@
 /**
- * Helpers for authoring OpenAPI metadata.
- *
- * `schemaTags()` is the canonical way to set the `x-tags` extension on a
- * component schema. It accepts any combination of registered tag names:
- * typically one schema-kind tag (`data` / `base` / `errors`), optionally
- * followed by a module tag (e.g. `pages`) and an owner tag (`cella` /
- * `app`). Validation (every tag must exist in the registry) happens later
- * in `openapi-registration` once all module files have registered their tags.
- *
- * @example
- *   .openapi('Page', {
- *     description: 'A documentation page.',
- *     'x-tags': schemaTags('data', 'pages', 'cella'),
- *   });
+ * Tags an OpenAPI schema with registered schema-kind, module, and owner tags.
+ * `openapi-registration` validates the names after every module registers its tags.
  */
 export const schemaTags = (...tags: string[]): string[] => tags;

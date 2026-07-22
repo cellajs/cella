@@ -19,12 +19,7 @@ function isRowDragData(data: Record<string, unknown>): data is RowDragData {
   return data.type === ROW_DRAG_TYPE;
 }
 
-/**
- * Resolve the drop zone given a cursor position and a per-zone allowance
- * predicate. Picks the user's natural choice from cursor position; if that
- * zone is disallowed, falls back to the next-nearest allowed zone. Returns
- * `null` when no zone is allowed (drop is fully blocked on this row).
- */
+/** Resolve the cursor's nearest allowed drop zone, or null when the row blocks all zones. */
 function resolveDropZone(
   rectTop: number,
   rectHeight: number,
@@ -43,13 +38,8 @@ function resolveDropZone(
 }
 
 /**
- * Imperatively set/clear `data-drop-edge` on a row element. Mutating the DOM
- * directly to avoid a render storm during drag.
- *
- * A `bottom` zone on row N is painted as `top` on row N+1 so the indicator
- * doesn't jump across the row seam; the last row falls back to `bottom` on
- * itself. The visual edge is therefore independent of the logical drop zone
- * stored in `self.data.dropZone`; `onDrop` still uses the original zone.
+ * Mutate drop-edge attributes without rerendering; paint bottom edges atop the next row when possible.
+ * Drop logic retains the original zone independently of that visual edge.
  */
 function setRowDropEdge(
   rowEl: HTMLElement | null,
@@ -63,11 +53,8 @@ function setRowDropEdge(
   if (rowEl && zone !== null) {
     if (zone === 'bottom') {
       const next = rowEl.nextElementSibling;
-      // Only redirect to the next .rdg-row sibling. This skips ancillary nodes
-      // (focus sinks, measuring cells) that data-grid renders alongside rows.
-      // Skip the redirect when the next row would reject this drag's `top`
-      // zone; otherwise the indicator gets painted on a row whose hit area
-      // refuses the drop, the user chases it, and the indicator vanishes.
+      // Redirect only to an accepting next grid row, skipping measurement/focus nodes.
+      // This keeps the indicator on a hit area that can receive the drop.
       if (allowRedirect && next instanceof HTMLElement && next.classList.contains('rdg-row')) {
         targetEl = next;
         attrValue = 'top';
@@ -110,14 +97,8 @@ export interface RowDragConfig<R> {
 }
 
 /**
- * A renderCell wrapper that attaches drag source + drop target listeners to
- * each cell. Used internally by `<DataGrid>` when `onRowReorder` is set.
- *
- * Per-cell wiring is required because data-grid uses
- * `display: contents` on the row container, so the row element has no
- * bounding rect for hit-testing. Drop indicators are written imperatively to
- * the row element (`data-drop-edge` attribute) and styled by CSS, with no React
- * state changes during drag, and no `:has()` selectors.
+ * Attaches row drag/drop behavior to cells because `display: contents` rows have no hit-test box.
+ * Drop indicators update an imperative data attribute without per-move React state.
  */
 export function RowDragCell<R, SR>({
   rowIdx,
@@ -144,11 +125,8 @@ export function RowDragCell<R, SR>({
     const el = ref.current;
     if (!el) return;
 
-    // Cache the cell's rect on enter, reuse for every onDrag in this session.
-    // `getBoundingClientRect()` per mousemove forces a synchronous layout flush
-    // (~0.1–0.3ms each, more on large tables). Caching makes drop-zone math
-    // O(1) regardless of table size. Refresh on scroll because rect.top is
-    // viewport-relative and auto-scroll can move the cell mid-drag.
+    // Cache geometry per drag to avoid layout reads on every pointer move.
+    // Refresh on scroll because viewport-relative positions change during auto-scroll.
     let cached: { top: number; height: number } | null = null;
     const refreshRect = () => {
       const r = el.getBoundingClientRect();

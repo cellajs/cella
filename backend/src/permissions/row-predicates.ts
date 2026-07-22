@@ -45,18 +45,9 @@ export type CollectionReadWhere =
   | { kind: 'where'; where: SQL };
 
 /**
- * Build the row-scope WHERE clause for a collection read from a resolved filter:
- * `(subChannel IN unconditional ids) OR (condition SQL AND subChannel IN conditional ids) OR …`.
- *
- * Deep chains: entries tagged with an intermediate `channelType` (e.g. course grants on
- * a project-homed entity) are scoped by THAT level's own id column, resolved via
- * `appConfig.entityIdColumnKeys`. On tables with denormalized ancestor columns an
- * intermediate id covers every row physically below it.
- *
- * @param filter - Resolved scope filter (`resolveCollectionReadFilter`).
- * @param table - The product table being queried.
- * @param subChannelColumn - The table's home sub-context id column (e.g. `tasks.projectId`).
- * @param actor - Who is asking; row conditions compile against it.
+ * Builds the OR-combined SQL predicate for resolved collection scopes.
+ * Intermediate grants use their own denormalized ancestor ID column, while home grants use
+ * `subChannelColumn`; row conditions compile against the actor.
  */
 export const buildCollectionReadWhere = (
   filter: CollectionReadFilter,

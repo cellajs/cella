@@ -36,21 +36,8 @@ export const findChannelCountersByKeys = async ({ var: { db } }: DbContext, keys
 };
 
 /**
- * Returns the SQL select shape for entity counts from channelCountersTable.
- * Reads pre-computed counts from JSONB without running COUNT(*) subqueries.
- *
- * JSONB key conventions:
- *   m:c:{role}  → membership count by role (e.g. m:c:admin, m:c:member)
- *   m:c:pending → pending invitations count
- *   m:c:total   → total active members
- *   e:c:{type}  → child entity count (e.g. e:c:attachment; countable rows must be live AND
- *                 published on draft-lifecycle tables)
- *   e:li:h:{type} → epoch ms of the latest countable row born in the context's OWN stream
- *                 (publish time on draft-lifecycle tables, else created time)
- *   e:lu:h:{type} → epoch ms of the latest countable-row content update in that stream
- *                 (product types only). Stamped at the home context (deepest non-null
- *                 ancestor). These stamps do not propagate to higher ancestors like
- *                 e:c: deltas are; they are per-stream signals.
+ * Builds a SQL projection of precomputed membership, entity, and activity values from
+ * `channelCountersTable`, avoiding per-request aggregate subqueries.
  */
 export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
   const children = hierarchy.getOrderedDescendants(entityType);

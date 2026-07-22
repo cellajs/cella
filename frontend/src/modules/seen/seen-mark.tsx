@@ -78,17 +78,8 @@ interface SeenMarkProps {
 }
 
 /**
- * Invisible zero-size marker that marks an entity row seen when it enters the viewport. Drop into any
- * cell (e.g. name column). A shared singleton IntersectionObserver supports hundreds of instances.
- *
- * @example
- * ```tsx
- * // In a column's renderCell (attachment: organizationId is the badge context):
- * <SeenMark productId={row.id} tenantId={tenantId} organizationId={organizationId} productType="attachment" />
- *
- * // Task badge groups by project, so pass channelId:
- * <SeenMark productId={task.id} tenantId={task.tenantId} organizationId={task.organizationId} channelId={task.projectId} productType="task" />
- * ```
+ * Invisible viewport marker that records an entity as seen.
+ * Instances share one observer; `channelId` overrides organization-level badge grouping.
  */
 export function SeenMark({ productId, tenantId, organizationId, channelId, productType }: SeenMarkProps) {
   const resolvedChannelId = channelId ?? organizationId;

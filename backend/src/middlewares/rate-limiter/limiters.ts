@@ -12,11 +12,8 @@ import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
  * requests (sign up, public requests etc.).
  */
 export const spamLimiter = rateLimiter('success', 'spam', [['userId', 'ip']], {
-  // 204 must count as success: sendMagicLink and resendInvitationWithToken return 204, and with
-  // the default [200, 201] this limiter never consumed a point on them (i.e. no spam limit at
-  // all). This stays scoped here because a global 204 would let failseries
-  // limiters (e.g. emailEnumLimiter on checkEmail, whose hit response is 204) be reset by
-  // interleaving a known-valid request between probes.
+  // Count 204 delivery responses as success for magic-link throttling.
+  // Keep it local so 204 responses cannot reset unrelated fail-series enumeration limits.
   limits: { successStatusCodes: [200, 201, 204] },
   description: 'Max 10 requests/hour per user (per IP when anonymous) for email-sending endpoints',
 });
@@ -68,15 +65,9 @@ export const magicLinkLimiter = rateLimiter('limit', 'magicLink', ['email'], {
 });
 
 /**
- * Passkey challenge rate limiter to prevent challenge generation abuse.
- * Higher limit because conditional mediation (passkey autofill) generates
- * a challenge on every sign-in form mount.
- *
- * Deliberately a flat 'limit', not a 'failseries': challenge generation always
- * succeeds so there is no failure signal here. Brute force is bounded by the
- * failseries `tokenLimiter('passkey')` on the verification route; this limiter
- * only bounds the email -> credentialIds lookup (enumeration surface) and
- * request volume.
+ * Bounds passkey challenge lookups while allowing frequent conditional-mediation requests.
+ * Verification has the brute-force limiter; generation uses a flat limit because it has no
+ * failure signal.
  */
 export const passkeyChallengeLimiter = rateLimiter('limit', 'passkeyChallenge', ['ip'], {
   limits: { points: 30, duration: 60 * 60, blockDuration: 60 * 5 },
@@ -84,16 +75,9 @@ export const passkeyChallengeLimiter = rateLimiter('limit', 'passkeyChallenge', 
 });
 
 /**
- * Points-weighted rate limiter factory for tenant-scoped routes.
- * Consumes `cost` points per request (default: 1). Budget is read from
- * `ctx.var.tenant.restrictions.rateLimits.apiPointsPerHour`, falling back
- * to the global default when no tenant is available on the context.
- *
- * Global safety-net ceiling: 5000 points/hour (static `limits.points`). Tenant budgets are
- * clamped to it, and a budget of 0 ("no tenant-specific limit") falls back to it.
- *
- * @internal Use `bulkPointsLimiter` or `singlePointsLimiter` for common cases, or create custom limiters with different costs as needed.
- * @param cost - Static cost per request, or 0 to use dynamic `getConsumePoints`.
+ * Builds a tenant-scoped points limiter, capped at the global 5,000-point hourly ceiling.
+ * Missing and zero tenant budgets use that ceiling.
+ * @param cost Static request cost, or zero to derive it from the request.
  */
 export const pointsLimiter = (cost = 1) =>
   rateLimiter('limit', 'apiPoints', ['tenantId', 'userId'], {

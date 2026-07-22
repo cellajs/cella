@@ -30,15 +30,9 @@ export interface OrgSequenceGroup {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Resolve the channel key for a product entity from its row data: the row's deepest non-null
- * ancestor (variable-depth rows attribute to their effective home, e.g. a course-stream item with
- * `projectId = null` scopes to its course). Without nullable ancestors this equals the
- * declared parent. Falls back to the activity's org for rows whose ancestor ids are all null.
- * The hierarchy model guarantees every product entity at least an organization, so a row
- * without one is a modeling error, so the group fails loudly without inventing a scope.
- *
- * Under the org sequence this no longer scopes seq allocation; it remains the audience/home
- * grouping rule (message grouping fallback, activity stamps, unseen grouping).
+ * Resolves a product row's home key from its deepest populated ancestor, falling back to
+ * the activity organization. Missing organization context violates the hierarchy and fails.
+ * The key groups audiences, activity stamps, and unseen counts, not sequence allocation.
  */
 export function resolveChannelKey(
   entityType: string,

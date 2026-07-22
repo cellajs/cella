@@ -4,15 +4,7 @@ import pc from 'picocolors';
 export const DIVIDER = '─'.repeat(60);
 
 /**
- * Print the welcome header used across all Cella CLIs.
- *
- * Renders:
- *   ⧈ {name} · v{version}                             cellajs.com
- *   ────────────────────────────────────────────────────────────
- *
- * @param name    CLI name, e.g. 'cella bench' or 'raak infra'
- * @param version Optional semver string shown as `· v{version}`
- * @param right   Right-aligned label. Defaults to 'cellajs.com'
+ * Prints the shared CLI header with optional version and right-aligned label.
  */
 export function printHeader(name: string, version?: string, right = 'cellajs.com'): void {
   const visibleLeft = version ? `⧈ ${name} · v${version}` : `⧈ ${name}`;

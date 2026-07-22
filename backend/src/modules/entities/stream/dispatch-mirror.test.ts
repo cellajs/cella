@@ -128,10 +128,8 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
   });
 
   it('pings a subscriber who can read only a non-representative batch row', async () => {
-    // Subscriber connected while a member of both orgs (registered on org:B), but the
-    // org-B membership is gone from the live snapshot. CDC splits batch messages per seq
-    // context (per org here), so mixed-org rows in one message should not occur on the
-    // wire. Dispatch still evaluates per row and must not assume it.
+    // Simulate a stale channel registration after live membership removal.
+    // CDC normally splits organizations, but dispatch must still evaluate every row independently.
     const { subscriber, received } = fakeSubscriber(
       [membership(ORG_A, 'member', 'moved-user')],
       'moved-user',
@@ -179,10 +177,8 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
   });
 
   it('an unpublish arrives as DELETE with the old published row: old readers get the delete', async () => {
-    // The publication row filter rewrites unpublish (published → draft) into a DELETE
-    // whose rowData is the OLD published row (REPLICA IDENTITY FULL). Readers of that
-    // row receive the ordinary delete-style invalidation, an upgrade over the pre-filter
-    // model, where unpublish notified nobody and surfaced only as count drift.
+    // PostgreSQL exposes unpublish as DELETE with the old published row.
+    // Existing readers must receive the normal delete-style invalidation.
     const member = fakeSubscriber([membership(ORG_A, 'member', 'member-user')], 'member-user', [ORG_A], ORG_A);
     const otherOrg = fakeSubscriber([membership(ORG_B, 'member', 'other-user')], 'other-user', [ORG_B], ORG_B);
     for (const { subscriber } of [member, otherOrg]) {

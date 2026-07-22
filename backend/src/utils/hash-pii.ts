@@ -2,27 +2,12 @@ import { createHmac } from 'node:crypto';
 import { env } from '#/env';
 
 /**
- * One-way pseudonymize a PII value (e.g. email) into a stable, opaque key.
- *
- * Uses HMAC-SHA256 with `PII_HASH_SECRET` as a server-side pepper, then truncates
- * to 16 hex chars (64 bits), collision-resistant enough for lookup buckets while
- * keeping keys short for storage and logs.
- *
- * Use this for any PII that is stored or logged purely as a key (rate-limit
- * buckets, audit event subjects, analytics dimensions). Do NOT use this where
- * the original value must be recoverable. Use encryption for recoverable values.
- *
- * Properties:
- * - Deterministic: same input always produces the same output (good for keying).
- * - Pepper-protected: leak of the DB/logs alone does not allow reversal via
- *   precomputed rainbow tables. The pepper must stay secret on the server.
- * - Normalized: input is trimmed and lowercased so `Foo@Bar.com` and
- *   ` foo@bar.com ` collide to the same bucket.
- *
- * @param value Raw PII value to hash. Empty/whitespace-only input returns ''.
- * @param namespace Optional logical namespace mixed into the HMAC to enforce
- *   cryptographic domain separation between unrelated use sites (e.g. 'email',
- *   'audit:email'). Recommended for any new use site.
+ * Pseudonymizes normalized PII as a deterministic 64-bit HMAC identifier.
+ * The server pepper resists offline lookup, while namespaces separate unrelated use sites.
+ * Use only when the original value need not be recovered and the truncated-key collision
+ * risk is acceptable; recoverable values require encryption.
+ * @param value Raw value; blank input returns an empty string.
+ * @param namespace Domain mixed into the HMAC.
  */
 export const hashPii = (value: string, namespace = 'pii'): string => {
   const normalized = value.trim().toLowerCase();

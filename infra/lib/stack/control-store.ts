@@ -16,18 +16,10 @@ export interface GenRef {
 }
 
 /**
- * Per-service rollout record (the S3 control object). The pointers (not a single mutable gen number) are
- * the source of truth so a partial deploy is always recoverable by recomputing
- * desired-vs-live reconciliation:
- *   - `active`: the generation currently serving live on the LB.
- *   - `pendingSha`: a deploy INTENT, the SHA being rolled in. The genId is
- *                  derived and recorded by the Pulumi program (the genId
- *                  authority), then read back by the orchestrator, so the
- *                  control object never has to predict an id the program owns.
- *   - `seq`: monotonic counter, bumped on each promotion (ordering + GC).
- * No `previous` is kept: the old generation is reaped once the new one is
- * healthy, and rollback is a revert commit + forward redeploy (recreates every
- * service, including cdc, from its content-addressed id).
+ * Per-service rollout pointers stored in the S3 control object.
+ * `active` identifies live traffic, `pendingSha` records deploy intent until Pulumi derives
+ * the generation ID, and `seq` orders promotion and garbage collection. Rollback uses a
+ * revert and forward deployment, so no previous pointer is retained.
  */
 export interface ServiceRollout {
   active?: GenRef

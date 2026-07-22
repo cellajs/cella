@@ -27,23 +27,10 @@ interface FindUnseenCountsByUserOpts {
 }
 
 /**
- * Count tracked entities the user has NOT seen, grouped by their home context.
- *
- * "Unseen" = live tracked rows created within the seen window (`cutoff`) that have no seen_by
- * record for this user, restricted to rows the user's read scope can fetch (mirror rule: the
- * badge counts exactly what the corresponding list endpoint would return). Computed per entity
- * type as a single NOT EXISTS query. It is exact per entity, with no total-minus-seen aggregate
- * skew
- * (a recently-viewed row that just aged out of the window cannot cancel a different
- * in-window row).
- *
- * The window lives only here, on the row's recency key: publish time for draft-lifecycle
- * tables (`COALESCE(publishedAt, createdAt)`, so publishing an old draft still lights the
- * badge), plain createdAt elsewhere. Mirrored client-side in `unseen-sync.ts`; the two
- * must agree or badge deltas drift until the next recount. seen_by is retention-bounded
- * (pg_partman) to the same 90 days on view time, and because a row is only viewable (and
- * thus seen) after its recency instant, a seen row can only be dropped once its entity is
- * already out of this window, so NOT EXISTS on a dropped row never miscounts.
+ * Counts readable, live, unseen rows within the recency window by home context.
+ * Per-entity `NOT EXISTS` queries avoid total-minus-seen skew. Draft-lifecycle rows use
+ * publish time while other rows use creation time; `unseen-sync.ts` mirrors this rule.
+ * Seen-record retention matches the window, so expired records cannot reintroduce a row.
  */
 export const findUnseenCountsByUser = async (
   ctx: DbContext,

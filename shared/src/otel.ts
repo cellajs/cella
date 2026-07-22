@@ -108,10 +108,8 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   const traceExporter = hasMaple ? new OTLPTraceExporter(hasMaple('traces')) : undefined;
   const logExporter = hasMaple ? new OTLPLogExporter(hasMaple('logs')) : undefined;
 
-  // Opt into the stable HTTP semantic conventions (http.request.method, http.response.status_code,
-  // url.full, server.address, user_agent.original, …). This avoids deprecated http.* keys and is
-  // read by @opentelemetry/instrumentation-http at construction, so it must be set before
-  // getNodeAutoInstrumentations() runs below. `??=` lets an explicit env override (e.g. 'http/dup') win.
+// Select stable HTTP semantic attributes before instrumentation is constructed.
+// Preserve any explicit environment override.
   if (autoInstrumentations) {
     process.env.OTEL_SEMCONV_STABILITY_OPT_IN ??= 'http';
   }

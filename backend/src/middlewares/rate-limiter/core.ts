@@ -32,28 +32,15 @@ export const slowOptions = {
 };
 
 /**
- * Rate Limiter Middleware for API routes to control the rate of requests based on different modes and identifiers.
+ * Builds a route rate limiter. `limit` consumes every result, `success` and `fail` consume
+ * matching results, and `failseries` resets after success. Failure modes also consume a
+ * 24-hour bucket to detect slow brute-force attempts.
  *
- * It uses the `rate-limiter-flexible` library to limit the number of requests.
- *
- * The 'limit' mode consumes points for each failed/successful request.
- * The 'success' mode decreases the available points on successful requests only.
- * The 'fail' decreases points on failed requests only.
- * The 'failseries' decreases points on consecutive failed requests: it resets the rate limit on a successful request.
- *
- * The fail-driven modes ('fail', 'failseries') ALSO run a slow brute force instance (duration 24h)
- * in parallel to the rate limiter instance itself. This is to prevent attackers from slowly trying
- * to access data in a larger timeframe. 'limit' and 'success' never consume the slow bucket, so
- * they skip it entirely.
- *
- * @param mode - Rate limit mode that dictates how rate limiting is applied.
- * @param key - The key to identify the user or entity being rate-limited (e.g., user ID, email).
- * @param identifiers - Key parts concatenated into the rate limit key. Each part is a single
- *   identifier or a fallback chain (see {@link RateLimitKeyPart}).
- * @param opts - Optional configuration: limits, name, and description.
- * @returns Middleware handler for rate limiting.
- *
- * @see https://github.com/animir/node-rate-limiter-flexible#readme
+ * @param mode - Result mode that controls point consumption.
+ * @param key - Rate-limit namespace.
+ * @param identifiers - Key parts or fallback chains composing the subject identifier.
+ * @param opts - Limits and middleware metadata.
+ * @returns Route middleware enforcing the configured limits.
  */
 export const rateLimiter = (
   mode: RateLimitMode,
@@ -74,10 +61,8 @@ export const rateLimiter = (
       // Extract every identifier any key part (or chain member) can use
       const extractedIdentifiers = await extractIdentifiers(ctx, identifiers.flat());
 
-      // Generate rate limit key. Each part contributes one segment; a chain part
-      // uses its first available identifier (e.g. ['userId', 'ip'] keys signed-in
-      // traffic per user so shared-IP offices are not collectively throttled, and
-      // falls back to IP for anonymous requests).
+      // Each key part contributes one segment; fallback chains use their first available identity.
+      // User/IP chains avoid shared-office throttling while still covering anonymous traffic.
       let rateLimitKey = '';
 
       for (const part of identifiers) {
@@ -103,11 +88,8 @@ export const rateLimiter = (
       // userId-keyed limiter on a public route). Treat it as a misconfiguration.
       if (!rateLimitKey) throw new AppError(400, 'invalid_request', 'warn');
 
-      // Resolve cost and budget once for `limit` mode. The static `config.points` is a hard
-      // ceiling: tenant budgets are clamped to it and never mutate the shared limiter instance
-      // (assigning `limiter.points` would let one tenant's budget judge another tenant's
-      // request, since instances are memoized per keyPrefix across all tenants).
-      // Budget 0 means "no tenant-specific limit": the global ceiling still applies.
+      // Resolve request cost and clamp tenant budgets without mutating the shared prefix limiter.
+      // A zero tenant budget uses the global ceiling.
       const consumePoints = mode === 'limit' && getConsumePoints ? await getConsumePoints(ctx) : 1;
       const tenantBudget = mode === 'limit' && getPointsBudget ? getPointsBudget(ctx) : null;
       const effectiveBudget =
@@ -199,11 +181,8 @@ export const rateLimiter = (
           await limiter.delete(rateLimitKey);
         }
       } else if (isFail && !isIgnored && slowLimiter) {
-        // Consume the SAME normalized key the slow limiter is CHECKED with above (slowLimiter.get),
-        // so the 24h slow-brute-force bucket actually accumulates against the key it is read from.
-        // Slow-path limiters are IP-only, so rateLimitKey is exactly `ip:<normalized>` and
-        // includes the same prefix used by slowLimiter.get. A different key would prevent the
-        // bucket from growing and blocking.
+        // Consume the same normalized IP key used by the slow-bucket lookup.
+        // Key drift here would prevent the 24-hour brute-force bucket from ever blocking.
         try {
           await slowLimiter.consume(rateLimitKey);
         } catch (rlRejected) {

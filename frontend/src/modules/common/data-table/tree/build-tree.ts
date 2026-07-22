@@ -46,13 +46,8 @@ const defaultGetParentId = <T>(item: T) => (item as unknown as TreeItem).parentI
 const defaultGetDisplayOrder = <T>(item: T) => (item as unknown as TreeItem).displayOrder;
 
 /**
- * Builds a depth-first tree-ordered list from a flat items array. Children
- * appear directly below their parent, indented by depth. Only children of
- * expanded parents are included.
- *
- * Expansion model: `defaultExpanded` is the baseline; `toggledIds` are the
- * ids whose state has been explicitly flipped by the user. So:
- *   isExpanded = defaultExpanded XOR toggledIds.has(id)
+ * Build the visible depth-first tree from flat items.
+ * Expansion is `defaultExpanded XOR toggledIds.has(id)`.
  */
 export function buildTree<T>(items: T[], opts: BuildTreeOptions<T>): TreeRow<T>[] {
   const getId = opts.getId ?? defaultGetId;

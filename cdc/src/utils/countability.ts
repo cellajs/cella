@@ -2,18 +2,9 @@ import { isUnpublishedDraft } from 'shared';
 import type { RowData } from '../types';
 
 /**
- * The countable set: rows that participate in `e:c:` counters and `e:li:`/`e:lu:` activity
- * stamps: live (not soft-deleted) AND published (draft lifecycle, see
- * `shared/src/published-rows.ts`). Tables without either column are always in the set
- * for that dimension. Counter recalculation applies the same two predicates in SQL
- * (`recalculate-counters.ts`); CDC and recalculation must agree or counters drift on
- * every repair.
- *
- * For PRODUCT tables the published dimension is normally settled upstream: the
- * publication row filter keeps drafts out of the stream (parse-message.ts guards the
- * misconfig case). It stays part of the definition here because CHANNEL tables
- * carry `publishedAt` unfiltered (invitee gating), and recalculation counts published
- * rows only for both.
+ * Returns whether a row participates in entity counters and activity stamps.
+ * CDC and SQL recalculation both require live, published rows; retaining the publication
+ * check here also covers unfiltered channel rows.
  */
 export function isCountableRow(row: RowData): boolean {
   return row.deletedAt == null && !isUnpublishedDraft(row);

@@ -11,14 +11,8 @@ import { activityActionSchema, activitySchema } from '#/modules/activities/activ
 import { log } from '#/utils/logger';
 
 /**
- * Zod schema for CDC WebSocket message payload.
- * Validates the { activity, entity, batchRows, _trace } structure sent by CDC Worker.
- * Reuses activitySchema with stricter typing for fields that must be present in CDC context.
- *
- * This is the *validating* end of the CDC → API-server wire contract. The CDC worker
- * *produces* the same shape as `CdcOutboundMessage`.
- * Keep the two in sync: a field added there needs a matching field here.
- *
+ * Validates the CDC worker payload with stricter activity fields required on this wire path.
+ * Keep it synchronized with the producing `CdcOutboundMessage` type.
  * @see cdc/src/services/activity-service.ts
  */
 const cdcMessageSchema = z.object({
@@ -36,7 +30,7 @@ const cdcMessageSchema = z.object({
     count: z.number().optional(),
   }),
   rowData: z.record(z.string(), z.unknown()),
-  // Old-row permission subset when the row's materialized path changed (move-out)
+  // Old-row permission subset when the row's stored path changed (move-out)
   movedFrom: z.record(z.string(), z.unknown()).nullable().optional(),
   // Per-row permission fields for batches: dispatch decides per subscriber across all rows
   batchRows: z
@@ -92,18 +86,9 @@ function isDockerBridgeIp(ip: string): boolean {
 }
 
 /**
- * Allowed CDC Worker source IPs in production.
- *
- * Topology: the CDC worker runs on its own VM and connects over the Scaleway
- * VPC (10.0.0.0/24) to the backend VM, where a per-VM Caddy `ingress` proxy
- * owns host port 4000 and reverse-proxies to the backend app container (see
- * infra/compose.yml + infra/ingress.Caddyfile). The app therefore sees the
- * ingress container's Docker-bridge IP as the direct TCP peer, NOT the worker's
- * VPC IP, so when the peer is the trusted local proxy we read the real client
- * IP from `X-Forwarded-For` (set by our own ingress; Caddy's default empty
- * `trusted_proxies` means it overwrites any client-supplied value, so it can't
- * be spoofed). The mandatory `x-cdc-secret` shared secret remains the primary
- * authentication; this IP check is defense-in-depth.
+ * Allows direct loopback/VPC CDC peers and VPC clients forwarded by the local ingress.
+ * The ingress overwrites client-supplied forwarding headers, making its reported source
+ * trustworthy. The mandatory shared secret remains the primary authentication layer.
  */
 function isAllowedCdcSource(remoteIp: string | undefined, forwardedFor: string | string[] | undefined): boolean {
   if (!remoteIp) return false;
@@ -174,11 +159,8 @@ class CdcWebSocketServer {
         return;
       }
 
-      // In production, restrict to loopback (co-located: Compose / single pod)
-      // or the Scaleway VPC subnet (10.0.0.0/24) used by the multi-VM
-      // production infra; see infra/modules/network.ts. The worker reaches the
-      // app through the per-VM Caddy ingress, so the real client IP arrives in
-      // X-Forwarded-For while the socket peer is the local proxy.
+      // Production accepts co-located loopback or VPC workers.
+      // Behind the local ingress, the trusted forwarding header carries the worker IP.
       const remoteIp = request.socket.remoteAddress;
       if (env.NODE_ENV === 'production' && !isAllowedCdcSource(remoteIp, request.headers['x-forwarded-for'])) {
         log.warn('CDC WebSocket rejected disallowed source', {

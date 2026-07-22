@@ -11,12 +11,8 @@ interface UseFetchMoreOnDemandOptions {
 }
 
 /**
- * Satisfies a level-triggered "load more" demand: fetches whenever demand is
- * present AND the query can accept it. The effect re-evaluates on every input
- * change, so demand that arrives during a background refetch (mount refetch of
- * persisted pages, reconnect, sync invalidation) is served once the refetch
- * settles. Queuing prevents one-shot edge-triggered callbacks from losing
- * requests and permanently stalling infinite scroll.
+ * Fulfill level-triggered load demand whenever the query can accept it.
+ * Re-evaluation after background fetches prevents infinite-scroll demand from being lost.
  */
 export function useFetchMoreOnDemand({
   demand,

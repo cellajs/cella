@@ -4,13 +4,7 @@ import type { ChannelEntityType, EntityCanMap } from 'shared';
 /** Ancestor channel entity slugs for URL building, populated via cache enrichment. */
 export type AncestorSlugs = Partial<Record<ChannelEntityType, string>>;
 
-/**
- * Entity-type-keyed permission map, computed on the frontend from membership + access policies.
- *
- * Values can be `true` (unconditionally allowed), `false` (denied), or `'own'`
- * (allowed only when the actor owns the entity, an implicit "owner" relation).
- * Use `resolvePermission()` to resolve `'own'` to a boolean for a specific entity.
- */
+/** Entity permission map whose values allow, deny, or conditionally allow the actor's own rows. */
 export type EntityCan = EntityCanMap;
 
 /** Makes specified keys required and non-nullable */

@@ -42,10 +42,7 @@ function OperationsPage() {
   // Enable scroll spy with tag section IDs
   useScrollSpy(tagSectionIds);
 
-  // Backstop: scroll to a matching URL hash on mount. The spy store handles the common case during
-  // registerSections, but this covers a child registration racing ahead (e.g. cached tag details).
-  // scrollToSectionById queues/retries until the target is laid out, so it's safe before the
-  // (possibly prerendered) collapsible content has expanded.
+  // Retry hash scrolling on mount to cover child registration races and collapsed content layout.
   useEffect(() => {
     const hash = window.location.hash.slice(1);
     if (hash && tagSectionIds.includes(hash)) scrollToSectionById(hash);

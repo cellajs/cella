@@ -65,13 +65,9 @@ export interface DiagReader {
 }
 
 /**
- * Default reader shelling out to the preinstalled aws CLI (no shell). Unlike a
- * bare `.stdout ?? ''`, this surfaces the read failure reason: a missing aws
- * binary, bad credentials, or the wrong bucket, and never silently returns
- * an empty string that the renderer would misreport as "no logs uploaded". The
- * `list` failure throws (without it nothing else can run); a per-object `cat`
- * failure is left for the renderer to annotate inline so one unreadable object
- * doesn't abort the whole dump.
+ * Reads boot diagnostics through the AWS CLI while preserving actionable failures.
+ * Listing errors abort; individual object errors are returned for inline rendering so one bad
+ * object does not hide the rest.
  */
 export function createAwsReader(endpoint: string, bucket: string): DiagReader {
   const prefix = `s3://${bucket}/boot-diag/`

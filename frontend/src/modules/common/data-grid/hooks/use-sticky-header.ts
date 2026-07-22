@@ -4,13 +4,8 @@ import { useLayoutEffect } from 'react';
 const STICKY_CLASS = 'rdg-header-sticky';
 
 /**
- * Pins header cells to the viewport top using `position: fixed` when the grid
- * scrolls past the top edge. Each cell gets an explicit pixel width matching
- * its CSS-grid-computed width and a `left` offset derived from the grid's
- * horizontal position minus its scrollLeft.
- *
- * Vertical pinning is zero-lag (fixed positioning is compositor-handled).
- * Horizontal sync runs in a rAF callback, an acceptable trade-off per requirements.
+ * Pin measured header cells to the viewport with compositor-fixed vertical positioning.
+ * Synchronize horizontal offsets in animation frames.
  */
 export function useStickyHeader(
   gridRef: RefObject<HTMLDivElement | null>,

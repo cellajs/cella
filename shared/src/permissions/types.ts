@@ -3,15 +3,7 @@ import type { PublicReadMode } from './public-read';
 import type { RowConditionName } from './row-conditions';
 
 /**
- * Permission value accepted in access policy configuration.
- *
- * - `1` = allowed for all entities of this type (unconditional)
- * - `0` = denied
- * - `'own'` = the built-in owner condition (actor is the entity's creator).
- *
- * Row conditions are a closed set (`own`, and the public read grant), not a fork extension
- * point. So a config cell is one of exactly these three literals.
- *
+ * Closed policy-cell values: deny, unconditional allow, or creator-only allow.
  * @see row-conditions.ts
  */
 export type PermissionValue = 0 | 1 | 'own';
@@ -81,13 +73,7 @@ export interface AccessPolicyConfiguration {
 export type AccessPolicyCallback = (config: AccessPolicyConfiguration) => void;
 
 /**
- * Per-action permission state resolved for a specific entity type.
- *
- * - `true` = unconditionally allowed
- * - `false` = denied
- * - a {@link RowConditionName} (e.g. `'own'`) = allowed only for rows satisfying that row
- *   condition; resolve per row via `resolvePermission`. Narrowed to the closed name union (not a
- *   bare `string`) so `resolvePermission`'s switch is exhaustive. A new condition name is a
- *   compile error there, not a silent frontend denial.
+ * Resolved action state: unconditional boolean or a row condition evaluated per entity.
+ * The closed condition union keeps downstream resolution exhaustive.
  */
 export type ActionPermissionState = boolean | RowConditionName;

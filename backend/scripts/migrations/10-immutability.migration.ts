@@ -8,14 +8,9 @@ import {
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 /**
- * Creates triggers that prevent modification of identity columns (id, tenant_id,
- * organization_id, etc.) after row creation. This defense-in-depth holds even under
- * admin bypass, with write guards on tables the app may read but never write.
- *
- * Functions and trigger names both come from `#/db/immutability-triggers`. Do not hand-list them
- * here: this block creates its triggers inside a single `EXCEPTION WHEN OTHERS`, so one trigger
- * referencing a function nobody created rolls back *every* trigger in the block, and the failure
- * only ever surfaces as a NOTICE.
+ * Creates identity-immutability and admin-only write triggers from the shared registry.
+ * Keep functions and trigger names unified there: one missing function rolls back every trigger
+ * in this exception-handled block while surfacing only a notice.
  */
 async function run(): Promise<SideEffectBlock> {
   const functionsSql = allImmutabilityFunctionsSQL.join('\n--> statement-breakpoint\n');

@@ -86,11 +86,8 @@ const main = async () => {
           console.warn(
             `${timestamp()} [startup] singleVM + cdc: API holds the replication slot — deploy must be exclusive (no blue-green)`,
           );
-          // Detached on purpose: runCdcWorker never resolves because its tail is the
-          // infinite replication/reconnect loop (its standalone entrypoint is a
-          // process whose lifetime is that loop). Awaiting it here would block
-          // every worker below forever. Failures must log loudly, not vanish
-          // into an unhandled rejection.
+          // The replication loop never resolves, so detach it without blocking other workers.
+          // Log failures explicitly to prevent unhandled rejections.
           void (await import('cdc-worker')).runCdcWorker().catch((error) => {
             console.error(`${timestamp()} [startup] in-process cdc worker crashed:`, error);
           });

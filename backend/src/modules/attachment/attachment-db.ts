@@ -13,10 +13,7 @@ export const attachmentsTable = snakeCase.table(
   'attachments',
   {
     ...productColumns('attachment'),
-    // S3 bucket visibility (public vs private bucket), not a permission grant. Unrelated to the
-    // permission `publicAt` (from productColumns) which grants non-member read. Named `public`
-    // for historical reasons; a rename to e.g. `isInPublicBucket` is deferred to a future attachment
-    // migration to avoid a standalone data migration here.
+    // S3 bucket visibility, independent from the `publicAt` non-member permission grant.
     public: boolean().notNull().default(false),
     bucketName: varchar({ length: maxLength.field }).notNull(),
     /** Upload batch grouping (multi-file uploads shown as one carousel), not ownership. */
