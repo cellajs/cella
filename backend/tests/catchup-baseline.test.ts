@@ -146,7 +146,7 @@ describe('Catchup (view-driven, sequence)', async () => {
     expect(views![0]).toEqual({ key: 'forged', status: 'opaque' });
   });
 
-  it('forbids a view on an org the caller is no part of, without leaking numbers', async () => {
+  it('answers a view on an org the caller is no part of, without leaking numbers', async () => {
     const orgId = tenant.organization.id;
     const result = await call(postAppCatchup, {
       body: {
@@ -173,10 +173,12 @@ describe('Catchup (view-driven, sequence)', async () => {
 
     expect(result.response.status).toBe(200);
     const { views } = result.data as AppCatchupResponse;
-    expect(views!.map((v) => [v.key, v.status])).toEqual([
-      ['other:attachment', 'forbidden'],
-      [`${orgId}:attachment`, 'ok'],
-    ]);
+    // The other org's exact non-'ok' status is fork-dependent: 'forbidden' with no public read
+    // route, 'opaque' when a publicRead() grant means a readable row can exist there. The
+    // guarantee both forks share is what this test asserts: not 'ok', and no numbers leaked.
+    expect(views!.map((v) => v.key)).toEqual(['other:attachment', `${orgId}:attachment`]);
+    expect(views![0].status).not.toBe('ok');
+    expect(views![1].status).toBe('ok');
     expect(views![0].frontiers).toBeUndefined();
     expect(views![0].counts).toBeUndefined();
   });

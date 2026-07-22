@@ -1,7 +1,7 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconComponent } from '~/modules/common/icons/types';
 
 // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
-type IconType = LucideIcon | React.ComponentType<any>;
+type IconType = IconComponent | React.ComponentType<any>;
 
 type StepItem = {
   id?: string;

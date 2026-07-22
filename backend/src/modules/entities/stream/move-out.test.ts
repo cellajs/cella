@@ -99,10 +99,16 @@ describe('dispatchMoveOuts', () => {
     streamSubscriberManager.register(member.subscriber);
 
     // New row is an unpublished draft (veto: unreadable for everyone); old row was published.
+    // The old row is authored by the reader so it stays readable under a read:'own' policy too,
+    // keeping the readability difference fork-independent (read:1 reads it regardless).
     await dispatchMoveOuts(
       updateEvent({
         rowData: row('att-1', { path: `${ORG}/new-spot`, publishedAt: null }),
-        movedFrom: row('att-1', { path: `${ORG}/old-spot`, publishedAt: '2026-07-01T00:00:00Z' }),
+        movedFrom: row('att-1', {
+          path: `${ORG}/old-spot`,
+          publishedAt: '2026-07-01T00:00:00Z',
+          createdBy: 'member-user',
+        }),
       }),
     );
 
@@ -122,10 +128,13 @@ describe('dispatchMoveOuts', () => {
     const member = fakeSubscriber([membership(ORG, 'member', 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
+    // Positive control: both rows authored by the reader, so they are genuinely readable at
+    // both locations under a read:'own' policy as well. Without that authorship the assertion
+    // could pass vacuously (member reads neither location, so of course no moveOut fires).
     await dispatchMoveOuts(
       updateEvent({
-        rowData: row('att-1', { path: `${ORG}/new-spot` }),
-        movedFrom: row('att-1', { path: `${ORG}/old-spot` }),
+        rowData: row('att-1', { path: `${ORG}/new-spot`, createdBy: 'member-user' }),
+        movedFrom: row('att-1', { path: `${ORG}/old-spot`, createdBy: 'member-user' }),
       }),
     );
 
@@ -145,6 +154,9 @@ describe('dispatchMoveOuts', () => {
     const member = fakeSubscriber([membership(ORG, 'member', 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
+    // Rows meant to be readable by member-user (the old side of att-2, both sides of att-3) are
+    // authored by them, so they stay readable under a read:'own' policy too (read:1 reads them
+    // regardless), keeping the readability differences fork-independent.
     await dispatchMoveOuts(
       updateEvent({
         rowData: row('att-1', { path: `${ORG}/a` }),
@@ -153,13 +165,17 @@ describe('dispatchMoveOuts', () => {
           {
             seq: 8,
             rowData: row('att-2', { path: `${ORG}/b-new`, publishedAt: null }),
-            movedFrom: row('att-2', { path: `${ORG}/b-old`, publishedAt: '2026-07-01T00:00:00Z' }),
+            movedFrom: row('att-2', {
+              path: `${ORG}/b-old`,
+              publishedAt: '2026-07-01T00:00:00Z',
+              createdBy: 'member-user',
+            }),
           },
           // Moved but still readable → routed by the normal update, no moveOut.
           {
             seq: 9,
-            rowData: row('att-3', { path: `${ORG}/c-new` }),
-            movedFrom: row('att-3', { path: `${ORG}/c-old` }),
+            rowData: row('att-3', { path: `${ORG}/c-new`, createdBy: 'member-user' }),
+            movedFrom: row('att-3', { path: `${ORG}/c-old`, createdBy: 'member-user' }),
           },
           // Not moved at all.
           { seq: 10, rowData: row('att-4', { path: `${ORG}/d` }) },

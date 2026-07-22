@@ -19,12 +19,35 @@ vi.mock('~/query/realtime/sync-store', () => ({
 vi.mock('./app-stream-handler', () => ({ handleAppStreamNotification: vi.fn() }));
 vi.mock('./view-declaration', () => ({ declareViewsFromMemberships: vi.fn() }));
 vi.mock('./catchup-processor', () => ({ catchupEntityTypes: () => [], processAppCatchup: vi.fn() }));
+// Controllable leader state so tests can drive the follower -> leader promotion transition.
+const leaderControl = vi.hoisted(() => {
+  const state = { isLeader: true };
+  const subscribers = new Set<(s: { isLeader: boolean }, p: { isLeader: boolean }) => void>();
+  return {
+    isLeader: () => state.isLeader,
+    getState: () => ({ isLeader: state.isLeader }),
+    subscribe: (fn: (s: { isLeader: boolean }, p: { isLeader: boolean }) => void) => {
+      subscribers.add(fn);
+      return () => subscribers.delete(fn);
+    },
+    setLeader: (next: boolean) => {
+      const prev = state.isLeader;
+      state.isLeader = next;
+      for (const fn of subscribers) fn({ isLeader: next }, { isLeader: prev });
+    },
+    reset: () => {
+      state.isLeader = true;
+      subscribers.clear();
+    },
+  };
+});
+
 vi.mock('./tab-coordinator', () => ({
   broadcastNotification: vi.fn(),
-  initTabCoordinator: vi.fn(),
-  isLeader: () => true,
+  initTabCoordinator: vi.fn(() => Promise.resolve()),
+  isLeader: () => leaderControl.isLeader(),
   onNotification: vi.fn(() => () => {}),
-  useTabCoordinatorStore: { getState: () => ({ isLeader: true }), subscribe: () => () => {} },
+  useTabCoordinatorStore: { getState: () => leaderControl.getState(), subscribe: leaderControl.subscribe },
 }));
 vi.mock('sdk', () => ({ postAppCatchup: vi.fn() }));
 
@@ -75,7 +98,10 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
 
 let managerCount = 0;
 
-function createHarness(overrides?: { fetchAndProcessCatchup?: (cursor: string | null) => Promise<string | null> }) {
+function createHarness(overrides?: {
+  fetchAndProcessCatchup?: (cursor: string | null) => Promise<string | null>;
+  useTabCoordination?: boolean;
+}) {
   const order: string[] = [];
   const processed: unknown[] = [];
   let resolveCatchup: ((cursor: string | null) => void) | undefined;
@@ -83,7 +109,7 @@ function createHarness(overrides?: { fetchAndProcessCatchup?: (cursor: string | 
   const manager = new StreamManager(`TestStream-${managerCount++}`, {
     endpoint: 'http://api.test/stream',
     withCredentials: false,
-    useTabCoordination: false,
+    useTabCoordination: overrides?.useTabCoordination ?? false,
     fetchAndProcessCatchup:
       overrides?.fetchAndProcessCatchup ??
       (() =>
@@ -113,6 +139,7 @@ function createHarness(overrides?: { fetchAndProcessCatchup?: (cursor: string | 
 
 beforeEach(() => {
   FakeEventSource.instances = [];
+  leaderControl.reset();
 });
 
 afterEach(() => {
@@ -213,5 +240,33 @@ describe('StreamManager subscribe-then-snapshot', () => {
 
     expect(h.manager.useStore.getState().state).toBe('error');
     expect(h.es.readyState).toBe(FakeEventSource.CLOSED);
+  });
+});
+
+describe('StreamManager leader promotion', () => {
+  it('opens an SSE when a broadcast-only follower is promoted to leader', async () => {
+    leaderControl.setLeader(false); // start as a follower
+    const h = createHarness({ useTabCoordination: true });
+
+    await h.manager.connect();
+
+    // Follower parks in broadcast-only 'live' with no SSE.
+    expect(FakeEventSource.instances).toHaveLength(0);
+    expect(h.manager.useStore.getState().state).toBe('live');
+
+    // Leader tab closes: the Web Lock transfers and this tab is promoted.
+    leaderControl.setLeader(true);
+    await tick();
+
+    // Regression: the promoted tab must open a real SSE, not early-return on the stale 'live' state.
+    expect(FakeEventSource.instances).toHaveLength(1);
+    expect(h.manager.isConnected()).toBe(true);
+
+    // And it drives through catchup to a genuine SSE-backed live state.
+    h.es.emit('offset', '100');
+    h.resolveCatchup('c1');
+    await tick();
+
+    expect(h.manager.useStore.getState().state).toBe('live');
   });
 });

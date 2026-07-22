@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { computeChannelPath, computeProductPath, createEntityHierarchy, createRoleRegistry, hierarchy } from 'shared';
+import { computeChannelPath, computeProductPath, createEntityHierarchy, createRoleRegistry } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { seedDb } from '#/db/db';
 import { pathColumnExpression } from './path-column';
@@ -28,13 +28,22 @@ const deepIdColumns = {
   project: 'projectId',
 };
 
+// Synthetic org-homed product, fork-independent: mirrors cella's default attachment topology
+// without binding to the real config (forks that re-home the product would break the assertion).
+const orgHomedH = createEntityHierarchy(roles)
+  .user()
+  .channel('organization', { parent: null, roles: roles.all })
+  .product('doc', { parent: 'organization' })
+  .build();
+const orgHomedIdColumns = { organization: 'organizationId' };
+
 describe('pathColumnExpression (SQL shape)', () => {
-  it('org-homed product (cella attachment): just the org id', () => {
-    expect(pathColumnExpression('attachment', false, hierarchy)).toBe('"organization_id"::text');
+  it('org-homed product: just the org id', () => {
+    expect(pathColumnExpression('doc', false, orgHomedH, orgHomedIdColumns)).toBe('"organization_id"::text');
   });
 
   it('root channel (organization): its own id', () => {
-    expect(pathColumnExpression('organization', true, hierarchy)).toBe('"id"::text');
+    expect(pathColumnExpression('organization', true, orgHomedH, orgHomedIdColumns)).toBe('"id"::text');
   });
 
   it('deep product: COALESCE-wrapped intermediate ancestors, root-first', () => {

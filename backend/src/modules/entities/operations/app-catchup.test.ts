@@ -50,12 +50,19 @@ describe('answerCatchupViews', () => {
     ]);
   });
 
-  it('forbids a view outside the caller memberships without leaking numbers', async () => {
+  it('answers a view outside the caller memberships without leaking numbers', async () => {
+    // The exact non-'ok' status is fork-dependent: 'forbidden' when the product type has no
+    // public read route, 'opaque' when a publicRead() grant means a readable row can exist.
+    // The guarantee both forks share is what this test asserts: not 'ok', and no numbers.
     const answers = await answerCatchupViews(orgAdmin, { userId: 'actor', isSystemAdmin: false }, [
       { key: 'v2', organizationId: OTHER_ORG, prefixes: [OTHER_ORG], entityTypes: [productType], cursor: 0 },
     ]);
 
-    expect(answers).toEqual([{ key: 'v2', status: 'forbidden' }]);
+    expect(answers).toHaveLength(1);
+    expect(answers[0].key).toBe('v2');
+    expect(answers[0].status).not.toBe('ok');
+    expect(answers[0].frontiers).toBeUndefined();
+    expect(answers[0].counts).toBeUndefined();
   });
 
   it('a mixed request answers each view independently', async () => {
@@ -64,10 +71,11 @@ describe('answerCatchupViews', () => {
       { key: 'b', organizationId: OTHER_ORG, prefixes: [OTHER_ORG], entityTypes: [productType], cursor: 5 },
     ]);
 
-    expect(answers.map((a) => [a.key, a.status])).toEqual([
-      ['a', 'ok'],
-      ['b', 'forbidden'],
-    ]);
+    // View 'a' is the caller's own org (ok); view 'b' is a non-member org, whose exact
+    // non-'ok' status is fork-dependent (see the previous test).
+    expect(answers.map((a) => a.key)).toEqual(['a', 'b']);
+    expect(answers[0].status).toBe('ok');
+    expect(answers[1].status).not.toBe('ok');
   });
 
   it('a forged prefix pointing at another org is forbidden even with real memberships', async () => {

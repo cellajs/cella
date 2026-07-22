@@ -59,11 +59,12 @@ beforeAll(async () => {
       return;
     }
 
-    const payload = verifyToken(token);
-    if (!payload) {
+    const result = verifyToken(token);
+    if (!result.ok) {
       rejectAtHttp(wss, req, socket, head, 4001, 'Invalid or expired token');
       return;
     }
+    const payload = result.payload;
 
     // Token must match requested entityType and tenantId
     if (payload.entityType !== entityType) {

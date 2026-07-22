@@ -84,12 +84,20 @@ export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMess
       return;
     }
 
-    const payload = verifyToken(token);
-    if (!payload) {
-      log.warn('WS token verification failed', { entityType: rawEntityType });
+    const result = verifyToken(token);
+    if (!result.ok) {
+      // Expired is routine on a long-lived editor socket (30-minute token; the client
+      // reconnects with a fresh one), so it stays at debug. A bad signature or malformed
+      // token is a genuine anomaly (YJS_SECRET drift, truncation, tampering) and warns.
+      if (result.reason === 'expired') {
+        log.debug('WS token expired', { entityType: rawEntityType });
+      } else {
+        log.warn('WS token verification failed', { entityType: rawEntityType, reason: result.reason });
+      }
       rejectUpgrade(socket, 4001, 'Invalid or expired token');
       return;
     }
+    const payload = result.payload;
 
     // Token must authorize editing this entity type
     if (payload.entityType !== rawEntityType) {
