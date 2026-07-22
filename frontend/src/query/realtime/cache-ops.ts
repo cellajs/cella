@@ -283,8 +283,8 @@ export async function fetchEntityAndUpdateList(
  * callers may advance their sync cursor); false when unavailable, failed, or the window overflows
  * one response. Callers then fall back to full list invalidation and react-query owns recovery.
  *
- * seqCursor is the bounded inclusive range "51,150"; `pathPrefix` optionally narrows the
- * fetch to one channel subtree (forwarded to the registered deltaFetch).
+ * seqCursor is the bounded inclusive range "51,150"; `channelId` optionally narrows the
+ * fetch to one channel (forwarded to the registered deltaFetch as its ancestor filter).
  *
  * Result statuses drive the caller's recovery policy: 'ok' (patched; `items` are the fetched
  * rows, e.g. for unseen-count accounting), 'overflow'/'unsupported' (fall back to list
@@ -293,7 +293,15 @@ export async function fetchEntityAndUpdateList(
 export interface RangeFetchResult {
   status: 'ok' | 'overflow' | 'unsupported' | 'error';
   items: ItemData[];
+  /** Highest seq actually returned; 0 when empty. Lets callers detect a short delivery. */
+  reachedSeq: number;
 }
+
+// Product rows carry the org sequence; read it defensively (ItemData is intentionally loose).
+const seqOf = (item: ItemData): number => {
+  const seq = (item as { seq?: unknown }).seq;
+  return typeof seq === 'number' ? seq : 0;
+};
 
 export async function fetchRangeAndPatch(
   entityType: string,
@@ -301,18 +309,18 @@ export async function fetchRangeAndPatch(
   tenantId: string | null,
   seqCursor: string,
   keys: EntityQueryKeys,
-  pathPrefix?: string,
+  channelId?: string,
 ): Promise<RangeFetchResult> {
   if (!tenantId && organizationId) {
     console.debug(`[CacheOps] No tenantId for ${entityType} delta fetch, falling back to invalidation`);
-    return { status: 'unsupported', items: [] };
+    return { status: 'unsupported', items: [], reachedSeq: 0 };
   }
 
   const deltaFetch = getEntityDeltaFetch(entityType);
-  if (!deltaFetch) return { status: 'unsupported', items: [] };
+  if (!deltaFetch) return { status: 'unsupported', items: [], reachedSeq: 0 };
 
   try {
-    const { items } = await deltaFetch(organizationId, tenantId, seqCursor, pathPrefix);
+    const { items } = await deltaFetch(organizationId, tenantId, seqCursor, channelId);
 
     // Overflow guard: registrars request SYNC_CHUNK_SIZE, so a full response means the seq
     // window may exceed what one fetch returns. Patching a truncated window would silently
@@ -320,7 +328,7 @@ export async function fetchRangeAndPatch(
     // cursor to the window end), treat as "delta too large" and let the caller invalidate.
     if (items.length >= SYNC_CHUNK_SIZE) {
       console.debug(`[CacheOps] Delta fetch: ${entityType} window overflow (seqCursor=${seqCursor}) → invalidation`);
-      return { status: 'overflow', items: [] };
+      return { status: 'overflow', items: [], reachedSeq: 0 };
     }
 
     let sawNewRow = false;
@@ -335,9 +343,9 @@ export async function fetchRangeAndPatch(
     if (items.length > 0) {
       console.debug(`[CacheOps] Delta fetch: ${entityType} patched ${items.length} entities (seqCursor=${seqCursor})`);
     }
-    return { status: 'ok', items };
+    return { status: 'ok', items, reachedSeq: items.reduce((max, item) => Math.max(max, seqOf(item)), 0) };
   } catch (error) {
     console.warn(`[CacheOps] Delta fetch failed for ${entityType}, falling back to invalidation`, error);
-    return { status: 'error', items: [] };
+    return { status: 'error', items: [], reachedSeq: 0 };
   }
 }

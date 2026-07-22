@@ -141,7 +141,7 @@ const viteConfig = {
     {
       enforce: 'pre' as const,
       ...mdx({
-        include: /\/(src\/content\/docs\/.*\.(md|mdx)|cella\/[A-Z][A-Z_]*\.md|[a-z-]+\/README\.md)$/,
+        include: /\/(src\/content\/docs\/.*\.(md|mdx)|(cella\/)?[A-Z][A-Z_]*\.md|[a-z-]+\/README\.md)$/,
         format: 'detect',
         // Read component overrides (links, headings) from MDXProvider context. A
         // `components` prop does not cross into imported modules, and wrapper pages

@@ -1,13 +1,14 @@
 import pg from 'pg';
+import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
 import { env } from '../env';
 
 // In production we require a verified TLS connection to the managed PostgreSQL.
 // The CA (Scaleway RDB instance cert) is provisioned automatically into the
 // DATABASE_SSL_CA runtime secret by `pulumi up`; a missing value is a
-// misconfiguration causes an immediate failure to prevent a silent security downgrade.
+// misconfiguration and fails immediately to prevent a silent security downgrade.
 // The secret is base64-encoded (the PEM is multi-line and would break the
 // line-based `.env.runtime` delivery), so decode it back to PEM here.
-const sslConfig =
+const sslCa =
   env.NODE_ENV === 'production' && !env.NODB
     ? (() => {
         if (!env.DATABASE_SSL_CA) {
@@ -17,28 +18,18 @@ const sslConfig =
               "CLI → 'Apply infra change', or check the database-ssl-ca runtime secret.",
           );
         }
-        return { ca: Buffer.from(env.DATABASE_SSL_CA, 'base64').toString('utf-8'), rejectUnauthorized: true };
+        return Buffer.from(env.DATABASE_SSL_CA, 'base64').toString('utf-8');
       })()
     : undefined;
 
-// Scaleway-built connection strings pin `sslmode=require&uselibpqcompat=true`,
-// which pg would let override the verified `ssl` config above. Strip those
-// params so our CA-pinned config wins.
-const connectionString = (() => {
-  try {
-    const parsed = new URL(env.DATABASE_URL);
-    parsed.searchParams.delete('sslmode');
-    parsed.searchParams.delete('uselibpqcompat');
-    return parsed.toString();
-  } catch {
-    return env.DATABASE_URL;
-  }
-})();
-
+// verifiedPostgresSsl pins the cert identity check to the dialed host so the Scaleway
+// RDB cert's IP SANs are honored (node-postgres otherwise verifies against localhost);
+// stripPostgresSslParams removes Scaleway's `sslmode`/`uselibpqcompat` params so the
+// CA-pinned ssl config wins. Same helpers as backend and cdc.
 export const pool = new pg.Pool({
-  connectionString,
+  connectionString: stripPostgresSslParams(env.DATABASE_URL),
   max: env.YJS_DB_POOL_MAX,
-  ssl: sslConfig,
+  ssl: verifiedPostgresSsl(env.DATABASE_URL, sslCa),
 });
 
 /** Set RLS session context on a client connection */

@@ -22,6 +22,8 @@ overrides:
   esbuild@<0.28.1: ^0.28.1
   esbuild@>=0.27.3 <0.28.1: ^0.28.1
   'protobufjs@>=8.0.0 <8.4.1': 8.6.5
+  '@types/hast': 3.0.5
+  '@shikijs/types': 4.3.1
 packageExtensions:
   '@artilleryio/sketches-js':
     dependencies:

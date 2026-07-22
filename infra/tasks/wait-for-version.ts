@@ -89,7 +89,13 @@ export function createFetchProbe(timeoutMs: number): ProbeFn {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
     try {
-      const res = await fetch(url, { signal: controller.signal, redirect: 'follow' })
+      // WebSocket services (e.g. yjs) advertise ws(s):// health URLs, but their
+      // /health endpoint speaks plain HTTP on the same host and fetch() rejects
+      // the ws scheme outright (surfacing as status 0 → gate never passes).
+      // Normalize the scheme so same-origin wss URLs stay probeable (mirrors the
+      // backend's own probe in lib/health-probe.ts).
+      const httpUrl = url.replace(/^ws(s?):/, 'http$1:')
+      const res = await fetch(httpUrl, { signal: controller.signal, redirect: 'follow' })
       return { status: res.status, version: res.headers.get('x-app-version') ?? undefined }
     } catch {
       return { status: 0, version: undefined }

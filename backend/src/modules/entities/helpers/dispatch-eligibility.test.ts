@@ -96,7 +96,8 @@ const singleDecision = (subscriber: SubscriberAccess, event: AppStreamProductEve
 
 describe('dispatch batch eligibility: deterministic splits', () => {
   it('a malformed membership denies its holder without poisoning others in the SAME batch call', () => {
-    const event = attachmentEvent(ORGS[0], { rowData: attachmentRow('att-1', ORGS[0]) });
+    // Org members hold read:'own': the row must be authored by the reader to be readable.
+    const event = attachmentEvent(ORGS[0], { rowData: attachmentRow('att-1', ORGS[0], { createdBy: 'user-1' }) });
 
     const clean: SubscriberAccess = {
       userId: 'user-1',
@@ -141,12 +142,13 @@ describe('dispatch batch eligibility: deterministic splits', () => {
   });
 
   it('batch rows: readable non-representative row still reaches only its readers', () => {
+    // Org members hold read:'own': att-b must be authored by orgAMember for them to read it.
     const event = attachmentEvent(ORGS[1], {
       batchUntilSeq: 2,
       rowData: attachmentRow('att-a', ORGS[1]),
       batchRows: [
         { seq: 1, rowData: attachmentRow('att-a', ORGS[1]) },
-        { seq: 2, rowData: attachmentRow('att-b', ORGS[0]) },
+        { seq: 2, rowData: attachmentRow('att-b', ORGS[0], { createdBy: 'user-1' }) },
       ],
     });
 

@@ -2,6 +2,7 @@ import type { ProductEntityType } from 'shared';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
 import { ingestSyncedRows } from '~/modules/seen/unseen-sync';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-config';
 import { sourceId } from '~/query/offline/stx-utils';
 import { queryClient } from '~/query/query-client';
 import * as cacheOps from './cache-ops';
@@ -206,16 +207,24 @@ async function flushDue(): Promise<void> {
 }
 
 /**
- * Narrowest path prefix covering every due channel of a group; undefined = whole org (no
- * narrowing). Paths come from the fork-registered channel-path resolver; any org-level entry
- * or unresolvable channel widens to the org. The template always widens (its only channel IS
- * the org), so `pathPrefix` never leaves undefined there.
+ * The channel id covering every due channel of a group, scoping the delta fetch by the
+ * entity's conventional ancestor filter (e.g. projectId); undefined = whole org (no narrowing).
+ * One shared channel (the common case: a single viewed channel) needs no path lookup. Multiple
+ * distinct channels narrow to their least-common-ancestor channel via the fork-registered
+ * channel-path resolver; any org-level entry, unresolvable channel, or channels that diverge at
+ * the org root widen to the org. The template always widens (its only channel IS the org).
  */
-function coveringPathPrefix(entries: DirtyEntry[]): string | undefined {
-  const paths: string[][] = [];
+function coveringChannelId(entries: DirtyEntry[]): string | undefined {
+  const ids = new Set<string>();
   for (const entry of entries) {
     if (!entry.channelId || entry.channelId === entry.organizationId) return undefined;
-    const path = resolveChannelPath(null, entry.channelId);
+    ids.add(entry.channelId);
+  }
+  if (ids.size === 1) return [...ids][0];
+
+  const paths: string[][] = [];
+  for (const id of ids) {
+    const path = resolveChannelPath(null, id);
     if (!path) return undefined;
     paths.push(path.split('/'));
   }
@@ -225,8 +234,18 @@ function coveringPathPrefix(entries: DirtyEntry[]): string | undefined {
     while (i < common.length && i < segments.length && common[i] === segments[i]) i++;
     common = common.slice(0, i);
   }
-  // A single root segment is the org id: no narrowing.
-  return common.length > 1 ? common.join('/') : undefined;
+  // A single root segment is the org id: no narrowing. Otherwise the deepest common segment is
+  // the covering channel id.
+  return common.length > 1 ? common[common.length - 1] : undefined;
+}
+
+// A promised seq (notification batch-end / catchup frontier) that never came back: drop to
+// basic-fetch mode (staleTime fallback) until a clean catchup reconciles. Logs once per entry;
+// the warn reaches Maple via the browser SDK, never the user.
+function enterBasicFetchMode(context: Record<string, unknown>): void {
+  if (!isSyncDeliveryTrusted()) return;
+  setSyncDeliveryTrusted(false);
+  console.warn('[SyncTrust] delivery shortfall; switching to basic-fetch mode', context);
 }
 
 /** Flush one covering group: fetch the merged range once, then settle every entry from it. */
@@ -249,7 +268,7 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
     tenantId,
     `${fromSeq},${untilSeq}`,
     keys,
-    coveringPathPrefix(entries),
+    coveringChannelId(entries),
   );
 
   if (result.status === 'error' && entries.some((entry) => entry.attempts + 1 < MAX_FLUSH_ATTEMPTS)) {
@@ -259,9 +278,16 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
   }
 
   if (result.status === 'ok') {
-    // Per-view advance accounting: the fetch covered [fromSeq, untilSeq] for every channel
-    // under the covering prefix, so each due channel advances to the shared upper bound.
-    for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
+    if (result.reachedSeq < untilSeq) {
+      // Short delivery: keep the cursor honest (do not advance) so catchup re-checks the gap,
+      // heal the visible view once, and degrade sync trust.
+      cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
+      enterBasicFetchMode({ entityType, organizationId, promisedSeq: untilSeq, reachedSeq: result.reachedSeq });
+    } else {
+      // Per-view advance accounting: the fetch covered [fromSeq, untilSeq] for every channel
+      // under the covering prefix, so each due channel advances to the shared upper bound.
+      for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
+    }
     // Unseen sync: exact badge deltas from the fetched rows (each row resolves its own home
     // channel; the org id is only the fallback for rows without ancestor ids).
     ingestSyncedRows(entityType, organizationId, result.items as { id: string }[]);

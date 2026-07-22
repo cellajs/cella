@@ -2,7 +2,12 @@ import type { GetMyMembershipsResponse, PostAppCatchupResponse } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
 import { meKeys } from '~/modules/me/query';
 import { seenKeys } from '~/modules/seen/helpers';
-import { getEntityQueryKeys, getRegisteredEntityTypes, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import {
+  getEntityQueryKeys,
+  getRegisteredProductEntityTypes,
+  hasEntityQueryKeys,
+} from '~/query/basic/entity-query-registry';
+import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-config';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
@@ -33,6 +38,7 @@ import { getSyncTier, getTenantIdForOrg } from './sync-priority';
 export async function processAppCatchup(response: PostAppCatchupResponse, baselineOnly = false): Promise<void> {
   const { changes, views } = response;
   const syncStore = useSyncStore.getState();
+  let hadGap = false; // any view still behind the server frontier this cycle
 
   // ── Views: product entity sync per (org, entityType) ──────────────────────
   if (views?.length) {
@@ -80,6 +86,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       }
 
       if (frontier <= clientCursor) continue; // caught up
+      hadGap = true;
 
       const tenantId = syncStore.getOrgTenantId(organizationId) ?? getTenantIdForOrg(organizationId);
 
@@ -148,6 +155,12 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
     return;
   }
 
+  // Nothing outstanding this cycle: a prior delivery shortfall has been filled, resume trusted mode.
+  if (!hadGap && !isSyncDeliveryTrusted()) {
+    setSyncDeliveryTrusted(true);
+    console.info('[SyncTrust] catchup reconciled; resuming trusted mode');
+  }
+
   // Refresh memberships (getMyMemberships, invalidate channel lists, refresh current user).
   const membershipChannelsBefore = membershipChannelKeys();
   membershipOps.invalidateChannelList(null);
@@ -183,7 +196,7 @@ function membershipChannelKeys(): Set<string> {
 
 /** Registered product entity types, for building the catchup views request. */
 export function catchupEntityTypes(): string[] {
-  return getRegisteredEntityTypes().filter((entityType) => hasEntityQueryKeys(entityType));
+  return getRegisteredProductEntityTypes();
 }
 
 /**

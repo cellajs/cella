@@ -1,7 +1,37 @@
-import { describe, expect, it, vi } from 'vitest'
-import { isHealthy, parseArgs, pollForVersion, type ProbeResult } from './wait-for-version'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createFetchProbe, isHealthy, parseArgs, pollForVersion, type ProbeResult } from './wait-for-version'
 
 const SHA = 'abc1234'
+
+describe('createFetchProbe', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('normalizes ws(s):// health URLs to http(s):// so fetch can probe them', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204, headers: { 'x-app-version': SHA } }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await createFetchProbe(1000)('wss://www.example.dev/yjs/health')
+
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://www.example.dev/yjs/health')
+    expect(result).toEqual({ status: 204, version: SHA })
+  })
+
+  it('leaves http(s):// URLs untouched', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204, headers: { 'x-app-version': SHA } }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await createFetchProbe(1000)('https://www.example.dev/api/health')
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://www.example.dev/api/health')
+  })
+
+  it('surfaces a thrown request as status 0', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')))
+
+    expect(await createFetchProbe(1000)('https://www.example.dev/api/health')).toEqual({ status: 0, version: undefined })
+  })
+})
 
 describe('isHealthy', () => {
   it('accepts 204 with matching version (API services)', () => {
