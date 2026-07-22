@@ -124,18 +124,13 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   const organization = ctx.get('organization');
   const detailsRequired = severitiesRequiringDetails.has(severity);
 
-  // Client-facing correlation id: the active OTel trace id. One id now joins the
-  // browser trace (frontend injects traceparent), the server span, every log line
-  // (pino mixin stamps trace_id), and the Maple session timeline. Falls back to
-  // the request id when no span is recording (tracing disabled/misconfigured).
+  // Correlate browser tracing, server spans, logs, and Maple through the active trace ID.
+  // Fall back to request ID when no span records.
   const logId = trace.getActiveSpan()?.spanContext().traceId ?? ctx.get('requestId');
   const timestamp = getIsoDate();
 
-  // Message carries name + type so dedup keys on the error kind, not just the class name
-  // (`AppError: forbidden` and `AppError: invalid_request` suppress independently).
-  // Full details (err with stack/cause, request context) for warn/error/fatal, minimal for info.
-  // tenantId/userId/organizationId/requestId are bound from the ambient log context;
-  // trace_id (stamped on every log line by the pino mixin) is the client-facing logId.
+  // Include error type in the message so deduplication separates distinct AppError kinds.
+  // Warn and above retain stack/context; ambient logging supplies request and trace identities.
   log[severity](
     `${name}: ${type}`,
     detailsRequired

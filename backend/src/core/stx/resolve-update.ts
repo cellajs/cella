@@ -71,14 +71,9 @@ function resolvePreparedOps<T extends Record<string, unknown>>(
 }
 
 /**
- * Pure sync pipeline: normalize lens keys → filter no-ops → resolve HLC conflicts →
- * apply AWSet deltas → build stx.
- * Works for any product entity. Returns `{ changed: false }` when nothing survived.
- *
- * Lens seam (runtime touch point 1): old-shape `ops` and `stx.fieldTimestamps`
- * keys are canonicalized and expand-window twins mirror-written before conflict
- * resolution, so HLC/AWSet logic only ever sees canonical keys. Passthrough
- * while the lens list is empty.
+ * Resolves a product update through lens normalization, no-op filtering, HLC conflicts,
+ * and AWSet deltas. Keys and expand-window twins are canonicalized before conflict logic;
+ * returns unchanged when no operation survives.
  */
 export function resolveUpdateOps<T extends Record<string, unknown>>(
   entityType: ProductEntityType,

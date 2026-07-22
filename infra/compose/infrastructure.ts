@@ -156,15 +156,9 @@ export function assembleCompose(appServices: AppServices): ComposeFile {
 const PROCESS_IDENTITY_ENV = new Set(['MODE', 'PORT'])
 
 /**
- * singleVM support, part 2 of 2 (ports above): fold every co-hosted service's
- * `env` into the host block. The workers run in-process on the host container,
- * so their wiring (`API_WS_URL`, `YJS_PORT`, …) must reach the HOST's
- * environment: their own blocks never start under the host's compose profile.
- * Placeholders (`${VAR}`) folded here are collected for the host VM by the
- * profile-driven scan in resources/compose-env.ts, which also unions the
- * co-hosted registry `bindings` that supply them. Same-value collisions are
- * fine (e.g. `BACKEND_URL` on host and worker); conflicting values fail synth
- * loudly to prevent a folded worker from receiving a broken environment.
+ * Folds co-hosted service environments into the single-VM host block.
+ * The host profile supplies their placeholders and bindings because worker blocks do not start.
+ * Equal collisions are accepted; conflicting values fail synthesis.
  */
 function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, ComposeService>): void {
   const hostSlug = Object.entries(appServices).find(([, cfg]) => cfg.primaryRollout)?.[0]
@@ -189,14 +183,9 @@ function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, Com
 }
 
 /**
- * singleVM support: publish every co-hosted service's port on the host
- * (`primaryRollout`) block so that when `appConfig.singleVM` folds the workers
- * into the backend process, the load balancer can still reach each in-process
- * worker at the host VM on its own port. Published unconditionally (the Compose
- * file is shared across deploy modes); in the normal split-VM deploy the extra
- * host ports simply have nothing bound behind them and are never reachable from
- * the public internet (the VM security group drops all public inbound and the
- * LB only targets a service's own VM). No-op when no service opts in.
+ * Publishes co-hosted worker ports on the single-VM host for load-balancer access.
+ * Shared Compose output includes them in split mode too, where nothing binds them and network
+ * policy keeps them unreachable. Does nothing when no service opts in.
  */
 function publishCoHostedPorts(appServices: AppServices, blocks: Record<string, ComposeService>): void {
   const hostSlug = Object.entries(appServices).find(([, cfg]) => cfg.primaryRollout)?.[0]

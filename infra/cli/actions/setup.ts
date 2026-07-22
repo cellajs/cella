@@ -130,18 +130,10 @@ async function mintCiKey(ctx: SetupContext): Promise<CiKeyResult> {
 }
 
 /**
- * VM reader key: minimal-privilege identity baked into service VMs. Provisioned
- * alongside the CI key on fresh/rotate, OR on its own to self-heal a stack that
- * is missing it (a plain Resume). provisionScopedKey is idempotent: it reuses
- * the `<slug>-vm-reader` app by name and just mints a fresh key, so a repeated
- * heal rotates existing credentials and never duplicates them. Minting the IAM app requires a key with
- * IAMManager: on fresh/rotate the bootstrap key already is one; on a plain
- * Resume prompt for a bootstrap key just for this step.
- *
- * A Resume re-mints only when no versioned `vm-reader-key` secret exists. On a
- * Secret Manager error we assume the key is present to avoid an unnecessary
- * rotation; a real miss fails later at `pulumi up`. Returns the new access key
- * ('' when nothing was minted).
+ * Ensures service VMs have a minimal-privilege reader key, minting one during setup
+ * or when resume detects no versioned secret. Provisioning reuses the named IAM app,
+ * so recovery rotates credentials without duplicating the identity. Lookup errors defer
+ * validation to `pulumi up`; an empty result means no key was minted.
  */
 async function ensureVmKey(ctx: SetupContext, needsCiKey: boolean): Promise<string> {
   let hasVmKey = false
@@ -268,10 +260,8 @@ async function provisionConfirmedManagedKeys(ctx: SetupContext, mintDecisions: M
 }
 
 /**
- * Base-infra provisioning: DNS zone check, stack lock, computeDeferred marker
- * on a fresh provision, the `pulumi up` retry loop, and. Once the containers
- * exist: the first-value seed for operator secrets and the mint of any
- * managed keys the operator opted into at the prompts.
+ * Validate DNS, lock the stack, defer fresh compute, and converge Pulumi.
+ * Once secret containers exist, seed operator values and mint requested keys.
  */
 async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInputs): Promise<void> {
   const { dnsZone, hasDomain } = deriveInfra(ctx.appConfig)
@@ -284,10 +274,8 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
     }
   }
 
-  // Lock the stack for the provisioning phase (pulumi up + image bake) so a
-  // second operator or a CI deploy cannot mutate concurrently. Released at
-  // the provisioning exit points below; a dead lock self-expires (TTL) or is
-  // cleared via the CLI "Unlock" action.
+  // Lock provisioning against concurrent operators and CI.
+  // Exit paths release it; abandoned locks expire or can be cleared with "Unlock".
   const stackLock = await acquireStackLockOrExit({
     appConfig: ctx.appConfig,
     accessKey: ctx.accessKey,
@@ -328,11 +316,8 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
   }
   console.info(`\n${checkMark} Base infrastructure provisioned. Compute VMs will be deployed by CI after images are pushed.`)
 
-  // Pulumi has now created the (empty) operator secret containers, so write
-  // the first VERSION for any values gathered at the prompt. Doing this here
-  // after `up` so a fresh fork does not fail with "secret already exists".
-  // Empty/undefined values are skipped and can be
-  // set later via "Manage runtime secrets".
+  // Seed prompted values only after Pulumi creates the empty secret containers.
+  // Empty values remain available through "Manage runtime secrets".
   await seedOperatorSecrets({
     secretKey: ctx.secretKey,
     projectId: ctx.projectId,
@@ -366,15 +351,9 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
 
   const stackName = await promptStackName(context)
 
-  // Operator-managed runtime secrets (admin email, Brevo) live in Scaleway Secret
-  // Manager and are owned by "Manage runtime secrets", not stack config. Managed
-  // keys (AI, S3) are scoped Scaleway IAM keys that cella can MINT here without a
-  // pasted value: confirmed now, minted after the first `pulumi up` once their
-  // containers exist. Only prompt on the very first bootstrap so the first deploy
-  // works without a second step; on an already-bootstrapped stack we skip the
-  // prompts (Resume/Rotate should not re-ask) and warn below about any
-  // required secret still missing. Declined keys are set/minted later via
-  // "Manage runtime secrets".
+  // Prompt for operator secrets and managed-key decisions only on initial bootstrap.
+  // Keys are minted after their first infrastructure update creates the containers; resume and
+  // rotation report missing values without prompting. Declined values remain manageable later.
   const isInitialBootstrap = !context.hasCiKey
   const inputs: BootstrapSecretInputs = {
     operatorSecrets: { adminEmail: '', brevoApiKey: '' },
@@ -443,11 +422,8 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     await must('Pulumi stack init', 'pulumi', ['stack', 'init', stackName], spawnSync)
   }
 
-  // Operator secret VALUES are seeded AFTER the first `pulumi up` (in
-  // provisionBaseInfra), not here. Pulumi owns the secret containers
-  // (resources/secrets.ts), so creating them out-of-band before `up` would make
-  // `pulumi up` fail with "secret already exists" on a fresh fork. The gap check
-  // is read-only, so it is safe to run before `up`.
+  // Seed operator secret values after the first `pulumi up`; Pulumi owns their containers.
+  // The pre-apply gap check is read-only.
   if (!inputs.operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx)
 
   // Identities: CI deploy key, VM reader key, operator app

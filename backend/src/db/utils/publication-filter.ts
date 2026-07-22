@@ -11,15 +11,9 @@ import { hasPublishedAt } from './published-predicate';
 export const PUBLISHED_ROW_FILTER = 'published_at IS NOT NULL';
 
 /**
- * Row filter for a table in the CDC publication, or undefined for unfiltered.
- *
- * ONLY product tables that opt into the draft lifecycle (`publishedColumn`) are
- * filtered: PG rewrites their publish edge into an INSERT and unpublish into a DELETE
- * at decode time (row-filter transitions are a PG 15 feature; cella documents PG 17+
- * as its floor, see infra/README; REPLICA IDENTITY FULL permits filtering on any
- * column), so drafts never reach the worker. CHANNEL tables are never filtered.
- * Their `publishedAt` (defaultNow) gates invitees, not readers, and filtering them
- * would also suppress channel-path-sync for channel drafts.
+ * Returns the CDC publication filter for product tables with a draft lifecycle.
+ * PostgreSQL exposes publish/unpublish transitions as insert/delete events, keeping drafts
+ * out of CDC. Channel publication gates members and remains unfiltered so path sync continues.
  */
 export function publicationRowFilter(
   entityType: string,

@@ -19,10 +19,8 @@ export function resolveHomeChannelId(entityType: string, entity: ItemData): stri
 }
 
 /**
- * Whether `queryKey` is the canonical home list for a row homed at `homeChannelId`:
- * [entityType, 'list', organizationId, homeChannelId]. Every row belongs to exactly one home list.
- * Filtered keys (object segments) never match: those lists are scoped by server-side filters we
- * can't replicate here; string keys at other depths are prefixes, never data keys.
+ * Match a row's sole canonical home-list key.
+ * Exclude filtered keys whose server predicates cannot be reproduced locally.
  */
 export function matchesCanonicalHome(
   queryKey: readonly unknown[],
@@ -54,15 +52,9 @@ export interface SpliceResult {
 }
 
 /**
- * Apply one entity to every list cache under its org, following the canonical-home policy shared by
- * the realtime and mutation paths:
- *   - a row already cached in a list updates in place;
- *   - an unknown row inserts ONLY into its canonical home list;
- *   - an unknown row is never inserted into a filtered/search list (its filter can't be evaluated
- *     client-side, so a non-matching row would leak in).
- *
- * With `removeOnParentChannelChange`, a cached row whose parent channel changed is removed from the
- * list (the realtime path sets this when the server moves a row to a different parent).
+ * Applies an entity across organization list caches using canonical-home placement.
+ * Existing rows update in place; unknown rows enter only an unfiltered home list.
+ * Parent moves may remove cached rows when requested.
  */
 export function spliceEntityIntoListCaches(
   queryClient: QueryClient,

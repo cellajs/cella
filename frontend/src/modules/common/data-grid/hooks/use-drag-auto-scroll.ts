@@ -22,12 +22,7 @@ function findScrollParent(start: HTMLElement | null): HTMLElement | null {
 }
 
 /**
- * Auto-scroll the actual vertical scroll container while dragging
- * (pragmatic-dnd). The `.rdg` element only scrolls horizontally; vertical
- * scroll lives on the nearest scrollable ancestor or the window.
- *
- * The scroll container is cached in a ref so the lookup only happens once
- * per enable toggle, not on every render.
+ * Auto-scroll the cached vertical ancestor or window during drag; `.rdg` scrolls only horizontally.
  */
 export function useDragAutoScroll(gridRef: RefObject<HTMLDivElement | null>, enabled: boolean): void {
   const scrollParentRef = useRef<HTMLElement | null>(null);

@@ -6,10 +6,8 @@ import { appConfig } from '../../shared';
 const port = Number(new URL(appConfig.frontendUrl).port) + 3006;
 
 /**
- * `playwright install` for the Storybook Vitest addon. Playwright pins an exact browser build, so a
- * bumped `playwright` dep fails with "Executable doesn't exist" until re-installed; install is
- * idempotent (no download when current) so it's cheap per run. Done here, not in a `postinstall`
- * hook, to avoid tripping supply-chain scanners and survive `pnpm install --ignore-scripts`.
+ * Install Playwright's pinned Storybook browser idempotently at test startup.
+ * Avoid postinstall so ignored scripts and supply-chain scanners do not disable setup.
  */
 function ensurePlaywrightBrowsers() {
   try {

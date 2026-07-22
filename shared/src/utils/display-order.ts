@@ -17,16 +17,8 @@ interface OrderedItem {
 }
 
 /**
- * Compute an order strictly between `prev` and `next`. Either bound may be
- * omitted to get an edge order (extends past the existing bound by `orderGap`).
- *
- * Returns `null` when both bounds are present and too close to split. The
- * caller should rebalance the sibling group.
- *
- * - `getOrderBetween(undefined, undefined)` → `defaultOrder`
- * - `getOrderBetween(undefined, 50)` → `40`
- * - `getOrderBetween(50, undefined)` → `60`
- * - `getOrderBetween(50, 60)` → `55`
+ * Returns an order between optional neighbors, extending by `orderGap` at list edges.
+ * Null signals insufficient space and requires sibling rebalancing.
  */
 export const getOrderBetween = (prev: number | undefined, next: number | undefined): number | null => {
   if (prev === undefined && next === undefined) return defaultOrder;

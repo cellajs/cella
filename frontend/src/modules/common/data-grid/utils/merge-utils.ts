@@ -45,12 +45,7 @@ export function resolveMergeRule<R, SR>(column: Column<R, SR>, activeModes: Acti
 
 const warnedMergeKeys = new Set<string>();
 
-/**
- * Dev-only warning for a merge rule whose host is not a grid column right now
- * (missing key, host excluded at this breakpoint, or host itself merged away).
- * The column falls back to its normal visibility rules; warn once per pair so
- * genuine mistakes surface without spamming on every render.
- */
+/** Warn once per invalid merge pair in development while falling back to normal visibility. */
 export function warnInvalidMergeRule(columnKey: string, into: string): void {
   if (!import.meta.env.DEV) return;
   const pair = `${columnKey}→${into}`;

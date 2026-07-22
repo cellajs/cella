@@ -9,12 +9,7 @@ const wrapTextPadding = 12;
 /** Default max lines when wrapText is `true` (unlimited) */
 const defaultMaxLines = 10;
 
-/**
- * Quantized height tiers for wrapText rows.
- * Rows snap to one of these discrete heights.
- * This improves CSS grid track RLE compression and bounds scroll jitter
- * when using `minmax(tierPx, max-content)` tracks.
- */
+/** Quantize wrapped-row heights to improve grid-track compression and bound scroll jitter. */
 const heightTiers = [1, 2, 3, 4] as const;
 
 /** Resolve a wrapText value to a concrete max-lines number (0 = no wrapping). */

@@ -107,11 +107,8 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
       persistOptions={{
         persister: activePersister,
         dehydrateOptions: {
-          // Every tab dehydrates ITS OWN paused mutations; the persister writes them to a
-          // per-tab record, so tabs never overwrite each other's queues (the old leader-only
-          // gate silently dropped a follower's paused work on refresh). Only paused mutations
-          // are persisted; they're the offline replay queue. Active/streaming mutations (e.g.
-          // AI chat SSE) can hold non-cloneable data (ReadableStream) and must be skipped.
+          // Persist each tab's paused offline queue separately so tabs cannot overwrite one another.
+          // Active mutations may contain non-cloneable streaming data and remain in memory only.
           shouldDehydrateMutation: (mutation) => mutation.state.isPaused,
           shouldDehydrateQuery: (query) => query.state.status === 'success' && query.meta?.persist !== false,
         },

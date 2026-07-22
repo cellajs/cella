@@ -16,13 +16,9 @@ export const channelColumns = <T extends ChannelEntityType>(entityType: T) => ({
   createdBy: uuid().references(() => usersTable.id, { onDelete: 'set null' }),
   updatedBy: uuid().references(() => usersTable.id, { onDelete: 'set null' }),
   /**
-   * When the context went live for its members: null = draft (invites against it are
-   * deferred, see membership dispatch). Defaults to creation time, so forks without
-   * draft flows never see null and the mechanism stays dormant. Distinct from
-   * `publicAt` below: `publishedAt` controls MEMBER visibility, `publicAt` grants NON-members.
-   * The PRODUCT-entity sibling (`published-column.ts`, nullable, no default) carries
-   * different semantics: null = author-only draft, enforced across dispatch, reads,
-   * counters and cache (see `shared/src/published-rows.ts`).
+   * Member-visible publication time; null defers invite dispatch for a draft context.
+   * It defaults to creation, while product publication is opt-in and `publicAt` grants
+   * non-member access.
    */
   publishedAt: timestamp({ mode: 'string' }).defaultNow(),
   /**

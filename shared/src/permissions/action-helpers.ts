@@ -44,14 +44,8 @@ export const resolvePermission = (
 };
 
 /**
- * Whether a permission is granted **unconditionally** (`true`). Row-conditional
- * (`'own'` or another condition name) and denied (`false`) permissions return false.
- *
- * Use this for **context-scoped** features that cannot resolve per-row ownership up front, such as
- * deciding whether to offer collaborative (Yjs) editing on an entity type, where the affordance is
- * enabled for a role, not for a specific row. An `'own'`
- * grant is deliberately NOT unconditional: it depends on the row, which this check has no access
- * to, so it returns `false` (secure default). Per-row affordances should use `resolvePermission`.
+ * Returns true only for unconditional permission.
+ * Context-wide features use this secure default; row affordances should call `resolvePermission`.
  */
 export const isUnconditionalPermission = (permission: ActionPermissionState | undefined): boolean =>
   permission === true;

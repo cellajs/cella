@@ -35,10 +35,8 @@ export function ScrollArea({
     });
   }, [autoScrollOnDrag, viewportRef]);
 
-  // TODO [#13]: revisit once Base UI observes content subtree (https://github.com/mui/base-ui).
-  // Base UI's ScrollArea only ResizeObserves the viewport, so scrollbar visibility doesn't
-  // recompute when inner content grows/shrinks (e.g. sheeter content swap, accordion toggles).
-  // Subtree mutations require a 1px viewport min-height toggle to wake ResizeObserver.
+  // TODO [#13]: Remove when Base UI observes content subtrees.
+  // Toggle viewport min-height so inner mutations wake its viewport-only ResizeObserver.
   React.useEffect(() => {
     const viewport = viewportRef.current;
     if (typeof MutationObserver === 'undefined' || !viewport) return;

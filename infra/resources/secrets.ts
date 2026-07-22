@@ -10,22 +10,9 @@ import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc, ca
 const secretPath = secretManagerPath(naming.slug, mode)
 
 /**
- * One-time adoption hook for operator secret containers that were created
- * out-of-band before Pulumi owned them (so they are not yet in state). Importing
- * them on the first run of this code adopts the existing container without
- * trying to create it (which would fail with "secret already exists"). Supply the
- * ids for a single, targeted `pulumi up`, then unset the variable again:
- *
- *   OPERATOR_SECRET_IMPORTS="admin-email=nl-ams/<uuid>,brevo-api-key=nl-ams/<uuid>"
- *
- * Entries are `secretName=region/uuid` (the Scaleway Secret `.id` form) and are
- * only consulted for operator secrets. Once a container is in state the variable
- * can be removed.
- *
- * Manual fallback only: the "Apply infra change" CLI flow now self-heals this
- * drift automatically via `lib/adopt-orphaned-secrets.ts` (it lists the live
- * containers and `pulumi import`s any that are missing from state before
- * `pulumi up`). Use this env hook for non-CLI runs or to force a specific id.
+ * Parses one-time imports for operator secret containers created outside Pulumi.
+ * Entries use `secretName=region/uuid`; remove the variable after the targeted update.
+ * The normal CLI self-heals this drift, so the hook is for direct runs or forced IDs.
  */
 function parseOperatorSecretImports(raw: string | undefined): Record<string, string> {
   if (!raw) return {}
@@ -79,23 +66,15 @@ function pulumiOwnedRuntimeSecret(configKey: string, name: string) {
 }
 
 /**
- * Pulumi-derived secret values that cannot be produced generically from the
- * registry: the database connection strings (built from database resources) and
- * the database CA certificate (the RDB instance's own cert). Every other
- * `valueSource: 'pulumi'` secret is resolved from its registry definition
- * (`generation: 'random'` → a stable RandomPassword named after its
- * `secretName`), so adding a new pulumi-owned random secret only requires a
- * registry entry.
+ * Pulumi-derived secrets requiring live database resources: connection strings and CA data.
+ * Other Pulumi-owned values resolve generically from registry generation metadata.
  */
 const derivedRuntimeSecretData: Record<string, pulumi.Input<string>> = {
   databaseUrlAdmin: connectionStringAdmin,
   databaseUrlRuntime: connectionStringRuntime,
   databaseUrlCdc: connectionStringCdc,
-  // The RDB CA is a multi-line PEM. Runtime secrets are delivered to VMs via
-  // `.env.runtime` (a docker-compose env_file), which is line-based and rejects
-  // multi-line values. A multi-line secret fails the boot agent's runtime-secret
-  // hydration and blocks the app from booting. Store it base64-encoded (single
-  // line); the app db clients decode it back to PEM. See backend/src/db/db.ts.
+// Base64-encode the multiline RDB CA for line-based `.env.runtime` delivery.
+// Database clients decode it back to PEM.
   databaseSslCa: pulumi.output(caCertificate).apply((pem) => Buffer.from(pem, 'utf-8').toString('base64')),
 }
 
@@ -112,11 +91,8 @@ function pulumiRuntimeSecretData(definition: RuntimeSecretDefinition): pulumi.In
 
 const secretResources = Object.fromEntries(runtimeSecrets.map((definition) => {
   const isOperator = definition.valueSource === 'operator'
-  // Pulumi owns the container for EVERY runtime secret. Operator-managed ones are
-  // created empty (no version) and filled out-of-band via the "Manage runtime
-  // secrets" CLI. `retainOnDelete` keeps the operator-supplied value from being
-  // deleted when a registry entry is renamed or removed; the orphaned old
-  // container is cleaned up by hand.
+// Pulumi creates every secret container; operators add versions through the CLI.
+// Retain operator values when registry entries disappear, leaving manual orphan cleanup.
   const secret = createSecretContainer(definition.secretName, definition.description, {
     retainOnDelete: isOperator,
     importId: isOperator ? operatorSecretImports[definition.secretName] : undefined,

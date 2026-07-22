@@ -4,19 +4,9 @@ import { xMiddleware } from '#/core/x-middleware';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 
 /**
- * Guard middleware that checks if the requesting user is relatable to a target user.
- * Two users are relatable if they share at least one organization membership.
- *
- * Reads `relatableUserId` from path params (fallback: query params).
- * No-ops if param is absent or matches the requesting user.
- * System admins bypass the check.
- *
- * @example
- * ```ts
- * xGuard: [authGuard, crossTenantGuard, relatableGuard],
- * // Route must include relatableUserId as path or query param
- * path: '/users/{relatableUserId}',
- * ```
+ * Requires the target user to share an organization with the requester.
+ * Reads `relatableUserId` from path or query parameters, skips absent/self targets,
+ * and allows system administrators.
  */
 export const relatableGuard = xMiddleware(
   {

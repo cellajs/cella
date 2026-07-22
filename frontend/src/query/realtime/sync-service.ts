@@ -12,10 +12,8 @@ const syncQueryConfig = {
 };
 
 /**
- * Run the sync service after the app stream reaches 'live'. Proactively resolves staleness for
- * the current org via ensureQueryData/ensureInfiniteQueryData (high priority); other orgs are
- * left to refetch naturally on navigation. When `offlineAccess` is enabled, also fills the
- * offline cache for remaining orgs. Honors `signal` for cancellation on unmount or re-trigger.
+ * Resolve current-organization staleness once the stream is live; optionally fill other offline caches.
+ * Cancel on unmount or retrigger through `signal`.
  */
 export async function runSyncService(offlineAccess: boolean, signal: AbortSignal): Promise<void> {
   // Wait briefly to avoid overloading server on connect

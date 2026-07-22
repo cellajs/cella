@@ -1,11 +1,8 @@
 import { defineGeneral } from '../lib/general-config'
 
 export const generalConfig = defineGeneral({
-  // VM base image: a Scaleway marketplace LABEL passed straight to the instance
-  // (compute.ts). 'docker' is the Docker InstantApp (Docker + compose preinstalled
-  // and current), so there is no image bake: the boot agent ships as a registry
-  // container pulled at first boot. Set a literal image UUID to pin a
-  // specific image for rollback.
+// Pass a Scaleway marketplace label or pinned image UUID directly to the instance.
+// The Docker image needs no bake because the boot agent is pulled at first boot.
   compute: {
     image: 'docker',
   },

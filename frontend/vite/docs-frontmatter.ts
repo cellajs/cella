@@ -8,12 +8,7 @@ import { createUpdatedAtResolver, type UpdatedAtResolver } from './git-updated-a
 const VIRTUAL_ID = 'virtual:docs-frontmatter';
 const RESOLVED_ID = `\0${VIRTUAL_ID}`;
 
-/**
- * Second virtual module `virtual:docs-search-sections`: plaintext body
- * paragraphs per page, keyed like the frontmatter index and anchored to their
- * nearest heading. Only the (lazy) docs search engine imports it, so page body
- * text stays in the code-split content chunk and out of the eager metadata chunk.
- */
+/** Lazy virtual module of page paragraphs keyed to their nearest heading for docs search. */
 const SECTIONS_VIRTUAL_ID = 'virtual:docs-search-sections';
 const SECTIONS_RESOLVED_ID = `\0${SECTIONS_VIRTUAL_ID}`;
 
@@ -78,11 +73,8 @@ function toPlainText(markdown: string): string {
 const HEADING_LINE_SINGLE = /^(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$/;
 
 /**
- * Single-pass extraction of headings and body sections. One slugger instance
- * drives both, so section anchors agree with heading ids by construction.
- * including github-slugger's `-1` dedup suffixes for repeated heading texts.
- * `stripLeadingH1` mirrors remarkStripRepoDocH1: repo docs' first h1 never renders.
- * Exported for the slug-agreement unit tests.
+ * Extract headings and sections with one slugger so anchors and duplicate suffixes agree.
+ * Optionally strip the repository document H1 to match rendering.
  */
 export function extractStructure(
   source: string,
@@ -142,12 +134,7 @@ function parseFrontmatter(source: string): unknown {
   return match ? parse(match[1]) : {};
 }
 
-/**
- * Attach a build-time `updatedAt` derived from git (the newest committer date across
- * the page and its imported docs), so the "last edited" line and pages-table column
- * stay correct without hand-maintained frontmatter. An author-pinned `updatedAt` is
- * left untouched. See vite/git-updated-at.ts for the full precedence and caveats.
- */
+/** Derive unpinned page `updatedAt` from the newest Git date across its imported documents. */
 function withUpdatedAt(frontmatter: unknown, files: string[], resolver: UpdatedAtResolver): unknown {
   const record = frontmatter && typeof frontmatter === 'object' ? (frontmatter as Record<string, unknown>) : {};
   const pinned = typeof record.updatedAt === 'string' ? record.updatedAt : undefined;
@@ -161,12 +148,7 @@ function importTargets(file: string, source: string): string[] {
   return [...source.matchAll(RELATIVE_MD_IMPORT)].map((m) => path.resolve(path.dirname(file), m[1]));
 }
 
-/**
- * A page's headings and sections: its own, plus those of relatively-imported md
- * files (wrapper pages render repo docs as their body). Each source file gets a
- * fresh slugger, matching rehype-slug's per-compiled-module deduplication.
- * Exported for the wrapper-page unit test.
- */
+/** Collect page and imported-document sections with per-module slugger scopes matching rehype. */
 export function pageStructure(file: string, source: string): { headings: DocHeading[]; sections: DocSection[] } {
   const own = extractStructure(source);
   const imported = importTargets(file, source)
@@ -238,10 +220,7 @@ export function docsFrontmatter(): Plugin {
       // Imported repo docs live outside the frontend root, make sure they're watched.
       for (const target of initial.targets) server.watcher.add(target);
 
-      // Debounced: a reparent from the pages table moves files (unlink + add, sometimes
-      // several when a leaf becomes a directory page), and rebuilding per watcher event
-      // would ship a half-moved index and reload the client twice. Rebuild once after
-      // the burst settles.
+      // Debounce multi-file reparent bursts so the index never exposes a half-moved tree or duplicate reloads.
       let rebuildTimer: ReturnType<typeof setTimeout> | null = null;
 
       const rebuild = () => {

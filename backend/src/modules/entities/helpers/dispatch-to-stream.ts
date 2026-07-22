@@ -55,19 +55,9 @@ const rowReadSubject = (event: AppStreamProductEvent): SubjectForPermission | nu
 };
 
 /**
- * SSE must mirror API read visibility: which of these subscribers can read the event's row?
- *
- * ONE `checkAccessFanout` call: the engine collapses subscribers into access classes and
- * runs the policy walk once per class, with the SAME inputs as API reads. The event carries
- * the full row (REPLICA IDENTITY FULL), which row conditions and public grants evaluate
- * per subscriber. Rows are self-describing, so no second row is ever needed.
- *
- * Fail-closed on every edge: a vetoed row (see `rowReadSubject`) denies all; a subscriber
- * whose memberships fail engine validation denies just that subscriber
- * (`onInvalidMembership: 'deny'`) without poisoning the batch.
- *
- * The same visibility is re-checked when a cache hit is served (`productCache` re-runs
- * `checkAccess` against the cached row), so over-notifying is never a leak here.
+ * Mirrors API row visibility for SSE using one fan-out permission check.
+ * Access classes share policy walks, while invalid rows fail closed and invalid memberships
+ * deny only their subscriber. Product-cache reads recheck the same permission decision.
  */
 export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event: AppStreamProductEvent): boolean[] {
   const subject = rowReadSubject(event);
@@ -119,16 +109,9 @@ const eventRows = (event: AppStreamProductEvent): ActivityBatchRow[] =>
   event.batchRows?.length ? event.batchRows : [{ rowData: event.rowData as Record<string, unknown> }];
 
 /**
- * Dispatch activity events to matching app stream subscribers.
- *
- * Product entity events route through org channels; membership events route through the
- * subject user's channel:
- * - Membership events only ever deliver to the affected user, and the user channel reaches
- *   them even for a membership in an org the connection is not registered on (the new-org
- *   invite that tells the client to reconnect).
- * - Product entity events → per-ROW read permission (mirrors the API): a subscriber is
- *   pinged iff they can read at least one row the event speaks for. Rows are evaluated in
- *   order; a subscriber leaves the undecided pool at their first readable row.
+ * Routes membership events through the affected user's channel and product events through
+ * organization channels. Product batches notify a subscriber after the first row they may read,
+ * matching API visibility.
  */
 export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, AppStreamEvent>({
   getChannel: (event) => {
@@ -178,15 +161,8 @@ const movedRows = (
 };
 
 /**
- * Move-out delivery: when a row's path changed, subscribers who could read the OLD
- * location but not the new one would otherwise never learn the row left. The normal
- * notification is permission-filtered on the NEW row, and a later delta fetch is
- * permission-filtered too, so no tombstone ever reaches them. For exactly those
- * subscribers this sends an `action: 'moveOut'` notification carrying the old path;
- * the notification itself is the removal instruction.
- *
- * Subscribers who can read BOTH locations get the normal update and route the row
- * between views client-side; they are excluded here to avoid remove-then-reinsert races.
+ * Sends `moveOut` with the old path to subscribers who lost read access after a move.
+ * Subscribers who retain access receive only the normal update, avoiding remove/reinsert races.
  */
 export async function dispatchMoveOuts(event: AppStreamProductEvent): Promise<void> {
   const moves = movedRows(event);

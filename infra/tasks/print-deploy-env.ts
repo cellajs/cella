@@ -55,10 +55,8 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     throw new Error(`At most one enabled service may set primaryRollout: true (${primaryServices.map((service) => service.slug).join(', ')})`)
   }
   const primaryService = primaryServices[0]
-  // Rollout matrices cover only services that own a VM generation: under
-  // `singleVM` the co-hosted workers (cdc/yjs) ride the primary VM's generation
-  // and have nothing to cut over (deploy-service would fail resolving their
-  // pending generation). Mirrors the deployedServices() set compute.ts uses.
+// Include only services that own VM generations; single-VM workers cut over with their host.
+// This mirrors the compute resource set.
   const deployedSlugs = new Set(deployedServices(appConfig.services, appConfig.singleVM).map((service) => service.slug))
   const rolloutRows = enabledServiceRows.filter((item) => deployedSlugs.has(item.service))
   const primaryRollout = primaryService ? rolloutRows.filter((item) => item.service === primaryService.slug).map(({ service, health_url }) => ({ service, health_url })) : []

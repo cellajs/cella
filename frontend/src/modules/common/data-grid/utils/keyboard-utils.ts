@@ -62,12 +62,7 @@ export function isDefaultCellInput(event: React.KeyboardEvent<HTMLDivElement>, i
   return !nonInputKeys.has(event.key);
 }
 
-/**
- * By default, the following navigation keys are enabled while an editor is open, under specific conditions:
- * - Tab:
- *   - The editor must be an <input>, a <textarea>, or a <select> element.
- *   - The editor element must be the only immediate child of the editor container/a label.
- */
+/** Allow Tab navigation from a sole input, textarea, or select inside the editor container. */
 export function onEditorNavigation({ key, target }: React.KeyboardEvent<HTMLDivElement>): boolean {
   if (
     key === 'Tab' &&

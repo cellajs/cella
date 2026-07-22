@@ -20,14 +20,9 @@ export const productColumns = <T extends ProductEntityType>(entityType: T) => ({
   deletedAt: timestamp('deleted_at', { mode: 'string' }),
   deletedBy: uuid('deleted_by').references(() => usersTable.id, { onDelete: 'set null' }),
   /**
-   * Public readability: non-null = readable by ANY actor, anonymous included, regardless of
-   * membership. Only has effect when the entity declares `publicRead()` in
-   * `shared/config/permissions-config.ts`; null (the default) keeps the mechanism dormant.
-   *
-   * Deliberately denormalized onto the row: the check-form, the collection-read SQL compiler,
-   * and CDC stream dispatch must all reach the same verdict, and dispatch only ever ships the
-   * row itself. A fork wanting "public because the parent is public" propagates `publicAt` to
-   * descendants. Publication is data, not a permission rule.
+   * Enables actor-independent reads when the entity declares `publicRead()`.
+   * Keeping publication on the row lets permission checks, SQL, and stream dispatch reach the
+   * same decision; parent publication must be propagated as data.
    */
   publicAt: timestamp('public_at', { mode: 'string' }),
   /**

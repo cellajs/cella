@@ -6,13 +6,7 @@ type BlobSource = 'upload' | 'download';
 export type UploadStatus = 'pending' | 'uploading' | 'uploaded' | 'failed' | 'local-only';
 export type DownloadStatus = 'pending' | 'downloading' | 'downloaded' | 'failed' | 'skipped';
 
-/**
- * Blob variant types:
- * - 'raw': Original file from user upload (before Transloadit processing)
- * - 'original': Processed original from Transloadit (:original step)
- * - 'converted': Converted format from Transloadit (e.g., PDF to images)
- * - 'thumbnail': Thumbnail from Transloadit (thumb_* steps)
- */
+/** Transloadit blob stages: raw upload, processed original, conversion, or thumbnail. */
 export type BlobVariant = 'raw' | 'original' | 'converted' | 'thumbnail';
 
 /**

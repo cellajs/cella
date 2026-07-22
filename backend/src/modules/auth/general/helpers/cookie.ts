@@ -12,10 +12,8 @@ const isProduction = appConfig.mode === 'production';
 // __Host-) cookies are rejected by some browsers; every other mode is https.
 const secure = appConfig.mode !== 'development';
 
-// __Host- prefix: host-locked with no Domain attribute, so the cookie is never
-// sent to (or spoofable by) other subdomains. Hono enforces Path=/ and Secure
-// when the prefix option is set. Same-origin serving is what makes this
-// possible: every service lives under the app origin.
+// `__Host-` locks cookies to the app host with Secure, root path, and no Domain attribute.
+// Same-origin service paths make this isolation possible.
 const prefix = secure ? ('host' as const) : undefined;
 
 type CookieName =
@@ -27,14 +25,8 @@ type CookieName =
   | `oauth-state-${string}`;
 
 /**
- * Cookies read during a cross-site top-level navigation must stay Lax:
- * - `oauth-state-*` is read on the OAuth provider's callback redirect.
- * - `invitation` / `oauth-verification` are re-read mid-chain in flows that
- *   arrive cross-site (email link → OAuth callback).
- * Everything else, including the session, is only read from same-origin
- * requests and is hardened to Strict. The connect flow's session read at the
- * OAuth callback moved into the oauth-state payload for this.
- *
+ * Keeps cookies required during cross-site OAuth and invitation redirects at SameSite Lax.
+ * All other cookies, including sessions, are restricted to same-origin requests.
  * @see initiation.ts
  */
 const isLaxCookie = (name: CookieName) =>

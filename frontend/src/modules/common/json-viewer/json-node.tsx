@@ -246,10 +246,8 @@ export const JsonNode: FC<JsonNodeProps> = memo(
       ? (value as unknown[]).map((v, i) => [i, v] as [number, unknown])
       : Object.entries(value as Record<string, unknown>);
 
-    // Filter out the 'required' key in schema mode because it is shown as a label.
-    // Also filter out 'type' and 'ref' keys when not inside 'properties' (they will be shown as labels after open bracket)
-    // For array schemas, filter out 'items' key (its properties will be hoisted)
-    // 'anyOf' and 'oneOf' are flattened like 'properties' but still rendered.
+    // Hide schema keys promoted into labels and hoist array-item properties.
+    // Flatten `anyOf`/`oneOf` like properties while retaining their rendered nodes.
     const filteredEntries =
       openapiMode === 'schema' && !isArray
         ? rawEntries.filter(

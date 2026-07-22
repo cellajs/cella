@@ -10,13 +10,8 @@ type WireConformanceTarget = Omit<CdcMessage, 'activity'> & {
 type Assert<T extends true> = T;
 
 /**
- * Compile-time drift guard for the CDC → API-server wire contract (see
- * .info/wire-contract-and-stream-split-options.md, Part A, option A1).
- * Envelope fields (rowData, batchRows, _trace) are checked strictly.
- * The activity sub-shape is checked with tolerance for insert-optionality (nullable
- * columns are `T?`), since both sides co-derive it from `activitiesTable` and
- * `createActivity` fills those at runtime. Type-only: compiled by `pnpm ts`, not run by vitest.
- * If CDC's payload stops satisfying the backend's validated shape, the conditional yields
- * `false` and `Assert<false>` fails to compile, surfacing the drift here.
+ * Compile-time CDC-to-backend wire drift guard.
+ * Envelope fields are strict, while activity fields tolerate insert optionality filled at runtime.
+ * Incompatible payloads fail `pnpm ts` through `Assert<false>`.
  */
 export type CdcConformsToBackendSchema = Assert<CdcOutboundMessage extends WireConformanceTarget ? true : false>;

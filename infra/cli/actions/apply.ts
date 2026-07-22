@@ -49,17 +49,12 @@ export async function runApply(context: InfraContext): Promise<void> {
   const { appConfig } = context
   pulumiLoginAndSelect(infraDir, applyEnv, appConfig, targetStack)
 
-  // Acquire the stack lock so a second operator (or CI) cannot mutate this stack
-  // concurrently. Built on the control object's S3 bucket using the bootstrap
-  // key just supplied. Released at every exit point below; a dead run's lock
-  // self-expires after the TTL, or is cleared via the CLI "Unlock" action.
+  // Lock the stack through the control bucket to exclude concurrent operators and CI.
+  // Exit paths release it; abandoned locks expire or can be cleared with "Unlock".
   const stackLock = await acquireStackLockOrExit({ appConfig, accessKey: bootAccess, secretKey: bootSecret, stack: targetStack, operation: 'apply' })
 
-  // Resolve the organization id from the project so (a) it is set explicitly in
-  // the env for the IAM policy create/update inside `pulumi up` (matching CI),
-  // and (b) we can look up an existing IAM policy to adopt below. Non-fatal: if
-  // it cannot be resolved the program still derives it from the project at
-  // runtime, and policy adoption is skipped.
+  // Resolve the organization ID for Pulumi's IAM environment and orphan-policy adoption.
+  // Failure is non-fatal because the program can derive it at runtime.
   let organizationId: string | undefined
   try {
     organizationId = await resolveOrganizationId(bootSecret, projectId)
@@ -68,10 +63,8 @@ export async function runApply(context: InfraContext): Promise<void> {
     console.warn(`${warningMark} Could not resolve organization id (${errorMessage(error)}); continuing without it.`)
   }
 
-  // The VM reader IAM policy is Pulumi-managed but the original bootstrap created
-  // it out-of-band, so it can be missing from Pulumi state. That makes
-  // `pulumi up` try to create it and fail (409 locally / no IAM write in CI).
-  // Adopt the pre-existing policy into state first; idempotent once imported.
+  // Adopt a bootstrap-created VM reader policy that exists outside Pulumi state.
+  // This prevents a duplicate-create conflict and is idempotent after import.
   if (organizationId) {
     try {
       const policyName = deriveInfra(appConfig).naming.resource('vm-reader-policy')
@@ -89,11 +82,8 @@ export async function runApply(context: InfraContext): Promise<void> {
     }
   }
 
-  // Operator-managed Secret Manager containers can exist in Scaleway but be
-  // missing from Pulumi state (e.g. after a state rebuild/restore), which makes
-  // `pulumi up` try to create them and fail with "cannot have same secret name
-  // in same path". Adopt any such orphans into state first; idempotent once
-  // imported. Supersedes the manual OPERATOR_SECRET_IMPORTS env hook.
+  // Adopt operator-secret containers missing from restored Pulumi state before `up`.
+  // This prevents duplicate-name failures during Pulumi reconciliation.
   try {
     await adoptOrphanedSecrets({
       stack: targetStack,
@@ -108,12 +98,8 @@ export async function runApply(context: InfraContext): Promise<void> {
     console.warn(`${warningMark} ${errorMessage(error)}`)
   }
 
-  // Reconcile gen/sha into the local Pulumi config from live state before
-  // `pulumi up`, so a stale committed Pulumi.<stack>.yaml can't converge compute
-  // back to an old generation (destroying newer live VMs). CI does this in the
-  // deploy workflow; the operator apply path must too. Best-effort by design:
-  // it skips cleanly when there is no compute output yet, but a hard failure
-  // (bad credentials or passphrase) aborts to prevent applying against stale configuration.
+  // Reconcile generation and SHA from live state so stale local config cannot replace newer VMs.
+  // Missing compute output is harmless; credential or passphrase failures abort the apply.
   console.info(pc.dim('\n→ Reconciling rollout config from live state (sync-rollout-config)…'))
   const sync = spawnSync('pnpm', ['--filter', 'infra', 'sync-rollout-config', '--stack', targetStack], { cwd: infraDir, env: applyEnv, stdio: 'inherit' })
   if (sync.status !== 0) {
@@ -122,20 +108,13 @@ export async function runApply(context: InfraContext): Promise<void> {
     process.exit(sync.status ?? 1)
   }
 
-  // No compute-deferred marker and no stack-file backup here: the stack is
-  // already bootstrapped with live compute, the bootstrap key reaches
-  // `pulumi up` receives provider credentials through SCW_* env (applyEnv), and
-  // `pulumi up` is idempotent; an interrupted run is recovered simply by
-  // re-running it. Deferring compute (as the fresh-provision flow does) would
-  // tear down the running VMs/LB on an established stack.
+  // Established stacks apply compute directly and recover from interruption by rerunning `up`.
+  // Fresh-provision deferral here would tear down the existing VMs and load balancer.
   while (true) {
     const { code, output } = await runPulumiUpWithHint(targetStack, infraDir, applyEnv)
     if (code === 0) break
 
-    // A delete that 404s means the live object is already gone (deleted
-    // out-of-band or cascade-deleted by Scaleway) and only the state entry
-    // remains. Pruning it completes what the delete would have done, so offer
-    // that and re-converge, which keeps the apply from wedging one resource at a time.
+    // A delete 404 leaves only stale Pulumi state, so offer to prune it and reconverge.
     const orphans = parseOrphanedDeletes(output)
     if (orphans.length > 0) {
       console.warn(`\n${warningMark} ${orphans.length} resource(s) failed to delete because the live object no longer exists:`)

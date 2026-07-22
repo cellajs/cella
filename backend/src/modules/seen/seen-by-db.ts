@@ -5,18 +5,9 @@ import { tenantIdLength } from '#/db/utils/constraints';
 import { usersTable } from '#/modules/user/user-db';
 
 /**
- * Seen-by tracking table for per-user-per-entity view rows.
- *
- * Records when a user has viewed a product entity (e.g., task).
- * Derives unseen counts within a 90-day rolling window.
- *
- * Excluded from CDC like userCountersTable: frequent writes should not
- * generate activities or SSE noise. Excluded from entityTables and resourceTables.
- *
- * Partitioned by created_at with 90-day retention via pg_partman.
- * Composite PK (id, createdAt) required for partitioning.
- * No FKs on organizationId/tenantId: RLS + application logic enforce integrity,
- * and FKs on high-write partitioned tables add unnecessary overhead.
+ * Per-user product views for 90-day unseen-count windows.
+ * The high-write table is partitioned, excluded from CDC/entity registries, and uses a composite
+ * partition-compatible key. RLS and application logic replace organization/tenant foreign keys.
  */
 export const seenByTable = snakeCase.table(
   'seen_by',
@@ -34,11 +25,9 @@ export const seenByTable = snakeCase.table(
   (table) => [
     // Composite PK required for partitioning by created_at
     primaryKey({ columns: [table.id, table.createdAt] }),
-    // Dedup lookup: mark-seen inserts via NOT EXISTS on (userId, entityId). A UNIQUE constraint
-    // is impossible here because partitioned tables require the partition column (createdAt) in
-    // every
-    // unique index. Rare concurrent-flush races can leave duplicate rows; readers use
-    // EXISTS/NOT EXISTS (dup-safe) and counter recalculation counts DISTINCT users.
+    // Partitioning prevents a unique user/entity index without the time column.
+    // Rare concurrent duplicates are safe because readers use existence and recalculation counts
+    // distinct users.
     index('seen_by_user_product_index').on(table.userId, table.productId),
     // Index for unseen count query: COUNT(*) WHERE userId AND channelId AND productType
     index('seen_by_user_channel_type_index').on(table.userId, table.channelId, table.productType),

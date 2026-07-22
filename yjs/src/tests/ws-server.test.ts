@@ -43,11 +43,8 @@ beforeAll(async () => {
 
   wss = new WebSocketServer({ noServer: true });
 
-  // Mirrors the optimistic-connect architecture:
-  // 1. Token verified locally (HMAC)
-  // 2. Token entityType/tenantId must match request params
-  // 3. Connection accepted immediately
-  // 4. Entity access decided locally (no backend round-trip)
+// Optimistic connect verifies the token and request identity locally, then accepts immediately.
+// Entity access is also decided without a backend round-trip.
   httpServer.on('upgrade', async (req, socket, head) => {
     const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
     const token = url.searchParams.get('token');

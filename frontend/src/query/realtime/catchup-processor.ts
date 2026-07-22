@@ -17,23 +17,9 @@ import { propagateEmbeddings } from './propagation';
 import { getSyncTier, getTenantIdForOrg } from './sync-priority';
 
 /**
- * Process the app stream catchup response (view-driven, org sequence).
- *
- * The client declares one view per (org, entityType) with its org-sequence cursor
- * (`sync-store.getCatchupViews`); the server answers `ok` (with `frontiers`/`counts`
- * rollups), `opaque` (readable but not provably all, with no numbers), or `forbidden`.
- * For an `ok` view with `frontier > cursor` ONE org-wide delta fetch from `cursor + 1`
- * returns every changed row in the org for that type (including rows homed in child
- * channels and tombstones), and cache-ops routes them into the right lists. Child-scope
- * watermarks remain live-path bookkeeping; catchup no longer depends on
- * membership-derived channel discovery (the elevated-reader gap this design removes).
- *
- * Catchup guarantees retained by the org-sequence engine:
- * - advance-after-ingest: the org cursor advances only after the window drained (ok),
- *   was handed to react-query (invalidate), or was deliberately skipped (nothing cached)
- * - baseline: cursor 0 stores the frontier and refetches only when something is cached
- * - tier folding: background orgs enqueue into the fetch prioritizer (advance at flush)
- * - counts are compared server-to-server only (in-session change signal)
+ * Processes view-driven catchup against organization sequence cursors.
+ * Readable views fetch deltas when their frontier advances; other statuses expose no summaries.
+ * Cursors advance only after ingestion, invalidation handoff, or an intentional cache-free skip.
  */
 export async function processAppCatchup(response: PostAppCatchupResponse, baselineOnly = false): Promise<void> {
   const { changes, views } = response;
@@ -167,10 +153,8 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   await membershipOps.fetchMemberships();
   membershipOps.refreshMe();
 
-  // Drop product caches for any org where a channel membership vanished (channel deletion or
-  // plain removal). Coarse per org: still-visible rows refetch permission-scoped on next
-  // mount, detail-by-id self-heals via GC / 403. The org list prefix covers home and filtered
-  // lists alike. Runs only on an actual loss, so unchanged catchups touch nothing.
+  // Remove organization product caches after membership loss so surviving rows refetch under
+  // current permissions. Organization prefixes cover home and filtered lists.
   const membershipChannelsAfter = membershipChannelKeys();
   const orgsWithLostChannel = new Set(
     [...membershipChannelsBefore].filter((key) => !membershipChannelsAfter.has(key)).map((key) => key.split(':')[0]),
@@ -200,11 +184,8 @@ export function catchupEntityTypes(): string[] {
 }
 
 /**
- * Answers for registered grant-boundary views: precise CHANGE DETECTION on top of the
- * org-view correctness baseline. `ok` + unchanged frontier skips every refetch (the win);
- * changed → invalidate the affected active lists and advance the view cursor (row
- * ingestion itself rides org-view delta fetches, with no per-view range fetch here);
- * `opaque` → staleness fallback; `forbidden` → the grant is gone, drop the view.
+ * Use grant-boundary answers for precise invalidation atop organization-view ingestion.
+ * Unchanged skips work, opaque falls back to staleness, and forbidden drops the view.
  */
 function processRegisteredViewAnswer(
   answer: NonNullable<PostAppCatchupResponse['views']>[number],
@@ -266,12 +247,7 @@ function hasAnyCachedList(keys: ReturnType<typeof getEntityQueryKeys>, organizat
   return queryClient.getQueriesData({ queryKey: prefix }).some(([, data]) => data !== undefined);
 }
 
-/**
- * Server counts last seen by THIS session, keyed by `${orgId}:${entityType}`.
- * Counts are compared server-to-server (change signal), never against the client's caches:
- * cached lists are predicate-filtered per user, so equality with shared counts is
- * meaningless (a member who can't see every row would mismatch forever).
- */
+/** Compare per-session server counts only with later server counts, never permission-filtered caches. */
 const lastSeenServerCounts = new Map<string, number>();
 
 /** In-session count drift check per ok view; first sight records without comparing. */

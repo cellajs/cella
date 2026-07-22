@@ -17,13 +17,7 @@ export function requireSystemAdmin(): void {
   throw redirect({ to: appConfig.defaultRedirectPath, replace: true });
 }
 
-/**
- * Throw a redirect unless the user may perform `action` on `entityType` at this channel
- * entity. Permissions come from the SAME derivation the cache enrichment uses
- * (`enrichWithPermissions`: membership + accessPolicies, system-admin bypass), with `'own'`
- * resolved against the entity's creator, so route guards can never disagree with the
- * affordances the page renders.
- */
+/** Redirect unless cache-equivalent policy derivation allows the action, including own-row grants. */
 export function requireEntityAction(
   entity: EnrichableChannel & { createdBy?: string | { id: string } | null },
   channelType: ChannelEntityType,

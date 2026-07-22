@@ -24,10 +24,8 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
   });
   const membershipTableNames = [getTableName(membershipsTable), getTableName(inactiveMembershipsTable)];
 
-  // Products excluded from RLS (parentless, always public, protected by sysAdminGuard).
-  // Filtered by the tables that actually exist: a fork without these modules must not
-  // emit grants for nonexistent tables because one failed statement rolls back the whole
-  // grant block (see the exception handler below).
+  // Parentless public products rely on `sysAdminGuard`; they are outside RLS.
+  // Include only existing fork tables because one missing grant target rolls back the block.
   const noRlsCandidates = ['pages'];
   const noRlsProductNames = noRlsCandidates.filter((name) => (entityTableNames as string[]).includes(name));
 

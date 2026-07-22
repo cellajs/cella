@@ -111,10 +111,8 @@ class AttachmentDownloadService {
   }
 
   /**
-   * (Re)subscribe the pending-queue liveQuery against the current appdb (no-op / 0 while signed
-   * out); tears down any prior subscription first. Uses a table-scan `.filter` because
-   * `.where('status')` since `status` is only part of the compound `[organizationId+status]`
-   * index. The queue is small, so a scan is cheap and avoids a schema migration.
+   * Replace the pending-queue subscription for the current database; signed-out state is empty.
+   * Scan the small queue because status exists only in a compound index.
    */
   private subscribeQueue(): void {
     this.queueSubscription?.unsubscribe();

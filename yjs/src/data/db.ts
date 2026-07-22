@@ -2,12 +2,8 @@ import pg from 'pg';
 import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
 import { env } from '../env';
 
-// In production we require a verified TLS connection to the managed PostgreSQL.
-// The CA (Scaleway RDB instance cert) is provisioned automatically into the
-// DATABASE_SSL_CA runtime secret by `pulumi up`; a missing value is a
-// misconfiguration and fails immediately to prevent a silent security downgrade.
-// The secret is base64-encoded (the PEM is multi-line and would break the
-// line-based `.env.runtime` delivery), so decode it back to PEM here.
+// Production requires the provisioned RDB CA to prevent a silent TLS downgrade.
+// Decode its base64 form after line-based runtime-secret delivery.
 const sslCa =
   env.NODE_ENV === 'production' && !env.NODB
     ? (() => {
@@ -22,10 +18,8 @@ const sslCa =
       })()
     : undefined;
 
-// verifiedPostgresSsl pins the cert identity check to the dialed host so the Scaleway
-// RDB cert's IP SANs are honored (node-postgres otherwise verifies against localhost);
-// stripPostgresSslParams removes Scaleway's `sslmode`/`uselibpqcompat` params so the
-// CA-pinned ssl config wins. Same helpers as backend and cdc.
+  // Pin certificate identity to the dialed host and strip URL SSL options that override the CA.
+  // Backend and CDC use the same helpers.
 export const pool = new pg.Pool({
   connectionString: stripPostgresSslParams(env.DATABASE_URL),
   max: env.YJS_DB_POOL_MAX,

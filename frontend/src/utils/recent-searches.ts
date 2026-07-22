@@ -4,13 +4,8 @@ const MAX_RECENT_SEARCHES = 5;
 const normalize = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 
 /**
- * Add a query to a recent-searches list (used by app search and docs search).
- * Most recent first; entries deduped by normalized form; containment-deduped so
- * only the most detailed variant survives. Searching "user" after
- * "user roles" keeps "user roles" (bumped to the top), while searching
- * "user roles" after "user" replaces it.
- *
- * Returns the input array unchanged (same reference) when nothing was added.
+ * Add a normalized recent query, keeping the most detailed containment variant first.
+ * Return the original array reference when nothing changes.
  */
 export function addRecentSearch(searches: string[], value: string): string[] {
   const trimmed = value.trim();

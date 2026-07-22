@@ -13,15 +13,7 @@ import type { appConfig as AppConfig } from '../../shared'
  */
 export interface ServiceDefinition extends ServiceMeta {
   slug: ServiceName
-  /**
-   * Where the service runs:
-   *  - 'dedicated-vm': its own Scaleway VM (today's model; the default when
-   *    omitted).
-   *  - 'shared-workers': co-located as a container on a shared workers VM.
-   * The shared-workers placement is the lever for the multi-fork "N worker
-   * containers on one VM" model and is not yet
-   * implemented by the compute module. No service sets it today.
-   */
+  /** Service placement. Only dedicated VMs are currently supported. */
   placement?: 'dedicated-vm' | 'shared-workers'
 }
 
@@ -48,13 +40,9 @@ export function enabledServices(serviceConfig: Record<string, AppServiceEndpoint
 }
 
 /**
- * Services that get their OWN dedicated VM for a given app. In the normal
- * split-VM deploy this is every enabled service. Under `singleVM` the enabled
- * `coHosted` workers (cdc/yjs/ai) are dropped because they run in-process on the host
- * (backend) VM. Only the host and any non-co-hosted service (the
- * SPA proxy) keep their own VM. The load balancer still derives its routes from
- * `enabledServices`, so a co-hosted service keeps its public endpoint; only its
- * backend target changes (see {@link serviceGenerationIps}).
+ * Returns services receiving dedicated VMs.
+ * Single-VM mode removes co-hosted workers from compute while preserving their enabled routing
+ * through the host target.
  */
 export function deployedServices(
   serviceConfig: Record<string, AppServiceEndpointConfig>,

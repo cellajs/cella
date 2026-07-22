@@ -1,18 +1,9 @@
 import type { Context } from 'hono';
 
 /**
- * Client IP from the trusted single-hop proxy.
- *
- * Production topology: one Scaleway L7 load balancer → app (Docker bridge port). The LB appends the
- * observed client as the RIGHT-most X-Forwarded-For entry; every entry to its left is client-supplied
- * and must be ignored. `socket.remoteAddress` is always the LB (never the client), so it serves only
- * as a no-XFF fallback (dev/test/direct hits). `X-Real-IP` is not trusted because spoofable
- * and redundant once we read the right-most XFF entry.
- *
- * ⚠️ Fork note: this hardcodes cella's single-trusted-hop assumption. A fork behind a different proxy
- * chain (zero trusted hops, or 2+) must adjust which XFF entry is authoritative. The right-most
- * entry
- * is only the real client when exactly one trusted proxy appends it.
+ * Returns the client IP under Cella's single-trusted-proxy topology.
+ * The load balancer appends the authoritative rightmost forwarding entry; socket address is the
+ * direct-hit fallback. Forks with a different proxy count must select a different entry.
  */
 export const getIp = (ctx: Context): string | null => {
   const xff = ctx.req.header('x-forwarded-for');

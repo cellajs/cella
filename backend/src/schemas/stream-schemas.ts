@@ -18,16 +18,8 @@ const propagationHintSchema = z.object({
 });
 
 /**
- * Stream notification schema for SSE streams.
- * Notification payload shape for the app stream.
- * Lightweight payload - client fetches entity data via API if needed.
- *
- * For product entities (page, attachment):
- * - Includes stx, seq for sync engine
- *
- * For membership, app stream only:
- * - seq is null (membership changes detected via activity scan on catchup)
- * - stx/seq are null
+ * Lightweight app-stream notification schema; clients fetch entity data separately.
+ * Product events carry sync metadata, while membership events leave sequence and STX null.
  */
 export const streamNotificationSchema = z
   .object({

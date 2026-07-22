@@ -37,23 +37,9 @@ export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient ex
 }
 
 /**
- * Type-safe factory for email templates: infers the shape returned by
- * `translate()` and enforces that `component()` receives exactly those props
- * (plus per-recipient placeholder strings), catching props a component
- * destructures that `translate()` never returns.
- *
- * Curried because TypeScript cannot partially infer type params: the first call
- * binds TStatic / TRecipient (caller-specified), the second infers TTranslated
- * from `translate`'s return type.
- *
- * @example
- * ```ts
- * export const fooEmail = defineEmailTemplate<FooStatic, FooRecipient>()({
- *   translate(lng, statics) { return { subject: '…', bar: '…' }; },
- *   component({ bar }) { … },
- *   preview: { statics: { … }, recipient: { … } },
- * });
- * ```
+ * Creates an email template whose translated props must match its component props.
+ * The curried calls bind caller-specified static and recipient types before TypeScript
+ * infers the translated shape.
  */
 export function defineEmailTemplate<TStatic, TRecipient extends EmailRecipient = EmailRecipient>() {
   return <TTranslated extends { subject: string }>(def: {

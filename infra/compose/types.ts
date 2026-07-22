@@ -1,13 +1,8 @@
 import type { Environment } from '../lib/stack/bootstrap-stack-state'
 
 /**
- * How a service's VM generation is cut over on a deploy (immutable-node model):
- *  - 'lb-overlap': create the new generation, health-gate it, atomically
- *    expand the LB to both generations then contract to the new one, drain the
- *    old (backend/frontend/yjs/ai).
- *  - 'exclusive': no LB overlap possible; the old generation must fully
- *    release a singleton resource before the new one takes over (cdc holds one
- *    PostgreSQL replication slot).
+ * VM cutover strategy: `lb-overlap` health-gates and drains overlapping generations;
+ * `exclusive` releases a singleton resource before replacement starts.
  */
 export type ReplacementStrategy = 'lb-overlap' | 'exclusive'
 
@@ -22,24 +17,15 @@ export type ReplacementStrategy = 'lb-overlap' | 'exclusive'
 export type DrainPolicy = 'requests' | 'reconnect'
 
 /**
- * How the load balancer exposes a service publicly:
- *  - 'default': the LB's fallback backend. The app origin (the SPA proxy);
- *    everything no path route matches lands here.
- *  - 'host': host-header routed (own DNS record + cert + route).
- *  - 'path': reached only via its `lbPathBegin` path route on the shared HTTPS
- *    frontend (same-origin model: `https://<app-host><prefix>/...`).
- * Absent = internal-only (no public LB backend; e.g. cdc).
+ * Public load-balancer route: fallback app origin, dedicated host, or shared-host path.
+ * An absent route keeps the service internal.
  */
 export type LbRoute = 'default' | 'host' | 'path'
 
 /**
- * Path-prefix route (`matchPathBegin`) on the shared HTTPS frontend, e.g.
- * `/api`: `https://<app-host><prefix>/...` reaches this service's LB backend.
- * The LB matches on ONE criterion per route (host OR path: never both) and
- * does NOT strip the prefix, so the service must also serve itself under
- * `<prefix>` (the backend/mcp self-mounts in backend/src/server.ts, the yjs
- * prefix handling in yjs/src/server). Must start with '/' and have no
- * trailing slash. Required for `lbRoute: 'path'` services.
+ * Shared-host path prefix matched without stripping.
+ * The service must serve under the same leading-slash, no-trailing-slash prefix; required for
+ * path-routed services.
  */
 export type LbPathBegin = `/${string}`
 
@@ -47,14 +33,9 @@ export type LbPathBegin = `/${string}`
 export type ServiceInstanceType = string | Partial<Record<Environment, string>>
 
 /**
- * Deploy-plane metadata for one *logical* service, carried in the Compose file
- * as the Compose extension field `x-service`. The single source of truth for
- * deploy knobs; `lib/services.ts` derives its `ServiceDefinition` registry from
- * these blocks.
- *
- * Removing a block removes the service from the registry entirely (no VM, LB
- * backend, DNS, cert, or release SHA config). Optional per-app deployment is
- * gated by `appConfig.services.<slug>.enabled` (see {@link enabledServices}).
+ * Deployment metadata for one logical service, carried as the Compose `x-service` extension.
+ * `lib/services.ts` derives the registry; removing a block removes all deployment resources,
+ * while app configuration may disable it per deployment.
  */
 export interface ServiceMeta {
   /**
@@ -138,19 +119,9 @@ export interface ComposeFile {
 }
 
 /**
- * One app service, authored in the fork-owned `services.config.ts`.
- *
- * This is the *data* tier of the synthesis split: a fork declares its services
- * here as compact, declarative entries; cella's `infrastructure.ts` owns the
- * *machinery* (the ingress proxy, the blue-green / one-shot-migrate mechanism,
- * the healthcheck shape, the shared env) and expands each entry into the full
- * Compose block at synth time. Uniform boilerplate (the healthcheck block, the
- * `NODE_ENV`/`APP_MODE`/`TZ` env, the `.env` files) is injected by cella, so it
- * never has to be repeated here and a fork picks up cella's changes to it on
- * sync without a merge conflict.
- *
- * To add a service: add an entry. To remove one: delete the entry; there is no
- * separate feature flag, presence here is what puts the service in the fleet.
+ * Declarative fork-owned service entry synthesized into Compose and deployment metadata.
+ * Cella injects shared ingress, rollout, health, and environment machinery. Entry presence
+ * determines whether the service belongs to the fleet.
  */
 export interface AppServiceConfig {
   /** Container image ref, e.g. `'${REGISTRY}/yjs:${YJS_TAG:-latest}'`. */

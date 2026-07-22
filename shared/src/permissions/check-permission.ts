@@ -10,15 +10,9 @@ import type {
 } from './permission-manager/types';
 
 /**
- * Who is acting, for tiers that compile predicates for the SQL twin (`compileRowConditionSql`,
- * collection scopes, catchup reads); these tiers never run the JS engine.
- *
- * The discriminated union makes the actor state explicit. An optional `userId` is
- * how permission bugs get in: a caller that simply forgets it still compiles, and every rule
- * that reads the actor (`'own'`, and any fork condition) then silently fails closed. A
- * denial nobody notices. Anonymity has to be *stated*, not achieved by omission.
- *
- * `{ anonymous: true }` cannot be produced by accident and is greppable in review.
+ * Explicit authenticated or anonymous actor used by SQL permission predicates.
+ * The discriminant prevents an accidentally omitted user ID from silently denying actor-based
+ * conditions.
  */
 export type Actor = { userId: string; isSystemAdmin?: boolean } | { anonymous: true };
 
@@ -70,15 +64,8 @@ export interface CheckAccessFanoutOptions {
 }
 
 /** Config-bound engine options: every entry point of the family injects the same grants. */
-/*
- * The `checkAccess*` family is the one authorization surface shared by every JS tier
- * (backend handlers, yjs relay, stream dispatch): three named projections of the same
- * engine, so the decision is always computed by the same code with the same injected
- * `publicReadGrants` and `elevatedRoles`. Allowed if the entity OR an ancestor matches a
- * grant. The SQL twin (`compileRowConditionSql`, collection scopes) is the one deliberate
- * second form (Postgres cannot call these) and stays pinned by the row-predicate parity
- * tests.
- */
+// Shared JS permission entry points inject identical public and elevated grants.
+// SQL collection predicates are the tested database-side projection of the same decisions.
 const boundOptions = { publicGrants: publicReadGrants, elevatedRoles };
 
 /** Engine options for one access, on top of the config-bound grants. */

@@ -13,16 +13,9 @@ if (typeof document !== 'undefined') {
 }
 
 /**
- * Zustand `StateStorage` over the per-user `appdb.kv` table, keyed by the store's base name.
- * Resolves the live DB on every op so it follows rebinds, and no-ops while signed out (anonymous
- * visitors simply never persist).
- *
- * Writes are trailing-debounced ({@link WRITE_DEBOUNCE_MS}) so high-frequency `set`s (e.g. a
- * resize loop persisting board layout every frame) collapse into one IndexedDB transaction.
- * `createJSONStorage` calls this factory once per store, so per-store state lives in the closure.
- *
- * Pair with `skipHydration: true`; hydration is driven explicitly after the DB is bound
- * (see `~/query/app-storage`), not at store creation.
+ * Creates per-user Zustand storage backed by the live app database.
+ * Writes are trailing-debounced per store, signed-out operations do nothing, and database rebinds
+ * are resolved on every operation. Pair with explicit post-bind hydration.
  */
 export function idbKvStorage(base: string): StateStorage {
   let pending: { value: string; db: AppDatabase } | null = null;

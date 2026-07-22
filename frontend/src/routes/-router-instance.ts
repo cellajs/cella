@@ -1,14 +1,8 @@
 import type { RegisteredRouter } from '@tanstack/react-router';
 
 /**
- * Late-registered handle on the router instance, for consumers that need it outside React (plain
- * functions, stores, config objects) where `useRouter()` is unavailable.
- *
- * This module must never import `~/routes/router`. That module pulls in the generated route tree,
- * and the route tree reaches most of the app; a direct import here would put every consumer back
- * into one import cycle with it. Keeping this module dependency-free is the whole point.
- *
- * Inside a component, prefer `useRouter()` / `useNavigate()` over `getRouter()`.
+ * Expose a late-registered router outside React without importing the cyclic generated route tree.
+ * Components should prefer `useRouter` or `useNavigate`.
  */
 let instance: RegisteredRouter | null = null;
 

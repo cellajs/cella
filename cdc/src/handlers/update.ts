@@ -49,10 +49,8 @@ export function handleUpdate(
   // Skip if nothing meaningful changed
   if (changedFields && changedFields.length === 0) return null;
 
-  // Strip sync-state fields: they always change on every write but aren't user mutations.
-  // Must happen before embedding suppression so WAL-diff paths don't see 'stx'/'seq'.
-  // 'path' is a stored generated column derived from the placement columns. The placement
-  // change itself is the user mutation; the path echo is not.
+  // Remove sync and generated path echoes before embedding suppression.
+  // Placement columns themselves retain the user-visible move.
   const syncStateKeys = new Set(['stx', 'seq', 'path']);
   const userChangedFields = changedFields?.filter((k) => !syncStateKeys.has(k)) ?? null;
 
@@ -68,7 +66,7 @@ export function handleUpdate(
 
   const activity = createActivity(tableMeta, rowData, 'update', { changedFields: userChangedFields });
 
-  // Move-out detection: the materialized `path` (stored generated column, present in the
+  // Move-out detection: the generated `path` (present in the
   // REPLICA IDENTITY FULL old image) changed → carry the old row's permission subset so
   // dispatch can notify subscribers who could read the old location but not the new one.
   const movedFrom =

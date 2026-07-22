@@ -35,15 +35,9 @@ type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
 };
 
 /**
- * Affix header that pins to the top of its scroll container via CSS
- * `position: sticky`. Placement is owned by the browser, robust inside
- * transformed/virtualized ancestors where `position: fixed` would anchor to the
- * wrong containing block. A zero-height sentinel + IntersectionObserver is the
- * single source of truth for the `data-sticky` state (used for styling), and an
- * optional `offsetBottom` releases the bar before the container's bottom edge.
- *
- * Tall sticky *sidebars* require plain CSS:
- * `sticky top-X max-h-[calc(100vh-…)] overflow-y-auto`.
+ * Pins a header within its scroll container using CSS sticky positioning.
+ * A sentinel observer drives styling state, and `offsetBottom` releases the bar before the
+ * container edge. Tall sidebars should use plain sticky CSS.
  */
 export function StickyBox({
   enabled = true,
@@ -87,10 +81,7 @@ export function StickyBox({
     return () => io.disconnect();
   }, [enabled, offsetTop]);
 
-  // offsetBottom: CSS sticky always travels to the bottom of its containing
-  // block. To release earlier (e.g. clear a footer), switch the bar to a
-  // relative offset once the sticky position would come within offsetBottom of
-  // the container's bottom edge.
+  // Release sticky positioning early when the bar approaches the configured bottom offset.
   useEffect(() => {
     const bar = barRef.current;
     const parent = bar?.parentElement;

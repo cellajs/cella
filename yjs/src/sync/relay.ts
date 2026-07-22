@@ -210,10 +210,8 @@ async function handleSyncUpdate(ctx: DocContext, ws: WebSocket, update: Uint8Arr
     collab.savingPromise = savePromise;
     try {
       await savePromise;
-      // Convert the saved state to blocks and persist it to the entity (single writer:
-      // one call per document per save window, regardless of how many clients are typing).
-      // A 'retry' failure leaves the diff baseline stale; the next save window or the
-      // gated session cleanup converges it.
+    // Persist blocks once per document and save window, regardless of active client count.
+    // Retry failures leave the baseline stale so the next save or cleanup converges it.
       await materializeState(collab, snapshotToSave);
     } catch (err) {
       log.error(`Failed to save state for ${ctx.entityType}:${ctx.entityId}`, { err: err });

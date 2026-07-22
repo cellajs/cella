@@ -106,12 +106,7 @@ export function startSyncSpan(name: string, attributes?: Record<string, string |
   return span;
 }
 
-/**
- * Record a critical client failure as an immediate error-status span so it
- * reaches Maple error analytics/alerting (span-based), independent of the
- * session-replay timeline. Use for swallowed-but-serious failures: offline
- * cache restore, mutation quarantine, upload sync, realtime catchup.
- */
+/** Record a swallowed critical failure as an immediate error span for Maple alerting. */
 export function reportCriticalError(name: string, err: unknown, attrs: SpanAttrs = {}): void {
   const span = tracer.startSpan(`client.${name}`);
   applyAttrs(span, attrs);

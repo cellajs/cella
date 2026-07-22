@@ -74,14 +74,9 @@ export function sumInto(
 }
 
 /**
- * Apply a unified delta plan for a batch of CDC events. Mutates
- * `event.result.rowData.seq` for each stampable event.
- *
- * Phase 1 reserves one contiguous org-sequence range per organization
- * (`sequence` via RETURNING) and assigns values to events in WAL order.
- * All product entity types share the sequence, so WAL commit order IS sequence
- * order. Phase 2 then writes frontier (`e:f:{type}`) marks at every
- * ancestor node, the remaining count deltas, and the row seq stamp-backs.
+ * Applies a batch delta plan and stamps each eligible event with organization sequence.
+ * The first phase reserves WAL-ordered sequence ranges; the second writes ancestor frontiers,
+ * remaining counts, and row sequence values.
  */
 export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: AncestorSource = hierarchy): Promise<void> {
   const { orgSequenceGroups, countDeltasByChannelKey } = plan;
@@ -107,12 +102,8 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
       rowData.seq = seq;
       allProductStamps.push({ tableName: getTableName(tableMeta.table), id: rowData.id, seq });
 
-      // Frontier rollups. Every stamped event bumps: the publication row filter keeps
-      // drafts out of the stream, publishes arrive as INSERTs, and every event in this
-      // sequence group is delta-fetchable. Unpublishes arrive as unstamped DELETEs and
-      // use delete-style invalidation. A draft that slips past a missing filter is
-      // dropped at the entrance guard (parse-message.ts).
-      // Subtree: e:f:{type} max-merged at the org and every non-null ancestor.
+  // Roll each delta-fetchable stamped event into organization and populated-ancestor frontiers.
+  // Drafts are filtered, while unpublishes use unstamped delete invalidation.
       const nodes = frontierNodeKeys(tableMeta.type, rowData, activity.organizationId ?? group.orgKey, h);
       const frontierKey = `e:f:${tableMeta.type}`;
       for (const node of nodes) {

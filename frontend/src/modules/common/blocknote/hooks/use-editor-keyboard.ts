@@ -20,12 +20,7 @@ interface UseEditorKeyboardArgs {
   commit: () => void;
 }
 
-/**
- * Returns an `onKeyDown` with three IDE-like behaviors:
- * - Selection wrapping: typing `[ { ( \` " '` with a non-empty selection wraps it without replacing it.
- * - Escape / Cmd+Ctrl+Enter: commit (non-empty only) + onEscapeClick / onEnterClick. Enter stops
- *   propagation so the submit shortcut doesn't bubble to surrounding forms.
- */
+/** Handle selection wrapping plus commit-and-close shortcuts without bubbling form submission. */
 export function useEditorKeyboard({
   editor,
   onEscapeClick,

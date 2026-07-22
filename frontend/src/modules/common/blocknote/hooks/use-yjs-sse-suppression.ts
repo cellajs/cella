@@ -3,15 +3,9 @@ import type { ProductEntityType } from 'shared';
 import { registerActiveYjsEditor, unregisterActiveYjsEditor } from '~/modules/common/blocknote/yjs-editor';
 
 /**
- * Register the entity as actively Yjs-edited for the lifetime of the editor, so SSE
- * cache ops skip Yjs-owned fields (description + derived), since a slightly stale server
- * snapshot must not overwrite the fresher local Y.Doc state.
- *
- * The relay persists session state to the entity row,
- * so there is nothing to flush on unmount: unregister immediately and let the next
- * SSE update bring authoritative values.
- *
- * Pass `null` when not in collaborative mode.
+ * Suppresses SSE writes to Yjs-owned fields while a collaborative editor is active.
+ * The relay persists state, so unmount unregisters immediately without another flush.
+ * Pass null outside collaborative mode.
  */
 export function useYjsSseSuppression(target: { entityType: ProductEntityType; entityId: string } | null) {
   const entityType = target?.entityType;

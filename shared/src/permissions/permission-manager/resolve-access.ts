@@ -39,27 +39,10 @@ const deniedDecision = <T extends PermissionMembership>(subject: SubjectForPermi
 });
 
 /**
- * Resolve decisions for MANY accesses against ONE subject: the fan-out dual of
- * `getAllDecisions` (one actor, many subjects).
- *
- * The engine collapses accesses into equivalence classes and runs the policy walk once per
- * class, because it alone knows the full projection of what a decision reads from an actor:
- *
- * - the system-admin bit (short-circuits to allow-all),
- * - one bit per row condition the subject's policy table actually references, evaluated
- *   through the same `matchesRowCondition` the walk uses; a fork adding a condition to
- *   `row-conditions.ts` is keyed automatically, because the key builder enumerates the
- *   POLICY INDEX, not a hardcoded condition list,
- * - the roles held at each of the subject's channel levels, read from the same
- *   `${channelType}:${channelId}` membership-index lookups the walk performs. Grant scoping
- *   (`elevatedRoles`, home channel) is a function of (level, role, subject), so it cannot
- *   split a class.
- *
- * Equal keys ⇒ `checkWithIndices` cannot distinguish the accesses; the property test in
- * `resolve-access.test.ts` pins this against mapped single checks over synthetic policies.
- *
- * The memo lives only for this call; no cross-call state, nothing to invalidate. The
- * shared class decision is re-personalized per access (`membership` is the access's own).
+ * Resolves many actors against one subject by grouping accesses the policy engine cannot
+ * distinguish. Keys include system-admin state, referenced row conditions, and roles at
+ * each subject channel level. The per-call class result is then paired with each access's
+ * own membership; property tests compare it with independent single-access decisions.
  */
 export function getDecisionsForAccesses<T extends PermissionMembership>(
   policies: AccessPolicies,

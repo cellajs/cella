@@ -17,13 +17,8 @@ let lastResult: boolean | null = null;
 let inFlight: Promise<boolean> | null = null;
 
 /**
- * Probe actual internet connectivity via /health (shallow 204). Triggered by network-level fetch
- * failures (TypeError) in lib/api-client.ts and on-error.ts to detect "WiFi connected but no
- * internet", where navigator.onLine stays true but all API calls fail.
- *
- * Results are cached (10s) and concurrent calls deduped. On failure it calls
- * onlineManager.setOnline(false), which cascades: DownAlert banner, staleTime -> infinite (stops
- * refetches), mutations pause until reconnect. Recovery is driven by the browser 'online' event.
+ * Probe `/health` after network failures to detect false-positive browser online state.
+ * Cache and deduplicate probes; failure pauses queries and mutations through `onlineManager`.
  */
 export async function checkConnectivity(): Promise<boolean> {
   const now = Date.now();
@@ -90,14 +85,7 @@ export function resetConnectivityCache() {
   lastResult = null;
 }
 
-/**
- * Re-probe immediately (bypassing the cache) and restore online state on success.
- *
- * Used when a backgrounded (possibly frozen) tab returns to the foreground: a stale
- * "offline" state may linger from before the freeze, and the browser 'online' event is
- * laggy/unreliable on mobile. Verifying with a real request clears a lingering offline
- * toast as soon as the network is actually back without waiting for the next refetch.
- */
+/** Bypass cached connectivity on tab resume and restore online state after a successful probe. */
 export async function revalidateConnectivity(): Promise<boolean> {
   resetConnectivityCache();
   const online = await checkConnectivity();

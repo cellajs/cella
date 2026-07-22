@@ -5,14 +5,8 @@ import { stateBucket } from './stack/control-store'
 type Cfg = typeof AppConfig
 
 /**
- * The one misconfiguration guard worth failing every deploy path on: an app
- * served at the zone apex. The LB module gives an apex-hosted app no DNS
- * record, cert, or host route by design (resources/loadbalancer.ts). The
- * supported pattern is a subdomain with the automatic apex→www redirect. A
- * fork that ships `frontendUrl: https://<domain>` gets a live API and a dead
- * site, so this is checked centrally in deriveInfra (Pulumi program, CI's
- * print-deploy-env, and the infra CLI all pass through it) and surfaced early
- * by `pnpm infra`. Returns the error message, or undefined when fine.
+ * Reports unsupported frontend deployment at the zone apex, where no app DNS, certificate,
+ * or host route is created. Deploy paths validate this centrally and require a subdomain.
  */
 export function frontendApexIssue(appConfig: Cfg): string | undefined {
   const hasDomain = Boolean(appConfig.domain && appConfig.domain !== 'localhost')

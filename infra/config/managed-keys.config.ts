@@ -1,22 +1,9 @@
 import { defineManagedKeys } from '../lib/managed-keys'
 
 /**
- * The fork-owned managed-keys registry: scoped Scaleway IAM keys the infra CLI
- * can MINT on the operator's behalf and seed into runtime secrets without
- * the operator hand-creating a key in the console and pasting it. Mirrors the
- * other config files (data only); `lib/managed-keys.ts` owns the machinery and
- * fail-fast validation.
- *
- * A managed key is distinct from a plain `operator` runtime secret only in HOW
- * its value is produced: cella mints a `<slug>-<suffix>` IAM application + policy
- * (scoped to `permissionSets`) and writes the resulting key into the runtime
- * secret(s) named in `assign`. Those targets still live in runtime-secrets.config.ts
- * as `valueSource: 'operator'`: Pulumi owns their (empty) containers and they stay
- * settable by hand via "Manage runtime secrets"; minting is just an automated way
- * to fill them, and re-minting (rotation) is the same call.
- *
- * Minting is ALWAYS operator-confirmed, never silent. The AI key authorizes
- * billed inference, so its prompt defaults to "no".
+ * Fork-owned registry of scoped IAM keys the infrastructure CLI can mint into operator
+ * runtime secrets. `lib/managed-keys.ts` owns provisioning and validation; targets remain
+ * manually settable. Every mint or rotation requires operator confirmation.
  */
 export const managedKeysConfig = defineManagedKeys({
   ai: {

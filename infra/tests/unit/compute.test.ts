@@ -36,10 +36,8 @@ describe('compute module source contracts', () => {
   })
 
   it('uses VM reader credentials (vmAccessKey/vmSecretKey) from helpers, not the operator scaleway key', () => {
-    // The VM identity is a minimal-privilege `<slug>-vm-reader` application
-    // (ContainerRegistryReadOnly + SecretManagerReadOnly + SecretManagerSecretAccess).
-    // compute.ts must source its credentials from the infra helpers, never by
-    // reading `new pulumi.Config('scaleway').requireSecret(...)` directly.
+    // The VM reader identity has registry, secret-metadata, and secret-value read grants only.
+    // Infrastructure helpers are the sole credential source for compute.
     expect(source).toMatch(/vmAccessKey|vmSecretKey/)
     expect(source).not.toMatch(/Config\(['"]scaleway['"]\)\.requireSecret\(['"]secretKey['"]\)/)
     expect(source).not.toMatch(/Config\(['"]scaleway['"]\)\.requireSecret\(['"]accessKey['"]\)/)
@@ -76,11 +74,8 @@ describe('compute module source contracts', () => {
   })
 
   it('binds compose env from the registry placeholder scan + bindings + envPool (no per-service env maps)', () => {
-    // Per-service compose env is derived by scanning each service's compose
-    // blocks for ${VAR} placeholders, bound from the registry's `bindings`
-    // templates first and the shared envPool second, so adding a service never
-    // requires a compute.ts edit unless it introduces a genuinely new
-    // Pulumi-bound value.
+// Derive each service's compose environment from placeholders, resolving bindings before the shared pool.
+// New services need compute changes only for genuinely new Pulumi values.
     expect(source).toMatch(/const envPool:/)
     expect(source).toMatch(/composePlaceholders\(/)
     expect(source).toMatch(/block\.profiles\.includes\(/)
@@ -98,11 +93,8 @@ describe('compute module source contracts', () => {
   })
 
   it('contains no inter-service env wiring — service topology lives in registry bindings', () => {
-    // cdc's API_WS_URL and mcp's MCP_API_URL are declared as @{...} binding
-    // templates in config/services.config.ts; compute.ts only provides the
-    // generic resolver. The backend IS named (it exposes the one stable
-    // internal address the resolver targets), but no service's ENV wiring may
-    // be hard-coded here.
+// CDC and MCP endpoint bindings belong to the service registry; compute provides only resolution.
+// The backend supplies the stable target, but service environment wiring must not be hard-coded here.
     for (const banned of ['API_WS_URL', 'MCP_API_URL', 'mcpUrl']) {
       expect(source, `inter-service env token ${banned} must not appear in compute.ts`).not.toContain(banned)
     }
@@ -121,12 +113,8 @@ describe('compute module source contracts', () => {
   })
 
   it('treats both cloud-init and the base image as immutable generation identity', () => {
-    // A generation VM fixes its cloud-init AND its image at creation. A marketplace
-    // label can resolve to a rotated UUID over time; without ignoring `image`, the
-    // base `pulumi up` would diff every running generation and destructively replace
-    // the live frontend/backend/cdc VMs (delete-before-create, bypassing the
-    // LB-overlap cutover). A new
-    // image is only ever picked up by a NEW generation (new resource name).
+    // Ignore marketplace-label rotation so base applies cannot replace live VMs outside cutover.
+    // Only a newly named generation adopts a new resolved image.
     expect(source).toMatch(/ignoreChanges: \['cloudInit', 'image'\]/)
   })
 

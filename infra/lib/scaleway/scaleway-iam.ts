@@ -119,14 +119,8 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
     log(`  ${changeMark} Created IAM application: ${app.name} (${app.id})`)
   }
 
-  // 2. Find or create the policy. Always recreate when found so the rules stay
-  //    in sync with the caller's permission sets. An existing policy silently
-  //    loses new permissions if we just skip it.
-  //
-  //    Skipped entirely when `managePolicy` is false: the policy is then owned
-  //    by a Pulumi-managed `iam.Policy` resource, so this flow must not create
-  //    (or delete) one; doing so would either race Pulumi or leave an orphan
-  //    second policy on the application.
+  // Recreate managed policies so rules match current permissions.
+  // When Pulumi owns the policy, skip it here to avoid races and duplicate policies.
   if (config.managePolicy !== false) {
     if (!config.buildRules) {
       throw new Error('provisionScopedKey: buildRules is required when managePolicy is not false')
@@ -152,10 +146,8 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
     log(`  ${checkMark} Policy management delegated to Pulumi (iam.Policy resource) — skipping`)
   }
 
-  // 3. Delete any existing API keys before minting a new one. Scaleway only
-  //    returns the secret_key at creation time, so pre-existing keys are
-  //    unrecoverable dead weight; purging them keeps re-runs from accumulating
-  //    orphans.
+  // 3. Replace existing API keys because Scaleway reveals each secret only at creation.
+  //    Purging first prevents reruns from accumulating unusable keys.
   if (config.mintKey === false) {
     log(`  ${checkMark} Key minting skipped — create one in the console for ${app.name}`)
     return { accessKey: '', secretKey: '', applicationId: app.id, organizationId }

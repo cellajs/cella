@@ -15,10 +15,7 @@ export function setupVmKey(opts: SetupVmKeyOptions): Promise<VmKeyResult> {
     suffix: 'vm-reader',
     appDescription: 'Non-human principal for deployed service VMs — read-only registry + S3 + secrets',
     policyDescription: 'Minimal read-only policy for service VMs (auto-generated)',
-    // The policy is a Pulumi-managed resource (infra/resources/vm-iam.ts), so this
-    // bootstrap flow provisions only the application + key. Pulumi reconciles the
-    // permission sets (VM_PROJECT_PERMISSION_SETS) on every `pulumi up`, which is
-    // what makes the VM grant drift-proof.
+  // Bootstrap only the application and key; Pulumi owns and reconciles its policy grants.
     managePolicy: false,
   })
 }

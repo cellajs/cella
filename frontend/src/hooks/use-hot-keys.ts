@@ -1,15 +1,7 @@
 import { useEffect } from 'react';
 import { getHotkeyMatcher, type HotkeyItem, shouldFireEvent } from '~/hooks/use-hot-keys-helpers';
 
-/**
- * Global keyboard shortcuts. Each hotkey is `[combination, handler, options?]`.
- *
- * @example
- * useHotkeys([
- *   ['ctrl + s', (event) => console.info('Save triggered')],
- *   ['ESC', (event) => console.info('Escape pressed')],
- * ]);
- */
+/** Register global shortcuts as `[combination, handler, options?]` tuples. */
 export function useHotkeys(
   hotkeys: HotkeyItem[],
   tagsToIgnore: string[] = ['INPUT', 'TEXTAREA', 'SELECT'], // HTML tags to ignore

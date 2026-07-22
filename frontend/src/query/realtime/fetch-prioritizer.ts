@@ -79,12 +79,7 @@ export function enqueueRange(input: EnqueueInput): void {
   enqueueWithTier(input, tier);
 }
 
-/**
- * Enqueue a catchup gap (reconnect/boot top-up). Unlike live notifications, muted channel views are
- * treated as background here: catchup is a one-shot reconciliation, and skipping muted channel views
- * would leave their persisted caches stale forever (nothing else refetches them). The
- * background spread also de-stampedes the reconnect herd.
- */
+/** Enqueue catchup gaps, including muted views in spread background work so persisted caches converge. */
 export function enqueueCatchupRange(input: EnqueueInput): void {
   const tier = getSyncTier(input.entityType, input.organizationId, input.channelId);
   enqueueWithTier(input, tier.min === Number.POSITIVE_INFINITY ? { min: 2_000, max: 30_000 } : tier);
@@ -146,11 +141,8 @@ export function flushAllNow(): Promise<void> {
 }
 
 /**
- * Awaitable immediate flush of ONE channel view, the foreground catchup path (gap 4a):
- * catchup enqueues its gap, then awaits this so the mutation-replay gate resolves against a
- * reconciled cache, while the fetch prioritizer stays the only code that fetches seq ranges.
- * Single attempt: a failure takes the fallback (invalidate + advance), not the lazy
- * retry ladder, mirroring catchup's original inline semantics.
+ * Flush one foreground catchup view before mutation replay while centralizing range fetches.
+ * A single failed attempt invalidates and advances.
  */
 export async function flushChannelViewNow(
   entityType: ProductEntityType,
@@ -207,12 +199,8 @@ async function flushDue(): Promise<void> {
 }
 
 /**
- * The channel id covering every due channel of a group, scoping the delta fetch by the
- * entity's conventional ancestor filter (e.g. projectId); undefined = whole org (no narrowing).
- * One shared channel (the common case: a single viewed channel) needs no path lookup. Multiple
- * distinct channels narrow to their least-common-ancestor channel via the fork-registered
- * channel-path resolver; any org-level entry, unresolvable channel, or channels that diverge at
- * the org root widen to the org. The template always widens (its only channel IS the org).
+ * Find the common channel covering due views for one narrowed delta fetch.
+ * Organization, unresolved, or root-divergent paths widen to the whole organization.
  */
 function coveringChannelId(entries: DirtyEntry[]): string | undefined {
   const ids = new Set<string>();

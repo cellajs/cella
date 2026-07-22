@@ -49,10 +49,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     el.classList.toggle('unsaved-changes', show);
   };
 
-  // Debounced draft persistence via form.watch subscription.
-  // Unlike useWatch, form.watch(callback) does NOT trigger React re-renders:
-  // it invokes the callback directly, letting us debounce the save without
-  // cascading re-renders through the form component tree.
+  // Subscribe directly to form changes so debounced persistence does not rerender the form tree.
   useEffect(() => {
     const subscription = form.watch(() => {
       if (isResetting.current) return;

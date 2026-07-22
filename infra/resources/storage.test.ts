@@ -6,10 +6,8 @@ let h: MockHarness
 beforeAll(async () => {
   h = await installPulumiMocks({
     stack: 'production',
-    // bootstrap:computeDeferred gates compute off so pulumi-context.ts skips the
-    // image-tag pin assertion (these tests don't render compute). The CI/VM
-    // application ids are derived from the IAM API (stubbed in the mock harness),
-    // absent from stack config.
+// Deferring compute skips image-pin validation because these tests render only storage.
+// The mock IAM API supplies CI and VM application IDs normally absent from stack config.
     config: { 'bootstrap:computeDeferred': 'test' },
   })
   await import('./storage')

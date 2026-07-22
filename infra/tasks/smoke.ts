@@ -51,13 +51,9 @@ export interface ComponentIssue {
 }
 
 /**
- * Parse a /health?depth=full body and return every component that is not
- * healthy. A non-critical worker that is fully down surfaces as `degraded`
- * (the backend rollup caps non-critical components there so it never
- * deregisters itself), so this check intentionally treats anything other than
- * `healthy` as a failure: by the time smoke runs, all services have rolled
- * green and nothing should be degraded. A malformed/empty body yields a
- * synthetic issue so the check fails loudly.
+ * Returns every non-healthy component from a deep health response.
+ * Smoke tests treat degraded non-critical workers as failures after rollout; malformed responses
+ * produce a synthetic issue.
  */
 export function unhealthyComponents(body: string): ComponentIssue[] {
   let parsed: { components?: Record<string, { status?: string; reason?: string }> }
@@ -176,10 +172,7 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
     }
   }
 
-  // 1. Frontend index.html references the freshly built hashed entry asset.
-  // When the local dist hash is known (expectedAsset), assert the served HTML
-  // references that exact bundle. Without the artifact, fall back to checking
-  // that the page references some hashed asset.
+// 1. Require the exact local entry hash when available, otherwise any hashed frontend asset.
   await check(opts.expectedAsset ? 'index.html references freshly built bundle' : 'index.html references hashed asset', async () => {
     const res = await get(`${frontendUrl}/`)
     const matched = opts.expectedAsset ? res.body.includes(opts.expectedAsset) : hasHashedAsset(res.body)
@@ -226,11 +219,8 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
     return { ok: missing.length === 0, detail: `missing: ${missing.join(', ')}` }
   })
 
-  // 6. Backend reports every health component healthy (db / cdc / yjs / ai).
-  // Retried across one CDC-reconnect backoff cycle: right after a roll the
-  // worker's WebSocket can still be mid-reconnect, surfacing as a transient
-  // worker_disconnected. Pass on the first clean read; a genuinely broken
-  // component stays bad for the whole budget and still fails.
+// 6. Retry aggregate health across one CDC reconnect interval after rollout.
+// Pass on the first clean read; persistent component failures exhaust the budget.
   await check('backend components healthy', async () => {
     let lastDetail = 'no response'
     const healthy = await pollUntil(

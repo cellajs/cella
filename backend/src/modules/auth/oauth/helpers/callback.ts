@@ -41,14 +41,8 @@ interface BaseCallbackProps {
 }
 
 /**
- * Handles the OAuth provider callback, branching on `oauthPayload.type`:
- * - 'connect' → link the provider to an existing account
- * - 'invite'  → invited user completing OAuth signup
- * - 'verify'  → verify an existing OAuth account
- * - 'auth'    → standard authentication/signup
- *
- * Fetches any existing OAuth account, runs the matching flow, then hands off to
- * `processOAuthAccount` for session setup, MFA, or verification email and the final redirect.
+ * Routes connect, invite, verify, and authentication callbacks to their OAuth flow.
+ * `processOAuthAccount` then handles session setup, MFA, verification, and redirect.
  */
 export const handleOAuthCallback = async (
   ctx: Context<Env>,

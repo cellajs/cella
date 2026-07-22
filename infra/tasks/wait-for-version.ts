@@ -89,11 +89,8 @@ export function createFetchProbe(timeoutMs: number): ProbeFn {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
     try {
-      // WebSocket services (e.g. yjs) advertise ws(s):// health URLs, but their
-      // /health endpoint speaks plain HTTP on the same host and fetch() rejects
-      // the ws scheme outright (surfacing as status 0 → gate never passes).
-      // Normalize the scheme so same-origin wss URLs stay probeable (mirrors the
-      // backend's own probe in lib/health-probe.ts).
+    // Probe WebSocket services over HTTP because their `/health` endpoint is not a WebSocket.
+    // This mirrors the backend health probe's scheme normalization.
       const httpUrl = url.replace(/^ws(s?):/, 'http$1:')
       const res = await fetch(httpUrl, { signal: controller.signal, redirect: 'follow' })
       return { status: res.status, version: res.headers.get('x-app-version') ?? undefined }
@@ -126,10 +123,8 @@ export async function pollForVersion(opts: PollOptions): Promise<PollOutcome> {
         return { ok: true, attempts: i, lastStatus, lastVersion }
       }
 
-      // Consult the reconciler's own status. Fast-fail ONLY on a terminal rollout
-      // failure (bad release); keep polling through self-healing infra transients
-      // (pull/tag-fetch) and just surface the phase/reason so the CI log shows
-      // progress for long-running probes.
+    // Fail fast only on terminal rollout status; keep polling through self-healing transients.
+    // Surface phase and reason to show progress in CI.
       const roll = opts.status?.()
       if (roll && roll.desired === expectedSha) {
         if (roll.result === 'failed' && roll.exitCode && TERMINAL_EXIT_CODES.has(roll.exitCode)) {

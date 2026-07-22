@@ -16,12 +16,7 @@ export type DialogData = {
   description?: ReactNode;
   drawerOnMobile?: boolean;
   outsideScroll?: boolean;
-  /**
-   * Skip the exit animation and remove the dialog immediately on ESC / outside-press.
-   * Use for dialogs whose open state is externally owned (e.g. a URL search param): the delayed
-   * removal would otherwise leave the store closing while the URL still says open, flashing the
-   * dialog back. Removing immediately clears that external state in the same tick.
-   */
+  /** Remove immediately on dismissal so externally owned open state cannot flash the dialog back. */
   instantClose?: boolean;
   className?: string;
   headerClassName?: string;

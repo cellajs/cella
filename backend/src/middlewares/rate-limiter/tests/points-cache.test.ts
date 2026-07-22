@@ -126,10 +126,8 @@ describe('points-cache', () => {
     });
 
     it('should never lose local consumes to a DB undercount', () => {
-      // THE original budget-bypass bug: 799 fast-path consumes, then a DB trip that only
-      // knew about 1 request, reset the local counter to that undercount and restarted
-      // the fast path forever. Debt settlement makes the DB count genuinely authoritative
-      // because the debt is consumed into it before syncing.
+      // Fast-path debt must reach the database before local state syncs from it.
+      // Otherwise an undercounted database trip could reopen the fast path indefinitely.
       for (let i = 0; i < 799; i++) {
         tryFastConsume('tenant:user1', 1, 1000);
       }

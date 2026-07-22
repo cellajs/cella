@@ -6,14 +6,7 @@ import { streamSubscriberManager } from './subscriber-manager';
 import type { CursoredSubscriber, DispatcherConfig } from './types';
 
 /**
- * Create a dispatcher function for a specific stream type.
- * Handles subscriber lookup by channel, filtering, and error handling.
- *
- * @example
- * const dispatchToOrgSubscribers = createStreamDispatcher<OrgStreamSubscriber>({
- *   getChannel: (event) => event.organizationId ? orgChannel(event.organizationId) : null,
- *   selectEligible: (subscribers, event) => subscribers.filter((s) => canReceiveOrgEvent(s, event)),
- * });
+ * Creates a stream dispatcher with channel lookup, eligibility filtering, and error handling.
  */
 export function createStreamDispatcher<T extends CursoredSubscriber, E extends ActivityEvent = ActivityEvent>(
   config: DispatcherConfig<T, E>,

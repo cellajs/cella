@@ -52,14 +52,9 @@ async function transition(id: string, to: DownloadStatus, skipReason?: string): 
 }
 
 /**
- * Enqueue attachments for background download. The queue table doubles as the "seen?" registry:
- * existing `pending`/`downloading`/`downloaded` rows are left untouched, which is what keeps a
- * finished attachment from being re-downloaded on every list refresh. Two kinds of row are
- * revived here, because enqueue is the natural retry trigger (the user is looking at the list
- * again, and the metadata may have changed since):
- * - `skipped` for lacking an `originalKey` at queue time, once one exists;
- * - `failed`, while it still has retry attempts left.
- * Attachments with a processed variant already stored locally are skipped.
+ * Enqueues attachments once for background download, preserving active and completed entries.
+ * It revives skipped rows when metadata gains an original key and failed rows with retries left;
+ * locally processed variants remain skipped.
  */
 async function enqueue(attachments: Attachment[], organizationId: string): Promise<void> {
   if (!attachments.length) return;

@@ -14,17 +14,8 @@ interface HttpCacheOptions {
 }
 
 /**
- * HTTP cache middleware that sets Cache-Control headers.
- * Attach to GET routes via `xCache: httpCache({ ... })`.
- * `private` is browser-only; `public` also allows CDN/proxy caching.
- *
- * @example
- * // Private, 1h cache for auth-required presigned URLs
- * xCache: httpCache({ scope: 'private', maxAge: 3600 })
- *
- * @example
- * // Public, 5min cache for public entity data
- * xCache: httpCache({ scope: 'public', maxAge: 300 })
+ * Builds `Cache-Control` middleware for a route's `xCache` option.
+ * Private responses remain browser-only; public responses permit shared caches.
  */
 export const httpCache = (options: HttpCacheOptions = {}): MiddlewareHandler<Env> => {
   const { scope = 'private', maxAge = 3600, staleWhileRevalidate = 600, immutable = false } = options;

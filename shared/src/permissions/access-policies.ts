@@ -34,10 +34,7 @@ const createChannelPolicyBuilder = (
       const fullPermissions = {} as EntityActionPermissions;
       for (const action of entityActions) {
         const value = permissions[action] ?? 0;
-        // Fail loud at boot: a row condition on `create` can never match. The row doesn't exist
-        // yet (the subject carries no `row`), so e.g. `create: 'own'` reads a `createdBy` that
-        // isn't there and silently denies forever. That's a config mistake, not a runtime state.
-        // Surface the configuration error here so it cannot become an invisible production denial.
+        // A row-conditioned create is invalid because its absent row cannot satisfy the condition.
         if (action === 'create' && isRowCondition(value)) {
           throw new Error(
             `[Permission] "${channelType}.${role}" uses a row condition ('${value}') on 'create', ` +
@@ -79,22 +76,8 @@ export interface PermissionsConfigResult {
 }
 
 /**
- * Configures the full permission set for all entity types using a callback pattern.
- * The callback receives the subject, context builders for role×context grants, and
- * `publicRead(mode)` for the subject-level public read grant.
- *
- * @example
- * ```ts
- * const { accessPolicies, publicReadGrants } = configurePermissions(entityTypes, ({ subject, contexts, publicRead }) => {
- *   switch (subject.name) {
- *     case 'project':
- *       publicRead('publicSelf'); // readable by anyone once its publicAt is set
- *       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
- *       break;
- *   }
- * });
- * ```
- *
+ * Configures entity policies through subject-specific role/context builders and a
+ * subject-level public-read grant.
  * @see public-read.ts
  */
 export const configurePermissions = (

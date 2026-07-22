@@ -19,11 +19,8 @@ try {
 
   console.info(pc.green(`${timestamp()} [migrate] ✓ Migrations complete`));
 
-  // Provision the system admin from ADMIN_EMAIL. Idempotent: the seed skips when
-  // the users table is already populated, so this no-ops on every deploy after
-  // the first and only seeds a fresh database (e.g. a new prod, or after a
-  // database reset). Lazy import keeps the seed's mock helpers out of the
-  // migrate path until this point.
+  // Seed the configured system administrator only for an empty user table.
+  // Lazy loading keeps mock helpers outside the migration path until needed.
   console.info(`${timestamp()} [migrate] Seeding system admin (idempotent)...`);
   const { initSeed } = await import('../scripts/seeds/00-init.seed');
   await initSeed();
@@ -33,20 +30,15 @@ try {
 } catch (error) {
   const msg = error instanceof Error ? error.message : String(error);
   console.error(pc.red(`${timestamp()} [migrate] ✗ Migrate companion failed: ${msg}`));
-  // Drizzle wraps the underlying pg/driver error as `cause`; its message holds
-  // the real reason (TLS identity mismatch, auth failure, missing role, …),
-  // which the top-level message omits. Surface it so a failed migrate on a
-  // no-SSH VM is diagnosable from the serial console alone.
+  // Surface wrapped driver errors so serial-only production failures retain TLS/auth detail.
   const cause = error instanceof Error ? error.cause : undefined;
   if (cause) {
     const causeMsg =
       cause instanceof Error ? `${cause.message}${cause.stack ? `\n${cause.stack}` : ''}` : String(cause);
     console.error(pc.red(`${timestamp()} [migrate]   cause: ${causeMsg}`));
   }
-  // Also ship the failure to Maple; container stdout is not centrally collected,
-  // so without this a failed production migration is invisible in the log backend.
-  // The OTel transport batches with a 5s schedule; wait past it so the export
-  // actually leaves before the one-shot container exits.
+  // Export the failure because one-shot container output is not centrally collected.
+  // Wait through the OTel batch interval before exiting.
   const { baseLog } = await import('#/lib/pino');
   baseLog.fatal('Migrate companion failed', { err: error });
   await new Promise((resolve) => setTimeout(resolve, 6000));

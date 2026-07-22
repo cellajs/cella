@@ -6,16 +6,9 @@ import { timestampColumns } from '#/db/utils/timestamp-columns';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
 /**
- * Activities table for Change Data Capture (CDC).
- * Tracks create, update, and delete operations across all resources.
- *
- * PARTITIONING: Partitioned by createdAt via pg_partman (weekly, 90-day retention).
- * Drizzle sees a regular table; PostgreSQL manages partitions transparently.
- *
- * Id is a a LSN-based string (e.g. "0-16B3748") for deterministic idempotent WAL listening.
- *
- * No FKs: partitioned tables don't support foreign key constraints,
- * and activities are append-only CDC logs that don't need referential integrity.
+ * Append-only CDC activity log partitioned weekly with 90-day retention.
+ * LSN-derived IDs make WAL replay idempotent. The partitioned table intentionally has no
+ * foreign keys; Drizzle accesses it as a regular table.
  */
 export const activitiesTable = snakeCase.table(
   'activities',

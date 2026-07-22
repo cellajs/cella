@@ -6,19 +6,9 @@ import { resolve } from 'node:path'
 export const scwConfigPathNone = (infraDir: string): string => resolve(infraDir, '.scw-config-none')
 
 /**
- * Resolve the Scaleway project id from the environment, reconciling the two
- * accepted variable names.
- *
- * `SCW_PROJECT_ID` is this repo's own `.env` convention (see
- * `backend/.env.example`); `SCW_DEFAULT_PROJECT_ID` is the name the Scaleway
- * SDK / Terraform provider / `scw` CLI read natively (and what CI and
- * `buildProviderEnv` inject). Either is accepted, but if both are set they MUST
- * agree; a mismatch almost always means a stale `SCW_DEFAULT_PROJECT_ID`
- * exported in the shell is silently shadowing the repo's `SCW_PROJECT_ID`, so we
- * fail loudly because choosing one would be ambiguous.
- *
- * Returns the single agreed value, or `undefined` when neither is set (callers
- * decide whether that is fatal).
+ * Resolves the repository and Scaleway-native project ID variables to one value.
+ * When both are present they must match, preventing an exported CLI value from silently
+ * shadowing repository configuration. Returns undefined when neither is set.
  */
 export function resolveProjectId(): string | undefined {
   const repo = process.env.SCW_PROJECT_ID?.trim() || undefined
@@ -50,20 +40,9 @@ export interface ProviderEnvInput {
 }
 
 /**
- * Build the child-process env for a Pulumi/Scaleway invocation.
- *
- * Leaves exactly one source of Scaleway provider credentials for each
- * invocation. Three consumers read differently-named variables: the Scaleway provider
- * (`SCW_*`), the S3-protocol Pulumi state backend (`AWS_*`, same credentials,
- * different contract), and Pulumi itself (`PULUMI_CONFIG_PASSPHRASE`). It also
- * applies the two guards that pin provider auth to *these* credentials by
- * neutralising any local Scaleway CLI profile: `SCW_CONFIG_PATH` points at a
- * non-existent file and `SCW_PROFILE` is emptied so a profile exported in the
- * operator's shell cannot pass through and shadow the supplied key.
- *
- * The current process env is inherited (`PATH`, `HOME`, … are required by the
- * child) and the credential vars are set last so they always win over anything
- * already present in the environment.
+ * Builds a child environment with explicit Scaleway, S3-state, and Pulumi credentials.
+ * It inherits process utilities but overrides credential variables and disables local
+ * Scaleway profiles so operator configuration cannot shadow the supplied identity.
  */
 export function buildProviderEnv(infraDir: string, input: ProviderEnvInput): NodeJS.ProcessEnv {
   const { accessKey, secretKey, projectId, passphrase, organizationId } = input

@@ -445,10 +445,8 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     }
   }
 
-  // Sort schemas by ownership tag (primary), module tag (secondary), then name
-  // for a readable, grouped display order. Raw OpenAPI order reflects route-traversal
-  // registration order, which appears random. Schemas missing a tag sort to the end
-  // of that level.
+  // Group schemas by ownership, module, and name for stable presentation across route registration.
+  // Untagged schemas sort last at their level.
   componentSchemas.sort((a, b) => {
     const ownershipA = a.tagsByKind?.ownership?.[0] ?? '';
     const ownershipB = b.tagsByKind?.ownership?.[0] ?? '';

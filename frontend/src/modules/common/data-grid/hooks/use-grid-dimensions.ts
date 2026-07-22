@@ -44,16 +44,9 @@ function getScrollParent(node: HTMLElement): HTMLElement | null {
 }
 
 /**
- * Auto-detects the nearest scrollable ancestor unless an explicit
- * scrollContainerRef is provided; falls back to window-level scroll.
- *
- * Column virtualization is absent, so the grid does not track its own
- * inline-size in JS (CSS grid sizes columns natively between breakpoints).
- * Only viewportHeight and scroll positions are tracked (row virtualization).
- *
- * Backed by `useSyncExternalStore` to avoid tearing under concurrent
- * rendering (mirrors upstream PR #3968). Updates are rAF-throttled;
- * ResizeObserver tracks horizontalScrollbarHeight.
+ * Tracks row-virtualization dimensions from an explicit or nearest scroll container.
+ * CSS owns column sizing. `useSyncExternalStore` prevents concurrent-render tearing,
+ * with animation-frame throttling and scrollbar observation.
  */
 export function useGridDimensions(
   scrollContainerRef?: RefObject<HTMLElement | null>,

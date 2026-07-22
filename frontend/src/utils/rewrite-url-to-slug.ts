@@ -1,18 +1,8 @@
 import { redirect } from '@tanstack/react-router';
 
 /**
- * Rewrite URL params to use available slugs.
- *
- * Call in beforeLoad after fetching entity data: if the user navigated by IDs but entities have
- * slugs, redirects (replace) to the slug-based URL without a re-render or extra fetch.
- *
- * @example
- * beforeLoad: async ({ params }) => {
- *   const workspace = await queryClient.ensureQueryData(workspaceQueryOptions(params.organizationSlug));
- *   const org = queryClient.getQueryData(organizationQueryKeys.detail.byId(workspace.organizationId));
- *   rewriteUrlToSlug(params, { organizationSlug: org?.slug, tenantId }, WorkspaceRoute.to);
- *   return { workspace };
- * }
+ * Replaces ID route parameters with available slugs during `beforeLoad`.
+ * Redirects without adding history or triggering another data fetch.
  */
 export const rewriteUrlToSlug = <T extends Record<string, string>>(
   params: T,

@@ -143,12 +143,8 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   })
   if (!cutover.ok) throw new Error(`Cutover failed for ${service}: ${cutover.aborted}`)
 
-  // Under singleVM the co-hosted lb-routed workers (e.g. yjs) ride this host
-  // VM in-process, but their LB backends are separate Scaleway objects nothing
-  // else reconciles (Pulumi sets serverIps at create, then ignoreChanges: the
-  // cutover task owns the live list). Drive each one to the promoted
-  // generation's IP with the same idempotent corrective call, or the worker's
-  // public route keeps pointing at a reaped generation forever.
+    // Repoint separate load-balancer backends for workers co-hosted on this single VM.
+    // Pulumi ignores their live server lists, so cutover must remove reaped-generation IPs.
   if (definition.primaryRollout && appConfig.singleVM) {
     for (const worker of coHostedServices(appConfig.services, appConfig.singleVM)) {
       if (!worker.lbRoute) continue

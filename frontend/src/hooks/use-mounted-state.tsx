@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-/**
- * Tracks mount stages, returning flags:
- * - `hasMounted`: mounted (ref-based, no re-render)
- * - `hasStarted`: true after 200ms
- * - `hasWaited`: true after 800ms
- */
+/** Track immediate mount plus the 200 ms `hasStarted` and 800 ms `hasWaited` stages. */
 export const useMountedState = () => {
   const mountedRef = useRef(false);
   const [stage, setStage] = useState<0 | 1 | 2>(0);

@@ -12,21 +12,8 @@ export const paginationSchema = <O, I>(schema: z.ZodType<O, I>) =>
   });
 
 /**
- * Factory to create a batch response schema for create/update/delete operations.
- * Provides a unified response format with optional data items and rejected items.
- *
- * - For creates/updates: pass item schema to get `data: T[]` with created/updated items
- * - For deletes: omit item schema to get `data: []` (empty array)
- *
- * @example
- * // For create operations - returns created items
- * const pagesResponseSchema = batchResponseSchema(pageSchema);
- * // Result: { data: Page[], rejectedIds: string[], rejectionReasons?: Record<string, string[]> }
- *
- * @example
- * // For delete operations - returns empty data
- * const deleteResponseSchema = batchResponseSchema();
- * // Result: { data: [], rejectedIds: string[], rejectionReasons?: Record<string, string[]> }
+ * Creates a uniform batch result with processed data and rejected identifiers.
+ * Passing an item schema produces `data: T[]`; omitting it requires an empty data array.
  */
 export const batchResponseSchema = <T extends z.ZodTypeAny>(itemSchema?: T) =>
   z.object({

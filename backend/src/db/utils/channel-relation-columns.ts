@@ -38,14 +38,9 @@ export type ChannelRelationColumns<E extends string> = EntityIdColumns<
 export type ActivityChannelColumns = EntityIdColumns<AncestorChannelType<ProductEntityType> & EntityType, NullableUuid>;
 
 /**
- * Generates context-entity id columns for a product entity based on the hierarchy config.
- * Ancestors (organization, and any intermediate context parents) become non-null columns;
- * except ancestors the hierarchy declares in `nullableAncestors` (variable-depth rows);
- * declared related contexts become nullable columns. Keeps product schemas fork-agnostic:
- * forks only adjust the hierarchy, not each table definition.
- *
- * Indexes and foreign keys still live in the table definition (they reference fork-specific
- * parent tables), but the columns and their inferred insert/select types come from here.
+ * Generates a product entity's ancestor and related-channel ID columns from hierarchy config.
+ * Declared nullable ancestors and related channels remain optional; table definitions retain
+ * fork-specific indexes and foreign keys.
  */
 export const channelRelationColumns = <E extends ProductEntityType>(entityType: E): ChannelRelationColumns<E> => {
   const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(entityType));

@@ -2,20 +2,9 @@ import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 
 /**
- * In-memory per-tenant concurrency lock for entity creation.
- *
- * Prevents concurrent insert requests for the same tenant from racing
- * past quota checks. When an insert is already in-flight for a given tenant,
- * subsequent requests receive a 409 Conflict without queuing.
- *
- * Scoped by `tenantId`: a normal user only works in one tenant at a time,
- * so this effectively serializes their create requests without being too
- * granular. The lock is held only for the duration of the request handler
- * and auto-releases on completion or error.
- *
- * Single-process only: with multiple backend instances the worst-case
- * overshoot is bounded to one batch per instance, which is acceptable
- * given quotas are soft business guardrails.
+ * Rejects concurrent creates for one tenant so they cannot race past quota checks.
+ * The request-scoped lock always releases on completion. It is process-local, bounding
+ * multi-instance quota overshoot to one batch per instance.
  */
 const inflightInserts = new Map<string, Promise<void>>();
 

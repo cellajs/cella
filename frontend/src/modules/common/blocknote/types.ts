@@ -54,24 +54,14 @@ export type IconType = (
 ) => React.ReactElement;
 
 /**
- * How a BlockNote file upload is stored and later resolved. The context picks one
- * cleanly; the read path never needs it (a slashed cloud key resolves via CDN, a
- * UUID attachment id via presigning):
- * - `public-no-attachment`: public bucket, no entity, block stores the key → CDN.
- * - `public-attachment`: public bucket, persists an attachment entity, block stores the key → CDN.
- * - `private-attachment`: private bucket, persists an attachment entity, block stores the id → presigned.
- *
- * There is deliberately no `private-no-attachment`: private media must be a real
- * attachment so permission can be scoped to it.
+ * Selects whether BlockNote stores a public bucket key or a private attachment ID.
+ * Attachment modes persist an entity; private media requires one for permission-scoped access.
  */
 export type BlockNoteMediaMode = 'public-no-attachment' | 'public-attachment' | 'private-attachment';
 
 /**
- * File-panel context. The `-attachment` modes require `tenantId` (for the create
- * mutation and, when private, for presigned reads) and an `onComplete` that
- * persists the parsed attachments with host linkage. `onComplete` receives the
- * already-parsed attachments (with their stable client ids) so the persisted row
- * keeps the same id the block references.
+ * Attachment modes require a tenant and completion callback for persistence and private reads.
+ * Parsed attachments retain the client IDs referenced by their blocks.
  */
 export type BaseUppyFilePanelProps = {
   organizationId: string;

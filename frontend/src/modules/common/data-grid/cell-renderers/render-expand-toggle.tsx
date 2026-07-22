@@ -14,12 +14,7 @@ export interface RenderExpandToggleProps {
   /** True when this row's parent is itself the last child of its grandparent. Determines
    *  whether the depth-1 trunk should keep going through deeper rows. */
   parentIsLastChild?: boolean;
-  /**
-   * Maximum allowed nesting depth (inclusive). When set, rows at `maxDepth - 1`
-   * switch to a "deepest" visual (thin connector lines, hollow bullet,
-   * offset onto a deeper track) so users can see the depth limit at a glance.
-   * Omit for unlimited / undecorated nesting.
-   */
+  /** Maximum nesting depth; its final level receives the thin, hollow depth-limit treatment. */
   maxDepth?: number;
   tabIndex?: number;
   /** Optional accessible label for the toggle. Falls back to "Expand"/"Collapse". */
@@ -62,14 +57,7 @@ interface ConnectorGeometry {
   rowHeight: number;
 }
 
-/**
- * Smooth elbow above the chevron: straight stem on the offset track, then a
- * cubic-Bézier S-curve that lands on the chevron's top edge (not its center).
- * Terminating at the chevron edge means the entire curve stays visible above
- * the button without being clipped behind it. Tangents are vertical at
- * both ends so the path connects seamlessly to the previous row's vertical
- * line and aligns with the chevron's vertical centerline.
- */
+/** Draw a vertical-tangent elbow from the previous row's track to the chevron's unclipped top edge. */
 function elbowAbovePath(xStart: number, xEnd: number, rowHeight: number): string {
   const yEnd = rowHeight / 2 - CHEVRON_HALF;
   const yStem = yEnd / 2; // stem from top to half-way to the chevron edge
@@ -130,20 +118,9 @@ function buildConnectorPaths(g: ConnectorGeometry): ConnectorPath[] {
 }
 
 /**
- * Focusable expand/collapse toggle for tree-style data grids.
- *
- * Visual language (calibrated for a tree with 2 or 3 levels; the consumer
- * sets the limit via `maxDepth`):
- * - Root rows (`depth = 0`): chevron only, no connector lines.
- * - Inner rows: 2px solid connector lines + filled bullet for leaves, all on
- *   the centered "depth-1" track (column center − 4px).
- * - Deepest rows (`depth = maxDepth - 1`): 1px thin connector lines + hollow
- *   bullet on a "depth-2" track (column center + 4px). When the depth-1
- *   ancestor still has siblings to come, a continuous solid trunk is also
- *   drawn at the depth-1 track so depth-1 siblings stay visually connected.
- *
- * Connector lines are rendered as SVG paths with cubic-Bézier corners so
- * elbows flow smoothly through the chevron without a visible "hinge".
+ * Renders the focusable tree-grid toggle and its depth-aware connectors.
+ * Root rows show only a chevron; deeper rows use solid or thin tracks and leaf bullets.
+ * Curved SVG paths keep connectors continuous through the toggle.
  */
 export function RenderExpandToggle({
   expanded,
@@ -191,10 +168,8 @@ export function RenderExpandToggle({
   return (
     <span className="relative flex h-full w-full items-center justify-center">
       {paths.length > 0 && (
-        // No fixed width/height: `preserveAspectRatio="none"` lets the SVG stretch to fill the
-        // actual rendered cell (via `inset-0` + `h-full w-full`). On mobile the grid renders rows
-        // ~1.2x taller and the rem-scaled UI grows the column, so the connector follows along
-        // with the mobile root font size. The viewBox stays in desktop user-units.
+        // Stretch connectors to the rendered cell so mobile row and rem scaling remain aligned.
+        // The viewBox retains stable desktop drawing coordinates.
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 h-full w-full text-input"

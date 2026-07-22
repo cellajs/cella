@@ -1,30 +1,10 @@
 import { defineRuntimeSecrets } from '../lib/runtime-secrets'
 
 /**
- * The fork-owned runtime-secrets registry: the single place a fork maps an
- * application secret to the services that receive it, and declares whether it is
- * required or optional. Mirrors `config/services.config.ts`: data only, while
- * `runtime-secrets.ts` owns the machinery (Secret Manager provisioning, the
- * per-VM manifest, and the derived lookups).
- *
- * Each VM is hydrated from a PER-SERVICE manifest, so a secret is only ever
- * written to `/opt/app/.env.runtime` on a VM whose service appears in its
- * `services` list, e.g. the cdc VM never receives `COOKIE_SECRET`. Narrowing a
- * `services` array is therefore the lever for "only share what the VM needs".
- *
- * Field meanings (hover any field for the `RuntimeSecretConfig` docs):
- *  - `secretName`: Scaleway Secret Manager container name (kebab-case).
- *  - `envVar`: environment variable the container consumes it as.
- *  - `required`: whether deploy/health gating treats its absence as fatal.
- *  - `valueSource`: `'pulumi'` (cella generates/derives + writes a version) or
- *                    `'operator'` (a human supplies the value out-of-band).
- *  - `generation`: `'random'` (Pulumi RandomPassword) or `'manual'`.
- *  - `services`: which deployable services receive it.
- *
- * Forks pin this file (see `overrides.pinned` in `cella.config.ts`) to customize the
- * mapping without conflicting on `pnpm cella` upstream syncs. A typo (unknown
- * service, duplicate envVar/secretName, empty `services`) fails fast at load
- * time in `runtime-secrets.ts`, preventing a missing runtime variable.
+ * Fork-owned mapping from runtime secrets to their consuming services.
+ * Per-service manifests restrict each VM to the values it needs; `runtime-secrets.ts`
+ * provisions containers and validates the registry. The file is pinned so forks can
+ * customize distribution without upstream sync conflicts.
  */
 export const runtimeSecretsConfig = defineRuntimeSecrets({
   databaseUrlRuntime: {
@@ -181,10 +161,8 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     generation: 'manual',
     services: ['backend', 'mcp'],
   },
-  // The S3 pair is minted as one scoped Object-Storage key (see managed-keys.config.ts,
-  // `s3`) or set by hand; `operator` keeps the (empty) containers Pulumi-owned and
-  // manageable via "Manage runtime secrets". Scoped to backend: attachment
-  // presigning/upload is a backend-API concern (modules/attachment, modules/me).
+  // The S3 pair shares one scoped key and keeps its empty containers Pulumi-owned.
+  // It is backend-only because attachment signing and upload are API concerns.
   s3AccessKeyId: {
     secretName: 's3-access-key-id',
     description: 'Scaleway Object Storage access key id (attachment upload + presigned URLs)',

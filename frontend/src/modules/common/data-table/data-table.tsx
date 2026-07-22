@@ -20,12 +20,7 @@ import { cn } from '~/utils/cn';
 /** Maximum number of rows that can be selected at once */
 const MAX_SELECTABLE_ROWS = 1000;
 
-/**
- * Engine props DataTable forwards to <DataGrid> unchanged. Sourced from
- * DataGridProps so their types/docs live in one place and new pure-passthrough
- * props only need adding to this key list; they then flow through `...gridProps`
- * with no extra plumbing.
- */
+/** DataGrid props forwarded unchanged through `gridProps`, retaining their source types and docs. */
 type ForwardedGridProps<TData> = Pick<
   DataGridProps<TData>,
   | 'onCellClick'
@@ -80,12 +75,8 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
 }
 
 /**
- * Query-backed table, the boundary between a data query and the grid engine.
- * Owns async/presentation state (loading skeleton, error panel, empty state,
- * infinite scroll, the max-selection cap, column-width reset) and forwards
- * everything else to <DataGrid> (the engine: virtualization, selection, editing,
- * keyboard nav, column layout). Pure engine props flow through untouched via
- * `...gridProps`; see {@link ForwardedGridProps}.
+ * Bridge query presentation state and infinite scrolling to the DataGrid engine.
+ * Pure engine props pass through unchanged via {@link ForwardedGridProps}.
  */
 export const DataTable = <TData,>({
   // DataTable-owned / transformed props, destructured so they don't leak into `...gridProps`.
@@ -124,12 +115,8 @@ export const DataTable = <TData,>({
     setColumnWidths(new Map());
   }, [resetWidthsKey]);
 
-  // Only use DataGrid's near-end signal when virtualization is enabled;
-  // otherwise delegate to InfiniteLoader's intersection observer (without
-  // virtualization all rows render, so near-end would always be true).
-  // Level-triggered: the grid reports near-end as state and this effect
-  // fetches whenever the query can accept it, so demand raised during a
-  // background refetch is served when it settles.
+  // Virtualized tables use the grid's level-triggered near-end state; fully rendered tables use
+  // InfiniteLoader observation. Deferred demand runs once the query can accept it.
   const [nearEnd, setNearEnd] = useState(false);
   useFetchMoreOnDemand({
     demand: !!enableVirtualization && nearEnd,

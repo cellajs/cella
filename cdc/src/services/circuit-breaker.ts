@@ -21,17 +21,9 @@ const FAILURE_THRESHOLD = 3;
 const COOLDOWN_MS = 60_000;
 
 /**
- * Per-table circuit breaker for CDC event processing.
- *
- * Prevents a single table's persistent failures from blocking the entire
- * pipeline. When a table hits consecutive failure threshold, its circuit
- * opens: events are skipped (LSN acked, logged) until the cooldown expires
- * and a test event succeeds.
- *
- * States:
- *   CLOSED    → normal processing
- *   OPEN      → skip events, wait for cooldown
- *   HALF_OPEN → test one event; success → CLOSED, failure → OPEN
+ * Isolates persistent CDC failures by table so one source cannot block the pipeline.
+ * Open circuits acknowledge and log skipped events until cooldown; half-open tests one event
+ * before closing or reopening.
  */
 class CircuitBreaker {
   private circuits = new Map<string, CircuitEntry>();

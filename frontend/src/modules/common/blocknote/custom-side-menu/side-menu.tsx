@@ -35,10 +35,8 @@ export const CustomSideMenu = ({ editor, allowedTypes, headingLevels }: CustomBl
   );
 };
 
-// Custom drag handle separates drag from menu-open.
-// Mismatch: Base UI's Menu.Trigger opens on mousedown, Radix on click.
-// With Base UI, dragging fires mousedown which incorrectly opens the menu.
-// We use controlled menu state toggled only by onClick to match Radix behavior.
+// Keep drag mousedown separate from Base UI's menu trigger.
+// Controlled click-only state prevents dragging from opening the menu.
 function DragHandle({
   sideMenu,
   block,

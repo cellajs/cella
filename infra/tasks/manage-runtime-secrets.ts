@@ -83,11 +83,8 @@ async function handleList(ctx: MenuContext): Promise<void> {
   ctx.log(`\n${pc.bold('Runtime secrets')} ${pc.dim(ctx.path)}`)
   for (const secret of ctx.secrets) {
     const current = byName.get(secret.secretName)
-    // A secret *object* can exist with zero versions (created but never given a
-    // value). Only a versioned secret actually has content the services can read,
-    // so gate "present" on version_count. Otherwise an empty container reports a
-    // false positive. The in-between state (object, no version) is called out
-    // explicitly so the operator knows to run "Set or update".
+      // Treat only versioned secrets as present; an empty container has no readable value.
+      // Report that intermediate state so the operator knows to set it.
     const status = !current
       ? `${tildeMark} missing`
       : (current.version_count ?? 0) > 0
@@ -145,10 +142,8 @@ async function handleDelete(ctx: MenuContext): Promise<void> {
 async function handleSet(ctx: MenuContext): Promise<void> {
   const secret = await selectSecret(ctx, 'Select a runtime secret to set (Esc to go back)', ctx.secrets)
   if (!secret) return
-  // Pulumi owns container creation (resources/secrets.ts). Refuse to create one
-  // out-of-band here. That would make the next `pulumi up` fail with "secret
-  // already exists". The operator must deploy first so the (empty) container
-  // exists, then set its value here.
+    // Refuse out-of-band container creation because Pulumi owns it and would hit a duplicate.
+    // Operators must deploy the empty container before setting its value.
   const existingSecret = await ctx.client.getSecretByName(secret.secretName, ctx.path)
   if (!existingSecret) {
     ctx.log(
@@ -235,11 +230,8 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     log: options.log ?? defaultLog,
   }
 
-  // Explain the two distinct "update" surfaces up front: Secret Manager writes
-  // happen immediately as a new immutable VERSION, but running services do not
-  // hot-reload runtime secrets. They only observe the latest value the next time
-  // the affected VM boots (for example, on a deploy or manual restart). The
-  // trailing newline leaves a blank line before the menu.
+  // Secret Manager writes an immutable version immediately, but services load it only at boot.
+  // The trailing newline separates this warning from the menu.
   ctx.log(
     `${pc.dim('Changes are written to Secret Manager immediately as a new version. Scaleway may keep the parent secret')}\n` +
       `${pc.dim('container metadata looking unchanged; check the secret\'s Versions list for the new revision. Running services pick')}\n` +

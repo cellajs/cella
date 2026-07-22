@@ -10,10 +10,7 @@ import { mergeDeep } from './utils';
 type Config = Omit<typeof _default, 's3'> & { s3: S3Config };
 const configModes = { development, tunnel, staging, production, test } satisfies Record<Config['mode'], unknown>;
 
-// APP_MODE allows selecting the config independently of NODE_ENV.
-// This lets containers run with NODE_ENV=production (to avoid dev-only
-// behaviour like pino-pretty worker threads) while still loading the
-// development config for correct slug/naming.
+  // APP_MODE selects config independently so production-mode containers can use development naming.
 const rawMode = process.env.APP_MODE || process.env.NODE_ENV || 'development';
 // Fail loud on an unknown mode so an undefined `configModes` entry cannot silently boot the
 // default configuration for the wrong environment.
@@ -50,10 +47,8 @@ merged.services = {
   mcp: { ...(merged.services.mcp ?? {}), publicUrl: merged.mcpUrl },
 };
 
-// Validate slug is a true, URL-safe slug. It feeds resource names (S3 buckets,
-// Scaleway Container Registry namespace, etc). Scaleway registry namespaces
-// require >= 4 chars with no hyphens, so we enforce a 4-char minimum on the
-// hyphen-stripped form. Forks must provide a valid slug; validation never rewrites it.
+  // Require a URL-safe resource slug with at least four non-hyphen characters for Scaleway.
+  // Forks must provide a valid value; validation never rewrites it.
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 if (!slugPattern.test(merged.slug)) {
   throw new Error(`Invalid config slug "${merged.slug}": must be lowercase alphanumeric, hyphen-separated (e.g. "my-app").`);
@@ -62,11 +57,8 @@ if (merged.slug.replace(/-/g, '').length < 4) {
   throw new Error(`Invalid config slug "${merged.slug}": must be at least 4 characters (excluding hyphens) for Scaleway registry naming.`);
 }
 
-// Derive S3 bucket names and CDN URLs from the slug (which already encodes the
-// environment, e.g. "cella-development" -> cella-development-public/-private).
-// The bucket name also doubles as the Transloadit credential name. Set explicit
-// publicBucket/privateBucket in a config to override (e.g. to share dev buckets
-// across multiple cella apps).
+  // Derive environment-specific bucket names, CDN URLs, and Transloadit credentials from the slug.
+  // Explicit bucket config can share storage across applications.
 const s3 = merged.s3 as S3Config;
 const bucketPrefix = merged.slug;
 s3.publicBucket ??= `${bucketPrefix}-public`;

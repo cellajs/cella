@@ -87,11 +87,8 @@ describe('EntityHierarchyBuilder', () => {
   });
 
   describe('hierarchy queries (raak-like model)', () => {
-    // Matches raak's entity structure:
-    // - organization: root context
-    // - workspace: context under organization (parallel to project)
-    // - project: context under organization
-    // - task, label, attachment: products scoped to project (inherit org permissions)
+// Model organization as root; workspace and project as its contexts.
+// Task, label, and attachment are project products inheriting organization permissions.
     const hierarchy = createEntityHierarchy(roles)
       .user()
       .channel('organization', { parent: null, roles: [roles.admin, roles.member] })

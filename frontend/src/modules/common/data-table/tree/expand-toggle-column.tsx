@@ -38,10 +38,8 @@ const def: ColumnOrColumnGroup<AnyTreeRow> = {
   width: 36,
   minWidth: 36,
   maxWidth: 36,
-  // When the row has a toggle button, suppress the default cell focus outline and
-  // re-render the focus ring on the button itself for a tighter visual. Leaf rows
-  // have no button to receive the ring, so they keep the default cell outline:
-  // otherwise keyboard focus on a leaf would be invisible (WCAG 2.4.7).
+  // Move the focus ring to toggle buttons, while leaf rows retain the cell outline so keyboard
+  // focus remains visible.
   cellClass: (row) =>
     row._hasChildren
       ? 'flex items-center justify-center !p-0 aria-selected:outline-none aria-selected:[&_[data-slot=expand-toggle]]:ring-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-ring aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-background'

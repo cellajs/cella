@@ -8,11 +8,8 @@ import { revalidateConnectivity } from '~/query/offline/connectivity';
 const showDelay = 2000;
 
 /**
- * Low-pass filter over `onlineManager` (the connectivity source of truth, driven by the /health probe).
- * onlineManager reacts instantly, which suits query pausing but makes transient UI blips visible and
- * flash a toast. So: surface offline only after `showDelay` of sustained disconnection, clear immediately
- * on reconnect, and on tab resume re-verify with a real request (mobile's 'online' event is laggy, so the
- * pre-freeze offline state may be stale).
+ * Delay offline UI until disconnection persists, clear immediately on reconnect, and probe on resume.
+ * Query pausing still follows `onlineManager` without delay.
  */
 export const useUiOffline = () => {
   const isOnline = useOnlineManager();

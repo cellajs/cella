@@ -26,15 +26,9 @@ export type RepairResult =
   | { action: 'repaired'; state: ControlState }
 
 /**
- * Break-glass repair for the S3 control object. Every read validates the
- * document strictly (`parseControlState`), so a malformed pointer fails the deploy.
- * This task unbricks such a stack by dropping an `active` pointer without a valid
- * `id` and stripping an obsolete `previous` pointer.
- *
- * Pure transform: given the raw control document text (or undefined when the
- * object does not exist), produce the outcome. Throws on an unrecognised
- * schemaVersion so a corrupt or future document fails loudly and is never
- * silently overwritten.
+ * Repairs malformed control state by removing invalid active and obsolete previous pointers.
+ * Unknown schema versions fail without overwriting potentially future data; absent input remains
+ * absent.
  */
 export function repairControlDocument(raw: string | undefined): RepairResult {
   if (raw === undefined || raw.trim() === '') return { action: 'absent' }

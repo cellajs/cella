@@ -17,7 +17,7 @@ export {
 export type { AncestorSource, ResolvedAncestor } from './resolve-row-channel';
 export { possibleHomeChannels, resolveDeepestAncestorId, resolveNonNullAncestors } from './resolve-row-channel';
 
-// Materialized id-path rule (sequence sync: routing, move-out, subtree addressing)
+// Stored ID-path rule for sequence routing, move-out, and subtree addressing.
 export {
   computeAncestorPath,
   computeChannelPath,

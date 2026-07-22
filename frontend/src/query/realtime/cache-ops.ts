@@ -65,13 +65,8 @@ function stripYjsOwnedFields(entityType: string, entity: ItemData, detailKey: Qu
 }
 
 /**
- * Patch only the stx metadata on a cached entity (detail + list caches).
- * Used by echo-prevented SSE notifications to keep HLC timestamp metadata fresh
- * without overwriting optimistic field values or triggering refetches.
- *
- * Mutates stx IN-PLACE to avoid creating new object references, which would
- * trigger React Query observer notifications and expensive board re-renders.
- * stx is conflict-resolution metadata never rendered in the UI.
+ * Patch only cached STX metadata for echo-prevented stream events, preserving optimistic fields.
+ * Mutate unrendered metadata in place to avoid React Query observer notifications.
  */
 export function patchEntityStxInCache(
   entityType: ProductEntityType,
@@ -182,12 +177,8 @@ export function removeEntityFromListCache(entityId: string, keys: EntityQueryKey
 }
 
 /**
- * Apply one server-truth row to detail and list caches through the shared applicator for both
- * realtime paths (seq-range fetches and seq-less single fetches). Tombstones remove; rows
- * already cached update in place; unknown rows insert only into their canonical home list
- * (the row's effective home channel; see matchesCanonicalHome).
- * Returns true when the row was new to every scanned list cache, so callers can invalidate
- * filtered lists with object key segments, whose server-side filters cannot be replicated, once per flush.
+ * Apply server truth across detail and list caches; tombstones remove and new rows enter only home lists.
+ * Return whether every list lacked the row so callers can invalidate opaque filtered lists once.
  */
 function applyServerEntity(
   entityType: string,
@@ -241,10 +232,8 @@ function applyServerEntity(
 }
 
 /**
- * Fetch a single entity by ID and apply it to detail + list caches. Resolves the queryFn from
- * query defaults (registered by entity modules), so no entity-specific imports here; falls back
- * to list invalidation if none are registered. `organizationId`/`tenantId` from the SSE
- * notification are passed via meta so entity queryFns can resolve path params.
+ * Fetch one entity through registered query defaults and apply it to caches, or invalidate lists.
+ * Stream organization and tenant IDs pass through metadata for path resolution.
  */
 export async function fetchEntityAndUpdateList(
   entityId: string,
@@ -278,17 +267,9 @@ export async function fetchEntityAndUpdateList(
 }
 
 /**
- * Fetch changed entities by seq range (via the registered deltaFetch: list endpoint + `seqCursor`)
- * and patch them into list + detail caches. Returns true only when the FULL range was ingested (so
- * callers may advance their sync cursor); false when unavailable, failed, or the window overflows
- * one response. Callers then fall back to full list invalidation and react-query owns recovery.
- *
- * seqCursor is the bounded inclusive range "51,150"; `channelId` optionally narrows the
- * fetch to one channel (forwarded to the registered deltaFetch as its ancestor filter).
- *
- * Result statuses drive the caller's recovery policy: 'ok' (patched; `items` are the fetched
- * rows, e.g. for unseen-count accounting), 'overflow'/'unsupported' (fall back to list
- * invalidation now), 'error' (transient and safe to retry).
+ * Describes a bounded sequence fetch applied to list and detail caches.
+ * Only `ok` permits cursor advancement; overflow/unsupported require list invalidation, while
+ * transient errors may retry. `reachedSeq` exposes short deliveries.
  */
 export interface RangeFetchResult {
   status: 'ok' | 'overflow' | 'unsupported' | 'error';
@@ -322,10 +303,8 @@ export async function fetchRangeAndPatch(
   try {
     const { items } = await deltaFetch(organizationId, tenantId, seqCursor, channelId);
 
-    // Overflow guard: registrars request SYNC_CHUNK_SIZE, so a full response means the seq
-    // window may exceed what one fetch returns. Patching a truncated window would silently
-    // drop the remainder (the backend orders seq reads by seq, but the caller advances its
-    // cursor to the window end), treat as "delta too large" and let the caller invalidate.
+    // A full chunk may truncate the range. Report overflow so the caller invalidates without
+    // advancing past unseen rows.
     if (items.length >= SYNC_CHUNK_SIZE) {
       console.debug(`[CacheOps] Delta fetch: ${entityType} window overflow (seqCursor=${seqCursor}) → invalidation`);
       return { status: 'overflow', items: [], reachedSeq: 0 };

@@ -1,14 +1,9 @@
 import { appConfig } from 'shared';
 
 /**
- * Validate a post-auth redirect target and return a normalized, same-origin
- * relative path. Returns `false` for anything that is not a safe internal path.
- *
- * Safe means a single-slash absolute path on the frontend origin. Scheme-relative
- * targets (`//host`), absolute URLs, backslash authority tricks (`/\host`),
- * encoded bypasses (`/%2Fhost`), control characters, and backend-only routes
- * (`/api/...`) are all rejected. Only the normalized relative path is returned,
- * so callers never replay the original untrusted string.
+ * Returns a normalized same-origin redirect path or false.
+ * It rejects absolute/scheme-relative URLs, authority tricks, encoded bypasses, control
+ * characters, and backend routes so callers never replay untrusted input.
  */
 export function isValidRedirectPath(path: unknown): string | false {
   if (typeof path !== 'string' || path.length === 0) return false;

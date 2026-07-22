@@ -30,16 +30,7 @@ function handleActivityEvent(event: ActivityEvent): void {
 }
 
 /**
- * Register cache hook with ActivityBus.
- * Call this once during server startup.
- *
- * @example
- * ```typescript
- * import { registerCacheInvalidation } from '#/middlewares/product-cache/cache-invalidation';
- *
- * // In server startup
- * registerCacheInvalidation();
- * ```
+ * Registers the product-cache invalidation hook once during server startup.
  */
 export function registerCacheInvalidation(): void {
   if (isRegistered) {

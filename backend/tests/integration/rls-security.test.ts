@@ -247,12 +247,8 @@ async function ensureRlsRoles() {
     await adminDb.execute(sql.raw(`GRANT SELECT, INSERT, UPDATE, DELETE ON ${table} TO runtime_role`));
   }
 
-  // Non-RLS tables runtime_role must access (write isolation enforced by guards at the app layer).
-  // Channel entities are all non-RLS and land in production's fullCrudTables, so runtime_role gets
-  // full CRUD on each; derived from config so a fork's deeper contexts (e.g. project, needed by a
-  // product's publicAt-inheritance trigger that reads the parent as the invoking runtime_role) are
-  // covered without listing them here. seen_by is non-RLS too (production classifies it in
-  // fullCrudTables), read in the NOT EXISTS of the unseen-count query, so it needs a grant as well.
+  // Grant runtime access to configured non-RLS channel tables and seen tracking.
+  // Config derivation covers deeper fork contexts used by triggers; application guards enforce writes.
   const channelTableNames = appConfig.channelEntityTypes
     .map((type) => entityTables[type as keyof typeof entityTables])
     .filter(Boolean)
@@ -699,13 +695,8 @@ const rlsSuiteReady = await (async () => {
   // ---- Unseen counts: entity-table read must run with tenant context (getUnseenCounts) ----
 
   describe('Unseen counts (seen-tracking RLS regression)', () => {
-    // getUnseenCounts delegates to findUnseenCountsByUser, which counts entity-table rows the user
-    // has not seen. Entity tables have FORCE RLS, so this MUST run inside a tenant context
-    // (tenantRead sets app.tenant_id); a context-less baseDb read silently returns zero and the
-    // unseen badge breaks. These lock that behaviour in, exercised on the first seen-tracked
-    // product type that has a fixture (base Cella: attachment; a fork may track e.g. task).
-    // The fixture's representative row is the only in-window row of that type in its home
-    // context and User A has no seen_by rows initially.
+    // Unseen entity reads require tenant context because FORCE RLS makes base reads return zero.
+    // Exercise the first tracked product fixture, whose representative row starts unseen.
     type UnseenRow = { channelId: string; productType: string; unseenCount: number };
     const trackedProduct = iterableRlsProducts.find(([type]) =>
       (trackedProductTypes as readonly string[]).includes(type),
@@ -953,12 +944,8 @@ const rlsSuiteReady = await (async () => {
     });
   });
 
-  // ---- CDC seq stamping under FORCE RLS ----
-  // Regression test: the CDC worker runs as admin_role (no app.tenant_id set)
-  // and must be able to UPDATE seq on product entity rows under FORCE RLS.
-  // Without BYPASSRLS on the connecting role, the tenant SELECT policy hides
-  // every row and the UPDATE silently affects 0 rows, counters then advance
-  // while row.seq stays at 0, breaking the sync engine.
+  // CDC uses `admin_role` without tenant context and must bypass FORCE RLS for sequence stamps.
+  // Otherwise counters advance while hidden product rows remain at sequence zero.
   describe('CDC seq stamping (admin_role under FORCE RLS)', () => {
     let adminRoleDb: NodePgDatabase;
 

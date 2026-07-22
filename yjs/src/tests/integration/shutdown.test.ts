@@ -78,10 +78,7 @@ describe('4.2 Graceful shutdown', () => {
 
     await shutdownServer();
 
-    // Attempting to connect should fail: the socket must error out and never
-    // reach 'open'. The exact error message is environment-dependent (e.g. the
-    // CI runner may surface an empty message when the TCP connect aborts during
-    // the handshake), so assert only that the connection fails.
+    // Connection errors vary by environment, so assert failure without matching the message.
     const result = await new Promise<{ opened: boolean; error?: Error }>((resolve) => {
       const ws = new WsWebSocket(`ws://localhost:${port}`);
       ws.on('open', () => {

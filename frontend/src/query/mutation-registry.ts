@@ -6,15 +6,7 @@ type MutationDefaultsRegistrar = (queryClient: QueryClient) => void;
 const registrars: MutationDefaultsRegistrar[] = [];
 let storedClient: QueryClient | null = null;
 
-/**
- * Register a mutation-defaults registrar. Applied immediately if the queryClient is already
- * initialized, otherwise buffered until initMutationDefaults() runs.
- *
- * @example
- * ```ts
- * addMutationRegistrar((qc) => qc.setMutationDefaults(keys.create, { mutationFn: ... }));
- * ```
- */
+/** Register mutation defaults immediately after query initialization or buffer them until then. */
 export function addMutationRegistrar(registrar: MutationDefaultsRegistrar): void {
   if (storedClient) {
     registrar(storedClient);

@@ -16,24 +16,10 @@ export interface CdcBatchRow {
 }
 
 /**
- * Outbound activity + row-data message the CDC worker sends to the API server.
- * This is the producing end of the wire contract; the backend independently validates
- * the same shape with `cdcMessageSchema`.
- * Keep both in sync: a field added here needs a matching field there, or the backend
- * will reject the message at runtime.
- *
- * `batchRows` carries per-row permission fields (context ids, path, createdBy, publicAt)
- * so mixed-visibility batches dispatch per subscriber per row. The first row alone cannot
- * represent visibility for the entire batch.
- *
- * Seq values are org-sequence values (shared across product entity types); a batch group's
- * `seq..batchUntilSeq` range is NOT guaranteed contiguous for its own rows: `count`
- * carries the actual row count, and per-row seqs ride `batchRows`.
- *
- * `movedFrom` (single) / `batchRows[].movedFrom` carry the OLD row's permission subset
- * when a row's materialized path changed, so dispatch can deliver a move-out to
- * subscribers who could read the old location but not the new one.
- *
+ * CDC-to-backend wire payload mirrored by `cdcMessageSchema`.
+ * Batch rows carry individual permission data and sequence values because group ranges need
+ * not be contiguous and visibility may differ. `movedFrom` carries the prior permission
+ * projection so dispatch can notify subscribers that lost access after a move.
  * @see backend/src/lib/cdc-websocket.ts
  */
 export interface CdcOutboundMessage {
@@ -45,16 +31,10 @@ export interface CdcOutboundMessage {
 }
 
 /**
- * Generate a deterministic activity ID from LSN for idempotency.
- * Same LSN will always produce the same ID, preventing duplicates on replay.
- *
- * A Postgres LSN is a 64-bit value printed as two unpadded 32-bit hex segments
- * (e.g. "0/16B3748"). We zero-pad each segment to 8 hex digits so the resulting id
- * is fixed-width (17 chars) and sorts lexicographically in true commit order. This
- * lets cursor scans use plain `id > cursor` string comparison without numeric parsing.
- *
- * @param lsn - Log Sequence Number from PostgreSQL WAL (e.g., "0/16B3748")
- * @returns Zero-padded, dash-joined LSN (e.g., "00000000-016B3748")
+ * Converts an LSN to a deterministic fixed-width activity ID.
+ * Padding preserves commit order under lexical cursor comparisons and makes replay idempotent.
+ * @param lsn PostgreSQL WAL position.
+ * @returns Zero-padded, dash-joined LSN.
  */
 export function generateActivityId(lsn: string): string {
   const [hi, lo] = lsn.split('/');
@@ -104,10 +84,8 @@ export interface BatchEvent {
 }
 
 /**
- * The audience-grouping key of a batch event: the row's materialized path when present
- * (product rows), else the deepest-ancestor channel key, else the org. One message per
- * (path, entityType) group keeps notifications one-audience and lets the client route
- * by path prefix. Resource events (no entityType) and non-product entities group by org.
+ * Group batch audiences by stored product path, deepest channel, or organization.
+ * One path-and-type group lets clients route by prefix; resources group by organization.
  */
 function batchPathKey({ activity, rowData }: BatchEvent): string {
   if (activity.entityType && isProductEntity(activity.entityType)) {

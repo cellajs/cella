@@ -6,12 +6,8 @@ import { deployedServices, coHostedServices, type ServiceDefinition } from '../l
 import { infra } from '../pulumi-context'
 import { controlState } from './control'
 
-// Services that get their own dedicated VM. Under `appConfig.singleVM` the
-// enabled `coHosted` workers (cdc/yjs/ai) are folded into the backend process
-// and do NOT get their own VM (see `deployedServices`); the load balancer still
-// routes to them via the host VM (see `serviceGenerationIps`). Each remaining
-// service runs on its own dedicated VM (the multi-fork shared-workers placement
-// is guarded below).
+// Give each service a VM except workers co-hosted on the backend in single-VM mode.
+// Load-balanced co-hosts still route through the host VM; shared-worker placement is guarded below.
 export const enabled = deployedServices(appConfig.services, appConfig.singleVM).map((svc) => {
   const placement = svc.placement ?? 'dedicated-vm'
   if (placement !== 'dedicated-vm') {
@@ -36,19 +32,11 @@ export function secretConsumersFor(svc: ServiceDefinition): RuntimeSecretConsume
   return [svc.slug as RuntimeSecretConsumer]
 }
 
-/** The replacement strategy a service's VM actually uses. Under singleVM a host
- *  co-hosting an `exclusive` worker (cdc holds the single replication slot) must
- *  itself cut over exclusively: two overlapping host generations would double-
- *  consume the slot.
- *
- *  Intentional asymmetry with the rollout tasks: deploy-service still runs the
- *  LB-overlap reconciler for the host (its registry strategy) even when the
- *  program provisions it exclusively here. That composes correctly because
- *  the reconciler is level-triggered. The old generation is already replaced
- *  by `pulumi up`, so the expand phase is naturally empty and the reconciler
- *  simply repairs the LB onto the replacement generation and health-gates it.
- *  The trade-off is inherent to singleVM+cdc: the host cutover has a bounded
- *  bounded downtime window with no blue-green overlap. */
+/**
+ * Resolves the VM replacement strategy. A single-VM host containing an exclusive worker
+ * must also cut over exclusively to avoid concurrent replication-slot consumers.
+ * The level-triggered load-balancer reconciler then repairs traffic onto the replacement.
+ */
 export function effectiveStrategy(svc: ServiceDefinition): ServiceDefinition['replacementStrategy'] {
   if (appConfig.singleVM && svc.slug === hostSlug && coHosted.some((s) => s.replacementStrategy === 'exclusive')) {
     return 'exclusive'
@@ -97,13 +85,9 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
 }
 
 /**
- * Generations a service provisions: the live one (`active`, else the pending
- * intent on first deploy) and the pending generation being rolled in. This
- * derives the content-addressed id for a pending SHA (the genId authority).
- * Deduplicated by id. When a pending SHA hashes to the active id (a same-config
- * redeploy) it collapses to a single VM. Index 0 is the live binding target.
- * The old generation is reaped once the new one is healthy, so no powered-off
- * rollback VM lingers; rollback is a revert commit + redeploy.
+ * Returns the live and pending content-addressed generations, deduplicated by ID.
+ * The first entry is the binding target; equal active/pending IDs collapse to one VM.
+ * Old generations are reaped after promotion, so rollback uses a revert and redeploy.
  */
 export function activeGenerations(svc: ServiceDefinition): Generation[] {
   const entry = controlState.rollout[svc.slug]
@@ -120,11 +104,8 @@ export function activeGenerations(svc: ServiceDefinition): Generation[] {
     }
   }
 
-  // Exclusive services (cdc) hold a single resource the platform permits one
-  // consumer of (the replication slot), so there is no overlap: provision
-  // ONLY the live generation (the pending intent, else active), which replaces
-  // the old VM in place. Under singleVM the host inherits this when it co-hosts
-  // an exclusive worker (it now holds the slot in-process).
+// Provision only the selected generation for exclusive services such as CDC.
+// Single-VM hosts inherit exclusivity when they own the replication slot in-process.
   if (effectiveStrategy(svc) === 'exclusive') {
     add(pending ?? active)
     if (generations.length === 0) add({ id: deriveGenId('latest', fingerprint), sha: 'latest' })

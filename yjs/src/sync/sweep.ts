@@ -4,14 +4,9 @@ import { log } from '../lib/pino';
 import { postMaterialize, stateToBlocksJson } from './materialize';
 
 /**
- * Startup sweep: recover sessions orphaned by a relay crash between last-disconnect
- * and cleanup. Rows with `lastEditedBy` carried edits, so convert their Y.Doc state
- * to blocks and persist it before deleting. Rows without never diverged from their seed
- * (saveState only runs on updates), so they are deleted directly.
- *
- * Retry-class failures leave the row for the next boot or a later session on that
- * entity; concurrent durable writes from different relay instances converge via
- * server-side HLC last-write-wins.
+ * Recovers stale relay sessions on startup, persisting edited Y.Doc state before deletion.
+ * Unedited rows delete directly; retryable failures remain for a later boot or session.
+ * Concurrent durable writes converge through server-side HLC resolution.
  */
 export async function runStartupSweep(): Promise<void> {
   let stale: Awaited<ReturnType<typeof listStaleDocs>>;

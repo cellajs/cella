@@ -18,17 +18,9 @@ for (const { embeddedProduct, hostProduct } of appConfig.productEmbeddings) {
 const { transactionTimeoutMs } = RESOURCE_LIMITS.buffers;
 
 /**
- * Transaction-aware buffer for CDC WAL events.
- *
- * Uses streaming cascade suppression: as DELETE events arrive, channel entity
- * IDs (organization, project, workspace) are tracked in a Set. Child deletes
- * referencing a tracked context ID are dropped inline, never buffered.
- *
- * This keeps memory bounded to surviving events only (channel entity deletes +
- * non-delete mutations), regardless of cascade size. A 100k-task org delete
- * buffers about 8 events while avoiding roughly 116k individual events.
- *
- * Single-event transactions (the common case) are passed through with no overhead.
+ * Buffers transaction-aware CDC events while suppressing cascaded deletes as they arrive.
+ * Tracking deleted channel IDs bounds memory to surviving events regardless of cascade size;
+ * single-event transactions pass through directly.
  */
 export class TransactionBuffer {
   private activeXid: number | null = null;
@@ -116,10 +108,8 @@ export class TransactionBuffer {
     this.deletedChannelIds.clear();
     this.suppressedCount = 0;
 
-    // Second pass: catch child deletes that arrived before their parent channel entity
-    // delete. Most children are dropped inline in onEvent(), but WAL order isn't always
-    // parent-first (e.g., application-level batch deletes). This pass is cheap since only
-    // surviving events remain (typically channel entity deletes + non-delete mutations).
+    // Catch children that preceded their parent delete in WAL order.
+    // Inline suppression already removed the common parent-first case.
     if (deletedChannelIds && events.length > 1) {
       const deletedChannelSet = new Set(deletedChannelIds);
       const filtered: PendingEvent[] = [];

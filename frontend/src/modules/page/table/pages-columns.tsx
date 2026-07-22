@@ -19,11 +19,8 @@ const publishStatuses = ['published', 'draft'] as const;
 type PublishStatus = (typeof publishStatuses)[number];
 
 /**
- * Column definitions for the pages table. The tree expand toggle pulls its handler / row height /
- * max depth from the surrounding `<TreeProvider>` (in `pages-table.tsx`), so no per-column wiring
- * is needed. When {@link canEditDocs} (dev only), title / render mode / published status are
- * inline-editable and a drag handle enables reorder + reparent; edits are written back to the
- * md/mdx frontmatter by the dev server (vite/docs-editor.ts). Production renders read-only.
+ * Pages-table columns consume tree behavior from context and expose development-only editing.
+ * The dev server persists reorder, reparent, and field changes to MDX frontmatter.
  */
 export function usePagesTableColumns() {
   const { t } = useTranslation();

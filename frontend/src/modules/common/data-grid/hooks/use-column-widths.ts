@@ -19,13 +19,8 @@ function getWidth<R, SR>(widths: ReadonlyMap<string, number>, col: CalculatedCol
 }
 
 /**
- * Column widths for user-initiated resize.
- *
- * Auto columns use CSS-native `minmax(min, 1fr)`, requiring no JS measurement for initial
- * sizing or window resize. During drag resize, ALL columns are pinned to pixel
- * widths and space is redistributed (see `redistributeWidths`). On resize end,
- * drag widths become 'resized' so flex sizing is restored for columns
- * the user did not explicitly resize.
+ * Keep auto columns flexible, pin all columns to pixels during drag, then retain only user widths.
+ * Space redistribution is handled by `redistributeWidths`.
  */
 export function useColumnWidths<R, SR>(
   columns: readonly CalculatedColumn<R, SR>[],
@@ -147,13 +142,7 @@ export function useColumnWidths<R, SR>(
   } as const;
 }
 
-/**
- * Redistribute space when the resized column changes width.
- *
- * Widening (drag right): right neighbor shrinks first, then others proportionally.
- * Narrowing (drag left): freed space grows right columns equally.
- * Overflow past minWidth: left columns shrink (neighbor first), freed space also grows right.
- */
+/** Redistribute drag width through the nearest right column, then other columns within minimums. */
 function redistributeWidths<R, SR>(snapshot: ResizeSnapshot<R, SR>, rawWidth: number): Map<string, number> {
   const { resizingCol, initialWidth, allWidths, rightCols, leftCols } = snapshot;
 

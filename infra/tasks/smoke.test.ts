@@ -297,10 +297,7 @@ describe('parseArgs', () => {
 
 describe('main', () => {
   it('hard-fails (exit 1) when --dist is set but unreadable, before any network probe', async () => {
-    // A provided-but-unreadable --dist means the served bundle cannot be
-    // verified against the freshly built hash. Silently degrading once turned
-    // this into a no-op (a wrong cwd resolved --dist to nothing), so it must
-    // hard-fail before any smoke probe runs.
+  // An explicit unreadable distribution would disable build-hash verification, so fail before probing.
     const exit = vi.spyOn(process, 'exit').mockImplementation((() => {
       throw new Error('process.exit called')
     }) as never)

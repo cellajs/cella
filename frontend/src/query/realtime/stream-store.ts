@@ -73,13 +73,8 @@ function createStreamStore(name: string) {
 }
 
 /**
- * Module-level promise (the initial-catchup gate) that resolves when the first stream completes catchup
- * after page load. Used by the query provider to delay `resumePausedMutations`
- * until the cache is fresh, even though the provider's `onSuccess` fires
- * before any stream has called `connect()`.
- *
- * The promise is created eagerly at import time. Once resolved it stays resolved
- * for the lifetime of the page (only the initial cache restore needs to wait).
+ * Eager, page-lifetime gate resolved after the first stream catchup.
+ * The query provider awaits it before replaying paused mutations against restored cache state.
  */
 let initialCatchupResolve: (() => void) | null = null;
 const initialCatchupGate: Promise<void> = new Promise<void>((resolve) => {
@@ -134,10 +129,8 @@ export class StreamManager {
   }
 
   /**
-   * Connect to stream (subscribe-then-snapshot: SSE opens first and buffers notifications,
-   * catchup runs on the server's `offset` event, then the buffer drains and the stream goes live).
-   * A change committed between the catchup read and SSE registration is therefore either in the
-   * catchup answer or in the buffer; never lost in the registration window.
+   * Subscribe before catchup, buffering live events until snapshot reconciliation completes.
+   * Changes in the registration window therefore land in either snapshot or buffer.
    */
   async connect() {
     // Set up reconnect listeners (idempotent, cleaned up in disconnect)
@@ -192,10 +185,8 @@ export class StreamManager {
   }
 
   /**
-   * Run catchup while the already-open EventSource buffers live notifications, then drain the
-   * buffer in arrival order and go live. Buffer overflow means the catchup answer is far behind
-   * the stream; one catchup retry re-reads the newer frontiers (buffered events committed before
-   * that read, so its normal range fetches sweep them). A second overflow is a failure.
+   * Catch up while buffering, then drain in arrival order and go live.
+   * One overflow retries against newer frontiers; a second fails.
    */
   private async runCatchupCycle(signal: AbortSignal, eventSource: EventSource) {
     const { useTabCoordination } = this.config;
@@ -567,11 +558,8 @@ export const appStreamManager = new StreamManager('AppStream', {
   withCredentials: true,
   useTabCoordination: true,
   fetchAndProcessCatchup: async (cursor) => {
-    // View-driven catchup: one org-prefix view per (org, entityType) with its org-sequence
-    // cursor, PLUS grant-boundary views derived from the cached memberships (precision on
-    // top of the org-view baseline; the template derives none). The registry only holds
-    // registered product types, so the string[] narrows to the SDK's entity-type enum at
-    // runtime by construction.
+    // Combine baseline organization views with membership-derived grant boundaries.
+    // The registry contains only product types, so runtime strings satisfy the SDK enum.
     declareViewsFromMemberships();
     const views = useSyncStore.getState().getCatchupViews(catchupEntityTypes());
     const response = await postAppCatchup({

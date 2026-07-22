@@ -11,11 +11,8 @@ import { tableRegistry } from '../table-registry';
 export type ActivityWithoutId = Omit<InsertActivityModel, 'id'>;
 
 /**
- * Result of parsing a CDC message.
- * Includes activity to insert, row data (entity or resource) and table metadata.
- * `movedFrom` is set on product updates whose materialized `path` changed (reparent):
- * the permission-relevant subset of the OLD row, so dispatch can deliver a move-out
- * to subscribers who could read the old location but not the new one.
+ * Parsed activity, row data, and table metadata. Reparented products include the old row's
+ * permission fields so dispatch can remove them from subscribers who lost access.
  */
 export interface ParseMessageResult {
   activity: ActivityWithoutId;
@@ -30,17 +27,9 @@ const DRAFT_GUARD_WARN_INTERVAL_MS = 60_000;
 let lastDraftGuardWarnAt = 0;
 
 /**
- * Entrance guard for the draft boundary. The publication row filter
- * (`published_at IS NOT NULL`, see backend `publication-filter.ts`) keeps draft product
- * rows out of the replication stream entirely, so a draft row here means a fork
- * misconfiguration. The usual cause: `publishedColumn` was added without regenerating the
- * publication (`pnpm generate` + `pnpm migrate`). Dropping the event keeps counters
- * correct (drafts must count nothing); the rate-limited warning makes the gap loud
- * so sequence stamps are not silently corrupted.
- *
- * Uniform across actions because the delete handler snapshots the OLD row into
- * `rowData`: a true draft hard-delete never arrives (old row fails the filter), while
- * an unpublish arrives as DELETE with a published old row and passes untouched.
+ * Drops draft product rows that bypass the expected publication filter, preserving counters
+ * and sequence stamps while warning about migration drift. Delete events use the old row,
+ * so true draft deletes remain filtered and unpublishes still pass as published-row deletes.
  */
 function isFilteredDraftEvent(result: ParseMessageResult): boolean {
   if (result.tableMeta.kind !== 'entity' || !hierarchy.isProduct(result.tableMeta.type)) return false;
@@ -85,4 +74,3 @@ export function parseMessage(message: Pgoutput.Message): ParseMessageResult | nu
   if (result && isFilteredDraftEvent(result)) return null;
   return result;
 }
-

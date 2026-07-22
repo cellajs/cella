@@ -22,10 +22,8 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   const organizationId = ctx.var.organization.id;
   const { q, sort, order, limit, offset, seqCursor } = input;
 
-  // Resolve the caller's readable scope (unconditional grants + row-conditional slices,
-  // e.g. `read: 'own'`) and compile it to a single row predicate. Attachments live
-  // directly under the organization, so there is no sub-context to narrow by; the
-  // organization id column stands in as the (never-hit) sub-context column.
+  // Compile unconditional and row-conditional read scopes into one predicate.
+  // Organization-homed attachments reuse the organization column as the unused home column.
   const actor = actorFrom(ctx);
   const readFilter = resolveCollectionReadFilter(ctx.var.memberships, 'attachment', organizationId, actor);
   const scopeWhere = buildCollectionReadWhere(readFilter, attachmentsTable, attachmentsTable.organizationId, actor);

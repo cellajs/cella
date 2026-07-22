@@ -11,12 +11,8 @@ type SearchParams = {
 };
 
 /**
- * Manages search params (query string), optionally syncing to the URL.
- * `saveDataInSearch` (default true) persists changes AND gates whether existing URL params are read on mount.
- *
- * Defaults are not this hook's job: a route declares them with zod `.default()` on `validateSearch`
- * (which rehydrates them on read) plus a `stripSearchParams` middleware (which keeps them out of the
- * URL). Each module's search-params-schemas file exports the defaults both sides share.
+ * Manage query parameters, optionally reading and writing the URL through `saveDataInSearch`.
+ * Routes own defaults through validation and stripping middleware.
  */
 export function useSearchParams<T extends Record<string, string | string[] | undefined>>(searchParams?: SearchParams) {
   const { from, saveDataInSearch = true } = searchParams ?? {};

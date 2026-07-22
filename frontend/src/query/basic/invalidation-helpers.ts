@@ -4,11 +4,8 @@ import { isQueued } from '~/query/offline/mutation-queue';
 import { getEntityQueryKeys } from './entity-query-registry';
 
 /**
- * Remove QUEUED (offline-parked) update mutations for entities about to be deleted, so a stale
- * offline edit does not replay after the delete. Active (in-flight) updates are left in the mutation
- * cache: removing one does not cancel its request but does drop it from the scope queue, which would
- * let the delete start alongside it and defeat same-scope serialization. Those stay queued and the
- * delete serializes behind them.
+ * Remove parked updates before deletion so they cannot replay afterward.
+ * Retain active updates in the scope queue so the delete remains serialized behind them.
  */
 export function removePendingMutations(queryClient: QueryClient, updateKey: QueryKey, ids: string[]): void {
   const idSet = new Set(ids);
@@ -23,17 +20,8 @@ export function removePendingMutations(queryClient: QueryClient, updateKey: Quer
 }
 
 /**
- * True if invalidation should be skipped because sibling mutations are still running; call in
- * onSettled before invalidating to avoid over-invalidation during concurrent optimistic updates.
- *
+ * Returns whether sibling mutations should defer invalidation until the last settlement.
  * @see https://tkdodo.eu/blog/concurrent-optimistic-updates-in-react-query
- * @example
- * ```ts
- * onSettled: () => {
- *   if (shouldSkipInvalidation(queryClient, keys.update)) return;
- *   queryClient.invalidateQueries({ queryKey: keys.list.base });
- * }
- * ```
  */
 function shouldSkipInvalidation(queryClient: QueryClient, mutationKey: QueryKey): boolean {
   // onSettled still counts the current mutation as "mutating": >1 means siblings are pending and
@@ -41,14 +29,7 @@ function shouldSkipInvalidation(queryClient: QueryClient, mutationKey: QueryKey)
   return queryClient.isMutating({ mutationKey }) > 1;
 }
 
-/**
- * Invalidate only if this is the last mutation in the group (wraps shouldSkipInvalidation).
- *
- * @example
- * ```ts
- * onSettled: () => invalidateIfLastMutation(queryClient, keys.update, keys.list.base),
- * ```
- */
+/** Invalidate only after the final mutation in a grouped scope settles. */
 export function invalidateIfLastMutation(queryClient: QueryClient, mutationKey: QueryKey, queryKey: QueryKey): void {
   if (!shouldSkipInvalidation(queryClient, mutationKey)) {
     queryClient.invalidateQueries({ queryKey });

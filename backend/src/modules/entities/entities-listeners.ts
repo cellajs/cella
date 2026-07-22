@@ -37,11 +37,8 @@ for (const action of ['created', 'updated', 'deleted'] as const) {
   activityBus.on(`membership.${action}`, async (event) => {
     if (!event.organizationId) return;
 
-    // Keep connected subscribers' membership snapshots fresh BEFORE dispatch: the
-    // dispatch decision must mirror the API, which reads live memberships per request.
-    // The user channel reaches the subject's connections even when the membership's org
-    // was not registered at connect time; product events for a NEW org still need the
-    // client reconnect (org channel registration happens at connect).
+    // Refresh subscriber memberships before dispatch so SSE mirrors live API access.
+    // The user channel reaches new-organization members and prompts their channel reconnection.
     const membership = getEventData(event, 'membership');
     if (membership?.userId) {
       const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(`user:${membership.userId}`);
