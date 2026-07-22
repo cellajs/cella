@@ -1,4 +1,4 @@
-import { createExtension, getBlockInfoFromTransaction } from '@blocknote/core';
+import { createExtension, getBlockInfoFromSelection } from '@blocknote/core';
 import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
 import { SquareCheckBigIcon } from 'lucide-react';
@@ -14,7 +14,7 @@ const checklistExtensions = createExtension({
     Enter: ({ editor }) => {
       // Get block info from ProseMirror transaction for accurate state
       const { blockInfo, selectionEmpty } = editor.transact((tr) => ({
-        blockInfo: getBlockInfoFromTransaction(tr),
+        blockInfo: getBlockInfoFromSelection(tr),
         selectionEmpty: tr.selection.anchor === tr.selection.head,
       }));
 
@@ -32,7 +32,7 @@ const checklistExtensions = createExtension({
         editor.transact((tr) => {
           tr.deleteSelection();
           const pos = tr.selection.from;
-          const info = getBlockInfoFromTransaction(tr);
+          const info = getBlockInfoFromSelection(tr);
           if (!info.isBlockContainer) return;
           // Empty attrs for both container and content: the new block gets default props.
           // (render component auto-assigns a fresh checkboxId when it's empty)

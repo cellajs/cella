@@ -36,7 +36,7 @@
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1090.0",
+    "@aws-sdk/client-s3": "^3.1091.0",
     "@inquirer/core": "^11.2.1",
     "@inquirer/prompts": "^8.5.1",
     "@pulumi/pulumi": "^3.253.0",
