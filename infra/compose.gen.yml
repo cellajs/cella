@@ -47,6 +47,7 @@ services:
       drainPolicy: requests
       lbRoute: path
       lbPathBegin: /api
+      internalRoute: true
       dockerfile: Dockerfile
       target: backend
   migrate:
@@ -98,7 +99,7 @@ services:
       target: cdc
       coHosted: true
       bindings:
-        API_WS_URL: ws://@{backend.privateIp}:@{backend.port}/internal/cdc
+        API_WS_URL: ws://@{backend.internalHost}:@{backend.internalPort}/internal/cdc
   yjs:
     image: ${REGISTRY}/yjs:${YJS_TAG:-latest}
     profiles: [yjs]

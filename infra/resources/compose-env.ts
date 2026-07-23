@@ -4,6 +4,7 @@ import type { ServiceName } from '../compose/compose'
 import { frontendCsp } from '../lib/frontend-csp'
 import { servicesByName, type ServiceDefinition } from '../lib/services'
 import { endpoints, mode, region, serviceUrl } from '../pulumi-context'
+import { internalLbPort, lbInternalAddress } from './lb-internal'
 import { registryEndpoint } from './registry'
 import { frontendBucketName } from './storage'
 
@@ -80,6 +81,18 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
         return currentGenBindingIp(slug)
       case 'port':
         return String(definition.healthPort)
+      // Stable service address through the LB's ACL-guarded internal frontend:
+      // survives every cutover, so consumers never bake a generation IP. The
+      // folded-worker loopback shortcut collapses host+port together to the
+      // in-process app (no LB hop inside one VM).
+      case 'internalHost':
+        if (slug === loopbackSlug) return '127.0.0.1'
+        if (!definition.internalRoute) throw new Error(`compute: binding @{${target}.internalHost} on '${selfSlug}' — service '${slug}' has no internalRoute.`)
+        return lbInternalAddress
+      case 'internalPort':
+        if (slug === loopbackSlug) return String(definition.healthPort)
+        if (!definition.internalRoute) throw new Error(`compute: binding @{${target}.internalPort} on '${selfSlug}' — service '${slug}' has no internalRoute.`)
+        return String(internalLbPort(definition.healthPort))
       case 'url': {
         const endpoint = endpointBySlug.get(slug)
         if (!endpoint) throw new Error(`compute: binding @{${target}.url} on '${selfSlug}' — service '${slug}' has no public endpoint.`)

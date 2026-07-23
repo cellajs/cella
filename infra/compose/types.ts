@@ -72,6 +72,8 @@ export interface ServiceMeta {
   lbPathBegin?: LbPathBegin
   /** Long-lived LB timeouts (1h server/tunnel) for WebSocket services. */
   lbWebsockets?: boolean
+  /** Private ACL-guarded LB frontend giving in-network consumers a stable, cutover-following address. */
+  internalRoute?: boolean
   /** Service whose image this one reuses (mcp reuses backend); no own image built. */
   reusesImageOf?: string
   /** Dockerfile path for services that build their own image. Omit when `reusesImageOf` is set. */
@@ -177,6 +179,14 @@ export interface AppServiceConfig {
    * speaking WebSockets through the LB (yjs). Only meaningful with `lbRoute`.
    */
   lbWebsockets?: boolean
+  /**
+   * Expose this service on a private, ACL-guarded LB frontend so consumers
+   * inside the private network reach it at a STABLE address that follows every
+   * cutover (`@{<slug>.internalHost}:@{<slug>.internalPort}` bindings). The
+   * internal pool gets WebSocket-grade timeouts; only private-network sources
+   * pass the frontend's ACLs.
+   */
+  internalRoute?: boolean
   /**
    * Service whose image this one reuses, so CI builds no separate image for it
    * (mcp reuses the backend image at the same SHA).

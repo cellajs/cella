@@ -31,13 +31,19 @@ export function planForService(serviceFlag: string, healthUrl?: string): Rollout
     if (!plan.healthUrl) throw new Error(`Service '${service}' has no health URL.`)
   }
 
-  // Workers co-hosted on this single VM keep their own LB backends; cutover
-  // must repoint them because Pulumi ignores their live server lists.
+  // LB pools that must follow this service's cutover because Pulumi ignores
+  // their live server lists: co-hosted workers' pools (singleVM) and the
+  // service's own internal pool (internalRoute).
+  const repointKeys: string[] = []
   if (definition.primaryRollout && appConfig.singleVM) {
-    plan.coHostedLbSlugs = coHostedServices(appConfig.services, appConfig.singleVM)
-      .filter((worker) => worker.lbRoute)
-      .map((worker) => worker.slug)
+    repointKeys.push(
+      ...coHostedServices(appConfig.services, appConfig.singleVM)
+        .filter((worker) => worker.lbRoute)
+        .map((worker) => worker.slug),
+    )
   }
+  if (definition.internalRoute) repointKeys.push(`${service}-internal`)
+  if (repointKeys.length > 0) plan.repointBackendKeys = repointKeys
 
   return plan
 }

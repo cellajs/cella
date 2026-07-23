@@ -4,9 +4,10 @@ import { appConfig } from '../../shared'
 import { naming, zone, tags, dnsZone, serviceHost, serviceUrl, infra } from '../pulumi-context'
 import { enabledServices } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
-import { privateNetworkId } from './network'
+import { privateNetworkId, privateNetworkSubnet } from './network'
 import { serviceGenerationIps } from './compute'
 import { CertReadyGate, DnsPropagationGate } from './dns-cert-gates'
+import { internalLbPort, publishLbInternalAddress } from './lb-internal'
 
 /**
  * Resource base names for resources whose shipped Pulumi URNs and Scaleway
@@ -177,6 +178,74 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
 
   const defaultBackend = backends.get(defaultService.slug)!
 
+  // Internal LB routes: a private, ACL-guarded frontend per `internalRoute`
+  // service so in-network consumers (e.g. cdc dialing the backend's
+  // /internal/cdc WebSocket) reach a STABLE address that follows every cutover.
+  // The LB keeps its DHCP-assigned private-network IP (recreating the
+  // attachment would sever LB-to-VM traffic); the address is resolved from IPAM
+  // after the LB exists and handed to compute via the lb-internal seam.
+
+  const lbPrivateIp = scaleway.ipam.getIpsOutput({
+    privateNetworkId,
+    resource: lb.id.apply((id) => ({ id: id.split('/').at(-1) ?? id, type: 'lb_server' })),
+    type: 'ipv4',
+  }).apply((result) => {
+    const address = result.ips?.[0]?.address
+    if (!address) throw new Error('loadbalancer: could not resolve the LB private-network IP from IPAM (resource type lb_server).')
+    return address
+  })
+  publishLbInternalAddress(lbPrivateIp)
+
+  const internalBackends = new Map<string, scaleway.loadbalancers.Backend>()
+  const internalServices = enabledServices(appConfig.services).filter((s) => s.internalRoute)
+  for (const service of internalServices) {
+    // Its own pool (same generation IPs as the public one, cutover repoints
+    // both): internal consumers hold long-lived WebSockets, so this pool gets
+    // 1h timeouts and kills sessions on mark-down so consumers re-dial the new
+    // generation immediately.
+    const internalBackend = new scaleway.loadbalancers.Backend(`${service.slug}-internal-lb-backend`, {
+      lbId: lb.id,
+      name: naming.resource(`${service.slug}-internal`),
+      forwardProtocol: 'http',
+      forwardPort: service.healthPort,
+      serverIps: serviceGenerationIps(service.slug),
+      onMarkedDownAction: 'shutdown_sessions',
+      healthCheckHttp: { uri: '/health', code: 204 },
+      healthCheckDelay: '3s',
+      healthCheckTimeout: '2s',
+      healthCheckMaxRetries: 2,
+      timeoutServer: '1h',
+      timeoutTunnel: '1h',
+    }, {
+      ignoreChanges: ['serverIps'],
+    })
+    internalBackends.set(`${service.slug}-internal`, internalBackend)
+
+    const internalFrontend = new scaleway.loadbalancers.Frontend(`${service.slug}-internal-frontend`, {
+      lbId: lb.id,
+      name: naming.resource(`${service.slug}-internal`),
+      backendId: internalBackend.id,
+      inboundPort: internalLbPort(service.healthPort),
+    })
+
+    // The frontend listens on the LB's public IP too; the ACL pair admits only
+    // private-network sources and denies everything else.
+    new scaleway.loadbalancers.Acl(`${service.slug}-internal-allow-pn`, {
+      frontendId: internalFrontend.id,
+      name: naming.resource(`${service.slug}-internal-allow`),
+      index: 0,
+      action: { type: 'allow' },
+      match: { ipSubnets: [privateNetworkSubnet] },
+    })
+    new scaleway.loadbalancers.Acl(`${service.slug}-internal-deny-all`, {
+      frontendId: internalFrontend.id,
+      name: naming.resource(`${service.slug}-internal-deny`),
+      index: 1,
+      action: { type: 'deny' },
+      match: { httpFilter: 'acl_http_filter_none' },
+    })
+  }
+
   // HTTPS Frontend (port 443): TLS termination + host-header routes
 
   const allCertIds: pulumi.Input<string>[] = [...certs.values()].map((cert) => cert.id)
@@ -280,7 +349,12 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   return {
     serviceUrls,
     lbId: lb.id,
-    lbBackendIds: pulumi.output(Object.fromEntries([...backends.entries()].map(([service, backend]) => [service, backend.id]))),
+    lbBackendIds: pulumi.output(
+      Object.fromEntries([
+        ...[...backends.entries()].map(([service, backend]) => [service, backend.id] as const),
+        ...[...internalBackends.entries()].map(([key, backend]) => [key, backend.id] as const),
+      ]),
+    ),
   }
 }
 

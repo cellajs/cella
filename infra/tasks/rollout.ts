@@ -13,7 +13,7 @@ export interface RolloutServicePlan {
   /** Public health URL; required for lb-overlap services. */
   healthUrl?: string
   /** Co-hosted worker slugs (singleVM) whose LB backends follow this VM. */
-  coHostedLbSlugs?: string[]
+  repointBackendKeys?: string[]
 }
 
 /**
@@ -106,17 +106,17 @@ export async function activateService(
   })
   if (!cutover.ok) throw new Error(`Cutover failed for ${service}: ${cutover.aborted}`)
 
-  // Repoint separate load-balancer backends for workers co-hosted on this single
-  // VM. Pulumi ignores their live server lists, so cutover must remove
-  // reaped-generation IPs.
-  for (const worker of plan.coHostedLbSlugs ?? []) {
-    const workerBackendId = backendIds[worker]
-    if (!workerBackendId) {
-      rt.info(`[deploy ${service}] co-hosted '${worker}' declares lbRoute but has no LB backend id, skipping repoint`)
+  // Repoint the LB pools that follow this service's VM (co-hosted workers'
+  // pools, the service's own internal pool). Pulumi ignores their live server
+  // lists, so cutover must remove reaped-generation IPs.
+  for (const key of plan.repointBackendKeys ?? []) {
+    const followerBackendId = backendIds[key]
+    if (!followerBackendId) {
+      rt.info(`[deploy ${service}] follower pool '${key}' has no LB backend id, skipping repoint`)
       continue
     }
-    rt.info(`[deploy ${service}] repointing co-hosted ${worker} LB backend -> [${target.privateIp}]`)
-    await rt.lbSetServers(workerBackendId, [target.privateIp])
+    rt.info(`[deploy ${service}] repointing follower pool '${key}' -> [${target.privateIp}]`)
+    await rt.lbSetServers(followerBackendId, [target.privateIp])
   }
 
   rt.info(`[deploy ${service}] promoting generation ${target.genId}`)
@@ -146,7 +146,7 @@ export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime
   // LB backend ids are only defined (and only needed) when a wave contains an
   // lb-overlap service; exclusive-only waves skip the stack-output read.
   const backendIdsFor = async (wave: RolloutServicePlan[]): Promise<Record<string, string>> =>
-    wave.some((item) => item.strategy !== 'exclusive' || (item.coHostedLbSlugs?.length ?? 0) > 0) ? rt.readLbBackendIds() : {}
+    wave.some((item) => item.strategy !== 'exclusive' || (item.repointBackendKeys?.length ?? 0) > 0) ? rt.readLbBackendIds() : {}
 
   if (plan.primary) {
     rt.info(`[rollout] wave 1: ${plan.primary.service}`)

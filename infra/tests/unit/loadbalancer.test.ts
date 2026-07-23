@@ -53,8 +53,9 @@ describe('loadbalancer module — registry-driven wiring', () => {
     expect(src).not.toContain('__ingress/health')
     // onMarkedDownAction follows the service drainPolicy.
     expect(src).toMatch(/onMarkedDownAction:/)
-    // Exactly one Backend construction site: the registry loop.
-    expect(src.match(/new scaleway\.loadbalancers\.Backend\(/g)).toHaveLength(1)
+    // Exactly two Backend construction sites: the public registry loop and the
+    // internal-route loop.
+    expect(src.match(/new scaleway\.loadbalancers\.Backend\(/g)).toHaveLength(2)
   })
 
   it('keeps WebSocket LB timeouts gated on the registry lbWebsockets knob', () => {
@@ -97,5 +98,51 @@ describe('loadbalancer module — registry-driven wiring', () => {
     expect(src).toMatch(/export const serviceDomainUrls/)
     // No per-service named exports: a new service needs no export added.
     expect(src).not.toMatch(/export const (api|yjs|ai)DomainUrl/)
+  })
+})
+
+// Internal routes: private, ACL-guarded frontends giving in-network consumers a
+// stable address that follows every cutover (the cdc -> backend binding).
+describe('loadbalancer module — internal routes', () => {
+  it('derives internal routes from the registry internalRoute knob', () => {
+    expect(src).toMatch(/enabledServices\(appConfig\.services\)\.filter\(\(s\) => s\.internalRoute\)/)
+  })
+
+  it('keeps the DHCP private-network attachment and resolves the LB IP from IPAM', () => {
+    // Recreating the attachment would sever LB-to-VM traffic; the address is
+    // read back from IPAM (resource type lb_server) after the LB exists.
+    expect(src).not.toMatch(/ipamIds:/)
+    expect(src).toMatch(/scaleway\.ipam\.getIpsOutput\(/)
+    expect(src).toMatch(/type: 'lb_server'/)
+    expect(src).toMatch(/publishLbInternalAddress\(/)
+  })
+
+  it('gives internal traffic its own pool with WebSocket-grade timeouts and session kill on mark-down', () => {
+    expect(src).toMatch(/new scaleway\.loadbalancers\.Backend\(`\$\{service\.slug\}-internal-lb-backend`/)
+    expect(src).toMatch(/onMarkedDownAction: 'shutdown_sessions'/)
+    // The internal pool block carries its own 1h timeouts (not lbWebsockets-gated).
+    const internalBlock = src.match(/internal-lb-backend[\s\S]*?ignoreChanges: \['serverIps'\]/)?.[0] ?? ''
+    expect(internalBlock).toContain("timeoutServer: '1h'")
+    expect(internalBlock).toContain("timeoutTunnel: '1h'")
+  })
+
+  it('guards every internal frontend with allow-private-subnet then deny-all ACLs', () => {
+    expect(src).toMatch(/new scaleway\.loadbalancers\.Frontend\(`\$\{service\.slug\}-internal-frontend`/)
+    expect(src).toMatch(/inboundPort: internalLbPort\(service\.healthPort\)/)
+    expect(src).toMatch(/action: \{ type: 'allow' \}/)
+    expect(src).toMatch(/ipSubnets: \[privateNetworkSubnet\]/)
+    expect(src).toMatch(/action: \{ type: 'deny' \}/)
+    // The deny rule matches everything after the allow rule.
+    const denyBlock = src.match(/internal-deny-all[\s\S]*?\}\)/)?.[0] ?? ''
+    expect(denyBlock).toContain('index: 1')
+    expect(denyBlock).toContain("httpFilter: 'acl_http_filter_none'")
+    // Internal frontends never carry certificates (plain ws inside the VPC).
+    const frontendBlock = src.match(/internal-frontend`[\s\S]*?\}\)/)?.[0] ?? ''
+    expect(frontendBlock).not.toContain('certificateIds')
+  })
+
+  it('exports internal pool ids under the <slug>-internal key for cutover repointing', () => {
+    expect(src).toMatch(/internalBackends\.set\(`\$\{service\.slug\}-internal`/)
+    expect(src).toMatch(/internalBackends\.entries\(\)/)
   })
 })

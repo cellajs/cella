@@ -231,7 +231,7 @@ describe('activateService co-hosted repoint', () => {
       backendIds: { backend: 'b-bid', yjs: 'y-bid', mcp: 'm-bid' },
       initialLb: { 'b-bid': ['10.0.0.1'], 'y-bid': ['10.0.0.1'], 'm-bid': ['10.0.0.1'] },
     })
-    const plan: RolloutServicePlan = { ...backendPlan, coHostedLbSlugs: ['yjs', 'mcp'] }
+    const plan: RolloutServicePlan = { ...backendPlan, repointBackendKeys: ['yjs', 'mcp'] }
     await activateService(plan, SHA, await fake.rt.readGenerations(), await fake.rt.readLbBackendIds(), fake.rt)
     expect(fake.lbHistory.get('y-bid')?.at(-1)).toEqual(['10.0.0.2'])
     expect(fake.lbHistory.get('m-bid')?.at(-1)).toEqual(['10.0.0.2'])

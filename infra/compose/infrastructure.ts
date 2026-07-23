@@ -57,6 +57,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   if (cfg.lbRoute) meta.lbRoute = cfg.lbRoute
   if (cfg.lbPathBegin) meta.lbPathBegin = cfg.lbPathBegin
   if (cfg.lbWebsockets) meta.lbWebsockets = true
+  if (cfg.internalRoute) meta.internalRoute = true
   if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf
   if (cfg.dockerfile) meta.dockerfile = cfg.dockerfile
   if (cfg.target) meta.target = cfg.target

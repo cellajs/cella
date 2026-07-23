@@ -25,6 +25,9 @@ export const appServices = defineServices({
     // route; the backend self-mounts '/api' (no LB stripping).
     lbRoute: 'path',
     lbPathBegin: '/api',
+    // Private ACL-guarded LB frontend: in-network consumers (cdc) dial a stable
+    // address that follows every cutover.
+    internalRoute: true,
     // Per-service VM size (required on every service).
     instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },
     env: {
@@ -52,10 +55,12 @@ export const appServices = defineServices({
       CDC_HEALTH_PORT: '4001',
     },
     // cdc → backend is a server-to-server WebSocket on the internal /internal/cdc
-    // path, straight to the backend VM over the private network (the backend
-    // rejects sources outside loopback / the VPC, so it can't go via the LB).
+    // path, dialed through the LB's private ACL-guarded internal frontend. The
+    // address is stable across backend cutovers (the LB stays inside the VPC,
+    // so the backend's loopback/VPC source check still passes), and the LB
+    // kills sessions on mark-down so cdc re-dials the new generation.
     bindings: {
-      API_WS_URL: 'ws://@{backend.privateIp}:@{backend.port}/internal/cdc',
+      API_WS_URL: 'ws://@{backend.internalHost}:@{backend.internalPort}/internal/cdc',
     },
   },
 

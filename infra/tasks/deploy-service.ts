@@ -29,7 +29,7 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   await rt.update()
 
   const generations = await rt.readGenerations()
-  const backendIds = plan.strategy !== 'exclusive' || (plan.coHostedLbSlugs?.length ?? 0) > 0 ? await rt.readLbBackendIds() : {}
+  const backendIds = plan.strategy !== 'exclusive' || (plan.repointBackendKeys?.length ?? 0) > 0 ? await rt.readLbBackendIds() : {}
   await activateService(plan, sha, generations, backendIds, rt)
 
   // Reap the displaced generation now that the new one serves healthily. No
