@@ -8,7 +8,7 @@ import {
   setPending,
   updateServiceRollout,
 } from '../lib/stack/control-store'
-import { runPulumi, stackOutput } from '../lib/stack/run-pulumi'
+import { createPulumiDriver, type PulumiDriver } from '../lib/stack/pulumi-driver'
 import { sleep } from './args'
 import { createLbGetServers, createLbSetServers } from './cutover'
 import { createFetchProbe, pollForVersion } from './wait-for-version'
@@ -25,6 +25,8 @@ export interface RolloutRuntimeOptions {
   stack: string
   /** Scaleway LB zone; defaults to `<region>-1` from the environment. */
   lbZone?: string
+  /** Pulumi driver; defaults to the INFRA_PULUMI_DRIVER selection. */
+  driver?: PulumiDriver
 }
 
 /**
@@ -35,6 +37,7 @@ export interface RolloutRuntimeOptions {
  */
 export function createRolloutRuntime(options: RolloutRuntimeOptions): RolloutRuntime {
   const { stack } = options
+  const driver = options.driver ?? createPulumiDriver(stack)
   const zone = options.lbZone ?? `${process.env.SCW_DEFAULT_REGION ?? process.env.REGION ?? 'fr-par'}-1`
   const secretKey = process.env.SCW_SECRET_KEY
 
@@ -50,17 +53,9 @@ export function createRolloutRuntime(options: RolloutRuntimeOptions): RolloutRun
   }
 
   return {
-    async update() {
-      // --skip-preview: the update is already non-interactive and serialized by
-      // the stack lock; the preview pass would diff the whole stack a second time.
-      runPulumi(['up', '--stack', stack, '--yes', '--non-interactive', '--skip-preview'])
-    },
-    async readGenerations() {
-      return stackOutput<GenerationMetadata[]>(stack, 'computeGenerationMetadata')
-    },
-    async readLbBackendIds() {
-      return stackOutput<Record<string, string>>(stack, 'lbBackendIds')
-    },
+    update: () => driver.update(),
+    readGenerations: () => driver.output<GenerationMetadata[]>('computeGenerationMetadata'),
+    readLbBackendIds: () => driver.output<Record<string, string>>('lbBackendIds'),
     async currentRollout(service: string): Promise<ServiceRollout | undefined> {
       const ctx = await controlCtx()
       if (!ctx) return undefined

@@ -27,6 +27,9 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean } = {}) 
       const label = cmd === 'pnpm' ? (args[2] ?? '').replace('tasks/', '').replace('.ts', '') : `${cmd}:${args[0]}`
       ops.push(`exec:${label}${execOpts?.allowFailure ? ':allow-failure' : ''}`)
     },
+    update: async (stack) => {
+      ops.push(`update:${stack}`)
+    },
     rollout: async () => {
       ops.push('rollout')
       if (opts.rolloutFails) throw new Error('cutover failed')
@@ -75,6 +78,7 @@ describe('runDeploy sequencing', () => {
       'exec:pulumi:login',
       'exec:stack-lock',
       'exec:wait-for-images',
+      'update:production',
       'rollout',
       'publish-entry',
       'exec:smoke',

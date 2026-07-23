@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 const serviceSource = readFileSync(resolve(__dirname, 'deploy-service.ts'), 'utf-8')
 const runtimeSource = readFileSync(resolve(__dirname, 'rollout-runtime.ts'), 'utf-8')
+const driverSource = readFileSync(resolve(__dirname, '../lib/stack/pulumi-driver.ts'), 'utf-8')
 
 describe('deploy-service source contracts', () => {
   it('supports deferring the reap so deploy-rollout can batch it', () => {
@@ -24,8 +25,9 @@ describe('rollout-runtime source contracts', () => {
     expect(runtimeSource).toMatch(/attempts: deployHealthAttempts/)
   })
 
-  it('skips the redundant preview on rollout stack updates', () => {
-    const upCalls = runtimeSource.match(/runPulumi\(\['up'[^\]]*\]\)/g) ?? []
+  it('routes stack updates through the Pulumi driver, which skips the redundant preview', () => {
+    expect(runtimeSource).toMatch(/driver\.update\(\)/)
+    const upCalls = driverSource.match(/exec\(\['up'[^\]]*\]\)/g) ?? []
     expect(upCalls.length).toBeGreaterThan(0)
     for (const call of upCalls) expect(call).toContain("'--skip-preview'")
   })

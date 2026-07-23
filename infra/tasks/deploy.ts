@@ -30,6 +30,8 @@ export interface DeployOptions {
 export interface DeployEffects {
   /** Run a CLI in the infra dir; throws on non-zero exit unless allowFailure. */
   exec(cmd: string, args: string[], opts?: { allowFailure?: boolean; stdin?: string }): void
+  /** One full stack update through the configured Pulumi driver. */
+  update(stack: string): Promise<void>
   rollout(argv: string[]): Promise<void>
   verifyVersion(url: string, sha: string): Promise<boolean>
   publishEntryFiles(opts: { distDir: string; bucket: string; region: string }): Promise<void>
@@ -108,9 +110,9 @@ export async function runDeploy(
       fx.exec(...task('wait-for-images', '--registry', registry, '--ns', env.registry_ns, '--tag', opts.sha, '--build-images-json', env.build_images_matrix))
     })
     await step('Repair errored LB certificates', () => fx.exec(...task('repair-certs', '--stack', stack)))
-    await step('Base stack update', () => {
+    await step('Base stack update', async () => {
       fx.exec(...task('sync-rollout-config', '--stack', stack))
-      fx.exec('pulumi', ['up', '--stack', stack, '--yes', '--non-interactive', '--skip-preview'])
+      await fx.update(stack)
     })
     await step('Verify VM reader IAM grant', () =>
       fx.exec(...task('assert-vm-grants', '--application-name', env.vm_reader_app, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--organization-id', process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '')))
@@ -199,6 +201,10 @@ function createRealEffects(): DeployEffects {
         input: opts.stdin,
       })
       if (res.status !== 0 && !opts.allowFailure) throw new Error(`${cmd} ${args[0] ?? ''} failed with exit ${res.status}`)
+    },
+    update: async (stack) => {
+      const { createPulumiDriver } = await import('../lib/stack/pulumi-driver')
+      await createPulumiDriver(stack).update()
     },
     rollout: (argv) => runWavedRolloutCli(argv),
     async verifyVersion(url, sha) {
