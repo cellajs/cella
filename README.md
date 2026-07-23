@@ -39,7 +39,6 @@
 ## Requirements
 
 - Nodejs 24.x. Check `node -v`
-- PostgreSQL 17+
 - Make sure you can work with [Docker](https://docs.docker.com/get-docker/)
 - You work with [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and have [gh cli](https://cli.github.com/) installed
 
