@@ -201,10 +201,9 @@ export const checkWithIndices = <T extends PermissionMembership>(
   }
 
   // Public reads are membership-independent but use the same row condition as the SQL compiler.
-  const publicMode = publicGrants?.[subject.entityType];
-  if (publicMode && matchesRowCondition('public', conditionRow, conditionActor)) {
+  if (publicGrants?.[subject.entityType] && matchesRowCondition('public', conditionRow, conditionActor)) {
     actions.read.enabled = true;
-    actions.read.grantedBy.push({ type: 'public', mode: publicMode });
+    actions.read.grantedBy.push({ type: 'public' });
   }
 
   const can = createActionRecord((action) => actions[action].enabled);

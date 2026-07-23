@@ -5,7 +5,7 @@ import type { GrantSource, PermissionDecision, PermissionMembership } from './ty
 
 const formatGrant = (g: GrantSource): string => {
   if (g.type === 'membership') return `${g.channelType}:${g.channelId}/${g.role}`;
-  if (g.type === 'public') return `public:${g.mode}`;
+  if (g.type === 'public') return 'public';
   if (g.type === 'systemAdmin') return 'systemAdmin';
   return `relation:${g.relation}`;
 };

@@ -77,6 +77,9 @@
       "summary": "Removed the usePreparedMutation hook; buildPreparedHandlers(mutation, prepare) stays. Mutation hooks now call useMutation directly and spread { ...mutation, ...buildPreparedHandlers(mutation, prepare) }, dropping five explicit generics and the Mutatable cast. PreparedVars/COALESCED unchanged. Frontend-only, no wire-shape change. Manual: each query.ts hook restructured (import swap + return rewrite + inline prepare input annotation)."
     },
     {
+      "id": "20260723T0824-public-read-flag",
+      "version": "next",
+      "title": "Public read is a flag, not a mode",
       "id": "20260723T0739-hierarchy-owned-id-columns",
       "version": "next",
       "title": "Hierarchy-owned id-column keys and row-location API",
@@ -84,6 +87,9 @@
       "forkBreaking": true,
       "clientCacheBump": false,
       "script": null,
+      "roots": ["shared", "backend/src", "frontend/src"],
+      "requires": ["pnpm check"],
+      "summary": "Deleted the single-member PublicReadMode union. PublicReadGrants values are now `true`, the config builder's publicRead() takes no argument, and GrantSource's public variant is { type: 'public' }. Decision logic unchanged (still the shared 'public' row condition over the row's publicAt); no wire-shape or database change. Manual: single-token edits at each call site."
       "roots": [
         "shared",
         "backend/src"

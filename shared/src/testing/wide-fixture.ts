@@ -11,7 +11,6 @@ import {
   type PermissionTopology,
   type PermissionValue,
   type PublicReadGrants,
-  type PublicReadMode,
   type SubjectForPermission,
 } from '../permissions';
 
@@ -55,7 +54,7 @@ type WideChannelBuilder = Record<WideRole, (perms: WidePerms) => void>;
 export interface WideAccessPolicyConfiguration {
   subject: { name: WideEntityType };
   contexts: Record<WideChannelType, WideChannelBuilder>;
-  publicRead: (mode: PublicReadMode) => void;
+  publicRead: () => void;
 }
 
 export type WideAccessPolicyCallback = (config: WideAccessPolicyConfiguration) => void;
@@ -85,7 +84,7 @@ export const wideSubject = (input: {
 }): SubjectForPermission => ({ ...input }) as unknown as SubjectForPermission;
 
 /** Wrap a wide-keyed public-read grant map for the engine's `publicGrants` option. */
-export const widePublicGrants = (grants: Partial<Record<WideEntityType, PublicReadMode>>): PublicReadGrants =>
+export const widePublicGrants = (grants: Partial<Record<WideEntityType, true>>): PublicReadGrants =>
   grants as PublicReadGrants;
 
 /** `computeCan`'s result keyed by the wide vocabulary, so tests read `.task` etc. cast-free. */

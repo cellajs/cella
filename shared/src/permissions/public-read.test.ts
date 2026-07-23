@@ -11,7 +11,7 @@ import { matchesRowCondition } from './row-conditions';
  */
 const NOW = '2026-07-06T12:00:00Z';
 
-const grants = widePublicGrants({ project: 'publicSelf', task: 'publicSelf' });
+const grants = widePublicGrants({ project: true, task: true });
 
 const projectSubject = (publicAt: string | null): SubjectForPermission =>
   wideSubject({
@@ -31,7 +31,7 @@ describe('public read grants — anonymous actor', () => {
       topology: wideTopology,
     });
     expect(can.read).toBe(true);
-    expect(actions.read.grantedBy).toEqual([{ type: 'public', mode: 'publicSelf' }]);
+    expect(actions.read.grantedBy).toEqual([{ type: 'public' }]);
   });
 
   it('denies when publicAt is null or row data is absent', () => {
@@ -112,18 +112,18 @@ describe("the 'public' row condition — the shared rule", () => {
 describe('configurePermissions — publicRead declaration', () => {
   it('collects grants per subject and returns them alongside policies', () => {
     const { publicReadGrants } = configureWidePermissions(({ subject, publicRead }) => {
-      if (subject.name === 'project') publicRead('publicSelf');
-      if (subject.name === 'task') publicRead('publicSelf');
+      if (subject.name === 'project') publicRead();
+      if (subject.name === 'task') publicRead();
     });
-    expect(publicReadGrants).toEqual({ project: 'publicSelf', task: 'publicSelf' });
+    expect(publicReadGrants).toEqual({ project: true, task: true });
   });
 
   it('throws when publicRead is declared twice for a subject', () => {
     expect(() =>
       configureWidePermissions(({ subject, publicRead }) => {
         if (subject.name === 'project') {
-          publicRead('publicSelf');
-          publicRead('publicSelf');
+          publicRead();
+          publicRead();
         }
       }),
     ).toThrow('publicRead() called twice');
