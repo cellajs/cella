@@ -1,23 +1,43 @@
+import { asRecord } from 'shared/utils/as-record';
 import { generateId } from 'shared/utils/entity-id';
 import type { z } from 'zod';
 import { useUserStore } from '~/modules/user/user-store';
 
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+/** A zod node exposes its definition tag; anything else is not a schema this walker can read. */
+const isSchema = (value: unknown): value is z.ZodType =>
+  isRecord(value) && isRecord(value.def) && typeof value.def.type === 'string';
+
+const asSchema = (value: unknown): z.ZodType | undefined => (isSchema(value) ? value : undefined);
+
+const asSchemaList = (value: unknown): z.ZodType[] => (Array.isArray(value) ? value.filter(isSchema) : []);
+
+const asShape = (value: unknown): Record<string, z.ZodType> => {
+  if (!isRecord(value)) return {};
+  const shape: Record<string, z.ZodType> = {};
+  for (const [key, field] of Object.entries(value)) {
+    if (isSchema(field)) shape[key] = field;
+  }
+  return shape;
+};
+
 /**
- * Zod v4 schema definition structure (internal API).
- * Using 'any' for the internal _def since Zod v4 doesn't export these types.
+ * Read one payload field off a schema definition.
+ * `def.type` is a closed union, but the per-variant payload fields it implies (`shape`,
+ * `options`, `entries`, ...) are not on the shared base type, so each is read as `unknown`
+ * and narrowed at its use.
  */
-// biome-ignore lint/suspicious/noExplicitAny: Zod v4 internal API not exported
-type ZodDef = any;
+const defField = (def: z.ZodType['def'], key: string): unknown => asRecord(def)[key];
 
 /**
  * Extract a sensible default value from a Zod v4 schema field.
  * Traverses the schema definition to determine the appropriate empty/default value.
  */
-const getDefaultForZodType = (schema: { _def: ZodDef }): unknown => {
-  const def = schema._def;
-  const type = def.type;
+const getDefaultForZodType = (schema: z.ZodType): unknown => {
+  const def = schema.def;
 
-  switch (type) {
+  switch (def.type) {
     case 'string':
       return '';
 
@@ -42,42 +62,50 @@ const getDefaultForZodType = (schema: { _def: ZodDef }): unknown => {
 
     case 'object': {
       // Recursively build object defaults
-      const shape = def.shape ?? {};
+      const shape = asShape(defField(def, 'shape'));
       const result: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(shape)) {
-        result[key] = getDefaultForZodType(value as { _def: ZodDef });
+        result[key] = getDefaultForZodType(value);
       }
       return result;
     }
 
-    case 'enum':
+    case 'enum': {
       // Return first enum value as default
-      return def.entries ? Object.values(def.entries)[0] : '';
+      const entries = defField(def, 'entries');
+      return isRecord(entries) ? Object.values(entries)[0] : '';
+    }
 
-    case 'literal':
-      return def.value;
+    case 'literal': {
+      // Zod v4 stores every accepted literal in `values`; the first is the canonical default.
+      const values = defField(def, 'values');
+      return Array.isArray(values) ? values[0] : undefined;
+    }
 
     case 'union': {
       // For unions, try to find null first (common pattern: z.union([z.string(), z.null()]))
-      const options = def.options ?? [];
+      const options = asSchemaList(defField(def, 'options'));
       for (const option of options) {
-        if (option._def?.type === 'null' || option.type === 'null') {
-          return null;
-        }
+        if (option.def.type === 'null') return null;
       }
       // Otherwise use first option
-      return options.length > 0 ? getDefaultForZodType(options[0]) : null;
+      const [first] = options;
+      return first ? getDefaultForZodType(first) : null;
     }
 
-    case 'optional':
-      return def.innerType ? getDefaultForZodType(def.innerType) : undefined;
+    case 'optional': {
+      const innerType = asSchema(defField(def, 'innerType'));
+      return innerType ? getDefaultForZodType(innerType) : undefined;
+    }
 
     case 'nullable':
       return null;
 
-    case 'default':
+    case 'default': {
       // Use the schema's own default
-      return typeof def.defaultValue === 'function' ? def.defaultValue() : def.defaultValue;
+      const defaultValue = defField(def, 'defaultValue');
+      return typeof defaultValue === 'function' ? defaultValue() : defaultValue;
+    }
 
     case 'record':
       return {};
@@ -90,14 +118,14 @@ const getDefaultForZodType = (schema: { _def: ZodDef }): unknown => {
 
     case 'tuple':
       // Return defaults for each tuple element
-      return (def.items ?? []).map((item: { _def: ZodDef }) => getDefaultForZodType(item));
+      return asSchemaList(defField(def, 'items')).map(getDefaultForZodType);
 
     case 'any':
     case 'unknown':
       return null;
 
     default:
-      console.debug(`[createOptimisticEntity] Unhandled Zod type: ${type}`);
+      console.debug(`[createOptimisticEntity] Unhandled Zod type: ${def.type}`);
       return null;
   }
 };
@@ -107,11 +135,12 @@ const getDefaultForZodType = (schema: { _def: ZodDef }): unknown => {
  * Returns a complete object with sensible defaults for each field.
  */
 export const getSchemaDefaults = <T extends z.ZodObject<z.ZodRawShape>>(schema: T): z.infer<T> => {
-  const shape = schema._def.shape ?? {};
   const result: Record<string, unknown> = {};
 
-  for (const [key, value] of Object.entries(shape)) {
-    result[key] = getDefaultForZodType(value as unknown as { _def: ZodDef });
+  // A generic `ZodRawShape` types its fields as core nodes, so they go through the same
+  // structural check the walker uses for nested shapes.
+  for (const [key, value] of Object.entries(asShape(schema.def.shape))) {
+    result[key] = getDefaultForZodType(value);
   }
 
   return result as z.infer<T>;

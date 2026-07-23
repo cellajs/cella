@@ -71,7 +71,12 @@ export async function handleMcpMessage(ctx: AuthContext, message: JsonRpcMessage
       if (!tool) return fail(-32602, `Unknown tool: ${name}`);
 
       try {
-        const output = await tool.execute?.(args, { toolCallId: String(id) });
+        // `tools/call` returns one result and carries no event stream, so custom events are
+        // dropped. The callback must still be present: tools may invoke it unconditionally.
+        const output = await tool.execute?.(args, {
+          toolCallId: String(id),
+          emitCustomEvent: () => undefined,
+        });
         const text = typeof output === 'string' ? output : JSON.stringify(output ?? null);
         return respond({ content: [{ type: 'text', text }] });
       } catch (error) {
