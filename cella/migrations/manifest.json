@@ -220,6 +220,24 @@
         "pnpm check"
       ],
       "summary": "GET /attachments/presigned-url (getPresignedUrl) -> POST /attachments/presigned-urls (getPresignedUrls): up to 50 id+variant items per call, uniform rejectedIds (no 403/404 existence oracle). Backend getPresignedUrlOp/findAttachmentById/presignedUrlQuerySchema -> getPresignedUrlsOp/findAttachmentsByIds/presignedUrlsBodySchema. Frontend getPrivateFileUrlById delegates to the presign-batch coalescer (flush window, in-flight dedupe, 1h memo); per-id denials reject with PresignRejectedError. No DB change."
+    },
+    {
+      "id": "20260723T1705-media-attachment-ref",
+      "version": "next",
+      "title": "Media blocks carry an attachment reference",
+      "kind": "manual",
+      "forkBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "frontend/src",
+        "shared",
+        "yjs/src"
+      ],
+      "requires": [
+        "pnpm check"
+      ],
+      "summary": "Media block specs (image/video/audio/file) gain an attachmentId prop via withAttachmentRef, applied to both the frontend editor schema and the yjs relay's server schema so Y.Docs round-trip it; UppyFilePanel stamps it on upload. Dead checklistGroupConfig plus checklist-group-block/render deleted, the four mediaBlockTypes copies consolidated onto the shared/blocknote export, and derive-description-core added as the shared block walk for description derivation. No wire-shape or DB change."
     }
   ]
 }
