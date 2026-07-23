@@ -9,7 +9,7 @@ const driverSource = readFileSync(resolve(__dirname, '../lib/stack/pulumi-driver
 describe('deploy-service source contracts', () => {
   it('supports deferring the reap so deploy-rollout can batch it', () => {
     expect(serviceSource).toMatch(/--skip-reap/)
-    expect(serviceSource).toMatch(/if \(!skipReap\) await rt\.update\(\)/)
+    expect(serviceSource).toMatch(/if \(!skipReap\) await rt\.update\(\[plan\.service\]\)/)
   })
 
   it('no longer mutates a stable private IP or reboots during cutover', () => {
@@ -26,7 +26,7 @@ describe('rollout-runtime source contracts', () => {
   })
 
   it('routes stack updates through the Pulumi driver, which skips the redundant preview', () => {
-    expect(runtimeSource).toMatch(/driver\.update\(\)/)
+    expect(runtimeSource).toMatch(/foundationDriver\.update\(\)/)
     const upCalls = driverSource.match(/exec\(\['up'[^\]]*\]\)/g) ?? []
     expect(upCalls.length).toBeGreaterThan(0)
     for (const call of upCalls) expect(call).toContain("'--skip-preview'")

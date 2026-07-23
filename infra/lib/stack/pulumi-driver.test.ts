@@ -14,9 +14,12 @@ describe('createCliDriver', () => {
     })
     const driver = createCliDriver('production', exec)
     await driver.update()
-    expect(calls[0]).toEqual(['up', '--stack', 'production', '--yes', '--non-interactive', '--skip-preview'])
+    // First call ensures the stack exists (generation stacks are created on
+    // first use), then the update runs without a separate preview pass.
+    expect(calls[0]).toEqual(['stack', 'select', 'production'])
+    expect(calls[1]).toEqual(['up', '--stack', 'production', '--yes', '--non-interactive', '--skip-preview'])
     await expect(driver.output('lbBackendIds')).resolves.toEqual({ backend: 'bid-1' })
-    expect(calls[1]).toEqual(['stack', 'output', 'lbBackendIds', '--stack', 'production', '--json'])
+    expect(calls[2]).toEqual(['stack', 'output', 'lbBackendIds', '--stack', 'production', '--json'])
   })
 })
 

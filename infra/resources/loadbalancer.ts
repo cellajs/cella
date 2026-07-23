@@ -8,6 +8,7 @@ import type { ServiceName } from '../compose/compose'
 import { privateNetworkId, privateNetworkSubnet } from './network'
 import { serviceGenerationIps } from './compute'
 import { CertReadyGate, DnsPropagationGate } from './dns-cert-gates'
+import { registerFoundationInput } from './foundation-inputs'
 import { internalLbPort, publishLbInternalAddress } from './lb-internal'
 
 /**
@@ -196,6 +197,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     return address
   })
   publishLbInternalAddress(lbPrivateIp)
+  registerFoundationInput('lbInternalAddress', lbPrivateIp.apply((address) => address.split('/')[0] ?? address))
 
   const internalBackends = new Map<string, scaleway.loadbalancers.Backend>()
   const internalServices = enabledServices(appConfig.services).filter((s) => s.internalRoute)

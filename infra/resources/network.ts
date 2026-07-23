@@ -1,5 +1,6 @@
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tags } from '../pulumi-context'
+import { registerFoundationInput } from './foundation-inputs'
 
 // VPC
 
@@ -32,3 +33,5 @@ export const vpcId = vpc.id
 
 /** Private Network ID used by database and containers. */
 export const privateNetworkId = privateNetwork.id
+
+registerFoundationInput('privateNetworkId', privateNetworkId)

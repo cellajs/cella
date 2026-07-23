@@ -18,9 +18,22 @@ export interface PulumiDriver {
 type ExecPulumi = (args: string[]) => string
 
 export function createCliDriver(stack: string, exec: ExecPulumi = runPulumi): PulumiDriver {
+  // Generation stacks are created on first use (micro topology); the select
+  // probe runs once per driver.
+  let ensured = false
+  const ensureStack = () => {
+    if (ensured) return
+    ensured = true
+    try {
+      exec(['stack', 'select', stack])
+    } catch {
+      exec(['stack', 'init', stack])
+    }
+  }
   return {
     kind: 'cli',
     async update() {
+      ensureStack()
       // --skip-preview: non-interactive and serialized by the stack lock; the
       // preview pass would diff the whole stack a second time.
       exec(['up', '--stack', stack, '--yes', '--non-interactive', '--skip-preview'])

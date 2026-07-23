@@ -1,66 +1,40 @@
-import { naming, region, mode } from './pulumi-context'
+import { mode, naming, region, stackScope } from './pulumi-context'
 
-console.info(`Pulumi stack: ${mode}`)
+console.info(`Pulumi stack: ${mode} (scope: ${stackScope})`)
 console.info(`Slug: ${naming.slug}`)
 console.info(`Region: ${region}`)
 console.info(`Prefix: ${naming.prefix}`)
 
-// Static site (Object Storage)
+// Scope dispatch: a `<mode>-gen-<slug>` stack loads only the generation slice;
+// every other stack loads the full program ('all' also provisions generations,
+// 'foundation' leaves them to their own stacks). Dynamic imports keep the
+// out-of-scope resource modules from evaluating at all.
+const program = stackScope === 'generations' ? await import('./resources/program-generations') : await import('./resources/program-foundation')
 
-import * as storage from './resources/storage'
-
-export const frontendBucketName = storage.frontendBucketName
-export const frontendBucketEndpoint = storage.frontendBucketEndpoint
-export const frontendWebsiteEndpoint = storage.frontendWebsiteEndpoint
-
-// DNS (CAA records)
-
-import './resources/dns'
-
-// Network + Registry + Upload Buckets
-
-import * as network from './resources/network'
-import * as registry from './resources/registry'
-
-export const vpcId = network.vpcId
-export const privateNetworkId = network.privateNetworkId
-export const registryId = registry.registryId
-export const registryEndpoint = registry.registryEndpoint
-export const registryNamespace = registry.registryNamespace
-export const publicUploadsBucketName = storage.publicUploadsBucketName
-export const publicUploadsBucketEndpoint = storage.publicUploadsBucketEndpoint
-export const privateUploadsBucketName = storage.privateUploadsBucketName
-export const privateUploadsBucketEndpoint = storage.privateUploadsBucketEndpoint
-export const bootDiagBucketName = storage.bootDiagBucketName
-export const bootDiagBucketEndpoint = storage.bootDiagBucketEndpoint
-
-// Database (Managed PostgreSQL)
-
-import * as database from './resources/database'
-
-export const dbInstanceId = database.instanceId
-export const dbName = database.databaseName
-export const dbHost = database.host
-export const dbConnectionStringAdmin = database.connectionStringAdmin
-export const dbConnectionStringRuntime = database.connectionStringRuntime
-export const dbConnectionStringCdc = database.connectionStringCdc
-export const dbConnectionStringAdminPublic = database.connectionStringAdminPublic
-
-// Secrets + Compute (Docker Compose VMs)
-
-import * as compute from './resources/compute'
-import './resources/secrets'
-import './resources/vm-iam'
-
-export const computeInstances = compute.computeInstances.map((i) => i.name)
-export const computeGenerationMetadata = compute.computeGenerationMetadata
-
-// Load Balancer + API/Yjs/AI DNS
-
-import * as lb from './resources/loadbalancer'
-
-// Map load-balanced service slugs to public URLs; empty without domain or compute.
-// Consumers discover new services from the map without new exports.
-export const serviceDomainUrls = lb.serviceDomainUrls
-export const lbId = lb.lbId
-export const lbBackendIds = lb.lbBackendIds
+export const frontendBucketName = program.frontendBucketName
+export const frontendBucketEndpoint = program.frontendBucketEndpoint
+export const frontendWebsiteEndpoint = program.frontendWebsiteEndpoint
+export const vpcId = program.vpcId
+export const privateNetworkId = program.privateNetworkId
+export const registryId = program.registryId
+export const registryEndpoint = program.registryEndpoint
+export const registryNamespace = program.registryNamespace
+export const publicUploadsBucketName = program.publicUploadsBucketName
+export const publicUploadsBucketEndpoint = program.publicUploadsBucketEndpoint
+export const privateUploadsBucketName = program.privateUploadsBucketName
+export const privateUploadsBucketEndpoint = program.privateUploadsBucketEndpoint
+export const bootDiagBucketName = program.bootDiagBucketName
+export const bootDiagBucketEndpoint = program.bootDiagBucketEndpoint
+export const dbInstanceId = program.dbInstanceId
+export const dbName = program.dbName
+export const dbHost = program.dbHost
+export const dbConnectionStringAdmin = program.dbConnectionStringAdmin
+export const dbConnectionStringRuntime = program.dbConnectionStringRuntime
+export const dbConnectionStringCdc = program.dbConnectionStringCdc
+export const dbConnectionStringAdminPublic = program.dbConnectionStringAdminPublic
+export const computeInstances = program.computeInstances
+export const computeGenerationMetadata = program.computeGenerationMetadata
+export const serviceDomainUrls = program.serviceDomainUrls
+export const lbId = program.lbId
+export const lbBackendIds = program.lbBackendIds
+export const foundationInputs = program.foundationInputs

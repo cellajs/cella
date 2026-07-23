@@ -26,7 +26,7 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   // Record the deploy INTENT (pendingSha) and let the Pulumi program, the genId
   // authority, derive the content-addressed id and provision the VM.
   await rt.setPending(plan.service, sha)
-  await rt.update()
+  await rt.update([plan.service])
 
   const generations = await rt.readGenerations()
   const backendIds = plan.strategy !== 'exclusive' || (plan.repointBackendKeys?.length ?? 0) > 0 ? await rt.readLbBackendIds() : {}
@@ -36,7 +36,7 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   // `previous` is retained; rollback is a revert commit + redeploy. A displaced
   // generation is already detached from the LB, so deferring the reap
   // (--skip-reap) only leaves an idle VM until the caller's single final update.
-  if (!skipReap) await rt.update()
+  if (!skipReap) await rt.update([plan.service])
 }
 
 if (isMain(import.meta.url)) {

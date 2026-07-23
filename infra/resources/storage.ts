@@ -1,6 +1,7 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tagsAsMap, isProduction, infra, serviceUrl, ciDeployApplicationId, vmReaderApplicationId, operatorApplicationId } from '../pulumi-context'
+import { registerFoundationInput } from './foundation-inputs'
 
 // Optionally grant the operator application S3 access alongside CI in deny-by-default policies.
 // Omit its statement when unset so existing forks keep their policy unchanged.
@@ -215,3 +216,6 @@ export const bootDiagBucketName = bootDiagBucket.name
 
 /** Boot diagnostics bucket S3 endpoint */
 export const bootDiagBucketEndpoint = bootDiagBucket.endpoint
+
+registerFoundationInput('bootDiagBucketName', bootDiagBucketName)
+registerFoundationInput('frontendBucketName', frontendBucketName)

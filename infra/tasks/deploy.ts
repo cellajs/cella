@@ -204,6 +204,10 @@ function createRealEffects(): DeployEffects {
     },
     update: async (stack) => {
       const { createPulumiDriver } = await import('../lib/stack/pulumi-driver')
+      const { stackTopology } = await import('../lib/stack/topology')
+      // Micro topology: the pre-split stack is the foundation; its updates must
+      // not provision generations (their stacks own them and reap follows).
+      if (stackTopology() === 'micro') process.env.INFRA_STACK_SCOPE = 'foundation'
       await createPulumiDriver(stack).update()
     },
     rollout: (argv) => runWavedRolloutCli(argv),

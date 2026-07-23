@@ -22,8 +22,12 @@ export interface RolloutServicePlan {
  * S3 control object, the Scaleway LB API, and public health polling.
  */
 export interface RolloutRuntime {
-  /** One full-stack update: provisions pending generations, reaps displaced ones. */
-  update(): Promise<void>
+  /**
+   * Provision/reap the generations of the given services. The monolith
+   * topology runs ONE full-stack update regardless of the list; the micro
+   * topology updates each service's own generation stack, in parallel.
+   */
+  update(services: string[]): Promise<void>
   /** The `computeGenerationMetadata` stack output. */
   readGenerations(): Promise<GenerationMetadata[]>
   /** The `lbBackendIds` stack output (service slug to LB backend id). */
@@ -151,7 +155,7 @@ export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime
   if (plan.primary) {
     rt.info(`[rollout] wave 1: ${plan.primary.service}`)
     await rt.setPending(plan.primary.service, sha)
-    await rt.update()
+    await rt.update([plan.primary.service])
     const generations = await rt.readGenerations()
     const backendIds = await backendIdsFor([plan.primary])
     await activateService(plan.primary, sha, generations, backendIds, rt)
@@ -160,7 +164,7 @@ export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime
   if (plan.rest.length > 0) {
     rt.info(`[rollout] wave 2: ${plan.rest.map((p) => p.service).join(', ')}`)
     for (const item of plan.rest) await rt.setPending(item.service, sha)
-    await rt.update()
+    await rt.update(plan.rest.map((item) => item.service))
     const generations = await rt.readGenerations()
     const backendIds = await backendIdsFor(plan.rest)
     const outcomes = await Promise.allSettled(plan.rest.map((item) => activateService(item, sha, generations, backendIds, rt)))
@@ -174,6 +178,6 @@ export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime
     }
   }
 
-  rt.info('[rollout] reaping displaced generations (single stack update)')
-  await rt.update()
+  rt.info('[rollout] reaping displaced generations')
+  await rt.update([...(plan.primary ? [plan.primary.service] : []), ...plan.rest.map((item) => item.service)])
 }

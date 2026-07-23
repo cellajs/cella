@@ -9,6 +9,7 @@ import {
   updateServiceRollout,
 } from '../lib/stack/control-store'
 import { createPulumiDriver, type PulumiDriver } from '../lib/stack/pulumi-driver'
+import { generationStackName, stackTopology } from '../lib/stack/topology'
 import { sleep } from './args'
 import { createLbGetServers, createLbSetServers } from './cutover'
 import { createFetchProbe, pollForVersion } from './wait-for-version'
@@ -37,7 +38,20 @@ export interface RolloutRuntimeOptions {
  */
 export function createRolloutRuntime(options: RolloutRuntimeOptions): RolloutRuntime {
   const { stack } = options
-  const driver = options.driver ?? createPulumiDriver(stack)
+  const topology = stackTopology()
+  const foundationDriver = options.driver ?? createPulumiDriver(stack)
+  // Micro topology: one driver per touched service's generation stack.
+  const generationDrivers = new Map<string, PulumiDriver>()
+  const touchedServices = new Set<string>()
+  const generationDriver = (service: string): PulumiDriver => {
+    touchedServices.add(service)
+    let driver = generationDrivers.get(service)
+    if (!driver) {
+      driver = createPulumiDriver(generationStackName(stack, service))
+      generationDrivers.set(service, driver)
+    }
+    return driver
+  }
   const zone = options.lbZone ?? `${process.env.SCW_DEFAULT_REGION ?? process.env.REGION ?? 'fr-par'}-1`
   const secretKey = process.env.SCW_SECRET_KEY
 
@@ -53,9 +67,24 @@ export function createRolloutRuntime(options: RolloutRuntimeOptions): RolloutRun
   }
 
   return {
-    update: () => driver.update(),
-    readGenerations: () => driver.output<GenerationMetadata[]>('computeGenerationMetadata'),
-    readLbBackendIds: () => driver.output<Record<string, string>>('lbBackendIds'),
+    async update(services: string[]) {
+      if (topology === 'monolith') {
+        await foundationDriver.update()
+        return
+      }
+      // Micro: each service's generation stack updates independently, in
+      // parallel; the foundation stack is untouched during a rollout.
+      await Promise.all(services.map((service) => generationDriver(service).update()))
+    },
+    async readGenerations(): Promise<GenerationMetadata[]> {
+      if (topology === 'monolith') return foundationDriver.output<GenerationMetadata[]>('computeGenerationMetadata')
+      const perStack = await Promise.all(
+        [...touchedServices].map((service) => generationDriver(service).output<GenerationMetadata[]>('computeGenerationMetadata')),
+      )
+      return perStack.flat()
+    },
+    // LB pools always live on the foundation stack.
+    readLbBackendIds: () => foundationDriver.output<Record<string, string>>('lbBackendIds'),
     async currentRollout(service: string): Promise<ServiceRollout | undefined> {
       const ctx = await controlCtx()
       if (!ctx) return undefined

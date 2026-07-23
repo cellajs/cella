@@ -10,7 +10,29 @@ import { serviceEndpoints, servicesByName } from './lib/services'
 import type { ServiceName } from './compose/compose'
 import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from './lib/scaleway/vm-reader-secret'
 
-const stackMode = pulumi.getStack().split('/').pop()
+const stackName = pulumi.getStack().split('/').pop() ?? ''
+
+// Micro topology: a `<mode>-gen-<slug>` stack provisions ONE service's VM
+// generations and reads shared values from the foundation stack's outputs. The
+// foundation stack (the pre-split stack, same name as the mode) provisions
+// everything else when INFRA_STACK_SCOPE=foundation. Default 'all' is the
+// single-stack topology and behaves exactly as before the split.
+const generationStackMatch = stackName.match(/^(.+)-gen-([a-z0-9-]+)$/)
+
+export type StackScope = 'all' | 'foundation' | 'generations'
+export const stackScope: StackScope = generationStackMatch
+  ? 'generations'
+  : process.env.INFRA_STACK_SCOPE === 'foundation'
+    ? 'foundation'
+    : 'all'
+/** The one service a `<mode>-gen-<slug>` stack provisions generations for. */
+export const generationStackService = generationStackMatch?.[2] as ServiceName | undefined
+export const provisionFoundation = stackScope !== 'generations'
+export const provisionGenerations = stackScope !== 'foundation'
+/** Stack whose outputs a generations stack references for shared values. */
+export const foundationStackName = generationStackMatch?.[1] ?? stackName
+
+const stackMode = foundationStackName
 
 // Make sure the stack mode matches the appConfig.mode
 if (appConfig.mode !== stackMode) {

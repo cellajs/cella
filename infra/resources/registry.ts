@@ -1,5 +1,6 @@
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region } from '../pulumi-context'
+import { registerFoundationInput } from './foundation-inputs'
 
 // Container Registry Namespace
 
@@ -20,3 +21,5 @@ export const registryEndpoint = registry.endpoint
 
 /** Registry namespace name (no hyphens) */
 export const registryNamespace = registry.name
+
+registerFoundationInput('registryEndpoint', registryEndpoint)

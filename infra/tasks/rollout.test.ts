@@ -223,6 +223,21 @@ describe('runWavedRollout sequencing', () => {
   })
 })
 
+describe('runWavedRollout update batching', () => {
+  it('passes each wave’s service set to update (micro topology parallelism seam)', async () => {
+    const fake = makeFake(cellaFixture())
+    const waves: string[][] = []
+    const rt: RolloutRuntime = {
+      ...fake.rt,
+      update: async (services) => {
+        waves.push([...services])
+      },
+    }
+    await runWavedRollout({ sha: SHA, primary: backendPlan, rest: [cdcPlan, frontendPlan] }, rt)
+    expect(waves).toEqual([['backend'], ['cdc', 'frontend'], ['backend', 'cdc', 'frontend']])
+  })
+})
+
 describe('activateService co-hosted repoint', () => {
   it('repoints co-hosted worker LB backends to the new generation IP after cutover', async () => {
     const fake = makeFake({
