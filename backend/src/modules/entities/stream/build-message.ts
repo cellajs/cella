@@ -112,7 +112,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
 }
 
 /**
- * Move-out notification: the row left `movedFrom.path` (reparent). Sent ONLY to
+ * Move-out notification: the row left the location computed from `movedFrom` (reparent). Sent ONLY to
  * subscribers who could read the old location but not the new one. For them the
  * row effectively disappeared, and no delta fetch will return it (permission-filtered),
  * so the notification itself is the removal instruction.
