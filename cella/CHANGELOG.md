@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/cellajs/cella/compare/0.6.0...0.6.1) (2026-07-23)
+
+
+### 🔧 Small improvements
+
+* faster SW install and reload UX (serwist, chunking, compression) ([#961](https://github.com/cellajs/cella/issues/961)) ([201e68d](https://github.com/cellajs/cella/commit/201e68dc55e6c9e72ec6e973386258cbd155dfe4))
+
 ## [0.6.0](https://github.com/cellajs/cella/compare/0.5.7...0.6.0) (2026-07-23)
 
 
