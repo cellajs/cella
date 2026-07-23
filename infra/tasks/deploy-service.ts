@@ -82,7 +82,11 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   const serviceFlag = getFlag(argv, '--service')
   const sha = getFlag(argv, '--sha')
   const stack = getFlag(argv, '--stack')
-  if (!serviceFlag || !sha || !stack) throw new Error('Usage: deploy-service.ts --service <svc> --sha <git-sha> --stack <stack> [--health-url URL] [--lb-zone ZONE]')
+  // deploy-rollout passes --skip-reap and runs ONE reap `up` after all services,
+  // keeping N-1 full-stack updates off the critical path. Standalone invocations
+  // keep the inline reap so a manual deploy leaves no displaced VM behind.
+  const skipReap = argv.includes('--skip-reap')
+  if (!serviceFlag || !sha || !stack) throw new Error('Usage: deploy-service.ts --service <svc> --sha <git-sha> --stack <stack> [--health-url URL] [--lb-zone ZONE] [--skip-reap]')
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`)
 
   // The registry lookup validates and narrows the raw flag to a real ServiceName.
@@ -97,7 +101,9 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   // authority, derive the content-addressed id and provision the VM. We read
   // the resolved id back from `computeGenerationMetadata`.
   await updateStore(stack, service, (cur) => setPending(cur, sha))
-  runPulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
+  // --skip-preview: the update is already non-interactive and serialized by the
+  // stack lock; the preview pass would diff the whole stack a second time.
+  runPulumi(['up', '--stack', stack, '--yes', '--non-interactive', '--skip-preview'])
 
   const generations = stackOutput<GenerationMetadata[]>(stack, 'computeGenerationMetadata')
   const target = resolvePendingGen(generations, service, sha, current?.active?.id)
@@ -162,7 +168,9 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   await updateStore(stack, service, (cur) => promote(cur, { id: target.genId, sha }))
   // Reap the old generation now that the new one serves healthily. No `previous`
   // is retained; rollback is a revert commit + redeploy (recreates every service).
-  runPulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
+  // A displaced generation is already detached from the LB, so deferring its reap
+  // (--skip-reap) only leaves an idle VM until the caller's single final reap up.
+  if (!skipReap) runPulumi(['up', '--stack', stack, '--yes', '--non-interactive', '--skip-preview'])
 }
 
 if (isMain(import.meta.url)) {

@@ -15,4 +15,12 @@ describe('deploy-service source contracts', () => {
     expect(source).not.toMatch(/rebootServer/)
     expect(source).not.toMatch(/stableInternalGen/)
   })
+
+  it('supports deferred reaps and skips the redundant preview on rollout updates', () => {
+    expect(source).toMatch(/--skip-reap/)
+    expect(source).toMatch(/if \(!skipReap\) runPulumi/)
+    const upCalls = source.match(/runPulumi\(\['up'[^\]]*\]\)/g) ?? []
+    expect(upCalls.length).toBeGreaterThan(0)
+    for (const call of upCalls) expect(call).toContain("'--skip-preview'")
+  })
 })

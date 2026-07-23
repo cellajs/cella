@@ -230,8 +230,13 @@ jobs:
   # -------------------------------------------------------------------------
   pulumi:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: [setup, build-agent-image, build-images]
+    # Cold rollouts of many services (a fork deploying yjs/mcp) need headroom;
+    # a 20-minute cap cancelled raak's first 5-service deploy mid-cutover.
+    timeout-minutes: 30
+    # Only setup: this job's install/lock/preflight/base-infra work runs
+    # concurrently with the image builds. The "Wait for image tags" step below is
+    # the real gate before any step that provisions a VM.
+    needs: [setup]
     # contents: read for checkout.
     permissions:
       contents: read
