@@ -5,7 +5,7 @@ import { devtools } from 'zustand/middleware';
 import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
 import { setSyncStreamLive } from '~/query/basic/sync-stale-config';
-import { useSyncStore } from '~/query/realtime/sync-store';
+import { type CatchupViewRequest, useSyncStore } from '~/query/realtime/sync-store';
 import { handleAppStreamNotification } from './app-stream-handler';
 import { catchupEntityTypes, processAppCatchup } from './catchup-processor';
 import {
@@ -553,22 +553,41 @@ export class StreamManager {
 
 // App Stream
 
+type CatchupBody = NonNullable<Parameters<typeof postAppCatchup>[0]>['body'];
+type CatchupView = NonNullable<CatchupBody['views']>[number];
+type CatchupProductType = CatchupView['entityTypes'][number];
+
+const isCatchupProductType = (entityType: string): entityType is CatchupProductType =>
+  (appConfig.productEntityTypes as readonly string[]).includes(entityType);
+
+/**
+ * Narrow client-declared views to the product types the catchup endpoint accepts.
+ * Views are built from runtime strings, and one unrecognized type would reject the whole
+ * request, stalling catchup for every other view. Unknown types are dropped; a view left
+ * without any type is omitted.
+ */
+function toCatchupViews(views: readonly CatchupViewRequest[]): CatchupView[] {
+  const accepted: CatchupView[] = [];
+  for (const view of views) {
+    const entityTypes = view.entityTypes.filter(isCatchupProductType);
+    if (entityTypes.length === 0) continue;
+    accepted.push({ ...view, entityTypes });
+  }
+  return accepted;
+}
+
 export const appStreamManager = new StreamManager('AppStream', {
   endpoint: `${appConfig.backendUrl}/entities/app/stream`,
   withCredentials: true,
   useTabCoordination: true,
   fetchAndProcessCatchup: async (cursor) => {
     // Combine baseline organization views with membership-derived grant boundaries.
-    // The registry contains only product types, so runtime strings satisfy the SDK enum.
     declareViewsFromMemberships();
-    const views = useSyncStore.getState().getCatchupViews(catchupEntityTypes());
+    const views = toCatchupViews(useSyncStore.getState().getCatchupViews(catchupEntityTypes()));
     const response = await postAppCatchup({
       body: {
         cursor: cursor ?? undefined,
-        views:
-          views.length > 0
-            ? (views as unknown as NonNullable<Parameters<typeof postAppCatchup>[0]>['body']['views'])
-            : undefined,
+        views: views.length > 0 ? views : undefined,
       },
     });
     await processAppCatchup(response, !cursor);
