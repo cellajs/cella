@@ -36,6 +36,18 @@
       "roots": ["frontend/src"],
       "requires": ["pnpm check"],
       "summary": "Rewrite toaster(message, severity, options) calls to Sonner-style toaster.success/info/warning/error methods. TypeScript-AST codemod handles literal severities and reports dynamic calls for manual review; internal API only, no wire-shape change."
+    },
+    {
+      "id": "20260722T2105-prepared-mutation-compose",
+      "version": "next",
+      "title": "Compose prepared mutations over useMutation (drop usePreparedMutation)",
+      "kind": "manual",
+      "forkBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": ["frontend/src"],
+      "requires": ["pnpm check"],
+      "summary": "Removed the usePreparedMutation hook; buildPreparedHandlers(mutation, prepare) stays. Mutation hooks now call useMutation directly and spread { ...mutation, ...buildPreparedHandlers(mutation, prepare) }, dropping five explicit generics and the Mutatable cast. PreparedVars/COALESCED unchanged. Frontend-only, no wire-shape change. Manual: each query.ts hook restructured (import swap + return rewrite + inline prepare input annotation)."
     }
   ]
 }

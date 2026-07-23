@@ -2,8 +2,8 @@ import type { QueryClient } from '@tanstack/react-query';
 import { appConfig, hierarchy, resolveDeepestAncestorId } from 'shared';
 import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
-import type { ItemData } from '~/query/basic/types';
-import type { EntityQueryKeys } from './entity-query-registry';
+import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
+import { getEntityQueryKeys } from './entity-query-registry';
 
 /**
  * The row's effective home channel id: deepest non-null ancestor, the org itself for org-homed
@@ -58,15 +58,13 @@ export interface SpliceResult {
  */
 export function spliceEntityIntoListCaches(
   queryClient: QueryClient,
-  opts: {
-    entity: ItemData;
-    keys: EntityQueryKeys;
-    organizationId: string | null;
-    homeChannelId: string | null;
-    removeOnParentChannelChange?: boolean;
-  },
+  entity: RoutableItemData,
+  opts: { removeOnParentChannelChange?: boolean } = {},
 ): SpliceResult {
-  const { entity, keys, organizationId, homeChannelId, removeOnParentChannelChange = false } = opts;
+  const { removeOnParentChannelChange = false } = opts;
+  const { entityType, organizationId = null } = entity;
+  const keys = getEntityQueryKeys(entityType);
+  const homeChannelId = resolveHomeChannelId(entityType, entity);
 
   let seen = false;
   let spliced = false;
@@ -108,13 +106,6 @@ export function spliceEntityIntoListCaches(
  * never into filtered/search lists. The mutation-path counterpart of the realtime splice: creates
  * splice into the home list live sync owns; a row already present anywhere updates in place.
  */
-export function insertEntitiesIntoHome(
-  queryClient: QueryClient,
-  opts: { entityType: string; entities: ItemData[]; keys: EntityQueryKeys; organizationId: string },
-): void {
-  const { entityType, entities, keys, organizationId } = opts;
-  for (const entity of entities) {
-    const homeChannelId = resolveHomeChannelId(entityType, entity);
-    spliceEntityIntoListCaches(queryClient, { entity, keys, organizationId, homeChannelId });
-  }
+export function insertEntitiesIntoHome(queryClient: QueryClient, entities: OrgRoutableItemData[]): void {
+  for (const entity of entities) spliceEntityIntoListCaches(queryClient, entity);
 }

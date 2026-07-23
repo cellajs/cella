@@ -43,7 +43,7 @@ export const RequestsTableBar = ({
   const { q, order, sort } = searchVars;
   const isFiltered = !!q;
 
-  const requestsListKey = requestsKeys.table.base();
+  const requestsListKey = requestsKeys.table.base;
 
   const { mutateAsync: approveRequests } = useSendApprovalInviteMutation();
 

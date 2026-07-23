@@ -6,6 +6,12 @@ export interface ItemData {
   membership?: { id: string } | null;
 }
 
+/** Entity fields needed to resolve its registered cache keys and canonical home list. */
+export type RoutableItemData = ItemData & { entityType: string; organizationId?: string };
+
+/** An org-scoped entity that can be inserted into a canonical home list. */
+export type OrgRoutableItemData = RoutableItemData & { organizationId: string };
+
 /** Entity data with optional context columns */
 export type ItemDataWithChannel = ItemData & Partial<ChannelIdColumns>;
 

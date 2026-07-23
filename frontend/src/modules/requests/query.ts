@@ -18,36 +18,39 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { requestsSearchDefaults } from '~/modules/requests/search-params-schemas';
 import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 
+type RequestFilters = Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'>;
+type RequestsListParams = RequestFilters & { limit?: number };
+
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
  */
 export const requestsKeys = {
   table: {
-    base: () => ['requests', 'table'] as const,
-    entries: (filters: Omit<GetRequestsData['query'], 'limit' | 'offset'>) =>
-      [...requestsKeys.table.base(), filters] as const,
+    base: ['requests', 'table'] as const,
+    entries: (filters: RequestFilters) => [...requestsKeys.table.base, filters] as const,
   },
-  approve: () => ['requests', 'approve'],
-  create: () => ['requests', 'create'],
-  delete: () => ['requests', 'delete'],
+  approve: ['requests', 'approve'] as const,
+  create: ['requests', 'create'] as const,
+  delete: ['requests', 'delete'] as const,
 };
 
 /** Infinite query options for a paginated list of requests. */
-export const requestsListQueryOptions = ({
-  q = requestsSearchDefaults.q,
-  sort = requestsSearchDefaults.sort,
-  order = requestsSearchDefaults.order,
-  limit: baseLimit = appConfig.requestLimits.requests,
-}: Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
-  const limit = String(baseLimit);
-
-  const queryKey = requestsKeys.table.entries({ q, sort, order });
+export const requestsListQueryOptions = (params: RequestsListParams) => {
+  const defaults = requestsSearchDefaults;
+  const {
+    q = defaults.q,
+    sort = defaults.sort,
+    order = defaults.order,
+    limit = appConfig.requestLimits.requests,
+  } = params;
+  const filters = { q, sort, order };
+  const requestQuery = { ...filters, limit: String(limit) };
 
   return infiniteQueryOptions({
-    queryKey,
-    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset ?? (page ?? 0) * Number(limit));
-      return await getRequests({ query: { q, sort, order, limit, offset }, signal });
+    queryKey: requestsKeys.table.entries(filters),
+    queryFn: ({ pageParam: { page, offset }, signal }) => {
+      const requestOffset = String(offset ?? (page ?? 0) * limit);
+      return getRequests({ query: { ...requestQuery, offset: requestOffset }, signal });
     },
     ...baseInfiniteQueryOptions,
     refetchOnMount: true,
@@ -61,7 +64,7 @@ export const requestsListQueryOptions = ({
  */
 export const useCreateRequestMutation = () => {
   return useMutation<CreateRequestResponse, ApiError, CreateRequestData['body']>({
-    mutationKey: requestsKeys.create(),
+    mutationKey: requestsKeys.create,
     mutationFn: (body) => createRequest({ body }),
   });
 };
@@ -73,8 +76,8 @@ export const useCreateRequestMutation = () => {
  */
 export const useSendApprovalInviteMutation = () => {
   return useMutation<SystemInviteResponse, ApiError, SystemInviteData['body']>({
-    mutationKey: requestsKeys.approve(),
-    mutationFn: async (body) => await systemInvite({ body }),
+    mutationKey: requestsKeys.approve,
+    mutationFn: (body) => systemInvite({ body }),
     onSuccess: () => toaster.success(t('c:success.users_invited')),
     onError: () => toaster.error(t('error:bad_request_action')),
   });
@@ -87,7 +90,7 @@ export const useSendApprovalInviteMutation = () => {
  */
 export const useDeleteRequestMutation = () => {
   return useMutation<boolean, ApiError, Request[]>({
-    mutationKey: requestsKeys.delete(),
+    mutationKey: requestsKeys.delete,
     mutationFn: async (requests) => {
       const ids = requests.map(({ id }) => id);
       await deleteRequests({ body: { ids } });

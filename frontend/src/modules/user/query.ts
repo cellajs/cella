@@ -5,14 +5,15 @@ import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { usersSearchDefaults } from '~/modules/user/search-params-schemas';
 import type { BaseUser } from '~/modules/user/types';
-import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
+import { cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
 import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import type { MutationData } from '~/query/types';
 
-type UserFilters = Omit<GetUsersData['query'], 'limit' | 'offset'>;
+type UserFilters = Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset'>;
+type UsersListParams = UserFilters & { limit?: number };
 
 const keys = createEntityKeys<UserFilters>('user');
 
@@ -27,29 +28,30 @@ const findUserInCache = createCacheFinder<User>('user');
 export const userQueryOptions = (id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => getUser({ path: { relatableUserId: id } }),
+    queryFn: () => getUser({ path: { relatableUserId: id } }),
     placeholderData: () => findUserInCache(id),
   });
 
 /**
  * Infinite query options to get a paginated list of users.
  */
-export const usersListQueryOptions = ({
-  q = usersSearchDefaults.q,
-  sort = usersSearchDefaults.sort,
-  order = usersSearchDefaults.order,
-  role,
-  limit: baseLimit = appConfig.requestLimits.users,
-}: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
-  const limit = String(baseLimit);
-
-  const queryKey = keys.list.filtered({ q, sort, order, role });
+export const usersListQueryOptions = (params: UsersListParams) => {
+  const defaults = usersSearchDefaults;
+  const {
+    q = defaults.q,
+    sort = defaults.sort,
+    order = defaults.order,
+    role,
+    limit = appConfig.requestLimits.users,
+  } = params;
+  const filters = { q, sort, order, role };
+  const requestQuery = { ...filters, limit: String(limit) };
 
   return infiniteQueryOptions({
-    queryKey,
-    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset ?? (page ?? 0) * Number(limit));
-      return await getUsers({ query: { q, sort, order, role, limit, offset }, signal });
+    queryKey: keys.list.filtered(filters),
+    queryFn: ({ pageParam: { page, offset }, signal }) => {
+      const requestOffset = String(offset ?? (page ?? 0) * limit);
+      return getUsers({ query: { ...requestQuery, offset: requestOffset }, signal });
     },
     ...baseInfiniteQueryOptions,
     refetchOnMount: true,
@@ -92,7 +94,11 @@ export const useUserDeleteMutation = () => {
     },
     onSuccess: (_, users) => {
       cacheRemove(listKey, users);
-      for (const user of users) queryClient.removeQueries({ queryKey: keys.detail.byId(user.id) });
+      removeDetailQueriesById(
+        queryClient,
+        keys.detail.base,
+        users.map(({ id }) => id),
+      );
     },
     onSettled: () => {
       invalidateIfLastMutation(queryClient, keys.all, listKey);

@@ -37,21 +37,22 @@ import type { MutationData } from '~/query/types';
  * For managing query caching and invalidation.
  */
 export const meKeys = {
-  all: ['me'],
-  auth: ['me', 'auth'],
-  invites: ['me', 'invites'],
-  memberships: ['me', 'memberships'],
+  all: ['me'] as const,
+  auth: ['me', 'auth'] as const,
+  invites: ['me', 'invites'] as const,
+  memberships: ['me', 'memberships'] as const,
   register: {
-    passkey: ['me', 'register', 'passkey'],
+    passkey: ['me', 'register', 'passkey'] as const,
   },
   update: {
-    info: ['me', 'update', 'info'],
-    flags: ['me', 'update', 'flags'],
+    info: ['me', 'update', 'info'] as const,
+    flags: ['me', 'update', 'flags'] as const,
   },
   delete: {
-    passkey: ['me', 'delete', 'passkey'],
-    totp: ['me', 'delete', 'totp'],
+    passkey: ['me', 'delete', 'passkey'] as const,
+    totp: ['me', 'delete', 'totp'] as const,
   },
+  handleInvitation: ['me', 'handle-invitation'] as const,
 };
 
 /**
@@ -85,7 +86,7 @@ export const useUpdateSelfMutation = () => {
   return useMutation<User, ApiError, Omit<UpdateMeData['body'], 'role' | 'userFlags'>>({
     mutationKey: meKeys.update.info,
     mutationFn: (body) => updateMe({ body }),
-    onSuccess: (updatedUser) => updateOnSuccesses(updatedUser),
+    onSuccess: (updatedUser) => applyUpdatedSelf(updatedUser),
     gcTime: 1000 * 10,
   });
 };
@@ -100,7 +101,7 @@ export const useToggleMfaMutation = () => {
     mutationKey: meKeys.update.info,
     mutationFn: (body) => toggleMfa({ body }),
     onSuccess: (updatedUser, { mfaRequired: isEnabling }) => {
-      updateOnSuccesses(updatedUser);
+      applyUpdatedSelf(updatedUser);
       if (isEnabling) queryClient.invalidateQueries({ queryKey: meKeys.auth });
       toaster.success(t(`mfa_${updatedUser.mfaRequired ? 'enabled' : 'disabled'}`));
     },
@@ -117,7 +118,7 @@ export const useUpdateSelfFlagsMutation = () => {
   return useMutation<User, ApiError, Pick<UpdateMeData['body'], 'userFlags'>>({
     mutationKey: meKeys.update.flags,
     mutationFn: (body) => updateMe({ body }),
-    onSuccess: (updatedUser) => updateOnSuccesses(updatedUser),
+    onSuccess: (updatedUser) => applyUpdatedSelf(updatedUser),
     gcTime: 1000 * 10,
   });
 };
@@ -132,7 +133,7 @@ export const useCreatePasskeyMutation = () => {
     mutationKey: meKeys.register.passkey,
     mutationFn: async () => {
       const credentialData = await getPasskeyRegistrationCredential();
-      return await createPasskey({ body: credentialData });
+      return createPasskey({ body: credentialData });
     },
     onSuccess: (newPasskey) => {
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
@@ -201,7 +202,7 @@ export const useDeleteTotpMutation = () => {
   });
 };
 
-const updateOnSuccesses = (updatedUser: User) => {
+const applyUpdatedSelf = (updatedUser: User) => {
   const { updateUser } = useUserStore.getState();
 
   queryClient.setQueryData(userQueryKeys.detail.byId(updatedUser.id), updatedUser);
@@ -215,7 +216,7 @@ const updateOnSuccesses = (updatedUser: User) => {
 export const myMembershipsQueryOptions = () =>
   queryOptions({
     queryKey: meKeys.memberships,
-    queryFn: async ({ signal }) => getMyMemberships({ signal }),
+    queryFn: ({ signal }) => getMyMemberships({ signal }),
     staleTime: 0,
   });
 
@@ -225,6 +226,7 @@ export const myMembershipsQueryOptions = () =>
  */
 export const useHandleInvitationMutation = () =>
   useMutation<HandleMembershipInvitationResponse, ApiError, MutationData<HandleMembershipInvitationData>>({
+    mutationKey: meKeys.handleInvitation,
     mutationFn: ({ path }) => handleMembershipInvitation({ path }),
     onSuccess: async (settledEntity, { path: { acceptOrReject } }) => {
       // Invalidate memberships + entity lists so useMenu reactively rebuilds

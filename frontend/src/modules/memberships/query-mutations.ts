@@ -117,7 +117,7 @@ const onError = (
 
 export const useInviteMemberMutation = () =>
   useMutation<MembershipInviteResponse, ApiError, InviteMember, undefined>({
-    mutationKey: memberQueryKeys.update(),
+    mutationKey: memberQueryKeys.update,
     mutationFn: ({ body, path, query }) => membershipInvite({ body, path, query }),
     onSuccess: ({ invitesSentCount }, { channel }) => {
       const { id: entityId, entityType, organizationId } = channel;
@@ -154,7 +154,7 @@ export const useInviteMemberMutation = () =>
 
 export const useMemberUpdateMutation = () =>
   useMutation<Membership, ApiError, MutationUpdateMembership, MembershipChannelProp>({
-    mutationKey: memberQueryKeys.update(),
+    mutationKey: memberQueryKeys.update,
     mutationFn: async ({ path, body }) => {
       return await updateMembership({ body, path });
     },
@@ -267,7 +267,7 @@ export const useMemberUpdateMutation = () =>
 
 export const useMembershipsDeleteMutation = () =>
   useMutation<void, ApiError, DeleteMembership, MemberChannelProp[]>({
-    mutationKey: memberQueryKeys.delete(),
+    mutationKey: memberQueryKeys.delete,
     mutationFn: async ({ path, body, query }) => {
       await deleteMemberships({ path, body, query });
     },

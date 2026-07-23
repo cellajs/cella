@@ -1,4 +1,4 @@
-import type { QueryKey } from '@tanstack/react-query';
+import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, QueryDataActions } from '~/query/basic/types';
@@ -28,4 +28,16 @@ export function cacheUpdate(queryKey: QueryKey, items: ItemData[]) {
 /** Remove items from all queries that prefix-match `queryKey`. */
 export function cacheRemove(queryKey: QueryKey, items: ItemData[]) {
   mutateMatchingQueries(queryKey, items, 'remove');
+}
+
+/** Remove detail queries for a set of IDs with a single query-cache scan. */
+export function removeDetailQueriesById(client: QueryClient, detailBase: QueryKey, ids: Iterable<string | number>) {
+  const idsToRemove = new Set(ids);
+  if (idsToRemove.size === 0) return;
+
+  const idIndex = detailBase.length;
+  client.removeQueries({
+    queryKey: detailBase,
+    predicate: ({ queryKey }) => idsToRemove.has(queryKey[idIndex] as string | number),
+  });
 }

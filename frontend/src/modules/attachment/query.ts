@@ -1,5 +1,5 @@
 import type { QueryClient, UseMutationOptions } from '@tanstack/react-query';
-import { infiniteQueryOptions, queryOptions, useQuery, useQueryClient } from '@tanstack/react-query';
+import { infiniteQueryOptions, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { type Attachment, type GetAttachmentsData, getAttachment, getAttachments } from 'sdk';
 import { zAttachment } from 'sdk/zod.gen';
@@ -20,7 +20,7 @@ import {
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
-import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
+import { cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys, SYNC_CHUNK_SIZE } from '~/query/basic/entity-query-registry';
@@ -29,16 +29,14 @@ import { createCacheFinder } from '~/query/basic/find-in-list-cache';
 import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/invalidation-helpers';
 import { syncStaleTime } from '~/query/basic/sync-stale-config';
-import type { ItemData } from '~/query/basic/types';
+import type { OrgRoutableItemData } from '~/query/basic/types';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import { type PreparedVars, usePreparedMutation } from '~/query/offline/prepared-mutation';
+import { buildPreparedHandlers, type PreparedVars } from '~/query/offline/prepared-mutation';
 import { removePausedCreates, squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
 import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
 import { mergeServerResponse, syncEntityToCache } from '~/query/offline/update-success-utils';
-import { getRouteOrgId, getRouteTenantId } from '~/query/realtime/sync-priority';
+import { resolveQueryOrgTenantIds } from '~/query/realtime/sync-priority';
 import { createResourceError } from '~/utils/resource-error';
-
-const attachmentsLimit = appConfig.requestLimits.attachments;
 
 type AttachmentFilters = Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
 
@@ -69,34 +67,30 @@ type AttachmentsListParams = Omit<NonNullable<GetAttachmentsData['query']>, 'lim
 };
 
 export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
-  const d = attachmentsSearchDefaults;
+  const defaults = attachmentsSearchDefaults;
 
   const {
     tenantId,
     organizationId,
-    q = d.q,
-    sort = d.sort,
-    order = d.order,
-    limit: baseLimit = attachmentsLimit,
+    q = defaults.q,
+    sort = defaults.sort,
+    order = defaults.order,
+    limit = appConfig.requestLimits.attachments,
   } = params;
 
-  const limit = String(baseLimit);
-  const keyFilters = { q, sort, order };
-  const queryKey = keys.list.filtered(organizationId, keyFilters);
-  const baseQuery = { q, sort, order, limit };
+  const filters = { q, sort, order };
+  const requestQuery = { ...filters, limit: String(limit) };
 
   return infiniteQueryOptions({
-    queryKey,
-    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset ?? (page ?? 0) * Number(limit));
+    queryKey: keys.list.filtered(organizationId, filters),
+    queryFn: ({ pageParam: { page, offset }, signal }) => {
+      const requestOffset = String(offset ?? (page ?? 0) * limit);
 
-      const result = await getAttachments({
+      return getAttachments({
         path: { tenantId, organizationId },
-        query: { ...baseQuery, offset },
+        query: { ...requestQuery, offset: requestOffset },
         signal,
       });
-
-      return result;
     },
     ...baseInfiniteQueryOptions,
     meta: { persist: false },
@@ -115,11 +109,7 @@ export const attachmentsCanonicalOptions = ({
     queryKey: keys.list.home(organizationId),
     queryFn: async () => {
       return fetchAllPages(
-        ({ limit, offset }) =>
-          getAttachments({
-            path: { tenantId, organizationId },
-            query: { limit, offset },
-          }),
+        ({ limit, offset }) => getAttachments({ path: { tenantId, organizationId }, query: { limit, offset } }),
         1000,
       );
     },
@@ -129,7 +119,7 @@ export const attachmentsCanonicalOptions = ({
 
 export const attachmentQueryOptions = (tenantId: string, organizationId: string, id: string) => ({
   queryKey: keys.detail.byId(id),
-  queryFn: async () => getAttachment({ path: { tenantId, organizationId, id } }),
+  queryFn: () => getAttachment({ path: { tenantId, organizationId, id } }),
   initialData: () => findAttachmentInCache(id),
 });
 
@@ -172,7 +162,7 @@ type DeleteData = Awaited<ReturnType<typeof deleteAttachmentsMutationFn>>;
  */
 const attachmentCreateOptions = (
   queryClient: QueryClient,
-): UseMutationOptions<CreateData, Error, CreateAttachmentVars, { optimisticAttachments: ItemData[] }> => ({
+): UseMutationOptions<CreateData, Error, CreateAttachmentVars, { optimisticAttachments: OrgRoutableItemData[] }> => ({
   mutationKey: keys.create,
   scope: { id: 'attachment' },
   mutationFn: createAttachmentsMutationFn,
@@ -180,13 +170,8 @@ const attachmentCreateOptions = (
   onMutate: async ({ organizationId, data }) => {
     const orgKey = keys.list.org(organizationId);
     await queryClient.cancelQueries({ queryKey: orgKey });
-    const optimisticAttachments = data.map((att) => createOptimisticEntity(zAttachment, att));
-    insertEntitiesIntoHome(queryClient, {
-      entityType: 'attachment',
-      entities: optimisticAttachments,
-      keys,
-      organizationId,
-    });
+    const optimisticAttachments = data.map((att) => createOptimisticEntity(zAttachment, { ...att, organizationId }));
+    insertEntitiesIntoHome(queryClient, optimisticAttachments);
     return { optimisticAttachments };
   },
   onError: (_err, variables, context) => {
@@ -197,12 +182,7 @@ const attachmentCreateOptions = (
   onSuccess: (result, variables, context) => {
     const orgKey = keys.list.org(variables.organizationId);
     if (context?.optimisticAttachments) cacheRemove(orgKey, context.optimisticAttachments);
-    insertEntitiesIntoHome(queryClient, {
-      entityType: 'attachment',
-      entities: result.data,
-      keys,
-      organizationId: variables.organizationId,
-    });
+    insertEntitiesIntoHome(queryClient, result.data);
   },
   onSettled: (_data, error, variables) => {
     if (error)
@@ -260,37 +240,25 @@ const attachmentDeleteOptions = (
   meta: { suppressGlobalErrorToast: true },
   onMutate: async ({ organizationId, attachments }) => {
     const orgKey = keys.list.org(organizationId);
-    removePendingMutations(
-      queryClient,
-      keys.update,
-      attachments.map((a) => a.id),
-    );
+    const attachmentIds = attachments.map((a) => a.id);
+    removePendingMutations(queryClient, keys.update, attachmentIds);
     await queryClient.cancelQueries({ queryKey: orgKey });
     cacheRemove(orgKey, attachments);
-    for (const { id } of attachments) queryClient.removeQueries({ queryKey: keys.detail.byId(id) });
+    removeDetailQueriesById(queryClient, keys.detail.base, attachmentIds);
     return { deletedAttachments: attachments };
   },
-  onError: (_err, variables, context) => {
+  onError: (_err, _variables, context) => {
     handleError('delete');
     if (context?.deletedAttachments) {
-      insertEntitiesIntoHome(queryClient, {
-        entityType: 'attachment',
-        entities: context.deletedAttachments,
-        keys,
-        organizationId: variables.organizationId,
-      });
+      insertEntitiesIntoHome(queryClient, context.deletedAttachments);
     }
   },
   onSuccess: (result, variables) => {
     const rejectedIds = result?.rejectedIds ?? [];
     if (rejectedIds.length === 0) return;
     const rejectedSet = new Set(rejectedIds);
-    insertEntitiesIntoHome(queryClient, {
-      entityType: 'attachment',
-      entities: variables.attachments.filter((a) => rejectedSet.has(a.id)),
-      keys,
-      organizationId: variables.organizationId,
-    });
+    const rejectedAttachments = variables.attachments.filter((a) => rejectedSet.has(a.id));
+    insertEntitiesIntoHome(queryClient, rejectedAttachments);
     toaster.info(
       i18n.t('c:resources_delete_denied', { count: rejectedIds.length, total: variables.attachments.length }),
     );
@@ -303,23 +271,22 @@ const attachmentDeleteOptions = (
 
 export const useAttachmentCreateMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
-  return usePreparedMutation<
-    CreateData,
-    Error,
-    CreateAttachmentVars,
-    { optimisticAttachments: ItemData[] },
-    CreateAttachmentInput
-  >(attachmentCreateOptions(queryClient), (data) => ({
+  const mutation = useMutation(attachmentCreateOptions(queryClient));
+
+  const prepare = (data: CreateAttachmentInput): PreparedVars<CreateAttachmentVars> => ({
     kind: 'run',
     vars: { tenantId, organizationId, data, stx: createStxForCreate() },
-  }));
+  });
+
+  return { ...mutation, ...buildPreparedHandlers(mutation, prepare) };
 };
 
 export const useAttachmentUpdateMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
+  const mutation = useMutation(attachmentUpdateOptions(queryClient));
 
   const prepare = ({ id, ops }: UpdateAttachmentVars): PreparedVars<UpdateAttachmentFullVars> => {
-    if (squashIntoPendingCreate(queryClient, keys.create, id, ops as Record<string, unknown>)) {
+    if (squashIntoPendingCreate(queryClient, keys.create, id, ops)) {
       const cached = findAttachmentInCache(id);
       if (cached) {
         const optimisticAttachment = { ...cached, ...ops, updatedAt: new Date().toISOString() };
@@ -330,58 +297,38 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
     }
 
     const newStx = createStxForUpdate(Object.keys(ops));
-    const { ops: mergedOps, stx } = squashPendingMutation(
-      queryClient,
-      keys.update,
-      id,
-      ops as Record<string, unknown>,
-      newStx,
-    );
+    const { ops: mergedOps, stx } = squashPendingMutation(queryClient, keys.update, id, ops, newStx);
     return { kind: 'run', vars: { tenantId, organizationId, id, ops: mergedOps, stx } };
   };
 
-  return usePreparedMutation<
-    UpdateData,
-    Error,
-    UpdateAttachmentFullVars,
-    { previousAttachment: Attachment | undefined },
-    UpdateAttachmentVars
-  >(attachmentUpdateOptions(queryClient), prepare);
+  return { ...mutation, ...buildPreparedHandlers(mutation, prepare) };
 };
 
+/**
+ * Delete mutation hook for attachments. This is a prepared mutation that can be used offline and will squash multiple deletes into one.
+ */
 export const useAttachmentDeleteMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
+  const mutation = useMutation(attachmentDeleteOptions(queryClient));
 
   const prepare = (attachments: Attachment[]): PreparedVars<DeleteAttachmentVars> => {
-    const cancelled = new Set(
-      removePausedCreates(
-        queryClient,
-        keys.create,
-        attachments.map((a) => a.id),
-      ),
-    );
+    const attachmentIds = attachments.map(({ id }) => id);
+    const cancelled = new Set(removePausedCreates(queryClient, keys.create, attachmentIds));
+
     if (cancelled.size > 0) {
       const localOnly = attachments.filter((a) => cancelled.has(a.id));
-      removePendingMutations(
-        queryClient,
-        keys.update,
-        localOnly.map((a) => a.id),
-      );
+      const localOnlyIds = localOnly.map(({ id }) => id);
+      removePendingMutations(queryClient, keys.update, localOnlyIds);
       cacheRemove(keys.list.org(organizationId), localOnly);
-      for (const { id } of localOnly) queryClient.removeQueries({ queryKey: keys.detail.byId(id) });
+      removeDetailQueriesById(queryClient, keys.detail.base, localOnlyIds);
     }
+
     const remaining = attachments.filter((a) => !cancelled.has(a.id));
     if (remaining.length === 0) return { kind: 'noop' };
     return { kind: 'run', vars: { tenantId, organizationId, attachments: remaining, stx: createStxForDelete() } };
   };
 
-  return usePreparedMutation<
-    DeleteData,
-    Error,
-    DeleteAttachmentVars,
-    { deletedAttachments: Attachment[] },
-    Attachment[]
-  >(attachmentDeleteOptions(queryClient), prepare);
+  return { ...mutation, ...buildPreparedHandlers(mutation, prepare) };
 };
 
 // Mutation defaults (offline persistence)
@@ -390,9 +337,7 @@ addMutationRegistrar((queryClient: QueryClient) => {
     queryFn: ({ queryKey, meta }) => {
       const id = queryKey[2] as string;
       const cached = findAttachmentInCache(id);
-      const organizationId = (meta?.organizationId as string) ?? cached?.organizationId ?? getRouteOrgId();
-      const tenantId = (meta?.tenantId as string) ?? cached?.tenantId ?? getRouteTenantId();
-      if (!organizationId || !tenantId) throw new Error('Cannot resolve organizationId/tenantId for attachment fetch');
+      const { organizationId, tenantId } = resolveQueryOrgTenantIds(meta, cached, 'attachment');
       return getAttachment({ path: { id, organizationId, tenantId } });
     },
   });
