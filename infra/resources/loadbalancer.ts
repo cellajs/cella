@@ -1,6 +1,7 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { appConfig } from '../../shared'
+import { engineConfig } from '../config/engine-config'
+const appConfig = engineConfig()
 import { naming, zone, tags, dnsZone, serviceHost, serviceUrl, infra } from '../pulumi-context'
 import { enabledServices } from '../lib/services'
 import type { ServiceName } from '../compose/compose'

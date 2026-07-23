@@ -1,4 +1,5 @@
-import { appConfig } from '../../shared'
+import { engineConfig } from '../config/engine-config'
+const appConfig = engineConfig()
 import type { ServiceName } from '../compose/compose'
 import { coHostedServices, servicesByName } from '../lib/services'
 import type { RolloutServicePlan } from './rollout'

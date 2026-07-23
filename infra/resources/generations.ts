@@ -1,4 +1,5 @@
-import { appConfig } from '../../shared'
+import { engineConfig } from '../config/engine-config'
+const appConfig = engineConfig()
 import { composeConfig } from '../compose/compose'
 import { deriveGenId } from '../lib/gen-id'
 import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
