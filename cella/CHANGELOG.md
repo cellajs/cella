@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.6.0](https://github.com/cellajs/cella/compare/0.5.7...0.6.0) (2026-07-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* batch presigned URLs replace the single presign endpoint ([#957](https://github.com/cellajs/cella/issues/957))
+* replace unchecked type assertions that hid real defects ([#956](https://github.com/cellajs/cella/issues/956))
+* rename attachment storage flag to publicBucket ([#954](https://github.com/cellajs/cella/issues/954))
+* consolidate permission vocabulary onto repo terms ([#955](https://github.com/cellajs/cella/issues/955))
+* public read is a flag, not a mode ([#953](https://github.com/cellajs/cella/issues/953))
+* hierarchy as single source of truth (config, guards, row location, path column) ([#952](https://github.com/cellajs/cella/issues/952))
+* breaking change migration structure renewal and renaming ([#942](https://github.com/cellajs/cella/issues/942))
+
+### 🎉 New features
+
+* batch presigned URLs replace the single presign endpoint ([#957](https://github.com/cellajs/cella/issues/957)) ([26208e6](https://github.com/cellajs/cella/commit/26208e657d67a55942a019372994592a788ee4cd))
+* breaking change migration structure renewal and renaming ([#942](https://github.com/cellajs/cella/issues/942)) ([b4b40b8](https://github.com/cellajs/cella/commit/b4b40b806bd2b9ec8a747168fc4b074b2cca6b11))
+* hierarchy as single source of truth (config, guards, row location, path column) ([#952](https://github.com/cellajs/cella/issues/952)) ([df50a60](https://github.com/cellajs/cella/commit/df50a6025c9af3ee73ca4e51864b50bb69ceab34))
+* owned embedding lifecycle ([#960](https://github.com/cellajs/cella/issues/960)) ([51028b6](https://github.com/cellajs/cella/commit/51028b67e5a1cd17c378bee4d4d55af24b408029))
+
+
+### 🐞 Bug fixes
+
+* index each list item as its own docs search section ([#959](https://github.com/cellajs/cella/issues/959)) ([4cf7fe5](https://github.com/cellajs/cella/commit/4cf7fe53dd16ecf35588360d3181fdaa80812420))
+* release tab leadership when leaving the app ([#951](https://github.com/cellajs/cella/issues/951)) ([baa38f0](https://github.com/cellajs/cella/commit/baa38f0e4b1ce5c36f0729eecdd1376cf70946a6))
+* seq necessary in catchup tests ([#946](https://github.com/cellajs/cella/issues/946)) ([c908b99](https://github.com/cellajs/cella/commit/c908b990ce115695882fdbb83027763f5e0fa310))
+
+
+### 🔧 Small improvements
+
+* align toaster API with Sonner ([#949](https://github.com/cellajs/cella/issues/949)) ([5c375ca](https://github.com/cellajs/cella/commit/5c375cae665fec920e5f4740853b6aad0732d51e))
+* back to useMutation, cleanup query.ts files ([#950](https://github.com/cellajs/cella/issues/950)) ([0538424](https://github.com/cellajs/cella/commit/0538424b2ede266a0b0be1011549e57e0b682376))
+* consolidate permission vocabulary onto repo terms ([#955](https://github.com/cellajs/cella/issues/955)) ([1642b7d](https://github.com/cellajs/cella/commit/1642b7dc9dbd857726d2a0f317dda68178d7251f))
+* improve fork alignment ([#943](https://github.com/cellajs/cella/issues/943)) ([6f21e07](https://github.com/cellajs/cella/commit/6f21e0737de691963c31250ae7ea09ff543b239d))
+* public read is a flag, not a mode ([#953](https://github.com/cellajs/cella/issues/953)) ([702955a](https://github.com/cellajs/cella/commit/702955ae853afd44f21f0b3d78cb6ccd8f445597))
+* rename attachment storage flag to publicBucket ([#954](https://github.com/cellajs/cella/issues/954)) ([32847fe](https://github.com/cellajs/cella/commit/32847feb1f8076f615b0ed07beff29ef41b11720))
+* replace unchecked type assertions that hid real defects ([#956](https://github.com/cellajs/cella/issues/956)) ([dad46cb](https://github.com/cellajs/cella/commit/dad46cb09d11915af13109016ee9a6a535c5c4ca))
+
+
+### 🧹 Chores
+
+* imporve add entity todo list md ([#958](https://github.com/cellajs/cella/issues/958)) ([8a71bc8](https://github.com/cellajs/cella/commit/8a71bc872541ee7f46323fac77834e96a9069168))
+* improve embedded propagation hints naming ([#947](https://github.com/cellajs/cella/issues/947)) ([a7ee2d2](https://github.com/cellajs/cella/commit/a7ee2d200e07f1711b587f116a7fae2d0b045cd5))
+* tighten long-form source comments ([#948](https://github.com/cellajs/cella/issues/948)) ([070d340](https://github.com/cellajs/cella/commit/070d3407d67695ce4ada072cb67431d8881df549))
+* update deps ([#945](https://github.com/cellajs/cella/issues/945)) ([6baf179](https://github.com/cellajs/cella/commit/6baf1796cf5f76b9eb475eb7aff7941c12fbb9b9))
+
 ## [0.5.7](https://github.com/cellajs/cella/compare/0.5.6...0.5.7) (2026-07-21)
 
 
