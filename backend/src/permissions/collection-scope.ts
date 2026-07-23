@@ -1,46 +1,46 @@
 import {
-  type AccessPolicies,
   type Actor,
-  accessPolicies,
+  hierarchy as appHierarchy,
   type ChannelEntityType,
   elevatedRoles as configuredElevatedRoles,
   publicReadGrants as configuredPublicReadGrants,
+  type EntityHierarchy,
   type EntityRole,
+  getEntityPolicies,
   getPolicyPermissions,
-  getSubjectPolicies,
-  hierarchy,
   isRowCondition,
-  type NormalizedPermissionValue,
-  type PermissionTopology,
+  type PolicyCell,
+  type PolicyMatrix,
   type ProductEntityType,
   type PublicReadGrants,
+  policyMatrix,
   type RowConditionName,
 } from 'shared';
 import { AppError } from '#/core/error';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
-/** The `read` policy value a role grants for the entity type within the given context. */
+/** The `read` policy value a role grants for the entity type within the given channel. */
 const roleReadValue = (
-  policies: AccessPolicies,
+  policies: PolicyMatrix,
   entityType: ProductEntityType,
   channelType: ChannelEntityType,
   role: EntityRole,
-): NormalizedPermissionValue => {
-  const subjectPolicies = getSubjectPolicies(entityType, policies);
-  const permissions = getPolicyPermissions(subjectPolicies, channelType, role);
+): PolicyCell => {
+  const entityPolicies = getEntityPolicies(entityType, policies);
+  const permissions = getPolicyPermissions(entityPolicies, channelType, role);
   return permissions?.read ?? 0;
 };
 
 /**
- * A row-conditional slice of the caller's readable scope: rows within `subChannelIds`
+ * A row-conditional slice of the caller's readable scope: rows within `channelIds`
  * (undefined = org-wide) are readable only where `condition` matches.
  * Compiled to SQL by `buildCollectionReadWhere` (`row-predicates.ts`).
- * `channelType` is the grant's level; absent = the entity's home context (sub-context
+ * `channelType` is the grant's level; absent = the entity's home channel (home channel
  * column), the shape required by callers that do not provide a deep chain.
  */
 export interface ConditionalScope {
   condition: RowConditionName;
-  subChannelIds: string[] | undefined;
+  channelIds: string[] | undefined;
   channelType?: ChannelEntityType;
   /** Home-scoped grant (elevatedRoles): these levels' columns must be NULL as well. */
   deeperChannels?: ChannelEntityType[];
@@ -50,12 +50,12 @@ export interface ConditionalScope {
  * An unconditional grant at an intermediate ancestor level (deep chains only, e.g.
  * course/courseSection between organization and an item's home project): rows are
  * scoped by THAT level's own id column. Root grants stay org-wide and home grants
- * stay in `subChannelIds`, so two-level forks never produce these. With `elevatedRoles`
+ * stay in `homeChannelIds`, so two-level forks never produce these. With `elevatedRoles`
  * configured, only subtree-scoped roles land here.
  */
-export interface AncestorScope {
+export interface IntermediateScope {
   channelType: ChannelEntityType;
-  subChannelIds: string[];
+  channelIds: string[];
 }
 
 /**
@@ -65,7 +65,7 @@ export interface AncestorScope {
  */
 export interface HomeScope {
   channelType: ChannelEntityType;
-  subChannelIds: string[];
+  channelIds: string[];
   /** The chain levels more specific than `channelType` (their columns must be NULL). */
   deeperChannels: ChannelEntityType[];
 }
@@ -74,9 +74,9 @@ export interface HomeScope {
 interface ScopeAccumulator {
   unconditionalOrgWide: boolean;
   unconditionalIds: Set<string>;
-  /** Unconditional grants at intermediate ancestor levels (deep chains), keyed by context type. */
-  ancestorUnconditional: Map<ChannelEntityType, Set<string>>;
-  /** HOME-scoped unconditional grants (elevatedRoles), keyed by context type. */
+  /** Unconditional grants at intermediate ancestor levels (deep chains), keyed by channel type. */
+  intermediateUnconditional: Map<ChannelEntityType, Set<string>>;
+  /** HOME-scoped unconditional grants (elevatedRoles), keyed by channel type. */
   homeScoped: Map<ChannelEntityType, Set<string>>;
   /** Keyed by `${condition name}:${level}:${homeOnly}`; the name uniquely identifies the rule. */
   conditional: Map<
@@ -94,14 +94,14 @@ interface ScopeAccumulator {
 /**
  * Resolve the caller's readable scope for a product entity within an organization.
  *
- * - Unconditional grants (`read: 1`) widen the plain sub-context scope, as before.
+ * - Unconditional grants (`read: 1`) widen the plain home-channel scope, as before.
  * - Row-conditional grants (`read: <condition>`, e.g. `'own'`) contribute a
- *   {@link ConditionalScope}: those contexts' rows are readable where the condition
+ *   {@link ConditionalScope}: those channels' rows are readable where the condition
  *   matches. This makes condition-only roles listable at all; a role with only
  *   `read: 'own'` otherwise contributes no unconditional scope.
  */
 const resolveScopes = (
-  policies: AccessPolicies,
+  policies: PolicyMatrix,
   memberships: MembershipBaseModel[],
   entityType: ProductEntityType,
   organizationId: string,
@@ -110,18 +110,18 @@ const resolveScopes = (
   publicGrants: PublicReadGrants | undefined,
 ): ScopeAccumulator => {
   const rootChannel = ancestors.at(-1) ?? null; // organization
-  const subChannelType = ancestors.find((context) => context !== rootChannel) ?? null; // home context, e.g. project
+  const homeChannelType = ancestors.find((channel) => channel !== rootChannel) ?? null; // home channel, e.g. project
 
   // Grant scoping: with elevatedRoles configured, a non-elevated role's grant speaks only
   // for rows HOMED at its level. Grants at the deepest level are home-exact by
   // construction; root/intermediate grants of non-elevated roles become home-scoped.
   const isHomeScopedGrant = (channelType: ChannelEntityType, role: EntityRole): boolean =>
-    elevatedRoles !== undefined && !elevatedRoles.includes(role) && channelType !== subChannelType;
+    elevatedRoles !== undefined && !elevatedRoles.includes(role) && channelType !== homeChannelType;
 
   const acc: ScopeAccumulator = {
     unconditionalOrgWide: false,
     unconditionalIds: new Set(),
-    ancestorUnconditional: new Map(),
+    intermediateUnconditional: new Map(),
     homeScoped: new Map(),
     conditional: new Map(),
   };
@@ -154,17 +154,17 @@ const resolveScopes = (
       return;
     }
     if (channelId === null) acc.unconditionalOrgWide = true;
-    else if (channelType === subChannelType) acc.unconditionalIds.add(channelId);
+    else if (channelType === homeChannelType) acc.unconditionalIds.add(channelId);
     else {
       // Intermediate ancestor level (deep chains): scoped by that level's own id column.
-      const ids = acc.ancestorUnconditional.get(channelType) ?? new Set<string>();
+      const ids = acc.intermediateUnconditional.get(channelType) ?? new Set<string>();
       ids.add(channelId);
-      acc.ancestorUnconditional.set(channelType, ids);
+      acc.intermediateUnconditional.set(channelType, ids);
     }
   };
 
   for (const membership of memberships) {
-    // Root-context (e.g. organization) grant → org-wide scope (or org-homed rows only,
+    // Root-channel (e.g. organization) grant → org-wide scope (or org-homed rows only,
     // for non-elevated roles).
     if (rootChannel && membership.channelType === rootChannel && membership.channelId === organizationId) {
       const value = roleReadValue(policies, entityType, rootChannel, membership.role);
@@ -189,7 +189,7 @@ const resolveScopes = (
         addConditional(
           value,
           membership.channelId,
-          grantLevel === subChannelType ? undefined : grantLevel,
+          grantLevel === homeChannelType ? undefined : grantLevel,
           isHomeScopedGrant(grantLevel, membership.role),
         );
     }
@@ -204,18 +204,18 @@ const resolveScopes = (
 
 /**
  * Effective collection-read scopes, combined with OR semantics.
- * Undefined `subChannelIds` means organization-wide access, an empty array means no
+ * Undefined `homeChannelIds` means organization-wide access, an empty array means no
  * unconditional access, and IDs restrict it. A read is empty only when every scope is empty.
  */
 export interface CollectionReadFilter {
-  subChannelIds: string[] | undefined;
+  homeChannelIds: string[] | undefined;
   conditionalScopes: ConditionalScope[];
   /**
    * Unconditional grants at intermediate ancestor levels (deep chains; aggregate reads
    * only; `requested` narrowing stays home-level). OR-ed with everything else, each
    * scoped by its own level's id column.
    */
-  ancestorScopes?: AncestorScope[];
+  intermediateScopes?: IntermediateScope[];
   /**
    * HOME-scoped grants (elevatedRoles; aggregate reads only): rows homed exactly at
    * the grant's level. OR-ed with everything else.
@@ -226,10 +226,10 @@ export interface CollectionReadFilter {
 /** Whether the resolved filter yields no readable rows at all (op should return an empty list). */
 export const hasNoReadScope = (filter: CollectionReadFilter): boolean => {
   return (
-    filter.subChannelIds !== undefined &&
-    filter.subChannelIds.length === 0 &&
+    filter.homeChannelIds !== undefined &&
+    filter.homeChannelIds.length === 0 &&
     filter.conditionalScopes.length === 0 &&
-    (filter.ancestorScopes?.length ?? 0) === 0 &&
+    (filter.intermediateScopes?.length ?? 0) === 0 &&
     (filter.homeScopes?.length ?? 0) === 0
   );
 };
@@ -254,7 +254,7 @@ const toConditionalScopes = (
       ? deeperChannelsOf(orderedChannels, channelType ?? (orderedChannels.at(-1) as ChannelEntityType))
       : undefined;
     if (orgWide) {
-      scopes.push({ condition, subChannelIds: undefined, ...(deeper?.length && { deeperChannels: deeper }) });
+      scopes.push({ condition, channelIds: undefined, ...(deeper?.length && { deeperChannels: deeper }) });
       continue;
     }
     // Intermediate-level slices keep their own id space (scoped by their own column).
@@ -262,7 +262,7 @@ const toConditionalScopes = (
       if (ids.size > 0)
         scopes.push({
           condition,
-          subChannelIds: [...ids],
+          channelIds: [...ids],
           channelType,
           ...(deeper?.length && { deeperChannels: deeper }),
         });
@@ -270,18 +270,18 @@ const toConditionalScopes = (
     }
     // Ids already unconditionally readable don't need the conditional slice.
     const remaining = [...ids].filter((id) => !acc.unconditionalIds.has(id));
-    if (remaining.length > 0) scopes.push({ condition, subChannelIds: remaining });
+    if (remaining.length > 0) scopes.push({ condition, channelIds: remaining });
   }
   return scopes;
 };
 
-const toAncestorScopes = (acc: ScopeAccumulator): AncestorScope[] => {
-  // Org-wide unconditional scope subsumes every ancestor slice.
+const toIntermediateScopes = (acc: ScopeAccumulator): IntermediateScope[] => {
+  // Org-wide unconditional scope subsumes every intermediate slice.
   if (acc.unconditionalOrgWide) return [];
 
-  const scopes: AncestorScope[] = [];
-  for (const [channelType, ids] of acc.ancestorUnconditional) {
-    if (ids.size > 0) scopes.push({ channelType, subChannelIds: [...ids] });
+  const scopes: IntermediateScope[] = [];
+  for (const [channelType, ids] of acc.intermediateUnconditional) {
+    if (ids.size > 0) scopes.push({ channelType, channelIds: [...ids] });
   }
   return scopes;
 };
@@ -295,7 +295,7 @@ const toHomeScopes = (acc: ScopeAccumulator, orderedChannels: readonly ChannelEn
     if (ids.size > 0)
       scopes.push({
         channelType,
-        subChannelIds: [...ids],
+        channelIds: [...ids],
         deeperChannels: deeperChannelsOf(orderedChannels, channelType),
       });
   }
@@ -305,7 +305,7 @@ const toHomeScopes = (acc: ScopeAccumulator, orderedChannels: readonly ChannelEn
 /** Everything a collection-read scope resolution depends on. */
 export interface CollectionReadScopeInput {
   /** Policy set. The bound wrapper injects the app's; parity tests pass synthetic ones. */
-  policies: AccessPolicies;
+  policies: PolicyMatrix;
   memberships: MembershipBaseModel[];
   /** The product entity being listed. */
   entityType: ProductEntityType;
@@ -314,28 +314,28 @@ export interface CollectionReadScopeInput {
   /** Who is asking. Carries the system-admin bypass; required so no call site can forget it. */
   actor: Actor;
   /**
-   * Explicit sub-context narrowing already resolved from the request:
-   * - `subChannelId`: a single explicit id (e.g. `projectId` query param).
-   * - `subChannelIds`: a pre-resolved set (e.g. all project ids of a requested workspace).
+   * Explicit home-channel narrowing already resolved from the request:
+   * - `homeChannelId`: a single explicit id (e.g. `projectId` query param).
+   * - `homeChannelIds`: a pre-resolved set (e.g. all project ids of a requested workspace).
    * When neither is provided the read is an aggregate over the caller's readable scope.
    */
-  requested?: { subChannelId?: string; subChannelIds?: string[] };
+  requested?: { homeChannelId?: string; homeChannelIds?: string[] };
   /**
    * Grant scoping role list.
    * @see shared/config/permissions-config.ts
    */
   elevatedRoles?: readonly string[];
   /**
-   * Subject-level public read grants.
+   * Entity-type public read grants.
    * @see shared/src/permissions/public-read.ts
    */
   publicGrants?: PublicReadGrants;
   /**
-   * Hierarchy override, the same seam `getAllDecisions(…, { topology })` exposes. Defaults to
+   * Hierarchy override, the same seam `getAllDecisions(…, { hierarchy })` exposes. Defaults to
    * the app's real hierarchy; parity tests pass a synthetic one to exercise deep chains a
    * 2-level config structurally cannot reach.
    */
-  topology?: PermissionTopology;
+  hierarchy?: EntityHierarchy;
 }
 
 /**
@@ -351,10 +351,10 @@ export const resolveCollectionReadFilter = (
   entityType: ProductEntityType,
   organizationId: string,
   actor: Actor,
-  requested?: { subChannelId?: string; subChannelIds?: string[] },
+  requested?: { homeChannelId?: string; homeChannelIds?: string[] },
 ): CollectionReadFilter =>
   resolveCollectionReadFilterForPolicies({
-    policies: accessPolicies,
+    policies: policyMatrix,
     memberships,
     entityType,
     organizationId,
@@ -378,22 +378,22 @@ export const resolveCollectionReadFilterForPolicies = ({
   requested,
   elevatedRoles,
   publicGrants,
-  topology,
+  hierarchy,
 }: CollectionReadScopeInput): CollectionReadFilter => {
   // Match the engine's administrator short-circuit with organization-wide collection access.
   // Administrators may pass the guard without a membership.
   if (!('anonymous' in actor) && actor.isSystemAdmin) {
-    // An explicitly requested sub-context still narrows the read. Sysadmin widens
+    // An explicitly requested home channel still narrows the read. Sysadmin widens
     // WHO can read, never WHAT a placement-filtered list returns.
-    if (requested?.subChannelId !== undefined)
-      return { subChannelIds: [requested.subChannelId], conditionalScopes: [] };
-    if (requested?.subChannelIds !== undefined)
-      return { subChannelIds: requested.subChannelIds, conditionalScopes: [] };
-    return { subChannelIds: undefined, conditionalScopes: [] };
+    if (requested?.homeChannelId !== undefined)
+      return { homeChannelIds: [requested.homeChannelId], conditionalScopes: [] };
+    if (requested?.homeChannelIds !== undefined)
+      return { homeChannelIds: requested.homeChannelIds, conditionalScopes: [] };
+    return { homeChannelIds: undefined, conditionalScopes: [] };
   }
 
-  const topoHierarchy = topology?.hierarchy ?? hierarchy;
-  const orderedChannels = topoHierarchy.getOrderedAncestors(entityType) as ChannelEntityType[];
+  const resolvedHierarchy = hierarchy ?? appHierarchy;
+  const orderedChannels = resolvedHierarchy.getOrderedAncestors(entityType) as ChannelEntityType[];
   const acc = resolveScopes(
     policies,
     memberships,
@@ -405,16 +405,17 @@ export const resolveCollectionReadFilterForPolicies = ({
   );
   const conditionalScopes = toConditionalScopes(acc, orderedChannels);
   const rootChannel = orderedChannels.at(-1) ?? null;
-  const homeChannel = orderedChannels.find((context) => context !== rootChannel) ?? null;
-  const ancestorScopes = toAncestorScopes(acc);
+  const homeChannel = orderedChannels.find((channel) => channel !== rootChannel) ?? null;
+  const intermediateScopes = toIntermediateScopes(acc);
   const homeScopes = toHomeScopes(acc, orderedChannels);
 
   const withScopes = (
-    filter: Omit<CollectionReadFilter, 'ancestorScopes' | 'homeScopes'>,
-    ancestors: AncestorScope[] = ancestorScopes,
+    filter: Omit<CollectionReadFilter, 'intermediateScopes' | 'homeScopes'>,
+    intermediates: IntermediateScope[] = intermediateScopes,
     homes: HomeScope[] = homeScopes,
   ): CollectionReadFilter => {
-    let base: CollectionReadFilter = ancestors.length > 0 ? { ...filter, ancestorScopes: ancestors } : filter;
+    let base: CollectionReadFilter =
+      intermediates.length > 0 ? { ...filter, intermediateScopes: intermediates } : filter;
     if (homes.length > 0) base = { ...base, homeScopes: homes };
     return base;
   };
@@ -433,36 +434,36 @@ export const resolveCollectionReadFilterForPolicies = ({
       conditionalScopes
         // Intermediate + home-scoped slices are dropped (requested narrowing is home-level)
         .filter((scope) => !isIntermediate(scope.channelType) && !scope.deeperChannels)
-        .map(({ condition, subChannelIds }) => ({
+        .map(({ condition, channelIds }) => ({
           condition,
-          subChannelIds: subChannelIds === undefined ? remaining : remaining.filter((id) => subChannelIds.includes(id)),
+          channelIds: channelIds === undefined ? remaining : remaining.filter((id) => channelIds.includes(id)),
         }))
-        .filter((scope) => scope.subChannelIds.length > 0)
+        .filter((scope) => scope.channelIds.length > 0)
     );
   };
 
   // Explicit single id (e.g. ?projectId=…): must be within the caller's readable scope.
-  if (requested?.subChannelId !== undefined) {
-    const id = requested.subChannelId;
-    if (unconditionallyReadable(id)) return { subChannelIds: [id], conditionalScopes: [] };
+  if (requested?.homeChannelId !== undefined) {
+    const id = requested.homeChannelId;
+    if (unconditionallyReadable(id)) return { homeChannelIds: [id], conditionalScopes: [] };
 
     const scopes = conditionalScopesFor([id]);
     if (scopes.length === 0) {
       throw new AppError(403, 'forbidden', 'warn', { entityType });
     }
-    return { subChannelIds: [], conditionalScopes: scopes };
+    return { homeChannelIds: [], conditionalScopes: scopes };
   }
 
   // Explicit set (e.g. all projects of a workspace): intersect with the caller's scope.
-  if (requested?.subChannelIds !== undefined) {
-    const unconditional = requested.subChannelIds.filter((id) => unconditionallyReadable(id));
-    return { subChannelIds: unconditional, conditionalScopes: conditionalScopesFor(requested.subChannelIds) };
+  if (requested?.homeChannelIds !== undefined) {
+    const unconditional = requested.homeChannelIds.filter((id) => unconditionallyReadable(id));
+    return { homeChannelIds: unconditional, conditionalScopes: conditionalScopesFor(requested.homeChannelIds) };
   }
 
   // Aggregate read: org-wide for root-level grants, otherwise the caller's readable
-  // sub-contexts plus any intermediate ancestor / home scopes.
+  // home channels plus any intermediate / home scopes.
   return withScopes({
-    subChannelIds: acc.unconditionalOrgWide ? undefined : [...acc.unconditionalIds],
+    homeChannelIds: acc.unconditionalOrgWide ? undefined : [...acc.unconditionalIds],
     conditionalScopes,
   });
 };

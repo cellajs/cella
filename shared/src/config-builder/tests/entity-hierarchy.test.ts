@@ -87,7 +87,7 @@ describe('EntityHierarchyBuilder', () => {
   });
 
   describe('hierarchy queries (raak-like model)', () => {
-// Model organization as root; workspace and project as its contexts.
+// Model organization as root; workspace and project as its channels.
 // Task, label, and attachment are project products inheriting organization permissions.
     const hierarchy = createEntityHierarchy(roles)
       .user()

@@ -1,11 +1,11 @@
 import { createEntityHierarchy, createRoleRegistry } from '../config-builder/entity-hierarchy';
-import type { AccessPolicies, PermissionTopology, PermissionValue } from '../permissions';
-import { configureAccessPolicies } from '../permissions/access-policies';
+import type { PolicyMatrix, HierarchyOverrides, PolicyCellInput } from '../permissions';
+import { configurePolicyMatrix } from '../permissions/policy-matrix';
 import type { EntityType } from '../../types';
 
-// Deep synthetic topology (projectcampus-shaped): 4 channel levels with an `item` product whose
+// Deep synthetic hierarchy (projectcampus-shaped): 4 channel levels with an `item` product whose
 // rows attach at any depth, typed independently of any fork's app config. Path, home-resolution,
-// counter, permission-proving, and view-derivation suites all test against this ONE topology so
+// counter, permission-proving, and view-derivation suites all test against this ONE hierarchy so
 // the subsystems that must agree on path semantics are proven against the same shape.
 export type DeepChannelType = 'organization' | 'course' | 'courseSection' | 'project';
 export type DeepNullableAncestor = 'project' | 'courseSection' | 'course';
@@ -45,27 +45,27 @@ export const makeDeepHierarchy = (
 /** Canonical deep hierarchy: `item` attaches at any depth. */
 export const deepHierarchy = makeDeepHierarchy();
 
-/** Topology seam wrapper for the permission engine and scope compiler. */
-export const deepTopology: PermissionTopology = { hierarchy: deepHierarchy };
+/** Hierarchy override seam for the permission engine and scope compiler. */
+export const deepOverrides: HierarchyOverrides = { hierarchy: deepHierarchy };
 
 /**
- * `item` read policies over the deep topology, one read cell per channel level and role.
+ * `item` read policies over the deep hierarchy, one read cell per channel level and role.
  * `readValue` decides each cell so suites can express grant matrices as a single function.
  */
 export const deepReadPolicies = (
-  readValue: (channelType: DeepChannelType, role: string) => PermissionValue,
-): AccessPolicies =>
-  configureAccessPolicies(
+  readValue: (channelType: DeepChannelType, role: string) => PolicyCellInput,
+): PolicyMatrix =>
+  configurePolicyMatrix(
     deepEntityTypes as unknown as readonly EntityType[],
-    ({ subject, contexts }) => {
-      if ((subject.name as string) !== 'item') return;
-      const builders = contexts as unknown as Record<
+    ({ entityType, channels }) => {
+      if ((entityType as string) !== 'item') return;
+      const builders = channels as unknown as Record<
         DeepChannelType,
-        Record<string, (perms: { read: PermissionValue }) => void>
+        Record<string, (perms: { read: PolicyCellInput }) => void>
       >;
       for (const [channelType, roles] of Object.entries(deepChannelRoles) as [DeepChannelType, readonly string[]][]) {
         for (const role of roles) builders[channelType][role]?.({ read: readValue(channelType, role) });
       }
     },
-    deepTopology,
+    deepOverrides,
   );

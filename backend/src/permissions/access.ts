@@ -7,8 +7,8 @@ import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
  * scopes, catchup reads), from an authenticated request context.
  *
  * Every authenticated route has both `userId` and `isSystemAdmin` set by the guard chain, so
- * handlers must not assemble actors by hand because that lets call sites
- * ended up silently omitting `userId` and fail-closing every `'own'` grant.
+ * handlers must not assemble actors by hand: a call site that silently omits `userId`
+ * fail-closes every `'own'` grant.
  */
 export const actorFrom = (ctx: AuthContext): Actor => ({
   userId: ctx.var.userId,

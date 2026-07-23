@@ -66,7 +66,7 @@ export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event
     const results = checkAccessFanout(subscribers as SubscriberAccess[], 'read', subject, {
       onInvalidMembership: 'deny',
     });
-    return results.map((result) => result.isAllowed);
+    return results.map((result) => result.allowed);
   } catch {
     log.error('Stream read decision failed; denying all', {
       entityType: subject.entityType,

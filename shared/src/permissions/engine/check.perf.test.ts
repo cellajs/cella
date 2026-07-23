@@ -1,6 +1,6 @@
 import { appConfig, type ChannelEntityType, type EntityRole } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { configureAccessPolicies } from '../../testing/policies';
+import { configurePolicyMatrix } from '../../testing/policies';
 import { getAllDecisions } from './check';
 import type { SubjectForPermission } from './types';
 
@@ -20,15 +20,15 @@ type TestMembership = {
   projectId: string | null;
 };
 
-const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
-  switch (subject.name) {
+const policies = configurePolicyMatrix(appConfig.entityTypes, ({ entityType, channels }) => {
+  switch (entityType) {
     case 'organization':
-      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-      contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0 });
+      channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+      channels.organization.member({ create: 0, read: 1, update: 0, delete: 0 });
       break;
     case 'attachment':
-      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-      contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
+      channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+      channels.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
       break;
   }
 });

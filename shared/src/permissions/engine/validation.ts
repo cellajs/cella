@@ -1,16 +1,16 @@
 import { hierarchy } from '../../../config/hierarchy-config';
 import type { EntityHierarchy } from '../../config-builder/entity-hierarchy';
-import type { PermissionMembership, SubjectForPermission } from './types';
+import type { AccessMembership, SubjectForPermission } from './types';
 
 /**
- * Validates a subject has required fields for permission checking. `topology` defaults to the
- * real config's entity guards; the engine passes its (possibly synthetic) hierarchy so a subject
+ * Validates a subject has required fields for permission checking. `entityGuards` defaults to
+ * the real config's hierarchy; the engine passes its (possibly synthetic) hierarchy so a subject
  * whose entity type only exists in a test fixture still validates.
  */
 export const validateSubject = (
   subject: SubjectForPermission,
   index?: number,
-  topology?: Pick<EntityHierarchy, 'isChannel' | 'isProduct'>,
+  entityGuards?: Pick<EntityHierarchy, 'isChannel' | 'isProduct'>,
 ): void => {
   const prefix = index !== undefined ? `Subject[${index}]` : 'Subject';
 
@@ -18,8 +18,8 @@ export const validateSubject = (
     throw new Error(`[Permission] ${prefix} missing entityType`);
   }
 
-  const isChannel = (topology ?? hierarchy).isChannel(subject.entityType);
-  const isProduct = (topology ?? hierarchy).isProduct(subject.entityType);
+  const isChannel = (entityGuards ?? hierarchy).isChannel(subject.entityType);
+  const isProduct = (entityGuards ?? hierarchy).isProduct(subject.entityType);
   if (!isChannel && !isProduct) {
     throw new Error(`[Permission] ${prefix} has invalid entityType: ${subject.entityType}`);
   }
@@ -30,7 +30,7 @@ export const validateSubject = (
 };
 
 /** Validates a membership has required fields. */
-export const validateMembership = <T extends PermissionMembership>(membership: T, index: number): void => {
+export const validateMembership = <T extends AccessMembership>(membership: T, index: number): void => {
   if (!membership.channelType) {
     throw new Error(`[Permission] Membership[${index}] missing channelType`);
   }
@@ -40,6 +40,6 @@ export const validateMembership = <T extends PermissionMembership>(membership: T
   }
 
   if (!membership.channelId) {
-    throw new Error(`[Permission] Membership[${index}] missing context ID (channelId)`);
+    throw new Error(`[Permission] Membership[${index}] missing channelId`);
   }
 };

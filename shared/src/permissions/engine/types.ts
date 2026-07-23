@@ -1,6 +1,6 @@
 import type { ChannelEntityType, EntityActionType, EntityIdColumns, EntityRole, ProductEntityType } from '../../../types';
 import type { PublicReadGrants } from '../public-read';
-import type { PermissionTopology } from './topology';
+import type { EntityHierarchy } from '../../config-builder/entity-hierarchy';
 
 /** Database-shaped channel ID columns, such as `organizationId`. */
 export type ChannelIdColumns = EntityIdColumns<ChannelEntityType, string | null>;
@@ -12,7 +12,7 @@ export type AncestorChannelIds = Partial<Record<ChannelEntityType, string | null
 export type ResolvedChannelIds = Partial<Record<ChannelEntityType, string>>;
 
 /** Membership fields read by the permission engine. Tier models may include extra fields. */
-export interface PermissionMembership {
+export interface AccessMembership {
   channelType: ChannelEntityType;
   channelId: string;
   role: EntityRole;
@@ -43,11 +43,11 @@ export type GrantSource =
   | { type: 'systemAdmin' };
 
 export interface ActionAttribution {
-  enabled: boolean;
+  allowed: boolean;
   grantedBy: GrantSource[];
 }
 
-export interface PermissionDecision<T extends PermissionMembership = PermissionMembership> {
+export interface PermissionDecision<T extends AccessMembership = AccessMembership> {
   subject: {
     entityType: ChannelEntityType | ProductEntityType;
     id?: string;
@@ -77,8 +77,10 @@ export interface PermissionCheckOptions {
    * @see shared/config/permissions-config.ts
    */
   elevatedRoles?: readonly string[];
-  /** Hierarchy and actions override for synthetic topologies. */
-  topology?: PermissionTopology;
+  /** Synthetic hierarchy override; defaults to the app singleton. */
+  hierarchy?: EntityHierarchy;
+  /** Action set override; defaults to `appConfig.entityActions`. */
+  entityActions?: readonly EntityActionType[];
   /** Emit the decision tree to debug logging. */
   debug?: boolean;
 }

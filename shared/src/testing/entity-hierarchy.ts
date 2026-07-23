@@ -44,7 +44,7 @@ export const buildTestEntityHierarchyPlan = ({
   makeChannelId,
 }: BuildTestEntityHierarchyPlanOptions): TestEntityHierarchyPlan => {
   if (!rootChannelType) {
-    throw new Error('Entity hierarchy has no root context type');
+    throw new Error('Entity hierarchy has no root channel type');
   }
 
   const ancestors = hierarchy.getOrderedAncestors(entityType) as ChannelEntityType[];
@@ -68,7 +68,7 @@ export const buildTestEntityHierarchyPlan = ({
 
     const parentId = channelIdsByType[parentChannelType];
     if (!parentId) {
-      throw new Error(`Cannot seed ${channelType}: missing parent context id for ${parentChannelType}`);
+      throw new Error(`Cannot seed ${channelType}: missing parent channel id for ${parentChannelType}`);
     }
     if (!makeChannelId) {
       throw new Error(`Cannot seed ${channelType}: makeChannelId is required for non-root ancestors`);
@@ -92,7 +92,7 @@ export const buildTestEntityHierarchyPlan = ({
   const sqlChannelColumns = ancestors.map((channelType) => {
     const id = channelIdsByType[channelType];
     if (!id) {
-      throw new Error(`Missing context id for ${channelType}`);
+      throw new Error(`Missing channel id for ${channelType}`);
     }
 
     const idKey = appConfig.entityIdColumnKeys[channelType];

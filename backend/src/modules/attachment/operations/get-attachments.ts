@@ -9,7 +9,7 @@ import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-
 import { type ListTotalSource, resolveListTotal } from '#/modules/entities/helpers/list-total';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { auditUserSelect, coalesceAuditUsers, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
-import { actorFrom } from '#/permissions/actor';
+import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getOrderColumn } from '#/utils/order-column';

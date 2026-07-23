@@ -12,7 +12,7 @@ vi.mock('./app-product-cache', () => ({
 const checkAccess = vi.fn();
 vi.mock('#/permissions', () => ({ checkAccess: (...a: unknown[]) => checkAccess(...a) }));
 const accessFrom = vi.fn((): Record<string, unknown> => ({}));
-vi.mock('#/permissions/actor', () => ({ accessFrom: () => accessFrom() }));
+vi.mock('#/permissions/access', () => ({ accessFrom: () => accessFrom() }));
 const buildSubjectFromEntity = vi.fn((..._a: unknown[]) => ({}));
 vi.mock('#/permissions/build-subject', () => ({
   buildSubjectFromEntity: (...a: unknown[]) => buildSubjectFromEntity(...a),
@@ -46,7 +46,7 @@ describe('productCache — per-request authorization on cache hit', () => {
   });
 
   it('serves the cached row and skips the handler when the caller is allowed', async () => {
-    checkAccess.mockReturnValue({ isAllowed: true });
+    checkAccess.mockReturnValue({ allowed: true });
     const ctx = mockCtx();
     const next = vi.fn();
 
@@ -58,7 +58,7 @@ describe('productCache — per-request authorization on cache hit', () => {
   });
 
   it('normalizes the enriched createdBy object back to the raw id for the permission subject', async () => {
-    checkAccess.mockReturnValue({ isAllowed: true });
+    checkAccess.mockReturnValue({ allowed: true });
 
     await productCache('attachment')(mockCtx() as never, vi.fn());
 
@@ -66,7 +66,7 @@ describe('productCache — per-request authorization on cache hit', () => {
   });
 
   it('falls through to the handler (never a stale serve) when the caller is NOT allowed', async () => {
-    checkAccess.mockReturnValue({ isAllowed: false });
+    checkAccess.mockReturnValue({ allowed: false });
     const ctx = mockCtx();
     const next = vi.fn();
 
@@ -86,7 +86,7 @@ describe('productCache — draft veto on cache hit (publishedAt lifecycle)', () 
   beforeEach(() => {
     vi.clearAllMocks();
     productCacheGet.mockReturnValue(cachedDraft);
-    checkAccess.mockReturnValue({ isAllowed: true });
+    checkAccess.mockReturnValue({ allowed: true });
   });
 
   it('serves a cached draft to its author', async () => {

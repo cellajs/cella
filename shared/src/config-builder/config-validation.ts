@@ -1,7 +1,7 @@
 import type { ProductEntityType } from '../../types';
-import { accessPolicies } from '../../config/permissions-config';
+import { policyMatrix } from '../../config/permissions-config';
 import { appConfig } from './app-config';
-import { getSubjectPolicies, isRowCondition } from '../permissions';
+import { getEntityPolicies, isRowCondition } from '../permissions';
 import type { RequiredConfig } from './types';
 
 // Validate that Config satisfies RequiredConfig (compile-time only).
@@ -16,7 +16,7 @@ void _configValid;
 // Unseen tracking requires unconditional channel reads for tracked types.
 // Conditional visibility must keep endpoint-based counting.
 for (const entityType of appConfig.seenTrackedProductTypes) {
-  for (const policy of getSubjectPolicies(entityType as ProductEntityType, accessPolicies)) {
+  for (const policy of getEntityPolicies(entityType as ProductEntityType, policyMatrix)) {
     if (isRowCondition(policy.permissions.read)) {
       throw new Error(
         `[Config] Seen-tracked entity type "${entityType}" has a row-conditional read grant ` +

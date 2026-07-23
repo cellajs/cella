@@ -1,4 +1,4 @@
-import type { PermissionValue } from 'shared';
+import type { PolicyCellInput } from 'shared';
 import {
   type DeepChannelType as ChannelType,
   deepHierarchy,
@@ -7,7 +7,7 @@ import {
 import { describe, expect, it } from 'vitest';
 import { deriveGrantBoundaryViews, type ViewMembership } from './views';
 
-// Shared deep fixture, same topology as the backend classifier tests: derived views
+// Shared deep fixture, same hierarchy as the backend classifier tests: derived views
 // must be exactly the ones resolveViewReadStatus can prove `ok`.
 const ORG = 'org-1';
 
@@ -28,7 +28,7 @@ const paths: Record<string, string> = {
 
 const derive = (
   memberships: ViewMembership[],
-  read: (channelType: ChannelType, role: string) => PermissionValue,
+  read: (channelType: ChannelType, role: string) => PolicyCellInput,
   elevatedRoles?: readonly string[],
 ) =>
   deriveGrantBoundaryViews({
@@ -36,7 +36,7 @@ const derive = (
     entityTypes: ['item'],
     resolvePath: (_type, id) => paths[id] ?? null,
     policies: policies(read),
-    topology: deepHierarchy,
+    hierarchy: deepHierarchy,
     elevatedRoles,
   });
 
@@ -44,13 +44,13 @@ const ELEVATED = ['admin', 'staff'] as const;
 
 describe('deriveGrantBoundaryViews', () => {
   it('org-wide subtree for elevated org roles; org SELF for home-scoped org roles', () => {
-    const adminRead = (ct: ChannelType, role: string): PermissionValue =>
+    const adminRead = (ct: ChannelType, role: string): PolicyCellInput =>
       ct === 'organization' && role === 'admin' ? 1 : 0;
     expect(derive([membership('organization', ORG, 'admin')], adminRead, ELEVATED)).toEqual([
       { key: `${ORG}:item:subtree`, organizationId: ORG, prefixes: [ORG], entityTypes: ['item'], depth: 'subtree' },
     ]);
 
-    const memberRead = (ct: ChannelType, role: string): PermissionValue =>
+    const memberRead = (ct: ChannelType, role: string): PolicyCellInput =>
       ct === 'organization' && role === 'member' ? 1 : 0;
     expect(derive([membership('organization', ORG, 'member')], memberRead, ELEVATED)).toEqual([
       { key: `${ORG}:item:self`, organizationId: ORG, prefixes: [ORG], entityTypes: ['item'], depth: 'self' },
@@ -58,7 +58,7 @@ describe('deriveGrantBoundaryViews', () => {
   });
 
   it('home-level grants merge into ONE prefix-set subtree view (the 3-of-5 aggregate)', () => {
-    const ownerRead = (ct: ChannelType, role: string): PermissionValue =>
+    const ownerRead = (ct: ChannelType, role: string): PolicyCellInput =>
       ct === 'project' && role === 'owner' ? 1 : 0;
     const views = derive(
       [
@@ -81,7 +81,7 @@ describe('deriveGrantBoundaryViews', () => {
   });
 
   it('elevated intermediate grants derive subtree views; non-elevated derive SELF views', () => {
-    const staffRead = (ct: ChannelType, role: string): PermissionValue => (ct === 'course' && role === 'staff' ? 1 : 0);
+    const staffRead = (ct: ChannelType, role: string): PolicyCellInput => (ct === 'course' && role === 'staff' ? 1 : 0);
     expect(derive([membership('course', 'c1', 'staff')], staffRead, ELEVATED)).toEqual([
       {
         key: `${ORG}:item:subtree`,
@@ -92,7 +92,7 @@ describe('deriveGrantBoundaryViews', () => {
       },
     ]);
 
-    const studentRead = (ct: ChannelType, role: string): PermissionValue =>
+    const studentRead = (ct: ChannelType, role: string): PolicyCellInput =>
       ct === 'course' && role === 'student' ? 1 : 0;
     expect(derive([membership('course', 'c1', 'student')], studentRead, ELEVATED)).toEqual([
       { key: `${ORG}:item:self`, organizationId: ORG, prefixes: [paths.c1], entityTypes: ['item'], depth: 'self' },
@@ -100,7 +100,7 @@ describe('deriveGrantBoundaryViews', () => {
   });
 
   it('without elevatedRoles every unconditional grant is subtree (engine parity)', () => {
-    const studentRead = (ct: ChannelType, role: string): PermissionValue =>
+    const studentRead = (ct: ChannelType, role: string): PolicyCellInput =>
       ct === 'course' && role === 'student' ? 1 : 0;
     expect(derive([membership('course', 'c1', 'student')], studentRead, undefined)).toEqual([
       {
@@ -114,7 +114,7 @@ describe('deriveGrantBoundaryViews', () => {
   });
 
   it('an org-wide subtree prefix subsumes narrower ones; conditional/unknown grants derive nothing', () => {
-    const read = (ct: ChannelType, role: string): PermissionValue => {
+    const read = (ct: ChannelType, role: string): PolicyCellInput => {
       if (ct === 'organization' && role === 'admin') return 1;
       if (ct === 'project' && role === 'owner') return 1;
       if (ct === 'course' && role === 'student') return 'own';

@@ -5,7 +5,7 @@ import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { checkAccess } from '#/permissions';
-import { accessFrom } from '#/permissions/actor';
+import { accessFrom } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import type { EntityModel } from '#/tables';
 
@@ -44,9 +44,9 @@ export const getValidProduct = async <K extends ProductEntityType>(
   // Step 2: Check permission for the requested action. The entity doubles as `row`, so
   // 'own' row conditions and public read grants evaluate from real row data.
   const subject = buildSubjectFromEntity(entityType, entity);
-  const { isAllowed } = checkAccess(accessFrom(ctx), action, subject);
+  const { allowed } = checkAccess(accessFrom(ctx), action, subject);
 
-  if (!isAllowed) {
+  if (!allowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
   }
 

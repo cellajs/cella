@@ -7,7 +7,7 @@ import { isChannel, isProduct,
   type ChannelEntityType,
   draftVisibleTo,
   hierarchy,
-  type PermissionMembership,
+  type AccessMembership,
   type ProductEntityType,
   toColumnName,
   toTableName } from 'shared';
@@ -47,14 +47,14 @@ export function getTableColumnNames(client: pg.PoolClient, table: string): Promi
  * Runs on an RLS-scoped client (tenant + user already set by {@link withClient}), so the result is
  * naturally limited to the active tenant. Only the three columns the engine reads are selected.
  */
-export async function loadMemberships(client: pg.PoolClient, userId: string): Promise<PermissionMembership[]> {
+export async function loadMemberships(client: pg.PoolClient, userId: string): Promise<AccessMembership[]> {
   const table = toTableName('membership');
   const channelType = toColumnName('channelType');
   const channelId = toColumnName('channelId');
   const role = toColumnName('role');
   const userIdColumn = toColumnName('userId');
   const projection = `"${channelType}" AS "channelType", "${channelId}" AS "channelId", "${role}" AS "role"`;
-  const { rows } = await client.query<PermissionMembership>(
+  const { rows } = await client.query<AccessMembership>(
     `SELECT ${projection} FROM "${table}" WHERE "${userIdColumn}" = $1`,
     [userId],
   );
@@ -143,7 +143,7 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
 
     // Collaborative editing confers no system-admin bypass. The same stance the backend's
     // materialize endpoint takes, so the relay and the write it triggers agree.
-    const { isAllowed } = checkAccess({ userId: ctx.userId, isSystemAdmin: false, memberships }, 'update', subject);
-    return isAllowed;
+    const { allowed } = checkAccess({ userId: ctx.userId, isSystemAdmin: false, memberships }, 'update', subject);
+    return allowed;
   });
 }

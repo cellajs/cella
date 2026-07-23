@@ -1,7 +1,7 @@
 import type { EntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// Synthetic sub-org topology as a real builder instance: 'task' is a product homed at the
+// Synthetic sub-org hierarchy as a real builder instance: 'task' is a product homed at the
 // `project` channel so home-list placement (deepest non-null ancestor) is exercised; base
 // cella only has org-homed attachments.
 vi.mock('shared', async (importOriginal) => {

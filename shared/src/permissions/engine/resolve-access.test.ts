@@ -6,9 +6,9 @@ import {
   type WideRole,
   wideMembership,
   wideSubject,
-  wideTopology,
+  wideOverrides,
 } from '../../testing/wide-fixture';
-import type { PermissionMembership, SubjectForPermission } from './types';
+import type { AccessMembership, SubjectForPermission } from './types';
 import { getAllDecisions } from './check';
 import { getDecisionsForAccesses, type EngineAccess } from './resolve-access';
 
@@ -33,65 +33,65 @@ interface PolicyScenario {
 const scenarios: PolicyScenario[] = [
   {
     name: 'role-only grants',
-    result: configureWidePermissions(({ subject, contexts }) => {
-      switch (subject.name) {
+    result: configureWidePermissions(({ entityType, channels }) => {
+      switch (entityType) {
         case 'organization':
-          contexts.organization.admin({ read: 1, update: 1, delete: 1 });
-          contexts.organization.member({ read: 1 });
+          channels.organization.admin({ read: 1, update: 1, delete: 1 });
+          channels.organization.member({ read: 1 });
           break;
         case 'task':
-          contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-          contexts.organization.member({ create: 1, read: 1 });
-          contexts.project.admin({ create: 1, read: 1, update: 1, delete: 1 });
-          contexts.project.member({ create: 1, read: 1, update: 1 });
-          contexts.project.guest({ read: 1 });
+          channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+          channels.organization.member({ create: 1, read: 1 });
+          channels.project.admin({ create: 1, read: 1, update: 1, delete: 1 });
+          channels.project.member({ create: 1, read: 1, update: 1 });
+          channels.project.guest({ read: 1 });
           break;
         case 'attachment':
-          contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-          contexts.organization.member({ create: 1, read: 1 });
+          channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+          channels.organization.member({ create: 1, read: 1 });
           break;
       }
     }),
   },
   {
     name: 'own-conditional grants',
-    result: configureWidePermissions(({ subject, contexts }) => {
-      switch (subject.name) {
+    result: configureWidePermissions(({ entityType, channels }) => {
+      switch (entityType) {
         case 'organization':
-          contexts.organization.admin({ read: 1, update: 1, delete: 1 });
-          contexts.organization.member({ read: 1 });
+          channels.organization.admin({ read: 1, update: 1, delete: 1 });
+          channels.organization.member({ read: 1 });
           break;
         case 'project':
-          contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-          contexts.organization.member({ read: 1 });
-          contexts.project.member({ read: 1, update: 'own' });
-          contexts.project.guest({ read: 'own' });
+          channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+          channels.organization.member({ read: 1 });
+          channels.project.member({ read: 1, update: 'own' });
+          channels.project.guest({ read: 'own' });
           break;
         case 'task':
-          contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-          contexts.project.member({ create: 1, read: 'own', update: 'own', delete: 'own' });
-          contexts.project.guest({ read: 'own' });
+          channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+          channels.project.member({ create: 1, read: 'own', update: 'own', delete: 'own' });
+          channels.project.guest({ read: 'own' });
           break;
       }
     }),
   },
   {
     name: 'public read + elevated roles',
-    result: configureWidePermissions(({ subject, contexts, publicRead }) => {
-      switch (subject.name) {
+    result: configureWidePermissions(({ entityType, channels, publicRead }) => {
+      switch (entityType) {
         case 'organization':
-          contexts.organization.admin({ read: 1, update: 1, delete: 1 });
-          contexts.organization.member({ read: 1 });
+          channels.organization.admin({ read: 1, update: 1, delete: 1 });
+          channels.organization.member({ read: 1 });
           break;
         case 'attachment':
           publicRead();
-          contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-          contexts.organization.member({ create: 1, read: 1 });
-          contexts.project.member({ create: 1, read: 1, update: 'own' });
+          channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+          channels.organization.member({ create: 1, read: 1 });
+          channels.project.member({ create: 1, read: 1, update: 'own' });
           break;
         case 'label':
-          contexts.organization.member({ read: 1 });
-          contexts.project.guest({ read: 1 });
+          channels.organization.member({ read: 1 });
+          channels.project.guest({ read: 1 });
           break;
       }
     }),
@@ -147,7 +147,7 @@ const makeRandomizer = (seed: number) => {
     if (random() < 0.08) return { memberships: [] }; // anonymous
     const roles: WideRole[] = ['admin', 'member', 'guest'];
     const membershipCount = Math.floor(random() * 4);
-    const memberships: PermissionMembership[] = Array.from({ length: membershipCount }, () => {
+    const memberships: AccessMembership[] = Array.from({ length: membershipCount }, () => {
       const kind = random();
       if (kind < 0.5) return wideMembership('organization', pick(ORGS), pick(['admin', 'member'] as WideRole[]));
       if (kind < 0.85) return wideMembership('project', pick(PROJECTS), pick(roles));
@@ -168,9 +168,9 @@ describe('getDecisionsForAccesses ≍ mapped getAllDecisions', () => {
     it(`agrees on can + membership for every access — ${scenario.name}`, () => {
       const SEED = 0xacce55;
       const { randomSubject, randomAccess } = makeRandomizer(SEED);
-      const { accessPolicies, publicReadGrants } = scenario.result;
+      const { policyMatrix, publicReadGrants } = scenario.result;
       const baseOptions = {
-        topology: wideTopology,
+        ...wideOverrides,
         publicGrants: publicReadGrants,
         elevatedRoles: scenario.elevatedRoles,
       };
@@ -179,10 +179,10 @@ describe('getDecisionsForAccesses ≍ mapped getAllDecisions', () => {
         const subject = randomSubject();
         const accesses = Array.from({ length: 40 }, randomAccess);
 
-        const batch = getDecisionsForAccesses(accessPolicies, accesses, subject, baseOptions);
+        const batch = getDecisionsForAccesses(policyMatrix, accesses, subject, baseOptions);
 
         for (const [index, access] of accesses.entries()) {
-          const single = getAllDecisions(accessPolicies, access.memberships, subject, {
+          const single = getAllDecisions(policyMatrix, access.memberships, subject, {
             ...baseOptions,
             userId: access.userId,
             isSystemAdmin: access.isSystemAdmin,
@@ -197,7 +197,7 @@ describe('getDecisionsForAccesses ≍ mapped getAllDecisions', () => {
 });
 
 describe('getDecisionsForAccesses: invalid memberships', () => {
-  const { accessPolicies } = scenarios[0].result;
+  const { policyMatrix } = scenarios[0].result;
   const subject = wideSubject({
     entityType: 'task',
     id: 'task-x',
@@ -208,15 +208,15 @@ describe('getDecisionsForAccesses: invalid memberships', () => {
   const invalid: EngineAccess = {
     memberships: [
       wideMembership('project', 'proj1', 'member'),
-      { channelType: 'project', channelId: '', role: 'member' } as unknown as PermissionMembership,
+      { channelType: 'project', channelId: '', role: 'member' } as unknown as AccessMembership,
     ],
     userId: 'user2',
   };
 
   it("'deny' fail-closes just the invalid access, order-independent", () => {
     // invalid FIRST: a shared class would cache its deny onto the valid access
-    const decisions = getDecisionsForAccesses(accessPolicies, [invalid, valid], subject, {
-      topology: wideTopology,
+    const decisions = getDecisionsForAccesses(policyMatrix, [invalid, valid], subject, {
+      ...wideOverrides,
       onInvalidMembership: 'deny',
     });
     expect(decisions[0].can.read).toBe(false);
@@ -226,7 +226,7 @@ describe('getDecisionsForAccesses: invalid memberships', () => {
 
   it("default ('throw') surfaces the malformed membership like the single-access path", () => {
     expect(() =>
-      getDecisionsForAccesses(accessPolicies, [invalid, valid], subject, { topology: wideTopology }),
+      getDecisionsForAccesses(policyMatrix, [invalid, valid], subject, { ...wideOverrides }),
     ).toThrow(/Membership/);
   });
 });

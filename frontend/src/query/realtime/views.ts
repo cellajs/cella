@@ -1,11 +1,11 @@
 import {
-  type AccessPolicies,
-  accessPolicies,
+  hierarchy as appHierarchy,
   elevatedRoles as configuredElevatedRoles,
   type EntityHierarchy,
+  getEntityPolicies,
   getPolicyPermissions,
-  getSubjectPolicies,
-  hierarchy,
+  type PolicyMatrix,
+  policyMatrix,
 } from 'shared';
 
 /** Grant-boundary view shape (cursor is owned by the sync store, not the derivation). */
@@ -31,9 +31,9 @@ export interface DeriveViewsInput {
   entityTypes: readonly string[];
   /** Canonical path for a channel, from cached channel entities; null = unknown → grant skipped. */
   resolvePath: (channelType: string, channelId: string) => string | null;
-  /** Injectable for synthetic-topology tests; default to the app's real config. */
-  policies?: AccessPolicies;
-  topology?: EntityHierarchy;
+  /** Injectable for synthetic-hierarchy tests; default to the app's real config. */
+  policies?: PolicyMatrix;
+  hierarchy?: EntityHierarchy;
   elevatedRoles?: readonly string[];
 }
 
@@ -45,16 +45,16 @@ export function deriveGrantBoundaryViews({
   memberships,
   entityTypes,
   resolvePath,
-  policies = accessPolicies,
-  topology = hierarchy,
+  policies = policyMatrix,
+  hierarchy = appHierarchy,
   elevatedRoles = configuredElevatedRoles,
 }: DeriveViewsInput): DerivedSyncView[] {
   const views = new Map<string, DerivedSyncView>();
 
   for (const entityType of entityTypes) {
-    const subjectPolicies = getSubjectPolicies(entityType as never, policies);
+    const entityPolicies = getEntityPolicies(entityType as never, policies);
     // Ancestors are most-specific → root; the home level is the first non-root one.
-    const ancestors = topology.getOrderedAncestors(entityType);
+    const ancestors = hierarchy.getOrderedAncestors(entityType);
     const root = ancestors[ancestors.length - 1];
     const homeLevel = ancestors.find((a) => a !== root) ?? root;
     // Mirrors the engine's isHomeScopedGrant: without elevatedRoles every grant is subtree.
@@ -63,7 +63,7 @@ export function deriveGrantBoundaryViews({
 
     for (const m of memberships) {
       if (!ancestors.includes(m.channelType)) continue;
-      if (getPolicyPermissions(subjectPolicies, m.channelType as never, m.role as never)?.read !== 1) continue;
+      if (getPolicyPermissions(entityPolicies, m.channelType as never, m.role as never)?.read !== 1) continue;
 
       const depth: DerivedSyncView['depth'] = isSubtreeGrant(m.channelType, m.role) ? 'subtree' : 'self';
       const prefix = m.channelType === root ? m.organizationId : resolvePath(m.channelType, m.channelId);
