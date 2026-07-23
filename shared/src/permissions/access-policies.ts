@@ -1,5 +1,5 @@
 import type { ChannelEntityType, EntityActionType, EntityType, ProductEntityType } from '../../types';
-import type { PublicReadGrants, PublicReadMode } from './public-read';
+import type { PublicReadGrants } from './public-read';
 import { isRowCondition } from './row-conditions';
 import type {
   AccessPolicies,
@@ -102,11 +102,11 @@ export const configurePermissions = (
     const config: AccessPolicyConfiguration = {
       subject: { name: entityType },
       contexts,
-      publicRead: (mode: PublicReadMode) => {
+      publicRead: () => {
         if (publicReadGrants[entityType]) {
           throw new Error(`[Permission] publicRead() called twice for "${entityType}"`);
         }
-        publicReadGrants[entityType] = mode;
+        publicReadGrants[entityType] = true;
       },
     };
 

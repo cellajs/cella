@@ -32,7 +32,7 @@ describe('missing policy rows', () => {
     const { accessPolicies, publicReadGrants } = configurePermissions(
       wideEntityTypes as unknown as readonly EntityType[],
       ({ subject, publicRead }) => {
-        if (subject.name === 'attachment') publicRead('publicSelf');
+        if (subject.name === 'attachment') publicRead();
       },
       wideTopology,
     );
@@ -49,7 +49,7 @@ describe('missing policy rows', () => {
     );
 
     expect(decision.can.read).toBe(true);
-    expect(decision.actions.read.grantedBy).toEqual([{ type: 'public', mode: 'publicSelf' }]);
+    expect(decision.actions.read.grantedBy).toEqual([{ type: 'public' }]);
   });
 });
 

@@ -136,7 +136,7 @@ export type SubjectForPermission = {
   id?: string;
   createdBy?: string | null;
   channelIds: AncestorChannelIds; // Partial<Record<ChannelEntityType, string | null>>
-  row?: Record<string, unknown>; // for row conditions + publicSelf
+  row?: Record<string, unknown>; // for row conditions + public read
 };
 
 export interface PermissionDecision<
@@ -183,7 +183,7 @@ export const matchesRowCondition = (
 
 The name is the single source of truth. Three paths map it to behaviour through an exhaustive `switch` — `matchesRowCondition` (JS, in `shared/`), `compileRowConditionSql` (Drizzle, in `backend/`), and the frontend `resolvePermission` (`action-helpers.ts`) — so their forms **cannot drift**: TypeScript's exhaustiveness makes adding a name a compile error in every one of them, and the parity property test proves the paths agree. The `shared/`→`backend/` split is why `shared/` emits only the name and the backend compiles the SQL: `shared/` is ORM-free.
 
-**Public read** (`shared/src/permissions/public-read.ts`) makes rows readable by _any_ actor, anonymous included, independent of memberships. One rule: the row's own `publicAt` is set. Declared per subject with `publicRead('publicSelf')`, it widens `read` and nothing else. It is _not_ a policy cell — it grants with no membership — but it resolves through the same `'public'` row condition, so it rides the same switches and the same parity test.
+**Public read** (`shared/src/permissions/public-read.ts`) makes rows readable by _any_ actor, anonymous included, independent of memberships. One rule: the row's own `publicAt` is set. Declared per subject with `publicRead()`, it widens `read` and nothing else. It is _not_ a policy cell — it grants with no membership — but it resolves through the same `'public'` row condition, so it rides the same switches and the same parity test.
 
 ## The access
 

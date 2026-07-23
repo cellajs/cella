@@ -88,7 +88,7 @@ Add a `case` to the `switch` in [`shared/config/permissions-config.ts`](../share
 ```ts
 case 'note':
   // Public read: readable by anyone once the note's own publicAt is set (optional)
-  publicRead('publicSelf');
+  publicRead();
   contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
   contexts.organization.member({ create: 0, read: 0, update: 0, delete: 0 });
   contexts.project.admin({ create: 1, read: 1, update: 1, delete: 1 });
@@ -100,7 +100,7 @@ case 'note':
 Cell values: `1` allowed, `0`/omitted denied, `'own'` = the built-in "actor is creator" row condition. That is the whole set — row conditions are closed (`own` + public read), not a fork extension point.
 
 - **Product entities have no "self" rows**: their context rows are _home_ rows where `create` is meaningful. (Channel entities distinguish _elevation_ rows on an ancestor, which carry `create`, from _self_ rows on the same context, which omit it. See the header comment in `permissions-config.ts`.)
-- **`publicRead('publicSelf')`**: the row is readable by anyone — anonymous included — once its own `publicAt` is set. Every context and product row already carries the column. Publication does **not** cascade: a public parent does not publish its children, because a cross-row rule cannot be evaluated by the collection-read SQL compiler or by CDC dispatch (which only ships the row itself). If you want cascade, propagate `publicAt` down to descendant rows — it is a data concern, not a permission rule. See [Permissions](./PERMISSIONS.md).
+- **`publicRead()`**: the row is readable by anyone — anonymous included — once its own `publicAt` is set. Every context and product row already carries the column. Publication does **not** cascade: a public parent does not publish its children, because a cross-row rule cannot be evaluated by the collection-read SQL compiler or by CDC dispatch (which only ships the row itself). If you want cascade, propagate `publicAt` down to descendant rows — it is a data concern, not a permission rule. See [Permissions](./PERMISSIONS.md).
 
 ### Step 4: 🔴 Create the database table
 
@@ -306,7 +306,7 @@ Channel entities do **not** go through the CDC/SSE product pipeline or the wire-
 
 ## Optional capabilities
 
-- **Public read**: `publicRead('publicSelf')` in Step 3. Set the row's `publicAt` to publish it; it then appears for anonymous actors on single-row reads, in list endpoints, and over SSE alike.
+- **Public read**: `publicRead()` in Step 3. Set the row's `publicAt` to publish it; it then appears for anonymous actors on single-row reads, in list endpoints, and over SSE alike.
 - **Drafts (author-only until published)**: spread `...publishedColumn` ([`published-column.ts`](../backend/src/db/utils/published-column.ts)) into the table, then re-run `pnpm generate` + `pnpm migrate` — the CDC publication gains a row filter (`published_at IS NOT NULL`, PG 17+) so drafts never enter the replication stream (publish arrives as INSERT, unpublish as DELETE). `publishedAt` null = author-only draft, excluded from API reads, counters, stamps and badges via introspection — no further wiring. Fork adds a publish endpoint (`resolveServerUpdateOps`) and a drafts view; see [2026-07-published-rows](./migrations/2026-07-published-rows/).
 - **Unseen-count badges**: add the type to `seenTrackedEntityTypes` (Step 2); tracking in [`app-stream-handler.ts`](../frontend/src/query/realtime/app-stream-handler.ts) and the `seen` module then covers it automatically, grouping badges by the parent channel.
 - **Embedded id-arrays**: if the entity is referenced as an id array on another entity (like `label` in `task.labels`), add a `productEmbeddings` entry (Step 2) so CDC ref-counting, cache patching, and cascade suppression handle it.

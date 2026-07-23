@@ -84,7 +84,7 @@ const scenarios: PolicyScenario[] = [
           contexts.organization.member({ read: 1 });
           break;
         case 'attachment':
-          publicRead('publicSelf');
+          publicRead();
           contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
           contexts.organization.member({ create: 1, read: 1 });
           contexts.project.member({ create: 1, read: 1, update: 'own' });

@@ -1,5 +1,4 @@
 import type { ChannelEntityType, EntityActionType, EntityRole, EntityType, ProductEntityType } from '../../types';
-import type { PublicReadMode } from './public-read';
 import type { RowConditionName } from './row-conditions';
 
 /**
@@ -60,11 +59,13 @@ export interface AccessPolicyConfiguration {
   subject: { name: EntityType };
   contexts: Record<ChannelEntityType, ChannelPolicyBuilder>;
   /**
-   * Declare the subject-level public read grant for this subject.
+   * Opt this subject into public read: rows whose own `publicAt` is set become readable by any
+   * actor, anonymous included. Call it at most once per subject; omitting it keeps `publicAt`
+   * dormant for the type.
    *
    * @see public-read.ts
    */
-  publicRead: (mode: PublicReadMode) => void;
+  publicRead: () => void;
 }
 
 /**

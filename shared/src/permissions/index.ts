@@ -10,7 +10,7 @@ export type {
   PermissionValue,
   SubjectAccessPolicies,
 } from './types';
-export type { PublicReadGrants, PublicReadMode } from './public-read';
+export type { PublicReadGrants } from './public-read';
 export { isRowCondition, matchesRowCondition } from './row-conditions';
 export type { ConditionActor, RowConditionName, RowForCondition } from './row-conditions';
 

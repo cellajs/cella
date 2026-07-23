@@ -149,8 +149,7 @@ const membership = (channelType: ChannelEntityType, channelId: string, role: str
   }) as unknown as MembershipBaseModel;
 
 /** A public read grant on `attachment`, in ~30% of scenarios. */
-const randomPublicGrants = (random: () => number): PublicReadGrants =>
-  random() < 0.3 ? { attachment: 'publicSelf' } : {};
+const randomPublicGrants = (random: () => number): PublicReadGrants => (random() < 0.3 ? { attachment: true } : {});
 
 const randomScenario = (random: () => number): Scenario => {
   const anonymous = random() < 0.1;

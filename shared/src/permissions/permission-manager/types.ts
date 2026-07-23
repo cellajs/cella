@@ -1,5 +1,5 @@
 import type { ChannelEntityType, EntityActionType, EntityIdColumns, EntityRole, ProductEntityType } from '../../../types';
-import type { PublicReadGrants, PublicReadMode } from '../public-read';
+import type { PublicReadGrants } from '../public-read';
 import type { PermissionTopology } from './topology';
 
 /** Database-shaped channel ID columns, such as `organizationId`. */
@@ -39,7 +39,7 @@ export type SubjectForPermission = {
 export type GrantSource =
   | { type: 'membership'; channelType: ChannelEntityType; channelId: string; role: EntityRole }
   | { type: 'relation'; relation: string }
-  | { type: 'public'; mode: PublicReadMode }
+  | { type: 'public' }
   | { type: 'systemAdmin' };
 
 export interface ActionAttribution {
