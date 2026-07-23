@@ -122,7 +122,7 @@ describe('catchup processor (view-driven)', () => {
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
     expect(queryClient.getQueryData(keys.detail.byId('attachment-1'))).toMatchObject({ name: 'fresh' });
     expect(queryClient.getQueryData(keys.list.org('org-1'))).toEqual({
-      items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'fresh', seq: 6 }],
+      items: [{ id: 'attachment-1', entityType: 'attachment', organizationId: 'org-1', name: 'fresh', seq: 6 }],
       total: 1,
     });
   });

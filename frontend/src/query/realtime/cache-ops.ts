@@ -11,7 +11,7 @@ import {
 } from '~/query/basic/entity-query-registry';
 import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
-import type { EntityQueryData, InfiniteEntityQueryData, ItemData } from '~/query/basic/types';
+import type { EntityQueryData, InfiniteEntityQueryData, ItemData, RoutableItemData } from '~/query/basic/types';
 import { isPending } from '~/query/offline/mutation-queue';
 import { queryClient } from '~/query/query-client';
 
@@ -199,6 +199,11 @@ function applyServerEntity(
   }
 
   const filtered = stripYjsOwnedFields(entityType, entity, keys.detail.byId(entity.id));
+  const routedEntity: RoutableItemData = {
+    ...filtered,
+    entityType,
+    organizationId: organizationId ?? undefined,
+  };
 
   // Update detail cache
   queryClient.setQueryData(keys.detail.byId(entity.id), (old: ItemData | undefined) => {
@@ -206,16 +211,12 @@ function applyServerEntity(
     return { ...old, ...filtered };
   });
 
-  const homeChannelId = resolveHomeChannelId(entityType, filtered);
+  const homeChannelId = resolveHomeChannelId(entityType, routedEntity);
 
   // Splice into list caches through the shared canonical-home policy (also used by the mutation
   // path). Cached rows update in place; new rows insert only into the canonical home list; a row
   // whose parent channel changed is removed.
-  const { seen, spliced, sawFilteredList } = spliceEntityIntoListCaches(queryClient, {
-    entity: filtered,
-    keys,
-    organizationId,
-    homeChannelId,
+  const { seen, spliced, sawFilteredList } = spliceEntityIntoListCaches(queryClient, routedEntity, {
     removeOnParentChannelChange: true,
   });
 

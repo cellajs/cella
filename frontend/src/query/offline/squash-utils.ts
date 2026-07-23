@@ -1,20 +1,18 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { StxBase } from 'sdk';
-import { type ArrayDelta, isArrayDelta, mergeArrayDeltas } from './array-delta';
+import { isArrayDelta, mergeArrayDeltas } from './array-delta';
 import { canCoalesce, isQueued } from './mutation-queue';
 
 type OpsVariables = { id?: string; ops?: Record<string, unknown>; stx?: StxBase };
 type CreateVariables = { id?: string; data?: Array<Record<string, unknown> | undefined> };
 
 // Merge two ops objects: scalar fields are overwritten by `newer`; AWSet deltas are merged via mergeArrayDeltas.
-function mergeOps(older: Record<string, unknown>, newer: Record<string, unknown>): Record<string, unknown> {
-  const merged = { ...older };
+function mergeOps<TOps extends object>(older: Record<string, unknown>, newer: TOps): Record<string, unknown> & TOps {
+  const merged = { ...older, ...newer };
   for (const [key, value] of Object.entries(newer)) {
-    const existing = merged[key];
+    const existing = older[key];
     if (isArrayDelta(value) && isArrayDelta(existing)) {
-      merged[key] = mergeArrayDeltas(existing as ArrayDelta, value as ArrayDelta);
-    } else {
-      merged[key] = value;
+      Object.assign(merged, { [key]: mergeArrayDeltas(existing, value) });
     }
   }
   return merged;
@@ -23,16 +21,16 @@ function mergeOps(older: Record<string, unknown>, newer: Record<string, unknown>
 /** Result of coalescing an update: the merged ops and an stx whose field timestamps preserve each
  * inherited field's original intent time while carrying the incoming edit's timestamps for the
  * fields it actually changed. */
-export type SquashedUpdate = { ops: Record<string, unknown>; stx: StxBase };
+export type SquashedUpdate<TOps extends object> = { ops: TOps; stx: StxBase };
 
 /** Merge queued offline entity updates while preserving inherited LWW timestamps and AWSet intent. */
-export function squashPendingMutation(
+export function squashPendingMutation<TOps extends object>(
   queryClient: QueryClient,
   mutationKey: readonly unknown[],
   entityId: string,
-  newOps: Record<string, unknown>,
+  newOps: TOps,
   newStx: StxBase,
-): SquashedUpdate {
+): SquashedUpdate<TOps> {
   if (!canCoalesce()) return { ops: newOps, stx: newStx };
 
   const mutationCache = queryClient.getMutationCache();
@@ -57,13 +55,13 @@ export function squashPendingMutation(
     mutationCache.remove(mutation);
   }
 
-  mergedOps = mergeOps(mergedOps, newOps);
+  const ops = mergeOps(mergedOps, newOps);
   const stx: StxBase = {
     ...newStx,
     fieldTimestamps: { ...inheritedTimestamps, ...newStx.fieldTimestamps },
   };
 
-  return { ops: mergedOps, stx };
+  return { ops, stx };
 }
 
 /**
@@ -115,11 +113,11 @@ export function removePausedCreates(
  * Online updates remain serialized separately; relative array deltas cannot merge into a create's
  * full-array representation.
  */
-export function squashIntoPendingCreate(
+export function squashIntoPendingCreate<TOps extends object>(
   queryClient: QueryClient,
   createMutationKey: readonly unknown[],
   entityId: string,
-  ops: Record<string, unknown>,
+  ops: TOps,
 ): boolean {
   if (!canCoalesce()) return false;
   if (Object.values(ops).some((value) => isArrayDelta(value))) return false;

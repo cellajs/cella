@@ -1,5 +1,3 @@
-import { type UseMutationOptions, useMutation } from '@tanstack/react-query';
-
 /** Prepared durable mutation: run with variables, already coalesced, or nothing to send. */
 export type PreparedVars<TVars> = { kind: 'run'; vars: TVars } | { kind: 'coalesced' } | { kind: 'noop' };
 
@@ -10,15 +8,20 @@ export type PreparedVars<TVars> = { kind: 'run'; vars: TVars } | { kind: 'coales
  */
 export const COALESCED = Symbol('coalesced');
 
-/** The subset of a mutation the prepared handlers drive. */
+/**
+ * The subset of a mutation the prepared handlers drive. Method syntax (not property-function syntax)
+ * so a react-query `UseMutationResult` is structurally assignable under strictFunctionTypes without a
+ * cast: its `mutate`/`mutateAsync` take a typed options arg that method-parameter bivariance accepts.
+ */
 interface Mutatable<TData, TVars> {
-  mutate: (vars: TVars, opts?: unknown) => void;
-  mutateAsync: (vars: TVars, opts?: unknown) => Promise<TData>;
+  mutate(vars: TVars, opts?: unknown): void;
+  mutateAsync(vars: TVars, opts?: unknown): Promise<TData>;
 }
 
 /**
- * Prepare public input into durable variables once before mutation execution.
- * Coalesced and empty async calls resolve immediately; synchronous calls issue nothing.
+ * Prepare public input into durable variables once before mutation execution. Coalesced and empty
+ * async calls resolve immediately; synchronous calls issue nothing. Pure, so unit-testable with a
+ * fake mutation. Compose over a plain mutation: `{ ...mutation, ...buildPreparedHandlers(mutation, prepare) }`.
  */
 export function buildPreparedHandlers<TData, TVars, TInput>(
   mutation: Mutatable<TData, TVars>,
@@ -36,20 +39,4 @@ export function buildPreparedHandlers<TData, TVars, TInput>(
   };
 
   return { mutate, mutateAsync };
-}
-
-/**
- * Hook form: run the mutation with `options` and expose `mutate`/`mutateAsync` that accept the
- * public input, preparing it (routing context, stx, offline coalescing) via `prepare`.
- */
-export function usePreparedMutation<TData, TError, TVars, TContext, TInput>(
-  options: UseMutationOptions<TData, TError, TVars, TContext>,
-  prepare: (input: TInput) => PreparedVars<TVars>,
-) {
-  const mutation = useMutation(options);
-  const { mutate, mutateAsync } = buildPreparedHandlers<TData, TVars, TInput>(
-    mutation as Mutatable<TData, TVars>,
-    prepare,
-  );
-  return { ...mutation, mutate, mutateAsync };
 }
