@@ -285,19 +285,30 @@ export async function controlContextForStack(stack: string, log: (msg: string) =
 }
 
 /** Read-modify-write a single service's rollout entry. Uses `If-Match` when the
- *  object already exists so optimistic concurrency rejects a racing writer. */
+ *  object already exists so optimistic concurrency rejects a racing writer.
+ *  Retries the whole read-patch-write on a conditional-write conflict: entries
+ *  are per-service, so re-applying the patch over the winner's state is safe.
+ *  Parallel cutovers promote concurrently and rely on this. */
 export async function updateServiceRollout(
   s3: S3Like,
   bucket: string,
   key: string,
   slug: string,
   patch: (current: ServiceRollout | undefined) => ServiceRollout,
+  attempts = 4,
 ): Promise<void> {
-  const { state, etag } = await readControlState(s3, bucket, key)
-  state.rollout[slug] = patch(state.rollout[slug])
-  state.updatedAt = new Date().toISOString()
-  state.updatedBy = controlActor()
-  await writeControlState(s3, bucket, key, state, etag ? { ifMatch: etag } : {})
+  for (let attempt = 1; ; attempt++) {
+    const { state, etag } = await readControlState(s3, bucket, key)
+    state.rollout[slug] = patch(state.rollout[slug])
+    state.updatedAt = new Date().toISOString()
+    state.updatedBy = controlActor()
+    try {
+      await writeControlState(s3, bucket, key, state, etag ? { ifMatch: etag } : { ifNoneMatch: '*' })
+      return
+    } catch (err) {
+      if (attempt >= attempts) throw err
+    }
+  }
 }
 
 /** Metadata for the conditional-write lock that serializes stack mutations. */

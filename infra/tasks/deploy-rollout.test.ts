@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { main, parseArgs, type RolloutEffects } from './deploy-rollout'
+import { buildWavedPlan, main, parseArgs } from './deploy-rollout'
 
 describe('deploy-rollout parseArgs', () => {
   it('parses primary and rest rollout matrices', () => {
@@ -18,57 +18,42 @@ describe('deploy-rollout parseArgs', () => {
   })
 })
 
-function recordingEffects(log: string[], opts: { failOn?: string } = {}): RolloutEffects {
-  return {
-    deployService: (item) => {
-      if (opts.failOn === item.service) throw new Error(`deploy-service failed for ${item.service} with exit 1`)
-      log.push(`deploy:${item.service}`)
-    },
-    reapDisplacedGenerations: (stack) => {
-      log.push(`reap:${stack}`)
-    },
-  }
-}
-
-const argvFor = (primary: object[], rest: object[]): string[] => [
-  '--stack', 'production', '--sha', 'abc123',
-  '--primary-json', JSON.stringify(primary),
-  '--rest-json', JSON.stringify(rest),
-]
-
-describe('deploy-rollout sequencing', () => {
-  it('deploys primary first, then rest in order, then reaps exactly once', async () => {
-    const log: string[] = []
-    const argv = argvFor(
-      [{ service: 'backend', health_url: 'https://api' }],
-      [{ service: 'cdc', health_url: '' }, { service: 'frontend', health_url: 'https://app' }],
-    )
-    await main(argv, recordingEffects(log))
-    expect(log).toEqual(['deploy:backend', 'deploy:cdc', 'deploy:frontend', 'reap:production'])
+describe('buildWavedPlan', () => {
+  it('resolves registry-backed plans with normalized health URLs', () => {
+    const plan = buildWavedPlan({
+      sha: 'abc123',
+      primary: [{ service: 'backend', health_url: 'https://api' }],
+      rest: [{ service: 'cdc', health_url: '' }, { service: 'frontend', health_url: 'https://app' }],
+    })
+    expect(plan.primary).toMatchObject({ service: 'backend', strategy: 'lb-overlap', drainSeconds: 10, healthUrl: 'https://api/health' })
+    expect(plan.rest[0]).toMatchObject({ service: 'cdc', strategy: 'exclusive' })
+    expect(plan.rest[1]).toMatchObject({ service: 'frontend', strategy: 'lb-overlap', healthUrl: 'https://app/health' })
   })
 
-  it('still reaps when there is no primary service', async () => {
-    const log: string[] = []
-    await main(argvFor([], [{ service: 'frontend', health_url: 'https://app' }]), recordingEffects(log))
-    expect(log).toEqual(['deploy:frontend', 'reap:production'])
+  it('rejects more than one primary service', () => {
+    expect(() =>
+      buildWavedPlan({
+        sha: 'abc123',
+        primary: [
+          { service: 'backend', health_url: 'https://api' },
+          { service: 'frontend', health_url: 'https://app' },
+        ],
+        rest: [],
+      }),
+    ).toThrow(/at most one primary/)
   })
 
-  it('does not reap when a service deploy fails (displaced generations may still serve)', async () => {
-    const log: string[] = []
-    const argv = argvFor(
-      [{ service: 'backend', health_url: 'https://api' }],
-      [{ service: 'frontend', health_url: 'https://app' }],
-    )
-    await expect(main(argv, recordingEffects(log, { failOn: 'frontend' }))).rejects.toThrow(/frontend/)
-    expect(log).toEqual(['deploy:backend'])
-    expect(log).not.toContain('reap:production')
+  it('rejects an unknown service', () => {
+    expect(() => buildWavedPlan({ sha: 'abc123', primary: [], rest: [{ service: 'nope', health_url: '' }] })).toThrow(/Unknown service/)
   })
+})
 
-  it('rejects more than one primary service', async () => {
-    const argv = argvFor(
-      [{ service: 'backend', health_url: 'https://api' }, { service: 'mcp', health_url: 'https://mcp' }],
-      [],
-    )
-    await expect(main(argv, recordingEffects([]))).rejects.toThrow(/at most one primary/)
+describe('deploy-rollout main', () => {
+  it('refuses non-pinned image tags before touching any runtime', async () => {
+    const makeRuntime = () => {
+      throw new Error('runtime should not be constructed')
+    }
+    const argv = ['--stack', 'production', '--sha', 'latest', '--primary-json', '[]', '--rest-json', '[]']
+    await expect(main(argv, makeRuntime)).rejects.toThrow(/non-pinned/)
   })
 })

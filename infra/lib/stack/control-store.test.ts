@@ -14,6 +14,7 @@ import {
   releaseLock,
   serializeControlState,
   setPending,
+  updateServiceRollout,
   stateBucket,
   writeControlState,
 } from './control-store'
@@ -245,5 +246,66 @@ describe('rollout transitions', () => {
 
   it('emptyRollout starts at seq 0 with no pointers', () => {
     expect(emptyRollout()).toEqual({ seq: 0 })
+  })
+})
+
+/** Stateful control-object S3 mock: a racing writer promotes `frontend` between
+ *  our first read and write, so the conditional write conflicts exactly once. */
+function makeRacingControlS3(initial: ControlState) {
+  let obj = { body: serializeControlState(initial), etag: '"e1"' }
+  let counter = 1
+  let raced = false
+  const fail412 = () => Object.assign(new Error('PreconditionFailed'), { name: 'PreconditionFailed' })
+  const send = vi.fn(async (cmd: { constructor: { name: string }; input: Record<string, string> }) => {
+    const kind = cmd.constructor.name
+    if (kind === 'GetObjectCommand') {
+      return { Body: { transformToString: async () => obj.body }, ETag: obj.etag }
+    }
+    if (kind === 'PutObjectCommand') {
+      if (!raced) {
+        raced = true
+        const racedState = parseControlState(obj.body)
+        racedState.rollout.frontend = { seq: 9, active: { id: 'ff99', sha: 'zz', seq: 9 } }
+        obj = { body: serializeControlState(racedState), etag: `"e${++counter}"` }
+        throw fail412()
+      }
+      if (cmd.input.IfMatch && cmd.input.IfMatch !== obj.etag) throw fail412()
+      obj = { body: cmd.input.Body ?? '', etag: `"e${++counter}"` }
+      return { ETag: obj.etag }
+    }
+    throw new Error(`unexpected command ${kind}`)
+  })
+  // biome-ignore lint/suspicious/noExplicitAny: minimal mock surface
+  return { s3: { send } as any, read: () => parseControlState(obj.body) }
+}
+
+describe('updateServiceRollout', () => {
+  const initial: ControlState = {
+    schemaVersion: 2,
+    bootstrap: {},
+    rollout: { backend: { seq: 1, active: { id: 'aa11', sha: 'old', seq: 1 }, pendingSha: 'new' } },
+  }
+
+  it('retries the read-patch-write when a racing writer wins the conditional write', async () => {
+    const { s3, read } = makeRacingControlS3(initial)
+    await updateServiceRollout(s3, 'b', 'k', 'backend', (cur) => promote(cur, { id: 'bb22', sha: 'new' }))
+    const state = read()
+    // Both the racer's entry and ours survive.
+    expect(state.rollout.frontend).toEqual({ seq: 9, active: { id: 'ff99', sha: 'zz', seq: 9 } })
+    expect(state.rollout.backend).toEqual({ seq: 2, active: { id: 'bb22', sha: 'new', seq: 2 } })
+  })
+
+  it('gives up after the configured attempts', async () => {
+    const fail412 = () => Object.assign(new Error('PreconditionFailed'), { name: 'PreconditionFailed' })
+    const send = vi.fn(async (cmd: { constructor: { name: string } }) => {
+      if (cmd.constructor.name === 'GetObjectCommand') {
+        return { Body: { transformToString: async () => serializeControlState(initial) }, ETag: '"e1"' }
+      }
+      throw fail412()
+    })
+    // biome-ignore lint/suspicious/noExplicitAny: minimal mock surface
+    const s3 = { send } as any
+    await expect(updateServiceRollout(s3, 'b', 'k', 'backend', (cur) => promote(cur, { id: 'bb22', sha: 'new' }), 2)).rejects.toThrow(/PreconditionFailed/)
+    expect(send.mock.calls.filter(([cmd]) => (cmd as { constructor: { name: string } }).constructor.name === 'PutObjectCommand')).toHaveLength(2)
   })
 })
