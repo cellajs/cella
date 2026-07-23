@@ -56,12 +56,12 @@ export const WaitlistForm = ({
   });
 
   const onSubmit = (body: FormValues) => {
-    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
 
     createRequest(body, {
       onSuccess: () => {
         navigate({ to: '/about', replace: true });
-        toaster(t('c:success.waitlist_request', { appName: appConfig.name }), 'success');
+        toaster.success(t('c:success.waitlist_request', { appName: appConfig.name }));
 
         if (isDialog) useDialoger.getState().remove();
         callback?.({ status: 'success' });

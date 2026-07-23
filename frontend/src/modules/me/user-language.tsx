@@ -23,7 +23,7 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
   const language = user?.language || i18n.languages[0];
 
   const changeLanguage = (lng: Language) => {
-    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
     if (window.Gleap) window.Gleap.setLanguage(lng);
     i18n.changeLanguage(lng);
     useDropdowner.getState().remove();

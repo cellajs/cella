@@ -58,9 +58,9 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
       return await sendNewsletter({ body, query });
     },
     onSuccess: () => {
-      if (testOnly) return toaster(t('c:success.test_email'), 'success');
+      if (testOnly) return toaster.success(t('c:success.test_email'));
       form.reset();
-      toaster(t('c:success.create_newsletter'), 'success');
+      toaster.success(t('c:success.create_newsletter'));
       useSheeter.getState().remove(formContainerId);
       callback?.({ status: 'success' });
     },

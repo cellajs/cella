@@ -259,9 +259,8 @@ const attachmentDeleteOptions = (
     const rejectedSet = new Set(rejectedIds);
     const rejectedAttachments = variables.attachments.filter((a) => rejectedSet.has(a.id));
     insertEntitiesIntoHome(queryClient, rejectedAttachments);
-    toaster(
+    toaster.info(
       i18n.t('c:resources_delete_denied', { count: rejectedIds.length, total: variables.attachments.length }),
-      'info',
     );
   },
   onSettled: (_data, error, variables) => {

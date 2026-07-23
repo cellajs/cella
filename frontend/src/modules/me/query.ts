@@ -103,7 +103,7 @@ export const useToggleMfaMutation = () => {
     onSuccess: (updatedUser, { mfaRequired: isEnabling }) => {
       applyUpdatedSelf(updatedUser);
       if (isEnabling) queryClient.invalidateQueries({ queryKey: meKeys.auth });
-      toaster(t(`mfa_${updatedUser.mfaRequired ? 'enabled' : 'disabled'}`), 'success');
+      toaster.success(t(`mfa_${updatedUser.mfaRequired ? 'enabled' : 'disabled'}`));
     },
     gcTime: 1000 * 10,
   });
@@ -143,12 +143,12 @@ export const useCreatePasskeyMutation = () => {
           passkeys: [newPasskey, ...oldData.passkeys],
         };
       });
-      toaster(t('c:success.passkey_added'), 'success');
+      toaster.success(t('c:success.passkey_added'));
     },
     onError(error) {
       // On cancel throws error NotAllowedError
       console.error('Error during passkey registration:', error);
-      toaster(t('error:passkey_registration_failed'), 'error');
+      toaster.error(t('error:passkey_registration_failed'));
     },
   });
 };
@@ -170,11 +170,11 @@ export const useDeletePasskeyMutation = () => {
           passkeys: oldData.passkeys.filter((passkey) => id !== passkey.id),
         };
       });
-      toaster(t('c:success.passkey_unlinked'), 'success');
+      toaster.success(t('c:success.passkey_unlinked'));
     },
     onError(error) {
       console.error('Error removing passkey:', error);
-      toaster(t('error:passkey_unlink_failed'), 'error');
+      toaster.error(t('error:passkey_unlink_failed'));
     },
   });
 };
@@ -189,7 +189,7 @@ export const useDeleteTotpMutation = () => {
     mutationKey: meKeys.delete.totp,
     mutationFn: () => deleteTotp(),
     onSuccess: () => {
-      toaster(t('c:success.totp_removed'), 'success');
+      toaster.success(t('c:success.totp_removed'));
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, hasTotp: false };
@@ -197,7 +197,7 @@ export const useDeleteTotpMutation = () => {
     },
     onError(error) {
       console.error('Error removing totp:', error);
-      toaster(t('error:totp_remove_failed'), 'error');
+      toaster.error(t('error:totp_remove_failed'));
     },
   });
 };
@@ -237,6 +237,6 @@ export const useHandleInvitationMutation = () =>
         return { ...oldData, items: oldData.items.filter((invite) => invite.entity.id !== settledEntity.id) };
       });
 
-      toaster(t('c:invitation_settled', { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }), 'success');
+      toaster.success(t('c:invitation_settled', { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }));
     },
   });

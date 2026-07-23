@@ -51,7 +51,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
         onSuccess: (updatedTenant) => {
           if (isSheet) useSheeter.getState().remove(formContainerId);
           form.reset(body);
-          toaster(t('c:success.update_resource', { resource: t('c:tenant') }), 'success');
+          toaster.success(t('c:success.update_resource', { resource: t('c:tenant') }));
           callback?.({ data: updatedTenant, status: 'success' });
         },
       },

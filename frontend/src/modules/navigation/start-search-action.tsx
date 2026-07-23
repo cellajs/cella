@@ -6,7 +6,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { AppSearch } from '~/modules/navigation/app-search';
 
 export function startSearchAction(triggerRef: RefObject<HTMLButtonElement | null>) {
-  if (!onlineManager.isOnline()) return toaster(i18n.t('c:action.offline.text'), 'warning');
+  if (!onlineManager.isOnline()) return toaster.warning(i18n.t('c:action.offline.text'));
 
   return useDialoger.getState().create(<AppSearch />, {
     id: 'search',

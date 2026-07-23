@@ -48,13 +48,13 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const onSubmit: SubmitHandler<FormValues> = (body) => {
     createRequest(body, {
       onSuccess: () => {
-        toaster(t('c:message_sent.text'), 'success');
+        toaster.success(t('c:message_sent.text'));
 
         if (isDialog) useDialoger.getState().remove();
         form.reset();
       },
       onError: () => {
-        toaster(t('error:reported_try_later'), 'error');
+        toaster.error(t('error:reported_try_later'));
       },
     });
   };

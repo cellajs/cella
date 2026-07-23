@@ -81,7 +81,7 @@ export function useUploadUppy() {
               statusEventHandler.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>),
             ).catch((err) => {
               console.error('onComplete handler failed:', err);
-              toaster(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }), 'error');
+              toaster.error(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }));
             });
           });
         // Plugin Options

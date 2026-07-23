@@ -40,7 +40,7 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
 
   // Open upload dialog
   const openUploadDialog = () => {
-    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
     upload.create({
       id: 'upload-image',
       isPublic: true,

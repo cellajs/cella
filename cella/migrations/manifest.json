@@ -26,6 +26,18 @@
       "summary": "PropagationHint fields sourceType->embeddedProduct, targetType->hostProduct, field->hostColumn on StreamNotification.propagation + catchup propagation; propagationTargets->hostsByEmbeddedProduct; product-type wire fields tightened to z.enum(productEntityTypes). Manual (field names too generic to codemod); forks bump clientCacheVersion."
     },
     {
+      "id": "20260722T2050-sonner-style-toaster-api",
+      "version": "next",
+      "title": "Adopt the Sonner-style toaster API",
+      "kind": "codemod",
+      "forkBreaking": true,
+      "clientCacheBump": false,
+      "script": "cella/migrations/20260722T2050-sonner-style-toaster-api/sonner-style-toaster-api.ts",
+      "roots": ["frontend/src"],
+      "requires": ["pnpm check"],
+      "summary": "Rewrite toaster(message, severity, options) calls to Sonner-style toaster.success/info/warning/error methods. TypeScript-AST codemod handles literal severities and reports dynamic calls for manual review; internal API only, no wire-shape change."
+    },
+    {
       "id": "20260722T2105-prepared-mutation-compose",
       "version": "next",
       "title": "Compose prepared mutations over useMutation (drop usePreparedMutation)",

@@ -41,7 +41,7 @@ export const SetupTotp = () => {
         if (!oldData) return oldData;
         return { ...oldData, hasTotp: true };
       });
-      toaster(t('c:success.totp_added'), 'success');
+      toaster.success(t('c:success.totp_added'));
     },
     onError: () => {
       // Reset form component to force re-entry of TOTP verify code

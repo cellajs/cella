@@ -118,7 +118,7 @@ export function SubmitButton({
     }
     if (showOfflineWarning) {
       e.preventDefault();
-      return toaster(t('c:action.offline.text'), 'warning');
+      return toaster.warning(t('c:action.offline.text'));
     }
     onClick?.(e);
   };

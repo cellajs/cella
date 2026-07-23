@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { toast } from 'sonner';
 import { action } from 'storybook/actions';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { Toaster } from '~/modules/ui/sonner';
 
@@ -23,7 +23,7 @@ const meta: Meta<typeof Toaster> = {
     <div className="flex min-h-96 items-center justify-center space-x-2">
       <Button
         onClick={() =>
-          toast('Event has been created', {
+          toaster('Event has been created', {
             description: new Date().toLocaleString(),
             action: {
               label: 'Undo',
@@ -49,7 +49,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const ShouldShowToast: Story = {
-  name: 'when clicking Show Toast button, should show a toast',
+  name: 'when repeating the same toast, should keep one toast',
   tags: ['!dev', '!autodocs'],
   play: async ({ canvasElement, step }) => {
     const canvasBody = within(canvasElement.ownerDocument.body);
@@ -65,7 +65,7 @@ export const ShouldShowToast: Story = {
     await step('create more toasts', async () => {
       await userEvent.click(triggerBtn);
       await userEvent.click(triggerBtn);
-      await waitFor(() => expect(canvasBody.getAllByRole('listitem')).toHaveLength(3));
+      await waitFor(() => expect(canvasBody.getAllByRole('listitem')).toHaveLength(1));
     });
   },
 };

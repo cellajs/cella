@@ -98,7 +98,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
 
       // Show toast
       const toastType = error.severity === 'error' ? 'error' : error.severity === 'warn' ? 'warning' : 'info';
-      toaster(errorMessage, toastType, { description });
+      toaster[toastType](errorMessage, { description });
     }
 
     // Redirect to sign-in page if the user is not authenticated (unless already on /auth/*)

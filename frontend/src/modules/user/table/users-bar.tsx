@@ -86,7 +86,7 @@ export const UsersTableBar = ({
                 count: args.data.length,
                 resources: t('c:user_other').toLowerCase(),
               });
-        toaster(message, 'success');
+        toaster.success(message);
       }
       clearSelection();
     };

@@ -54,7 +54,7 @@ function UserAccountPage() {
       <DeleteSelf
         dialog
         callback={({ status }: CallbackArgs<User>) => {
-          if (status === 'success') toaster(t('c:success.delete_resource', { resource: t('c:account') }), 'success');
+          if (status === 'success') toaster.success(t('c:success.delete_resource', { resource: t('c:account') }));
         }}
       />,
       {
@@ -68,7 +68,7 @@ function UserAccountPage() {
   };
 
   const authenticateWithProvider = (provider: EnabledOAuthProvider) => {
-    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
 
     // Proceed to OAuth URL with redirect and connect
     try {
@@ -84,7 +84,7 @@ function UserAccountPage() {
       window.location.assign(providerUrl);
     } catch (error) {
       console.error('Failed to build OAuth URL:', error);
-      toaster(t('c:url_malformed'), 'error');
+      toaster.error(t('c:url_malformed'));
       setLoadingProvider(null);
     }
   };

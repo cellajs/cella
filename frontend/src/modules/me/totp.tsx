@@ -37,8 +37,8 @@ export function Totp() {
   };
 
   const handleDeleteTOTP = () => {
-    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
-    if (user.mfaRequired) return toaster(t('c:unlink_mfa_last', { method: 'TOTP' }), 'info');
+    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (user.mfaRequired) return toaster.info(t('c:unlink_mfa_last', { method: 'TOTP' }));
 
     deleteTotp();
   };

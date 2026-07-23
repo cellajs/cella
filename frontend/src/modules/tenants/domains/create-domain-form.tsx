@@ -22,7 +22,7 @@ export function CreateDomainForm({ tenantId }: { tenantId: string }) {
       {
         onSuccess: () => {
           setNewDomain('');
-          toaster(t('c:success.create_resource', { resource: t('c:domain') }), 'success');
+          toaster.success(t('c:success.create_resource', { resource: t('c:domain') }));
           useDialoger.getState().remove(createDomainDialogId);
         },
       },

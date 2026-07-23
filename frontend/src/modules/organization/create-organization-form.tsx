@@ -70,7 +70,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
 
   const onSuccess = (createdOrganization: Organization) => {
     form.reset();
-    toaster(t('c:success.create_resource', { resource: t('c:organization') }), 'success');
+    toaster.success(t('c:success.create_resource', { resource: t('c:organization') }));
     callback?.({ data: createdOrganization, status: 'success' });
     nextStep?.();
   };
@@ -84,7 +84,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
         const tenant = await selfCreateTenant({ body: { name: `${values.name} workspace` } });
         resolvedTenantId = tenant.id;
       } catch {
-        toaster(t('error:create_resource', { resource: t('c:tenant') }), 'error');
+        toaster.error(t('error:create_resource', { resource: t('c:tenant') }));
         return;
       }
     }
@@ -95,7 +95,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
         onSuccess: (createdOrganization) => onSuccess(createdOrganization),
         onError: (error) => {
           if (error.message === 'org_limit_reached') {
-            toaster(t('error:org_limit_reached'), 'warning');
+            toaster.warning(t('error:org_limit_reached'));
           }
         },
       },

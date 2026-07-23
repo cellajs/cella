@@ -107,7 +107,7 @@ export const MembersTableBar = ({
   };
 
   const openInviteDialog = () => {
-    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
 
     createDialog(<InviteUsers channel={channel} mode={null} dialog />, {
       id: 'invite-users',

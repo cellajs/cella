@@ -78,8 +78,8 @@ export const useSendApprovalInviteMutation = () => {
   return useMutation<SystemInviteResponse, ApiError, SystemInviteData['body']>({
     mutationKey: requestsKeys.approve,
     mutationFn: (body) => systemInvite({ body }),
-    onSuccess: () => toaster(t('c:success.users_invited'), 'success'),
-    onError: () => toaster(t('error:bad_request_action'), 'error'),
+    onSuccess: () => toaster.success(t('c:success.users_invited')),
+    onError: () => toaster.error(t('error:bad_request_action')),
   });
 };
 

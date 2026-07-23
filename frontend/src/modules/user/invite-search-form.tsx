@@ -40,10 +40,10 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
           form.reset(undefined, { keepDirtyValues: true });
           if (invitesSentCount > 0) {
             const resource = t(`c:${invitesSentCount === 1 ? 'user' : 'users'}`).toLowerCase();
-            toaster(t('c:success.resource_count_invited', { count: invitesSentCount, resource }), 'success');
+            toaster.success(t('c:success.resource_count_invited', { count: invitesSentCount, resource }));
           }
           if (rejectedIds.length)
-            toaster(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }), 'info');
+            toaster.info(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }));
 
           if (isDialog) useDialoger.getState().remove();
         },

@@ -25,7 +25,7 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
 
   const handleUpdateMembershipKey = (key: 'archived' | 'muted') => {
     if (key === 'archived' && item.membership.archived && !onlineManager.isOnline()) {
-      return toaster(t('c:action.offline.text'), 'warning');
+      return toaster.warning(t('c:action.offline.text'));
     }
 
     const updatedMembership: MutationUpdateMembership = {

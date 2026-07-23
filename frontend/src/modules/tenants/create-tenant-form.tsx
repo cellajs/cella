@@ -48,7 +48,7 @@ export function CreateTenantForm({ labelDirection = 'top', children, callback }:
     mutate(values, {
       onSuccess: (createdTenant) => {
         form.reset();
-        toaster(t('c:success.create_resource', { resource: t('c:tenant') }), 'success');
+        toaster.success(t('c:success.create_resource', { resource: t('c:tenant') }));
         callback?.({ data: createdTenant, status: 'success' });
       },
     });

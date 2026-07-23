@@ -47,7 +47,7 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
       setMagicLinkMode('signup');
       setStep('magicLinkSent', form.getValues('email') || email);
     },
-    onError: () => toaster(t('error:reported_try_later'), 'error'),
+    onError: () => toaster.error(t('error:reported_try_later')),
   });
 
   const onSubmit = () => sendMagic();

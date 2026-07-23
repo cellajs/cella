@@ -64,7 +64,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
         onSuccess: (updatedOrganization) => {
           if (isSheet) useSheeter.getState().remove(formContainerId);
           form.reset(body);
-          toaster(t('c:success.update_resource', { resource: t('c:organization') }), 'success');
+          toaster.success(t('c:success.update_resource', { resource: t('c:organization') }));
           callback?.({ data: updatedOrganization, status: 'success' });
         },
       },
@@ -104,9 +104,9 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
                       persistAttachments(attachments, {
                         tenantId: organization.tenantId,
                         organizationId: organization.id,
-                      }).catch(() =>
-                        toaster(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }), 'error'),
-                      ),
+                      }).catch(() => {
+                        toaster.error(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }));
+                      }),
                   }
                 : undefined,
             }}

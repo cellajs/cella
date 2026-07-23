@@ -35,8 +35,8 @@ export function UserProfilePage({ user, organizationId, isSheet }: Props) {
 
   const coverUpdateCallback = (bannerUrl: string) => {
     const callbacks = {
-      onSuccess: () => toaster(t('c:success.upload_cover'), 'success'),
-      onError: () => toaster(t('error:image_upload_failed'), 'error'),
+      onSuccess: () => toaster.success(t('c:success.upload_cover')),
+      onError: () => toaster.error(t('error:image_upload_failed')),
     };
 
     if (isSelf) {

@@ -46,15 +46,14 @@ export function SessionsList() {
         };
       });
 
-      toaster(
+      toaster.success(
         ids.length === 1 ? t('c:success.session_terminated', { id: ids[0] }) : t('c:success.sessions_terminated'),
-        'success',
       );
     },
   });
 
   const handleDeleteSessions = (ids: string[]) => {
-    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
     _deleteMySessions(ids);
   };
 

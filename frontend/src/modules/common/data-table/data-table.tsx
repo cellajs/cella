@@ -140,9 +140,9 @@ export const DataTable = <TData,>({
       if (newSize > MAX_SELECTABLE_ROWS) {
         // If this is a "select all" attempt (large jump in selection)
         if (newSize - currentSize > 1) {
-          toaster(t('c:selection_limit_all', { max: MAX_SELECTABLE_ROWS }), 'warning');
+          toaster.warning(t('c:selection_limit_all', { max: MAX_SELECTABLE_ROWS }));
         } else {
-          toaster(t('c:selection_limit', { max: MAX_SELECTABLE_ROWS }), 'warning');
+          toaster.warning(t('c:selection_limit', { max: MAX_SELECTABLE_ROWS }));
         }
         return;
       }

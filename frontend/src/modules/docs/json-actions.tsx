@@ -41,7 +41,7 @@ export const JsonActions = ({
 
   const handleCopy = () => {
     copyToClipboard(JSON.stringify(data, null, 2));
-    toaster(t('c:success.resource_copied', { resource: resourceName ?? 'JSON' }), 'success');
+    toaster.success(t('c:success.resource_copied', { resource: resourceName ?? 'JSON' }));
   };
 
   const handleDownload = () => {

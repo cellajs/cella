@@ -154,7 +154,7 @@ export const useTableMutation = <N extends `${EntityType}s`, M extends MutationT
     },
     onError: (_error, _variables, onMutateResult, context) => {
       console.error(_error);
-      toaster(t(`error:${type}_resource`, { resource: t(`c:${table}`) }), 'error');
+      toaster.error(t(`error:${type}_resource`, { resource: t(`c:${table}`) }));
 
       if (!onMutateResult?.length) {
         return;

@@ -45,7 +45,7 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
       const providerUrl = `${baseUrl}?${params.toString()}`;
       window.location.assign(providerUrl);
     } catch (error) {
-      toaster(t('c:url_malformed'), 'error');
+      toaster.error(t('c:url_malformed'));
       setLoadingProvider(null);
     }
   };

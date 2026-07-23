@@ -8,5 +8,5 @@ import { toaster } from '~/modules/common/toaster/toaster';
  * `meta: { suppressGlobalErrorToast: true }` so the user only sees this toast.
  */
 export const createResourceError = (resource: string) => (type: 'create' | 'update' | 'delete') => {
-  toaster(t(`error:${type}_resource`, { resource: t(`c:${resource}`) }), 'error');
+  toaster.error(t(`error:${type}_resource`, { resource: t(`c:${resource}`) }));
 };
