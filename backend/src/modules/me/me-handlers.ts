@@ -142,8 +142,8 @@ app.openapi(meRoutes.deleteMyMembership, async (ctx) => {
 });
 
 app.openapi(meRoutes.getUploadToken, async (ctx) => {
-  const { public: isPublic, organizationId, templateId } = ctx.req.valid('query');
-  const data = getUploadTokenOp(ctx, { isPublic, organizationId, templateId });
+  const { publicBucket, organizationId, templateId } = ctx.req.valid('query');
+  const data = getUploadTokenOp(ctx, { publicBucket, organizationId, templateId });
   return ctx.json(data, 200);
 });
 

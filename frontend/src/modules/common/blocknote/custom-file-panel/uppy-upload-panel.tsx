@@ -54,7 +54,7 @@ export function UppyFilePanel({
 }: BaseUppyFilePanelProps & FilePanelProps) {
   // Private media lives in the private bucket and is referenced by attachment id;
   // both public modes use the public bucket and are referenced by cloud key.
-  const isPublic = mediaMode !== 'private-attachment';
+  const publicBucket = mediaMode !== 'private-attachment';
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const isOnline = useOnlineManager();
@@ -103,7 +103,7 @@ export function UppyFilePanel({
     const initializeUppy = async () => {
       try {
         localUppy = await createBaseTransloaditUppy(uppyOptions, {
-          public: isPublic,
+          publicBucket,
           templateId: 'attachment',
           organizationId,
         });
@@ -173,7 +173,7 @@ export function UppyFilePanel({
       setUppy(null);
       if (localUppy) localUppy.destroy();
     };
-  }, [blockType, editor, isPublic, organizationId, uppyOptions]);
+  }, [blockType, editor, publicBucket, organizationId, uppyOptions]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

@@ -40,7 +40,7 @@ export function makeAttachment(overrides: Record<string, unknown> = {}) {
     originalKey: 'files/original.png',
     thumbnailKey: null,
     convertedKey: null,
-    public: false,
+    publicBucket: false,
     tenantId: 'tenant-1',
     ...overrides,
   } as any;

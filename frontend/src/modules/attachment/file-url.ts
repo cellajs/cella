@@ -7,7 +7,7 @@ import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
 export type CloudFileVariant = Exclude<BlobVariant, 'raw'>;
 
 /** Cloud-key fields an attachment carries, enough to resolve any variant's URL. */
-type CloudKeyFields = Pick<Attachment, 'originalKey' | 'convertedKey' | 'thumbnailKey' | 'public'>;
+type CloudKeyFields = Pick<Attachment, 'originalKey' | 'convertedKey' | 'thumbnailKey' | 'publicBucket'>;
 
 /**
  * The cloud key holding a given variant, or null when the variant has no cloud object.
@@ -61,6 +61,6 @@ export async function getCloudUrl(
   const key = getVariantKey(attachment, variant);
   if (!key) return null;
 
-  if (attachment.public) return getPublicFileUrl(key);
+  if (attachment.publicBucket) return getPublicFileUrl(key);
   return getPrivateFileUrlById(attachment.id, variant, attachment.tenantId, attachment.organizationId);
 }

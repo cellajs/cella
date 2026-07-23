@@ -32,7 +32,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       name: filename,
       description: null,
       keywords: faker.lorem.words(3),
-      public: false,
+      publicBucket: false,
       bucketName: 'attachments',
       groupId: null,
       filename,

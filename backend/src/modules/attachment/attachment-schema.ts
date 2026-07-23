@@ -11,7 +11,7 @@ import { mockAttachmentResponse } from './attachment-mocks';
 const attachmentFieldDescriptions = {
   contentType: 'MIME type of the uploaded file (e.g. image/png).',
   convertedContentType: 'MIME type of the server-converted variant; null when none.',
-  public: 'When true, served directly from the CDN without a presigned URL.',
+  publicBucket: 'When true, the file is stored in the public bucket and served from the CDN without a presigned URL.',
   originalKey: 'Storage object key for the original uploaded file.',
   convertedKey: 'Storage object key for the converted variant; null when none.',
   thumbnailKey: 'Storage object key for the generated thumbnail; null when none.',
@@ -43,7 +43,7 @@ const attachmentCreateBodySchema = attachmentInsertSchema
     size: true,
     originalKey: true,
     bucketName: true,
-    public: true,
+    publicBucket: true,
     groupId: true,
     convertedContentType: true,
     convertedKey: true,

@@ -31,7 +31,7 @@ export const useAttachmentsUploadDialog = (tenantId: string, organizationId: str
 
     useUploader.getState().create({
       id: 'upload-attachment',
-      isPublic: false,
+      publicBucket: false,
       personalUpload: false,
       organizationId,
       templateId: 'attachment',

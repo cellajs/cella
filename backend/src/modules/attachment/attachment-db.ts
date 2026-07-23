@@ -13,8 +13,9 @@ export const attachmentsTable = snakeCase.table(
   'attachments',
   {
     ...productColumns('attachment'),
-    // S3 bucket visibility, independent from the `publicAt` non-member permission grant.
-    public: boolean().notNull().default(false),
+    // Bytes live in the public S3 bucket and are served from the CDN. Storage placement only:
+    // row readability for non-members is the separate `publicAt` permission grant.
+    publicBucket: boolean().notNull().default(false),
     bucketName: varchar({ length: maxLength.field }).notNull(),
     /** Upload batch grouping (multi-file uploads shown as one carousel), not ownership. */
     groupId: uuid(),

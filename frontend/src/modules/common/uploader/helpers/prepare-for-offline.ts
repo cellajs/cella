@@ -29,7 +29,7 @@ export const prepareFilesForOffline: PrepareFilesForOffline = async (files, toke
   // Build upload context for sync worker
   const uploadContext: UploadContext = {
     templateId: tokenQuery.templateId,
-    public: tokenQuery.public,
+    publicBucket: tokenQuery.publicBucket,
   };
 
   // Store each file blob locally, under the id its attachment row will be created with.

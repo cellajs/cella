@@ -1493,7 +1493,7 @@
       "UploadToken": {
         "type": "object",
         "properties": {
-          "public": {
+          "publicBucket": {
             "type": "boolean"
           },
           "sub": {
@@ -1532,10 +1532,10 @@
             ]
           }
         },
-        "required": ["public", "sub", "s3", "signature", "params"],
+        "required": ["publicBucket", "sub", "s3", "signature", "params"],
         "description": "A signed token authorizing file uploads to the configured storage provider.",
         "example": {
-          "public": false,
+          "publicBucket": false,
           "sub": "x1lsgegsw6imziogthaolhvy",
           "s3": true,
           "signature": "gVDbK1LX8P8h331cTbWcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYg",
@@ -2022,9 +2022,9 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
-          "public": {
+          "publicBucket": {
             "type": "boolean",
-            "description": "When true, served directly from the CDN without a presigned URL."
+            "description": "When true, the file is stored in the public bucket and served from the CDN without a presigned URL."
           },
           "bucketName": {
             "type": "string",
@@ -2092,7 +2092,7 @@
           "deletedBy",
           "publicAt",
           "seq",
-          "public",
+          "publicBucket",
           "bucketName",
           "groupId",
           "filename",
@@ -2112,7 +2112,7 @@
           "name": "rightfully_lest_noted.mp3",
           "description": null,
           "keywords": "universe explicabo aliquid",
-          "public": false,
+          "publicBucket": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "rightfully_lest_noted.mp3",
@@ -4384,7 +4384,7 @@
               "default": "false"
             },
             "required": false,
-            "name": "public",
+            "name": "publicBucket",
             "in": "query"
           },
           {
@@ -4414,7 +4414,7 @@
                   "$ref": "#/components/schemas/UploadToken"
                 },
                 "example": {
-                  "public": false,
+                  "publicBucket": false,
                   "sub": "x1lsgegsw6imziogthaolhvy",
                   "s3": true,
                   "signature": "gVDbK1LX8P8h331cTbWcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYg",
@@ -8337,7 +8337,7 @@
                       "name": "vice.mar",
                       "description": null,
                       "keywords": "magni deleniti quisquam",
-                      "public": false,
+                      "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "vice.mar",
@@ -8369,7 +8369,7 @@
                       "name": "bah_oof_truthfully.css",
                       "description": null,
                       "keywords": "vallum infit terra",
-                      "public": false,
+                      "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "bah_oof_truthfully.css",
@@ -8492,9 +8492,9 @@
                       "type": "string",
                       "maxLength": 255
                     },
-                    "public": {
+                    "publicBucket": {
                       "type": "boolean",
-                      "description": "When true, served directly from the CDN without a presigned URL."
+                      "description": "When true, the file is stored in the public bucket and served from the CDN without a presigned URL."
                     },
                     "groupId": {
                       "type": ["string", "null"],
@@ -8570,7 +8570,7 @@
                       "name": "ugh_besides.svgz",
                       "description": null,
                       "keywords": "voveo quis adaugeo",
-                      "public": false,
+                      "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "ugh_besides.svgz",
@@ -8602,7 +8602,7 @@
                       "name": "instead_volleyball.jpe",
                       "description": null,
                       "keywords": "adversus voco vos",
-                      "public": false,
+                      "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "instead_volleyball.jpe",
@@ -8675,7 +8675,7 @@
                       "name": "ugh_besides.svgz",
                       "description": null,
                       "keywords": "voveo quis adaugeo",
-                      "public": false,
+                      "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "ugh_besides.svgz",
@@ -8707,7 +8707,7 @@
                       "name": "instead_volleyball.jpe",
                       "description": null,
                       "keywords": "adversus voco vos",
-                      "public": false,
+                      "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "instead_volleyball.jpe",
@@ -9023,7 +9023,7 @@
                   "name": "rightfully_lest_noted.mp3",
                   "description": null,
                   "keywords": "universe explicabo aliquid",
-                  "public": false,
+                  "publicBucket": false,
                   "bucketName": "attachments",
                   "groupId": null,
                   "filename": "rightfully_lest_noted.mp3",
@@ -9172,7 +9172,7 @@
                   "name": "rightfully_lest_noted.mp3",
                   "description": null,
                   "keywords": "universe explicabo aliquid",
-                  "public": false,
+                  "publicBucket": false,
                   "bucketName": "attachments",
                   "groupId": null,
                   "filename": "rightfully_lest_noted.mp3",

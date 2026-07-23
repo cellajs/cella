@@ -19,7 +19,7 @@ function makeOriginal(overrides: Record<string, unknown> = {}) {
     url: 'files/holiday.png',
     mime: 'image/png',
     size: 2048,
-    user_meta: { attachmentId: 'att-uuid-1', public: 'false', bucketName: 'private' },
+    user_meta: { attachmentId: 'att-uuid-1', publicBucket: 'false', bucketName: 'private' },
     ...overrides,
   } as unknown as UploadedFile;
 }

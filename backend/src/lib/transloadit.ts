@@ -5,7 +5,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { env } from '#/env';
 import { utcDateString } from '#/utils/utc-data-string';
 
-export const getParams = (templateId: UploadTemplateId, isPublic: boolean, sub: string) => {
+export const getParams = (templateId: UploadTemplateId, publicBucket: boolean, sub: string) => {
   // Transloadit security requires us to set an expiration date like this
   const expires = utcDateString(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
 
@@ -32,11 +32,11 @@ export const getParams = (templateId: UploadTemplateId, isPublic: boolean, sub: 
         // Use is also based on template data
         use: template.use,
         robot: '/s3/store',
-        credentials: isPublic ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
+        credentials: publicBucket ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
         host: appConfig.s3.host,
         no_vhost: true,
         url_prefix: '',
-        acl: isPublic ? 'public-read' : 'private',
+        acl: publicBucket ? 'public-read' : 'private',
         path: `/${sub}/\${file.id}.\${file.url_name}`,
       },
     },
