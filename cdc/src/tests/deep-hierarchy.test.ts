@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createEntityHierarchy, createRoleRegistry } from 'shared';
+import { makeDeepHierarchy } from 'shared/testing/deep-fixture';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { EntityTableMeta } from '../types';
@@ -7,15 +7,9 @@ import { computeBatchUnifiedDeltas, frontierNodeKeys, resolveChannelKey } from '
 import { getCountDeltas } from '../utils/update-counts';
 import { log } from '../lib/pino';
 
-const roles = createRoleRegistry(['admin', 'member'] as const);
-const h = createEntityHierarchy(roles)
-  .user()
-  .channel('organization', { parent: null, roles: roles.all })
-  .channel('course', { parent: 'organization', roles: roles.all })
-  .channel('courseSection', { parent: 'course', roles: roles.all })
-  .channel('project', { parent: 'courseSection', roles: roles.all })
-  .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection'] })
-  .build();
+// `course` stays non-nullable so the missing-ancestor warning suite below can prove
+// that a null non-nullable ancestor still warns.
+const h = makeDeepHierarchy(['project', 'courseSection']);
 
 const itemMeta = (): EntityTableMeta =>
   ({ kind: 'entity', type: 'item', table: { [Symbol.for('drizzle:Name')]: 'items' } }) as unknown as EntityTableMeta;

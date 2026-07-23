@@ -1,23 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { createEntityHierarchy, createRoleRegistry } from '../entity-hierarchy';
+import { makeDeepHierarchy } from '../../testing/deep-fixture';
 import { possibleHomeChannels, resolveDeepestAncestorId, resolveNonNullAncestors } from '../resolve-row-channel';
 
 /**
- * Synthetic deep hierarchy (projectcampus-shaped): 4 context levels with an `item` product
- * whose rows attach at any depth. raak/cella configs cannot exhibit variable-depth rows
- * (no nullable ancestors), so the rule is proven here.
+ * Variable-depth `item` rows attach at any depth; raak/cella configs cannot exhibit this
+ * (no nullable ancestors), so the rule is proven on the deep fixture. `course` stays
+ * non-nullable here so possibleHomeChannels can prove its first-non-nullable boundary.
  */
 describe('resolve-row-channel (deepest non-null ancestor rule)', () => {
-  const roles = createRoleRegistry(['admin', 'member'] as const);
-  const h = createEntityHierarchy(roles)
-    .user()
-    .channel('organization', { parent: null, roles: roles.all })
-    .channel('course', { parent: 'organization', roles: roles.all })
-    .channel('courseSection', { parent: 'course', roles: roles.all })
-    .channel('project', { parent: 'courseSection', roles: roles.all })
-    .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection'] })
-    .product('task', { parent: 'project' })
-    .build();
+  const h = makeDeepHierarchy(['project', 'courseSection']);
 
   const fullDepthRow = {
     id: 'i1',

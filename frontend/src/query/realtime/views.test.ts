@@ -1,53 +1,15 @@
+import type { PermissionValue } from 'shared';
 import {
-  type AccessPolicies,
-  createEntityHierarchy,
-  createRoleRegistry,
-  type EntityType,
-  type PermissionTopology,
-  type PermissionValue,
-} from 'shared';
-import { configureAccessPolicies } from 'shared/testing/policies';
+  type DeepChannelType as ChannelType,
+  deepHierarchy,
+  deepReadPolicies as policies,
+} from 'shared/testing/deep-fixture';
 import { describe, expect, it } from 'vitest';
 import { deriveGrantBoundaryViews, type ViewMembership } from './views';
 
-// Synthetic deep topology (projectcampus-shaped), same as the backend classifier tests:
-// derived views must be exactly the ones resolveViewReadStatus can prove `ok`.
+// Shared deep fixture, same topology as the backend classifier tests: derived views
+// must be exactly the ones resolveViewReadStatus can prove `ok`.
 const ORG = 'org-1';
-const roles = createRoleRegistry(['admin', 'member', 'staff', 'student', 'owner', 'follower'] as const);
-const deepHierarchy = createEntityHierarchy(roles)
-  .user()
-  .channel('organization', { parent: null, roles: ['admin', 'member'] })
-  .channel('course', { parent: 'organization', roles: ['staff', 'student'] })
-  .channel('courseSection', { parent: 'course', roles: ['staff', 'student'] })
-  .channel('project', { parent: 'courseSection', roles: ['owner', 'follower'] })
-  .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection', 'course'] })
-  .build();
-const deepTopology: PermissionTopology = { hierarchy: deepHierarchy };
-
-type ChannelType = 'organization' | 'course' | 'courseSection' | 'project';
-const ENTITY_TYPES = ['user', 'organization', 'course', 'courseSection', 'project', 'item'] as const;
-const CHANNEL_ROLES = {
-  organization: ['admin', 'member'],
-  course: ['staff', 'student'],
-  courseSection: ['staff', 'student'],
-  project: ['owner', 'follower'],
-} as const satisfies Record<ChannelType, readonly string[]>;
-
-const policies = (readValue: (channelType: ChannelType, role: string) => PermissionValue): AccessPolicies =>
-  configureAccessPolicies(
-    ENTITY_TYPES as unknown as readonly EntityType[],
-    ({ subject, contexts }) => {
-      if ((subject.name as string) !== 'item') return;
-      const builders = contexts as unknown as Record<
-        ChannelType,
-        Record<string, (perms: { read: PermissionValue }) => void>
-      >;
-      for (const [channelType, channelRoles] of Object.entries(CHANNEL_ROLES) as [ChannelType, readonly string[]][]) {
-        for (const role of channelRoles) builders[channelType][role]({ read: readValue(channelType, role) });
-      }
-    },
-    deepTopology,
-  );
 
 const membership = (channelType: ChannelType, channelId: string, role: string): ViewMembership => ({
   organizationId: ORG,

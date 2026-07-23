@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { computeChannelPath, computeProductPath, createEntityHierarchy, createRoleRegistry } from 'shared';
+import { deepHierarchy as deepH, deepIdColumns } from 'shared/testing/deep-fixture';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { seedDb } from '#/db/db';
 import { pathColumnExpression } from './path-column';
@@ -7,26 +8,9 @@ import { pathColumnExpression } from './path-column';
 /**
  * The generated `path` column (SQL) and `row-path.ts` (JS) must produce identical
  * values for every row shape. CDC routing, move-out detection, and client view
- * routing all assume the two rules agree.
+ * routing all assume the two rules agree. Deep-chain shapes use the shared deep fixture.
  */
-
-// Synthetic deep hierarchy (projectcampus-shaped), same topology as row-path.test.ts.
 const roles = createRoleRegistry(['admin', 'member'] as const);
-const deepH = createEntityHierarchy(roles)
-  .user()
-  .channel('organization', { parent: null, roles: roles.all })
-  .channel('course', { parent: 'organization', roles: roles.all })
-  .channel('courseSection', { parent: 'course', roles: roles.all })
-  .channel('project', { parent: 'courseSection', roles: roles.all })
-  .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection', 'course'] })
-  .build();
-
-const deepIdColumns = {
-  organization: 'organizationId',
-  course: 'courseId',
-  courseSection: 'courseSectionId',
-  project: 'projectId',
-};
 
 // Synthetic org-homed product, fork-independent: mirrors cella's default attachment topology
 // without binding to the real config (forks that re-home the product would break the assertion).

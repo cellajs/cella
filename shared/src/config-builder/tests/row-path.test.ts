@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEntityHierarchy, createRoleRegistry } from '../entity-hierarchy';
+import { deepHierarchy } from '../../testing/deep-fixture';
 import { resolveDeepestAncestorId } from '../resolve-row-channel';
 import {
   computeAncestorPath,
@@ -11,21 +11,11 @@ import {
 } from '../row-path';
 
 /**
- * Synthetic deep hierarchy (projectcampus-shaped), same topology as
- * resolve-row-channel.test.ts: the path rule must stay equivalent to the
- * deepest-non-null-ancestor rule (last segment = effective home).
+ * The path rule must stay equivalent to the deepest-non-null-ancestor rule
+ * (last segment = effective home), proven on the shared deep fixture.
  */
 describe('row-path (materialized id-path rule)', () => {
-  const roles = createRoleRegistry(['admin', 'member'] as const);
-  const h = createEntityHierarchy(roles)
-    .user()
-    .channel('organization', { parent: null, roles: roles.all })
-    .channel('course', { parent: 'organization', roles: roles.all })
-    .channel('courseSection', { parent: 'course', roles: roles.all })
-    .channel('project', { parent: 'courseSection', roles: roles.all })
-    .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection', 'course'] })
-    .product('task', { parent: 'project' })
-    .build();
+  const h = deepHierarchy;
 
   const fullDepthRow = {
     id: 'i1',
