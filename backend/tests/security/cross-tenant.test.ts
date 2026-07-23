@@ -1,4 +1,11 @@
-import { createAttachments, getAttachments, getOrganization, updateOrganization } from 'sdk';
+import {
+  createAttachments,
+  type GetPresignedUrlsResponse,
+  getAttachments,
+  getOrganization,
+  getPresignedUrls,
+  updateOrganization,
+} from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateMockEntityBodyChannelIdColumns } from '#/mocks';
 import { defaultHeaders } from '../fixtures';
@@ -136,6 +143,57 @@ describe('Cross-tenant API isolation', async () => {
       });
       expect(response.status).toBe(403);
       expect((error as ErrorResponse).type).toBe('forbidden');
+    });
+  });
+
+  // ---- Presigned URLs: the file-access boundary must never sign foreign rows ----
+
+  describe('Cross-tenant presigned URL denial', () => {
+    const presignAttachmentId = '00000000-0000-4000-a000-0000000000a1';
+
+    beforeAll(async () => {
+      const { response } = await call(createAttachments, {
+        path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
+        body: [attachmentBody(presignAttachmentId)],
+        headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
+      });
+      expect(response.status).toBe(201);
+    });
+
+    it('should sign for the owning tenant user', async () => {
+      const { data, response } = await call(getPresignedUrls, {
+        path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
+        body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },
+        headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
+      });
+      expect(response.status).toBe(200);
+      const result = data as GetPresignedUrlsResponse;
+      expect(result.rejectedIds).toEqual([]);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]?.url).toContain(`test/cross-tenant-${presignAttachmentId}.pdf`);
+    });
+
+    it("should reject User B calling Tenant A's presign endpoint with 403", async () => {
+      const { error, response } = await call(getPresignedUrls, {
+        path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
+        body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },
+        headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
+      });
+      expect(response.status).toBe(403);
+      expect((error as ErrorResponse).type).toBe('forbidden');
+    });
+
+    it("should reject Tenant A's attachment id in User B's own tenant uniformly, never signing it", async () => {
+      const { data, response } = await call(getPresignedUrls, {
+        path: { tenantId: tenantB.tenantId, organizationId: tenantB.organization.id },
+        body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },
+        headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
+      });
+      // A foreign id is indistinguishable from a nonexistent one: 200 + rejectedIds, no oracle.
+      expect(response.status).toBe(200);
+      const result = data as GetPresignedUrlsResponse;
+      expect(result.data).toEqual([]);
+      expect(result.rejectedIds).toEqual([presignAttachmentId]);
     });
   });
 });

@@ -1513,22 +1513,22 @@
     "entityType": "attachment"
   },
   {
-    "id": "getPresignedUrl",
-    "hash": "tag/attachments/GET/{tenantId}/{organizationId}/attachments/presigned-url",
-    "method": "get",
-    "path": "/{tenantId}/{organizationId}/attachments/presigned-url",
+    "id": "getPresignedUrls",
+    "hash": "tag/attachments/POST/{tenantId}/{organizationId}/attachments/presigned-urls",
+    "method": "post",
+    "path": "/{tenantId}/{organizationId}/attachments/presigned-urls",
     "tags": ["attachments"],
-    "summary": "Get presigned URL",
-    "description": "Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.",
+    "summary": "Get presigned URLs",
+    "description": "Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.",
     "deprecated": false,
     "hasParams": true,
-    "hasRequestBody": false,
+    "hasRequestBody": true,
     "hasResponseBody": true,
-    "hasExample": false,
+    "hasExample": true,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["presignedUrlLimiter"],
-      "xCache": ["httpCache"]
+      "xCache": []
     },
     "tagsByKind": {
       "module": ["attachments"],

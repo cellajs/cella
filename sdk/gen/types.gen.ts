@@ -4128,20 +4128,22 @@ export type CreateAttachmentsResponses = {
 
 export type CreateAttachmentsResponse = CreateAttachmentsResponses[keyof CreateAttachmentsResponses];
 
-export type GetPresignedUrlData = {
-  body?: never;
+export type GetPresignedUrlsData = {
+  body: {
+    items: Array<{
+      attachmentId: string;
+      variant?: 'original' | 'thumbnail' | 'converted';
+    }>;
+  };
   path: {
     tenantId: string;
     organizationId: string;
   };
-  query: {
-    attachmentId: string;
-    variant?: 'original' | 'thumbnail' | 'converted';
-  };
-  url: '/{tenantId}/{organizationId}/attachments/presigned-url';
+  query?: never;
+  url: '/{tenantId}/{organizationId}/attachments/presigned-urls';
 };
 
-export type GetPresignedUrlErrors = {
+export type GetPresignedUrlsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -4168,16 +4170,32 @@ export type GetPresignedUrlErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetPresignedUrlError = GetPresignedUrlErrors[keyof GetPresignedUrlErrors];
+export type GetPresignedUrlsError = GetPresignedUrlsErrors[keyof GetPresignedUrlsErrors];
 
-export type GetPresignedUrlResponses = {
+export type GetPresignedUrlsResponses = {
   /**
-   * Presigned URL
+   * Presigned URLs
    */
-  200: string;
+  200: {
+    data: Array<{
+      attachmentId: string;
+      variant: 'original' | 'thumbnail' | 'converted';
+      url: string;
+    }>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
 };
 
-export type GetPresignedUrlResponse = GetPresignedUrlResponses[keyof GetPresignedUrlResponses];
+export type GetPresignedUrlsResponse = GetPresignedUrlsResponses[keyof GetPresignedUrlsResponses];
 
 export type GetAttachmentData = {
   body?: never;

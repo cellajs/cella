@@ -73,23 +73,20 @@ export const deleteAttachmentsByIds = async (
     );
 };
 
-interface FindAttachmentByIdOpts {
-  id: string;
+interface FindAttachmentsByIdsOpts {
+  ids: string[];
 }
 
 /**
- * Find a live (non-deleted) attachment by its id. Tenant-scoped via RLS from
- * `tenantRead`; used by the presigned-url flow to resolve a caller-referenced
- * attachment before authorizing and signing one of its keys.
+ * Find live (non-deleted) attachments by id. Tenant-scoped via RLS from `tenantRead`:
+ * unknown, deleted, and cross-tenant ids are simply absent from the result.
  */
-export const findAttachmentById = async (ctx: DbContext, { id }: FindAttachmentByIdOpts) => {
+export const findAttachmentsByIds = async (ctx: DbContext, { ids }: FindAttachmentsByIdsOpts) => {
   const { db } = ctx.var;
-  const [att] = await db
+  return db
     .select()
     .from(attachmentsTable)
-    .where(and(eq(attachmentsTable.id, id), isNull(attachmentsTable.deletedAt)))
-    .limit(1);
-  return att;
+    .where(and(inArray(attachmentsTable.id, ids), isNull(attachmentsTable.deletedAt)));
 };
 
 interface FindAttachmentViewCountOpts {

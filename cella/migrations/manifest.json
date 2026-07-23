@@ -202,6 +202,24 @@
         "pnpm check"
       ],
       "summary": "useUserStore().user is MeUser | null (was MeUser seeded with `null as unknown as MeUser`); authenticated call sites use the new useCurrentUser()/getCurrentUser() accessors, which throw while signed out, and anything reachable signed out handles null. useTreeRows requires T extends TreeItem; buildTree is overloaded so other row shapes must pass all three accessors. Also widens getEntityPolicies/getPolicyPermissions to string and gives actorFrom/accessFrom a structural AccessContext (actorFrom now returns { anonymous: true } without a userId). Compile-time detected; no wire-shape or DB change."
+    },
+    {
+      "id": "20260723T1311-batch-presigned-urls",
+      "version": "next",
+      "title": "Batch presigned URLs replace the single presign endpoint",
+      "kind": "manual",
+      "forkBreaking": true,
+      "clientCacheBump": true,
+      "script": null,
+      "roots": [
+        "backend/src",
+        "frontend/src"
+      ],
+      "requires": [
+        "pnpm sdk",
+        "pnpm check"
+      ],
+      "summary": "GET /attachments/presigned-url (getPresignedUrl) -> POST /attachments/presigned-urls (getPresignedUrls): up to 50 id+variant items per call, uniform rejectedIds (no 403/404 existence oracle). Backend getPresignedUrlOp/findAttachmentById/presignedUrlQuerySchema -> getPresignedUrlsOp/findAttachmentsByIds/presignedUrlsBodySchema. Frontend getPrivateFileUrlById delegates to the presign-batch coalescer (flush window, in-flight dedupe, 1h memo); per-id denials reject with PresignRejectedError. No DB change."
     }
   ]
 }

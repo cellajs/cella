@@ -1065,13 +1065,57 @@
     }
   },
   {
-    "operationId": "getPresignedUrl",
+    "operationId": "getPresignedUrls",
     "responses": [
       {
         "status": 200,
-        "description": "Presigned URL",
+        "description": "Presigned URLs",
         "contentType": "application/json",
-        "schema": { "type": "string", "contentType": "application/json" }
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "attachmentId": { "type": "string", "required": true, "format": "uuid" },
+                  "variant": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["original", "thumbnail", "converted"]
+                  },
+                  "url": { "type": "string", "required": true }
+                }
+              }
+            },
+            "rejectedIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "data": [
+            {
+              "attachmentId": "01890a5d-ac96-774b-b302-0f3e2ae14a2a",
+              "variant": "thumbnail",
+              "url": "https://bucket.s3.nl-ams.scw.cloud/key?X-Amz-Signature=…"
+            }
+          ],
+          "rejectedIds": []
+        }
       },
       {
         "status": 400,
@@ -1123,15 +1167,30 @@
           "organizationId": { "type": "string", "required": true, "maxLength": 50 }
         }
       },
-      "query": {
+      "body": {
+        "type": "object",
         "properties": {
-          "attachmentId": { "type": "string", "required": true, "format": "uuid" },
-          "variant": {
-            "type": "string",
-            "required": false,
-            "enum": ["original", "thumbnail", "converted"]
+          "items": {
+            "type": "array",
+            "required": true,
+            "minItems": 1,
+            "maxItems": 50,
+            "itemType": "object",
+            "items": {
+              "type": "object",
+              "properties": {
+                "attachmentId": { "type": "string", "required": true, "format": "uuid" },
+                "variant": {
+                  "type": "string",
+                  "required": false,
+                  "enum": ["original", "thumbnail", "converted"]
+                }
+              }
+            }
           }
-        }
+        },
+        "required": true,
+        "contentType": "application/json"
       }
     }
   },

@@ -7,7 +7,7 @@ import { createAttachmentsOp } from '#/modules/attachment/operations/create-atta
 import { deleteAttachmentsOp } from '#/modules/attachment/operations/delete-attachments';
 import { getAttachmentOp } from '#/modules/attachment/operations/get-attachment';
 import { getAttachmentsOp } from '#/modules/attachment/operations/get-attachments';
-import { getPresignedUrlOp } from '#/modules/attachment/operations/get-presigned-url';
+import { getPresignedUrlsOp } from '#/modules/attachment/operations/get-presigned-urls';
 import { updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
 import { defaultHook } from '#/utils/default-hook';
 
@@ -19,8 +19,8 @@ app.openapi(attachmentRoutes.getAttachments, async (ctx) => {
   return ctx.json(result.data, 200);
 });
 
-app.openapi(attachmentRoutes.getPresignedUrl, async (ctx) => {
-  const result = await getPresignedUrlOp(ctx, ctx.req.valid('query'));
+app.openapi(attachmentRoutes.getPresignedUrls, async (ctx) => {
+  const result = await getPresignedUrlsOp(ctx, ctx.req.valid('json'));
   assertSuccess(result, 'attachment');
   return ctx.json(result.data, 200);
 });
