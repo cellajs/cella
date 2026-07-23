@@ -3,6 +3,7 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { appStreamManager } from '~/query/realtime/stream-store';
+import { releaseTabLeadership } from '~/query/realtime/tab-coordinator';
 import { createNotFoundComponent } from '~/routes/-route-utils';
 import { setRouter } from '~/routes/-router-instance';
 import { routeTree } from '~/routes/routeTree.gen';
@@ -41,7 +42,12 @@ const cleanupOnBoundaryChange = (current?: BoundaryType, pending?: BoundaryType)
   if (!current || !pending || current === pending) return;
   useSheeter.getState().remove(undefined, { isCleanup: true });
   useNavigationStore.getState().setNavSheetOpen(null);
-  if (pending === 'public') appStreamManager.disconnect();
+  if (pending === 'public') {
+    // Leaving the app: tear down the stream and release leadership so a follower tab is promoted
+    // and keeps the SSE alive. Retaining it here would starve every other tab.
+    appStreamManager.disconnect();
+    releaseTabLeadership();
+  }
 };
 
 /**
