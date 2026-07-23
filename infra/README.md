@@ -64,22 +64,25 @@ The key resources and how traffic flows between them:
 
 ## Deploy flow
 
-The deployment lifecycle when you push to `main`:
+The deployment lifecycle when a release publishes:
 
 ```
-Developer pushes to main
+Release published (or manual dispatch)
         ↓
-GitHub Actions builds images
+CI builds images in parallel
         ↓
-Runs pulumi up
+`infra deploy` (one command): preflights + stack lock
         ↓
-Provisions new VM generation(s)
+Wave 1: provision + cut over the primary service (backend)
         ↓
-Verifies public services serve the expected SHA
+Wave 2: ONE stack update provisions every remaining generation;
+        cutovers run concurrently per service
         ↓
-Retires old generation(s) through Pulumi-managed replacement
+Verify every public service serves the expected SHA
         ↓
-Load balancer keeps serving traffic
+Publish frontend entry files (atomic flip) + smoke checks
+        ↓
+One final stack update reaps every displaced generation
 ```
 
 At runtime, the load balancer targets the host port published by the service's compose profile directly. The `frontend` service is itself a Caddy proxy image that serves the SPA bucket through the same VM/LB path as other services.
@@ -88,7 +91,7 @@ At runtime, the load balancer targets the host port published by the service's c
 Scaleway LB ──▶ service VM host port ──▶ service container
 ```
 
-The primary rollout service (the one that owns migrations) is verified first, then the rest in parallel. `cdc` has no public health endpoint; its replacement is confirmed indirectly by the primary public service coming up healthy.
+The primary rollout service (the one that owns migrations) promotes first; the remaining services provision together and cut over concurrently. `cdc` has no public health endpoint; its replacement is confirmed indirectly by the primary public service coming up healthy.
 
 **Rollback:** the old generation is reaped once the new one is healthy; nothing is left running for two generations per service. To roll back, commit a revert and redeploy: it follows the exact same forward path and recreates **every** service (including cdc, which is replaced in place and never retained), reusing the cached generation because the `genId` is content-addressed.
 
@@ -119,12 +122,15 @@ A fourth secret sits outside this chain: the **Pulumi passphrase**, which encryp
 
 ## CI deploys
 
-The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) runs:
+The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger: a `setup` job derives names/matrices from config, a build matrix pushes images, and one `deploy` job runs the whole deployment as a single command:
 
-- **On push to `main`**: builds images, uploads frontend, runs `pulumi up`, verifies deployment.
-- **On manual dispatch**: same, against chosen environment (`staging` or `production`).
+```
+pnpm --filter infra deploy --mode <staging|production> --sha <sha> --dist <frontend-dist>
+```
 
-CI builds the image, records the release SHA as the rollout INTENT in the S3 control object, and [tasks/deploy-service.ts](tasks/deploy-service.ts) drives a **new VM generation** (`vm-<svc>-<genId>`) with that SHA baked into its cloud-init. The `genId` is **content-addressed** (a hash of the release SHA plus the generation's static config), so re-running a deploy reuses the same generation (a true no-op) and a manual `pulumi up` can never fork identity. For LB-backed services the reconciler expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, then contracts to `[new]`; the promoted new generation serves and the old one is reaped once it is healthy (rollback = revert commit + redeploy). See [rollout strategies](#rollout-strategies) for the model.
+[tasks/deploy.ts](tasks/deploy.ts) owns everything after the builds: preflights, the stack lock (released in `finally`), the base stack update, the waved rollout, public version verification, the atomic frontend entry publish, smoke checks, and boot diagnostics on failure. Any CI system (or an operator shell) with the SCW_* credentials runs the same command.
+
+The rollout records the release SHA as INTENT (`pendingSha`) in the S3 control object and lets the Pulumi program, the genId authority, provision a **new VM generation** (`vm-<svc>-<genId>`) with the SHA baked into its cloud-init. The `genId` is **content-addressed** (a hash of the release SHA plus the generation's static config), so re-running a deploy reuses the same generation (a true no-op) and a manual `pulumi up` can never fork identity. For LB-backed services the reconciler expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, then contracts to `[new]`; displaced generations are reaped by one final stack update after every cutover succeeded (rollback = revert commit + redeploy). See [rollout strategies](#rollout-strategies) for the model.
 
 To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
@@ -136,12 +142,12 @@ Every deploy is a **create-then-replace**: the image SHA is baked into a new VM 
 
 | `replacementStrategy` | Services | How |
 | --- | --- | --- |
-| **lb-overlap** | backend, frontend, yjs, mcp | Record the SHA as `pendingSha`; the Pulumi program materialises the content-addressed pending generation alongside the active one. [tasks/cutover.ts](tasks/cutover.ts) then runs a **level-triggered reconciler**: it reads the live LB server list and drives it toward the desired state with idempotent Scaleway `SetBackendServers` calls: expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It never silently skips the corrective call, so an empty/stale pool (or a same-generation redeploy) is repaired rather than assumed correct. The new generation is promoted to `active` and the old one is reaped by the deploy-service's own final `pulumi up` once the cutover is healthy. No generation is retained, so a deploy never runs two VMs per service. |
+| **lb-overlap** | backend, frontend, yjs, mcp | Record the SHA as `pendingSha`; the Pulumi program materialises the content-addressed pending generation alongside the active one. [tasks/cutover.ts](tasks/cutover.ts) then runs a **level-triggered reconciler**: it reads the live LB server list and drives it toward the desired state with idempotent Scaleway `SetBackendServers` calls: expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It never silently skips the corrective call, so an empty/stale pool (or a same-generation redeploy) is repaired rather than assumed correct. The new generation is promoted to `active`; every displaced generation is reaped by ONE final stack update after all cutovers succeeded. No generation is retained, so a deploy never runs two VMs per service beyond the overlap window. |
 | **exclusive** | cdc | No LB overlap: cdc holds one Postgres replication slot. The Pulumi program materialises only the new generation (the old one is replaced in the same `up`); the new worker contends for the slot the old one releases on drain (handoff is lossless: the slot retains the WAL position). |
 
 **`drainPolicy`** tunes how the old generation leaves the LB: `requests` (HTTP; `onMarkedDownAction: none`, in-flight requests finish) for backend/frontend/mcp, or `reconnect` (WebSocket; sessions shed, clients re-dial and resync from durable state) for yjs.
 
-[tasks/cutover.ts](tasks/cutover.ts) contains the pure, unit-tested **level-triggered** reconciler core for the explicit LB-overlap path: it reads the live server list and drives it toward the desired state (expand→health→contract→drain) with idempotent `SetBackendServers` calls, never silently skipping the corrective call. [tasks/deploy-service.ts](tasks/deploy-service.ts) wraps it with Pulumi bookends: record the SHA as `pendingSha` in the **S3 control object** (`control/<stack>.json` in the state bucket, the source of truth the Pulumi program reads), `pulumi up` to materialise the content-addressed generation, run the reconciler, then `promote` it to `active` (the old generation is reaped once the new one is healthy). Internal consumers reach a service over the private network with `@{<svc>.privateIp}`, which resolves to that service's current generation IP baked in at deploy time. The rollout order (the stable service first, e.g. backend before cdc) means a consumer redeployed afterwards always binds the freshly promoted generation. A frontend **content** release is just an S3 upload (no VM cutover); only a Caddy/CSP/cloud-init change replaces the frontend VM.
+[tasks/cutover.ts](tasks/cutover.ts) contains the pure, unit-tested **level-triggered** reconciler core for the explicit LB-overlap path: it reads the live server list and drives it toward the desired state (expand→health→contract→drain) with idempotent `SetBackendServers` calls, never silently skipping the corrective call. [tasks/rollout.ts](tasks/rollout.ts) sequences it into a **two-wave rollout** over an injected runtime: wave 1 provisions and promotes the primary service alone; wave 2 records `pendingSha` for every remaining service in the **S3 control object** (`control/<stack>.json` in the state bucket, the source of truth the Pulumi program reads), provisions all their generations in one stack update, health-gates and cuts each over concurrently, and one final update reaps every displaced generation. [tasks/deploy-service.ts](tasks/deploy-service.ts) drives the same steps for a single service (operator use). Internal consumers reach a service through the LB's ACL-guarded **internal route** with `@{<svc>.internalHost}:@{<svc>.internalPort}`, a stable address that follows every cutover; `@{<svc>.privateIp}` still resolves a same-stack generation IP baked at deploy time. A frontend **content** release is just an S3 upload (no VM cutover); only a Caddy/CSP/cloud-init change replaces the frontend VM.
 
 ### Runtime secret delivery
 
@@ -337,6 +343,29 @@ No resource names, domains, bucket names, or sizing are hardcoded in the Pulumi 
 ### Stacks
 
 Only `production` is supported out of the box, but additional stacks (e.g. `staging`) can be added. This will be documented later.
+
+Two **stack topologies** exist ([lib/stack/topology.ts](lib/stack/topology.ts)):
+
+- **monolith** (default): one stack per mode owns everything, exactly the shape above.
+- **micro** (`INFRA_STACK_TOPOLOGY=micro`): the pre-split stack becomes the **foundation** (network, LB, DNS, certs, DB, buckets, registry, secrets; its updates run with `INFRA_STACK_SCOPE=foundation`) and each service's VM generations live in their own `<mode>-gen-<slug>` stack. Scope derives from the stack name; a generations stack loads only the compute slice and reads shared values from the foundation's `foundationInputs` output ([resources/foundation-inputs.ts](resources/foundation-inputs.ts)). Wave updates then run per service in parallel with independent state and blast radius. Adoption needs no state surgery: generation stacks provision fresh generations, the cutover moves traffic, and the next foundation update reaps the VMs it no longer scopes.
+
+### Vocabulary
+
+One name per concept, used across code, tasks, and docs:
+
+| Term | Meaning |
+| --- | --- |
+| **generation** | One immutable VM of a service at one content-addressed `genId` (release SHA + static config). |
+| **rollout** | The whole act of moving a release onto the fleet; sequenced in waves by [tasks/rollout.ts](tasks/rollout.ts). |
+| **wave** | A batch of services provisioned in one stack update and cut over concurrently (wave 1 = primary, wave 2 = rest). |
+| **cutover** | The level-triggered LB reconciliation of one service: expand, health-gate, contract, drain. |
+| **promote / reap** | Record a healthy generation as `active` in the control object / destroy a displaced generation. |
+| **control object** | `control/<stack>.json` in the state bucket: per-service rollout state (`active`, `pendingSha`), plus the sibling lock. |
+| **driver** | The seam to the Pulumi engine ([lib/stack/pulumi-driver.ts](lib/stack/pulumi-driver.ts)): `cli` shells pulumi, `automation` embeds a LocalWorkspace session. |
+| **foundation** | Everything that outlives generations: network, LB, DNS, certs, DB, buckets, registry, secrets. |
+| **topology** | How stacks partition the deployment: `monolith` or `micro`. |
+| **internal route** | A service's private, ACL-guarded LB frontend giving in-network consumers a stable, cutover-following address. |
+| **engine config** | The injected app description the engine deploys ([config/engine-config.ts](config/engine-config.ts)); falls back to the workspace `appConfig`. |
 
 ### File structure
 
