@@ -15,6 +15,7 @@
     "print-frontend-build-env": "tsx tasks/print-frontend-build-env.ts",
     "install-pulumi-providers": "tsx tasks/install-pulumi-providers.ts",
     "sync-rollout-config": "tsx tasks/sync-rollout-config.ts",
+    "deploy": "tsx tasks/deploy.ts",
     "deploy-rollout": "tsx tasks/deploy-rollout.ts",
     "repair-control-store": "tsx tasks/repair-control-store.ts",
     "stack-lock": "tsx tasks/stack-lock.ts",
