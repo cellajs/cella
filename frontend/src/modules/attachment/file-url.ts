@@ -1,7 +1,7 @@
 import type { Attachment } from 'sdk';
-import { getPresignedUrl } from 'sdk/sdk.gen';
 import { appConfig } from 'shared';
 import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
+import { getPresignedUrlBatched } from '~/modules/attachment/presign-batch';
 
 /** Variants that exist as stored cloud keys (BlobVariant minus the local-only 'raw'). */
 export type CloudFileVariant = Exclude<BlobVariant, 'raw'>;
@@ -36,8 +36,9 @@ export function getPublicFileUrl(key: string): string {
 
 /**
  * Presigned URL for a private attachment referenced by id + variant.
- * The server resolves the row (RLS + permission) and signs the variant's key.
- * the client never submits a storage key. Preferred for entity grids/downloads.
+ * The server resolves the row (RLS + permission) and signs the variant's key;
+ * the client never submits a storage key. Concurrent calls coalesce into one
+ * batch request and signed URLs are memoized.
  */
 export async function getPrivateFileUrlById(
   attachmentId: string,
@@ -45,7 +46,7 @@ export async function getPrivateFileUrlById(
   tenantId: string,
   organizationId: string,
 ): Promise<string> {
-  return getPresignedUrl({ path: { tenantId, organizationId }, query: { attachmentId, variant } });
+  return getPresignedUrlBatched(attachmentId, variant, tenantId, organizationId);
 }
 
 /**

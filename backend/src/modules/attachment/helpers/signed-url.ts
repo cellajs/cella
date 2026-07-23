@@ -36,12 +36,9 @@ export async function getSignedUrlFromKey(
   Key: string,
   { publicBucket, bucketName, expiresIn = 86400 }: GetUrlOptions,
 ): Promise<string> {
-  // Already a local blob URL (e.g. from File API)
   if (Key.startsWith('blob:http')) return Key;
 
-  // Public,  constract URL
-  if (publicBucket) return `https://${bucketName}.s3.nl-ams.scw.cloud/${Key}`;
+  if (publicBucket) return `https://${bucketName}.${appConfig.s3.host}/${Key}`;
 
-  // Private, sign URL
   return s3SignedUrl(getS3Client(), new GetObjectCommand({ Bucket: bucketName, Key }), { expiresIn });
 }

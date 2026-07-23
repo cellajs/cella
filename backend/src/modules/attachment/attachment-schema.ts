@@ -81,13 +81,29 @@ export const attachmentListQuerySchema = paginationQuerySchema.extend({
 export const attachmentVariantSchema = z.enum(['original', 'thumbnail', 'converted']);
 
 /**
- * Query schema for the presigned URL endpoint. Callers reference a private
- * attachment by `attachmentId` + `variant`. Clients never submit storage keys.
- * The server resolves the owning row (RLS + permission) and fails closed before
- * signing, so an unknown/cross-tenant id can never be signed. Public media is
- * served directly from the CDN and never reaches this endpoint.
+ * Body schema for the batch presigned URLs endpoint. Callers reference private
+ * attachments by `attachmentId` + `variant`; clients never submit storage keys.
+ * The server resolves the owning rows (RLS + permission) and fails closed before
+ * signing. Public media is served from the CDN and never reaches this endpoint.
  */
-export const presignedUrlQuerySchema = z.object({
+export const presignedUrlsBodySchema = z.object({
+  items: z
+    .array(
+      z.object({
+        attachmentId: validUuidSchema,
+        variant: attachmentVariantSchema.default('original'),
+      }),
+    )
+    .min(1)
+    .max(50),
+});
+
+/**
+ * One signed download URL in the batch response. Missing and denied ids collapse
+ * into a uniform `rejectedIds` list (nonexistent and forbidden are indistinguishable).
+ */
+export const presignedUrlItemSchema = z.object({
   attachmentId: validUuidSchema,
-  variant: attachmentVariantSchema.default('original'),
+  variant: attachmentVariantSchema,
+  url: z.string(),
 });

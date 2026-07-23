@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Attachment } from 'sdk';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
+import { PresignRejectedError } from '~/modules/attachment/presign-batch';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 
 /** Cloud-key fields needed to resolve a URL without the react-query cache. */
@@ -83,53 +84,53 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
     const resolveAll = async () => {
       if (!resolvedItems.length) setIsLoading(true);
 
-      const errors: string[] = [];
-      const resolved: CarouselItemData[] = [];
       const newBlobUrls = new Map<string, string>();
 
-      for (const item of items) {
-        if (cancelled) break;
+      // Items resolve concurrently so cloud misses coalesce into one presign batch;
+      // each item catches its own failure so one rejection cannot drop the rest.
+      type Outcome = { data: CarouselItemData } | { errorId: string; permanent: boolean };
+      const outcomes: Outcome[] = await Promise.all(
+        items.map(async (item): Promise<Outcome> => {
+          if (item.url) return { data: buildItemData(item, item.url, item.url.startsWith('blob:')) };
 
-        // Already has URL, use directly.
-        if (item.url) {
-          resolved.push(buildItemData(item, item.url, item.url.startsWith('blob:')));
-          continue;
-        }
+          // Reuse existing blob URL to avoid revoking URLs still shown in <img> elements
+          const existingUrl = blobUrlsRef.current.get(item.id);
+          if (existingUrl) {
+            newBlobUrls.set(item.id, existingUrl);
+            return { data: buildItemData(item, existingUrl, true) };
+          }
 
-        // Reuse existing blob URL to avoid revoking URLs still shown in <img> elements
-        const existingUrl = blobUrlsRef.current.get(item.id);
-        if (existingUrl) {
-          newBlobUrls.set(item.id, existingUrl);
-          resolved.push(buildItemData(item, existingUrl, true));
-          continue;
-        }
+          try {
+            // Prefer the list cache's fresher metadata, but fall back to the item's own keys
+            // (group/single are full attachments) so a dropped cache entry doesn't show "not found".
+            const cachedMeta = findAttachmentInCache(item.id);
+            const meta = cachedMeta ?? (item.originalKey ? (item as AttachmentMetaFields) : null);
 
-        try {
-          // Prefer the list cache's fresher metadata, but fall back to the item's own keys
-          // (group/single are full attachments) so a dropped cache entry doesn't show "not found".
-          const cachedMeta = findAttachmentInCache(item.id);
-          const meta = cachedMeta ?? (item.originalKey ? (item as AttachmentMetaFields) : null);
-
-          const result = await resolveAttachmentUrl(item.id, meta, { preferredVariant: 'converted' });
-          if (result) {
-            if (result.isLocal) newBlobUrls.set(item.id, result.url);
-            resolved.push(buildItemData(item, result.url, result.isLocal));
-          } else {
+            const result = await resolveAttachmentUrl(item.id, meta, { preferredVariant: 'converted' });
+            if (result) {
+              if (result.isLocal) newBlobUrls.set(item.id, result.url);
+              return { data: buildItemData(item, result.url, result.isLocal) };
+            }
             // Make the otherwise-silent failure diagnosable: cachedMeta/itemKey tell us whether this
             // is a cache miss (both false) or a no-cloud-key resource whose local blob is gone.
             console.warn(
-              `[useResolvedAttachments] Unresolvable attachment ${item.id} — no local blob and no cloud URL ` +
-                `(cachedMeta=${!!cachedMeta}, itemKey=${!!item.originalKey})`,
+              `[useResolvedAttachments] Unresolvable attachment ${item.id} (no local blob and no cloud URL, ` +
+                `cachedMeta=${!!cachedMeta}, itemKey=${!!item.originalKey})`,
             );
-            errors.push(item.id);
+            return { errorId: item.id, permanent: false };
+          } catch (err) {
+            console.error(`Failed to resolve URL for attachment ${item.id}:`, err);
+            // A server-rejected id (denied or deleted) will not change on retry.
+            return { errorId: item.id, permanent: err instanceof PresignRejectedError };
           }
-        } catch (err) {
-          console.error(`Failed to resolve URL for attachment ${item.id}:`, err);
-          errors.push(item.id);
-        }
-      }
+        }),
+      );
 
       if (!cancelled) {
+        const resolved = outcomes.flatMap((outcome) => ('data' in outcome ? [outcome.data] : []));
+        const errors = outcomes.flatMap((outcome) => ('errorId' in outcome ? [outcome.errorId] : []));
+        const hasTransientErrors = outcomes.some((outcome) => 'errorId' in outcome && !outcome.permanent);
+
         // Revoke blob URLs absent from the active item set.
         for (const [id, url] of blobUrlsRef.current) {
           if (!newBlobUrls.has(id)) URL.revokeObjectURL(url);
@@ -141,7 +142,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
 
         // Retry transient failures a few times before letting the dialog show "not found". The
         // blob may still be downloading or the cache mid-sync. Bounded per item-set to avoid loops.
-        if (errors.length > 0 && retryCountRef.current < RESOLVE_RETRY_LIMIT) {
+        if (hasTransientErrors && retryCountRef.current < RESOLVE_RETRY_LIMIT) {
           retryCountRef.current += 1;
           retryTimer = setTimeout(() => setRetrySignal((v) => v + 1), RESOLVE_RETRY_DELAY_MS);
         }

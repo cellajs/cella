@@ -119,9 +119,9 @@ import type {
   GetPendingMembershipsData,
   GetPendingMembershipsErrors,
   GetPendingMembershipsResponses,
-  GetPresignedUrlData,
-  GetPresignedUrlErrors,
-  GetPresignedUrlResponses,
+  GetPresignedUrlsData,
+  GetPresignedUrlsErrors,
+  GetPresignedUrlsResponses,
   GetPublicCountsData,
   GetPublicCountsErrors,
   GetPublicCountsResponses,
@@ -309,9 +309,9 @@ import {
   zGetPendingMembershipsPath,
   zGetPendingMembershipsQuery,
   zGetPendingMembershipsResponse,
-  zGetPresignedUrlPath,
-  zGetPresignedUrlQuery,
-  zGetPresignedUrlResponse,
+  zGetPresignedUrlsBody,
+  zGetPresignedUrlsPath,
+  zGetPresignedUrlsResponse,
   zGetPublicCountsResponse,
   zGetRequestsQuery,
   zGetRequestsResponse,
@@ -2919,32 +2919,31 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Get presigned URL
+ * Get presigned URLs
  *
- * Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.
+ * Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.
  *
- * **GET /{tenantId}/{organizationId}/attachments/presigned-url** ·· [getPresignedUrl](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments/presigned-url) ·· [getPresignedUrl](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/attachments/presigned-url) ·· [getPresignedUrl](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/GET/{tenantId}/{organizationId}/attachments/presigned-url) ·· _attachments_cella_product_
+ * **POST /{tenantId}/{organizationId}/attachments/presigned-urls** ·· [getPresignedUrls](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/POST/{tenantId}/{organizationId}/attachments/presigned-urls) ·· [getPresignedUrls](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/attachments/presigned-urls) ·· [getPresignedUrls](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/POST/{tenantId}/{organizationId}/attachments/presigned-urls) ·· _attachments_cella_product_
  *
- * @param {getPresignedUrlData} options
+ * @param {getPresignedUrlsData} options
  * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.organizationid - `string`
- * @param {string} options.query.attachmentid - `string`
- * @param {enum=} options.query.variant - `enum` (optional)
+ * @param {any[]=} options.body.items - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
-export const getPresignedUrl = <ThrowOnError extends boolean = true>(
-  options: Options<GetPresignedUrlData, ThrowOnError>,
-): RequestResult<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
+export const getPresignedUrls = <ThrowOnError extends boolean = true>(
+  options: Options<GetPresignedUrlsData, ThrowOnError>,
+): RequestResult<GetPresignedUrlsResponses, GetPresignedUrlsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<GetPresignedUrlsResponses, GetPresignedUrlsErrors, ThrowOnError, 'data'>({
     requestValidator: async (data) =>
       await z
         .object({
-          body: z.never().optional(),
-          path: zGetPresignedUrlPath,
-          query: zGetPresignedUrlQuery,
+          body: zGetPresignedUrlsBody,
+          path: zGetPresignedUrlsPath,
+          query: z.never().optional(),
         })
         .parseAsync(data),
-    responseValidator: async (data) => await zGetPresignedUrlResponse.parseAsync(data),
+    responseValidator: async (data) => await zGetPresignedUrlsResponse.parseAsync(data),
     responseStyle: 'data',
     security: [
       {
@@ -2953,8 +2952,12 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(
         type: 'apiKey',
       },
     ],
-    url: '/{tenantId}/{organizationId}/attachments/presigned-url',
+    url: '/{tenantId}/{organizationId}/attachments/presigned-urls',
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 
 /**

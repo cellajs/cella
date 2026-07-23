@@ -1,7 +1,5 @@
-import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
 import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
-import { httpCache } from '#/middlewares/http-cache';
 import { productCache } from '#/middlewares/product-cache';
 import {
   bulkPointsLimiter,
@@ -15,7 +13,8 @@ import {
   attachmentListQuerySchema,
   attachmentSchema,
   attachmentUpdateStxBodySchema,
-  presignedUrlQuerySchema,
+  presignedUrlItemSchema,
+  presignedUrlsBodySchema,
 } from '#/modules/attachment/attachment-schema';
 import {
   batchResponseSchema,
@@ -182,24 +181,43 @@ const attachmentRoutes = {
     },
   }),
   /**
-   * Get presigned URL for private attachment
+   * Get presigned URLs for private attachments
    */
-  getPresignedUrl: createXRoute({
-    operationId: 'getPresignedUrl',
-    method: 'get',
-    path: '/presigned-url',
+  getPresignedUrls: createXRoute({
+    operationId: 'getPresignedUrls',
+    method: 'post',
+    path: '/presigned-urls',
     xGuard: [authGuard, tenantGuard, orgGuard],
     xRateLimiter: [presignedUrlLimiter],
-    xCache: [httpCache({ scope: 'private', maxAge: 3600 })],
     tags: ['attachments', 'cella', 'product'],
-    summary: 'Get presigned URL',
+    summary: 'Get presigned URLs',
     description:
-      'Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.',
-    request: { params: tenantOrgParamSchema, query: presignedUrlQuerySchema },
+      'Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.',
+    request: {
+      params: tenantOrgParamSchema,
+      body: {
+        required: true,
+        content: { 'application/json': { schema: presignedUrlsBodySchema } },
+      },
+    },
     responses: {
       200: {
-        description: 'Presigned URL',
-        content: { 'application/json': { schema: z.string() } },
+        description: 'Presigned URLs',
+        content: {
+          'application/json': {
+            schema: batchResponseSchema(presignedUrlItemSchema),
+            example: {
+              data: [
+                {
+                  attachmentId: '01890a5d-ac96-774b-b302-0f3e2ae14a2a',
+                  variant: 'thumbnail',
+                  url: 'https://bucket.s3.nl-ams.scw.cloud/key?X-Amz-Signature=…',
+                },
+              ],
+              rejectedIds: [],
+            },
+          },
+        },
       },
       ...errorResponseRefs,
     },

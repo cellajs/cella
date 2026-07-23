@@ -1487,20 +1487,37 @@ export const zCreateAttachmentsResponse = z.union([
   }),
 ]);
 
-export const zGetPresignedUrlPath = z.object({
+export const zGetPresignedUrlsBody = z.object({
+  items: z
+    .array(
+      z.object({
+        attachmentId: z.uuid(),
+        variant: z.enum(['original', 'thumbnail', 'converted']).optional().default('original'),
+      }),
+    )
+    .min(1)
+    .max(50),
+});
+
+export const zGetPresignedUrlsPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
 });
 
-export const zGetPresignedUrlQuery = z.object({
-  attachmentId: z.uuid(),
-  variant: z.enum(['original', 'thumbnail', 'converted']).optional().default('original'),
-});
-
 /**
- * Presigned URL
+ * Presigned URLs
  */
-export const zGetPresignedUrlResponse = z.string();
+export const zGetPresignedUrlsResponse = z.object({
+  data: z.array(
+    z.object({
+      attachmentId: z.uuid(),
+      variant: z.enum(['original', 'thumbnail', 'converted']),
+      url: z.string(),
+    }),
+  ),
+  rejectedIds: z.array(z.string()),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
+});
 
 export const zGetAttachmentPath = z.object({
   tenantId: z.string().max(50),
