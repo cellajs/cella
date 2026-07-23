@@ -1,8 +1,6 @@
 import { appConfig } from '../config-builder/app-config';
 import { isCDNUrl } from './is-cdn-url';
-
-/** Block types that auto-load external resources */
-const mediaBlockTypes = new Set(['image', 'video', 'audio', 'file']);
+import { mediaBlockTypes } from './text-from-block';
 
 const isAllowedDomain = (url: string, domains: string[]): boolean => {
   try {

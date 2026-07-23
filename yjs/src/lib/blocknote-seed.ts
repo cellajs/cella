@@ -1,10 +1,17 @@
-import { BlockNoteSchema, createBlockSpec, createCodeBlockSpec, createInlineContentSpec } from '@blocknote/core';
+import {
+  BlockNoteSchema,
+  createBlockSpec,
+  createCodeBlockSpec,
+  createInlineContentSpec,
+  defaultBlockSpecs,
+} from '@blocknote/core';
 import { ServerBlockNoteEditor } from '@blocknote/server-util';
 import {
   checklistItemConfig,
   codeBlockConfig,
   mentionConfig,
   notifyConfig,
+  withAttachmentRef,
 } from 'shared/utils/blocknote-schema-configs';
 import * as Y from 'yjs';
 import { log } from './pino';
@@ -27,6 +34,12 @@ const serverRender = () => {
  */
 const serverSchema = BlockNoteSchema.create().extend({
   blockSpecs: {
+    // Media blocks gain the attachment entity reference; keep in lockstep with the
+    // frontend's customSchema (blocknote-config.ts) for Y.Doc round-tripping.
+    audio: withAttachmentRef(defaultBlockSpecs.audio),
+    file: withAttachmentRef(defaultBlockSpecs.file),
+    image: withAttachmentRef(defaultBlockSpecs.image),
+    video: withAttachmentRef(defaultBlockSpecs.video),
     checklistItem: createBlockSpec(checklistItemConfig, { render: serverRender })(),
     notify: createBlockSpec(notifyConfig, { render: serverRender })(),
     // No highlighter server-side: only the node spec matters for seeding

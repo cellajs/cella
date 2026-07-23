@@ -4,6 +4,7 @@ import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.cs
 
 import DOMPurify from 'dompurify';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
+import { mediaBlockTypes } from 'shared/blocknote';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
@@ -26,9 +27,6 @@ interface BlockNoteFullHtmlProps {
   organizationId?: string;
 }
 
-// File block types that have a url prop
-const fileBlockTypes = new Set(['image', 'video', 'audio', 'file']);
-
 /**
  * Walk the block tree, resolve file URLs, collect media items, and patch checkbox state.
  */
@@ -43,7 +41,7 @@ async function processBlocks(
       blocks.map(async (block) => {
         let props = block.props;
 
-        if (fileBlockTypes.has(block.type) && 'url' in props && props.url) {
+        if (mediaBlockTypes.has(block.type) && 'url' in props && props.url) {
           const rawUrl = props.url as string;
           const resolvedUrl = await resolveUrl(rawUrl);
           props = { ...props, url: resolvedUrl };

@@ -1,8 +1,14 @@
 import { codeBlockOptions } from '@blocknote/code-block';
-import { BlockNoteSchema, createCodeBlockSpec, type Dictionary, defaultStyleSpecs } from '@blocknote/core';
+import {
+  BlockNoteSchema,
+  createCodeBlockSpec,
+  type Dictionary,
+  defaultBlockSpecs,
+  defaultStyleSpecs,
+} from '@blocknote/core';
 import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
-import { codeBlockConfig } from 'shared/utils/blocknote-schema-configs';
+import { codeBlockConfig, withAttachmentRef } from 'shared/utils/blocknote-schema-configs';
 import {
   checklistItemBlock,
   getChecklistSlashItem,
@@ -31,6 +37,12 @@ const { textColor: _textColor, backgroundColor: _backgroundColor, ...safeStyleSp
 // server-side seeder (shared/blocknote-schema-configs); only renders live here.
 export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs }).extend({
   blockSpecs: {
+    // Media blocks gain the attachment entity reference; keep in lockstep with the
+    // Yjs relay's server schema (blocknote-seed.ts) for Y.Doc round-tripping.
+    audio: withAttachmentRef(defaultBlockSpecs.audio),
+    file: withAttachmentRef(defaultBlockSpecs.file),
+    image: withAttachmentRef(defaultBlockSpecs.image),
+    video: withAttachmentRef(defaultBlockSpecs.video),
     checklistItem: checklistItemBlock(),
     notify: notifyBlock(), // Adds Notify block
     codeBlock: createCodeBlockSpec({
