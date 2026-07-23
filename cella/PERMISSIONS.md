@@ -1,6 +1,6 @@
 # Permissions: contextual RBAC
 
-Cella answers one question everywhere: **may this actor perform this action on this subject?** The whole subsystem is one sentence: **you present an access, the policy is consulted, you get back permissions, and every permission names the grants that earned it.** A single decision engine in `shared/src/permissions/` computes the answer from the actor's memberships, a static role × channel policy matrix, and the subject's own row data. The engine is tier-neutral and ORM-free, so the backend, the frontend, and the standalone Yjs relay all reach the same verdict from the same code — the relay authorizes without a backend round-trip.
+Cella answers one question everywhere: **may this actor perform this action on this subject?** The whole subsystem is one sentence: **you present an access, the policy is consulted, you get back permissions**. A single decision engine in `shared/src/permissions/` computes the answer from the actor's memberships, a static role × channel policy matrix, and the subject's own row data. The engine is tier-neutral and ORM-free, so the backend, the frontend, and the standalone Yjs relay all reach the same verdict from the same code — the relay authorizes without a backend round-trip.
 
 Roles are **scoped to channel entities**, never global. Product entities own no roles at all: they inherit their permissions from channels. Ownership is an _implicit_ relation derived from the row's `createdBy` column rather than a stored tuple.
 
@@ -234,13 +234,6 @@ export type CollectionReadWhere =
 
 A bare `undefined` WHERE would leak the table, which is exactly the bug this shape makes unrepresentable. In the same spirit, the compiled SQL for a row condition emits `false` for an anonymous actor, mirroring the check-form's deny.
 
-## Testing & consistency
-
-The load-bearing test is the parity property test in `backend/src/permissions/row-predicates.test.ts`, which runs against a real Postgres. It generates random policies, memberships, and actors, then asserts row-for-row that independent implementations agree: the engine's `getAllDecisions`, the compiled SQL executed against a scratch table, the frontend's `computeCan` + `resolveCan`, and — under the real app config — SSE dispatch. A deterministic PRNG means failures reproduce. This test is what lets the SQL compiler exist at all: two hand-written implementations of the same rule _will_ drift, so the drift is pinned rather than trusted. The `hierarchy` override option (`resolve-hierarchy.ts`) lets it drive the engine on a synthetic hierarchy without module mocks, so the two-level template config still exercises deep ancestor chains and `elevatedRoles`.
-
-**The scenario space is the test.** A parity test only pins the axes it actually varies (`isSystemAdmin` and public read grants are axes, not constants). If you add a dimension to the permission model, add it here in the same commit, and confirm the test goes red when you remove the fix.
-
-The rest of the suite covers grant attribution, `'own'` denial when the actor or `createdBy` is absent, public read for anonymous actors, policy completeness, the `null`-vs-`undefined` scope distinction, and a perf floor (`check.perf.test.ts`: 100 entities under 10 ms; a stable membership array must meaningfully beat rebuilding its index per call). The fan-out collapse has its own benchmark in `backend/…/dispatch-eligibility.perf.test.ts`.
 
 ## Behavior
 
