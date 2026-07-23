@@ -39,4 +39,18 @@ describe('getSignedUrlFromKey', () => {
     const blobUrl = 'blob:http://localhost:3000/1234';
     await expect(getSignedUrlFromKey(blobUrl, { publicBucket: false, bucketName: 'x' })).resolves.toBe(blobUrl);
   });
+
+  // Runs last: it swaps the env mock for the whole module registry.
+  it('rejects with a typed 503 when credentials are absent', async () => {
+    vi.resetModules();
+    vi.doMock('#/env', () => ({ env: { S3_ACCESS_KEY_ID: '', S3_ACCESS_KEY_SECRET: '' } }));
+    const { getSignedUrlFromKey: signUnconfigured } = await import('./signed-url');
+
+    await expect(
+      signUnconfigured('key.png', { publicBucket: false, bucketName: 'private-bucket' }),
+    ).rejects.toMatchObject({
+      status: 503,
+      type: 'server_error',
+    });
+  });
 });

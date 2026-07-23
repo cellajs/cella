@@ -81,26 +81,14 @@ jobs:
         run: pnpm --filter shared lens:check
 
   # Runs all tests (full mode with PostgreSQL). Heavy: runs on the release PR only.
+  # `pnpm test:full` starts the `db_test` compose container (DB_TEST_PORT) and applies
+  # migrations in the Vitest global setup, so the job needs no service container.
   test:
     if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--branches--main')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: read
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
     steps:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -125,15 +113,8 @@ jobs:
       - name: Generate OpenAPI spec
         run: pnpm sdk
 
-      - name: Run database migrations
-        run: pnpm --filter backend push
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
-
       - name: Run tests (full mode)
         run: pnpm test:full
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
 
   # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR only.
   storybook-test:

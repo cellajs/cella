@@ -28,6 +28,20 @@ describe('descriptionToYUpdate / yUpdateToBlocks round-trip', () => {
     expect(restored[1].content).toMatchObject([{ type: 'text', text: 'Hello world' }]);
   });
 
+  it('round-trips media blocks with the attachmentId reference prop', () => {
+    const blocks = [
+      block('image', { url: 'att-uuid-1', attachmentId: 'att-uuid-1', name: 'photo.png' }),
+      block('file', { url: 'seed/doc.pdf', attachmentId: 'att-uuid-2', name: 'doc.pdf' }),
+      // External media without an attachment row keeps the empty default
+      block('video', { url: 'https://example.com/clip.mp4', name: 'clip' }),
+    ];
+    const restored = yUpdateToBlocks(descriptionToYUpdate(JSON.stringify(blocks))!);
+
+    expect(restored[0].props).toMatchObject({ attachmentId: 'att-uuid-1', url: 'att-uuid-1' });
+    expect(restored[1].props).toMatchObject({ attachmentId: 'att-uuid-2' });
+    expect(restored[2].props).toMatchObject({ attachmentId: '' });
+  });
+
   it('round-trips checklist items with checked state and nested children', () => {
     const blocks = [
       block('checklistItem', { checkboxId: 'cb-1', checked: true }, text('done'), [

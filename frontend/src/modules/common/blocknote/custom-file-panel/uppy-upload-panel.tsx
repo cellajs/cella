@@ -126,9 +126,12 @@ export function UppyFilePanel({
             if (!currentBlock) return;
 
             for (const attachment of attachments) {
-              // Private → reference by attachment id (presigned); public → reference by cloud key (CDN).
+              // Private → display reference by attachment id (presigned); public → cloud key (CDN).
+              // attachmentId is the canonical entity linkage a host entity derives its references from.
               const url = mediaMode === 'private-attachment' ? attachment.id : attachment.originalKey;
-              editor.updateBlock(currentBlock, { props: { name: attachment.filename, url } });
+              editor.updateBlock(currentBlock, {
+                props: { name: attachment.filename, url, attachmentId: attachment.id },
+              });
             }
 
             // Hand the parsed attachments (stable client ids) to the host so it can add

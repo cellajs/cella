@@ -11,15 +11,27 @@ export const checklistItemConfig = {
   content: 'inline' as const,
 };
 
-export const checklistGroupConfig = {
-  type: 'checklistGroup' as const,
-  propSchema: {
-    textAlignment: defaultProps.textAlignment,
-    title: { default: '' as string },
-    collapsed: { default: false as boolean },
-  },
-  content: 'none' as const,
+/**
+ * Media blocks carry a reference to the attachment entity they were uploaded as, so
+ * derivation and lifecycle logic read an id prop and never parse URLs. External media
+ * (pasted URLs without an attachment row) leave it empty.
+ */
+export const attachmentRefPropSchema = {
+  attachmentId: { default: '' as string },
 };
+
+/**
+ * Widen a media block spec's props with the attachment reference. Apply to the same
+ * specs on every schema that round-trips a shared Y.Doc (frontend editor and Yjs
+ * relay), so the ProseMirror node specs stay identical.
+ */
+export const withAttachmentRef = <S extends { config: { propSchema: Record<string, unknown> } }>(spec: S) => ({
+  ...spec,
+  config: {
+    ...spec.config,
+    propSchema: { ...spec.config.propSchema, ...attachmentRefPropSchema },
+  },
+});
 
 /** Notify variants. Presentation (icons, colors) lives in the frontend's notify-options. */
 export const notifyTypeValues = ['warning', 'error', 'info', 'success'] as const;

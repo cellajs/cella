@@ -15,6 +15,7 @@ import { applyBatchUnifiedDeltas } from '../utils/apply-unified-deltas';
 import { syncChannelPaths } from '../utils/channel-path-sync';
 import { computeBatchUnifiedDeltas } from '../utils/compute-unified-deltas';
 import { cleanupEmbeddingReferences } from '../utils/embedding-cleanup';
+import { gcOwnedEmbeddedRows } from '../utils/owned-embedding-gc';
 
 import type { CdcRowData } from '../types';
 import type { ParseMessageResult } from './parse-message';
@@ -201,6 +202,12 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
     const { tableMeta } = events[0].result;
     if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && (action === 'update' || action === 'delete')) {
       await cleanupEmbeddingReferences(tableMeta.type, action, events);
+    }
+
+    // Owned-embedding GC: soft-delete embedded rows their host arrays stopped referencing
+    // (update covers array diffs and host soft-deletes; hard deletes ride FK cascades)
+    if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && action === 'update') {
+      await gcOwnedEmbeddedRows(tableMeta.type, events);
     }
 
     metrics.recordProcessing(events.length, performance.now() - startMs);

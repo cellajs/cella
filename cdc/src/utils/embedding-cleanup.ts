@@ -6,6 +6,7 @@ import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
 import { isSoftDeleteTransition } from './is-soft-delete-transition';
+import { stripChangedFieldsStx } from './strip-changed-fields';
 
 type EmbeddingCleanupAction = Extract<ActivityAction, 'update' | 'delete'>;
 
@@ -103,9 +104,7 @@ export async function cleanupEmbeddingReferences(
             FROM unnest(${hostColumn}) AS elem
             WHERE elem != ALL(${embeddedIds})
           )`,
-          // Strip changedFields from stx so CDC's handleUpdate recognizes this as
-          // a cleanup write (WAL diff fallback), not a user-driven mutation.
-          stx: sql`stx - 'changedFields'`,
+          stx: stripChangedFieldsStx(),
         })
         .where(and(...conditions));
     }));

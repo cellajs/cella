@@ -146,6 +146,13 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
     readonly embeddedProduct: T['productEntityTypes'][number] & string;
     readonly hostProduct: T['productEntityTypes'][number] & string;
     readonly hostColumn: string;
+    /**
+     * 'shared' (default): embedded rows live independently; host arrays hold
+     * best-effort references that CDC strips when the embedded row dies.
+     * 'owned': the union of host arrays is the row's reason to exist; CDC
+     * additionally garbage-collects embedded rows no live host references.
+     */
+    readonly lifecycle?: 'shared' | 'owned';
   }[];
   menuStructure: readonly MenuStructureItem<T['channelEntityTypes'][number] & string>[];
   defaultRestrictions: {

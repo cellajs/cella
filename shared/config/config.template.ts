@@ -37,11 +37,14 @@ export const config = {
   /**
    * Product embeddings: declares which product entities are embedded as ID arrays inside
    * other product entities. Forks extend when adding new embedding relationships.
+   * `lifecycle: 'owned'` additionally lets CDC garbage-collect embedded rows that no live
+   * host references; the default 'shared' only strips references to dead rows.
    */
   productEmbeddings: [] as readonly {
     readonly embeddedProduct: (typeof hierarchy.productTypes)[number];
     readonly hostProduct: (typeof hierarchy.productTypes)[number];
     readonly hostColumn: string;
+    readonly lifecycle?: 'shared' | 'owned';
   }[],
 
   /**

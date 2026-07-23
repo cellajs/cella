@@ -144,7 +144,11 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
     // Acks resume → retained WAL drains well below the WS-down peak.
     await waitFor(async () => (await slotLagBytes()) < Math.max(65_536, lagPeak / 2), 30_000, 'slot drained after reconnect');
 
+    // Drain to the floor before probing a fresh change: the previous threshold still allows
+    // half the burst to be in flight, whose replay competes with the probe on a slow runner.
+    await waitFor(async () => (await slotLagBytes()) < 65_536, 30_000, 'backlog fully drained after reconnect');
+
     const id = await insertTenant(`bp-resume-${Date.now()}`);
-    await waitFor(() => activityMsgs.some((m) => m.subjectId === id), 15_000, 'delivery resumed after reconnect');
-  }, 60_000);
+    await waitFor(() => activityMsgs.some((m) => m.subjectId === id), 30_000, 'delivery resumed after reconnect');
+  }, 120_000);
 });
