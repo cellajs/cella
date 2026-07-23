@@ -129,6 +129,61 @@ const viteConfig = {
             },
             // Merge all lucide icon modules into one shared chunk to keep request count low
             { name: 'icons', test: /node_modules[\\/]lucide-react[\\/]/ },
+            // Broadly shared vendor packages, one chunk each. Groups get an explicit
+            // minSize: 0 because the top-level minSize is inherited as the group default
+            // and silently drops groups that accumulate less than it.
+            { name: 'base-ui', test: /node_modules[\\/](@base-ui|@floating-ui)[\\/]/, minSize: 0 },
+            { name: 'tanstack', test: /node_modules[\\/]@tanstack[\\/]/, minSize: 0 },
+            // Heavy or foundational libraries each get their own chunk. Group capture
+            // includes a captured module's unclaimed dependencies, so without these the
+            // app groups below would fold whole libraries into eagerly loaded chunks.
+            { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, minSize: 0 },
+            { name: 'zod', test: /node_modules[\\/]zod[\\/]/, minSize: 0 },
+            { name: 'motion', test: /node_modules[\\/](framer-motion|motion-dom|motion-utils)[\\/]/, minSize: 0 },
+            { name: 'forms', test: /node_modules[\\/](react-hook-form|@hookform)[\\/]/, minSize: 0 },
+            {
+              name: 'editor',
+              test: /node_modules[\\/](@blocknote|prosemirror-[\w-]+|@tiptap|yjs|y-protocols|y-prosemirror|lib0)[\\/]/,
+              minSize: 0,
+            },
+            { name: 'pdf', test: /node_modules[\\/](pdfjs-dist|react-pdf|jspdf[\w.-]*)[\\/]/, minSize: 0 },
+            { name: 'media', test: /node_modules[\\/](media-chrome|player\.style)[\\/]/, minSize: 0 },
+            { name: 'gleap', test: /node_modules[\\/]gleap[\\/]/, minSize: 0 },
+            { name: 'react-scan', test: /node_modules[\\/]react-scan[\\/]/, minSize: 0 },
+            { name: 'maps', test: /node_modules[\\/](@vis\.gl|@googlemaps)[\\/]/, minSize: 0 },
+            { name: 'uppy', test: /node_modules[\\/](@uppy|@transloadit)[\\/]/, minSize: 0 },
+            {
+              // Curated list of tiny ubiquitous libraries; a blanket node_modules match
+              // would fold heavy lazy libraries (blocknote, pdf) into an eager chunk
+              name: 'vendor',
+              test: /node_modules[\\/](zustand|clsx|dayjs|nanoid|use-sync-external-store|use-debounce|react-error-boundary|react-intersection-observer|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
+              minSize: 0,
+            },
+            // App-wide primitives loaded on any real screen
+            {
+              name: 'app-core',
+              test: /[\\/]src[\\/](hooks|utils|query)[\\/]|[\\/]src[\\/]modules[\\/]ui[\\/]/,
+              minSize: 0,
+            },
+            {
+              // Shared app components. The blocknote wrappers stay out: they statically
+              // import the heavy editor, and group capture includes dependencies, which
+              // would pull it into this eagerly loaded chunk.
+              name: 'common',
+              test: (id: string) =>
+                /[\\/]src[\\/]modules[\\/]common[\\/]/.test(id) && !/[\\/]common[\\/]blocknote[\\/]/.test(id),
+              minSize: 0,
+            },
+            // Route shims are thin glue; route components stay in their module chunks
+            { name: 'routes', test: /[\\/]src[\\/]routes[\\/]/, minSize: 0 },
+            {
+              // One chunk per remaining feature module folder, keeping feature-level laziness
+              name: (id: string) => {
+                const m = id.match(/[\\/]src[\\/]modules[\\/]([\w-]+)[\\/]/);
+                return m ? `m-${m[1]}` : null;
+              },
+              minSize: 0,
+            },
           ],
         },
       },
