@@ -1,11 +1,9 @@
 /// <reference lib="webworker" />
-import { clientsClaim } from 'workbox-core';
-import { ExpirationPlugin } from 'workbox-expiration';
-import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
-import { NavigationRoute, registerRoute } from 'workbox-routing';
-import { StaleWhileRevalidate } from 'workbox-strategies';
+import { CacheFirst, ExpirationPlugin, type PrecacheEntry, Serwist, StaleWhileRevalidate } from 'serwist';
 
-declare const self: ServiceWorkerGlobalScope;
+declare const self: ServiceWorkerGlobalScope & {
+  __WB_MANIFEST: (PrecacheEntry | string)[];
+};
 
 // Periodic Background Sync API (Chromium-only), not yet in lib.dom.
 interface PeriodicSyncEvent extends ExtendableEvent {
@@ -18,40 +16,51 @@ declare global {
 }
 declare const __BACKEND_URL__: string;
 
-// Take control of all pages immediately
-clientsClaim();
-
-// Allow the client to trigger skipWaiting via postMessage
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
-
-// Workbox precaching: manifest injected by vite-plugin-pwa.
-cleanupOutdatedCaches();
-precacheAndRoute(self.__WB_MANIFEST);
-
-// Serve the precached app shell for offline SPA navigation.
-// Exclude a same-origin backend prefix so OAuth and download navigations retain network
-// responses; cross-origin backends do not match this navigation route.
+// Exclude a same-origin backend prefix from the SPA navigation fallback so OAuth and
+// download navigations retain network responses; cross-origin backends never match it.
 const apiPathPrefix = new URL(__BACKEND_URL__, self.location.origin).pathname.replace(/\/+$/, '');
 const navigationDenylist = apiPathPrefix
   ? [new RegExp(`^${apiPathPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`)]
   : [];
-registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: navigationDenylist }));
 
-// Cache runtime docs data after its first visit so the section works offline.
-// Stale-while-revalidate refreshes these non-content-hashed files after each deploy.
-registerRoute(
-  ({ url }) =>
-    url.origin === self.location.origin &&
-    (url.pathname.startsWith('/static/docs.gen/') || url.pathname === '/static/openapi.json'),
-  new StaleWhileRevalidate({
-    cacheName: 'docs-gen',
-    plugins: [new ExpirationPlugin({ maxEntries: 40 })],
-  }),
-);
+// Serwist wires precaching (manifest injected by vite-plugin-pwa), the offline app-shell
+// navigation fallback, and runtime caching. `skipWaiting: false` keeps the update prompt
+// contract: Serwist itself listens for the client's `{type: 'SKIP_WAITING'}` message.
+const serwist = new Serwist({
+  precacheEntries: self.__WB_MANIFEST,
+  skipWaiting: false,
+  clientsClaim: true,
+  precacheOptions: {
+    cleanupOutdatedCaches: true,
+    // Number of parallel precache downloads during SW install
+    concurrency: 10,
+    navigateFallback: 'index.html',
+    navigateFallbackDenylist: navigationDenylist,
+  },
+  runtimeCaching: [
+    {
+      // Cache runtime docs data after its first visit so the section works offline.
+      // Stale-while-revalidate refreshes these non-content-hashed files after each deploy.
+      matcher: ({ url }) =>
+        url.origin === self.location.origin &&
+        (url.pathname.startsWith('/static/docs.gen/') || url.pathname === '/static/openapi.json'),
+      handler: new StaleWhileRevalidate({
+        cacheName: 'docs-gen',
+        plugins: [new ExpirationPlugin({ maxEntries: 40 })],
+      }),
+    },
+    {
+      // Syntax-highlight grammar/theme chunks are excluded from the precache (globIgnores
+      // in vite.config.ts). Content-hashed and immutable, so cache-first is safe; this
+      // keeps highlighting working offline after a language loads once.
+      matcher: ({ url }) => url.origin === self.location.origin && /^\/assets\/grammars-/.test(url.pathname),
+      handler: new CacheFirst({
+        cacheName: 'grammars',
+        plugins: [new ExpirationPlugin({ maxEntries: 80 })],
+      }),
+    },
+  ],
+});
 
 // Chromium-only (Chrome 80+, Edge). Fires at browser-determined intervals.
 // Fetches the real unseen count from the server so badge stays accurate.
@@ -61,6 +70,8 @@ self.addEventListener('periodicsync', (event) => {
     event.waitUntil(updateBadge());
   }
 });
+
+serwist.addEventListeners();
 
 async function updateBadge() {
   try {

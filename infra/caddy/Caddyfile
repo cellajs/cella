@@ -32,6 +32,10 @@
 		format console
 	}
 
+	# S3 stores objects uncompressed, so compress proxied responses here.
+	# Without this every asset (and the full SW precache) ships raw bytes.
+	encode zstd gzip
+
 	header {
 		Content-Security-Policy "{$FRONTEND_CSP}"
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"

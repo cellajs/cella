@@ -763,6 +763,9 @@ importers:
       sdk:
         specifier: workspace:*
         version: link:../sdk
+      serwist:
+        specifier: ^9.5.12
+        version: 9.5.12(browserslist@4.28.2)(typescript@6.0.3)
       shared:
         specifier: workspace:*
         version: link:../shared
@@ -935,21 +938,6 @@ importers:
       workbox-build:
         specifier: ^7.4.1
         version: 7.4.1(@types/babel__core@7.20.5)(supports-color@8.1.1)
-      workbox-core:
-        specifier: ^7.4.1
-        version: 7.4.1
-      workbox-expiration:
-        specifier: ^7.4.1
-        version: 7.4.1
-      workbox-precaching:
-        specifier: ^7.4.1
-        version: 7.4.1
-      workbox-routing:
-        specifier: ^7.4.1
-        version: 7.4.1
-      workbox-strategies:
-        specifier: ^7.4.1
-        version: 7.4.1
       yaml:
         specifier: ^2.9.0
         version: 2.9.0
@@ -5783,6 +5771,14 @@ packages:
     resolution: {integrity: sha512-GQ9t+RSTx5s3b/aZrLFuL4nrwPLMah5NiZk5cjxJmgmOSgm3nMdO8gdqCedDch5B13F3YsxtaQYjSJnzLz8M5A==}
     engines: {node: '>=18'}
 
+  '@serwist/utils@9.5.12':
+    resolution: {integrity: sha512-BHDwiGL7H7JS7wFvVlAWTFHGt0ffHuPgKtdkaYP0lEWJFl6fKJRCnTDZhwhusFvBhicf37XP8Y6PouTZbcLmgg==}
+    peerDependencies:
+      browserslist: '>=4'
+    peerDependenciesMeta:
+      browserslist:
+        optional: true
+
   '@shikijs/core@4.3.1':
     resolution: {integrity: sha512-ANMDxuaPsNMdDC1m4vfvhlDmJweMwkE5XitTwrq2rWHx5jM+dlm4MmHt2PP6t0uejfR77SuhrhJ0zEijIF/uhA==}
     engines: {node: '>=20'}
@@ -8934,6 +8930,9 @@ packages:
   idb@7.1.1:
     resolution: {integrity: sha512-gchesWBzyvGHRO9W8tzUWFDycow5gwjvFKfyV9FF32Y7F50yZMp7mP+T2mJIWFx49zicqyC4uefHM17o6xKIVQ==}
 
+  idb@8.0.3:
+    resolution: {integrity: sha512-LtwtVyVYO5BqRvcsKuB2iUMnHwPVByPCXFXOpuU96IZPPoPN6xjOGxZQ74pgSVVLQWtUOYgyeL4GE98BY5D3wg==}
+
   ignore-walk@8.0.0:
     resolution: {integrity: sha512-FCeMZT4NiRQGh+YkeKMtWrOmBgWjHjMJ26WQWrRQyoyzqevdaGSakUaJW5xQYmjLlUVk2qUnCjYVBax9EKKg8A==}
     engines: {node: ^20.17.0 || >=22.9.0}
@@ -11382,6 +11381,14 @@ packages:
   seroval@1.5.5:
     resolution: {integrity: sha512-bSjOuPcwPKLSJNhr9+bZxA20nQxVle5J5MNsYRVE6cIg7KpRLXGupymePavu0jrxlPiPsr4xGZSB8yUY2sH2sw==}
     engines: {node: '>=10'}
+
+  serwist@9.5.12:
+    resolution: {integrity: sha512-PwREKJrSb3ja40XJyBntPOm7okcYZJCJPd++jUVz8tzxY1VYO9dyKSm0MimZ8LtUk0pIUTN0q2cfGe7R0wQsaQ==}
+    peerDependencies:
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   set-function-length@1.2.2:
     resolution: {integrity: sha512-pgRc4hJ4/sNjWCSS9AmnS40x3bNMDTknHgL5UaMBTMyJnU90EgWh1Rz+MC9eFu4BuN/UwZjKQuY/1v3rM7HMfg==}
@@ -17879,6 +17886,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@serwist/utils@9.5.12(browserslist@4.28.2)':
+    optionalDependencies:
+      browserslist: 4.28.2
+
   '@shikijs/core@4.3.1':
     dependencies:
       '@shikijs/primitive': 4.3.1
@@ -21406,6 +21417,8 @@ snapshots:
 
   idb@7.1.1: {}
 
+  idb@8.0.3: {}
+
   ignore-walk@8.0.0:
     dependencies:
       minimatch: 10.2.5
@@ -24329,6 +24342,15 @@ snapshots:
       seroval: 1.5.5
 
   seroval@1.5.5: {}
+
+  serwist@9.5.12(browserslist@4.28.2)(typescript@6.0.3):
+    dependencies:
+      '@serwist/utils': 9.5.12(browserslist@4.28.2)
+      idb: 8.0.3
+    optionalDependencies:
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - browserslist
 
   set-function-length@1.2.2:
     dependencies:

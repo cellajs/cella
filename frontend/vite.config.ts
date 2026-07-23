@@ -102,13 +102,89 @@ const viteConfig = {
   build: {
     rollupOptions: {
       output: {
+        // Rolldown ignores `manualChunks` when `codeSplitting` is set, so all grouping lives here
         codeSplitting: {
           minSize: 50 * 1024, // Minimum chunk size of 50 Kb
-        },
-        manualChunks(id) {
-          if (id.includes('shiki')) {
-            return 'shiki'; // Ensures all shiki-related modules go into one chunk
-          }
+          groups: [
+            // One group per grammar/theme module: each language stays its own lazily
+            // loadable chunk, and the grammars- prefix keeps all of them out of the SW
+            // precache (globIgnores). The name encodes the package variant so the
+            // plain and precompiled builds of a language never merge into one chunk.
+            // The shiki core engine is untouched and stays in precached chunks.
+            {
+              name: (id: string) => {
+                // The oniguruma WASM engine is dynamically importable but unused: the app
+                // CSP has no 'unsafe-eval', so the JavaScript regex engine is always used
+                if (/node_modules[\\/]@shikijs[\\/]engine-oniguruma[\\/]/.test(id)) return 'grammars-wasm';
+                const m = id.match(
+                  /node_modules[\\/]@shikijs[\\/](langs|langs-precompiled|themes)[\\/]dist[\\/]([\w.+-]+?)\.m?js$/
+                );
+                if (!m || m[2] === 'index') return null;
+                const variant = m[1] === 'langs-precompiled' ? 'pc-' : m[1] === 'themes' ? 'theme-' : '';
+                return `grammars-${variant}${m[2].replace(/[^\w-]/g, '-')}`;
+              },
+              // The top-level minSize is inherited as the group default and would silently
+              // drop languages smaller than it back to automatic (precached) chunking
+              minSize: 0,
+            },
+            // Merge all lucide icon modules into one shared chunk to keep request count low
+            { name: 'icons', test: /node_modules[\\/]lucide-react[\\/]/ },
+            // Broadly shared vendor packages, one chunk each. Groups get an explicit
+            // minSize: 0 because the top-level minSize is inherited as the group default
+            // and silently drops groups that accumulate less than it.
+            { name: 'base-ui', test: /node_modules[\\/](@base-ui|@floating-ui)[\\/]/, minSize: 0 },
+            { name: 'tanstack', test: /node_modules[\\/]@tanstack[\\/]/, minSize: 0 },
+            // Heavy or foundational libraries each get their own chunk. Group capture
+            // includes a captured module's unclaimed dependencies, so without these the
+            // app groups below would fold whole libraries into eagerly loaded chunks.
+            { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, minSize: 0 },
+            { name: 'zod', test: /node_modules[\\/]zod[\\/]/, minSize: 0 },
+            { name: 'motion', test: /node_modules[\\/](framer-motion|motion-dom|motion-utils)[\\/]/, minSize: 0 },
+            { name: 'forms', test: /node_modules[\\/](react-hook-form|@hookform)[\\/]/, minSize: 0 },
+            {
+              name: 'editor',
+              test: /node_modules[\\/](@blocknote|prosemirror-[\w-]+|@tiptap|yjs|y-protocols|y-prosemirror|lib0)[\\/]/,
+              minSize: 0,
+            },
+            { name: 'pdf', test: /node_modules[\\/](pdfjs-dist|react-pdf|jspdf[\w.-]*)[\\/]/, minSize: 0 },
+            { name: 'media', test: /node_modules[\\/](media-chrome|player\.style)[\\/]/, minSize: 0 },
+            { name: 'gleap', test: /node_modules[\\/]gleap[\\/]/, minSize: 0 },
+            { name: 'react-scan', test: /node_modules[\\/]react-scan[\\/]/, minSize: 0 },
+            { name: 'maps', test: /node_modules[\\/](@vis\.gl|@googlemaps)[\\/]/, minSize: 0 },
+            { name: 'uppy', test: /node_modules[\\/](@uppy|@transloadit)[\\/]/, minSize: 0 },
+            {
+              // Curated list of tiny ubiquitous libraries; a blanket node_modules match
+              // would fold heavy lazy libraries (blocknote, pdf) into an eager chunk
+              name: 'vendor',
+              test: /node_modules[\\/](zustand|clsx|dayjs|nanoid|use-sync-external-store|use-debounce|react-error-boundary|react-intersection-observer|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
+              minSize: 0,
+            },
+            // App-wide primitives loaded on any real screen
+            {
+              name: 'app-core',
+              test: /[\\/]src[\\/](hooks|utils|query)[\\/]|[\\/]src[\\/]modules[\\/]ui[\\/]/,
+              minSize: 0,
+            },
+            {
+              // Shared app components. The blocknote wrappers stay out: they statically
+              // import the heavy editor, and group capture includes dependencies, which
+              // would pull it into this eagerly loaded chunk.
+              name: 'common',
+              test: (id: string) =>
+                /[\\/]src[\\/]modules[\\/]common[\\/]/.test(id) && !/[\\/]common[\\/]blocknote[\\/]/.test(id),
+              minSize: 0,
+            },
+            // Route shims are thin glue; route components stay in their module chunks
+            { name: 'routes', test: /[\\/]src[\\/]routes[\\/]/, minSize: 0 },
+            {
+              // One chunk per remaining feature module folder, keeping feature-level laziness
+              name: (id: string) => {
+                const m = id.match(/[\\/]src[\\/]modules[\\/]([\w-]+)[\\/]/);
+                return m ? `m-${m[1]}` : null;
+              },
+              minSize: 0,
+            },
+          ],
         },
       },
     },
@@ -286,8 +362,9 @@ viteConfig.plugins?.push(
       ],
     },
     injectManifest: {
-      globPatterns: ['**/*.{js,css,html,svg,png,svg,ico,woff2}'],
-      globIgnores: ['**/shiki.*', '**/shiki/**', '**/static/common/flags/**/*'],
+      globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+      // `grammars-*` is the codeSplitting group for shiki/tm-grammars: runtime-loaded, not precached
+      globIgnores: ['**/grammars-*.js', '**/static/common/flags/**/*'],
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
     },
   })
