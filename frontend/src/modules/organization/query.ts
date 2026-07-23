@@ -16,7 +16,7 @@ import { ApiError } from '~/lib/api';
 import { addMyMembershipCache, getApiIncludedMembership } from '~/modules/memberships/query-mutations';
 import { organizationsSearchDefaults } from '~/modules/organization/search-params-schemas';
 import type { EnrichedOrganization } from '~/modules/organization/types';
-import { cacheCreate, cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
+import { cacheCreate, cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
@@ -74,24 +74,21 @@ export const organizationsListQueryOptions = (params: OrganizationsListParams) =
     excludeArchived,
     role,
     include,
-    limit: baseLimit = appConfig.requestLimits.organizations,
+    limit = appConfig.requestLimits.organizations,
   } = params;
 
-  const limit = String(baseLimit);
-
   // Exclude `include` from cache key so queries with/without counts share the same cache
-  const keyFilters = { q, sort, order, relatableUserId, excludeArchived, role };
+  const filters = { q, sort, order, relatableUserId, excludeArchived, role };
 
-  const queryKey = keys.list.filtered(keyFilters);
-  const baseQuery = { ...keyFilters, include, limit };
+  const requestQuery = { ...filters, include, limit: String(limit) };
 
   return infiniteQueryOptions({
-    queryKey,
-    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset ?? (page ?? 0) * Number(limit));
+    queryKey: keys.list.filtered(filters),
+    queryFn: async ({ pageParam: { page, offset }, signal }) => {
+      const requestOffset = String(offset ?? (page ?? 0) * limit);
 
       const result = await getOrganizations({
-        query: { ...baseQuery, offset },
+        query: { ...requestQuery, offset: requestOffset },
         signal,
       });
       // Cache entries are populated by the enrichment pipeline (membership/can/ancestorSlugs).
@@ -173,7 +170,11 @@ export const useOrganizationDeleteMutation = () => {
     },
     onSuccess: (_, { organizations }) => {
       cacheRemove(listKey, organizations);
-      for (const org of organizations) queryClient.removeQueries({ queryKey: keys.detail.byId(org.id) });
+      removeDetailQueriesById(
+        queryClient,
+        keys.detail.base,
+        organizations.map(({ id }) => id),
+      );
     },
     onSettled: () => {
       invalidateIfLastMutation(queryClient, keys.all, listKey);

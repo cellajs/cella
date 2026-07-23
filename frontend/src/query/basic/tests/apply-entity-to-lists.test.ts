@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { EntityQueryKeys } from '~/query/basic/entity-query-registry';
-import type { ItemData } from '~/query/basic/types';
+import type { ItemData, OrgRoutableItemData } from '~/query/basic/types';
 
 // Base cella has only org-homed attachments; mock a minimal org-only topology so home resolution
 // (deepest non-null ancestor, org for org-homed rows) is deterministic here.
@@ -46,11 +46,18 @@ const keys = {
   delete: ['attachment', 'delete'],
 } as unknown as EntityQueryKeys;
 
+const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
+registerEntityQueryKeys('attachment', keys);
+
 const homeKey = ['attachment', 'list', orgId, orgId];
 const filteredKey = ['attachment', 'list', orgId, { q: 'foo' }];
 
-const row = (id: string, extra: Record<string, unknown> = {}): ItemData =>
-  ({ id, entityType: 'attachment', organizationId: orgId, ...extra }) as unknown as ItemData;
+const row = (id: string, extra: Record<string, unknown> = {}): OrgRoutableItemData => ({
+  id,
+  entityType: 'attachment',
+  organizationId: orgId,
+  ...extra,
+});
 
 describe('spliceEntityIntoListCaches: canonical-home policy', () => {
   afterEach(() => queryClient.clear());
@@ -59,12 +66,7 @@ describe('spliceEntityIntoListCaches: canonical-home policy', () => {
     queryClient.setQueryData(homeKey, { items: [], total: 0 });
     queryClient.setQueryData(filteredKey, { pages: [{ items: [], total: 0 }], pageParams: [{ page: 0 }] });
 
-    const result = spliceEntityIntoListCaches(queryClient, {
-      entity: row('a'),
-      keys,
-      organizationId: orgId,
-      homeChannelId: orgId,
-    });
+    const result = spliceEntityIntoListCaches(queryClient, row('a'));
 
     const home = queryClient.getQueryData<{ items: ItemData[]; total: number }>(homeKey);
     const filtered = queryClient.getQueryData<{ pages: { items: ItemData[]; total: number }[] }>(filteredKey);
@@ -84,12 +86,7 @@ describe('spliceEntityIntoListCaches: canonical-home policy', () => {
       pageParams: [{ page: 0 }],
     });
 
-    const result = spliceEntityIntoListCaches(queryClient, {
-      entity: row('a', { name: 'new' }),
-      keys,
-      organizationId: orgId,
-      homeChannelId: orgId,
-    });
+    const result = spliceEntityIntoListCaches(queryClient, row('a', { name: 'new' }));
 
     const home = queryClient.getQueryData<{ items: ItemData[]; total: number }>(homeKey);
     const filtered = queryClient.getQueryData<{ pages: { items: ItemData[]; total: number }[] }>(filteredKey);
@@ -109,12 +106,7 @@ describe('insertEntitiesIntoHome: resolves the org-homed attachment home key', (
   it('splices an org-homed row into [type, list, org, org]', () => {
     queryClient.setQueryData(homeKey, { items: [], total: 0 });
 
-    insertEntitiesIntoHome(queryClient, {
-      entityType: 'attachment',
-      entities: [row('a')],
-      keys,
-      organizationId: orgId,
-    });
+    insertEntitiesIntoHome(queryClient, [row('a')]);
 
     const home = queryClient.getQueryData<{ items: ItemData[]; total: number }>(homeKey);
     expect(home?.items.map((i) => i.id)).toEqual(['a']);

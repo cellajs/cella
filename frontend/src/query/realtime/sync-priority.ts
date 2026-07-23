@@ -27,6 +27,22 @@ export function getRouteTenantId(): string | null {
   return null;
 }
 
+type OrgTenantIdSource = { organizationId?: string | null; tenantId?: string | null };
+
+/** Resolve org/tenant IDs for a query, preferring query meta, then cached entity fields, then the current route. */
+export function resolveQueryOrgTenantIds(
+  meta: OrgTenantIdSource | undefined,
+  cached: OrgTenantIdSource | undefined,
+  resource: string,
+): { organizationId: string; tenantId: string } {
+  const organizationId = meta?.organizationId ?? cached?.organizationId ?? getRouteOrgId();
+  const tenantId = meta?.tenantId ?? cached?.tenantId ?? getRouteTenantId();
+  if (!organizationId || !tenantId) {
+    throw new Error(`Cannot resolve organizationId/tenantId for ${resource} fetch`);
+  }
+  return { organizationId, tenantId };
+}
+
 /** Resolve tenantId for an organizationId. Checks sync store first (persisted, instant), then query cache. */
 export function getTenantIdForOrg(organizationId: string): string | null {
   // Sync store is persisted to localStorage, available before query cache hydration.

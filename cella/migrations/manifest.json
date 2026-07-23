@@ -24,6 +24,18 @@
       "roots": ["backend/src", "frontend/src", "shared", "cdc/src"],
       "requires": ["pnpm sdk", "pnpm check"],
       "summary": "PropagationHint fields sourceType->embeddedProduct, targetType->hostProduct, field->hostColumn on StreamNotification.propagation + catchup propagation; propagationTargets->hostsByEmbeddedProduct; product-type wire fields tightened to z.enum(productEntityTypes). Manual (field names too generic to codemod); forks bump clientCacheVersion."
+    },
+    {
+      "id": "20260722T2105-prepared-mutation-compose",
+      "version": "next",
+      "title": "Compose prepared mutations over useMutation (drop usePreparedMutation)",
+      "kind": "manual",
+      "forkBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": ["frontend/src"],
+      "requires": ["pnpm check"],
+      "summary": "Removed the usePreparedMutation hook; buildPreparedHandlers(mutation, prepare) stays. Mutation hooks now call useMutation directly and spread { ...mutation, ...buildPreparedHandlers(mutation, prepare) }, dropping five explicit generics and the Mutatable cast. PreparedVars/COALESCED unchanged. Frontend-only, no wire-shape change. Manual: each query.ts hook restructured (import swap + return rewrite + inline prepare input annotation)."
     }
   ]
 }

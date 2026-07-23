@@ -22,7 +22,8 @@ import { tenantsSearchDefaults } from '~/modules/tenants/search-params-schemas';
 import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 import type { MutationData } from '~/query/types';
 
-type TenantFilters = Omit<GetTenantsData['query'], 'limit' | 'offset'>;
+type TenantFilters = Omit<NonNullable<GetTenantsData['query']>, 'limit' | 'offset'>;
+type TenantsListParams = TenantFilters & { limit?: number };
 
 /**
  * Query keys for tenant operations.
@@ -40,22 +41,23 @@ const tenantQueryKeys = {
 /**
  * Infinite query options for fetching a paginated list of tenants.
  */
-export const tenantsListQueryOptions = ({
-  q = tenantsSearchDefaults.q,
-  status,
-  sort = tenantsSearchDefaults.sort,
-  order = tenantsSearchDefaults.order,
-  limit: baseLimit = appConfig.requestLimits.users, // Use users limit as fallback
-}: Omit<NonNullable<GetTenantsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
-  const limit = String(baseLimit);
-
-  const queryKey = tenantQueryKeys.list.filtered({ q, status, sort, order });
+export const tenantsListQueryOptions = (params: TenantsListParams) => {
+  const defaults = tenantsSearchDefaults;
+  const {
+    q = defaults.q,
+    status,
+    sort = defaults.sort,
+    order = defaults.order,
+    limit = appConfig.requestLimits.users, // Use users limit as fallback
+  } = params;
+  const filters = { q, status, sort, order };
+  const requestQuery = { ...filters, limit: String(limit) };
 
   return infiniteQueryOptions({
-    queryKey,
-    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset ?? (page ?? 0) * Number(limit));
-      return await getTenants({ query: { q, status, sort, order, limit, offset }, signal });
+    queryKey: tenantQueryKeys.list.filtered(filters),
+    queryFn: ({ pageParam: { page, offset }, signal }) => {
+      const requestOffset = String(offset ?? (page ?? 0) * limit);
+      return getTenants({ query: { ...requestQuery, offset: requestOffset }, signal });
     },
     ...baseInfiniteQueryOptions,
     refetchOnMount: true,
@@ -99,6 +101,9 @@ export const useTenantUpdateMutation = () => {
 const domainQueryKeys = {
   list: (tenantId: string) => ['domain', 'list', tenantId] as const,
   detail: (tenantId: string, id: string) => ['domain', 'detail', tenantId, id] as const,
+  create: ['domain', 'create'] as const,
+  delete: ['domain', 'delete'] as const,
+  verify: ['domain', 'verify'] as const,
 };
 
 /**
@@ -126,6 +131,7 @@ export const useDomainCreateMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation<CreateDomainResponse, ApiError, MutationData<CreateDomainData>>({
+    mutationKey: domainQueryKeys.create,
     mutationFn: ({ path, body }) => createDomain({ path, body }),
     onSuccess: (_, { path }) => {
       queryClient.invalidateQueries({ queryKey: domainQueryKeys.list(path.tenantId) });
@@ -141,6 +147,7 @@ export const useDomainDeleteMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation<DeleteDomainResponse, ApiError, MutationData<DeleteDomainData>>({
+    mutationKey: domainQueryKeys.delete,
     mutationFn: ({ path }) => deleteDomain({ path }),
     onSuccess: (_, { path }) => {
       queryClient.invalidateQueries({ queryKey: domainQueryKeys.list(path.tenantId) });
@@ -156,6 +163,7 @@ export const useDomainVerifyMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation<VerifyDomainResponse, ApiError, MutationData<VerifyDomainData>>({
+    mutationKey: domainQueryKeys.verify,
     mutationFn: ({ path }) => verifyDomain({ path }),
     onSuccess: (_, { path }) => {
       queryClient.invalidateQueries({ queryKey: domainQueryKeys.list(path.tenantId) });
