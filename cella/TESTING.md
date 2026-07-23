@@ -1,8 +1,15 @@
-# Testing Guide
+# Testing
 
 <!-- Sync test marker: 2026-01-28-test-1 -->
 
-All tests run on [Vitest](https://vitest.dev), orchestrated from the repo root via a single config ([vitest.config.ts](../vitest.config.ts)) with one project per package. Storybook is used for UI component testing.
+This document explains how to run the test suite and where new tests belong.
+
+### TL;DR
+
+All package tests use [Vitest](https://vitest.dev) and share one root setup. `pnpm test` starts the
+required Docker test database and runs the tests with a coverage summary. Storybook UI examples run
+separately in a browser with `pnpm test:storybook`. Keep unit tests next to their source, and put
+tests that require extra services or network servers in `tests/integration/`.
 
 ## Running tests
 

@@ -1,12 +1,18 @@
-# Schema evolution (doba lenses)
+# Schema evolution
 
-> **Status**: the lens system is fully wired and live with an **empty lens list** — every seam is a passthrough no-op. Until lens #1 ships, breaking schema changes use the interim [cache-bust hatch](#cache-bust-interim). Two items remain open before lens #1: the oasdiff lens escape and the [shipping playbook](#lens-playbook); see [Remaining work](#remaining-work). Mechanism: version-tolerant API boundary + local cache migration, built on [doba](https://github.com/karol-broda/doba) (`dobajs`) as the transform/registry engine. Related: [Sync engine](/docs/page/architecture/sync-engine), [Architecture](/docs/page/architecture).
->
-> This file is committed and published on the docs site (Architecture → Schema evolution). Forks register their own entities through the same [evolution contract](#evolution-contract) factory; CI (`lens:check` "contract completeness") fails if any configured entity skips it.
+This document explains how breaking changes to entity wire shapes ship without stranding offline clients, and tracks the remaining work on that system.
+
+### TL;DR
+
+When the fields returned by the API change incompatibly, add one permanent conversion module that
+describes the old and new forms. These modules are called **lenses**. From that description, Cella
+accepts both forms during rollout, converts writes to the current form, and updates data already
+cached in browsers. No lenses have shipped yet, so the system currently leaves data unchanged.
+Until the first real lens is added, use the interim [cache reset](#cache-bust-interim).
 
 ---
 
-## TL;DR
+## The lens model
 
 Breaking schema changes (e.g., rename `attachment.name` → `attachment.title`) are shipped as **append-only lens modules**. Each lens declares the change once; everything else is derived from that declaration:
 
@@ -17,7 +23,7 @@ Breaking schema changes (e.g., rename `attachment.name` → `attachment.title`) 
 
 **Phase 1 has exactly two runtime transformation touch points.** Everything else is build-time schema generation, data-level dual-emit during expand windows, or deferred to Phase 2.
 
-doba provides the migration chain executor, bidirectional migrations, graph path-finding (Phase 2), and telemetry hooks. We provide the lens module convention, the Cella seams, and the OpenAPI artifact.
+doba provides the migration chain executor, bidirectional migrations, graph path-finding (Phase 2), and telemetry hooks.
 
 **Two phases:**
 

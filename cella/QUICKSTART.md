@@ -1,10 +1,16 @@
 # Quickstart
 
-Here we document how you can get started building your own web app with cella.
+This document gets you from an empty folder to a running Cella app of your own, and points to the CLIs you will use along the way.
+
+### TL;DR
+
+Cella gives you a complete app repository rather than a framework dependency. The command below
+creates a project that you own and can keep updated from the Cella template. Run the setup commands,
+then customize the app's identity, data structure, and access rules in `shared/config/`.
 
 ## Create
 
-Cella is a template, not a framework. Create your own copy with the [`create-cella`](https://github.com/cellajs/cella-cli) CLI. It lets you pick optional modules, ports and a seed admin, then initializes a fresh git repo with the cella upstream remote wired up for future syncs:
+Create your own copy with the [`create-cella`](https://github.com/cellajs/cella-cli) CLI. It lets you pick optional modules, ports and a seed admin, then initializes a fresh git repo with the cella upstream remote wired up for future syncs:
 
 ```bash
 pnpm create @cellajs/cella my-app
@@ -30,7 +36,7 @@ pnpm check
 
 ## Run tests
 
-See [Testing](/docs/page/guides/testing) for full documentation on writing and running tests.
+See [Testing](./TESTING.md) for full documentation on writing and running tests.
 
 ```bash
 pnpm test # Run tests (excluding ui stories)
@@ -57,7 +63,7 @@ The service worker registers on `localhost` without HTTPS. There is currently no
 4. Explore the `*-config.ts` files and each package's README to learn the moving parts.
 5. Uploads run through Transloadit into S3-compatible Object Storage, with a local-only fallback.
 6. Changed the db schema? Run `pnpm generate` for a new drizzle migration.
-7. Read the [architecture](/docs/page/architecture) and other info in your own repo or in cella docs.
+7. Read the [architecture](./ARCHITECTURE.md) and other info in your own repo or in cella docs.
 8. The [MDX files](../frontend/src/content/docs) mention cella documentation, you might want to change or remove it.
 
 Contributions are welcome: [open an issue or PR](https://github.com/cellajs/cella) to get involved.
@@ -76,7 +82,7 @@ pnpm cella
 
 Deploy your app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitHub Actions. CI handles routine zero-downtime deploys on push to `main`. The CLI generates the Docker Compose synth and drives the Pulumi infrastructure tasks.
 
-See [Deployment](/docs/page/guides/deployment) for full documentation and configuration.
+See the [infra guide](../infra/README.md) for full documentation and configuration.
 
 ```bash
 pnpm infra
@@ -86,7 +92,7 @@ pnpm infra
 
 Artillery load testing to keep services such as backend, cdc and yjs performant. It seeds deterministic test data, runs declarative scenarios against your dev DB, and saves every run as a baseline to compare against the previous one.
 
-See [Load testing](/docs/page/guides/load-testing) for full documentation and scenarios.
+See the [bench guide](../bench/README.md) for full documentation and scenarios.
 
 ```bash
 pnpm bench

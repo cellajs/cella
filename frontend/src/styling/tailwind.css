@@ -146,6 +146,17 @@
   @apply max-sm:text-md;
 }
 
+/* Prose links follow the app-wide link affordance: small offset, faded underline that
+   strengthens on hover. currentColor keeps it correct for any link color in both themes. */
+.prose a:not(:where(.not-prose, .not-prose *)) {
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklch, currentColor 30%, transparent);
+}
+
+.prose a:not(:where(.not-prose, .not-prose *)):hover {
+  text-decoration-color: color-mix(in oklch, currentColor 60%, transparent);
+}
+
 /* Keep docs code unlayered so it outranks typography's utilities-layer theme. */
 
 /* Inline `code` pills: drop the prose backtick pseudo-elements, add a bordered chip. */

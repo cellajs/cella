@@ -1,10 +1,13 @@
-# Permissions: contextual RBAC
+# Permissions
 
-Cella answers one question everywhere: **may this actor perform this action on this subject?** The whole subsystem is one sentence: **you present an access, the policy is consulted, you get back permissions**. A single decision engine in `shared/src/permissions/` computes the answer from the actor's memberships, a static role × channel policy matrix, and the subject's own row data. The engine is tier-neutral and ORM-free, so the backend, the frontend, and the standalone Yjs relay all reach the same verdict from the same code — the relay authorizes without a backend round-trip.
+This document explains Cella's contextual RBAC: how the answer to **may this actor perform this action on this subject?** is computed, everywhere that question is asked.
 
-Roles are **scoped to channel entities**, never global. Product entities own no roles at all: they inherit their permissions from channels. Ownership is an _implicit_ relation derived from the row's `createdBy` column rather than a stored tuple.
+### TL;DR
 
-Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and knows nothing about roles, policies, or actions. See [Multi-tenancy](./MULTI_TENANCY.md) for the database boundary and how the layers combine.
+For any row, the permission engine answers one question: can this user perform this action? It
+combines the user's memberships, the configured rules for their roles, and values on the row.
+Roles are assigned on containers such as organizations, and content inside uses those roles.
+Creator-only rules compare the user with the row's `createdBy` value.
 
 ## Architecture
 
@@ -61,14 +64,14 @@ Postgres RLS is a **separate, coarser layer**. It enforces tenant isolation and 
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-The engine **never loads rows**. Callers resolve whatever row data a decision needs and hand it in. That keeps `shared/` free of any ORM, makes the same function callable from a Postgres-only worker, and makes the check-form/SQL-form parity property testable.
+The engine is tier-neutral: the backend, the frontend, and the standalone Yjs relay all reach the same verdict from the same code, so the relay authorizes without a backend round-trip. The engine also **never loads rows**. Callers resolve whatever row data a decision needs and hand it in. That keeps `shared/` free of any ORM, makes the same function callable from a Postgres-only worker, and makes the check-form/SQL-form parity property testable.
 
 ## Vocabulary
 
 | Term | Meaning |
 | --- | --- |
-| **Channel entity** | Owns roles and memberships (`organization` in the template). Orders as `[self, ...ancestors]`. |
-| **Product entity** | Owns no roles; inherits from channels (`attachment`). Orders as `[...ancestors]`. Must have a channel parent. |
+| **Channel** | Owns roles and memberships (`organization` in the template). Orders as `[self, ...ancestors]`. |
+| **Product** | Owns no roles; inherits from channels (`attachment`). Orders as `[...ancestors]`. Must have a channel parent. |
 | **User entity** | Carries no policies at all; `configurePermissions` filters it out. |
 | **Membership** | The engine reads only `{ channelType, channelId, role }` (`AccessMembership`). Explicit `user → channel` relation. |
 | **Subject** | What is being acted on: entity type, optional id, `channelIds` scope, and optionally `row`. |
@@ -78,7 +81,7 @@ The engine **never loads rows**. Callers resolve whatever row data a decision ne
 
 Naming follows the one-sentence dataflow, three stages with three words, and the next three sections walk it in order. **Access** is what you present: identity plus memberships (`Access`, `AccessMembership`, `accessFrom(ctx)`). **Policy** is what is consulted: the configured matrix (`PolicyMatrix`, `PolicyCell`, `configurePermissions`). **Permission** is what you get back: per-action verdicts (`PermissionResult.allowed`, `PermissionDecision`, the `can` map). **Grant** is why you got it: the recorded sources behind each allowed action (`GrantSource`, `grantedBy`: `membership`, `relation`, `public`, or `systemAdmin`). Everything else reuses the hierarchy's vocabulary (`channel`, `home`, `entityType`); `subject` is the one engine-only noun, reserved for the checked instance.
 
-## The access: what you present
+## The access you present
 
 Every `checkAccess*` call takes an explicit `Access` — the actor AND their memberships in one object:
 
@@ -94,7 +97,7 @@ On the backend, handlers never assemble an access by hand: `accessFrom(ctx)` rea
 
 The compiled-predicate paths (the SQL twin: `compileRowConditionSql`, collection scopes, catchup reads) keep the membership-less `Actor` union and `actorFrom(ctx)` — memberships enter those paths as SQL scope, not as an engine argument.
 
-## The policy: what is consulted
+## The policy consulted
 
 The policy is declared once, validated at boot, and never varies per request. Two files, both fork-facing. They must change together — the hierarchy defines what channels exist, the policies must then cover every role in every one of them.
 
@@ -136,7 +139,7 @@ Missing actions and missing role/channel rows both deny by default, so policies 
 
 For channel entities, note the two row kinds: **elevation** rows sit on an _ancestor_ channel and say what a parent's member may do to the child (this is where `create` lives); **self** rows sit on the same channel and say what the entity's own members may do to it (`create` is meaningless there). Product entities have only _home_ rows, where `create` grants making the product inside that channel.
 
-## The permission: what you get back
+## The permission returned
 
 Presenting an access to the engine yields per-action verdicts. `getAllDecisions(policies, memberships, subject, options)` is the core; the **`checkAccess*` family** is the bound surface every tier actually calls — three named projections of the same engine, all injecting the configured `publicReadGrants` and `elevatedRoles`. The name at the call site tells you the shape:
 

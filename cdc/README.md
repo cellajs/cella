@@ -1,12 +1,13 @@
 # CDC worker
 
-The CDC worker turns committed PostgreSQL changes into the server-side outputs used by the sync engine:
+This document covers the change-data-capture worker: the service that turns committed PostgreSQL changes into the server-side outputs used by the sync engine.
 
-- append-only activity rows for audit history and app-stream recovery;
-- organization sequences and `channel_counters` for client delta detection; and
-- realtime messages sent to the API for SSE fan-out.
+### TL;DR
 
-This document covers the worker. For notification shapes, client catch-up, and HLC merging, see the [sync engine documentation](/docs/page/architecture/sync-engine).
+The worker watches committed database changes and turns them into audit history, progress numbers,
+totals, and live client notifications. It keeps changes in commit order and groups nearby changes
+when the same clients should receive them. Each change gets a database-backed order number; clients
+use that number, not network arrival order, to put changes in order.
 
 ## How it fits
 

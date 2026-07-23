@@ -1,8 +1,14 @@
-# infra cli
+# Infra CLI
 
-Merge your automated release PR to `main` and a new deployment is rolled out automatically. Fully using Infrastructure as Code. On European infra using mostly [Scaleway](https://www.scaleway.com/).
+This document covers the infra package: infrastructure as code and the CLI that deploy a Cella app to European cloud infrastructure, mostly [Scaleway](https://www.scaleway.com/).
 
-Inspired by [SST](https://sst.dev), this infra deployment flow uses [Pulumi](https://www.pulumi.com/) as its engine.
+### TL;DR
+
+Publishing a release starts an automatic deployment. It creates new servers for that exact version,
+checks them, moves traffic without downtime, and removes the old servers.
+[Pulumi](https://www.pulumi.com/) manages the cloud resources. GitHub Actions runs the deployment.
+Separate credentials are used for initial setup, automated deployment, and running servers, so
+each stage has only the permissions it needs.
 
 ## Overview
 

@@ -1,8 +1,13 @@
 # @cellajs/bench
 
-Artillery load testing to keep services (backend, cdc, yjs) performant using the **bench CLI**.
+This document covers the bench package: [Artillery](https://www.artillery.io/) load testing that keeps the backend, cdc, and yjs services performant, driven by the **bench CLI**.
 
-Runs against your dev stack with idempotent, deterministic seed data. Auth is pre-seeded (VUs build cookies from seeded session tokens, no sign-in warmup), so load lands on the endpoint under test. Every run is saved to `.baselines/<scenario>.json` and compared against the previous one.
+### TL;DR
+
+Bench load-tests your running development app with repeatable scenarios and test data that can
+be safely reset and reused. Test users are already signed in, so the results focus on the endpoint
+being tested. Each run is saved and compared with the previous one: read results as trends, not
+absolutes.
 
 ## Prerequisites
 

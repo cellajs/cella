@@ -1,40 +1,14 @@
-# React Client
+# Client (React)
 
-Build a conventional React feature and Cella makes it live, restartable, and offline-capable without giving it a second data model. The generated OpenAPI client fetches data, TanStack Query owns it in memory, realtime updates the same cache, and IndexedDB can restore that cache later.
+This document unpacks the client's central object: the query client that holds server data in the browser, and everything wired around it.
 
-The central idea is simple: **offline and realtime are durability and delivery around the ordinary query cache, not separate application modes.**
+### TL;DR
 
-## One QueryClient, two entity contracts
+Every tab runs one query client. API requests fill it, live updates patch it, background services subscribe to it, and a persister writes selected parts to a per-user database. Even file downloads start from what appears in it. Understand the query client and you understand the client.
 
-```text
-routes, menus, and components
-             │
-             ▼
-one TanStack QueryClient per tab (one shared QueryCache)
-│
-├─ CHANNEL ENTITY
-│  └─ membership notification → invalidate/refetch
-│     └─ [me, memberships] + [organization, list, {filters}]
-│        └─ enrichment: membership → can → ancestorSlugs
-│
-├─ SYNCED PRODUCT
-│  └─ product notification → registered REST delta fetch
-│     ├─ canonical [attachment, list, org, home]
-│     │  ├─ direct realtime patch target
-│     │  └─ select() → local views
-│     └─ filtered [attachment, list, org, {filters}]
-│        └─ update known rows; otherwise invalidate/refetch
-│
-└─ restore/persist selected queries ↔ per-user appdb (IndexedDB)
-```
+## Around the query client
 
-Both entity kinds live in the same cache but follow different update contracts. Channel entities use conventional queries plus invalidation and refetch; a cache subscriber enriches their rows with membership, interface permissions, and ancestor slugs. Synced products additionally register a delta fetcher and a canonical home list that realtime can patch. Server-filtered product lists are invalidated when the client cannot reproduce their placement rules safely.
-
-The server remains authoritative. IndexedDB is a durable copy of selected client data, not a browser database that feature code queries as an alternative backend.
-
-That keeps one place to inspect when the interface looks wrong: the TanStack Query cache.
-
-## One runtime owner for each kind of state
+Not everything is server data. The client has five state owners, and the query client is the one this document unpacks:
 
 | State kind | Runtime owner | Persistence |
 | --- | --- | --- |
@@ -44,118 +18,116 @@ That keeps one place to inspect when the interface looks wrong: the TanStack Que
 | Bootstrap user and UI preferences | Zustand | `localStorage`, available before `appdb` opens |
 | App shell and static assets | Browser | Service-worker Cache Storage |
 
-The boundary is more important than the library names:
 
-- Do not mirror server entities into Zustand. Components should derive them from queries.
-- Do not use React context as an application store. Reserve it for tree-local component wiring or providers required by a library.
-- Do not use the service worker as an API response cache. Structured offline data belongs to TanStack Query and `appdb`.
-- Keep tenant, channel, and entity scoping inside persisted state values. The database name already supplies the user boundary.
+The rest of this document walks the query client's anatomy:
 
-## From cold start to live app
+```text
+         SDK requests           live updates (sync engine)
+               │                        │
+               ▼                        ▼
+ ┌─────────────────────────────────────────────────────┐
+ │             query client (one per tab)              │
+ │                                                     │
+ │  query cache                 mutation cache         │
+ │  ├─ channel lists + details  ├─ optimistic writes   │
+ │  ├─ canonical product lists  ├─ paused offline queue│
+ │  ├─ filtered lists           └─ replay defaults     │
+ │  └─ me + unseen counts                              │
+ └──────┬──────────────────┬──────────────────┬────────┘
+        │ subscribers      │ persister        │ feeds
+        ▼                  ▼                  ▼
+   enrichment         per-user appdb     download queue
+   unseen deltas      (queries, meta,    + blob storage
+   blob cleanup       kv, failed sync)   (blobs table)
+```
 
-The startup sequence is designed to show useful cached data early without connecting the stream with an empty cursor:
+## Inside the cache
 
-1. On a cold boot or reload, the user and UI bootstrap stores hydrate from `localStorage`. This identifies a returning user before a `/me` request succeeds, including while offline.
-2. The storage lifecycle binds one IndexedDB database named `${appConfig.slug}:${userId}` and hydrates the signed-in user's persisted Zustand stores.
-3. `PersistQueryClientProvider` restores the active query-cache scope. While no real user is bound, persistence is a no-op and queries remain in memory.
-4. The authenticated route waits for app storage, then stream coordination elects one leader tab. That tab performs catchup and owns the server-sent events (SSE) connection.
-5. Restored paused mutations become eligible to resume after the first active catchup attempt. Network failures can pause; settled HTTP errors do not become an offline queue.
-6. Route loaders and queries fill the current view. With offline access enabled, background sync can also prepare the user's other accessible channels for later use.
+The query cache holds a few recurring shapes:
 
-This is the boot lifecycle. Sequence cursors, scheduling, retries, and replay guarantees belong to the [Sync engine](./SYNC_ENGINE.md).
+- **Channel entity lists and details** (`[organization, 'list', ...]`): plain queries that invalidate and refetch when a membership or channel notification arrives.
+- **Canonical product lists** (`[attachment, 'list', org, home]`): one flat, complete list per home channel. This is the list live updates patch directly; components narrow it with `select()` rather than copying rows into another store.
+- **Filtered product lists**: server-side search and sort results under their own keys. When a change cannot be placed in them, they are invalidated rather than patched.
+- **Session queries**: `me`, memberships, invites, and unseen counts.
 
-## How feature data flows
+Each entity module registers its query keys and delta fetch once, in its `query.ts`. Generic cache and realtime code look entities up in that registry, so no sync code needs to import entity modules.
 
-Each frontend feature module owns its query options, keys, and mutations, usually in `frontend/src/modules/<module>/query.ts`. Query functions call the generated `sdk` package, so the browser uses the same OpenAPI contract as every external client.
+Staleness follows the stream: synced product queries stay fresh while the live connection is up and fall back to five minutes without it; other queries default to 30 seconds. How changes are produced and delivered is the [Sync engine](./SYNC_ENGINE.md)'s story; seen from the query client, they are ordinary cache writes that upsert rows or invalidate lists.
 
-Entity modules build consistent keys with `createEntityKeys()` and register them with `registerEntityQueryKeys()`. Registration lets generic cache and realtime code find a product type's list, detail, and delta-fetch behavior without importing every feature into the sync layer.
+## Subscribers
 
-### Canonical and derived lists
+The cache is observable, and several client features are built as cache subscribers rather than as extra stores:
 
-A synced product has one **canonical list** for each effective home channel: the flat, complete list that realtime can safely patch. “Home” means the deepest non-null channel ancestor; an organization-homed attachment therefore has one canonical list per organization.
+- **Enrichment**: a subscriber watches channel entity lists and details and adds three derived fields to each row: the current user's `membership`, a `can` permission map for interface affordances, and `ancestorSlugs` for building URLs. It runs when memberships change or a channel query updates, short-circuits when nothing changed, and guards against reacting to its own writes. Enrichment is derived from cached data only; it never alters the API shape or replaces backend permission checks.
+- **Download feeding**: the attachment download service watches attachment list queries. Every attachment that appears in the cache is queued for background download, so files a user can see become available offline. See [Files and blobs](#files-and-blobs).
+- **Blob cleanup**: the same service watches the mutation cache; a successful attachment delete removes the matching local blobs and queue rows.
+- **Unseen counts**: rows delivered by sync bump unseen badge counts up or down directly in the cache; an exact server recount periodically replaces the estimate.
 
-Components create narrower views with TanStack Query's `select()` rather than copying the same entities into another store. A search or sort that must run on the server receives a separate filtered key. Such filtered lists can opt out of persistence and are invalidated when a realtime change cannot be spliced into them safely.
+## Mutations
 
-This convention gives the sync layer an unambiguous merge target while feature components retain ordinary query ergonomics.
+A mutation patches the cache optimistically, sends the request, then reconciles with the server response; on error, the optimistic change rolls back. Queries and mutations both run in `offlineFirst` network mode.
 
-### Mutations and enrichment
+Offline writes queue rather than fail. A network failure retries briefly, then pauses the mutation, and paused mutations persist for replay after reload. Server errors never queue; a 4xx during replay is quarantined into the `failed_sync` table so no offline edit is silently lost.
 
-Mutations optimistically patch the relevant cache entries, send an OpenAPI request, and reconcile with the authoritative response. Modules also register replay defaults because functions cannot be serialized into IndexedDB; persisted mutation variables must contain the route and scope IDs needed after a reload.
+Replay works because of two rules. Functions cannot be persisted, so each entity module registers its mutation functions as defaults at startup, before the cache restores. And persisted variables must carry the ids needed to route the request after a reload. Queued work is also tidied while offline: repeated edits to one entity squash into one update, an edit to a not-yet-created entity folds into its create, and deleting a queued create cancels both.
 
-A cache subscriber enriches channel entity lists with three frontend conveniences:
+Each tab persists its own paused-mutation record, with ownership tracked through Web Locks; a restoring tab adopts the records of dead tabs. Replay waits for the first catchup so it runs against fresh data.
 
-1. the current user's membership;
-2. a permission map for interface affordances;
-3. ancestor slugs for URLs.
+## Files and blobs
 
-The enrichment is derived from cached data. It does not alter the API shape or replace backend permission checks.
+Attachments show how far the query client reaches, even for binary data. The metadata row is a product entity in the query cache like any other. The bytes live next to the cache, in the `blobs` table of the per-user database, keyed per variant (`raw`, `original`, `converted`, `thumbnail`).
 
-## Browser durability
+**Uploads store locally first.** Adding a file mints the attachment id up front, stores the raw blob, and inserts an optimistic row into the cache. With cloud upload configured and a connection available, the file then goes through the processing pipeline; offline, the blob waits as pending and a background upload service retries with backoff once connectivity returns. Without cloud storage the blob simply stays local.
 
-Every real signed-in user gets one Dexie database. A user ID in the database name makes cross-user separation structural and gives sign-out one boundary to erase.
+**Downloads follow the cache.** Every attachment row that reaches the cache is enqueued in the `downloadQueue` table. A scheduler downloads a few files at a time within a configured storage budget, fetching variants in priority order and evicting the raw blob once a durable variant lands. All knobs live in `appConfig.localBlobStorage`.
 
-| Area | What `appdb` keeps |
-| --- | --- |
-| `kv` | Per-user Zustand stores such as navigation, drafts, seen state, and sync cursors |
-| Query records and metadata | Persisted query results, paused mutations, cache and schema versions |
-| Blob and download tables | Attachment bytes and background download work |
-| Failed sync | Sync mutations quarantined after a 4xx client error |
+**Components never query blobs.** They resolve a display URL: local blob first, served as an object URL, cloud URL otherwise, with a background download queued so the next view is local. Upload status badges read the blob table reactively. Blob bytes never enter the query cache; the cache stays JSON.
 
-Product queries are stored as individual records so unchanged queries need not be rewritten. Smaller channel and non-product queries share a metadata record with dehydrated mutations. Queries can opt out through their metadata, so persistence is an architectural capability rather than a promise that every request is available offline.
+## The persister
 
-The database follows authentication deliberately:
+The persister snapshots the cache into the per-user database and restores it on boot. It writes at two granularities: each product query is its own record, so unchanged lists are not rewritten, while channel queries, paused mutations, and version stamps share one meta record per scope. A query opts out with `meta: { persist: false }`.
 
-- Signing in opens or rebinds the user's database and hydrates its stores.
-- Switching accounts closes the previous database before opening the next one.
-- Explicit sign-out deletes the database, which is safer on a shared device.
-- Involuntary session loss closes but preserves it. Per-user Zustand values rehydrate after the same user signs in; restoring persisted queries and paused mutations currently requires a reload.
-- Impersonation stays ephemeral and does not bind the impersonated user's durable database.
-
-### Session and offline scopes
-
-Both persistence modes live inside the same per-user IndexedDB. They differ in lifetime and how much data background sync prepares.
+Persistence runs in one of two scopes:
 
 | Mode | Scope | Lifetime | Background coverage |
 | --- | --- | --- | --- |
-| **Session** (`offlineAccess=false`) | One `s-<uuid>` scope per tab | Best-effort tab lifetime; unload cleanup may run on refresh or close, with abandoned scopes swept later | Current route/channel on demand |
+| **Session** (`offlineAccess=false`) | One `s-<uuid>` scope per tab | Best-effort tab lifetime; abandoned scopes are swept later | Current route and channel on demand |
 | **Offline** (`offlineAccess=true`) | Shared `rq` scope | Survives tab and browser restarts | Current channel first, then other accessible channels |
 
-Durable reads and durable writes are related but distinct. Enabling offline access retains more query data. Paused-write durability is currently best-effort: the mutation needs serializable variables and a registered replay function, only the leader tab is eligible to persist it on app routes, and the shared scope is not a transactional multi-tab queue.
+Two version stamps guard every restore. A `clientCacheVersion` mismatch wipes cached queries but keeps paused mutations, which replay against the fresh cache. A schema version behind the bundle triggers the boot lens migration; a version ahead of the bundle makes the tab stop persisting rather than downgrade newer data. Read [Schema evolution](./SCHEMA_EVOLUTION.md) before changing a cached entity's wire shape.
 
-## PWA, tabs, and upgrades
+## The per-user database
 
-The service worker makes the application shell loadable without a network and caches selected static documentation assets. It does not cache API responses; TanStack Query persistence and the blob tables own structured data and attachment bytes.
+Everything durable converges in one Dexie database per signed-in user, named `${appConfig.slug}:${userId}`:
 
-Where Web Locks are available, one authenticated tab holds the server-sent events (SSE) connection and BroadcastChannel forwards notifications to followers. Without Web Locks, each tab falls back to its own connection. All tabs still use their own in-memory TanStack Query cache and may initiate writes. The detailed convergence and persistence limits are documented under [multiple tabs in the sync engine](./SYNC_ENGINE.md#multiple-tabs).
-
-Persisted clients do not all upgrade at once. The durable offline scope can migrate cached entities and paused mutation variables before hydration; incompatible session scopes are discarded. A client that discovers newer on-disk data stops persisting instead of downgrading it. Read [Schema evolution](./SCHEMA_EVOLUTION.md) before changing a cached entity's wire shape.
-
-## Extension rules
-
-When adding or changing a feature, preserve these seams:
-
-1. Put server data in TanStack Query and client-owned state in Zustand.
-2. Give each synced product scope one canonical home list; derive local views from it.
-3. Register entity keys and a delta fetcher so generic realtime code can find the feature.
-4. Include every route and scope ID a paused mutation needs in its serializable variables.
-5. Opt filtered, transient, or unsafe-to-restore queries out of persistence.
-6. Put new per-user durable Zustand stores behind `idbKvStorage()` and register their hydration in `app-storage.ts`.
-
-The end-to-end entity recipe is in [New entity](./ADD_ENTITY.md).
-
-## Code map
-
-| Location | Responsibility |
+| Table | Contents |
 | --- | --- |
-| `frontend/src/query/query-client.ts` | Query defaults, retry boundary, and cache lifecycle |
-| `frontend/src/query/provider.tsx` | Persistence restoration and mutation replay coordination |
-| `frontend/src/query/basic/` | Keys, canonical-query registration, optimistic cache helpers |
-| `frontend/src/query/realtime/` | Leader election, stream connection, catchup, and cache patching |
-| `frontend/src/query/offline/` | Mutation metadata, retries, replay, and failed-sync handling |
-| `frontend/src/query/app-db.ts` | Per-user IndexedDB schema and binding |
-| `frontend/src/query/persister.ts` | Session/offline scopes and incremental query persistence |
-| `frontend/src/query/enrichment/` | Membership, permission, and ancestor-slug derivation |
-| `frontend/src/modules/<module>/query.ts` | Feature-owned queries, keys, and mutations |
-| `sdk/gen/` | Generated client and types; never edit by hand |
+| `kv` | Per-user Zustand stores: navigation, drafts, seen state, sync cursors |
+| `queries` and `meta` | Persisted query records, paused mutations, version stamps |
+| `blobs` | Attachment bytes: uploads pending sync and cached downloads |
+| `downloadQueue` | Background download work |
+| `failedSync` | Mutations quarantined after a 4xx replay error |
 
-Continue with the [Sync engine](./SYNC_ENGINE.md) for delivery guarantees, the [Permissions guide](./PERMISSIONS.md) for the `can` model, and [Schema evolution](./SCHEMA_EVOLUTION.md) for durable-cache upgrades.
+The database follows authentication, not routes:
+
+- Signing in binds the database and hydrates its stores; switching accounts closes the previous one first.
+- Explicit sign-out deletes the database, the safe choice on a shared device.
+- Involuntary session loss only closes it, so the same user can recover offline work after signing back in.
+- Impersonation stays ephemeral and never binds the impersonated user's durable database.
+
+## Cold start to live
+
+Boot is ordered so cached data appears early and the stream never connects with an empty cursor:
+
+1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request succeeds, offline included.
+2. The storage lifecycle binds the per-user database and hydrates its Zustand stores, including the sync cursor.
+3. The persister restores the cache scope; entity modules have already registered their mutation and replay defaults.
+4. One tab is elected leader, performs catchup, and owns the live connection.
+5. Paused mutations resume after the first catchup.
+6. Route loaders fill the current view; a background service then freshens the current organization's lists, and other organizations too when offline access is on.
+
+Cursor mechanics, scheduling, and delivery guarantees belong to the [Sync engine](./SYNC_ENGINE.md).
+
+## Tabs and upgrades
+
+Each tab has its own query client and can write; one leader tab owns the stream and broadcasts notifications to the rest. The service worker keeps the app shell loadable without a network but never caches API responses. When a new version deploys, an old tab that detects newer persisted data stops persisting and prompts for a reload. Details live under [multiple tabs](./SYNC_ENGINE.md#multiple-tabs) in the sync engine and in [Schema evolution](./SCHEMA_EVOLUTION.md).

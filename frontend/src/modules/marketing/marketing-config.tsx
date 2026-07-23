@@ -117,7 +117,7 @@ export const featuresPageItems: FeaturesPageItem[] = [
 
   // Security & multi-tenancy
   { id: 'tenant_isolation', category: 'security' },
-  { id: 'permission_manager', category: 'security' },
+  { id: 'permission_engine', category: 'security' },
   { id: 'guard_chain', category: 'security' },
   { id: 'rls', category: 'security' },
   { id: 'immutability', category: 'security' },

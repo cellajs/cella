@@ -1,8 +1,14 @@
-# Yjs collaborative editing relay
+# Yjs worker
 
-The Yjs worker is a WebSocket relay for real-time collaborative editing of BlockNote descriptions. During collaboration, the relay is the single writer: it seeds new sessions from the stored description and materializes merged edits back into the entity row. Clients merge and render the shared document, but do not seed or persist it.
+This document covers the Yjs worker: a WebSocket relay for **real-time collaborative editing of BlockNote descriptions**.
 
-This document covers the relay. For token fetching, solo fallback, SSE suppression, offline writes, and HLC merging, see the [sync engine documentation](/docs/page/architecture/sync-engine).
+### TL;DR
+
+During collaborative editing, the Yjs service is the only component that saves the shared editing
+state. It starts each session from the stored description, sends edits to connected clients, and
+turns the merged result into normal stored entity data through the backend. Editing clients merge
+and display changes but do not save them directly. Other viewers receive the saved result through
+the usual live-update system.
 
 ## How it fits
 
@@ -29,7 +35,7 @@ The relay drives two related data paths:
 
 The backend uses its normal update pipeline for materialization: it rechecks permission, sanitizes media URLs, derives fields, stamps a server HLC, and commits. Clients with an active editor suppress Yjs-owned fields from SSE so an older materialized snapshot cannot overwrite their fresher local document.
 
-## Connection and authorization
+## Connection and auth
 
 Clients connect to:
 
@@ -90,7 +96,7 @@ At startup, a sweep handles rows orphaned by a relay crash. Old rows with `last_
 
 The sweep intentionally reads across tenants without RLS context. If the worker's database role enforces RLS, the sweep cannot see those rows and degrades to a no-op.
 
-## Durability and failure behavior
+## Durability and failure
 
 Durability has three layers:
 
