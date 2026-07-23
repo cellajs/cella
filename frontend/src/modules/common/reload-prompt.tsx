@@ -1,4 +1,5 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { LoaderCircleIcon } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
@@ -10,9 +11,6 @@ const SW_UPDATE_INTERVAL = 15 * 60 * 1000;
 export function ReloadPrompt() {
   const { t } = useTranslation();
   const [reloading, setReloading] = useState(false);
-
-  // replaced dynamically
-  const buildDate = '__DATE__';
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -50,13 +48,16 @@ export function ReloadPrompt() {
     }
   }, [needRefresh, updateServiceWorker]);
 
-  // Attempt SW-driven reload, force a hard reload if nothing happens after 5s
+  // Attempt SW-driven reload, force a hard reload if nothing happens after 5s.
+  // The gap between click and reload is the new SW's activate phase (stale
+  // precache cleanup), so the button shows a spinner until the page goes away.
   const reload = useCallback(() => {
+    if (reloading) return;
     setReloading(true);
     // Guaranteed fallback: if the SW update doesn't trigger a reload, force one
     setTimeout(() => window.location.reload(), 5000);
     updateServiceWorker(true);
-  }, [updateServiceWorker]);
+  }, [reloading, updateServiceWorker]);
 
   const close = () => {
     setNeedRefresh(false);
@@ -70,18 +71,18 @@ export function ReloadPrompt() {
             <span>{t('c:refresh_pwa_app.text')}</span>
           </div>
           <div className="space-x-2">
-            {needRefresh && (
-              <Button onClick={reload} loading={reloading}>
-                {t('c:reload')}
-              </Button>
-            )}
-            <Button variant="secondary" onClick={() => close()}>
+            <Button onClick={reload} disabled={reloading} aria-busy={reloading || undefined}>
+              <span className="relative inline-flex items-center">
+                <span className={reloading ? 'invisible' : undefined}>{t('c:reload')}</span>
+                {reloading && <LoaderCircleIcon className="absolute inset-0 m-auto animate-spin" />}
+              </span>
+            </Button>
+            <Button variant="secondary" onClick={close} disabled={reloading}>
               {t('c:close')}
             </Button>
           </div>
         </div>
       )}
-      <div className="hidden">{buildDate}</div>
     </>
   );
 }

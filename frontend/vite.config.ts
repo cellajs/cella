@@ -102,13 +102,23 @@ const viteConfig = {
   build: {
     rollupOptions: {
       output: {
+        // Rolldown ignores `manualChunks` when `codeSplitting` is set, so all grouping lives here
         codeSplitting: {
           minSize: 50 * 1024, // Minimum chunk size of 50 Kb
+          groups: [
+            // Merge all lucide icon modules into one shared chunk to keep request count low
+            { name: 'icons', test: /node_modules[\\/]lucide-react[\\/]/ },
+          ],
         },
-        manualChunks(id) {
-          if (id.includes('shiki')) {
-            return 'shiki'; // Ensures all shiki-related modules go into one chunk
+        // Prefix lazily imported grammar/theme chunks so the SW precache can exclude
+        // them by glob while each language still loads on demand. The shiki core
+        // engine is statically imported and keeps its normal (precached) chunk.
+        chunkFileNames(chunk) {
+          const grammarModule = /node_modules[\\/](shiki|@shikijs|tm-grammars|tm-themes)[\\/]/;
+          if (chunk.facadeModuleId && grammarModule.test(chunk.facadeModuleId)) {
+            return 'assets/grammars-[hash].js';
           }
+          return 'assets/[name]-[hash].js';
         },
       },
     },
@@ -286,8 +296,9 @@ viteConfig.plugins?.push(
       ],
     },
     injectManifest: {
-      globPatterns: ['**/*.{js,css,html,svg,png,svg,ico,woff2}'],
-      globIgnores: ['**/shiki.*', '**/shiki/**', '**/static/common/flags/**/*'],
+      globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+      // `grammars-*` is the codeSplitting group for shiki/tm-grammars: runtime-loaded, not precached
+      globIgnores: ['**/grammars-*.js', '**/static/common/flags/**/*'],
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
     },
   })

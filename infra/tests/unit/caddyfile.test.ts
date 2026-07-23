@@ -75,6 +75,10 @@ describe('frontend Caddyfile', () => {
   it('disables auto_https since the LB terminates TLS', () => {
     expect(caddyfile).toMatch(/auto_https\s+off/)
   })
+
+  it('compresses responses (S3 origin stores objects uncompressed)', () => {
+    expect(caddyfile).toMatch(/encode\s+zstd\s+gzip/)
+  })
 })
 
 describe('frontend Caddy Dockerfile', () => {
