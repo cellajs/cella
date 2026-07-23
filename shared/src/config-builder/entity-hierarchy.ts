@@ -574,7 +574,7 @@ export class EntityHierarchy<
     return computeChannelPath(this, entityType, row);
   }
 
-  /** Generated-column SQL for the stored path; `appendOwnId` for channel entities. */
+  /** Path SQL expression; channel tables store it as a generated column (`appendOwnId` true). */
   readonly pathColumnSql = (entityType: string, appendOwnId: boolean): string => {
     return pathColumnSql(this, entityType, appendOwnId);
   }

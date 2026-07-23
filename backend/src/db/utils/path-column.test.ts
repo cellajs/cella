@@ -5,9 +5,10 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { seedDb } from '#/db/db';
 
 /**
- * The generated `path` column (SQL) and `row-path.ts` (JS) must produce identical
- * values for every row shape. CDC routing, move-out detection, and client view
- * routing all assume the two rules agree. Deep-chain shapes use the shared deep fixture.
+ * The path SQL rule (stored as a generated column on channel tables) and the JS rule
+ * (computed for product rows) must produce identical values for every row shape. CDC
+ * routing, move-out detection, and client view routing all assume the two rules agree.
+ * Deep-chain shapes use the shared deep fixture.
  */
 const roles = createRoleRegistry(['admin', 'member'] as const);
 

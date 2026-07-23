@@ -3,7 +3,7 @@ import type { EntityHierarchy, ActivityAction } from 'shared';
 import type { PendingEvent, TableMeta } from '../types';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData } from '../types';
-import { type CountsHierarchy, getCountDeltas, isMaxMergeKey } from './update-counts';
+import { getCountDeltas, isMaxMergeKey } from './update-counts';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -85,7 +85,7 @@ export function mergeDelta(
 }
 
 /** Check if this event should get a sequence stamp (product entity create/update). */
-function isStampable(tableMeta: TableMeta, action: ActivityAction, h: CountsHierarchy): boolean {
+function isStampable(tableMeta: TableMeta, action: ActivityAction, h: EntityHierarchy): boolean {
   return tableMeta.kind === 'entity' && h.isProduct(tableMeta.type) && (action === 'create' || action === 'update');
 }
 
@@ -97,7 +97,7 @@ function isStampable(tableMeta: TableMeta, action: ActivityAction, h: CountsHier
  * sequence; WAL order within the batch is preserved), accumulates all count deltas.
  * Frontier (`e:f:`) deltas are emitted at apply time, once sequence values are assigned.
  */
-export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHierarchy = hierarchy): BatchUnifiedDeltaPlan {
+export function computeBatchUnifiedDeltas(events: PendingEvent[], h: EntityHierarchy = hierarchy): BatchUnifiedDeltaPlan {
   const countDeltasByChannelKey = new Map<string, Record<string, number>>();
   const orgSequenceGroupMap = new Map<string, OrgSequenceGroup>();
 

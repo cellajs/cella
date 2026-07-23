@@ -16,11 +16,6 @@ export interface CountDelta {
   deltas: Record<string, number>;
 }
 
-/** Hierarchy surface the counter machinery needs; injectable for synthetic-hierarchy tests. */
-export type CountsHierarchy = EntityHierarchy & {
-  isProduct(entityType: string): boolean;
-};
-
 /**
  * `e:li:h:<type>` (last insert) / `e:lu:h:<type>` (last update) keys carry epoch-ms activity
  * stamps that merge via max and never sum. Mirrored by the
@@ -50,7 +45,7 @@ export function getCountDeltas(
   activity: ActivityWithoutId,
   newRow: CdcRowData,
   oldRow: CdcRowData | null,
-  h: CountsHierarchy = hierarchy,
+  h: EntityHierarchy = hierarchy,
 ): CountDelta[] {
   const { action, organizationId } = activity;
 

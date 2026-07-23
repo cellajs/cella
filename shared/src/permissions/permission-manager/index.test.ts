@@ -36,14 +36,14 @@ describe('hierarchy guards (real app config)', () => {
     });
   });
 
-  describe('getChannelRoles', () => {
+  describe('hierarchy.getRoles', () => {
     it('returns roles for the organization context', () => {
       const roles = hierarchy.getRoles('organization');
       expect(roles).toEqual(['admin', 'member']);
     });
   });
 
-  describe('isChannelEntity / isProductEntity', () => {
+  describe('hierarchy.isChannel / hierarchy.isProduct', () => {
     it('correctly identifies channel entities', () => {
       expect(hierarchy.isChannel('organization')).toBe(true);
       expect(hierarchy.isChannel('attachment')).toBe(false);
