@@ -128,6 +128,13 @@ The permission system in `backend/src/permissions/` provides: the `checkAccess*`
 - Code comments explain non-trivial logic only. Do not narrate decision history, what was considered and rejected, or how the code evolved; that belongs in commit messages, not source. A comment should describe _what_ the code does and _why_, not _what it replaced_ or _what it is not_.
 - **Never use em dashes (`—`, U+2014) anywhere in text**: source comments, YAML, config files, and docs. Split the sentence, use a colon, or remove the secondary clause. `pnpm check` runs `shared/scripts/check-comment-style.ts`, which fails the build on any em dash. Treat contrast, history, and conversational phrases such as `instead`, `rather than`, `previously`, `used to`, `maybe`, and `we should` as review signals. Rewrite useful comments around the current behavior or constraint, and delete the rest.
 - Reserve `materialize` and `materialization` for the named Yjs operation that converts collaborative state into durable entity data. Use concrete verbs such as `persist`, `provision`, `create`, or `resolve` elsewhere.
+- **Reserved domain vocabulary.** These words already name a subsystem; do not reuse them for anything else, and check what a word means here before naming a new module or export:
+  - `sync` -> the entity sync engine (`sync-store`, `sync-service`, `SyncTier`, `syncStaleTime`, `declareSyncView`).
+  - `schema` / `lens` -> schema evolution (`currentSchemaVersion`, `defineLens`, `markBundleStale`).
+  - `channel` -> channel entities (`ChannelEntityType`, `channelId`); not a transport or a `BroadcastChannel`.
+  - `own` / `owner` -> the permission engine's creator relation.
+  - `leader tab` / `election` -> cross-tab coordination of the single SSE connection (`tab-coordinator`).
+  Name modules for the role they play in the domain, not the primitive they are built on: a name like `leader-lease` describes a mechanism (and stops being true when the mechanism changes), while `tab-coordinator` describes the job. When splitting a module, name the remainder deliberately; a leftover named after its payload plus a generic verb is how collisions get introduced.
 - Storybook: Stories in `stories/` folder within the module, named `<component-filename>.stories.tsx`.
 - Icons: lucide with Icon suffix (e.g., `PencilIcon`).
 - UI primitives: Base UI (`@base-ui/react`), **not** Radix. Shadcn-style components in `frontend/src/modules/ui/` wrap Base UI primitives.

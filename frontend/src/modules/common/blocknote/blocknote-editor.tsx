@@ -2,6 +2,7 @@ import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/styles.css';
 import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
+import { withCollaboration } from '@blocknote/core/yjs';
 import type { FilePanelProps } from '@blocknote/react';
 import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
@@ -103,31 +104,35 @@ function BlockNote({
   );
 
   // Parse initial content once at creation time so the undo history starts clean
-  // (BlockNote's recommended pattern from https://www.blocknotejs.org/examples/backend/saving-loading)
-  // In collaboration mode, the Yjs provider supplies the document state.
   const initialContent = collaborative ? undefined : getParsedContent(defaultValue);
 
-  const editor = useCreateBlockNote({
+  const baseOptions = {
     schema: customSchema,
     initialContent,
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
-    // Only the Yjs wiring goes to the editor; the entity identity in the bundle
-    // is consumed by the SSE suppression hook below.
-    collaboration: collaboration
-      ? { provider: collaboration.provider, fragment: collaboration.fragment, user: collaboration.user }
-      : undefined,
-
     extensions: [checkedExtension(), ...(extensions ?? [])],
     resolveFileUrl: createResolveFileUrl({ baseFilePanelProps }),
-  });
+  };
+
+  const editor = useCreateBlockNote(
+    collaboration
+      ? withCollaboration({
+          ...baseOptions,
+          collaboration: {
+            fragment: collaboration.fragment,
+            user: collaboration.user,
+            provider: collaboration.provider,
+          },
+        })
+      : baseOptions,
+  );
 
   // Re-subscribe Yjs UndoManager after TipTap mount cycles so CMD+Z keeps working.
   useYjsUndoManagerFix(editor, collaborative);
 
-  // Shield Yjs-owned fields from SSE while this editor is active. The relay owns
-  // persistence and seeding, so no client sends description updates.
+  // Shield Yjs-owned fields from SSE while this editor is active.
   useYjsSseSuppression(
     collaboration ? { entityType: collaboration.entityType, entityId: collaboration.entityId } : null,
   );
@@ -163,8 +168,7 @@ function BlockNote({
     editor,
     containerRef: blockNoteRef,
     onBlur: () => {
-      // In `commitOnEveryChange` mode, every change is already pushed via onChange,
-      // so blur is a no-op. Otherwise we commit pending edits to the cache here.
+      // In `commitOnEveryChange` mode, every change is already pushed via onChange.
       // Guarded with `!editor.isEmpty` to avoid writing empty content before Yjs sync.
       if (!commitOnEveryChange && !editor.isEmpty) handleUpdateData(editor);
     },

@@ -46,6 +46,17 @@ const isWebLocksAvailable = (): boolean => {
 };
 
 /**
+ * Resolve when `signal` aborts. A lock callback awaits this to hold the lock releasably: the
+ * callback returns once the signal fires, which frees the lock for a waiting follower without
+ * requiring the tab to close.
+ */
+const untilAborted = (signal: AbortSignal): Promise<void> =>
+  new Promise<void>((resolve) => {
+    if (signal.aborted) return resolve();
+    signal.addEventListener('abort', () => resolve(), { once: true });
+  });
+
+/**
  * Check if BroadcastChannel is available.
  */
 const isBroadcastChannelAvailable = (): boolean => {
@@ -92,10 +103,34 @@ export const initTabCoordinator = async (): Promise<void> => {
   return initPromise;
 };
 
+/**
+ * Release this tab's leadership so a waiting follower is promoted. Call when the tab leaves the
+ * authenticated app: leadership gates who maintains the SSE stream, so a tab that holds it while no
+ * longer streaming starves every follower. A full tab close frees the lock via realm destruction.
+ *
+ * Clearing `initPromise` lets a later return to the app run the election again and take whichever
+ * role is open: follower while another tab leads, leader when none does. That re-run also restores
+ * the pending promotion request, so a sole tab picks the stream back up when it returns.
+ */
+export const releaseTabLeadership = (): void => {
+  const store = useTabCoordinatorStore.getState();
+
+  lockController?.abort();
+  lockController = null;
+  initPromise = null;
+
+  store.setIsLeader(false);
+  store.setIsReady(false);
+  store.setIsActive(false);
+};
+
 /** Acquire the leader lock (first tab to acquire it becomes leader); resolves once leader status is known. */
 const attemptLeaderElection = (): Promise<void> => {
   const store = useTabCoordinatorStore.getState();
+  // One controller per election: aborting it releases whichever lock this tab currently holds or
+  // awaits. `ifAvailable` cannot be combined with a signal, so the callback checks it by hand.
   lockController = new AbortController();
+  const { signal } = lockController;
 
   return new Promise<void>((resolveElection) => {
     // Debug: Query existing locks first
@@ -123,9 +158,9 @@ const attemptLeaderElection = (): Promise<void> => {
           store.setIsReady(true);
           resolveElection();
 
-          // Keep the lock by returning a never-resolving promise
-          // The lock is held until the tab closes or releases it
-          return new Promise<void>(() => {});
+          // Hold the lock until leadership is released (or the tab closes), then return to free it
+          await untilAborted(signal);
+          return;
         }
 
         // Lock not available - we're a follower
@@ -134,9 +169,9 @@ const attemptLeaderElection = (): Promise<void> => {
         store.setIsReady(true);
         resolveElection();
 
-        // Now wait for leadership in case current leader closes
+        // Now wait for leadership in case current leader closes or leaves the app
         // This runs in background and doesn't block initialization
-        waitForLeadership();
+        waitForLeadership(signal);
 
         return undefined;
       })
@@ -154,17 +189,16 @@ const attemptLeaderElection = (): Promise<void> => {
  * Wait in background for leadership to become available.
  * Called by follower tabs to eventually become leader when current leader closes.
  */
-const waitForLeadership = (): void => {
+const waitForLeadership = (signal: AbortSignal): void => {
   const store = useTabCoordinatorStore.getState();
-  lockController = new AbortController();
 
   navigator.locks
-    .request(leaderLockName, { signal: lockController.signal }, async () => {
+    .request(leaderLockName, { signal }, async () => {
       console.debug('[TabCoordinator] Promoted to leader');
       store.setIsLeader(true);
 
-      // Keep the lock by returning a never-resolving promise
-      return new Promise<void>(() => {});
+      // Hold the lock until leadership is released, then return to free it
+      await untilAborted(signal);
     })
     .catch((error) => {
       if (error instanceof DOMException && error.name === 'AbortError') {
