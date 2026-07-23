@@ -6,7 +6,7 @@ import {
   type CanState,
   computeCan,
   configurePermissions,
-  type PermissionMembership,
+  type AccessMembership,
   type PermissionsConfigResult,
   type HierarchyOverrides,
   type PolicyCellInput,
@@ -72,7 +72,7 @@ export const wideMembership = (
   channelType: WideChannelType,
   channelId: string,
   role: WideRole,
-): PermissionMembership => ({ channelType, channelId, role }) as unknown as PermissionMembership;
+): AccessMembership => ({ channelType, channelId, role }) as unknown as AccessMembership;
 
 /** Build a subject over a wide entity. */
 export const wideSubject = (input: {
@@ -93,7 +93,7 @@ export type WideCanMap = Partial<Record<WideEntityType, Record<EntityActionType,
 /** Drive `computeCan` over the wide hierarchy while containing app-config casts here. */
 export const computeWideCan = (
   channelType: WideChannelType,
-  membership: PermissionMembership | undefined | null,
+  membership: AccessMembership | undefined | null,
   policies: PolicyMatrix,
 ): WideCanMap =>
   computeCan(

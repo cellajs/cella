@@ -9,19 +9,19 @@ import type {
   ActionAttribution,
   PermissionCheckOptions,
   PermissionDecision,
-  PermissionMembership,
+  AccessMembership,
   ResolvedChannelIds,
   SubjectForPermission,
 } from './types';
 import { validateMembership, validateSubject } from './validation';
 
 /** Memberships keyed by `${channelType}:${channelId}`. */
-export type MembershipIndex<T extends PermissionMembership> = Map<string, T[]>;
+export type MembershipIndex<T extends AccessMembership> = Map<string, T[]>;
 
 /** Permissions keyed by `${channelType}:${role}`. */
 export type PolicyIndex = Map<string, EntityActionPermissions>;
 
-const buildMembershipIndex = <T extends PermissionMembership>(memberships: T[]): MembershipIndex<T> => {
+const buildMembershipIndex = <T extends AccessMembership>(memberships: T[]): MembershipIndex<T> => {
   const index: MembershipIndex<T> = new Map();
   for (const m of memberships) {
     if (!m.channelId) {
@@ -40,16 +40,16 @@ const buildMembershipIndex = <T extends PermissionMembership>(memberships: T[]):
  * stable reference safe to reuse; the WeakMap releases entries with their arrays. Callers must
  * not mutate a memberships array after passing it to a permission check.
  */
-const membershipIndexMemo = new WeakMap<object, MembershipIndex<PermissionMembership>>();
+const membershipIndexMemo = new WeakMap<object, MembershipIndex<AccessMembership>>();
 
 /** Returns a validated membership index, memoized by input identity. */
-export const getMembershipIndex = <T extends PermissionMembership>(memberships: T[]): MembershipIndex<T> => {
+export const getMembershipIndex = <T extends AccessMembership>(memberships: T[]): MembershipIndex<T> => {
   const cached = membershipIndexMemo.get(memberships);
   if (cached) return cached as MembershipIndex<T>;
 
   memberships.forEach((m, i) => validateMembership(m, i));
   const index = buildMembershipIndex(memberships);
-  membershipIndexMemo.set(memberships, index as MembershipIndex<PermissionMembership>);
+  membershipIndexMemo.set(memberships, index as MembershipIndex<AccessMembership>);
   return index;
 };
 
@@ -94,7 +94,7 @@ export const getSubjectChannelId = (
  * Evaluates one subject against prebuilt membership and policy indexes. Named row conditions
  * are matched against the subject's row fields.
  */
-export const checkWithIndices = <T extends PermissionMembership>(
+export const checkWithIndices = <T extends AccessMembership>(
   membershipIndex: MembershipIndex<T>,
   policyIndex: PolicyIndex,
   subject: SubjectForPermission,
@@ -220,19 +220,19 @@ export const checkWithIndices = <T extends PermissionMembership>(
  * Checks all permissions for one or more subjects. A single subject returns a
  * `PermissionDecision`; an array returns a `Map` keyed by subject.id.
  */
-export function getAllDecisions<T extends PermissionMembership>(
+export function getAllDecisions<T extends AccessMembership>(
   policies: PolicyMatrix,
   memberships: T[],
   subjects: SubjectForPermission,
   options?: PermissionCheckOptions,
 ): PermissionDecision<T>;
-export function getAllDecisions<T extends PermissionMembership>(
+export function getAllDecisions<T extends AccessMembership>(
   policies: PolicyMatrix,
   memberships: T[],
   subjects: SubjectForPermission[],
   options?: PermissionCheckOptions,
 ): Map<string, PermissionDecision<T>>;
-export function getAllDecisions<T extends PermissionMembership>(
+export function getAllDecisions<T extends AccessMembership>(
   policies: PolicyMatrix,
   memberships: T[],
   subjects: SubjectForPermission | SubjectForPermission[],

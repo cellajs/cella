@@ -33,7 +33,7 @@ export type {
   GrantSource,
   PermissionCheckOptions,
   PermissionDecision,
-  PermissionMembership,
+  AccessMembership,
   ResolvedChannelIds,
   SubjectForPermission,
 } from './engine/types';

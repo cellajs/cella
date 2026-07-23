@@ -1,7 +1,7 @@
 import { appConfig } from '../../config-builder/app-config';
 import type { EntityActionType } from '../../../types';
 import { createActionRecord } from '../action-helpers';
-import type { GrantSource, PermissionDecision, PermissionMembership } from './types';
+import type { GrantSource, PermissionDecision, AccessMembership } from './types';
 
 const formatGrant = (g: GrantSource): string => {
   if (g.type === 'membership') return `${g.channelType}:${g.channelId}/${g.role}`;
@@ -11,7 +11,7 @@ const formatGrant = (g: GrantSource): string => {
 };
 
 /** Formats a decision tree for debug logging. */
-export const formatPermissionDecision = <T extends PermissionMembership>(decision: PermissionDecision<T>): string => {
+export const formatPermissionDecision = <T extends AccessMembership>(decision: PermissionDecision<T>): string => {
   const lines = [
     `[Permission Check] entity=${decision.subject.entityType} id=${decision.subject.id}`,
     `├─ Channel IDs: ${JSON.stringify(decision.subject.channelIds)}`,
@@ -34,7 +34,7 @@ export const formatPermissionDecision = <T extends PermissionMembership>(decisio
 };
 
 /** Formats per-entity and per-action decision counts for debug logging. */
-export const formatBatchPermissionSummary = <T extends PermissionMembership>(
+export const formatBatchPermissionSummary = <T extends AccessMembership>(
   decisions: Map<string, PermissionDecision<T>>,
 ): string => {
   if (decisions.size === 0) return '[Batch Permission] No subjects checked';

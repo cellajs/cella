@@ -1,6 +1,6 @@
 import { hierarchy } from '../../../config/hierarchy-config';
 import type { EntityHierarchy } from '../../config-builder/entity-hierarchy';
-import type { PermissionMembership, SubjectForPermission } from './types';
+import type { AccessMembership, SubjectForPermission } from './types';
 
 /**
  * Validates a subject has required fields for permission checking. `entityGuards` defaults to
@@ -30,7 +30,7 @@ export const validateSubject = (
 };
 
 /** Validates a membership has required fields. */
-export const validateMembership = <T extends PermissionMembership>(membership: T, index: number): void => {
+export const validateMembership = <T extends AccessMembership>(membership: T, index: number): void => {
   if (!membership.channelType) {
     throw new Error(`[Permission] Membership[${index}] missing channelType`);
   }

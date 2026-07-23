@@ -126,7 +126,7 @@ export type {
   GrantSource,
   PermissionCheckOptions,
   PermissionDecision,
-  PermissionMembership,
+  AccessMembership,
   HierarchyOverrides,
   ResolvedChannelIds,
   SubjectForPermission,

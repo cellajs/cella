@@ -4,7 +4,7 @@ import { allActionsDenied, createActionRecord } from '../action-helpers';
 import { isRowCondition, matchesRowCondition, type RowConditionName, type RowForCondition } from '../row-conditions';
 import { buildPolicyIndex, checkWithIndices, getMembershipIndex, getSubjectChannelId } from './check';
 import { resolveHierarchy } from './resolve-hierarchy';
-import type { PermissionCheckOptions, PermissionDecision, PermissionMembership, SubjectForPermission } from './types';
+import type { PermissionCheckOptions, PermissionDecision, AccessMembership, SubjectForPermission } from './types';
 import { validateSubject } from './validation';
 
 /**
@@ -12,7 +12,7 @@ import { validateSubject } from './validation';
  * fields the engine reads. Anonymous actors are expressed as `{ memberships: [] }` with
  * no `userId`; the `checkAccess*` wrappers map their public `Access` union onto this.
  */
-export interface EngineAccess<T extends PermissionMembership = PermissionMembership> {
+export interface EngineAccess<T extends AccessMembership = AccessMembership> {
   memberships: T[];
   userId?: string;
   isSystemAdmin?: boolean;
@@ -31,7 +31,7 @@ export interface ResolveAccessOptions extends PermissionCheckOptions {
 }
 
 /** All-denied decision for an access the engine refuses to evaluate (fail-closed). */
-const deniedDecision = <T extends PermissionMembership>(subject: SubjectForPermission): PermissionDecision<T> => ({
+const deniedDecision = <T extends AccessMembership>(subject: SubjectForPermission): PermissionDecision<T> => ({
   subject: { entityType: subject.entityType, id: subject.id, channelIds: {} },
   actions: createActionRecord(() => ({ allowed: false, grantedBy: [] })),
   can: { ...allActionsDenied },
@@ -44,7 +44,7 @@ const deniedDecision = <T extends PermissionMembership>(subject: SubjectForPermi
  * each subject channel level. The per-call class result is then paired with each access's
  * own membership; property tests compare it with independent single-access decisions.
  */
-export function getDecisionsForAccesses<T extends PermissionMembership>(
+export function getDecisionsForAccesses<T extends AccessMembership>(
   policies: PolicyMatrix,
   accesses: EngineAccess<T>[],
   subject: SubjectForPermission,

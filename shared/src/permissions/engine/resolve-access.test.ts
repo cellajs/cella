@@ -8,7 +8,7 @@ import {
   wideSubject,
   wideOverrides,
 } from '../../testing/wide-fixture';
-import type { PermissionMembership, SubjectForPermission } from './types';
+import type { AccessMembership, SubjectForPermission } from './types';
 import { getAllDecisions } from './check';
 import { getDecisionsForAccesses, type EngineAccess } from './resolve-access';
 
@@ -147,7 +147,7 @@ const makeRandomizer = (seed: number) => {
     if (random() < 0.08) return { memberships: [] }; // anonymous
     const roles: WideRole[] = ['admin', 'member', 'guest'];
     const membershipCount = Math.floor(random() * 4);
-    const memberships: PermissionMembership[] = Array.from({ length: membershipCount }, () => {
+    const memberships: AccessMembership[] = Array.from({ length: membershipCount }, () => {
       const kind = random();
       if (kind < 0.5) return wideMembership('organization', pick(ORGS), pick(['admin', 'member'] as WideRole[]));
       if (kind < 0.85) return wideMembership('project', pick(PROJECTS), pick(roles));
@@ -208,7 +208,7 @@ describe('getDecisionsForAccesses: invalid memberships', () => {
   const invalid: EngineAccess = {
     memberships: [
       wideMembership('project', 'proj1', 'member'),
-      { channelType: 'project', channelId: '', role: 'member' } as unknown as PermissionMembership,
+      { channelType: 'project', channelId: '', role: 'member' } as unknown as AccessMembership,
     ],
     userId: 'user2',
   };

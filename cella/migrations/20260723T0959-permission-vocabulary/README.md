@@ -7,9 +7,9 @@ The permission subsystem carried four vocabulary layers that grew across iterati
 `Permission*` prefix split, a `topology` wrapper for what the rest of the repo calls the
 hierarchy, and three words (`can`, `enabled`, `isAllowed`) for "the action is allowed". This
 migration aligns permission naming with the repo's hierarchy vocabulary. The naming rule is now
-stated in `cella/PERMISSIONS.md`: Access is the input (who is asking), Policy is the configured
-matrix, Permission is the engine's verdict; `subject` remains the one engine-only noun for the
-checked instance.
+stated in `cella/PERMISSIONS.md`: you present an access, the policy is consulted, you get back
+permissions, and every permission names the grants that earned it; `subject` remains the one
+engine-only noun for the checked instance.
 
 Renamed exports (old → new):
 
@@ -28,6 +28,7 @@ Renamed exports (old → new):
 | `ActionPermissionState` | `CanState` |
 | `resolvePermission` | `resolveCan` |
 | `isUnconditionalPermission` | `isUnconditionalCan` |
+| `PermissionMembership` | `AccessMembership` |
 | `PermissionResult.isAllowed` | `PermissionResult.allowed` |
 | `ActionAttribution.enabled` | `ActionAttribution.allowed` |
 | `PermissionTopology` / `options.topology` | removed; `options.hierarchy` + `options.entityActions` |
@@ -61,7 +62,7 @@ No script. The renames are word-boundary symbol swaps; apply the table above wit
 rename-symbol or a grep-guided pass:
 
 ```sh
-grep -rnE "AccessPolic|accessPolicies|PermissionValue|ActionPermissionState|resolvePermission|isUnconditionalPermission|isAllowed|PermissionTopology|topology|subChannel|ancestorScopes|subject, contexts|permission-manager|check-permission" --include="*.ts" --include="*.tsx" backend frontend/src shared yjs/src
+grep -rnE "AccessPolic|accessPolicies|PermissionValue|ActionPermissionState|resolvePermission|isUnconditionalPermission|PermissionMembership|isAllowed|PermissionTopology|topology|subChannel|ancestorScopes|subject, contexts|permission-manager|check-permission" --include="*.ts" --include="*.tsx" backend frontend/src shared yjs/src
 ```
 
 ## Manual steps

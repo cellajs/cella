@@ -12,7 +12,7 @@ export type AncestorChannelIds = Partial<Record<ChannelEntityType, string | null
 export type ResolvedChannelIds = Partial<Record<ChannelEntityType, string>>;
 
 /** Membership fields read by the permission engine. Tier models may include extra fields. */
-export interface PermissionMembership {
+export interface AccessMembership {
   channelType: ChannelEntityType;
   channelId: string;
   role: EntityRole;
@@ -47,7 +47,7 @@ export interface ActionAttribution {
   grantedBy: GrantSource[];
 }
 
-export interface PermissionDecision<T extends PermissionMembership = PermissionMembership> {
+export interface PermissionDecision<T extends AccessMembership = AccessMembership> {
   subject: {
     entityType: ChannelEntityType | ProductEntityType;
     id?: string;
