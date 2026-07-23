@@ -106,19 +106,30 @@ const viteConfig = {
         codeSplitting: {
           minSize: 50 * 1024, // Minimum chunk size of 50 Kb
           groups: [
+            // One group per grammar/theme module: each language stays its own lazily
+            // loadable chunk, and the grammars- prefix keeps all of them out of the SW
+            // precache (globIgnores). The name encodes the package variant so the
+            // plain and precompiled builds of a language never merge into one chunk.
+            // The shiki core engine is untouched and stays in precached chunks.
+            {
+              name: (id: string) => {
+                // The oniguruma WASM engine is dynamically importable but unused: the app
+                // CSP has no 'unsafe-eval', so the JavaScript regex engine is always used
+                if (/node_modules[\\/]@shikijs[\\/]engine-oniguruma[\\/]/.test(id)) return 'grammars-wasm';
+                const m = id.match(
+                  /node_modules[\\/]@shikijs[\\/](langs|langs-precompiled|themes)[\\/]dist[\\/]([\w.+-]+?)\.m?js$/
+                );
+                if (!m || m[2] === 'index') return null;
+                const variant = m[1] === 'langs-precompiled' ? 'pc-' : m[1] === 'themes' ? 'theme-' : '';
+                return `grammars-${variant}${m[2].replace(/[^\w-]/g, '-')}`;
+              },
+              // The top-level minSize is inherited as the group default and would silently
+              // drop languages smaller than it back to automatic (precached) chunking
+              minSize: 0,
+            },
             // Merge all lucide icon modules into one shared chunk to keep request count low
             { name: 'icons', test: /node_modules[\\/]lucide-react[\\/]/ },
           ],
-        },
-        // Prefix lazily imported grammar/theme chunks so the SW precache can exclude
-        // them by glob while each language still loads on demand. The shiki core
-        // engine is statically imported and keeps its normal (precached) chunk.
-        chunkFileNames(chunk) {
-          const grammarModule = /node_modules[\\/](shiki|@shikijs|tm-grammars|tm-themes)[\\/]/;
-          if (chunk.facadeModuleId && grammarModule.test(chunk.facadeModuleId)) {
-            return 'assets/grammars-[hash].js';
-          }
-          return 'assets/[name]-[hash].js';
         },
       },
     },

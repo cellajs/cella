@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { ExpirationPlugin, type PrecacheEntry, Serwist, StaleWhileRevalidate } from 'serwist';
+import { CacheFirst, ExpirationPlugin, type PrecacheEntry, Serwist, StaleWhileRevalidate } from 'serwist';
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: (PrecacheEntry | string)[];
@@ -47,6 +47,16 @@ const serwist = new Serwist({
       handler: new StaleWhileRevalidate({
         cacheName: 'docs-gen',
         plugins: [new ExpirationPlugin({ maxEntries: 40 })],
+      }),
+    },
+    {
+      // Syntax-highlight grammar/theme chunks are excluded from the precache (globIgnores
+      // in vite.config.ts). Content-hashed and immutable, so cache-first is safe; this
+      // keeps highlighting working offline after a language loads once.
+      matcher: ({ url }) => url.origin === self.location.origin && /^\/assets\/grammars-/.test(url.pathname),
+      handler: new CacheFirst({
+        cacheName: 'grammars',
+        plugins: [new ExpirationPlugin({ maxEntries: 80 })],
       }),
     },
   ],
