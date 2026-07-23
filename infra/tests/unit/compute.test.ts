@@ -129,7 +129,8 @@ describe('compute module source contracts', () => {
     expect(source).not.toMatch(/stableInternalGen_/)
     expect(source).not.toMatch(/stablePrivateIp/)
     expect(source).toMatch(/deleteBeforeReplace: true/)
-    expect(source).toMatch(/content-addressed id for a pending SHA/)
+    // A pending SHA derives its content-addressed generation id from the service fingerprint.
+    expect(source).toMatch(/deriveGenId\(entry\.pendingSha, fingerprint\)/)
   })
 
   it('envPool does not bind backend secrets as compose env values', () => {

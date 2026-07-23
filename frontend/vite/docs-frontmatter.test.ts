@@ -131,9 +131,28 @@ describe('extractStructure sections', () => {
     ].join('\n');
     const texts = extractStructure(src).sections.map((s) => s.text);
     expect(texts).toContain('A bold link with code.');
-    expect(texts).toContain('item one item two');
+    expect(texts).toContain('item one');
+    expect(texts).toContain('item two');
     expect(texts.join(' ')).toContain('cell a cell b');
     expect(texts.join(' ')).not.toMatch(/import|Tiles|note to self|\||\*\*/);
+  });
+
+  it('splits uninterrupted lists into one section per item, keeping wrapped lines attached', () => {
+    const src = [
+      '## Components',
+      '',
+      '- **First:** alpha bravo',
+      '  wrapped continuation line',
+      '- **Second:** charlie with `singleVm` on',
+      '1. numbered delta',
+      '2. numbered echo',
+    ].join('\n');
+    expect(extractStructure(src).sections).toEqual([
+      { headingId: 'spy-components', text: 'First: alpha bravo wrapped continuation line' },
+      { headingId: 'spy-components', text: 'Second: charlie with singleVm on' },
+      { headingId: 'spy-components', text: 'numbered delta' },
+      { headingId: 'spy-components', text: 'numbered echo' },
+    ]);
   });
 
   it('skips the leading h1 of repo docs but keeps its text under null anchor', () => {

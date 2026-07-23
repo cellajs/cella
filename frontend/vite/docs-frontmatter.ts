@@ -72,6 +72,9 @@ function toPlainText(markdown: string): string {
 
 const HEADING_LINE_SINGLE = /^(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$/;
 
+/** Lookahead for a list-item start: each bullet indexes as its own section. */
+const LIST_ITEM_BOUNDARY = /\n(?=[ \t]*(?:[-*+]|\d+\.)[ \t])/;
+
 /**
  * Extract headings and sections with one slugger so anchors and duplicate suffixes agree.
  * Optionally strip the repository document H1 to match rendering.
@@ -89,10 +92,13 @@ export function extractStructure(
   let firstHeading = true;
 
   const flush = () => {
-    // Paragraph-level sections: split on blank lines before whitespace collapses.
+    // Paragraph-level sections: split on blank lines before whitespace collapses, then at
+    // list-item starts so an uninterrupted list never collapses into one capped section.
     for (const paragraph of buffer.join('\n').split(/\n[ \t]*\n+/)) {
-      const text = toPlainText(paragraph);
-      if (text) sections.push({ headingId: currentHeadingId, text: text.slice(0, MAX_SECTION_LENGTH) });
+      for (const block of paragraph.split(LIST_ITEM_BOUNDARY)) {
+        const text = toPlainText(block);
+        if (text) sections.push({ headingId: currentHeadingId, text: text.slice(0, MAX_SECTION_LENGTH) });
+      }
     }
     buffer = [];
   };
