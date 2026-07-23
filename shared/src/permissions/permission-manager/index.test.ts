@@ -1,4 +1,4 @@
-import { getChannelRoles, hierarchy, isChannelEntity, isProductEntity } from 'shared';
+import { hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { configureWidePermissions, wideMembership, wideSubject, wideTopology } from '../../testing/wide-fixture';
 import { getAllDecisions } from './check';
@@ -36,24 +36,24 @@ describe('hierarchy guards (real app config)', () => {
     });
   });
 
-  describe('getChannelRoles', () => {
+  describe('hierarchy.getRoles', () => {
     it('returns roles for the organization context', () => {
-      const roles = getChannelRoles('organization');
+      const roles = hierarchy.getRoles('organization');
       expect(roles).toEqual(['admin', 'member']);
     });
   });
 
-  describe('isChannelEntity / isProductEntity', () => {
+  describe('hierarchy.isChannel / hierarchy.isProduct', () => {
     it('correctly identifies channel entities', () => {
-      expect(isChannelEntity('organization')).toBe(true);
-      expect(isChannelEntity('attachment')).toBe(false);
-      expect(isChannelEntity('user')).toBe(false);
+      expect(hierarchy.isChannel('organization')).toBe(true);
+      expect(hierarchy.isChannel('attachment')).toBe(false);
+      expect(hierarchy.isChannel('user')).toBe(false);
     });
 
     it('correctly identifies product entities', () => {
-      expect(isProductEntity('attachment')).toBe(true);
-      expect(isProductEntity('organization')).toBe(false);
-      expect(isProductEntity('user')).toBe(false);
+      expect(hierarchy.isProduct('attachment')).toBe(true);
+      expect(hierarchy.isProduct('organization')).toBe(false);
+      expect(hierarchy.isProduct('user')).toBe(false);
     });
   });
 });

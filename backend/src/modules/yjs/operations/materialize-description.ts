@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { isProductEntity } from 'shared';
+import { isProduct } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -29,7 +29,7 @@ export interface MaterializeDescriptionInput {
  * revoked mid-session), server-HLC stamping, derived-field computation, CDC/SSE.
  */
 export async function materializeDescriptionOp(input: MaterializeDescriptionInput): Promise<{ sanitized: boolean }> {
-  if (!isProductEntity(input.entityType)) {
+  if (!isProduct(input.entityType)) {
     throw new AppError(400, 'invalid_request', 'warn', {
       meta: { reason: `Unknown entity type: ${input.entityType}` },
     });

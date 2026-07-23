@@ -28,7 +28,7 @@ The bulk of this guide covers **product entities**. Channel-entity differences a
 
 ## Guardrail: the compiler keeps config in sync
 
-Before diving in, know your safety net. The three "declare it" edits (hierarchy, `config.default.ts` arrays, `entityIdColumnKeys`) are cross-checked **at compile time** by [`shared/src/config-builder/config-validation.ts`](../shared/src/config-builder/config-validation.ts). It bidirectionally asserts that `entityTypes ≡ hierarchy.allTypes`, `channelEntityTypes ≡ hierarchy.channelTypes`, `productEntityTypes ≡ hierarchy.productTypes`, and that `entityIdColumnKeys` has a `` `${K}Id` `` entry for every type. If you add to the hierarchy but forget an array (or vice versa), **the build fails**. Separately, the CI job `lens:check` fails if a product/channel entity does not register its evolution contract (Step 6).
+Before diving in, know your safety net. The hierarchy builder is the single declaration of the entity taxonomy: `entityTypes`, `channelEntityTypes`, `productEntityTypes`, and `entityIdColumnKeys` in `config.default.ts` are all **derived** from it (`hierarchy.allTypes`, `hierarchy.channelTypes`, `hierarchy.productTypes`, `hierarchy.idColumnKeys`), so they cannot drift. Declaring the entity in the hierarchy (Step 1) IS the registration. Separately, the CI job `lens:check` fails if a product/channel entity does not register its evolution contract (Step 6).
 
 ---
 
@@ -60,22 +60,13 @@ export const hierarchy = createEntityHierarchy(roles)
 
 The builder ([`entity-hierarchy.ts`](../shared/src/config-builder/entity-hierarchy.ts)) validates at construction: parents must be declared **before** children, parents must be channels, roles must exist, `organization` + `user()` are mandatory. **Order matters**: declare parents earlier in the chain.
 
-### Step 2: 🔴 Register entity metadata in `appConfig`
+### Step 2: 🟢 Entity metadata in `appConfig` (derived) + 🔴 optional opt-ins
 
-Add the type to the string-literal arrays in [`shared/config/config.default.ts`](../shared/config/config.default.ts) (all `as const`; literal types are load-bearing for Drizzle strict enums):
-
-```ts
-entityTypes:        ['user', 'organization', 'workspace', 'project', 'task', 'label', 'note', 'attachment'] as const,
-productEntityTypes: ['task', 'label', 'note', 'attachment'] as const,   // (channelEntityTypes if a channel)
-entityIdColumnKeys: {
-  // ...existing...
-  note: 'noteId',        // must be exactly `${type}Id`
-} as const,
-```
+The taxonomy arrays and id-column keys in [`shared/config/config.default.ts`](../shared/config/config.default.ts) derive from the hierarchy (`entityTypes: nonEmpty(hierarchy.allTypes)`, `entityIdColumnKeys: hierarchy.idColumnKeys`, ...), so declaring `note` in Step 1 already registered it; the literal types stay load-bearing for Drizzle strict enums via `nonEmpty()`.
 
 Optional arrays, add only if relevant:
 
-- `seenTrackedEntityTypes`: opt in to unseen-count badges (grouped by parent channel).
+- `seenTrackedProductTypes`: opt in to unseen-count badges (grouped by parent channel).
 - `productEmbeddings`: only if the entity is embedded as an id-array inside another entity (like `label` inside `task.labels`).
 - `menuStructure`: for channel entities that appear in the user menu.
 - `defaultRestrictions.quotas`: per-tenant quota.
@@ -141,7 +132,7 @@ Mandatory columns come from the spread helpers; **do not hand-write them**:
 
 | Provided by | Columns |
 | --- | --- |
-| `productEntityColumns('<type>')` | `stx` (jsonb, sync metadata), `seq` (bigint, org-sequence position, CDC-stamped), `path` (STORED generated id-path), `description`, `keywords`, `createdBy/updatedBy`, `deletedAt/deletedBy` (soft delete) |
+| `productEntityColumns('<type>')` | `stx` (jsonb, sync metadata), `seq` (bigint, org-sequence position, CDC-stamped), `description`, `keywords`, `createdBy/updatedBy`, `deletedAt/deletedBy` (soft delete) |
 | ↳ `tenantEntityColumns` (nested) | `id` (uuid v7 PK via `generateId`), `entityType` (enum locked to the type), `tenantId` (FK → tenants), `name`, `createdAt`, `updatedAt` |
 
 Conventions: `snakeCase.table(...)` maps camelCase fields → snake_case columns automatically; table name is the pluralized type (`note` → `notes`); ids are plain **UUID v7** (time-ordered, no prefixes). You may replace the explicit `organizationId`/`projectId` columns with `...channelRelationColumns('note')` (emits NOT-NULL ancestor id columns from the hierarchy); see [`attachment-db.ts`](../backend/src/modules/attachment/attachment-db.ts).
@@ -229,12 +220,12 @@ Order matters: param-segment mounts (`/:tenantId/...`) must come after static mo
 
 For the entity to participate in catch-up sync, its list operation `get-notes.ts` must, when `seqCursor` is present:
 
-1. Extend `paginationQuerySchema` so `seqCursor` (org-sequence values) and `pathPrefix` (subtree narrowing for feed loads) are accepted (in `note-schema.ts`).
+1. Extend `paginationQuerySchema` so `seqCursor` (org-sequence values) is accepted (in `note-schema.ts`). Forks with sub-org channels can additionally narrow list reads to a subtree via ancestor id columns (see `buildSubtreeCoverWhere`-style helpers in forks).
 2. Order by `asc(<table>.seq)` with an `asc(id)` tiebreak.
 3. **Include tombstones** (skip the `isNull(deletedAt)` filter) so clients can drop deleted rows.
 4. Use `tenantReadIncludingDeleted` instead of `tenantRead`.
 
-Reuse the shared `seqCursorFilters` + `pathPrefixFilter` helpers ([`seq-cursor.ts`](../backend/src/utils/seq-cursor.ts)). See [`get-attachments.ts`](../backend/src/modules/attachment/operations/get-attachments.ts) for the pattern. The generic client catch-up endpoint (`POST /entities/app/stream`) needs no changes.
+Reuse the shared `seqCursorFilters` helper ([`seq-cursor.ts`](../backend/src/utils/seq-cursor.ts)). See [`get-attachments.ts`](../backend/src/modules/attachment/operations/get-attachments.ts) for the pattern. The generic client catch-up endpoint (`POST /entities/app/stream`) needs no changes.
 
 ### What the sync engine gives you for free 🟢
 
@@ -295,7 +286,7 @@ Once `registerEntityQueryKeys` + `addMutationRegistrar` run (via the eager impor
 A channel entity (has memberships + roles) differs from the product recipe:
 
 - **Step 1**: use `.channel('name', { parent, roles, relatedChannels? })`. `roles` must be non-empty and from the role registry.
-- **Step 2**: register under `channelEntityTypes` (not `productEntityTypes`).
+- **Step 2**: derivation registers it under `channelEntityTypes` automatically (it was declared with `.channel()` in Step 1).
 - **Step 3**: policies distinguish **elevation** rows (on an ancestor channel, carrying `create`) from **self** rows (on the same channel, omitting `create`). See the `project`/`workspace` cases and the header comment in [`permissions-config.ts`](../shared/config/permissions-config.ts).
 - **Step 4**: use `...channelEntityColumns('name')` (adds `slug`, thumbnails, etc.). Add a `unique(tenantId, id)` compound constraint so the table can be a composite-FK target. **No `tenantSelectPolicy`/`writeThroughPolicies`, no `seq`/`stx`**: channel entities have no RLS and no sync layer (offline read only; access is guard-enforced).
 - **Frontend**: register in `channelEntityListQueriesByType` and add a `menu-config.tsx` section (+ `menuStructure` in `config.default.ts`) rather than `buildEntitySyncQueries`.
@@ -308,7 +299,7 @@ Channel entities do **not** go through the CDC/SSE product pipeline or the wire-
 
 - **Public read**: `publicRead()` in Step 3. Set the row's `publicAt` to publish it; it then appears for anonymous actors on single-row reads, in list endpoints, and over SSE alike.
 - **Drafts (author-only until published)**: spread `...publishedColumn` ([`published-column.ts`](../backend/src/db/utils/published-column.ts)) into the table, then re-run `pnpm generate` + `pnpm migrate` — the CDC publication gains a row filter (`published_at IS NOT NULL`, PG 17+) so drafts never enter the replication stream (publish arrives as INSERT, unpublish as DELETE). `publishedAt` null = author-only draft, excluded from API reads, counters, stamps and badges via introspection — no further wiring. Fork adds a publish endpoint (`resolveServerUpdateOps`) and a drafts view; see [2026-07-published-rows](./migrations/2026-07-published-rows/).
-- **Unseen-count badges**: add the type to `seenTrackedEntityTypes` (Step 2); tracking in [`app-stream-handler.ts`](../frontend/src/query/realtime/app-stream-handler.ts) and the `seen` module then covers it automatically, grouping badges by the parent channel.
+- **Unseen-count badges**: add the type to `seenTrackedProductTypes` (Step 2); tracking in [`app-stream-handler.ts`](../frontend/src/query/realtime/app-stream-handler.ts) and the `seen` module then covers it automatically, grouping badges by the parent channel.
 - **Embedded id-arrays**: if the entity is referenced as an id array on another entity (like `label` in `task.labels`), add a `productEmbeddings` entry (Step 2) so CDC ref-counting, cache patching, and cascade suppression handle it.
 
 ---
@@ -318,7 +309,7 @@ Channel entities do **not** go through the CDC/SSE product pipeline or the wire-
 **🔴 Manual (you edit these):**
 
 1. [`shared/config/hierarchy-config.ts`](../shared/config/hierarchy-config.ts): `.product(...)` / `.channel(...)`
-2. [`shared/config/config.default.ts`](../shared/config/config.default.ts): `entityTypes`, `productEntityTypes`/`channelEntityTypes`, `entityIdColumnKeys` (+ optional arrays)
+2. [`shared/config/config.default.ts`](../shared/config/config.default.ts): taxonomy + id columns derive from the hierarchy automatically; add optional arrays only (`seenTrackedProductTypes`, `productEmbeddings`, `menuStructure`, quotas, request limits)
 3. [`shared/config/permissions-config.ts`](../shared/config/permissions-config.ts): a `case` in the policy switch
 4. `backend/src/modules/<name>/<name>-db.ts`: the Drizzle table
 5. [`backend/src/tables.ts`](../backend/src/tables.ts): add to `entityTables`

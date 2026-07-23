@@ -1,9 +1,21 @@
+import { toColumnName } from '../permissions/schema-naming';
 
 /** Minimal hierarchy surface needed for attribution: lets tests inject a synthetic hierarchy. */
 export interface AncestorSource {
   getOrderedAncestors(entityType: string): readonly string[];
   getNullableAncestors(entityType: string): readonly string[];
 }
+
+/**
+ * The id-column key convention (`project` to `projectId`), the single runtime source of the
+ * rule. Config validation pins `appConfig.entityIdColumnKeys` to this shape, so the rule holds
+ * for any entity type, including injected or under-construction hierarchies whose types are
+ * absent from the current fork's config.
+ */
+export const entityIdColumnKey = (entityType: string): string => `${entityType}Id`;
+
+/** The id-column SQL name convention (`courseSection` to `course_section_id`). */
+export const entityIdColumnName = (entityType: string): string => `${toColumnName(entityType)}_id`;
 
 export interface ResolvedAncestor {
   /** Ancestor channel type (e.g. 'project'). */
@@ -22,7 +34,7 @@ export function resolveNonNullAncestors(
 ): ResolvedAncestor[] {
   const ancestors: ResolvedAncestor[] = [];
   for (const type of hierarchy.getOrderedAncestors(entityType)) {
-    const idColumn = `${type}Id`;
+    const idColumn = entityIdColumnKey(type);
     const id = row[idColumn];
     if (typeof id === 'string' && id) ancestors.push({ type, idColumn, id });
   }
@@ -36,7 +48,7 @@ export function resolveDeepestAncestorId(
   row: Record<string, unknown>,
 ): string | null {
   for (const type of hierarchy.getOrderedAncestors(entityType)) {
-    const id = row[`${type}Id`];
+    const id = row[entityIdColumnKey(type)];
     if (typeof id === 'string' && id) return id;
   }
   return null;

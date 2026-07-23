@@ -1,11 +1,12 @@
 import { appConfig } from '../../config-builder/app-config';
 import { hierarchy } from '../../../config/hierarchy-config';
 import type { ChannelEntityType, EntityActionType } from '../../../types';
-import type { PermissionTopology, TopologyHierarchy } from './topology';
+import type { EntityHierarchy } from '../../config-builder/entity-hierarchy';
+import type { PermissionTopology } from './topology';
 
 /** The topology surface the permission machinery reads, with the app singletons as defaults. */
 export interface ResolvedTopology {
-  hierarchy: TopologyHierarchy;
+  hierarchy: EntityHierarchy;
   entityActions: readonly EntityActionType[];
   channelEntityTypes: readonly ChannelEntityType[];
   getRoles: (type: string) => readonly string[];
@@ -17,7 +18,7 @@ export interface ResolvedTopology {
  * binding.
  */
 export const resolveTopology = (topology?: PermissionTopology): ResolvedTopology => {
-  const h: TopologyHierarchy = topology?.hierarchy ?? hierarchy;
+  const h: EntityHierarchy = topology?.hierarchy ?? hierarchy;
   return {
     hierarchy: h,
     entityActions: (topology?.entityActions ?? appConfig.entityActions) as readonly EntityActionType[],

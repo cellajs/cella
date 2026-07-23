@@ -1,9 +1,17 @@
+import { hierarchy } from './config/config.default';
+
 // App configuration
 export { appConfig } from './src/config-builder/app-config';
 export type { ConfigMode } from './src/config-builder/types';
 
 // Entity hierarchy & roles
 export { hierarchy, roles } from './config/config.default';
+
+// Bound guard facade: these ARE the app singleton's methods (arrow fields, so binding is
+// preserved), re-exported for the two highest-frequency checks. Everything else stays on
+// the instance. Test mocks that replace `hierarchy` must override these from the same
+// synthetic instance.
+export const { isChannel, isProduct } = hierarchy;
 
 // Entity hierarchy types and builder functions
 export type {
@@ -20,23 +28,11 @@ export {
   createRoleRegistry,
 } from './src/config-builder/entity-hierarchy';
 
-// Row-to-home attribution (shared rule for CDC counters/self summaries, notifications, recalculation)
-export type { AncestorSource, ResolvedAncestor } from './src/config-builder/resolve-row-channel';
-export {
-  possibleHomeChannels,
-  resolveDeepestAncestorId,
-  resolveNonNullAncestors,
-} from './src/config-builder/resolve-row-channel';
-
-// Stored ID-path rule for sequence routing, move-out, and subtree addressing.
-export {
-  computeAncestorPath,
-  computeChannelPath,
-  computeProductPath,
-  pathHomeId,
-  pathSegments,
-  pathStartsWith,
-} from './src/config-builder/row-path';
+// Row location: home attribution and paths are instance methods on EntityHierarchy.
+// Only the naming rule and the pure path-string helpers remain as free exports.
+export type { ResolvedAncestor } from './src/config-builder/resolve-row-channel';
+export { entityIdColumnKey, entityIdColumnName } from './src/config-builder/resolve-row-channel';
+export { pathHomeId, pathSegments, pathStartsWith } from './src/config-builder/row-path';
 
 // Config builder types
 export type { AppServiceEndpointConfig, RequestLimitsConfig, RequiredConfig, S3Config, S3ConfigInput } from './src/config-builder/types';
@@ -52,7 +48,6 @@ export type {
   EntityActionType,
   EntityIdColumnKey,
   EntityIdColumnKeys,
-  EntityIdColumnKeysShape,
   EntityIdColumns,
   EntityRole,
   EntityType,
@@ -78,13 +73,7 @@ export type {
 // Activity actions and event types (value exports)
 export { activityActions, activityEventTypes, activityVerbs, actionToVerb, isValidEventType } from './types';
 
-export {
-  getChannelRoles,
-  isChannelEntity,
-  isProductEntity,
-} from './src/entity-guards';
-
-export { hasKey, recordFromKeys, identityRecord, typedEntries, typedKeys } from './src/config-builder/utils';
+export { hasKey, identityRecord, nonEmpty, recordFromKeys, typedEntries, typedKeys } from './src/config-builder/utils';
 export { seenWindowMs } from './src/seen-window';
 export { draftVisibleTo, isUnpublishedDraft } from './src/published-rows';
 

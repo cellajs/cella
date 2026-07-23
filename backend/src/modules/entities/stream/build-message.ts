@@ -1,4 +1,4 @@
-import { appConfig, type ChannelEntityType, hierarchy, isProductEntity, resolveDeepestAncestorId } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy, isProduct, pathHomeId } from 'shared';
 import { dbPoolPressure } from '#/db/db';
 import { type ActivityEvent, getEventData } from '#/lib/activity-bus';
 import type { StreamNotification } from '#/schemas';
@@ -30,7 +30,7 @@ function computeSpreadWindow(organizationId: string | null): number | null {
  * and to branch dispatch/handling on either end.
  */
 export function appNotificationKind(event: Pick<ActivityEvent, 'entityType'>): 'product' | 'membership' {
-  return isProductEntity(event.entityType) ? 'product' : 'membership';
+  return isProduct(event.entityType) ? 'product' : 'membership';
 }
 
 /** Type-guard form of {@link appNotificationKind}: narrows an app-stream event to the membership member. */
@@ -50,7 +50,7 @@ export function isMembershipEvent(event: AppStreamEvent): event is AppStreamMemb
  */
 export function buildStreamNotification(event: ActivityEvent): StreamNotification {
   const { entityType } = event;
-  const isProduct = isProductEntity(entityType);
+  const isProductEvent = isProduct(entityType);
 
   // Extract channelType for membership events
   const membership = event.resourceType === 'membership' ? getEventData(event, 'membership') : null;
@@ -60,11 +60,11 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   // non-null ancestor. Variable-depth rows group under their effective home. Grouping only:
   // the org sequence does not key on this.
   let channelId: string | null = null;
-  if (isProduct && entityType) {
-    channelId = resolveDeepestAncestorId(hierarchy, entityType, event as unknown as Record<string, unknown>);
+  if (isProductEvent && entityType) {
+    channelId = hierarchy.resolveDeepestAncestorId(entityType, event as unknown as Record<string, unknown>);
   }
 
-  const stx = (isProduct && event.stx) || null;
+  const stx = (isProductEvent && event.stx) || null;
 
   // Derive propagation hint for embedded product types (e.g., label → task.labels).
   // For batch events, propagation is pre-set by the CDC worker. For single entity
@@ -84,17 +84,17 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     }
   }
 
-  // Stored ID path of the affected rows (message groups are per path, so the
-  // representative row's path speaks for the whole batch).
+  // Location path of the affected rows, computed from ancestor id columns (message groups
+  // are per path, so the representative row's path speaks for the whole batch).
   const rowData = event.rowData as Record<string, unknown> | null;
-  const path = isProduct && rowData && typeof rowData.path === 'string' ? rowData.path : null;
+  const path = isProductEvent && rowData && entityType ? hierarchy.computeProductPath(entityType, rowData) : null;
 
   return {
     // Discriminant: product entities go through the seq sync path;
     // everything else on this stream is a membership change (query invalidation).
     kind: appNotificationKind(event),
     action: event.action,
-    productType: isProduct ? entityType : null,
+    productType: isProductEvent ? entityType : null,
     resourceType: event.resourceType,
     subjectId: event.subjectId,
     organizationId: event.organizationId,
@@ -102,30 +102,30 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     channelType,
     path,
     channelId,
-    seq: isProduct ? (event.seq ?? null) : null,
+    seq: isProductEvent ? (event.seq ?? null) : null,
     stx,
     batchUntilSeq: event.batchUntilSeq ?? null,
-    count: isProduct ? (event.count ?? null) : null,
-    spreadWindow: isProduct ? computeSpreadWindow(event.organizationId) : null,
+    count: isProductEvent ? (event.count ?? null) : null,
+    spreadWindow: isProductEvent ? computeSpreadWindow(event.organizationId) : null,
     propagation,
   };
 }
 
 /**
- * Move-out notification: the row left `movedFrom.path` (reparent). Sent ONLY to
+ * Move-out notification: the row left the location computed from `movedFrom` (reparent). Sent ONLY to
  * subscribers who could read the old location but not the new one. For them the
  * row effectively disappeared, and no delta fetch will return it (permission-filtered),
  * so the notification itself is the removal instruction.
  */
 export function buildMoveOutNotification(event: ActivityEvent, movedFrom: Record<string, unknown>): StreamNotification {
   const base = buildStreamNotification(event);
-  const oldPath = typeof movedFrom.path === 'string' ? movedFrom.path : null;
+  const oldPath = event.entityType ? hierarchy.computeProductPath(event.entityType, movedFrom) : null;
   return {
     ...base,
     action: 'moveOut',
     path: oldPath,
     // The old path's deepest segment is the old home channel (unseen grouping).
-    channelId: oldPath ? (oldPath.split('/').pop() ?? null) : base.channelId,
+    channelId: oldPath ? pathHomeId(oldPath) : base.channelId,
     // No range to fetch: the removal is the payload.
     batchUntilSeq: null,
     count: 1,

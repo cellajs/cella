@@ -488,7 +488,6 @@ export type Attachment = {
   deletedBy: string | null;
   publicAt: string | null;
   seq: number;
-  path: string | null;
   /**
    * When true, served directly from the CDN without a presigned URL.
    */

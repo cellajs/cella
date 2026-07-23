@@ -1,9 +1,9 @@
-import { hierarchy, resolveDeepestAncestorId, resolveNonNullAncestors } from 'shared';
-import type { ActivityAction, AncestorSource } from 'shared';
+import { hierarchy } from 'shared';
+import type { EntityHierarchy, ActivityAction } from 'shared';
 import type { PendingEvent, TableMeta } from '../types';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData } from '../types';
-import { type CountsHierarchy, getCountDeltas, isMaxMergeKey } from './update-counts';
+import { getCountDeltas, isMaxMergeKey } from './update-counts';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,9 +38,9 @@ export function resolveChannelKey(
   entityType: string,
   rowData: CdcRowData,
   activity: ActivityWithoutId,
-  h: AncestorSource = hierarchy,
+  h: EntityHierarchy = hierarchy,
 ): string {
-  const deepest = resolveDeepestAncestorId(h, entityType, rowData);
+  const deepest = h.resolveDeepestAncestorId(entityType, rowData);
   if (deepest) return deepest;
   if (activity.organizationId) return activity.organizationId;
   throw new Error(`No context for ${entityType} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
@@ -55,10 +55,10 @@ export function frontierNodeKeys(
   entityType: string,
   rowData: CdcRowData,
   organizationId: string,
-  h: AncestorSource = hierarchy,
+  h: EntityHierarchy = hierarchy,
 ): string[] {
   const nodes = [organizationId];
-  for (const ancestor of resolveNonNullAncestors(h, entityType, rowData)) {
+  for (const ancestor of h.resolveNonNullAncestors(entityType, rowData)) {
     if (ancestor.id !== organizationId) nodes.push(ancestor.id);
   }
   return nodes;
@@ -85,7 +85,7 @@ export function mergeDelta(
 }
 
 /** Check if this event should get a sequence stamp (product entity create/update). */
-function isStampable(tableMeta: TableMeta, action: ActivityAction, h: CountsHierarchy): boolean {
+function isStampable(tableMeta: TableMeta, action: ActivityAction, h: EntityHierarchy): boolean {
   return tableMeta.kind === 'entity' && h.isProduct(tableMeta.type) && (action === 'create' || action === 'update');
 }
 
@@ -97,7 +97,7 @@ function isStampable(tableMeta: TableMeta, action: ActivityAction, h: CountsHier
  * sequence; WAL order within the batch is preserved), accumulates all count deltas.
  * Frontier (`e:f:`) deltas are emitted at apply time, once sequence values are assigned.
  */
-export function computeBatchUnifiedDeltas(events: PendingEvent[], h: CountsHierarchy = hierarchy): BatchUnifiedDeltaPlan {
+export function computeBatchUnifiedDeltas(events: PendingEvent[], h: EntityHierarchy = hierarchy): BatchUnifiedDeltaPlan {
   const countDeltasByChannelKey = new Map<string, Record<string, number>>();
   const orgSequenceGroupMap = new Map<string, OrgSequenceGroup>();
 

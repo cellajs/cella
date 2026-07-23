@@ -26,7 +26,6 @@ shared
     ├── permissions/               Access policies, computeCan, shared by backend & frontend
     ├── tracing/                   OpenTelemetry setup, span names, span processor
     ├── utils/                     Display order, entity IDs, nanoid, worker lifecycle, etc.
-    ├── entity-guards.ts           Type guards for entity types
     ├── otel.ts                    OTel convenience exports
     └── pino.ts                    Shared Pino logger config
 ```

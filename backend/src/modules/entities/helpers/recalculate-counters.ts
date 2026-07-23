@@ -1,5 +1,6 @@
 import { getColumns, getTableName, sql } from 'drizzle-orm';
-import { type AncestorSource, appConfig, type EntityType, hierarchy, roles } from 'shared';
+import type { EntityHierarchy } from 'shared';
+import { appConfig, type EntityType, entityIdColumnName, hierarchy, roles } from 'shared';
 import type { DbOrTx } from '#/db/db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
@@ -9,9 +10,6 @@ import { getEntityTable } from '#/tables';
 
 /** Entity type to SQL table name (e.g. 'task' to 'tasks') */
 const tbl = (et: EntityType) => getTableName(getEntityTable(et));
-
-/** Entity type to FK column name (e.g. 'project' to 'project_id') */
-const fkCol = (et: string) => `${et.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`)}_id`;
 
 /**
  * Live-rows-only predicate for soft-deleting tables. CDC decrements e:c: counters on
@@ -35,11 +33,8 @@ const publishedPredicate = (et: EntityType, alias: string) =>
  * Matches CDC's `resolveChannelKey`: variable-depth rows scope to their effective home.
  * Exported for tests; the hierarchy parameter exists to prove the SQL shape on synthetic hierarchies.
  */
-export const deepestAncestorExpr = (et: string, alias: string, h: AncestorSource = hierarchy) => {
-  const ancestors = h.getOrderedAncestors(et);
-  if (!ancestors.length) return null;
-  return `COALESCE(${ancestors.map((a) => `${alias}.${fkCol(a)}`).join(', ')})`;
-};
+export const deepestAncestorExpr = (et: string, alias: string, h: EntityHierarchy = hierarchy) =>
+  h.deepestAncestorSql(et, alias);
 
 /** JSONB pair with a COUNT subquery: 'key', COALESCE((SELECT COUNT(*) …), 0) */
 const countPair = (key: string, from: string, where: string) =>
@@ -106,7 +101,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   // Full attribution: every descendant type counts on every ancestor level it carries a
   // non-null FK for (matches CDC's getEntityDeltas), not just direct product children.
   for (const ctxType of hierarchy.channelTypes.filter((ct) => ct !== 'organization')) {
-    const fk = fkCol(ctxType);
+    const fk = entityIdColumnName(ctxType);
     const descendants = hierarchy.getOrderedDescendants(ctxType);
     const allPairs = [
       ...membershipPairs('ctx', fk, ctxType, hierarchy.getRoles(ctxType)),
@@ -165,7 +160,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
     // matching CDC's frontierNodeKeys: org + every non-null ancestor).
     for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
       if (ancestor === 'organization') continue;
-      const col = fkCol(ancestor);
+      const col = entityIdColumnName(ancestor);
       await upsertChannelCounters(
         db,
         `

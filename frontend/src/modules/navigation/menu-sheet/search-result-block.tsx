@@ -2,7 +2,7 @@ import { ChevronDownIcon, UserIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase } from 'sdk';
-import { type ChannelEntityType, isChannelEntity } from 'shared';
+import { type ChannelEntityType, isChannel } from 'shared';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
@@ -19,7 +19,7 @@ type SearchBlockProps = {
 
 export const SearchResultBlock = ({ results, entityType, hideSeparator = false }: SearchBlockProps) => {
   const { t } = useTranslation();
-  const isChannel = isChannelEntity(entityType);
+  const isChannelType = isChannel(entityType);
   const [collapsed, setCollapsed] = useState(false);
 
   if (!results.length) return null;
@@ -43,8 +43,8 @@ export const SearchResultBlock = ({ results, entityType, hideSeparator = false }
             <ComboboxItem
               key={item.id}
               value={item}
-              disabled={isChannel && 'membership' in item && item.membership === null}
-              data-already-member={isChannel && 'membership' in item && item.membership !== null}
+              disabled={isChannelType && 'membership' in item && item.membership === null}
+              data-already-member={isChannelType && 'membership' in item && item.membership !== null}
               className={`group w-full justify-between ${collapsed && 'hidden'}`}
             >
               <div className="group flex items-center space-x-2 outline-0 ring-0">

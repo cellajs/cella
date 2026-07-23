@@ -98,9 +98,8 @@ describe('dispatchMoveOuts', () => {
     // keeping the readability difference fork-independent (read:1 reads it regardless).
     await dispatchMoveOuts(
       updateEvent({
-        rowData: row('att-1', { path: `${ORG}/new-spot`, publishedAt: null }),
+        rowData: row('att-1', { publishedAt: null }),
         movedFrom: row('att-1', {
-          path: `${ORG}/old-spot`,
           publishedAt: '2026-07-01T00:00:00Z',
           createdBy: 'member-user',
         }),
@@ -113,7 +112,8 @@ describe('dispatchMoveOuts', () => {
       action: 'moveOut',
       productType: 'attachment',
       subjectId: 'att-1',
-      path: `${ORG}/old-spot`,
+      // Computed from movedFrom's ancestor ids; org-homed attachments resolve to the org id.
+      path: ORG,
       batchUntilSeq: null,
       count: 1,
     });
@@ -128,8 +128,8 @@ describe('dispatchMoveOuts', () => {
     // could pass vacuously (member reads neither location, so of course no moveOut fires).
     await dispatchMoveOuts(
       updateEvent({
-        rowData: row('att-1', { path: `${ORG}/new-spot`, createdBy: 'member-user' }),
-        movedFrom: row('att-1', { path: `${ORG}/old-spot`, createdBy: 'member-user' }),
+        rowData: row('att-1', { createdBy: 'member-user' }),
+        movedFrom: row('att-1', { createdBy: 'member-user' }),
       }),
     );
 
@@ -140,7 +140,7 @@ describe('dispatchMoveOuts', () => {
     const member = fakeSubscriber([membership(ORG, 'member', 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
-    await dispatchMoveOuts(updateEvent({ rowData: row('att-1', { path: `${ORG}/spot` }) }));
+    await dispatchMoveOuts(updateEvent({ rowData: row('att-1') }));
 
     expect(member.received).toHaveLength(0);
   });
@@ -154,14 +154,13 @@ describe('dispatchMoveOuts', () => {
     // regardless), keeping the readability differences fork-independent.
     await dispatchMoveOuts(
       updateEvent({
-        rowData: row('att-1', { path: `${ORG}/a` }),
+        rowData: row('att-1'),
         batchRows: [
           // Moved AND unpublished → moveOut for the org member.
           {
             seq: 8,
-            rowData: row('att-2', { path: `${ORG}/b-new`, publishedAt: null }),
+            rowData: row('att-2', { publishedAt: null }),
             movedFrom: row('att-2', {
-              path: `${ORG}/b-old`,
               publishedAt: '2026-07-01T00:00:00Z',
               createdBy: 'member-user',
             }),
@@ -169,16 +168,16 @@ describe('dispatchMoveOuts', () => {
           // Moved but still readable → routed by the normal update, no moveOut.
           {
             seq: 9,
-            rowData: row('att-3', { path: `${ORG}/c-new`, createdBy: 'member-user' }),
-            movedFrom: row('att-3', { path: `${ORG}/c-old`, createdBy: 'member-user' }),
+            rowData: row('att-3', { createdBy: 'member-user' }),
+            movedFrom: row('att-3', { createdBy: 'member-user' }),
           },
           // Not moved at all.
-          { seq: 10, rowData: row('att-4', { path: `${ORG}/d` }) },
+          { seq: 10, rowData: row('att-4') },
         ],
       }),
     );
 
     expect(member.received).toHaveLength(1);
-    expect(member.received[0]).toMatchObject({ action: 'moveOut', subjectId: 'att-2', path: `${ORG}/b-old` });
+    expect(member.received[0]).toMatchObject({ action: 'moveOut', subjectId: 'att-2', path: ORG });
   });
 });

@@ -1,4 +1,4 @@
-import type { AncestorSource } from './resolve-row-channel';
+import { type AncestorSource, entityIdColumnKey, entityIdColumnName } from './resolve-row-channel';
 
 /**
  * Builds a root-first path from populated ancestor IDs, optionally appending a channel row's ID.
@@ -11,17 +11,17 @@ export function computeAncestorPath(
   row: Record<string, unknown>,
 ): string | null {
   // getOrderedAncestors is most-specific → root; paths are root-first.
-  const rootFirst = [...hierarchy.getOrderedAncestors(entityType)].reverse();
-  if (rootFirst.length === 0) return null;
+  const [root, ...deeper] = [...hierarchy.getOrderedAncestors(entityType)].reverse();
+  if (root === undefined) return null;
 
   const segments: string[] = [];
-  for (const type of rootFirst) {
-    const id = row[`${type}Id`];
+  for (const type of [root, ...deeper]) {
+    const id = row[entityIdColumnKey(type)];
     if (typeof id === 'string' && id) segments.push(id);
   }
   // The root (organization) ancestor is structurally non-null for every product/channel
   // below it; a row without it has no addressable subtree.
-  const rootId = row[`${rootFirst[0]}Id`];
+  const rootId = row[entityIdColumnKey(root)];
   if (typeof rootId !== 'string' || !rootId) return null;
   return segments.join('/');
 }
@@ -65,4 +65,37 @@ export function pathSegments(path: string): string[] {
 export function pathHomeId(path: string): string {
   const segments = pathSegments(path);
   return segments[segments.length - 1] ?? path;
+}
+
+/**
+ * SQL twin of {@link computeAncestorPath} / {@link computeChannelPath}, kept adjacent so the
+ * two rules stay provably identical (see the path parity tests). Produces the generated-column
+ * expression `"organization_id"::text || COALESCE('/' || "course_id"::text, '') || ...`,
+ * appending `'/' || "id"::text` when `appendOwnId` (channel entities). The expression updates
+ * atomically on reparenting, skips nullable intermediate ancestors, and requires a non-null
+ * root organization.
+ */
+export function pathColumnSql(hierarchy: AncestorSource, entityType: string, appendOwnId: boolean): string {
+  // getOrderedAncestors is most-specific → root; path segments are root-first.
+  const [root, ...deeper] = [...hierarchy.getOrderedAncestors(entityType)].reverse();
+
+  // Root channel (organization): the path is its own id.
+  if (root === undefined) return `"id"::text`;
+
+  const parts = [`"${entityIdColumnName(root)}"::text`];
+  for (const ancestor of deeper) {
+    parts.push(`COALESCE('/' || "${entityIdColumnName(ancestor)}"::text, '')`);
+  }
+  if (appendOwnId) parts.push(`'/' || "id"::text`);
+  return parts.join(' || ');
+}
+
+/**
+ * SQL twin of `resolveDeepestAncestorId`: a COALESCE over the aliased ancestor id columns,
+ * most-specific first. Null when the entity has no ancestors.
+ */
+export function deepestAncestorSql(hierarchy: AncestorSource, entityType: string, alias: string): string | null {
+  const ancestors = hierarchy.getOrderedAncestors(entityType);
+  if (!ancestors.length) return null;
+  return `COALESCE(${ancestors.map((a) => `${alias}.${entityIdColumnName(a)}`).join(', ')})`;
 }

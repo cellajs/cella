@@ -1,4 +1,4 @@
-import { type EntityType, isProductEntity, type ProductEntityType } from 'shared';
+import { type EntityType, isProduct, type ProductEntityType } from 'shared';
 import type { ItemData } from '~/query/basic/types';
 
 /** Minimal query keys interface needed by stream handlers. */
@@ -103,7 +103,7 @@ export function getRegisteredEntityTypes(): string[] {
 
 /** Registered entity types that are product entities: client-wired and product-classified. */
 export function getRegisteredProductEntityTypes(): ProductEntityType[] {
-  return getRegisteredEntityTypes().filter(isProductEntity);
+  return getRegisteredEntityTypes().filter((t) => isProduct(t));
 }
 
 /** The entity type's delta fetch function, or undefined if it does not support delta fetching. */

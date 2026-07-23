@@ -1,0 +1,71 @@
+import { createEntityHierarchy, createRoleRegistry } from '../config-builder/entity-hierarchy';
+import type { AccessPolicies, PermissionTopology, PermissionValue } from '../permissions';
+import { configureAccessPolicies } from '../permissions/access-policies';
+import type { EntityType } from '../../types';
+
+// Deep synthetic topology (projectcampus-shaped): 4 channel levels with an `item` product whose
+// rows attach at any depth, typed independently of any fork's app config. Path, home-resolution,
+// counter, permission-proving, and view-derivation suites all test against this ONE topology so
+// the subsystems that must agree on path semantics are proven against the same shape.
+export type DeepChannelType = 'organization' | 'course' | 'courseSection' | 'project';
+export type DeepNullableAncestor = 'project' | 'courseSection' | 'course';
+
+export const deepRoles = createRoleRegistry(['admin', 'member', 'staff', 'student', 'owner', 'follower'] as const);
+
+/** Role sets granted per channel level; suites that assert per-role behavior key off these. */
+export const deepChannelRoles = {
+  organization: ['admin', 'member'],
+  course: ['staff', 'student'],
+  courseSection: ['staff', 'student'],
+  project: ['owner', 'follower'],
+} as const satisfies Record<DeepChannelType, readonly string[]>;
+
+/** Entity vocabulary for policy configuration (excludes the auxiliary `task` product). */
+export const deepEntityTypes = ['user', 'organization', 'course', 'courseSection', 'project', 'item'] as const;
+
+/**
+ * Builds the deep hierarchy. The default marks every intermediate ancestor of `item` nullable
+ * (rows attach at any depth, organization included). Suites proving nullable-boundary behavior
+ * (missing-ancestor warnings, possible home channels) pass a narrower list to keep `course`
+ * non-nullable. `task` is a fixed-depth sibling product for declared-parent fallback assertions.
+ */
+export const makeDeepHierarchy = (
+  itemNullableAncestors: readonly DeepNullableAncestor[] = ['project', 'courseSection', 'course'],
+) =>
+  createEntityHierarchy(deepRoles)
+    .user()
+    .channel('organization', { parent: null, roles: deepChannelRoles.organization })
+    .channel('course', { parent: 'organization', roles: deepChannelRoles.course })
+    .channel('courseSection', { parent: 'course', roles: deepChannelRoles.courseSection })
+    .channel('project', { parent: 'courseSection', roles: deepChannelRoles.project })
+    .product('item', { parent: 'project', nullableAncestors: itemNullableAncestors })
+    .product('task', { parent: 'project' })
+    .build();
+
+/** Canonical deep hierarchy: `item` attaches at any depth. */
+export const deepHierarchy = makeDeepHierarchy();
+
+/** Topology seam wrapper for the permission engine and scope compiler. */
+export const deepTopology: PermissionTopology = { hierarchy: deepHierarchy };
+
+/**
+ * `item` read policies over the deep topology, one read cell per channel level and role.
+ * `readValue` decides each cell so suites can express grant matrices as a single function.
+ */
+export const deepReadPolicies = (
+  readValue: (channelType: DeepChannelType, role: string) => PermissionValue,
+): AccessPolicies =>
+  configureAccessPolicies(
+    deepEntityTypes as unknown as readonly EntityType[],
+    ({ subject, contexts }) => {
+      if ((subject.name as string) !== 'item') return;
+      const builders = contexts as unknown as Record<
+        DeepChannelType,
+        Record<string, (perms: { read: PermissionValue }) => void>
+      >;
+      for (const [channelType, roles] of Object.entries(deepChannelRoles) as [DeepChannelType, readonly string[]][]) {
+        for (const role of roles) builders[channelType][role]?.({ read: readValue(channelType, role) });
+      }
+    },
+    deepTopology,
+  );

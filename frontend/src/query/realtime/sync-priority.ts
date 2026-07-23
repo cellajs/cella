@@ -1,5 +1,5 @@
 import type { GetMyMembershipsResponse } from 'sdk';
-import { hierarchy } from 'shared';
+import { isProduct } from 'shared';
 import { queryClient } from '~/query/query-client';
 import { isObservedChannel } from '~/query/realtime/observed-channels';
 import { useSyncStore } from '~/query/realtime/sync-store';
@@ -92,7 +92,7 @@ function isMutedOrArchived(organizationId: string, channelId: string | null): bo
 
 /** Set the sole sync priority: viewed scopes live, muted scopes on open, and others in background. */
 export function getSyncTier(entityType: string, organizationId: string, channelId: string | null): SyncTier {
-  if (!hierarchy.isProduct(entityType)) return TIER_ON_OPEN;
+  if (!isProduct(entityType)) return TIER_ON_OPEN;
   if (isViewingChannel(organizationId, channelId)) return TIER_VIEWING;
   if (isMutedOrArchived(organizationId, channelId)) return TIER_ON_OPEN;
   return TIER_BACKGROUND;

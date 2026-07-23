@@ -6,13 +6,8 @@ import {
   appConfig,
   type ChannelEntityType,
   computeCan,
-  createEntityHierarchy,
-  createRoleRegistry,
-  type EntityType,
   getAllDecisions,
-  getChannelRoles,
   hierarchy,
-  type PermissionTopology,
   type PermissionValue,
   type ProductEntityType,
   type PublicReadGrants,
@@ -20,6 +15,12 @@ import {
   type SubjectForPermission,
   toColumnName,
 } from 'shared';
+import {
+  type DeepChannelType,
+  deepChannelRoles,
+  deepReadPolicies as deepPolicies,
+  deepTopology,
+} from 'shared/testing/deep-fixture';
 import { configureAccessPolicies } from 'shared/testing/policies';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { seedDb } from '#/db/db';
@@ -117,7 +118,7 @@ const randomPolicies = (random: () => number): AccessPolicies =>
     if (subject.name !== 'attachment') return;
     const builders = contexts as unknown as Record<string, Record<string, (perms: { read: PermissionValue }) => void>>;
     for (const ctx of CHAIN) {
-      for (const role of getChannelRoles(ctx)) {
+      for (const role of hierarchy.getRoles(ctx)) {
         builders[ctx][role]({ read: randomReadValue(random) });
       }
     }
@@ -165,10 +166,10 @@ const randomScenario = (random: () => number): Scenario => {
   }
 
   const memberships: MembershipBaseModel[] = [];
-  if (random() < 0.4) memberships.push(membership(ROOT, ROOT_ID, pick(random, getChannelRoles(ROOT))));
+  if (random() < 0.4) memberships.push(membership(ROOT, ROOT_ID, pick(random, hierarchy.getRoles(ROOT))));
   if (SUB) {
     for (const subId of SUB_INSTANCES) {
-      if (random() < 0.4) memberships.push(membership(SUB, subId, pick(random, getChannelRoles(SUB))));
+      if (random() < 0.4) memberships.push(membership(SUB, subId, pick(random, hierarchy.getRoles(SUB))));
     }
   }
   return {
@@ -336,27 +337,8 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
   });
 });
 
-// This synthetic four-level topology exercises intermediate ancestor grants. Both the
-// engine and scope compiler receive it through their topology seam.
-const deepRoles = createRoleRegistry(['admin', 'member', 'staff', 'student', 'owner', 'follower'] as const);
-const deepHierarchy = createEntityHierarchy(deepRoles)
-  .user()
-  .channel('organization', { parent: null, roles: ['admin', 'member'] })
-  .channel('course', { parent: 'organization', roles: ['staff', 'student'] })
-  .channel('courseSection', { parent: 'course', roles: ['staff', 'student'] })
-  .channel('project', { parent: 'courseSection', roles: ['owner', 'follower'] })
-  .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection', 'course'] })
-  .build();
-const deepTopology: PermissionTopology = { hierarchy: deepHierarchy };
-
-type DeepChannelType = 'organization' | 'course' | 'courseSection' | 'project';
-const DEEP_ENTITY_TYPES = ['user', 'organization', 'course', 'courseSection', 'project', 'item'] as const;
-const DEEP_CHANNEL_ROLES = {
-  organization: ['admin', 'member'],
-  course: ['staff', 'student'],
-  courseSection: ['staff', 'student'],
-  project: ['owner', 'follower'],
-} as const satisfies Record<DeepChannelType, readonly string[]>;
+// The shared deep fixture exercises intermediate ancestor grants. Both the engine and
+// scope compiler receive its topology through their topology seam.
 const DEEP_ITEM = 'item' as unknown as ProductEntityType;
 
 // Column keys follow the `${channelType}Id` convention `buildCollectionReadWhere` falls
@@ -401,23 +383,6 @@ const DEEP_ROWS: DeepParityRow[] = [...USERS, null].flatMap((createdBy) =>
   })),
 );
 
-/** Policies for `item` over the synthetic topology, one read cell per context × role. */
-const deepPolicies = (readValue: (channelType: DeepChannelType, role: string) => PermissionValue): AccessPolicies =>
-  configureAccessPolicies(
-    DEEP_ENTITY_TYPES as unknown as readonly EntityType[],
-    ({ subject, contexts }) => {
-      if ((subject.name as string) !== 'item') return;
-      const builders = contexts as unknown as Record<
-        DeepChannelType,
-        Record<string, (perms: { read: PermissionValue }) => void>
-      >;
-      for (const [channelType, roles] of Object.entries(DEEP_CHANNEL_ROLES) as [DeepChannelType, readonly string[]][]) {
-        for (const role of roles) builders[channelType][role]({ read: readValue(channelType, role) });
-      }
-    },
-    deepTopology,
-  );
-
 const deepMembership = (channelType: DeepChannelType, channelId: string, role: string): MembershipBaseModel =>
   ({
     id: `mem-${channelType}-${channelId}-${role}`,
@@ -437,13 +402,13 @@ interface DeepScenario {
 const randomDeepScenario = (random: () => number): DeepScenario => {
   const memberships: MembershipBaseModel[] = [];
   if (random() < 0.5)
-    memberships.push(deepMembership('organization', ROOT_ID, pick(random, DEEP_CHANNEL_ROLES.organization)));
-  if (random() < 0.5) memberships.push(deepMembership('course', 'c1', pick(random, DEEP_CHANNEL_ROLES.course)));
-  if (random() < 0.3) memberships.push(deepMembership('course', 'c2', pick(random, DEEP_CHANNEL_ROLES.course)));
+    memberships.push(deepMembership('organization', ROOT_ID, pick(random, deepChannelRoles.organization)));
+  if (random() < 0.5) memberships.push(deepMembership('course', 'c1', pick(random, deepChannelRoles.course)));
+  if (random() < 0.3) memberships.push(deepMembership('course', 'c2', pick(random, deepChannelRoles.course)));
   if (random() < 0.5)
-    memberships.push(deepMembership('courseSection', 's1', pick(random, DEEP_CHANNEL_ROLES.courseSection)));
-  if (random() < 0.5) memberships.push(deepMembership('project', 'p1', pick(random, DEEP_CHANNEL_ROLES.project)));
-  if (random() < 0.3) memberships.push(deepMembership('project', 'p3', pick(random, DEEP_CHANNEL_ROLES.project)));
+    memberships.push(deepMembership('courseSection', 's1', pick(random, deepChannelRoles.courseSection)));
+  if (random() < 0.5) memberships.push(deepMembership('project', 'p1', pick(random, deepChannelRoles.project)));
+  if (random() < 0.3) memberships.push(deepMembership('project', 'p3', pick(random, deepChannelRoles.project)));
   return {
     policies: deepPolicies(() => randomReadValue(random)),
     memberships,
@@ -650,13 +615,13 @@ const randomRealScenario = (
   random: () => number,
 ): { memberships: MembershipBaseModel[]; userId: string; isSystemAdmin: boolean } => {
   const memberships: MembershipBaseModel[] = [];
-  if (random() < 0.5) memberships.push(realMembership(ROOT, ROOT_ID, pick(random, getChannelRoles(ROOT)), ROOT_ID));
+  if (random() < 0.5) memberships.push(realMembership(ROOT, ROOT_ID, pick(random, hierarchy.getRoles(ROOT)), ROOT_ID));
   // A grant in a DIFFERENT org must contribute nothing to this org's collection
   if (random() < 0.3)
-    memberships.push(realMembership(ROOT, 'org-other', pick(random, getChannelRoles(ROOT)), 'org-other'));
+    memberships.push(realMembership(ROOT, 'org-other', pick(random, hierarchy.getRoles(ROOT)), 'org-other'));
   if (SUB) {
     for (const subId of SUB_INSTANCES) {
-      if (random() < 0.4) memberships.push(realMembership(SUB, subId, pick(random, getChannelRoles(SUB)), ROOT_ID));
+      if (random() < 0.4) memberships.push(realMembership(SUB, subId, pick(random, hierarchy.getRoles(SUB)), ROOT_ID));
     }
   }
   // SSE subscribers are always authenticated; 'outsider' stands in for a user with no rows
