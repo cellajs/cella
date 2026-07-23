@@ -2,7 +2,7 @@ import { ChevronDownIcon, UserIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase } from 'sdk';
-import { type ChannelEntityType, isChannelEntity } from 'shared';
+import { type ChannelEntityType, hierarchy } from 'shared';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
@@ -19,7 +19,7 @@ type SearchBlockProps = {
 
 export const SearchResultBlock = ({ results, entityType, hideSeparator = false }: SearchBlockProps) => {
   const { t } = useTranslation();
-  const isChannel = isChannelEntity(entityType);
+  const isChannel = hierarchy.isChannel(entityType);
   const [collapsed, setCollapsed] = useState(false);
 
   if (!results.length) return null;

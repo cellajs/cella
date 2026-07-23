@@ -1,5 +1,5 @@
-import { appConfig, entityIdColumnKey, hierarchy, resolveDeepestAncestorId, resolveNonNullAncestors } from 'shared';
-import type { ActivityAction, AncestorSource, EntityType } from 'shared';
+import { appConfig, entityIdColumnKey, hierarchy } from 'shared';
+import type { EntityHierarchy, ActivityAction, EntityType } from 'shared';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
 import type { CdcRowData } from '../types';
@@ -17,7 +17,7 @@ export interface CountDelta {
 }
 
 /** Hierarchy surface the counter machinery needs; injectable for synthetic-hierarchy tests. */
-export type CountsHierarchy = AncestorSource & {
+export type CountsHierarchy = EntityHierarchy & {
   isProduct(entityType: string): boolean;
 };
 
@@ -91,9 +91,8 @@ export function getCountDeltas(
           : getStringValue(newRow, 'updatedAt');
         const parsedMs = stampSource ? Date.parse(stampSource) : Number.NaN;
         deltas.push({
-          channelKey: resolveDeepestAncestorId(h, tableMeta.type, newRow) ?? organizationId,
-          deltas: { [stampKey]: Number.isNaN(parsedMs) ? Date.now() : parsedMs },
-        });
+          channelKey: h.resolveDeepestAncestorId(tableMeta.type, newRow) ?? organizationId,
+          deltas: { [stampKey]: Number.isNaN(parsedMs) ? Date.now() : parsedMs } });
       }
     }
 
@@ -241,7 +240,7 @@ function getEntityDeltas(
   entityType: EntityType,
   newRow: CdcRowData,
   oldRow: CdcRowData | null,
-  h: AncestorSource,
+  h: EntityHierarchy,
 ): CountDelta[] {
   if (!newRow.id) {
     log.warn(`getEntityDeltas: missing "id" for ${entityType}`, { action });
@@ -255,13 +254,13 @@ function getEntityDeltas(
     const value = action === 'create' ? 1 : -1;
     const row = action === 'delete' ? (oldRow ?? newRow) : newRow;
     const deltas: CountDelta[] = [{ channelKey: organizationId, deltas: { [counterKey]: value } }];
-    for (const ancestor of resolveNonNullAncestors(h, entityType, row)) {
+    for (const ancestor of h.resolveNonNullAncestors(entityType, row)) {
       if (ancestor.id === organizationId) continue; // org already counted above
       deltas.push({ channelKey: ancestor.id, deltas: { [counterKey]: value } });
     }
     // Self count: rows HOMED at the node only (deepest non-null ancestor, org fallback),
     // the summary a self view is answered from (mirrors the e:li:h:/e:lu:h: placement rule).
-    const home = resolveDeepestAncestorId(h, entityType, row) ?? organizationId;
+    const home = h.resolveDeepestAncestorId(entityType, row) ?? organizationId;
     deltas.push({ channelKey: home, deltas: { [selfCountKey]: value } });
     warnMissingAncestors(h, entityType, row);
     return deltas;
@@ -270,8 +269,8 @@ function getEntityDeltas(
   // Re-credit ancestor differences for updates within the countable set.
   // Set-crossing changes already map to create or delete.
   if (action === 'update' && oldRow) {
-    const oldIds = new Set(resolveNonNullAncestors(h, entityType, oldRow).map((a) => a.id));
-    const newIds = new Set(resolveNonNullAncestors(h, entityType, newRow).map((a) => a.id));
+    const oldIds = new Set(h.resolveNonNullAncestors(entityType, oldRow).map((a) => a.id));
+    const newIds = new Set(h.resolveNonNullAncestors(entityType, newRow).map((a) => a.id));
     const deltas: CountDelta[] = [];
     for (const id of newIds) {
       if (!oldIds.has(id)) deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
@@ -280,8 +279,8 @@ function getEntityDeltas(
       if (!newIds.has(id)) deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
     }
     // Reparent moves the self count between homes.
-    const oldHome = resolveDeepestAncestorId(h, entityType, oldRow) ?? organizationId;
-    const newHome = resolveDeepestAncestorId(h, entityType, newRow) ?? organizationId;
+    const oldHome = h.resolveDeepestAncestorId(entityType, oldRow) ?? organizationId;
+    const newHome = h.resolveDeepestAncestorId(entityType, newRow) ?? organizationId;
     if (oldHome !== newHome) {
       deltas.push({ channelKey: oldHome, deltas: { [selfCountKey]: -1 } });
       deltas.push({ channelKey: newHome, deltas: { [selfCountKey]: 1 } });
@@ -295,7 +294,7 @@ function getEntityDeltas(
 /**
  * Warn for missing ancestor ids, except ancestors declared nullable (variable-depth rows).
  */
-function warnMissingAncestors(h: AncestorSource, entityType: EntityType, row: CdcRowData): void {
+function warnMissingAncestors(h: EntityHierarchy, entityType: EntityType, row: CdcRowData): void {
   const nullable = h.getNullableAncestors(entityType);
   for (const ancestor of h.getOrderedAncestors(entityType)) {
     const idColumn = entityIdColumnKey(ancestor);

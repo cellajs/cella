@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { computeProductPath, hierarchy } from 'shared';
+import { hierarchy } from 'shared';
 import {
   generateMockEntityChannelIdColumns,
   MOCK_REF_DATE,
@@ -54,7 +54,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       stx: mockStx(),
       ...channelIds,
       // Generated column in the live schema (productPathColumn); mocks mirror the SQL rule.
-      path: computeProductPath(hierarchy, 'attachment', channelIds),
+      path: hierarchy.computeProductPath('attachment', channelIds),
     };
   });
 

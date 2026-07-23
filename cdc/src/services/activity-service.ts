@@ -1,5 +1,5 @@
+import { hierarchy } from 'shared';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
-import { isProductEntity } from 'shared';
 import { log } from '../lib/pino';
 import type { TraceContext } from '../lib/tracing';
 import type { CdcRowData } from '../types';
@@ -88,7 +88,7 @@ export interface BatchEvent {
  * One path-and-type group lets clients route by prefix; resources group by organization.
  */
 function batchPathKey({ activity, rowData }: BatchEvent): string {
-  if (activity.entityType && isProductEntity(activity.entityType)) {
+  if (activity.entityType && hierarchy.isProduct(activity.entityType)) {
     const path = typeof rowData.path === 'string' && rowData.path ? rowData.path : null;
     return `${path ?? resolveChannelKey(activity.entityType, rowData, activity)}\0${activity.entityType}`;
   }
@@ -144,8 +144,7 @@ function sendBatchGroupToApi(
   const batchRows: CdcBatchRow[] = events.map((event) => ({
     seq: event.seq,
     rowData: pickPermissionRowData(event.rowData) as CdcRowData,
-    ...(event.movedFrom ? { movedFrom: event.movedFrom } : {}),
-  }));
+    ...(event.movedFrom ? { movedFrom: event.movedFrom } : {}) }));
 
   // The backend invalidates each row's detail-cache entry from batchRows, so a later detail
   // fetch re-enriches (see cdc-websocket handleMessage).

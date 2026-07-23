@@ -1,4 +1,4 @@
-import { type ChannelEntityType, isProductEntity, type ProductEntityType } from 'shared';
+import { type ChannelEntityType, hierarchy, type ProductEntityType } from 'shared';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
 import { applyUnfetchableRemovalUnseen } from '~/modules/seen/unseen-sync';
@@ -47,7 +47,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
 
       // kind === 'product', so productType is narrowed to a product entity type.
       const entityType = notification.productType;
-      if (!isProductEntity(entityType))
+      if (!hierarchy.isProduct(entityType))
         return console.error('Unknown entityType in app stream notification:', entityType);
 
       // Merge create/update ranges for prioritized lazy fetch, including soft-delete tombstones.

@@ -2,7 +2,7 @@ import { getTableName } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import format from 'pg-format';
 import { hierarchy } from 'shared';
-import type { AncestorSource } from 'shared';
+import type { EntityHierarchy, } from 'shared';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import { type BatchUnifiedDeltaPlan, frontierNodeKeys, mergeDelta } from './compute-unified-deltas';
@@ -78,7 +78,7 @@ export function sumInto(
  * The first phase reserves WAL-ordered sequence ranges; the second writes ancestor frontiers,
  * remaining counts, and row sequence values.
  */
-export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: AncestorSource = hierarchy): Promise<void> {
+export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: EntityHierarchy = hierarchy): Promise<void> {
   const { orgSequenceGroups, countDeltasByChannelKey } = plan;
 
   const handledChannelKeys = new Set<string>();
@@ -120,8 +120,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: An
       orgKey: group.orgKey,
       count: group.count,
       baseSeq: baseSeq + 1,
-      highSeq,
-    });
+      highSeq });
   }
 
   // Phase 2: frontier marks + remaining count UPSERTs + bulk entity stamp, all in parallel.

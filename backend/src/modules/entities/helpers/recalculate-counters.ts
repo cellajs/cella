@@ -1,13 +1,6 @@
 import { getColumns, getTableName, sql } from 'drizzle-orm';
-import {
-  type AncestorSource,
-  appConfig,
-  deepestAncestorSql,
-  type EntityType,
-  entityIdColumnName,
-  hierarchy,
-  roles,
-} from 'shared';
+import type { EntityHierarchy } from 'shared';
+import { appConfig, type EntityType, entityIdColumnName, hierarchy, roles } from 'shared';
 import type { DbOrTx } from '#/db/db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
@@ -40,8 +33,8 @@ const publishedPredicate = (et: EntityType, alias: string) =>
  * Matches CDC's `resolveChannelKey`: variable-depth rows scope to their effective home.
  * Exported for tests; the hierarchy parameter exists to prove the SQL shape on synthetic hierarchies.
  */
-export const deepestAncestorExpr = (et: string, alias: string, h: AncestorSource = hierarchy) =>
-  deepestAncestorSql(h, et, alias);
+export const deepestAncestorExpr = (et: string, alias: string, h: EntityHierarchy = hierarchy) =>
+  h.deepestAncestorSql(et, alias);
 
 /** JSONB pair with a COUNT subquery: 'key', COALESCE((SELECT COUNT(*) …), 0) */
 const countPair = (key: string, from: string, where: string) =>

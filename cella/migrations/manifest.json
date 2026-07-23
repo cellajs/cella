@@ -108,6 +108,26 @@
         "pnpm check"
       ],
       "summary": "config.default.ts derives entityTypes/channelEntityTypes/productEntityTypes from the hierarchy via nonEmpty(); bidirectional config-validation checks and EntityIdColumnKeysShape removed. Forks replace their literal arrays with the derived form. No wire or DB change."
+    },
+    {
+      "id": "20260723T0814-hierarchy-instance-only-api",
+      "version": "next",
+      "title": "Hierarchy instance-only row-location API",
+      "kind": "manual",
+      "forkBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "backend/src",
+        "cdc/src",
+        "frontend/src",
+        "shared",
+        "yjs/src"
+      ],
+      "requires": [
+        "pnpm check"
+      ],
+      "summary": "Free row-location functions, entity guards (isChannelEntity/isProductEntity/getChannelRoles), and the AncestorSource/CountsHierarchy/TopologyHierarchy types are removed; the EntityHierarchy instance is the only API. Mechanical rewrite: fn(h, ...) to h.fn(...), guards to hierarchy.isChannel/isProduct/getRoles, topology params typed EntityHierarchy. No wire or DB change."
     }
   ]
 }

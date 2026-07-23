@@ -1,5 +1,5 @@
+import { hierarchy } from 'shared';
 import { activitiesTable } from '#/modules/activities/activities-db';
-import { isProductEntity } from 'shared';
 
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
@@ -65,8 +65,7 @@ async function persistActivities(
         tableName,
         action: activityWithId.action,
         subjectId: activityWithId.subjectId,
-        err: insertResult.error,
-      });
+        err: insertResult.error });
       circuitBreaker.recordFailure(tableName);
       return false;
     }
@@ -75,8 +74,7 @@ async function persistActivities(
       log.info(`Activity insert succeeded after retry`, {
         activityId: activityWithId.id,
         attempts: insertResult.attempts,
-        lsn,
-      });
+        lsn });
     }
     return true;
   }
@@ -101,8 +99,7 @@ async function persistActivities(
           tableName,
           action: activityWithId.action,
           subjectId: activityWithId.subjectId,
-          err: singleResult.error,
-        });
+          err: singleResult.error });
         anyFailed = true;
       }
     }
@@ -123,8 +120,7 @@ function dispatchToApi(stamped: PreparedEvent[], traceCtx: TraceContext): void {
       activity: activityWithId,
       rowData,
       seq,
-      movedFrom,
-    }));
+      movedFrom }));
     sendBatchMessageToApi(batchInfos, traceCtx);
   } else {
     const { activityWithId, rowData, seq, movedFrom } = stamped[0];
@@ -184,8 +180,7 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
 
     const stamped = prepared.map((item) => ({
       ...item,
-      seq: typeof item.rowData.seq === 'number' ? item.rowData.seq : item.seq,
-    }));
+      seq: typeof item.rowData.seq === 'number' ? item.rowData.seq : item.seq }));
 
     circuitBreaker.recordSuccess(tableName);
 
@@ -196,8 +191,7 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
         subjectId: activityWithId.subjectId,
         activityId: activityWithId.id,
         lsn,
-        ...(activityWithId.changedFields && { changedFields: activityWithId.changedFields }),
-      });
+        ...(activityWithId.changedFields && { changedFields: activityWithId.changedFields }) });
     }
 
     // Send the real-time sync notification (single vs batch payload)
@@ -205,7 +199,7 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
 
     // Embedding cleanup: strip deleted embedded-entity IDs from host-entity arrays
     const { tableMeta } = events[0].result;
-    if (tableMeta.kind === 'entity' && isProductEntity(tableMeta.type) && (action === 'update' || action === 'delete')) {
+    if (tableMeta.kind === 'entity' && hierarchy.isProduct(tableMeta.type) && (action === 'update' || action === 'delete')) {
       await cleanupEmbeddingReferences(tableMeta.type, action, events);
     }
 
@@ -215,8 +209,7 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
       log.trace(`Batch processed`, {
         batchSize: events.length,
         entityType: events[0].result.activity.entityType,
-        action,
-      });
+        action });
     }
   });
 }

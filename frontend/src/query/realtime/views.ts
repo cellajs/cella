@@ -1,8 +1,8 @@
 import {
   type AccessPolicies,
-  type AncestorSource,
   accessPolicies,
   elevatedRoles as configuredElevatedRoles,
+  type EntityHierarchy,
   getPolicyPermissions,
   getSubjectPolicies,
   hierarchy,
@@ -33,7 +33,7 @@ export interface DeriveViewsInput {
   resolvePath: (channelType: string, channelId: string) => string | null;
   /** Injectable for synthetic-topology tests; default to the app's real config. */
   policies?: AccessPolicies;
-  topology?: AncestorSource;
+  topology?: EntityHierarchy;
   elevatedRoles?: readonly string[];
 }
 

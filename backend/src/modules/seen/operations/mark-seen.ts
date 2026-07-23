@@ -1,7 +1,7 @@
 import { and, eq, getColumns, gt, inArray, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { ProductEntityType, SeenTrackedProductType } from 'shared';
-import { appConfig, hierarchy, possibleHomeChannels, seenWindowMs } from 'shared';
+import { appConfig, hierarchy, seenWindowMs } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { AuthContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
@@ -28,7 +28,7 @@ export function isTrackedProductType(productType: string): productType is SeenTr
 }
 
 /** Context types that group unseen counts: every context a tracked row can have as its effective home */
-export const groupingChannelTypes = new Set(trackedProductTypes.flatMap((t) => possibleHomeChannels(hierarchy, t)));
+export const groupingChannelTypes = new Set(trackedProductTypes.flatMap((t) => hierarchy.possibleHomeChannels(t)));
 
 export async function markSeenOp(ctx: AuthContext, entityIds: string[], productType: ProductEntityType) {
   const user = ctx.var.user;

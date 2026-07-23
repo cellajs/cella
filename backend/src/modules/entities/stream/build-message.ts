@@ -1,4 +1,4 @@
-import { appConfig, type ChannelEntityType, hierarchy, isProductEntity, resolveDeepestAncestorId } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import { dbPoolPressure } from '#/db/db';
 import { type ActivityEvent, getEventData } from '#/lib/activity-bus';
 import type { StreamNotification } from '#/schemas';
@@ -30,7 +30,7 @@ function computeSpreadWindow(organizationId: string | null): number | null {
  * and to branch dispatch/handling on either end.
  */
 export function appNotificationKind(event: Pick<ActivityEvent, 'entityType'>): 'product' | 'membership' {
-  return isProductEntity(event.entityType) ? 'product' : 'membership';
+  return hierarchy.isProduct(event.entityType) ? 'product' : 'membership';
 }
 
 /** Type-guard form of {@link appNotificationKind}: narrows an app-stream event to the membership member. */
@@ -50,7 +50,7 @@ export function isMembershipEvent(event: AppStreamEvent): event is AppStreamMemb
  */
 export function buildStreamNotification(event: ActivityEvent): StreamNotification {
   const { entityType } = event;
-  const isProduct = isProductEntity(entityType);
+  const isProduct = hierarchy.isProduct(entityType);
 
   // Extract channelType for membership events
   const membership = event.resourceType === 'membership' ? getEventData(event, 'membership') : null;
@@ -61,7 +61,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   // the org sequence does not key on this.
   let channelId: string | null = null;
   if (isProduct && entityType) {
-    channelId = resolveDeepestAncestorId(hierarchy, entityType, event as unknown as Record<string, unknown>);
+    channelId = hierarchy.resolveDeepestAncestorId(entityType, event as unknown as Record<string, unknown>);
   }
 
   const stx = (isProduct && event.stx) || null;

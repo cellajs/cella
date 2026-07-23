@@ -331,7 +331,7 @@ class EntityHierarchyBuilder<
 
 /** Frozen entity hierarchy with query methods. Created by EntityHierarchyBuilder.build(). */
 export class EntityHierarchy<
-  TRoles extends { all: readonly string[] },
+  TRoles extends { all: readonly string[] } = { all: readonly string[] },
   TChannels extends string = string,
   TProducts extends string = string,
   TParentMap extends Record<string, string | null> = Record<string, string | null>,
@@ -397,12 +397,12 @@ export class EntityHierarchy<
     return this.entities.get(entityType)?.kind;
   }
 
-  isChannel(entityType: string): entityType is TChannels {
-    return this.getKind(entityType) === 'channel';
+  isChannel(entityType: string | null | undefined): entityType is TChannels {
+    return !!entityType && this.getKind(entityType) === 'channel';
   }
 
-  isProduct(entityType: string): entityType is TProducts {
-    return this.getKind(entityType) === 'product';
+  isProduct(entityType: string | null | undefined): entityType is TProducts {
+    return !!entityType && this.getKind(entityType) === 'product';
   }
 
   /** Get roles for a channel entity. Returns empty array for non-channel. */

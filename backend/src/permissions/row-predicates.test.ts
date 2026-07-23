@@ -7,7 +7,6 @@ import {
   type ChannelEntityType,
   computeCan,
   getAllDecisions,
-  getChannelRoles,
   hierarchy,
   type PermissionValue,
   type ProductEntityType,
@@ -119,7 +118,7 @@ const randomPolicies = (random: () => number): AccessPolicies =>
     if (subject.name !== 'attachment') return;
     const builders = contexts as unknown as Record<string, Record<string, (perms: { read: PermissionValue }) => void>>;
     for (const ctx of CHAIN) {
-      for (const role of getChannelRoles(ctx)) {
+      for (const role of hierarchy.getRoles(ctx)) {
         builders[ctx][role]({ read: randomReadValue(random) });
       }
     }
@@ -168,10 +167,10 @@ const randomScenario = (random: () => number): Scenario => {
   }
 
   const memberships: MembershipBaseModel[] = [];
-  if (random() < 0.4) memberships.push(membership(ROOT, ROOT_ID, pick(random, getChannelRoles(ROOT))));
+  if (random() < 0.4) memberships.push(membership(ROOT, ROOT_ID, pick(random, hierarchy.getRoles(ROOT))));
   if (SUB) {
     for (const subId of SUB_INSTANCES) {
-      if (random() < 0.4) memberships.push(membership(SUB, subId, pick(random, getChannelRoles(SUB))));
+      if (random() < 0.4) memberships.push(membership(SUB, subId, pick(random, hierarchy.getRoles(SUB))));
     }
   }
   return {
@@ -617,13 +616,13 @@ const randomRealScenario = (
   random: () => number,
 ): { memberships: MembershipBaseModel[]; userId: string; isSystemAdmin: boolean } => {
   const memberships: MembershipBaseModel[] = [];
-  if (random() < 0.5) memberships.push(realMembership(ROOT, ROOT_ID, pick(random, getChannelRoles(ROOT)), ROOT_ID));
+  if (random() < 0.5) memberships.push(realMembership(ROOT, ROOT_ID, pick(random, hierarchy.getRoles(ROOT)), ROOT_ID));
   // A grant in a DIFFERENT org must contribute nothing to this org's collection
   if (random() < 0.3)
-    memberships.push(realMembership(ROOT, 'org-other', pick(random, getChannelRoles(ROOT)), 'org-other'));
+    memberships.push(realMembership(ROOT, 'org-other', pick(random, hierarchy.getRoles(ROOT)), 'org-other'));
   if (SUB) {
     for (const subId of SUB_INSTANCES) {
-      if (random() < 0.4) memberships.push(realMembership(SUB, subId, pick(random, getChannelRoles(SUB)), ROOT_ID));
+      if (random() < 0.4) memberships.push(realMembership(SUB, subId, pick(random, hierarchy.getRoles(SUB)), ROOT_ID));
     }
   }
   // SSE subscribers are always authenticated; 'outsider' stands in for a user with no rows

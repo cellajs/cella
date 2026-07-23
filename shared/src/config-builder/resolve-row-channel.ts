@@ -1,3 +1,4 @@
+import { toColumnName } from '../permissions/schema-naming';
 
 /** Minimal hierarchy surface needed for attribution: lets tests inject a synthetic hierarchy. */
 export interface AncestorSource {
@@ -14,8 +15,7 @@ export interface AncestorSource {
 export const entityIdColumnKey = (entityType: string): string => `${entityType}Id`;
 
 /** The id-column SQL name convention (`courseSection` to `course_section_id`). */
-export const entityIdColumnName = (entityType: string): string =>
-  `${entityType.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`)}_id`;
+export const entityIdColumnName = (entityType: string): string => `${toColumnName(entityType)}_id`;
 
 export interface ResolvedAncestor {
   /** Ancestor channel type (e.g. 'project'). */

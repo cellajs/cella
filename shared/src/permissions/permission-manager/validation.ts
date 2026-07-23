@@ -1,5 +1,5 @@
-import { isChannelEntity, isProductEntity } from '../../entity-guards';
-import type { TopologyHierarchy } from './topology';
+import { hierarchy } from '../../../config/hierarchy-config';
+import type { EntityHierarchy } from '../../config-builder/entity-hierarchy';
 import type { PermissionMembership, SubjectForPermission } from './types';
 
 /**
@@ -10,7 +10,7 @@ import type { PermissionMembership, SubjectForPermission } from './types';
 export const validateSubject = (
   subject: SubjectForPermission,
   index?: number,
-  topology?: Pick<TopologyHierarchy, 'isChannel' | 'isProduct'>,
+  topology?: Pick<EntityHierarchy, 'isChannel' | 'isProduct'>,
 ): void => {
   const prefix = index !== undefined ? `Subject[${index}]` : 'Subject';
 
@@ -18,8 +18,8 @@ export const validateSubject = (
     throw new Error(`[Permission] ${prefix} missing entityType`);
   }
 
-  const isChannel = topology ? topology.isChannel(subject.entityType) : isChannelEntity(subject.entityType);
-  const isProduct = topology ? topology.isProduct(subject.entityType) : isProductEntity(subject.entityType);
+  const isChannel = (topology ?? hierarchy).isChannel(subject.entityType);
+  const isProduct = (topology ?? hierarchy).isProduct(subject.entityType);
   if (!isChannel && !isProduct) {
     throw new Error(`[Permission] ${prefix} has invalid entityType: ${subject.entityType}`);
   }
