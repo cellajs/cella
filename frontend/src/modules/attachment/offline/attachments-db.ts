@@ -20,7 +20,7 @@ export function makeBlobKey(attachmentId: string, variant: BlobVariant): string 
 /** Upload context stored with a blob, used when the upload service re-uploads it. */
 export interface UploadContext {
   templateId: UploadTemplateId;
-  public: boolean;
+  publicBucket: boolean;
 }
 
 /**
@@ -46,7 +46,7 @@ export interface AttachmentBlob {
   /** Original filename (used by the upload service during re-upload) */
   filename?: string;
 
-  /** Upload context for the upload service (templateId, public flag) */
+  /** Upload context for the upload service (templateId, publicBucket flag) */
   uploadContext?: UploadContext;
 
   /** File size in bytes (denormalized for filtering) */

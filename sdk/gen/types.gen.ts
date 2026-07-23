@@ -343,7 +343,7 @@ export type InactiveMembership = {
  * A signed token authorizing file uploads to the configured storage provider.
  */
 export type UploadToken = {
-  public: boolean;
+  publicBucket: boolean;
   sub: string;
   s3: boolean;
   signature: string | null;
@@ -489,9 +489,9 @@ export type Attachment = {
   publicAt: string | null;
   seq: number;
   /**
-   * When true, served directly from the CDN without a presigned URL.
+   * When true, the file is stored in the public bucket and served from the CDN without a presigned URL.
    */
-  public: boolean;
+  publicBucket: boolean;
   bucketName: string;
   groupId: string | null;
   filename: string;
@@ -2002,7 +2002,7 @@ export type GetUploadTokenData = {
   body?: never;
   path?: never;
   query: {
-    public?: string | boolean;
+    publicBucket?: string | boolean;
     organizationId?: string;
     templateId: 'avatar' | 'cover' | 'attachment';
   };
@@ -4036,9 +4036,9 @@ export type CreateAttachmentsData = {
     originalKey: string;
     bucketName: string;
     /**
-     * When true, served directly from the CDN without a presigned URL.
+     * When true, the file is stored in the public bucket and served from the CDN without a presigned URL.
      */
-    public?: boolean;
+    publicBucket?: boolean;
     groupId?: string | null;
     /**
      * MIME type of the server-converted variant; null when none.

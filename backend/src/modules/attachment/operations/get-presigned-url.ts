@@ -48,7 +48,7 @@ export async function getPresignedUrlOp(
   if (!allowed) return { success: false, error: 'forbidden', status: 403 };
 
   const key = selectVariantKey(attachment, variant);
-  const url = await getSignedUrlFromKey(key, { bucketName: attachment.bucketName, isPublic: false });
+  const url = await getSignedUrlFromKey(key, { bucketName: attachment.bucketName, publicBucket: false });
 
   return { success: true, data: url };
 }

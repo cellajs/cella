@@ -45,8 +45,8 @@ export const createBaseTransloaditUppy = async (
   const uppy = new Uppy({
     ...uppyOptions,
     meta: {
-      public: tokenQuery.public,
-      bucketName: tokenQuery.public ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
+      publicBucket: tokenQuery.publicBucket,
+      bucketName: tokenQuery.publicBucket ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
       offlineUploaded: !hasCloudUpload,
     },
     onBeforeFileAdded,
@@ -90,7 +90,7 @@ export const createBaseTransloaditUppy = async (
     if (organizationId) {
       const uploadContext: UploadContext = {
         templateId: tokenQuery.templateId,
-        public: tokenQuery.public,
+        publicBucket: tokenQuery.publicBucket,
       };
       for (const file of uploadFiles) {
         await attachmentStorage.storeUploadBlob(file, organizationId, 'pending', uploadContext, file.meta.attachmentId);

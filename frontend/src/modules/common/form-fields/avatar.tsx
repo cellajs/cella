@@ -43,7 +43,7 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
     upload.create({
       id: 'upload-image',
-      isPublic: true,
+      publicBucket: true,
       personalUpload: true,
       plugins: ['webcam', 'image-editor', 'url'],
       templateId: 'avatar',

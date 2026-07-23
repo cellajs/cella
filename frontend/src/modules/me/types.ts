@@ -13,6 +13,6 @@ export type UserMenu = Record<MenuEntityType, UserMenuItem[]>;
 
 export type UserMenuItem = WithRequired<EnrichedChannel, 'membership'> & { submenu?: UserMenuItem[] };
 
-export type UploadTokenQuery = GetUploadTokenData['query'] & { public: boolean };
+export type UploadTokenQuery = GetUploadTokenData['query'] & { publicBucket: boolean };
 
 export type Invitation = GetMyInvitationsResponse['items'][number];

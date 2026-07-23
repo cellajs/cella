@@ -4,7 +4,7 @@ import type { CustomUppyOpt, Plugins, StatusEventHandlers } from '~/modules/comm
 
 type CommonUploadData = {
   id: number | string;
-  isPublic: boolean;
+  publicBucket: boolean;
   templateId: UploadTemplateId;
   plugins?: Plugins;
   restrictions?: Partial<CustomUppyOpt['restrictions']>;

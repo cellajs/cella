@@ -87,7 +87,7 @@ class AttachmentUploadService {
   private async checkCloudAvailability(organizationId: string): Promise<boolean> {
     try {
       const token = await getUploadToken({
-        query: { public: false, templateId: 'attachment', organizationId },
+        query: { publicBucket: false, templateId: 'attachment', organizationId },
       });
       return !!(token?.params && token?.signature);
     } catch {
@@ -132,7 +132,7 @@ class AttachmentUploadService {
         assemblyOptions: async () => {
           const token = await getUploadToken({
             query: {
-              public: blob.uploadContext?.public ?? false,
+              publicBucket: blob.uploadContext?.publicBucket ?? false,
               templateId: blob.uploadContext?.templateId ?? 'attachment',
               organizationId: blob.organizationId,
             },

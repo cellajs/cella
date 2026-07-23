@@ -60,7 +60,7 @@ export const mockUploadTokenResponse = (key = 'upload-token:default'): UploadTok
     const expiresAt = faker.date.soon({ days: 1, refDate: MOCK_REF_DATE });
 
     return {
-      public: false,
+      publicBucket: false,
       sub: mockNanoid(),
       s3: true,
       signature: faker.string.alphanumeric(64),

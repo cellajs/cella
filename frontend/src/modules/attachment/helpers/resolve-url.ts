@@ -19,7 +19,7 @@ export interface ResolveOptions {
 /** Cloud-key fields needed to build a URL without consulting the react-query cache. */
 type AttachmentMeta = Pick<
   Attachment,
-  'originalKey' | 'convertedKey' | 'thumbnailKey' | 'public' | 'organizationId' | 'tenantId'
+  'originalKey' | 'convertedKey' | 'thumbnailKey' | 'publicBucket' | 'organizationId' | 'tenantId'
 >;
 
 /**

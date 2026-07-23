@@ -122,10 +122,10 @@
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
-                  "public": {
+                  "publicBucket": {
                     "type": "boolean",
                     "required": true,
-                    "description": "When true, served directly from the CDN without a presigned URL."
+                    "description": "When true, the file is stored in the public bucket and served from the CDN without a presigned URL."
                   },
                   "bucketName": { "type": "string", "required": true, "maxLength": 255 },
                   "groupId": {
@@ -184,7 +184,7 @@
               "name": "vice.mar",
               "description": null,
               "keywords": "magni deleniti quisquam",
-              "public": false,
+              "publicBucket": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "vice.mar",
@@ -216,7 +216,7 @@
               "name": "bah_oof_truthfully.css",
               "description": null,
               "keywords": "vallum infit terra",
-              "public": false,
+              "publicBucket": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "bah_oof_truthfully.css",
@@ -438,10 +438,10 @@
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
-                  "public": {
+                  "publicBucket": {
                     "type": "boolean",
                     "required": true,
-                    "description": "When true, served directly from the CDN without a presigned URL."
+                    "description": "When true, the file is stored in the public bucket and served from the CDN without a presigned URL."
                   },
                   "bucketName": { "type": "string", "required": true, "maxLength": 255 },
                   "groupId": {
@@ -511,7 +511,7 @@
               "name": "ugh_besides.svgz",
               "description": null,
               "keywords": "voveo quis adaugeo",
-              "public": false,
+              "publicBucket": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "ugh_besides.svgz",
@@ -543,7 +543,7 @@
               "name": "instead_volleyball.jpe",
               "description": null,
               "keywords": "adversus voco vos",
-              "public": false,
+              "publicBucket": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "instead_volleyball.jpe",
@@ -692,10 +692,10 @@
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
-                  "public": {
+                  "publicBucket": {
                     "type": "boolean",
                     "required": true,
-                    "description": "When true, served directly from the CDN without a presigned URL."
+                    "description": "When true, the file is stored in the public bucket and served from the CDN without a presigned URL."
                   },
                   "bucketName": { "type": "string", "required": true, "maxLength": 255 },
                   "groupId": {
@@ -765,7 +765,7 @@
               "name": "ugh_besides.svgz",
               "description": null,
               "keywords": "voveo quis adaugeo",
-              "public": false,
+              "publicBucket": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "ugh_besides.svgz",
@@ -797,7 +797,7 @@
               "name": "instead_volleyball.jpe",
               "description": null,
               "keywords": "adversus voco vos",
-              "public": false,
+              "publicBucket": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "instead_volleyball.jpe",
@@ -900,10 +900,10 @@
               "maxLength": 2048
             },
             "bucketName": { "type": "string", "required": true, "maxLength": 255 },
-            "public": {
+            "publicBucket": {
               "type": "boolean",
               "required": false,
-              "description": "When true, served directly from the CDN without a presigned URL."
+              "description": "When true, the file is stored in the public bucket and served from the CDN without a presigned URL."
             },
             "groupId": {
               "type": ["string", "null"],
@@ -1252,10 +1252,10 @@
               "minimum": -9007199254740991,
               "maximum": 9007199254740991
             },
-            "public": {
+            "publicBucket": {
               "type": "boolean",
               "required": true,
-              "description": "When true, served directly from the CDN without a presigned URL."
+              "description": "When true, the file is stored in the public bucket and served from the CDN without a presigned URL."
             },
             "bucketName": { "type": "string", "required": true, "maxLength": 255 },
             "groupId": {
@@ -1308,7 +1308,7 @@
           "name": "rightfully_lest_noted.mp3",
           "description": null,
           "keywords": "universe explicabo aliquid",
-          "public": false,
+          "publicBucket": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "rightfully_lest_noted.mp3",
@@ -1504,10 +1504,10 @@
               "minimum": -9007199254740991,
               "maximum": 9007199254740991
             },
-            "public": {
+            "publicBucket": {
               "type": "boolean",
               "required": true,
-              "description": "When true, served directly from the CDN without a presigned URL."
+              "description": "When true, the file is stored in the public bucket and served from the CDN without a presigned URL."
             },
             "bucketName": { "type": "string", "required": true, "maxLength": 255 },
             "groupId": {
@@ -1560,7 +1560,7 @@
           "name": "rightfully_lest_noted.mp3",
           "description": null,
           "keywords": "universe explicabo aliquid",
-          "public": false,
+          "publicBucket": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "rightfully_lest_noted.mp3",

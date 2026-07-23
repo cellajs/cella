@@ -110,10 +110,10 @@
           "minimum": -9007199254740991,
           "maximum": 9007199254740991
         },
-        "public": {
+        "publicBucket": {
           "type": "boolean",
           "required": true,
-          "description": "When true, served directly from the CDN without a presigned URL."
+          "description": "When true, the file is stored in the public bucket and served from the CDN without a presigned URL."
         },
         "bucketName": { "type": "string", "required": true, "maxLength": 255 },
         "groupId": {
@@ -171,7 +171,7 @@
       "name": "rightfully_lest_noted.mp3",
       "description": null,
       "keywords": "universe explicabo aliquid",
-      "public": false,
+      "publicBucket": false,
       "bucketName": "attachments",
       "groupId": null,
       "filename": "rightfully_lest_noted.mp3",
@@ -798,7 +798,7 @@
     "schema": {
       "type": "object",
       "properties": {
-        "public": { "type": "boolean", "required": true },
+        "publicBucket": { "type": "boolean", "required": true },
         "sub": { "type": "string", "required": true },
         "s3": { "type": "boolean", "required": true },
         "signature": {
@@ -836,7 +836,7 @@
     },
     "description": "A signed token authorizing file uploads to the configured storage provider.",
     "example": {
-      "public": false,
+      "publicBucket": false,
       "sub": "x1lsgegsw6imziogthaolhvy",
       "s3": true,
       "signature": "gVDbK1LX8P8h331cTbWcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYg",

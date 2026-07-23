@@ -8,7 +8,7 @@ import { findAttachmentInCache } from '~/modules/attachment/query';
 /** Cloud-key fields needed to resolve a URL without the react-query cache. */
 type AttachmentMetaFields = Pick<
   Attachment,
-  'originalKey' | 'convertedKey' | 'thumbnailKey' | 'public' | 'organizationId' | 'tenantId'
+  'originalKey' | 'convertedKey' | 'thumbnailKey' | 'publicBucket' | 'organizationId' | 'tenantId'
 >;
 
 /** A carousel item that may already carry its own attachment metadata (group/single items do). */

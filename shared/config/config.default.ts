@@ -133,7 +133,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v2',
-  clientCacheVersion: 'v4-no-product-path',
+  clientCacheVersion: 'v5-public-bucket',
 
   // Authentication
 

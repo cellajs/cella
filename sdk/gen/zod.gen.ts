@@ -286,7 +286,7 @@ export const zInactiveMembership = z.object({
  * A signed token authorizing file uploads to the configured storage provider.
  */
 export const zUploadToken = z.object({
-  public: z.boolean(),
+  publicBucket: z.boolean(),
   sub: z.string(),
   s3: z.boolean(),
   signature: z.string().nullable(),
@@ -409,7 +409,7 @@ export const zAttachment = z.object({
   deletedBy: z.uuid().nullable(),
   publicAt: z.string().nullable(),
   seq: z.int().gte(-9007199254740991).lte(9007199254740991),
-  public: z.boolean(),
+  publicBucket: z.boolean(),
   bucketName: z.string().max(255),
   groupId: z.uuid().nullable(),
   filename: z.string().max(255),
@@ -746,7 +746,7 @@ export const zDeleteMyMembershipQuery = z.object({
 export const zDeleteMyMembershipResponse = z.void();
 
 export const zGetUploadTokenQuery = z.object({
-  public: z.union([z.string(), z.boolean()]).optional().default('false'),
+  publicBucket: z.union([z.string(), z.boolean()]).optional().default('false'),
   organizationId: z.string().optional(),
   templateId: z.enum(['avatar', 'cover', 'attachment']),
 });
@@ -1458,7 +1458,7 @@ export const zCreateAttachmentsBody = z
       size: z.string().max(255),
       originalKey: z.string().max(2048),
       bucketName: z.string().max(255),
-      public: z.boolean().optional(),
+      publicBucket: z.boolean().optional(),
       groupId: z.uuid().nullish(),
       convertedContentType: z.string().max(255).nullish(),
       convertedKey: z.string().max(2048).nullish(),

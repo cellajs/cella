@@ -43,7 +43,7 @@ describe('getPresignedUrlOp — fail-closed id+variant signing', () => {
     expect(res).toEqual({ success: true, data: 'https://signed.example/url' });
     expect(getSignedUrlFromKey).toHaveBeenCalledWith(attachment.thumbnailKey, {
       bucketName: 'private-bucket',
-      isPublic: false,
+      publicBucket: false,
     });
   });
 

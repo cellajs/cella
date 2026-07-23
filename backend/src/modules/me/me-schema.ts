@@ -41,7 +41,7 @@ export const meAuthDataSchema = z
 
 export const uploadTokenSchema = z
   .object({
-    public: z.boolean(),
+    publicBucket: z.boolean(),
     sub: z.string(),
     s3: z.boolean(),
     signature: z.string().nullable(),
@@ -68,7 +68,7 @@ export const uploadTokenSchema = z
 export type { MeAuthResponse, MeResponse, UploadTokenResponse } from './types';
 
 export const uploadTokenQuerySchema = z.object({
-  public: booleanTransformSchema,
+  publicBucket: booleanTransformSchema,
   organizationId: z.string().optional(),
   templateId: z.enum(appConfig.uploadTemplateIds),
 });

@@ -30,7 +30,7 @@ export interface MeAuthResponse {
 
 /** UploadToken response type */
 export interface UploadTokenResponse {
-  public: boolean;
+  publicBucket: boolean;
   sub: string;
   s3: boolean;
   signature: string;

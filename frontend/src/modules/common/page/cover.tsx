@@ -35,7 +35,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
     upload.create({
       id: 'page-cover',
-      isPublic: true,
+      publicBucket: true,
       ...(organizationId ? { organizationId, personalUpload: false } : { personalUpload: true }),
       plugins: ['webcam', 'image-editor', 'url'],
       templateId: 'cover',

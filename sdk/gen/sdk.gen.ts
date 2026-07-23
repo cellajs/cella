@@ -1492,7 +1492,7 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(
  * **GET /me/upload-token** ·· [getUploadToken](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/upload-token) ·· [getUploadToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/upload-token) ·· _me_cella_
  *
  * @param {getUploadTokenData} options
- * @param {string | boolean=} options.query.public - `string | boolean` (optional)
+ * @param {string | boolean=} options.query.publicbucket - `string | boolean` (optional)
  * @param {string=} options.query.organizationid - `string` (optional)
  * @param {enum} options.query.templateid - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
