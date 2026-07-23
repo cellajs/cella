@@ -9,8 +9,19 @@
       "forkBreaking": true,
       "clientCacheBump": false,
       "script": "cella/migrations/20260722T0902-drop-entity-suffix-renames/drop-entity-suffix-renames.ts",
-      "roots": ["backend/src", "backend/tests", "backend/scripts", "frontend/src", "shared", "cdc/src", "yjs/src"],
-      "requires": ["pnpm sdk", "pnpm check"],
+      "roots": [
+        "backend/src",
+        "backend/tests",
+        "backend/scripts",
+        "frontend/src",
+        "shared",
+        "cdc/src",
+        "yjs/src"
+      ],
+      "requires": [
+        "pnpm sdk",
+        "pnpm check"
+      ],
       "summary": "ChannelEntityBase->ChannelBase, ProductEntityBase->ProductBase, getValid*Entity->getValid*, EnrichedChannelEntity->EnrichedChannel, bare channelEntity->channel and the rest of the single-family Entity identifiers (48 ids + 9 files). Allow-list codemod; internal rename, no wire-shape change."
     },
     {
@@ -21,8 +32,16 @@
       "forkBreaking": true,
       "clientCacheBump": true,
       "script": null,
-      "roots": ["backend/src", "frontend/src", "shared", "cdc/src"],
-      "requires": ["pnpm sdk", "pnpm check"],
+      "roots": [
+        "backend/src",
+        "frontend/src",
+        "shared",
+        "cdc/src"
+      ],
+      "requires": [
+        "pnpm sdk",
+        "pnpm check"
+      ],
       "summary": "PropagationHint fields sourceType->embeddedProduct, targetType->hostProduct, field->hostColumn on StreamNotification.propagation + catchup propagation; propagationTargets->hostsByEmbeddedProduct; product-type wire fields tightened to z.enum(productEntityTypes). Manual (field names too generic to codemod); forks bump clientCacheVersion."
     },
     {
@@ -33,8 +52,12 @@
       "forkBreaking": true,
       "clientCacheBump": false,
       "script": "cella/migrations/20260722T2050-sonner-style-toaster-api/sonner-style-toaster-api.ts",
-      "roots": ["frontend/src"],
-      "requires": ["pnpm check"],
+      "roots": [
+        "frontend/src"
+      ],
+      "requires": [
+        "pnpm check"
+      ],
       "summary": "Rewrite toaster(message, severity, options) calls to Sonner-style toaster.success/info/warning/error methods. TypeScript-AST codemod handles literal severities and reports dynamic calls for manual review; internal API only, no wire-shape change."
     },
     {
@@ -45,9 +68,30 @@
       "forkBreaking": true,
       "clientCacheBump": false,
       "script": null,
-      "roots": ["frontend/src"],
-      "requires": ["pnpm check"],
+      "roots": [
+        "frontend/src"
+      ],
+      "requires": [
+        "pnpm check"
+      ],
       "summary": "Removed the usePreparedMutation hook; buildPreparedHandlers(mutation, prepare) stays. Mutation hooks now call useMutation directly and spread { ...mutation, ...buildPreparedHandlers(mutation, prepare) }, dropping five explicit generics and the Mutatable cast. PreparedVars/COALESCED unchanged. Frontend-only, no wire-shape change. Manual: each query.ts hook restructured (import swap + return rewrite + inline prepare input annotation)."
+    },
+    {
+      "id": "20260723T0739-hierarchy-owned-id-columns",
+      "version": "next",
+      "title": "Hierarchy-owned id-column keys and row-location API",
+      "kind": "manual",
+      "forkBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "shared",
+        "backend/src"
+      ],
+      "requires": [
+        "pnpm check"
+      ],
+      "summary": "EntityHierarchy instance owns row location: idColumnKeys/idColumnKey/idColumnName, resolve*, compute*Path, pathColumnSql, deepestAncestorSql. appConfig.entityIdColumnKeys now derives from hierarchy.idColumnKeys (replace the literal map in config.default.ts). backend pathColumnExpression removed in favor of hierarchy.pathColumnSql. No wire-shape or DB change."
     }
   ]
 }

@@ -16,7 +16,8 @@ type _ConfigSatisfiesRequired = Config extends RequiredConfig ? true : never;
 const _configValid: _ConfigSatisfiesRequired = true;
 void _configValid;
 
-// Validate entityIdColumnKeys has all entity types as keys with correct `${K}Id` naming
+// Validate entityIdColumnKeys covers all entity types with `${K}Id` naming. The map is
+// derived from `hierarchy.idColumnKeys`, so this guards hierarchy/entityTypes agreement.
 const _entityIdKeysCheck: EntityIdColumnKeysShape = appConfig.entityIdColumnKeys;
 void _entityIdKeysCheck;
 

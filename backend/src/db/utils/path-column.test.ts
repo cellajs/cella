@@ -1,9 +1,8 @@
 import { sql } from 'drizzle-orm';
-import { computeChannelPath, computeProductPath, createEntityHierarchy, createRoleRegistry } from 'shared';
-import { deepHierarchy as deepH, deepIdColumns } from 'shared/testing/deep-fixture';
+import { createEntityHierarchy, createRoleRegistry } from 'shared';
+import { deepHierarchy as deepH } from 'shared/testing/deep-fixture';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { seedDb } from '#/db/db';
-import { pathColumnExpression } from './path-column';
 
 /**
  * The generated `path` column (SQL) and `row-path.ts` (JS) must produce identical
@@ -19,33 +18,31 @@ const orgHomedH = createEntityHierarchy(roles)
   .channel('organization', { parent: null, roles: roles.all })
   .product('doc', { parent: 'organization' })
   .build();
-const orgHomedIdColumns = { organization: 'organizationId' };
-
-describe('pathColumnExpression (SQL shape)', () => {
+describe('pathColumnSql (SQL shape)', () => {
   it('org-homed product: just the org id', () => {
-    expect(pathColumnExpression('doc', false, orgHomedH, orgHomedIdColumns)).toBe('"organization_id"::text');
+    expect(orgHomedH.pathColumnSql('doc', false)).toBe('"organization_id"::text');
   });
 
   it('root channel (organization): its own id', () => {
-    expect(pathColumnExpression('organization', true, orgHomedH, orgHomedIdColumns)).toBe('"id"::text');
+    expect(orgHomedH.pathColumnSql('organization', true)).toBe('"id"::text');
   });
 
   it('deep product: COALESCE-wrapped intermediate ancestors, root-first', () => {
-    expect(pathColumnExpression('item', false, deepH, deepIdColumns)).toBe(
+    expect(deepH.pathColumnSql('item', false)).toBe(
       `"organization_id"::text || COALESCE('/' || "course_id"::text, '') || COALESCE('/' || "course_section_id"::text, '') || COALESCE('/' || "project_id"::text, '')`,
     );
   });
 
   it('deep channel: ancestors plus own id', () => {
-    expect(pathColumnExpression('project', true, deepH, deepIdColumns)).toBe(
+    expect(deepH.pathColumnSql('project', true)).toBe(
       `"organization_id"::text || COALESCE('/' || "course_id"::text, '') || COALESCE('/' || "course_section_id"::text, '') || '/' || "id"::text`,
     );
   });
 });
 
 describe('SQL ≍ JS path parity on a live deep-chain table', () => {
-  const itemExpr = pathColumnExpression('item', false, deepH, deepIdColumns);
-  const projectExpr = pathColumnExpression('project', true, deepH, deepIdColumns);
+  const itemExpr = deepH.pathColumnSql('item', false);
+  const projectExpr = deepH.pathColumnSql('project', true);
 
   beforeAll(async () => {
     await seedDb.execute(
@@ -100,7 +97,7 @@ describe('SQL ≍ JS path parity on a live deep-chain table', () => {
     );
     for (const { id, path } of stored.rows) {
       const row = itemRows.find((r) => r.id === id);
-      expect(path, `item ${id}`).toBe(computeProductPath(deepH, 'item', row ?? {}));
+      expect(path, `item ${id}`).toBe(deepH.computeProductPath('item', row ?? {}));
     }
   });
 
@@ -123,7 +120,7 @@ describe('SQL ≍ JS path parity on a live deep-chain table', () => {
     );
     for (const { id, path } of stored.rows) {
       const row = projectRows.find((r) => r.id === id);
-      expect(path, `project ${id}`).toBe(computeChannelPath(deepH, 'project', row ?? {}));
+      expect(path, `project ${id}`).toBe(deepH.computeChannelPath('project', row ?? {}));
     }
   });
 });

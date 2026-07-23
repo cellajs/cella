@@ -1,4 +1,5 @@
 import type { ConfigMode, RequiredConfig, S3ConfigInput } from '../src/config-builder/types';
+import { hierarchy } from './hierarchy-config';
 
 // Re-export for external consumers
 export { roles, hierarchy } from './hierarchy-config';
@@ -26,12 +27,8 @@ export const config = {
    */
   seenTrackedProductTypes: ['attachment'] as const,
 
-  /** Maps entity types to their ID column names - must match entityTypes */
-  entityIdColumnKeys: {
-    user: 'userId',
-    organization: 'organizationId',
-    attachment: 'attachmentId',
-  } as const,
+  /** Maps entity types to their ID column names, derived from the hierarchy (`${type}Id`). */
+  entityIdColumnKeys: hierarchy.idColumnKeys,
 
   /** Available CRUD actions for permission checks */
   entityActions: ['create', 'read', 'update', 'delete'] as const,

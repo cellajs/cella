@@ -15,13 +15,21 @@ export {
 
 // Row-to-home attribution (shared rule for CDC counters/self summaries, notifications, recalculation)
 export type { AncestorSource, ResolvedAncestor } from './resolve-row-channel';
-export { possibleHomeChannels, resolveDeepestAncestorId, resolveNonNullAncestors } from './resolve-row-channel';
+export {
+  entityIdColumnKey,
+  entityIdColumnName,
+  possibleHomeChannels,
+  resolveDeepestAncestorId,
+  resolveNonNullAncestors,
+} from './resolve-row-channel';
 
 // Stored ID-path rule for sequence routing, move-out, and subtree addressing.
 export {
   computeAncestorPath,
   computeChannelPath,
   computeProductPath,
+  deepestAncestorSql,
+  pathColumnSql,
   pathHomeId,
   pathSegments,
   pathStartsWith,

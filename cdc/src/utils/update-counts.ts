@@ -1,4 +1,4 @@
-import { appConfig, hierarchy, resolveDeepestAncestorId, resolveNonNullAncestors } from 'shared';
+import { appConfig, entityIdColumnKey, hierarchy, resolveDeepestAncestorId, resolveNonNullAncestors } from 'shared';
 import type { ActivityAction, AncestorSource, EntityType } from 'shared';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
@@ -298,8 +298,9 @@ function getEntityDeltas(
 function warnMissingAncestors(h: AncestorSource, entityType: EntityType, row: CdcRowData): void {
   const nullable = h.getNullableAncestors(entityType);
   for (const ancestor of h.getOrderedAncestors(entityType)) {
-    if (typeof row[`${ancestor}Id`] === 'string') continue;
+    const idColumn = entityIdColumnKey(ancestor);
+    if (typeof row[idColumn] === 'string') continue;
     if (nullable.includes(ancestor)) continue;
-    log.warn(`getEntityDeltas: missing "${ancestor}Id" for ${entityType}`, { id: row.id });
+    log.warn(`getEntityDeltas: missing "${idColumn}" for ${entityType}`, { id: row.id });
   }
 }

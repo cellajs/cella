@@ -1,32 +1,29 @@
 import type { PostAppCatchupResponse } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('shared', () => ({
-  appConfig: {
-    slug: 'test',
-    channelEntityTypes: ['organization', 'project'],
-    entityIdColumnKeys: { organization: 'organizationId', project: 'projectId' },
-    seenTrackedProductTypes: [],
-  },
-  hierarchy: {
-    getOrderedAncestors: (entityType: string) => {
-      if (entityType === 'attachment') return ['project', 'organization'];
-      return ['organization'];
+// Real builder instance and real resolvers over a synthetic sub-org topology; only the
+// app-bound config and hierarchy singletons are replaced.
+vi.mock('shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('shared')>();
+  const roles = actual.createRoleRegistry(['member'] as const);
+  const hierarchy = actual
+    .createEntityHierarchy(roles)
+    .user()
+    .channel('organization', { parent: null, roles: roles.all })
+    .channel('project', { parent: 'organization', roles: roles.all })
+    .product('attachment', { parent: 'project' })
+    .build();
+  return {
+    ...actual,
+    appConfig: {
+      slug: 'test',
+      channelEntityTypes: hierarchy.channelTypes,
+      entityIdColumnKeys: hierarchy.idColumnKeys,
+      seenTrackedProductTypes: [],
     },
-    getParent: () => null,
-  },
-  resolveDeepestAncestorId: (
-    hierarchy: { getOrderedAncestors: (entityType: string) => readonly string[] },
-    entityType: string,
-    row: Record<string, unknown>,
-  ) => {
-    for (const type of hierarchy.getOrderedAncestors(entityType)) {
-      const id = row[`${type}Id`];
-      if (typeof id === 'string' && id) return id;
-    }
-    return null;
-  },
-}));
+    hierarchy,
+  };
+});
 
 vi.mock('~/modules/common/blocknote/yjs-editor', () => ({
   isYjsEditorActive: () => false,

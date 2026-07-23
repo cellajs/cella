@@ -1,31 +1,28 @@
 import type { EntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// Synthetic sub-org topology: 'task' is a product homed at the `project` channel so home-list
-// placement (deepest non-null ancestor) is exercised; base cella only has org-homed attachments.
-vi.mock('shared', () => ({
-  appConfig: {
-    channelEntityTypes: ['organization', 'project'],
-    entityIdColumnKeys: { organization: 'organizationId', project: 'projectId' },
-  },
-  hierarchy: {
-    getOrderedAncestors: (entityType: string) => {
-      if (entityType === 'task') return ['project', 'organization'];
-      return ['organization'];
+// Synthetic sub-org topology as a real builder instance: 'task' is a product homed at the
+// `project` channel so home-list placement (deepest non-null ancestor) is exercised; base
+// cella only has org-homed attachments.
+vi.mock('shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('shared')>();
+  const roles = actual.createRoleRegistry(['member'] as const);
+  const hierarchy = actual
+    .createEntityHierarchy(roles)
+    .user()
+    .channel('organization', { parent: null, roles: roles.all })
+    .channel('project', { parent: 'organization', roles: roles.all })
+    .product('task', { parent: 'project' })
+    .build();
+  return {
+    ...actual,
+    appConfig: {
+      channelEntityTypes: hierarchy.channelTypes,
+      entityIdColumnKeys: hierarchy.idColumnKeys,
     },
-  },
-  resolveDeepestAncestorId: (
-    hierarchy: { getOrderedAncestors: (entityType: string) => readonly string[] },
-    entityType: string,
-    row: Record<string, unknown>,
-  ) => {
-    for (const type of hierarchy.getOrderedAncestors(entityType)) {
-      const id = row[`${type}Id`];
-      if (typeof id === 'string' && id) return id;
-    }
-    return null;
-  },
-}));
+    hierarchy,
+  };
+});
 
 vi.mock('~/modules/common/blocknote/yjs-editor', () => ({
   isYjsEditorActive: () => false,

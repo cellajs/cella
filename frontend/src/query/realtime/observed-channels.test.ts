@@ -2,24 +2,29 @@ import { QueryObserver } from '@tanstack/react-query';
 import type { EntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// Synthetic sub-org topology because base cella has no sub-org channels.
-// Task is a product homed at the `project` channel under `organization`.
-vi.mock('shared', () => ({
-  appConfig: {
-    slug: 'test',
-    channelEntityTypes: ['organization', 'project'],
-    entityIdColumnKeys: { organization: 'organizationId', project: 'projectId', task: 'taskId' },
-    seenTrackedProductTypes: [],
-  },
-  hierarchy: {
-    getOrderedAncestors: (entityType: string) => {
-      if (entityType === 'task') return ['project', 'organization'];
-      return ['organization'];
+// Synthetic sub-org topology (real builder instance) because base cella has no sub-org
+// channels. Task is a product homed at the `project` channel under `organization`.
+vi.mock('shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('shared')>();
+  const roles = actual.createRoleRegistry(['member'] as const);
+  const hierarchy = actual
+    .createEntityHierarchy(roles)
+    .user()
+    .channel('organization', { parent: null, roles: roles.all })
+    .channel('project', { parent: 'organization', roles: roles.all })
+    .product('task', { parent: 'project' })
+    .build();
+  return {
+    ...actual,
+    appConfig: {
+      slug: 'test',
+      channelEntityTypes: hierarchy.channelTypes,
+      entityIdColumnKeys: hierarchy.idColumnKeys,
+      seenTrackedProductTypes: [],
     },
-    getParent: () => null,
-    isProduct: (entityType: string) => entityType === 'task',
-  },
-}));
+    hierarchy,
+  };
+});
 
 // Sub-org channels are absent from the route context, so viewing detection uses the query cache.
 let routeMatches: { context?: Record<string, unknown> }[] = [];

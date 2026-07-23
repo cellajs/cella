@@ -1,4 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
+import { wideHierarchy } from 'shared/testing/wide-fixture';
 
 export const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, gcTime: 0 } },
@@ -77,58 +78,19 @@ export function makeInfiniteData(items: { id: string; membership?: TestMembershi
   return { pages: [{ items }], pageParams: [undefined] };
 }
 
+// Real builder instance from the shared wide fixture (org with workspace/project siblings).
+// The deep-path import stays unmocked when tests vi.mock('shared'), so traversal logic is
+// the real class, never a hand-rolled twin.
+export const mockHierarchy = wideHierarchy;
+
 export const mockAppConfig = {
-  channelEntityTypes: ['organization', 'workspace', 'project'] as string[],
-  entityIdColumnKeys: { organization: 'organizationId', workspace: 'workspaceId', project: 'projectId' } as Record<
-    string,
-    string
-  >,
+  channelEntityTypes: [...wideHierarchy.channelTypes] as string[],
+  entityIdColumnKeys: wideHierarchy.idColumnKeys as Record<string, string>,
   entityActions: ['create', 'read', 'update', 'delete', 'search'] as string[],
   menuStructure: [
     { entityType: 'organization', subentityType: null },
     { entityType: 'workspace', subentityType: 'project' },
   ] as { entityType: string; subentityType: string | null }[],
-};
-
-const parentMap: Record<string, string | null> = {
-  organization: null,
-  workspace: 'organization',
-  project: 'organization',
-};
-
-const childrenMap: Record<string, string[]> = {
-  organization: ['workspace', 'project'],
-  workspace: [],
-  project: [],
-};
-
-export const mockHierarchy = {
-  isChannel(entityType: string): boolean {
-    return mockAppConfig.channelEntityTypes.includes(entityType);
-  },
-  getOrderedAncestors(entityType: string): string[] {
-    const ancestors: string[] = [];
-    let current = parentMap[entityType] ?? null;
-    while (current !== null) {
-      ancestors.push(current);
-      current = parentMap[current] ?? null;
-    }
-    return ancestors;
-  },
-  hasAncestor(entityType: string, ancestor: string): boolean {
-    return this.getOrderedAncestors(entityType).includes(ancestor);
-  },
-  getOrderedDescendants(channelType: string): string[] {
-    const descendants: string[] = [];
-    const queue = [...(childrenMap[channelType] ?? [])];
-    let i = 0;
-    while (i < queue.length) {
-      const current = queue[i++];
-      descendants.push(current);
-      queue.push(...(childrenMap[current] ?? []));
-    }
-    return descendants;
-  },
 };
 
 /** Stub computeCan, returns all-false for each entity type (self + descendants). */

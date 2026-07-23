@@ -1,3 +1,13 @@
+import {
+  entityIdColumnKey,
+  entityIdColumnName,
+  possibleHomeChannels,
+  type ResolvedAncestor,
+  resolveDeepestAncestorId,
+  resolveNonNullAncestors,
+} from './resolve-row-channel';
+import { computeAncestorPath, computeChannelPath, computeProductPath, deepestAncestorSql, pathColumnSql } from './row-path';
+
 // Role Registry
 function buildRoleMap<T extends readonly string[]>(roleNames: T): { readonly [K in T[number]]: K } {
   return Object.fromEntries(roleNames.map((r) => [r, r])) as { readonly [K in T[number]]: K };
@@ -345,6 +355,11 @@ export class EntityHierarchy<
   readonly productTypes: readonly TProducts[];
   readonly allTypes: readonly ('user' | TChannels | TProducts)[];
   readonly relatableChannelTypes: readonly TChannels[];
+  /**
+   * Every entity type mapped to its id-column key (`organization` to `organizationId`).
+   * The hierarchy owns this rule; `appConfig.entityIdColumnKeys` is derived from it.
+   */
+  readonly idColumnKeys: { readonly [K in 'user' | TChannels | TProducts]: `${K}Id` };
 
   constructor(roles: TRoles, entities: Map<string, EntityEntry>) {
     this.roleRegistry = roles;
@@ -371,6 +386,10 @@ export class EntityHierarchy<
     this.productTypes = Object.freeze(products);
     this.allTypes = Object.freeze(all);
     this.relatableChannelTypes = Object.freeze([...relatableChannels]);
+    // Mapped literal type from a runtime loop; a single assertion bridges the two.
+    this.idColumnKeys = Object.freeze(Object.fromEntries(all.map((t) => [t, entityIdColumnKey(t)]))) as {
+      readonly [K in 'user' | TChannels | TProducts]: `${K}Id`;
+    };
     Object.freeze(this);
   }
 
@@ -508,6 +527,61 @@ export class EntityHierarchy<
 
   get roles(): TRoles {
     return this.roleRegistry;
+  }
+
+  // Row location: the hierarchy instance is the canonical entry point for id-column naming,
+  // home attribution, and path computation. Implementations live in `resolve-row-channel.ts`
+  // and `row-path.ts`, which also expose them as free functions over the minimal
+  // `AncestorSource` seam for injected or under-construction hierarchies.
+
+  /** Id-column key for an entity type (`project` to `projectId`). */
+  idColumnKey(entityType: string): string {
+    return entityIdColumnKey(entityType);
+  }
+
+  /** Id-column SQL name for an entity type (`courseSection` to `course_section_id`). */
+  idColumnName(entityType: string): string {
+    return entityIdColumnName(entityType);
+  }
+
+  /** All non-null ancestors of a row, most-specific → root. */
+  resolveNonNullAncestors(entityType: string, row: Record<string, unknown>): ResolvedAncestor[] {
+    return resolveNonNullAncestors(this, entityType, row);
+  }
+
+  /** The row's effective home channel id: deepest non-null ancestor, null when all are null. */
+  resolveDeepestAncestorId(entityType: string, row: Record<string, unknown>): string | null {
+    return resolveDeepestAncestorId(this, entityType, row);
+  }
+
+  /** Channel types that can be a row's effective home under the deepest-non-null rule. */
+  possibleHomeChannels(entityType: string): string[] {
+    return possibleHomeChannels(this, entityType);
+  }
+
+  /** Root-first path from populated ancestor IDs; null without the root ancestor. */
+  computeAncestorPath(entityType: string, row: Record<string, unknown>): string | null {
+    return computeAncestorPath(this, entityType, row);
+  }
+
+  /** A product row's path: its non-null ancestor chain. */
+  computeProductPath(entityType: string, row: Record<string, unknown>): string | null {
+    return computeProductPath(this, entityType, row);
+  }
+
+  /** A channel row's path: its ancestor chain plus its own id. */
+  computeChannelPath(entityType: string, row: Record<string, unknown>): string | null {
+    return computeChannelPath(this, entityType, row);
+  }
+
+  /** Generated-column SQL for the stored path; `appendOwnId` for channel entities. */
+  pathColumnSql(entityType: string, appendOwnId: boolean): string {
+    return pathColumnSql(this, entityType, appendOwnId);
+  }
+
+  /** COALESCE SQL over aliased ancestor id columns: the home channel id of a row, in SQL. */
+  deepestAncestorSql(entityType: string, alias: string): string | null {
+    return deepestAncestorSql(this, entityType, alias);
   }
 }
 

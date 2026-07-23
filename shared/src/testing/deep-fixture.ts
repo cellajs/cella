@@ -23,14 +23,6 @@ export const deepChannelRoles = {
 /** Entity vocabulary for policy configuration (excludes the auxiliary `task` product). */
 export const deepEntityTypes = ['user', 'organization', 'course', 'courseSection', 'project', 'item'] as const;
 
-/** The `${channelType}Id` column-key convention the deep tables follow. */
-export const deepIdColumns = {
-  organization: 'organizationId',
-  course: 'courseId',
-  courseSection: 'courseSectionId',
-  project: 'projectId',
-} as const;
-
 /**
  * Builds the deep hierarchy. The default marks every intermediate ancestor of `item` nullable
  * (rows attach at any depth, organization included). Suites proving nullable-boundary behavior
