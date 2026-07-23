@@ -115,6 +115,7 @@
     "remark-gfm": "^4.0.1",
     "remark-mdx-frontmatter": "^5.2.0",
     "sdk": "workspace:*",
+    "serwist": "^9.5.12",
     "shared": "workspace:*",
     "shiki": "^4.3.1",
     "slugify": "1.6.9",
@@ -174,11 +175,6 @@
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.10",
     "workbox-build": "^7.4.1",
-    "workbox-core": "^7.4.1",
-    "workbox-expiration": "^7.4.1",
-    "workbox-precaching": "^7.4.1",
-    "workbox-routing": "^7.4.1",
-    "workbox-strategies": "^7.4.1",
     "yaml": "^2.9.0"
   },
   "browserslist": [
