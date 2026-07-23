@@ -2022,9 +2022,6 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
-          "path": {
-            "type": ["string", "null"]
-          },
           "public": {
             "type": "boolean",
             "description": "When true, served directly from the CDN without a presigned URL."
@@ -2095,7 +2092,6 @@
           "deletedBy",
           "publicAt",
           "seq",
-          "path",
           "public",
           "bucketName",
           "groupId",
@@ -2139,8 +2135,7 @@
             "sourceId": "0841e0bb-2810-4252-8874-9789e1db3e97",
             "fieldTimestamps": {}
           },
-          "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
-          "path": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
+          "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
         },
         "x-tags": ["data", "attachments", "cella"]
       },
@@ -8365,8 +8360,7 @@
                         "sourceId": "966a04b5-5092-46e5-aef7-3b6c996a20eb",
                         "fieldTimestamps": {}
                       },
-                      "organizationId": "043315eb-ed4a-44ea-9cb4-a6c0fe212f50",
-                      "path": "043315eb-ed4a-44ea-9cb4-a6c0fe212f50"
+                      "organizationId": "043315eb-ed4a-44ea-9cb4-a6c0fe212f50"
                     },
                     {
                       "id": "c2ac3827-d82b-4e19-b35e-9d906125ba7c",
@@ -8398,8 +8392,7 @@
                         "sourceId": "c7c8981c-d73a-47bf-9e99-126641d43cb8",
                         "fieldTimestamps": {}
                       },
-                      "organizationId": "65b1a01e-b422-4db6-8339-b813cf84d752",
-                      "path": "65b1a01e-b422-4db6-8339-b813cf84d752"
+                      "organizationId": "65b1a01e-b422-4db6-8339-b813cf84d752"
                     }
                   ],
                   "total": 2
@@ -8600,8 +8593,7 @@
                         "sourceId": "691ea12d-93d0-4a05-89eb-59fada054211",
                         "fieldTimestamps": {}
                       },
-                      "organizationId": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2",
-                      "path": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2"
+                      "organizationId": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2"
                     },
                     {
                       "id": "3c32a472-30f5-492f-925e-fbf3260196c1",
@@ -8633,8 +8625,7 @@
                         "sourceId": "1cc76d33-0afc-40f8-b565-ad527c313a69",
                         "fieldTimestamps": {}
                       },
-                      "organizationId": "7a21be26-ba4e-4e7e-b27d-369703e5ea44",
-                      "path": "7a21be26-ba4e-4e7e-b27d-369703e5ea44"
+                      "organizationId": "7a21be26-ba4e-4e7e-b27d-369703e5ea44"
                     }
                   ],
                   "rejectedIds": []
@@ -8707,8 +8698,7 @@
                         "sourceId": "691ea12d-93d0-4a05-89eb-59fada054211",
                         "fieldTimestamps": {}
                       },
-                      "organizationId": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2",
-                      "path": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2"
+                      "organizationId": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2"
                     },
                     {
                       "id": "3c32a472-30f5-492f-925e-fbf3260196c1",
@@ -8740,8 +8730,7 @@
                         "sourceId": "1cc76d33-0afc-40f8-b565-ad527c313a69",
                         "fieldTimestamps": {}
                       },
-                      "organizationId": "7a21be26-ba4e-4e7e-b27d-369703e5ea44",
-                      "path": "7a21be26-ba4e-4e7e-b27d-369703e5ea44"
+                      "organizationId": "7a21be26-ba4e-4e7e-b27d-369703e5ea44"
                     }
                   ],
                   "rejectedIds": []
@@ -9057,8 +9046,7 @@
                     "sourceId": "0841e0bb-2810-4252-8874-9789e1db3e97",
                     "fieldTimestamps": {}
                   },
-                  "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
-                  "path": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
+                  "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
                 }
               }
             }
@@ -9207,8 +9195,7 @@
                     "sourceId": "0841e0bb-2810-4252-8874-9789e1db3e97",
                     "fieldTimestamps": {}
                   },
-                  "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
-                  "path": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
+                  "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
                 }
               }
             }

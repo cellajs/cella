@@ -30,7 +30,7 @@ const cdcMessageSchema = z.object({
     count: z.number().optional(),
   }),
   rowData: z.record(z.string(), z.unknown()),
-  // Old-row permission subset when the row's stored path changed (move-out)
+  // Old-row permission subset when the row's computed location path changed (move-out)
   movedFrom: z.record(z.string(), z.unknown()).nullable().optional(),
   // Per-row permission fields for batches: dispatch decides per subscriber across all rows
   batchRows: z

@@ -13,22 +13,13 @@ export {
   createRoleRegistry,
 } from './entity-hierarchy';
 
-// Row-to-home attribution (shared rule for CDC counters/self summaries, notifications, recalculation)
-export type { AncestorSource, ResolvedAncestor } from './resolve-row-channel';
-export { possibleHomeChannels, resolveDeepestAncestorId, resolveNonNullAncestors } from './resolve-row-channel';
-
-// Stored ID-path rule for sequence routing, move-out, and subtree addressing.
-export {
-  computeAncestorPath,
-  computeChannelPath,
-  computeProductPath,
-  pathHomeId,
-  pathSegments,
-  pathStartsWith,
-} from './row-path';
+// Row location: home attribution and paths are instance methods on EntityHierarchy.
+export type { ResolvedAncestor } from './resolve-row-channel';
+export { entityIdColumnKey, entityIdColumnName } from './resolve-row-channel';
+export { pathHomeId, pathSegments, pathStartsWith } from './row-path';
 
 // Utility functions
-export { hasKey, identityRecord, mergeDeep, recordFromKeys } from './utils';
+export { hasKey, identityRecord, mergeDeep, nonEmpty, recordFromKeys } from './utils';
 
 // Config types
 export type {

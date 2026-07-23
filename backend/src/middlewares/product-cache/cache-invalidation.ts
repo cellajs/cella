@@ -1,4 +1,4 @@
-import { isProductEntity } from 'shared';
+import { isProduct } from 'shared';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import { log } from '#/utils/logger';
 import { productCache } from './app-product-cache';
@@ -14,7 +14,7 @@ function handleActivityEvent(event: ActivityEvent): void {
   const { action, entityType, subjectId } = event;
 
   // Only handle delete for product entities with valid entityType and entityId
-  if (action !== 'delete' || !entityType || !subjectId || !isProductEntity(entityType)) {
+  if (action !== 'delete' || !entityType || !subjectId || !isProduct(entityType)) {
     return;
   }
 

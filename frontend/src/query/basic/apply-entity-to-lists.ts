@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import { appConfig, hierarchy, resolveDeepestAncestorId } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
@@ -12,7 +12,7 @@ import { getEntityQueryKeys } from './entity-query-registry';
  */
 export function resolveHomeChannelId(entityType: string, entity: ItemData): string | null {
   const entityRecord = entity as unknown as Record<string, unknown>;
-  const home = resolveDeepestAncestorId(hierarchy, entityType, entityRecord);
+  const home = hierarchy.resolveDeepestAncestorId(entityType, entityRecord);
   if (home) return home;
   const organizationId = entityRecord.organizationId;
   return typeof organizationId === 'string' ? organizationId : null;

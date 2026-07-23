@@ -110,10 +110,6 @@
           "minimum": -9007199254740991,
           "maximum": 9007199254740991
         },
-        "path": {
-          "type": ["string", "null"],
-          "required": true
-        },
         "public": {
           "type": "boolean",
           "required": true,
@@ -198,8 +194,7 @@
         "sourceId": "0841e0bb-2810-4252-8874-9789e1db3e97",
         "fieldTimestamps": {}
       },
-      "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
-      "path": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
+      "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
     }
   },
   {

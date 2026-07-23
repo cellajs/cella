@@ -1,5 +1,5 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import { isChannelEntity, appConfig } from 'shared';
+import { isChannel, appConfig } from 'shared';
 import type { ChannelIdColumns } from 'shared';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
@@ -51,8 +51,7 @@ export class TransactionBuffer {
       log.warn('BEGIN received while transaction active, flushing previous', {
         prevXid: this.activeXid,
         newXid: msg.xid,
-        pendingCount: this.pendingEvents.length,
-      });
+        pendingCount: this.pendingEvents.length });
       this.flushAll();
     }
 
@@ -78,7 +77,7 @@ export class TransactionBuffer {
     const { activity } = result;
 
     // Track channel entity deletes for streaming suppression
-    if (activity.action === 'delete' && activity.entityType && isChannelEntity(activity.entityType) && activity.subjectId) {
+    if (activity.action === 'delete' && activity.entityType && isChannel(activity.entityType) && activity.subjectId) {
       this.deletedChannelIds.add(activity.subjectId);
     }
 
@@ -127,8 +126,7 @@ export class TransactionBuffer {
       log.info('Suppressed cascaded delete events', {
         suppressedCount,
         processedCount: events.length,
-        deletedChannelIds,
-      });
+        deletedChannelIds });
     }
 
     if (events.length === 0) return;
@@ -158,8 +156,7 @@ export class TransactionBuffer {
         );
         if (nonDeleteTypes.size > 1) {
           log.warn('Transaction contains non-delete mutations across types', {
-            types: [...nonDeleteTypes],
-          });
+            types: [...nonDeleteTypes] });
         }
       }
 
@@ -189,7 +186,7 @@ export class TransactionBuffer {
     if (activity.action !== 'delete') return false;
 
     // Don't suppress the channel entity delete itself
-    if (activity.entityType && isChannelEntity(activity.entityType)) return false;
+    if (activity.entityType && isChannel(activity.entityType)) return false;
 
     // Check all channel entity ID columns on this activity
     for (const idColumn of channelIdColumnKeys) {
@@ -237,8 +234,7 @@ export class TransactionBuffer {
       log.info('Suppressed soft cascade update events', {
         softSuppressedCount,
         deleteTypes: [...deleteTypes],
-        survivingCount: kept.length,
-      });
+        survivingCount: kept.length });
     }
 
     return kept;
@@ -264,8 +260,7 @@ export class TransactionBuffer {
       if (this.activeXid !== null) {
         log.warn('Transaction buffer timeout, flushing without filtering', {
           xid: this.activeXid,
-          count: this.pendingEvents.length,
-        });
+          count: this.pendingEvents.length });
         this.flushAll();
       }
     }, transactionTimeoutMs);

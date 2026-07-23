@@ -1,5 +1,5 @@
 import type pg from 'pg';
-import {
+import { isChannel, isProduct,
   appConfig,
   buildSubject,
   checkAccess,
@@ -7,13 +7,10 @@ import {
   type ChannelEntityType,
   draftVisibleTo,
   hierarchy,
-  isChannelEntity,
-  isProductEntity,
   type PermissionMembership,
   type ProductEntityType,
   toColumnName,
-  toTableName,
-} from 'shared';
+  toTableName } from 'shared';
 import type { DocContext } from '../constants';
 import { withClient } from './db';
 
@@ -119,7 +116,7 @@ export async function resolveEntityScope(
  */
 export async function canEditEntity(ctx: DocContext): Promise<boolean> {
   const { entityType } = ctx;
-  if (!isChannelEntity(entityType) && !isProductEntity(entityType)) return false;
+  if (!isChannel(entityType) && !isProduct(entityType)) return false;
 
   return withClient(ctx.tenantId, ctx.userId, async (client) => {
     const [entity, memberships] = await Promise.all([
@@ -142,8 +139,7 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
       id: entity.id,
       createdBy,
       // The row itself: without it, every row-derived grant ('own', public read) fails closed.
-      row: entity as unknown as Record<string, unknown>,
-    });
+      row: entity as unknown as Record<string, unknown> });
 
     // Collaborative editing confers no system-admin bypass. The same stance the backend's
     // materialize endpoint takes, so the relay and the write it triggers agree.

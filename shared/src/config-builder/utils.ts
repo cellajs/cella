@@ -65,3 +65,12 @@ export function typedEntries<T extends Record<string, unknown>>(obj: T): [keyof 
 export function typedKeys<T extends Record<string, unknown>>(obj: T): (keyof T & string)[] {
   return Object.keys(obj) as (keyof T & string)[];
 }
+
+/**
+ * Narrow a runtime-built readonly array to the non-empty tuple type libraries like drizzle
+ * and zod demand for enum columns. Throws on an empty array so the narrowed type stays honest.
+ */
+export function nonEmpty<T>(values: readonly T[]): readonly [T, ...T[]] {
+  if (values.length === 0) throw new Error('nonEmpty: expected at least one element');
+  return values as readonly [T, ...T[]];
+}

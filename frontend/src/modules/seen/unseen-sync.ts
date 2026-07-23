@@ -1,4 +1,4 @@
-import { hierarchy, type ProductEntityType, resolveDeepestAncestorId, seenWindowMs } from 'shared';
+import { hierarchy, type ProductEntityType, seenWindowMs } from 'shared';
 import { isSeenTracked, matchesUnseenFilters, seenKeys } from '~/modules/seen/helpers';
 import { isSeenLocally } from '~/modules/seen/seen-store';
 import { applyUnseenDelta } from '~/modules/seen/unseen-delta';
@@ -40,7 +40,7 @@ export function ingestSyncedRows(
     if (Number.isNaN(recencyAt) || recencyAt <= cutoff) continue;
     if (!matchesUnseenFilters(productType, row)) continue;
 
-    const channelId = resolveDeepestAncestorId(hierarchy, productType, row) ?? fallbackChannelId;
+    const channelId = hierarchy.resolveDeepestAncestorId(productType, row) ?? fallbackChannelId;
     const seen = isSeenLocally(row.id);
 
     if (typeof row.deletedAt === 'string' && row.deletedAt.length > 0) {

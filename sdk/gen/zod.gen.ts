@@ -409,7 +409,6 @@ export const zAttachment = z.object({
   deletedBy: z.uuid().nullable(),
   publicAt: z.string().nullable(),
   seq: z.int().gte(-9007199254740991).lte(9007199254740991),
-  path: z.string().nullable(),
   public: z.boolean(),
   bucketName: z.string().max(255),
   groupId: z.uuid().nullable(),

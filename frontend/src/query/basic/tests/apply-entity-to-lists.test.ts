@@ -2,26 +2,28 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { EntityQueryKeys } from '~/query/basic/entity-query-registry';
 import type { ItemData, OrgRoutableItemData } from '~/query/basic/types';
 
-// Base cella has only org-homed attachments; mock a minimal org-only topology so home resolution
-// (deepest non-null ancestor, org for org-homed rows) is deterministic here.
-vi.mock('shared', () => ({
-  appConfig: {
-    channelEntityTypes: ['organization'],
-    entityIdColumnKeys: { organization: 'organizationId' },
-  },
-  hierarchy: { getOrderedAncestors: () => ['organization'] },
-  resolveDeepestAncestorId: (
-    hierarchy: { getOrderedAncestors: (entityType: string) => readonly string[] },
-    entityType: string,
-    row: Record<string, unknown>,
-  ) => {
-    for (const type of hierarchy.getOrderedAncestors(entityType)) {
-      const id = row[`${type}Id`];
-      if (typeof id === 'string' && id) return id;
-    }
-    return null;
-  },
-}));
+// Base cella has only org-homed attachments; a real builder instance with an org-only topology
+// keeps home resolution (deepest non-null ancestor, org for org-homed rows) deterministic here.
+vi.mock('shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('shared')>();
+  const roles = actual.createRoleRegistry(['member'] as const);
+  const hierarchy = actual
+    .createEntityHierarchy(roles)
+    .user()
+    .channel('organization', { parent: null, roles: roles.all })
+    .product('attachment', { parent: 'organization' })
+    .build();
+  return {
+    ...actual,
+    appConfig: {
+      channelEntityTypes: hierarchy.channelTypes,
+      entityIdColumnKeys: hierarchy.idColumnKeys,
+    },
+    hierarchy,
+    isChannel: hierarchy.isChannel,
+    isProduct: hierarchy.isProduct,
+  };
+});
 vi.mock('~/query/offline', () => ({ sourceId: 'test-source' }));
 vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
 vi.stubGlobal('navigator', { onLine: true });
