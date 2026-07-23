@@ -4,9 +4,9 @@ This document explains Cella's contextual RBAC: how the answer to **may this act
 
 ### TL;DR
 
-For any row, the permission engine answers one question: can this user perform this action? It
-combines the user's memberships, the configured rules for their roles, and values on the row.
-Roles are assigned on containers such as organizations, and content inside uses those roles.
+**You present an access, the policy is consulted, a permission is returned.** The permission
+engine combines the user's memberships, the configured rules for their roles, and values on the
+row. Roles are assigned on containers such as organizations, and content inside uses those roles.
 Creator-only rules compare the user with the row's `createdBy` value.
 
 ## Architecture

@@ -4,8 +4,8 @@ This document explains how product data stays current across clients and what th
 
 ### TL;DR
 
-When data changes, the server sends a small notification and the client fetches the changed rows
-through the normal API, often served from cache. The client then updates its one data cache. The
+**Notify-then-fetch**. When data changes, the server sends a small notification and the client fetches the changed rows
+through the normal API, often served from cache. The client then updates relevant cache only. The
 sync system reuses the app's existing data model, storage, and permission checks. Live updates and
 reconnects follow this same fetch path.
 

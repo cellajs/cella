@@ -1,13 +1,12 @@
 # CDC worker
 
-This document covers the change-data-capture worker: the service that turns committed PostgreSQL changes into the server-side outputs used by the sync engine.
+This document covers the CDC worker: the service that turns committed PostgreSQL changes into the server-side outputs used by the sync engine.
 
 ### TL;DR
 
-The worker watches committed database changes and turns them into audit history, progress numbers,
+A **Change Data Capture** worker watches committed database changes and turns them into audit history, progress numbers,
 totals, and live client notifications. It keeps changes in commit order and groups nearby changes
-when the same clients should receive them. Each change gets a database-backed order number; clients
-use that number, not network arrival order, to put changes in order.
+when the same clients should receive them. Each change gets a order number and all counts are updated.
 
 ## How it fits
 

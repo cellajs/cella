@@ -4,14 +4,14 @@ This document is the system-level tour of a Cella app and the starting point for
 
 ### TL;DR
 
-Cella is a full-stack TypeScript project template for collaborative, content-rich web apps. Most
+Cella is a **full-stack TypeScript project template for collaborative, content-rich web apps**. Most
 feature work follows a familiar path: store rows in PostgreSQL, expose API endpoints, and read them
 in React. Live updates, offline support, and tenant isolation build on that path. One configuration
 describes the app's data types, how they relate, and the behavior Cella generates for them.
 
 ## Overview
 
-This diagram shows the normal production topology of a Cella app. Your own setup could be different since you can choose to add or remove workers or 'cohost' them into a single backend VM.
+This diagram shows the normal production topology of a Cella app. Your own setup could be different since you can choose to add or remove workers. You can even **'cohost' them into a single backend VM**.
 
 ```
    ┌──────────────┐                          ┌──────────────────────────────┐

@@ -4,16 +4,16 @@ This document unpacks the client's central object: the query client that holds s
 
 ### TL;DR
 
-Every tab runs one query client. API requests fill it, live updates patch it, background services subscribe to it, and a persister writes selected parts to a per-user database. Even file downloads start from what appears in it. Understand the query client and you understand the client.
+Every tab runs one query client. API requests fill it, live updates patch it, background services subscribe to it, and a persister writes selected parts to a per-user database. Even file downloads start from what appears in it. **The query client is where all server data comes together**.
 
-## Around the query client
+## Bigger picture
 
-Not everything is server data. The client has five state owners, and the query client is the one this document unpacks:
+Before we go into the query client: not everything is server data. The client has five state owners, and the query client is the one this document unpacks:
 
 | State kind | Runtime owner | Persistence |
 | --- | --- | --- |
 | Shareable navigation and view state | TanStack Router | URL and browser history |
-| Server entities and resources | TanStack Query | Selected queries in per-user `appdb` |
+| **Server entities and resources** | TanStack Query | Selected queries in per-user `appdb` |
 | Signed-in client state | Zustand | Per-user `appdb` key/value records |
 | Bootstrap user and UI preferences | Zustand | `localStorage`, available before `appdb` opens |
 | App shell and static assets | Browser | Service-worker Cache Storage |
