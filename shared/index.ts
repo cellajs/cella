@@ -56,7 +56,6 @@ export type {
   EntityActionType,
   EntityIdColumnKey,
   EntityIdColumnKeys,
-  EntityIdColumnKeysShape,
   EntityIdColumns,
   EntityRole,
   EntityType,
@@ -88,7 +87,7 @@ export {
   isProductEntity,
 } from './src/entity-guards';
 
-export { hasKey, recordFromKeys, identityRecord, typedEntries, typedKeys } from './src/config-builder/utils';
+export { hasKey, identityRecord, nonEmpty, recordFromKeys, typedEntries, typedKeys } from './src/config-builder/utils';
 export { seenWindowMs } from './src/seen-window';
 export { draftVisibleTo, isUnpublishedDraft } from './src/published-rows';
 

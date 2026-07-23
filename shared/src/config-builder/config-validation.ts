@@ -1,12 +1,6 @@
-import type {
-  ChannelEntityType,
-  EntityIdColumnKeysShape,
-  EntityType,
-  ProductEntityType,
-} from '../../types';
+import type { ProductEntityType } from '../../types';
 import { accessPolicies } from '../../config/permissions-config';
 import { appConfig } from './app-config';
-import { hierarchy } from '../../config/config.default';
 import { getSubjectPolicies, isRowCondition } from '../permissions';
 import type { RequiredConfig } from './types';
 
@@ -16,32 +10,8 @@ type _ConfigSatisfiesRequired = Config extends RequiredConfig ? true : never;
 const _configValid: _ConfigSatisfiesRequired = true;
 void _configValid;
 
-// Validate entityIdColumnKeys covers all entity types with `${K}Id` naming. The map is
-// derived from `hierarchy.idColumnKeys`, so this guards hierarchy/entityTypes agreement.
-const _entityIdKeysCheck: EntityIdColumnKeysShape = appConfig.entityIdColumnKeys;
-void _entityIdKeysCheck;
-
-// Validate entityTypes matches hierarchy.allTypes (bi-directional type check)
-type HierarchyEntityType = (typeof hierarchy.allTypes)[number];
-const _entityTypesMatch1: EntityType extends HierarchyEntityType ? true : false = true;
-const _entityTypesMatch2: HierarchyEntityType extends EntityType ? true : false = true;
-void _entityTypesMatch1;
-void _entityTypesMatch2;
-
-// Validate channelEntityTypes matches hierarchy.channelTypes
-type HierarchyChannelType = (typeof hierarchy.channelTypes)[number];
-const _channelTypesMatch1: ChannelEntityType extends HierarchyChannelType ? true : false = true;
-const _channelTypesMatch2: HierarchyChannelType extends ChannelEntityType ? true : false = true;
-void _channelTypesMatch1;
-void _channelTypesMatch2;
-
-// Validate productEntityTypes matches hierarchy.productTypes
-type HierarchyProductType = (typeof hierarchy.productTypes)[number];
-const _productTypesMatch1: ProductEntityType extends HierarchyProductType ? true : false = true;
-const _productTypesMatch2: HierarchyProductType extends ProductEntityType ? true : false = true;
-void _productTypesMatch1;
-void _productTypesMatch2;
-
+// Entity arrays and id-column keys are derived from the hierarchy in config.default.ts, so
+// hierarchy/config agreement no longer needs bidirectional checks here.
 
 // Unseen tracking requires unconditional channel reads for tracked types.
 // Conditional visibility must keep endpoint-based counting.

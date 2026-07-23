@@ -36,7 +36,7 @@ export {
 } from './row-path';
 
 // Utility functions
-export { hasKey, identityRecord, mergeDeep, recordFromKeys } from './utils';
+export { hasKey, identityRecord, mergeDeep, nonEmpty, recordFromKeys } from './utils';
 
 // Config types
 export type {

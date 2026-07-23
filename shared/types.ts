@@ -97,9 +97,6 @@ export type SystemRole = (typeof appConfig.systemRoles)[number] | null;
 /** Entity roles type - union of all roles from the role registry. */
 export type EntityRole = (typeof roles.all)[number];
 
-/** Expected shape for entityIdColumnKeys - must have all entity types as keys with `${EntityType}Id` naming. */
-export type EntityIdColumnKeysShape = { readonly [K in EntityType]: `${K}Id` };
-
 /** Entity ID column keys mapping (e.g., { organization: 'organizationId' }) */
 export type EntityIdColumnKeys = typeof appConfig.entityIdColumnKeys;
 

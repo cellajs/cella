@@ -1,25 +1,23 @@
 import type { ConfigMode, RequiredConfig, S3ConfigInput } from '../src/config-builder/types';
+import { nonEmpty } from '../src/config-builder/utils';
 import { hierarchy } from './hierarchy-config';
 
 // Re-export for external consumers
 export { roles, hierarchy } from './hierarchy-config';
 
-// Set these early for reuse
-const entityTypes = ['user', 'organization', 'attachment'] as const;
-const productEntityTypes = ['attachment'] as const;
-
 export const config = {
 
-  // Entity data model
+  // Entity data model, derived from the hierarchy: the builder in hierarchy-config.ts is the
+  // single declaration of the entity taxonomy.
 
-  /** All entity types in the app - must match hierarchy.allTypes. */
-  entityTypes,
+  /** All entity types in the app. */
+  entityTypes: nonEmpty(hierarchy.allTypes),
 
-  /** Channel entities with memberships - must match hierarchy.channelTypes. */
-  channelEntityTypes: ['organization'] as const,
+  /** Channel entities with memberships. */
+  channelEntityTypes: nonEmpty(hierarchy.channelTypes),
 
-  /** Product/content entities - must match hierarchy.productTypes. */
-  productEntityTypes,
+  /** Product/content entities. */
+  productEntityTypes: nonEmpty(hierarchy.productTypes),
 
   /**
    * Product entity types tracked for seen/unseen counts.
@@ -41,8 +39,8 @@ export const config = {
    * other product entities. Forks extend when adding new embedding relationships.
    */
   productEmbeddings: [] as readonly {
-    readonly embeddedProduct: (typeof productEntityTypes)[number];
-    readonly hostProduct: (typeof productEntityTypes)[number];
+    readonly embeddedProduct: (typeof hierarchy.productTypes)[number];
+    readonly hostProduct: (typeof hierarchy.productTypes)[number];
     readonly hostColumn: string;
   }[],
 

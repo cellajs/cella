@@ -92,6 +92,22 @@
         "pnpm check"
       ],
       "summary": "EntityHierarchy instance owns row location: idColumnKeys/idColumnKey/idColumnName, resolve*, compute*Path, pathColumnSql, deepestAncestorSql. appConfig.entityIdColumnKeys now derives from hierarchy.idColumnKeys (replace the literal map in config.default.ts). backend pathColumnExpression removed in favor of hierarchy.pathColumnSql. No wire-shape or DB change."
+    },
+    {
+      "id": "20260723T0802-hierarchy-derived-entity-arrays",
+      "version": "next",
+      "title": "Hierarchy-derived entity arrays in config",
+      "kind": "manual",
+      "forkBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "shared"
+      ],
+      "requires": [
+        "pnpm check"
+      ],
+      "summary": "config.default.ts derives entityTypes/channelEntityTypes/productEntityTypes from the hierarchy via nonEmpty(); bidirectional config-validation checks and EntityIdColumnKeysShape removed. Forks replace their literal arrays with the derived form. No wire or DB change."
     }
   ]
 }
