@@ -18,7 +18,7 @@ describe('shared buildSubject', () => {
   const ancestors = hierarchy.getOrderedAncestors(productWithAncestors);
   const ancestorIdKeys = ancestors.map((a) => appConfig.entityIdColumnKeys[a]);
 
-  /** Build ancestor context ID columns with all ancestors set to test values */
+  /** Build ancestor channel ID columns with all ancestors set to test values */
   const fullAncestorChannelIds = () => Object.fromEntries(ancestorIdKeys.map((key) => [key, `test-${key}`]));
 
   it('returns a subject with entityType and generated id', () => {
@@ -27,7 +27,7 @@ describe('shared buildSubject', () => {
     expect(typeof subject.id).toBe('string');
   });
 
-  it('extracts ancestor context IDs from the input columns', () => {
+  it('extracts ancestor channel IDs from the input columns', () => {
     const subject = buildSubject(productWithAncestors, fullAncestorChannelIds());
     for (const key of ancestorIdKeys) {
       const ancestor = ancestors[ancestorIdKeys.indexOf(key)];

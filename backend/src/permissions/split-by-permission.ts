@@ -5,14 +5,14 @@ import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
 import { resolveEntities } from '#/modules/entities/entities-queries';
 import { checkAccessBatch } from '#/permissions';
-import { accessFrom } from '#/permissions/actor';
+import { accessFrom } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 /**
  * Resolves `ids` and splits them into `allowedIds` / `rejectedIds` by whether the user may perform
  * `action`.
  *
- * @param entityType - The type of entity (context or product, not user).
+ * @param entityType - The type of entity (channel or product, not user).
  * @throws {AppError} 403 if no entities are allowed.
  */
 export const splitByPermission = async (
@@ -41,7 +41,7 @@ export const splitByPermission = async (
 
   for (const entity of entities) {
     const result = results.get(entity.id);
-    if (result?.isAllowed) {
+    if (result?.allowed) {
       allowedIds.push(entity.id);
     } else {
       rejectedIds.push(entity.id);

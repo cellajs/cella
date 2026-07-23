@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   makeInfiniteData,
   makeMembership,
-  mockAccessPolicies,
   mockAppConfig,
   mockComputeCan,
   mockGetEntityQueryKeys,
   mockGetRegisteredEntityTypes,
   mockHasEntityQueryKeys,
   mockHierarchy,
+  mockPolicyMatrix,
   mockRegisterEntityQueryKeys,
   queryClient,
 } from '~/query/enrichment/test-setup';
@@ -18,7 +18,7 @@ vi.mock('shared', () => ({
   hierarchy: mockHierarchy,
   isChannel: mockHierarchy.isChannel,
   computeCan: mockComputeCan,
-  accessPolicies: mockAccessPolicies,
+  policyMatrix: mockPolicyMatrix,
 }));
 vi.mock('~/query/query-client', () => ({ queryClient }));
 vi.mock('~/modules/me/query', () => ({ meKeys: { memberships: ['me', 'memberships'] } }));

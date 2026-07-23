@@ -1,31 +1,31 @@
 export type {
-  AccessPolicies,
-  AccessPolicyCallback,
-  AccessPolicyConfiguration,
-  AccessPolicyEntry,
-  ActionPermissionState,
+  PolicyMatrix,
+  PolicyCallback,
+  PolicyConfiguration,
+  PolicyEntry,
+  CanState,
   ChannelPolicyBuilder,
   EntityActionPermissions,
-  NormalizedPermissionValue,
-  PermissionValue,
-  SubjectAccessPolicies,
+  PolicyCell,
+  PolicyCellInput,
+  EntityPolicies,
 } from './types';
 export type { PublicReadGrants } from './public-read';
 export { isRowCondition, matchesRowCondition } from './row-conditions';
 export type { ConditionActor, RowConditionName, RowForCondition } from './row-conditions';
 
-// `configureAccessPolicies` is test-only; it lives at `shared/testing/policies`, not on this barrel.
-export { configurePermissions, getPolicyPermissions, getSubjectPolicies } from './access-policies';
-export type { PermissionsConfigResult } from './access-policies';
-export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './action-helpers';
+// `configurePolicyMatrix` is test-only; it lives at `shared/testing/policies`, not on this barrel.
+export { configurePermissions, getPolicyPermissions, getEntityPolicies } from './policy-matrix';
+export type { PermissionsConfigResult } from './policy-matrix';
+export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalCan, resolveCan } from './action-helpers';
 export { computeCan } from './compute-can';
 export type { EntityCanMap } from './compute-can';
-export { accessPolicies, publicReadGrants, elevatedRoles } from '../../config/permissions-config';
+export { policyMatrix, publicReadGrants, elevatedRoles } from '../../config/permissions-config';
 
 // Permission engine (tier-neutral decision logic)
-export { getAllDecisions } from './permission-manager/check';
-export { formatBatchPermissionSummary, formatPermissionDecision } from './permission-manager/format';
-export { validateMembership, validateSubject } from './permission-manager/validation';
+export { getAllDecisions } from './engine/check';
+export { formatBatchPermissionSummary, formatPermissionDecision } from './engine/format';
+export { validateMembership, validateSubject } from './engine/validation';
 export type {
   ActionAttribution,
   AncestorChannelIds,
@@ -33,11 +33,11 @@ export type {
   GrantSource,
   PermissionCheckOptions,
   PermissionDecision,
-  PermissionMembership,
+  AccessMembership,
   ResolvedChannelIds,
   SubjectForPermission,
-} from './permission-manager/types';
-export type { PermissionTopology } from './permission-manager/topology';
+} from './engine/types';
+export type { HierarchyOverrides } from './engine/resolve-hierarchy';
 export { buildSubject, buildSubjectFromEntity } from './build-subject';
 export { validateAncestorScope } from './validate-ancestor-scope';
 export { MissingScopeError } from './missing-scope-error';
@@ -50,6 +50,6 @@ export {
   checkAccessFanout,
   type CheckAccessFanoutOptions,
   type PermissionResult,
-} from './check-permission';
-export { type EngineAccess, getDecisionsForAccesses, type ResolveAccessOptions } from './permission-manager/resolve-access';
+} from './check-access';
+export { type EngineAccess, getDecisionsForAccesses, type ResolveAccessOptions } from './engine/resolve-access';
 export { toColumnName, toTableName } from './schema-naming';

@@ -2,14 +2,14 @@ import { appConfig } from '../config-builder/app-config';
 import { hierarchy } from '../../config/hierarchy-config';
 import type { ChannelEntityType, ProductEntityType } from '../../types';
 import { generateId } from '../utils/entity-id';
-import type { AncestorChannelIds, ChannelIdColumns, SubjectForPermission } from './permission-manager/types';
+import type { AncestorChannelIds, ChannelIdColumns, SubjectForPermission } from './engine/types';
 import { validateAncestorScope } from './validate-ancestor-scope';
 
 /**
  * Builds a permission subject from database-shaped ancestor ID columns, ignoring unrelated
  * properties. `null` marks an unused ancestor; `undefined` fails validation.
  *
- * @throws MissingScopeError if any required ancestor context ID is missing (undefined)
+ * @throws MissingScopeError if any required ancestor channel ID is missing (undefined)
  */
 export const buildSubject = (
   entityType: ChannelEntityType | ProductEntityType,

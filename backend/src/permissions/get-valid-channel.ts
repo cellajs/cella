@@ -4,7 +4,7 @@ import { AppError } from '#/core/error';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkAccess } from '#/permissions';
-import { accessFrom } from '#/permissions/actor';
+import { accessFrom } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import type { EntityModel } from '#/tables';
 
@@ -39,9 +39,9 @@ export const getValidChannel = async <T extends ChannelEntityType>(
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)
   const subject = buildSubjectFromEntity(entityType, entity);
-  const { isAllowed, membership } = checkAccess(accessFrom(ctx), action, subject);
+  const { allowed, membership } = checkAccess(accessFrom(ctx), action, subject);
 
-  if (!isAllowed) {
+  if (!allowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
   }
 

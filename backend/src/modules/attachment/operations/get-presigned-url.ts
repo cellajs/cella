@@ -7,7 +7,7 @@ import { findAttachmentById } from '#/modules/attachment/attachment-queries';
 import type { attachmentVariantSchema, presignedUrlQuerySchema } from '#/modules/attachment/attachment-schema';
 import { getSignedUrlFromKey } from '#/modules/attachment/helpers/signed-url';
 import { checkAccess } from '#/permissions';
-import { accessFrom } from '#/permissions/actor';
+import { accessFrom } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 type PresignedUrlQuery = z.infer<typeof presignedUrlQuerySchema>;
@@ -42,10 +42,10 @@ export async function getPresignedUrlOp(
   // Fail closed: no row means no permission to sign anything.
   if (!attachment) return { success: false, error: 'not_found', status: 404 };
 
-  // The actor carries the system-admin bypass, so `isAllowed` is already the final verdict.
+  // The actor carries the system-admin bypass, so `allowed` is already the final verdict.
   const subject = buildSubjectFromEntity('attachment', attachment);
-  const { isAllowed } = checkAccess(accessFrom(ctx), 'read', subject);
-  if (!isAllowed) return { success: false, error: 'forbidden', status: 403 };
+  const { allowed } = checkAccess(accessFrom(ctx), 'read', subject);
+  if (!allowed) return { success: false, error: 'forbidden', status: 403 };
 
   const key = selectVariantKey(attachment, variant);
   const url = await getSignedUrlFromKey(key, { bucketName: attachment.bucketName, publicBucket: false });

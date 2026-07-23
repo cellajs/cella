@@ -74,24 +74,24 @@ Optional arrays, add only if relevant:
 
 ### Step 3: 🔴 Declare access policies
 
-Add a `case` to the `switch` in [`shared/config/permissions-config.ts`](../shared/config/permissions-config.ts). The callback gives you `contexts` (CRUD cells per role×context) and `publicRead`.
+Add a `case` to the `switch` in [`shared/config/permissions-config.ts`](../shared/config/permissions-config.ts). The callback gives you `channels` (CRUD cells per role×channel) and `publicRead`.
 
 ```ts
 case 'note':
   // Public read: readable by anyone once the note's own publicAt is set (optional)
   publicRead();
-  contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-  contexts.organization.member({ create: 0, read: 0, update: 0, delete: 0 });
-  contexts.project.admin({ create: 1, read: 1, update: 1, delete: 1 });
-  contexts.project.member({ create: 1, read: 1, update: 1, delete: 1 });
-  contexts.project.guest({ create: 0, read: 1, update: 0, delete: 0 });
+  channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+  channels.organization.member({ create: 0, read: 0, update: 0, delete: 0 });
+  channels.project.admin({ create: 1, read: 1, update: 1, delete: 1 });
+  channels.project.member({ create: 1, read: 1, update: 1, delete: 1 });
+  channels.project.guest({ create: 0, read: 1, update: 0, delete: 0 });
   break;
 ```
 
 Cell values: `1` allowed, `0`/omitted denied, `'own'` = the built-in "actor is creator" row condition. That is the whole set — row conditions are closed (`own` + public read), not a fork extension point.
 
 - **Product entities have no "self" rows**: their context rows are _home_ rows where `create` is meaningful. (Channel entities distinguish _elevation_ rows on an ancestor, which carry `create`, from _self_ rows on the same context, which omit it. See the header comment in `permissions-config.ts`.)
-- **`publicRead()`**: the row is readable by anyone — anonymous included — once its own `publicAt` is set. Every context and product row already carries the column. Publication does **not** cascade: a public parent does not publish its children, because a cross-row rule cannot be evaluated by the collection-read SQL compiler or by CDC dispatch (which only ships the row itself). If you want cascade, propagate `publicAt` down to descendant rows — it is a data concern, not a permission rule. See [Permissions](./PERMISSIONS.md).
+- **`publicRead()`**: the row is readable by anyone — anonymous included — once its own `publicAt` is set. Every channel and product row already carries the column. Publication does **not** cascade: a public parent does not publish its children, because a cross-row rule cannot be evaluated by the collection-read SQL compiler or by CDC dispatch (which only ships the row itself). If you want cascade, propagate `publicAt` down to descendant rows — it is a data concern, not a permission rule. See [Permissions](./PERMISSIONS.md).
 
 ### Step 4: 🔴 Create the database table
 

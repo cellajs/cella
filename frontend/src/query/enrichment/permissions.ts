@@ -1,5 +1,5 @@
 import type { ChannelEntityType, EntityActionType, EntityCanMap, EntityType } from 'shared';
-import { accessPolicies, allActionsAllowed, computeCan, hierarchy } from 'shared';
+import { allActionsAllowed, computeCan, hierarchy, policyMatrix } from 'shared';
 import { useUserStore } from '~/modules/user/user-store';
 import type { EnrichableChannel } from '~/query/enrichment/types';
 
@@ -44,7 +44,7 @@ export function enrichWithPermissions(item: EnrichableChannel, channelType: Chan
 
   const isSystemAdmin = useUserStore.getState().isSystemAdmin;
   const computed = membership
-    ? computeCan(channelType, membership, accessPolicies)
+    ? computeCan(channelType, membership, policyMatrix)
     : isSystemAdmin
       ? computeSystemAdminCan(channelType)
       : {};

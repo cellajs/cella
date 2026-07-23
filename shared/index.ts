@@ -79,23 +79,23 @@ export { draftVisibleTo, isUnpublishedDraft } from './src/published-rows';
 
 // Permissions
 export type {
-  AccessPolicies,
-  AccessPolicyCallback,
-  AccessPolicyConfiguration,
-  AccessPolicyEntry,
+  PolicyMatrix,
+  PolicyCallback,
+  PolicyConfiguration,
+  PolicyEntry,
   ChannelPolicyBuilder,
   EntityActionPermissions,
-  NormalizedPermissionValue,
-  PermissionValue,
-  SubjectAccessPolicies,
+  PolicyCell,
+  PolicyCellInput,
+  EntityPolicies,
 } from './src/permissions';
 export { isRowCondition, matchesRowCondition } from './src/permissions';
 export type { ConditionActor, PublicReadGrants, RowConditionName, RowForCondition } from './src/permissions';
-export { configurePermissions, getPolicyPermissions, getSubjectPolicies } from './src/permissions';
+export { configurePermissions, getPolicyPermissions, getEntityPolicies } from './src/permissions';
 export type { PermissionsConfigResult } from './src/permissions';
-export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './src/permissions';
-export { accessPolicies, computeCan, publicReadGrants, elevatedRoles } from './src/permissions';
-export type { ActionPermissionState, EntityCanMap } from './src/permissions';
+export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalCan, resolveCan } from './src/permissions';
+export { policyMatrix, computeCan, publicReadGrants, elevatedRoles } from './src/permissions';
+export type { CanState, EntityCanMap } from './src/permissions';
 
 // Permission engine (tier-neutral decision logic, shared by backend + yjs)
 export {
@@ -126,8 +126,8 @@ export type {
   GrantSource,
   PermissionCheckOptions,
   PermissionDecision,
-  PermissionMembership,
-  PermissionTopology,
+  AccessMembership,
+  HierarchyOverrides,
   ResolvedChannelIds,
   SubjectForPermission,
 } from './src/permissions';

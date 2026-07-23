@@ -8,7 +8,7 @@ import '#/modules/entities/entities-module';
 import { entityRoutes } from '#/modules/entities/entities-routes';
 import { appCatchupOp, getLatestUserActivityId } from '#/modules/entities/operations/app-catchup';
 import { checkSlugOp } from '#/modules/entities/operations/check-slug';
-import { actorFrom } from '#/permissions/actor';
+import { actorFrom } from '#/permissions/access';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 import type { AppStreamSubscriber } from './helpers/dispatch-to-stream';
