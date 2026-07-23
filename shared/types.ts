@@ -12,7 +12,7 @@ export type ChannelEntityType = (typeof appConfig.channelEntityTypes)[number];
 /** Product entities: user-generated content (no memberships assigned) */
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
-/** Relatable channel entities - channel entities that appear as parents of product entities. Used for activities table columns and CDC context extraction. */
+/** Relatable channel entities - channel entities that appear as parents of product entities. Used for activities table columns and CDC channel extraction. */
 export type RelatableChannelEntityType = (typeof hierarchy.relatableChannelTypes)[number];
 
 /** Resource types that are not entities but have activities logged */
@@ -105,23 +105,23 @@ export type EntityIdColumnKey<T extends EntityType> = EntityIdColumnKeys[T];
 
 /**
  * Maps a set of entity types `TS` to their id-column keys (via {@link EntityIdColumnKey}), each
- * carrying value type `V`. The single generic behind every "context id columns" shape: pass the
+ * carrying value type `V`. The single generic behind every "channel id columns" shape: pass the
  * entity-type subset and the column value; a drizzle uuid builder, `string`, `string | null`, a
  * zod field, etc.
  */
 export type EntityIdColumns<TS extends EntityType, V> = { [T in TS as EntityIdColumnKey<T>]: V };
 
-// Context relation types derived from the hierarchy's phantom parent/related maps. They
-// generate context-entity id columns on product/context tables in a fork-agnostic way.
+// Channel relation types derived from the hierarchy's phantom parent/related maps. They
+// generate channel-entity id columns on product/channel tables in a fork-agnostic way.
 
 /** Type-level map of each entity to its strict parent (null = root). */
 type HierarchyParentMap = typeof hierarchy._parentMap;
 
-/** Type-level map of each entity to the union of its related (non-ancestor) contexts. */
+/** Type-level map of each entity to the union of its related (non-ancestor) channels. */
 type HierarchyRelatedMap = typeof hierarchy._relatedMap;
 
 /**
- * Strict ancestor context chain for an entity, resolved recursively via the parent map.
+ * Strict ancestor channel chain for an entity, resolved recursively via the parent map.
  * Example: `AncestorChannelType<'task'>` → `'project' | 'organization'`.
  */
 export type AncestorChannelType<E extends string> = E extends keyof HierarchyParentMap
@@ -133,16 +133,16 @@ export type AncestorChannelType<E extends string> = E extends keyof HierarchyPar
   : never;
 
 /**
- * The root channel entity type: the parentless context (no ancestors), e.g. `'organization'`.
+ * The root channel entity type: the parentless channel (no ancestors), e.g. `'organization'`.
  * Derived from the hierarchy so forks that rename/restructure the root don't need code changes.
- * Root context identifiers use `EntityIdColumnKey<RootChannelType>`.
+ * Root channel identifiers use `EntityIdColumnKey<RootChannelType>`.
  */
 export type RootChannelType = {
   [K in ChannelEntityType]: [AncestorChannelType<K>] extends [never] ? K : never;
 }[ChannelEntityType];
 
 /**
- * Related (non-ancestor) context types declared for an entity via `relatedChannels`.
+ * Related (non-ancestor) channel types declared for an entity via `relatedChannels`.
  * Example (Raak): `RelatedChannelType<'chat'>` → `'workspace' | 'project'`.
  */
 export type RelatedChannelType<E extends string> = E extends keyof HierarchyRelatedMap

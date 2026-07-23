@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { MailIcon, SquareXIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { isUnconditionalPermission } from 'shared';
+import { isUnconditionalCan } from 'shared';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { Export } from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -56,7 +56,7 @@ export const MembersTableBar = ({
   const isFiltered = role !== undefined || !!q;
   // Managing members is a channel-scoped affordance (not a per-row question), and the enriched
   // The entity has no `createdBy` for resolving `'own'`, so require an unconditional grant.
-  const canUpdate = isUnconditionalPermission(channel.can?.[channel.entityType]?.update);
+  const canUpdate = isUnconditionalCan(channel.can?.[channel.entityType]?.update);
   const entityType = channel.entityType;
 
   // Clear selected rows on search

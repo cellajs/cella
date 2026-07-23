@@ -1,7 +1,7 @@
 import type { PostAppCatchupResponse } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// Real builder instance and real resolvers over a synthetic sub-org topology; only the
+// Real builder instance and real resolvers over a synthetic sub-org hierarchy; only the
 // app-bound config and hierarchy singletons are replaced.
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();

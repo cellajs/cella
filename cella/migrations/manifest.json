@@ -77,9 +77,6 @@
       "summary": "Removed the usePreparedMutation hook; buildPreparedHandlers(mutation, prepare) stays. Mutation hooks now call useMutation directly and spread { ...mutation, ...buildPreparedHandlers(mutation, prepare) }, dropping five explicit generics and the Mutatable cast. PreparedVars/COALESCED unchanged. Frontend-only, no wire-shape change. Manual: each query.ts hook restructured (import swap + return rewrite + inline prepare input annotation)."
     },
     {
-      "id": "20260723T0824-public-read-flag",
-      "version": "next",
-      "title": "Public read is a flag, not a mode",
       "id": "20260723T0739-hierarchy-owned-id-columns",
       "version": "next",
       "title": "Hierarchy-owned id-column keys and row-location API",
@@ -87,9 +84,6 @@
       "forkBreaking": true,
       "clientCacheBump": false,
       "script": null,
-      "roots": ["shared", "backend/src", "frontend/src"],
-      "requires": ["pnpm check"],
-      "summary": "Deleted the single-member PublicReadMode union. PublicReadGrants values are now `true`, the config builder's publicRead() takes no argument, and GrantSource's public variant is { type: 'public' }. Decision logic unchanged (still the shared 'public' row condition over the row's publicAt); no wire-shape or database change. Manual: single-token edits at each call site."
       "roots": [
         "shared",
         "backend/src"
@@ -153,6 +147,45 @@
         "pnpm check"
       ],
       "summary": "Product rows compute their location path from ancestor id columns (hierarchy.computeProductPath) in CDC batching, move detection, and stream notifications; the stored generated column is dropped (wire: product responses lose the path field, clientCacheVersion bumped to v4-no-product-path). Channel tables keep their generated path for channel_counters ancestry."
+    },
+    {
+      "id": "20260723T0824-public-read-flag",
+      "version": "next",
+      "title": "Public read is a flag, not a mode",
+      "kind": "manual",
+      "forkBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "shared",
+        "backend/src",
+        "frontend/src"
+      ],
+      "requires": [
+        "pnpm check"
+      ],
+      "summary": "Deleted the single-member PublicReadMode union. PublicReadGrants values are now `true`, the config builder's publicRead() takes no argument, and GrantSource's public variant is { type: 'public' }. Decision logic unchanged (still the shared 'public' row condition over the row's publicAt); no wire-shape or database change. Manual: single-token edits at each call site."
+    },
+    {
+      "id": "20260723T0959-permission-vocabulary",
+      "version": "next",
+      "title": "Permission vocabulary consolidation",
+      "kind": "manual",
+      "forkBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "shared",
+        "backend/src",
+        "backend/tests",
+        "frontend/src",
+        "yjs/src"
+      ],
+      "requires": [
+        "pnpm sdk",
+        "pnpm check"
+      ],
+      "summary": "Access/Policy/Permission naming rule: AccessPolicies family -> PolicyMatrix/EntityPolicies/PolicyEntry, accessPolicies -> policyMatrix, PermissionValue/NormalizedPermissionValue -> PolicyCellInput/PolicyCell, ActionPermissionState -> CanState, resolvePermission -> resolveCan, isAllowed/enabled -> allowed, PermissionTopology removed (options.hierarchy + options.entityActions), config DSL ({ subject, contexts }) -> ({ entityType, channels }), collection scopes subChannelIds -> homeChannelIds/channelIds, AncestorScope -> IntermediateScope, permission-manager/ -> engine/, actor.ts -> access.ts. No wire-shape or DB change."
     }
   ]
 }

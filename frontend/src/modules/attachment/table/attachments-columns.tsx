@@ -2,7 +2,7 @@ import { UserIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
-import { resolvePermission, seenWindowMs } from 'shared';
+import { resolveCan, seenWindowMs } from 'shared';
 import { DownloadCell, EllipsisCell, ThumbnailCell } from '~/modules/attachment/table/attachment-cells';
 import { EditCellInput } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
@@ -32,7 +32,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
   // Per-entity affordances use `useResolveCan` for a precise decision.
   const canUpdate = !!channel.can?.attachment?.update;
 
-  // Per-row delete resolves 'own' against the row's creator (resolvePermission is what
+  // Per-row delete resolves 'own' against the row's creator (resolveCan is what
   // useResolveCan wraps; used directly here so the memo can depend on plain values).
   const deleteState = channel.can?.attachment?.delete;
   const userId = useUserStore((state) => state.user?.id);
@@ -88,7 +88,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
           <EllipsisCell
             row={row}
             tabIndex={tabIndex}
-            canDelete={resolvePermission(deleteState, row.createdBy?.id ?? null, userId)}
+            canDelete={resolveCan(deleteState, row.createdBy?.id ?? null, userId)}
           />
         ),
       },

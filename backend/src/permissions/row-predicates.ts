@@ -47,20 +47,20 @@ export type CollectionReadWhere =
 /**
  * Builds the OR-combined SQL predicate for resolved collection scopes.
  * Intermediate grants use their own denormalized ancestor ID column, while home grants use
- * `subChannelColumn`; row conditions compile against the actor.
+ * `homeChannelColumn`; row conditions compile against the actor.
  */
 export const buildCollectionReadWhere = (
   filter: CollectionReadFilter,
   table: AnyPgTable,
-  subChannelColumn: PgColumn,
+  homeChannelColumn: PgColumn,
   actor: Actor,
 ): CollectionReadWhere => {
   // Org-wide unconditional read (conditional scopes are subsumed and already dropped).
-  if (filter.subChannelIds === undefined) return { kind: 'all' };
+  if (filter.homeChannelIds === undefined) return { kind: 'all' };
 
   /**
    * The id column a scope entry filters by: its own level's column, or the home column.
-   * Column keys come from `appConfig.entityIdColumnKeys`; a synthetic topology level
+   * Column keys come from `appConfig.entityIdColumnKeys`; a synthetic hierarchy level
    * (parity tests) is absent there and falls back to the `${channelType}Id` convention
    * the config validator enforces for real entities.
    */
@@ -71,41 +71,41 @@ export const buildCollectionReadWhere = (
           (appConfig.entityIdColumnKeys as Partial<Record<string, string>>)[channelType] ?? `${channelType}Id`,
           `${channelType} scope`,
         )
-      : subChannelColumn;
+      : homeChannelColumn;
 
   const clauses: SQL[] = [];
 
-  if (filter.subChannelIds.length > 0) {
-    clauses.push(inArray(subChannelColumn, filter.subChannelIds));
+  if (filter.homeChannelIds.length > 0) {
+    clauses.push(inArray(homeChannelColumn, filter.homeChannelIds));
   }
 
-  for (const { channelType, subChannelIds } of filter.ancestorScopes ?? []) {
-    if (subChannelIds.length === 0) continue;
-    clauses.push(inArray(scopeColumn(channelType), subChannelIds));
+  for (const { channelType, channelIds } of filter.intermediateScopes ?? []) {
+    if (channelIds.length === 0) continue;
+    clauses.push(inArray(scopeColumn(channelType), channelIds));
   }
 
   // HOME-scoped grants (elevatedRoles): the grant level's column matches AND every
   // more-specific ancestor column is NULL, which identifies rows homed at that level.
-  for (const { channelType, subChannelIds, deeperChannels } of filter.homeScopes ?? []) {
-    if (subChannelIds.length === 0) continue;
+  for (const { channelType, channelIds, deeperChannels } of filter.homeScopes ?? []) {
+    if (channelIds.length === 0) continue;
     const scoped = and(
-      inArray(scopeColumn(channelType), subChannelIds),
+      inArray(scopeColumn(channelType), channelIds),
       ...deeperChannels.map((deeper) => isNull(scopeColumn(deeper))),
     );
     if (scoped) clauses.push(scoped);
   }
 
-  for (const { condition, subChannelIds, channelType, deeperChannels } of filter.conditionalScopes) {
+  for (const { condition, channelIds, channelType, deeperChannels } of filter.conditionalScopes) {
     const conditionSql = compileRowConditionSql(condition, table, actor);
     const homeNulls = (deeperChannels ?? []).map((deeper) => isNull(scopeColumn(deeper)));
-    if (subChannelIds === undefined) {
+    if (channelIds === undefined) {
       // Org-wide conditional grant: condition (plus home NULLs, if home-scoped) bounds the rows.
       const scoped = homeNulls.length > 0 ? and(conditionSql, ...homeNulls) : conditionSql;
       if (scoped) clauses.push(scoped);
       continue;
     }
-    if (subChannelIds.length === 0) continue;
-    const scoped = and(inArray(scopeColumn(channelType), subChannelIds), conditionSql, ...homeNulls);
+    if (channelIds.length === 0) continue;
+    const scoped = and(inArray(scopeColumn(channelType), channelIds), conditionSql, ...homeNulls);
     if (scoped) clauses.push(scoped);
   }
 

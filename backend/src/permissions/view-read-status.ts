@@ -44,7 +44,7 @@ export function resolveViewReadStatus(
 }
 
 /**
- * Same as {@link resolveViewReadStatus} against an explicit policy set / topology,
+ * Same as {@link resolveViewReadStatus} against an explicit policy set / hierarchy,
  * mirroring `resolveCollectionReadFilterForPolicies`. Lets parity tests exercise deep
  * synthetic hierarchies that cella's own 2-level config structurally cannot reach.
  */
@@ -79,7 +79,7 @@ function classifyPrefix(
   if (truePath != null && truePath !== prefix) return hasNoReadScope(filter) ? 'forbidden' : 'opaque';
 
   // Org-wide unconditional read (org admin, sysadmin): every node in the org is answerable.
-  if (filter.subChannelIds === undefined) return 'ok';
+  if (filter.homeChannelIds === undefined) return 'ok';
 
   const node = segments[segments.length - 1];
   const isOrgPrefix = segments.length === 1;
@@ -88,14 +88,15 @@ function classifyPrefix(
 
   if (!isOrgPrefix) {
     // Home-level unconditional grant (deepest level: covers its subtree).
-    if (provableIds.some((id) => filter.subChannelIds?.includes(id))) return 'ok';
+    if (provableIds.some((id) => filter.homeChannelIds?.includes(id))) return 'ok';
     // Unconditional grant at an intermediate ancestor level (subtree-scoped: elevated).
-    if (filter.ancestorScopes?.some((scope) => provableIds.some((id) => scope.subChannelIds.includes(id)))) return 'ok';
+    if (filter.intermediateScopes?.some((scope) => provableIds.some((id) => scope.channelIds.includes(id))))
+      return 'ok';
   }
 
   // A self view accepts only an unconditional home grant on that exact node.
   // Ancestor home grants do not prove descendants, and subtree views cannot use this proof.
-  if (depth === 'self' && filter.homeScopes?.some((scope) => scope.subChannelIds.includes(node))) return 'ok';
+  if (depth === 'self' && filter.homeScopes?.some((scope) => scope.channelIds.includes(node))) return 'ok';
 
   // Anything else with SOME read scope → opaque; nothing at all → forbidden.
   return hasNoReadScope(filter) ? 'forbidden' : 'opaque';

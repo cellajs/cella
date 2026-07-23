@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { UsersIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig, isUnconditionalPermission } from 'shared';
+import { appConfig, isUnconditionalCan } from 'shared';
 import { useOrganizationLayoutContext } from '~/hooks/use-route-context';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
@@ -45,7 +45,7 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
 
   // Managing members is a channel-scoped affordance (not a per-row question), and the enriched
   // The entity has no `createdBy` for resolving `'own'`, so require an unconditional grant.
-  const canUpdate = isUnconditionalPermission(channel.can?.[channel.entityType]?.update);
+  const canUpdate = isUnconditionalCan(channel.can?.[channel.entityType]?.update);
 
   // Table state
   const { q, role, sort, order } = search;

@@ -22,12 +22,12 @@ const translateMissingScope = (e: unknown): never => {
 };
 
 /**
- * Build a permission subject from an entity type and ancestor context ID columns.
+ * Build a permission subject from an entity type and ancestor channel ID columns.
  *
  * Thin backend wrapper over the shared `buildSubject` that translates `MissingScopeError` to
  * `AppError(400, 'missing_scope')`. See the shared implementation for full semantics.
  *
- * @throws AppError 400 if any required ancestor context ID is missing (undefined)
+ * @throws AppError 400 if any required ancestor channel ID is missing (undefined)
  */
 export const buildSubject = (
   entityType: ChannelEntityType | ProductEntityType,

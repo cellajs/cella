@@ -1,6 +1,6 @@
 import type { ChannelEntityType, EntityActionType, EntityIdColumns, EntityRole, ProductEntityType } from '../../../types';
 import type { PublicReadGrants } from '../public-read';
-import type { PermissionTopology } from './topology';
+import type { EntityHierarchy } from '../../config-builder/entity-hierarchy';
 
 /** Database-shaped channel ID columns, such as `organizationId`. */
 export type ChannelIdColumns = EntityIdColumns<ChannelEntityType, string | null>;
@@ -43,7 +43,7 @@ export type GrantSource =
   | { type: 'systemAdmin' };
 
 export interface ActionAttribution {
-  enabled: boolean;
+  allowed: boolean;
   grantedBy: GrantSource[];
 }
 
@@ -77,8 +77,10 @@ export interface PermissionCheckOptions {
    * @see shared/config/permissions-config.ts
    */
   elevatedRoles?: readonly string[];
-  /** Hierarchy and actions override for synthetic topologies. */
-  topology?: PermissionTopology;
+  /** Synthetic hierarchy override; defaults to the app singleton. */
+  hierarchy?: EntityHierarchy;
+  /** Action set override; defaults to `appConfig.entityActions`. */
+  entityActions?: readonly EntityActionType[];
   /** Emit the decision tree to debug logging. */
   debug?: boolean;
 }

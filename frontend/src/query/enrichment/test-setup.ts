@@ -104,4 +104,4 @@ export function mockComputeCan(channelType: string): Record<string, Record<strin
 }
 
 /** Stub access policies (empty) */
-export const mockAccessPolicies = {};
+export const mockPolicyMatrix = {};

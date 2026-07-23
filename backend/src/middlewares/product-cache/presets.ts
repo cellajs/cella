@@ -3,7 +3,7 @@ import { draftVisibleTo, type ProductEntityType } from 'shared';
 import type { Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
 import { checkAccess } from '#/permissions';
-import { accessFrom } from '#/permissions/actor';
+import { accessFrom } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { coalesce, isInFlight } from '#/utils/request-coalescing';
 import { productCache as productCacheStore } from './app-product-cache';
@@ -91,7 +91,7 @@ function callerCanRead(ctx: Context<Env>, productType: ProductEntityType, cached
     const access = accessFrom(ctx as never);
     if (!draftVisibleTo(authRow, 'anonymous' in access ? undefined : access.userId)) return false;
     const subject = buildSubjectFromEntity(productType, authRow);
-    return checkAccess(access, 'read', subject).isAllowed;
+    return checkAccess(access, 'read', subject).allowed;
   } catch {
     // Unexpected row shape → don't serve from cache; the handler re-authorizes authoritatively.
     return false;

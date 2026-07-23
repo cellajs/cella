@@ -1,9 +1,9 @@
 import type { ChannelEntityType } from '../../../types';
-import type { AccessPolicies } from '../types';
+import type { PolicyMatrix } from '../types';
 import { allActionsDenied, createActionRecord } from '../action-helpers';
 import { isRowCondition, matchesRowCondition, type RowConditionName, type RowForCondition } from '../row-conditions';
 import { buildPolicyIndex, checkWithIndices, getMembershipIndex, getSubjectChannelId } from './check';
-import { resolveTopology } from './resolve-topology';
+import { resolveHierarchy } from './resolve-hierarchy';
 import type { PermissionCheckOptions, PermissionDecision, PermissionMembership, SubjectForPermission } from './types';
 import { validateSubject } from './validation';
 
@@ -33,7 +33,7 @@ export interface ResolveAccessOptions extends PermissionCheckOptions {
 /** All-denied decision for an access the engine refuses to evaluate (fail-closed). */
 const deniedDecision = <T extends PermissionMembership>(subject: SubjectForPermission): PermissionDecision<T> => ({
   subject: { entityType: subject.entityType, id: subject.id, channelIds: {} },
-  actions: createActionRecord(() => ({ enabled: false, grantedBy: [] })),
+  actions: createActionRecord(() => ({ allowed: false, grantedBy: [] })),
   can: { ...allActionsDenied },
   membership: null,
 });
@@ -45,12 +45,12 @@ const deniedDecision = <T extends PermissionMembership>(subject: SubjectForPermi
  * own membership; property tests compare it with independent single-access decisions.
  */
 export function getDecisionsForAccesses<T extends PermissionMembership>(
-  policies: AccessPolicies,
+  policies: PolicyMatrix,
   accesses: EngineAccess<T>[],
   subject: SubjectForPermission,
   options?: ResolveAccessOptions,
 ): PermissionDecision<T>[] {
-  const { hierarchy, entityActions, getRoles } = resolveTopology(options?.topology);
+  const { hierarchy, entityActions, getRoles } = resolveHierarchy(options);
   validateSubject(subject, undefined, hierarchy);
 
   const ancestors = hierarchy.getOrderedAncestors(subject.entityType) as ChannelEntityType[];

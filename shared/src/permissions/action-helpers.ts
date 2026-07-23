@@ -1,7 +1,7 @@
 import { appConfig } from '../config-builder/app-config';
 import type { EntityActionType } from '../../types';
 import { recordFromKeys } from '../config-builder/utils';
-import type { ActionPermissionState } from './types';
+import type { CanState } from './types';
 
 /**
  * Creates a typed record mapping each entity action to a value.
@@ -24,11 +24,11 @@ export const allActionsAllowed = Object.freeze(createActionRecord(() => true as 
 /**
  * Resolves a three-state permission (`true | false | condition name`) to a boolean. `'own'`
  * compares the actor's `userId` against `entity.createdBy`. The switch is exhaustive over the
- * closed {@link ActionPermissionState} name union, so adding a row condition is a compile error
+ * closed {@link CanState} name union, so adding a row condition is a compile error
  * here: the frontend can never silently deny a new condition.
  */
-export const resolvePermission = (
-  permission: ActionPermissionState | undefined,
+export const resolveCan = (
+  permission: CanState | undefined,
   entityCreatedBy?: string | null,
   userId?: string,
 ): boolean => {
@@ -45,7 +45,7 @@ export const resolvePermission = (
 
 /**
  * Returns true only for unconditional permission.
- * Context-wide features use this secure default; row affordances should call `resolvePermission`.
+ * Channel-wide features use this secure default; row affordances should call `resolveCan`.
  */
-export const isUnconditionalPermission = (permission: ActionPermissionState | undefined): boolean =>
+export const isUnconditionalCan = (permission: CanState | undefined): boolean =>
   permission === true;

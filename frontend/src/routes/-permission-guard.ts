@@ -1,6 +1,6 @@
 import { redirect } from '@tanstack/react-router';
 import type { ChannelEntityType, EntityActionType, EntityType } from 'shared';
-import { appConfig, resolvePermission } from 'shared';
+import { appConfig, resolveCan } from 'shared';
 import { useUserStore } from '~/modules/user/user-store';
 import { enrichWithPermissions } from '~/query/enrichment/permissions';
 import type { EnrichableChannel } from '~/query/enrichment/types';
@@ -27,7 +27,7 @@ export function requireEntityAction(
 ): void {
   const enriched = enrichWithPermissions(entity, channelType);
   const createdBy = typeof entity.createdBy === 'string' ? entity.createdBy : (entity.createdBy?.id ?? null);
-  const allowed = resolvePermission(enriched.can?.[entityType]?.[action], createdBy, useUserStore.getState().user?.id);
+  const allowed = resolveCan(enriched.can?.[entityType]?.[action], createdBy, useUserStore.getState().user?.id);
   if (allowed) return;
   throw redirect({ to: redirectTo, params: true, replace: true });
 }

@@ -14,14 +14,14 @@ const formatGrant = (g: GrantSource): string => {
 export const formatPermissionDecision = <T extends PermissionMembership>(decision: PermissionDecision<T>): string => {
   const lines = [
     `[Permission Check] entity=${decision.subject.entityType} id=${decision.subject.id}`,
-    `├─ Context IDs: ${JSON.stringify(decision.subject.channelIds)}`,
+    `├─ Channel IDs: ${JSON.stringify(decision.subject.channelIds)}`,
     '│',
     '├─ Action Attribution:',
   ];
 
   for (const action of appConfig.entityActions) {
     const attr = decision.actions[action];
-    const status = attr.enabled ? '✓ GRANTED' : '✗ DENIED';
+    const status = attr.allowed ? '✓ GRANTED' : '✗ DENIED';
     const grants = attr.grantedBy.length > 0 ? `by [${attr.grantedBy.map(formatGrant).join(', ')}]` : '(no grants)';
     lines.push(`│  ├─ ${action}: ${status} ${grants}`);
   }

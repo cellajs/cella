@@ -1,13 +1,13 @@
-import { accessPolicies, elevatedRoles, publicReadGrants } from '../../config/permissions-config';
+import { policyMatrix, elevatedRoles, publicReadGrants } from '../../config/permissions-config';
 import type { EntityActionType } from '../../types';
-import { getAllDecisions } from './permission-manager/check';
-import { type EngineAccess, getDecisionsForAccesses } from './permission-manager/resolve-access';
+import { getAllDecisions } from './engine/check';
+import { type EngineAccess, getDecisionsForAccesses } from './engine/resolve-access';
 import type {
   PermissionCheckOptions,
   PermissionDecision,
   PermissionMembership,
   SubjectForPermission,
-} from './permission-manager/types';
+} from './engine/types';
 
 /**
  * Explicit authenticated or anonymous actor used by SQL permission predicates.
@@ -39,7 +39,7 @@ const toEngineAccess = <T extends PermissionMembership>(access: Access<T>): Engi
  */
 export interface PermissionResult<T extends PermissionMembership = PermissionMembership> {
   /** Whether the specific action is allowed */
-  isAllowed: boolean;
+  allowed: boolean;
   /** The user's membership for this entity, if any */
   membership: T | null;
 }
@@ -86,12 +86,12 @@ export function checkAccess<T extends PermissionMembership>(
 ): PermissionResult<T> {
   const engineAccess = toEngineAccess(access);
   const { can, membership } = getAllDecisions(
-    accessPolicies,
+    policyMatrix,
     engineAccess.memberships,
     subject,
     accessOptions(engineAccess),
   );
-  return { isAllowed: can[action], membership };
+  return { allowed: can[action], membership };
 }
 
 /**
@@ -104,10 +104,10 @@ export function checkAccessBatch<T extends PermissionMembership>(
   subjects: SubjectForPermission[],
 ): BatchPermissionResult<T> {
   const engineAccess = toEngineAccess(access);
-  const decisions = getAllDecisions(accessPolicies, engineAccess.memberships, subjects, accessOptions(engineAccess));
+  const decisions = getAllDecisions(policyMatrix, engineAccess.memberships, subjects, accessOptions(engineAccess));
   const results = new Map<string, PermissionResult<T>>();
   for (const [id, decision] of decisions) {
-    results.set(id, { isAllowed: decision.can[action], membership: decision.membership });
+    results.set(id, { allowed: decision.can[action], membership: decision.membership });
   }
   return { results, decisions };
 }
@@ -124,9 +124,9 @@ export function checkAccessFanout<T extends PermissionMembership>(
   subject: SubjectForPermission,
   options?: CheckAccessFanoutOptions,
 ): PermissionResult<T>[] {
-  const decisions = getDecisionsForAccesses(accessPolicies, accesses.map(toEngineAccess), subject, {
+  const decisions = getDecisionsForAccesses(policyMatrix, accesses.map(toEngineAccess), subject, {
     ...boundOptions,
     onInvalidMembership: options?.onInvalidMembership,
   });
-  return decisions.map((decision) => ({ isAllowed: decision.can[action], membership: decision.membership }));
+  return decisions.map((decision) => ({ allowed: decision.can[action], membership: decision.membership }));
 }

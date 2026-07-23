@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { EntityQueryKeys } from '~/query/basic/entity-query-registry';
 import type { ItemData, OrgRoutableItemData } from '~/query/basic/types';
 
-// Base cella has only org-homed attachments; a real builder instance with an org-only topology
+// Base cella has only org-homed attachments; a real builder instance with an org-only hierarchy
 // keeps home resolution (deepest non-null ancestor, org for org-homed rows) deterministic here.
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();

@@ -1,15 +1,15 @@
 import { createEntityHierarchy, createRoleRegistry } from '../config-builder/entity-hierarchy';
 import type { EntityActionType, EntityType } from '../../types';
 import {
-  type AccessPolicies,
-  type AccessPolicyCallback,
-  type ActionPermissionState,
+  type PolicyMatrix,
+  type PolicyCallback,
+  type CanState,
   computeCan,
   configurePermissions,
   type PermissionMembership,
   type PermissionsConfigResult,
-  type PermissionTopology,
-  type PermissionValue,
+  type HierarchyOverrides,
+  type PolicyCellInput,
   type PublicReadGrants,
   type SubjectForPermission,
 } from '../permissions';
@@ -23,7 +23,7 @@ export type WideRole = 'admin' | 'member' | 'guest';
 
 export const wideRoles = createRoleRegistry(['admin', 'member', 'guest'] as const);
 
-/** Fork-independent hierarchy with sibling contexts, deep products, and guest roles. */
+/** Fork-independent hierarchy with sibling channels, deep products, and guest roles. */
 export const wideHierarchy = createEntityHierarchy(wideRoles)
   .user()
   .channel('organization', { parent: null, roles: ['admin', 'member'] })
@@ -45,29 +45,29 @@ export const wideEntityTypes: readonly WideEntityType[] = [
 ];
 
 /** Wide hierarchy override; actions retain their hierarchy-independent app defaults. */
-export const wideTopology: PermissionTopology = { hierarchy: wideHierarchy };
+export const wideOverrides: HierarchyOverrides = { hierarchy: wideHierarchy };
 
-type WidePerms = Partial<Record<EntityActionType, PermissionValue>>;
+type WidePerms = Partial<Record<EntityActionType, PolicyCellInput>>;
 type WideChannelBuilder = Record<WideRole, (perms: WidePerms) => void>;
 
 /** Wide-typed callback config surfaced to `configureWidePermissions`. */
-export interface WideAccessPolicyConfiguration {
-  subject: { name: WideEntityType };
-  contexts: Record<WideChannelType, WideChannelBuilder>;
+export interface WidePolicyConfiguration {
+  entityType: WideEntityType;
+  channels: Record<WideChannelType, WideChannelBuilder>;
   publicRead: () => void;
 }
 
-export type WideAccessPolicyCallback = (config: WideAccessPolicyConfiguration) => void;
+export type WidePolicyCallback = (config: WidePolicyConfiguration) => void;
 
 /** Configure permissions with the wide vocabulary while containing app-config casts here. */
-export const configureWidePermissions = (callback: WideAccessPolicyCallback): PermissionsConfigResult =>
+export const configureWidePermissions = (callback: WidePolicyCallback): PermissionsConfigResult =>
   configurePermissions(
     wideEntityTypes as unknown as readonly EntityType[],
-    callback as unknown as AccessPolicyCallback,
-    wideTopology,
+    callback as unknown as PolicyCallback,
+    wideOverrides,
   );
 
-/** Build a membership over a wide context. */
+/** Build a membership over a wide channel. */
 export const wideMembership = (
   channelType: WideChannelType,
   channelId: string,
@@ -88,17 +88,17 @@ export const widePublicGrants = (grants: Partial<Record<WideEntityType, true>>):
   grants as PublicReadGrants;
 
 /** `computeCan`'s result keyed by the wide vocabulary, so tests read `.task` etc. cast-free. */
-export type WideCanMap = Partial<Record<WideEntityType, Record<EntityActionType, ActionPermissionState>>>;
+export type WideCanMap = Partial<Record<WideEntityType, Record<EntityActionType, CanState>>>;
 
 /** Drive `computeCan` over the wide hierarchy while containing app-config casts here. */
 export const computeWideCan = (
   channelType: WideChannelType,
   membership: PermissionMembership | undefined | null,
-  policies: AccessPolicies,
+  policies: PolicyMatrix,
 ): WideCanMap =>
   computeCan(
     channelType as unknown as Parameters<typeof computeCan>[0],
     membership as unknown as Parameters<typeof computeCan>[1],
     policies,
-    wideTopology,
+    wideOverrides,
   ) as unknown as WideCanMap;

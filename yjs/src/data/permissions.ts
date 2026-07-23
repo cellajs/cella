@@ -143,7 +143,7 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
 
     // Collaborative editing confers no system-admin bypass. The same stance the backend's
     // materialize endpoint takes, so the relay and the write it triggers agree.
-    const { isAllowed } = checkAccess({ userId: ctx.userId, isSystemAdmin: false, memberships }, 'update', subject);
-    return isAllowed;
+    const { allowed } = checkAccess({ userId: ctx.userId, isSystemAdmin: false, memberships }, 'update', subject);
+    return allowed;
   });
 }

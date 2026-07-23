@@ -6,13 +6,13 @@ export {
   checkAccessBatch,
   checkAccessFanout,
   type PermissionResult,
-} from './check-permission';
+} from './check-access';
 export {
-  type AncestorScope,
   type CollectionReadFilter,
   type ConditionalScope,
   type HomeScope,
   hasNoReadScope,
+  type IntermediateScope,
   resolveCollectionReadFilter,
 } from './collection-scope';
 export { getValidChannel, type ValidChannelResult } from './get-valid-channel';

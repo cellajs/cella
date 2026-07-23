@@ -2,7 +2,7 @@ import { QueryObserver } from '@tanstack/react-query';
 import type { EntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// Synthetic sub-org topology (real builder instance) because base cella has no sub-org
+// Synthetic sub-org hierarchy (real builder instance) because base cella has no sub-org
 // channels. Task is a product homed at the `project` channel under `organization`.
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();

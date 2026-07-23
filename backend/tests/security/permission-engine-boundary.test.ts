@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 // The one file allowed to call the engine directly: the wrapper itself.
-const ALLOWED = path.join(repoRoot, 'shared/src/permissions/check-permission.ts');
+const ALLOWED = path.join(repoRoot, 'shared/src/permissions/check-access.ts');
 
 const SOURCE_ROOTS = ['shared/src', 'backend/src', 'frontend/src', 'yjs/src', 'cdc/src', 'mcp/src'];
 
@@ -32,7 +32,7 @@ const walk = (dir: string): string[] => {
 // Production code must reach the raw permission engine through the actor-required wrapper.
 // Scan both barrel and deep imports so every row-condition check receives an actor.
 describe('permission engine boundary', () => {
-  it('only check-permission.ts imports getAllDecisions directly', () => {
+  it('only check-access.ts imports getAllDecisions directly', () => {
     const offenders = SOURCE_ROOTS.flatMap((root) => walk(path.join(repoRoot, root)))
       .filter((file) => file !== ALLOWED)
       .filter((file) => IMPORTS_ENGINE.test(readFileSync(file, 'utf8')))

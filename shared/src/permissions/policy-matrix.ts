@@ -2,32 +2,31 @@ import type { ChannelEntityType, EntityActionType, EntityType, ProductEntityType
 import type { PublicReadGrants } from './public-read';
 import { isRowCondition } from './row-conditions';
 import type {
-  AccessPolicies,
-  AccessPolicyCallback,
-  AccessPolicyConfiguration,
-  AccessPolicyEntry,
+  PolicyMatrix,
+  PolicyCallback,
+  PolicyConfiguration,
+  PolicyEntry,
   ChannelPolicyBuilder,
   EntityActionPermissions,
-  PermissionValue,
-  SubjectAccessPolicies,
+  PolicyCellInput,
+  EntityPolicies,
 } from './types';
-import { resolveTopology } from './permission-manager/resolve-topology';
-import type { PermissionTopology } from './permission-manager/topology';
+import { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy';
 
 /**
- * Creates a context policy builder for fluent role-permission configuration.
+ * Creates a channel policy builder for fluent role-permission configuration.
  */
 const createChannelPolicyBuilder = (
   channelType: ChannelEntityType,
   roles: readonly string[],
-  entries: AccessPolicyEntry[],
+  entries: PolicyEntry[],
   entityActions: readonly EntityActionType[],
 ): ChannelPolicyBuilder => {
 
-  const builder: Record<string, (permissions: Partial<Record<EntityActionType, PermissionValue>>) => void> = {};
+  const builder: Record<string, (permissions: Partial<Record<EntityActionType, PolicyCellInput>>) => void> = {};
 
   for (const role of roles) {
-    builder[role] = (permissions: Partial<Record<EntityActionType, PermissionValue>>) => {
+    builder[role] = (permissions: Partial<Record<EntityActionType, PolicyCellInput>>) => {
       // Expand to a full record so the engine always reads an explicit value: any action the
       // policy omits defaults to 0 (denied). A cell is the config literal verbatim. The `'own'`
       // name IS the value the engine reads, so there is nothing to normalize.
@@ -38,7 +37,7 @@ const createChannelPolicyBuilder = (
         if (action === 'create' && isRowCondition(value)) {
           throw new Error(
             `[Permission] "${channelType}.${role}" uses a row condition ('${value}') on 'create', ` +
-              `which can never match — the row does not exist yet. Use 1 or 0 for create.`,
+              `which can never match: the row does not exist yet. Use 1 or 0 for create.`,
           );
         }
         fullPermissions[action] = value;
@@ -51,57 +50,57 @@ const createChannelPolicyBuilder = (
 };
 
 /**
- * Creates a contexts object with builders for all context types.
+ * Creates a channels object with builders for all channel types.
  */
 const createChannelBuilders = (
-  entries: AccessPolicyEntry[],
+  entries: PolicyEntry[],
   channelEntityTypes: readonly ChannelEntityType[],
   getRoles: (channelType: string) => readonly string[],
   entityActions: readonly EntityActionType[],
 ): Record<ChannelEntityType, ChannelPolicyBuilder> => {
-  const contexts = {} as Record<ChannelEntityType, ChannelPolicyBuilder>;
+  const channels = {} as Record<ChannelEntityType, ChannelPolicyBuilder>;
 
   for (const channelType of channelEntityTypes) {
     const roles = getRoles(channelType);
-    contexts[channelType] = createChannelPolicyBuilder(channelType, roles, entries, entityActions);
+    channels[channelType] = createChannelPolicyBuilder(channelType, roles, entries, entityActions);
   }
 
-  return contexts;
+  return channels;
 };
 
-/** Result of `configurePermissions`: role×context policies + subject-level grants. */
+/** Result of `configurePermissions`: the role x channel policy matrix + per-entity-type grants. */
 export interface PermissionsConfigResult {
-  accessPolicies: AccessPolicies;
+  policyMatrix: PolicyMatrix;
   publicReadGrants: PublicReadGrants;
 }
 
 /**
- * Configures entity policies through subject-specific role/context builders and a
- * subject-level public-read grant.
+ * Configures entity policies through per-entity-type role/channel builders and a
+ * per-entity-type public-read grant.
  * @see public-read.ts
  */
 export const configurePermissions = (
   entityTypes: readonly EntityType[],
-  callback: AccessPolicyCallback,
-  topology?: PermissionTopology,
+  callback: PolicyCallback,
+  overrides?: HierarchyOverrides,
 ): PermissionsConfigResult => {
-  const policies: AccessPolicies = {};
+  const policies: PolicyMatrix = {};
   const publicReadGrants: PublicReadGrants = {};
 
-  // Topology defaults to the app's real config; tests pass a synthetic one (wide-fixture.ts).
-  const { entityActions, channelEntityTypes, getRoles } = resolveTopology(topology);
+  // Hierarchy defaults to the app's real config; tests pass a synthetic one (wide-fixture.ts).
+  const { entityActions, channelEntityTypes, getRoles } = resolveHierarchy(overrides);
 
   const permissionableTypes = entityTypes.filter(
     (type): type is ChannelEntityType | ProductEntityType => type !== 'user',
   );
 
   for (const entityType of permissionableTypes) {
-    const entries: AccessPolicyEntry[] = [];
-    const contexts = createChannelBuilders(entries, channelEntityTypes, getRoles, entityActions);
+    const entries: PolicyEntry[] = [];
+    const channels = createChannelBuilders(entries, channelEntityTypes, getRoles, entityActions);
 
-    const config: AccessPolicyConfiguration = {
-      subject: { name: entityType },
-      contexts,
+    const config: PolicyConfiguration = {
+      entityType,
+      channels,
       publicRead: () => {
         if (publicReadGrants[entityType]) {
           throw new Error(`[Permission] publicRead() called twice for "${entityType}"`);
@@ -117,37 +116,37 @@ export const configurePermissions = (
     }
   }
 
-  return { accessPolicies: policies, publicReadGrants };
+  return { policyMatrix: policies, publicReadGrants };
 };
 
 /**
- * Configures access policies only (no public read grants). Kept for tests and callers
+ * Configures a policy matrix only (no public read grants). Kept for tests and callers
  * that drive the engine with synthetic policies; app configs should use
  * `configurePermissions`.
  */
-export const configureAccessPolicies = (
+export const configurePolicyMatrix = (
   entityTypes: readonly EntityType[],
-  callback: AccessPolicyCallback,
-  topology?: PermissionTopology,
-): AccessPolicies => {
-  return configurePermissions(entityTypes, callback, topology).accessPolicies;
+  callback: PolicyCallback,
+  overrides?: HierarchyOverrides,
+): PolicyMatrix => {
+  return configurePermissions(entityTypes, callback, overrides).policyMatrix;
 };
 
 /**
- * Gets the access policies for a specific subject (entity type).
+ * Gets the policy entries for a specific entity type.
  */
-export const getSubjectPolicies = (
-  subject: ChannelEntityType | ProductEntityType,
-  policies: AccessPolicies,
-): SubjectAccessPolicies => {
-  return policies[subject] ?? [];
+export const getEntityPolicies = (
+  entityType: ChannelEntityType | ProductEntityType,
+  policies: PolicyMatrix,
+): EntityPolicies => {
+  return policies[entityType] ?? [];
 };
 
 /**
- * Gets the permissions for a specific context and role combination.
+ * Gets the permissions for a specific channel and role combination.
  */
 export const getPolicyPermissions = (
-  policies: SubjectAccessPolicies,
+  policies: EntityPolicies,
   channelType: ChannelEntityType,
   role: string,
 ): EntityActionPermissions | undefined => {

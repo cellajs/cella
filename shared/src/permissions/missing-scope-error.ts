@@ -1,7 +1,7 @@
 import type { ChannelEntityType, ProductEntityType } from '../../types';
 
 /**
- * Thrown by `validateAncestorScope` when a required ancestor context ID is missing (`undefined`).
+ * Thrown by `validateAncestorScope` when a required ancestor channel ID is missing (`undefined`).
  *
  * This is the tier-neutral error the shared permission engine raises. Each tier maps it to its own
  * transport error: the backend translates it to `AppError(400, 'missing_scope')`; the yjs relay maps
