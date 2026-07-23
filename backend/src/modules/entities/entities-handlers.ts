@@ -79,7 +79,7 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
 
 app.openapi(entityRoutes.appCatchup, async (ctx) => {
   const { cursor, views } = ctx.req.valid('json');
-  const actor = actorFrom(ctx as never);
+  const actor = actorFrom(ctx);
   const result = await appCatchupOp(ctx.var.memberships, cursor, actor, views);
   assertSuccess(result, 'user');
   return ctx.json(result.data);

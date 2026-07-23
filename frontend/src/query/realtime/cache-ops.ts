@@ -1,5 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { ProductEntityType } from 'shared';
+import { asRecord } from 'shared/utils/as-record';
 import { getYjsOwnedFields, isYjsEditorActive } from '~/modules/common/blocknote/yjs-editor';
 import { resolveHomeChannelId, spliceEntityIntoListCaches } from '~/query/basic/apply-entity-to-lists';
 import {
@@ -37,7 +38,7 @@ export function hasPendingMutationForEntity(entityType: string, entityId: string
 }
 
 function isSoftDeleted(entity: ItemData): boolean {
-  const deletedAt = (entity as unknown as Record<string, unknown>).deletedAt;
+  const deletedAt = asRecord(entity).deletedAt;
   return typeof deletedAt === 'string' && deletedAt.length > 0;
 }
 

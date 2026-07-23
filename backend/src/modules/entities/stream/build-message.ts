@@ -1,4 +1,5 @@
 import { appConfig, type ChannelEntityType, hierarchy, isProduct, pathHomeId } from 'shared';
+import { asRecord } from 'shared/utils/as-record';
 import { dbPoolPressure } from '#/db/db';
 import { type ActivityEvent, getEventData } from '#/lib/activity-bus';
 import type { StreamNotification } from '#/schemas';
@@ -61,7 +62,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   // the org sequence does not key on this.
   let channelId: string | null = null;
   if (isProductEvent && entityType) {
-    channelId = hierarchy.resolveDeepestAncestorId(entityType, event as unknown as Record<string, unknown>);
+    channelId = hierarchy.resolveDeepestAncestorId(entityType, asRecord(event));
   }
 
   const stx = (isProductEvent && event.stx) || null;

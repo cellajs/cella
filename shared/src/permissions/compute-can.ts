@@ -27,7 +27,7 @@ function computeEntityPermissions(
   policies: PolicyMatrix,
   entityActions: readonly EntityActionType[],
 ): ActionStates {
-  const entityPolicies = getEntityPolicies(entityType as ChannelEntityType, policies);
+  const entityPolicies = getEntityPolicies(entityType, policies);
   const permissions = getPolicyPermissions(entityPolicies, channelType, role);
 
   if (!permissions) return allActionsDenied;

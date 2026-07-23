@@ -1,4 +1,4 @@
-import type { EntityTable } from 'dexie';
+import type { Dexie } from 'dexie';
 import type { UploadTemplateId } from 'shared';
 import { getAppDb } from '~/query/app-db';
 
@@ -110,14 +110,14 @@ export interface DownloadQueueEntry {
  * Accessors throw while signed out; guard with `getAppDb()` where no DB is reachable.
  */
 export const attachmentsDb = {
-  get blobs(): EntityTable<AttachmentBlob, 'id'> {
+  get blobs(): Dexie.Table<AttachmentBlob, string> {
     const db = getAppDb();
     if (!db) throw new Error('[attachmentsDb] No appdb bound (signed out)');
-    return db.blobs as unknown as EntityTable<AttachmentBlob, 'id'>;
+    return db.blobs;
   },
-  get downloadQueue(): EntityTable<DownloadQueueEntry, 'id'> {
+  get downloadQueue(): Dexie.Table<DownloadQueueEntry, string> {
     const db = getAppDb();
     if (!db) throw new Error('[attachmentsDb] No appdb bound (signed out)');
-    return db.downloadQueue as unknown as EntityTable<DownloadQueueEntry, 'id'>;
+    return db.downloadQueue;
   },
 };

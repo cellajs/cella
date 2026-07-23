@@ -134,20 +134,22 @@ export const configurePolicyMatrix = (
 
 /**
  * Gets the policy entries for a specific entity type.
+ * The lookup is total: an entity type the matrix does not cover yields no entries, which the
+ * engine reads as denied. Callers hold runtime strings (fork-configurable entity names), so the
+ * parameter is a string and the miss is a normal result.
  */
-export const getEntityPolicies = (
-  entityType: ChannelEntityType | ProductEntityType,
-  policies: PolicyMatrix,
-): EntityPolicies => {
-  return policies[entityType] ?? [];
+export const getEntityPolicies = (entityType: string, policies: PolicyMatrix): EntityPolicies => {
+  const byEntityType: Partial<Record<string, EntityPolicies>> = policies;
+  return byEntityType[entityType] ?? [];
 };
 
 /**
  * Gets the permissions for a specific channel and role combination.
+ * A channel/role pair with no entry yields `undefined`, which callers read as denied.
  */
 export const getPolicyPermissions = (
   policies: EntityPolicies,
-  channelType: ChannelEntityType,
+  channelType: string,
   role: string,
 ): EntityActionPermissions | undefined => {
   const entry = policies.find((p) => p.channelType === channelType && p.role === role);
