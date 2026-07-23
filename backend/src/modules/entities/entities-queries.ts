@@ -1,5 +1,5 @@
 import { and, count, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
-import { type ChannelEntityType, hierarchy, roles, type EntityType as SharedEntityType } from 'shared';
+import { type ChannelEntityType, hierarchy, isProduct, roles, type EntityType as SharedEntityType } from 'shared';
 import type z from 'zod';
 import type { DbContext } from '#/core/context';
 import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
@@ -41,7 +41,7 @@ export const findChannelCountersByKeys = async ({ var: { db } }: DbContext, keys
  */
 export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
   const children = hierarchy.getOrderedDescendants(entityType);
-  const productChildren = children.filter((child) => hierarchy.isProduct(child));
+  const productChildren = children.filter((child) => isProduct(child));
   const col = '"channel_counters"."counts"';
 
   // Build membership JSON: { admin: N, member: N, ..., pending: N, total: N }
@@ -92,7 +92,7 @@ export const getChannelCounts = async ({ var: { db } }: DbContext, entityType: C
     const zeroMembership = Object.fromEntries([...roles.all.map((r) => [r, 0]), ['pending', 0], ['total', 0]]);
     const zeroEntities = Object.fromEntries(descendants.map((e) => [e, 0]));
     const nullActivity = Object.fromEntries(
-      descendants.filter((e) => hierarchy.isProduct(e)).map((e) => [e, { created: null, updated: null }]),
+      descendants.filter((e) => isProduct(e)).map((e) => [e, { created: null, updated: null }]),
     );
     return {
       membership: zeroMembership as z.infer<typeof membershipCountSchema>,
@@ -115,7 +115,7 @@ export const getChannelCounts = async ({ var: { db } }: DbContext, entityType: C
 export const getOrgEntityCount = async (ctx: DbContext, orgId: string, entityType: EntityType) => {
   const { db } = ctx.var;
 
-  const table = hierarchy.isProduct(entityType) ? getEntityTable(entityType) : null;
+  const table = isProduct(entityType) ? getEntityTable(entityType) : null;
   if (table && hasPublishedAt(table)) {
     const deletedFilter = hasDeletedAt(table) ? sql.raw(' AND deleted_at IS NULL') : sql.raw('');
     const [row] = await db

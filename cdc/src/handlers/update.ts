@@ -1,5 +1,5 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import { appConfig, hierarchy } from 'shared';
+import { isChannel, isProduct, appConfig, hierarchy } from 'shared';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
 import { convertRowKeys, extractRowData, getChangedFields } from '../utils';
@@ -15,8 +15,8 @@ const embeddingColumns: Set<string> = new Set(appConfig.productEmbeddings.map((e
 
 /** A row's location path from its ancestor id columns; null for non-hierarchy rows. */
 const rowLocationPath = (entityType: string, row: Record<string, unknown>): string | null => {
-  if (hierarchy.isProduct(entityType)) return hierarchy.computeProductPath(entityType, row);
-  if (hierarchy.isChannel(entityType)) return hierarchy.computeChannelPath(entityType, row);
+  if (isProduct(entityType)) return hierarchy.computeProductPath(entityType, row);
+  if (isChannel(entityType)) return hierarchy.computeChannelPath(entityType, row);
   return null;
 };
 

@@ -16,7 +16,7 @@ import {
 vi.mock('shared', () => ({
   appConfig: mockAppConfig,
   hierarchy: mockHierarchy,
-  isChannelEntity: (type: string) => mockAppConfig.channelEntityTypes.includes(type),
+  isChannel: mockHierarchy.isChannel,
   computeCan: mockComputeCan,
   accessPolicies: mockAccessPolicies,
 }));

@@ -1,5 +1,5 @@
 import type { MembershipBase } from 'sdk';
-import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
+import { appConfig, type ChannelEntityType, isChannel } from 'shared';
 import { meKeys } from '~/modules/me/query';
 import type { EntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { getEntityQueryKeys, getRegisteredEntityTypes } from '~/query/basic/entity-query-registry';
@@ -8,13 +8,13 @@ import { queryClient } from '~/query/query-client';
 /** Get all registered channel entity types with their query keys */
 export function getRegisteredChannelEntities(): { type: ChannelEntityType; keys: EntityQueryKeys }[] {
   return getRegisteredEntityTypes()
-    .filter((t) => hierarchy.isChannel(t))
+    .filter((t) => isChannel(t))
     .map((t) => ({ type: t as ChannelEntityType, keys: getEntityQueryKeys(t) }));
 }
 
 /** Get registered query keys for a channel entity type, or null if not registered */
 export function getChannelKeys(entityType: string): { type: ChannelEntityType; keys: EntityQueryKeys } | null {
-  if (!hierarchy.isChannel(entityType)) return null;
+  if (!isChannel(entityType)) return null;
   const keys = getEntityQueryKeys(entityType);
   return { type: entityType as ChannelEntityType, keys };
 }

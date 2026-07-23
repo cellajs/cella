@@ -1,5 +1,5 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import { hierarchy, appConfig } from 'shared';
+import { isChannel, appConfig } from 'shared';
 import type { ChannelIdColumns } from 'shared';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
@@ -77,7 +77,7 @@ export class TransactionBuffer {
     const { activity } = result;
 
     // Track channel entity deletes for streaming suppression
-    if (activity.action === 'delete' && activity.entityType && hierarchy.isChannel(activity.entityType) && activity.subjectId) {
+    if (activity.action === 'delete' && activity.entityType && isChannel(activity.entityType) && activity.subjectId) {
       this.deletedChannelIds.add(activity.subjectId);
     }
 
@@ -186,7 +186,7 @@ export class TransactionBuffer {
     if (activity.action !== 'delete') return false;
 
     // Don't suppress the channel entity delete itself
-    if (activity.entityType && hierarchy.isChannel(activity.entityType)) return false;
+    if (activity.entityType && isChannel(activity.entityType)) return false;
 
     // Check all channel entity ID columns on this activity
     for (const idColumn of channelIdColumnKeys) {

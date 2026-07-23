@@ -3,7 +3,7 @@ import i18n from 'i18next';
 import { BoxIcon, PencilIcon, ShieldIcon, TrashIcon, UserRoundIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { hierarchy, roles } from 'shared';
+import { hierarchy, isChannel, roles } from 'shared';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
@@ -155,8 +155,8 @@ export const useColumns = () => {
     // Dynamic entity count columns for org-scoped descendant entities
     ...(() => {
       const descendants = hierarchy.getOrderedDescendants('organization');
-      const channelDescendants = descendants.filter((t) => hierarchy.isChannel(t));
-      const productDescendants = descendants.filter((t) => !hierarchy.isChannel(t));
+      const channelDescendants = descendants.filter((t) => isChannel(t));
+      const productDescendants = descendants.filter((t) => !isChannel(t));
       // Context: last visible, Product: first visible
       const lastChannel = channelDescendants[channelDescendants.length - 1];
       const firstProduct = productDescendants[0];

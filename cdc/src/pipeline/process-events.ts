@@ -1,4 +1,4 @@
-import { hierarchy } from 'shared';
+import { isProduct } from 'shared';
 import { activitiesTable } from '#/modules/activities/activities-db';
 
 import { cdcDb } from '../lib/db';
@@ -199,7 +199,7 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
 
     // Embedding cleanup: strip deleted embedded-entity IDs from host-entity arrays
     const { tableMeta } = events[0].result;
-    if (tableMeta.kind === 'entity' && hierarchy.isProduct(tableMeta.type) && (action === 'update' || action === 'delete')) {
+    if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && (action === 'update' || action === 'delete')) {
       await cleanupEmbeddingReferences(tableMeta.type, action, events);
     }
 

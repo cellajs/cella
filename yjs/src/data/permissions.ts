@@ -1,5 +1,5 @@
 import type pg from 'pg';
-import {
+import { isChannel, isProduct,
   appConfig,
   buildSubject,
   checkAccess,
@@ -116,7 +116,7 @@ export async function resolveEntityScope(
  */
 export async function canEditEntity(ctx: DocContext): Promise<boolean> {
   const { entityType } = ctx;
-  if (!hierarchy.isChannel(entityType) && !hierarchy.isProduct(entityType)) return false;
+  if (!isChannel(entityType) && !isProduct(entityType)) return false;
 
   return withClient(ctx.tenantId, ctx.userId, async (client) => {
     const [entity, memberships] = await Promise.all([

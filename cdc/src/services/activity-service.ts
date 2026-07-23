@@ -1,4 +1,4 @@
-import { hierarchy } from 'shared';
+import { isProduct, hierarchy } from 'shared';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { log } from '../lib/pino';
 import type { TraceContext } from '../lib/tracing';
@@ -88,7 +88,7 @@ export interface BatchEvent {
  * One path-and-type group lets clients route by prefix; resources group by organization.
  */
 function batchPathKey({ activity, rowData }: BatchEvent): string {
-  if (activity.entityType && hierarchy.isProduct(activity.entityType)) {
+  if (activity.entityType && isProduct(activity.entityType)) {
     const path = hierarchy.computeProductPath(activity.entityType, rowData);
     return `${path ?? resolveChannelKey(activity.entityType, rowData, activity)}\0${activity.entityType}`;
   }

@@ -20,6 +20,8 @@ vi.mock('shared', async (importOriginal) => {
       entityIdColumnKeys: hierarchy.idColumnKeys,
     },
     hierarchy,
+    isChannel: hierarchy.isChannel,
+    isProduct: hierarchy.isProduct,
   };
 });
 vi.mock('~/query/offline', () => ({ sourceId: 'test-source' }));

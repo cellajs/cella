@@ -1,5 +1,5 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import { hierarchy, isUnpublishedDraft } from 'shared';
+import { isProduct, isUnpublishedDraft } from 'shared';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { handleDelete, handleInsert, handleUpdate } from '../handlers';
 import { log } from '../lib/pino';
@@ -32,7 +32,7 @@ let lastDraftGuardWarnAt = 0;
  * so true draft deletes remain filtered and unpublishes still pass as published-row deletes.
  */
 function isFilteredDraftEvent(result: ParseMessageResult): boolean {
-  if (result.tableMeta.kind !== 'entity' || !hierarchy.isProduct(result.tableMeta.type)) return false;
+  if (result.tableMeta.kind !== 'entity' || !isProduct(result.tableMeta.type)) return false;
   if (!isUnpublishedDraft(result.rowData)) return false;
   const now = Date.now();
   if (now - lastDraftGuardWarnAt > DRAFT_GUARD_WARN_INTERVAL_MS) {

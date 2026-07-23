@@ -10,7 +10,11 @@ guards. Removed from the `shared` barrel:
   `pathColumnSql`, `deepestAncestorSql` (call the same-named method on a hierarchy instance).
 - Entity guards `isChannelEntity`, `isProductEntity`, `getChannelRoles`
   (`shared/src/entity-guards.ts` deleted; use `hierarchy.isChannel`, `hierarchy.isProduct`,
-  `hierarchy.getRoles`; the guards now accept `null | undefined` and return false).
+  `hierarchy.getRoles`; the guards now accept `null | undefined` and return false). For the
+  two highest-frequency guards, `shared` re-exports the app singleton's bound methods as
+  `isChannel` / `isProduct` (class methods are arrow fields, so destructuring keeps `this`);
+  these are aliases of the instance methods, not separate implementations. Test mocks that
+  replace `hierarchy` must override `isChannel`/`isProduct` from the same synthetic instance.
 - Types `AncestorSource`, `CountsHierarchy`, `TopologyHierarchy`: every injectable-topology
   parameter is now typed `EntityHierarchy` (the class gained generic defaults so the bare
   name works as an annotation). `PermissionTopology.hierarchy` is an `EntityHierarchy`.

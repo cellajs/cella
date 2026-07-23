@@ -1,4 +1,4 @@
-import { type ChannelEntityType, hierarchy, recordFromKeys, roles } from 'shared';
+import { type ChannelEntityType, hierarchy, isProduct, recordFromKeys, roles } from 'shared';
 
 /**
  * Zero-initialized counts for a newly created channel entity (create responses, no prior data).
@@ -9,7 +9,7 @@ export const buildZeroCounts = (entityType: ChannelEntityType, creatorRole = 'ad
   const entities = recordFromKeys(descendants, () => 0);
   // Activity stamps stay null until the first post (created) / first content update (updated)
   const activity = recordFromKeys(
-    descendants.filter((descendant) => hierarchy.isProduct(descendant)),
+    descendants.filter((descendant) => isProduct(descendant)),
     () => ({ created: null, updated: null }) as { created: number | null; updated: number | null },
   );
   const membership = {

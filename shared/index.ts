@@ -1,9 +1,17 @@
+import { hierarchy } from './config/config.default';
+
 // App configuration
 export { appConfig } from './src/config-builder/app-config';
 export type { ConfigMode } from './src/config-builder/types';
 
 // Entity hierarchy & roles
 export { hierarchy, roles } from './config/config.default';
+
+// Bound guard facade: these ARE the app singleton's methods (arrow fields, so binding is
+// preserved), re-exported for the two highest-frequency checks. Everything else stays on
+// the instance. Test mocks that replace `hierarchy` must override these from the same
+// synthetic instance.
+export const { isChannel, isProduct } = hierarchy;
 
 // Entity hierarchy types and builder functions
 export type {
