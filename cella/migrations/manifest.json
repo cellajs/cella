@@ -128,6 +128,25 @@
         "pnpm check"
       ],
       "summary": "Free row-location functions, entity guards (isChannelEntity/isProductEntity/getChannelRoles), and the AncestorSource/CountsHierarchy/TopologyHierarchy types are removed; the EntityHierarchy instance is the only API. Mechanical rewrite: fn(h, ...) to h.fn(...), guards to hierarchy.isChannel/isProduct/getRoles, topology params typed EntityHierarchy. No wire or DB change."
+    },
+    {
+      "id": "20260723T0822-drop-product-path-column",
+      "version": "next",
+      "title": "Drop the product tables' stored path column",
+      "kind": "manual",
+      "forkBreaking": true,
+      "clientCacheBump": true,
+      "script": null,
+      "roots": [
+        "backend/src",
+        "backend/drizzle",
+        "cdc/src"
+      ],
+      "requires": [
+        "pnpm generate",
+        "pnpm check"
+      ],
+      "summary": "Product rows compute their location path from ancestor id columns (hierarchy.computeProductPath) in CDC batching, move detection, and stream notifications; the stored generated column is dropped (wire: product responses lose the path field, clientCacheVersion bumped to v4-no-product-path). Channel tables keep their generated path for channel_counters ancestry."
     }
   ]
 }

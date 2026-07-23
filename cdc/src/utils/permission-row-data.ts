@@ -6,7 +6,7 @@ import type { CdcRowData } from '../types';
  * Fork-specific permission inputs must be added here; content never belongs in batch metadata.
  */
 const permissionRowKeys: Set<string> = (() => {
-  const keys = new Set<string>(['id', 'createdBy', 'deletedAt', 'publicAt', 'publishedAt', 'path']);
+  const keys = new Set<string>(['id', 'createdBy', 'deletedAt', 'publicAt', 'publishedAt']);
   for (const channelType of appConfig.channelEntityTypes) {
     keys.add(appConfig.entityIdColumnKeys[channelType]);
   }

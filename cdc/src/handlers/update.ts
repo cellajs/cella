@@ -1,5 +1,5 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
 import { convertRowKeys, extractRowData, getChangedFields } from '../utils';
@@ -12,6 +12,13 @@ import { createActivity } from '../services/create-activity';
  * Columns that hold embedded entity ID arrays (e.g. task.labels).
  */
 const embeddingColumns: Set<string> = new Set(appConfig.productEmbeddings.map((e) => e.hostColumn));
+
+/** A row's location path from its ancestor id columns; null for non-hierarchy rows. */
+const rowLocationPath = (entityType: string, row: Record<string, unknown>): string | null => {
+  if (hierarchy.isProduct(entityType)) return hierarchy.computeProductPath(entityType, row);
+  if (hierarchy.isChannel(entityType)) return hierarchy.computeChannelPath(entityType, row);
+  return null;
+};
 
 /**
  * Read changedFields from stx metadata if the backend persisted it.
@@ -66,11 +73,13 @@ export function handleUpdate(
 
   const activity = createActivity(tableMeta, rowData, 'update', { changedFields: userChangedFields });
 
-  // Move-out detection: the generated `path` (present in the
-  // REPLICA IDENTITY FULL old image) changed → carry the old row's permission subset so
+  // Move-out detection: the row's location path, computed from the ancestor id columns in
+  // the REPLICA IDENTITY FULL images, changed → carry the old row's permission subset so
   // dispatch can notify subscribers who could read the old location but not the new one.
+  const oldLocation = oldRowData ? rowLocationPath(tableMeta.type, oldRowData) : null;
+  const newLocation = rowLocationPath(tableMeta.type, rowData);
   const movedFrom =
-    oldRowData && typeof oldRowData.path === 'string' && typeof rowData.path === 'string' && oldRowData.path !== rowData.path
+    oldRowData && oldLocation !== null && newLocation !== null && oldLocation !== newLocation
       ? pickPermissionRowData(oldRowData)
       : null;
 

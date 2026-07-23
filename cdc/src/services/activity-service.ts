@@ -84,12 +84,12 @@ export interface BatchEvent {
 }
 
 /**
- * Group batch audiences by stored product path, deepest channel, or organization.
+ * Group batch audiences by computed product path, deepest channel, or organization.
  * One path-and-type group lets clients route by prefix; resources group by organization.
  */
 function batchPathKey({ activity, rowData }: BatchEvent): string {
   if (activity.entityType && hierarchy.isProduct(activity.entityType)) {
-    const path = typeof rowData.path === 'string' && rowData.path ? rowData.path : null;
+    const path = hierarchy.computeProductPath(activity.entityType, rowData);
     return `${path ?? resolveChannelKey(activity.entityType, rowData, activity)}\0${activity.entityType}`;
   }
   return activity.organizationId ?? 'none';

@@ -28,7 +28,7 @@ The core concepts are:
 | Concept | Meaning |
 | --- | --- |
 | **Sequence** | One monotonic counter per organization, shared by all product entity types |
-| **Path** | Materialized root-first channel ID path; every subtree is a path prefix |
+| **Path** | Root-first channel ID path computed from a row's ancestor ids; every subtree is a path prefix |
 | **Subtree** | A channel node and every row at or below it; identified by the node's path prefix |
 | **Home** | Deepest non-null channel ancestor of a product row, with organization as fallback |
 | **Frontier** | Newest sequence position represented by a channel summary |
@@ -42,7 +42,7 @@ The core concepts are:
 Five rules explain most behavior:
 
 1. Every product change takes the next organization sequence position. Commit order is sequence order across product types.
-2. A product's location is its materialized path, a generated column derived from the row's full ancestor ids.
+2. A product's location is its path, computed from the row's full ancestor ids. Channel rows store it as a generated column; product paths are computed where needed.
 3. Channel summaries aggregate the newest sequence and row counts. Frontiers only move forward.
 4. Clients compare view cursors with frontiers, fetch missing ranges, and advance only after ingesting the response.
 5. The product stream contains fetchable rows only. Publication filters exclude drafts, and SSE dispatch checks row permission for every subscriber.

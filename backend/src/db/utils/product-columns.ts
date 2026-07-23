@@ -1,7 +1,6 @@
 import { bigint, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { ProductEntityType } from 'shared';
 import { maxLength } from '#/db/utils/constraints';
-import { productPathColumn } from '#/db/utils/path-column';
 import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
 import { usersTable } from '#/modules/user/user-db';
 import { stxColumns } from './stx-columns';
@@ -31,5 +30,4 @@ export const productColumns = <T extends ProductEntityType>(entityType: T) => ({
    * order); rows briefly hold the default 0 until stamped. Used for delta sync (`seqCursor`).
    */
   seq: bigint('seq', { mode: 'number' }).notNull().default(0),
-  ...productPathColumn(entityType),
 });

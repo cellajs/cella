@@ -1,4 +1,4 @@
-import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy, pathHomeId } from 'shared';
 import { dbPoolPressure } from '#/db/db';
 import { type ActivityEvent, getEventData } from '#/lib/activity-bus';
 import type { StreamNotification } from '#/schemas';
@@ -84,10 +84,10 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     }
   }
 
-  // Stored ID path of the affected rows (message groups are per path, so the
-  // representative row's path speaks for the whole batch).
+  // Location path of the affected rows, computed from ancestor id columns (message groups
+  // are per path, so the representative row's path speaks for the whole batch).
   const rowData = event.rowData as Record<string, unknown> | null;
-  const path = isProduct && rowData && typeof rowData.path === 'string' ? rowData.path : null;
+  const path = isProduct && rowData && entityType ? hierarchy.computeProductPath(entityType, rowData) : null;
 
   return {
     // Discriminant: product entities go through the seq sync path;
@@ -119,13 +119,13 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
  */
 export function buildMoveOutNotification(event: ActivityEvent, movedFrom: Record<string, unknown>): StreamNotification {
   const base = buildStreamNotification(event);
-  const oldPath = typeof movedFrom.path === 'string' ? movedFrom.path : null;
+  const oldPath = event.entityType ? hierarchy.computeProductPath(event.entityType, movedFrom) : null;
   return {
     ...base,
     action: 'moveOut',
     path: oldPath,
     // The old path's deepest segment is the old home channel (unseen grouping).
-    channelId: oldPath ? (oldPath.split('/').pop() ?? null) : base.channelId,
+    channelId: oldPath ? pathHomeId(oldPath) : base.channelId,
     // No range to fetch: the removal is the payload.
     batchUntilSeq: null,
     count: 1,
