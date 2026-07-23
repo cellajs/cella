@@ -62,7 +62,7 @@ describe('mcp-server', () => {
 
 describe('tool-source describeMcpTools', () => {
   it('describes a schema-less tool with an empty object input schema', () => {
-    const tools: ExecutableTool[] = [{ name: 'noop', description: 'does nothing' }];
+    const tools: ExecutableTool[] = [{ __toolSide: 'server', name: 'noop', description: 'does nothing' }];
     const [descriptor] = describeMcpTools(tools);
     expect(descriptor).toMatchObject({ name: 'noop', description: 'does nothing' });
     expect(descriptor.inputSchema).toMatchObject({ type: 'object', additionalProperties: false });

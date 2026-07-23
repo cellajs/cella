@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { getRelativeOrder } from 'shared/utils/display-order';
-import { type BuildTreeOptions, buildTree, type TreeItem, type TreeRow } from './build-tree';
+import { type BuildTreeOptions, buildTree, type TreeItem, type TreeRow, treeItemAccessors } from './build-tree';
 import type { TreeContextValue } from './tree-context';
 
 /** Persists a tree-shape change to the backing store. Wire to your mutation. */
@@ -29,10 +29,6 @@ interface CanDropArgs {
   zone: DropZone;
 }
 
-const defaultGetId = <T>(item: T) => (item as unknown as TreeItem).id;
-const defaultGetParentId = <T>(item: T) => (item as unknown as TreeItem).parentId;
-const defaultGetDisplayOrder = <T>(item: T) => (item as unknown as TreeItem).displayOrder;
-
 function isSelfOrDescendantOf<T>(
   rootId: string,
   candidateId: string,
@@ -53,8 +49,12 @@ function isSelfOrDescendantOf<T>(
 /**
  * Owns expansion, drop validation, reordering, and reparenting for a tree data table.
  * Pair its context with `TreeProvider` and `ExpandToggleColumn`.
+ *
+ * Rows must satisfy {@link TreeItem}, since the accessors here are all optional and fall back
+ * to its field names. For a row shape with different field names, call `buildTree` directly
+ * and supply the full accessor set.
  */
-export function useTreeRows<T>(opts: UseTreeRowsOptions<T>) {
+export function useTreeRows<T extends TreeItem>(opts: UseTreeRowsOptions<T>) {
   const [toggledIds, setToggledIds] = useState<Set<string>>(new Set());
   // Latest opts behind a ref so the callbacks below stay stable while still
   // reading current accessors / mutate / maxDepth.
@@ -92,8 +92,8 @@ export function useTreeRows<T>(opts: UseTreeRowsOptions<T>) {
       const target = rows[toIdx];
       if (!dragged || !target) return false;
       const o = optsRef.current;
-      const getId = o.getId ?? defaultGetId;
-      const getParentId = o.getParentId ?? defaultGetParentId;
+      const getId = o.getId ?? treeItemAccessors.getId;
+      const getParentId = o.getParentId ?? treeItemAccessors.getParentId;
 
       // Cycle prevention: target must not be the dragged row or any descendant.
       const byId = new Map(rows.map((r) => [getId(r), r] as const));
@@ -117,9 +117,9 @@ export function useTreeRows<T>(opts: UseTreeRowsOptions<T>) {
       if (!dragged || !target) return;
       if (!canDrop(rows, { fromIdx, toIdx, zone: edge })) return;
       const o = optsRef.current;
-      const getId = o.getId ?? defaultGetId;
-      const getParentId = o.getParentId ?? defaultGetParentId;
-      const getDisplayOrder = o.getDisplayOrder ?? defaultGetDisplayOrder;
+      const getId = o.getId ?? treeItemAccessors.getId;
+      const getParentId = o.getParentId ?? treeItemAccessors.getParentId;
+      const getDisplayOrder = o.getDisplayOrder ?? treeItemAccessors.getDisplayOrder;
 
       // Bottom-drop on an expanded parent reads visually as "land just under
       // it" = first child of that parent. Closed parents stay sibling drops.
@@ -152,8 +152,8 @@ export function useTreeRows<T>(opts: UseTreeRowsOptions<T>) {
       const target = rows[toIdx];
       if (!dragged || !target) return;
       const o = optsRef.current;
-      const getId = o.getId ?? defaultGetId;
-      const getParentId = o.getParentId ?? defaultGetParentId;
+      const getId = o.getId ?? treeItemAccessors.getId;
+      const getParentId = o.getParentId ?? treeItemAccessors.getParentId;
       if (getParentId(dragged) === getId(target)) return;
       if (!canDrop(rows, { fromIdx, toIdx, zone: 'center' })) return;
 

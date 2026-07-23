@@ -73,10 +73,23 @@ type TrackedType = EntityType | ResourceType;
 /** Strongly typed activity event type, e.g. 'user.created', 'membership.updated'. */
 export type ActivityEventType = `${TrackedType}.${ActivityVerb}`;
 
-/** Runtime array of all valid activity event types for schema enum constraints. */
-export const activityEventTypes = [...appConfig.entityTypes, ...appConfig.resourceTypes].flatMap(
-  (type) => activityVerbs.map((verb) => `${type}.${verb}`),
-) as unknown as readonly [ActivityEventType, ...ActivityEventType[]];
+/**
+ * Runtime array of all valid activity event types for schema enum constraints.
+ * Zod enums require a non-empty tuple, so a config that declares no entity or resource type
+ * fails here, at the point that names the cause.
+ */
+export const activityEventTypes = ((): readonly [ActivityEventType, ...ActivityEventType[]] => {
+  const types = [...appConfig.entityTypes, ...appConfig.resourceTypes].flatMap((type) =>
+    activityVerbs.map((verb): ActivityEventType => `${type}.${verb}`),
+  );
+  const [first, ...rest] = types;
+  if (!first) {
+    throw new Error(
+      'FATAL: activityEventTypes is empty. Config must declare at least one entity or resource type.',
+    );
+  }
+  return [first, ...rest];
+})();
 
 /** Set of valid event types for runtime validation. */
 const validEventTypes = new Set<string>(activityEventTypes);

@@ -43,9 +43,27 @@ const createPgConnection = (connectionString: string, max: number): PgDB =>
     ...dbConfig,
   });
 
+/**
+ * Stand-in for `baseDb` when `NODB` is set. Every property access throws with the accessed
+ * name, so a code path that reaches the database under `NODB` names itself in the stack trace.
+ * Capability probes are exempt: `prepared.ts` reads `select` to decide whether prepared
+ * statements can be built, and `dbPoolPressure` reads `$client` to sample the pool.
+ */
+const noDbProbeKeys: ReadonlySet<string | symbol> = new Set(['select', '$client']);
+
+const createNoDbStub = (): DB =>
+  new Proxy({} as DB, {
+    get(_target, property) {
+      if (noDbProbeKeys.has(property)) return undefined;
+      throw new Error(
+        `Database access ("${String(property)}") attempted while NODB is set. This process runs without a database connection.`,
+      );
+    },
+  });
+
 const initConnections = (): { db: DB; migrationDb?: PgDB; adminDb?: PgDB } => {
   if (env.NODB) {
-    return { db: {} as unknown as DB };
+    return { db: createNoDbStub() };
   }
 
   return {
@@ -64,10 +82,14 @@ export const baseDb: DB = connections.db;
  * Feeds the sync spread window so the notification fan-out decelerates under DB load.
  */
 export const dbPoolPressure = (): number => {
-  const pool = baseDb.$client as unknown as { waitingCount?: number; options?: { max?: number } };
-  const max = pool?.options?.max ?? 0;
-  if (!max || typeof pool.waitingCount !== 'number') return 0;
-  return pool.waitingCount / max;
+  // `$client` is a pg Pool or Client; only the Pool carries these counters, so both are read
+  // defensively. Absent under NODB, where the client probe yields undefined.
+  const client: unknown = baseDb.$client;
+  if (typeof client !== 'object' || client === null) return 0;
+  const { waitingCount, options } = client as { waitingCount?: unknown; options?: { max?: unknown } };
+  const max = typeof options?.max === 'number' ? options.max : 0;
+  if (!max || typeof waitingCount !== 'number') return 0;
+  return waitingCount / max;
 };
 export const migrationDb: PgDB | undefined = connections.migrationDb;
 export const unsafeInternalAdminDb: PgDB | undefined = connections.adminDb;

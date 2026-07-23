@@ -1,4 +1,3 @@
-import type { DbOrTx } from '#/db/db';
 import { recalculateCounters } from '#/modules/entities/helpers/recalculate-counters';
 
 import { cdcDb } from '../lib/db';
@@ -18,7 +17,7 @@ export async function runPostCatchupRecovery(): Promise<void> {
 
   // Phase 1: Recalculate all counters from source-of-truth tables
   try {
-    const { channelRows, productRows } = await recalculateCounters(cdcDb as unknown as DbOrTx);
+    const { channelRows, productRows } = await recalculateCounters(cdcDb);
     log.info('Post-catchup counter recalculation complete', {
       channelRows,
       productRows,

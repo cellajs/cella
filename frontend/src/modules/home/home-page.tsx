@@ -7,7 +7,7 @@ import { SimpleHeader } from '~/modules/common/simple-header';
 import { InvitationsTable } from '~/modules/me/invitations-table';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
-import { useUserStore } from '~/modules/user/user-store';
+import { useCurrentUser } from '~/modules/user/user-store';
 
 /**
  * Home page component displaying a welcome message and pending invitations for the user.
@@ -15,7 +15,7 @@ import { useUserStore } from '~/modules/user/user-store';
  */
 export function HomePage() {
   const { t } = useTranslation();
-  const { user } = useUserStore();
+  const user = useCurrentUser();
 
   const showMfaAlert = !user.mfaRequired;
 

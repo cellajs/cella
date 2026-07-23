@@ -99,7 +99,7 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], productT
       sql`, `,
     );
 
-    const result = await db.execute(sql`
+    const result = await db.execute<{ new_count: number }>(sql`
       WITH candidate (id, user_id, product_id, product_type, channel_id, organization_id, tenant_id, created_at) AS (
         VALUES ${values}
       ),
@@ -123,7 +123,7 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], productT
       SELECT count(*)::int AS new_count FROM inserted
     `);
 
-    const nc = Number((result as unknown as { rows: { new_count: number }[] }).rows[0]?.new_count ?? 0);
+    const nc = Number(result.rows[0]?.new_count ?? 0);
     return { validIds: vIds, entityChannelIdMap: ctxIdMap, newCount: nc };
   });
 

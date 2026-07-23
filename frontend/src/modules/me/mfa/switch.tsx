@@ -6,11 +6,11 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ConfirmDisableMfa, ConfirmMfaOptions } from '~/modules/me/mfa/confirmation';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { Switch } from '~/modules/ui/switch';
-import { useUserStore } from '~/modules/user/user-store';
+import { useCurrentUser } from '~/modules/user/user-store';
 
 export const MfaSwitch = () => {
   const { t } = useTranslation();
-  const { user } = useUserStore();
+  const user = useCurrentUser();
   const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
   const hasPasskey = authData.passkeys.length > 0;
   const hasTotp = authData.hasTotp;

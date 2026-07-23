@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { appConfig, hierarchy } from 'shared';
+import { asRecord } from 'shared/utils/as-record';
 import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
@@ -11,7 +12,7 @@ import { getEntityQueryKeys } from './entity-query-registry';
  * routing can never disagree.
  */
 export function resolveHomeChannelId(entityType: string, entity: ItemData): string | null {
-  const entityRecord = entity as unknown as Record<string, unknown>;
+  const entityRecord = asRecord(entity);
   const home = hierarchy.resolveDeepestAncestorId(entityType, entityRecord);
   if (home) return home;
   const organizationId = entityRecord.organizationId;
@@ -32,8 +33,8 @@ export function matchesCanonicalHome(
 
 /** True when the row moved to a different parent channel (any context id column differs). */
 function hasParentChannelChanged(cached: ItemData, incoming: ItemData): boolean {
-  const c = cached as unknown as Record<string, unknown>;
-  const i = incoming as unknown as Record<string, unknown>;
+  const c = asRecord(cached);
+  const i = asRecord(incoming);
   for (const entityType of appConfig.channelEntityTypes) {
     const key = appConfig.entityIdColumnKeys[entityType];
     if (typeof c[key] === 'string' && typeof i[key] === 'string' && c[key] !== i[key]) return true;

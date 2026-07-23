@@ -3,7 +3,7 @@ import { generatePasskeyChallenge } from 'sdk';
 import { appConfig } from 'shared';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { generatePasskeyName } from '~/modules/me/helpers';
-import { useUserStore } from '~/modules/user/user-store';
+import { getCurrentUser } from '~/modules/user/user-store';
 
 /**
  * Check if the browser supports conditional mediation (passkey autofill).
@@ -83,7 +83,7 @@ export const getPasskeyRegistrationCredential = async () => {
 
   const isDevelopment = appConfig.mode === 'development';
 
-  const email = useUserStore.getState().user.email;
+  const email = getCurrentUser().email;
   const generatedName = generatePasskeyName();
   const nameOnDevice = isDevelopment
     ? `${email} (${generatedName}) for ${appConfig.name}`

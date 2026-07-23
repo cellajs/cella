@@ -13,7 +13,8 @@ type LastUser = Pick<MeUser, 'id' | 'email'>;
 export const yjsTokenKey = (entityType: ProductEntityType, tenantId: string) => `${entityType}:${tenantId}`;
 
 interface UserStoreState {
-  user: MeUser; // Current user data
+  /** Current user. `null` while signed out; set by the authenticated route guard. */
+  user: MeUser | null;
   isSystemAdmin: boolean;
   lastUser: LastUser | null; // Last signed-out user's email
   yjsTokens: Record<string, string>; // Map of "entityType:tenantId" → HMAC token (not persisted)
@@ -27,7 +28,7 @@ interface UserStoreState {
 
 // Default state values. `user` is `null` at rest; the router guarantees it's set inside app routes.
 const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'lastUser' | 'yjsTokens'> = {
-  user: null as unknown as MeUser,
+  user: null,
   isSystemAdmin: false,
   lastUser: null,
   yjsTokens: {},
@@ -106,3 +107,25 @@ export const useUserStore = create<UserStoreState>()(
 
 // Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
 export { useUserStore as userStore };
+
+const signedOutMessage =
+  '[userStore] Read the signed-in user while signed out. Only authenticated routes may use it; ' +
+  'read `useUserStore().user` and handle null elsewhere.';
+
+/**
+ * The signed-in user, for components mounted under an authenticated route.
+ * Requires `user` to be set, which the route guard guarantees. Throws while signed out, so a
+ * component mounted outside the guard fails at the read that broke the requirement.
+ */
+export const useCurrentUser = (): MeUser => {
+  const user = useUserStore((state) => state.user);
+  if (!user) throw new Error(signedOutMessage);
+  return user;
+};
+
+/** Imperative twin of {@link useCurrentUser}, for non-React code in authenticated flows. */
+export const getCurrentUser = (): MeUser => {
+  const { user } = useUserStore.getState();
+  if (!user) throw new Error(signedOutMessage);
+  return user;
+};

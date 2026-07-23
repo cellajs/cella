@@ -1,4 +1,5 @@
 import type pg from 'pg';
+import { asRecord } from 'shared/utils/as-record';
 import { isChannel, isProduct,
   appConfig,
   buildSubject,
@@ -132,14 +133,14 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
     // Unpublished drafts (publishedAt null) are editable by their author alone. The
     // published-rows lifecycle veto, ahead of the engine (which has no draft vocabulary).
     // Absent column (resolveEntityScope filtered it out) → always published → no-op.
-    if (!draftVisibleTo(entity as unknown as Record<string, unknown>, ctx.userId)) return false;
+    if (!draftVisibleTo(asRecord(entity), ctx.userId)) return false;
 
     const createdBy = typeof entity.createdBy === 'string' || entity.createdBy === null ? entity.createdBy : undefined;
     const subject = buildSubject(entityType, entity, {
       id: entity.id,
       createdBy,
       // The row itself: without it, every row-derived grant ('own', public read) fails closed.
-      row: entity as unknown as Record<string, unknown> });
+      row: asRecord(entity) });
 
     // Collaborative editing confers no system-admin bypass. The same stance the backend's
     // materialize endpoint takes, so the relay and the write it triggers agree.

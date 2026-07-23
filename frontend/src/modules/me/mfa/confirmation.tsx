@@ -6,7 +6,7 @@ import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useToggleMfaMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { useUserStore } from '~/modules/user/user-store';
+import { useCurrentUser } from '~/modules/user/user-store';
 
 export const ConfirmDisableMfa = () => {
   const { t } = useTranslation();
@@ -39,7 +39,7 @@ export const ConfirmDisableMfa = () => {
 
 export const ConfirmMfaOptions = ({ mfaRequired }: { mfaRequired: boolean }) => {
   const { t } = useTranslation();
-  const user = useUserStore((state) => state.user);
+  const user = useCurrentUser();
   const { remove: removeDialog } = useDialoger();
 
   const { mutateAsync: toggleMfa } = useToggleMfaMutation();

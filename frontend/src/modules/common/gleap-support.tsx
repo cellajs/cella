@@ -63,7 +63,7 @@ export function GleapSupport() {
 
       // Update Gleap user on user change
       const unsubscribe = useUserStore.subscribe((state) => {
-        const user: User = state.user;
+        const user = state.user;
 
         if (user) return setGleapUser(user);
 

@@ -6,7 +6,7 @@ import { channelListQueriesByType } from '~/list-queries-config';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/ui/combobox';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
-import { useUserStore } from '~/modules/user/user-store';
+import { useCurrentUser } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 
 type SelectParentProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
@@ -28,7 +28,7 @@ export const SelectParentFormField = <TFieldValues extends FieldValues>({
   required,
   disabled,
 }: SelectParentProps<TFieldValues>) => {
-  const { user } = useUserStore();
+  const user = useCurrentUser();
 
   // Fetch entities using proper query
   const queryFactory = channelListQueriesByType[parentType];

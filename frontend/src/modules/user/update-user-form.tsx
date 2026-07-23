@@ -22,7 +22,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '~/modules/ui/input';
 import { Label } from '~/modules/ui/label';
 import { useUserUpdateMutation } from '~/modules/user/query';
-import { useUserStore } from '~/modules/user/user-store';
+import { useCurrentUser } from '~/modules/user/user-store';
 
 const formSchema = zUpdateUserBody;
 
@@ -42,7 +42,7 @@ interface UpdateUserFormProps {
 
 export function UpdateUserForm({ user, callback, sheet: isSheet, compact, children }: UpdateUserFormProps) {
   const { t } = useTranslation();
-  const { user: currentUser } = useUserStore();
+  const currentUser = useCurrentUser();
   const isSelf = currentUser.id === user.id;
   const { nextStep } = useStepper();
 

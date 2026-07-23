@@ -14,7 +14,7 @@ import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
 import { MenuSheetPanels } from '~/modules/navigation/menu-sheet/sheet-panel';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/modules/user/user-store';
+import { useCurrentUser, useUserStore } from '~/modules/user/user-store';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 type AccountButtonProps = {
@@ -65,7 +65,8 @@ function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action 
 export const AccountSheet = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, isSystemAdmin } = useUserStore();
+  const user = useCurrentUser();
+  const { isSystemAdmin } = useUserStore();
   const isMobile = useBreakpointBelow('sm', false);
   const isOnline = useOnlineManager();
 

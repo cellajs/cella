@@ -1,4 +1,5 @@
 import type { ProductEntityType } from 'shared';
+import { asRecord } from 'shared/utils/as-record';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
@@ -96,7 +97,7 @@ function patchSingleHost(
   removeSet: Set<string>,
   freshEmbedded: Map<string, ItemData>,
 ): ItemData {
-  const record = host as unknown as Record<string, unknown>;
+  const record = asRecord(host);
   const embedded = record[hostColumn];
 
   // Array column (e.g., task.labels)
@@ -113,7 +114,7 @@ function patchSingleHost(
         const fresh = freshEmbedded.get(item.id);
         if (!fresh) return item;
         // Use updatedAt guard to avoid replacing newer data with older
-        const freshRecord = fresh as unknown as Record<string, unknown>;
+        const freshRecord = asRecord(fresh);
         if (item.updatedAt && freshRecord.updatedAt && freshRecord.updatedAt > item.updatedAt) return fresh;
         if (!item.updatedAt) return fresh;
         // fresh is same age or older, keep cached version (concurrent edit edge case).
@@ -132,7 +133,7 @@ function patchSingleHost(
     if (updateSet.has(obj.id)) {
       const fresh = freshEmbedded.get(obj.id);
       if (fresh) {
-        const freshRecord = fresh as unknown as Record<string, unknown>;
+        const freshRecord = asRecord(fresh);
         if (obj.updatedAt && freshRecord.updatedAt && freshRecord.updatedAt > obj.updatedAt) {
           return { ...host, [hostColumn]: fresh } as ItemData;
         }

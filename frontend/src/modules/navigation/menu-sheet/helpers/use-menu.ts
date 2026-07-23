@@ -8,13 +8,18 @@ import { buildMenuFromCache, menuEntityTypes } from './build-menu-from-cache';
  * subscriber enriches data, useQueries re-builds the menu. Disabled when `userId` is undefined.
  */
 export function useMenu(userId: string | undefined) {
+  // Menu structure may name an entity type with no registered list query (buildMenuFromCache
+  // treats those as empty). Dropping them keeps every entry a real options object, so none
+  // reaches useQueries without a queryKey.
+  const queries = menuEntityTypes
+    .map((entityType) => channelListQueriesByType[entityType])
+    .filter((factory) => factory !== undefined)
+    .map((factory) => ({ ...factory({ relatableUserId: userId ?? '' }), enabled: !!userId }));
+
   // Subscribe to each entity list query for granular reactivity
   const results = useQueries({
     // @ts-expect-error useQueries types don't support infinite query options, but it works at runtime
-    queries: menuEntityTypes.map((t) => ({
-      ...channelListQueriesByType[t]?.({ relatableUserId: userId ?? '' }),
-      enabled: !!userId,
-    })),
+    queries,
   });
 
   // Stable recompute key when query data changes

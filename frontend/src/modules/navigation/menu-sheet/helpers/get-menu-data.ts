@@ -3,7 +3,7 @@ import { getMyMemberships } from 'sdk';
 import { appConfig } from 'shared';
 import { channelListQueriesByType } from '~/list-queries-config';
 import { meKeys } from '~/modules/me/query';
-import { useUserStore } from '~/modules/user/user-store';
+import { getCurrentUser } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 import { buildMenuFromCache } from './build-menu-from-cache';
 
@@ -13,7 +13,7 @@ import { buildMenuFromCache } from './build-menu-from-cache';
  * buildMenuFromCache.
  */
 export async function getMenuData() {
-  const userId = useUserStore.getState().user.id;
+  const userId = getCurrentUser().id;
 
   // Fetch memberships first; the subscriber reads from this cache.
   await queryClient.ensureQueryData({

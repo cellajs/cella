@@ -15,7 +15,7 @@ import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 import { InviteUsers } from '~/modules/user/invite-users';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
-import { useUserStore } from '~/modules/user/user-store';
+import { useCurrentUser } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { cn } from '~/utils/cn';
 
@@ -36,7 +36,7 @@ export function Onboarding({
   setCreatedOrganization,
   setSeeded,
 }: OnboardingProps) {
-  const { user } = useUserStore();
+  const user = useCurrentUser();
   const { hasStarted } = useMountedState();
   const { t } = useTranslation();
 

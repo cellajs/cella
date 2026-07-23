@@ -18,7 +18,7 @@ import type {
   MembershipChannelProp,
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
-import { useUserStore } from '~/modules/user/user-store';
+import { getCurrentUser } from '~/modules/user/user-store';
 import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
 import { invalidateOnMembershipChange } from '~/query/basic/invalidation-helpers';
@@ -388,7 +388,7 @@ export const useChangeEntityRoleMutation = () =>
       }
 
       // No membership, create via invite.
-      const { email } = useUserStore.getState().user;
+      const { email } = getCurrentUser();
       const result = await membershipInvite({
         query: { entityId, entityType },
         path: { tenantId, organizationId },

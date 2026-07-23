@@ -31,6 +31,13 @@ export type TreeRow<T> = T & {
   _subtreeHeight: number;
 };
 
+/** The three field reads the tree builder performs, as functions over a row. */
+export interface TreeAccessors<T> {
+  getId: (item: T) => string;
+  getParentId: (item: T) => string | null;
+  getDisplayOrder: (item: T) => number;
+}
+
 export interface BuildTreeOptions<T> {
   toggledIds: ReadonlySet<string>;
   /** Baseline expansion state. `true` = all expanded by default. */
@@ -41,18 +48,26 @@ export interface BuildTreeOptions<T> {
   getDisplayOrder?: (item: T) => number;
 }
 
-const defaultGetId = <T>(item: T) => (item as unknown as TreeItem).id;
-const defaultGetParentId = <T>(item: T) => (item as unknown as TreeItem).parentId;
-const defaultGetDisplayOrder = <T>(item: T) => (item as unknown as TreeItem).displayOrder;
+/** Field reads used when a row satisfies {@link TreeItem} and supplies no overrides. */
+export const treeItemAccessors: TreeAccessors<TreeItem> = {
+  getId: (item) => item.id,
+  getParentId: (item) => item.parentId,
+  getDisplayOrder: (item) => item.displayOrder,
+};
 
 /**
  * Build the visible depth-first tree from flat items.
  * Expansion is `defaultExpanded XOR toggledIds.has(id)`.
+ *
+ * A row satisfying {@link TreeItem} may omit the accessors; any other row shape must supply
+ * all three, so a row without the default fields is rejected at the call site.
  */
-export function buildTree<T>(items: T[], opts: BuildTreeOptions<T>): TreeRow<T>[] {
-  const getId = opts.getId ?? defaultGetId;
-  const getParentId = opts.getParentId ?? defaultGetParentId;
-  const getDisplayOrder = opts.getDisplayOrder ?? defaultGetDisplayOrder;
+export function buildTree<T extends TreeItem>(items: T[], opts: BuildTreeOptions<T>): TreeRow<T>[];
+export function buildTree<T>(items: T[], opts: BuildTreeOptions<T> & TreeAccessors<T>): TreeRow<T>[];
+export function buildTree<T extends TreeItem>(items: T[], opts: BuildTreeOptions<T>): TreeRow<T>[] {
+  const getId = opts.getId ?? treeItemAccessors.getId;
+  const getParentId = opts.getParentId ?? treeItemAccessors.getParentId;
+  const getDisplayOrder = opts.getDisplayOrder ?? treeItemAccessors.getDisplayOrder;
   const defaultExpanded = opts.defaultExpanded ?? false;
   const { toggledIds } = opts;
 

@@ -6,7 +6,7 @@ import type { Passkey } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
-import { useUserStore } from '~/modules/user/user-store';
+import { useCurrentUser } from '~/modules/user/user-store';
 import { dateShort } from '~/utils/date-short';
 
 interface PasskeyTileProps {
@@ -18,7 +18,7 @@ interface PasskeyTileProps {
 
 export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPasskeyLeft }: PasskeyTileProps) => {
   const { t } = useTranslation();
-  const user = useUserStore((state) => state.user);
+  const user = useCurrentUser();
 
   const [expanded, setExpanded] = useState(false);
 

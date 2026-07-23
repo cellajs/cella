@@ -52,7 +52,7 @@ export function deriveGrantBoundaryViews({
   const views = new Map<string, DerivedSyncView>();
 
   for (const entityType of entityTypes) {
-    const entityPolicies = getEntityPolicies(entityType as never, policies);
+    const entityPolicies = getEntityPolicies(entityType, policies);
     // Ancestors are most-specific → root; the home level is the first non-root one.
     const ancestors = hierarchy.getOrderedAncestors(entityType);
     const root = ancestors[ancestors.length - 1];
@@ -63,7 +63,7 @@ export function deriveGrantBoundaryViews({
 
     for (const m of memberships) {
       if (!ancestors.includes(m.channelType)) continue;
-      if (getPolicyPermissions(entityPolicies, m.channelType as never, m.role as never)?.read !== 1) continue;
+      if (getPolicyPermissions(entityPolicies, m.channelType, m.role)?.read !== 1) continue;
 
       const depth: DerivedSyncView['depth'] = isSubtreeGrant(m.channelType, m.role) ? 'subtree' : 'self';
       const prefix = m.channelType === root ? m.organizationId : resolvePath(m.channelType, m.channelId);

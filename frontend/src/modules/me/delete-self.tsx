@@ -6,7 +6,7 @@ import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { userQueryKeys } from '~/modules/user/query';
-import { useUserStore } from '~/modules/user/user-store';
+import { useCurrentUser } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 
 interface Props {
@@ -18,7 +18,7 @@ export function DeleteSelf({ callback, dialog: isDialog }: Props) {
   const navigate = useNavigate();
   const removeDialog = useDialoger((state) => state.remove);
 
-  const { user } = useUserStore();
+  const user = useCurrentUser();
 
   const { mutate: _deleteMe, isPending } = useMutation({
     mutationFn: async () => {
