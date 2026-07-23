@@ -186,6 +186,22 @@
         "pnpm check"
       ],
       "summary": "Access/Policy/Permission naming rule: AccessPolicies family -> PolicyMatrix/EntityPolicies/PolicyEntry, accessPolicies -> policyMatrix, PermissionValue/NormalizedPermissionValue -> PolicyCellInput/PolicyCell, ActionPermissionState -> CanState, resolvePermission -> resolveCan, PermissionMembership -> AccessMembership, isAllowed/enabled -> allowed, PermissionTopology removed (options.hierarchy + options.entityActions), config DSL ({ subject, contexts }) -> ({ entityType, channels }), collection scopes subChannelIds -> homeChannelIds/channelIds, AncestorScope -> IntermediateScope, permission-manager/ -> engine/, actor.ts -> access.ts. No wire-shape or DB change."
+    },
+    {
+      "id": "20260723T1237-typed-nullable-user-and-tree-rows",
+      "version": "next",
+      "title": "Nullable store user and TreeItem-constrained tree rows",
+      "kind": "manual",
+      "forkBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "frontend/src"
+      ],
+      "requires": [
+        "pnpm check"
+      ],
+      "summary": "useUserStore().user is MeUser | null (was MeUser seeded with `null as unknown as MeUser`); authenticated call sites use the new useCurrentUser()/getCurrentUser() accessors, which throw while signed out, and anything reachable signed out handles null. useTreeRows requires T extends TreeItem; buildTree is overloaded so other row shapes must pass all three accessors. Also widens getEntityPolicies/getPolicyPermissions to string and gives actorFrom/accessFrom a structural AccessContext (actorFrom now returns { anonymous: true } without a userId). Compile-time detected; no wire-shape or DB change."
     }
   ]
 }
