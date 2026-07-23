@@ -5,13 +5,13 @@ import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import { Onboarding } from '~/modules/home/onboarding/steps';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '~/modules/ui/dialog';
-import { useUserStore } from '~/modules/user/user-store';
+import { useCurrentUser } from '~/modules/user/user-store';
 
 /**
  * Welcome page shown to new users. Contains onboarding flow and welcome message. Only shown if user has not completed onboarding.
  */
 function WelcomePage() {
-  const { user } = useUserStore();
+  const user = useCurrentUser();
 
   const [onboarding, setOnboardingState] = useState<OnboardingStates>(
     user.userFlags.finishedOnboarding ? 'completed' : 'start',

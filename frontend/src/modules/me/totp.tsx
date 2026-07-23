@@ -8,12 +8,12 @@ import { meAuthQueryOptions, useDeleteTotpMutation } from '~/modules/me/query';
 import { SetupTotp } from '~/modules/me/totp-setup';
 import { Button } from '~/modules/ui/button';
 import { Skeleton } from '~/modules/ui/skeleton';
-import { useUserStore } from '~/modules/user/user-store';
+import { useCurrentUser } from '~/modules/user/user-store';
 
 export function Totp() {
   const { t } = useTranslation();
 
-  const { user } = useUserStore();
+  const user = useCurrentUser();
   const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
   const hasTotp = authData.hasTotp;
   const { mutate: deleteTotp, isPending } = useDeleteTotpMutation();

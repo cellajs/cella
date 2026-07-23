@@ -24,7 +24,7 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
-import { useUserStore } from '~/modules/user/user-store';
+import { useCurrentUser } from '~/modules/user/user-store';
 
 const tabs = [
   { id: 'general', label: 'c:general' },
@@ -37,7 +37,7 @@ const enabledStrategies = appConfig.enabledAuthStrategies;
 
 function UserAccountPage() {
   const { t } = useTranslation();
-  const { user } = useUserStore();
+  const user = useCurrentUser();
   const mode = useUIStore((state) => state.mode);
   const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
   const { enabledOAuth } = authData;

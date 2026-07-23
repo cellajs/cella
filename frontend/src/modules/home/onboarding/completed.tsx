@@ -8,7 +8,7 @@ import { Confetti } from '~/modules/home/onboarding/confetti';
 import { useUpdateSelfFlagsMutation } from '~/modules/me/query';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
-import { useUserStore } from '~/modules/user/user-store';
+import { useCurrentUser } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 
 interface OnboardingCompletedProps {
@@ -19,7 +19,7 @@ interface OnboardingCompletedProps {
 
 export const OnboardingCompleted = ({ createdOrganization, seeded }: OnboardingCompletedProps) => {
   const { t } = useTranslation();
-  const { user } = useUserStore();
+  const user = useCurrentUser();
   const { setSectionsDefault } = useNavigationStore();
 
   const { mutate } = useUpdateSelfFlagsMutation();
