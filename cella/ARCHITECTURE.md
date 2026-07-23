@@ -1,12 +1,17 @@
 # Architecture
 
-Cella keeps ordinary feature work ordinary: PostgreSQL rows, OpenAPI endpoints, and TanStack Query hooks. Realtime updates, offline durability, generated contracts, and tenant isolation **fit around that path** instead of introducing a second application model.
+This document is the system-level tour of a Cella app and the starting point for the rest of the architecture documentation.
 
-It is a full-stack TypeScript monorepo for content-rich, collaborative applications people use every day. The template is deliberately opinionated about the seams between client, API, and database, while its modules and entity hierarchy can be reshaped by each project built from the template.
+### TL;DR
+
+Cella is a **full-stack TypeScript project template for collaborative, content-rich web apps**. Most
+feature work follows a familiar path: store rows in PostgreSQL, expose API endpoints, and read them
+in React. Live updates, offline support, and tenant isolation build on that path. One configuration
+describes the app's data types, how they relate, and the behavior Cella generates for them.
 
 ## Overview
 
-This diagram shows the normal production topology of a Cella app. Your own setup could be different since you can choose to add or remove workers or 'cohost' them into a single backend VM.
+This diagram shows the normal production topology of a Cella app. Your own setup could be different since you can choose to add or remove workers. You can even **'cohost' them into a single backend VM**.
 
 ```
    ┌──────────────┐                          ┌──────────────────────────────┐
@@ -72,7 +77,7 @@ One structural rule matters most when extending the model: every product belongs
 
 Sync is selective. A `channel` entity stay conventional, while `product` entities can opt into live updates and offline use without changing their API or cache model. Because an offline client may outlive a deployment, breaking entity-shape changes have an explicit evolution path.
 
-Read [React Client](./CLIENT.md) for state ownership, startup, IndexedDB, and multi-tab behavior. Read [Sync engine](./SYNC_ENGINE.md) for delivery and merge guarantees, and [Schema evolution](./SCHEMA_EVOLUTION.md) for version-tolerant changes.
+Read [Client](./CLIENT.md) for state ownership, startup, IndexedDB, and multi-tab behavior. Read [Sync engine](./SYNC_ENGINE.md) for delivery and merge guarantees, and [Schema evolution](./SCHEMA_EVOLUTION.md) for version-tolerant changes.
 
 ## Trust boundaries
 
@@ -119,18 +124,3 @@ Cella is a flat-root monorepo. The top-level folders reveal the service boundari
 ├── locales       Translations
 └── bench         Artillery load tests
 ```
-
-## Deep dives
-
-| Continue with | When you need to understand... |
-| --- | --- |
-| [React Client](./CLIENT.md) | TanStack Query, IndexedDB, Zustand, startup, and tabs |
-| [Sync engine](./SYNC_ENGINE.md) | Realtime delivery, catchup, offline writes, and guarantees |
-| [Permissions](./PERMISSIONS.md) | Roles, contextual grants, public reads, and row conditions |
-| [Multi-tenancy](./MULTI_TENANCY.md) | Database visibility, write safeguards, and PostgreSQL roles |
-| [Schema evolution](./SCHEMA_EVOLUTION.md) | Changing cached wire shapes across old clients |
-| [Observability](./OTEL.md) | Traces, logs, metrics, health, and shutdown |
-| [CDC worker](../cdc/README.md) | Logical replication and ordered side effects |
-| [Yjs worker](../yjs/README.md) | Collaborative editing and materialization |
-| [New entity](./ADD_ENTITY.md) | Adding a channel or product type to a project |
-| [Testing](./TESTING.md) | Test modes, infrastructure, and contributor workflow |

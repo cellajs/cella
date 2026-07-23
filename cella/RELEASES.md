@@ -1,11 +1,18 @@
 # Releases
 
-Releases are automated with [release-please](https://github.com/googleapis/release-please); versions and changelogs derive from [Conventional Commits](https://www.conventionalcommits.org). Never bump versions or push tags by hand.
+This document explains how versions, changelogs, releases, and production deploys are produced from merged work.
+
+### TL;DR
+
+Release automation reads commit messages to choose versions and write changelogs, then opens a pull
+request containing those changes. Do not change versions or create tags by hand. Slower test suites
+run on that release pull request. Production deploys only after it is merged and the GitHub Release
+is published.
 
 ## How it works
 
 1. Land work on `main` with Conventional Commit messages (a lefthook `commit-msg` hook runs commitlint locally).
-2. release-please keeps an open **release PR per package**, continuously updating the proposed version bump and generated [Changelog](/docs/page/changelog).
+2. release-please keeps an open **release PR per package**, continuously updating the proposed version bump and generated [Changelog](./CHANGELOG.md).
 3. The release PR runs the full CI, including the heavy suites (see [Gating](#gating)). Merge it when green: it bumps the version, updates the changelog, tags, and publishes the GitHub Release.
 
 ## Deploy timing
@@ -41,7 +48,10 @@ Types map to changelog sections (`changelog-sections` in [release-please-config.
 - `perf:` / `refactor:` → 🔧 Small improvements
 - `revert:` → ⏪ Reverts
 - `docs:` → 📖 Documentation
-- `chore:`, `build:`, `ci:`, `style:`, `test:` → hidden from notes
+- `build:` / `ci:` → 🏗️ Build & deps
+- `chore:` → 🧹 Chores
+- `style:` → 🎨 Styles
+- `test:` → 🧪 Tests
 
 A `!` (e.g. `feat!:`) or a `BREAKING CHANGE:` footer forces a breaking-change section and larger bump; link a fork-facing migration note in `cella/` from the commit body.
 

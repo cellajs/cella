@@ -1,0 +1,1 @@
+ALTER TABLE "attachments" RENAME COLUMN "public" TO "public_bucket";

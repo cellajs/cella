@@ -1,8 +1,14 @@
-# infra cli
+# Infra CLI
 
-Merge your automated release PR to `main` and a new deployment is rolled out automatically. Fully using Infrastructure as Code. On European infra using mostly [Scaleway](https://www.scaleway.com/).
+This document covers the infra package: infrastructure as code and a CLI to deploy your app to European cloud provider [Scaleway](https://www.scaleway.com/).
 
-Inspired by [SST](https://sst.dev), this infra deployment flow uses [Pulumi](https://www.pulumi.com/) as its engine.
+### TL;DR
+
+Publishing a release starts an automatic deployment. It creates new servers for that exact version,
+checks them, moves traffic without downtime, and removes the old servers.
+[Pulumi](https://www.pulumi.com/) manages the cloud resources. GitHub Actions runs the deployment.
+Separate credentials are used for initial setup, automated deployment, and running servers, so
+each stage has only the permissions it needs.
 
 ## Overview
 
@@ -10,7 +16,7 @@ The infrastructure is built around three principles:
 
 1. **Create-then-replace.** A release and an infra change are the same operation: every deploy bakes the image SHA into a _new_ VM generation's cloud-init, brings it up (cutover), then retires the old one.
 2. **Descending-privilege credentials.** Three keys, each creating the next (bootstrap → CI deploy → VM reader), so no privileged key ever lives on your laptop. CI only holds what it needs.
-3. **DRY config.** IaC is great for inheriting config to keep configuration DRY. See also [config files](#configuration).
+3. **DRY config.** IaC is great to keep configuration DRY. See also [config files](#configuration).
 
 The key resources and how traffic flows between them:
 

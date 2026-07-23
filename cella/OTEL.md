@@ -1,6 +1,13 @@
 # Observability
 
-Cella uses [OpenTelemetry](https://opentelemetry.io/) (OTel) for all three observability pillars: **traces**, **metrics**, and **logs**. [Maple.dev](https://maple.dev) is the default telemetry backend. Each service wires up OTel identically via a shared factory, keeping configuration in one place.
+This document explains how traces, metrics, and logs are wired across Cella's services, and how to instrument a new worker.
+
+### TL;DR
+
+Every service uses the same setup for [OpenTelemetry](https://opentelemetry.io/) traces, metrics,
+and logs, with [Maple.dev](https://maple.dev) as the default destination. The same trace follows a
+request from a browser click, through the backend and database-change worker, to the live update
+sent back to clients.
 
 ## Architecture
 

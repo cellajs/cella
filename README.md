@@ -32,16 +32,15 @@
 
 - [Agent guidelines](./cella/AGENTS.md)
 - [Architecture](./cella/ARCHITECTURE.md)
-- [React Client](./cella/CLIENT.md)
+- [Client (React)](./cella/CLIENT.md)
 - [Multi-tenancy](./cella/MULTI_TENANCY.md)
 - [Quickstart](./cella/QUICKSTART.md)
 
 ## Requirements
 
-- Nodejs 24.x. Check `node -v`. (Recommend: [Volta](https://docs.volta.sh/guide/)).
-- PostgreSQL 17+. The sync engine depends on logical replication row filters with `REPLICA IDENTITY FULL` (draft boundary) — the bundled docker compose already runs PG 17.
-- Make sure you can work with [Docker](https://docs.docker.com/get-docker/). (Recommend: [OrbStack](https://orbstack.dev/)).
-- Ideally you work with [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and have the [gh cli](https://cli.github.com/) installed.
+- Nodejs 24.x. Check `node -v`
+- Make sure you can work with [Docker](https://docs.docker.com/get-docker/)
+- You work with [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and have [gh cli](https://cli.github.com/) installed
 
 <br>
 

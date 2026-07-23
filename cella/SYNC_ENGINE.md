@@ -1,14 +1,17 @@
-# Cella sync engine
+# Sync engine
 
-Cella keeps product data current in React Query through a notify-then-fetch design:
+This document explains how product data stays current across clients and what the sync engine guarantees, online and offline.
+
+### TL;DR
+
+**Notify-then-fetch**. When data changes, the server sends a small notification and the client fetches the changed rows
+through the normal API, often served from cache. The client then updates relevant cache only. The
+sync system reuses the app's existing data model, storage, and permission checks. Live updates and
+reconnects follow this same fetch path.
 
 ```text
-Postgres commit -> CDC sequence stamp -> SSE notification -> REST range fetch -> cache patch
+Database change -> live notification -> normal API fetch -> client cache update
 ```
-
-The engine reuses the application's Postgres schema, OpenAPI endpoints, permission checks, and React Query cache. There is no sync-owned schema, parallel authorization layer, or second client store. Developers keep using ordinary REST operations while the sync layer adds ordering, reconnect catchup, live cache updates, and conflict metadata.
-
-This document explains that shared model and its guarantees. For implementation detail, continue with [Permissions](./PERMISSIONS.md), [CDC worker](../cdc/README.md), [Schema evolution](./SCHEMA_EVOLUTION.md), [Yjs relay](../yjs/README.md), or [Add entity](./ADD_ENTITY.md).
 
 ## Selective sync
 

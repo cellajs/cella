@@ -1,12 +1,13 @@
 # Multi-tenancy
 
-Application authorization is Cella's primary multi-tenancy boundary. Request guards, scoped
-queries, and the shared permission engine must keep tenant data isolated even if row-level security
-(RLS) is disabled or bypassed.
+This document explains how tenant data stays isolated: which layer is responsible for what, and how far the database backstop reaches.
 
-RLS is a second, deliberately narrow layer for tenant-scoped reads. If an application query omits
-tenant scope or selects the wrong tenant, PostgreSQL prevents rows from another tenant from being
-returned. RLS does not authorize writes or model roles, memberships, ownership, or product actions.
+### TL;DR
+
+The application is responsible for keeping each tenant's data separate: it checks who is making a
+request, limits every query to the current tenant, and applies [permissions](./PERMISSIONS.md).
+PostgreSQL adds a second safety net for reads of tenant-owned content. It catches application
+mistakes but is not the main access-control layer.
 
 ## Security contract
 
@@ -56,14 +57,15 @@ types, and explicit exclusions such as `pages`, then adds configured support tab
 product entity therefore joins the protected set automatically. RLS coverage does not replace the
 route's authorization or query-scoping requirements.
 
-Organization and membership queries using `baseDb` are expected because those tables have no RLS.
-Protected product reads must enter a tenant helper. A direct runtime query has no tenant context and
-normally returns no protected rows rather than throwing.
+Channel-entity and membership queries using `baseDb` are expected because those tables have no RLS.
+Protected product reads must enter a tenant helper. A direct `baseDb` query has no tenant context
+and normally returns no protected rows rather than throwing.
 
-## Tenant reads
+## Product reads
 
-The helpers in `backend/src/db/tenant-context.ts` open a transaction and set transaction-local
-PostgreSQL variables before running feature queries:
+Reading an RLS-protected table requires tenant context. The helpers in
+`backend/src/db/tenant-context.ts` open a transaction and set transaction-local PostgreSQL
+variables before running product queries:
 
 | Variable | Current RLS effect |
 | --- | --- |
@@ -75,9 +77,9 @@ The SELECT policy requires a non-empty tenant context and an exact match with th
 For soft-deletable tables it also hides tombstones unless `app.include_deleted` is true. A wrong
 tenant and a missing tenant both produce zero visible rows.
 
-RLS does not enforce the organization or a deeper channel boundary. Guards, permission predicates,
-and explicit query scope remain responsible for those boundaries. This keeps the database predicate
-small and avoids a membership lookup for every protected row.
+RLS stops at the tenant boundary: it does not enforce the organization or any deeper channel
+boundary. Guards, permission predicates, and explicit query scope remain responsible for those.
+This keeps the database predicate small and avoids a membership lookup for every protected row.
 
 ### Transaction helpers
 
@@ -95,8 +97,8 @@ after the transaction returns.
 ## Write-through policies
 
 When RLS is enabled and no applicable policy exists, PostgreSQL denies the operation. Cella installs
-explicit INSERT, UPDATE, and DELETE policies whose expressions are `true`, so runtime writes can
-proceed after application authorization.
+explicit INSERT, UPDATE, and DELETE policies whose expressions are `true`, so runtime writes to
+protected product tables can proceed after application authorization.
 
 This split keeps membership and product permissions in the shared engine used by the API and Yjs
 relay. It also avoids evaluating membership subqueries for every affected row. The tenant transaction
