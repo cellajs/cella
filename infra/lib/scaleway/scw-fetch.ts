@@ -1,6 +1,13 @@
+import { errorMessage } from '../utils/errors'
 import { type FetchLike, resolveFetch } from '../utils/fetch-like'
+import { retry } from '../utils/retry'
 
 const DEBUG = process.env.SCW_DEBUG === '1' || process.env.DEBUG === '1'
+
+// A rejected fetch is a transient network failure (an HTTP error status
+// resolves); one runner blip must not fail a whole deploy preflight.
+const networkAttempts = 3
+const networkRetryDelayMs = 2000
 
 export interface ScwAuth {
   secretKey: string
@@ -16,11 +23,24 @@ export function scwS3Endpoint(region: string): string {
 async function request(auth: ScwAuth, method: string, url: string, body?: unknown): Promise<string> {
   if (DEBUG) process.stderr.write(`[scw] → ${method} ${url}${body ? ` body=${JSON.stringify(body)}` : ''}\n`)
   const fetchImpl = resolveFetch(auth.fetchImpl)
-  const res = await fetchImpl(url, {
-    method,
-    headers: { 'X-Auth-Token': auth.secretKey, 'Content-Type': 'application/json' },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
+  let res: Awaited<ReturnType<FetchLike>>
+  try {
+    res = await retry(
+      () =>
+        fetchImpl(url, {
+          method,
+          headers: { 'X-Auth-Token': auth.secretKey, 'Content-Type': 'application/json' },
+          body: body !== undefined ? JSON.stringify(body) : undefined,
+        }),
+      {
+        attempts: networkAttempts,
+        delayMs: networkRetryDelayMs,
+        onRetry: (attempt, error) => console.warn(`[scw] ${method} ${url} attempt ${attempt} failed (${errorMessage(error)}); retrying`),
+      },
+    )
+  } catch (err) {
+    throw new Error(`Scaleway ${method} ${url} failed after ${networkAttempts} attempts: ${errorMessage(err)}`)
+  }
   const text = await res.text()
   if (DEBUG) process.stderr.write(`[scw] ← ${res.status} ${text.slice(0, 500)}\n`)
   if (!res.ok) throw new Error(`Scaleway ${method} ${url} → ${res.status}: ${text}`)
