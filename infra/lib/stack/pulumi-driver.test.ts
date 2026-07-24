@@ -1,35 +1,12 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createCliDriver, createPulumiDriver } from './pulumi-driver'
+import { describe, expect, it } from 'vitest'
+import { createPulumiDriver } from './pulumi-driver'
 
-afterEach(() => {
-  delete process.env.INFRA_PULUMI_DRIVER
-})
-
-describe('createCliDriver', () => {
-  it('updates without a preview pass and reads outputs as JSON', async () => {
-    const calls: string[][] = []
-    const exec = vi.fn((args: string[]) => {
-      calls.push(args)
-      return args[0] === 'stack' ? '{"backend":"bid-1"}' : ''
-    })
-    const driver = createCliDriver('production', exec)
-    await driver.update()
-    // First call ensures the stack exists (generation stacks are created on
-    // first use), then the update runs without a separate preview pass.
-    expect(calls[0]).toEqual(['stack', 'select', 'production'])
-    expect(calls[1]).toEqual(['up', '--stack', 'production', '--yes', '--non-interactive', '--skip-preview'])
-    await expect(driver.output('lbBackendIds')).resolves.toEqual({ backend: 'bid-1' })
-    expect(calls[2]).toEqual(['stack', 'output', 'lbBackendIds', '--stack', 'production', '--json'])
-  })
-})
-
-describe('createPulumiDriver selection', () => {
-  it('defaults to the CLI driver', () => {
-    expect(createPulumiDriver('production').kind).toBe('cli')
-  })
-
-  it('selects the Automation API driver via INFRA_PULUMI_DRIVER', () => {
-    process.env.INFRA_PULUMI_DRIVER = 'automation'
-    expect(createPulumiDriver('production').kind).toBe('automation')
+describe('createPulumiDriver', () => {
+  it('exposes the update/output seam without touching the engine until called', () => {
+    // Construction must stay side-effect free: the workspace session is
+    // resolved lazily so plan-only code paths never spawn a pulumi process.
+    const driver = createPulumiDriver('production')
+    expect(typeof driver.update).toBe('function')
+    expect(typeof driver.output).toBe('function')
   })
 })

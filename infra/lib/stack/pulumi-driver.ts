@@ -1,53 +1,38 @@
 import { infraDir } from '../utils/paths'
-import { runPulumi } from './run-pulumi'
 
 /**
  * The engine's seam to the Pulumi engine: one stack update + output reads.
- * Two implementations: the CLI driver shells `pulumi` per call (the proven
- * default), the Automation API driver holds a LocalWorkspace session and
- * streams engine output in-process. Select with INFRA_PULUMI_DRIVER=automation.
+ * Backed by the Automation API (LocalWorkspace in workDir mode, which re-runs
+ * the program per operation so multiple updates in one deploy always see fresh
+ * module state). The interface stays the extraction seam for embedding the
+ * engine in a service.
  */
 export interface PulumiDriver {
-  kind: 'cli' | 'automation'
   /** One full stack update (provisions pending generations, reaps displaced ones). */
   update(): Promise<void>
   /** Read a stack output. Throws when the output is missing. */
   output<T>(name: string): Promise<T>
 }
 
-type ExecPulumi = (args: string[], opts?: { quiet?: boolean }) => string
-
-export function createCliDriver(stack: string, exec: ExecPulumi = runPulumi): PulumiDriver {
-  // Generation stacks are created on first use (micro topology); the select
-  // probe runs once per driver, quietly (its failure is the expected branch).
-  let ensured = false
-  const ensureStack = () => {
-    if (ensured) return
-    ensured = true
-    try {
-      exec(['stack', 'select', stack], { quiet: true })
-    } catch {
-      exec(['stack', 'init', stack])
-    }
-  }
-  return {
-    kind: 'cli',
-    async update() {
-      ensureStack()
-      // --skip-preview: non-interactive and serialized by the stack lock; the
-      // preview pass would diff the whole stack a second time.
-      exec(['up', '--stack', stack, '--yes', '--non-interactive', '--skip-preview'])
-    },
-    async output<T>(name: string): Promise<T> {
-      return JSON.parse(exec(['stack', 'output', name, '--stack', stack, '--json'])) as T
-    },
-  }
+/** Names of all stacks in the backend the infra workspace points at. */
+export async function listStackNames(): Promise<string[]> {
+  const { LocalWorkspace } = await import('@pulumi/pulumi/automation')
+  const workspace = await LocalWorkspace.create({ workDir: infraDir })
+  const stacks = await workspace.listStacks()
+  return stacks.map((s) => s.name)
 }
 
-export function createAutomationDriver(stack: string): PulumiDriver {
+/** Destroy a stack's resources and remove the stack from the backend. */
+export async function destroyStack(stack: string): Promise<void> {
+  const { LocalWorkspace } = await import('@pulumi/pulumi/automation')
+  const s = await LocalWorkspace.selectStack({ stackName: stack, workDir: infraDir })
+  await s.destroy({ onOutput: (line) => process.stdout.write(line) })
+  await s.workspace.removeStack(stack)
+}
+
+export function createPulumiDriver(stack: string): PulumiDriver {
   // Lazily resolved: the automation host manages its own pulumi engine session.
-  // workDir mode re-runs the program per operation (like the CLI), so multiple
-  // updates in one deploy always see fresh module state.
+  // createOrSelectStack also creates generation stacks on first use (micro topology).
   let stackPromise: Promise<import('@pulumi/pulumi/automation').Stack> | undefined
   const getStack = () => {
     stackPromise ??= (async () => {
@@ -57,7 +42,6 @@ export function createAutomationDriver(stack: string): PulumiDriver {
     return stackPromise
   }
   return {
-    kind: 'automation',
     async update() {
       const s = await getStack()
       await s.up({ onOutput: (line) => process.stdout.write(line) })
@@ -70,9 +54,4 @@ export function createAutomationDriver(stack: string): PulumiDriver {
       return entry.value as T
     },
   }
-}
-
-/** Driver for a stack, selected by INFRA_PULUMI_DRIVER (default: cli). */
-export function createPulumiDriver(stack: string): PulumiDriver {
-  return process.env.INFRA_PULUMI_DRIVER === 'automation' ? createAutomationDriver(stack) : createCliDriver(stack)
 }
