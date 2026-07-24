@@ -1,6 +1,7 @@
 # Client (React)
 
-This document unpacks the client's central object: the query client that holds server data in the browser, and everything wired around it.
+This document explains the client's central object: the query client that holds server data in the
+browser, plus the services that read and update it.
 
 ### TL;DR
 
@@ -67,7 +68,10 @@ The cache is observable, and several client features are built as cache subscrib
 
 A mutation patches the cache optimistically, sends the request, then reconciles with the server response; on error, the optimistic change rolls back. Queries and mutations both run in `offlineFirst` network mode.
 
-Offline writes queue rather than fail. A network failure retries briefly, then pauses the mutation, and paused mutations persist for replay after reload. Server errors never queue; a 4xx during replay is quarantined into the `failed_sync` table so no offline edit is silently lost.
+Offline writes queue rather than fail. A network failure retries briefly, then pauses the mutation,
+and paused mutations persist for replay after reload. Server errors never queue; a 4xx during replay
+is quarantined into the `failed_sync` table so every rejected offline edit has a durable failure
+record.
 
 Replay works because of two rules. Functions cannot be persisted, so each entity module registers its mutation functions as defaults at startup, before the cache restores. And persisted variables must carry the ids needed to route the request after a reload. Queued work is also tidied while offline: repeated edits to one entity squash into one update, an edit to a not-yet-created entity folds into its create, and deleting a queued create cancels both.
 
@@ -79,7 +83,10 @@ Attachments show how far the query client reaches, even for binary data. The met
 
 **Uploads store locally first.** Adding a file mints the attachment id up front, stores the raw blob, and inserts an optimistic row into the cache. With cloud upload configured and a connection available, the file then goes through the processing pipeline; offline, the blob waits as pending and a background upload service retries with backoff once connectivity returns. Without cloud storage the blob simply stays local.
 
-**Downloads follow the cache.** Every attachment row that reaches the cache is enqueued in the `downloadQueue` table. A scheduler downloads a few files at a time within a configured storage budget, fetching variants in priority order and evicting the raw blob once a durable variant lands. All knobs live in `appConfig.localBlobStorage`.
+**Downloads follow the cache.** Every attachment row that reaches the cache is enqueued in the
+`downloadQueue` table. A scheduler downloads a few files at a time within a configured storage
+budget, fetching variants in priority order and evicting the raw blob once a durable variant has
+been stored. All knobs live in `appConfig.localBlobStorage`.
 
 **Components never query blobs.** They resolve a display URL: local blob first, served as an object URL, cloud URL otherwise, with a background download queued so the next view is local. Upload status badges read the blob table reactively. Blob bytes never enter the query cache; the cache stays JSON.
 

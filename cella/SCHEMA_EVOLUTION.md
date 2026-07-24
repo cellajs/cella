@@ -65,7 +65,12 @@ The `apiVersion` backstop (session-cookie name bump, idle-gated re-auth, jitter/
 
 ### Lens #1 policy
 
-**No permanent rehearsal lens** (decided 2026-07). Renaming a field purely as a rehearsal pollutes the API forever (lens modules are append-only), and the natural candidate `attachment.name` is a shared `productEntityColumns` base column: renaming it on one entity would diverge from the template convention. The machinery stays fully wired and passthrough; rehearse via a **branch-local lens** (see [playbook](#lens-playbook)) and ship lens #1 when a real breaking change needs it.
+**No permanent rehearsal lens** (decided 2026-07). Renaming a field purely as a rehearsal pollutes
+the API forever (lens modules are append-only), and the natural candidate `attachment.name` is a
+shared `productEntityColumns` base column: renaming it on one entity would diverge from the template
+convention. All schema and runtime entry points remain registered as passthroughs; rehearse via a
+**branch-local lens** (see [playbook](#lens-playbook)) and ship lens #1 when a real breaking change
+needs it.
 
 ---
 
@@ -186,7 +191,9 @@ Verified against doba source (`packages/doba`, v0.1.0):
 - Cache pointer + Dexie migration pass
 - CI guards (append-only lint, oasdiff, config-collision validator)
 
-**Note on Phase 1 footprint:** Phase 1 exercises doba only as a linear chain executor for cache-row migration; its graph/path-finding payoff lands in Phase 2. This keeps the dependency trivially replaceable while Phase 1 hardens in production.
+**Note on Phase 1 footprint:** Phase 1 exercises doba only as a linear chain executor for cache-row
+migration; graph path-finding is first used in Phase 2. This keeps the dependency trivially
+replaceable while Phase 1 hardens in production.
 
 ---
 
@@ -424,7 +431,7 @@ Because every lens migration is idempotent by construction, the backstop is triv
 
 - If boot detects an interrupted pass (pointer behind), **re-run the whole chain** over the affected scope: idempotency makes mixed old/new rows safe.
 - Any row that still fails a downstream Zod parse → evict that single query record (refetch on demand). Never fleet-wide.
-- Any migrated mutation that still fails replay with a 4xx is quarantined to the `failed_sync` Dexie table ([failed-sync.ts](../frontend/src/query/offline/failed-sync.ts)) — never dropped; surfaced in a non-blocking banner with JSON export.
+- Any migrated mutation that still fails replay with a 4xx is quarantined to the `failed_sync` Dexie table ([failed-sync.ts](../frontend/src/query/offline/failed-sync.ts)) — never dropped; shown in a non-blocking banner with JSON export.
 - No doba `identify()`, no `tryParse`, no steady-state Zod parsing of the cache. (Identify-based shape detection is reconsidered only if Phase 2 peer payload auditing needs it.)
 
 ### Multi-tab + PWA coordination
@@ -501,7 +508,8 @@ Builds on Phase 1's lens registry; adds negotiation between independently-deploy
 1. **Expand windows are long-lived state**: old+new columns coexist for days-to-weeks, and overlapping expand windows for the same entity must compose (key-map chains are order-sensitive). Covered by chain property tests; worth a "max concurrent expand lenses per entity" lint.
 2. **doba maturity**: v0.1.0, single maintainer. Mitigated by facade + pin + vendoring path, but worth a periodic health check; if we hit a bug, contributing upstream is cheaper than forking. Phase 1 exercises it only as a chain executor, so the blast radius is small.
 3. **Derivation in `engine.ts`** (delta → schema widening, key maps, doba migrations, spec deltas) is our code, not doba's. It is the highest-correctness-risk module and gets the densest property tests.
-4. **`retype` deltas** (e.g., `string → number`) need `custom` converters and may be genuinely lossy backward; policy decision per lens (`lossyBackward` + telemetry) rather than a general solution.
+4. **`retype` deltas** (e.g., `string → number`) need `custom` converters and may lose data during
+   backward conversion; each lens sets its own `lossyBackward` policy and telemetry.
 5. **Yjs-edited description fields** are outside the lens system (CRDT binary, separate worker); renaming a description-derived field touches the Yjs derived-fields PATCH contract; treat as frozen-envelope-adjacent until needed.
 6. **Expand-phase mirror writes** produce dual deltas in CDC `changedFields` and slightly larger payloads during the window: accepted noise, documented.
 

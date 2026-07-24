@@ -173,7 +173,11 @@ export interface PermissionDecision<
 }
 ```
 
-Ancestor scope is **explicitly tri-state**, and the distinction is load-bearing: `undefined` means a required scope was omitted and throws `MissingScopeError`; `null` means deliberately not scoped to that ancestor; a string means scoped to a concrete channel id. Silently treating a missing scope as "unscoped" would be a permission bypass, so it is a hard error — surfaced as HTTP 400 `missing_scope` on the backend and WS close `4400` in the relay.
+Ancestor scope is **explicitly tri-state**, and each state has different authorization behavior:
+`undefined` means a required scope was omitted and throws `MissingScopeError`; `null` means
+explicitly not scoped to that ancestor; a string means scoped to a concrete channel id. Treating a
+missing scope as "unscoped" would bypass permissions, so the backend returns HTTP 400
+`missing_scope` and the relay closes the WebSocket with code `4400`.
 
 Boundary code that starts from DB rows, route params, or CDC events uses `buildSubject()` to turn column-shaped input (`{ organizationId: 'org_x' }`) into this domain shape. Internals read `subject.channelIds.organization`, never a DB column name.
 
@@ -220,7 +224,7 @@ The engine produces a verdict. Each tier is responsible for _asking_ — and eve
 | **Yjs relay** | `canEditEntity` on WS upgrade | Reads the entity row and memberships over raw `pg` (table/column names derived via `toTableName`/`toColumnName`), then runs the same engine. |
 | **Postgres RLS** | `tenantRead` / `tenantContext` | Tenant isolation only. Not a permission layer. |
 
-One row-lifecycle check runs **before** the engine on every row path: unpublished drafts (`publishedAt` null — an opt-in product-table column, see `shared/src/published-rows.ts`) are visible to their author alone. The PRIMARY draft boundary sits below all of this: a publication row filter keeps draft product rows out of the replication stream entirely (publish arrives as INSERT, unpublish as DELETE — see SYNC_ENGINE.md), so the SSE dispatch veto is fail-closed defense-in-depth for a misconfigured fork, not the mechanism. The API-side checks remain load-bearing because the TABLE still contains drafts: collection/delta reads exclude them by predicate, the detail read 404s non-authors, the detail cache refuses to serve them, and the yjs relay rejects non-author write connections. The engine itself has no draft vocabulary — the column is the contract, and every check is introspection-guarded so tables without the column are untouched.
+One row-lifecycle check runs **before** the engine on every row path: unpublished drafts (`publishedAt` null — an opt-in product-table column, see `shared/src/published-rows.ts`) are visible to their author alone. The PRIMARY draft boundary sits below all of this: a publication row filter keeps draft product rows out of the replication stream entirely (publish arrives as INSERT, unpublish as DELETE — see SYNC_ENGINE.md), so the SSE dispatch veto is fail-closed defense-in-depth for a misconfigured fork, not the mechanism. The API-side checks remain required because the TABLE still contains drafts: collection/delta reads exclude them by predicate, the detail read 404s non-authors, the detail cache refuses to serve them, and the yjs relay rejects non-author write connections. The engine itself has no draft vocabulary — the column is the contract, and every check is introspection-guarded so tables without the column are untouched.
 
 Product `publishedAt` is distinct from channel `publishedAt`, which gates setup, and from `publicAt`, which grants non-members read access.
 
@@ -250,6 +254,6 @@ A bare `undefined` WHERE would leak the table, which is exactly the bug this sha
 | System admin acts on any single row | Allowed, `grantedBy: systemAdmin`, short-circuited before membership lookup |
 | System admin without an org membership lists a collection | Every row in the org. The bypass applies to the collection path too |
 | Membership role has no policy row for the subject | Denies every action for that membership |
-| Required ancestor scope omitted from `channelIds` | Throws `MissingScopeError` → 400 `missing_scope` / WS `4400`. Never silently unscoped |
+| Required ancestor scope omitted from `channelIds` | Throws `MissingScopeError` → 400 `missing_scope` / WS `4400`. Missing scope never defaults to unscoped |
 | Actor loses access mid-Yjs-session | The relay's materialization re-checks `update` on the backend before persisting |
 | System admin joins a Yjs collab session | No bypass. Collaborative editing is authorized as the acting user, matching materialization |

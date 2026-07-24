@@ -126,7 +126,8 @@ One known conflict remains: if one user edits in solo mode while others are in a
 - **The fragment and schema must remain aligned.** The `document-store` fragment and shared BlockNote schema must match the frontend binding.
 - **Seeds are server-generated and never merged.** Merging independently generated seeds would duplicate content; conflict handling chooses and reloads one canonical seed.
 - **Authorization is asynchronous.** The socket opens before entity access is known. Sync messages buffer behind the decision, while awareness bypasses it.
-- **RLS differs by path.** Normal operations set tenant and user context; the startup sweep is deliberately cross-tenant.
+- **RLS differs by path.** Normal operations set tenant and user context; the startup sweep runs
+  across all tenants.
 - **Materialization is eventual.** The entity row can lag the live document by the save window and any retry delay. Only product entities with a registered materializer can persist collaborative content.
 
 ## Health and configuration

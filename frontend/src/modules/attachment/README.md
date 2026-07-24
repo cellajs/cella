@@ -38,7 +38,10 @@ In both paths the raw file is stored locally _before_ upload, then uploaded via 
 
 ## Statuses
 
-- Blob upload status (per local blob): `pending → uploading → uploaded | failed`, or `local-only` when no cloud is configured. Surfaced by `useBlobUploadStatus` as the thumbnail badge. `uploaded` is also stamped on blobs that were _downloaded_ (it effectively means "exists in cloud").
+- Blob upload status (per local blob): `pending → uploading → uploaded | failed`, or `local-only`
+  when no cloud is configured. `useBlobUploadStatus` returns this state for the thumbnail badge.
+  `uploaded` is also stamped on blobs that were _downloaded_ (it effectively means "exists in
+  cloud").
 - Download-queue status (per attachment): `pending → downloading → downloaded | failed`, or `skipped` (too large / excluded type / no key yet). `failed` and `skipped`-for-no-key are revived by `enqueue`, not by the service — see the dedupe-registry note above.
 - Row optimism: rows created by `createOptimisticEntity` carry `_optimistic`; `isPersisted()` (`types.ts`) gates cloud operations (presigned URLs, download queueing) on real rows.
 
@@ -55,7 +58,8 @@ What is still open, in rough order of user impact:
 - **Locally-cached files lose their download/open affordances.** The dialog's toolbar buttons render only for `isCDNUrl(...)`, so they vanish once a file resolves to a local `blob:` URL — including for unsupported mime types, whose "download to view" placeholder then has nothing to click. `DownloadCell` always fetches from cloud, so it fails offline even when the blob is local.
 - **The offline cache is invisible and unmanageable.** Fully automatic, hard stop at 100MB/org with no LRU, no storage meter, no clear-cache control (only sign-out), and no user-facing indicator of download state — `useBlobUploadStatus` reflects upload state only.
 - **BlockNote vs table divergence.** The BlockNote carousel has no URL binding, so no deep link, back-button, or shareable URL. `resolveBlockNoteFileRef` returns an object URL it cannot revoke (no lifecycle to hang it on), so re-resolving inline media leaks blob URLs.
-- **Quota/size failures surface after the bytes are already in the bucket:** the tenant quota is enforced at row creation (429), by which point Transloadit has stored the file.
+- **Quota/size failures arrive after the bytes are already in the bucket:** the tenant quota is
+  enforced at row creation (429), by which point Transloadit has stored the file.
 - Smaller: deep-linking a dialog on a non-org route spins forever; opening the dialog doesn't mark the attachment seen (only table-row visibility does); `delete-attachments.tsx` reads `attachments[0]` and would throw on an empty array.
 
 Absent by design (candidate roadmap, not bugs): global drag-drop/paste upload, copy-link/share, undo delete, offline force-download ("keep offline" pin), storage management UI, editing metadata beyond `name`.

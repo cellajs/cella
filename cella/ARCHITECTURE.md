@@ -104,7 +104,9 @@ Backend modules define Hono routes with Zod schemas. Those routes produce an Ope
 
 Operational concerns follow the same modular shape. Node services share OpenTelemetry setup for traces, metrics, and logs. PostgreSQL CDC and Yjs collaboration are independent workers with health and shutdown contracts. Pulumi deploys the services to Scaleway, with GitHub Actions providing the delivery path. See [Observability](./OTEL.md) and the [infrastructure guide](../infra/README.md) for those deeper views.
 
-The test suite covers ordinary feature behavior as well as the seams that make this architecture safe: generated contracts, permission parity, cross-scope access, database constraints, sync catchup, and offline replay. See [Testing](./TESTING.md) for the available test modes.
+The test suite covers ordinary feature behavior and the cross-system behavior that protects this
+architecture: generated contracts, permission parity, cross-scope access, database constraints,
+sync catchup, and offline replay. See [Testing](./TESTING.md) for the available test modes.
 
 ## Repository map
 

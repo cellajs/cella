@@ -156,9 +156,9 @@ export const allAdminOnlyWriteTables: TableImmutabilityConfig[] = adminOnlyWrite
 /**
  * Every trigger function in creation order. Both emitters build from this single list.
  *
- * Load-bearing: both migration emitters derive from this list so every trigger function exists
+ * Both migration emitters derive from this list, which ensures every trigger function exists
  * before `CREATE TRIGGER` runs. A missing function would fail inside `EXCEPTION WHEN OTHERS`,
- * roll back the subtransaction, and silently remove every immutability trigger.
+ * roll back the subtransaction, and let the migration continue without immutability triggers.
  */
 export const allImmutabilityFunctionsSQL: string[] = [
   baseEntityImmutabilityFunctionSQL,

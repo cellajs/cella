@@ -1,6 +1,7 @@
 # Observability
 
-This document explains how traces, metrics, and logs are wired across Cella's services, and how to instrument a new worker.
+This document explains how traces, metrics, and logs move between Cella's services, and how to
+instrument a new worker.
 
 ### TL;DR
 
