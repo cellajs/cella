@@ -28,6 +28,13 @@ export interface RolloutRuntime {
    * topology updates each service's own generation stack, in parallel.
    */
   update(services: string[]): Promise<void>
+  /**
+   * Reap displaced generations after every promotion, on BOTH planes: the
+   * services' own stacks (micro) or the foundation stack (monolith), plus the
+   * other plane's leftovers so a topology switch cannot strand serving VMs
+   * (adoption leaves foundation generations, revert leaves generation stacks).
+   */
+  reap(services: string[]): Promise<void>
   /** The `computeGenerationMetadata` stack output. */
   readGenerations(): Promise<GenerationMetadata[]>
   /** The `lbBackendIds` stack output (service slug to LB backend id). */
@@ -141,8 +148,9 @@ export interface WavedRolloutPlan {
  * records pending intent for every remaining service, provisions all their
  * generations in ONE stack update (which also reaps the primary's displaced
  * generation), then health-gates and cuts each service over concurrently.
- * A final update reaps every remaining displaced generation. Any cutover
- * failure skips the final reap: a displaced generation may still be serving.
+ * A final reap removes every remaining displaced generation on both planes.
+ * Any cutover failure skips the reap: a displaced generation may still be
+ * serving.
  */
 export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime): Promise<void> {
   const { sha } = plan
@@ -179,5 +187,5 @@ export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime
   }
 
   rt.info('[rollout] reaping displaced generations')
-  await rt.update([...(plan.primary ? [plan.primary.service] : []), ...plan.rest.map((item) => item.service)])
+  await rt.reap([...(plan.primary ? [plan.primary.service] : []), ...plan.rest.map((item) => item.service)])
 }

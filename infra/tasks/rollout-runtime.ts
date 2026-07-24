@@ -8,7 +8,7 @@ import {
   setPending,
   updateServiceRollout,
 } from '../lib/stack/control-store'
-import { createPulumiDriver, type PulumiDriver } from '../lib/stack/pulumi-driver'
+import { createPulumiDriver, destroyStack, listStackNames, type PulumiDriver } from '../lib/stack/pulumi-driver'
 import { generationStackName, stackTopology } from '../lib/stack/topology'
 import { sleep } from './args'
 import { createLbGetServers, createLbSetServers } from './cutover'
@@ -26,7 +26,7 @@ export interface RolloutRuntimeOptions {
   stack: string
   /** Scaleway LB zone; defaults to `<region>-1` from the environment. */
   lbZone?: string
-  /** Pulumi driver; defaults to the INFRA_PULUMI_DRIVER selection. */
+  /** Pulumi driver; defaults to the Automation API driver for the stack. */
   driver?: PulumiDriver
 }
 
@@ -39,6 +39,9 @@ export interface RolloutRuntimeOptions {
 export function createRolloutRuntime(options: RolloutRuntimeOptions): RolloutRuntime {
   const { stack } = options
   const topology = stackTopology()
+  // Foundation updates under micro must run foundation-scoped (generation
+  // stacks match on their name, so the env cannot mis-scope them).
+  if (topology === 'micro') process.env.INFRA_STACK_SCOPE = 'foundation'
   const foundationDriver = options.driver ?? createPulumiDriver(stack)
   // Micro topology: one driver per touched service's generation stack.
   const generationDrivers = new Map<string, PulumiDriver>()
@@ -76,6 +79,25 @@ export function createRolloutRuntime(options: RolloutRuntimeOptions): RolloutRun
       // parallel; the foundation stack is untouched during a rollout.
       await Promise.all(services.map((service) => generationDriver(service).update()))
     },
+    async reap(services: string[]) {
+      if (topology === 'monolith') {
+        await foundationDriver.update()
+        // Leftover generation stacks (a revert from the micro topology) hold
+        // displaced VMs; an exclusive worker's old VM would keep its
+        // replication slot until destroyed.
+        const genStacks = (await listStackNames()).filter((name) => name.startsWith(`${stack}-gen-`))
+        for (const name of genStacks) {
+          console.info(`[reap] destroying leftover generation stack '${name}'`)
+          await destroyStack(name)
+        }
+        return
+      }
+      // Micro: generation stacks drop their displaced VMs; the foundation
+      // update drops generations whose active pointer moved off its plane
+      // (the adoption deploy's old monolith VMs).
+      await Promise.all(services.map((service) => generationDriver(service).update()))
+      await foundationDriver.update()
+    },
     async readGenerations(): Promise<GenerationMetadata[]> {
       if (topology === 'monolith') return foundationDriver.output<GenerationMetadata[]>('computeGenerationMetadata')
       const perStack = await Promise.all(
@@ -99,7 +121,10 @@ export function createRolloutRuntime(options: RolloutRuntimeOptions): RolloutRun
     async promote(service: string, gen: { id: string; sha: string }) {
       const ctx = await controlCtx()
       if (!ctx) return
-      await updateServiceRollout(ctx.s3, ctx.bucket, ctx.controlKey, service, (cur) => promote(cur, gen))
+      // The plane provisioning pending generations under this topology; it is
+      // recorded on the active pointer so each plane reaps only its own VMs.
+      const plane = topology === 'micro' ? 'generation' : 'foundation'
+      await updateServiceRollout(ctx.s3, ctx.bucket, ctx.controlKey, service, (cur) => promote(cur, { ...gen, plane }))
     },
     async lbGetServers(backendId: string) {
       return createLbGetServers({ secretKey: requireLbKey(), zone, backendId })()

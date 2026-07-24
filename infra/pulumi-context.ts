@@ -28,7 +28,14 @@ export const stackScope: StackScope = generationStackMatch
 /** The one service a `<mode>-gen-<slug>` stack provisions generations for. */
 export const generationStackService = generationStackMatch?.[2] as ServiceName | undefined
 export const provisionFoundation = stackScope !== 'generations'
-export const provisionGenerations = stackScope !== 'foundation'
+/** Plane this stack provisions VMs on. Each generation is provisioned only by
+ *  the plane recorded on its control-object pointer, so during a topology
+ *  switch the still-serving plane keeps its VMs until the reap. */
+export const generationPlane: 'foundation' | 'generation' = generationStackMatch ? 'generation' : 'foundation'
+/** Whether this stack provisions PENDING generations (the deploy target plane).
+ *  A foundation-scope update under the micro topology only carries its own
+ *  still-active generations; new ones go to the `<mode>-gen-<slug>` stacks. */
+export const providesPendingGenerations = stackScope !== 'foundation'
 /** Stack whose outputs a generations stack references for shared values. */
 export const foundationStackName = generationStackMatch?.[1] ?? stackName
 

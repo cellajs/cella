@@ -3,8 +3,9 @@ const appConfig = engineConfig()
 import { composeConfig } from '../compose/compose'
 import { deriveGenId } from '../lib/gen-id'
 import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
+import { type Generation, selectGenerations } from '../lib/select-generations'
 import { deployedServices, coHostedServices, type ServiceDefinition } from '../lib/services'
-import { infra } from '../pulumi-context'
+import { generationPlane, infra, providesPendingGenerations } from '../pulumi-context'
 import { controlState } from './control'
 
 // Give each service a VM except workers co-hosted on the backend in single-VM mode.
@@ -45,12 +46,7 @@ export function effectiveStrategy(svc: ServiceDefinition): ServiceDefinition['re
   return svc.replacementStrategy
 }
 
-export interface Generation {
-  /** Content-addressed generation id (resource suffix). */
-  id: string
-  /** Image SHA baked into this generation. */
-  sha: string
-}
+export type { Generation } from '../lib/select-generations'
 
 /**
  * Static, synchronously-known configuration that DEFINES a generation. Hashed
@@ -86,42 +82,18 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
 }
 
 /**
- * Returns the live and pending content-addressed generations, deduplicated by ID.
- * The first entry is the binding target; equal active/pending IDs collapse to one VM.
- * Old generations are reaped after promotion, so rollback uses a revert and redeploy.
+ * The live and pending content-addressed generations THIS STACK owns for a
+ * service. Selection (plane ownership, exclusive collapse, first-provision
+ * fallback) lives in lib/select-generations.ts as a pure function; single-VM
+ * hosts inherit exclusivity when they own the replication slot in-process. Old
+ * generations are reaped after promotion; rollback uses a revert and redeploy.
  */
 export function activeGenerations(svc: ServiceDefinition): Generation[] {
-  const entry = controlState.rollout[svc.slug]
   const fingerprint = serviceFingerprint(svc)
-  const pending: Generation | undefined = entry?.pendingSha ? { id: deriveGenId(entry.pendingSha, fingerprint), sha: entry.pendingSha } : undefined
-  const active: Generation | undefined = entry?.active ? { id: entry.active.id, sha: entry.active.sha } : undefined
-
-  const generations: Generation[] = []
-  const seen = new Set<string>()
-  const add = (g?: Generation) => {
-    if (g && !seen.has(g.id)) {
-      seen.add(g.id)
-      generations.push(g)
-    }
-  }
-
-// Provision only the selected generation for exclusive services such as CDC.
-// Single-VM hosts inherit exclusivity when they own the replication slot in-process.
-  if (effectiveStrategy(svc) === 'exclusive') {
-    add(pending ?? active)
-    if (generations.length === 0) add({ id: deriveGenId('latest', fingerprint), sha: 'latest' })
-    return generations
-  }
-
-  // Live binding target first: the active generation, or the pending one on a
-  // first deploy that has no active yet.
-  add(active ?? pending)
-  add(pending)
-
-  if (generations.length === 0) {
-    // First provision, before any deploy initializes the control object: a single default gen.
-    const sha = 'latest'
-    add({ id: deriveGenId(sha, fingerprint), sha })
-  }
-  return generations
+  return selectGenerations(controlState.rollout[svc.slug], {
+    exclusive: effectiveStrategy(svc) === 'exclusive',
+    plane: generationPlane,
+    pendingOwned: providesPendingGenerations,
+    genIdFor: (sha) => deriveGenId(sha, fingerprint),
+  })
 }

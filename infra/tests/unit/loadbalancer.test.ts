@@ -113,7 +113,7 @@ describe('loadbalancer module — internal routes', () => {
     // read back from IPAM (resource type lb_server) after the LB exists.
     expect(src).not.toMatch(/ipamIds:/)
     expect(src).toMatch(/ipam\/v1\/regions/)
-    expect(src).toMatch(/type: 'lb_server'/)
+    expect(src).toMatch(/resource_type=lb_server/)
     expect(src).toMatch(/publishLbInternalAddress\(/)
   })
 

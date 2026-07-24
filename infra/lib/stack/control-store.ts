@@ -2,6 +2,12 @@ import { isRecord } from '../utils/guards'
 import { scwS3Endpoint } from '../scaleway/scw-fetch'
 import { errorMessage } from '../utils/errors'
 
+/** Which stack plane provisioned a generation's VM: the foundation stack
+ *  (monolith topology) or the service's own `<mode>-gen-<slug>` stack (micro).
+ *  Each plane provisions only its own generations, so a topology switch keeps
+ *  the serving plane alive until the reap updates both planes. */
+export type GenerationPlane = 'foundation' | 'generation'
+
 /** A provisioned, content-addressed generation: the VM resource is
  *  `vm-<svc>-<id>`, baked with `sha`, promoted at monotonic `seq`. */
 export interface GenRef {
@@ -13,6 +19,9 @@ export interface GenRef {
   sha: string
   /** Monotonic sequence stamped when this generation was promoted to active. */
   seq: number
+  /** Plane that provisioned the VM. Absent on pre-plane control objects, which
+   *  were always foundation-provisioned. */
+  plane?: GenerationPlane
 }
 
 /**
@@ -130,11 +139,14 @@ export function lockKey(stack: string): string {
 
 function parseGenRef(slug: string, field: string, value: unknown): GenRef {
   if (!isRecord(value)) throw new Error(`control: rollout['${slug}'].${field} must be an object`)
-  const { id, sha, seq } = value
+  const { id, sha, seq, plane } = value
   if (typeof id !== 'string') throw new Error(`control: rollout['${slug}'].${field}.id must be a string`)
   if (typeof sha !== 'string') throw new Error(`control: rollout['${slug}'].${field}.sha must be a string`)
   if (typeof seq !== 'number') throw new Error(`control: rollout['${slug}'].${field}.seq must be a number`)
-  return { id, sha, seq }
+  if (plane !== undefined && plane !== 'foundation' && plane !== 'generation') {
+    throw new Error(`control: rollout['${slug}'].${field}.plane must be 'foundation' or 'generation'`)
+  }
+  return { id, sha, seq, ...(plane !== undefined ? { plane } : {}) }
 }
 
 function parseServiceRollout(slug: string, value: unknown): ServiceRollout {
@@ -206,11 +218,12 @@ export function setPending(current: ServiceRollout | undefined, sha: string): Se
 
 /** Promote a resolved generation to active: `seq` advances and the pending
  *  intent is cleared. The old active is not retained; its VM is reaped once the
- *  new one is healthy, so rollback is a revert commit + redeploy. */
-export function promote(current: ServiceRollout | undefined, resolved: { id: string; sha: string }): ServiceRollout {
+ *  new one is healthy, so rollback is a revert commit + redeploy. `plane`
+ *  records which stack provisioned the VM so each plane reaps only its own. */
+export function promote(current: ServiceRollout | undefined, resolved: { id: string; sha: string; plane?: GenerationPlane }): ServiceRollout {
   const base = current ?? emptyRollout()
   const seq = base.seq + 1
-  return { seq, active: { id: resolved.id, sha: resolved.sha, seq } }
+  return { seq, active: { id: resolved.id, sha: resolved.sha, seq, ...(resolved.plane !== undefined ? { plane: resolved.plane } : {}) } }
 }
 
 /** Read the control object. Returns the empty state (and no etag) when the

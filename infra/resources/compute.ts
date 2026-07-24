@@ -4,7 +4,7 @@ import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { engineConfig } from '../config/engine-config'
 const appConfig = engineConfig()
-import { naming, zone, region, tags, infra, vmAccessKey, vmSecretKey, generationStackService, provisionGenerations } from '../pulumi-context'
+import { naming, zone, region, tags, infra, vmAccessKey, vmSecretKey, generationStackService } from '../pulumi-context'
 import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import type { ServiceDefinition } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
@@ -234,15 +234,16 @@ function generationsFor(slug: ServiceName): Generation[] {
   return generations
 }
 
-// The generation slice this stack provisions: everything in the single-stack
-// topology, exactly one service in a `<mode>-gen-<slug>` stack, nothing in a
-// foundation-scope stack (generations live in their own stacks there).
+// The generation slice this stack plans: everything in the single-stack
+// topology and in foundation scope (where the per-plane filter inside
+// activeGenerations keeps only foundation-plane VMs), exactly one service in a
+// `<mode>-gen-<slug>` stack.
 const provisioned = generationStackService ? enabled.filter((svc) => svc.slug === generationStackService) : enabled
 if (generationStackService && provisioned.length === 0) {
   throw new Error(`compute: generations stack targets unknown or disabled service '${generationStackService}'`)
 }
 
-if (infra.computeEnabled && provisionGenerations) {
+if (infra.computeEnabled) {
   for (const svc of provisioned) generationsByService.set(svc.slug, activeGenerations(svc))
 
   // Pass 1: reserve every (service, generation) private IP up front so

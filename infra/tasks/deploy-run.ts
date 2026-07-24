@@ -205,8 +205,10 @@ function createRealEffects(): DeployEffects {
     update: async (stack) => {
       const { createPulumiDriver } = await import('../lib/stack/pulumi-driver')
       const { stackTopology } = await import('../lib/stack/topology')
-      // Micro topology: the pre-split stack is the foundation; its updates must
-      // not provision generations (their stacks own them and reap follows).
+      // Micro topology: the pre-split stack is the foundation. Its updates
+      // provision no PENDING generations (the per-service stacks own those)
+      // but keep carrying foundation-plane active VMs, so an adoption deploy
+      // leaves the serving monolith generations alive until the reap.
       if (stackTopology() === 'micro') process.env.INFRA_STACK_SCOPE = 'foundation'
       await createPulumiDriver(stack).update()
     },

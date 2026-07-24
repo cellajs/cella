@@ -129,8 +129,9 @@ describe('compute module source contracts', () => {
     expect(source).not.toMatch(/stableInternalGen_/)
     expect(source).not.toMatch(/stablePrivateIp/)
     expect(source).toMatch(/deleteBeforeReplace: true/)
-    // A pending SHA derives its content-addressed generation id from the service fingerprint.
-    expect(source).toMatch(/deriveGenId\(entry\.pendingSha, fingerprint\)/)
+    // A pending SHA derives its content-addressed generation id from the service
+    // fingerprint (selection logic lives in lib/select-generations.ts).
+    expect(source).toMatch(/genIdFor: \(sha\) => deriveGenId\(sha, fingerprint\)/)
   })
 
   it('envPool does not bind backend secrets as compose env values', () => {
