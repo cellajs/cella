@@ -308,9 +308,14 @@ const viteConfig = {
     },
   },
   define: {
-    'process.env': {
-      NODE_ENV: JSON.stringify(process.env.NODE_ENV),
-    },
+    // The bundle re-evaluates shared/src/config-builder/app-config.ts in the
+    // browser, so mode selection and the URL overrides it reads must survive
+    // into this replacement object; NODE_ENV alone silently rebakes production.
+    'process.env': Object.fromEntries(
+      (['NODE_ENV', 'APP_MODE', 'FRONTEND_URL', 'BACKEND_URL', 'BACKEND_AUTH_URL', 'YJS_URL', 'MCP_API_URL'] as const)
+        .filter((key) => process.env[key] !== undefined)
+        .map((key) => [key, process.env[key]]),
+    ),
     // Injected into lib/sw.ts for periodic badge sync
     '__BACKEND_URL__': JSON.stringify(appConfig.backendUrl),
     // Release identifier for observability (lib/maple.ts serviceVersion)
