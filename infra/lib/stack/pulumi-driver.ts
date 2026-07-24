@@ -15,17 +15,17 @@ export interface PulumiDriver {
   output<T>(name: string): Promise<T>
 }
 
-type ExecPulumi = (args: string[]) => string
+type ExecPulumi = (args: string[], opts?: { quiet?: boolean }) => string
 
 export function createCliDriver(stack: string, exec: ExecPulumi = runPulumi): PulumiDriver {
   // Generation stacks are created on first use (micro topology); the select
-  // probe runs once per driver.
+  // probe runs once per driver, quietly (its failure is the expected branch).
   let ensured = false
   const ensureStack = () => {
     if (ensured) return
     ensured = true
     try {
-      exec(['stack', 'select', stack])
+      exec(['stack', 'select', stack], { quiet: true })
     } catch {
       exec(['stack', 'init', stack])
     }
