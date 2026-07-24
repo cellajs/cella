@@ -16,6 +16,7 @@ import { runRotatePassphrase } from './actions/rotate-passphrase'
 import { runSecrets } from './actions/secrets'
 import { runSetup } from './actions/setup'
 import { runUnlock } from './actions/unlock'
+import { nonInteractive } from './shared'
 import type { CliMode, InfraContext } from './shared'
 
 // Load backend/.env before the root fallback so infra child tasks share the app's
@@ -127,7 +128,7 @@ if (deferredSince) {
 }
 
 const mode: CliMode =
-  context.state === 'fresh'
+  context.state === 'fresh' || nonInteractive()
     ? 'resume'
     : await select<CliMode>({
         message: 'Existing config detected. How would you like to proceed?',
