@@ -125,7 +125,7 @@ A fourth secret sits outside this chain: the **Pulumi passphrase**, which encryp
 The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger: a `setup` job derives names/matrices from config, a build matrix pushes images, and one `deploy` job runs the whole deployment as a single command:
 
 ```
-pnpm --filter infra deploy --mode <staging|production> --sha <sha> --dist <frontend-dist>
+pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --dist <frontend-dist>
 ```
 
 [tasks/deploy.ts](tasks/deploy.ts) owns everything after the builds: preflights, the stack lock (released in `finally`), the base stack update, the waved rollout, public version verification, the atomic frontend entry publish, smoke checks, and boot diagnostics on failure. Any CI system (or an operator shell) with the SCW_* credentials runs the same command.

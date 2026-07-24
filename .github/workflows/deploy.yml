@@ -278,7 +278,7 @@ jobs:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm --filter infra deploy --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}" --git-ref "${{ github.ref }}" --dist "$GITHUB_WORKSPACE/dist"
+        run: pnpm --filter infra run deploy --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}" --git-ref "${{ github.ref }}" --dist "$GITHUB_WORKSPACE/dist"
 
   # -------------------------------------------------------------------------
   # Upload versioned (content-hashed, immutable) frontend assets to the bucket.
