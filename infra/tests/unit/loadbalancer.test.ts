@@ -112,7 +112,7 @@ describe('loadbalancer module — internal routes', () => {
     // Recreating the attachment would sever LB-to-VM traffic; the address is
     // read back from IPAM (resource type lb_server) after the LB exists.
     expect(src).not.toMatch(/ipamIds:/)
-    expect(src).toMatch(/scaleway\.ipam\.getIpsOutput\(/)
+    expect(src).toMatch(/ipam\/v1\/regions/)
     expect(src).toMatch(/type: 'lb_server'/)
     expect(src).toMatch(/publishLbInternalAddress\(/)
   })

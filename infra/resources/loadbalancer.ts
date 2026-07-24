@@ -2,7 +2,7 @@ import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { engineConfig } from '../config/engine-config'
 const appConfig = engineConfig()
-import { naming, zone, tags, dnsZone, serviceHost, serviceUrl, infra } from '../pulumi-context'
+import { naming, zone, region, tags, dnsZone, serviceHost, serviceUrl, infra } from '../pulumi-context'
 import { enabledServices } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { privateNetworkId, privateNetworkSubnet } from './network'
@@ -191,12 +191,19 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   // attachment would sever LB-to-VM traffic); the address is resolved from IPAM
   // after the LB exists and handed to compute via the lb-internal seam.
 
-  const lbPrivateIp = scaleway.ipam.getIpsOutput({
-    privateNetworkId,
-    resource: lb.id.apply((id) => ({ id: id.split('/').at(-1) ?? id, type: 'lb_server' })),
-    type: 'ipv4',
-  }).apply((result) => {
-    const address = result.ips?.[0]?.address
+  // Resolved via the IPAM REST API directly: the provider's getIps invoke
+  // rejects these filters with a detail-less "invalid argument(s)". The filter
+  // pair (resource_id + resource_type=lb_server) is verified against the live
+  // API; the deploy identity carries IPAMFullAccess.
+  const lbPrivateIp = lb.id.apply(async (lbId) => {
+    const bareLbId = lbId.split('/').at(-1) ?? lbId
+    const secretKey = process.env.SCW_SECRET_KEY
+    if (!secretKey) throw new Error('loadbalancer: SCW_SECRET_KEY is required to resolve the LB private-network IP from IPAM')
+    const url = `https://api.scaleway.com/ipam/v1/regions/${region}/ips?resource_id=${bareLbId}&resource_type=lb_server&is_ipv6=false`
+    const res = await fetch(url, { headers: { 'X-Auth-Token': secretKey } })
+    if (!res.ok) throw new Error(`loadbalancer: IPAM lookup for the LB private IP failed: ${res.status} ${await res.text()}`)
+    const body = (await res.json()) as { ips?: Array<{ address?: string }> }
+    const address = body.ips?.[0]?.address
     if (!address) throw new Error('loadbalancer: could not resolve the LB private-network IP from IPAM (resource type lb_server).')
     return address
   })
