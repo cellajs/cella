@@ -137,14 +137,13 @@ export interface SmokeOptions {
 }
 
 /**
- * Component-health (check #6) retry budget. Right after a rollout the CDC
- * worker's WebSocket can still be mid-reconnect (exponential backoff up to 30s),
- * which the backend surfaces as a transient `cdc=unhealthy(worker_disconnected)`.
- * Polling across roughly one backoff cycle lets that settle while a genuinely
- * broken component stays bad for the whole budget and still fails the gate.
+ * Component-health (check #6) retry budget. The exclusive cdc replacement
+ * frees its replication slot only at the final reap, and the fresh worker's
+ * WebSocket reconnect backs off up to 30s, so the backend can surface a
+ * transient `cdc=unhealthy(worker_disconnected)` for up to ~2 minutes after
+ * cutover. The 120s budget outlasts that; a genuinely broken component stays
+ * bad for the whole budget and still fails the gate.
  */
-// The exclusive cdc replacement frees its replication slot only at the final
-// reap, so the new worker connects up to ~2 minutes after traffic cutover.
 export const COMPONENTS_RETRY_ATTEMPTS = 15
 export const COMPONENTS_RETRY_DELAY_MS = 8_000
 
