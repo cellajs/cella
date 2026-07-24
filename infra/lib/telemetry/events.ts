@@ -11,8 +11,8 @@ export interface EventDef<T extends string = string> {
 
 /**
  * Catalog entry: the template's `{placeholders}` become REQUIRED attributes at
- * every emit site (see `Telemetry.event`), so a renamed attribute fails the
- * typecheck at the template instead of rendering a literal `{gen_id}`.
+ * every emit site (see `Telemetry.event`); a renamed attribute fails the
+ * typecheck at the template, never rendering a literal `{gen_id}`.
  */
 export function defineEvent<const T extends string>(name: string, template: T): EventDef<T> {
   return { name, template }
