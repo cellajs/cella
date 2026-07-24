@@ -252,7 +252,10 @@ function createRealEffects(): DeployEffects {
       let config = otlpConfigFromEnv()
       if (!config) {
         const { mapleKeyFromSecretManager } = await import('../lib/telemetry/maple-key')
-        const key = await mapleKeyFromSecretManager().catch(() => undefined)
+        const key = await mapleKeyFromSecretManager().catch((err) => {
+          console.warn(`[deploy] maple ingest key lookup failed: ${errorMessage(err)}`)
+          return undefined
+        })
         if (key) config = { endpoint: 'https://ingest.maple.dev/v1', headers: { 'x-maple-ingest-key': key } }
       }
       if (!config) console.info('[deploy] telemetry export disabled (no OTLP endpoint or maple ingest key); black box only')

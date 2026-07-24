@@ -143,7 +143,9 @@ export interface SmokeOptions {
  * Polling across roughly one backoff cycle lets that settle while a genuinely
  * broken component stays bad for the whole budget and still fails the gate.
  */
-export const COMPONENTS_RETRY_ATTEMPTS = 6
+// The exclusive cdc replacement frees its replication slot only at the final
+// reap, so the new worker connects up to ~2 minutes after traffic cutover.
+export const COMPONENTS_RETRY_ATTEMPTS = 15
 export const COMPONENTS_RETRY_DELAY_MS = 8_000
 
 
