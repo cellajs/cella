@@ -2,6 +2,7 @@ import { confirm } from '@inquirer/prompts'
 import { pc } from 'shared/cli-utils/colors';
 import { checkMark, tildeMark, warningMark } from 'shared/utils/console'
 import { resolveProjectId } from './bootstrap-scw-env'
+import { nonInteractive } from '../../cli/shared'
 import { isMain } from '../utils/is-main'
 import { errorMessage } from '../utils/errors'
 
@@ -16,10 +17,14 @@ interface DnsZone {
   ns?: string[]
 }
 
-async function listZones(secretKey: string, projectId: string, domain: string): Promise<DnsZone[]> {
+async function listZones(secretKey: string, projectId: string | undefined, domain: string): Promise<DnsZone[]> {
   // Cache-bust with a timestamp param and explicit no-cache headers; some
-  // intermediaries seem to return stale zone status otherwise.
-  const url = `${BASE}/dns-zones/?project_id=${projectId}&domain=${encodeURIComponent(domain)}&page_size=100&_=${Date.now()}`
+  // intermediaries seem to return stale zone status otherwise. Without a
+  // projectId the listing spans every project the key can read: a zone active
+  // in a sibling project (staging reusing the production apex) counts as
+  // active for record management, which is org-wide by permission set.
+  const projectFilter = projectId ? `project_id=${projectId}&` : ''
+  const url = `${BASE}/dns-zones/?${projectFilter}domain=${encodeURIComponent(domain)}&page_size=100&_=${Date.now()}`
   const res = await fetch(url, {
     headers: { 'X-Auth-Token': secretKey, 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
     cache: 'no-store',
@@ -66,6 +71,14 @@ export async function ensureDnsZone(opts: {
     return { status: 'active' }
   }
 
+  // Org-shared apex: another project (production) already runs the zone. Never
+  // re-register it; record management only needs org-wide DNS permission.
+  const orgApex = findApex(await listZones(secretKey, undefined, domain))
+  if (orgApex?.status === 'active') {
+    console.info(`  ${tildeMark} DNS zone ${pc.cyan(domain)} is active in a sibling project — reusing it (org-shared zone)`)
+    return { status: 'active' }
+  }
+
   if (!apex) {
     console.info(`  ${tildeMark} Registering ${pc.cyan(domain)} as an external domain on Scaleway DNS…`)
     const reg = await registerExternal(secretKey, projectId, domain)
@@ -83,7 +96,7 @@ export async function ensureDnsZone(opts: {
   console.info(`  A second email will arrive once ownership is validated — then recheck below.\n`)
 
   while (true) {
-    const action = await confirm({ message: 'Recheck DNS zone status now? (No = skip and continue)', default: true })
+    const action = nonInteractive() ? false : await confirm({ message: 'Recheck DNS zone status now? (No = skip and continue)', default: true })
     if (!action) {
       console.info(`  ${warningMark} Skipped. Pulumi will fail on DNS records until validation completes — re-run bootstrap to retry.`)
       return { status: 'skipped' }

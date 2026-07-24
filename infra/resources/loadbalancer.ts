@@ -38,7 +38,11 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   }
 
   const appHost = serviceHost('frontend')
-  const appIsAtApex = appHost === dnsZone
+  // Zone-apex resources (apex A record, apex cert, apex-to-www redirect) belong
+  // to exactly ONE stack per zone: the one serving `www.<zone>`. A staging
+  // stack on the shared zone (staging.<zone>) must never manage the apex, or
+  // its A record would round-robin production traffic to the staging LB.
+  const managesApex = appHost === `www.${dnsZone}`
 
 // Create DNS and certificates per unique hostname, not per service.
 // The first service claims resource naming, preserving app URNs for shared same-origin hosts.
@@ -107,7 +111,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   // Apex → points at the LB so the apex→www redirect ACL below can answer.
   let apexDns: scaleway.domain.Record | undefined
   let apexDnsGate: DnsPropagationGate | undefined
-  if (!appIsAtApex) {
+  if (managesApex) {
     apexDns = new scaleway.domain.Record('apex-dns', {
       dnsZone,
       name: '',
@@ -141,7 +145,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   }
 
   let apexCert: scaleway.loadbalancers.Certificate | undefined
-  if (!appIsAtApex && apexDns && apexDnsGate) {
+  if (managesApex && apexDns && apexDnsGate) {
     apexCert = new scaleway.loadbalancers.Certificate('apex-cert', {
       lbId: lb.id,
       name: naming.resource('apex-cert'),
@@ -290,7 +294,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   }
 
   // Apex → www redirect (HTTPS) via ACL on the HTTPS frontend
-  if (!appIsAtApex) {
+  if (managesApex) {
     new scaleway.loadbalancers.Acl('apex-redirect-https', {
       frontendId: httpsFrontend.id,
       name: naming.resource('apex-redirect'),

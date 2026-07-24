@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { resolve } from 'node:path'
-import { confirm, input } from '@inquirer/prompts'
+import { confirm } from '@inquirer/prompts'
 import { pc } from 'shared/cli-utils/colors';
 import { DIVIDER } from 'shared/cli-utils/display'
 import { checkMark, warningMark } from 'shared/utils/console'
@@ -13,7 +13,7 @@ import { deriveInfra } from '../../lib/naming'
 import { infraDir } from '../../lib/utils/paths'
 import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../../lib/scaleway/permissions'
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up'
-import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam'
+import { ensureBootstrapDnsGrant, resolveOrganizationId } from '../../lib/scaleway/scaleway-iam'
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets'
 import { managedKeys, type ManagedKeyId } from '../../lib/managed-keys'
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager'
@@ -27,7 +27,7 @@ import { setupCiKey } from '../../tasks/setup-ci-key'
 import { setupOperatorApp } from '../../tasks/setup-operator-app'
 import { setupVmKey } from '../../tasks/setup-vm-key'
 import type { CliMode, InfraContext } from '../shared'
-import { acquireStackLockOrExit, createStepRunner, envOr, promptRequiredInput, promptStackName, pulumiLoginUrl, resolveOrCreatePassphrase } from '../shared'
+import { acquireStackLockOrExit, confirmOrDefault, createStepRunner, envOr, inputOrDefault, nonInteractive, promptRequiredInput, promptStackName, pulumiLoginUrl, resolveOrCreatePassphrase } from '../shared'
 
 /** Everything the per-phase helpers below share. */
 interface SetupContext {
@@ -124,7 +124,7 @@ async function mintCiKey(ctx: SetupContext): Promise<CiKeyResult> {
       return { accessKey: key.accessKey, secretKey: key.secretKey, organizationId: key.organizationId }
     } catch (error) {
       console.error(`\n${warningMark} CI key setup failed: ${errorMessage(error)}`)
-      if (!(await confirm({ message: 'Retry?', default: true }))) return { accessKey: '', secretKey: '', organizationId: '' }
+      if (nonInteractive() || !(await confirm({ message: 'Retry?', default: true }))) return { accessKey: '', secretKey: '', organizationId: '' }
     }
   }
 }
@@ -169,7 +169,7 @@ async function ensureVmKey(ctx: SetupContext, needsCiKey: boolean): Promise<stri
       return key.accessKey
     } catch (error) {
       console.error(`\n${warningMark} VM key setup failed: ${errorMessage(error)}`)
-      if (!(await confirm({ message: 'Retry?', default: true }))) return ''
+      if (nonInteractive() || !(await confirm({ message: 'Retry?', default: true }))) return ''
     }
   }
 }
@@ -267,10 +267,21 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
   const { dnsZone, hasDomain } = deriveInfra(ctx.appConfig)
   if (hasDomain) {
     try {
+      // Application-owned bootstrap keys need org-wide DNS before the first up
+      // can write records in an org-shared zone (staging on the production apex).
+      const organizationId = ctx.childEnv.SCW_DEFAULT_ORGANIZATION_ID
+      if (organizationId) {
+        await ensureBootstrapDnsGrant({
+          callerSecretKey: ctx.secretKey,
+          accessKey: ctx.accessKey,
+          organizationId,
+          slug: ctx.appConfig.slug,
+        }).catch((error) => console.warn(`  ${warningMark} Bootstrap DNS grant skipped: ${errorMessage(error)}`))
+      }
       await ensureDnsZone({ secretKey: ctx.secretKey, projectId: ctx.projectId, domain: dnsZone })
     } catch (error) {
       console.error(`\n${warningMark} DNS zone check failed: ${errorMessage(error)}`)
-      if (!(await confirm({ message: 'Continue with pulumi up anyway?', default: false }))) process.exit(1)
+      if (!(await confirmOrDefault({ message: 'Continue with pulumi up anyway?', default: false }))) process.exit(1)
     }
   }
 
@@ -302,7 +313,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
   while (true) {
     const { code } = await runPulumiUpWithHint(ctx.stackName, infraDir, ctx.childEnv)
     if (code === 0) break
-    if (!(await confirm({ message: 'Retry?', default: true }))) {
+    if (nonInteractive() || !(await confirm({ message: 'Retry?', default: true }))) {
       await stackLock.release()
       process.exit(code)
     }
@@ -360,17 +371,16 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     mintDecisions: new Map<ManagedKeyId, boolean>(),
   }
   if (isInitialBootstrap) {
-    inputs.operatorSecrets.adminEmail = await input({ message: 'Admin email (optional, set later via "Manage runtime secrets")' })
-    inputs.operatorSecrets.brevoApiKey = inputs.operatorSecrets.adminEmail
-      ? await maskedSecret({ message: 'Brevo API key (optional)' }).catch(() => '')
-      : ''
+    inputs.operatorSecrets.adminEmail = await inputOrDefault({ message: 'Admin email (optional, set later via "Manage runtime secrets")', envName: 'INFRA_ADMIN_EMAIL' })
+    inputs.operatorSecrets.brevoApiKey =
+      inputs.operatorSecrets.adminEmail && !nonInteractive() ? await maskedSecret({ message: 'Brevo API key (optional)' }).catch(() => '') : ''
     for (const key of managedKeys) {
-      inputs.mintDecisions.set(key.id, await confirm({ message: key.prompt.message, default: key.prompt.default }))
+      inputs.mintDecisions.set(key.id, await confirmOrDefault({ message: key.prompt.message, default: key.prompt.default }))
     }
   }
 
   const modeLabel = mode === 'rotate' ? 'Rotate keys' : 'Resume'
-  if (!(await confirm({ message: `Proceed with ${modeLabel}?`, default: true }))) process.exit(0)
+  if (!(await confirmOrDefault({ message: `Proceed with ${modeLabel}?`, default: true }))) process.exit(0)
 
   // The bootstrap key also holds the object-storage rights needed for the
   // Pulumi state bucket, so it doubles as the state-backend credential pair.
@@ -477,7 +487,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         `  ${pc.dim('Recommended: push to the deploy branch and let CI run `pulumi up` (this local run is only needed for out-of-band changes).')}`,
       )
     }
-    const runNow = await confirm({ message: isFirstProvision ? 'Run the recommended first pulumi up now?' : 'Run pulumi up now?', default: isFirstProvision })
+    const runNow = await confirmOrDefault({ message: isFirstProvision ? 'Run the recommended first pulumi up now?' : 'Run pulumi up now?', default: isFirstProvision })
     if (runNow) {
       await provisionBaseInfra(ctx, inputs)
     } else {

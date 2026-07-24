@@ -1,5 +1,6 @@
 import { changeMark, checkMark, tildeMark } from 'shared/utils/console'
 import { scwFetch, scwSend } from './scw-fetch'
+import { ORG_WIDE_PROJECT_PERMISSION_SETS } from './permissions'
 
 const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1'
 const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3'
@@ -190,4 +191,44 @@ export async function findPolicyIdByName(secretKey: string, organizationId: stri
     `${IAM_BASE}/policies?organization_id=${organizationId}&policy_name=${encodeURIComponent(name)}&page_size=20`,
   )
   return policies.find((p) => p.name === name)?.id
+}
+
+/**
+ * Ensure the bootstrap key's own IAM application carries org-wide DNS. Needed
+ * when the zone lives in a sibling project (a staging stack reusing the
+ * production apex): the first provisioning `pulumi up` runs with the bootstrap
+ * key and must create records in that shared zone. No-ops for user-owned keys
+ * (Owner-level rights already include DNS) and when the policy already exists.
+ * The grant is removed with the bootstrap application when the key is revoked.
+ */
+export async function ensureBootstrapDnsGrant(opts: {
+  callerSecretKey: string
+  accessKey: string
+  organizationId: string
+  slug: string
+  log?: (msg: string) => void
+}): Promise<boolean> {
+  const log = opts.log ?? ((msg) => console.info(msg))
+  const key = await scwFetch<{ application_id?: string | null }>(
+    { secretKey: opts.callerSecretKey },
+    'GET',
+    `${IAM_BASE}/api-keys/${opts.accessKey}`,
+  )
+  if (!key.application_id) return false
+
+  const policyName = `${opts.slug}-bootstrap-dns`
+  const existing = await findPolicyIdByName(opts.callerSecretKey, opts.organizationId, policyName)
+  if (existing) {
+    log(`  Bootstrap DNS grant '${policyName}' already present`)
+    return true
+  }
+  await scwFetch<ScwPolicy>({ secretKey: opts.callerSecretKey }, 'POST', `${IAM_BASE}/policies`, {
+    name: policyName,
+    organization_id: opts.organizationId,
+    application_id: key.application_id,
+    description: 'Org-wide DNS for the bootstrap key: first provisioning up writes records in the org-shared zone (auto-generated; revoke with the bootstrap key)',
+    rules: [{ permission_set_names: [...ORG_WIDE_PROJECT_PERMISSION_SETS], organization_id: opts.organizationId }],
+  })
+  log(`  Created bootstrap DNS grant '${policyName}' (org-wide DomainsDNSFullAccess)`)
+  return true
 }

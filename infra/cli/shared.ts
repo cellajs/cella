@@ -37,6 +37,35 @@ export interface StepOptions {
 }
 
 /**
+ * Non-interactive mode (INFRA_NON_INTERACTIVE=1): every prompt resolves to its
+ * default (confirms), the env-provided value, or empty (optional inputs), so
+ * the CLI can run unattended in automation. Prompts without a safe default
+ * still throw, which is the correct failure for automation.
+ */
+export const nonInteractive = (): boolean => process.env.INFRA_NON_INTERACTIVE === '1'
+
+/** `confirm` that resolves to its default under INFRA_NON_INTERACTIVE. */
+export async function confirmOrDefault(opts: { message: string; default: boolean }): Promise<boolean> {
+  if (nonInteractive()) {
+    console.info(pc.dim(`  [non-interactive] ${opts.message} -> ${opts.default ? 'yes' : 'no'}`))
+    return opts.default
+  }
+  return confirm(opts)
+}
+
+/** Optional free-text `input` that resolves to env/default under INFRA_NON_INTERACTIVE. */
+export async function inputOrDefault(opts: { message: string; envName?: string; default?: string }): Promise<string> {
+  const fromEnv = opts.envName ? process.env[opts.envName]?.trim() : undefined
+  if (nonInteractive()) {
+    const value = fromEnv ?? opts.default ?? ''
+    console.info(pc.dim(`  [non-interactive] ${opts.message} -> ${value || '<empty>'}`))
+    return value
+  }
+  if (fromEnv) return fromEnv
+  return input({ message: opts.message, default: opts.default })
+}
+
+/**
  * Gets the first set environment variable from `envName` (a single name or an
  * ordered list of fallbacks), or prompts for it if none are set.
  */
@@ -114,7 +143,7 @@ export async function resolveOrCreatePassphrase(stackYaml?: string): Promise<{ p
 
 /** The "Pulumi stack name" prompt every action shares. */
 export function promptStackName(context: InfraContext): Promise<string> {
-  return input({ message: 'Pulumi stack name', default: `organization/infra/${context.environment}` })
+  return inputOrDefault({ message: 'Pulumi stack name', envName: 'INFRA_STACK_NAME', default: `organization/infra/${context.environment}` })
 }
 
 /** A required free-text prompt (used for Scaleway access keys). */

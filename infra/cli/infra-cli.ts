@@ -24,8 +24,42 @@ for (const envFile of [resolve(infraDir, '..', 'backend', '.env'), resolve(infra
   if (existsSync(envFile)) process.loadEnvFile(envFile)
 }
 
+/** Parse a dotenv-style file into key/value pairs (no interpolation). */
+function parseEnvFile(path: string): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const line of readFileSync(path, 'utf8').split('\n')) {
+    const match = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/)
+    if (!match) continue
+    out[match[1]!] = (match[2] ?? '').replace(/^['"]|['"]$/g, '')
+  }
+  return out
+}
+
+/**
+ * The target mode. INFRA_MODE (or --mode) selects it explicitly, including a
+ * fresh stack that has no Pulumi.<mode>.yaml yet; otherwise the first existing
+ * stack file wins (production before staging), matching prior behavior.
+ * A mode-scoped env file `infra/.env.<mode>` OVERRIDES the ambient env: it
+ * carries that mode's credentials/project so a staging run cannot silently
+ * inherit production values from backend/.env.
+ */
+function resolveMode(): 'production' | 'staging' {
+  const flagIndex = process.argv.indexOf('--mode')
+  const raw = (flagIndex >= 0 ? process.argv[flagIndex + 1] : undefined) ?? process.env.INFRA_MODE
+  if (raw) {
+    if (raw !== 'production' && raw !== 'staging') throw new Error(`INFRA_MODE must be 'production' or 'staging' (got '${raw}')`)
+    return raw
+  }
+  return pickStackShort((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)))
+}
+
 async function loadContext(): Promise<InfraContext> {
-  const environment = pickStackShort((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)))
+  const environment = resolveMode()
+  const modeEnvPath = resolve(infraDir, `.env.${environment}`)
+  if (existsSync(modeEnvPath)) {
+    for (const [key, value] of Object.entries(parseEnvFile(modeEnvPath))) process.env[key] = value
+    console.info(pc.dim(`Loaded ${modeEnvPath} (mode-scoped env, overrides ambient values)`))
+  }
   const stackPath = resolve(infraDir, `Pulumi.${environment}.yaml`)
   const stackYaml = existsSync(stackPath) ? readFileSync(stackPath, 'utf8') : undefined
   const state = detectStackState({ yamlText: stackYaml })
