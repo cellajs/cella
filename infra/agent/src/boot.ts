@@ -120,7 +120,16 @@ export async function boot(opts: BootOptions): Promise<void> {
   const phase = async (step: string, run: () => Promise<unknown>): Promise<void> => {
     logger.log('info', step)
     const startedAt = Date.now()
-    await run()
+    try {
+      await run()
+    } catch (err) {
+      telemetry.event(
+        bootEvents.stepFailed,
+        { service: plan.service, step, error: errorMessage(err) },
+        { severity: 'error', ctx: bootSpan.ctx },
+      )
+      throw err
+    }
     telemetry.event(
       bootEvents.stepCompleted,
       { service: plan.service, step, duration_s: Math.round((Date.now() - startedAt) / 1000) },

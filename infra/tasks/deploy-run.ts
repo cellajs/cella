@@ -54,7 +54,7 @@ export interface DeployEffects {
   rollout(argv: string[]): Promise<void>
   verifyVersion(url: string, sha: string): Promise<boolean>
   publishEntryFiles(opts: { distDir: string; bucket: string; region: string }): Promise<void>
-  bootDiagnostics(): Promise<void>
+  bootDiagnostics(sinceIso?: string): Promise<void>
   group(title: string): void
   groupEnd(): void
   info(msg: string): void
@@ -99,6 +99,7 @@ export async function runDeploy(
   process.env.AWS_SECRET_ACCESS_KEY ??= process.env.SCW_SECRET_KEY ?? ''
   process.env.SCW_DEFAULT_REGION ??= env.region
 
+  const startedAtIso = new Date().toISOString()
   await fx.initTelemetry({ mode: opts.mode, sha: opts.sha })
   const telemetry = deployTelemetry()
   const deploySpan = telemetry?.startSpan(`deploy ${opts.mode}`, { sha: opts.sha })
@@ -119,7 +120,9 @@ export async function runDeploy(
       fx.info(`[deploy] ${title}: ok (${seconds}s)`)
     } catch (err) {
       span?.end('error', { message: errorMessage(err) })
-      telemetry?.event(deployEvents.stepFailed, { step: title, error: errorMessage(err) }, { severity: 'error', ctx: span?.ctx })
+      const failAttrs: { step: string; error: string; 'error.stack'?: string } = { step: title, error: errorMessage(err) }
+      if (err instanceof Error && err.stack) failAttrs['error.stack'] = err.stack.slice(0, 4000)
+      telemetry?.event(deployEvents.stepFailed, failAttrs, { severity: 'error', ctx: span?.ctx })
       throw err
     } finally {
       fx.groupEnd()
@@ -159,7 +162,7 @@ export async function runDeploy(
     } catch (err) {
       telemetry?.event(deployEvents.rolloutFailed, { error: errorMessage(err) }, { severity: 'error' })
       fx.info('[deploy] rollout failed; collecting boot diagnostics')
-      await fx.bootDiagnostics().catch((diagErr) => fx.info(`[deploy] boot diagnostics failed: ${errorMessage(diagErr)}`))
+      await fx.bootDiagnostics(startedAtIso).catch((diagErr) => fx.info(`[deploy] boot diagnostics failed: ${errorMessage(diagErr)}`))
       throw err
     }
 
@@ -256,7 +259,11 @@ function createRealEffects(): DeployEffects {
           console.warn(`[deploy] maple ingest key lookup failed: ${errorMessage(err)}`)
           return undefined
         })
-        if (key) config = { endpoint: 'https://ingest.maple.dev/v1', headers: { 'x-maple-ingest-key': key } }
+        if (key) {
+          config = { endpoint: 'https://ingest.maple.dev/v1', headers: { 'x-maple-ingest-key': key } }
+          // In-process consumers (black-box replay on failure) resolve via env.
+          process.env.MAPLE_SECRET_INGEST_KEY ??= key
+        }
       }
       if (!config) console.info('[deploy] telemetry export disabled (no OTLP endpoint or maple ingest key); black box only')
       initDeployTelemetry({ mode, sha, endpoint: config?.endpoint, headers: config?.headers, onError: (message) => console.warn(`[deploy] ${message}`) })
@@ -281,9 +288,14 @@ function createRealEffects(): DeployEffects {
       return out.ok
     },
     publishEntryFiles: publishEntryFilesToBucket,
-    async bootDiagnostics() {
+    async bootDiagnostics(sinceIso) {
       const { main: diag } = await import('./diag')
       await diag([])
+      // Re-ship black-box events from VMs that died before their exporter was
+      // configured (pre-hydration failures); best-effort like all telemetry.
+      await diag(['--replay', ...(sinceIso ? ['--since', sinceIso] : [])]).catch((err) => {
+        console.warn(`[deploy] black-box replay failed: ${err instanceof Error ? err.message : String(err)}`)
+      })
     },
     group: (title) => console.info(inActions ? `::group::${title}` : `\n=== ${title} ===`),
     groupEnd: () => {

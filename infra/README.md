@@ -122,7 +122,7 @@ A fourth secret sits outside this chain: the **Pulumi passphrase**, which encryp
 
 ## CI deploys
 
-The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger: a `setup` job derives names/matrices from config, a build matrix pushes images, and one `deploy` job runs the whole deployment as a single command:
+The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger (~35 lines: release + manual dispatch) that calls the reusable pipeline in [.github/workflows/infra-deploy.yml](../.github/workflows/infra-deploy.yml). Inside the reusable workflow, a `setup` job derives names/matrices from config, a build matrix pushes images, and one `deploy` job runs the whole deployment as a single command:
 
 ```
 pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --dist <frontend-dist>
@@ -135,6 +135,17 @@ The rollout records the release SHA as INTENT (`pendingSha`) in the S3 control o
 To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
 To gate production behind manual approval, configure a [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) named `production` with required reviewers. The workflow already targets it.
+
+### Bring your own CI
+
+GitHub Actions is only the default trigger; the pipeline is one command plus standard docker builds. To run a release from any CI system (or a laptop):
+
+1. **Env**: export `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`, `PULUMI_CONFIG_PASSPHRASE` (the same five values the GitHub Environment holds). Install node + pnpm + docker + the pulumi CLI.
+2. **Build + push images**: `pnpm --silent --filter infra print-deploy-env <mode> --git-sha <sha>` prints `registry_ns` and `build_images_matrix`; for each matrix entry run a standard `docker build` with the listed dockerfile/target, tag `rg.<region>.scw.cloud/<registry_ns>/<service>:<sha>`, and push (login: user `nologin`, password = the secret key). Build the boot agent image the same way (`pnpm --filter infra agent:build`, then `docker build infra/agent`).
+3. **Build the frontend**: `pnpm --silent --filter infra print-frontend-build-env --mode <mode> --services-json <enabled_services_json>` prints the build env; export it and run `pnpm --filter frontend build`. Upload `frontend/dist` assets to the frontend bucket (versioned `assets/` + `static/` paths, immutable cache headers) before the deploy command runs.
+4. **Deploy**: `pnpm --filter infra run deploy --mode <mode> --sha <sha> --dist frontend/dist`. The command owns everything else and is safe to re-run; the stack lock serializes concurrent attempts.
+
+The deploy command needs no GitHub-specific context; `--git-ref` only gates production deploys to main/release refs when provided.
 
 ## Rollout strategies
 

@@ -19,7 +19,7 @@ const DB_ACL_KEY = 'infra:dbPublicAcl'
 const PUBLIC_DSN_OUTPUT = 'dbConnectionStringAdminPublic'
 
 /** Detect the operator's current public IPv4 via a well-known echo service. */
-async function detectPublicIp(): Promise<string | undefined> {
+export async function detectPublicIp(): Promise<string | undefined> {
   try {
     const res = await fetch('https://api.ipify.org', { signal: AbortSignal.timeout(5000) })
     if (!res.ok) return undefined
@@ -31,7 +31,7 @@ async function detectPublicIp(): Promise<string | undefined> {
 }
 
 /** Set one stack config key, exiting on failure. `secret` encrypts the value. */
-function pulumiConfigSet(env: NodeJS.ProcessEnv, stack: string, key: string, value: string, opts: { secret?: boolean } = {}): void {
+export function pulumiConfigSet(env: NodeJS.ProcessEnv, stack: string, key: string, value: string, opts: { secret?: boolean } = {}): void {
   const args = ['config', 'set', ...(opts.secret ? ['--secret'] : []), key, value, '--stack', stack]
   const result = spawnSync('pulumi', args, { cwd: infraDir, env, stdio: 'inherit' })
   if (result.status !== 0) {
@@ -41,13 +41,13 @@ function pulumiConfigSet(env: NodeJS.ProcessEnv, stack: string, key: string, val
 }
 
 /** Remove one stack config key. Best-effort: a missing key is not an error here. */
-function pulumiConfigRm(env: NodeJS.ProcessEnv, stack: string, key: string): void {
+export function pulumiConfigRm(env: NodeJS.ProcessEnv, stack: string, key: string): void {
   const result = spawnSync('pulumi', ['config', 'rm', key, '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' })
   if (result.status !== 0) console.warn(`${warningMark} pulumi config rm ${key} exited ${result.status} (already unset?) — continuing.`)
 }
 
 /** Read the public admin DSN stack output (empty when the endpoint is disabled). */
-function readPublicDsn(env: NodeJS.ProcessEnv, stack: string): string {
+export function readPublicDsn(env: NodeJS.ProcessEnv, stack: string): string {
   const result = spawnSync('pulumi', ['stack', 'output', PUBLIC_DSN_OUTPUT, '--show-secrets', '--stack', stack], { cwd: infraDir, env, encoding: 'utf8' })
   return result.status === 0 ? (result.stdout ?? '').trim() : ''
 }
@@ -60,7 +60,7 @@ function readPublicDsn(env: NodeJS.ProcessEnv, stack: string): string {
  * the provider env and stack so the caller can read outputs after the lock is
  * released. Exits the process on any hard failure.
  */
-async function convergePublicEndpoint(
+export async function convergePublicEndpoint(
   context: InfraContext,
   operation: string,
   mutate: (env: NodeJS.ProcessEnv, stack: string) => void,
