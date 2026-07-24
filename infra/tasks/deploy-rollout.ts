@@ -38,6 +38,9 @@ export function buildWavedPlan(args: { primary: RolloutItem[]; rest: RolloutItem
 
 export async function main(argv = process.argv.slice(2), makeRuntime: (opts: { stack: string }) => RolloutRuntime = createRolloutRuntime): Promise<void> {
   const args = parseArgs(argv)
+  process.env.APP_MODE ??= args.stack.split('/').pop()
+  const { loadEngineConfig } = await import('../config/engine-config')
+  await loadEngineConfig()
   if (args.sha === 'latest' || args.sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${args.sha}'`)
   const plan = buildWavedPlan(args)
   await runWavedRollout(plan, makeRuntime({ stack: args.stack }))

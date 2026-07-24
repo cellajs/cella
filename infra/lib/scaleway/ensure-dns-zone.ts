@@ -1,10 +1,9 @@
 import { confirm } from '@inquirer/prompts'
-import { pc } from 'shared/cli-utils/colors';
-import { checkMark, tildeMark, warningMark } from 'shared/utils/console'
 import { resolveProjectId } from './bootstrap-scw-env'
 import { nonInteractive } from '../../cli/shared'
 import { isMain } from '../utils/is-main'
 import { errorMessage } from '../utils/errors'
+import { pc, checkMark, tildeMark, warningMark } from '../utils/cli-output'
 
 const BASE = 'https://api.scaleway.com/domain/v2beta1'
 const CHALLENGE_NAME = '_scaleway-challenge'

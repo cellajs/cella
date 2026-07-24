@@ -1,6 +1,5 @@
-import { pc } from 'shared/cli-utils/colors'
-import { checkMark, crossMark, warningMark } from 'shared/utils/console'
 import type { RdbBackup, RdbDatabase, RdbInstance, RdbPermission } from '../lib/scaleway/scaleway-rdb'
+import { pc, checkMark, crossMark, warningMark } from '../lib/utils/cli-output'
 
 /** The live API target shown to the operator for confirmation. */
 export interface ResetTarget {

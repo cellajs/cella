@@ -1,10 +1,10 @@
 import { isMain } from '../lib/utils/is-main'
-import type { appConfig as AppConfig } from '../../shared'
+import type { EngineConfig } from '../config/engine-config'
 import { deriveInfra } from '../lib/naming'
 import { deployedServices, enabledServices, serviceEndpoints } from '../lib/services'
 import { getFlag } from './args'
 
-type Cfg = typeof AppConfig
+type Cfg = EngineConfig
 
 /** Exact set of keys this script is allowed to emit. Tests lock this. */
 export const ALLOWED_KEYS = [
@@ -99,7 +99,8 @@ export async function main(): Promise<void> {
     process.exit(1)
   }
   process.env.APP_MODE = mode
-  const { appConfig } = await import('shared')
+  const { loadEngineConfig } = await import('../config/engine-config')
+  const appConfig = await loadEngineConfig()
   if (appConfig.mode !== mode) {
     console.error(`Mode mismatch: requested "${mode}" but loaded config is "${appConfig.mode}"`)
     process.exit(1)

@@ -5,6 +5,8 @@ import * as pulumi from '@pulumi/pulumi'
 // explicitly set APP_MODE against the stack).
 process.env.APP_MODE ??= pulumi.getStack().split('/').pop() ?? ''
 
+const { loadEngineConfig } = await import('./config/engine-config')
+await loadEngineConfig()
 const program = await import('./resources/program')
 
 export const frontendBucketName = program.frontendBucketName

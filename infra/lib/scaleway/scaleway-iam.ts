@@ -1,6 +1,6 @@
-import { changeMark, checkMark, tildeMark } from 'shared/utils/console'
 import { scwFetch, scwSend } from './scw-fetch'
 import { ORG_WIDE_PROJECT_PERMISSION_SETS } from './permissions'
+import { changeMark, checkMark, tildeMark } from '../utils/cli-output'
 
 const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1'
 const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3'

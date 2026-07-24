@@ -279,7 +279,8 @@ export async function controlContextForStack(stack: string, log: (msg: string) =
     return null
   }
   process.env.APP_MODE ??= stack.split('/').pop()
-  const { appConfig } = await import('shared')
+  const { loadEngineConfig } = await import('../../config/engine-config')
+  const appConfig = await loadEngineConfig()
   const s3 = await makeControlClient(appConfig.s3.region, accessKey, secretKey)
   return { s3, bucket: stateBucket(appConfig.slug), controlKey: controlKey(stack), lockKey: lockKey(stack) }
 }

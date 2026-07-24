@@ -1,15 +1,14 @@
 import { spawnSync } from 'node:child_process'
 import { confirm, input } from '@inquirer/prompts'
-import { pc } from 'shared/cli-utils/colors';
-import { crossMark, warningMark } from 'shared/utils/console'
-import type { appConfig as AppConfig } from 'shared'
+import type { EngineConfig } from '../config/engine-config'
 import type { Environment, StackState } from '../lib/stack/bootstrap-stack-state'
 import { acquireLock, controlActor, lockKey, makeControlClient, releaseLock, stateBucket } from '../lib/stack/control-store'
 import { errorMessage } from '../lib/utils/errors'
 import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase'
 import { maskedSecret } from './prompts/masked-secret'
+import { pc, crossMark, warningMark } from '../lib/utils/cli-output'
 
-type AppConfigType = typeof AppConfig
+type AppConfigType = EngineConfig
 
 /** Infra CLI operation modes */
 export type CliMode = 'resume' | 'rotate' | 'rotate-passphrase' | 'apply' | 'preview' | 'secrets' | 'reset-database' | 'expose-db' | 'unexpose-db' | 'unlock'
@@ -23,7 +22,7 @@ export interface InfraContext {
   stackYaml?: string
   state: StackState
   hasCiKey: boolean
-  appConfig: typeof AppConfig
+  appConfig: EngineConfig
   projectId: string
 }
 

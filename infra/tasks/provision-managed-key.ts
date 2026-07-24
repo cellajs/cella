@@ -1,8 +1,8 @@
-import { checkMark } from 'shared/utils/console'
 import type { ManagedKeyDefinition, MintedKeyField } from '../lib/managed-keys'
 import { runtimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
 import { provisionScopedKey } from '../lib/scaleway/scaleway-iam'
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager'
+import { checkMark } from '../lib/utils/cli-output'
 
 export interface ProvisionManagedKeyOptions {
   /** The managed key to mint (from `managedKeys`). */

@@ -1,9 +1,6 @@
 import { services as composeServices, type ServiceName } from '../compose/compose'
 import type { ServiceMeta } from '../compose/types'
-import type { AppServiceEndpointConfig } from '../../shared'
-// Type-only: erased at compile, so this module stays appConfig-free at runtime
-// (pulumi-context.ts imports it before setting APP_MODE; see `serviceEndpoints` below).
-import type { appConfig as AppConfig } from '../../shared'
+import type { EngineConfig, EngineServiceEndpoint } from '../config/engine-config'
 
 /**
  * One deployable service: the Compose model's `x-service` (`ServiceMeta`) narrowed
@@ -35,7 +32,7 @@ export const imageServiceNames = services.filter((s) => !s.reusesImageOf).map((s
  * of truth for "which services this app deploys": compute (VMs), the load
  * balancer, and any future deploy-plan artifact all derive from it.
  */
-export function enabledServices(serviceConfig: Record<string, AppServiceEndpointConfig>): readonly ServiceDefinition[] {
+export function enabledServices(serviceConfig: Record<string, EngineServiceEndpoint>): readonly ServiceDefinition[] {
   return services.filter((s) => serviceConfig[s.slug]?.enabled !== false)
 }
 
@@ -45,7 +42,7 @@ export function enabledServices(serviceConfig: Record<string, AppServiceEndpoint
  * through the host target.
  */
 export function deployedServices(
-  serviceConfig: Record<string, AppServiceEndpointConfig>,
+  serviceConfig: Record<string, EngineServiceEndpoint>,
   singleVM: boolean,
 ): readonly ServiceDefinition[] {
   const enabled = enabledServices(serviceConfig)
@@ -61,7 +58,7 @@ export function deployedServices(
  * exclusively).
  */
 export function coHostedServices(
-  serviceConfig: Record<string, AppServiceEndpointConfig>,
+  serviceConfig: Record<string, EngineServiceEndpoint>,
   singleVM: boolean,
 ): readonly ServiceDefinition[] {
   if (!singleVM) return []
@@ -85,8 +82,8 @@ export interface ServiceEndpoint {
  * (helpers.ts imports it before APP_MODE is set), so the lookup must be a
  * function, not a module-level constant.
  */
-export function serviceEndpoints(cfg: typeof AppConfig): readonly ServiceEndpoint[] {
-  const serviceUrls = cfg.services as Record<string, AppServiceEndpointConfig>
+export function serviceEndpoints(cfg: EngineConfig): readonly ServiceEndpoint[] {
+  const serviceUrls = cfg.services as Record<string, EngineServiceEndpoint>
   return services
     .filter((s) => s.lbRoute)
     .map((s) => {

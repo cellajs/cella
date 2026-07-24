@@ -1,7 +1,5 @@
 import { spawnSync } from 'node:child_process'
 import { confirm, input } from '@inquirer/prompts'
-import { pc } from 'shared/cli-utils/colors';
-import { checkMark, crossMark, warningMark } from 'shared/utils/console'
 import { adoptOrphanedPolicy } from '../../lib/scaleway/adopt-orphaned-policy'
 import { adoptOrphanedSecrets } from '../../lib/scaleway/adopt-orphaned-secrets'
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'
@@ -13,6 +11,7 @@ import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from 
 import { maskedSecret } from '../prompts/masked-secret'
 import { acquireStackLockOrExit, envOr, type InfraContext, promptRequiredInput, promptStackName, pulumiLoginAndSelect, resolveVerifiedPassphrase } from '../shared'
 import { parseAclInput } from './db-exposure-acl'
+import { pc, checkMark, crossMark, warningMark } from '../../lib/utils/cli-output'
 
 // Pulumi config keys consumed by resources/database.ts and the output it exports.
 const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint'

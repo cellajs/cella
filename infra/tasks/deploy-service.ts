@@ -20,6 +20,9 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   if (!serviceFlag || !sha || !stack) throw new Error('Usage: deploy-service.ts --service <svc> --sha <git-sha> --stack <stack> [--health-url URL] [--lb-zone ZONE] [--skip-reap]')
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`)
 
+  process.env.APP_MODE ??= stack.split('/').pop()
+  const { loadEngineConfig } = await import('../config/engine-config')
+  await loadEngineConfig()
   const plan = planForService(serviceFlag, getFlag(argv, '--health-url'))
   const rt = createRolloutRuntime({ stack, lbZone: getFlag(argv, '--lb-zone') })
 

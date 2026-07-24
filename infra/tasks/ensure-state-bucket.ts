@@ -96,7 +96,8 @@ export async function main(): Promise<void> {
   const secretKey = process.env.SCW_SECRET_KEY
   if (!accessKey || !secretKey) throw new Error('SCW_ACCESS_KEY and SCW_SECRET_KEY must be set')
   process.env.APP_MODE = process.env.APP_MODE ?? 'production'
-  const { appConfig } = await import('shared')
+  const { loadEngineConfig } = await import('../config/engine-config')
+  const appConfig = await loadEngineConfig()
   const { stateBucket } = await import('../lib/stack/control-store')
   const bucketName = stateBucket(appConfig.slug)
   const region = appConfig.s3.region

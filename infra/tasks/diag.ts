@@ -11,7 +11,8 @@ interface ResolvedTarget {
 /** Derive bucket/region/service-list from appConfig for the given app mode. */
 async function resolveTarget(mode: string): Promise<ResolvedTarget> {
   process.env.APP_MODE = mode
-  const { appConfig } = await import('shared')
+  const { loadEngineConfig } = await import('../config/engine-config')
+  const appConfig = await loadEngineConfig()
   const { deriveInfra } = await import('../lib/naming')
   const { serviceNames } = await import('../compose/compose')
   const { naming, region } = deriveInfra(appConfig)

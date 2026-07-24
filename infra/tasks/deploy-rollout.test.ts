@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { buildWavedPlan, main, parseArgs } from './deploy-rollout'
+import { setEngineConfig } from '../config/engine-config'
+import { fakeConfig } from '../tests/helpers/fake-config'
+
+// planForService reads the engine config at call time; inject the fixture.
+setEngineConfig(fakeConfig())
 
 describe('deploy-rollout parseArgs', () => {
   it('parses primary and rest rollout matrices', () => {

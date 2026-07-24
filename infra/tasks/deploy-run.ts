@@ -72,7 +72,8 @@ export function parseDeployArgs(argv: string[]): DeployOptions {
 /** Derive the deploy env table from the app config for the requested mode. */
 async function loadDeployEnvFromConfig(opts: DeployOptions): Promise<Record<AllowedKey, string>> {
   process.env.APP_MODE = opts.mode
-  const { appConfig } = await import('shared')
+  const { loadEngineConfig } = await import('../config/engine-config')
+  const appConfig = await loadEngineConfig()
   if (appConfig.mode !== opts.mode) throw new Error(`Mode mismatch: requested "${opts.mode}" but loaded config is "${appConfig.mode}"`)
   return buildDeployEnv(appConfig, { imageTag: opts.sha })
 }

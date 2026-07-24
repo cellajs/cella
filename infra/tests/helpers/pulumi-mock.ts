@@ -47,6 +47,11 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
     process.env.PULUMI_CONFIG = JSON.stringify(opts.config)
   }
 
+  // Engine modules read config at evaluation; load it (workspace fallback)
+  // before any resource module is imported, exactly like index.ts does.
+  const { loadEngineConfig } = await import('../../config/engine-config')
+  await loadEngineConfig()
+
   const pulumi = await import('@pulumi/pulumi')
   const resources: CapturedResource[] = []
 

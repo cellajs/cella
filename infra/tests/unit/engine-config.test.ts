@@ -1,6 +1,8 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { fakeConfig } from '../helpers/fake-config'
 
 const infraRoot = resolve(__dirname, '../..')
 
@@ -19,35 +21,55 @@ function sources(dir: string): string[] {
   return out
 }
 
-// The engine (Pulumi program + libs) consumes app config ONLY through the
-// engine-config seam, so an embedder can inject its own config before importing
-// the program. config/engine-config.ts holds the single workspace fallback.
+// Config flows ONLY through the engine-config seam; its lazy workspace
+// fallback is the single allowed reference to the shared package.
 describe('config inversion sweep', () => {
-  it('no engine module value-imports the shared appConfig', () => {
+  it("no engine module references the shared package except engine-config's fallback", () => {
     const scanned = [
       ...sources(join(infraRoot, 'resources')),
       ...sources(join(infraRoot, 'lib')),
       ...sources(join(infraRoot, 'compose')),
+      ...sources(join(infraRoot, 'tasks')),
+      ...sources(join(infraRoot, 'cli')),
+      ...sources(join(infraRoot, 'config')),
+      ...sources(join(infraRoot, 'agent', 'src')),
       join(infraRoot, 'pulumi-context.ts'),
       join(infraRoot, 'index.ts'),
     ]
     const offenders: string[] = []
     for (const file of scanned) {
+      if (file.endsWith('config/engine-config.ts')) continue
       const src = readFileSync(file, 'utf-8')
-      // Type-only imports are erased at runtime and stay allowed; dynamic
-      // imports in mode-switching tasks are out of scope here.
-      const valueImport = /^import\s+(?!type\s)[^;\n]*from\s+'(?:\.\.\/)+shared'/m
-      if (valueImport.test(src)) offenders.push(file.replace(`${infraRoot}/`, ''))
+      // The shared PACKAGE ('shared', 'shared/...') or a relative escape to the
+      // workspace's shared dir; cli/shared.ts (a local module) is unrelated.
+      if (/from\s+'shared(?:'|\/)|from\s+'(?:\.\.\/){2,}shared'|import\('shared'\)/.test(src)) {
+        offenders.push(file.replace(`${infraRoot}/`, ''))
+      }
     }
     expect(offenders).toEqual([])
   })
 
-  it('engine-config returns the injected config once set', async () => {
+  it('engineConfig throws before a config is loaded, then returns the injected one', async () => {
+    vi.resetModules()
     const { engineConfig, setEngineConfig } = await import('../../config/engine-config')
-    const fallback = engineConfig()
-    expect(fallback.slug).toBeTruthy()
-    const fake = { ...fallback, slug: 'injected-app' }
-    setEngineConfig(fake)
+    expect(() => engineConfig()).toThrow(/no config loaded/)
+    setEngineConfig(fakeConfig({ slug: 'injected-app' }))
     expect(engineConfig().slug).toBe('injected-app')
+  })
+
+  it('loadEngineConfig resolves an INFRA_CONFIG_MODULE over the workspace fallback', async () => {
+    vi.resetModules()
+    const dir = mkdtempSync(join(tmpdir(), 'engine-config-'))
+    const modulePath = join(dir, 'config.mjs')
+    writeFileSync(modulePath, `export const engineConfig = ${JSON.stringify(fakeConfig({ slug: 'pointer-app' }))}\n`)
+    process.env.INFRA_CONFIG_MODULE = modulePath
+    try {
+      const { loadEngineConfig } = await import('../../config/engine-config')
+      const config = await loadEngineConfig()
+      expect(config.slug).toBe('pointer-app')
+    } finally {
+      delete process.env.INFRA_CONFIG_MODULE
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 })

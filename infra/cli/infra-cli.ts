@@ -2,9 +2,6 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { select } from '@inquirer/prompts'
-import { pc } from 'shared/cli-utils/colors';
-import { printHeader } from 'shared/cli-utils/display'
-import { warningMark } from 'shared/utils/console'
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env'
 import { detectComputeDeferred, detectStackState, pickStackShort } from '../lib/stack/bootstrap-stack-state'
 import { infraDir } from '../lib/utils/paths'
@@ -18,6 +15,7 @@ import { runSetup } from './actions/setup'
 import { runUnlock } from './actions/unlock'
 import { nonInteractive } from './shared'
 import type { CliMode, InfraContext } from './shared'
+import { pc, printHeader, warningMark } from '../lib/utils/cli-output'
 
 // Load backend/.env before the root fallback so infra child tasks share the app's
 // local config. Existing environment variables keep precedence over both files.
@@ -65,10 +63,11 @@ async function loadContext(): Promise<InfraContext> {
   const stackYaml = existsSync(stackPath) ? readFileSync(stackPath, 'utf8') : undefined
   const state = detectStackState({ yamlText: stackYaml })
 
-  // Set the stack mode before importing `shared`, which reads APP_MODE during
+  // Set the stack mode before loading the config, which reads APP_MODE during
   // module evaluation. The CLI-selected stack is authoritative for child tasks.
   process.env.APP_MODE = environment
-  const { appConfig } = await import('shared')
+  const { loadEngineConfig } = await import('../config/engine-config')
+  const appConfig = await loadEngineConfig()
 
   // Project id is required for every mode (it scopes all Scaleway API calls), so
   // resolve it once here from the env files loaded above and fail fast if absent.

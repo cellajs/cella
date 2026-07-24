@@ -1,8 +1,8 @@
 
-import type { appConfig as AppConfig } from '../../shared'
+import type { EngineConfig } from '../config/engine-config'
 import { stateBucket } from './stack/control-store'
 
-type Cfg = typeof AppConfig
+type Cfg = EngineConfig
 
 /**
  * Reports unsupported frontend deployment at the zone apex, where no app DNS, certificate,
@@ -10,8 +10,9 @@ type Cfg = typeof AppConfig
  */
 export function frontendApexIssue(appConfig: Cfg): string | undefined {
   const hasDomain = Boolean(appConfig.domain && appConfig.domain !== 'localhost')
-  if (!hasDomain || appConfig.services.frontend.enabled === false) return undefined
-  const frontendHost = new URL(appConfig.services.frontend.publicUrl).hostname
+  const frontend = appConfig.services.frontend
+  if (!hasDomain || !frontend?.publicUrl || frontend.enabled === false) return undefined
+  const frontendHost = new URL(frontend.publicUrl).hostname
   if (frontendHost !== appConfig.domain) return undefined
   return (
     `The app cannot be served at the zone apex ('${appConfig.domain}') — the load balancer gives an apex-hosted app no DNS record, TLS certificate, or host route. ` +

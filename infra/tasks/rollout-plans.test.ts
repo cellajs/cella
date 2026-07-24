@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { planForService } from './rollout-plans'
+import { setEngineConfig } from '../config/engine-config'
+import { fakeConfig } from '../tests/helpers/fake-config'
+
+// planForService reads the engine config at call time; inject the fixture.
+setEngineConfig(fakeConfig())
 
 describe('planForService', () => {
   it('builds an lb-overlap plan with normalized health URL and internal-pool repoint', () => {

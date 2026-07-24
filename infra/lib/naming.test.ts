@@ -72,8 +72,6 @@ describe('deriveInfra', () => {
         domain: 'localhost',
         frontendUrl: 'http://localhost:3000',
         backendUrl: 'http://localhost:4000',
-        yjsUrl: 'ws://localhost:4002',
-        mcpUrl: 'http://localhost:4003',
       }),
     )
     expect(d.hasDomain).toBe(false)

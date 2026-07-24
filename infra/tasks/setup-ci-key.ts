@@ -1,10 +1,8 @@
-import { pc } from 'shared/cli-utils/colors';
-import { DIVIDER } from 'shared/cli-utils/display'
-import { checkMark } from 'shared/utils/console'
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env'
 import { isMain } from '../lib/utils/is-main'
 import { ORG_SCOPED_PERMISSION_SETS, ORG_WIDE_PROJECT_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'
 import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam'
+import { pc, DIVIDER, checkMark } from '../lib/utils/cli-output'
 
 export type SetupCiKeyOptions = ProvisionScopedKeyOptions
 export type CiKeyResult = ScopedKeyResult
@@ -38,7 +36,8 @@ if (isMain(import.meta.url)) {
   }
 
   process.env.APP_MODE = process.env.APP_MODE ?? 'production'
-  const { appConfig } = await import('shared')
+  const { loadEngineConfig } = await import('../config/engine-config')
+  const appConfig = await loadEngineConfig()
 
   console.info('\n→ Setting up CI deploy key')
   const result = await setupCiKey({ callerSecretKey: secretKey, organizationId, projectId, slug: appConfig.slug })

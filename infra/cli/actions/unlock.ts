@@ -1,7 +1,7 @@
-import { pc } from 'shared/cli-utils/colors';
 import { forceUnlock, lockKey, makeControlClient, stateBucket } from '../../lib/stack/control-store'
 import { maskedSecret } from '../prompts/masked-secret'
 import { envOr, type InfraContext, promptRequiredInput, promptStackName } from '../shared'
+import { pc } from '../../lib/utils/cli-output'
 
 /** Clear a stale stack lock left behind by an interrupted apply or deploy.
  *  The escape hatch for the conditional-write lock guarding mutating ops. Use

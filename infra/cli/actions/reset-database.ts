@@ -1,6 +1,4 @@
 import { input } from '@inquirer/prompts'
-import { pc } from 'shared/cli-utils/colors'
-import { checkMark, crossMark, warningMark } from 'shared/utils/console'
 import { deriveInfra } from '../../lib/naming'
 import { createRdbClient, waitForBackupReady } from '../../lib/scaleway/scaleway-rdb'
 import { errorMessage } from '../../lib/utils/errors'
@@ -14,6 +12,7 @@ import {
 } from '../../tasks/reset-database'
 import { maskedSecret } from '../prompts/masked-secret'
 import { envOr, type InfraContext } from '../shared'
+import { pc, checkMark, crossMark, warningMark } from '../../lib/utils/cli-output'
 
 /** Roles Pulumi provisions on the instance (`resources/database.ts`). Both must be re-granted. */
 const ROLES = ['admin_role', 'runtime_role'] as const

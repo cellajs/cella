@@ -1,9 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { resolve } from 'node:path'
 import { confirm } from '@inquirer/prompts'
-import { pc } from 'shared/cli-utils/colors';
-import { DIVIDER } from 'shared/cli-utils/display'
-import { checkMark, warningMark } from 'shared/utils/console'
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone'
 import { writeEnvVar } from '../../lib/utils/env-file'
@@ -28,6 +25,7 @@ import { setupOperatorApp } from '../../tasks/setup-operator-app'
 import { setupVmKey } from '../../tasks/setup-vm-key'
 import type { CliMode, InfraContext } from '../shared'
 import { acquireStackLockOrExit, confirmOrDefault, createStepRunner, envOr, inputOrDefault, nonInteractive, promptRequiredInput, promptStackName, pulumiLoginUrl, resolveOrCreatePassphrase } from '../shared'
+import { pc, DIVIDER, checkMark, warningMark } from '../../lib/utils/cli-output'
 
 /** Everything the per-phase helpers below share. */
 interface SetupContext {

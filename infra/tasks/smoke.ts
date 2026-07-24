@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs'
-import { sleep as defaultSleep } from 'shared/utils/sleep'
 import { errorMessage } from '../lib/utils/errors'
 import { isMain } from '../lib/utils/is-main'
 import { pollUntil } from '../lib/utils/retry'
 import { parseServiceRows } from '../lib/utils/service-rows'
 import { getFlag } from './args'
 import { isHealthy } from './wait-for-version'
+import { sleep as defaultSleep } from '../lib/utils/cli-output'
 
 /** Extract the hashed entry script src (e.g. /assets/index-abc123.js) from HTML. */
 export function extractEntryAsset(html: string): string | undefined {

@@ -1,5 +1,4 @@
 import { engineConfig } from '../config/engine-config'
-const appConfig = engineConfig()
 import type { ServiceName } from '../compose/compose'
 import { coHostedServices, servicesByName } from '../lib/services'
 import type { RolloutServicePlan } from './rollout'
@@ -15,6 +14,7 @@ function normalizeHealthUrl(explicit?: string): string | undefined {
  * URL (the only defined deploy path).
  */
 export function planForService(serviceFlag: string, healthUrl?: string): RolloutServicePlan {
+  const appConfig = engineConfig()
   const definition = servicesByName.get(serviceFlag as ServiceName)
   if (!definition) throw new Error(`Unknown service '${serviceFlag}'`)
   const service = definition.slug
