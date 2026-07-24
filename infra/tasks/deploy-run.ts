@@ -97,6 +97,8 @@ export async function runDeploy(
   // Downstream tools read AWS_*/region conventions; derive them once here.
   process.env.AWS_ACCESS_KEY_ID ??= process.env.SCW_ACCESS_KEY ?? ''
   process.env.AWS_SECRET_ACCESS_KEY ??= process.env.SCW_SECRET_KEY ?? ''
+  // The aws CLI (diag's S3 reader) refuses to run without a region.
+  process.env.AWS_DEFAULT_REGION ??= env.region
   process.env.SCW_DEFAULT_REGION ??= env.region
 
   const startedAtIso = new Date().toISOString()
