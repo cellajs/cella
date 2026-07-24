@@ -1,5 +1,6 @@
 import type { AttrValue } from './otlp'
 import { createTelemetry, otlpConfigFromEnv, type Telemetry } from './emitter'
+import { defineEvent, type EventDef, type Placeholders } from './events'
 
 /**
  * Audit/error event catalog for the deploy pipeline. Names are stable: maple
@@ -7,24 +8,24 @@ import { createTelemetry, otlpConfigFromEnv, type Telemetry } from './emitter'
  * first (mirrors the EngineConfig rule: the catalog IS the contract).
  */
 export const deployEvents = {
-  started: 'deploy.started',
-  stepCompleted: 'deploy.step.completed',
-  stepFailed: 'deploy.step.failed',
-  servicePending: 'deploy.service.pending',
-  servicePromoted: 'deploy.service.promoted',
-  healthGatePassed: 'deploy.health_gate.passed',
-  healthGateFailed: 'deploy.health_gate.failed',
-  rolloutFailed: 'deploy.rollout.failed',
-  completed: 'deploy.completed',
-  failed: 'deploy.failed',
+  started: defineEvent('deploy.started', 'deploy of {sha} to {mode} started'),
+  stepCompleted: defineEvent('deploy.step.completed', 'step {step} completed in {duration_s}s'),
+  stepFailed: defineEvent('deploy.step.failed', 'step {step} failed: {error}'),
+  servicePending: defineEvent('deploy.service.pending', '{service} marked pending for {sha}'),
+  servicePromoted: defineEvent('deploy.service.promoted', '{service} promoted to generation {gen_id}'),
+  healthGatePassed: defineEvent('deploy.health_gate.passed', 'health gate passed: {url} serves {sha}'),
+  healthGateFailed: defineEvent('deploy.health_gate.failed', 'health gate FAILED: {url} never served {sha}'),
+  rolloutFailed: defineEvent('deploy.rollout.failed', 'rollout failed: {error}'),
+  completed: defineEvent('deploy.completed', 'deploy of {sha} to {mode} succeeded'),
+  failed: defineEvent('deploy.failed', 'deploy of {sha} to {mode} FAILED'),
 } as const
 
-/** Boot agent event names (same stream, VM side). */
+/** Boot agent events (same stream, VM side). */
 export const bootEvents = {
-  started: 'boot.started',
-  stepCompleted: 'boot.step.completed',
-  completed: 'boot.completed',
-  failed: 'boot.failed',
+  started: defineEvent('boot.started', '{service} boot started for {sha}'),
+  stepCompleted: defineEvent('boot.step.completed', '{service} boot step {step} completed in {duration_s}s'),
+  completed: defineEvent('boot.completed', '{service} booted {sha} successfully'),
+  failed: defineEvent('boot.failed', '{service} boot FAILED: {error}'),
 } as const
 
 // One emitter per deploy process. rollout-runtime emits through the accessor
@@ -65,13 +66,13 @@ export function deployTelemetry(): Telemetry | undefined {
   return active
 }
 
-/** Emit an event on the active deploy emitter; no-op when telemetry is off. */
-export function emitDeployEvent(
-  name: string,
-  attrs: Record<string, AttrValue> = {},
+/** Emit a cataloged event on the active deploy emitter; no-op when telemetry is off. */
+export function emitDeployEvent<T extends string>(
+  def: EventDef<T>,
+  attrs: Record<Placeholders<T>, AttrValue> & Record<string, AttrValue>,
   opts: { severity?: 'info' | 'warn' | 'error'; body?: string } = {},
 ): void {
-  active?.event(name, attrs, opts)
+  active?.event(def, attrs, opts)
 }
 
 /** Deactivate (tests). */

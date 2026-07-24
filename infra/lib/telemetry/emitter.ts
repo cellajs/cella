@@ -1,5 +1,6 @@
 import type { FetchLike } from '../utils/fetch-like'
 import { resolveFetch } from '../utils/fetch-like'
+import { type EventDef, type Placeholders, renderEvent } from './events'
 import {
   type AttrValue,
   buildEvent,
@@ -42,6 +43,12 @@ export interface Telemetry {
   rootCtx: SpanContext
   traceparent(): string
   startSpan(name: string, attrs?: Record<string, AttrValue>, parent?: SpanContext): SpanHandle
+  /** Emit a cataloged event: the template's placeholders are required attrs and render the body. */
+  event<T extends string>(
+    def: EventDef<T>,
+    attrs: Record<Placeholders<T>, AttrValue> & Record<string, AttrValue>,
+    opts?: { severity?: Severity; body?: string; ctx?: SpanContext },
+  ): void
   event(name: string, attrs?: Record<string, AttrValue>, opts?: { severity?: Severity; body?: string; ctx?: SpanContext }): void
   /** Every buffered log record, JSONL-encoded: the black-box sink's exact payload. */
   eventsJsonl(): string
@@ -110,14 +117,15 @@ export function createTelemetry(opts: TelemetryOptions): Telemetry {
     rootCtx,
     traceparent: () => formatTraceparent(rootCtx),
     startSpan,
-    event(name, attrs = {}, eventOpts = {}) {
+    event(nameOrDef: EventDef | string, attrs: Record<string, AttrValue> = {}, eventOpts: { severity?: Severity; body?: string; ctx?: SpanContext } = {}) {
+      const def = typeof nameOrDef === 'string' ? undefined : nameOrDef
       records.push(
         buildEvent({
-          name,
+          name: def?.name ?? (nameOrDef as string),
           timeMs: now(),
           attrs,
           severity: eventOpts.severity,
-          body: eventOpts.body,
+          body: eventOpts.body ?? (def ? renderEvent(def, attrs) : undefined),
           ctx: eventOpts.ctx ?? rootCtx,
         }),
       )
