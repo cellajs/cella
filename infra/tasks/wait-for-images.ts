@@ -119,10 +119,12 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     inspect: dockerInspect,
   })
 
-  if (!outcome.ok) {
-    console.error(`::error::Images never appeared: ${outcome.missing.join(', ')}`)
-    process.exit(1)
-  }
+  if (!outcome.ok) throw new Error(`Images never appeared: ${outcome.missing.join(', ')}`)
 }
 
-if (isMain(import.meta.url)) await main()
+if (isMain(import.meta.url)) {
+  main().catch((err) => {
+    console.error(`::error::${err instanceof Error ? err.message : String(err)}`)
+    process.exit(1)
+  })
+}

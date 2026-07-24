@@ -24,12 +24,16 @@ export async function main(): Promise<void> {
       { attempts: 5, delayMs: 15_000, onRetry: (attempt) => console.warn(`plugin install attempt ${attempt} failed; retrying in 15s`) },
     )
   } catch {
-    console.error('::error::Pulumi scaleway provider install failed after 5 attempts')
-    process.exit(1)
+    throw new Error('Pulumi scaleway provider install failed after 5 attempts')
   }
   console.info(`scaleway plugin v${version} installed`)
   const res = spawnSync('pulumi', ['plugin', 'ls'], { stdio: 'inherit', env: process.env })
-  if (res.status !== 0) process.exit(res.status ?? 1)
+  if (res.status !== 0) throw new Error(`pulumi plugin ls failed with exit ${res.status}`)
 }
 
-if (isMain(import.meta.url)) await main()
+if (isMain(import.meta.url)) {
+  main().catch((err) => {
+    console.error(`::error::${err instanceof Error ? err.message : String(err)}`)
+    process.exit(1)
+  })
+}

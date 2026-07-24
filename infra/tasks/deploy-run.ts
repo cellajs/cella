@@ -26,9 +26,24 @@ export interface DeployOptions {
   gitRef?: string
 }
 
-/** One executed step: subprocess steps run through `exec`, the rest in-process. */
+/** Deploy step tasks runnable in-process (tasks/<name>.ts, main(argv) throws on failure). */
+export type TaskName =
+  | 'ensure-state-bucket'
+  | 'stack-lock'
+  | 'install-pulumi-providers'
+  | 'wait-for-images'
+  | 'repair-certs'
+  | 'sync-rollout-config'
+  | 'assert-vm-grants'
+  | 'assert-secrets-deliverable'
+  | 'smoke'
+
+/** One executed step. Steps run in-process via `task`; `exec` remains for
+ *  genuinely external binaries (pulumi login/select, docker login). */
 export interface DeployEffects {
-  /** Run a CLI in the infra dir; throws on non-zero exit unless allowFailure. */
+  /** Run a task module's main(argv) in-process; throws on failure. */
+  task(name: TaskName, argv?: string[]): Promise<void>
+  /** Run an external binary in the infra dir; throws on non-zero exit unless allowFailure. */
   exec(cmd: string, args: string[], opts?: { allowFailure?: boolean; stdin?: string }): void
   /** One full stack update through the configured Pulumi driver. */
   update(stack: string): Promise<void>
@@ -53,9 +68,6 @@ export function parseDeployArgs(argv: string[]): DeployOptions {
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`)
   return { mode, sha, distDir: getFlag(argv, '--dist'), gitRef: getFlag(argv, '--git-ref') }
 }
-
-/** Task step runner: `tsx tasks/<file>.ts <args>` in the infra dir. */
-const task = (file: string, ...args: string[]): [string, string[]] => ['pnpm', ['exec', 'tsx', `tasks/${file}.ts`, ...args]]
 
 /** Derive the deploy env table from the app config for the requested mode. */
 async function loadDeployEnvFromConfig(opts: DeployOptions): Promise<Record<AllowedKey, string>> {
@@ -95,29 +107,29 @@ export async function runDeploy(
 
   let lockHeld = false
   try {
-    await step('Ensure Pulumi state bucket', () => fx.exec(...task('ensure-state-bucket')))
+    await step('Ensure Pulumi state bucket', () => fx.task('ensure-state-bucket'))
     await step('Login to S3 state backend', () =>
       fx.exec('pulumi', ['login', `s3://${env.state_bucket}?endpoint=s3.${env.region}.scw.cloud&region=${env.region}`]))
     await step('Select stack', () => fx.exec('pulumi', ['stack', 'select', stack]))
-    await step('Acquire stack lock', () => {
-      fx.exec(...task('stack-lock', 'acquire', '--stack', stack, '--operation', 'deploy', '--ttl-min', '60'))
+    await step('Acquire stack lock', async () => {
+      await fx.task('stack-lock', ['acquire', '--stack', stack, '--operation', 'deploy', '--ttl-min', '60'])
       lockHeld = true
     })
-    await step('Pre-install Pulumi providers', () => fx.exec(...task('install-pulumi-providers')))
-    await step('Wait for image tags in registry', () => {
+    await step('Pre-install Pulumi providers', () => fx.task('install-pulumi-providers'))
+    await step('Wait for image tags in registry', async () => {
       const registry = `rg.${env.region}.scw.cloud`
       fx.exec('docker', ['login', registry, '-u', 'nologin', '--password-stdin'], { stdin: process.env.SCW_SECRET_KEY ?? '' })
-      fx.exec(...task('wait-for-images', '--registry', registry, '--ns', env.registry_ns, '--tag', opts.sha, '--build-images-json', env.build_images_matrix))
+      await fx.task('wait-for-images', ['--registry', registry, '--ns', env.registry_ns, '--tag', opts.sha, '--build-images-json', env.build_images_matrix])
     })
-    await step('Repair errored LB certificates', () => fx.exec(...task('repair-certs', '--stack', stack)))
+    await step('Repair errored LB certificates', () => fx.task('repair-certs', ['--stack', stack]))
     await step('Base stack update', async () => {
-      fx.exec(...task('sync-rollout-config', '--stack', stack))
+      await fx.task('sync-rollout-config', ['--stack', stack])
       await fx.update(stack)
     })
     await step('Verify VM reader IAM grant', () =>
-      fx.exec(...task('assert-vm-grants', '--application-name', env.vm_reader_app, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--organization-id', process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '')))
+      fx.task('assert-vm-grants', ['--application-name', env.vm_reader_app, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--organization-id', process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '']))
     await step('Verify runtime secrets are deliverable', () =>
-      fx.exec(...task('assert-secrets-deliverable', '--region', env.region, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--services-json', env.enabled_services_json)))
+      fx.task('assert-secrets-deliverable', ['--region', env.region, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--services-json', env.enabled_services_json]))
 
     try {
       await step('Waved rollout', () =>
@@ -143,14 +155,13 @@ export async function runDeploy(
       await step('Publish frontend entry files', () =>
         fx.publishEntryFiles({ distDir: opts.distDir ?? '', bucket: env.frontend_bucket, region: env.region }))
       await step('Smoke tests', () =>
-        fx.exec(...task('smoke', '--sha', opts.sha, '--services-json', env.enabled_services_json, '--dist', resolve(opts.distDir ?? '', 'index.html'))))
+        fx.task('smoke', ['--sha', opts.sha, '--services-json', env.enabled_services_json, '--dist', resolve(opts.distDir ?? '', 'index.html')]))
     } else {
       fx.info('[deploy] no --dist provided; skipping frontend entry publish and smoke tests')
     }
   } finally {
     if (lockHeld) {
-      const [cmd, args] = task('stack-lock', 'release', '--stack', stack)
-      fx.exec(cmd, args, { allowFailure: true })
+      await fx.task('stack-lock', ['release', '--stack', stack]).catch((err) => fx.info(`[deploy] lock release failed: ${errorMessage(err)}`))
     }
   }
 }
@@ -190,9 +201,25 @@ async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string
   }
 }
 
+// Each task stays an independent CLI (tsx tasks/<name>.ts) for operators; the
+// deploy runs the same mains in-process, so one node process reads config once
+// and a failing step surfaces with its full stack trace.
+const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
+  'ensure-state-bucket': async () => (await import('./ensure-state-bucket')).main(),
+  'stack-lock': async (argv) => (await import('./stack-lock')).main(argv),
+  'install-pulumi-providers': async () => (await import('./install-pulumi-providers')).main(),
+  'wait-for-images': async (argv) => (await import('./wait-for-images')).main(argv),
+  'repair-certs': async (argv) => (await import('./repair-certs')).main(argv),
+  'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
+  'assert-vm-grants': async (argv) => (await import('./assert-vm-grants')).main(argv),
+  'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),
+  smoke: async (argv) => (await import('./smoke')).main(argv),
+}
+
 function createRealEffects(): DeployEffects {
   const inActions = Boolean(process.env.GITHUB_ACTIONS)
   return {
+    task: (name, argv = []) => taskRunners[name](argv),
     exec(cmd, args, opts = {}) {
       const res = spawnSync(cmd, args, {
         cwd: infraDir,
@@ -204,12 +231,6 @@ function createRealEffects(): DeployEffects {
     },
     update: async (stack) => {
       const { createPulumiDriver } = await import('../lib/stack/pulumi-driver')
-      const { stackTopology } = await import('../lib/stack/topology')
-      // Micro topology: the pre-split stack is the foundation. Its updates
-      // provision no PENDING generations (the per-service stacks own those)
-      // but keep carrying foundation-plane active VMs, so an adoption deploy
-      // leaves the serving monolith generations alive until the reap.
-      if (stackTopology() === 'micro') process.env.INFRA_STACK_SCOPE = 'foundation'
       await createPulumiDriver(stack).update()
     },
     rollout: (argv) => runWavedRolloutCli(argv),

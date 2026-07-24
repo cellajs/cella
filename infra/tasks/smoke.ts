@@ -286,9 +286,9 @@ export function resolveExpectedAsset(dist: string | undefined): string | undefin
   try {
     html = readFileSync(dist, 'utf-8')
   } catch (err) {
-    console.error(`::error::Could not read ${dist}: ${errorMessage(err)}`)
-    console.error('::error::The local bundle is required to verify the served bundle. Check the --dist path and the working directory.')
-    process.exit(1)
+    throw new Error(
+      `Could not read ${dist}: ${errorMessage(err)}. The local bundle is required to verify the served bundle; check the --dist path and the working directory.`,
+    )
   }
   const expectedAsset = extractEntryAsset(html)
   if (expectedAsset) console.info(`Expecting served index.html to reference: ${expectedAsset}`)
@@ -313,7 +313,13 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     else console.error(`::error::${r.name}${r.detail ? ` — ${r.detail}` : ''}`)
   }
 
-  if (results.some((r) => !r.ok)) process.exit(1)
+  const failed = results.filter((r) => !r.ok)
+  if (failed.length > 0) throw new Error(`${failed.length} smoke check(s) failed`)
 }
 
-if (isMain(import.meta.url)) await main()
+if (isMain(import.meta.url)) {
+  main().catch((err) => {
+    console.error(`::error::${err instanceof Error ? err.message : String(err)}`)
+    process.exit(1)
+  })
+}

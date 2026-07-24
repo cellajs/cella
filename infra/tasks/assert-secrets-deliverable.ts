@@ -134,29 +134,32 @@ export function serviceNamesFromServicesJson(raw: string): ServiceName[] {
 }
 
 // Standalone entry point.
-if (isMain(import.meta.url)) {
+export async function main(argv = process.argv.slice(2)): Promise<void> {
   const secretKey = process.env.SCW_SECRET_KEY
-  const region = getFlag(process.argv, '--region') ?? process.env.REGION
-  const projectId = getFlag(process.argv, '--project-id') ?? process.env.SCW_DEFAULT_PROJECT_ID
-  const servicesJson = getFlag(process.argv, '--services-json')
-  const servicesArg = getFlag(process.argv, '--services')
+  const region = getFlag(argv, '--region') ?? process.env.REGION
+  const projectId = getFlag(argv, '--project-id') ?? process.env.SCW_DEFAULT_PROJECT_ID
+  const servicesJson = getFlag(argv, '--services-json')
+  const servicesArg = getFlag(argv, '--services')
   const enabled = (servicesJson ? serviceNamesFromServicesJson(servicesJson) : servicesArg ? servicesArg.split(',') : serviceNames)
     .map((s) => s.trim())
     .filter((s): s is ServiceName => (serviceNames as readonly string[]).includes(s))
 
-  if (!secretKey || !region || !projectId) {
-    process.stderr.write('Required: SCW_SECRET_KEY, --region, --project-id\n')
-    process.exit(2)
-  }
+  if (!secretKey || !region || !projectId) throw new Error('Required: SCW_SECRET_KEY, --region, --project-id')
 
   const secrets = secretsForServices(enabled)
   const result = await assertSecretsDeliverable({ secretKey, region, projectId, secrets })
   if (!result.ok) {
-    process.stderr.write(
-      `Undeliverable runtime secrets: ${result.offenders.map((o) => `${o.envVar} [${o.secretName}] (${o.reason})`).join(', ')}.\n` +
+    throw new Error(
+      `Undeliverable runtime secrets: ${result.offenders.map((o) => `${o.envVar} [${o.secretName}] (${o.reason})`).join(', ')}. ` +
         'A multi-line value must be base64-encoded (single line) and decoded by the consumer; a missing required secret must be ' +
-        'provisioned (pulumi-derived) or seeded (operator) before the roll. See infra/README.md → "Runtime secret delivery".\n',
+        'provisioned (pulumi-derived) or seeded (operator) before the roll. See infra/README.md, "Runtime secret delivery".',
     )
-    process.exit(1)
   }
+}
+
+if (isMain(import.meta.url)) {
+  main().catch((err) => {
+    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`)
+    process.exit(1)
+  })
 }

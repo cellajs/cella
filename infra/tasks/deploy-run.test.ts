@@ -23,9 +23,11 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
 function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean } = {}) {
   const ops: string[] = []
   const fx: DeployEffects = {
+    task: async (name, argv = []) => {
+      ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`)
+    },
     exec: (cmd, args, execOpts) => {
-      const label = cmd === 'pnpm' ? (args[2] ?? '').replace('tasks/', '').replace('.ts', '') : `${cmd}:${args[0]}`
-      ops.push(`exec:${label}${execOpts?.allowFailure ? ':allow-failure' : ''}`)
+      ops.push(`exec:${cmd}:${args[0]}${execOpts?.allowFailure ? ':allow-failure' : ''}`)
     },
     update: async (stack) => {
       ops.push(`update:${stack}`)
@@ -74,15 +76,15 @@ describe('runDeploy sequencing', () => {
     // Ordering spine: lock before any stack mutation, rollout after preflights,
     // publish only after verification, lock release last.
     const spine = [
-      'exec:ensure-state-bucket',
+      'task:ensure-state-bucket',
       'exec:pulumi:login',
-      'exec:stack-lock',
-      'exec:wait-for-images',
+      'task:stack-lock:acquire',
+      'task:wait-for-images',
       'update:production',
       'rollout',
       'publish-entry',
-      'exec:smoke',
-      'exec:stack-lock:allow-failure',
+      'task:smoke',
+      'task:stack-lock:release',
     ]
     let cursor = -1
     for (const op of spine) {
@@ -100,21 +102,21 @@ describe('runDeploy sequencing', () => {
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/)
     expect(ops).toContain('boot-diag')
     expect(ops).not.toContain('publish-entry')
-    expect(ops.at(-1)).toBe('exec:stack-lock:allow-failure')
+    expect(ops.at(-1)).toBe('task:stack-lock:release')
   })
 
   it('fails before publishing when a service does not serve the expected version', async () => {
     const { fx, ops } = makeFake({ verifyFails: true })
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/does not serve/)
     expect(ops).not.toContain('publish-entry')
-    expect(ops.at(-1)).toBe('exec:stack-lock:allow-failure')
+    expect(ops.at(-1)).toBe('task:stack-lock:release')
   })
 
   it('skips entry publish and smoke without a dist dir', async () => {
     const { fx, ops } = makeFake()
     await runDeploy({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv)
     expect(ops).not.toContain('publish-entry')
-    expect(ops).not.toContain('exec:smoke')
+    expect(ops).not.toContain('task:smoke')
     expect(ops).toContain('rollout')
   })
 

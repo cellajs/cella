@@ -90,14 +90,11 @@ export async function assertBucketProject(s3: S3Client, bucketName: string, expe
   }
 }
 
-async function main() {
+export async function main(): Promise<void> {
   const { S3Client } = await import('@aws-sdk/client-s3')
   const accessKey = process.env.SCW_ACCESS_KEY
   const secretKey = process.env.SCW_SECRET_KEY
-  if (!accessKey || !secretKey) {
-    console.error('SCW_ACCESS_KEY and SCW_SECRET_KEY must be set')
-    process.exit(1)
-  }
+  if (!accessKey || !secretKey) throw new Error('SCW_ACCESS_KEY and SCW_SECRET_KEY must be set')
   process.env.APP_MODE = process.env.APP_MODE ?? 'production'
   const { appConfig } = await import('shared')
   const { stateBucket } = await import('../lib/stack/control-store')
@@ -111,10 +108,7 @@ async function main() {
   if (expectedProjectId) {
     const keyProject = await keyPreferredProject({ secretKey }, accessKey)
     const mismatch = keyProjectMismatch(keyProject, expectedProjectId, accessKey)
-    if (mismatch) {
-      console.error(`✗ ${mismatch}`)
-      process.exit(1)
-    }
+    if (mismatch) throw new Error(mismatch)
   } else {
     console.warn('⚠ SCW_PROJECT_ID / SCW_DEFAULT_PROJECT_ID not set — skipping the key-preferred-project preflight.')
   }
@@ -131,4 +125,9 @@ async function main() {
   else console.info(`Created Pulumi state bucket: s3://${bucketName} (${region})`)
 }
 
-if (isMain(import.meta.url)) await main()
+if (isMain(import.meta.url)) {
+  main().catch((err) => {
+    console.error(`✗ ${err instanceof Error ? err.message : String(err)}`)
+    process.exit(1)
+  })
+}
