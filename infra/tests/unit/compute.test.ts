@@ -29,7 +29,7 @@ describe('compute module source contracts', () => {
   it('builds per-service runtime secret manifests instead of loading app secrets from stack config', () => {
     expect(source).toMatch(/buildRuntimeSecretsManifest\(/)
     expect(source).toMatch(/unionRuntimeSecrets\(/)
-    expect(source).toMatch(/foundationSecretId\(definition\.id\)/)
+    expect(source).toMatch(/secretIds\[definition\.id\]/)
     for (const key of ['cookieSecret', 'unsubscribeSecret', 'cdcSecret', 'yjsSecret', 'piiHashSecret', 'brevoApiKey', 'scwAiApiKey', 'adminEmail']) {
       expect(source).not.toMatch(new RegExp(`requireSecret\\(\\s*['"]${key}['"]\\s*\\)`))
     }
@@ -52,14 +52,14 @@ describe('compute module source contracts', () => {
 
   it('sizes each VM via the per-service instanceTypeFor helper', () => {
     // VM size must be resolved per service.
-    expect(source).toMatch(/type:\s*infra\.instanceTypeFor\(svc\.slug\)/)
+    expect(source).toMatch(/type:\s*sizing\.instanceTypeFor\(svc\.slug\)/)
     expect(source).not.toMatch(/type:\s*infra\.instanceType\b/)
   })
 
   it('uses the configured compute image and delegates boot inputs to cloud-init', () => {
     expect(source).toMatch(/image:\s*computeImageId/)
     // The marketplace label / UUID is passed straight through: no plan-time getImage lookup.
-    expect(source).toMatch(/const computeImageId:\s*pulumi\.Input<string>\s*=\s*infra\.computeImage/)
+    expect(source).toMatch(/const computeImageId:\s*pulumi\.Input<string>\s*=\s*sizing\.computeImage/)
     expect(source).not.toMatch(/getImageOutput/)
     expect(source).toMatch(/bootDiagBucket,/)
     expect(source).not.toMatch(/dockerPreinstalled:/)

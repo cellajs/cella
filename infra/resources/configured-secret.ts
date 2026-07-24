@@ -1,7 +1,10 @@
-import type * as pulumi from '@pulumi/pulumi'
+import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
-import { infraConfig } from '../pulumi-context'
 
+// Stack config for operator-provided secret values (`infra:<key>`).
+const infraConfig = new pulumi.Config('infra')
+
+/** A secret value from stack config, or a generated URL-safe random one. */
 export function configuredOrRandomSecret(configKey: string, resourceName: string): pulumi.Output<string> {
   const configured = infraConfig.getSecret(configKey)
   if (configured) return configured

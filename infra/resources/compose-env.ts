@@ -4,8 +4,9 @@ import type { ServiceName } from '../compose/compose'
 import { frontendCsp } from '../lib/frontend-csp'
 import { servicesByName, type ServiceDefinition } from '../lib/services'
 import { endpoints, mode, region, serviceUrl } from '../pulumi-context'
-import { foundationInput } from './foundation-inputs'
 import { internalLbPort, lbInternalAddress } from './lb-internal'
+import { registryEndpoint } from './registry'
+import { frontendBucketName } from './storage'
 
 
 
@@ -21,7 +22,7 @@ const envPool: Record<string, () => pulumi.Input<string>> = {
   BACKEND_URL: () => serviceUrl('backend'),
   // Frontend SPA proxy: CSP header + the S3 REST hostname Caddy proxies to.
   FRONTEND_CSP: () => frontendCsp,
-  ORIGIN_HOST: () => pulumi.interpolate`${foundationInput('frontendBucketName')}.s3.${region}.scw.cloud`,
+  ORIGIN_HOST: () => pulumi.interpolate`${frontendBucketName}.s3.${region}.scw.cloud`,
 }
 
 // Vars satisfied outside the pool:
@@ -170,7 +171,7 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
   return function buildComposeEnv(svc: ServiceDefinition, releaseSha: string): Record<string, () => pulumi.Input<string>> {
     const { slug } = svc
     const env: Record<string, () => pulumi.Input<string>> = {
-      REGISTRY: () => foundationInput('registryEndpoint'),
+      REGISTRY: () => registryEndpoint,
       APP_MODE: () => mode,
       // The generation's pinned image tag: the VM pulls exactly this SHA at boot.
       [tagVar(slug)]: () => releaseSha,

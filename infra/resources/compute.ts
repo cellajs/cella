@@ -4,21 +4,43 @@ import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { engineConfig } from '../config/engine-config'
 const appConfig = engineConfig()
-import { naming, zone, region, tags, infra, vmAccessKey, vmSecretKey, generationStackService } from '../pulumi-context'
+import { naming, zone, region, tags, mode } from '../pulumi-context'
+import { sizing } from '../config/sizing'
 import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import type { ServiceDefinition } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
+import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from '../lib/scaleway/vm-reader-secret'
 import { renderCloudInit } from './cloud-init'
 import { createComposeEnvBuilder } from './compose-env'
 import { activeGenerations, coHosted, enabled, hostSlug, secretConsumersFor, type Generation } from './generations'
-import { foundationInput, foundationSecretId } from './foundation-inputs'
+import { privateNetworkId } from './network'
+import { registryEndpoint } from './registry'
+import { bootDiagBucketName } from './storage'
+import { secretIds } from './secrets'
 import { vmReaderPolicy } from './vm-iam'
 
-// Foundation values arrive through the seam: live registrations in the
-// all/foundation scope, foundation-stack outputs in a generations stack.
-const privateNetworkId = foundationInput('privateNetworkId')
-const registryEndpoint = foundationInput('registryEndpoint')
-const bootDiagBucketName = foundationInput('bootDiagBucketName')
+// Reads the VM reader key pair (minimal-privilege: registry pull + Secret
+// Manager read) from Scaleway Secret Manager. Owned here: compute is its only
+// consumer, baking it into each generation's cloud-init.
+function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulumi.Output<string> } {
+  const secretPath = secretManagerPath(naming.slug, mode)
+  const container = scaleway.secrets.getSecretOutput({ name: VM_READER_SECRET_NAME, path: secretPath, region })
+  const payload = scaleway.secrets.getVersionOutput({ secretId: container.id, revision: 'latest', region }).data.apply(
+    (data): VmReaderKeyPayload => {
+      const parsed: unknown = JSON.parse(Buffer.from(data, 'base64').toString('utf8'))
+      const record = parsed as Partial<VmReaderKeyPayload> | null
+      if (typeof record?.accessKey !== 'string' || typeof record?.secretKey !== 'string') {
+        throw new Error(`Secret '${VM_READER_SECRET_NAME}' does not contain {accessKey, secretKey} — re-run the infra CLI bootstrap to reseed it.`)
+      }
+      return { accessKey: record.accessKey, secretKey: record.secretKey }
+    },
+  )
+  return { accessKey: pulumi.secret(payload.accessKey), secretKey: pulumi.secret(payload.secretKey) }
+}
+
+const vmReaderKey = sizing.computeEnabled ? readVmReaderKey() : undefined
+const vmAccessKey = vmReaderKey?.accessKey ?? pulumi.secret('')
+const vmSecretKey = vmReaderKey?.secretKey ?? pulumi.secret('')
 
 // Security Group: fully closed inbound; LB reaches VMs via private network.
 // Break-glass access is via Scaleway's serial console (no SSH on the public
@@ -36,7 +58,7 @@ const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
 /** Build the secret ID and env-name manifest baked into cloud-init. It never contains values. */
 function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi.Output<string> {
   const definitions = unionRuntimeSecrets(consumers)
-  return pulumi.all(definitions.map((definition) => foundationSecretId(definition.id))).apply((ids) =>
+  return pulumi.all(definitions.map((definition) => secretIds[definition.id])).apply((ids) =>
     JSON.stringify(
       definitions.map((definition, index) => ({
         id: definition.id,
@@ -169,7 +191,7 @@ function currentGenBindingIp(slug: ServiceName): pulumi.Output<string> {
 
 // Accept a Scaleway marketplace label or pinned image UUID without a plan-time lookup.
 // The boot agent is pulled at startup, so resolved image rotation is ignored.
-const computeImageId: pulumi.Input<string> = infra.computeImage
+const computeImageId: pulumi.Input<string> = sizing.computeImage
 
 function createGenerationVm(svc: ServiceDefinition, generation: Generation): GenerationInstance {
   const resourceName = `vm-${svc.slug}-${generation.id}`
@@ -190,7 +212,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
 
   const server = new scaleway.instance.Server(resourceName, {
     name: naming.resource(`${svc.slug}-${generation.id}`),
-    type: infra.instanceTypeFor(svc.slug),
+    type: sizing.instanceTypeFor(svc.slug),
     image: computeImageId,
     zone,
     tags,
@@ -200,10 +222,9 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   }, {
     // Generation VMs keep their initial cloud-init and image; changes create a content-addressed
     // generation through the rollout path. Ignoring provider image UUID drift prevents destructive
-    // in-place replacement outside load-balancer cutover.
-    // The IAM grant is foundation-owned; a generations stack relies on it
-    // already existing (the foundation deployed first).
-    dependsOn: vmReaderPolicy ? [vmReaderPolicy] : [],
+    // in-place replacement outside load-balancer cutover. The IAM grant must
+    // exist before the VM's first runtime-secret hydration.
+    dependsOn: [vmReaderPolicy],
     ignoreChanges: ['cloudInit', 'image'],
   })
 
@@ -234,22 +255,13 @@ function generationsFor(slug: ServiceName): Generation[] {
   return generations
 }
 
-// The generation slice this stack plans: everything in the single-stack
-// topology and in foundation scope (where the per-plane filter inside
-// activeGenerations keeps only foundation-plane VMs), exactly one service in a
-// `<mode>-gen-<slug>` stack.
-const provisioned = generationStackService ? enabled.filter((svc) => svc.slug === generationStackService) : enabled
-if (generationStackService && provisioned.length === 0) {
-  throw new Error(`compute: generations stack targets unknown or disabled service '${generationStackService}'`)
-}
-
-if (infra.computeEnabled) {
-  for (const svc of provisioned) generationsByService.set(svc.slug, activeGenerations(svc))
+if (sizing.computeEnabled) {
+  for (const svc of enabled) generationsByService.set(svc.slug, activeGenerations(svc))
 
   // Pass 1: reserve every (service, generation) private IP up front so
   // `@{backend.privateIp}` bindings resolve at plan time with no VM
   // creation-order constraints.
-  for (const svc of provisioned) {
+  for (const svc of enabled) {
     for (const generation of generationsFor(svc.slug)) {
       genIps.set(
         genIpKey(svc.slug, generation.id),
@@ -264,7 +276,7 @@ if (infra.computeEnabled) {
   }
 
   // Pass 2: create the VMs. Bindings read reserved IPs, so order does not matter.
-  for (const svc of provisioned) {
+  for (const svc of enabled) {
     for (const generation of generationsFor(svc.slug)) createGenerationVm(svc, generation)
   }
 }

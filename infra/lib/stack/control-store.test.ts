@@ -244,19 +244,12 @@ describe('rollout transitions', () => {
     expect(promote(undefined, { id: 'bb22', sha: 'def' })).toEqual({ seq: 1, active: { id: 'bb22', sha: 'def', seq: 1 } })
   })
 
-  it('promote records the provisioning plane and it round-trips through parse', () => {
-    const next = promote(undefined, { id: 'bb22', sha: 'def', plane: 'generation' })
-    expect(next.active?.plane).toBe('generation')
-    const state = parseControlState(serializeControlState({ schemaVersion: 2, bootstrap: {}, rollout: { backend: next } }))
-    expect(state.rollout.backend?.active?.plane).toBe('generation')
-  })
-
-  it('parse rejects an unknown plane value', () => {
+  it('parse tolerates and drops unknown pointer fields (a pre-refactor plane marker)', () => {
     const text = JSON.stringify({
       schemaVersion: 2,
-      rollout: { backend: { seq: 1, active: { id: 'aa11', sha: 'abc', seq: 1, plane: 'orbital' } } },
+      rollout: { backend: { seq: 1, active: { id: 'aa11', sha: 'abc', seq: 1, plane: 'foundation' } } },
     })
-    expect(() => parseControlState(text)).toThrow(/plane/)
+    expect(parseControlState(text).rollout.backend?.active).toEqual({ id: 'aa11', sha: 'abc', seq: 1 })
   })
 
   it('emptyRollout starts at seq 0 with no pointers', () => {

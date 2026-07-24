@@ -9,7 +9,7 @@ const driverSource = readFileSync(resolve(__dirname, '../lib/stack/pulumi-driver
 describe('deploy-service source contracts', () => {
   it('supports deferring the reap so deploy-rollout can batch it', () => {
     expect(serviceSource).toMatch(/--skip-reap/)
-    expect(serviceSource).toMatch(/if \(!skipReap\) await rt\.reap\(\[plan\.service\]\)/)
+    expect(serviceSource).toMatch(/if \(!skipReap\) await rt\.update\(\[plan\.service\]\)/)
   })
 
   it('no longer mutates a stable private IP or reboots during cutover', () => {
@@ -26,12 +26,7 @@ describe('rollout-runtime source contracts', () => {
   })
 
   it('routes stack updates through the Automation API driver', () => {
-    expect(runtimeSource).toMatch(/foundationDriver\.update\(\)/)
+    expect(runtimeSource).toMatch(/driver\.update\(\)/)
     expect(driverSource).toMatch(/LocalWorkspace\.createOrSelectStack/)
-  })
-
-  it('reaps on both planes: the foundation update plus generation-stack cleanup', () => {
-    expect(runtimeSource).toMatch(/async reap\(/)
-    expect(runtimeSource).toMatch(/destroyStack/)
   })
 })

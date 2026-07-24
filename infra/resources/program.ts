@@ -7,10 +7,15 @@ import * as compute from './compute'
 import './secrets'
 import './vm-iam'
 import * as lb from './loadbalancer'
-import { foundationInputsBundle } from './foundation-inputs'
+import { mode, naming, region } from '../pulumi-context'
 
-// The full program: every foundation resource plus, in 'all' scope, the
-// generation VMs ('foundation' scope leaves those to their own stacks).
+// The whole deployment program: one stack per mode, foundation resources plus
+// the content-addressed generation VMs.
+
+console.info(`Pulumi stack: ${mode}`)
+console.info(`Slug: ${naming.slug}`)
+console.info(`Region: ${region}`)
+console.info(`Prefix: ${naming.prefix}`)
 
 export const frontendBucketName = storage.frontendBucketName
 export const frontendBucketEndpoint = storage.frontendBucketEndpoint
@@ -42,6 +47,3 @@ export const computeGenerationMetadata = compute.computeGenerationMetadata
 export const serviceDomainUrls = lb.serviceDomainUrls
 export const lbId = lb.lbId
 export const lbBackendIds = lb.lbBackendIds
-
-/** Shared values the per-service generation stacks reference (micro topology). */
-export const foundationInputs = foundationInputsBundle()

@@ -4,7 +4,6 @@ import { naming, region, tags, mode } from '../pulumi-context'
 import { runtimeSecrets, type RuntimeSecretDefinition, type RuntimeSecretId } from '../lib/runtime-secrets'
 import { secretManagerPath } from '../lib/scaleway/vm-reader-secret'
 import { configuredOrRandomSecret } from './configured-secret'
-import { registerFoundationInput } from './foundation-inputs'
 import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc, caCertificate } from './database'
 
 /** Folder path for secret organization, e.g. '/cella-production/' */
@@ -113,7 +112,3 @@ export const secretIds = Object.fromEntries(
   Object.entries(secretResources).map(([id, secret]) => [id, secret.id]),
 ) as Record<RuntimeSecretId, pulumi.Output<string>>
 
-registerFoundationInput(
-  'runtimeSecretIds',
-  pulumi.all(secretIds).apply((ids) => ({ ...ids }))
-)

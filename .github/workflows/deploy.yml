@@ -23,14 +23,6 @@ on:
         options:
           - staging
           - production
-      topology:
-        description: 'Stack topology'
-        required: false
-        default: 'monolith'
-        type: choice
-        options:
-          - monolith
-          - micro
 
 # Prevent concurrent deployments to the same environment
 concurrency:
@@ -290,8 +282,6 @@ jobs:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Validation knob (workflow_dispatch only); releases use the default.
-          INFRA_STACK_TOPOLOGY: ${{ inputs.topology || 'monolith' }}
         run: pnpm --filter infra run deploy --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}" --git-ref "${{ github.ref }}" --dist "$GITHUB_WORKSPACE/dist"
 
   # -------------------------------------------------------------------------

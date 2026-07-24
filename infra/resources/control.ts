@@ -1,6 +1,6 @@
 import * as pulumi from '@pulumi/pulumi'
 import { type ControlState, controlKey, emptyControlState, readControlState, stateBucket } from '../lib/stack/control-store'
-import { foundationStackName, naming, region } from '../pulumi-context'
+import { mode, naming, region } from '../pulumi-context'
 import { errorMessage } from '../lib/utils/errors'
 
 async function loadControlState(): Promise<ControlState> {
@@ -21,9 +21,8 @@ async function loadControlState(): Promise<ControlState> {
       credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
       forcePathStyle: false,
     })
-    // One control object per deployment, keyed by the FOUNDATION stack: a
-    // `<mode>-gen-<slug>` stack shares its foundation's rollout state.
-    const { state } = await readControlState(s3, stateBucket(naming.slug), controlKey(foundationStackName))
+    // One control object per deployment, keyed by the stack (= mode).
+    const { state } = await readControlState(s3, stateBucket(naming.slug), controlKey(mode))
     return state
   } catch (err) {
     // readControlState returns the empty state for a missing object (fresh stack);

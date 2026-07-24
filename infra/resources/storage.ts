@@ -1,7 +1,18 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, tagsAsMap, isProduction, infra, serviceUrl, ciDeployApplicationId, vmReaderApplicationId, operatorApplicationId } from '../pulumi-context'
-import { registerFoundationInput } from './foundation-inputs'
+import { naming, region, tagsAsMap, isProduction, serviceUrl } from '../pulumi-context'
+import { sizing } from '../config/sizing'
+import { ciDeployApplicationId, vmReaderApplicationId } from './vm-iam'
+
+/**
+ * Optional operator application id (SCW_OPERATOR_APPLICATION_ID). When set, this
+ * IAM application is granted full S3 access on the CI-scoped bucket policies, so
+ * an operator key under it can read/refresh buckets without being the CI deploy
+ * app. Bucket policies are deny-by-default: without this, even an org-admin or
+ * personal key 403s on ListObjects/GetBucketCors during `pulumi up --refresh`.
+ * Empty = only the CI deploy app + public reads, the default.
+ */
+const operatorApplicationId: string | undefined = process.env.SCW_OPERATOR_APPLICATION_ID?.trim() || undefined
 
 // Optionally grant the operator application S3 access alongside CI in deny-by-default policies.
 // Omit its statement when unset so existing forks keep their policy unchanged.
@@ -29,7 +40,7 @@ const deployAccess = (bucketName: pulumi.Input<string>) => ({
 
 // Expire stale hashed assets only after old browser tabs are unlikely to lazy-load them.
 // Root entry files stay outside this lifecycle prefix.
-const assetRetentionDays = infra.assetRetentionDays
+const assetRetentionDays = sizing.assetRetentionDays
 
 // Frontend static files bucket (website hosting)
 
@@ -217,5 +228,3 @@ export const bootDiagBucketName = bootDiagBucket.name
 /** Boot diagnostics bucket S3 endpoint */
 export const bootDiagBucketEndpoint = bootDiagBucket.endpoint
 
-registerFoundationInput('bootDiagBucketName', bootDiagBucketName)
-registerFoundationInput('frontendBucketName', frontendBucketName)

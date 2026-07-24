@@ -50,9 +50,6 @@ function makeFake(opts: FakeOptions) {
     update: async () => {
       ops.push('update')
     },
-    reap: async () => {
-      ops.push('reap')
-    },
     readGenerations: async () => opts.generations,
     readLbBackendIds: async () => {
       if (opts.failBackendIdsRead) throw new Error('stack output lbBackendIds missing')
@@ -134,12 +131,12 @@ describe('resolvePendingGen', () => {
 })
 
 describe('runWavedRollout sequencing', () => {
-  it('runs wave 1 (primary), wave 2 (rest, one update), then a single dual-plane reap', async () => {
+  it('runs wave 1 (primary), wave 2 (rest, one update), then a single reap update', async () => {
     const fake = makeFake(cellaFixture())
     await runWavedRollout({ sha: SHA, primary: backendPlan, rest: [cdcPlan, frontendPlan] }, fake.rt)
 
     const updates = fake.ops.filter((op) => op === 'update')
-    expect(updates).toHaveLength(2)
+    expect(updates).toHaveLength(3)
 
     // Wave 1 completes (backend promoted) before wave 2 records any intent.
     const promoteBackend = fake.ops.indexOf('promote:backend:b-new')
@@ -150,7 +147,7 @@ describe('runWavedRollout sequencing', () => {
     // Wave 2: both services promoted after ONE shared update; reap is the last op.
     expect(fake.ops).toContain('promote:cdc:c-new')
     expect(fake.ops).toContain('promote:frontend:f-new')
-    expect(fake.ops.at(-1)).toBe('reap')
+    expect(fake.ops.at(-1)).toBe('update')
 
     // Exactly one update between wave-2 pendings and wave-2 promotes.
     const wave2Update = fake.ops.indexOf('update', pendingCdc)
@@ -178,10 +175,10 @@ describe('runWavedRollout sequencing', () => {
 
     await expect(runWavedRollout({ sha: SHA, primary: backendPlan, rest: [cdcPlan, frontendPlan] }, fake.rt)).rejects.toThrow(/frontend/)
 
-    // cdc still promoted; frontend not; no reap after the failure.
+    // cdc still promoted; frontend not; no reap update after the failure.
     expect(fake.ops).toContain('promote:cdc:c-new')
     expect(fake.ops).not.toContain('promote:frontend:f-new')
-    expect(fake.ops).not.toContain('reap')
+    expect(fake.ops.filter((op) => op === 'update')).toHaveLength(2)
 
     // The frontend pool still contains the old, serving generation.
     const frontendServers = fake.lbHistory.get('f-bid')?.at(-1) ?? []
@@ -191,8 +188,7 @@ describe('runWavedRollout sequencing', () => {
   it('supports a rollout without a primary service', async () => {
     const fake = makeFake(cellaFixture())
     await runWavedRollout({ sha: SHA, rest: [cdcPlan, frontendPlan] }, fake.rt)
-    expect(fake.ops.filter((op) => op === 'update')).toHaveLength(1)
-    expect(fake.ops.at(-1)).toBe('reap')
+    expect(fake.ops.filter((op) => op === 'update')).toHaveLength(2)
     expect(fake.ops).toContain('promote:frontend:f-new')
   })
 
@@ -228,22 +224,17 @@ describe('runWavedRollout sequencing', () => {
 })
 
 describe('runWavedRollout update batching', () => {
-  it('passes each wave’s service set to update and every service to the reap', async () => {
+  it('passes each wave’s service set to update, the final reap naming every service', async () => {
     const fake = makeFake(cellaFixture())
     const waves: string[][] = []
-    const reaps: string[][] = []
     const rt: RolloutRuntime = {
       ...fake.rt,
       update: async (services) => {
         waves.push([...services])
       },
-      reap: async (services) => {
-        reaps.push([...services])
-      },
     }
     await runWavedRollout({ sha: SHA, primary: backendPlan, rest: [cdcPlan, frontendPlan] }, rt)
-    expect(waves).toEqual([['backend'], ['cdc', 'frontend']])
-    expect(reaps).toEqual([['backend', 'cdc', 'frontend']])
+    expect(waves).toEqual([['backend'], ['cdc', 'frontend'], ['backend', 'cdc', 'frontend']])
   })
 })
 

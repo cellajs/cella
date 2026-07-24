@@ -1,15 +1,11 @@
-import { mode, naming, region, stackScope } from './pulumi-context'
+import * as pulumi from '@pulumi/pulumi'
 
-console.info(`Pulumi stack: ${mode} (scope: ${stackScope})`)
-console.info(`Slug: ${naming.slug}`)
-console.info(`Region: ${region}`)
-console.info(`Prefix: ${naming.prefix}`)
+// The stack name IS the config mode: derive APP_MODE before the dynamic import
+// below evaluates the shared appConfig (pulumi-context.ts still validates an
+// explicitly set APP_MODE against the stack).
+process.env.APP_MODE ??= pulumi.getStack().split('/').pop() ?? ''
 
-// Scope dispatch: a `<mode>-gen-<slug>` stack loads only the generation slice;
-// every other stack loads the full program ('all' also provisions generations,
-// 'foundation' leaves them to their own stacks). Dynamic imports keep the
-// out-of-scope resource modules from evaluating at all.
-const program = stackScope === 'generations' ? await import('./resources/program-generations') : await import('./resources/program-foundation')
+const program = await import('./resources/program')
 
 export const frontendBucketName = program.frontendBucketName
 export const frontendBucketEndpoint = program.frontendBucketEndpoint
@@ -37,4 +33,3 @@ export const computeGenerationMetadata = program.computeGenerationMetadata
 export const serviceDomainUrls = program.serviceDomainUrls
 export const lbId = program.lbId
 export const lbBackendIds = program.lbBackendIds
-export const foundationInputs = program.foundationInputs

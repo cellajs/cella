@@ -5,7 +5,7 @@ import { deriveGenId } from '../lib/gen-id'
 import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import { type Generation, selectGenerations } from '../lib/select-generations'
 import { deployedServices, coHostedServices, type ServiceDefinition } from '../lib/services'
-import { generationPlane, infra, providesPendingGenerations } from '../pulumi-context'
+import { sizing } from '../config/sizing'
 import { controlState } from './control'
 
 // Give each service a VM except workers co-hosted on the backend in single-VM mode.
@@ -77,23 +77,21 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
     bindings: svc.bindings ?? {},
     blocks,
     secrets,
-    computeImage: typeof infra.computeImage === 'string' ? infra.computeImage : 'dynamic',
+    computeImage: typeof sizing.computeImage === 'string' ? sizing.computeImage : 'dynamic',
   }
 }
 
 /**
- * The live and pending content-addressed generations THIS STACK owns for a
- * service. Selection (plane ownership, exclusive collapse, first-provision
- * fallback) lives in lib/select-generations.ts as a pure function; single-VM
- * hosts inherit exclusivity when they own the replication slot in-process. Old
- * generations are reaped after promotion; rollback uses a revert and redeploy.
+ * The live and pending content-addressed generations for a service. Selection
+ * (exclusive collapse, first-provision fallback) lives in
+ * lib/select-generations.ts as a pure function; single-VM hosts inherit
+ * exclusivity when they own the replication slot in-process. Old generations
+ * are reaped after promotion; rollback uses a revert and redeploy.
  */
 export function activeGenerations(svc: ServiceDefinition): Generation[] {
   const fingerprint = serviceFingerprint(svc)
   return selectGenerations(controlState.rollout[svc.slug], {
     exclusive: effectiveStrategy(svc) === 'exclusive',
-    plane: generationPlane,
-    pendingOwned: providesPendingGenerations,
     genIdFor: (sha) => deriveGenId(sha, fingerprint),
   })
 }

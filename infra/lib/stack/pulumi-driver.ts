@@ -14,25 +14,8 @@ export interface PulumiDriver {
   output<T>(name: string): Promise<T>
 }
 
-/** Names of all stacks in the backend the infra workspace points at. */
-export async function listStackNames(): Promise<string[]> {
-  const { LocalWorkspace } = await import('@pulumi/pulumi/automation')
-  const workspace = await LocalWorkspace.create({ workDir: infraDir })
-  const stacks = await workspace.listStacks()
-  return stacks.map((s) => s.name)
-}
-
-/** Destroy a stack's resources and remove the stack from the backend. */
-export async function destroyStack(stack: string): Promise<void> {
-  const { LocalWorkspace } = await import('@pulumi/pulumi/automation')
-  const s = await LocalWorkspace.selectStack({ stackName: stack, workDir: infraDir })
-  await s.destroy({ onOutput: (line) => process.stdout.write(line) })
-  await s.workspace.removeStack(stack)
-}
-
 export function createPulumiDriver(stack: string): PulumiDriver {
   // Lazily resolved: the automation host manages its own pulumi engine session.
-  // createOrSelectStack also creates generation stacks on first use (micro topology).
   let stackPromise: Promise<import('@pulumi/pulumi/automation').Stack> | undefined
   const getStack = () => {
     stackPromise ??= (async () => {

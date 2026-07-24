@@ -1,6 +1,4 @@
 import * as pulumi from '@pulumi/pulumi'
-import { stackScope } from '../pulumi-context'
-import { foundationInput } from './foundation-inputs'
 
 /**
  * Deferred hand-off of the LB's private-network address. compute.ts (evaluated
@@ -9,7 +7,6 @@ import { foundationInput } from './foundation-inputs'
  * plain shared module breaks the compute -> loadbalancer import cycle. The
  * promise only settles when the LB is provisioned; nothing awaits it otherwise
  * (no VM env references it unless an `internalRoute` consumer is deployed).
- * A generations stack has no LB of its own and reads the foundation output.
  */
 let publishAddress: ((address: pulumi.Output<string>) => void) | undefined
 const pendingAddress = new Promise<pulumi.Output<string>>((resolve) => {
@@ -17,10 +14,7 @@ const pendingAddress = new Promise<pulumi.Output<string>>((resolve) => {
 })
 
 /** The LB's stable private-network IPv4 address (no CIDR suffix). */
-export const lbInternalAddress: pulumi.Output<string> =
-  stackScope === 'generations'
-    ? foundationInput('lbInternalAddress')
-    : pulumi.output(pendingAddress).apply((address) => address.split('/')[0] ?? address)
+export const lbInternalAddress: pulumi.Output<string> = pulumi.output(pendingAddress).apply((address) => address.split('/')[0] ?? address)
 
 /** Publish the LB private address; called exactly once by loadbalancer.ts. */
 export function publishLbInternalAddress(address: pulumi.Output<string>): void {

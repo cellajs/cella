@@ -2,13 +2,13 @@ import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { engineConfig } from '../config/engine-config'
 const appConfig = engineConfig()
-import { naming, zone, region, tags, dnsZone, serviceHost, serviceUrl, infra } from '../pulumi-context'
+import { naming, zone, region, tags, dnsZone, serviceHost, serviceUrl } from '../pulumi-context'
+import { sizing } from '../config/sizing'
 import { enabledServices } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { privateNetworkId, privateNetworkSubnet } from './network'
 import { serviceGenerationIps } from './compute'
 import { CertReadyGate, DnsPropagationGate } from './dns-cert-gates'
-import { registerFoundationInput } from './foundation-inputs'
 import { internalLbPort, publishLbInternalAddress } from './lb-internal'
 
 /**
@@ -208,7 +208,6 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     return address
   })
   publishLbInternalAddress(lbPrivateIp)
-  registerFoundationInput('lbInternalAddress', lbPrivateIp.apply((address) => address.split('/')[0] ?? address))
 
   const internalBackends = new Map<string, scaleway.loadbalancers.Backend>()
   const internalServices = enabledServices(appConfig.services).filter((s) => s.internalRoute)
@@ -374,7 +373,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
 
 // Guard: skip while compute is deferred (fresh bootstrap); without compute VMs
 // the LB has no backends to route to. A real domain is asserted in pulumi-context.
-const outputs: LoadBalancerOutputs = infra.computeEnabled
+const outputs: LoadBalancerOutputs = sizing.computeEnabled
   ? provisionLoadBalancer()
   : { serviceUrls: {}, lbId: pulumi.output(undefined), lbBackendIds: pulumi.output({} as Record<string, string>) }
 

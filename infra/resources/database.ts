@@ -1,11 +1,15 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, infraConfig, infra, isProduction } from '../pulumi-context'
+import { naming, region, isProduction } from '../pulumi-context'
+import { sizing } from '../config/sizing'
 import { configuredOrRandomSecret } from './configured-secret'
 import { privateNetworkId } from './network'
 
-const dbNodeType = infra.dbNodeType
-const dbVolumeSize = infra.dbVolumeSize
+/** Stack config for infrastructure opt-ins (public endpoint exposure). */
+const infraConfig = new pulumi.Config('infra')
+
+const dbNodeType = sizing.dbNodeType
+const dbVolumeSize = sizing.dbVolumeSize
 
 /** Database name derived from slug (e.g. 'cella'). Shared with the reset task via `naming`. */
 const dbSlug = naming.dbName
