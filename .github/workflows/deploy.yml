@@ -226,12 +226,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build frontend
+      # GITHUB_ENV only reaches later steps, so the env print and the build
+      # must stay separate steps: the build bakes APP_MODE into appConfig.
+      - name: Derive frontend build env
         env:
+          ENVIRONMENT: ${{ needs.setup.outputs.environment }}
           ENABLED_SERVICES_JSON: ${{ needs.setup.outputs.enabled_services_json }}
-        run: |
-          pnpm --filter infra print-frontend-build-env --services-json "$ENABLED_SERVICES_JSON" >> "$GITHUB_ENV"
-          pnpm --filter frontend build
+        run: pnpm --silent --filter infra print-frontend-build-env --mode "$ENVIRONMENT" --services-json "$ENABLED_SERVICES_JSON" >> "$GITHUB_ENV"
+
+      - name: Build frontend
+        run: pnpm --filter frontend build
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
