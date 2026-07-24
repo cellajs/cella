@@ -20,10 +20,11 @@ function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types.input.
  * Compute VMs depend on this so that on a fresh bootstrap the grant is attached
  * before the VMs boot and run their first runtime-secret hydration.
  *
+ * Bootstrap-owned: IAM policy write is forbidden to the CI key (permission
+ * escalation), so a bootstrap-key up creates this before compute exists.
+ *
  * @see resources/compute.ts
  */
-// Bootstrap-owned: IAM policy write is forbidden to the CI key (permission
-// escalation), so a bootstrap-key up creates this before compute exists.
 export const vmReaderPolicy = provisionFoundation
   ? new scaleway.iam.Policy('vm-reader-policy', {
     name: naming.resource('vm-reader-policy'),

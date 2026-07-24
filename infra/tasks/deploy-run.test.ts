@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type DeployEffects, type DeployOptions, parseDeployArgs, runDeploy } from './deploy'
+import { type DeployEffects, type DeployOptions, parseDeployArgs, runDeploy } from './deploy-run'
 import type { AllowedKey } from './print-deploy-env'
 
 /** Cella-shaped deploy env table, injected in place of the shared config load. */
