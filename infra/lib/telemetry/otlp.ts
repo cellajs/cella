@@ -112,15 +112,21 @@ export function buildEvent(opts: {
 }): OtlpLogRecord {
   const severity: Severity = opts.severity ?? 'info'
   const time = unixNano(opts.timeMs)
+  // Backends render the BODY as the message line, so it must read on its own:
+  // the event name plus logfmt attrs. Attributes stay structured for rules.
+  const attrs = opts.attrs ?? {}
+  const logfmt = Object.entries(attrs)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(' ')
   return {
     timeUnixNano: time,
     observedTimeUnixNano: time,
     severityNumber: severityNumbers[severity],
     severityText: severity,
     eventName: opts.name,
-    body: { stringValue: opts.body ?? opts.name },
+    body: { stringValue: opts.body ?? (logfmt ? `${opts.name} ${logfmt}` : opts.name) },
     // event.name doubles as an attribute for backends predating the field.
-    attributes: toKeyValues({ 'event.name': opts.name, ...(opts.attrs ?? {}) }),
+    attributes: toKeyValues({ 'event.name': opts.name, ...attrs }),
     ...(opts.ctx ? { traceId: opts.ctx.traceId, spanId: opts.ctx.spanId } : {}),
   }
 }

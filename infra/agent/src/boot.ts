@@ -121,7 +121,11 @@ export async function boot(opts: BootOptions): Promise<void> {
     logger.log('info', step)
     const startedAt = Date.now()
     await run()
-    telemetry.event(bootEvents.stepCompleted, { step, duration_s: Math.round((Date.now() - startedAt) / 1000) }, { ctx: bootSpan.ctx })
+    telemetry.event(
+      bootEvents.stepCompleted,
+      { service: plan.service, step, duration_s: Math.round((Date.now() - startedAt) / 1000) },
+      { ctx: bootSpan.ctx },
+    )
   }
   let bootRc = 0
   let appLogs: string | undefined
@@ -147,10 +151,13 @@ export async function boot(opts: BootOptions): Promise<void> {
     // the crashed container's own output here to ship it with the diagnostics.
     appLogs = await captureServiceLogs(plan, exec).catch(() => undefined)
     bootSpan.end('error', { message: errorMessage(err) })
+    const failureBody = [`boot.failed service=${plan.service} sha=${plan.releaseSha} error=${errorMessage(err)}`, appLogs ? `--- app log tail ---\n${appLogs.slice(-4000)}` : '']
+      .filter(Boolean)
+      .join('\n')
     telemetry.event(
       bootEvents.failed,
       { service: plan.service, sha: plan.releaseSha, error: errorMessage(err) },
-      { severity: 'error', body: appLogs ? appLogs.slice(-4000) : errorMessage(err) },
+      { severity: 'error', body: failureBody },
     )
     throw err
   } finally {
