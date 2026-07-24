@@ -76,6 +76,10 @@ export interface ScopedKeyResult {
  * cannot be resolved.
  */
 export async function resolveOrganizationId(secretKey: string, projectId: string): Promise<string> {
+  // Env-provided id wins: a project-scoped bootstrap key (staging) may lack
+  // the Account read that the API fallback below needs.
+  const fromEnv = process.env.SCW_DEFAULT_ORGANIZATION_ID?.trim()
+  if (fromEnv) return fromEnv
   // GET /account/v3/projects/{id} returns the Project object directly, not
   // wrapped in { project: ... }.
   const project = await scwFetch<{ organization_id?: string }>({ secretKey }, 'GET', `${ACCOUNT_BASE}/projects/${projectId}`)
