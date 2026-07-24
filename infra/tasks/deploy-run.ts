@@ -5,6 +5,8 @@ import { basename, resolve } from 'node:path'
 import { errorMessage } from '../lib/utils/errors'
 import { isMain } from '../lib/utils/is-main'
 import { infraDir } from '../lib/utils/paths'
+import { deployEvents, deployTelemetry, initDeployTelemetry } from '../lib/telemetry/deploy-telemetry'
+import { otlpConfigFromEnv } from '../lib/telemetry/emitter'
 import { getFlag } from './args'
 import { main as runWavedRolloutCli } from './deploy-rollout'
 import { type AllowedKey, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env'
@@ -41,6 +43,8 @@ export type TaskName =
 /** One executed step. Steps run in-process via `task`; `exec` remains for
  *  genuinely external binaries (pulumi login/select, docker login). */
 export interface DeployEffects {
+  /** Create the deploy emitter (OTLP config resolution may hit Secret Manager). */
+  initTelemetry(init: { mode: string; sha: string }): Promise<void>
   /** Run a task module's main(argv) in-process; throws on failure. */
   task(name: TaskName, argv?: string[]): Promise<void>
   /** Run an external binary in the infra dir; throws on non-zero exit unless allowFailure. */
@@ -95,18 +99,35 @@ export async function runDeploy(
   process.env.AWS_SECRET_ACCESS_KEY ??= process.env.SCW_SECRET_KEY ?? ''
   process.env.SCW_DEFAULT_REGION ??= env.region
 
+  await fx.initTelemetry({ mode: opts.mode, sha: opts.sha })
+  const telemetry = deployTelemetry()
+  const deploySpan = telemetry?.startSpan(`deploy ${opts.mode}`, { sha: opts.sha })
+  // New generations bake this context into their boot plans, so agent boot
+  // spans join the deploy trace (the pulumi program inherits this env).
+  if (deploySpan) process.env.TRACEPARENT = deploySpan.traceparent()
+  telemetry?.event(deployEvents.started, { mode: opts.mode, sha: opts.sha })
+
   const step = async (title: string, run: () => void | Promise<void>): Promise<void> => {
     fx.group(title)
+    const span = telemetry?.startSpan(title, { step: title }, deploySpan?.ctx)
     const startedAt = Date.now()
     try {
       await run()
-      fx.info(`[deploy] ${title}: ok (${Math.round((Date.now() - startedAt) / 1000)}s)`)
+      const seconds = Math.round((Date.now() - startedAt) / 1000)
+      span?.end('ok')
+      telemetry?.event(deployEvents.stepCompleted, { step: title, duration_s: seconds }, { ctx: span?.ctx })
+      fx.info(`[deploy] ${title}: ok (${seconds}s)`)
+    } catch (err) {
+      span?.end('error', { message: errorMessage(err) })
+      telemetry?.event(deployEvents.stepFailed, { step: title, error: errorMessage(err) }, { severity: 'error', ctx: span?.ctx })
+      throw err
     } finally {
       fx.groupEnd()
     }
   }
 
   let lockHeld = false
+  let outcome: 'ok' | 'error' = 'ok'
   try {
     await step('Ensure Pulumi state bucket', () => fx.task('ensure-state-bucket'))
     await step('Login to S3 state backend', () =>
@@ -136,6 +157,7 @@ export async function runDeploy(
       await step('Waved rollout', () =>
         fx.rollout(['--stack', stack, '--sha', opts.sha, '--primary-json', env.primary_rollout_matrix, '--rest-json', env.roll_rest_matrix]))
     } catch (err) {
+      telemetry?.event(deployEvents.rolloutFailed, { error: errorMessage(err) }, { severity: 'error' })
       fx.info('[deploy] rollout failed; collecting boot diagnostics')
       await fx.bootDiagnostics().catch((diagErr) => fx.info(`[deploy] boot diagnostics failed: ${errorMessage(diagErr)}`))
       throw err
@@ -160,10 +182,16 @@ export async function runDeploy(
     } else {
       fx.info('[deploy] no --dist provided; skipping frontend entry publish and smoke tests')
     }
+  } catch (err) {
+    outcome = 'error'
+    throw err
   } finally {
     if (lockHeld) {
       await fx.task('stack-lock', ['release', '--stack', stack]).catch((err) => fx.info(`[deploy] lock release failed: ${errorMessage(err)}`))
     }
+    deploySpan?.end(outcome)
+    telemetry?.event(outcome === 'ok' ? deployEvents.completed : deployEvents.failed, { mode: opts.mode, sha: opts.sha }, outcome === 'ok' ? {} : { severity: 'error' })
+    await telemetry?.flush()
   }
 }
 
@@ -220,6 +248,16 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
 function createRealEffects(): DeployEffects {
   const inActions = Boolean(process.env.GITHUB_ACTIONS)
   return {
+    async initTelemetry({ mode, sha }) {
+      let config = otlpConfigFromEnv()
+      if (!config) {
+        const { mapleKeyFromSecretManager } = await import('../lib/telemetry/maple-key')
+        const key = await mapleKeyFromSecretManager().catch(() => undefined)
+        if (key) config = { endpoint: 'https://ingest.maple.dev/v1', headers: { 'x-maple-ingest-key': key } }
+      }
+      if (!config) console.info('[deploy] telemetry export disabled (no OTLP endpoint or maple ingest key); black box only')
+      initDeployTelemetry({ mode, sha, endpoint: config?.endpoint, headers: config?.headers, onError: (message) => console.warn(`[deploy] ${message}`) })
+    },
     task: (name, argv = []) => taskRunners[name](argv),
     exec(cmd, args, opts = {}) {
       const res = spawnSync(cmd, args, {

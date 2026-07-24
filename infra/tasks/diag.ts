@@ -29,10 +29,38 @@ function printSummary(keys: string[], serviceNames: readonly string[], log: (msg
   }
 }
 
+/** Re-ship black-box event JSONL to the configured OTLP backend (post-hoc replay). */
+async function replayEvents(keys: string[], services: readonly string[], reader: { cat(key: string): string }): Promise<void> {
+  const { otlpConfigFromEnv } = await import('../lib/telemetry/emitter')
+  const { logsPayload } = await import('../lib/telemetry/otlp')
+  const config = otlpConfigFromEnv()
+  if (!config) throw new Error('diag --replay needs an OTLP target: set OTEL_EXPORTER_OTLP_ENDPOINT or MAPLE_SECRET_INGEST_KEY')
+  const eventKeys = keys.filter((key) => key.endsWith('-events.jsonl') && services.some((service) => key.includes(`/${service}-`)))
+  if (eventKeys.length === 0) {
+    console.info('[diag] no black-box event bundles to replay')
+    return
+  }
+  for (const key of eventKeys) {
+    const records = reader
+      .cat(key)
+      .split('\n')
+      .filter((line) => line.trim())
+      .map((line) => JSON.parse(line))
+    const res = await fetch(`${config.endpoint}/logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...config.headers },
+      body: JSON.stringify(logsPayload({ 'service.name': 'infra-boot' }, records)),
+    })
+    if (!res.ok) throw new Error(`replay ${key} -> ${res.status}: ${(await res.text()).slice(0, 200)}`)
+    console.info(`[diag] replayed ${records.length} event(s) from ${key}`)
+  }
+}
+
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const mode = getFlag(argv, '--mode') ?? process.env.APP_MODE ?? 'production'
   const only = getFlag(argv, '--service')
   const wantList = argv.includes('--list')
+  const wantReplay = argv.includes('--replay')
 
   const target = await resolveTarget(mode)
   const bucket = getFlag(argv, '--bucket') ?? target.bucket
@@ -46,6 +74,11 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   if (wantList) {
     printSummary(keys, services)
+    return
+  }
+
+  if (wantReplay) {
+    await replayEvents(keys, services, reader)
     return
   }
 

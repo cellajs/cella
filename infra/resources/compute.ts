@@ -132,6 +132,9 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
       secretKey,
       region,
       bootDiagBucket,
+      // Deploy trace context (deploy-run exports it before the stack update);
+      // ignoreChanges on cloudInit keeps existing generations untouched.
+      traceparent: process.env.TRACEPARENT,
     }),
   )
 }

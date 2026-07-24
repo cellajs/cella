@@ -14,6 +14,8 @@ export interface BootPlan {
   service: string
   profile: string
   releaseSha: string
+  /** W3C traceparent of the deploy that provisioned this generation; boot telemetry joins that trace. */
+  traceparent?: string
   imageContract: typeof supportedImageContract
   registry: string
   region: string
@@ -47,6 +49,7 @@ export interface BootPlan {
 const topLevelKeys = new Set([
   'schemaVersion',
   'service',
+  'traceparent',
   'profile',
   'releaseSha',
   'imageContract',
@@ -145,11 +148,14 @@ export function parseBootPlanJson(json: string): BootPlan {
   const composeFile = stringField(docker, 'composeFile')
   for (const path of [scwAccessKeyFile, scwSecretKeyFile, logFile, composeFile]) assertAllowedPath(path)
 
+  const traceparent = typeof parsed.traceparent === 'string' && parsed.traceparent.trim() !== '' ? parsed.traceparent : undefined
+
   return {
     schemaVersion,
     service: stringField(parsed, 'service'),
     profile: stringField(parsed, 'profile'),
     releaseSha: stringField(parsed, 'releaseSha'),
+    ...(traceparent ? { traceparent } : {}),
     imageContract,
     registry: stringField(parsed, 'registry'),
     region: stringField(parsed, 'region'),

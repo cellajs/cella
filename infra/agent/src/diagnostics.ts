@@ -12,6 +12,8 @@ export interface UploadBootDiagnosticsOptions {
   bootRc: number
   logFile: string
   appLogs?: string
+  /** Black-box event stream (JSONL of OTLP log records), uploaded alongside the raw log. */
+  events?: string
   now?: Date
   fetchImpl?: FetchLike
 }
@@ -75,5 +77,10 @@ export async function uploadBootDiagnostics(opts: UploadBootDiagnosticsOptions):
   const keys = [`boot-diag/${opts.service}-${keyStamp}-boot.log`]
   if (opts.bootRc !== 0) keys.push(`boot-diag/${opts.service}-failed-${keyStamp}.log`)
   for (const key of keys) await putObject({ ...opts, now }, key, body)
+  if (opts.events?.trim()) {
+    const eventsKey = `boot-diag/${opts.service}-${keyStamp}-events.jsonl`
+    await putObject({ ...opts, now }, eventsKey, `${opts.events}\n`)
+    keys.push(eventsKey)
+  }
   return keys
 }

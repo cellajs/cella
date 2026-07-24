@@ -9,6 +9,7 @@ import {
   updateServiceRollout,
 } from '../lib/stack/control-store'
 import { createPulumiDriver, type PulumiDriver } from '../lib/stack/pulumi-driver'
+import { deployEvents, emitDeployEvent } from '../lib/telemetry/deploy-telemetry'
 import { sleep } from './args'
 import { createLbGetServers, createLbSetServers } from './cutover'
 import { createFetchProbe, pollForVersion } from './wait-for-version'
@@ -65,11 +66,13 @@ export function createRolloutRuntime(options: RolloutRuntimeOptions): RolloutRun
       return state.rollout[service]
     },
     async setPending(service: string, sha: string) {
+      emitDeployEvent(deployEvents.servicePending, { service, sha })
       const ctx = await controlCtx()
       if (!ctx) return
       await updateServiceRollout(ctx.s3, ctx.bucket, ctx.controlKey, service, (cur) => setPending(cur, sha))
     },
     async promote(service: string, gen: { id: string; sha: string }) {
+      emitDeployEvent(deployEvents.servicePromoted, { service, gen_id: gen.id, sha: gen.sha })
       const ctx = await controlCtx()
       if (!ctx) return
       await updateServiceRollout(ctx.s3, ctx.bucket, ctx.controlKey, service, (cur) => promote(cur, gen))
@@ -89,6 +92,8 @@ export function createRolloutRuntime(options: RolloutRuntimeOptions): RolloutRun
         intervalMs: deployHealthIntervalMs,
         sleep,
       })
+      if (out.ok) emitDeployEvent(deployEvents.healthGatePassed, { url, sha })
+      else emitDeployEvent(deployEvents.healthGateFailed, { url, sha }, { severity: 'error' })
       return out.ok
     },
     sleep,

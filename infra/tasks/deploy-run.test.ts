@@ -23,6 +23,9 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
 function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean } = {}) {
   const ops: string[] = []
   const fx: DeployEffects = {
+    initTelemetry: async () => {
+      ops.push('telemetry:init')
+    },
     task: async (name, argv = []) => {
       ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`)
     },

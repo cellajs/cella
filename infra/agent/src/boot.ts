@@ -1,5 +1,7 @@
 import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
+import { bootEvents } from '../../lib/telemetry/deploy-telemetry'
+import { createTelemetry, type Telemetry } from '../../lib/telemetry/emitter'
 import { errorMessage } from '../../lib/utils/errors'
 import { retry } from '../../lib/utils/retry'
 import { createJsonLogger } from './logger'
@@ -92,39 +94,67 @@ async function captureServiceLogs(plan: BootPlan, exec: ExecFn): Promise<string>
   return (res.stdout || res.stderr || '').trim()
 }
 
+/** Read the maple ingest key from the hydrated runtime env file, if delivered. */
+async function mapleKeyFromRuntimeEnv(path: string): Promise<string | undefined> {
+  const content = await readFile(path, 'utf-8').catch(() => '')
+  const line = content.split('\n').find((entry) => entry.startsWith('MAPLE_SECRET_INGEST_KEY='))
+  const value = line?.slice(line.indexOf('=') + 1).trim()
+  return value || undefined
+}
+
 export async function boot(opts: BootOptions): Promise<void> {
   const exec = opts.exec ?? execCommand
   const plan = parseBootPlanJson(await readFile(opts.planPath, 'utf-8'))
   const logger = createJsonLogger({ service: plan.service, release: plan.releaseSha })
   const accessKey = await readCredential(plan.credentials.scwAccessKeyFile)
   const secretKey = await readCredential(plan.credentials.scwSecretKeyFile)
+  // Build-only until secret hydration delivers an ingest key; every record
+  // lands in the black-box JSONL either way, joined to the deploy trace.
+  const telemetry: Telemetry = createTelemetry({
+    resource: { 'service.name': 'infra-boot', 'app.service': plan.service, 'vcs.ref.head.revision': plan.releaseSha },
+    traceparent: plan.traceparent,
+    onError: (message) => logger.log('warn', 'telemetry-export-failed', { message }),
+  })
+  const bootSpan = telemetry.startSpan(`boot ${plan.service}`, { service: plan.service, sha: plan.releaseSha })
+  telemetry.event(bootEvents.started, { service: plan.service, sha: plan.releaseSha })
+  const phase = async (step: string, run: () => Promise<unknown>): Promise<void> => {
+    logger.log('info', step)
+    const startedAt = Date.now()
+    await run()
+    telemetry.event(bootEvents.stepCompleted, { step, duration_s: Math.round((Date.now() - startedAt) / 1000) }, { ctx: bootSpan.ctx })
+  }
   let bootRc = 0
   let appLogs: string | undefined
 
   try {
-    logger.log('info', 'wait-private-network')
-    await waitForPrivateNetwork({ exec, timeoutSeconds: plan.timeouts.privateNetworkSeconds })
-    logger.log('info', 'write-app-files')
-    await writeAppFiles(plan)
-    logger.log('info', 'docker-login')
-    await dockerLogin(plan, secretKey, exec)
-    logger.log('info', 'hydrate-runtime-secrets')
-    await hydrateRuntimeSecrets({ manifest: plan.files.runtimeSecretManifest, secretKey, region: plan.region, outputPath: '/opt/app/.env.runtime' })
-    logger.log('info', 'pull-image')
-    await pullImage(plan, exec)
-    logger.log('info', 'release-command')
-    await runReleaseCommand(plan, exec)
-    logger.log('info', 'start-service')
-    await startService(plan, exec)
+    await phase('wait-private-network', () => waitForPrivateNetwork({ exec, timeoutSeconds: plan.timeouts.privateNetworkSeconds }))
+    await phase('write-app-files', () => writeAppFiles(plan))
+    await phase('docker-login', () => dockerLogin(plan, secretKey, exec))
+    await phase('hydrate-runtime-secrets', () =>
+      hydrateRuntimeSecrets({ manifest: plan.files.runtimeSecretManifest, secretKey, region: plan.region, outputPath: '/opt/app/.env.runtime' }))
+    const mapleKey = await mapleKeyFromRuntimeEnv('/opt/app/.env.runtime')
+    if (mapleKey) telemetry.configureExport({ endpoint: 'https://ingest.maple.dev/v1', headers: { 'x-maple-ingest-key': mapleKey } })
+    await phase('pull-image', () => pullImage(plan, exec))
+    await phase('release-command', () => runReleaseCommand(plan, exec))
+    await phase('start-service', () => startService(plan, exec))
     logger.log('info', 'boot-complete')
+    bootSpan.end('ok')
+    telemetry.event(bootEvents.completed, { service: plan.service, sha: plan.releaseSha })
   } catch (err) {
     bootRc = 1
     logger.log('error', 'boot-failed', { message: errorMessage(err) })
     // The agent runs containerized without the host boot log mounted, so capture
     // the crashed container's own output here to ship it with the diagnostics.
     appLogs = await captureServiceLogs(plan, exec).catch(() => undefined)
+    bootSpan.end('error', { message: errorMessage(err) })
+    telemetry.event(
+      bootEvents.failed,
+      { service: plan.service, sha: plan.releaseSha, error: errorMessage(err) },
+      { severity: 'error', body: appLogs ? appLogs.slice(-4000) : errorMessage(err) },
+    )
     throw err
   } finally {
+    await telemetry.flush().catch(() => {})
     try {
       await uploadBootDiagnostics({
         bucket: plan.bootDiagnostics.bucket,
@@ -136,6 +166,7 @@ export async function boot(opts: BootOptions): Promise<void> {
         bootRc,
         logFile: plan.bootDiagnostics.logFile,
         appLogs,
+        events: telemetry.eventsJsonl(),
       })
     } catch (err) {
       logger.log('warn', 'boot-diagnostics-upload-failed', { message: errorMessage(err) })

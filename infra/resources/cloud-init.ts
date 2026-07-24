@@ -25,6 +25,8 @@ export interface CloudInitParams {
   region: string
   /** Dedicated Object Storage bucket for boot diagnostics. */
   bootDiagBucket: string
+  /** Deploy trace context baked into the boot plan (absent outside a deploy run). */
+  traceparent?: string
 }
 
 const agentAccessKeyPath = '/etc/cella/scw-access-key'
@@ -68,6 +70,7 @@ function bootPlan(p: CloudInitParams): string {
     service: p.service,
     profile: p.profile,
     releaseSha: p.releaseSha,
+    ...(p.traceparent ? { traceparent: p.traceparent } : {}),
     imageContract: supportedImageContract,
     registry: p.registry,
     region: p.region,
