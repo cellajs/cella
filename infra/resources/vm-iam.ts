@@ -1,6 +1,6 @@
 import * as scaleway from '@pulumiverse/scaleway'
 import { VM_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'
-import { naming, organizationId, projectId, tags, vmReaderApplicationId, provisionFoundation } from '../pulumi-context'
+import { infra, naming, organizationId, projectId, tags, vmReaderApplicationId, provisionFoundation } from '../pulumi-context'
 
 /** Build the single project-scoped policy rule for the VM reader. */
 function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types.input.iam.PolicyRule[] {
@@ -22,7 +22,9 @@ function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types.input.
  *
  * @see resources/compute.ts
  */
-export const vmReaderPolicy = provisionFoundation
+// Deferred with compute: the grant is only consumed by VMs, and deferring it
+// lets a bootstrap key without IAM policy rights still provision base infra.
+export const vmReaderPolicy = provisionFoundation && infra.computeEnabled
   ? new scaleway.iam.Policy('vm-reader-policy', {
     name: naming.resource('vm-reader-policy'),
     description: 'Read-only registry + secret manager grant for service VMs (managed by Pulumi)',
