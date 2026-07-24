@@ -9,7 +9,6 @@ const program = await import('./resources/program')
 
 export const frontendBucketName = program.frontendBucketName
 export const frontendBucketEndpoint = program.frontendBucketEndpoint
-export const frontendWebsiteEndpoint = program.frontendWebsiteEndpoint
 export const vpcId = program.vpcId
 export const privateNetworkId = program.privateNetworkId
 export const registryId = program.registryId

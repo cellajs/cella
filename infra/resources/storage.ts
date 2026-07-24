@@ -70,21 +70,9 @@ const frontendBucket = new scaleway.object.Bucket('frontend-bucket', {
   ],
 }, { aliases: [{ type: 'scaleway:index/objectBucket:ObjectBucket' }], protect: isProduction })
 
-// SPA website configuration: enables S3 website hosting with index.html fallback.
-// Required for direct bucket access (dev) and the Caddy frontend proxy.
-// Requires ObjectStorageFullAccess IAM permission on the SCW API key.
-const frontendWebsite = new scaleway.object.BucketWebsiteConfiguration(
-  'frontend-website',
-  {
-    bucket: frontendBucket.name,
-    region,
-    indexDocument: { suffix: 'index.html' },
-    errorDocument: { key: 'index.html' },
-  },
-)
-
-// Create website configuration before restricting the public policy to GetObject;
-// the provider needs ListObjects while configuring the website.
+// Public read via bucket policy only: the SPA is served by the Caddy frontend
+// VMs proxying the S3 REST endpoint (with their own index.html fallback), so
+// no S3 website hosting configuration is needed.
 new scaleway.object.BucketPolicy('frontend-policy', {
   bucket: frontendBucket.name,
   region,
@@ -102,7 +90,7 @@ new scaleway.object.BucketPolicy('frontend-policy', {
       ...operatorAccess(frontendBucket.name),
     ],
   }),
-}, { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }], dependsOn: [frontendWebsite] })
+}, { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }] })
 
 // Public uploads bucket (user-uploaded public assets)
 
@@ -206,9 +194,6 @@ export const frontendBucketName = frontendBucket.name
 
 /** Frontend bucket S3 endpoint */
 export const frontendBucketEndpoint = frontendBucket.endpoint
-
-/** Frontend website endpoint */
-export const frontendWebsiteEndpoint = frontendWebsite.websiteEndpoint
 
 /** Public uploads bucket name */
 export const publicUploadsBucketName = publicUploadsBucket.name

@@ -19,7 +19,6 @@ console.info(`Prefix: ${naming.prefix}`)
 
 export const frontendBucketName = storage.frontendBucketName
 export const frontendBucketEndpoint = storage.frontendBucketEndpoint
-export const frontendWebsiteEndpoint = storage.frontendWebsiteEndpoint
 
 export const vpcId = network.vpcId
 export const privateNetworkId = network.privateNetworkId
