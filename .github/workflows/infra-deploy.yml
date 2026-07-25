@@ -110,8 +110,8 @@ jobs:
           # RELEASE_SHA is baked into the image as ENV for verification later
           build-args: |
             RELEASE_SHA=${{ needs.setup.outputs.image_tag }}
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          cache-from: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/${{ matrix.service }}:buildcache
+          cache-to: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/${{ matrix.service }}:buildcache,mode=max
           provenance: false
 
   # -------------------------------------------------------------------------
@@ -161,60 +161,14 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/cella-boot-agent:${{ needs.setup.outputs.image_tag }}
-          cache-from: type=gha,scope=boot-agent
-          cache-to: type=gha,mode=max,scope=boot-agent
+          cache-from: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/cella-boot-agent:buildcache
+          cache-to: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/cella-boot-agent:buildcache,mode=max
           provenance: false
 
   # -------------------------------------------------------------------------
   # Build frontend bundle (no upload). Runs in parallel with build-images so
   # the artifact is ready when publish-frontend gates on backend health.
   # -------------------------------------------------------------------------
-  build-frontend:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: [setup]
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          # Full history: the docs-frontmatter Vite plugin derives each page's
-          # updatedAt from git commit dates (frontend/vite/git-updated-at.ts). A
-          # shallow clone would collapse tracked docs onto their checkout mtime.
-          fetch-depth: 0
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # GITHUB_ENV only reaches later steps, so the env print and the build
-      # must stay separate steps: the build bakes APP_MODE into appConfig.
-      - name: Derive frontend build env
-        env:
-          ENVIRONMENT: ${{ needs.setup.outputs.environment }}
-          ENABLED_SERVICES_JSON: ${{ needs.setup.outputs.enabled_services_json }}
-        run: pnpm --silent --filter infra print-frontend-build-env --mode "$ENVIRONMENT" --services-json "$ENABLED_SERVICES_JSON" >> "$GITHUB_ENV"
-
-      - name: Build frontend
-        run: pnpm --filter frontend build
-
-      - name: Upload dist artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        with:
-          name: frontend-dist
-          path: frontend/dist
-          retention-days: 7
-          if-no-files-found: error
-
   # -------------------------------------------------------------------------
   # The deploy: ONE command (infra/tasks/deploy.ts) owns everything after the
   # image builds: preflights, stack lock, base stack update, waved rollout with
@@ -227,15 +181,19 @@ jobs:
     # Cold rollouts of many services (a fork deploying yjs/mcp) need headroom.
     timeout-minutes: 35
     # No build-images dependency: the command's wait-for-images step is the real
-    # gate, so preflights and the base stack update overlap the image builds.
-    # upload-frontend-assets must precede the command's entry publish.
-    needs: [setup, build-frontend, upload-frontend-assets]
+    # gate, so preflights, the frontend build, and the base stack update all
+    # overlap the image builds. The command builds + uploads the frontend too.
+    needs: [setup]
     permissions:
       contents: read
     environment: ${{ needs.setup.outputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          # Full history: the frontend build's docs-frontmatter plugin derives
+          # page updatedAt from git commit dates (frontend/vite/git-updated-at.ts).
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
@@ -254,12 +212,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Download dist artifact
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
-        with:
-          name: frontend-dist
-          path: dist
-
       - name: Deploy ${{ needs.setup.outputs.image_tag }} to ${{ needs.setup.outputs.environment }}
         env:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
@@ -268,42 +220,11 @@ jobs:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm --filter infra run deploy --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}" --git-ref "${{ github.ref }}" --dist "$GITHUB_WORKSPACE/dist"
+        run: pnpm --filter infra run deploy --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}" --git-ref "${{ github.ref }}"
 
   # -------------------------------------------------------------------------
   # Upload versioned (content-hashed, immutable) frontend assets to the bucket.
   # -------------------------------------------------------------------------
-  upload-frontend-assets:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: [setup, build-frontend]
-    permissions:
-      contents: read
-    environment: ${{ needs.setup.outputs.environment }}
-    steps:
-      - name: Download dist artifact
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
-        with:
-          name: frontend-dist
-          path: dist
-
-      - name: Upload versioned assets (long cache, no --delete)
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          AWS_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
-          S3_ENDPOINT: https://s3.${{ needs.setup.outputs.region }}.scw.cloud
-          BUCKET_NAME: ${{ needs.setup.outputs.frontend_bucket }}
-        run: |
-          BUCKET="s3://$BUCKET_NAME"
-          aws s3 sync dist/ "$BUCKET/" \
-            --endpoint-url "$S3_ENDPOINT" \
-            --cache-control "public, max-age=31536000, immutable" \
-            --exclude "index.html" \
-            --exclude "sw.js" \
-            --exclude "sw.js.map" \
-            --exclude "manifest.webmanifest"
-
   # -------------------------------------------------------------------------
   # Prune stale deployment records. Every secret-using job above declares
   # `environment:` (secrets are environment-scoped), and GitHub creates one

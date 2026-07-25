@@ -138,14 +138,12 @@ To gate production behind manual approval, configure a [GitHub Environment](http
 
 ### Bring your own CI
 
-GitHub Actions is only the default trigger; the pipeline is one command plus standard docker builds. To run a release from any CI system (or a laptop):
+GitHub Actions is only the default trigger; the whole release is ONE command on any runner:
 
-1. **Env**: export `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`, `PULUMI_CONFIG_PASSPHRASE` (the same five values the GitHub Environment holds). Install node + pnpm + docker + the pulumi CLI.
-2. **Build + push images**: `pnpm --silent --filter infra print-deploy-env <mode> --git-sha <sha>` prints `registry_ns` and `build_images_matrix`; for each matrix entry run a standard `docker build` with the listed dockerfile/target, tag `rg.<region>.scw.cloud/<registry_ns>/<service>:<sha>`, and push (login: user `nologin`, password = the secret key). Build the boot agent image the same way (`pnpm --filter infra agent:build`, then `docker build infra/agent`).
-3. **Build the frontend**: `pnpm --silent --filter infra print-frontend-build-env --mode <mode> --services-json <enabled_services_json>` prints the build env; export it and run `pnpm --filter frontend build`. Upload `frontend/dist` assets to the frontend bucket (versioned `assets/` + `static/` paths, immutable cache headers) before the deploy command runs.
-4. **Deploy**: `pnpm --filter infra run deploy --mode <mode> --sha <sha> --dist frontend/dist`. The command owns everything else and is safe to re-run; the stack lock serializes concurrent attempts.
+1. **Env**: export `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`, `PULUMI_CONFIG_PASSPHRASE` (the same five values the GitHub Environment holds). Install node + pnpm + docker (with buildx) + the pulumi CLI.
+2. **Deploy**: `pnpm --filter infra run deploy --mode <mode> --sha <sha> --build`. The `--build` flag bakes and pushes every image (app services + boot agent) via `docker buildx bake` with a registry-backed build cache shared with CI; the command also builds the frontend and uploads its hashed assets itself. Safe to re-run; the stack lock serializes concurrent attempts.
 
-The deploy command needs no GitHub-specific context; `--git-ref` only gates production deploys to main/release refs when provided.
+On GitHub Actions the reusable workflow builds images as a parallel matrix instead (faster on cold caches) and omits `--build`; both paths share the same `:buildcache` registry cache. A prebuilt frontend can be supplied with `--dist <dir>` to skip the in-command build. The deploy command needs no GitHub-specific context; `--git-ref` only gates production deploys to main/release refs when provided.
 
 ## Rollout strategies
 

@@ -13,7 +13,11 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
     frontend_bucket: 'cella-frontend',
     state_bucket: 'cella-pulumi-state',
     vm_reader_app: 'cella-vm-reader',
-    enabled_services_json: JSON.stringify([{ service: 'backend' }, { service: 'cdc' }, { service: 'frontend' }]),
+    enabled_services_json: JSON.stringify([
+      { service: 'backend', public_url: 'https://www.cellajs.com/api' },
+      { service: 'cdc', public_url: '' },
+      { service: 'frontend', public_url: 'https://www.cellajs.com' },
+    ]),
     build_images_matrix: JSON.stringify([{ service: 'backend', dockerfile: 'Dockerfile', target: 'backend' }]),
     primary_rollout_matrix: JSON.stringify([{ service: 'backend', health_url: 'https://www.cellajs.com/api' }]),
     roll_rest_matrix: JSON.stringify([{ service: 'cdc', health_url: '' }, { service: 'frontend', health_url: 'https://www.cellajs.com' }]),
@@ -25,6 +29,9 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean } = {}) 
   const fx: DeployEffects = {
     initTelemetry: async () => {
       ops.push('telemetry:init')
+    },
+    uploadAssets: async () => {
+      ops.push('upload-assets')
     },
     task: async (name, argv = []) => {
       ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`)
@@ -64,8 +71,10 @@ describe('parseDeployArgs', () => {
       mode: 'staging',
       sha: 'abc',
       distDir: 'dist',
+      build: false,
       gitRef: undefined,
     })
+    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--build']).build).toBe(true)
     expect(() => parseDeployArgs(['--mode', 'staging', '--sha', 'latest'])).toThrow(/non-pinned/)
     expect(() => parseDeployArgs(['--mode', 'staging'])).toThrow(/Usage/)
   })
@@ -115,12 +124,30 @@ describe('runDeploy sequencing', () => {
     expect(ops.at(-1)).toBe('task:stack-lock:release')
   })
 
-  it('skips entry publish and smoke without a dist dir', async () => {
+  it('builds the frontend itself when no dist dir is provided', async () => {
     const { fx, ops } = makeFake()
     await runDeploy({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv)
-    expect(ops).not.toContain('publish-entry')
-    expect(ops).not.toContain('task:smoke')
-    expect(ops).toContain('rollout')
+    expect(ops).toContain('exec:pnpm:--filter')
+    expect(ops).toContain('upload-assets')
+    expect(ops).toContain('publish-entry')
+    expect(ops).toContain('task:smoke')
+  })
+
+  it('skips the frontend build (but still uploads) with a prebuilt dist dir', async () => {
+    const { fx, ops } = makeFake()
+    await runDeploy(baseOpts, fx, fakeDeployEnv)
+    expect(ops).not.toContain('exec:pnpm:--filter')
+    expect(ops).toContain('upload-assets')
+  })
+
+  it('bakes and pushes images in-process with --build', async () => {
+    const { fx, ops } = makeFake()
+    await runDeploy({ ...baseOpts, build: true }, fx, fakeDeployEnv)
+    expect(ops).toContain('exec:docker:buildx')
+    const bakeIndex = ops.indexOf('exec:docker:buildx')
+    const waitIndex = ops.indexOf('task:wait-for-images')
+    expect(bakeIndex).toBeGreaterThan(-1)
+    expect(waitIndex).toBeGreaterThan(bakeIndex)
   })
 
   it('rejects production deploys from untrusted refs before touching anything', async () => {

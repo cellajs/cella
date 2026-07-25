@@ -8,8 +8,10 @@ import { infraDir } from '../lib/utils/paths'
 import { deployEvents, deployTelemetry, initDeployTelemetry } from '../lib/telemetry/deploy-telemetry'
 import { otlpConfigFromEnv } from '../lib/telemetry/emitter'
 import { getFlag } from './args'
+import { bakeDefinition, parseBuildRows } from './build-images'
 import { main as runWavedRolloutCli } from './deploy-rollout'
 import { type AllowedKey, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env'
+import { frontendBuildEnv } from './print-frontend-build-env'
 import { createFetchProbe, pollForVersion } from './wait-for-version'
 
 /**
@@ -22,8 +24,10 @@ import { createFetchProbe, pollForVersion } from './wait-for-version'
 export interface DeployOptions {
   mode: string
   sha: string
-  /** Frontend dist directory (entry publish + smoke); both are skipped when absent. */
+  /** Prebuilt frontend dist directory. Absent = the command builds the frontend itself. */
   distDir?: string
+  /** Build + push all images in-process (buildx bake) before waiting on the registry. */
+  build?: boolean
   /** CI ref for the production trust gate; local operator runs may omit it. */
   gitRef?: string
 }
@@ -48,7 +52,9 @@ export interface DeployEffects {
   /** Run a task module's main(argv) in-process; throws on failure. */
   task(name: TaskName, argv?: string[]): Promise<void>
   /** Run an external binary in the infra dir; throws on non-zero exit unless allowFailure. */
-  exec(cmd: string, args: string[], opts?: { allowFailure?: boolean; stdin?: string }): void
+  exec(cmd: string, args: string[], opts?: { allowFailure?: boolean; stdin?: string; env?: Record<string, string> }): void
+  /** Upload the built frontend bundle (hashed assets skip when present; entry files excluded). */
+  uploadAssets(opts: { distDir: string; bucket: string; region: string }): Promise<void>
   /** One full stack update through the configured Pulumi driver. */
   update(stack: string): Promise<void>
   rollout(argv: string[]): Promise<void>
@@ -70,7 +76,7 @@ export function parseDeployArgs(argv: string[]): DeployOptions {
   const sha = getFlag(argv, '--sha')
   if (!mode || !sha) throw new Error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--dist <dir>] [--git-ref <ref>]')
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`)
-  return { mode, sha, distDir: getFlag(argv, '--dist'), gitRef: getFlag(argv, '--git-ref') }
+  return { mode, sha, distDir: getFlag(argv, '--dist'), build: argv.includes('--build'), gitRef: getFlag(argv, '--git-ref') }
 }
 
 /** Derive the deploy env table from the app config for the requested mode. */
@@ -143,11 +149,39 @@ export async function runDeploy(
       lockHeld = true
     })
     await step('Pre-install Pulumi providers', () => fx.task('install-pulumi-providers'))
-    await step('Wait for image tags in registry', async () => {
-      const registry = `rg.${env.region}.scw.cloud`
-      fx.exec('docker', ['login', registry, '-u', 'nologin', '--password-stdin'], { stdin: process.env.SCW_SECRET_KEY ?? '' })
-      await fx.task('wait-for-images', ['--registry', registry, '--ns', env.registry_ns, '--tag', opts.sha, '--build-images-json', env.build_images_matrix])
-    })
+
+    const registry = `rg.${env.region}.scw.cloud`
+    await step('Login to container registry', () =>
+      fx.exec('docker', ['login', registry, '-u', 'nologin', '--password-stdin'], { stdin: process.env.SCW_SECRET_KEY ?? '' }))
+
+    // Images and frontend converge concurrently: the image path builds (with
+    // --build) or waits for CI's registry pushes; the frontend path builds the
+    // bundle (unless --dist provided prebuilt) and uploads hashed assets.
+    // Entry files stay out until after version verification below.
+    const distDir = opts.distDir ?? resolve(infraDir, '..', 'frontend', 'dist')
+    const imagesReady = (async () => {
+      if (opts.build) {
+        await step('Build images (buildx bake)', () => {
+          const bake = bakeDefinition(parseBuildRows(env.build_images_matrix), { registry, namespace: env.registry_ns, tag: opts.sha, context: '..' })
+          fx.exec('pnpm', ['run', 'agent:build'])
+          fx.exec('docker', ['buildx', 'bake', '--file', '-', '--push'], { stdin: JSON.stringify(bake) })
+        })
+      }
+      await step('Wait for image tags in registry', () =>
+        fx.task('wait-for-images', ['--registry', registry, '--ns', env.registry_ns, '--tag', opts.sha, '--build-images-json', env.build_images_matrix]))
+    })()
+    const frontendReady = (async () => {
+      if (!opts.distDir) {
+        await step('Build frontend', () =>
+          fx.exec('pnpm', ['--filter', 'frontend', 'build'], { env: { ...frontendBuildEnv(opts.mode, env.enabled_services_json) } }))
+      }
+      await step('Upload frontend assets', () => fx.uploadAssets({ distDir, bucket: env.frontend_bucket, region: env.region }))
+    })()
+    const [imagesOutcome, frontendOutcome] = await Promise.allSettled([imagesReady, frontendReady])
+    for (const settled of [imagesOutcome, frontendOutcome]) {
+      if (settled.status === 'rejected') throw settled.reason
+    }
+
     await step('Repair errored LB certificates', () => fx.task('repair-certs', ['--stack', stack]))
     await step('Base stack update', async () => {
       await fx.task('sync-rollout-config', ['--stack', stack])
@@ -177,16 +211,12 @@ export async function runDeploy(
       }
     })
 
-    if (opts.distDir) {
-      // Strictly after rollout verification: users only load the new entry
-      // files once every service already serves the new release.
-      await step('Publish frontend entry files', () =>
-        fx.publishEntryFiles({ distDir: opts.distDir ?? '', bucket: env.frontend_bucket, region: env.region }))
-      await step('Smoke tests', () =>
-        fx.task('smoke', ['--sha', opts.sha, '--services-json', env.enabled_services_json, '--dist', resolve(opts.distDir ?? '', 'index.html')]))
-    } else {
-      fx.info('[deploy] no --dist provided; skipping frontend entry publish and smoke tests')
-    }
+    // Strictly after rollout verification: users only load the new entry
+    // files once every service already serves the new release.
+    await step('Publish frontend entry files', () =>
+      fx.publishEntryFiles({ distDir, bucket: env.frontend_bucket, region: env.region }))
+    await step('Smoke tests', () =>
+      fx.task('smoke', ['--sha', opts.sha, '--services-json', env.enabled_services_json, '--dist', resolve(distDir, 'index.html')]))
   } catch (err) {
     outcome = 'error'
     throw err
@@ -274,11 +304,15 @@ function createRealEffects(): DeployEffects {
     exec(cmd, args, opts = {}) {
       const res = spawnSync(cmd, args, {
         cwd: infraDir,
-        env: process.env,
+        env: opts.env ? { ...process.env, ...opts.env } : process.env,
         stdio: [opts.stdin === undefined ? 'inherit' : 'pipe', 'inherit', 'inherit'],
         input: opts.stdin,
       })
       if (res.status !== 0 && !opts.allowFailure) throw new Error(`${cmd} ${args[0] ?? ''} failed with exit ${res.status}`)
+    },
+    async uploadAssets(assetOpts) {
+      const { uploadFrontendAssets } = await import('./frontend-assets')
+      await uploadFrontendAssets(assetOpts)
     },
     update: async (stack) => {
       const { createPulumiDriver } = await import('../lib/stack/pulumi-driver')
