@@ -3,7 +3,7 @@ import { chmodSync, existsSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { select } from '@inquirer/prompts'
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env'
-import { detectComputeDeferred, detectStackState, pickStackShort } from '../lib/stack/bootstrap-stack-state'
+import { detectComputeDeferred, detectDbPublicEndpoint, detectStackState, pickStackShort } from '../lib/stack/bootstrap-stack-state'
 import { infraDir } from '../lib/utils/paths'
 import { runApply } from './actions/apply'
 import { runPreview } from './actions/preview'
@@ -149,31 +149,76 @@ if (deferredSince) {
   )
 }
 
-const mode: CliMode =
-  context.state === 'fresh' || nonInteractive()
-    ? 'resume'
-    : await select<CliMode>({
-        message: 'Existing config detected. How would you like to proceed?',
-        default: 'resume',
-        // No wrap-around, and page the whole list so the full action count
-        // stays visible at a glance.
-        loop: false,
-        pageSize: 12,
-        choices: [
-          { name: 'Status', value: 'status', description: 'Health check: what is set up, what is live, and the next step.' },
-          { name: 'Resume', value: 'resume', description: 'Re-sync config and GitHub secrets, and self-heal missing keys.' },
-          { name: 'Rotate keys', value: 'rotate', description: 'Replace the CI deploy and VM reader keys with fresh ones.' },
-          { name: 'Rotate passphrase', value: 'rotate-passphrase', description: 'Re-encrypt stack state with a new Pulumi passphrase and sync it.' },
-          { name: 'Apply infra change', value: 'apply', description: 'Apply database, VPC, or network changes (needs a bootstrap key).' },
-          { name: 'Preview', value: 'preview', description: 'Show what a deploy would change. Read-only, makes no changes.' },
-          { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete the runtime secrets.' },
-          { name: 'Reset database', value: 'reset-database', description: 'DESTRUCTIVE: wipe and rebuild the database empty (backup first).' },
-          { name: 'Seed database', value: 'seed-db', description: 'Load seed data into a non-production database.' },
-          { name: 'Expose database publicly', value: 'expose-db', description: 'Open a temporary DB endpoint locked to your IP (close it after).' },
-          { name: 'Stop public DB exposure', value: 'unexpose-db', description: 'Close the temporary public DB endpoint.' },
-          { name: 'Unlock', value: 'unlock', description: 'Clear a stale lock from an interrupted run.' },
-        ],
-      })
+// Two-level action menu: a short category list, then the actions inside it, so
+// the top level stays glanceable. Back returns to the top. The two DB-exposure
+// actions collapse into one status-aware toggle; the current state comes from
+// the local stack config already in memory.
+const backChoice = { name: '← Back', value: 'back' as const, description: 'Return to the main menu.' }
+
+async function chooseDatabaseAction(dbExposed: boolean): Promise<CliMode | 'back'> {
+  const toggle = dbExposed
+    ? { name: `Public DB access: ${pc.yellow('OPEN')} — close it`, value: 'unexpose-db' as const, description: 'Close the temporary public DB endpoint.' }
+    : { name: 'Open temporary public DB access', value: 'expose-db' as const, description: 'Open a temporary DB endpoint locked to your IP (close it after).' }
+  return select<CliMode | 'back'>({
+    message: 'Database',
+    loop: false,
+    choices: [
+      { name: 'Reset database', value: 'reset-database', description: 'DESTRUCTIVE: wipe and rebuild the database empty (backup first).' },
+      { name: 'Seed database', value: 'seed-db', description: 'Load seed data into a non-production database.' },
+      toggle,
+      backChoice,
+    ],
+  })
+}
+
+async function chooseKeysAction(): Promise<CliMode | 'back'> {
+  return select<CliMode | 'back'>({
+    message: 'Keys & secrets',
+    loop: false,
+    choices: [
+      { name: 'Rotate keys', value: 'rotate', description: 'Replace the CI deploy and VM reader keys with fresh ones.' },
+      { name: 'Rotate passphrase', value: 'rotate-passphrase', description: 'Re-encrypt stack state with a new Pulumi passphrase and sync it.' },
+      { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete the runtime secrets.' },
+      backChoice,
+    ],
+  })
+}
+
+async function chooseStackAction(): Promise<CliMode | 'back'> {
+  return select<CliMode | 'back'>({
+    message: 'Stack',
+    loop: false,
+    choices: [
+      { name: 'Apply infra change', value: 'apply', description: 'Apply database, VPC, or network changes (needs a bootstrap key).' },
+      { name: 'Preview', value: 'preview', description: 'Show what a deploy would change. Read-only, makes no changes.' },
+      { name: 'Resume', value: 'resume', description: 'Re-sync config and GitHub secrets, and self-heal missing keys.' },
+      { name: 'Unlock', value: 'unlock', description: 'Clear a stale lock from an interrupted run.' },
+      backChoice,
+    ],
+  })
+}
+
+async function chooseAction(ctx: InfraContext): Promise<CliMode> {
+  const dbExposed = detectDbPublicEndpoint(ctx.stackYaml)
+  while (true) {
+    const category = await select<'status' | 'database' | 'keys' | 'stack'>({
+      message: 'How would you like to proceed?',
+      default: 'status',
+      loop: false,
+      choices: [
+        { name: 'Status', value: 'status', description: 'Health check: what is set up, what is live, and the next step.' },
+        { name: 'Database', value: 'database', description: 'Reset, seed, or open temporary public access.' },
+        { name: 'Keys & secrets', value: 'keys', description: 'Rotate keys or the passphrase; manage runtime secrets.' },
+        { name: 'Stack', value: 'stack', description: 'Apply or preview infra changes, resume, or unlock.' },
+      ],
+    })
+    if (category === 'status') return 'status'
+    const action = category === 'database' ? await chooseDatabaseAction(dbExposed) : category === 'keys' ? await chooseKeysAction() : await chooseStackAction()
+    if (action !== 'back') return action
+  }
+}
+
+const mode: CliMode = context.state === 'fresh' || nonInteractive() ? 'resume' : await chooseAction(context)
 
 
 if (mode === 'status') {
