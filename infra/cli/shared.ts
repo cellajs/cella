@@ -44,21 +44,34 @@ export interface StepOptions {
  */
 export const nonInteractive = (): boolean => process.env.INFRA_NON_INTERACTIVE === '1'
 
-/** `confirm` that resolves to its default under INFRA_NON_INTERACTIVE. */
+/**
+ * True when the run should accept prompt defaults without asking: the
+ * `--defaults` flag (an interactive human choosing the fast path) OR
+ * INFRA_NON_INTERACTIVE (unattended automation). The two differ only for
+ * genuinely required inputs (bootstrap key, admin email): `--defaults` still
+ * prompts for those because a human is present, while automation lets the
+ * required prompt throw on a non-TTY.
+ */
+export const autoAcceptDefaults = (): boolean => process.argv.includes('--defaults') || nonInteractive()
+
+/** Short label for the auto-resolution log line. */
+const autoLabel = (): string => (nonInteractive() ? 'non-interactive' : 'defaults')
+
+/** `confirm` that resolves to its default under `--defaults`/INFRA_NON_INTERACTIVE. */
 export async function confirmOrDefault(opts: { message: string; default: boolean }): Promise<boolean> {
-  if (nonInteractive()) {
-    console.info(pc.dim(`  [non-interactive] ${opts.message} -> ${opts.default ? 'yes' : 'no'}`))
+  if (autoAcceptDefaults()) {
+    console.info(pc.dim(`  [${autoLabel()}] ${opts.message} -> ${opts.default ? 'yes' : 'no'}`))
     return opts.default
   }
   return confirm(opts)
 }
 
-/** Optional free-text `input` that resolves to env/default under INFRA_NON_INTERACTIVE. */
+/** Optional free-text `input` that resolves to env/default under `--defaults`/INFRA_NON_INTERACTIVE. */
 export async function inputOrDefault(opts: { message: string; envName?: string; default?: string }): Promise<string> {
   const fromEnv = opts.envName ? process.env[opts.envName]?.trim() : undefined
-  if (nonInteractive()) {
+  if (autoAcceptDefaults()) {
     const value = fromEnv ?? opts.default ?? ''
-    console.info(pc.dim(`  [non-interactive] ${opts.message} -> ${value || '<empty>'}`))
+    console.info(pc.dim(`  [${autoLabel()}] ${opts.message} -> ${value || '<empty>'}`))
     return value
   }
   if (fromEnv) return fromEnv

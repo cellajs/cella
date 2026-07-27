@@ -14,9 +14,9 @@ import { runRotatePassphrase } from './actions/rotate-passphrase'
 import { runSecrets } from './actions/secrets'
 import { runSetup } from './actions/setup'
 import { runUnlock } from './actions/unlock'
-import { nonInteractive } from './shared'
+import { autoAcceptDefaults, nonInteractive } from './shared'
 import type { CliMode, InfraContext } from './shared'
-import { pc, printHeader, warningMark } from '../lib/utils/cli-output'
+import { failWithHint, pc, printHeader, warningMark } from '../lib/utils/cli-output'
 
 // Load backend/.env before the root fallback so infra child tasks share the app's
 // local config. Existing environment variables keep precedence over both files.
@@ -54,7 +54,7 @@ async function resolveMode(): Promise<'production' | 'staging'> {
     return raw
   }
   const anyStackExists = (['production', 'staging'] as const).some((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)))
-  if (!anyStackExists && !nonInteractive()) {
+  if (!anyStackExists && !autoAcceptDefaults()) {
     return select<'production' | 'staging'>({
       message: 'Fresh install. Which mode do you want to set up?',
       default: 'staging',
@@ -121,8 +121,7 @@ async function loadContext(): Promise<InfraContext> {
 printHeader('infra cli')
 
 if (spawnSync('pulumi', ['version'], { stdio: 'ignore' }).status !== 0) {
-  console.error('✗ pulumi CLI not found. Install: brew install pulumi/tap/pulumi')
-  process.exit(1)
+  failWithHint('pulumi CLI not found', { command: 'brew install pulumi/tap/pulumi', description: 'the infra CLI needs Pulumi for every stack operation' })
 }
 
 const context = await loadContext()

@@ -12,9 +12,12 @@ if (!mode) {
 process.env.APP_MODE = mode
 
 const { main } = await import('./deploy-run')
-await main(argv).catch((err: unknown) => {
-  console.error(err instanceof Error ? err.message : String(err))
-  process.exit(1)
+await main(argv).catch(async (err: unknown) => {
+  const { failWithHint } = await import('../lib/utils/cli-output')
+  failWithHint(err instanceof Error ? err.message : String(err), {
+    command: 'pnpm --filter infra diag',
+    description: 'Re-running is safe (generations are content-addressed). For a boot crash, read diagnostics:',
+  })
 })
 
 export {}

@@ -36,3 +36,23 @@ export function printHeader(name: string, version?: string, right = 'cellajs.com
 
 /** Promise-based delay used by poll/retry loops. */
 export const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** A recovery hint printed after a failure: a runnable command and why. */
+export interface Hint {
+  command: string
+  description?: string
+}
+
+/**
+ * Print an error followed by a concrete recovery command, then exit. Every
+ * operator-facing failure should end this way so the next step is always named,
+ * never left for the reader to reconstruct. Returns `never`; use it at CLI and
+ * task entry points, not inside in-process tasks that must throw so an
+ * orchestrator can catch them.
+ */
+export function failWithHint(message: string, hint: Hint, code = 1): never {
+  console.error(`\n${crossMark} ${message}`)
+  if (hint.description) console.error(`  ${pc.dim(hint.description)}`)
+  console.error(`  ${pc.bold('Next:')} ${pc.cyan(hint.command)}`)
+  process.exit(code)
+}

@@ -209,6 +209,8 @@ The interactive CLI ([cli/infra-cli.ts](../infra/cli/infra-cli.ts)) is launched 
 
 A fresh install defaults to **staging**: the cheapest footprint, seedable, and disposable, so you validate the full pipeline before committing to production. Setting up production later is the same wizard, re-run with `pnpm infra --mode production`.
 
+Two flags control prompting. `--defaults` takes every optional default without asking, still prompting for the genuinely required inputs (bootstrap key, admin email): the interactive fast path. `INFRA_NON_INTERACTIVE=1` is for unattended automation: it also takes optional defaults, but a required input with no environment value fails instead of prompting. Run `pnpm --filter infra status` at any point to see the current state and the next action to take.
+
 ### 1. Prerequisites
 
 - **A domain.** You need an external domain (set as `appConfig.domain`) set up through: https://console.scaleway.com/domains/external.

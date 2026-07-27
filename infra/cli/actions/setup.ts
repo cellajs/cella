@@ -25,8 +25,8 @@ import { setupCiKey } from '../../tasks/setup-ci-key'
 import { setupOperatorApp } from '../../tasks/setup-operator-app'
 import { setupVmKey } from '../../tasks/setup-vm-key'
 import type { CliMode, InfraContext } from '../shared'
-import { acquireStackLockOrExit, confirmOrDefault, createStepRunner, envOr, inputOrDefault, nonInteractive, promptRequiredInput, promptStackName, pulumiLoginUrl, resolveOrCreatePassphrase } from '../shared'
-import { pc, DIVIDER, changeMark, checkMark, warningMark } from '../../lib/utils/cli-output'
+import { acquireStackLockOrExit, autoAcceptDefaults, confirmOrDefault, createStepRunner, envOr, inputOrDefault, nonInteractive, promptRequiredInput, promptStackName, pulumiLoginUrl, resolveOrCreatePassphrase } from '../shared'
+import { pc, DIVIDER, changeMark, checkMark, failWithHint, warningMark } from '../../lib/utils/cli-output'
 
 /** Everything the per-phase helpers below share. */
 interface SetupContext {
@@ -314,7 +314,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
     if (code === 0) break
     if (nonInteractive() || !(await confirm({ message: 'Retry?', default: true }))) {
       await stackLock.release()
-      process.exit(code)
+      failWithHint(`Base provisioning failed (pulumi up exited ${code})`, { command: 'pnpm infra', description: 'fix the cause above, then re-run and choose "Resume" to continue' }, code ?? 1)
     }
   }
   if (usingBootstrapKey) {
@@ -412,7 +412,9 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
   }
   const deployNow = nonInteractive()
     ? process.env.INFRA_DEPLOY_NOW === '1'
-    : await confirm({ message: `Deploy ${sha.slice(0, 7)} to ${mode} now? Builds images locally, then rolls out (10-20 min).`, default: hasAdminEmail })
+    : autoAcceptDefaults()
+      ? hasAdminEmail
+      : await confirm({ message: `Deploy ${sha.slice(0, 7)} to ${mode} now? Builds images locally, then rolls out (10-20 min).`, default: hasAdminEmail })
   if (!deployNow) {
     console.info(`  ${pc.dim('Deploy later from CI (publish a release / run the Deploy workflow) or locally:')} ${pc.cyan(manualCmd(sha))}`)
     return
@@ -606,7 +608,9 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     // manual reminder; env-supplied keys under automation are never revoked.
     const revokeNow = nonInteractive()
       ? false
-      : await confirm({ message: `Revoke the bootstrap key (${scwAccessKey}) now? Nothing else needs it; day-2 privileged actions ask for a fresh one.`, default: true })
+      : autoAcceptDefaults()
+        ? true
+        : await confirm({ message: `Revoke the bootstrap key (${scwAccessKey}) now? Nothing else needs it; day-2 privileged actions ask for a fresh one.`, default: true })
     if (revokeNow) {
       try {
         await revokeApiKey(scwSecretKey, scwAccessKey)
