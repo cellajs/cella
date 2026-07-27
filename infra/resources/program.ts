@@ -5,12 +5,13 @@ import * as registry from './registry'
 import * as database from './database'
 import * as compute from './compute'
 import './secrets'
+import './state-bucket-policy'
 import './vm-iam'
 import * as lb from './loadbalancer'
 import { mode, naming, region } from '../pulumi-context'
 
-// The whole deployment program: one stack per mode, foundation resources plus
-// the content-addressed generation VMs.
+// The whole deployment program: one stack per mode, long-lived base resources
+// plus the content-addressed generation VMs.
 
 console.info(`Pulumi stack: ${mode}`)
 console.info(`Slug: ${naming.slug}`)
@@ -39,6 +40,7 @@ export const dbConnectionStringAdmin = database.connectionStringAdmin
 export const dbConnectionStringRuntime = database.connectionStringRuntime
 export const dbConnectionStringCdc = database.connectionStringCdc
 export const dbConnectionStringAdminPublic = database.connectionStringAdminPublic
+export const dbCaCertificate = database.caCertificate
 
 export const computeInstances = compute.computeInstances.map((i) => i.name)
 export const computeGenerationMetadata = compute.computeGenerationMetadata

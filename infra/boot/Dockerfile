@@ -1,12 +1,12 @@
-# Cella boot agent: runs at VM first-boot via `docker run` to bring a service's
-# Docker Compose stack up. The agent ships as a normal registry image pulled at boot.
+# Cella boot runner: runs at VM first-boot via `docker run` to bring a service's
+# Docker Compose stack up. It ships as a normal registry image pulled at boot.
 #
 # It drives the HOST Docker daemon through the mounted socket
-# (/var/run/docker.sock), so it needs the docker CLI + compose plugin. The agent
+# (/var/run/docker.sock), so it needs the docker CLI + compose plugin. The runner
 # also runs with --network host and probes the private network via `ip route`,
-# so it needs iproute2. The agent JS bundle is produced on the host by
-# `pnpm --filter infra agent:build` (tsup → agent/dist/entry.cjs) before
-# `docker build` (context: infra/agent).
+# so it needs iproute2. The JS bundle is produced on the host by
+# `pnpm --filter infra boot:build` (tsup -> boot/dist/entry.cjs) before
+# `docker build` (context: infra/boot).
 FROM node:24-bookworm-slim
 
 RUN apt-get update \
@@ -20,6 +20,6 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-COPY dist/entry.cjs /app/agent.cjs
+COPY dist/entry.cjs /app/boot.cjs
 
-ENTRYPOINT ["node", "/app/agent.cjs"]
+ENTRYPOINT ["node", "/app/boot.cjs"]

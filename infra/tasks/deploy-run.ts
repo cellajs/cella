@@ -111,7 +111,7 @@ export async function runDeploy(
   await fx.initTelemetry({ mode: opts.mode, sha: opts.sha })
   const telemetry = deployTelemetry()
   const deploySpan = telemetry?.startSpan(`deploy ${opts.mode}`, { sha: opts.sha })
-  // New generations bake this context into their boot plans, so agent boot
+  // New generations bake this context into their boot plans, so VM boot
   // spans join the deploy trace (the pulumi program inherits this env).
   if (deploySpan) process.env.TRACEPARENT = deploySpan.traceparent()
   telemetry?.event(deployEvents.started, { mode: opts.mode, sha: opts.sha })
@@ -163,7 +163,7 @@ export async function runDeploy(
       if (opts.build) {
         await step('Build images (buildx bake)', () => {
           const bake = bakeDefinition(parseBuildRows(env.build_images_matrix), { registry, namespace: env.registry_ns, tag: opts.sha, context: '..' })
-          fx.exec('pnpm', ['run', 'agent:build'])
+          fx.exec('pnpm', ['run', 'boot:build'])
           fx.exec('docker', ['buildx', 'bake', '--file', '-', '--push'], { stdin: JSON.stringify(bake) })
         })
       }

@@ -10,6 +10,7 @@ import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-
 import type { ServiceDefinition } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from '../lib/scaleway/vm-reader-secret'
+import { resolveImageDigest } from '../lib/scaleway/registry-digest'
 import { renderCloudInit } from './cloud-init'
 import { createComposeEnvBuilder } from './compose-env'
 import { activeGenerations, coHosted, enabled, hostSlug, secretConsumersFor, type Generation } from './generations'
@@ -102,11 +103,42 @@ interface ServiceConfig {
   composeEnv: Record<string, () => pulumi.Input<string>>
 }
 
+// Per-tag digest memo: every generation of a release resolves the boot image
+// digest once, not once per VM.
+const bootImageDigests = new Map<string, Promise<string | undefined>>()
+
+/**
+ * Resolve the boot runner tag to its manifest digest so the launcher pins the
+ * root-equivalent (socket-mounted) image against later registry pushes. Fail
+ * closed on a real `up`; a dry run degrades to the tag with a warning so
+ * previews never require registry availability.
+ */
+function bootImageDigestFor(registry: string, releaseSha: string, secretKey: string): Promise<string | undefined> {
+  const memoKey = `${registry}|${releaseSha}`
+  let pending = bootImageDigests.get(memoKey)
+  if (!pending) {
+    pending = resolveImageDigest({ registry, image: 'cella-boot', tag: releaseSha, secretKey }).catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err)
+      if (pulumi.runtime.isDryRun()) {
+        pulumi.log.warn(`boot image digest resolution failed (preview continues on the tag): ${message}`)
+        return undefined
+      }
+      throw new Error(`Refusing to plan a VM with an unpinned boot image: ${message}`)
+    })
+    bootImageDigests.set(memoKey, pending)
+  }
+  return pending
+}
+
 function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Output<string> {
   const envLines = pulumi.all(
     Object.entries(service.composeEnv).map(([k, supply]) =>
       pulumi.output(supply()).apply((val) => `${k}=${val}`),
     ),
+  )
+
+  const bootImageDigest = pulumi.all([registryEndpoint, vmSecretKey]).apply(([registry, secretKey]) =>
+    bootImageDigestFor(registry, releaseSha, secretKey),
   )
 
   return pulumi.all([
@@ -118,7 +150,8 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
     vmSecretKey,
     registryEndpoint,
     bootDiagBucketName,
-  ]).apply(([env, manifest, accessKey, secretKey, registry, bootDiagBucket]) =>
+    bootImageDigest,
+  ]).apply(([env, manifest, accessKey, secretKey, registry, bootDiagBucket, digest]) =>
     renderCloudInit({
       service: service.name,
       profile: service.profile,
@@ -128,6 +161,7 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
       manifestContent: manifest,
       composeContent,
       registry,
+      bootImageDigest: digest,
       accessKey,
       secretKey,
       region,
@@ -193,7 +227,7 @@ function currentGenBindingIp(slug: ServiceName): pulumi.Output<string> {
 }
 
 // Accept a Scaleway marketplace label or pinned image UUID without a plan-time lookup.
-// The boot agent is pulled at startup, so resolved image rotation is ignored.
+// The boot runner is pulled at startup, so resolved image rotation is ignored.
 const computeImageId: pulumi.Input<string> = sizing.computeImage
 
 function createGenerationVm(svc: ServiceDefinition, generation: Generation): GenerationInstance {
@@ -304,7 +338,7 @@ export const computeGenerationMetadata = pulumi.all(instances.map((i) => pulumi.
  * server list. The live list is then owned by the cutover task (the LB backend
  * declares `ignoreChanges: ['serverIps']`).
  *
- * Under singleVM a co-hosted worker (cdc/yjs/ai) runs in the host backend
+ * Under singleVM a co-hosted worker (cdc/yjs/mcp) runs in the host backend
  * process, so its LB backend targets the host VM's
  * generation IPs (on the worker's own port, which the host block publishes).
  */

@@ -1,7 +1,7 @@
 import { isRecord } from '../../lib/utils/guards'
 
 export const supportedSchemaVersion = 1
-export const supportedImageContract = 'docker-node-agent-v1'
+export const supportedImageContract = 'docker-node-boot-v1'
 
 export interface RuntimeSecretManifestEntry {
   envVar: string

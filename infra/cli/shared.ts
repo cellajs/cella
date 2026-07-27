@@ -23,6 +23,7 @@ export interface InfraContext {
   state: StackState
   hasCiKey: boolean
   appConfig: EngineConfig
+  /** Scaleway project id. Empty only on a fresh install without SCW_PROJECT_ID; the setup wizard resolves it. */
   projectId: string
 }
 

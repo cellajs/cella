@@ -18,6 +18,22 @@ export interface UploadBootDiagnosticsOptions {
   fetchImpl?: FetchLike
 }
 
+// Mirrors the cloud-init log scrub (resources/cloud-init.ts scrubCloudInitLogs)
+// so both diagnostic channels drop the same secret-bearing lines.
+const secretLinePattern = /SECRET|PASSWORD|API_KEY|DATABASE_URL|docker login/i
+
+/**
+ * Replace secret-bearing lines before a log leaves the VM: an app that prints
+ * a DSN or key on crash must not have it amplified into the boot-diag bucket
+ * and telemetry bodies.
+ */
+export function scrubSecretLines(text: string): string {
+  return text
+    .split('\n')
+    .map((line) => (secretLinePattern.test(line) ? '[line scrubbed: matched secret pattern]' : line))
+    .join('\n')
+}
+
 function hmac(key: Buffer | string, msg: string): Buffer {
   return createHmac('sha256', key).update(msg, 'utf-8').digest()
 }
@@ -69,10 +85,10 @@ export async function uploadBootDiagnostics(opts: UploadBootDiagnosticsOptions):
   } catch {
     log = 'boot log not found\n'
   }
-  const parts = [`service=${opts.service}`, `release=${opts.releaseSha}`, `boot_rc=${opts.bootRc}`, '', log]
-  // The agent runs containerized without the host boot log mounted, so the file
+  const parts = [`service=${opts.service}`, `release=${opts.releaseSha}`, `boot_rc=${opts.bootRc}`, '', scrubSecretLines(log)]
+  // The boot runner runs containerized without the host boot log mounted, so the file
   // read above is usually empty; the captured app logs carry the crash reason.
-  if (opts.appLogs?.trim()) parts.push('', '--- app logs ---', opts.appLogs)
+  if (opts.appLogs?.trim()) parts.push('', '--- app logs ---', scrubSecretLines(opts.appLogs))
   const body = parts.join('\n')
   const keys = [`boot-diag/${opts.service}-${keyStamp}-boot.log`]
   if (opts.bootRc !== 0) keys.push(`boot-diag/${opts.service}-failed-${keyStamp}.log`)

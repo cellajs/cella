@@ -112,7 +112,7 @@ export interface ComposeService {
   env_file?: readonly string[]
   environment?: Readonly<Record<string, string>>
   healthcheck?: HealthCheck
-  /** Deploy-plane metadata; presence marks a logical service. */
+  /** Deploy metadata; presence marks a logical service. */
   'x-service'?: ServiceMeta
 }
 

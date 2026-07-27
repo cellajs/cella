@@ -24,10 +24,12 @@ export function detectStackState(probe: StackProbe): StackState {
 
 /**
  * Pick the first stack short-name (production, staging) whose Pulumi file
- * is present. Pure: caller supplies the existence check.
+ * is present. A fresh checkout with no stack file falls back to staging: the
+ * recommended first target for a new install. Pure: caller supplies the
+ * existence check.
  */
 export function pickStackShort(exists: (shortName: string) => boolean, candidates: readonly Environment[] = ['production', 'staging']): Environment {
-  return candidates.find(exists) ?? 'production'
+  return candidates.find(exists) ?? 'staging'
 }
 
 /**

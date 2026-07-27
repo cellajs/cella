@@ -27,6 +27,8 @@ export interface AssertVmGrantsResult {
   ok: boolean
   granted: string[]
   missing: string[]
+  /** Permission sets granted beyond the required set: privilege drift, fails the check. */
+  extra: string[]
 }
 
 function scwGet<T>(fetchImpl: FetchLike, secretKey: string, url: string): Promise<T> {
@@ -94,7 +96,9 @@ export async function fetchAppPermissionSetsByName(opts: {
 
 /**
  * Collect the union of permission set names granted to an application across all
- * its IAM policies and their rules, then compute which required sets are missing.
+ * its IAM policies and their rules, then verify it EQUALS the required set:
+ * missing sets break secret hydration, extra sets are privilege drift beyond the
+ * minimal VM profile (a write grant on this key widens every VM's blast radius).
  */
 export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<AssertVmGrantsResult> {
   const fetchImpl = resolveFetch(opts.fetchImpl)
@@ -111,13 +115,16 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
 
   const granted = new Set(await fetchGrantedPermissionSets(fetchImpl, opts.secretKey, organizationId, applicationId))
 
+  const requiredSet = new Set(required)
   const missing = required.filter((r) => !granted.has(r))
-  if (missing.length === 0) {
-    log(`✓ VM reader grant verified — all ${required.length} required permission sets present`)
+  const extra = [...granted].filter((g) => !requiredSet.has(g)).sort()
+  if (missing.length === 0 && extra.length === 0) {
+    log(`✓ VM reader grant verified — exactly the ${required.length} required permission sets, nothing more`)
   } else {
-    log(`✗ VM reader grant INCOMPLETE — missing: ${missing.join(', ')}`)
+    if (missing.length > 0) log(`✗ VM reader grant INCOMPLETE — missing: ${missing.join(', ')}`)
+    if (extra.length > 0) log(`✗ VM reader grant TOO BROAD — extra: ${extra.join(', ')}`)
   }
-  return { ok: missing.length === 0, granted: [...granted].sort(), missing }
+  return { ok: missing.length === 0 && extra.length === 0, granted: [...granted].sort(), missing, extra }
 }
 
 // Standalone entry point.
@@ -134,9 +141,13 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   const result = await assertVmGrants({ secretKey, applicationId, applicationName, projectId, organizationId })
   if (!result.ok) {
+    const problems = [
+      result.missing.length > 0 ? `missing required permission sets: ${result.missing.join(', ')}` : '',
+      result.extra.length > 0 ? `granted EXTRA permission sets beyond the minimal VM profile: ${result.extra.join(', ')}` : '',
+    ].filter(Boolean)
     throw new Error(
-      `VM reader application ${applicationId ?? applicationName} is missing required permission sets: ${result.missing.join(', ')}. ` +
-        'The Pulumi-managed policy (infra/resources/vm-iam.ts) should grant these; check that `pulumi up` succeeded.',
+      `VM reader application ${applicationId ?? applicationName} ${problems.join('; ')}. ` +
+        'The Pulumi-managed policy (infra/resources/vm-iam.ts) defines the exact grant; check that `pulumi up` succeeded and remove any manually-attached policies.',
     )
   }
 }

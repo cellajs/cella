@@ -21,7 +21,7 @@ export interface BakeOptions {
   context?: string
 }
 
-/** A `docker buildx bake` definition covering every app image + the boot agent. */
+/** A `docker buildx bake` definition covering every app image + the boot runner. */
 export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { group: unknown; target: Record<string, unknown> } {
   const context = opts.context ?? '.'
   const image = (service: string) => `${opts.registry}/${opts.namespace}/${service}:${opts.tag}`
@@ -38,12 +38,12 @@ export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { grou
       'cache-to': [`type=registry,ref=${cacheRef(row.service)},mode=max`],
     }
   }
-  target['boot-agent'] = {
-    context: `${context === '.' ? '' : `${context}/`}infra/agent`,
+  target['boot-runner'] = {
+    context: `${context === '.' ? '' : `${context}/`}infra/boot`,
     dockerfile: 'Dockerfile',
-    tags: [image('cella-boot-agent')],
-    'cache-from': [`type=registry,ref=${cacheRef('cella-boot-agent')}`],
-    'cache-to': [`type=registry,ref=${cacheRef('cella-boot-agent')},mode=max`],
+    tags: [image('cella-boot')],
+    'cache-from': [`type=registry,ref=${cacheRef('cella-boot')}`],
+    'cache-to': [`type=registry,ref=${cacheRef('cella-boot')},mode=max`],
   }
-  return { group: { default: { targets: [...rows.map((row) => row.service), 'boot-agent'] } }, target }
+  return { group: { default: { targets: [...rows.map((row) => row.service), 'boot-runner'] } }, target }
 }

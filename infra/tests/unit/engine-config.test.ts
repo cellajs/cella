@@ -32,7 +32,7 @@ describe('config inversion sweep', () => {
       ...sources(join(infraRoot, 'tasks')),
       ...sources(join(infraRoot, 'cli')),
       ...sources(join(infraRoot, 'config')),
-      ...sources(join(infraRoot, 'agent', 'src')),
+      ...sources(join(infraRoot, 'boot', 'src')),
       join(infraRoot, 'pulumi-context.ts'),
       join(infraRoot, 'index.ts'),
     ]

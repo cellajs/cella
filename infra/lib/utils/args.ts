@@ -1,4 +1,4 @@
-/** Tiny CLI arg helpers shared by the tsx tasks and the boot agent. */
+/** Tiny CLI arg helpers shared by the tsx tasks and the boot runner. */
 
 /** Value following `--flag`, or undefined if the flag is absent. */
 export function getFlag(argv: string[], flag: string): string | undefined {

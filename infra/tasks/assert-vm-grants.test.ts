@@ -44,7 +44,24 @@ describe('assertVmGrants', () => {
 
     expect(result.ok).toBe(true)
     expect(result.missing).toEqual([])
+    expect(result.extra).toEqual([])
     expect(result.granted).toEqual([...REQUIRED].sort())
+  })
+
+  it('fails when the application holds EXTRA permission sets beyond the required profile', async () => {
+    const fetchImpl = makeFetch([
+      { match: '/iam/v1alpha1/policies?', body: { policies: [{ id: 'pol-1', name: 'vm-reader-policy' }] } },
+      {
+        match: '/iam/v1alpha1/rules?policy_id=pol-1',
+        body: { rules: [{ permission_set_names: [...REQUIRED, 'ObjectStorageFullAccess'] }] },
+      },
+    ])
+
+    const result = await assertVmGrants({ ...baseOpts, fetchImpl })
+
+    expect(result.ok).toBe(false)
+    expect(result.missing).toEqual([])
+    expect(result.extra).toEqual(['ObjectStorageFullAccess'])
   })
 
   it('aggregates permission sets across multiple policies and rules', async () => {

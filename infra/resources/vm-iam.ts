@@ -24,6 +24,19 @@ export const vmReaderApplicationId = scaleway.iam
     return app.applicationId
   })
 
+/**
+ * Operator application id: the `<slug>-operator` principal human operators key
+ * under. Resolved from IAM by name (like the CI/VM principals) so CI ups see
+ * the same identity as local ups; the SCW_OPERATOR_APPLICATION_ID env var only
+ * feeds the infra CLI, not this program.
+ */
+export const operatorApplicationId = scaleway.iam
+  .getApplicationOutput({ name: `${appConfig.slug}-operator`, organizationId })
+  .apply((app) => {
+    if (!app.applicationId) throw new Error(`IAM application '${appConfig.slug}-operator' not found — run the infra CLI bootstrap first.`)
+    return app.applicationId
+  })
+
 /** Build the single project-scoped policy rule for the VM reader. */
 function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types.input.iam.PolicyRule[] {
   return [

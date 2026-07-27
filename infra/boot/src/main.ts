@@ -2,15 +2,15 @@ import { getFlag } from '../../lib/utils/args'
 import { boot } from './boot'
 import { supportedSchemaVersion } from './plan'
 
-const agentVersion = '0.1.0-dev'
+const bootRunnerVersion = '0.1.0-dev'
 
 function usage(): never {
-  throw new Error('Usage: cella-boot-agent --version | supports --schema-version <n> | boot --plan <path>')
+  throw new Error('Usage: cella-boot --version | supports --schema-version <n> | boot --plan <path>')
 }
 
 export async function main(argv = process.argv.slice(2)): Promise<number> {
   if (argv[0] === '--version') {
-    console.info(agentVersion)
+    console.info(bootRunnerVersion)
     return 0
   }
   if (argv[0] === 'supports') {

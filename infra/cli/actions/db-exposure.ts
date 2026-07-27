@@ -1,5 +1,9 @@
 import { spawnSync } from 'node:child_process'
+import { writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { confirm, input } from '@inquirer/prompts'
+import { hardenPublicDsn } from '../../lib/utils/public-dsn'
 import { adoptOrphanedPolicy } from '../../lib/scaleway/adopt-orphaned-policy'
 import { adoptOrphanedSecrets } from '../../lib/scaleway/adopt-orphaned-secrets'
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'
@@ -13,10 +17,11 @@ import { acquireStackLockOrExit, envOr, type InfraContext, promptRequiredInput, 
 import { parseAclInput } from './db-exposure-acl'
 import { pc, checkMark, crossMark, warningMark } from '../../lib/utils/cli-output'
 
-// Pulumi config keys consumed by resources/database.ts and the output it exports.
+// Pulumi config keys consumed by resources/database.ts and the outputs it exports.
 const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint'
 const DB_ACL_KEY = 'infra:dbPublicAcl'
 const PUBLIC_DSN_OUTPUT = 'dbConnectionStringAdminPublic'
+const DB_CA_OUTPUT = 'dbCaCertificate'
 
 /** Detect the operator's current public IPv4 via a well-known echo service. */
 export async function detectPublicIp(): Promise<string | undefined> {
@@ -50,6 +55,25 @@ export function pulumiConfigRm(env: NodeJS.ProcessEnv, stack: string, key: strin
 export function readPublicDsn(env: NodeJS.ProcessEnv, stack: string): string {
   const result = spawnSync('pulumi', ['stack', 'output', PUBLIC_DSN_OUTPUT, '--show-secrets', '--stack', stack], { cwd: infraDir, env, encoding: 'utf8' })
   return result.status === 0 ? (result.stdout ?? '').trim() : ''
+}
+
+/** Read the database instance CA certificate stack output (PEM; empty when unavailable). */
+export function readDbCa(env: NodeJS.ProcessEnv, stack: string): string {
+  const result = spawnSync('pulumi', ['stack', 'output', DB_CA_OUTPUT, '--show-secrets', '--stack', stack], { cwd: infraDir, env, encoding: 'utf8' })
+  return result.status === 0 ? (result.stdout ?? '').trim() : ''
+}
+
+/**
+ * Write the instance CA to a mode-scoped temp file (0600) for `sslrootcert`,
+ * so the printed break-glass DSN verifies the server certificate and hostname.
+ * Returns undefined when the CA output is unavailable.
+ */
+export function writeDbCaFile(env: NodeJS.ProcessEnv, stack: string, environment: string): string | undefined {
+  const ca = readDbCa(env, stack)
+  if (!ca) return undefined
+  const caPath = join(tmpdir(), `cella-db-ca-${environment}.pem`)
+  writeFileSync(caPath, `${ca}\n`, { mode: 0o600 })
+  return caPath
 }
 
 /**
@@ -182,8 +206,14 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
   if (!dsn) {
     console.warn(`${warningMark} Endpoint applied but no public DSN output yet — Scaleway may still be provisioning the load balancer. Re-run to read it.`)
   } else {
-    console.info(`\n${checkMark} ${pc.bold('Database exposed.')} Admin connection string:\n\n    ${pc.cyan(dsn)}\n`)
-    console.info(`  ${pc.dim('Example:')} psql "${dsn}"`)
+    // Verified TLS for the printed DSN: an exposure window is exactly when an
+    // on-path attacker is most interesting, and this DSN carries the admin role.
+    const caPath = writeDbCaFile(env, stack, context.environment)
+    const shownDsn = caPath ? hardenPublicDsn(dsn, caPath) : dsn
+    console.info(`\n${checkMark} ${pc.bold('Database exposed.')} Admin connection string:\n\n    ${pc.cyan(shownDsn)}\n`)
+    console.info(`  ${pc.dim('Example:')} psql "${shownDsn}"`)
+    if (caPath) console.info(`  ${pc.dim(`Server verification pins the instance CA written to ${caPath} (sslmode=verify-full).`)}`)
+    else console.warn(`  ${warningMark} CA output unavailable; DSN left encrypt-only (sslmode=require). Re-run to pick up the CA.`)
   }
   console.info(`\n  ${pc.bold('When finished, run "Stop public DB exposure" to close it again.')}`)
   revokeReminder()

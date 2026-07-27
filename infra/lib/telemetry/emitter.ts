@@ -52,7 +52,7 @@ export interface Telemetry {
   event(name: string, attrs?: Record<string, AttrValue>, opts?: { severity?: Severity; body?: string; ctx?: SpanContext }): void
   /** Every buffered log record, JSONL-encoded: the black-box sink's exact payload. */
   eventsJsonl(): string
-  /** Attach/replace the OTLP export target after creation (the boot agent only
+  /** Attach/replace the OTLP export target after creation (the boot runner only
    *  learns its ingest key after secret hydration; earlier records still export). */
   configureExport(config: { endpoint: string; headers?: Record<string, string> }): void
   /** Export buffered spans + events over OTLP/HTTP. Swallows failures; safe to call repeatedly. */

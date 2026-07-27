@@ -4,7 +4,7 @@ import { confirm } from '@inquirer/prompts'
 import { pc, checkMark, crossMark, warningMark } from '../../lib/utils/cli-output'
 import { infraDir } from '../../lib/utils/paths'
 import type { InfraContext } from '../shared'
-import { convergePublicEndpoint, detectPublicIp, pulumiConfigRm, pulumiConfigSet, readPublicDsn } from './db-exposure'
+import { convergePublicEndpoint, detectPublicIp, pulumiConfigRm, pulumiConfigSet, readDbCa, readPublicDsn } from './db-exposure'
 
 const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint'
 const DB_ACL_KEY = 'infra:dbPublicAcl'
@@ -40,13 +40,18 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
   try {
     const dsn = readPublicDsn(env, stack)
     if (!dsn) throw new Error('public DSN output empty; the endpoint may still be provisioning — re-run to seed.')
+    // Pin the instance CA so the seed's admin-role connection verifies the
+    // server (backend's verifiedPostgresSsl upgrades to verify-full + hostname
+    // pinning when DATABASE_SSL_CA is present).
+    const dbCa = readDbCa(env, stack)
+    if (!dbCa) console.warn(`${warningMark} DB CA output unavailable; seeding over encrypt-only TLS.`)
     console.info(pc.dim('\n-> Running backend seeds against the temporary endpoint...\n'))
     // Dev-mode env from backend/.env stays authoritative for everything except
     // the database target; seeded rows are environment-agnostic data.
     const result = spawnSync('pnpm', ['--filter', 'backend', 'seed'], {
       cwd: resolve(infraDir, '..'),
       stdio: 'inherit',
-      env: { ...process.env, DATABASE_URL: dsn, DATABASE_ADMIN_URL: dsn },
+      env: { ...process.env, DATABASE_URL: dsn, DATABASE_ADMIN_URL: dsn, ...(dbCa ? { DATABASE_SSL_CA: dbCa } : {}) },
     })
     if (result.status !== 0) throw new Error(`backend seed exited ${result.status}`)
     console.info(`\n${checkMark} ${pc.bold('Seeds completed.')}`)

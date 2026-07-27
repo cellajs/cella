@@ -1,4 +1,4 @@
-/** Dependency-free sleep, so this module can be included by the boot agent
+/** Dependency-free sleep, so this module can be included by the boot runner
  *  (whose tsup bundle must not reach into the `shared` workspace package). */
 const defaultSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 

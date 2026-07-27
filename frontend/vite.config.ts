@@ -57,7 +57,7 @@ const repoDocRoutes = {
   'cella/QUICKSTART.md': '/docs/page/quickstart',
   'cdc/README.md': '/docs/page/architecture/cdc',
   'yjs/README.md': '/docs/page/architecture/yjs',
-  'infra/README.md': '/docs/page/guides/deployment',
+  'cella/DEPLOYMENT.md': '/docs/page/guides/deployment',
   'bench/README.md': '/docs/page/guides/load-testing',
 } as const;
 

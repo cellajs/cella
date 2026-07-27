@@ -104,15 +104,16 @@ describe('setupCiKey', () => {
     const policyCreate = calls.find((c) => c.url.endsWith('/policies') && c.init.method === 'POST')!
     const policyBody = JSON.parse(policyCreate.init.body as string)
     expect(policyBody.application_id).toBe('app-new')
-    // Three rules: project-scoped sets, org-wide DNS (project scope_type), and
-    // org-scoped IAM read. DNS and IAM must be separate rules because Scaleway
-    // rejects mixing scope types within one rule.
+    // Three rules: project-scoped sets, project-scoped DNS, and org-scoped IAM
+    // read. DNS and IAM must be separate rules because Scaleway rejects mixing
+    // scope types within one rule.
     expect(policyBody.rules).toHaveLength(3)
     // Project-scoped rule binds to project id.
     expect(policyBody.rules[0].project_ids).toEqual(['proj-1'])
     expect(policyBody.rules[0].permission_set_names).toContain('ObjectStorageFullAccess')
-    // Org-wide rule (project scope_type) covers DNS.
-    expect(policyBody.rules[1].organization_id).toBe('org-1')
+    // DNS is project-scoped (no dnsZone passed: app project only), never org-wide.
+    expect(policyBody.rules[1].project_ids).toEqual(['proj-1'])
+    expect(policyBody.rules[1].organization_id).toBeUndefined()
     expect(policyBody.rules[1].permission_set_names).toEqual(['DomainsDNSFullAccess'])
     // Org-scoped rule covers IAM read, on its own (different scope type from DNS).
     expect(policyBody.rules[2].organization_id).toBe('org-1')

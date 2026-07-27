@@ -29,6 +29,7 @@ export const dbConnectionStringAdmin = program.dbConnectionStringAdmin
 export const dbConnectionStringRuntime = program.dbConnectionStringRuntime
 export const dbConnectionStringCdc = program.dbConnectionStringCdc
 export const dbConnectionStringAdminPublic = program.dbConnectionStringAdminPublic
+export const dbCaCertificate = program.dbCaCertificate
 export const computeInstances = program.computeInstances
 export const computeGenerationMetadata = program.computeGenerationMetadata
 export const serviceDomainUrls = program.serviceDomainUrls

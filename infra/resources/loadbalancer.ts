@@ -162,7 +162,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
 
   const backends = new Map<ServiceName, scaleway.loadbalancers.Backend>()
   for (const service of lbServices) {
-    // backend/yjs/ai answer /health with 204; the frontend Caddy proxy with 200.
+    // backend/yjs/mcp answer /health with 204; the frontend Caddy proxy with 200.
     const healthCode = service.slug === 'frontend' ? 200 : 204
     backends.set(service.slug, new scaleway.loadbalancers.Backend(`${service.slug}-lb-backend`, {
       lbId: lb.id,

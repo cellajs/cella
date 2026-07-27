@@ -1,5 +1,5 @@
 import { scwFetch, scwSend } from './scw-fetch'
-import { ORG_WIDE_PROJECT_PERMISSION_SETS } from './permissions'
+import { DNS_PERMISSION_SETS } from './permissions'
 import { changeMark, checkMark, tildeMark } from '../utils/cli-output'
 
 const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1'
@@ -213,6 +213,15 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
 }
 
 /**
+ * Delete an API key. Used by the setup wizard to revoke the bootstrap key as
+ * its last call: Scaleway allows a key to delete itself, so the wizard can
+ * finish with zero privileged credentials left outside the credential chain.
+ */
+export async function revokeApiKey(callerSecretKey: string, accessKey: string): Promise<void> {
+  await scwSend({ secretKey: callerSecretKey }, 'DELETE', `${IAM_BASE}/api-keys/${accessKey}`)
+}
+
+/**
  * Find an IAM policy id by exact name within an organization, or undefined when
  * none matches. Detects a pre-existing (orphaned) policy that must be
  * adopted into Pulumi state and preserved.
@@ -264,7 +273,7 @@ export async function ensureBootstrapDnsGrant(opts: {
       organization_id: opts.organizationId,
       application_id: key.application_id,
       description: 'Org-wide DNS for the bootstrap key: first provisioning up writes records in the org-shared zone (auto-generated; revoke with the bootstrap key)',
-      rules: [{ permission_set_names: [...ORG_WIDE_PROJECT_PERMISSION_SETS], organization_id: opts.organizationId }],
+      rules: [{ permission_set_names: [...DNS_PERMISSION_SETS], organization_id: opts.organizationId }],
     })
     log(`  Created bootstrap DNS grant '${policyName}' (org-wide DomainsDNSFullAccess)`)
   } catch (error) {

@@ -23,7 +23,7 @@ function fetchSecret(values: Record<string, string | null>): FetchLike {
 
 describe('hydrateRuntimeSecrets', () => {
   it('writes deliverable secrets mode 0600', async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'cella-agent-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'cella-boot-'))
     const outputPath = join(tempDir, '.env.runtime')
     await hydrateRuntimeSecrets({
       manifest: [{ envVar: 'COOKIE_SECRET', secretId: 'secret-1', required: true }],
@@ -37,7 +37,7 @@ describe('hydrateRuntimeSecrets', () => {
   })
 
   it('skips missing optional secrets and fails missing required secrets', async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'cella-agent-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'cella-boot-'))
     await expect(hydrateRuntimeSecrets({
       manifest: [{ envVar: 'OPTIONAL', secretId: 'missing', required: false }],
       secretKey: 'secret',
@@ -55,7 +55,7 @@ describe('hydrateRuntimeSecrets', () => {
   })
 
   it('rejects empty and multiline values', async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'cella-agent-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'cella-boot-'))
     await expect(hydrateRuntimeSecrets({
       manifest: [{ envVar: 'EMPTY', secretId: 'empty', required: true }, { envVar: 'PEM', secretId: 'pem', required: true }],
       secretKey: 'secret',

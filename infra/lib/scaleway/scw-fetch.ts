@@ -2,7 +2,22 @@ import { errorMessage } from '../utils/errors'
 import { type FetchLike, resolveFetch } from '../utils/fetch-like'
 import { retry } from '../utils/retry'
 
-const DEBUG = process.env.SCW_DEBUG === '1' || process.env.DEBUG === '1'
+// SCW_DEBUG only: the generic DEBUG var is set casually while troubleshooting
+// unrelated tools, and verbose mode must never be a one-variable accident away
+// from printing API bodies into retained CI logs.
+const DEBUG = process.env.SCW_DEBUG === '1'
+
+/**
+ * True for endpoints whose request or response bodies carry live secret
+ * values: Secret Manager versions/access (base64 secret data) and IAM api-key
+ * minting (the response contains the new secret key). Verbose logging redacts
+ * bodies for these so even deliberate debugging cannot print values.
+ */
+export function carriesSecretValues(url: string): boolean {
+  return url.includes('/secret-manager/') || url.includes('/api-keys')
+}
+
+const REDACTED = '[redacted: secret-bearing endpoint]'
 
 // A rejected fetch is a transient network failure (an HTTP error status
 // resolves); one runner blip must not fail a whole deploy preflight.
@@ -21,7 +36,10 @@ export function scwS3Endpoint(region: string): string {
 }
 
 async function request(auth: ScwAuth, method: string, url: string, body?: unknown): Promise<string> {
-  if (DEBUG) process.stderr.write(`[scw] → ${method} ${url}${body ? ` body=${JSON.stringify(body)}` : ''}\n`)
+  if (DEBUG) {
+    const bodyLog = body ? ` body=${carriesSecretValues(url) ? REDACTED : JSON.stringify(body)}` : ''
+    process.stderr.write(`[scw] → ${method} ${url}${bodyLog}\n`)
+  }
   const fetchImpl = resolveFetch(auth.fetchImpl)
   let res: Awaited<ReturnType<FetchLike>>
   try {
@@ -42,7 +60,7 @@ async function request(auth: ScwAuth, method: string, url: string, body?: unknow
     throw new Error(`Scaleway ${method} ${url} failed after ${networkAttempts} attempts: ${errorMessage(err)}`)
   }
   const text = await res.text()
-  if (DEBUG) process.stderr.write(`[scw] ← ${res.status} ${text.slice(0, 500)}\n`)
+  if (DEBUG) process.stderr.write(`[scw] ← ${res.status} ${carriesSecretValues(url) ? REDACTED : text.slice(0, 500)}\n`)
   if (!res.ok) throw new Error(`Scaleway ${method} ${url} → ${res.status}: ${text}`)
   return text
 }

@@ -6,7 +6,7 @@ import { errorMessage } from '../../lib/utils/errors'
 import { retry } from '../../lib/utils/retry'
 import { createJsonLogger } from './logger'
 import { execCommand, mustExec, type ExecFn } from './exec'
-import { uploadBootDiagnostics } from './diagnostics'
+import { scrubSecretLines, uploadBootDiagnostics } from './diagnostics'
 import { hydrateRuntimeSecrets } from './runtime-secrets'
 import { parseBootPlanJson, type BootPlan } from './plan'
 
@@ -88,10 +88,12 @@ async function startService(plan: BootPlan, exec: ExecFn): Promise<void> {
   await mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'up', '-d', '--wait', '--wait-timeout', String(startupTimeoutSeconds), plan.profile], { cwd: '/opt/app' })
 }
 
-/** Best-effort tail of the app container's own stdout/stderr for diagnostics. */
+/** Best-effort tail of the app container's own stdout/stderr for diagnostics,
+ *  secret-scrubbed at capture so every downstream sink (telemetry event body,
+ *  boot-diag upload) only ever sees the scrubbed form. */
 async function captureServiceLogs(plan: BootPlan, exec: ExecFn): Promise<string> {
   const res = await exec('docker', ['compose', '--profile', plan.profile, 'logs', '--no-color', '--tail', '200', plan.profile], { cwd: '/opt/app' })
-  return (res.stdout || res.stderr || '').trim()
+  return scrubSecretLines((res.stdout || res.stderr || '').trim())
 }
 
 /** Read the maple ingest key from the hydrated runtime env file, if delivered. */
@@ -156,7 +158,7 @@ export async function boot(opts: BootOptions): Promise<void> {
   } catch (err) {
     bootRc = 1
     logger.log('error', 'boot-failed', { message: errorMessage(err) })
-    // The agent runs containerized without the host boot log mounted, so capture
+    // The boot runner runs containerized without the host boot log mounted, so capture
     // the crashed container's own output here to ship it with the diagnostics.
     appLogs = await captureServiceLogs(plan, exec).catch(() => undefined)
     bootSpan.end('error', { message: errorMessage(err) })

@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { uploadBootDiagnostics } from './diagnostics'
+import { scrubSecretLines, uploadBootDiagnostics } from './diagnostics'
 
 let tempDir: string | undefined
 
@@ -82,5 +82,47 @@ describe('uploadBootDiagnostics', () => {
     })
     expect(body).toContain('--- app logs ---')
     expect(body).toContain('ERR_MODULE_NOT_FOUND')
+  })
+
+  it('scrubs secret-bearing lines from both the boot log and the app logs before upload', async () => {
+    tempDir = await mkdtemp(join(tmpdir(), 'cella-diag-'))
+    const logFile = join(tempDir, 'boot.log')
+    await writeFile(logFile, 'boot start\nDATABASE_URL=postgresql://admin:pw@host/db\nboot end', 'utf-8')
+    let body = ''
+    await uploadBootDiagnostics({
+      bucket: 'cella-boot-diag',
+      region: 'nl-ams',
+      accessKey: 'access',
+      secretKey: 'secret',
+      service: 'backend',
+      releaseSha: 'abc123',
+      bootRc: 1,
+      logFile,
+      appLogs: 'crash dump\nCOOKIE_SECRET=abc\nstack trace line',
+      now: new Date('2026-06-19T12:00:00Z'),
+      fetchImpl: async (_url, init) => {
+        body ||= init?.body ?? ''
+        return { ok: true, status: 200, text: async () => '' }
+      },
+    })
+    expect(body).toContain('boot start')
+    expect(body).toContain('stack trace line')
+    expect(body).not.toContain('postgresql://admin')
+    expect(body).not.toContain('COOKIE_SECRET=abc')
+    expect(body).toContain('[line scrubbed: matched secret pattern]')
+  })
+})
+
+describe('scrubSecretLines', () => {
+  it('replaces lines matching the cloud-init scrub pattern and keeps the rest', () => {
+    const input = ['ok line', 'MY_API_KEY=xyz', 'docker login rg.fr-par.scw.cloud', 'PASSWORD: hunter2', 'final line'].join('\n')
+    const out = scrubSecretLines(input)
+    expect(out.split('\n')).toEqual([
+      'ok line',
+      '[line scrubbed: matched secret pattern]',
+      '[line scrubbed: matched secret pattern]',
+      '[line scrubbed: matched secret pattern]',
+      'final line',
+    ])
   })
 })

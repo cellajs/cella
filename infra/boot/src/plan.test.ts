@@ -7,7 +7,7 @@ function plan(overrides: Record<string, unknown> = {}): string {
     service: 'backend',
     profile: 'backend',
     releaseSha: 'abc123',
-    imageContract: 'docker-node-agent-v1',
+    imageContract: 'docker-node-boot-v1',
     registry: 'rg.nl-ams.scw.cloud/ns',
     region: 'nl-ams',
     credentials: { scwAccessKeyFile: '/etc/cella/scw-access-key', scwSecretKeyFile: '/etc/cella/scw-secret-key' },

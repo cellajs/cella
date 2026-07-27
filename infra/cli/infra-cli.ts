@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { chmodSync, existsSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { select } from '@inquirer/prompts'
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env'
@@ -38,25 +38,46 @@ function parseEnvFile(path: string): Record<string, string> {
 /**
  * The target mode. INFRA_MODE (or --mode) selects it explicitly, including a
  * fresh stack that has no Pulumi.<mode>.yaml yet; otherwise the first existing
- * stack file wins (production before staging), matching prior behavior.
+ * stack file wins (production before staging), matching prior behavior. With
+ * no stack file at all, an interactive fresh install asks, defaulting to
+ * staging: validate the cheap disposable target first, promote to production
+ * later by re-running with `--mode production`.
  * A mode-scoped env file `infra/.env.<mode>` OVERRIDES the ambient env: it
  * carries that mode's credentials/project so a staging run cannot silently
  * inherit production values from backend/.env.
  */
-function resolveMode(): 'production' | 'staging' {
+async function resolveMode(): Promise<'production' | 'staging'> {
   const flagIndex = process.argv.indexOf('--mode')
   const raw = (flagIndex >= 0 ? process.argv[flagIndex + 1] : undefined) ?? process.env.INFRA_MODE
   if (raw) {
     if (raw !== 'production' && raw !== 'staging') throw new Error(`INFRA_MODE must be 'production' or 'staging' (got '${raw}')`)
     return raw
   }
+  const anyStackExists = (['production', 'staging'] as const).some((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)))
+  if (!anyStackExists && !nonInteractive()) {
+    return select<'production' | 'staging'>({
+      message: 'Fresh install. Which mode do you want to set up?',
+      default: 'staging',
+      choices: [
+        { name: 'staging (recommended)', value: 'staging', description: 'Cheapest footprint, seedable, disposable. Validate the full pipeline here first.' },
+        { name: 'production', value: 'production', description: 'The real thing. You can also promote later by re-running with --mode production.' },
+      ],
+    })
+  }
   return pickStackShort((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)))
 }
 
 async function loadContext(): Promise<InfraContext> {
-  const environment = resolveMode()
+  const environment = await resolveMode()
   const modeEnvPath = resolve(infraDir, `.env.${environment}`)
   if (existsSync(modeEnvPath)) {
+    // These files hold a live secret key + Pulumi passphrase; group/other read
+    // bits hand them to every local user, backup agent, and sync client.
+    const mode = statSync(modeEnvPath).mode
+    if ((mode & 0o077) !== 0) {
+      chmodSync(modeEnvPath, 0o600)
+      console.info(pc.dim(`Tightened ${modeEnvPath} to 600 (was ${(mode & 0o777).toString(8)}): it carries live credentials.`))
+    }
     for (const [key, value] of Object.entries(parseEnvFile(modeEnvPath))) process.env[key] = value
     console.info(pc.dim(`Loaded ${modeEnvPath} (mode-scoped env, overrides ambient values)`))
   }
@@ -70,10 +91,12 @@ async function loadContext(): Promise<InfraContext> {
   const { loadEngineConfig } = await import('../config/engine-config')
   const appConfig = await loadEngineConfig()
 
-  // Project id is required for every mode (it scopes all Scaleway API calls), so
-  // resolve it once here from the env files loaded above and fail fast if absent.
+  // Project id scopes all Scaleway API calls, so resolve it once here from the
+  // env files loaded above. A fresh install may not have one yet: the setup
+  // wizard offers to pick or create the project with the bootstrap key and
+  // writes SCW_PROJECT_ID to backend/.env itself. Every other state fails fast.
   const projectId = resolveProjectId()
-  if (!projectId) {
+  if (!projectId && state !== 'fresh') {
     throw new Error('SCW_PROJECT_ID is not set — add it to backend/.env before running the infra CLI.')
   }
 
@@ -91,7 +114,7 @@ async function loadContext(): Promise<InfraContext> {
     state,
     hasCiKey: state === 'bootstrapped',
     appConfig,
-    projectId,
+    projectId: projectId ?? '',
   }
 }
 

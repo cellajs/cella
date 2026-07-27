@@ -20,7 +20,7 @@ export const deployEvents = {
   failed: defineEvent('deploy.failed', 'deploy of {sha} to {mode} FAILED'),
 } as const
 
-/** Boot agent events (same stream, VM side). */
+/** Boot runner events (same stream, VM side). */
 export const bootEvents = {
   started: defineEvent('boot.started', '{service} boot started for {sha}'),
   stepCompleted: defineEvent('boot.step.completed', '{service} boot step {step} completed in {duration_s}s'),

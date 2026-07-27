@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 
-// Hand-rolled OTLP/JSON builders: the agent bundle stays dependency-free and
+// Hand-rolled OTLP/JSON builders: the boot runner bundle stays dependency-free and
 // the black-box S3 sink stores exactly these objects (no OTel SDK needed).
 
 /** Attribute value types the engine emits. */
