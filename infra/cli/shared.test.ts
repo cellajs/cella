@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { autoAcceptDefaults, confirmOrDefault, inputOrDefault } from './shared'
-import { failWithHint } from '../lib/utils/cli-output'
+import { failWithHint, withSpinner } from '../lib/utils/cli-output'
 
 const savedArgv = process.argv
 const savedNonInteractive = process.env.INFRA_NON_INTERACTIVE
@@ -81,5 +81,28 @@ describe('failWithHint', () => {
     expect(joined).toContain('boom')
     expect(joined).toContain('pnpm infra')
     expect(joined).toContain('why it broke')
+  })
+})
+
+describe('withSpinner', () => {
+  // stderr is not a TTY under vitest, so the static-line fallback path runs.
+  it('returns the task result', async () => {
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+    await expect(withSpinner('doing a thing', async () => 42)).resolves.toBe(42)
+  })
+
+  it('prints a single static line to stderr when not a TTY', async () => {
+    const written: string[] = []
+    vi.spyOn(process.stderr, 'write').mockImplementation((chunk: string | Uint8Array) => {
+      written.push(String(chunk))
+      return true
+    })
+    await withSpinner('loading projects', async () => 'ok')
+    expect(written.join('')).toContain('→ loading projects')
+  })
+
+  it('propagates a rejection', async () => {
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+    await expect(withSpinner('boom', async () => Promise.reject(new Error('nope')))).rejects.toThrow('nope')
   })
 })

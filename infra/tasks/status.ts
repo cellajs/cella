@@ -18,7 +18,7 @@ import { detectComputeDeferred, detectStackState, pickStackShort, type StackStat
 import { evaluateStatus } from '../lib/status/evaluate'
 import type { CheckStatus, GithubInputs, LiveServiceInput, RolloutServiceInput, StatusInputs, StatusReport } from '../lib/status/types'
 import { getFlag } from './args'
-import { checkMark, crossMark, DIVIDER, pc, warningMark } from '../lib/utils/cli-output'
+import { checkMark, crossMark, DIVIDER, pc, warningMark, withSpinner } from '../lib/utils/cli-output'
 
 /** GitHub Environment secrets a deploy needs; mirrors github-sync's write set. */
 const REQUIRED_ENV_SECRETS = ['SCW_ACCESS_KEY', 'SCW_SECRET_KEY', 'SCW_PROJECT_ID', 'SCW_ORGANIZATION_ID', 'PULUMI_CONFIG_PASSPHRASE']
@@ -112,7 +112,9 @@ async function gatherLive(appConfig: EngineConfig): Promise<LiveServiceInput[] |
   } catch {
     return undefined
   }
-  const probe = createFetchProbe(6000)
+  // Status is a snapshot, not a rollout gate, so a shorter timeout than the
+  // deploy poller keeps the worst-case wait small when a service is down.
+  const probe = createFetchProbe(3000)
   return Promise.all(
     endpoints.map(async (endpoint): Promise<LiveServiceInput> => {
       const healthUrl = `${endpoint.url.replace(/\/$/, '')}/health`
@@ -236,13 +238,15 @@ export function printReport(report: StatusReport, opts: { json?: boolean }): voi
  * the standalone `pnpm --filter infra status --json` path serves machines.
  */
 export async function runStatus(context: { environment: string; appConfig: EngineConfig; state: StackState; stackYaml?: string; projectId: string }): Promise<void> {
-  const report = await buildReport({
-    mode: context.environment,
-    appConfig: context.appConfig,
-    stackState: context.state,
-    stackYaml: context.stackYaml,
-    projectId: context.projectId || undefined,
-  })
+  const report = await withSpinner('Checking infra status', () =>
+    buildReport({
+      mode: context.environment,
+      appConfig: context.appConfig,
+      stackState: context.state,
+      stackYaml: context.stackYaml,
+      projectId: context.projectId || undefined,
+    }),
+  )
   printReport(report, { json: false })
 }
 
@@ -276,7 +280,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const stackYaml = existsSync(stackPath) ? readFileSync(stackPath, 'utf8') : undefined
   const stackState = detectStackState({ yamlText: stackYaml })
 
-  const report = await buildReport({ mode, appConfig, stackState, stackYaml, projectId: resolveProjectId() })
+  const report = await withSpinner('Checking infra status', () => buildReport({ mode, appConfig, stackState, stackYaml, projectId: resolveProjectId() }))
   printReport(report, { json })
 }
 

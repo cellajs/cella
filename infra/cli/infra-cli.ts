@@ -155,6 +155,10 @@ const mode: CliMode =
     : await select<CliMode>({
         message: 'Existing config detected. How would you like to proceed?',
         default: 'resume',
+        // No wrap-around, and page the whole list so the full action count
+        // stays visible at a glance.
+        loop: false,
+        pageSize: 12,
         choices: [
           { name: 'Status', value: 'status', description: 'Read-only health check: tooling, credentials, stack state, rollout, live service versions, and the next action to take. `--json` on the standalone `pnpm --filter infra status` for machines.' },
           { name: 'Resume', value: 'resume', description: 'Verify & sync config + GitHub secrets with the CI key; self-heals missing keys. Read-only on DB/VPC/PN — cannot change protected infra.' },

@@ -37,6 +37,47 @@ export function printHeader(name: string, version?: string, right = 'cellajs.com
 /** Promise-based delay used by poll/retry loops. */
 export const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
+/**
+ * True when an animated spinner is appropriate: stderr is a TTY and the run is
+ * not automated. Automation (INFRA_NON_INTERACTIVE, CI, GitHub Actions) and
+ * piped output get a single static line.
+ */
+function spinnerEnabled(): boolean {
+  return Boolean(process.stderr.isTTY) && process.env.INFRA_NON_INTERACTIVE !== '1' && process.env.CI !== 'true' && !process.env.GITHUB_ACTIONS
+}
+
+const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+
+/**
+ * Run a silent async task while showing a spinner next to `label`, so a network
+ * round-trip does not look like a freeze. Everything is written to stderr, so
+ * stdout stays clean for machine output (e.g. `status --json`). Non-TTY or
+ * automated runs print one `→ label` line and no animation. The line is always
+ * cleared (success or throw), and the caller prints its own result.
+ *
+ * Only wrap tasks that produce no output of their own: a task that logs while
+ * running fights the spinner's redraw. Streaming subprocesses (`pulumi up`,
+ * `docker`) must not be wrapped.
+ */
+export async function withSpinner<T>(label: string, task: () => Promise<T>): Promise<T> {
+  if (!spinnerEnabled()) {
+    process.stderr.write(`→ ${label}\n`)
+    return task()
+  }
+  let frame = 0
+  process.stderr.write(`${pc.cyan(SPINNER_FRAMES[0])} ${label}`)
+  const timer = setInterval(() => {
+    frame = (frame + 1) % SPINNER_FRAMES.length
+    process.stderr.write(`\r${pc.cyan(SPINNER_FRAMES[frame]!)} ${label}`)
+  }, 80)
+  try {
+    return await task()
+  } finally {
+    clearInterval(timer)
+    process.stderr.write('\r\x1b[2K')
+  }
+}
+
 /** A recovery hint printed after a failure: a runnable command and why. */
 export interface Hint {
   command: string

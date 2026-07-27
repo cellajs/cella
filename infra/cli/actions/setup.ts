@@ -26,7 +26,7 @@ import { setupOperatorApp } from '../../tasks/setup-operator-app'
 import { setupVmKey } from '../../tasks/setup-vm-key'
 import type { CliMode, InfraContext } from '../shared'
 import { acquireStackLockOrExit, autoAcceptDefaults, confirmOrDefault, createStepRunner, envOr, inputOrDefault, nonInteractive, promptRequiredInput, promptStackName, pulumiLoginUrl, resolveOrCreatePassphrase } from '../shared'
-import { pc, DIVIDER, changeMark, checkMark, failWithHint, warningMark } from '../../lib/utils/cli-output'
+import { pc, DIVIDER, changeMark, checkMark, failWithHint, warningMark, withSpinner } from '../../lib/utils/cli-output'
 
 /** Everything the per-phase helpers below share. */
 interface SetupContext {
@@ -358,13 +358,16 @@ async function ensureProjectId(opts: { slug: string; accessKey: string; secretKe
     throw new Error('SCW_PROJECT_ID is not set. Non-interactive setup requires it in backend/.env or the environment.')
   }
   console.info(`\n→ Scaleway project ${pc.dim('(none configured yet)')}`)
-  const organizationId = await resolveOrganizationIdFromKey(opts.secretKey, opts.accessKey)
-  const projects = await listProjects(opts.secretKey, organizationId)
+  const { organizationId, projects } = await withSpinner('Loading Scaleway projects', async () => {
+    const organizationId = await resolveOrganizationIdFromKey(opts.secretKey, opts.accessKey)
+    return { organizationId, projects: await listProjects(opts.secretKey, organizationId) }
+  })
   const CREATE = '__create__'
   const existing = projects.find((project) => project.name === opts.slug)
   const choice = await select<string>({
     message: 'Scaleway project for this stack',
     default: existing?.id ?? CREATE,
+    loop: false,
     choices: [
       { name: `Create project "${opts.slug}"`, value: CREATE, description: 'Creates a fresh project in your organization.' },
       ...projects.map((project) => ({ name: `${project.name} ${pc.dim(`(${project.id})`)}`, value: project.id })),
@@ -613,7 +616,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         : await confirm({ message: `Revoke the bootstrap key (${scwAccessKey}) now? Nothing else needs it; day-2 privileged actions ask for a fresh one.`, default: true })
     if (revokeNow) {
       try {
-        await revokeApiKey(scwSecretKey, scwAccessKey)
+        await withSpinner('Revoking bootstrap key', () => revokeApiKey(scwSecretKey, scwAccessKey))
         console.info(`${checkMark} Bootstrap key ${scwAccessKey} revoked.`)
       } catch (error) {
         console.warn(
