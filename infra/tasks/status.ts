@@ -217,8 +217,11 @@ export function formatReport(report: StatusReport): string {
     ),
   )
   lines.push(pc.dim(DIVIDER))
+  // Pad the raw title to the widest, then colour, so values align in a column.
+  const width = report.checks.reduce((max, check) => Math.max(max, check.title.length), 0)
   for (const check of report.checks) {
-    lines.push(`${MARKS[check.status]} ${pc.bold(check.title)}: ${check.detail}`)
+    const label = pc.bold(pc.gray(check.title.padEnd(width)))
+    lines.push(`${MARKS[check.status]} ${label}  ${check.detail}`)
   }
   if (report.nextAction) {
     lines.push(pc.dim(DIVIDER))

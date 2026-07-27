@@ -155,12 +155,12 @@ if (deferredSince) {
 // the local stack config already in memory.
 const backChoice = { name: '← Back', value: 'back' as const, description: 'Return to the main menu.' }
 
-async function chooseDatabaseAction(dbExposed: boolean): Promise<CliMode | 'back'> {
+async function chooseDatabaseAction(dbExposed: boolean): Promise<Exclude<CliMode, 'status'> | 'back'> {
   const toggle = dbExposed
     ? { name: `Public DB access: ${pc.yellow('OPEN')} — close it`, value: 'unexpose-db' as const, description: 'Close the temporary public DB endpoint.' }
     : { name: 'Open temporary public DB access', value: 'expose-db' as const, description: 'Open a temporary DB endpoint locked to your IP (close it after).' }
-  return select<CliMode | 'back'>({
-    message: 'Database',
+  return select<Exclude<CliMode, 'status'> | 'back'>({
+    message: 'Manage database',
     loop: false,
     choices: [
       { name: 'Reset database', value: 'reset-database', description: 'DESTRUCTIVE: wipe and rebuild the database empty (backup first).' },
@@ -171,9 +171,9 @@ async function chooseDatabaseAction(dbExposed: boolean): Promise<CliMode | 'back
   })
 }
 
-async function chooseKeysAction(): Promise<CliMode | 'back'> {
-  return select<CliMode | 'back'>({
-    message: 'Keys & secrets',
+async function chooseKeysAction(): Promise<Exclude<CliMode, 'status'> | 'back'> {
+  return select<Exclude<CliMode, 'status'> | 'back'>({
+    message: 'Manage keys & secrets',
     loop: false,
     choices: [
       { name: 'Rotate keys', value: 'rotate', description: 'Replace the CI deploy and VM reader keys with fresh ones.' },
@@ -184,9 +184,9 @@ async function chooseKeysAction(): Promise<CliMode | 'back'> {
   })
 }
 
-async function chooseStackAction(): Promise<CliMode | 'back'> {
-  return select<CliMode | 'back'>({
-    message: 'Stack',
+async function chooseStackAction(): Promise<Exclude<CliMode, 'status'> | 'back'> {
+  return select<Exclude<CliMode, 'status'> | 'back'>({
+    message: 'Stack setup',
     loop: false,
     choices: [
       { name: 'Apply infra change', value: 'apply', description: 'Apply database, VPC, or network changes (needs a bootstrap key).' },
@@ -198,34 +198,34 @@ async function chooseStackAction(): Promise<CliMode | 'back'> {
   })
 }
 
-async function chooseAction(ctx: InfraContext): Promise<CliMode> {
+async function chooseAction(ctx: InfraContext): Promise<Exclude<CliMode, 'status'>> {
   const dbExposed = detectDbPublicEndpoint(ctx.stackYaml)
+  const { runStatus } = await import('../tasks/status')
   while (true) {
     const category = await select<'status' | 'database' | 'keys' | 'stack'>({
       message: 'How would you like to proceed?',
       default: 'status',
       loop: false,
       choices: [
-        { name: 'Status', value: 'status', description: 'Health check: what is set up, what is live, and the next step.' },
-        { name: 'Database', value: 'database', description: 'Reset, seed, or open temporary public access.' },
-        { name: 'Keys & secrets', value: 'keys', description: 'Rotate keys or the passphrase; manage runtime secrets.' },
-        { name: 'Stack', value: 'stack', description: 'Apply or preview infra changes, resume, or unlock.' },
+        { name: 'Show status', value: 'status', description: 'Health check: what is set up, what is live, and the next step.' },
+        { name: 'Manage database', value: 'database', description: 'Reset, seed, or open temporary public access.' },
+        { name: 'Manage keys & secrets', value: 'keys', description: 'Rotate keys or the passphrase; manage runtime secrets.' },
+        { name: 'Stack setup', value: 'stack', description: 'Apply or preview infra changes, resume, or unlock.' },
       ],
     })
-    if (category === 'status') return 'status'
+    // Status is read-only, so run it in place and return to the menu rather
+    // than exiting, letting the operator glance and then pick a real action.
+    if (category === 'status') {
+      await runStatus(ctx)
+      continue
+    }
     const action = category === 'database' ? await chooseDatabaseAction(dbExposed) : category === 'keys' ? await chooseKeysAction() : await chooseStackAction()
     if (action !== 'back') return action
   }
 }
 
-const mode: CliMode = context.state === 'fresh' || nonInteractive() ? 'resume' : await chooseAction(context)
+const mode: Exclude<CliMode, 'status'> = context.state === 'fresh' || nonInteractive() ? 'resume' : await chooseAction(context)
 
-
-if (mode === 'status') {
-  const { runStatus } = await import('../tasks/status')
-  await runStatus(context)
-  process.exit(0)
-}
 
 if (mode === 'apply') {
   await runApply(context)
