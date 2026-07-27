@@ -59,8 +59,8 @@ async function resolveMode(): Promise<'production' | 'staging'> {
       message: 'Fresh install. Which mode do you want to set up?',
       default: 'staging',
       choices: [
-        { name: 'staging (recommended)', value: 'staging', description: 'Cheapest footprint, seedable, disposable. Validate the full pipeline here first.' },
-        { name: 'production', value: 'production', description: 'The real thing. You can also promote later by re-running with --mode production.' },
+        { name: 'staging (recommended)', value: 'staging', description: 'Cheapest setup, disposable. Validate the pipeline here first.' },
+        { name: 'production', value: 'production', description: 'The real thing. Promote here later once staging is green.' },
       ],
     })
   }
@@ -160,18 +160,18 @@ const mode: CliMode =
         loop: false,
         pageSize: 12,
         choices: [
-          { name: 'Status', value: 'status', description: 'Read-only health check: tooling, credentials, stack state, rollout, live service versions, and the next action to take. `--json` on the standalone `pnpm --filter infra status` for machines.' },
-          { name: 'Resume', value: 'resume', description: 'Verify & sync config + GitHub secrets with the CI key; self-heals missing keys. Read-only on DB/VPC/PN — cannot change protected infra.' },
-          { name: 'Rotate keys', value: 'rotate', description: 'Mint fresh CI deploy and VM reader keys. Use after editing the CI policy permission sets.' },
-          { name: 'Rotate passphrase', value: 'rotate-passphrase', description: 'Re-encrypt stack state with a freshly generated Pulumi passphrase and sync it to GitHub. Needs the current passphrase; no bootstrap key.' },
-          { name: 'Apply infra change', value: 'apply', description: 'Privileged converge: one-shot `pulumi up` with a bootstrap key for DB/VPC/PN changes the CI key cannot. No refresh (buckets are CI-scoped); offers to prune state entries whose live object is already gone.' },
-          { name: 'Preview', value: 'preview', description: 'Read-only `pulumi preview`. Validates auth & shows drift; makes no changes.' },
-          { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete operator-managed runtime secrets in Scaleway Secret Manager.' },
-          { name: 'Reset database', value: 'reset-database', description: 'DESTRUCTIVE: delete + recreate the app database empty (backup first, roles re-granted), then migrate/seed on the serial console. Pre-production, or with services quiesced.' },
-          { name: 'Seed database', value: 'seed-db', description: 'Non-production only: temporarily expose the DB to your IP, run the backend seeds, close the endpoint again.' },
-          { name: 'Expose database publicly', value: 'expose-db', description: 'Add a scoped, temporary public DB endpoint (ACL-restricted to your IP) for prototyping/debugging. Prints the admin connection string. Remember to close it.' },
-          { name: 'Stop public DB exposure', value: 'unexpose-db', description: 'Remove the public DB endpoint and ACL, returning the database to private-only access.' },
-          { name: 'Unlock', value: 'unlock', description: 'Clear a stale stack lock left by an interrupted apply/deploy. Use only when no run is actually in progress.' },
+          { name: 'Status', value: 'status', description: 'Health check: what is set up, what is live, and the next step.' },
+          { name: 'Resume', value: 'resume', description: 'Re-sync config and GitHub secrets, and self-heal missing keys.' },
+          { name: 'Rotate keys', value: 'rotate', description: 'Replace the CI deploy and VM reader keys with fresh ones.' },
+          { name: 'Rotate passphrase', value: 'rotate-passphrase', description: 'Re-encrypt stack state with a new Pulumi passphrase and sync it.' },
+          { name: 'Apply infra change', value: 'apply', description: 'Apply database, VPC, or network changes (needs a bootstrap key).' },
+          { name: 'Preview', value: 'preview', description: 'Show what a deploy would change. Read-only, makes no changes.' },
+          { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete the runtime secrets.' },
+          { name: 'Reset database', value: 'reset-database', description: 'DESTRUCTIVE: wipe and rebuild the database empty (backup first).' },
+          { name: 'Seed database', value: 'seed-db', description: 'Load seed data into a non-production database.' },
+          { name: 'Expose database publicly', value: 'expose-db', description: 'Open a temporary DB endpoint locked to your IP (close it after).' },
+          { name: 'Stop public DB exposure', value: 'unexpose-db', description: 'Close the temporary public DB endpoint.' },
+          { name: 'Unlock', value: 'unlock', description: 'Clear a stale lock from an interrupted run.' },
         ],
       })
 
