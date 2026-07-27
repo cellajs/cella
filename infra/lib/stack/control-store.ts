@@ -344,6 +344,12 @@ async function putLock(s3: S3Like, bucket: string, key: string, info: LockInfo, 
   await putJsonObject(s3, bucket, key, `${JSON.stringify(info, null, 2)}\n`, opts)
 }
 
+/** Read the lock object without mutating it (the `infra status` reader). Returns
+ *  undefined when no lock is held or the object is unparseable. */
+export async function peekLock(s3: S3Like, bucket: string, key: string): Promise<LockInfo | undefined> {
+  return (await readLock(s3, bucket, key)).info
+}
+
 /** Acquire the stack lock. Returns `{acquired:false, held}` when a live lock is
  *  held by someone else; breaks and takes an expired lock. */
 export async function acquireLock(

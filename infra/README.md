@@ -65,6 +65,36 @@ Three design rules carry the model:
 
 The deploy command opens an OTel trace; every pipeline step is a span, and audit events (`deploy.started`, `<service> promoted to generation <id>`, `deploy.failed`, ...) stream to the configured OTLP endpoint. Each VM's **boot runner** joins the same trace through the boot plan's `traceparent` and reports its boot phases and failures, including a crash-log tail. Independently of any backend, every VM also uploads its **boot diagnostics** (logs + the same events as JSONL) to a dedicated bucket: `pnpm --filter infra diag` reads them, `--replay` re-ships them to the telemetry backend. Configure the destination with `OTEL_EXPORTER_OTLP_ENDPOINT`/`OTEL_EXPORTER_OTLP_HEADERS`, or seed the `maple-secret-ingest-key` secret and the deploy picks it up automatically.
 
+## Status command
+
+`infra status` is a read-only health check across the whole lifecycle: tooling, credentials, stack state, GitHub Environment, the state bucket and lock, rollout pointers, live service versions, and DNS. It runs from the operator menu (`pnpm infra` → **Status**) or standalone:
+
+```
+pnpm --filter infra status [--mode <production|staging>] [--json]
+```
+
+Each check reports one of `ok | warn | missing | error | unknown`, where `unknown` means "could not be evaluated" (almost always a missing credential), never a failure: a check that needs Scaleway API access (`credential: "scaleway"`, satisfied by any operator or CI deploy key) degrades to `unknown` when no key is present, so the command always completes. The report's single `nextAction` is the highest-priority pending step, with an exact command to run.
+
+`--json` emits a stable, versioned contract that forks, agents, and CI may depend on; a breaking shape change bumps `schemaVersion`.
+
+```jsonc
+{
+  "schemaVersion": 1,
+  "mode": "staging",
+  "generatedAt": "<iso>",
+  "stackState": "fresh | partial | bootstrapped",
+  "checks": [
+    { "id": "live.backend", "title": "Service backend", "status": "ok",
+      "detail": "serving 58d6ab0", "credential": "none",
+      "nextAction": { "description": "...", "command": "..." } } // present only when actionable
+  ],
+  "nextAction": { "description": "...", "command": "..." }, // absent when nothing needs doing
+  "summary": { "ok": 17, "warn": 0, "missing": 0, "error": 0, "unknown": 0 }
+}
+```
+
+Check `id`s are stable identifiers (`tooling.pulumi`, `config.stackState`, `identity.project`, `github.environment`, `state.bucket`, `state.lock`, `rollout`, `secrets.required`, `live.<service>`, `dns.zone`). The evaluator is a pure function of gathered facts, so the mapping from facts to verdicts is unit-tested in isolation.
+
 ## Extending
 
 The engine is plain Pulumi + the Scaleway SDK; there is no plugin framework to learn. Fork-owned registries ([config/services.config.ts](config/services.config.ts), [config/runtime-secrets.config.ts](config/runtime-secrets.config.ts), [config/general.config.ts](config/general.config.ts)) declare services, sizing, routing, and secret wiring; resource modules under [resources/](resources/) are ordinary Pulumi programs you can read and change. The app description itself is injected through [config/engine-config.ts](config/engine-config.ts), which keeps the engine decoupled from any one workspace.

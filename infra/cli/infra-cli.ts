@@ -157,6 +157,7 @@ const mode: CliMode =
         message: 'Existing config detected. How would you like to proceed?',
         default: 'resume',
         choices: [
+          { name: 'Status', value: 'status', description: 'Read-only health check: tooling, credentials, stack state, rollout, live service versions, and the next action to take. `--json` on the standalone `pnpm --filter infra status` for machines.' },
           { name: 'Resume', value: 'resume', description: 'Verify & sync config + GitHub secrets with the CI key; self-heals missing keys. Read-only on DB/VPC/PN — cannot change protected infra.' },
           { name: 'Rotate keys', value: 'rotate', description: 'Mint fresh CI deploy and VM reader keys. Use after editing the CI policy permission sets.' },
           { name: 'Rotate passphrase', value: 'rotate-passphrase', description: 'Re-encrypt stack state with a freshly generated Pulumi passphrase and sync it to GitHub. Needs the current passphrase; no bootstrap key.' },
@@ -171,6 +172,12 @@ const mode: CliMode =
         ],
       })
 
+
+if (mode === 'status') {
+  const { runStatus } = await import('../tasks/status')
+  await runStatus(context)
+  process.exit(0)
+}
 
 if (mode === 'apply') {
   await runApply(context)
