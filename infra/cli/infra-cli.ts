@@ -217,6 +217,7 @@ async function chooseAction(ctx: InfraContext): Promise<Exclude<CliMode, 'status
     // than exiting, letting the operator glance and then pick a real action.
     if (category === 'status') {
       await runStatus(ctx)
+      console.info('')
       continue
     }
     const action = category === 'database' ? await chooseDatabaseAction(dbExposed) : category === 'keys' ? await chooseKeysAction() : await chooseStackAction()
