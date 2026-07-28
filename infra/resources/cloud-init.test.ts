@@ -3,6 +3,7 @@ import { type CloudInitParams, renderCloudInit } from './cloud-init'
 
 function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
   return {
+    slug: 'cella',
     service: 'backend',
     profile: 'backend',
     runMigrate: true,
@@ -37,6 +38,18 @@ describe('renderCloudInit', () => {
     expect(out).toContain('systemctl start infra-boot.service')
     // Enabled so it re-runs on every reboot and re-hydrates runtime secrets.
     expect(out).toContain('systemctl enable infra-boot.service')
+  })
+
+  it('namespaces VM config paths and serial markers under the app slug', () => {
+    const out = renderCloudInit(params({ slug: 'acme' }))
+    // A fork's slug drives /etc/<slug> and the ::<slug>:: serial marker; the
+    // engine hardcodes no app name.
+    expect(out).toContain('cat > /etc/acme/boot-plan.json')
+    expect(out).toContain('boot --plan /etc/acme/boot-plan.json')
+    expect(out).toContain('-v /etc/acme:/etc/acme')
+    expect(out).toContain('say() { echo "::acme:: $*" ; }')
+    expect(out).not.toContain('/etc/cella')
+    expect(out).not.toContain('::cella::')
   })
 
   it('pins the boot runner by manifest digest when one is resolved', () => {

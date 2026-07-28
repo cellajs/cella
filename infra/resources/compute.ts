@@ -153,6 +153,7 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
     bootImageDigest,
   ]).apply(([env, manifest, accessKey, secretKey, registry, bootDiagBucket, digest]) =>
     renderCloudInit({
+      slug: naming.slug,
       service: service.name,
       profile: service.profile,
       runMigrate: service.runMigrate,

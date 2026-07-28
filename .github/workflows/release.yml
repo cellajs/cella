@@ -7,7 +7,8 @@ name: Release
 # Publishing that Release fires a `release: published` event, which the Deploy
 # workflow (.github/workflows/deploy.yml) listens for. That is the ONLY automatic
 # path to a production deploy. Nothing in this file deploys. A normal feature
-# merge to main just refreshes the release PR and does nothing else.
+# merge to main refreshes the release PR and auto-deploys staging (Deploy's push
+# trigger); it never touches production.
 #
 # Add a new releasable package by adding an entry to .github/release-please-config.json
 # and .github/release-please-manifest.json. No workflow changes needed.

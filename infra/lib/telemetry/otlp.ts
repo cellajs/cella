@@ -131,13 +131,17 @@ export function buildEvent(opts: {
   }
 }
 
+// OTLP instrumentation scope: names the emitting component (this deploy engine),
+// not the deployed app. Fork/app identity travels in the `resource` attributes.
+const SCOPE_NAME = 'infra'
+
 /** OTLP/JSON envelope for a logs export request. */
 export function logsPayload(resource: Record<string, AttrValue>, records: OtlpLogRecord[]): unknown {
   return {
     resourceLogs: [
       {
         resource: { attributes: toKeyValues(resource) },
-        scopeLogs: [{ scope: { name: 'cella-infra' }, logRecords: records }],
+        scopeLogs: [{ scope: { name: SCOPE_NAME }, logRecords: records }],
       },
     ],
   }
@@ -149,7 +153,7 @@ export function tracesPayload(resource: Record<string, AttrValue>, spans: OtlpSp
     resourceSpans: [
       {
         resource: { attributes: toKeyValues(resource) },
-        scopeSpans: [{ scope: { name: 'cella-infra' }, spans }],
+        scopeSpans: [{ scope: { name: SCOPE_NAME }, spans }],
       },
     ],
   }

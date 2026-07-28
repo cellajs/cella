@@ -37,7 +37,7 @@ export interface AdoptOrphanedPolicyOptions {
   env: NodeJS.ProcessEnv
   /** Pulumi logical resource name, e.g. `vm-reader-policy`. */
   pulumiName: string
-  /** Live Scaleway policy name, e.g. `cella-vm-reader-policy`. */
+  /** Live Scaleway policy name, e.g. `<slug>-vm-reader-policy`. */
   policyName: string
   /** Bootstrap secret key (IAM read; the env creds provide state write). */
   secretKey: string

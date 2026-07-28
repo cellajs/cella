@@ -1,4 +1,4 @@
-# Cella boot runner: runs at VM first-boot via `docker run` to bring a service's
+# Boot runner: runs at VM first-boot via `docker run` to bring a service's
 # Docker Compose stack up. It ships as a normal registry image pulled at boot.
 #
 # It drives the HOST Docker daemon through the mounted socket

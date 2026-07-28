@@ -1,11 +1,12 @@
 import { engineConfig } from '../config/engine-config'
+import { healthContract } from '../config/health.config'
 import type { ServiceName } from '../compose/compose'
 import { coHostedServices, servicesByName } from '../lib/services'
 import type { RolloutServicePlan } from './rollout'
 
 function normalizeHealthUrl(explicit?: string): string | undefined {
   if (!explicit) return undefined
-  return explicit.endsWith('/health') ? explicit : `${explicit.replace(/\/$/, '')}/health`
+  return explicit.endsWith(healthContract.path) ? explicit : `${explicit.replace(/\/$/, '')}${healthContract.path}`
 }
 
 /**

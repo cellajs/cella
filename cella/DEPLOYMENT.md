@@ -124,7 +124,7 @@ A fourth secret sits outside this chain: the **Pulumi passphrase**, which encryp
 
 ## CI deploys
 
-The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger (~35 lines: release + manual dispatch) that calls the reusable pipeline in [.github/workflows/infra-deploy.yml](../.github/workflows/infra-deploy.yml). Inside the reusable workflow, a `setup` job derives names/matrices from config, a build matrix pushes images, and one `deploy` job runs the whole deployment as a single command:
+The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger (push to main, release, and manual dispatch) that calls the reusable pipeline in [.github/workflows/infra-deploy.yml](../.github/workflows/infra-deploy.yml). Inside the reusable workflow, a `setup` job derives names/matrices from config, a build matrix pushes images, and one `deploy` job runs the whole deployment as a single command:
 
 ```
 pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref <ref>
@@ -134,9 +134,9 @@ pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref
 
 The rollout records the release SHA as INTENT (`pendingSha`) in the S3 control object and lets the Pulumi program, the sole authority over generation identity, provision a **new VM generation** (`vm-<svc>-<genId>`) with the SHA baked into its cloud-init. The `genId` is **content-addressed** (a hash of the release SHA plus the generation's static config), so re-running a deploy reuses the same generation (a true no-op) and a manual `pulumi up` can never fork identity. For LB-backed services the cutover expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, then contracts to `[new]`; displaced generations are reaped by one final stack update after every cutover succeeded (rollback = revert commit + redeploy). See [rollout strategies](#rollout-strategies) for the model.
 
-To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
+Pushes to main auto-deploy **staging**, so staging always mirrors the tip of main. This is **opt-in**: the push job runs only when the repo variable `AUTO_DEPLOY_STAGING` is `'true'` (`gh variable set AUTO_DEPLOY_STAGING --body true`). Until then, and for any fork that has not bootstrapped staging, the push job **skips cleanly** (a neutral run, never a failing check), so pulling this template never red-Xes a fork's CI. Turn it on once a manual staging deploy has proven the environment is live. A burst of merges coalesces: the newest push cancels a superseded in-flight staging run (`cancel-in-progress`), and production rollouts never cancel. You can always deploy staging on demand regardless of the variable: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
-To gate production behind manual approval, configure a [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) named `production` with required reviewers. The workflow already targets it.
+**Production** deploys only when a release is published (or a manual dispatch). To make it a manual promote, configure a [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) named `production` with required reviewers: the deploy job already targets that Environment, so the run pauses for an approval click before touching production.
 
 ### Bring your own CI
 

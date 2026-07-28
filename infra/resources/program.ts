@@ -1,14 +1,22 @@
+import type * as pulumi from '@pulumi/pulumi'
 import * as storage from './storage'
 import './dns'
 import * as network from './network'
 import * as registry from './registry'
-import * as database from './database'
+import * as stores from './stores'
 import * as compute from './compute'
 import './secrets'
 import './state-bucket-policy'
 import './vm-iam'
 import * as lb from './loadbalancer'
 import { mode, naming, region } from '../pulumi-context'
+
+/** Read a named output from the primary store, failing loudly if it is absent. */
+function primaryStoreOutput(name: string): pulumi.Output<string> {
+  const value = stores.primaryStoreOutputs[name]
+  if (value === undefined) throw new Error(`program: primary store did not expose output '${name}'`)
+  return value
+}
 
 // The whole deployment program: one stack per mode, long-lived base resources
 // plus the content-addressed generation VMs.
@@ -33,14 +41,14 @@ export const privateUploadsBucketEndpoint = storage.privateUploadsBucketEndpoint
 export const bootDiagBucketName = storage.bootDiagBucketName
 export const bootDiagBucketEndpoint = storage.bootDiagBucketEndpoint
 
-export const dbInstanceId = database.instanceId
-export const dbName = database.databaseName
-export const dbHost = database.host
-export const dbConnectionStringAdmin = database.connectionStringAdmin
-export const dbConnectionStringRuntime = database.connectionStringRuntime
-export const dbConnectionStringCdc = database.connectionStringCdc
-export const dbConnectionStringAdminPublic = database.connectionStringAdminPublic
-export const dbCaCertificate = database.caCertificate
+export const dbInstanceId = primaryStoreOutput('instanceId')
+export const dbName = primaryStoreOutput('databaseName')
+export const dbHost = primaryStoreOutput('host')
+export const dbConnectionStringAdmin = primaryStoreOutput('connectionStringAdmin')
+export const dbConnectionStringRuntime = primaryStoreOutput('connectionStringRuntime')
+export const dbConnectionStringCdc = primaryStoreOutput('connectionStringCdc')
+export const dbConnectionStringAdminPublic = primaryStoreOutput('connectionStringAdminPublic')
+export const dbCaCertificate = primaryStoreOutput('caCertificate')
 
 export const computeInstances = compute.computeInstances.map((i) => i.name)
 export const computeGenerationMetadata = compute.computeGenerationMetadata

@@ -1,9 +1,9 @@
-import { appServices } from '../config/services.config';
+import { appServices, processIdentityEnv } from '../config/services.config';
 import { assembleCompose } from './infrastructure'
 import type { ServiceMeta } from './types'
 
 /** The full Compose model: machinery + app services. Emitted by `synth.ts`. */
-export const composeConfig = assembleCompose(appServices)
+export const composeConfig = assembleCompose(appServices, { processIdentityEnv })
 
 /**
  * The literal service-name union, derived from the fork's service registry

@@ -9,7 +9,7 @@ const readInfra = (path: string) => readFileSync(resolve(infraDir, path), 'utf-8
 
 const lb = read('loadbalancer.ts')
 const dns = read('dns.ts')
-const db = read('database.ts')
+const db = read('stores/postgres-managed.ts')
 const reg = read('registry.ts')
 const secrets = read('secrets.ts')
 const configuredSecret = read('configured-secret.ts')

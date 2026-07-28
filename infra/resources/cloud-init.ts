@@ -1,7 +1,9 @@
 import { type BootPlan, parseRuntimeSecretManifest, supportedImageContract, supportedSchemaVersion } from '../boot/src/plan'
 
 export interface CloudInitParams {
-  /** Service name (backend, cdc, yjs, mcp, frontend). */
+  /** App slug: namespaces the VM's `/etc/<slug>` config dir and serial markers. */
+  slug: string
+  /** Service name (the compose profile slug). */
   service: string
   /** Docker compose profile to bring up (equals the service slug). */
   profile: string
@@ -36,23 +38,31 @@ export interface CloudInitParams {
   traceparent?: string
 }
 
-const accessKeyPath = '/etc/cella/scw-access-key'
-const secretKeyPath = '/etc/cella/scw-secret-key'
-const planPath = '/etc/cella/boot-plan.json'
+/** VM config paths, namespaced under `/etc/<slug>` so the engine hardcodes no app name. */
+const bootPaths = (slug: string) => {
+  const etcDir = `/etc/${slug}`
+  return {
+    etcDir,
+    accessKey: `${etcDir}/scw-access-key`,
+    secretKey: `${etcDir}/scw-secret-key`,
+    plan: `${etcDir}/boot-plan.json`,
+    launcher: `${etcDir}/run-boot.sh`,
+  }
+}
 
 const writeHeredoc = (path: string, marker: string, content: string): string => `cat > ${path} <<'${marker}'
 ${content}
 ${marker}`
 
-const bootHeader = (service: string, releaseSha: string): string => `#!/bin/bash
+const bootHeader = (slug: string, service: string, releaseSha: string): string => `#!/bin/bash
 exec > >(tee -a /var/log/infra-boot.log 2>/dev/null > /dev/console) 2>&1
 set -uo pipefail
-say() { echo "::cella:: $*" ; }
+say() { echo "::${slug}:: $*" ; }
 trap 'rc=$?; if [ "$rc" -ne 0 ]; then say "BOOT FAILED (exit $rc)"; fi' EXIT
 say "boot start: service=${service} release=${releaseSha}"`
 
 const bootReplayUnit = `[Unit]
-Description=Replay the cella first-boot log to the serial console
+Description=Replay the first-boot log to the serial console
 After=multi-user.target
 [Service]
 Type=oneshot
@@ -72,6 +82,7 @@ sed -E -i '/SECRET|PASSWORD|API_KEY|DATABASE_URL|docker login/Id' /var/log/cloud
 // and consumer in lockstep: a contract change on either side fails the
 // typecheck (or the manifest validation) during planning, before VM boot.
 function bootPlan(p: CloudInitParams): string {
+  const paths = bootPaths(p.slug)
   return JSON.stringify({
     schemaVersion: supportedSchemaVersion,
     service: p.service,
@@ -82,8 +93,8 @@ function bootPlan(p: CloudInitParams): string {
     registry: p.registry,
     region: p.region,
     credentials: {
-      scwAccessKeyFile: accessKeyPath,
-      scwSecretKeyFile: secretKeyPath,
+      scwAccessKeyFile: paths.accessKey,
+      scwSecretKeyFile: paths.secretKey,
     },
     bootDiagnostics: {
       bucket: p.bootDiagBucket,
@@ -111,8 +122,6 @@ function bootPlan(p: CloudInitParams): string {
 const bootImageRef = (p: CloudInitParams): string =>
   p.bootImageDigest ? `${p.registry}/infra-boot@${p.bootImageDigest}` : `${p.registry}/infra-boot:${p.releaseSha}`
 
-const launcherPath = '/etc/cella/run-boot.sh'
-
 /**
  * Launcher: log the host daemon into the registry (to pull the boot runner
  * image), then run the boot runner container. It drives the host Docker daemon
@@ -123,22 +132,23 @@ const launcherPath = '/etc/cella/run-boot.sh'
  */
 const bootLauncher = (p: CloudInitParams): string => {
   const registryHost = p.registry.split('/')[0]
+  const paths = bootPaths(p.slug)
   return `#!/bin/bash
 set -uo pipefail
-docker login ${registryHost} -u nologin --password-stdin < ${secretKeyPath}
+docker login ${registryHost} -u nologin --password-stdin < ${paths.secretKey}
 exec docker run --rm --network host \\
   -v /var/run/docker.sock:/var/run/docker.sock \\
   -v /opt/app:/opt/app \\
-  -v /etc/cella:/etc/cella \\
+  -v ${paths.etcDir}:${paths.etcDir} \\
   -v /etc/runtime-secrets:/etc/runtime-secrets \\
   ${bootImageRef(p)} \\
-  boot --plan ${planPath}`
+  boot --plan ${paths.plan}`
 }
 
 // The systemd unit runs on first boot and each reboot. Re-running is intentional:
 // the idempotent boot runner re-hydrates /opt/app/.env.runtime from Secret Manager.
-const bootUnit = `[Unit]
-Description=Cella boot runner (first boot + every reboot)
+const bootUnit = (launcherPath: string): string => `[Unit]
+Description=Boot runner (first boot + every reboot)
 After=docker.service network-online.target
 Wants=docker.service network-online.target
 [Service]
@@ -147,19 +157,22 @@ ExecStart=/bin/bash -lc 'set -o pipefail; ${launcherPath} 2>&1 | tee -a /var/log
 [Install]
 WantedBy=multi-user.target`
 
-const writeBootInputs = (p: CloudInitParams): string => `mkdir -p /etc/cella /opt/app /etc/runtime-secrets
-${writeHeredoc(planPath, 'BOOT_PLAN_EOF', bootPlan(p))}
-chmod 600 ${planPath}
-${writeHeredoc(accessKeyPath, 'SCW_ACCESS_KEY_EOF', p.accessKey)}
-chmod 600 ${accessKeyPath}
-${writeHeredoc(secretKeyPath, 'SCW_SECRET_KEY_EOF', p.secretKey)}
-chmod 600 ${secretKeyPath}
-${writeHeredoc(launcherPath, 'RUN_BOOT_EOF', bootLauncher(p))}
-chmod 700 ${launcherPath}`
+const writeBootInputs = (p: CloudInitParams): string => {
+  const paths = bootPaths(p.slug)
+  return `mkdir -p ${paths.etcDir} /opt/app /etc/runtime-secrets
+${writeHeredoc(paths.plan, 'BOOT_PLAN_EOF', bootPlan(p))}
+chmod 600 ${paths.plan}
+${writeHeredoc(paths.accessKey, 'SCW_ACCESS_KEY_EOF', p.accessKey)}
+chmod 600 ${paths.accessKey}
+${writeHeredoc(paths.secretKey, 'SCW_SECRET_KEY_EOF', p.secretKey)}
+chmod 600 ${paths.secretKey}
+${writeHeredoc(paths.launcher, 'RUN_BOOT_EOF', bootLauncher(p))}
+chmod 700 ${paths.launcher}`
+}
 
 // `enable` wires the unit into multi-user.target so it re-runs on every reboot
 // (re-hydrating runtime secrets); `start` runs it now on this first boot.
-const startBootRunner = (): string => `${writeHeredoc('/etc/systemd/system/infra-boot.service', 'INFRA_BOOT_UNIT_EOF', bootUnit)}
+const startBootRunner = (p: CloudInitParams): string => `${writeHeredoc('/etc/systemd/system/infra-boot.service', 'INFRA_BOOT_UNIT_EOF', bootUnit(bootPaths(p.slug).launcher))}
 systemctl daemon-reload
 systemctl enable infra-boot.service 2>&1 | tail -1
 systemctl start infra-boot.service`
@@ -167,10 +180,10 @@ systemctl start infra-boot.service`
 /** Render the first-boot cloud-init script for one service generation VM. */
 export function renderCloudInit(p: CloudInitParams): string {
   return [
-    bootHeader(p.service, p.releaseSha),
+    bootHeader(p.slug, p.service, p.releaseSha),
     installBootReplayService(),
     writeBootInputs(p),
-    startBootRunner(),
+    startBootRunner(p),
     scrubCloudInitLogs(),
   ].join('\n\n') + '\n'
 }

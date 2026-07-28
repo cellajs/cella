@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { promises as dns } from 'node:dns'
 import { existsSync, readFileSync } from 'node:fs'
 import type { EngineConfig } from '../config/engine-config'
+import { healthContract } from '../config/health.config'
 import { isMain } from '../lib/utils/is-main'
 import { infraDir } from '../lib/utils/paths'
 import { deriveInfra } from '../lib/naming'
@@ -117,7 +118,7 @@ async function gatherLive(appConfig: EngineConfig): Promise<LiveServiceInput[] |
   const probe = createFetchProbe(3000)
   return Promise.all(
     endpoints.map(async (endpoint): Promise<LiveServiceInput> => {
-      const healthUrl = `${endpoint.url.replace(/\/$/, '')}/health`
+      const healthUrl = `${endpoint.url.replace(/\/$/, '')}${healthContract.path}`
       const result = await probe(healthUrl)
       return { slug: endpoint.slug, healthUrl, probe: { status: result.status, version: result.version } }
     }),

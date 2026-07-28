@@ -94,8 +94,12 @@ function assertKnownTopLevel(obj: Record<string, unknown>): void {
 }
 
 function assertAllowedPath(path: string): void {
-  const allowed = ['/opt/app/', '/etc/cella/', '/etc/runtime-secrets/', '/var/log/']
-  if (!allowed.some((prefix) => path.startsWith(prefix))) throw new Error(`boot plan: path '${path}' is outside the allowed boot paths`)
+  const allowedPrefixes = ['/opt/app/', '/var/log/']
+  // App config and secrets live under a single `/etc/<name>/` subdirectory (the
+  // app slug, or 'runtime-secrets'); accept any single kebab-case segment there.
+  const etcSubdir = /^\/etc\/[a-z0-9-]+\//
+  if (allowedPrefixes.some((prefix) => path.startsWith(prefix)) || etcSubdir.test(path)) return
+  throw new Error(`boot plan: path '${path}' is outside the allowed boot paths`)
 }
 
 function commandField(obj: Record<string, unknown>, key: string): [string, ...string[]] {

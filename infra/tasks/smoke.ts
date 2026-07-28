@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { healthContract } from '../config/health.config'
 import { errorMessage } from '../lib/utils/errors'
 import { isMain } from '../lib/utils/is-main'
 import { pollUntil } from '../lib/utils/retry'
@@ -198,8 +199,8 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
   const publicServices = (opts.services ?? [{ service: 'backend', health_url: backendUrl }]).filter((service) => service.health_url)
   for (const service of publicServices) {
     await check(`${service.service} reports deployed SHA`, async () => {
-      const res = await get(`${service.health_url}/health`)
-      const version = res.headers.get('x-app-version') ?? undefined
+      const res = await get(`${service.health_url}${healthContract.path}`)
+      const version = res.headers.get(healthContract.versionHeader) ?? undefined
       return {
         ok: isHealthy({ status: res.status, version }, expectedSha),
         detail: `served=${version ?? '<missing>'} expected=${expectedSha}`,
@@ -227,7 +228,7 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
     const healthy = await pollUntil(
       async () => {
         try {
-          const res = await get(`${backendUrl}/health?depth=full`)
+          const res = await get(`${backendUrl}${healthContract.path}?depth=full`)
           if (!res.ok) {
             lastDetail = `status=${res.status}`
             return undefined

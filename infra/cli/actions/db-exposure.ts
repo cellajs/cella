@@ -17,7 +17,7 @@ import { acquireStackLockOrExit, envOr, type InfraContext, promptRequiredInput, 
 import { parseAclInput } from './db-exposure-acl'
 import { pc, checkMark, crossMark, warningMark } from '../../lib/utils/cli-output'
 
-// Pulumi config keys consumed by resources/database.ts and the outputs it exports.
+// Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
 const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint'
 const DB_ACL_KEY = 'infra:dbPublicAcl'
 const PUBLIC_DSN_OUTPUT = 'dbConnectionStringAdminPublic'

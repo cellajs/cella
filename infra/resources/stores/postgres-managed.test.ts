@@ -1,15 +1,16 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import { installPulumiMocks } from '../tests/helpers/pulumi-mock'
+import { installPulumiMocks } from '../../tests/helpers/pulumi-mock'
 
-// database.ts creates Scaleway resources at import time, so prime the Pulumi
-// runtime mocks before importing it. We only exercise the pure DSN formatter.
+// Importing postgres-managed.ts pulls in the Pulumi resource graph (pulumi-context,
+// network) at module load, so prime the runtime mocks first. We only exercise the
+// pure DSN formatter; the provisioner's resources are created inside provision().
 let formatPostgresUrl: (user: string, pass: string, host: string, port: number | string, database: string) => string
 
 beforeAll(async () => {
   // `bootstrap:computeDeferred` disables the compute pin-guard so the module
   // imports without requiring pinned image tags.
   await installPulumiMocks({ stack: 'production', config: { 'bootstrap:computeDeferred': 'test' } })
-  ;({ formatPostgresUrl } = await import('./database'))
+  ;({ formatPostgresUrl } = await import('./postgres-managed'))
 })
 
 describe('formatPostgresUrl', () => {

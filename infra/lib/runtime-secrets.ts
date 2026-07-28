@@ -23,7 +23,7 @@ export interface RuntimeSecretConfig {
   envVar: string
   /** Whether deploy/health gating treats the value's absence as fatal. */
   required: boolean
-  /** `'pulumi'` = cella writes a version; `'operator'` = supplied out-of-band. */
+  /** `'pulumi'` = the engine writes a version; `'operator'` = supplied out-of-band. */
   valueSource: RuntimeSecretValueSource
   /** `'random'` = Pulumi RandomPassword; `'manual'` = derived/hand-supplied. */
   generation: RuntimeSecretGeneration

@@ -46,10 +46,11 @@ describe('loadbalancer module — registry-driven wiring', () => {
     expect(src).toMatch(/ignoreChanges:\s*\['serverIps'\]/)
   })
 
-  it('health-checks the app\'s own /health (no ingress hop)', () => {
+  it('health-checks the app\'s own health path (no ingress hop)', () => {
     // The app binds the host port directly in the immutable-node model, so the
-    // LB health-checks its real /health: a crashed generation is marked down.
-    expect(src).toMatch(/uri:\s*'\/health'/)
+    // LB health-checks its real health path (the fork's health contract): a
+    // crashed generation is marked down.
+    expect(src).toMatch(/uri:\s*healthContract\.path/)
     expect(src).not.toContain('__ingress/health')
     // onMarkedDownAction follows the service drainPolicy.
     expect(src).toMatch(/onMarkedDownAction:/)

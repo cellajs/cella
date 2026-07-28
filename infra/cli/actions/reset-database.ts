@@ -14,7 +14,7 @@ import { maskedSecret } from '../prompts/masked-secret'
 import { envOr, type InfraContext } from '../shared'
 import { pc, checkMark, crossMark, warningMark } from '../../lib/utils/cli-output'
 
-/** Roles Pulumi provisions on the instance (`resources/database.ts`). Both must be re-granted. */
+/** Roles Pulumi provisions on the instance (`resources/stores/postgres-managed.ts`). Both must be re-granted. */
 const ROLES = ['admin_role', 'runtime_role'] as const
 
 /** Retention for the pre-reset backup. Long enough to notice a bad reset the next working week. */

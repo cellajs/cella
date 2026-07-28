@@ -15,7 +15,7 @@ const registry = new scaleway.registry.Namespace('main-registry', {
 /** Registry namespace ID */
 export const registryId = registry.id
 
-/** Registry endpoint for docker push/pull, e.g. rg.nl-ams.scw.cloud/cella */
+/** Registry endpoint for docker push/pull, e.g. rg.nl-ams.scw.cloud/<namespace> */
 export const registryEndpoint = registry.endpoint
 
 /** Registry namespace name (no hyphens) */

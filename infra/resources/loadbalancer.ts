@@ -4,6 +4,7 @@ import { engineConfig } from '../config/engine-config'
 const appConfig = engineConfig()
 import { naming, zone, region, tags, dnsZone, serviceHost, serviceUrl } from '../pulumi-context'
 import { sizing } from '../config/sizing'
+import { healthContract } from '../config/health.config'
 import { enabledServices } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { privateNetworkId, privateNetworkSubnet } from './network'
@@ -162,8 +163,8 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
 
   const backends = new Map<ServiceName, scaleway.loadbalancers.Backend>()
   for (const service of lbServices) {
-    // backend/yjs/mcp answer /health with 204; the frontend Caddy proxy with 200.
-    const healthCode = service.slug === 'frontend' ? 200 : 204
+    // Each service declares the exact status its health endpoint returns
+    // (healthExpectStatus): API services answer with 204, the SPA proxy with 200.
     backends.set(service.slug, new scaleway.loadbalancers.Backend(`${service.slug}-lb-backend`, {
       lbId: lb.id,
       name: naming.resource(service.slug),
@@ -171,7 +172,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
       forwardPort: service.healthPort,
       serverIps: serviceGenerationIps(service.slug),
       onMarkedDownAction: service.drainPolicy === 'reconnect' ? 'shutdown_sessions' : 'none',
-      healthCheckHttp: { uri: '/health', code: healthCode },
+      healthCheckHttp: { uri: healthContract.path, code: service.healthExpectStatus },
       healthCheckDelay: '3s',
       healthCheckTimeout: '2s',
       healthCheckMaxRetries: 2,
@@ -223,7 +224,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
       forwardPort: service.healthPort,
       serverIps: serviceGenerationIps(service.slug),
       onMarkedDownAction: 'shutdown_sessions',
-      healthCheckHttp: { uri: '/health', code: 204 },
+      healthCheckHttp: { uri: healthContract.path, code: service.healthExpectStatus },
       healthCheckDelay: '3s',
       healthCheckTimeout: '2s',
       healthCheckMaxRetries: 2,

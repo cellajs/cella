@@ -1,29 +1,17 @@
 import * as pulumi from '@pulumi/pulumi'
 import { composeConfig } from '../compose/compose'
 import type { ServiceName } from '../compose/compose'
-import { frontendCsp } from '../lib/frontend-csp'
+import { appEnvSuppliers } from '../config/env-suppliers.config'
+import type { EnvSupplier } from '../lib/env-suppliers'
 import { servicesByName, type ServiceDefinition } from '../lib/services'
-import { endpoints, mode, region, serviceUrl } from '../pulumi-context'
+import { endpoints, mode } from '../pulumi-context'
 import { internalLbPort, lbInternalAddress } from './lb-internal'
 import { registryEndpoint } from './registry'
-import { frontendBucketName } from './storage'
 
-
-
-/**
- * Pulumi-bound values for the `${VAR}` placeholders a service's compose blocks
- * reference. The registry declares WHICH vars a service consumes; this pool
- * binds the shared, app-wide ones (public URLs come from the endpoint
- * registry via `serviceUrl`). Service-specific wiring is declared as
- * `bindings` on the registry entry and resolved generically below.
- */
-const envPool: Record<string, () => pulumi.Input<string>> = {
-  FRONTEND_URL: () => serviceUrl('frontend'),
-  BACKEND_URL: () => serviceUrl('backend'),
-  // Frontend SPA proxy: CSP header + the S3 REST hostname Caddy proxies to.
-  FRONTEND_CSP: () => frontendCsp,
-  ORIGIN_HOST: () => pulumi.interpolate`${frontendBucketName}.s3.${region}.scw.cloud`,
-}
+// The `${VAR}` placeholder suppliers for shared, app-wide values are fork-owned
+// (config/env-suppliers.config.ts). Service-specific wiring is declared as
+// `bindings` on the registry entry and resolved generically below.
+const envSuppliers: Record<string, EnvSupplier> = appEnvSuppliers
 
 // Vars satisfied outside the pool:
 //  - REGISTRY / APP_MODE: universal, injected into every VM's .env;
@@ -185,11 +173,11 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
         env[name] = () => resolveBinding(binding.owner, binding.template, binding.loopbackSlug)
         continue
       }
-      const supply = envPool[name]
+      const supply = envSuppliers[name]
       if (!supply) {
         if (skippable.has(name)) continue
         throw new Error(
-          `compute: service '${slug}' references \${${name}} in its compose blocks but no binding or envPool supplier defines a value for it — add a binding in config/services.config.ts or a supplier in resources/compose-env.ts.`,
+          `compute: service '${slug}' references \${${name}} in its compose blocks but no binding or env supplier defines a value for it — add a binding in config/services.config.ts or a supplier in config/env-suppliers.config.ts.`,
         )
       }
       env[name] = supply

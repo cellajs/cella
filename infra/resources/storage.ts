@@ -2,7 +2,14 @@ import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tagsAsMap, isProduction, serviceUrl } from '../pulumi-context'
 import { sizing } from '../config/sizing'
+import { services } from '../lib/services'
 import { ciDeployApplicationId, vmReaderApplicationId } from './vm-iam'
+
+// The browser app origin allowed to call the upload buckets: the service that
+// owns the LB's default route (the SPA), resolved without naming a service.
+const browserOriginSlug = services.find((s) => s.lbRoute === 'default')?.slug
+if (!browserOriginSlug) throw new Error('storage: no service owns the LB default route — cannot resolve the browser origin for bucket CORS.')
+const browserOrigin = serviceUrl(browserOriginSlug)
 
 /**
  * Optional operator application id (SCW_OPERATOR_APPLICATION_ID). When set, this
@@ -104,7 +111,7 @@ const publicUploadsBucket = new scaleway.object.Bucket('public-uploads-bucket', 
     {
       allowedHeaders: ['*'],
       allowedMethods: ['GET', 'PUT', 'POST'],
-      allowedOrigins: [serviceUrl('frontend')],
+      allowedOrigins: [browserOrigin],
       maxAgeSeconds: 3600,
     },
   ],
@@ -142,7 +149,7 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
     {
       allowedHeaders: ['*'],
       allowedMethods: ['GET', 'PUT', 'POST'],
-      allowedOrigins: [serviceUrl('frontend')],
+      allowedOrigins: [browserOrigin],
       maxAgeSeconds: 3600,
     },
   ],

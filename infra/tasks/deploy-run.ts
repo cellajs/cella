@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
+import { healthContract } from '../config/health.config'
 import { errorMessage } from '../lib/utils/errors'
 import { isMain } from '../lib/utils/is-main'
 import { infraDir } from '../lib/utils/paths'
@@ -206,7 +207,7 @@ export async function runDeploy(
       const rows: RolloutRow[] = [...JSON.parse(env.primary_rollout_matrix), ...JSON.parse(env.roll_rest_matrix)]
       for (const row of rows) {
         if (!row.health_url) continue
-        const ok = await fx.verifyVersion(`${row.health_url.replace(/\/$/, '')}/health`, opts.sha)
+        const ok = await fx.verifyVersion(`${row.health_url.replace(/\/$/, '')}${healthContract.path}`, opts.sha)
         if (!ok) throw new Error(`Service '${row.service}' does not serve ${opts.sha}`)
       }
     })
