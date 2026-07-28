@@ -1,10 +1,8 @@
-import { pc } from 'shared/cli-utils/colors';
-import { DIVIDER } from 'shared/cli-utils/display'
-import { checkMark } from 'shared/utils/console'
 import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam'
 import { isMain } from '../lib/utils/is-main'
 import { secretManagerPath } from '../lib/scaleway/vm-reader-secret'
 import { seedVmReaderKey } from './seed-vm-reader-key'
+import { pc, DIVIDER, checkMark } from '../lib/utils/cli-output'
 
 export type SetupVmKeyOptions = ProvisionScopedKeyOptions
 export type VmKeyResult = ScopedKeyResult
@@ -32,7 +30,8 @@ if (isMain(import.meta.url)) {
   }
 
   process.env.APP_MODE = process.env.APP_MODE ?? 'production'
-  const { appConfig } = await import('shared')
+  const { loadEngineConfig } = await import('../config/engine-config')
+  const appConfig = await loadEngineConfig()
 
   console.info('\n→ Setting up VM reader key')
   const result = await setupVmKey({ callerSecretKey: secretKey, organizationId, projectId, slug: appConfig.slug })

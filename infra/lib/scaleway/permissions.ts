@@ -21,24 +21,28 @@ export const PROJECT_PERMISSION_SETS = [
   'RelationalDatabasesReadOnly',
 ] as const
 
-// CI deploy key: organization scope
+// CI deploy key: grants beyond the app project
 
-// Org-level grants are split by Scaleway *scope type*: a single IAM policy rule
-// may only hold permission sets of ONE scope type, so these become two separate
-// org-keyed rules in setup-ci-key.ts buildRules.
-
-/** Project-scoped sets granted org-wide (all projects); DNS is "Scoped by Project". */
-export const ORG_WIDE_PROJECT_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const
+/**
+ * DNS permission set. "Scoped by Project" on Scaleway. The CI key receives it
+ * project-scoped (the app project plus the serving zone's project, resolved in
+ * setup-ci-key.ts), so a compromised CI key cannot touch unrelated zones. The
+ * bootstrap grant (scaleway-iam.ts ensureBootstrapDnsGrant) still applies it
+ * org-wide until the bootstrap key is revoked.
+ */
+export const DNS_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const
 
 /**
  * Organization-scoped sets. IAMReadOnly lets `pulumi up` and the deploy's
  * "Verify VM reader IAM grant" step look up the CI/VM applications by name
  * (org-scoped IAM reads); self-introspection alone doesn't cover listing others.
+ * A single IAM policy rule may only hold permission sets of ONE scope type, so
+ * this stays a separate org-keyed rule in setup-ci-key.ts buildRules.
  */
 export const ORG_SCOPED_PERMISSION_SETS = ['IAMReadOnly'] as const
 
-/** Union of all org-level grants, for audit/drift checks only (rule-agnostic). */
-export const ORG_PERMISSION_SETS = [...ORG_WIDE_PROJECT_PERMISSION_SETS, ...ORG_SCOPED_PERMISSION_SETS] as const
+/** Audit union of the CI grants beyond the plain app-project rule (rule-agnostic). */
+export const ORG_PERMISSION_SETS = [...DNS_PERMISSION_SETS, ...ORG_SCOPED_PERMISSION_SETS] as const
 
 // VM reader key (`<slug>-vm-reader`): project scope
 

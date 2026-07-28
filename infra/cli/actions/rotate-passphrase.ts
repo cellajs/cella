@@ -1,14 +1,13 @@
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { pc } from 'shared/cli-utils/colors';
-import { checkMark, crossMark, warningMark } from 'shared/utils/console'
 import { syncGithubEnvironment } from '../../lib/github-sync'
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'
 import { generatePassphrase, supportsStdinPassphraseRotation, verifyStackPassphrase } from '../../lib/stack/pulumi-passphrase'
 import { infraDir } from '../../lib/utils/paths'
 import { maskedSecret } from '../prompts/masked-secret'
 import { acquireStackLockOrExit, confirmPassphraseStored, envOr, type InfraContext, promptRequiredInput, promptStackName, pulumiLoginAndSelect, resolveVerifiedPassphrase } from '../shared'
+import { pc, checkMark, crossMark, warningMark } from '../../lib/utils/cli-output'
 
 /**
  * Rotates and verifies the Pulumi passphrase, then synchronizes it to the GitHub environment.

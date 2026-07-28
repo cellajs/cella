@@ -279,25 +279,37 @@ export async function controlContextForStack(stack: string, log: (msg: string) =
     return null
   }
   process.env.APP_MODE ??= stack.split('/').pop()
-  const { appConfig } = await import('shared')
+  const { loadEngineConfig } = await import('../../config/engine-config')
+  const appConfig = await loadEngineConfig()
   const s3 = await makeControlClient(appConfig.s3.region, accessKey, secretKey)
   return { s3, bucket: stateBucket(appConfig.slug), controlKey: controlKey(stack), lockKey: lockKey(stack) }
 }
 
 /** Read-modify-write a single service's rollout entry. Uses `If-Match` when the
- *  object already exists so optimistic concurrency rejects a racing writer. */
+ *  object already exists so optimistic concurrency rejects a racing writer.
+ *  Retries the whole read-patch-write on a conditional-write conflict: entries
+ *  are per-service, so re-applying the patch over the winner's state is safe.
+ *  Parallel cutovers promote concurrently and rely on this. */
 export async function updateServiceRollout(
   s3: S3Like,
   bucket: string,
   key: string,
   slug: string,
   patch: (current: ServiceRollout | undefined) => ServiceRollout,
+  attempts = 4,
 ): Promise<void> {
-  const { state, etag } = await readControlState(s3, bucket, key)
-  state.rollout[slug] = patch(state.rollout[slug])
-  state.updatedAt = new Date().toISOString()
-  state.updatedBy = controlActor()
-  await writeControlState(s3, bucket, key, state, etag ? { ifMatch: etag } : {})
+  for (let attempt = 1; ; attempt++) {
+    const { state, etag } = await readControlState(s3, bucket, key)
+    state.rollout[slug] = patch(state.rollout[slug])
+    state.updatedAt = new Date().toISOString()
+    state.updatedBy = controlActor()
+    try {
+      await writeControlState(s3, bucket, key, state, etag ? { ifMatch: etag } : { ifNoneMatch: '*' })
+      return
+    } catch (err) {
+      if (attempt >= attempts) throw err
+    }
+  }
 }
 
 /** Metadata for the conditional-write lock that serializes stack mutations. */
@@ -330,6 +342,12 @@ async function readLock(s3: S3Like, bucket: string, key: string): Promise<{ info
 
 async function putLock(s3: S3Like, bucket: string, key: string, info: LockInfo, opts: ConditionalWrite): Promise<void> {
   await putJsonObject(s3, bucket, key, `${JSON.stringify(info, null, 2)}\n`, opts)
+}
+
+/** Read the lock object without mutating it (the `infra status` reader). Returns
+ *  undefined when no lock is held or the object is unparseable. */
+export async function peekLock(s3: S3Like, bucket: string, key: string): Promise<LockInfo | undefined> {
+  return (await readLock(s3, bucket, key)).info
 }
 
 /** Acquire the stack lock. Returns `{acquired:false, held}` when a live lock is

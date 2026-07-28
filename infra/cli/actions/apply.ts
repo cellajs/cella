@@ -1,7 +1,5 @@
 import { spawnSync } from 'node:child_process'
 import { confirm } from '@inquirer/prompts'
-import { pc } from 'shared/cli-utils/colors';
-import { warningMark } from 'shared/utils/console'
 import { adoptOrphanedPolicy } from '../../lib/scaleway/adopt-orphaned-policy'
 import { adoptOrphanedSecrets } from '../../lib/scaleway/adopt-orphaned-secrets'
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'
@@ -12,6 +10,7 @@ import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from 
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam'
 import { deriveInfra } from '../../lib/naming'
 import { acquireStackLockOrExit, envOr, type InfraContext, promptRequiredInput, promptStackName, pulumiLoginAndSelect, resolveVerifiedPassphrase } from '../shared'
+import { pc, warningMark } from '../../lib/utils/cli-output'
 
 /** One-shot `pulumi up` using a freshly-supplied bootstrap key passed via
  *  SCW_* env. For applying changes to bootstrap-owned resources (DB / VPC /

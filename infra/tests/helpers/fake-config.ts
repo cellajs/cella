@@ -1,16 +1,14 @@
-import type { appConfig } from 'shared'
+import type { EngineConfig } from '../../config/engine-config'
 
-export function fakeConfig(overrides: Partial<Record<string, unknown>> = {}) {
-  // Returned as the real appConfig type so consuming tests keep property-level
-  // checking (the fixture itself stays a minimal literal).
+/** Minimal cella-shaped EngineConfig fixture for pure derivation tests. */
+export function fakeConfig(overrides: Partial<EngineConfig> = {}): EngineConfig {
   return {
     slug: 'cella',
-    mode: 'production' as const,
+    mode: 'production',
     domain: 'cellajs.com',
     frontendUrl: 'https://www.cellajs.com',
     backendUrl: 'https://www.cellajs.com/api',
-    yjsUrl: 'wss://www.cellajs.com/yjs',
-    mcpUrl: 'https://www.cellajs.com/mcp',
+    singleVM: false,
     services: {
       frontend: { enabled: true, publicUrl: 'https://www.cellajs.com' },
       backend: { enabled: true, publicUrl: 'https://www.cellajs.com/api' },
@@ -18,13 +16,14 @@ export function fakeConfig(overrides: Partial<Record<string, unknown>> = {}) {
       yjs: { enabled: false, publicUrl: 'wss://www.cellajs.com/yjs' },
       mcp: { enabled: false, publicUrl: 'https://www.cellajs.com/mcp' },
     },
-    securityEmail: 'security@cellajs.com',
     s3: {
       host: 's3.nl-ams.scw.cloud',
       region: 'nl-ams',
       publicBucket: 'cella-public',
       privateBucket: 'cella-private',
+      publicCDNUrl: 'https://cella-public.s3.nl-ams.scw.cloud',
+      privateCDNUrl: 'https://cella-private.s3.nl-ams.scw.cloud',
     },
     ...overrides,
-  } as unknown as typeof appConfig
+  }
 }

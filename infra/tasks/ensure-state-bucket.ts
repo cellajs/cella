@@ -1,5 +1,13 @@
 import { isMain } from '../lib/utils/is-main'
-import { CreateBucketCommand, HeadBucketCommand, ListBucketsCommand, type S3Client } from '@aws-sdk/client-s3'
+import {
+  CreateBucketCommand,
+  HeadBucketCommand,
+  ListBucketsCommand,
+  PutBucketEncryptionCommand,
+  PutBucketLifecycleConfigurationCommand,
+  PutBucketVersioningCommand,
+  type S3Client,
+} from '@aws-sdk/client-s3'
 import { scwFetch, type ScwAuth } from '../lib/scaleway/scw-fetch'
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env'
 
@@ -69,6 +77,86 @@ export async function ensureStateBucket(s3: S3Client, bucketName: string): Promi
   }
 }
 
+/** Days a noncurrent state-file version is kept before lifecycle expiry. */
+export const NONCURRENT_VERSION_RETENTION_DAYS = 90
+
+/**
+ * Converge the state bucket onto its hardened configuration: versioning (every
+ * checkpoint write becomes a recoverable version), SSE-ONE default encryption
+ * (AES-256, Scaleway-managed keys, transparent to the Pulumi backend), and a
+ * lifecycle rule bounding noncurrent-version growth. Idempotent: safe to run on
+ * every invocation, so pre-existing buckets converge too.
+ *
+ * Each call tolerates AccessDenied: once the state-bucket policy
+ * (resources/state-bucket-policy.ts) is applied, bucket-config writes are
+ * reserved to the operator principal and the CI key's attempt is expected to
+ * 403; the configuration is already in place from the bootstrap run.
+ */
+export async function hardenStateBucket(
+  s3: S3Client,
+  bucketName: string,
+  log: (msg: string) => void = (msg) => console.info(msg),
+): Promise<{ applied: string[]; denied: string[] }> {
+  const applied: string[] = []
+  const denied: string[] = []
+  const attempt = async (label: string, run: () => Promise<unknown>): Promise<void> => {
+    try {
+      await run()
+      applied.push(label)
+    } catch (err: unknown) {
+      const status = (err as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode
+      if (status === 403) {
+        denied.push(label)
+        return
+      }
+      throw err
+    }
+  }
+
+  await attempt('versioning', () =>
+    s3.send(new PutBucketVersioningCommand({ Bucket: bucketName, VersioningConfiguration: { Status: 'Enabled' } })),
+  )
+  await attempt('encryption', () =>
+    s3.send(
+      new PutBucketEncryptionCommand({
+        Bucket: bucketName,
+        ServerSideEncryptionConfiguration: {
+          Rules: [{ ApplyServerSideEncryptionByDefault: { SSEAlgorithm: 'AES256' } }],
+        },
+      }),
+    ),
+  )
+  await attempt('lifecycle', () =>
+    s3.send(
+      new PutBucketLifecycleConfigurationCommand({
+        Bucket: bucketName,
+        LifecycleConfiguration: {
+          Rules: [
+            {
+              ID: 'expire-noncurrent-state-versions',
+              Status: 'Enabled',
+              Filter: { Prefix: '' },
+              NoncurrentVersionExpiration: { NoncurrentDays: NONCURRENT_VERSION_RETENTION_DAYS },
+            },
+            {
+              ID: 'purge-expired-delete-markers',
+              Status: 'Enabled',
+              Filter: { Prefix: '' },
+              Expiration: { ExpiredObjectDeleteMarker: true },
+            },
+          ],
+        },
+      }),
+    ),
+  )
+
+  if (applied.length > 0) log(`State bucket hardening applied: ${applied.join(', ')}`)
+  if (denied.length > 0) {
+    log(`State bucket hardening skipped (${denied.join(', ')}): bucket policy reserves bucket-config writes to the operator principal.`)
+  }
+  return { applied, denied }
+}
+
 /**
  * Post-condition: the bucket this key sees must live in the expected project.
  * Catches the pre-existing-bucket-in-the-wrong-project case that the preflight
@@ -90,16 +178,14 @@ export async function assertBucketProject(s3: S3Client, bucketName: string, expe
   }
 }
 
-async function main() {
+export async function main(): Promise<void> {
   const { S3Client } = await import('@aws-sdk/client-s3')
   const accessKey = process.env.SCW_ACCESS_KEY
   const secretKey = process.env.SCW_SECRET_KEY
-  if (!accessKey || !secretKey) {
-    console.error('SCW_ACCESS_KEY and SCW_SECRET_KEY must be set')
-    process.exit(1)
-  }
+  if (!accessKey || !secretKey) throw new Error('SCW_ACCESS_KEY and SCW_SECRET_KEY must be set')
   process.env.APP_MODE = process.env.APP_MODE ?? 'production'
-  const { appConfig } = await import('shared')
+  const { loadEngineConfig } = await import('../config/engine-config')
+  const appConfig = await loadEngineConfig()
   const { stateBucket } = await import('../lib/stack/control-store')
   const bucketName = stateBucket(appConfig.slug)
   const region = appConfig.s3.region
@@ -111,10 +197,7 @@ async function main() {
   if (expectedProjectId) {
     const keyProject = await keyPreferredProject({ secretKey }, accessKey)
     const mismatch = keyProjectMismatch(keyProject, expectedProjectId, accessKey)
-    if (mismatch) {
-      console.error(`✗ ${mismatch}`)
-      process.exit(1)
-    }
+    if (mismatch) throw new Error(mismatch)
   } else {
     console.warn('⚠ SCW_PROJECT_ID / SCW_DEFAULT_PROJECT_ID not set — skipping the key-preferred-project preflight.')
   }
@@ -127,8 +210,14 @@ async function main() {
   })
   const result = await ensureStateBucket(s3, bucketName)
   if (expectedProjectId) await assertBucketProject(s3, bucketName, expectedProjectId)
+  await hardenStateBucket(s3, bucketName)
   if (result === 'exists') console.info(`Pulumi state bucket already exists: s3://${bucketName} (${region})`)
   else console.info(`Created Pulumi state bucket: s3://${bucketName} (${region})`)
 }
 
-if (isMain(import.meta.url)) await main()
+if (isMain(import.meta.url)) {
+  main().catch((err) => {
+    console.error(`✗ ${err instanceof Error ? err.message : String(err)}`)
+    process.exit(1)
+  })
+}

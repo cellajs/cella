@@ -1,7 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process'
-import { pc } from 'shared/cli-utils/colors';
-import { warningMark } from 'shared/utils/console'
 import { isBootstrapOwned } from '../scaleway/permissions'
+import { pc, warningMark } from '../utils/cli-output'
 
 function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
   return new Promise((resolve) => child.once('close', (code) => resolve(code ?? 1)))

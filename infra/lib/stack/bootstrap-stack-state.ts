@@ -24,10 +24,12 @@ export function detectStackState(probe: StackProbe): StackState {
 
 /**
  * Pick the first stack short-name (production, staging) whose Pulumi file
- * is present. Pure: caller supplies the existence check.
+ * is present. A fresh checkout with no stack file falls back to staging: the
+ * recommended first target for a new install. Pure: caller supplies the
+ * existence check.
  */
 export function pickStackShort(exists: (shortName: string) => boolean, candidates: readonly Environment[] = ['production', 'staging']): Environment {
-  return candidates.find(exists) ?? 'production'
+  return candidates.find(exists) ?? 'staging'
 }
 
 /**
@@ -49,4 +51,15 @@ export function extractComputeDeferredMarker(yamlText: string): string | undefin
  */
 export function detectComputeDeferred(yamlText?: string): string | undefined {
   return yamlText ? extractComputeDeferredMarker(yamlText) : undefined
+}
+
+/**
+ * Detect whether the local stack config opts the database into a public
+ * endpoint (`infra:dbPublicEndpoint: "true"`), the state the expose/unexpose
+ * flow toggles. Read from the committed/local yaml, so it drives the menu's
+ * status-aware label without any I/O. The converge itself is idempotent, so a
+ * stale read only mislabels the menu, never misacts. Pure.
+ */
+export function detectDbPublicEndpoint(yamlText?: string): boolean {
+  return yamlText ? /(?:^|\n)\s*infra:dbPublicEndpoint:\s*["']?true/.test(yamlText) : false
 }

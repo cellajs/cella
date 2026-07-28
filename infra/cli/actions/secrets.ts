@@ -2,7 +2,8 @@ import { emitKeypressEvents } from 'node:readline'
 import { confirm, select } from '@inquirer/prompts'
 import { BACK, manageRuntimeSecrets } from '../../tasks/manage-runtime-secrets'
 import { maskedSecret } from '../prompts/masked-secret'
-import { envOr, type InfraContext } from '../shared'
+import type { InfraContext } from '../shared'
+import { pc } from '../../lib/utils/cli-output'
 
 type PromptOption<T extends string> = { name: string; value: T; description?: string }
 
@@ -46,9 +47,16 @@ function selectWithEscape<T extends string>(options: { message: string; choices:
 export async function runSecrets(context: InfraContext): Promise<void> {
   // The project id is resolved once at CLI startup (required), so reuse it.
   const projectId = context.projectId
-  const secretKey = await envOr(['SCW_SECRET_KEY', 'SCW_BOOTSTRAP_SECRET_KEY'], () =>
-    maskedSecret({ message: 'Scaleway bootstrap secret key' }),
-  )
+
+  // Managing runtime secrets reads/writes Secret Manager, which the operator or
+  // CI key already covers (no bootstrap key needed). Reuse one from the env when
+  // present; only prompt when none is loaded, and say how to skip the prompt.
+  let secretKey = process.env.SCW_SECRET_KEY?.trim() || process.env.SCW_BOOTSTRAP_SECRET_KEY?.trim() || ''
+  if (!secretKey) {
+    console.info(pc.dim('\n→ Needs a Scaleway key with Secret Manager access (your operator or CI key, not a bootstrap key).'))
+    console.info(pc.dim(`  Set SCW_SECRET_KEY in infra/.env.${context.environment} to skip this prompt next time.`))
+    secretKey = await maskedSecret({ message: 'Scaleway secret key' })
+  }
 
   const { appConfig } = context
   const path = `/${appConfig.slug}-${context.environment}/`

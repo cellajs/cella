@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { assertBucketProject, ensureStateBucket, keyProjectMismatch } from './ensure-state-bucket'
+import { assertBucketProject, ensureStateBucket, hardenStateBucket, keyProjectMismatch } from './ensure-state-bucket'
 
 /**
  * Builds a mock S3Client that responds to HEAD/CREATE commands using the
@@ -74,6 +74,65 @@ describe('ensureStateBucket', () => {
     const s3 = makeS3({ head: [{ status: 404 }, true], create: [true] })
     await expect(ensureStateBucket(s3, 'cella-pulumi-state')).resolves.toBe('created')
     await expect(ensureStateBucket(s3, 'cella-pulumi-state')).resolves.toBe('exists')
+  })
+})
+
+describe('hardenStateBucket', () => {
+  /** Mock client resolving or 403-ing per command name. */
+  const hardenClient = (deny: string[] = [], failWith?: { command: string; status: number }) => {
+    const send = vi.fn(async (cmd: { constructor: { name: string } }) => {
+      const kind = cmd.constructor.name
+      if (failWith && kind === failWith.command) {
+        throw Object.assign(new Error('hard failure'), { $metadata: { httpStatusCode: failWith.status } })
+      }
+      if (deny.includes(kind)) {
+        throw Object.assign(new Error('AccessDenied'), { $metadata: { httpStatusCode: 403 } })
+      }
+      return {}
+    })
+    // biome-ignore lint/suspicious/noExplicitAny: minimal mock surface
+    return { send } as any
+  }
+
+  it('applies versioning, encryption, and lifecycle', async () => {
+    const s3 = hardenClient()
+    const result = await hardenStateBucket(s3, 'cella-pulumi-state', () => {})
+    expect(result.applied).toEqual(['versioning', 'encryption', 'lifecycle'])
+    expect(result.denied).toEqual([])
+    const kinds = s3.send.mock.calls.map((c: [{ constructor: { name: string } }]) => c[0].constructor.name)
+    expect(kinds).toEqual(['PutBucketVersioningCommand', 'PutBucketEncryptionCommand', 'PutBucketLifecycleConfigurationCommand'])
+  })
+
+  it('enables versioning and AES256 default encryption with the expected shapes', async () => {
+    const s3 = hardenClient()
+    await hardenStateBucket(s3, 'cella-pulumi-state', () => {})
+    const [versioning, encryption, lifecycle] = s3.send.mock.calls.map((c: [{ input: unknown }]) => c[0].input)
+    expect(versioning).toMatchObject({ VersioningConfiguration: { Status: 'Enabled' } })
+    expect(encryption).toMatchObject({
+      ServerSideEncryptionConfiguration: { Rules: [{ ApplyServerSideEncryptionByDefault: { SSEAlgorithm: 'AES256' } }] },
+    })
+    expect(lifecycle).toMatchObject({
+      LifecycleConfiguration: { Rules: [{ NoncurrentVersionExpiration: { NoncurrentDays: 90 } }, { Expiration: { ExpiredObjectDeleteMarker: true } }] },
+    })
+  })
+
+  it('tolerates AccessDenied per call (policy-restricted CI key) and reports it', async () => {
+    const s3 = hardenClient(['PutBucketVersioningCommand', 'PutBucketEncryptionCommand', 'PutBucketLifecycleConfigurationCommand'])
+    const result = await hardenStateBucket(s3, 'cella-pulumi-state', () => {})
+    expect(result.applied).toEqual([])
+    expect(result.denied).toEqual(['versioning', 'encryption', 'lifecycle'])
+  })
+
+  it('mixes applied and denied when only some calls are restricted', async () => {
+    const s3 = hardenClient(['PutBucketVersioningCommand'])
+    const result = await hardenStateBucket(s3, 'cella-pulumi-state', () => {})
+    expect(result.applied).toEqual(['encryption', 'lifecycle'])
+    expect(result.denied).toEqual(['versioning'])
+  })
+
+  it('rethrows non-403 errors', async () => {
+    const s3 = hardenClient([], { command: 'PutBucketEncryptionCommand', status: 500 })
+    await expect(hardenStateBucket(s3, 'cella-pulumi-state', () => {})).rejects.toThrow(/hard failure/)
   })
 })
 

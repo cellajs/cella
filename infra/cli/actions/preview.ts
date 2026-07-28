@@ -1,10 +1,9 @@
 import { spawnSync } from 'node:child_process'
-import { pc } from 'shared/cli-utils/colors';
-import { warningMark } from 'shared/utils/console'
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'
 import { infraDir } from '../../lib/utils/paths'
 import { maskedSecret } from '../prompts/masked-secret'
 import { envOr, type InfraContext, promptRequiredInput, promptStackName, pulumiLoginAndSelect, resolveVerifiedPassphrase } from '../shared'
+import { pc, warningMark } from '../../lib/utils/cli-output'
 
 /** Read-only `pulumi preview` against the stack. Authenticates the provider
  *  from SCW_* env (not stack config) using a Scaleway key supplied here, so it

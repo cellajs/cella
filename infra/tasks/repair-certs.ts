@@ -67,8 +67,8 @@ async function liveStatus(auth: ScwAuth, id: string): Promise<LiveCertStatus> {
   }
 }
 
-export async function main(): Promise<void> {
-  const stack = getFlag(process.argv, '--stack')
+export async function main(argv = process.argv.slice(2)): Promise<void> {
+  const stack = getFlag(argv, '--stack')
   if (!stack) throw new Error('Usage: repair-certs --stack <stack>')
   const secretKey = process.env.SCW_SECRET_KEY
   if (!secretKey) throw new Error('SCW_SECRET_KEY must be set')

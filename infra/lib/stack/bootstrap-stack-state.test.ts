@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectComputeDeferred, detectStackState, extractComputeDeferredMarker, pickStackShort } from './bootstrap-stack-state'
+import { detectComputeDeferred, detectDbPublicEndpoint, detectStackState, extractComputeDeferredMarker, pickStackShort } from './bootstrap-stack-state'
 
 describe('detectStackState', () => {
   it('fresh: no yaml at all', () => {
@@ -35,8 +35,8 @@ describe('pickStackShort', () => {
     expect(pickStackShort((n) => n === 'staging')).toBe('staging')
   })
 
-  it('falls back to production when none exist', () => {
-    expect(pickStackShort(() => false)).toBe('production')
+  it('falls back to staging when none exist (fresh installs are staging-first)', () => {
+    expect(pickStackShort(() => false)).toBe('staging')
   })
 })
 
@@ -65,5 +65,18 @@ describe('detectComputeDeferred', () => {
 
   it('returns the marker value when present', () => {
     expect(detectComputeDeferred('config:\n  bootstrap:computeDeferred: 2026-05-27T10:00:00.000Z\n')).toBe('2026-05-27T10:00:00.000Z')
+  })
+})
+
+describe('detectDbPublicEndpoint', () => {
+  it('true when the config opts in (quoted or bare)', () => {
+    expect(detectDbPublicEndpoint('config:\n  infra:dbPublicEndpoint: "true"\n')).toBe(true)
+    expect(detectDbPublicEndpoint('config:\n  infra:dbPublicEndpoint: true\n')).toBe(true)
+  })
+
+  it('false when off, absent, or no yaml', () => {
+    expect(detectDbPublicEndpoint('config:\n  infra:dbPublicEndpoint: "false"\n')).toBe(false)
+    expect(detectDbPublicEndpoint('config:\n  scaleway:projectId: abc\n')).toBe(false)
+    expect(detectDbPublicEndpoint()).toBe(false)
   })
 })

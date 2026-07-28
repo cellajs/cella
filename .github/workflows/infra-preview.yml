@@ -1,9 +1,15 @@
 # =============================================================================
-# Infra preview on PRs
+# Infra preview
 # =============================================================================
-# Runs `pulumi preview` against the production stack for any PR that touches
-# infrastructure code, and posts the plan as a job summary so reviewers can
+# Runs `pulumi preview` and posts the plan as a job summary so reviewers can
 # see what would change before merging. Read-only. Never calls `pulumi up`.
+#
+# Credential scoping: PRs preview against the STAGING stack, whose credentials
+# live in a separate Scaleway organization. `pulumi preview` executes the
+# checked-out Pulumi program, so a same-repo branch PR runs pre-review code
+# with whatever secrets this job holds; staging keys bound that exposure to a
+# sacrificial org. A production plan is available on demand via
+# `workflow_dispatch` (maintainer-triggered, so the code ref is trusted).
 # =============================================================================
 
 name: Infra preview
@@ -18,22 +24,35 @@ on:
       - 'infra/**'
       - 'shared/**'
       - '.github/workflows/infra-preview.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to preview against'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - staging
+          - production
 
 concurrency:
-  group: infra-preview-${{ github.event.pull_request.number }}
+  group: infra-preview-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 env:
   NODE_VERSION: '24'
+  # PRs always target staging; only a manual dispatch can select production.
+  PREVIEW_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
 
 jobs:
   preview:
     # Skip preview for PRs from forks: they cannot access repo secrets, and
     # we do not want to expose Scaleway/Pulumi credentials to fork code.
-    if: github.event.pull_request.head.repo.full_name == github.repository
-    # Source SCW_*/PULUMI_CONFIG_PASSPHRASE from the production Environment.
+    # Manual dispatches run from a trusted ref and always proceed.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    # Source SCW_*/PULUMI_CONFIG_PASSPHRASE from the selected Environment.
     # Repo-level secrets were removed so credentials live in one place only.
-    environment: production
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -50,19 +69,23 @@ jobs:
           cache: 'pnpm'
 
       - name: Install Pulumi CLI
-        run: curl -fsSL https://get.pulumi.com | sh -s && echo "$HOME/.pulumi/bin" >> $GITHUB_PATH
+        uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
+        with:
+          pulumi-version: 3.236.0
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra... --filter shared...
 
       - name: Derive stack + state bucket
         id: derive
-        run: pnpm --filter infra print-deploy-env production >> $GITHUB_OUTPUT
+        run: pnpm --filter infra print-deploy-env "$PREVIEW_ENV" >> $GITHUB_OUTPUT
 
       - name: Ensure Pulumi state bucket exists
         env:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          APP_MODE: ${{ steps.derive.outputs.environment }}
         run: pnpm --filter infra ensure-state-bucket
 
       - name: Login to S3 state backend

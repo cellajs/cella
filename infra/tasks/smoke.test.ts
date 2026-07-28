@@ -296,24 +296,15 @@ describe('parseArgs', () => {
 })
 
 describe('main', () => {
-  it('hard-fails (exit 1) when --dist is set but unreadable, before any network probe', async () => {
+  it('hard-fails when --dist is set but unreadable, before any network probe', async () => {
   // An explicit unreadable distribution would disable build-hash verification, so fail before probing.
-    const exit = vi.spyOn(process, 'exit').mockImplementation((() => {
-      throw new Error('process.exit called')
-    }) as never)
-    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
 
     await expect(
       main(['--frontend', 'https://app', '--backend', 'https://api', '--sha', SHA, '--dist', '/nonexistent/does-not-exist.html']),
-    ).rejects.toThrow('process.exit called')
+    ).rejects.toThrow(/Could not read/)
 
-    expect(exit).toHaveBeenCalledWith(1)
     expect(fetchSpy).not.toHaveBeenCalled()
-    expect(error).toHaveBeenCalledWith(expect.stringContaining('Could not read'))
-
-    exit.mockRestore()
-    error.mockRestore()
     fetchSpy.mockRestore()
   })
 })

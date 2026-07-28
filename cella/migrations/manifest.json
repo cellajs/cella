@@ -238,6 +238,24 @@
         "pnpm check"
       ],
       "summary": "Media block specs (image/video/audio/file) gain an attachmentId prop via withAttachmentRef, applied to both the frontend editor schema and the yjs relay's server schema so Y.Docs round-trip it; UppyFilePanel stamps it on upload. Dead checklistGroupConfig plus checklist-group-block/render deleted, the four mediaBlockTypes copies consolidated onto the shared/blocknote export, and derive-description-core added as the shared block walk for description derivation. No wire-shape or DB change."
+    },
+    {
+      "id": "20260723T2257-deploy-engine-waves",
+      "version": "next",
+      "title": "Deploy engine: waved rollout, internal routes, one deploy command",
+      "kind": "manual",
+      "forkBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "infra",
+        ".github/workflows"
+      ],
+      "requires": [
+        "pnpm --filter infra compose:generate",
+        "pnpm check"
+      ],
+      "summary": "Two-wave rollout with concurrent cutovers and one deferred reap; single 'infra deploy' command replaces the pulumi/roll-*/publish/smoke jobs (branch-protection checks change to 'deploy'); cdc binds the backend through the LB's ACL-guarded internal route (services.config: backend internalRoute + internalHost/internalPort binding); optional INFRA_PULUMI_DRIVER=automation and INFRA_STACK_TOPOLOGY=micro knobs."
     }
   ]
 }

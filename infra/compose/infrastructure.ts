@@ -1,3 +1,4 @@
+import { healthContract } from '../config/health.config'
 import type { AppServiceConfig, AppServices, ServiceMeta, ComposeFile, ComposeService, HealthCheck } from './types'
 
 /** Helper for `services.config.ts`: typed identity that preserves literal keys. */
@@ -33,7 +34,7 @@ const STANDARD_ENV = {
 /** Uniform identity healthcheck injected into every app service. */
 function healthcheck(port: number, startPeriod: string): HealthCheck {
   return {
-    test: ['CMD', 'wget', '-qO-', `http://127.0.0.1:${port}/health`],
+    test: ['CMD', 'wget', '-qO-', `http://127.0.0.1:${port}${healthContract.path}`],
     interval: '30s',
     timeout: '5s',
     retries: 3,
@@ -47,7 +48,8 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
     slug,
     healthPort: cfg.port,
     healthTimeoutSeconds: cfg.healthTimeoutSeconds,
-    runMigrate: cfg.runMigrate ?? false,
+    healthExpectStatus: cfg.healthExpectStatus ?? 200,
+    runMigrate: cfg.release !== undefined,
     replacementStrategy: cfg.replacementStrategy,
     drainSeconds: cfg.drainSeconds ?? 0,
     instanceType: cfg.instanceType,
@@ -57,6 +59,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   if (cfg.lbRoute) meta.lbRoute = cfg.lbRoute
   if (cfg.lbPathBegin) meta.lbPathBegin = cfg.lbPathBegin
   if (cfg.lbWebsockets) meta.lbWebsockets = true
+  if (cfg.internalRoute) meta.internalRoute = true
   if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf
   if (cfg.dockerfile) meta.dockerfile = cfg.dockerfile
   if (cfg.target) meta.target = cfg.target
@@ -68,11 +71,11 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
 /**
  * Expand one fork app-service entry into a full Compose service block.
  *
- * `extraEnv` is machinery-injected env (e.g. a `runMigrate` service's synthetic
- * `RUN_MIGRATIONS_ON_BOOT=false`, since its one-shot `migrate` companion owns
- * migrations). Under the immutable-node model the app container binds the host
- * port directly (the per-VM ingress proxy is gone) and the LB health-checks the
- * app's own `/health`.
+ * `extraEnv` is the service's release-step `appEnv` (the env applied to the app
+ * block whenever a release companion exists, e.g. to keep the app from repeating
+ * the release work on its own boot). Under the immutable-node model the app
+ * container binds the host port directly (the per-VM ingress proxy is gone) and
+ * the LB health-checks the app's own health endpoint.
  */
 function appBlock(
   slug: string,
@@ -101,66 +104,59 @@ function appBlock(
 }
 
 /**
- * One-shot schema migrator derived from a service that opts into `runMigrate`.
- * Reuses the service image via `MODE=migrate`; applies migrations + ensures DB
- * roles, then exits. Run at the new generation's boot BEFORE the app starts
+ * One-shot release companion derived from a service that declares a `release`
+ * step. Reuses the service image with the fork's release command/env, then
+ * exits. Run at the new generation's boot BEFORE the app starts
  * (expand-before-cutover), gated on exit 0. No port/healthcheck (not long-running).
  */
-function migrateBlock(slug: string, cfg: AppServiceConfig): ComposeService {
+function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
+  const release = cfg.release
   return {
     image: cfg.image,
     profiles: [slug],
     restart: 'no',
+    ...(release?.command ? { command: release.command } : {}),
     env_file: ['.env', '.env.runtime'],
-    environment: { ...STANDARD_ENV, MODE: 'migrate', ...(cfg.env ?? {}) },
+    environment: { ...STANDARD_ENV, ...(release?.env ?? {}), ...(cfg.env ?? {}) },
   }
 }
 
-// Machinery: hand-authored, cella-owned. The one-shot migrate companion and
-// the compose assembly. Not fork data; driven by the fork's service registry.
-
-/**
- * Env injected into a `runMigrate` service's app block: its one-shot `migrate`
- * companion owns schema changes (run at new-generation boot before the app), so
- * the app container itself must NOT migrate on boot.
- */
-const MIGRATE_GATED_ENV: Record<string, string> = { RUN_MIGRATIONS_ON_BOOT: 'false' }
+// Machinery: the one-shot release companion and the compose assembly. Not fork
+// data; driven by the fork's service registry.
 
 /**
  * Assemble the full `ComposeFile` from the fork's service registry. Under the
  * immutable-node model each service is a single app block that binds the host
  * port directly (no per-VM ingress proxy); zero-downtime overlap happens at the
- * load balancer between VM generations, not inside the VM. A `runMigrate`
- * service additionally emits a one-shot `migrate` companion, run at the new
- * generation's boot before the app starts.
+ * load balancer between VM generations, not inside the VM. A service that
+ * declares a `release` step additionally emits a one-shot companion, run at the
+ * new generation's boot before the app starts.
+ *
+ * `processIdentityEnv` names the env keys that select a container's process
+ * identity (which worker/mode, which port); they are never folded from a
+ * co-hosted worker into the singleVM host. Fork-owned so the engine names no
+ * app-specific env key.
  */
-export function assembleCompose(appServices: AppServices): ComposeFile {
+export function assembleCompose(appServices: AppServices, options: { processIdentityEnv?: readonly string[] } = {}): ComposeFile {
+  const processIdentityEnv = new Set(options.processIdentityEnv ?? [])
   const services: Record<string, ComposeService> = {}
   for (const [slug, cfg] of Object.entries(appServices)) {
-    services[slug] = appBlock(slug, cfg, { extraEnv: cfg.runMigrate ? MIGRATE_GATED_ENV : undefined })
-    if (cfg.runMigrate) services.migrate = migrateBlock(slug, cfg)
+    services[slug] = appBlock(slug, cfg, { extraEnv: cfg.release?.appEnv })
+    if (cfg.release) services.migrate = releaseBlock(slug, cfg)
   }
   publishCoHostedPorts(appServices, services)
-  publishCoHostedEnv(appServices, services)
+  publishCoHostedEnv(appServices, services, processIdentityEnv)
   return { services }
 }
 
 /**
- * Env keys NEVER folded from a co-hosted service into the host block: they
- * configure the container's process identity (which entrypoint mode to boot,
- * which port the main process binds), and under `singleVM` that identity is
- * the host's: the folded workers are booted in-process by the host's own
- * startup (`main.api.ts`) and read only their service-specific vars
- * (`CDC_HEALTH_PORT`, `YJS_PORT`, `API_WS_URL`, …).
- */
-const PROCESS_IDENTITY_ENV = new Set(['MODE', 'PORT'])
-
-/**
  * Folds co-hosted service environments into the single-VM host block.
  * The host profile supplies their placeholders and bindings because worker blocks do not start.
- * Equal collisions are accepted; conflicting values fail synthesis.
+ * Equal collisions are accepted; conflicting values fail synthesis. Process-identity
+ * env keys are skipped: under `singleVM` the folded workers boot in-process under
+ * the host's own identity and read only their service-specific vars.
  */
-function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, ComposeService>): void {
+function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, ComposeService>, processIdentityEnv: ReadonlySet<string>): void {
   const hostSlug = Object.entries(appServices).find(([, cfg]) => cfg.primaryRollout)?.[0]
   if (!hostSlug) return
   const hostBlock = blocks[hostSlug]
@@ -169,7 +165,7 @@ function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, Com
   for (const [slug, cfg] of Object.entries(appServices)) {
     if (!cfg.coHosted || !cfg.env) continue
     for (const [key, value] of Object.entries(cfg.env)) {
-      if (PROCESS_IDENTITY_ENV.has(key)) continue
+      if (processIdentityEnv.has(key)) continue
       const existing = merged[key]
       if (existing !== undefined && existing !== value) {
         throw new Error(

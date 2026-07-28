@@ -1,8 +1,19 @@
-import { changeMark, checkMark, tildeMark } from 'shared/utils/console'
 import { scwFetch, scwSend } from './scw-fetch'
+import { DNS_PERMISSION_SETS } from './permissions'
+import { changeMark, checkMark, tildeMark } from '../utils/cli-output'
 
 const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1'
 const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3'
+
+/** A Scaleway permissions_denied error (403), regardless of resource. */
+function isPermissionDenied(error: unknown): boolean {
+  return error instanceof Error && /permissions_denied|→ 403/.test(error.message)
+}
+
+/** A Scaleway already-exists conflict (409 / duplicate name). */
+function isAlreadyExists(error: unknown): boolean {
+  return error instanceof Error && /already.?exists|→ 409|duplicate/i.test(error.message)
+}
 
 interface ScwApp {
   id: string
@@ -75,6 +86,10 @@ export interface ScopedKeyResult {
  * cannot be resolved.
  */
 export async function resolveOrganizationId(secretKey: string, projectId: string): Promise<string> {
+  // Env-provided id wins: a project-scoped bootstrap key (staging) may lack
+  // the Account read that the API fallback below needs.
+  const fromEnv = process.env.SCW_DEFAULT_ORGANIZATION_ID?.trim()
+  if (fromEnv) return fromEnv
   // GET /account/v3/projects/{id} returns the Project object directly, not
   // wrapped in { project: ... }.
   const project = await scwFetch<{ organization_id?: string }>({ secretKey }, 'GET', `${ACCOUNT_BASE}/projects/${projectId}`)
@@ -121,27 +136,40 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
 
   // Recreate managed policies so rules match current permissions.
   // When Pulumi owns the policy, skip it here to avoid races and duplicate policies.
+  // Scaleway splits IAM rights: IAMManager writes but cannot read (that needs
+  // IAMReadOnly). A write-only bootstrap key skips the recreate-check and
+  // creates directly, tolerating an already-exists conflict.
   if (config.managePolicy !== false) {
     if (!config.buildRules) {
       throw new Error('provisionScopedKey: buildRules is required when managePolicy is not false')
     }
-    const { policies } = await scwFetch<{ policies: ScwPolicy[] }>({ secretKey: callerSecretKey },
-      'GET',
-      `${IAM_BASE}/policies?application_id=${app.id}&organization_id=${organizationId}&page_size=20`,
-    )
-    const existingPolicy = policies.find((p) => p.name === policyName)
-    if (existingPolicy) {
-      await scwSend({ secretKey: callerSecretKey }, 'DELETE', `${IAM_BASE}/policies/${existingPolicy.id}`)
-      log(`  ${tildeMark} Removed existing policy: ${policyName} (recreating with current rules)`)
+    try {
+      const { policies } = await scwFetch<{ policies: ScwPolicy[] }>({ secretKey: callerSecretKey },
+        'GET',
+        `${IAM_BASE}/policies?application_id=${app.id}&organization_id=${organizationId}&page_size=20`,
+      )
+      const existingPolicy = policies.find((p) => p.name === policyName)
+      if (existingPolicy) {
+        await scwSend({ secretKey: callerSecretKey }, 'DELETE', `${IAM_BASE}/policies/${existingPolicy.id}`)
+        log(`  ${tildeMark} Removed existing policy: ${policyName} (recreating with current rules)`)
+      }
+    } catch (error) {
+      if (!isPermissionDenied(error)) throw error
+      log(`  ${tildeMark} Cannot list policies (IAMManager without IAMReadOnly) — creating '${policyName}' directly`)
     }
-    await scwFetch<ScwPolicy>({ secretKey: callerSecretKey }, 'POST', `${IAM_BASE}/policies`, {
-      name: policyName,
-      organization_id: organizationId,
-      application_id: app.id,
-      description: config.policyDescription,
-      rules: config.buildRules({ projectId, organizationId }),
-    })
-    log(`  ${changeMark} Created IAM policy: ${policyName}`)
+    try {
+      await scwFetch<ScwPolicy>({ secretKey: callerSecretKey }, 'POST', `${IAM_BASE}/policies`, {
+        name: policyName,
+        organization_id: organizationId,
+        application_id: app.id,
+        description: config.policyDescription,
+        rules: config.buildRules({ projectId, organizationId }),
+      })
+      log(`  ${changeMark} Created IAM policy: ${policyName}`)
+    } catch (error) {
+      if (!isAlreadyExists(error)) throw error
+      log(`  ${checkMark} Policy ${policyName} already exists — kept as-is (rules refresh needs IAMReadOnly)`)
+    }
   } else {
     log(`  ${checkMark} Policy management delegated to Pulumi (iam.Policy resource) — skipping`)
   }
@@ -153,14 +181,19 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
     return { accessKey: '', secretKey: '', applicationId: app.id, organizationId }
   }
 
-  const { api_keys: existingKeys = [] } = await scwFetch<{ api_keys?: Array<{ access_key: string }> }>(
-    { secretKey: callerSecretKey },
-    'GET',
-    `${IAM_BASE}/api-keys?application_id=${app.id}&organization_id=${organizationId}&page_size=100`,
-  )
-  for (const key of existingKeys) {
-    await scwSend({ secretKey: callerSecretKey }, 'DELETE', `${IAM_BASE}/api-keys/${key.access_key}`)
-    log(`  ${tildeMark} Removed orphan API key: ${key.access_key}`)
+  try {
+    const { api_keys: existingKeys = [] } = await scwFetch<{ api_keys?: Array<{ access_key: string }> }>(
+      { secretKey: callerSecretKey },
+      'GET',
+      `${IAM_BASE}/api-keys?application_id=${app.id}&organization_id=${organizationId}&page_size=100`,
+    )
+    for (const key of existingKeys) {
+      await scwSend({ secretKey: callerSecretKey }, 'DELETE', `${IAM_BASE}/api-keys/${key.access_key}`)
+      log(`  ${tildeMark} Removed orphan API key: ${key.access_key}`)
+    }
+  } catch (error) {
+    if (!isPermissionDenied(error)) throw error
+    log(`  ${tildeMark} Cannot list API keys (IAMManager without IAMReadOnly) — skipping the orphan purge`)
   }
 
   // 4. Mint a fresh API key.
@@ -180,6 +213,15 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
 }
 
 /**
+ * Delete an API key. Used by the setup wizard to revoke the bootstrap key as
+ * its last call: Scaleway allows a key to delete itself, so the wizard can
+ * finish with zero privileged credentials left outside the credential chain.
+ */
+export async function revokeApiKey(callerSecretKey: string, accessKey: string): Promise<void> {
+  await scwSend({ secretKey: callerSecretKey }, 'DELETE', `${IAM_BASE}/api-keys/${accessKey}`)
+}
+
+/**
  * Find an IAM policy id by exact name within an organization, or undefined when
  * none matches. Detects a pre-existing (orphaned) policy that must be
  * adopted into Pulumi state and preserved.
@@ -190,4 +232,53 @@ export async function findPolicyIdByName(secretKey: string, organizationId: stri
     `${IAM_BASE}/policies?organization_id=${organizationId}&policy_name=${encodeURIComponent(name)}&page_size=20`,
   )
   return policies.find((p) => p.name === name)?.id
+}
+
+/**
+ * Ensure the bootstrap key's own IAM application carries org-wide DNS. Needed
+ * when the zone lives in a sibling project (a staging stack reusing the
+ * production apex): the first provisioning `pulumi up` runs with the bootstrap
+ * key and must create records in that shared zone. No-ops for user-owned keys
+ * (Owner-level rights already include DNS) and when the policy already exists.
+ * The grant is removed with the bootstrap application when the key is revoked.
+ */
+export async function ensureBootstrapDnsGrant(opts: {
+  callerSecretKey: string
+  accessKey: string
+  organizationId: string
+  slug: string
+  log?: (msg: string) => void
+}): Promise<boolean> {
+  const log = opts.log ?? ((msg) => console.info(msg))
+  const key = await scwFetch<{ application_id?: string | null }>(
+    { secretKey: opts.callerSecretKey },
+    'GET',
+    `${IAM_BASE}/api-keys/${opts.accessKey}`,
+  )
+  if (!key.application_id) return false
+
+  const policyName = `${opts.slug}-bootstrap-dns`
+  try {
+    const existing = await findPolicyIdByName(opts.callerSecretKey, opts.organizationId, policyName)
+    if (existing) {
+      log(`  Bootstrap DNS grant '${policyName}' already present`)
+      return true
+    }
+  } catch (error) {
+    if (!isPermissionDenied(error)) throw error
+  }
+  try {
+    await scwFetch<ScwPolicy>({ secretKey: opts.callerSecretKey }, 'POST', `${IAM_BASE}/policies`, {
+      name: policyName,
+      organization_id: opts.organizationId,
+      application_id: key.application_id,
+      description: 'Org-wide DNS for the bootstrap key: first provisioning up writes records in the org-shared zone (auto-generated; revoke with the bootstrap key)',
+      rules: [{ permission_set_names: [...DNS_PERMISSION_SETS], organization_id: opts.organizationId }],
+    })
+    log(`  Created bootstrap DNS grant '${policyName}' (org-wide DomainsDNSFullAccess)`)
+  } catch (error) {
+    if (!isAlreadyExists(error)) throw error
+    log(`  Bootstrap DNS grant '${policyName}' already present`)
+  }
+  return true
 }

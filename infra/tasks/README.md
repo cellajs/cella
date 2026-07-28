@@ -7,7 +7,7 @@
 Two strategies:
 
 - **lb-overlap**: health-gate the new generation, expand the LB backend to `[old, new]`, contract to `[new]`, then drain. With `healthAfterExpand`, the order is expand → health-gate → contract instead, for services where CI must probe health through the public LB rather than a direct new-generation address.
-- **exclusive**: health-gate only, no LB. Used by `cdc`, which holds a single Postgres replication slot that permits exactly one consumer, so the old generation must release the slot before the new one acquires it. The new generation only reports `/health` healthy once it holds the slot, so "destroy old, then poll new healthy" confirms the handoff; that ordering is orchestrated by `deploy-service.ts` around its `pulumi up` bookends, after `sequenceCutover` returns.
+- **exclusive**: health-gate only, no LB. Used by `cdc`, which holds a single Postgres replication slot that permits exactly one consumer, so the old generation must release the slot before the new one acquires it. The new generation only reports `/health` healthy once it holds the slot, so "destroy old, then poll new healthy" confirms the handoff; that ordering is orchestrated by the waved rollout (`deploy-rollout.ts` -> `activateService`) around its stack-update bookends.
 
 An unhealthy new generation aborts before any LB mutation. With `healthAfterExpand`, a health-gate failure after expansion leaves the LB in the overlap state for manual diagnosis rather than rolling back automatically.
 

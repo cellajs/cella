@@ -4,9 +4,9 @@ import { naming, region, tags, mode } from '../pulumi-context'
 import { runtimeSecrets, type RuntimeSecretDefinition, type RuntimeSecretId } from '../lib/runtime-secrets'
 import { secretManagerPath } from '../lib/scaleway/vm-reader-secret'
 import { configuredOrRandomSecret } from './configured-secret'
-import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc, caCertificate } from './database'
+import { derivedRuntimeSecretData } from './stores'
 
-/** Folder path for secret organization, e.g. '/cella-production/' */
+/** Folder path for secret organization, e.g. '/<slug>-production/' */
 const secretPath = secretManagerPath(naming.slug, mode)
 
 /**
@@ -65,18 +65,9 @@ function pulumiOwnedRuntimeSecret(configKey: string, name: string) {
   return configuredOrRandomSecret(configKey, `generated-${name}`)
 }
 
-/**
- * Pulumi-derived secrets requiring live database resources: connection strings and CA data.
- * Other Pulumi-owned values resolve generically from registry generation metadata.
- */
-const derivedRuntimeSecretData: Record<string, pulumi.Input<string>> = {
-  databaseUrlAdmin: connectionStringAdmin,
-  databaseUrlRuntime: connectionStringRuntime,
-  databaseUrlCdc: connectionStringCdc,
-// Base64-encode the multiline RDB CA for line-based `.env.runtime` delivery.
-// Database clients decode it back to PEM.
-  databaseSslCa: pulumi.output(caCertificate).apply((pem) => Buffer.from(pem, 'utf-8').toString('base64')),
-}
+// Store-derived secret values (connection strings, CA data) are provisioned and
+// bound by the store plugins in resources/stores; other pulumi-owned values
+// resolve generically from registry generation metadata below.
 
 function pulumiRuntimeSecretData(definition: RuntimeSecretDefinition): pulumi.Input<string> {
   const derived = derivedRuntimeSecretData[definition.id]
@@ -111,3 +102,4 @@ const secretResources = Object.fromEntries(runtimeSecrets.map((definition) => {
 export const secretIds = Object.fromEntries(
   Object.entries(secretResources).map(([id, secret]) => [id, secret.id]),
 ) as Record<RuntimeSecretId, pulumi.Output<string>>
+

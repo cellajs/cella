@@ -1,7 +1,9 @@
-import { type BootPlan, parseRuntimeSecretManifest, supportedImageContract, supportedSchemaVersion } from '../agent/src/plan'
+import { type BootPlan, parseRuntimeSecretManifest, supportedImageContract, supportedSchemaVersion } from '../boot/src/plan'
 
 export interface CloudInitParams {
-  /** Service name (backend, cdc, yjs, ai, frontend). */
+  /** App slug: namespaces the VM's `/etc/<slug>` config dir and serial markers. */
+  slug: string
+  /** Service name (the compose profile slug). */
   service: string
   /** Docker compose profile to bring up (equals the service slug). */
   profile: string
@@ -17,6 +19,13 @@ export interface CloudInitParams {
   composeContent: string
   /** Registry endpoint (`<host>/<namespace>`); login uses the host part. */
   registry: string
+  /**
+   * Manifest digest (`sha256:…`) the boot runner tag resolved to at plan time.
+   * When set, the launcher runs the boot image by digest, so a later registry
+   * push cannot swap the root-equivalent (socket-mounted) boot runner under a
+   * reboot. Absent only when resolution failed during a dry run.
+   */
+  bootImageDigest?: string
   /** Scaleway secret key: registry password + Secret Manager access token. */
   secretKey: string
   /** Scaleway access key for writing boot diagnostics to Object Storage. */
@@ -25,59 +34,71 @@ export interface CloudInitParams {
   region: string
   /** Dedicated Object Storage bucket for boot diagnostics. */
   bootDiagBucket: string
+  /** Deploy trace context baked into the boot plan (absent outside a deploy run). */
+  traceparent?: string
 }
 
-const agentAccessKeyPath = '/etc/cella/scw-access-key'
-const agentSecretKeyPath = '/etc/cella/scw-secret-key'
-const agentPlanPath = '/etc/cella/boot-plan.json'
+/** VM config paths, namespaced under `/etc/<slug>` so the engine hardcodes no app name. */
+const bootPaths = (slug: string) => {
+  const etcDir = `/etc/${slug}`
+  return {
+    etcDir,
+    accessKey: `${etcDir}/scw-access-key`,
+    secretKey: `${etcDir}/scw-secret-key`,
+    plan: `${etcDir}/boot-plan.json`,
+    launcher: `${etcDir}/run-boot.sh`,
+  }
+}
 
 const writeHeredoc = (path: string, marker: string, content: string): string => `cat > ${path} <<'${marker}'
 ${content}
 ${marker}`
 
-const bootHeader = (service: string, releaseSha: string): string => `#!/bin/bash
-exec > >(tee -a /var/log/cella-boot.log 2>/dev/null > /dev/console) 2>&1
+const bootHeader = (slug: string, service: string, releaseSha: string): string => `#!/bin/bash
+exec > >(tee -a /var/log/infra-boot.log 2>/dev/null > /dev/console) 2>&1
 set -uo pipefail
-say() { echo "::cella:: $*" ; }
+say() { echo "::${slug}:: $*" ; }
 trap 'rc=$?; if [ "$rc" -ne 0 ]; then say "BOOT FAILED (exit $rc)"; fi' EXIT
 say "boot start: service=${service} release=${releaseSha}"`
 
 const bootReplayUnit = `[Unit]
-Description=Replay the cella first-boot log to the serial console
+Description=Replay the first-boot log to the serial console
 After=multi-user.target
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'cat /var/log/cella-boot.log 2>/dev/null > /dev/console'
+ExecStart=/bin/sh -c 'cat /var/log/infra-boot.log 2>/dev/null > /dev/console'
 [Install]
 WantedBy=multi-user.target`
 
-const installBootReplayService = (): string => `${writeHeredoc('/etc/systemd/system/cella-boot-replay.service', 'REPLAY_UNIT_EOF', bootReplayUnit)}
-systemctl enable cella-boot-replay.service 2>&1 | tail -1`
+const installBootReplayService = (): string => `${writeHeredoc('/etc/systemd/system/infra-boot-replay.service', 'REPLAY_UNIT_EOF', bootReplayUnit)}
+systemctl enable infra-boot-replay.service 2>&1 | tail -1`
 
 // -E (ERE) so `|` alternates; in a BRE the unescaped `|` is literal and the
 // scrub silently matches nothing.
 const scrubCloudInitLogs = (): string => `sed -E -i '/SECRET|PASSWORD|API_KEY|DATABASE_URL|docker login/Id' /var/log/cloud-init-output.log 2>/dev/null || true
 sed -E -i '/SECRET|PASSWORD|API_KEY|DATABASE_URL|docker login/Id' /var/log/cloud-init.log 2>/dev/null || true`
 
-// `satisfies BootPlan` + the agent's own schema constants keep producer and
-// consumer in lockstep: a contract change on either side fails the typecheck
-// (or the manifest validation) during planning, before VM boot.
+// `satisfies BootPlan` + the boot runner's own schema constants keep producer
+// and consumer in lockstep: a contract change on either side fails the
+// typecheck (or the manifest validation) during planning, before VM boot.
 function bootPlan(p: CloudInitParams): string {
+  const paths = bootPaths(p.slug)
   return JSON.stringify({
     schemaVersion: supportedSchemaVersion,
     service: p.service,
     profile: p.profile,
     releaseSha: p.releaseSha,
+    ...(p.traceparent ? { traceparent: p.traceparent } : {}),
     imageContract: supportedImageContract,
     registry: p.registry,
     region: p.region,
     credentials: {
-      scwAccessKeyFile: agentAccessKeyPath,
-      scwSecretKeyFile: agentSecretKeyPath,
+      scwAccessKeyFile: paths.accessKey,
+      scwSecretKeyFile: paths.secretKey,
     },
     bootDiagnostics: {
       bucket: p.bootDiagBucket,
-      logFile: '/var/log/cella-boot.log',
+      logFile: '/var/log/infra-boot.log',
     },
     releaseCommand: {
       enabled: p.runMigrate,
@@ -97,68 +118,72 @@ function bootPlan(p: CloudInitParams): string {
   } satisfies BootPlan, null, 2)
 }
 
-/** Agent image reference: same registry namespace + release SHA as the app images. */
-const agentImageRef = (p: CloudInitParams): string => `${p.registry}/cella-boot-agent:${p.releaseSha}`
-
-const agentLauncherPath = '/etc/cella/run-agent.sh'
+/** Boot runner image reference: pinned by digest when resolved, else the release-SHA tag. */
+const bootImageRef = (p: CloudInitParams): string =>
+  p.bootImageDigest ? `${p.registry}/infra-boot@${p.bootImageDigest}` : `${p.registry}/infra-boot:${p.releaseSha}`
 
 /**
- * Launcher: log the host daemon into the registry (to pull the agent image),
- * then run the agent container. The agent drives the host Docker daemon through
- * the mounted socket and probes/reaches the private network via `--network host`.
- * /opt/app + /etc/runtime-secrets are mounted so the agent writes compose.yml,
- * .env, .env.runtime and the manifest to the same host paths the daemon mounts.
+ * Launcher: log the host daemon into the registry (to pull the boot runner
+ * image), then run the boot runner container. It drives the host Docker daemon
+ * through the mounted socket and probes/reaches the private network via
+ * `--network host`. /opt/app + /etc/runtime-secrets are mounted so the boot
+ * runner writes compose.yml, .env, .env.runtime and the manifest to the same
+ * host paths the daemon mounts.
  */
-const agentLauncher = (p: CloudInitParams): string => {
+const bootLauncher = (p: CloudInitParams): string => {
   const registryHost = p.registry.split('/')[0]
+  const paths = bootPaths(p.slug)
   return `#!/bin/bash
 set -uo pipefail
-docker login ${registryHost} -u nologin --password-stdin < ${agentSecretKeyPath}
+docker login ${registryHost} -u nologin --password-stdin < ${paths.secretKey}
 exec docker run --rm --network host \\
   -v /var/run/docker.sock:/var/run/docker.sock \\
   -v /opt/app:/opt/app \\
-  -v /etc/cella:/etc/cella \\
+  -v ${paths.etcDir}:${paths.etcDir} \\
   -v /etc/runtime-secrets:/etc/runtime-secrets \\
-  ${agentImageRef(p)} \\
-  boot --plan ${agentPlanPath}`
+  ${bootImageRef(p)} \\
+  boot --plan ${paths.plan}`
 }
 
 // The systemd unit runs on first boot and each reboot. Re-running is intentional:
-// the idempotent agent re-hydrates /opt/app/.env.runtime from Secret Manager.
-const agentUnit = `[Unit]
-Description=Cella boot agent (first boot + every reboot)
+// the idempotent boot runner re-hydrates /opt/app/.env.runtime from Secret Manager.
+const bootUnit = (launcherPath: string): string => `[Unit]
+Description=Boot runner (first boot + every reboot)
 After=docker.service network-online.target
 Wants=docker.service network-online.target
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -lc 'set -o pipefail; ${agentLauncherPath} 2>&1 | tee -a /var/log/cella-boot.log > /dev/console'
+ExecStart=/bin/bash -lc 'set -o pipefail; ${launcherPath} 2>&1 | tee -a /var/log/infra-boot.log > /dev/console'
 [Install]
 WantedBy=multi-user.target`
 
-const writeAgentInputs = (p: CloudInitParams): string => `mkdir -p /etc/cella /opt/app /etc/runtime-secrets
-${writeHeredoc(agentPlanPath, 'BOOT_PLAN_EOF', bootPlan(p))}
-chmod 600 ${agentPlanPath}
-${writeHeredoc(agentAccessKeyPath, 'SCW_ACCESS_KEY_EOF', p.accessKey)}
-chmod 600 ${agentAccessKeyPath}
-${writeHeredoc(agentSecretKeyPath, 'SCW_SECRET_KEY_EOF', p.secretKey)}
-chmod 600 ${agentSecretKeyPath}
-${writeHeredoc(agentLauncherPath, 'RUN_AGENT_EOF', agentLauncher(p))}
-chmod 700 ${agentLauncherPath}`
+const writeBootInputs = (p: CloudInitParams): string => {
+  const paths = bootPaths(p.slug)
+  return `mkdir -p ${paths.etcDir} /opt/app /etc/runtime-secrets
+${writeHeredoc(paths.plan, 'BOOT_PLAN_EOF', bootPlan(p))}
+chmod 600 ${paths.plan}
+${writeHeredoc(paths.accessKey, 'SCW_ACCESS_KEY_EOF', p.accessKey)}
+chmod 600 ${paths.accessKey}
+${writeHeredoc(paths.secretKey, 'SCW_SECRET_KEY_EOF', p.secretKey)}
+chmod 600 ${paths.secretKey}
+${writeHeredoc(paths.launcher, 'RUN_BOOT_EOF', bootLauncher(p))}
+chmod 700 ${paths.launcher}`
+}
 
 // `enable` wires the unit into multi-user.target so it re-runs on every reboot
 // (re-hydrating runtime secrets); `start` runs it now on this first boot.
-const startAgent = (): string => `${writeHeredoc('/etc/systemd/system/cella-boot-agent.service', 'CELLA_BOOT_AGENT_UNIT_EOF', agentUnit)}
+const startBootRunner = (p: CloudInitParams): string => `${writeHeredoc('/etc/systemd/system/infra-boot.service', 'INFRA_BOOT_UNIT_EOF', bootUnit(bootPaths(p.slug).launcher))}
 systemctl daemon-reload
-systemctl enable cella-boot-agent.service 2>&1 | tail -1
-systemctl start cella-boot-agent.service`
+systemctl enable infra-boot.service 2>&1 | tail -1
+systemctl start infra-boot.service`
 
 /** Render the first-boot cloud-init script for one service generation VM. */
 export function renderCloudInit(p: CloudInitParams): string {
   return [
-    bootHeader(p.service, p.releaseSha),
+    bootHeader(p.slug, p.service, p.releaseSha),
     installBootReplayService(),
-    writeAgentInputs(p),
-    startAgent(),
+    writeBootInputs(p),
+    startBootRunner(p),
     scrubCloudInitLogs(),
   ].join('\n\n') + '\n'
 }

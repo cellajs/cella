@@ -11,20 +11,27 @@ export const appServices = defineServices({
     dockerfile: 'Dockerfile',
     target: 'backend',
     port: 4000,
+    // API services answer /health with 204 (no body); the LB matches it exactly.
+    healthExpectStatus: 204,
     healthTimeoutSeconds: 240,
     startPeriod: '15s',
     // Immutable-node cutover: a new generation is health-gated, the LB overlaps
-    // both generations, then contracts to the new one. The one-shot `migrate`
-    // companion runs at the new generation's boot (expand-before-cutover).
+    // both generations, then contracts to the new one. The one-shot release
+    // companion runs at the new generation's boot (expand-before-cutover): it
+    // applies migrations via MODE=migrate, and the app block is told not to
+    // migrate on its own boot.
     replacementStrategy: 'lb-overlap',
     drainPolicy: 'requests',
-    runMigrate: true,
+    release: { env: { MODE: 'migrate' }, appEnv: { RUN_MIGRATIONS_ON_BOOT: 'false' } },
     primaryRollout: true,
     drainSeconds: 10,
     // Same-origin: reached at https://<app-host>/api/... via an LB path-begin
     // route; the backend self-mounts '/api' (no LB stripping).
     lbRoute: 'path',
     lbPathBegin: '/api',
+    // Private ACL-guarded LB frontend: in-network consumers (cdc) dial a stable
+    // address that follows every cutover.
+    internalRoute: true,
     // Per-service VM size (required on every service).
     instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },
     env: {
@@ -38,6 +45,7 @@ export const appServices = defineServices({
     dockerfile: 'Dockerfile',
     target: 'cdc',
     port: 4001,
+    healthExpectStatus: 204,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
     // CDC must cut over exclusively because it owns one PostgreSQL replication slot.
@@ -52,10 +60,12 @@ export const appServices = defineServices({
       CDC_HEALTH_PORT: '4001',
     },
     // cdc → backend is a server-to-server WebSocket on the internal /internal/cdc
-    // path, straight to the backend VM over the private network (the backend
-    // rejects sources outside loopback / the VPC, so it can't go via the LB).
+    // path, dialed through the LB's private ACL-guarded internal frontend. The
+    // address is stable across backend cutovers (the LB stays inside the VPC,
+    // so the backend's loopback/VPC source check still passes), and the LB
+    // kills sessions on mark-down so cdc re-dials the new generation.
     bindings: {
-      API_WS_URL: 'ws://@{backend.privateIp}:@{backend.port}/internal/cdc',
+      API_WS_URL: 'ws://@{backend.internalHost}:@{backend.internalPort}/internal/cdc',
     },
   },
 
@@ -64,6 +74,7 @@ export const appServices = defineServices({
     dockerfile: 'Dockerfile',
     target: 'yjs',
     port: 4002,
+    healthExpectStatus: 204,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
     replacementStrategy: 'lb-overlap',
@@ -90,6 +101,7 @@ export const appServices = defineServices({
   mcp: {
     image: '${REGISTRY}/backend:${MCP_TAG:-latest}',
     port: 4003,
+    healthExpectStatus: 204,
     healthTimeoutSeconds: 240,
     startPeriod: '15s',
     replacementStrategy: 'lb-overlap',
@@ -141,3 +153,12 @@ export const appServices = defineServices({
     },
   },
 });
+
+/**
+ * Env keys that select a container's process identity: which in-process worker
+ * to boot (`MODE`) and which port it binds (`PORT`). Under `singleVM` these are
+ * never folded from a co-hosted worker onto the host, since the workers run
+ * in-process under the host's own identity. Fork-owned so the engine names no
+ * app-specific env key.
+ */
+export const processIdentityEnv = ['MODE', 'PORT'] as const;

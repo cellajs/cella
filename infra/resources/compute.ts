@@ -2,19 +2,46 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { appConfig } from '../../shared'
-import { naming, zone, region, tags, infra, vmAccessKey, vmSecretKey } from '../pulumi-context'
+import { engineConfig } from '../config/engine-config'
+const appConfig = engineConfig()
+import { naming, zone, region, tags, mode } from '../pulumi-context'
+import { sizing } from '../config/sizing'
 import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import type { ServiceDefinition } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
+import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from '../lib/scaleway/vm-reader-secret'
+import { resolveImageDigest } from '../lib/scaleway/registry-digest'
 import { renderCloudInit } from './cloud-init'
 import { createComposeEnvBuilder } from './compose-env'
 import { activeGenerations, coHosted, enabled, hostSlug, secretConsumersFor, type Generation } from './generations'
 import { privateNetworkId } from './network'
 import { registryEndpoint } from './registry'
-import { secretIds } from './secrets'
 import { bootDiagBucketName } from './storage'
+import { secretIds } from './secrets'
 import { vmReaderPolicy } from './vm-iam'
+
+// Reads the VM reader key pair (minimal-privilege: registry pull + Secret
+// Manager read) from Scaleway Secret Manager. Owned here: compute is its only
+// consumer, baking it into each generation's cloud-init.
+function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulumi.Output<string> } {
+  const secretPath = secretManagerPath(naming.slug, mode)
+  const container = scaleway.secrets.getSecretOutput({ name: VM_READER_SECRET_NAME, path: secretPath, region })
+  const payload = scaleway.secrets.getVersionOutput({ secretId: container.id, revision: 'latest', region }).data.apply(
+    (data): VmReaderKeyPayload => {
+      const parsed: unknown = JSON.parse(Buffer.from(data, 'base64').toString('utf8'))
+      const record = parsed as Partial<VmReaderKeyPayload> | null
+      if (typeof record?.accessKey !== 'string' || typeof record?.secretKey !== 'string') {
+        throw new Error(`Secret '${VM_READER_SECRET_NAME}' does not contain {accessKey, secretKey} — re-run the infra CLI bootstrap to reseed it.`)
+      }
+      return { accessKey: record.accessKey, secretKey: record.secretKey }
+    },
+  )
+  return { accessKey: pulumi.secret(payload.accessKey), secretKey: pulumi.secret(payload.secretKey) }
+}
+
+const vmReaderKey = sizing.computeEnabled ? readVmReaderKey() : undefined
+const vmAccessKey = vmReaderKey?.accessKey ?? pulumi.secret('')
+const vmSecretKey = vmReaderKey?.secretKey ?? pulumi.secret('')
 
 // Security Group: fully closed inbound; LB reaches VMs via private network.
 // Break-glass access is via Scaleway's serial console (no SSH on the public
@@ -76,11 +103,42 @@ interface ServiceConfig {
   composeEnv: Record<string, () => pulumi.Input<string>>
 }
 
+// Per-tag digest memo: every generation of a release resolves the boot image
+// digest once, not once per VM.
+const bootImageDigests = new Map<string, Promise<string | undefined>>()
+
+/**
+ * Resolve the boot runner tag to its manifest digest so the launcher pins the
+ * root-equivalent (socket-mounted) image against later registry pushes. Fail
+ * closed on a real `up`; a dry run degrades to the tag with a warning so
+ * previews never require registry availability.
+ */
+function bootImageDigestFor(registry: string, releaseSha: string, secretKey: string): Promise<string | undefined> {
+  const memoKey = `${registry}|${releaseSha}`
+  let pending = bootImageDigests.get(memoKey)
+  if (!pending) {
+    pending = resolveImageDigest({ registry, image: 'infra-boot', tag: releaseSha, secretKey }).catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err)
+      if (pulumi.runtime.isDryRun()) {
+        pulumi.log.warn(`boot image digest resolution failed (preview continues on the tag): ${message}`)
+        return undefined
+      }
+      throw new Error(`Refusing to plan a VM with an unpinned boot image: ${message}`)
+    })
+    bootImageDigests.set(memoKey, pending)
+  }
+  return pending
+}
+
 function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Output<string> {
   const envLines = pulumi.all(
     Object.entries(service.composeEnv).map(([k, supply]) =>
       pulumi.output(supply()).apply((val) => `${k}=${val}`),
     ),
+  )
+
+  const bootImageDigest = pulumi.all([registryEndpoint, vmSecretKey]).apply(([registry, secretKey]) =>
+    bootImageDigestFor(registry, releaseSha, secretKey),
   )
 
   return pulumi.all([
@@ -92,8 +150,10 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
     vmSecretKey,
     registryEndpoint,
     bootDiagBucketName,
-  ]).apply(([env, manifest, accessKey, secretKey, registry, bootDiagBucket]) =>
+    bootImageDigest,
+  ]).apply(([env, manifest, accessKey, secretKey, registry, bootDiagBucket, digest]) =>
     renderCloudInit({
+      slug: naming.slug,
       service: service.name,
       profile: service.profile,
       runMigrate: service.runMigrate,
@@ -102,10 +162,14 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
       manifestContent: manifest,
       composeContent,
       registry,
+      bootImageDigest: digest,
       accessKey,
       secretKey,
       region,
       bootDiagBucket,
+      // Deploy trace context (deploy-run exports it before the stack update);
+      // ignoreChanges on cloudInit keeps existing generations untouched.
+      traceparent: process.env.TRACEPARENT,
     }),
   )
 }
@@ -164,8 +228,8 @@ function currentGenBindingIp(slug: ServiceName): pulumi.Output<string> {
 }
 
 // Accept a Scaleway marketplace label or pinned image UUID without a plan-time lookup.
-// The boot agent is pulled at startup, so resolved image rotation is ignored.
-const computeImageId: pulumi.Input<string> = infra.computeImage
+// The boot runner is pulled at startup, so resolved image rotation is ignored.
+const computeImageId: pulumi.Input<string> = sizing.computeImage
 
 function createGenerationVm(svc: ServiceDefinition, generation: Generation): GenerationInstance {
   const resourceName = `vm-${svc.slug}-${generation.id}`
@@ -186,7 +250,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
 
   const server = new scaleway.instance.Server(resourceName, {
     name: naming.resource(`${svc.slug}-${generation.id}`),
-    type: infra.instanceTypeFor(svc.slug),
+    type: sizing.instanceTypeFor(svc.slug),
     image: computeImageId,
     zone,
     tags,
@@ -196,7 +260,8 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   }, {
     // Generation VMs keep their initial cloud-init and image; changes create a content-addressed
     // generation through the rollout path. Ignoring provider image UUID drift prevents destructive
-    // in-place replacement outside load-balancer cutover.
+    // in-place replacement outside load-balancer cutover. The IAM grant must
+    // exist before the VM's first runtime-secret hydration.
     dependsOn: [vmReaderPolicy],
     ignoreChanges: ['cloudInit', 'image'],
   })
@@ -228,7 +293,7 @@ function generationsFor(slug: ServiceName): Generation[] {
   return generations
 }
 
-if (infra.computeEnabled) {
+if (sizing.computeEnabled) {
   for (const svc of enabled) generationsByService.set(svc.slug, activeGenerations(svc))
 
   // Pass 1: reserve every (service, generation) private IP up front so
@@ -274,7 +339,7 @@ export const computeGenerationMetadata = pulumi.all(instances.map((i) => pulumi.
  * server list. The live list is then owned by the cutover task (the LB backend
  * declares `ignoreChanges: ['serverIps']`).
  *
- * Under singleVM a co-hosted worker (cdc/yjs/ai) runs in the host backend
+ * Under singleVM a co-hosted worker (cdc/yjs/mcp) runs in the host backend
  * process, so its LB backend targets the host VM's
  * generation IPs (on the worker's own port, which the host block publishes).
  */

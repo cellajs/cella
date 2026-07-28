@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs'
-import { sleep as defaultSleep } from 'shared/utils/sleep'
+import { healthContract } from '../config/health.config'
 import { errorMessage } from '../lib/utils/errors'
 import { isMain } from '../lib/utils/is-main'
 import { pollUntil } from '../lib/utils/retry'
 import { parseServiceRows } from '../lib/utils/service-rows'
 import { getFlag } from './args'
 import { isHealthy } from './wait-for-version'
+import { sleep as defaultSleep } from '../lib/utils/cli-output'
 
 /** Extract the hashed entry script src (e.g. /assets/index-abc123.js) from HTML. */
 export function extractEntryAsset(html: string): string | undefined {
@@ -137,13 +138,14 @@ export interface SmokeOptions {
 }
 
 /**
- * Component-health (check #6) retry budget. Right after a rollout the CDC
- * worker's WebSocket can still be mid-reconnect (exponential backoff up to 30s),
- * which the backend surfaces as a transient `cdc=unhealthy(worker_disconnected)`.
- * Polling across roughly one backoff cycle lets that settle while a genuinely
- * broken component stays bad for the whole budget and still fails the gate.
+ * Component-health (check #6) retry budget. The exclusive cdc replacement
+ * frees its replication slot only at the final reap, and the fresh worker's
+ * WebSocket reconnect backs off up to 30s, so the backend can surface a
+ * transient `cdc=unhealthy(worker_disconnected)` for up to ~2 minutes after
+ * cutover. The 120s budget outlasts that; a genuinely broken component stays
+ * bad for the whole budget and still fails the gate.
  */
-export const COMPONENTS_RETRY_ATTEMPTS = 6
+export const COMPONENTS_RETRY_ATTEMPTS = 15
 export const COMPONENTS_RETRY_DELAY_MS = 8_000
 
 
@@ -197,8 +199,8 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
   const publicServices = (opts.services ?? [{ service: 'backend', health_url: backendUrl }]).filter((service) => service.health_url)
   for (const service of publicServices) {
     await check(`${service.service} reports deployed SHA`, async () => {
-      const res = await get(`${service.health_url}/health`)
-      const version = res.headers.get('x-app-version') ?? undefined
+      const res = await get(`${service.health_url}${healthContract.path}`)
+      const version = res.headers.get(healthContract.versionHeader) ?? undefined
       return {
         ok: isHealthy({ status: res.status, version }, expectedSha),
         detail: `served=${version ?? '<missing>'} expected=${expectedSha}`,
@@ -226,7 +228,7 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
     const healthy = await pollUntil(
       async () => {
         try {
-          const res = await get(`${backendUrl}/health?depth=full`)
+          const res = await get(`${backendUrl}${healthContract.path}?depth=full`)
           if (!res.ok) {
             lastDetail = `status=${res.status}`
             return undefined
@@ -286,9 +288,9 @@ export function resolveExpectedAsset(dist: string | undefined): string | undefin
   try {
     html = readFileSync(dist, 'utf-8')
   } catch (err) {
-    console.error(`::error::Could not read ${dist}: ${errorMessage(err)}`)
-    console.error('::error::The local bundle is required to verify the served bundle. Check the --dist path and the working directory.')
-    process.exit(1)
+    throw new Error(
+      `Could not read ${dist}: ${errorMessage(err)}. The local bundle is required to verify the served bundle; check the --dist path and the working directory.`,
+    )
   }
   const expectedAsset = extractEntryAsset(html)
   if (expectedAsset) console.info(`Expecting served index.html to reference: ${expectedAsset}`)
@@ -313,7 +315,13 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     else console.error(`::error::${r.name}${r.detail ? ` — ${r.detail}` : ''}`)
   }
 
-  if (results.some((r) => !r.ok)) process.exit(1)
+  const failed = results.filter((r) => !r.ok)
+  if (failed.length > 0) throw new Error(`${failed.length} smoke check(s) failed`)
 }
 
-if (isMain(import.meta.url)) await main()
+if (isMain(import.meta.url)) {
+  main().catch((err) => {
+    console.error(`::error::${err instanceof Error ? err.message : String(err)}`)
+    process.exit(1)
+  })
+}

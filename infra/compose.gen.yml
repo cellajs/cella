@@ -37,6 +37,7 @@ services:
       slug: backend
       healthPort: 4000
       healthTimeoutSeconds: 240
+      healthExpectStatus: 204
       runMigrate: true
       replacementStrategy: lb-overlap
       drainSeconds: 10
@@ -47,6 +48,7 @@ services:
       drainPolicy: requests
       lbRoute: path
       lbPathBegin: /api
+      internalRoute: true
       dockerfile: Dockerfile
       target: backend
   migrate:
@@ -90,6 +92,7 @@ services:
       slug: cdc
       healthPort: 4001
       healthTimeoutSeconds: 90
+      healthExpectStatus: 204
       runMigrate: false
       replacementStrategy: exclusive
       drainSeconds: 0
@@ -98,7 +101,7 @@ services:
       target: cdc
       coHosted: true
       bindings:
-        API_WS_URL: ws://@{backend.privateIp}:@{backend.port}/internal/cdc
+        API_WS_URL: ws://@{backend.internalHost}:@{backend.internalPort}/internal/cdc
   yjs:
     image: ${REGISTRY}/yjs:${YJS_TAG:-latest}
     profiles: [yjs]
@@ -125,6 +128,7 @@ services:
       slug: yjs
       healthPort: 4002
       healthTimeoutSeconds: 90
+      healthExpectStatus: 204
       runMigrate: false
       replacementStrategy: lb-overlap
       drainSeconds: 5
@@ -165,6 +169,7 @@ services:
       slug: mcp
       healthPort: 4003
       healthTimeoutSeconds: 240
+      healthExpectStatus: 204
       runMigrate: false
       replacementStrategy: lb-overlap
       drainSeconds: 10
@@ -196,6 +201,7 @@ services:
       slug: frontend
       healthPort: 80
       healthTimeoutSeconds: 90
+      healthExpectStatus: 200
       runMigrate: false
       replacementStrategy: lb-overlap
       drainSeconds: 0

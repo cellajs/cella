@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import type { Environment } from './stack/bootstrap-stack-state'
-import { crossMark, warningMark } from 'shared/utils/console'
+import { crossMark, warningMark } from './utils/cli-output'
 
 /** Parses `git remote get-url origin` output into `owner/repo`. Accepts both
  *  https://github.com/owner/repo(.git) and git@github.com:owner/repo(.git)

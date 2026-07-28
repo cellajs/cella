@@ -78,15 +78,8 @@ describe('storage module', () => {
     }
   })
 
-  it('frontend bucket has website configuration with index.html fallback', () => {
-    const sites = h.resources.filter((r) => /bucketWebsiteConfiguration/i.test(r.type))
-    expect(sites).toHaveLength(1)
-    // biome-ignore lint/suspicious/noExplicitAny: raw input shape
-    const idx = (sites[0]?.inputs.indexDocument as any)?.suffix
-    // biome-ignore lint/suspicious/noExplicitAny: raw input shape
-    const err = (sites[0]?.inputs.errorDocument as any)?.key
-    expect(idx).toBe('index.html')
-    expect(err).toBe('index.html')
+  it('provisions no S3 website hosting (Caddy owns the SPA fallback over the REST endpoint)', () => {
+    expect(h.resources.filter((r) => /bucketWebsiteConfiguration/i.test(r.type))).toHaveLength(0)
   })
 
   it('frontend bucket expires stale assets/ chunks but never root entry files', () => {

@@ -1,6 +1,25 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, tagsAsMap, isProduction, infra, serviceUrl, ciDeployApplicationId, vmReaderApplicationId, operatorApplicationId } from '../pulumi-context'
+import { naming, region, tagsAsMap, isProduction, serviceUrl } from '../pulumi-context'
+import { sizing } from '../config/sizing'
+import { services } from '../lib/services'
+import { ciDeployApplicationId, vmReaderApplicationId } from './vm-iam'
+
+// The browser app origin allowed to call the upload buckets: the service that
+// owns the LB's default route (the SPA), resolved without naming a service.
+const browserOriginSlug = services.find((s) => s.lbRoute === 'default')?.slug
+if (!browserOriginSlug) throw new Error('storage: no service owns the LB default route — cannot resolve the browser origin for bucket CORS.')
+const browserOrigin = serviceUrl(browserOriginSlug)
+
+/**
+ * Optional operator application id (SCW_OPERATOR_APPLICATION_ID). When set, this
+ * IAM application is granted full S3 access on the CI-scoped bucket policies, so
+ * an operator key under it can read/refresh buckets without being the CI deploy
+ * app. Bucket policies are deny-by-default: without this, even an org-admin or
+ * personal key 403s on ListObjects/GetBucketCors during `pulumi up --refresh`.
+ * Empty = only the CI deploy app + public reads, the default.
+ */
+const operatorApplicationId: string | undefined = process.env.SCW_OPERATOR_APPLICATION_ID?.trim() || undefined
 
 // Optionally grant the operator application S3 access alongside CI in deny-by-default policies.
 // Omit its statement when unset so existing forks keep their policy unchanged.
@@ -28,7 +47,7 @@ const deployAccess = (bucketName: pulumi.Input<string>) => ({
 
 // Expire stale hashed assets only after old browser tabs are unlikely to lazy-load them.
 // Root entry files stay outside this lifecycle prefix.
-const assetRetentionDays = infra.assetRetentionDays
+const assetRetentionDays = sizing.assetRetentionDays
 
 // Frontend static files bucket (website hosting)
 
@@ -58,21 +77,9 @@ const frontendBucket = new scaleway.object.Bucket('frontend-bucket', {
   ],
 }, { aliases: [{ type: 'scaleway:index/objectBucket:ObjectBucket' }], protect: isProduction })
 
-// SPA website configuration: enables S3 website hosting with index.html fallback.
-// Required for direct bucket access (dev) and the Caddy frontend proxy.
-// Requires ObjectStorageFullAccess IAM permission on the SCW API key.
-const frontendWebsite = new scaleway.object.BucketWebsiteConfiguration(
-  'frontend-website',
-  {
-    bucket: frontendBucket.name,
-    region,
-    indexDocument: { suffix: 'index.html' },
-    errorDocument: { key: 'index.html' },
-  },
-)
-
-// Create website configuration before restricting the public policy to GetObject;
-// the provider needs ListObjects while configuring the website.
+// Public read via bucket policy only: the SPA is served by the Caddy frontend
+// VMs proxying the S3 REST endpoint (with their own index.html fallback), so
+// no S3 website hosting configuration is needed.
 new scaleway.object.BucketPolicy('frontend-policy', {
   bucket: frontendBucket.name,
   region,
@@ -90,7 +97,7 @@ new scaleway.object.BucketPolicy('frontend-policy', {
       ...operatorAccess(frontendBucket.name),
     ],
   }),
-}, { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }], dependsOn: [frontendWebsite] })
+}, { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }] })
 
 // Public uploads bucket (user-uploaded public assets)
 
@@ -104,7 +111,7 @@ const publicUploadsBucket = new scaleway.object.Bucket('public-uploads-bucket', 
     {
       allowedHeaders: ['*'],
       allowedMethods: ['GET', 'PUT', 'POST'],
-      allowedOrigins: [serviceUrl('frontend')],
+      allowedOrigins: [browserOrigin],
       maxAgeSeconds: 3600,
     },
   ],
@@ -142,7 +149,7 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
     {
       allowedHeaders: ['*'],
       allowedMethods: ['GET', 'PUT', 'POST'],
-      allowedOrigins: [serviceUrl('frontend')],
+      allowedOrigins: [browserOrigin],
       maxAgeSeconds: 3600,
     },
   ],
@@ -195,9 +202,6 @@ export const frontendBucketName = frontendBucket.name
 /** Frontend bucket S3 endpoint */
 export const frontendBucketEndpoint = frontendBucket.endpoint
 
-/** Frontend website endpoint */
-export const frontendWebsiteEndpoint = frontendWebsite.websiteEndpoint
-
 /** Public uploads bucket name */
 export const publicUploadsBucketName = publicUploadsBucket.name
 
@@ -215,3 +219,4 @@ export const bootDiagBucketName = bootDiagBucket.name
 
 /** Boot diagnostics bucket S3 endpoint */
 export const bootDiagBucketEndpoint = bootDiagBucket.endpoint
+

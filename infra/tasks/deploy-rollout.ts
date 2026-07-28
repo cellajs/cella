@@ -1,8 +1,10 @@
-import { spawnSync } from 'node:child_process'
 import { isMain } from '../lib/utils/is-main'
 import { parseServiceRows } from '../lib/utils/service-rows'
-import { getFlag } from './args'
 import { errorMessage } from '../lib/utils/errors'
+import { getFlag } from './args'
+import { type RolloutRuntime, runWavedRollout, type WavedRolloutPlan } from './rollout'
+import { planForService } from './rollout-plans'
+import { createRolloutRuntime } from './rollout-runtime'
 
 interface RolloutItem {
   service: string
@@ -11,16 +13,6 @@ interface RolloutItem {
 
 function parseRolloutJson(raw: string, flag: string): RolloutItem[] {
   return parseServiceRows(raw, flag, { required: ['service', 'health_url'] })
-}
-
-function runDeployService(item: RolloutItem, opts: { stack: string; sha: string }): void {
-  // Each deploy-service does its own final `pulumi up` after a healthy cutover,
-  // reaping the displaced generation inline; no `previous` is retained. Rollback is a
-  // revert commit + redeploy, which recreates every service (cdc included).
-  const args = ['--filter', 'infra', 'deploy-service', '--service', item.service, '--sha', opts.sha, '--stack', opts.stack]
-  if (item.health_url) args.push('--health-url', item.health_url)
-  const res = spawnSync('pnpm', args, { stdio: 'inherit', env: process.env })
-  if (res.status !== 0) throw new Error(`deploy-service failed for ${item.service} with exit ${res.status}`)
 }
 
 export function parseArgs(argv: string[]): { primary: RolloutItem[]; rest: RolloutItem[]; stack: string; sha: string } {
@@ -32,12 +24,26 @@ export function parseArgs(argv: string[]): { primary: RolloutItem[]; rest: Rollo
   return { primary: parseRolloutJson(primaryRaw, '--primary-json'), rest: parseRolloutJson(restRaw, '--rest-json'), stack, sha }
 }
 
-export async function main(argv = process.argv.slice(2)): Promise<void> {
-  const args = parseArgs(argv)
+/** Build the two-wave plan from the CI rollout matrices. */
+export function buildWavedPlan(args: { primary: RolloutItem[]; rest: RolloutItem[]; sha: string }): WavedRolloutPlan {
   if (args.primary.length > 1) throw new Error(`Expected at most one primary rollout service, got ${args.primary.length}`)
-  if (args.primary.length === 0) console.info('No primary rollout service configured — skipping primary rollout.')
-  for (const item of args.primary) runDeployService(item, args)
-  for (const item of args.rest) runDeployService(item, args)
+  if (args.primary.length === 0) console.info('No primary rollout service configured — skipping wave 1.')
+  const [primaryItem] = args.primary
+  return {
+    sha: args.sha,
+    primary: primaryItem ? planForService(primaryItem.service, primaryItem.health_url || undefined) : undefined,
+    rest: args.rest.map((item) => planForService(item.service, item.health_url || undefined)),
+  }
+}
+
+export async function main(argv = process.argv.slice(2), makeRuntime: (opts: { stack: string }) => RolloutRuntime = createRolloutRuntime): Promise<void> {
+  const args = parseArgs(argv)
+  process.env.APP_MODE ??= args.stack.split('/').pop()
+  const { loadEngineConfig } = await import('../config/engine-config')
+  await loadEngineConfig()
+  if (args.sha === 'latest' || args.sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${args.sha}'`)
+  const plan = buildWavedPlan(args)
+  await runWavedRollout(plan, makeRuntime({ stack: args.stack }))
 }
 
 if (isMain(import.meta.url)) {

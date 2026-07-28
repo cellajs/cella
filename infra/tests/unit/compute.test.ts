@@ -7,6 +7,7 @@ const composeEnvSource = readFileSync(resolve(__dirname, '../../resources/compos
 const generationsSource = readFileSync(resolve(__dirname, '../../resources/generations.ts'), 'utf-8')
 // Most checks cover the compute stack as a whole, independent of which
 // of the three files a pattern lives in.
+const envSuppliersSource = readFileSync(resolve(__dirname, '../../config/env-suppliers.config.ts'), 'utf-8')
 const source = computeSource + composeEnvSource + generationsSource
 
 // Static checks pin structural compute contracts without rendering Pulumi.
@@ -52,14 +53,14 @@ describe('compute module source contracts', () => {
 
   it('sizes each VM via the per-service instanceTypeFor helper', () => {
     // VM size must be resolved per service.
-    expect(source).toMatch(/type:\s*infra\.instanceTypeFor\(svc\.slug\)/)
+    expect(source).toMatch(/type:\s*sizing\.instanceTypeFor\(svc\.slug\)/)
     expect(source).not.toMatch(/type:\s*infra\.instanceType\b/)
   })
 
   it('uses the configured compute image and delegates boot inputs to cloud-init', () => {
     expect(source).toMatch(/image:\s*computeImageId/)
     // The marketplace label / UUID is passed straight through: no plan-time getImage lookup.
-    expect(source).toMatch(/const computeImageId:\s*pulumi\.Input<string>\s*=\s*infra\.computeImage/)
+    expect(source).toMatch(/const computeImageId:\s*pulumi\.Input<string>\s*=\s*sizing\.computeImage/)
     expect(source).not.toMatch(/getImageOutput/)
     expect(source).toMatch(/bootDiagBucket,/)
     expect(source).not.toMatch(/dockerPreinstalled:/)
@@ -73,14 +74,14 @@ describe('compute module source contracts', () => {
     expect(source).toMatch(/deployedServices\(appConfig\.services, appConfig\.singleVM\)/)
   })
 
-  it('binds compose env from the registry placeholder scan + bindings + envPool (no per-service env maps)', () => {
+  it('binds compose env from the registry placeholder scan + bindings + fork env suppliers (no per-service env maps)', () => {
 // Derive each service's compose environment from placeholders, resolving bindings before the shared pool.
 // New services need compute changes only for genuinely new Pulumi values.
-    expect(source).toMatch(/const envPool:/)
+    expect(source).toMatch(/appEnvSuppliers/)
     expect(source).toMatch(/composePlaceholders\(/)
     expect(source).toMatch(/block\.profiles\.includes\(/)
     // Registry bindings resolve first (unioned with folded co-hosted bindings
-    // on the singleVM host), the shared envPool second.
+    // on the singleVM host), the shared fork env suppliers second.
     expect(source).toMatch(/effectiveBindings\(/)
     expect(source).toMatch(/resolveBinding\(/)
     // Unknown placeholders must fail before a broken VM can boot.
@@ -129,18 +130,19 @@ describe('compute module source contracts', () => {
     expect(source).not.toMatch(/stableInternalGen_/)
     expect(source).not.toMatch(/stablePrivateIp/)
     expect(source).toMatch(/deleteBeforeReplace: true/)
-    // A pending SHA derives its content-addressed generation id from the service fingerprint.
-    expect(source).toMatch(/deriveGenId\(entry\.pendingSha, fingerprint\)/)
+    // A pending SHA derives its content-addressed generation id from the service
+    // fingerprint (selection logic lives in lib/select-generations.ts).
+    expect(source).toMatch(/genIdFor: \(sha\) => deriveGenId\(sha, fingerprint\)/)
   })
 
-  it('envPool does not bind backend secrets as compose env values', () => {
+  it('fork env suppliers do not bind backend secrets as compose env values', () => {
     // The .env file is still mounted via env_file: .env, but secrets travel via
-    // the runtime-secrets manifest, never as envPool compose values.
-    const poolBlock = source.match(/const envPool:[\s\S]*?\n\}/)
-    expect(poolBlock, 'could not locate envPool').not.toBeNull()
+    // the runtime-secrets manifest, never as shared compose env supplier values.
+    const poolBlock = envSuppliersSource.match(/defineEnvSuppliers\(\{[\s\S]*?\}\)/)
+    expect(poolBlock, 'could not locate appEnvSuppliers').not.toBeNull()
     const body = poolBlock?.[0] ?? ''
     for (const banned of ['DATABASE_URL', 'COOKIE_SECRET', 'BREVO_API_KEY', 'SCW_AI_API_KEY', 'YJS_SECRET', 'CDC_SECRET']) {
-      expect(body, `${banned} must not appear in envPool`).not.toContain(banned)
+      expect(body, `${banned} must not appear in the env suppliers`).not.toContain(banned)
     }
   })
 

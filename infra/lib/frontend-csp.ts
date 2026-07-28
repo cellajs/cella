@@ -1,4 +1,5 @@
-import { appConfig } from '../../shared'
+import { engineConfig } from '../config/engine-config'
+const appConfig = engineConfig()
 import { enabledServices } from './services'
 
 const enabledServiceSlugs = new Set(enabledServices(appConfig.services).map((service) => service.slug))

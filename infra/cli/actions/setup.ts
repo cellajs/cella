@@ -1,10 +1,8 @@
 import { spawnSync } from 'node:child_process'
 import { resolve } from 'node:path'
-import { confirm, input } from '@inquirer/prompts'
-import { pc } from 'shared/cli-utils/colors';
-import { DIVIDER } from 'shared/cli-utils/display'
-import { checkMark, warningMark } from 'shared/utils/console'
+import { confirm, select } from '@inquirer/prompts'
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'
+import { createProject, listProjects, resolveOrganizationIdFromKey } from '../../lib/scaleway/scaleway-account'
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone'
 import { writeEnvVar } from '../../lib/utils/env-file'
 import { errorMessage } from '../../lib/utils/errors'
@@ -13,7 +11,7 @@ import { deriveInfra } from '../../lib/naming'
 import { infraDir } from '../../lib/utils/paths'
 import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../../lib/scaleway/permissions'
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up'
-import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam'
+import { ensureBootstrapDnsGrant, resolveOrganizationId, revokeApiKey } from '../../lib/scaleway/scaleway-iam'
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets'
 import { managedKeys, type ManagedKeyId } from '../../lib/managed-keys'
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager'
@@ -27,7 +25,8 @@ import { setupCiKey } from '../../tasks/setup-ci-key'
 import { setupOperatorApp } from '../../tasks/setup-operator-app'
 import { setupVmKey } from '../../tasks/setup-vm-key'
 import type { CliMode, InfraContext } from '../shared'
-import { acquireStackLockOrExit, createStepRunner, envOr, promptRequiredInput, promptStackName, pulumiLoginUrl, resolveOrCreatePassphrase } from '../shared'
+import { acquireStackLockOrExit, autoAcceptDefaults, confirmOrDefault, createStepRunner, envOr, inputOrDefault, nonInteractive, promptRequiredInput, promptStackName, pulumiLoginUrl, resolveOrCreatePassphrase } from '../shared'
+import { pc, DIVIDER, changeMark, checkMark, failWithHint, warningMark, withSpinner } from '../../lib/utils/cli-output'
 
 /** Everything the per-phase helpers below share. */
 interface SetupContext {
@@ -120,11 +119,11 @@ async function warnOnCiPolicyDrift(ctx: SetupContext): Promise<void> {
 async function mintCiKey(ctx: SetupContext): Promise<CiKeyResult> {
   while (true) {
     try {
-      const key = await setupCiKey({ callerSecretKey: ctx.secretKey, projectId: ctx.projectId, slug: ctx.appConfig.slug })
+      const key = await setupCiKey({ callerSecretKey: ctx.secretKey, projectId: ctx.projectId, slug: ctx.appConfig.slug, dnsZone: deriveInfra(ctx.appConfig).dnsZone })
       return { accessKey: key.accessKey, secretKey: key.secretKey, organizationId: key.organizationId }
     } catch (error) {
       console.error(`\n${warningMark} CI key setup failed: ${errorMessage(error)}`)
-      if (!(await confirm({ message: 'Retry?', default: true }))) return { accessKey: '', secretKey: '', organizationId: '' }
+      if (nonInteractive() || !(await confirm({ message: 'Retry?', default: true }))) return { accessKey: '', secretKey: '', organizationId: '' }
     }
   }
 }
@@ -169,7 +168,7 @@ async function ensureVmKey(ctx: SetupContext, needsCiKey: boolean): Promise<stri
       return key.accessKey
     } catch (error) {
       console.error(`\n${warningMark} VM key setup failed: ${errorMessage(error)}`)
-      if (!(await confirm({ message: 'Retry?', default: true }))) return ''
+      if (nonInteractive() || !(await confirm({ message: 'Retry?', default: true }))) return ''
     }
   }
 }
@@ -267,10 +266,21 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
   const { dnsZone, hasDomain } = deriveInfra(ctx.appConfig)
   if (hasDomain) {
     try {
+      // Application-owned bootstrap keys need org-wide DNS before the first up
+      // can write records in an org-shared zone (staging on the production apex).
+      const organizationId = ctx.childEnv.SCW_DEFAULT_ORGANIZATION_ID
+      if (organizationId) {
+        await ensureBootstrapDnsGrant({
+          callerSecretKey: ctx.secretKey,
+          accessKey: ctx.accessKey,
+          organizationId,
+          slug: ctx.appConfig.slug,
+        }).catch((error) => console.warn(`  ${warningMark} Bootstrap DNS grant skipped: ${errorMessage(error)}`))
+      }
       await ensureDnsZone({ secretKey: ctx.secretKey, projectId: ctx.projectId, domain: dnsZone })
     } catch (error) {
       console.error(`\n${warningMark} DNS zone check failed: ${errorMessage(error)}`)
-      if (!(await confirm({ message: 'Continue with pulumi up anyway?', default: false }))) process.exit(1)
+      if (!(await confirmOrDefault({ message: 'Continue with pulumi up anyway?', default: false }))) process.exit(1)
     }
   }
 
@@ -302,9 +312,9 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
   while (true) {
     const { code } = await runPulumiUpWithHint(ctx.stackName, infraDir, ctx.childEnv)
     if (code === 0) break
-    if (!(await confirm({ message: 'Retry?', default: true }))) {
+    if (nonInteractive() || !(await confirm({ message: 'Retry?', default: true }))) {
       await stackLock.release()
-      process.exit(code)
+      failWithHint(`Base provisioning failed (pulumi up exited ${code})`, { command: 'pnpm infra', description: 'fix the cause above, then re-run and choose "Resume" to continue' }, code ?? 1)
     }
   }
   if (usingBootstrapKey) {
@@ -314,7 +324,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
       stdio: 'ignore',
     })
   }
-  console.info(`\n${checkMark} Base infrastructure provisioned. Compute VMs will be deployed by CI after images are pushed.`)
+  console.info(`\n${checkMark} Base infrastructure provisioned (no compute yet). The next deploy, local or CI, brings the VMs up.`)
 
   // Seed prompted values only after Pulumi creates the empty secret containers.
   // Empty values remain available through "Manage runtime secrets".
@@ -336,6 +346,108 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
 }
 
 /**
+ * Pick or create the Scaleway project when none is configured yet, using the
+ * bootstrap key. Lists the organization's projects for an interactive pick and
+ * defaults to creating one named after the app slug (or selecting it when it
+ * already exists). The chosen id is written to backend/.env as SCW_PROJECT_ID
+ * so every later run resolves it without prompting. Non-interactive runs must
+ * supply SCW_PROJECT_ID themselves.
+ */
+async function ensureProjectId(opts: { slug: string; accessKey: string; secretKey: string }): Promise<string> {
+  if (nonInteractive()) {
+    throw new Error('SCW_PROJECT_ID is not set. Non-interactive setup requires it in backend/.env or the environment.')
+  }
+  console.info(`\n→ Scaleway project ${pc.dim('(none configured yet)')}`)
+  const { organizationId, projects } = await withSpinner('Loading Scaleway projects', async () => {
+    const organizationId = await resolveOrganizationIdFromKey(opts.secretKey, opts.accessKey)
+    return { organizationId, projects: await listProjects(opts.secretKey, organizationId) }
+  })
+  const CREATE = '__create__'
+  const existing = projects.find((project) => project.name === opts.slug)
+  const choice = await select<string>({
+    message: 'Scaleway project for this stack',
+    default: existing?.id ?? CREATE,
+    loop: false,
+    choices: [
+      { name: `Create project "${opts.slug}"`, value: CREATE, description: 'Creates a fresh project in your organization.' },
+      ...projects.map((project) => ({ name: `${project.name} ${pc.dim(`(${project.id})`)}`, value: project.id })),
+    ],
+  })
+  let projectId = choice
+  if (choice === CREATE) {
+    const name = await inputOrDefault({ message: 'New project name', default: opts.slug })
+    const project = await createProject(opts.secretKey, { organizationId, name, description: 'Created by the infra CLI setup wizard' })
+    console.info(`  ${changeMark} Created project ${project.name} (${project.id})`)
+    projectId = project.id
+  }
+  writeEnvVar(resolve(infraDir, '..', 'backend', '.env'), 'SCW_PROJECT_ID', projectId)
+  process.env.SCW_PROJECT_ID = projectId
+  console.info(`  ${checkMark} SCW_PROJECT_ID written to backend/.env`)
+  return projectId
+}
+
+/**
+ * Offer to run the first deploy right here, so a fresh setup ends with a live
+ * app. Runs the exact one-command deploy CI runs, with --build (bakes images
+ * locally via docker buildx), authenticated with the freshly minted CI deploy
+ * key so the first deploy also proves the CI credential path. Skipped when
+ * docker or a git HEAD is unavailable; declining prints the CI and manual
+ * paths.
+ */
+async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: BootstrapSecretInputs): Promise<void> {
+  const mode = ctx.context.environment
+  const manualCmd = (sha: string) => `pnpm --filter infra run deploy --mode ${mode} --sha ${sha} --build`
+  if (spawnSync('docker', ['buildx', 'version'], { stdio: 'ignore' }).status !== 0) {
+    console.info(`\n${pc.dim('docker (with buildx) not found; skipping the first deploy. Run it later:')} ${pc.cyan(manualCmd('<git-sha>'))}`)
+    return
+  }
+  const sha = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: infraDir, encoding: 'utf8' }).stdout?.trim()
+  if (!sha) {
+    console.info(`\n${pc.dim('Could not resolve git HEAD; skipping the first deploy. Run it later:')} ${pc.cyan(manualCmd('<git-sha>'))}`)
+    return
+  }
+  const hasAdminEmail = !!inputs.operatorSecrets.adminEmail
+  if (!hasAdminEmail) {
+    console.warn(
+      `  ${warningMark} No admin email is set, and the deploy preflight requires the ${pc.bold('admin-email')} runtime secret.\n` +
+        `    Set it first via "Manage runtime secrets", or the deploy will fail before rolling anything.`,
+    )
+  }
+  const deployNow = nonInteractive()
+    ? process.env.INFRA_DEPLOY_NOW === '1'
+    : autoAcceptDefaults()
+      ? hasAdminEmail
+      : await confirm({ message: `Deploy ${sha.slice(0, 7)} to ${mode} now? Builds images locally, then rolls out (10-20 min).`, default: hasAdminEmail })
+  if (!deployNow) {
+    console.info(`  ${pc.dim('Deploy later from CI (publish a release / run the Deploy workflow) or locally:')} ${pc.cyan(manualCmd(sha))}`)
+    return
+  }
+  // The exact env the GitHub Environment holds: CI deploy key as both the
+  // provider and state-backend credentials, plus passphrase and project ids
+  // (inherited from childEnv).
+  const deployEnv: NodeJS.ProcessEnv = {
+    ...ctx.childEnv,
+    SCW_ACCESS_KEY: ciKey.accessKey,
+    SCW_SECRET_KEY: ciKey.secretKey,
+    AWS_ACCESS_KEY_ID: ciKey.accessKey,
+    AWS_SECRET_ACCESS_KEY: ciKey.secretKey,
+    ...(ciKey.organizationId ? { SCW_DEFAULT_ORGANIZATION_ID: ciKey.organizationId } : {}),
+  }
+  const { status } = spawnSync('pnpm', ['run', 'deploy', '--mode', mode, '--sha', sha, '--build'], { cwd: infraDir, env: deployEnv, stdio: 'inherit' })
+  if (status === 0) {
+    const { serviceEndpoints } = await import('../../lib/services')
+    const frontendUrl = serviceEndpoints(ctx.appConfig).find((endpoint) => endpoint.slug === 'frontend')?.url
+    console.info(`\n${checkMark} ${pc.bold(pc.greenBright('App is live.'))}${frontendUrl ? ` ${pc.underline(pc.cyanBright(frontendUrl))}` : ''}`)
+    if (hasAdminEmail) console.info(`  ${pc.dim('Sign in by requesting a magic link for the admin email you provided.')}`)
+  } else {
+    console.warn(
+      `\n${warningMark} First deploy failed (exit ${status}). Boot diagnostics were collected; inspect with ${pc.cyan('pnpm --filter infra diag')}.\n` +
+        `  Re-running the same deploy is safe (generations are content-addressed): ${pc.cyan(manualCmd(sha))}`,
+    )
+  }
+}
+
+/**
  * Runs the first setup process for the infra CLI, including handling bootstrap keys, CI keys, and Pulumi stack configuration.
  */
 export async function runSetup(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate'>): Promise<void> {
@@ -345,9 +457,10 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // Provider authentication and all IAM / Secret-Manager work use an operator
   // bootstrap key supplied here. The provider reads it from SCW_* env
   // (childEnv below), not from stack config.
-  const scwProjectId = context.projectId
   const scwAccessKey = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () => promptRequiredInput('Scaleway bootstrap access key'))
   const scwSecretKey = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => maskedSecret({ message: 'Scaleway bootstrap secret key' }))
+  const scwProjectId =
+    context.projectId || (await ensureProjectId({ slug: context.appConfig.slug, accessKey: scwAccessKey, secretKey: scwSecretKey }))
 
   const stackName = await promptStackName(context)
 
@@ -360,17 +473,16 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     mintDecisions: new Map<ManagedKeyId, boolean>(),
   }
   if (isInitialBootstrap) {
-    inputs.operatorSecrets.adminEmail = await input({ message: 'Admin email (optional, set later via "Manage runtime secrets")' })
-    inputs.operatorSecrets.brevoApiKey = inputs.operatorSecrets.adminEmail
-      ? await maskedSecret({ message: 'Brevo API key (optional)' }).catch(() => '')
-      : ''
+    inputs.operatorSecrets.adminEmail = await inputOrDefault({ message: 'Admin email (optional, set later via "Manage runtime secrets")', envName: 'INFRA_ADMIN_EMAIL' })
+    inputs.operatorSecrets.brevoApiKey =
+      inputs.operatorSecrets.adminEmail && !nonInteractive() ? await maskedSecret({ message: 'Brevo API key (optional)' }).catch(() => '') : ''
     for (const key of managedKeys) {
-      inputs.mintDecisions.set(key.id, await confirm({ message: key.prompt.message, default: key.prompt.default }))
+      inputs.mintDecisions.set(key.id, await confirmOrDefault({ message: key.prompt.message, default: key.prompt.default }))
     }
   }
 
   const modeLabel = mode === 'rotate' ? 'Rotate keys' : 'Resume'
-  if (!(await confirm({ message: `Proceed with ${modeLabel}?`, default: true }))) process.exit(0)
+  if (!(await confirmOrDefault({ message: `Proceed with ${modeLabel}?`, default: true }))) process.exit(0)
 
   // The bootstrap key also holds the object-storage rights needed for the
   // Pulumi state bucket, so it doubles as the state-backend credential pair.
@@ -477,9 +589,14 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         `  ${pc.dim('Recommended: push to the deploy branch and let CI run `pulumi up` (this local run is only needed for out-of-band changes).')}`,
       )
     }
-    const runNow = await confirm({ message: isFirstProvision ? 'Run the recommended first pulumi up now?' : 'Run pulumi up now?', default: isFirstProvision })
+    const runNow = await confirmOrDefault({ message: isFirstProvision ? 'Run the recommended first pulumi up now?' : 'Run pulumi up now?', default: isFirstProvision })
     if (runNow) {
       await provisionBaseInfra(ctx, inputs)
+      // Fresh bootstrap with the CI key secret still in memory: finish with a
+      // live app. Rotate/resume runs skip this; CI owns their deploys.
+      if (isInitialBootstrap && ciKey.secretKey) {
+        await offerFirstDeploy(ctx, ciKey, inputs)
+      }
     } else {
       console.info(`  ${pc.dim('Recommended: re-run `pnpm infra` and choose "Resume" to retry.')}`)
       console.info('  Manual fallback if needed:')
@@ -489,6 +606,25 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     }
   }
   if (needsCiKey && ciKey.accessKey) {
-    console.info(`\n${pc.dim('Reminder:')} revoke the bootstrap key now — see ${pc.underline('infra/README.md')} → ${pc.italic('"Revoke the bootstrap key"')}`)
+    // The wizard no longer needs the bootstrap key, so offer to revoke it as
+    // the last call (a key may delete itself). Declining falls back to the
+    // manual reminder; env-supplied keys under automation are never revoked.
+    const revokeNow = nonInteractive()
+      ? false
+      : autoAcceptDefaults()
+        ? true
+        : await confirm({ message: `Revoke the bootstrap key (${scwAccessKey}) now? Nothing else needs it; day-2 privileged actions ask for a fresh one.`, default: true })
+    if (revokeNow) {
+      try {
+        await withSpinner('Revoking bootstrap key', () => revokeApiKey(scwSecretKey, scwAccessKey))
+        console.info(`${checkMark} Bootstrap key ${scwAccessKey} revoked.`)
+      } catch (error) {
+        console.warn(
+          `${warningMark} Could not revoke the bootstrap key (${errorMessage(error)}). Delete it in the console: ${pc.underline('https://console.scaleway.com/iam/api-keys')}`,
+        )
+      }
+    } else {
+      console.info(`\n${pc.dim('Reminder:')} revoke the bootstrap key now — see ${pc.underline('infra/README.md')} → ${pc.italic('"Revoke the bootstrap key"')}`)
+    }
   }
 }

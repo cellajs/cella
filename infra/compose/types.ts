@@ -33,6 +33,21 @@ export type LbPathBegin = `/${string}`
 export type ServiceInstanceType = string | Partial<Record<Environment, string>>
 
 /**
+ * A one-shot release step run at a new generation's boot BEFORE the app starts
+ * (expand-before-cutover), gated on exit 0. The engine runs the service image as
+ * a companion; what the step DOES is fork-defined. Mirrors Fly's release_command
+ * / Render's pre-deploy: a schema migration, a data backfill, a seed.
+ */
+export interface ReleaseStep {
+  /** Command override for the release container. Omit to use the image's default entrypoint. */
+  command?: readonly string[]
+  /** Env applied to the release container (e.g. a mode selector that runs migrations). */
+  env?: Readonly<Record<string, string>>
+  /** Env applied to the long-running app block whenever a release step exists (e.g. disable app-boot migration). */
+  appEnv?: Readonly<Record<string, string>>
+}
+
+/**
  * Deployment metadata for one logical service, carried as the Compose `x-service` extension.
  * `lib/services.ts` derives the registry; removing a block removes all deployment resources,
  * while app configuration may disable it per deployment.
@@ -46,9 +61,11 @@ export interface ServiceMeta {
   slug: string
   /** Host/exposed port the reconciler probes for the identity health check. */
   healthPort: number
-  /** Seconds the reconciler waits for the new container to pass /health. */
+  /** Seconds the reconciler waits for the new container to pass its health check. */
   healthTimeoutSeconds: number
-  /** Run the one-shot `migrate` service before rolling this service. */
+  /** HTTP status a healthy response returns, matched exactly by the LB health check. */
+  healthExpectStatus: number
+  /** Whether a one-shot release companion runs before rolling this service (derived from `release`). */
   runMigrate: boolean
   /** Deploy this service before the rest of the VM fleet. At most one enabled service may set this. */
   primaryRollout?: boolean
@@ -72,6 +89,8 @@ export interface ServiceMeta {
   lbPathBegin?: LbPathBegin
   /** Long-lived LB timeouts (1h server/tunnel) for WebSocket services. */
   lbWebsockets?: boolean
+  /** Private ACL-guarded LB frontend giving in-network consumers a stable, cutover-following address. */
+  internalRoute?: boolean
   /** Service whose image this one reuses (mcp reuses backend); no own image built. */
   reusesImageOf?: string
   /** Dockerfile path for services that build their own image. Omit when `reusesImageOf` is set. */
@@ -105,12 +124,13 @@ export interface ComposeService {
   image: string
   profiles: readonly string[]
   restart: 'unless-stopped' | 'no' | 'always' | 'on-failure'
+  command?: readonly string[]
   ports?: readonly string[]
   stop_grace_period?: string
   env_file?: readonly string[]
   environment?: Readonly<Record<string, string>>
   healthcheck?: HealthCheck
-  /** Deploy-plane metadata; presence marks a logical service. */
+  /** Deploy metadata; presence marks a logical service. */
   'x-service'?: ServiceMeta
 }
 
@@ -120,7 +140,7 @@ export interface ComposeFile {
 
 /**
  * Declarative fork-owned service entry synthesized into Compose and deployment metadata.
- * Cella injects shared ingress, rollout, health, and environment machinery. Entry presence
+ * The engine injects shared ingress, rollout, health, and environment machinery. Entry presence
  * determines whether the service belongs to the fleet.
  */
 export interface AppServiceConfig {
@@ -143,14 +163,23 @@ export interface AppServiceConfig {
    */
   startPeriod: string
   /**
+   * HTTP status this service's health endpoint returns when healthy, matched
+   * exactly by the LB health check. Defaults to 200; API services that answer
+   * with no body use 204.
+   */
+  healthExpectStatus?: number
+  /**
   * How this service's VM generation is replaced on a deploy. `'lb-overlap'`
   * is for LB-exposed services; `'exclusive'` is for the singleton-slot cdc
   * worker, which cannot overlap because only one process can consume its
   * PostgreSQL replication slot.
    */
   replacementStrategy: ReplacementStrategy
-  /** Run the one-shot `migrate` service before rolling. Backend-only today. */
-  runMigrate?: boolean
+  /**
+   * A one-shot release step run before rolling this service (schema migration,
+   * backfill, seed). Presence emits a companion container; see {@link ReleaseStep}.
+   */
+  release?: ReleaseStep
   /** Deploy this service before the rest of the VM fleet. At most one enabled service may set this. */
   primaryRollout?: boolean
   /**
@@ -178,6 +207,14 @@ export interface AppServiceConfig {
    */
   lbWebsockets?: boolean
   /**
+   * Expose this service on a private, ACL-guarded LB frontend so consumers
+   * inside the private network reach it at a STABLE address that follows every
+   * cutover (`@{<slug>.internalHost}:@{<slug>.internalPort}` bindings). The
+   * internal pool gets WebSocket-grade timeouts; only private-network sources
+   * pass the frontend's ACLs.
+   */
+  internalRoute?: boolean
+  /**
    * Service whose image this one reuses, so CI builds no separate image for it
    * (mcp reuses the backend image at the same SHA).
    */
@@ -202,10 +239,10 @@ export interface AppServiceConfig {
    */
   instanceType: ServiceInstanceType
   /**
-   * Service-specific environment variables (e.g. cdc's `API_WS_URL`, mcp's
-   * `MODE: mcp-worker`). Merged AFTER the standard env so it can override it.
-   * The uniform `NODE_ENV`/`APP_MODE`/`TZ` are injected by cella; don't repeat
-   * them here.
+   * Service-specific environment variables (e.g. a worker's process-mode or
+   * health-port var). Merged AFTER the standard env so it can override it.
+   * The uniform `NODE_ENV`/`APP_MODE`/`TZ` are injected by the engine; don't
+   * repeat them here.
    */
   env?: Readonly<Record<string, string>>
   /**

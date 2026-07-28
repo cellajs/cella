@@ -4,7 +4,7 @@ Two homes, chosen by what the test actually exercises. Keep to this rule so the 
 
 ## Co-located `*.test.ts` (next to the module): the default
 
-A test that imports **one** module and exercises its exported behaviour lives beside that module. This is the common case (`lib/**`, `tasks/**`, `agent/src/**`, `cli/**`, `compose/**`).
+A test that imports **one** module and exercises its exported behaviour lives beside that module. This is the common case (`lib/**`, `tasks/**`, `boot/src/**`, `cli/**`, `compose/**`).
 
 Modules under `resources/` construct live Pulumi resources at import time, so a co-located test primes the mock runtime and dynamic-imports the module. It is still a single-module behavioural test and still lives beside the source (`resources/database.test.ts`, `resources/storage.test.ts`, `resources/network.test.ts`).
 

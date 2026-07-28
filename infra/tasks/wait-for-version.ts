@@ -1,3 +1,4 @@
+import { healthContract } from '../config/health.config'
 import { isMain } from '../lib/utils/is-main'
 import { pollUntil } from '../lib/utils/retry'
 import { getFlag, getNumFlag, sleep } from './args'
@@ -69,13 +70,13 @@ export interface PollOutcome {
 }
 
 /**
- * A probe is "healthy" when the status is a documented success (200 for the
- * Caddy frontend, 204 for the API services) AND the served version matches the
- * SHA we are rolling to. A 200/204 with a stale or missing version means the
- * stale container is still answering: keep waiting.
+ * A probe is "healthy" when the status is a success (any 2xx, covering the SPA
+ * proxy's 200 and the API services' 204) AND the served version matches the SHA
+ * we are rolling to. A 2xx with a stale or missing version means the stale
+ * container is still answering: keep waiting.
  */
 export function isHealthy(result: ProbeResult, expectedSha: string): boolean {
-  const statusOk = result.status === 200 || result.status === 204
+  const statusOk = result.status >= 200 && result.status < 300
   return statusOk && result.version === expectedSha
 }
 
@@ -89,11 +90,11 @@ export function createFetchProbe(timeoutMs: number): ProbeFn {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
     try {
-    // Probe WebSocket services over HTTP because their `/health` endpoint is not a WebSocket.
+    // Probe WebSocket services over HTTP because their health endpoint is not a WebSocket.
     // This mirrors the backend health probe's scheme normalization.
       const httpUrl = url.replace(/^ws(s?):/, 'http$1:')
       const res = await fetch(httpUrl, { signal: controller.signal, redirect: 'follow' })
-      return { status: res.status, version: res.headers.get('x-app-version') ?? undefined }
+      return { status: res.status, version: res.headers.get(healthContract.versionHeader) ?? undefined }
     } catch {
       return { status: 0, version: undefined }
     } finally {

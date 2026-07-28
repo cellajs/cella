@@ -24,9 +24,9 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const ttlMs = getNumFlag(argv, '--ttl-min', 60) * 60_000
   const res = await acquireLock(s3, bucket, key, { owner, operation, ttlMs })
   if (!res.acquired) {
-    console.error(`[stack-lock] ${stack} is locked by ${res.held.owner} (operation: ${res.held.operation}, since ${res.held.acquiredAt}).`)
-    console.error('  If that run is dead, clear it with the infra CLI "Unlock" action.')
-    process.exit(1)
+    throw new Error(
+      `[stack-lock] ${stack} is locked by ${res.held.owner} (operation: ${res.held.operation}, since ${res.held.acquiredAt}). If that run is dead, clear it with the infra CLI "Unlock" action.`,
+    )
   }
   console.info(`[stack-lock] acquired ${stack} (${owner}, operation: ${operation})`)
 }

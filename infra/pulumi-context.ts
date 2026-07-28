@@ -1,20 +1,25 @@
 import * as pulumi from '@pulumi/pulumi'
-import * as scaleway from '@pulumiverse/scaleway'
-import { appConfig } from '../shared'
-import { generalConfig } from './config/general.config';
+import { engineConfig } from './config/engine-config'
+const appConfig = engineConfig()
 import type { Environment } from './lib/stack/bootstrap-stack-state'
-import { resolvePerMode } from './lib/general-config'
 import { deriveInfra } from './lib/naming'
-import { serviceEndpoints, servicesByName } from './lib/services'
+import { serviceEndpoints } from './lib/services'
 import type { ServiceName } from './compose/compose'
-import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from './lib/scaleway/vm-reader-secret'
 
-const stackMode = pulumi.getStack().split('/').pop()
+/**
+ * Stack identity and derived addressing, shared by every resource module. The
+ * stack NAME is the config mode (index.ts derives APP_MODE from it before any
+ * module loads the shared appConfig); everything else here is a pure derivation
+ * of that identity. Provider lookups, secret reads, and sizing live with their
+ * consumers (vm-iam.ts, compute.ts, config/sizing.ts).
+ */
+export const stackName = pulumi.getStack().split('/').pop() ?? ''
 
-// Make sure the stack mode matches the appConfig.mode
-if (appConfig.mode !== stackMode) {
+// A mismatch means APP_MODE was set explicitly and contradicts the selected
+// stack; fail before any resource is declared against the wrong environment.
+if (appConfig.mode !== stackName) {
   throw new Error(
-    `APP_MODE resolved to '${appConfig.mode}' but the Pulumi stack is '${stackMode}'. Set APP_MODE=${stackMode} before running pulumi (the infra CLI and CI do this automatically).`,
+    `APP_MODE resolved to '${appConfig.mode}' but the Pulumi stack is '${stackName}'. Unset APP_MODE (index.ts derives it from the stack) or select the matching stack.`,
   )
 }
 
@@ -23,7 +28,6 @@ const derived = deriveInfra(appConfig)
 export const { naming, dnsZone, region, zone, tags, tagsAsMap, isProduction } = derived
 
 // Deploys require a real domain; validate it once before defining resources.
-// module on `hasDomain` independently.
 if (!derived.hasDomain) {
   throw new Error(
     `Pulumi deploys require a real appConfig.domain (got '${appConfig.domain}'). Configure the domain for mode '${appConfig.mode}' before deploying.`,
@@ -38,7 +42,7 @@ export const mode = appConfig.mode
 if (mode !== 'production' && mode !== 'staging') {
   throw new Error(`Pulumi deploys only support 'production' or 'staging' (got '${mode}').`)
 }
-const deployMode: Environment = mode
+export const deployMode: Environment = mode
 
 // Per-service public endpoints (host + URL), derived from the service registry by slug.
 export const endpoints = serviceEndpoints(appConfig)
@@ -58,9 +62,6 @@ export function serviceUrl(slug: ServiceName): string {
   return endpoint.url
 }
 
-/** Pulumi stack config for infrastructure-specific values (sizing, secrets) */
-export const infraConfig = new pulumi.Config('infra')
-
 /** Reads a required Scaleway id from the env. Both deploy paths (CI and the infra
  *  CLI) inject these, so the program requires them strictly with no fallback. */
 function requireEnv(name: string): string {
@@ -72,73 +73,5 @@ function requireEnv(name: string): string {
 /** Scaleway project id: scopes every provider call. */
 export const projectId: string = requireEnv('SCW_DEFAULT_PROJECT_ID')
 
-/** Scaleway organization id: scopes the org-level IAM application lookups below. */
+/** Scaleway organization id: scopes the org-level IAM application lookups. */
 export const organizationId: string = requireEnv('SCW_DEFAULT_ORGANIZATION_ID')
-
-/**
- * Optional operator application id (SCW_OPERATOR_APPLICATION_ID). When set, this
- * IAM application is granted full S3 access on the CI-scoped bucket policies, so
- * an operator key under it can read/refresh buckets without being the CI deploy
- * app. Bucket policies are deny-by-default: without this, even an org-admin or
- * personal key 403s on ListObjects/GetBucketCors during `pulumi up --refresh`.
- * Empty = only the CI deploy app + public reads, the default. */
-export const operatorApplicationId: string | undefined = process.env.SCW_OPERATOR_APPLICATION_ID?.trim() || undefined
-
-/** CI deploy application id: the `<slug>-ci-deploy` principal CI authenticates as. */
-export const ciDeployApplicationId = scaleway.iam
-  .getApplicationOutput({ name: `${appConfig.slug}-ci-deploy`, organizationId })
-  .apply((app) => {
-    if (!app.applicationId) throw new Error(`IAM application '${appConfig.slug}-ci-deploy' not found — run the infra CLI bootstrap first.`)
-    return app.applicationId
-  })
-
-/** VM reader application id: the `<slug>-vm-reader` principal baked into service VMs. */
-export const vmReaderApplicationId = scaleway.iam
-  .getApplicationOutput({ name: `${appConfig.slug}-vm-reader`, organizationId })
-  .apply((app) => {
-    if (!app.applicationId) throw new Error(`IAM application '${appConfig.slug}-vm-reader' not found — run the infra CLI bootstrap first.`)
-    return app.applicationId
-  })
-
-// Compute is deferred only during a fresh provision: the
-// bootstrap CLI sets `bootstrap:computeDeferred` before the first `pulumi up`
-const computeDeferred = new pulumi.Config('bootstrap').get('computeDeferred') !== undefined
-
-// VM size is per-service, declared in config/services.config.ts
-const registryInstanceType = (serviceName: ServiceName): string => {
-  const size = servicesByName.get(serviceName)?.instanceType
-  const resolved = typeof size === 'string' ? size : size?.[deployMode]
-  if (resolved === undefined) throw new Error(`Service '${serviceName}' has no instanceType for mode '${mode}' in the registry (config/services.config.ts).`)
-  return resolved
-}
-
-// Expose mode-aware defaults (compute image, db sizing) as a single object for convenient import in resource modules.
-export const infra = {
-  computeImage: resolvePerMode(generalConfig.compute.image, deployMode),
-  dbNodeType: resolvePerMode(generalConfig.database.nodeType, deployMode),
-  dbVolumeSize: resolvePerMode(generalConfig.database.volumeSizeGb, deployMode),
-  assetRetentionDays: resolvePerMode(generalConfig.assets.retentionDays, deployMode),
-  instanceTypeFor: registryInstanceType,
-  computeEnabled: !computeDeferred,
-}
-
-// Reads the VM reader key pair from Scaleway Secret Manager.
-function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulumi.Output<string> } {
-  const secretPath = secretManagerPath(naming.slug, mode)
-  const container = scaleway.secrets.getSecretOutput({ name: VM_READER_SECRET_NAME, path: secretPath, region })
-  const payload = scaleway.secrets.getVersionOutput({ secretId: container.id, revision: 'latest', region }).data.apply(
-    (data): VmReaderKeyPayload => {
-      const parsed: unknown = JSON.parse(Buffer.from(data, 'base64').toString('utf8'))
-      const record = parsed as Partial<VmReaderKeyPayload> | null
-      if (typeof record?.accessKey !== 'string' || typeof record?.secretKey !== 'string') {
-        throw new Error(`Secret '${VM_READER_SECRET_NAME}' does not contain {accessKey, secretKey} — re-run the infra CLI bootstrap to reseed it.`)
-      }
-      return { accessKey: record.accessKey, secretKey: record.secretKey }
-    },
-  )
-  return { accessKey: pulumi.secret(payload.accessKey), secretKey: pulumi.secret(payload.secretKey) }
-}
-
-const vmReaderKey = computeDeferred ? undefined : readVmReaderKey()
-export const vmAccessKey = vmReaderKey?.accessKey ?? pulumi.secret('')
-export const vmSecretKey = vmReaderKey?.secretKey ?? pulumi.secret('')

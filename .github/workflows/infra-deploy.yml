@@ -1,0 +1,270 @@
+name: Infra deploy (reusable)
+
+# The whole deploy pipeline as a reusable workflow: build images + frontend,
+# then ONE `infra deploy` command (preflights, lock, stack update, waved
+# rollout, verify, entry publish, smoke). Forks call this from their thin
+# deploy.yml and never edit this file; secrets arrive via `secrets: inherit`.
+
+permissions: {}
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: string
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Determine environment and detect which services changed. The heavy test +
+  # storybook suites already ran as required checks on the release-please PR
+  # (see .github/workflows/ci.yml), so deploy assumes validated code and goes
+  # straight to build + rollout. A manual workflow_dispatch bypasses those
+  # checks by design.
+  # -------------------------------------------------------------------------
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      environment: ${{ steps.derive.outputs.environment }}
+      pulumi_stack: ${{ steps.derive.outputs.pulumi_stack }}
+      registry_ns: ${{ steps.derive.outputs.registry_ns }}
+      frontend_bucket: ${{ steps.derive.outputs.frontend_bucket }}
+      state_bucket: ${{ steps.derive.outputs.state_bucket }}
+      vm_reader_app: ${{ steps.derive.outputs.vm_reader_app }}
+      region: ${{ steps.derive.outputs.region }}
+      enabled_services_json: ${{ steps.derive.outputs.enabled_services_json }}
+      image_tag: ${{ steps.derive.outputs.image_tag }}
+      build_images_matrix: ${{ steps.derive.outputs.build_images_matrix }}
+      primary_rollout_matrix: ${{ steps.derive.outputs.primary_rollout_matrix }}
+      roll_rest_matrix: ${{ steps.derive.outputs.roll_rest_matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Derive resource names from shared config
+        id: derive
+        env:
+          ENV: ${{ inputs.environment || 'production' }}
+          GIT_REF: ${{ github.ref }}
+          GIT_SHA: ${{ github.sha }}
+        run: pnpm --silent --filter infra print-deploy-env "$ENV" --git-ref "$GIT_REF" --git-sha "$GIT_SHA" >> $GITHUB_OUTPUT
+
+  # -------------------------------------------------------------------------
+  # Build and push Docker images
+  # -------------------------------------------------------------------------
+  build-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [setup]
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.setup.outputs.build_images_matrix) }}
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: Login to Scaleway Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
+        with:
+          registry: rg.${{ needs.setup.outputs.region }}.scw.cloud
+          username: nologin
+          password: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Build and push ${{ matrix.service }} image
+        id: build
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          # Stage within a multi-target Dockerfile; empty for single-target
+          # files (build-push-action omits --target for an empty string).
+          target: ${{ matrix.target }}
+          push: true
+          tags: rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/${{ matrix.service }}:${{ needs.setup.outputs.image_tag }}
+          # RELEASE_SHA is baked into the image as ENV for verification later
+          build-args: |
+            RELEASE_SHA=${{ needs.setup.outputs.image_tag }}
+          cache-from: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/${{ matrix.service }}:buildcache
+          cache-to: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/${{ matrix.service }}:buildcache,mode=max
+          provenance: false
+
+  # -------------------------------------------------------------------------
+  # Every VM `docker run`s the boot runner first.
+  # -------------------------------------------------------------------------
+  build-boot-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [setup]
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Build boot runner bundle
+        run: pnpm --filter infra boot:build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: Login to Scaleway Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
+        with:
+          registry: rg.${{ needs.setup.outputs.region }}.scw.cloud
+          username: nologin
+          password: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Build and push boot runner image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          context: infra/boot
+          file: infra/boot/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/infra-boot:${{ needs.setup.outputs.image_tag }}
+          cache-from: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/infra-boot:buildcache
+          cache-to: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/infra-boot:buildcache,mode=max
+          provenance: false
+
+  # -------------------------------------------------------------------------
+  # Build frontend bundle (no upload). Runs in parallel with build-images so
+  # the artifact is ready when publish-frontend gates on backend health.
+  # -------------------------------------------------------------------------
+  # -------------------------------------------------------------------------
+  # The deploy: ONE command (infra/tasks/deploy.ts) owns everything after the
+  # image builds: preflights, stack lock, base stack update, waved rollout with
+  # LB cutovers, public version verification, atomic frontend entry publish,
+  # smoke checks, boot diagnostics on failure. CI stays a thin trigger; any CI
+  # system with the SCW_* secrets can run the same command.
+  # -------------------------------------------------------------------------
+  deploy:
+    runs-on: ubuntu-latest
+    # Cold rollouts of many services (a fork deploying yjs/mcp) need headroom.
+    timeout-minutes: 35
+    # No build-images dependency: the command's wait-for-images step is the real
+    # gate, so preflights, the frontend build, and the base stack update all
+    # overlap the image builds. The command builds + uploads the frontend too.
+    needs: [setup]
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          # Full history: the frontend build's docs-frontmatter plugin derives
+          # page updatedAt from git commit dates (frontend/vite/git-updated-at.ts).
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install Pulumi CLI
+        uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
+        with:
+          pulumi-version: 3.236.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy ${{ needs.setup.outputs.image_tag }} to ${{ needs.setup.outputs.environment }}
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm --filter infra run deploy --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}" --git-ref "${{ github.ref }}"
+
+  # -------------------------------------------------------------------------
+  # Upload versioned (content-hashed, immutable) frontend assets to the bucket.
+  # -------------------------------------------------------------------------
+  # -------------------------------------------------------------------------
+  # Prune stale deployment records. Every secret-using job above declares
+  # `environment:` (secrets are environment-scoped), and GitHub creates one
+  # deployment record per such job, including matrix legs. Each run leaves
+  # several records behind. They are audit-only; keep just the newest per
+  # environment so the /deployments list stays readable.
+  # A record must be marked `inactive` before it can be DELETEd.
+  # -------------------------------------------------------------------------
+  prune-deployments:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [setup, deploy]
+    if: success()
+    permissions:
+      deployments: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ENVIRONMENT: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Delete all but the newest deployment record
+        run: |
+          set -euo pipefail
+          # Newest first; keep index 0, prune the rest.
+          ids=$(gh api --paginate \
+            "repos/${GITHUB_REPOSITORY}/deployments?environment=${ENVIRONMENT}&per_page=100" \
+            --jq '.[].id' || true)
+          first=true
+          kept=""
+          deleted=0
+          while IFS= read -r id; do
+            [ -z "$id" ] && continue
+            if [ "$first" = true ]; then
+              first=false
+              kept="$id"
+              continue
+            fi
+            # Must be inactive before it can be deleted.
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/deployments/${id}/statuses" \
+              -f state=inactive >/dev/null
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/deployments/${id}" >/dev/null
+            deleted=$((deleted + 1))
+          done <<< "$ids"
+          echo "Kept newest deployment ${kept:-<none>} for '${ENVIRONMENT}'; deleted ${deleted} stale record(s)."

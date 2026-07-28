@@ -2,7 +2,7 @@ import { defineGeneral } from '../lib/general-config'
 
 export const generalConfig = defineGeneral({
 // Pass a Scaleway marketplace label or pinned image UUID directly to the instance.
-// The Docker image needs no bake because the boot agent is pulled at first boot.
+// The Docker image needs no bake because the boot runner is pulled at first boot.
   compute: {
     image: 'docker',
   },

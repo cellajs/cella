@@ -1,7 +1,9 @@
 import { spawnSync } from 'node:child_process'
+import { writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { confirm, input } from '@inquirer/prompts'
-import { pc } from 'shared/cli-utils/colors';
-import { checkMark, crossMark, warningMark } from 'shared/utils/console'
+import { hardenPublicDsn } from '../../lib/utils/public-dsn'
 import { adoptOrphanedPolicy } from '../../lib/scaleway/adopt-orphaned-policy'
 import { adoptOrphanedSecrets } from '../../lib/scaleway/adopt-orphaned-secrets'
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'
@@ -13,14 +15,16 @@ import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from 
 import { maskedSecret } from '../prompts/masked-secret'
 import { acquireStackLockOrExit, envOr, type InfraContext, promptRequiredInput, promptStackName, pulumiLoginAndSelect, resolveVerifiedPassphrase } from '../shared'
 import { parseAclInput } from './db-exposure-acl'
+import { pc, checkMark, crossMark, warningMark } from '../../lib/utils/cli-output'
 
-// Pulumi config keys consumed by resources/database.ts and the output it exports.
+// Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
 const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint'
 const DB_ACL_KEY = 'infra:dbPublicAcl'
 const PUBLIC_DSN_OUTPUT = 'dbConnectionStringAdminPublic'
+const DB_CA_OUTPUT = 'dbCaCertificate'
 
 /** Detect the operator's current public IPv4 via a well-known echo service. */
-async function detectPublicIp(): Promise<string | undefined> {
+export async function detectPublicIp(): Promise<string | undefined> {
   try {
     const res = await fetch('https://api.ipify.org', { signal: AbortSignal.timeout(5000) })
     if (!res.ok) return undefined
@@ -32,7 +36,7 @@ async function detectPublicIp(): Promise<string | undefined> {
 }
 
 /** Set one stack config key, exiting on failure. `secret` encrypts the value. */
-function pulumiConfigSet(env: NodeJS.ProcessEnv, stack: string, key: string, value: string, opts: { secret?: boolean } = {}): void {
+export function pulumiConfigSet(env: NodeJS.ProcessEnv, stack: string, key: string, value: string, opts: { secret?: boolean } = {}): void {
   const args = ['config', 'set', ...(opts.secret ? ['--secret'] : []), key, value, '--stack', stack]
   const result = spawnSync('pulumi', args, { cwd: infraDir, env, stdio: 'inherit' })
   if (result.status !== 0) {
@@ -42,15 +46,34 @@ function pulumiConfigSet(env: NodeJS.ProcessEnv, stack: string, key: string, val
 }
 
 /** Remove one stack config key. Best-effort: a missing key is not an error here. */
-function pulumiConfigRm(env: NodeJS.ProcessEnv, stack: string, key: string): void {
+export function pulumiConfigRm(env: NodeJS.ProcessEnv, stack: string, key: string): void {
   const result = spawnSync('pulumi', ['config', 'rm', key, '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' })
   if (result.status !== 0) console.warn(`${warningMark} pulumi config rm ${key} exited ${result.status} (already unset?) — continuing.`)
 }
 
 /** Read the public admin DSN stack output (empty when the endpoint is disabled). */
-function readPublicDsn(env: NodeJS.ProcessEnv, stack: string): string {
+export function readPublicDsn(env: NodeJS.ProcessEnv, stack: string): string {
   const result = spawnSync('pulumi', ['stack', 'output', PUBLIC_DSN_OUTPUT, '--show-secrets', '--stack', stack], { cwd: infraDir, env, encoding: 'utf8' })
   return result.status === 0 ? (result.stdout ?? '').trim() : ''
+}
+
+/** Read the database instance CA certificate stack output (PEM; empty when unavailable). */
+export function readDbCa(env: NodeJS.ProcessEnv, stack: string): string {
+  const result = spawnSync('pulumi', ['stack', 'output', DB_CA_OUTPUT, '--show-secrets', '--stack', stack], { cwd: infraDir, env, encoding: 'utf8' })
+  return result.status === 0 ? (result.stdout ?? '').trim() : ''
+}
+
+/**
+ * Write the instance CA to a mode-scoped temp file (0600) for `sslrootcert`,
+ * so the printed break-glass DSN verifies the server certificate and hostname.
+ * Returns undefined when the CA output is unavailable.
+ */
+export function writeDbCaFile(env: NodeJS.ProcessEnv, stack: string, environment: string): string | undefined {
+  const ca = readDbCa(env, stack)
+  if (!ca) return undefined
+  const caPath = join(tmpdir(), `cella-db-ca-${environment}.pem`)
+  writeFileSync(caPath, `${ca}\n`, { mode: 0o600 })
+  return caPath
 }
 
 /**
@@ -61,7 +84,7 @@ function readPublicDsn(env: NodeJS.ProcessEnv, stack: string): string {
  * the provider env and stack so the caller can read outputs after the lock is
  * released. Exits the process on any hard failure.
  */
-async function convergePublicEndpoint(
+export async function convergePublicEndpoint(
   context: InfraContext,
   operation: string,
   mutate: (env: NodeJS.ProcessEnv, stack: string) => void,
@@ -183,8 +206,14 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
   if (!dsn) {
     console.warn(`${warningMark} Endpoint applied but no public DSN output yet — Scaleway may still be provisioning the load balancer. Re-run to read it.`)
   } else {
-    console.info(`\n${checkMark} ${pc.bold('Database exposed.')} Admin connection string:\n\n    ${pc.cyan(dsn)}\n`)
-    console.info(`  ${pc.dim('Example:')} psql "${dsn}"`)
+    // Verified TLS for the printed DSN: an exposure window is exactly when an
+    // on-path attacker is most interesting, and this DSN carries the admin role.
+    const caPath = writeDbCaFile(env, stack, context.environment)
+    const shownDsn = caPath ? hardenPublicDsn(dsn, caPath) : dsn
+    console.info(`\n${checkMark} ${pc.bold('Database exposed.')} Admin connection string:\n\n    ${pc.cyan(shownDsn)}\n`)
+    console.info(`  ${pc.dim('Example:')} psql "${shownDsn}"`)
+    if (caPath) console.info(`  ${pc.dim(`Server verification pins the instance CA written to ${caPath} (sslmode=verify-full).`)}`)
+    else console.warn(`  ${warningMark} CA output unavailable; DSN left encrypt-only (sslmode=require). Re-run to pick up the CA.`)
   }
   console.info(`\n  ${pc.bold('When finished, run "Stop public DB exposure" to close it again.')}`)
   revokeReminder()

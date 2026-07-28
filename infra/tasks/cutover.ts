@@ -181,7 +181,8 @@ function parseBackendServers(payload: string): string[] {
   if (!isRecord(data)) return []
   // The list may sit on the root or under a `backend` wrapper.
   const backend = isRecord(data.backend) ? data.backend : data
-  const direct = stringArray(backend.server_ip) ?? stringArray(backend.server_ips) ?? stringArray(backend.serverIps)
+  // The live zoned API names the list `pool`; older/provider shapes vary.
+  const direct = stringArray(backend.pool) ?? stringArray(backend.server_ip) ?? stringArray(backend.server_ips) ?? stringArray(backend.serverIps)
   if (direct) return direct
   if (Array.isArray(backend.servers)) {
     return backend.servers

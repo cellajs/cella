@@ -1,18 +1,17 @@
 import { spawnSync } from 'node:child_process'
 import { confirm, input } from '@inquirer/prompts'
-import { pc } from 'shared/cli-utils/colors';
-import { crossMark, warningMark } from 'shared/utils/console'
-import type { appConfig as AppConfig } from 'shared'
+import type { EngineConfig } from '../config/engine-config'
 import type { Environment, StackState } from '../lib/stack/bootstrap-stack-state'
 import { acquireLock, controlActor, lockKey, makeControlClient, releaseLock, stateBucket } from '../lib/stack/control-store'
 import { errorMessage } from '../lib/utils/errors'
 import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase'
 import { maskedSecret } from './prompts/masked-secret'
+import { pc, crossMark, warningMark } from '../lib/utils/cli-output'
 
-type AppConfigType = typeof AppConfig
+type AppConfigType = EngineConfig
 
 /** Infra CLI operation modes */
-export type CliMode = 'resume' | 'rotate' | 'rotate-passphrase' | 'apply' | 'preview' | 'secrets' | 'reset-database' | 'expose-db' | 'unexpose-db' | 'unlock'
+export type CliMode = 'status' | 'resume' | 'rotate' | 'rotate-passphrase' | 'apply' | 'preview' | 'secrets' | 'reset-database' | 'seed-db' | 'expose-db' | 'unexpose-db' | 'unlock'
 
 /**
  * Context for the infra CLI, including stack information and state. Passed to each service handler to provide necessary information about the current infra status and configuration.
@@ -23,7 +22,8 @@ export interface InfraContext {
   stackYaml?: string
   state: StackState
   hasCiKey: boolean
-  appConfig: typeof AppConfig
+  appConfig: EngineConfig
+  /** Scaleway project id. Empty only on a fresh install without SCW_PROJECT_ID; the setup wizard resolves it. */
   projectId: string
 }
 
@@ -34,6 +34,48 @@ export interface StepOptions {
   cwd?: string
   retry?: boolean
   env?: NodeJS.ProcessEnv
+}
+
+/**
+ * Non-interactive mode (INFRA_NON_INTERACTIVE=1): every prompt resolves to its
+ * default (confirms), the env-provided value, or empty (optional inputs), so
+ * the CLI can run unattended in automation. Prompts without a safe default
+ * still throw, which is the correct failure for automation.
+ */
+export const nonInteractive = (): boolean => process.env.INFRA_NON_INTERACTIVE === '1'
+
+/**
+ * True when the run should accept prompt defaults without asking: the
+ * `--defaults` flag (an interactive human choosing the fast path) OR
+ * INFRA_NON_INTERACTIVE (unattended automation). The two differ only for
+ * genuinely required inputs (bootstrap key, admin email): `--defaults` still
+ * prompts for those because a human is present, while automation lets the
+ * required prompt throw on a non-TTY.
+ */
+export const autoAcceptDefaults = (): boolean => process.argv.includes('--defaults') || nonInteractive()
+
+/** Short label for the auto-resolution log line. */
+const autoLabel = (): string => (nonInteractive() ? 'non-interactive' : 'defaults')
+
+/** `confirm` that resolves to its default under `--defaults`/INFRA_NON_INTERACTIVE. */
+export async function confirmOrDefault(opts: { message: string; default: boolean }): Promise<boolean> {
+  if (autoAcceptDefaults()) {
+    console.info(pc.dim(`  [${autoLabel()}] ${opts.message} -> ${opts.default ? 'yes' : 'no'}`))
+    return opts.default
+  }
+  return confirm(opts)
+}
+
+/** Optional free-text `input` that resolves to env/default under `--defaults`/INFRA_NON_INTERACTIVE. */
+export async function inputOrDefault(opts: { message: string; envName?: string; default?: string }): Promise<string> {
+  const fromEnv = opts.envName ? process.env[opts.envName]?.trim() : undefined
+  if (autoAcceptDefaults()) {
+    const value = fromEnv ?? opts.default ?? ''
+    console.info(pc.dim(`  [${autoLabel()}] ${opts.message} -> ${value || '<empty>'}`))
+    return value
+  }
+  if (fromEnv) return fromEnv
+  return input({ message: opts.message, default: opts.default })
 }
 
 /**
@@ -114,7 +156,7 @@ export async function resolveOrCreatePassphrase(stackYaml?: string): Promise<{ p
 
 /** The "Pulumi stack name" prompt every action shares. */
 export function promptStackName(context: InfraContext): Promise<string> {
-  return input({ message: 'Pulumi stack name', default: `organization/infra/${context.environment}` })
+  return inputOrDefault({ message: 'Pulumi stack name', envName: 'INFRA_STACK_NAME', default: `organization/infra/${context.environment}` })
 }
 
 /** A required free-text prompt (used for Scaleway access keys). */
