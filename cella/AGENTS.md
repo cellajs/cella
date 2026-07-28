@@ -127,6 +127,16 @@ The permission system in `backend/src/permissions/` provides: the `checkAccess*`
 - JSDoc on all exports. Backend: full JSDoc with params/response. Frontend: 1-3 lines. No standalone file-level comments above imports. A comment longer than three prose lines must directly document a declaration or local executable block. Move cross-file architecture, workflows, and failure-mode narratives to the nearest canonical README.
 - Code comments explain non-trivial logic only. Do not narrate decision history, what was considered and rejected, or how the code evolved; that belongs in commit messages, not source. A comment should describe _what_ the code does and _why_, not _what it replaced_ or _what it is not_.
 - **Never use em dashes (`—`, U+2014) anywhere in text**: source comments, YAML, config files, and docs. Split the sentence, use a colon, or remove the secondary clause. `pnpm check` runs `shared/scripts/check-comment-style.ts`, which fails the build on any em dash. Treat contrast, history, and conversational phrases such as `instead`, `rather than`, `previously`, `used to`, `maybe`, and `we should` as review signals. Rewrite useful comments around the current behavior or constraint, and delete the rest.
+- **Agent-associated vocabulary**: prose and comments must name the concrete behavior. Replace
+  `load-bearing` with the dependency, requirement, or failure consequence it abbreviates. Treat
+  `seam`, `land`, `surface` as a verb, `wiring`, `scaffold`, `floor`, `decisive`, `genuinely`,
+  `cleanly`, `honest take`, and `silently` as review signals. Prefer exact terms such as boundary,
+  merge, report, registration, template, minimum, or the specific missing error or notification.
+  Keep technically exact domain terms such as `canonical`, `idempotent`, `parity`, `guard`, `stale`,
+  `round-trip`, `fallback`, `authoritative`, and `verdict`. Do not rename identifiers, files, APIs,
+  or named domain concepts only to satisfy prose style. `pnpm prose:audit` reports the
+  lower-confidence terms; required replacements fail the normal style checks. The vocabulary checks
+  exclude generated output, migrations, changelog history, and `infra/`.
 - Reserve `materialize` and `materialization` for the named Yjs operation that converts collaborative state into durable entity data. Use concrete verbs such as `persist`, `provision`, `create`, or `resolve` elsewhere.
 - **Reserved domain vocabulary.** These words already name a subsystem; do not reuse them for anything else, and check what a word means here before naming a new module or export:
   - `sync` -> the entity sync engine (`sync-store`, `sync-service`, `SyncTier`, `syncStaleTime`, `declareSyncView`).

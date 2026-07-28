@@ -10,7 +10,9 @@ then customize the app's identity, data structure, and access rules in `shared/c
 
 ## Create
 
-Create your own copy with the [`create-cella`](https://github.com/cellajs/cella-cli) CLI. It lets you pick optional modules, ports and a seed admin, then initializes a fresh git repo with the cella upstream remote wired up for future syncs:
+Create your own copy with the [`create-cella`](https://github.com/cellajs/cella-cli) CLI. It lets you
+pick optional modules, ports and a seed admin, then initializes a fresh git repo with the cella
+upstream remote configured for future syncs:
 
 ```bash
 pnpm create @cellajs/cella my-app

@@ -7,6 +7,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import {
+  requiredAgentVocabularyRules,
+  reviewAgentVocabularyRules,
+} from './agent-vocabulary.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..');
@@ -127,6 +131,10 @@ function isSource(file: string): boolean {
   if (file === 'infra/compose.gen.yml' || file.includes('.gen.')) return false;
   const name = basename(file);
   return sourceExtensions.has(extname(name)) || name.startsWith('Dockerfile') || name === 'Caddyfile';
+}
+
+function checksAgentVocabulary(file: string): boolean {
+  return !file.startsWith('infra/');
 }
 
 function typedComments(file: string, source: string): Comment[] {
@@ -287,10 +295,24 @@ for (const file of trackedFiles().filter(isSource)) {
         failures.push(`${file}:${location.line}:${location.column} [${rule.name}] ${rule.message}`);
       }
     }
+    if (checksAgentVocabulary(file)) {
+      for (const rule of requiredAgentVocabularyRules) {
+        if (rule.pattern.test(comment.text)) {
+          failures.push(`${file}:${location.line}:${location.column} [${rule.name}] ${rule.message}`);
+        }
+      }
+    }
     if (!audit) continue;
     for (const rule of auditRules) {
       if (rule.pattern.test(comment.text)) {
         findings.push(`${file}:${location.line}:${location.column} [${rule.name}] ${rule.message}`);
+      }
+    }
+    if (checksAgentVocabulary(file)) {
+      for (const rule of reviewAgentVocabularyRules) {
+        if (rule.pattern.test(comment.text)) {
+          findings.push(`${file}:${location.line}:${location.column} [${rule.name}] ${rule.message}`);
+        }
       }
     }
   }

@@ -11,7 +11,7 @@ is published.
 
 ## How it works
 
-1. Land work on `main` with Conventional Commit messages (a lefthook `commit-msg` hook runs commitlint locally).
+1. Merge work into `main` with Conventional Commit messages (a lefthook `commit-msg` hook runs commitlint locally).
 2. release-please keeps an open **release PR per package**, continuously updating the proposed version bump and generated [Changelog](./CHANGELOG.md).
 3. The release PR runs the full CI, including the heavy suites (see [Gating](#gating)). Merge it when green: it bumps the version, updates the changelog, tags, and publishes the GitHub Release.
 

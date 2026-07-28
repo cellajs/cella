@@ -20,9 +20,9 @@ The two layers cover independent failures:
 | A permission bug exposes data within the active tenant | RLS cannot help because the row still matches the tenant |
 | Application scope and RLS both fail | Cross-tenant isolation can fail |
 
-RLS must not be load-bearing for an authorization decision. A user-facing API or worker path should
-produce the same allow or deny result when connected through a test role that bypasses RLS. A
-parity suite and related hardening are the planned defense-in-depth follow-up.
+Authorization must remain correct if RLS is absent or misconfigured. A user-facing API or worker
+path should produce the same allow or deny result when connected through a test role that bypasses
+RLS. A parity suite and related hardening are the planned defense-in-depth follow-up.
 
 ## Responsibilities by layer
 
@@ -50,7 +50,7 @@ tables. The template's default protected tables are `attachments` and `yjs_docum
 | Registered tenant support tables | Same RLS shape; `yjs_documents` is the default | Owning module and guards |
 | Channel entities | No RLS | Channel and organization guards plus permissions |
 | Memberships | No RLS | Membership operations and permissions |
-| Ordinary resources | No RLS unless deliberately registered | Owning route or module |
+| Ordinary resources | No RLS unless explicitly registered | Owning route or module |
 
 The migration classifier starts with registered entity tables, removes `user`, configured channel
 types, and explicit exclusions such as `pages`, then adds configured support tables. A registered

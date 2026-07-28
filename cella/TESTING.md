@@ -60,7 +60,9 @@ Coverage automatically excludes `*.test.ts`, `tests/**` folders and mocks, so pl
 
 **Backend specifics.** Test env vars (secrets, `DATABASE_URL`, `NODE_ENV=test`) are preset in [backend/vitest.config.ts](../backend/vitest.config.ts); don't load `.env` in tests. Backend tests run serially (`fileParallelism: false`) against a shared test database prepared by [backend/tests/global-setup.ts](../backend/tests/global-setup.ts); write tests so they don't assume an empty database. Use the `#/` import alias as in source code.
 
-**Don't over-gate.** A test that only needs the test database (or no database) belongs in the regular set. Only reach for `tests/integration/` + `TEST_MODE` gating when external moving parts are genuinely required.
+**Don't over-gate.** A test that only needs the test database (or no database) belongs in the regular
+set. Only reach for `tests/integration/` + `TEST_MODE` gating when external moving parts are
+required.
 
 **New packages.** When adding a workspace package with tests, register it in the root [vitest.config.ts](../vitest.config.ts): add it to `projects` and to the `coverage.include` globs.
 
