@@ -11,7 +11,7 @@ function plan(overrides: Record<string, unknown> = {}): string {
     registry: 'rg.nl-ams.scw.cloud/ns',
     region: 'nl-ams',
     credentials: { scwAccessKeyFile: '/etc/cella/scw-access-key', scwSecretKeyFile: '/etc/cella/scw-secret-key' },
-    bootDiagnostics: { bucket: 'cella-boot-diag', logFile: '/var/log/cella-boot.log' },
+    bootDiagnostics: { bucket: 'cella-boot-diag', logFile: '/var/log/infra-boot.log' },
     releaseCommand: { enabled: true, command: ['docker', 'compose', 'run', 'migrate'] },
     docker: { composeFile: '/opt/app/compose.yml' },
     files: { compose: 'services: {}', env: 'BACKEND_TAG=abc', runtimeSecretManifest: [{ envVar: 'COOKIE_SECRET', secretId: 'uuid', required: true }] },

@@ -41,9 +41,9 @@ export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { grou
   target['boot-runner'] = {
     context: `${context === '.' ? '' : `${context}/`}infra/boot`,
     dockerfile: 'Dockerfile',
-    tags: [image('cella-boot')],
-    'cache-from': [`type=registry,ref=${cacheRef('cella-boot')}`],
-    'cache-to': [`type=registry,ref=${cacheRef('cella-boot')},mode=max`],
+    tags: [image('infra-boot')],
+    'cache-from': [`type=registry,ref=${cacheRef('infra-boot')}`],
+    'cache-to': [`type=registry,ref=${cacheRef('infra-boot')},mode=max`],
   }
   return { group: { default: { targets: [...rows.map((row) => row.service), 'boot-runner'] } }, target }
 }

@@ -254,7 +254,7 @@ The CLI:
 
 ### 4. Compute base image
 
-Service VMs boot from Scaleway's stock **`docker`** marketplace image (Docker Engine + the Compose plugin, preinstalled and current), set as `compute.image` in [config/general.config.ts](../infra/config/general.config.ts) and passed straight to the instance. There is **no image bake**: the boot runner ships as a normal registry container (`cella-boot`, built from [boot/Dockerfile](../infra/boot/Dockerfile)) that CI builds and pushes per commit, and every VM `docker run`s it at first boot (mounting the host Docker socket) to bring its compose stack up. Cloud-init shrinks to a launcher that writes the boot plan, logs the host into the registry, and runs the boot runner container; the boot runner owns the boot state machine (compose/env files, runtime-secret hydration, image pull, migrate, app start).
+Service VMs boot from Scaleway's stock **`docker`** marketplace image (Docker Engine + the Compose plugin, preinstalled and current), set as `compute.image` in [config/general.config.ts](../infra/config/general.config.ts) and passed straight to the instance. There is **no image bake**: the boot runner ships as a normal registry container (`infra-boot`, built from [boot/Dockerfile](../infra/boot/Dockerfile)) that CI builds and pushes per commit, and every VM `docker run`s it at first boot (mounting the host Docker socket) to bring its compose stack up. Cloud-init shrinks to a launcher that writes the boot plan, logs the host into the registry, and runs the boot runner container; the boot runner owns the boot state machine (compose/env files, runtime-secret hydration, image pull, migrate, app start).
 
 Set `compute.image` to a literal image UUID only to **pin** a specific base image for rollback.
 

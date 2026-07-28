@@ -5,7 +5,7 @@ import { supportedSchemaVersion } from './plan'
 const bootRunnerVersion = '0.1.0-dev'
 
 function usage(): never {
-  throw new Error('Usage: cella-boot --version | supports --schema-version <n> | boot --plan <path>')
+  throw new Error('Usage: infra-boot --version | supports --schema-version <n> | boot --plan <path>')
 }
 
 export async function main(argv = process.argv.slice(2)): Promise<number> {

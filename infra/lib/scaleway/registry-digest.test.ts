@@ -28,7 +28,7 @@ function makeFetch(routes: Array<{ match: string; response: MockResponse }>): Fe
 
 const baseOpts = {
   registry: 'rg.fr-par.scw.cloud/my-ns',
-  image: 'cella-boot',
+  image: 'infra-boot',
   tag: 'abc123',
   secretKey: 'scw-secret',
 }
@@ -49,12 +49,12 @@ describe('parseBearerChallenge', () => {
 describe('resolveImageDigest', () => {
   it('hashes the manifest bytes fetched with basic auth', async () => {
     const fetchImpl = makeFetch([
-      { match: '/v2/my-ns/cella-boot/manifests/abc123', response: { status: 200, body: MANIFEST } },
+      { match: '/v2/my-ns/infra-boot/manifests/abc123', response: { status: 200, body: MANIFEST } },
     ])
 
     await expect(resolveImageDigest({ ...baseOpts, fetchImpl })).resolves.toBe(MANIFEST_DIGEST)
     expect(fetchImpl).toHaveBeenCalledWith(
-      'https://rg.fr-par.scw.cloud/v2/my-ns/cella-boot/manifests/abc123',
+      'https://rg.fr-par.scw.cloud/v2/my-ns/infra-boot/manifests/abc123',
       expect.objectContaining({ headers: expect.objectContaining({ Authorization: expect.stringMatching(/^Basic /) }) }),
     )
   })
@@ -77,7 +77,7 @@ describe('resolveImageDigest', () => {
       }
       if (url.startsWith('https://auth.scw/token')) {
         expect(url).toContain('service=registry')
-        expect(url).toContain('scope=repository%3Amy-ns%2Fcella-boot%3Apull')
+        expect(url).toContain('scope=repository%3Amy-ns%2Finfra-boot%3Apull')
         return { ok: true, status: 200, text: async () => JSON.stringify({ token: 'tok-1' }) }
       }
       return { ok: false, status: 599, text: async () => 'unexpected' }

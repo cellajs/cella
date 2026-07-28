@@ -117,7 +117,7 @@ function bootImageDigestFor(registry: string, releaseSha: string, secretKey: str
   const memoKey = `${registry}|${releaseSha}`
   let pending = bootImageDigests.get(memoKey)
   if (!pending) {
-    pending = resolveImageDigest({ registry, image: 'cella-boot', tag: releaseSha, secretKey }).catch((err: unknown) => {
+    pending = resolveImageDigest({ registry, image: 'infra-boot', tag: releaseSha, secretKey }).catch((err: unknown) => {
       const message = err instanceof Error ? err.message : String(err)
       if (pulumi.runtime.isDryRun()) {
         pulumi.log.warn(`boot image digest resolution failed (preview continues on the tag): ${message}`)

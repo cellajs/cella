@@ -6,13 +6,13 @@
 
 The EU has great cloud providers; what it lacks is an easy way to deploy within them.
 
-Infra CLI makes is easy to set up a full-stack app on European cloud provider [Scaleway](https://www.scaleway.com/), then deploys every release with zero downtime through one CI-agnostic command. Everything runs in your GitHub and Scaleway accounts; there is no service in the middle.
+Infra CLI makes is easy to set up a full-stack app on European cloud provider [Scaleway](https://www.scaleway.com/), then deploys every release with zero downtime through one CI-agnostic command.
 
 ## Key features
 
 **Go European without looking back.** Deploy on Scaleway, one of the most established and feature-rich cloud providers in Europe.
 
-**Everything is yours.** It all runs in your GitHub and Scaleway account.
+**Everything is yours.** It all runs in your Scaleway account and in your action runner (Github Actions is used currently).
 
 **Full stack deployment.** One guided setup has you covered: domain, HTTPS, load balancer, managed database, file storage, servers.
 
@@ -54,6 +54,8 @@ one final stack update reaps every displaced generation
 ```
 
 **Manage** is the same `pnpm infra` entrypoint on an existing stack: instead of the wizard it opens an operator menu for day-2 work. From there you re-sync config and GitHub Environment secrets (Resume), rotate the CI and VM reader keys or the Pulumi passphrase, run a privileged `pulumi up` for protected infra (database, VPC, private network), preview drift, manage runtime secrets in Secret Manager (list, set, rotate, delete), run database actions (reset, seed, temporary public exposure), and clear a stale stack lock. See [cella/DEPLOYMENT.md](../cella/DEPLOYMENT.md#advanced-operations) for the step-by-steps.
+
+## Core philosophy
 
 Three design rules carry the model:
 
@@ -118,13 +120,9 @@ One name per concept, used across code, tasks, and docs:
 | **control object** | `control/<stack>.json` in the state bucket: per-service rollout state (`active`, `pendingSha`). |
 | **stack lock** | The conditional-write sibling (`control/<stack>.lock.json`) that serializes deploys and operator actions per stack. |
 | **bootstrap** | The one-time operator setup that creates state storage and the credential chain. Unrelated to VM boot. |
-| **boot runner** | The `cella-boot` container every VM runs at first boot: hydrates secrets, pulls images, runs migrations, starts the compose stack, reports diagnostics. Source in [boot/](boot/). |
+| **boot runner** | The `infra-boot` container every VM runs at first boot: hydrates secrets, pulls images, runs migrations, starts the compose stack, reports diagnostics. Source in [boot/](boot/). |
 | **boot plan** | The JSON contract cloud-init writes for the boot runner: service, compose/env files, secret manifest, trace context. |
 | **hydrate** | Fetch runtime secrets from Secret Manager and write `/opt/app/.env.runtime` on the VM before the app starts. |
 | **boot diagnostics** | The logs and JSONL events a VM uploads to its dedicated bucket at boot, healthy or not; read with `infra diag`, re-ship with `--replay`. |
 | **internal route** | A service's private, ACL-guarded LB frontend giving in-network consumers a stable address that follows every cutover. |
 | **engine config** | The injected app description the engine deploys ([config/engine-config.ts](config/engine-config.ts)); defaults to the workspace `appConfig`. |
-
-## Status
-
-Built for and validated on cella's own staging environment end to end, with production rollout underway. Scaleway is the only provider and that is a deliberate scope choice, not a temporary gap. The standalone npm package (`infra init` against an existing repo) is planned; until then the package is consumed inside the cella monorepo. Design direction and roadmap live with the maintainers; start at [cella/DEPLOYMENT.md](../cella/DEPLOYMENT.md) to operate it today.

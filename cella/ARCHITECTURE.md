@@ -1,6 +1,6 @@
 # Architecture
 
-This document is the system-level tour of a Cella app and the starting point for the rest of the architecture documentation.
+This document explains the basics of Cella.
 
 ### TL;DR
 

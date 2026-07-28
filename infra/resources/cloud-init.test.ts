@@ -32,19 +32,19 @@ describe('renderCloudInit', () => {
     expect(out).toContain('docker login rg.fr-par.scw.cloud -u nologin --password-stdin < /etc/cella/scw-secret-key')
     expect(out).toContain('docker run --rm --network host')
     expect(out).toContain('-v /var/run/docker.sock:/var/run/docker.sock')
-    expect(out).toContain('rg.fr-par.scw.cloud/my-namespace/cella-boot:abc123def')
+    expect(out).toContain('rg.fr-par.scw.cloud/my-namespace/infra-boot:abc123def')
     expect(out).toContain('boot --plan /etc/cella/boot-plan.json')
-    expect(out).toContain('systemctl start cella-boot.service')
+    expect(out).toContain('systemctl start infra-boot.service')
     // Enabled so it re-runs on every reboot and re-hydrates runtime secrets.
-    expect(out).toContain('systemctl enable cella-boot.service')
+    expect(out).toContain('systemctl enable infra-boot.service')
   })
 
   it('pins the boot runner by manifest digest when one is resolved', () => {
     const digest = 'sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
     const out = renderCloudInit(params({ bootImageDigest: digest }))
 
-    expect(out).toContain(`rg.fr-par.scw.cloud/my-namespace/cella-boot@${digest}`)
-    expect(out).not.toContain('cella-boot:abc123def')
+    expect(out).toContain(`rg.fr-par.scw.cloud/my-namespace/infra-boot@${digest}`)
+    expect(out).not.toContain('infra-boot:abc123def')
   })
 
   it('passes service boot data through the schema-v1 boot plan', () => {

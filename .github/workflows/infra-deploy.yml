@@ -160,9 +160,9 @@ jobs:
           file: infra/boot/Dockerfile
           push: true
           platforms: linux/amd64
-          tags: rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/cella-boot:${{ needs.setup.outputs.image_tag }}
-          cache-from: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/cella-boot:buildcache
-          cache-to: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/cella-boot:buildcache,mode=max
+          tags: rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/infra-boot:${{ needs.setup.outputs.image_tag }}
+          cache-from: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/infra-boot:buildcache
+          cache-to: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/infra-boot:buildcache,mode=max
           provenance: false
 
   # -------------------------------------------------------------------------

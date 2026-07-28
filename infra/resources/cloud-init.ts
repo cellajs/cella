@@ -45,7 +45,7 @@ ${content}
 ${marker}`
 
 const bootHeader = (service: string, releaseSha: string): string => `#!/bin/bash
-exec > >(tee -a /var/log/cella-boot.log 2>/dev/null > /dev/console) 2>&1
+exec > >(tee -a /var/log/infra-boot.log 2>/dev/null > /dev/console) 2>&1
 set -uo pipefail
 say() { echo "::cella:: $*" ; }
 trap 'rc=$?; if [ "$rc" -ne 0 ]; then say "BOOT FAILED (exit $rc)"; fi' EXIT
@@ -56,12 +56,12 @@ Description=Replay the cella first-boot log to the serial console
 After=multi-user.target
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'cat /var/log/cella-boot.log 2>/dev/null > /dev/console'
+ExecStart=/bin/sh -c 'cat /var/log/infra-boot.log 2>/dev/null > /dev/console'
 [Install]
 WantedBy=multi-user.target`
 
-const installBootReplayService = (): string => `${writeHeredoc('/etc/systemd/system/cella-boot-replay.service', 'REPLAY_UNIT_EOF', bootReplayUnit)}
-systemctl enable cella-boot-replay.service 2>&1 | tail -1`
+const installBootReplayService = (): string => `${writeHeredoc('/etc/systemd/system/infra-boot-replay.service', 'REPLAY_UNIT_EOF', bootReplayUnit)}
+systemctl enable infra-boot-replay.service 2>&1 | tail -1`
 
 // -E (ERE) so `|` alternates; in a BRE the unescaped `|` is literal and the
 // scrub silently matches nothing.
@@ -87,7 +87,7 @@ function bootPlan(p: CloudInitParams): string {
     },
     bootDiagnostics: {
       bucket: p.bootDiagBucket,
-      logFile: '/var/log/cella-boot.log',
+      logFile: '/var/log/infra-boot.log',
     },
     releaseCommand: {
       enabled: p.runMigrate,
@@ -109,7 +109,7 @@ function bootPlan(p: CloudInitParams): string {
 
 /** Boot runner image reference: pinned by digest when resolved, else the release-SHA tag. */
 const bootImageRef = (p: CloudInitParams): string =>
-  p.bootImageDigest ? `${p.registry}/cella-boot@${p.bootImageDigest}` : `${p.registry}/cella-boot:${p.releaseSha}`
+  p.bootImageDigest ? `${p.registry}/infra-boot@${p.bootImageDigest}` : `${p.registry}/infra-boot:${p.releaseSha}`
 
 const launcherPath = '/etc/cella/run-boot.sh'
 
@@ -143,7 +143,7 @@ After=docker.service network-online.target
 Wants=docker.service network-online.target
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -lc 'set -o pipefail; ${launcherPath} 2>&1 | tee -a /var/log/cella-boot.log > /dev/console'
+ExecStart=/bin/bash -lc 'set -o pipefail; ${launcherPath} 2>&1 | tee -a /var/log/infra-boot.log > /dev/console'
 [Install]
 WantedBy=multi-user.target`
 
@@ -159,10 +159,10 @@ chmod 700 ${launcherPath}`
 
 // `enable` wires the unit into multi-user.target so it re-runs on every reboot
 // (re-hydrating runtime secrets); `start` runs it now on this first boot.
-const startBootRunner = (): string => `${writeHeredoc('/etc/systemd/system/cella-boot.service', 'CELLA_BOOT_UNIT_EOF', bootUnit)}
+const startBootRunner = (): string => `${writeHeredoc('/etc/systemd/system/infra-boot.service', 'INFRA_BOOT_UNIT_EOF', bootUnit)}
 systemctl daemon-reload
-systemctl enable cella-boot.service 2>&1 | tail -1
-systemctl start cella-boot.service`
+systemctl enable infra-boot.service 2>&1 | tail -1
+systemctl start infra-boot.service`
 
 /** Render the first-boot cloud-init script for one service generation VM. */
 export function renderCloudInit(p: CloudInitParams): string {

@@ -16,7 +16,7 @@ const MANIFEST_ACCEPT = [
 export interface ResolveImageDigestOptions {
   /** Registry endpoint including namespace, e.g. `rg.fr-par.scw.cloud/my-ns`. */
   registry: string
-  /** Image name inside the namespace, e.g. `cella-boot`. */
+  /** Image name inside the namespace, e.g. `infra-boot`. */
   image: string
   tag: string
   /** Scaleway secret key; registry basic auth is `nologin:<secret>`. */
