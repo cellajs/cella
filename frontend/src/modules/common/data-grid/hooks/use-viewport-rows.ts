@@ -13,6 +13,7 @@ interface ViewportRowsArgs<R> {
   measured: boolean;
 }
 
+/** Provides viewport rows state and actions. */
 export function useViewportRows<R>({
   rows,
   rowHeight,

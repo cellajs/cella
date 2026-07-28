@@ -8,6 +8,7 @@ import { Button } from '~/modules/ui/button';
 // Periodic fallback interval (15 min) for SW update checks
 const SW_UPDATE_INTERVAL = 15 * 60 * 1000;
 
+/** Renders the reload prompt component. */
 export function ReloadPrompt() {
   const { t } = useTranslation();
   const [reloading, setReloading] = useState(false);

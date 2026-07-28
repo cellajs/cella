@@ -18,7 +18,7 @@ export interface FooterLinkProps {
 /**
  * Component for rendering a single footer link.
  */
-const AppFooterLink = ({ id, href }: FooterLinkProps) => {
+function AppFooterLink({ id, href }: FooterLinkProps) {
   const { t } = useTranslation();
 
   return (
@@ -28,7 +28,7 @@ const AppFooterLink = ({ id, href }: FooterLinkProps) => {
       </Button>
     </li>
   );
-};
+}
 
 interface FooterLinksProps {
   links?: FooterLinkProps[];
@@ -38,7 +38,7 @@ interface FooterLinksProps {
 /**
  * Row of footer links including a contact button
  */
-export const AppFooterLinks = ({ links = defaultFooterLinks, className = '' }: FooterLinksProps) => {
+export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: FooterLinksProps) {
   const { t } = useTranslation();
   const contactButtonRef = useRef(null);
   const statusUrl = appConfig.statusUrl?.trim();
@@ -63,12 +63,12 @@ export const AppFooterLinks = ({ links = defaultFooterLinks, className = '' }: F
       </li>
     </ul>
   );
-};
+}
 
 /**
  * App Footer component
  */
-export const AppFooter = ({ className = '' }) => {
+export function AppFooter({ className = '' }) {
   return (
     <footer className={cn('flex flex-col gap-2', className)}>
       <div className="flex items-center gap-4">
@@ -87,4 +87,4 @@ export const AppFooter = ({ className = '' }) => {
       <AppFooterLinks />
     </footer>
   );
-};
+}

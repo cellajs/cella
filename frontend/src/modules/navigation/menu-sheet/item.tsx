@@ -19,7 +19,8 @@ interface MenuSheetItemProps {
   className?: string;
 }
 
-export const MenuSheetItem = ({ item, icon: Icon, className }: MenuSheetItemProps) => {
+/** Renders the menu sheet item component. */
+export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProps) {
   const { t } = useTranslation();
 
   const isOnline = onlineManager.isOnline();
@@ -106,4 +107,4 @@ export const MenuSheetItem = ({ item, icon: Icon, className }: MenuSheetItemProp
       )}
     </Link>
   );
-};
+}

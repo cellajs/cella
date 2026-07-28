@@ -88,7 +88,7 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
 /**
  * Simple read-only operations table for displaying operations within a tag section
  */
-export const TagOperationsTable = ({ operations, tagName, onPrerender }: TagOperationsTableProps) => {
+export function TagOperationsTable({ operations, tagName, onPrerender }: TagOperationsTableProps) {
   const columns = useColumns(tagName);
 
   return (
@@ -110,4 +110,4 @@ export const TagOperationsTable = ({ operations, tagName, onPrerender }: TagOper
       />
     </div>
   );
-};
+}

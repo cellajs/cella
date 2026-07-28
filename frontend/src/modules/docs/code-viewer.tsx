@@ -27,7 +27,7 @@ const getHighlighter = () => {
  * Code viewer component using Shiki for syntax highlighting.
  * Supports TypeScript and Zod code display.
  */
-export const CodeViewer = ({ code, language }: CodeViewerProps) => {
+export function CodeViewer({ code, language }: CodeViewerProps) {
   const [state, setState] = useState<{ html: string; isLoading: boolean }>({ html: '', isLoading: true });
   const mode = useUIStore((state) => state.mode);
 
@@ -66,4 +66,4 @@ export const CodeViewer = ({ code, language }: CodeViewerProps) => {
       dangerouslySetInnerHTML={{ __html: state.html }}
     />
   );
-};
+}

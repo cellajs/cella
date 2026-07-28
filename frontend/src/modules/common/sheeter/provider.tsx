@@ -11,7 +11,7 @@ import { getRouter } from '~/routes/-router-instance';
 /**
  * Renders drawers on mobile, sheets on desktop; when `container` is provided, sheets are portaled into it.
  */
-export const Sheeter = () => {
+export function Sheeter() {
   const isMobile = useBreakpointBelow('sm');
   const sheets = useSheeter((state) => state.sheets);
   // Mode string used in keys to force clean remount when crossing breakpoint,
@@ -60,4 +60,4 @@ export const Sheeter = () => {
       })}
     </>
   );
-};
+}

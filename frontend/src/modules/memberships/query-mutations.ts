@@ -115,6 +115,7 @@ const onError = (
   }
 };
 
+/** Provides the React Query mutation for invite member. */
 export const useInviteMemberMutation = () =>
   useMutation<MembershipInviteResponse, ApiError, InviteMember, undefined>({
     mutationKey: memberQueryKeys.update,
@@ -152,6 +153,7 @@ export const useInviteMemberMutation = () =>
     onError,
   });
 
+/** Provides the React Query mutation for member update. */
 export const useMemberUpdateMutation = () =>
   useMutation<Membership, ApiError, MutationUpdateMembership, MembershipChannelProp>({
     mutationKey: memberQueryKeys.update,
@@ -265,6 +267,7 @@ export const useMemberUpdateMutation = () =>
     },
   });
 
+/** Provides the React Query mutation for memberships delete. */
 export const useMembershipsDeleteMutation = () =>
   useMutation<void, ApiError, DeleteMembership, MemberChannelProp[]>({
     mutationKey: memberQueryKeys.delete,
@@ -365,6 +368,7 @@ type ChangeEntityRoleResult = {
   wasNew: boolean;
 };
 
+/** Provides the React Query mutation for change entity role. */
 export const useChangeEntityRoleMutation = () =>
   useMutation<ChangeEntityRoleResult, ApiError, ChangeEntityRoleVariables>({
     mutationFn: async ({ entity, role }) => {

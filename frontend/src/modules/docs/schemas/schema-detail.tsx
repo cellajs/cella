@@ -22,7 +22,7 @@ interface SchemaDetailProps {
  * Single schema detail card with collapsible ViewerGroup.
  * Lazily loads types/zod content via React Query.
  */
-const SchemaDetail = ({ schema, className }: SchemaDetailProps) => {
+function SchemaDetail({ schema, className }: SchemaDetailProps) {
   const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
   const { data: typesIndex } = useSuspenseQuery(typesIndexQueryOptions);
 
@@ -53,7 +53,7 @@ const SchemaDetail = ({ schema, className }: SchemaDetailProps) => {
       </CardContent>
     </Card>
   );
-};
+}
 
 interface TagSchemasListProps {
   schemas: GenComponentSchema[];
@@ -63,7 +63,7 @@ interface TagSchemasListProps {
  * Renders a list of schema details and registers all schema refs
  * with the shared scroll spy in a single hook call.
  */
-export const TagSchemasList = ({ schemas }: TagSchemasListProps) => {
+export function TagSchemasList({ schemas }: TagSchemasListProps) {
   // Register all schema refs for this tag section
   const sectionIds = schemas.map((s) => s.ref.replace(/^#/, ''));
   useScrollSpy(sectionIds);
@@ -75,4 +75,4 @@ export const TagSchemasList = ({ schemas }: TagSchemasListProps) => {
       ))}
     </div>
   );
-};
+}

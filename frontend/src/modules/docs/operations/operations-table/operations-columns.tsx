@@ -10,6 +10,7 @@ import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { getMethodColor } from '../../helpers/get-method-color';
 
+/** Builds the column definitions for the enclosing table. */
 export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: string[] = []) => {
   const { t } = useTranslation();
 

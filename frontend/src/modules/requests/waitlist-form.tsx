@@ -34,7 +34,7 @@ interface WaitlistFormProps {
 /**
  * Waitlist form to request access to application. Can be used in dialog or embedded in an (auth) page layout.
  */
-export const WaitlistForm = ({
+export function WaitlistForm({
   email,
   inputClassName,
   buttonContent,
@@ -42,7 +42,7 @@ export const WaitlistForm = ({
   dialog: isDialog,
   callback,
   className,
-}: WaitlistFormProps) => {
+}: WaitlistFormProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -114,4 +114,4 @@ export const WaitlistForm = ({
       </form>
     </Form>
   );
-};
+}

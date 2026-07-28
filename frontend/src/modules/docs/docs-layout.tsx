@@ -54,16 +54,13 @@ function DocsLayout() {
     document.body.style.cursor = 'col-resize';
   };
 
-  // Fetch tags via React Query (reduces bundle size)
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);
 
-  // Get sheeter state
   const sheets = useSheeter((state) => state.sheets);
   const sidebarOpen = sheets.some((s) => s.id === 'docs-sidebar');
 
   const sidebarContent = <DocsSidebar tags={tags} />;
 
-  // Create or remove sheet based on mobile state
   useEffect(() => {
     // Clean up sheet when switching to desktop
     if (isDesktop && sidebarOpen) {

@@ -25,7 +25,8 @@ interface MenuItemEditWrapperProps {
   toggleSubmenuVisibility: (id: string) => void;
 }
 
-export const MenuItemEditWrapper = ({
+/** Renders the menu item edit wrapper component. */
+export function MenuItemEditWrapper({
   item,
   unarchiveItems,
   isArchived,
@@ -33,7 +34,7 @@ export const MenuItemEditWrapper = ({
   isSubmenuArchivedVisible = false,
   detailedMenu,
   toggleSubmenuVisibility,
-}: MenuItemEditWrapperProps) => {
+}: MenuItemEditWrapperProps) {
   const dragRef = useRef(null);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
@@ -103,4 +104,4 @@ export const MenuItemEditWrapper = ({
       {closestEdge && <DropIndicator className="h-0.5 w-full" edge={closestEdge} gap={0.35} />}
     </li>
   );
-};
+}

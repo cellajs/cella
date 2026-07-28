@@ -32,7 +32,7 @@ import { addRecentSearch } from '~/utils/recent-searches';
 // Define searchable entity types
 const searchableEntityTypes = ['user', ...appConfig.channelEntityTypes] as const;
 
-const SearchResultsSkeleton = () => {
+function SearchResultsSkeleton() {
   // Stay hidden for a short while, then fade in slowly to avoid flashing on fast responses.
   const { hasStarted } = useMountedState();
 
@@ -49,7 +49,7 @@ const SearchResultsSkeleton = () => {
       ))}
     </div>
   );
-};
+}
 
 type HistoryEntry = { kind: 'history'; value: string };
 type SearchSelection = EnrichedChannel | UserBase | HistoryEntry;
@@ -57,7 +57,7 @@ type SearchSelection = EnrichedChannel | UserBase | HistoryEntry;
 /**
  * Application search component.
  */
-export const AppSearch = () => {
+export function AppSearch() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
@@ -125,7 +125,6 @@ export const AppSearch = () => {
     (isDebouncePending || userQ.isLoading || Object.values(channelResults).some((q) => q.isLoading));
 
   const onSelectItem = (item: EnrichedChannel | UserBase) => {
-    // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
     // For users, open sheet
@@ -241,4 +240,4 @@ export const AppSearch = () => {
       </div>
     </Combobox>
   );
-};
+}

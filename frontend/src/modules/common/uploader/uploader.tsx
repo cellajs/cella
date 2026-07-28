@@ -7,7 +7,8 @@ import { useUIStore } from '~/modules/ui/ui-store';
 
 import '~/modules/common/uploader/uppy-styles';
 
-export const Uploader = () => {
+/** Renders the uploader component. */
+export function Uploader() {
   const mode = useUIStore((state) => state.mode);
   const remove = useUploader((state) => state.remove);
 
@@ -49,4 +50,4 @@ export const Uploader = () => {
       </DialogContent>
     </Dialog>
   );
-};
+}

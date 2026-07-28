@@ -11,6 +11,7 @@ interface HelpTextProps {
   type?: 'popover';
 }
 
+/** Renders the help text component. */
 export function HelpText({ content, children, className, type }: HelpTextProps) {
   const [collapsed, setCollapsed] = useState(true);
 

@@ -22,13 +22,11 @@ import { getHashUrl } from '../hash-url';
 
 function OperationsPage() {
   const { t } = useTranslation();
-  // Get active tag from URL search param
   const { operationTag: activeTag } = useSearch({ from: '/_public/_content/docs/operations' });
 
   // Prerender trigger for hover-intent DOM preparation
   const { prerender } = usePrerenderTrigger('operations');
 
-  // Fetch operations grouped by tag, and tags list (exclude empty tags)
   const { data: operationsByTag } = useSuspenseQuery(operationsByTagQueryOptions);
   const { data: allTags } = useSuspenseQuery(tagsQueryOptions);
   const tags = allTags.filter((t) => t.count > 0);

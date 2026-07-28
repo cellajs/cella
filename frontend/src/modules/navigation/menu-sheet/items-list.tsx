@@ -16,7 +16,8 @@ interface MenuSheetItemsProps {
   className?: string;
 }
 
-export const MenuSheetItems = ({ data, type, isArchived, options, className }: MenuSheetItemsProps) => {
+/** Renders the menu sheet items component. */
+export function MenuSheetItems({ data, type, isArchived, options, className }: MenuSheetItemsProps) {
   const { t } = useTranslation();
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
@@ -60,4 +61,4 @@ export const MenuSheetItems = ({ data, type, isArchived, options, className }: M
   };
 
   return data.length === 0 ? renderNoItems() : renderItems();
-};
+}

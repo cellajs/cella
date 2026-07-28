@@ -16,7 +16,7 @@ type TagExpandLinkProps = Pick<LinkProps, 'to' | 'search' | 'hash'> & {
  * Centered "Show / Hide details" Link styled as a rounded-full button.
  * Chevron stays mounted across toggles so its rotation animates smoothly.
  */
-export const TagExpandLink = ({ isOpen, loading, to, search, hash, onMouseEnter, onClick }: TagExpandLinkProps) => {
+export function TagExpandLink({ isOpen, loading, to, search, hash, onMouseEnter, onClick }: TagExpandLinkProps) {
   const { t } = useTranslation();
 
   return (
@@ -43,4 +43,4 @@ export const TagExpandLink = ({ isOpen, loading, to, search, hash, onMouseEnter,
       </Link>
     </div>
   );
-};
+}

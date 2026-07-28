@@ -17,7 +17,8 @@ interface OnboardingCompletedProps {
   seeded: boolean | null;
 }
 
-export const OnboardingCompleted = ({ createdOrganization, seeded }: OnboardingCompletedProps) => {
+/** Renders the onboarding completed component. */
+export function OnboardingCompleted({ createdOrganization, seeded }: OnboardingCompletedProps) {
   const { t } = useTranslation();
   const user = useCurrentUser();
   const { setSectionsDefault } = useNavigationStore();
@@ -66,4 +67,4 @@ export const OnboardingCompleted = ({ createdOrganization, seeded }: OnboardingC
       </p>
     </div>
   );
-};
+}

@@ -53,7 +53,7 @@ interface OperationDetailProps {
  * Single operation detail with collapsible request and responses sections.
  * Displays method, path, description, request parameters, and responses.
  */
-export const OperationDetail = ({ operation, detail: detailProp, className }: OperationDetailProps) => {
+export function OperationDetail({ operation, detail: detailProp, className }: OperationDetailProps) {
   const { t } = useTranslation();
   const detail = useResolvedDetail(operation, detailProp);
 
@@ -98,14 +98,14 @@ export const OperationDetail = ({ operation, detail: detailProp, className }: Op
       </CardContent>
     </Card>
   );
-};
+}
 
 interface TagOperationsListProps {
   operations: GenOperationSummary[];
 }
 
 /** Fetches tag details once (not per-child) and registers all operation hashes with the scroll spy. */
-export const TagOperationsList = ({ operations }: TagOperationsListProps) => {
+export function TagOperationsList({ operations }: TagOperationsListProps) {
   // Register all operation hashes for this tag section
   const sectionIds = operations.map((op) => op.hash);
   useScrollSpy(sectionIds);
@@ -130,4 +130,4 @@ export const TagOperationsList = ({ operations }: TagOperationsListProps) => {
       ))}
     </div>
   );
-};
+}

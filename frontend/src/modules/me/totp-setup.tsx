@@ -15,7 +15,7 @@ import { Button } from '~/modules/ui/button';
 /**
  * A component that sets up TOTP for the user, including displaying a QR code, manual setup key fallback, and handling TOTP verification.
  */
-export const SetupTotp = () => {
+export function SetupTotp() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -115,7 +115,7 @@ export const SetupTotp = () => {
       )}
     </div>
   );
-};
+}
 
 /**
  * A component that displays the manual TOTP setup key in a dialog.

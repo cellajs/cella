@@ -2,6 +2,7 @@ import { useEventListener } from '~/hooks/use-event-listener';
 import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
+/** Renders the dropdowner drawer component. */
 export function DropdownerDrawer({ dropdown }: { dropdown: InternalDropdown }) {
   const { id, content } = dropdown;
 

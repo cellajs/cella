@@ -2,6 +2,7 @@ import { Separator as SeparatorPrimitive } from '@base-ui/react/separator';
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
+/** Renders the styled separator primitive. */
 export function Separator({
   className,
   orientation = 'horizontal',

@@ -26,7 +26,6 @@ export function UserProfilePage({ user, organizationId, isSheet }: Props) {
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
 
-  // Determine if this is current user's profile
   const isSelf = !!currentUser && currentUser.id === user.id;
 
   // Pick correct mutation hook

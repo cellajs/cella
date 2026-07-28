@@ -10,14 +10,15 @@ interface CustomSlashMenuComponentProps extends SuggestionMenuProps<DefaultReact
 }
 
 // Custom slash menu component rendered inside the floating positioner.
-export const CustomSlashMenuComponent = ({
+/** Connects the custom slash menu to the BlockNote suggestion menu. */
+export function CustomSlashMenuComponent({
   items,
   loadingState,
   selectedIndex,
   onItemClick,
   originalItemCount,
   allowedTypes,
-}: CustomSlashMenuComponentProps) => {
+}: CustomSlashMenuComponentProps) {
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
   const indexedItemCount = customSlashIndexedItems.filter((item) => allowedTypes.includes(item)).length;
@@ -85,4 +86,4 @@ export const CustomSlashMenuComponent = ({
       ))}
     </div>
   );
-};
+}

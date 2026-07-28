@@ -171,7 +171,6 @@ export const createOptimisticEntity = <T extends z.ZodObject<z.ZodRawShape>>(
       }
     : null;
 
-  // Get defaults from schema
   const defaults = getSchemaDefaults(schema);
 
   // Merge: schema defaults < user input < auto-generated fields

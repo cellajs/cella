@@ -47,4 +47,5 @@ function schemaItemEqual(prev: SchemaItemProps, next: SchemaItemProps) {
   return prev.schema === next.schema && prev.isActive === next.isActive;
 }
 
+/** Renders an API schema in the documentation sidebar. */
 export const SchemaItem = memo(SchemaItemBase, schemaItemEqual);

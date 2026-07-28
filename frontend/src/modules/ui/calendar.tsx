@@ -29,6 +29,7 @@ function CalendarWeekNumber({ children, ...props }: WeekNumberProps) {
   );
 }
 
+/** Renders the styled calendar primitive. */
 export function Calendar({
   className,
   classNames,

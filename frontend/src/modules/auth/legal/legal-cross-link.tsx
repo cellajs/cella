@@ -8,6 +8,7 @@ import type { LegalSubject } from '~/modules/auth/legal/legal-config';
  */
 const LegalDialogNavContext = createContext<((subject: LegalSubject) => void) | null>(null);
 
+/** Shares legal-dialog navigation state with descendant components. */
 export const LegalDialogNavProvider = LegalDialogNavContext.Provider;
 
 /**

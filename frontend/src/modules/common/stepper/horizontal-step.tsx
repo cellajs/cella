@@ -100,4 +100,5 @@ function HorizontalStepBase(props: StepSharedProps, ref: React.ForwardedRef<HTML
   );
 }
 
+/** Renders one step in a horizontal stepper. */
 export const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>(HorizontalStepBase);

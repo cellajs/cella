@@ -39,6 +39,7 @@ export function openUpdateUserSheet(user: BaseUser, buttonRef: RefObject<HTMLBut
   );
 }
 
+/** Renders the update table row. */
 export function UpdateRow({ user, tabIndex }: Props) {
   const buttonRef = useRef(null);
 

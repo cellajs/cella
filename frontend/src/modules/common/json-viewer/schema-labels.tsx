@@ -1,5 +1,3 @@
-import type { FC } from 'react';
-
 interface SchemaLabelsProps {
   typeValue: string | string[] | null;
   refValue: string | null;
@@ -40,7 +38,8 @@ function getTypeColorClass(
 }
 
 // Renders OpenAPI schema-mode labels: type, ref, contentType, and composition markers (anyOf/oneOf) when present.
-export const SchemaLabels: FC<SchemaLabelsProps> = ({
+/** Renders the schema labels component. */
+export function SchemaLabels({
   typeValue,
   refValue,
   contentTypeValue,
@@ -48,10 +47,9 @@ export const SchemaLabels: FC<SchemaLabelsProps> = ({
   hasOneOf,
   constraints,
   theme,
-}) => {
+}: SchemaLabelsProps) {
   if (!typeValue && !refValue && !contentTypeValue && !hasAnyOf && !hasOneOf && !constraints) return null;
 
-  // Normalize typeValue to array for consistent rendering
   const typeValues = typeValue ? (Array.isArray(typeValue) ? typeValue : [typeValue]) : [];
 
   // Composition label (anyOf takes precedence over oneOf if both are present)
@@ -92,4 +90,4 @@ export const SchemaLabels: FC<SchemaLabelsProps> = ({
       )}
     </>
   );
-};
+}

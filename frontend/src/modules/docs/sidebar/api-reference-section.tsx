@@ -26,7 +26,6 @@ interface ApiReferenceSectionProps {
 export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSectionProps) {
   const { t } = useTranslation();
 
-  // Fetch schemas data for sidebar count (non-suspense to avoid sheet reload on mobile)
   const { data: schemas } = useQuery(schemasQueryOptions);
 
   // Get current pathname to determine active/expanded section

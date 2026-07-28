@@ -4,7 +4,8 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { Switch } from '~/modules/ui/switch';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-export const OfflineAccessSwitch = () => {
+/** Renders the offline access switch component. */
+export function OfflineAccessSwitch() {
   const { t } = useTranslation();
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
 
@@ -30,4 +31,4 @@ export const OfflineAccessSwitch = () => {
       </label>
     </div>
   );
-};
+}

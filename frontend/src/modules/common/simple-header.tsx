@@ -17,14 +17,15 @@ const collapseTextClasses =
 
 const expandedTextClasses = 'transition-[max-height,opacity,margin] duration-300 ease-in-out max-h-24 mt-2 md:mt-3';
 
-export const SimpleHeader = ({
+/** Renders the simple header. */
+export function SimpleHeader({
   heading,
   text,
   children,
   className = '',
   textClassName = '',
   collapseText,
-}: SimpleHeaderProps) => {
+}: SimpleHeaderProps) {
   const { t } = useTranslation();
   const hasScrolled = useHasScrolled();
   const useCollapse = collapseText || textClassName;
@@ -46,4 +47,4 @@ export const SimpleHeader = ({
       {children}
     </div>
   );
-};
+}

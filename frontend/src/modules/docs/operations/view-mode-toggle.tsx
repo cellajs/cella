@@ -10,7 +10,7 @@ interface ViewModeToggleProps {
  * Toggle between list and table view modes.
  * Navigates between /docs/operations (list) and /docs/operations/table (table) routes.
  */
-export const ViewModeToggle = ({ size = 'default' }: ViewModeToggleProps) => {
+export function ViewModeToggle({ size = 'default' }: ViewModeToggleProps) {
   const { location } = useRouterState();
   const isTableRoute = location.pathname === '/docs/operations/table';
   const viewMode = isTableRoute ? 'table' : 'list';
@@ -29,4 +29,4 @@ export const ViewModeToggle = ({ size = 'default' }: ViewModeToggleProps) => {
       </ToggleGroupItem>
     </ToggleGroup>
   );
-};
+}

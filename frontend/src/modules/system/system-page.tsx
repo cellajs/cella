@@ -5,6 +5,7 @@ import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { ScrollReset } from '~/modules/common/scroll-reset';
 import { SimpleHeader } from '~/modules/common/simple-header';
 
+/** Renders the system page. */
 export function SystemPage() {
   const { t } = useTranslation();
 

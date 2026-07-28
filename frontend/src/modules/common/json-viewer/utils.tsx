@@ -7,18 +7,15 @@ const containsSearchMatch = (value: unknown, searchText: string): boolean => {
   if (!searchText) return false;
   const lowerSearch = searchText.toLowerCase();
 
-  // Check primitive values
   if (value === null || value === undefined) return false;
   if (typeof value === 'string') return value.toLowerCase().includes(lowerSearch);
   if (typeof value === 'number') return String(value).includes(searchText);
   if (typeof value === 'boolean') return String(value).toLowerCase().includes(lowerSearch);
 
-  // Check arrays
   if (Array.isArray(value)) {
     return value.some((item) => containsSearchMatch(item, searchText));
   }
 
-  // Check objects (including keys)
   if (typeof value === 'object') {
     return Object.entries(value as Record<string, unknown>).some(
       ([key, val]) => key.toLowerCase().includes(lowerSearch) || containsSearchMatch(val, searchText),
@@ -113,7 +110,6 @@ export const highlightText = (
   const lowerText = text.toLowerCase();
   const lowerSearch = searchText.toLowerCase();
 
-  // Find all match indices
   const matches: number[] = [];
   let searchIndex = 0;
   while (true) {
@@ -125,17 +121,14 @@ export const highlightText = (
 
   if (matches.length === 0) return <span className={colorClass}>{text}</span>;
 
-  // Build segments with highlighted matches
   const segments: ReactNode[] = [];
   let lastEnd = 0;
 
   for (let i = 0; i < matches.length; i++) {
     const matchStart = matches[i];
-    // Add text before match
     if (matchStart > lastEnd) {
       segments.push(text.slice(lastEnd, matchStart));
     }
-    // Add highlighted match
     segments.push(
       <span key={i} className={searchMatchClass} data-search-match="true">
         {text.slice(matchStart, matchStart + searchText.length)}
@@ -144,7 +137,6 @@ export const highlightText = (
     lastEnd = matchStart + searchText.length;
   }
 
-  // Add remaining text after last match
   if (lastEnd < text.length) {
     segments.push(text.slice(lastEnd));
   }
@@ -167,7 +159,6 @@ export const getPathToNthMatch = (
   let count = 0;
 
   const search = (val: unknown, path: (string | number)[]): { path: (string | number)[]; found: boolean } | null => {
-    // Check primitive values
     if (val === null || val === undefined) return null;
 
     if (typeof val === 'string') {
@@ -194,7 +185,6 @@ export const getPathToNthMatch = (
       return null;
     }
 
-    // Check arrays
     if (Array.isArray(val)) {
       for (let i = 0; i < val.length; i++) {
         const result = search(val[i], [...path, i]);
@@ -203,15 +193,12 @@ export const getPathToNthMatch = (
       return null;
     }
 
-    // Check objects (including keys)
     if (typeof val === 'object') {
       for (const [key, v] of Object.entries(val as Record<string, unknown>)) {
-        // Check the key itself
         if (key.toLowerCase().includes(lowerSearch)) {
           if (count === targetIndex) return { path: [...path, key], found: true };
           count++;
         }
-        // Check the value
         const result = search(v, [...path, key]);
         if (result?.found) return result;
       }

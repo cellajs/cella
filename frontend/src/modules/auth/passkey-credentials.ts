@@ -124,6 +124,7 @@ export const getPasskeyRegistrationCredential = async () => {
   };
 };
 
+/** Returns the passkey verify credential. */
 export const getPasskeyVerifyCredential = async (
   query: Omit<PasskeyCredentialProps, 'type'> & {
     type: Exclude<PasskeyCredentialProps['type'], 'registration'>;

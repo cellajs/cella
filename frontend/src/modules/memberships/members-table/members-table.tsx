@@ -51,7 +51,6 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
   const { q, role, sort, order } = search;
   const limit = LIMIT;
 
-  // Build columns
   const [selected, setSelected] = useState<Member[]>([]);
   const [columns, setColumns] = useColumns(canUpdate, isSheet);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
@@ -70,7 +69,6 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
 
-  // Update rows
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
     if (column.key !== 'role') return;
 

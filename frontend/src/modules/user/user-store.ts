@@ -34,6 +34,7 @@ const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'lastUser' | 'y
   yjsTokens: {},
 };
 
+/** Provides access to shared user-sheet state. */
 export const useUserStore = create<UserStoreState>()(
   devtools(
     persist(

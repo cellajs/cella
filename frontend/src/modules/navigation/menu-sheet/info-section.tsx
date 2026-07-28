@@ -40,7 +40,7 @@ function StatusCard({ label, status }: { label: string; status: HealthStatus }) 
 /**
  * Info content: support links and app status.
  */
-export const InfoContent = () => {
+export function InfoContent() {
   const { t } = useTranslation();
   const supportRef = useRef<HTMLButtonElement | null>(null);
   const contactRef = useRef<HTMLButtonElement | null>(null);
@@ -118,4 +118,4 @@ export const InfoContent = () => {
       </div>
     </div>
   );
-};
+}

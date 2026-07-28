@@ -9,6 +9,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { teardownUserState } from '~/utils/teardown-user-state';
 
 // Sign out user and clear all stores and query cache
+/** Renders the sign out component. */
 export function SignOut() {
   const { t } = useTranslation();
 

@@ -30,7 +30,7 @@ const extractEmail = (value: string, stripDisplayName: boolean): string => {
  * Email input component with multi-email support, validation, and paste handling.
  * Built on top of TagInput with email-specific validation and delimiter support.
  */
-export const SelectEmails = ({
+export function SelectEmails({
   emails,
   onValueChange,
   allowDisplayName = false,
@@ -38,7 +38,7 @@ export const SelectEmails = ({
   allowDuplicate = false,
   delimiter = defaultEmailDelimiter,
   ...tagInputProps
-}: SelectEmailsProps) => {
+}: SelectEmailsProps) {
   const tags = emails ?? [];
 
   /** Validates email format, optionally allowing display name format */
@@ -79,4 +79,4 @@ export const SelectEmails = ({
       {...tagInputProps}
     />
   );
-};
+}

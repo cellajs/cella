@@ -44,7 +44,6 @@ export function SignInStep() {
   const abortRef = useRef<AbortController | null>(null);
   const [conditionalMediationSupported, setConditionalMediationSupported] = useState(false);
 
-  // Set up form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { email },

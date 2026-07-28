@@ -13,13 +13,14 @@ interface DataTableSkeletonProps {
 
 const EMPTY_CELL_WIDTHS: string[] = [];
 
-export const DataTableSkeleton = ({
+/** Renders the data table skeleton component. */
+export function DataTableSkeleton({
   columnCount = 4,
   cellHeight = 40,
   cellsWidths = EMPTY_CELL_WIDTHS,
   rowCount = 20,
   shrinkTable = false,
-}: DataTableSkeletonProps) => {
+}: DataTableSkeletonProps) {
   const renderCellHeight = cellHeight - 18;
   const { hasMounted } = useMountedState();
   const isMobile = useBreakpointBelow('sm', false);
@@ -67,4 +68,4 @@ export const DataTableSkeleton = ({
       </Table>
     </div>
   );
-};
+}

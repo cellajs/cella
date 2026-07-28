@@ -3,6 +3,7 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { TreeRow } from './build-tree';
 import { useTreeContext } from './tree-context';
 
+/** Identifies the tree-table expansion column. */
 export const expandToggleColumnKey = 'expand-toggle-column';
 
 /**

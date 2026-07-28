@@ -5,7 +5,8 @@ import { MenuItemEditWrapper } from '~/modules/navigation/menu-sheet/item-edit-w
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
-export const MenuSheetItemsEdit = ({
+/** Renders the menu sheet items edit component. */
+export function MenuSheetItemsEdit({
   data,
   isArchived,
   options,
@@ -13,7 +14,7 @@ export const MenuSheetItemsEdit = ({
   data: UserMenuItem[];
   options?: MenuSectionOptions;
   isArchived: boolean;
-}) => {
+}) {
   const { t } = useTranslation();
   const { detailedMenu } = useNavigationStore();
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
@@ -49,4 +50,4 @@ export const MenuSheetItemsEdit = ({
       toggleSubmenuVisibility={toggleSubmenuVisibility}
     />
   ));
-};
+}

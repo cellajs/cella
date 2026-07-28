@@ -22,7 +22,7 @@ interface FocusViewContainerProps {
 }
 
 /** Button to toggle focus view mode, which hides non-essential UI elements for a more immersive experience. */
-export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
+export function FocusView({ className = '', iconOnly }: FocusViewProps) {
   const { t } = useTranslation();
   const { focusView, setFocusView } = useUIStore();
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
@@ -44,10 +44,10 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
       </Button>
     </TooltipButton>
   );
-};
+}
 
 /** Container that applies focus view styles when focus view mode is active. Should wrap the main content of the page. */
-export const FocusViewContainer = ({ children, className = '', disabled }: FocusViewContainerProps) => {
+export function FocusViewContainer({ children, className = '', disabled }: FocusViewContainerProps) {
   const focusView = useUIStore((state) => state.focusView);
 
   const isActive = focusView && !disabled;
@@ -65,4 +65,4 @@ export const FocusViewContainer = ({ children, className = '', disabled }: Focus
       {children}
     </div>
   );
-};
+}

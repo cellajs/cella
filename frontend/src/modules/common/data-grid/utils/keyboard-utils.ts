@@ -48,6 +48,7 @@ const nonInputKeys = new Set([
   'F12',
 ]);
 
+/** Checks whether the platform control modifier is held. */
 export function isCtrlKeyHeldDown(e: React.KeyboardEvent): boolean {
   return (e.ctrlKey || e.metaKey) && e.key !== 'Control';
 }
@@ -56,6 +57,7 @@ export function isCtrlKeyHeldDown(e: React.KeyboardEvent): boolean {
 // event.nativeEvent.code cannot be used either as it would break copy/paste for the DVORAK layout
 const vKey = 86;
 
+/** Checks whether a key event should start the default cell editor. */
 export function isDefaultCellInput(event: React.KeyboardEvent<HTMLDivElement>, isUserHandlingPaste: boolean): boolean {
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   if (isCtrlKeyHeldDown(event) && (event.keyCode !== vKey || isUserHandlingPaste)) return false;
@@ -73,6 +75,7 @@ export function onEditorNavigation({ key, target }: React.KeyboardEvent<HTMLDivE
   return false;
 }
 
+/** Returns the left right key. */
 export function getLeftRightKey() {
   return {
     leftKey: 'ArrowLeft',

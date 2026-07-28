@@ -6,7 +6,8 @@ interface ConfettiProps {
   options?: confetti.Options; // Options for customizing confetti
 }
 
-export const Confetti = ({ fire, options }: ConfettiProps) => {
+/** Renders the confetti component. */
+export function Confetti({ fire, options }: ConfettiProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const confettiInstance = useRef<confetti.CreateTypes | null>(null);
 
@@ -42,4 +43,4 @@ export const Confetti = ({ fire, options }: ConfettiProps) => {
       style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
     />
   );
-};
+}

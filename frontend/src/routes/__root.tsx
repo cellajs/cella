@@ -8,23 +8,26 @@ import { queryClient } from '~/query/query-client';
 
 // Root boundary components are defined locally (not imported) so their bindings are never read
 // cross-module at route-definition eval time, which can TDZ during HMR re-evaluation.
-const RootErrorComponent = ({ error }: { error: unknown }) => (
-  <ErrorNotice boundary="root" error={error as ErrorNoticeError} />
-);
+function RootErrorComponent({ error }: { error: unknown }) {
+  return <ErrorNotice boundary="root" error={error as ErrorNoticeError} />;
+}
 
-const RootNotFoundComponent = () => (
-  <ErrorNotice
-    error={{
-      type: 'page_not_found',
-      severity: 'info',
-      status: 404,
-      name: i18n.t('error:page_not_found'),
-      message: i18n.t('error:page_not_found.text'),
-    }}
-    boundary="root"
-  />
-);
+function RootNotFoundComponent() {
+  return (
+    <ErrorNotice
+      error={{
+        type: 'page_not_found',
+        severity: 'info',
+        status: 404,
+        name: i18n.t('error:page_not_found'),
+        message: i18n.t('error:page_not_found.text'),
+      }}
+      boundary="root"
+    />
+  );
+}
 
+/** Defines the root application route. */
 export const Route = createRootRouteWithContext()({
   staticData: { isAuth: false, boundary: 'root' },
   component: Root,

@@ -60,7 +60,8 @@ const downAlertConfig = {
   },
 } as const;
 
-export const DownAlert = () => {
+/** Renders the down alert component. */
+export function DownAlert() {
   const isOnline = useOnlineManager();
   const { downAlert, setDownAlert } = useAlertStore();
   const [dismissedAlerts, setDismissedAlerts] = useState<Partial<Record<AlertKeys, boolean>>>({});
@@ -94,4 +95,4 @@ export const DownAlert = () => {
       </Alert>
     </div>
   );
-};
+}

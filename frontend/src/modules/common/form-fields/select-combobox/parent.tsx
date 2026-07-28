@@ -18,7 +18,7 @@ type SelectParentProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TF
 /**
  * Form field for selecting a parent entity.
  */
-export const SelectParentFormField = <TFieldValues extends FieldValues>({
+export function SelectParentFormField<TFieldValues extends FieldValues>({
   parentType,
   control,
   name,
@@ -27,7 +27,7 @@ export const SelectParentFormField = <TFieldValues extends FieldValues>({
   onSelect,
   required,
   disabled,
-}: SelectParentProps<TFieldValues>) => {
+}: SelectParentProps<TFieldValues>) {
   const user = useCurrentUser();
 
   // Fetch entities using proper query
@@ -81,4 +81,4 @@ export const SelectParentFormField = <TFieldValues extends FieldValues>({
       )}
     />
   );
-};
+}

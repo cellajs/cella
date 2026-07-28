@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { RenderCheckboxProps } from '../types';
 
+/** Renders the render checkbox component. */
 export function RenderCheckbox({ onChange, indeterminate: _indeterminate, ...props }: RenderCheckboxProps) {
   const withShift = useRef(false);
 

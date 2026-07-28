@@ -96,7 +96,6 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
         description = `Log ID: ${error.logId}`;
       }
 
-      // Show toast
       const toastType = error.severity === 'error' ? 'error' : error.severity === 'warn' ? 'warning' : 'info';
       toaster[toastType](errorMessage, { description });
     }

@@ -1,6 +1,7 @@
 import { alertsConfig } from '~/alert-config';
 import { AlertBanner, type AlertContextMode } from './alert-banner';
 
+/** Renders the alerter component. */
 export function Alerter({ mode }: { mode: AlertContextMode }) {
   return (
     <>

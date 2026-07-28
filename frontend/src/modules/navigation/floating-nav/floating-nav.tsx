@@ -16,6 +16,7 @@ interface FloatingNavProps {
   resetTrigger?: unknown;
 }
 
+/** Renders the floating nav component. */
 export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-nav', resetTrigger }: FloatingNavProps) {
   const isMobile = useBreakpointBelow('sm');
   const { isVisible: showButtons, reset } = useScrollVisibility(isMobile, scrollContainerRef);

@@ -101,6 +101,7 @@ function AlertDialogDescription({
   );
 }
 
+/** Renders the styled alert dialog media primitive. */
 export function AlertDialogMedia({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div

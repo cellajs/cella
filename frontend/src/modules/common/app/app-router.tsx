@@ -8,7 +8,7 @@ import { router } from '~/routes/router';
 /**
  * Wait for react-query to hydrate cache so we can use fallback getQueryData in router loaders when offline.
  */
-export const AppRouter = () => {
+export function AppRouter() {
   const isRestoring = useIsRestoring();
   const isOnline = onlineManager.isOnline();
   const fetchingCount = useIsFetching();
@@ -32,4 +32,4 @@ export const AppRouter = () => {
       <RouterProvider router={router} />
     </>
   );
-};
+}

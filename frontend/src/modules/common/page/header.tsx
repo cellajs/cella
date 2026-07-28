@@ -21,6 +21,7 @@ type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   parent?: ChannelBase;
 };
 
+/** Renders the page header. */
 export function PageHeader({ entity, panel, parent, ...coverProps }: PageHeaderProps) {
   const { t } = useTranslation();
 

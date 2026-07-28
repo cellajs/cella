@@ -19,14 +19,15 @@ interface Props<TData> {
   className?: string;
 }
 
+/** Renders the export component. */
 // biome-ignore lint/suspicious/noExplicitAny: any is required here
-export const Export = <R extends Record<string, any>>({
+export function Export<R extends Record<string, any>>({
   filename,
   columns,
   selectedRows,
   fetchRows,
   className = '',
-}: Props<R>) => {
+}: Props<R>) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
   const mode = uiStore.getState().mode;
@@ -95,4 +96,4 @@ export const Export = <R extends Record<string, any>>({
       </DropdownMenuContent>
     </DropdownMenu>
   );
-};
+}

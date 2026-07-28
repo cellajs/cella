@@ -138,6 +138,7 @@ The permission system in `backend/src/permissions/` provides: the `checkAccess*`
   lower-confidence terms; required replacements fail the normal style checks. The vocabulary checks
   exclude generated output, migrations, changelog history, and `infra/`.
 - Reserve `materialize` and `materialization` for the named Yjs operation that converts collaborative state into durable entity data. Use concrete verbs such as `persist`, `provision`, `create`, or `resolve` elsewhere.
+- **Prefer plain composable functions over configuration factories.** A `createX(config)` that returns behavior is justified only when it must bind long-lived shared state for many call sites (e.g. mutation options bound to a QueryClient, per-entity key registries). When every call site can pass explicit arguments to a small function, write that function and compose it; a factory adds an indirection layer, hides data flow, and invites config objects to grow.
 - **Reserved domain vocabulary.** These words already name a subsystem; do not reuse them for anything else, and check what a word means here before naming a new module or export:
   - `sync` -> the entity sync engine (`sync-store`, `sync-service`, `SyncTier`, `syncStaleTime`, `declareSyncView`).
   - `schema` / `lens` -> schema evolution (`currentSchemaVersion`, `defineLens`, `markBundleStale`).

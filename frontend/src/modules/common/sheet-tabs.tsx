@@ -14,7 +14,7 @@ interface Props {
 /**
  * Component for rendering tabs inside a sheet.
  */
-export const SheetTabs = ({ tabs }: Props) => {
+export function SheetTabs({ tabs }: Props) {
   const layoutId = nanoid();
   const { t } = useTranslation();
 
@@ -53,4 +53,4 @@ export const SheetTabs = ({ tabs }: Props) => {
       </div>
     </div>
   );
-};
+}

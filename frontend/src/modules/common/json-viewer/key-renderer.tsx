@@ -1,5 +1,3 @@
-import type { FC } from 'react';
-
 interface KeyRendererProps {
   keyName?: string | number | false;
   showKeyQuotes: boolean;
@@ -19,7 +17,7 @@ interface KeyRendererProps {
  * Renders a JSON key with search highlighting and required label.
  * Handles both numeric indices (for arrays) and string keys (for objects).
  */
-export const KeyRenderer: FC<KeyRendererProps> = ({
+export function KeyRenderer({
   keyName,
   showKeyQuotes,
   searchText,
@@ -27,7 +25,7 @@ export const KeyRenderer: FC<KeyRendererProps> = ({
   hasSelfRequired,
   openapiMode,
   theme,
-}) => {
+}: KeyRendererProps) {
   if (keyName === false || keyName === undefined) return null;
 
   const keyStr = String(keyName);
@@ -36,7 +34,6 @@ export const KeyRenderer: FC<KeyRendererProps> = ({
   // Dictionary-style key from additionalProperties (e.g., [key])
   const isDictionaryKey = openapiMode === 'schema' && keyStr.startsWith('[') && keyStr.endsWith(']');
 
-  // Show required label if node has required: true on itself
   const requiredLabel = hasSelfRequired && (
     <span className={`ml-1.5 rounded px-1 py-0.5 font-medium text-xs ${theme.required}`}>required</span>
   );
@@ -58,4 +55,4 @@ export const KeyRenderer: FC<KeyRendererProps> = ({
       {requiredLabel}
     </>
   );
-};
+}

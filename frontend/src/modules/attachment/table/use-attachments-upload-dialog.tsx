@@ -9,6 +9,7 @@ import { useUploader } from '~/modules/common/uploader/use-uploader';
 const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
 
+/** Provides attachments upload dialog state and actions. */
 export const useAttachmentsUploadDialog = (tenantId: string, organizationId: string) => {
   const createAttachments = useAttachmentCreateMutation(tenantId, organizationId);
 

@@ -11,7 +11,7 @@ interface SelectLanguageProps {
 /**
  * Dropdown select for picking a single language from the configured app languages.
  */
-export const SelectLanguage = ({ value, options, onChange }: SelectLanguageProps) => {
+export function SelectLanguage({ value, options, onChange }: SelectLanguageProps) {
   const { t } = useTranslation();
 
   const selectOptions = options.map((lang) => ({
@@ -29,4 +29,4 @@ export const SelectLanguage = ({ value, options, onChange }: SelectLanguageProps
       className="w-full"
     />
   );
-};
+}

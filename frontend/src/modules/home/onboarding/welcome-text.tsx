@@ -11,7 +11,7 @@ interface WelcomeTextProps {
 /**
  * Welcome text shown at the start of onboarding, before the stepper. Contains a brief intro and a call to action to start the stepper.
  */
-export const WelcomeText = ({ onboardingToStepper }: WelcomeTextProps) => {
+export function WelcomeText({ onboardingToStepper }: WelcomeTextProps) {
   const { t } = useTranslation();
 
   return (
@@ -31,4 +31,4 @@ export const WelcomeText = ({ onboardingToStepper }: WelcomeTextProps) => {
       </Button>
     </div>
   );
-};
+}

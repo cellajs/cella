@@ -12,13 +12,13 @@ type DomainsFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TF
 /**
  * Form field for entering and validating a list of domain names using tag input.
  */
-export const DomainsFormField = <TFieldValues extends FieldValues>({
+export function DomainsFormField<TFieldValues extends FieldValues>({
   control,
   name,
   label,
   description,
   required,
-}: DomainsFieldProps<TFieldValues>) => {
+}: DomainsFieldProps<TFieldValues>) {
   const { t } = useTranslation();
 
   const { getValues } = useFormContext();
@@ -75,4 +75,4 @@ export const DomainsFormField = <TFieldValues extends FieldValues>({
       }}
     />
   );
-};
+}

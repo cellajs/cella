@@ -20,6 +20,7 @@ interface Props<TData> {
   children?: ReactNode;
 }
 
+/** Renders the columns view component. */
 export function ColumnsView<TData>({ columns, setColumns, className = '', children }: Props<TData>) {
   const { t } = useTranslation();
   const [columnSearch, setColumnSearch] = useState('');

@@ -9,7 +9,7 @@ import { getSkipPageEnter } from '~/utils/nav-transition';
 /**
  * Main content area for the app layout, includes error boundary and alerter.
  */
-export const AppContent = () => {
+export function AppContent() {
   // Curtain over the content area that briefly holds the background then reveals, masking scroll-to-header
   // travel on entity navigation. Skipped on same-base forward nav (org -> org), which has no scroll delta.
   const channelKey = usePageChannelKey();
@@ -34,4 +34,4 @@ export const AppContent = () => {
       </div>
     </ErrorBoundary>
   );
-};
+}

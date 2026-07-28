@@ -13,6 +13,7 @@ interface ManageDomainsContentProps {
   tenant: Tenant;
 }
 
+/** Renders the manage domains content component. */
 export function ManageDomainsContent({ tenant }: ManageDomainsContentProps) {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);

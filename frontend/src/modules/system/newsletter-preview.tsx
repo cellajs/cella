@@ -4,6 +4,7 @@ import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { Spinner } from '~/modules/common/spinner';
 
+/** Renders the newsletter preview component. */
 export function NewsletterPreview() {
   const form = useFormWithDraft('create-newsletter');
 

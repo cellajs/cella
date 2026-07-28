@@ -33,7 +33,6 @@ function OrganizationsTable() {
   const { q, sort, order } = search;
   const limit = LIMIT;
 
-  // Build columns
   const [selected, setSelected] = useState<EnrichedOrganization[]>([]);
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);

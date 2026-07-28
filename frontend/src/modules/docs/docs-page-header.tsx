@@ -10,8 +10,10 @@ interface DocsPageHeaderProps {
  * what gives the h1 its size and weight, so generated pages match a written one (see view-page).
  * Scoped to the heading only: the rest of these pages is cards and tables, which prose would restyle.
  */
-export const DocsPageHeader = ({ title, className }: DocsPageHeaderProps) => (
-  <div className={cn('prose dark:prose-invert max-w-none', className)}>
-    <h1 className="pt-6">{title}</h1>
-  </div>
-);
+export function DocsPageHeader({ title, className }: DocsPageHeaderProps) {
+  return (
+    <div className={cn('prose dark:prose-invert max-w-none', className)}>
+      <h1 className="pt-6">{title}</h1>
+    </div>
+  );
+}

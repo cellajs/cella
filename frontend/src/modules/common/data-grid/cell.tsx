@@ -260,7 +260,9 @@ function renderCellContent<R, SR>(
   return content;
 }
 
+/** Memoizes the data-grid cell renderer. */
 export const CellComponent = memo(Cell) as <R, SR>(props: CellRendererProps<R, SR>) => React.JSX.Element;
+/** Renders the default data-grid cell content. */
 export function defaultRenderCell<R, SR>(key: React.Key, props: CellRendererProps<R, SR>) {
   return <CellComponent key={key} {...props} />;
 }

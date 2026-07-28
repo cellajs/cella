@@ -27,7 +27,8 @@ interface MenuSheetSectionProps {
   options: MenuSectionOptions;
 }
 
-export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
+/** Renders the menu sheet section. */
+export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
   const { toggleSection, setNavSheetOpen } = navigationStore.getState();
@@ -141,4 +142,4 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
       </AnimatePresence>
     </div>
   );
-};
+}

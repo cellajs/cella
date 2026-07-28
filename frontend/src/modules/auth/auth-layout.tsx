@@ -8,6 +8,7 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const BgAnimation = lazyNamed(() => import('~/modules/common/bg-animation/bg-animation'), 'BgAnimation');
 
+/** Renders the shared auth layout. */
 export function AuthLayout() {
   const { hasStarted, hasWaited } = useMountedState();
   const { location, resolvedLocation } = useRouterState();

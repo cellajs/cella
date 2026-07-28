@@ -11,7 +11,7 @@ interface SkipOrganizationProps {
  * Confirmation dialog content for skipping organization creation during onboarding.
  * Marks onboarding as completed or cancels the action.
  */
-export const SkipOrganization = ({ setOnboardingState }: SkipOrganizationProps) => {
+export function SkipOrganization({ setOnboardingState }: SkipOrganizationProps) {
   const { t } = useTranslation();
 
   const removeDialog = useDialoger((state) => state.remove);
@@ -35,4 +35,4 @@ export const SkipOrganization = ({ setOnboardingState }: SkipOrganizationProps) 
       </Button>
     </div>
   );
-};
+}

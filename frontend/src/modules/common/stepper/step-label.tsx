@@ -35,6 +35,7 @@ const descriptionVariants = cva('', {
   },
 });
 
+/** Renders the step label component. */
 export function StepLabel({ isCurrentStep, opacity, label, description }: StepLabelProps) {
   const { variant, styles, size, orientation } = useStepper();
   const shouldRender = !!label || !!description;

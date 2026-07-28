@@ -170,6 +170,7 @@ function runEnrichment(entityType: ChannelEntityType) {
   }
 }
 
+/** Initializes cache enrichment for channel entities and memberships. */
 export function initChannelEnrichment(): () => void {
   return queryClient.getQueryCache().subscribe((event) => {
     if (event.type !== 'updated' || isEnriching) return;

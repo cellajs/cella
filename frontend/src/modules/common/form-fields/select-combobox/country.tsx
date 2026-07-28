@@ -8,13 +8,13 @@ import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field'
 /**
  * Combobox form field for selecting a country, with flag icons.
  */
-export const SelectCountry = <TFieldValues extends FieldValues>({
+export function SelectCountry<TFieldValues extends FieldValues>({
   control,
   name,
   disabled,
   label,
   required,
-}: BaseFormFieldProps<TFieldValues>) => {
+}: BaseFormFieldProps<TFieldValues>) {
   const options = countries.map(({ code, name }) => ({ value: code, label: name }));
 
   const renderCountryOption: ComboboxSelectProps['renderOption'] = ({ value, label }) => (
@@ -55,4 +55,4 @@ export const SelectCountry = <TFieldValues extends FieldValues>({
       )}
     />
   );
-};
+}

@@ -36,7 +36,8 @@ interface LegalNoticeProps {
   mode?: 'waitlist' | 'signup' | 'verify';
 }
 
-export const LegalNotice = ({ email = '', mode = 'signup' }: LegalNoticeProps) => {
+/** Renders the legal notice component. */
+export function LegalNotice({ email = '', mode = 'signup' }: LegalNoticeProps) {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
@@ -82,4 +83,4 @@ export const LegalNotice = ({ email = '', mode = 'signup' }: LegalNoticeProps) =
       <span>of {appConfig.company.name}.</span>
     </p>
   );
-};
+}

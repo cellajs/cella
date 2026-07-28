@@ -22,7 +22,7 @@ interface MenuSheetPanelProps {
 /**
  * Single accordion panel button + expandable content.
  */
-const MenuSheetPanel = ({ id, label, children, onPrefetch }: MenuSheetPanelProps) => {
+function MenuSheetPanel({ id, label, children, onPrefetch }: MenuSheetPanelProps) {
   const { t } = useTranslation();
   const menuSheetPanel = useNavigationStore((state) => state.menuSheetPanel);
   const toggleMenuSheetPanel = useNavigationStore((state) => state.toggleMenuSheetPanel);
@@ -58,13 +58,13 @@ const MenuSheetPanel = ({ id, label, children, onPrefetch }: MenuSheetPanelProps
       </AnimatePresence>
     </div>
   );
-};
+}
 
 /**
  * Bottom panels container for the menu sheet.
  * Sticks to the bottom and overlays content when a panel is expanded.
  */
-export const MenuSheetPanels = () => {
+export function MenuSheetPanels() {
   const menuSheetPanel = useNavigationStore((state) => state.menuSheetPanel);
   const toggleMenuSheetPanel = useNavigationStore((state) => state.toggleMenuSheetPanel);
 
@@ -120,4 +120,4 @@ export const MenuSheetPanels = () => {
       </FocusTrap>
     </div>
   );
-};
+}

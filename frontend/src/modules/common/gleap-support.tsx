@@ -50,6 +50,7 @@ export function openGleapSupport() {
   }
 }
 
+/** Connects the application session to the Gleap support widget. */
 export function GleapSupport() {
   const { user } = useUserStore();
   const isOnline = useOnlineManager();

@@ -93,7 +93,7 @@ interface OperationResponsesProps {
  * Operation responses component that uses useSuspenseQuery for Suspense integration.
  * Wrap the parent component in a Suspense boundary for optimal batching.
  */
-export const OperationResponses = ({ detail }: OperationResponsesProps) => {
+export function OperationResponses({ detail }: OperationResponsesProps) {
   const { t } = useTranslation();
 
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
@@ -126,4 +126,4 @@ export const OperationResponses = ({ detail }: OperationResponsesProps) => {
       </CollapsibleContent>
     </Collapsible>
   );
-};
+}

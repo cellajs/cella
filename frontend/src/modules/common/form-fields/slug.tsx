@@ -33,7 +33,7 @@ function SlugInput(props: React.ComponentProps<typeof InputGroupInput>) {
 /**
  * Form field for entering a URL slug with auto-generation from a name and availability checking.
  */
-export const SlugFormField = <TFieldValues extends FieldValues>({
+export function SlugFormField<TFieldValues extends FieldValues>({
   control,
   label,
   previousSlug,
@@ -42,7 +42,7 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
   entityType,
   tenantId,
   prefix: customPrefix,
-}: SlugFieldProps<TFieldValues>) => {
+}: SlugFieldProps<TFieldValues>) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
@@ -151,4 +151,4 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
       )}
     />
   );
-};
+}

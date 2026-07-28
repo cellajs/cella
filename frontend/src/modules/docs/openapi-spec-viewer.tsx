@@ -21,7 +21,6 @@ function countSearchMatches(value: unknown, searchText: string): number {
   const lowerSearch = searchText.toLowerCase();
   let count = 0;
 
-  // Check primitive values
   if (value === null || value === undefined) return 0;
   if (typeof value === 'string') {
     if (value.toLowerCase().includes(lowerSearch)) count++;
@@ -30,12 +29,10 @@ function countSearchMatches(value: unknown, searchText: string): number {
   } else if (typeof value === 'boolean') {
     if (String(value).toLowerCase().includes(lowerSearch)) count++;
   } else if (Array.isArray(value)) {
-    // Check arrays
     for (const item of value) {
       count += countSearchMatches(item, searchText);
     }
   } else if (typeof value === 'object') {
-    // Check objects (including keys)
     for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
       if (key.toLowerCase().includes(lowerSearch)) count++;
       count += countSearchMatches(val, searchText);
@@ -76,7 +73,6 @@ export function OpenApiSpecViewer() {
       const matches = viewerContainerRef.current.querySelectorAll('[data-search-match="true"]');
       if (matches.length === 0) return;
 
-      // Remove previous current-match highlight
       const prevCurrent = viewerContainerRef.current.querySelector('.json-current-match');
       if (prevCurrent) prevCurrent.classList.remove('json-current-match');
 
@@ -88,7 +84,6 @@ export function OpenApiSpecViewer() {
     }, 150);
   };
 
-  // Fetch OpenAPI json
   const { data, isLoading, error } = useQuery(openApiSpecQueryOptions);
 
   // Count matches whenever search text or data changes

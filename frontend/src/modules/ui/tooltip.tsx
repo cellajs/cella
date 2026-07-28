@@ -2,6 +2,7 @@ import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
 import type { ComponentPropsWithoutRef, ReactNode, RefAttributes } from 'react';
 import { cn } from '~/utils/cn';
 
+/** Renders the styled tooltip provider primitive. */
 export function TooltipProvider({
   delayDuration,
   skipDelayDuration,
@@ -23,6 +24,7 @@ export function TooltipProvider({
   );
 }
 
+/** Renders the styled tooltip primitive. */
 export function Tooltip({
   disableHoverablePopup,
   ...props
@@ -33,10 +35,12 @@ export function Tooltip({
   return <TooltipPrimitive.Root data-slot="tooltip" disableHoverablePopup={disableHoverablePopup} {...props} />;
 }
 
+/** Renders the styled tooltip trigger primitive. */
 export function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props & RefAttributes<HTMLElement>) {
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
 }
 
+/** Renders the styled tooltip content primitive. */
 export function TooltipContent({
   className,
   sideOffset = 0,
@@ -73,6 +77,7 @@ export function TooltipContent({
 }
 
 // Keep TooltipPortal as a pass-through for backward compatibility
+/** Renders the styled tooltip portal primitive. */
 export function TooltipPortal({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }

@@ -17,6 +17,7 @@ export const redirectToWelcomeIfOnboarding = () => {
   if (!user.userFlags.finishedOnboarding) navigate('/welcome');
 };
 
+/** Redirects to home if onboarded when required. */
 export const redirectToHomeIfOnboarded = () => {
   const { user } = useUserStore.getState();
   if (!user) return;

@@ -215,6 +215,8 @@
   "unauthorized": "Unauthorized",
   "unauthorized_action": "Unauthorized: No session or invalid session",
   "unauthorized.text": "You could not be authenticated.",
+  "unsubscribe_expired": "Unsubscribe link expired",
+  "unsubscribe_expired.text": "This unsubscribe link is more than 90 days old and is no longer valid. Open a recent email and use its unsubscribe link, or adjust your email preferences from your account.",
   "unsubscribe_failed": "Unsubscribe failed",
   "unsubscribe_failed.text": "Could not unsubscribe. Please try again or contact support.",
   "unsupported_oauth": "Provider unsupported",

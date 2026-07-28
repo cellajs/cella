@@ -167,6 +167,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
   );
 }
 
+/** Renders the styled sidebar rail primitive. */
 export function SidebarRail({ className, ...props }: React.ComponentProps<'button'>) {
   const { toggleSidebar } = useSidebar();
 
@@ -192,6 +193,7 @@ export function SidebarRail({ className, ...props }: React.ComponentProps<'butto
   );
 }
 
+/** Renders the styled sidebar inset primitive. */
 export function SidebarInset({ className, ...props }: React.ComponentProps<'main'>) {
   return (
     <main
@@ -206,6 +208,7 @@ export function SidebarInset({ className, ...props }: React.ComponentProps<'main
   );
 }
 
+/** Renders the styled sidebar input primitive. */
 export function SidebarInput({ className, ...props }: React.ComponentProps<typeof Input>) {
   return (
     <Input
@@ -239,6 +242,7 @@ function SidebarFooter({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/** Renders the styled sidebar separator primitive. */
 export function SidebarSeparator({ className, ...props }: React.ComponentProps<typeof Separator>) {
   return (
     <Separator
@@ -299,6 +303,7 @@ function SidebarGroupLabel({
   return <div {...computedProps}>{children}</div>;
 }
 
+/** Renders the styled sidebar group action primitive. */
 export function SidebarGroupAction({
   className,
   render,
@@ -428,6 +433,7 @@ function SidebarMenuButton({
   );
 }
 
+/** Renders the styled sidebar menu action primitive. */
 export function SidebarMenuAction({
   className,
   render,
@@ -462,6 +468,7 @@ export function SidebarMenuAction({
   );
 }
 
+/** Renders the styled sidebar menu badge primitive. */
 export function SidebarMenuBadge({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -481,6 +488,7 @@ export function SidebarMenuBadge({ className, ...props }: React.ComponentProps<'
   );
 }
 
+/** Renders the styled sidebar menu skeleton primitive. */
 export function SidebarMenuSkeleton({
   className,
   showIcon = false,
@@ -512,6 +520,7 @@ export function SidebarMenuSkeleton({
   );
 }
 
+/** Renders the styled sidebar menu sub primitive. */
 export function SidebarMenuSub({ className, ...props }: React.ComponentProps<'ul'>) {
   return (
     <ul
@@ -527,6 +536,7 @@ export function SidebarMenuSub({ className, ...props }: React.ComponentProps<'ul
   );
 }
 
+/** Renders the styled sidebar menu sub item primitive. */
 export function SidebarMenuSubItem({ className, ...props }: React.ComponentProps<'li'>) {
   return (
     <li
@@ -538,6 +548,7 @@ export function SidebarMenuSubItem({ className, ...props }: React.ComponentProps
   );
 }
 
+/** Renders the styled sidebar menu sub button primitive. */
 export function SidebarMenuSubButton({
   render,
   size = 'md',

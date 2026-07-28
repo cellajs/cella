@@ -8,7 +8,8 @@ import { useToggleMfaMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { useCurrentUser } from '~/modules/user/user-store';
 
-export const ConfirmDisableMfa = () => {
+/** Renders the confirmation for disable mfa. */
+export function ConfirmDisableMfa() {
   const { t } = useTranslation();
   const { remove: removeDialog } = useDialoger();
 
@@ -35,9 +36,10 @@ export const ConfirmDisableMfa = () => {
       {openConfirmation && <ConfirmMfaOptions mfaRequired={false} />}
     </>
   );
-};
+}
 
-export const ConfirmMfaOptions = ({ mfaRequired }: { mfaRequired: boolean }) => {
+/** Renders the confirmation for mfa options. */
+export function ConfirmMfaOptions({ mfaRequired }: { mfaRequired: boolean }) {
   const { t } = useTranslation();
   const user = useCurrentUser();
   const { remove: removeDialog } = useDialoger();
@@ -93,4 +95,4 @@ export const ConfirmMfaOptions = ({ mfaRequired }: { mfaRequired: boolean }) => 
       )}
     </>
   );
-};
+}

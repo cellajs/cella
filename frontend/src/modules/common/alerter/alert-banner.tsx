@@ -23,7 +23,8 @@ export type AlertBanner = {
   contextMode?: AlertContextMode;
 };
 
-export const AlertBanner = ({
+/** Renders the alert banner component. */
+export function AlertBanner({
   id,
   icon: Icon,
   children,
@@ -32,7 +33,7 @@ export const AlertBanner = ({
   variant = 'default',
   animate = false,
   contextMode = 'app',
-}: AlertBanner) => {
+}: AlertBanner) {
   const { t } = useTranslation();
   const { alertsSeen, setAlertSeen, downAlert } = useAlertStore();
   const { publicAlertsSeen, setPublicAlertSeen } = useUIStore();
@@ -73,4 +74,4 @@ export const AlertBanner = ({
 
   if (!showAlert) return null;
   return alertContent;
-};
+}

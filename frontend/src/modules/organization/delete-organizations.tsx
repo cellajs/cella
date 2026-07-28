@@ -11,6 +11,7 @@ interface Props {
   callback?: (args: CallbackArgs<Organization[]>) => void;
 }
 
+/** Renders the deletion flow for organizations. */
 export function DeleteOrganizations({ tenantId, organizations, callback, dialog: isDialog }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
   const { mutate: deleteOrganizations, isPending } = useOrganizationDeleteMutation();

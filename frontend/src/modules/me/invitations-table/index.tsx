@@ -12,10 +12,10 @@ function rowKeyGetter(row: Invitation) {
   return row.inactiveMembership.id;
 }
 
+/** Renders the invitations table. */
 export function InvitationsTable() {
   const { t } = useTranslation();
 
-  // Build columns
   const columns = useColumns();
 
   const queryOptions = meInvitationsQueryOptions();

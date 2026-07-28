@@ -3,6 +3,7 @@ import * as React from 'react';
 import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';
 
+/** Defines the style variants for badge. */
 export const badgeVariants = cva(
   'focus-effect flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2 py-0.5 font-medium text-xs shadow-xs transition-[color,box-shadow] aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3',
   {
@@ -46,6 +47,7 @@ export const badgeVariants = cva(
   },
 );
 
+/** Renders the styled badge primitive. */
 export function Badge({
   className,
   variant,

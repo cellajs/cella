@@ -222,7 +222,7 @@ Each channel view records both the newest known position and the successfully in
 
 After SSE reaches live state, background fill loads product queries for the current organization. Other organizations are filled only when `offlineAccess` is enabled. If the stream fails, query-level mount behavior, reconnect refetching, and pull-to-refresh remain available.
 
-Synced product queries use infinite stale time while SSE is live and five minutes while disconnected. Other queries keep the global 30-second default. With `offlineAccess`, that global default becomes infinite while the device is offline.
+Synced product queries use infinite stale time while the stream is healthy, so catchup owns their freshness and route-loader prefetches reuse already-synced lists instead of refetching them. Only a failed stream drops those queries to a five minute fallback. Other queries keep the global 30-second default. With `offlineAccess`, that global default becomes infinite while the device is offline.
 
 | Concern | `offlineAccess` on | `offlineAccess` off |
 | --- | --- | --- |

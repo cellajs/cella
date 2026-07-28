@@ -3,11 +3,12 @@ interface Props {
   title: string;
 }
 
-export const PopConfirm = ({ children, title }: Props) => {
+/** Renders the pop confirm component. */
+export function PopConfirm({ children, title }: Props) {
   return (
     <div className="flex flex-col gap-3 sm:w-max sm:max-w-72 sm:p-3">
       <p className="text-sm max-sm:py-3 max-sm:text-center">{title}</p>
       {children}
     </div>
   );
-};
+}

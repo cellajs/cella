@@ -19,6 +19,7 @@ export interface HeaderRowProps<R, SR> {
   headerRowClass: Maybe<string>;
 }
 
+/** Defines the shared class name for data-grid header rows. */
 export const headerRowClassname = 'rdg-header-row contents font-semibold text-foreground/70';
 
 function HeaderRow<R, SR>({

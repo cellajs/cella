@@ -7,6 +7,7 @@ interface IsSelectedCellEditableOpts<R, SR> {
   rows: readonly R[];
 }
 
+/** Checks whether the selected cell can enter edit mode. */
 export function isSelectedCellEditable<R, SR>({
   selectedPosition,
   columns,
@@ -18,6 +19,7 @@ export function isSelectedCellEditable<R, SR>({
 }
 
 // https://github.com/vercel/next.js/issues/56480
+/** Checks whether a cell is editable for the current row. */
 export function isCellEditableUtil<R, SR>(column: CalculatedColumn<R, SR>, row: R): boolean {
   return (
     column.renderEditCell != null &&
@@ -109,6 +111,7 @@ function findNextFocusableColumn<R, SR>(
   return direction === 1 ? maxIdx + 1 : -1;
 }
 
+/** Returns the next selected cell position. */
 export function getNextSelectedCellPosition<R, SR>({
   moveUp,
   moveNext,
@@ -264,6 +267,7 @@ interface CanExitGridOpts {
   shiftKey: boolean;
 }
 
+/** Checks whether keyboard navigation can leave the grid. */
 export function canExitGrid({
   maxColIdx,
   minRowIdx,

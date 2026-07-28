@@ -5,10 +5,12 @@ import { resolveWrapTextLines } from './wrap-text-utils';
 
 export { cn } from '~/utils/cn';
 
+/** Returns the row style. */
 export function getRowStyle(rowIdx: number): CSSProperties {
   return { '--rdg-grid-row-start': rowIdx };
 }
 
+/** Returns the header cell style. */
 export function getHeaderCellStyle<R, SR>(
   column: CalculatedColumnOrColumnGroup<R, SR>,
   rowIdx: number,
@@ -34,6 +36,7 @@ export function getHeaderCellStyle<R, SR>(
   };
 }
 
+/** Returns the cell style. */
 export function getCellStyle<R, SR>(column: CalculatedColumn<R, SR>, colSpan = 1): React.CSSProperties {
   const index = column.idx + 1;
   const wrapLines = resolveWrapTextLines(column.wrapText);
@@ -45,6 +48,7 @@ export function getCellStyle<R, SR>(column: CalculatedColumn<R, SR>, colSpan = 1
   };
 }
 
+/** Returns the cell classname. */
 export function getCellClassname<R, SR>(
   column: CalculatedColumn<R, SR>,
   ...extraClasses: Parameters<typeof cn>

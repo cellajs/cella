@@ -15,6 +15,7 @@ interface Props {
 
 const defaultTitleProps = {};
 
+/** Renders the content placeholder component. */
 export function ContentPlaceholder({
   title,
   icon: Icon,

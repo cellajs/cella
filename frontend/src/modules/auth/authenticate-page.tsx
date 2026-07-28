@@ -31,6 +31,7 @@ function shouldShowDivider(): boolean {
   return enabledStrategies.includes('oauth');
 }
 
+/** Renders the authenticate page. */
 export function AuthenticatePage() {
   const { t } = useTranslation();
 
@@ -109,7 +110,6 @@ export function AuthenticatePage() {
     );
   }
 
-  // Render form based on current step
   return (
     <>
       {step === 'checkEmail' && !restrictedMode && <CheckEmailStep />}

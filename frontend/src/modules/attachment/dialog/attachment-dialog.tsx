@@ -58,7 +58,6 @@ export function AttachmentDialog() {
   // that causes Embla to reinit and flash other slides
   const awaitingGroup = !!groupId && !groupAttachments;
 
-  // Build items array: use group attachments if available, otherwise single attachment
   const attachments: AttachmentDialogItem[] = groupAttachments ?? [singleAttachment ?? { id: initialAttachmentId }];
 
   // Resolve URLs for any items that don't have them

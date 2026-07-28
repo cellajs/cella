@@ -12,6 +12,7 @@ import { cn } from '~/utils/cn';
 
 // Layout primitives (no RHF dependency)
 
+/** Renders the styled field set primitive. */
 export function FieldSet({ className, ...props }: React.ComponentProps<'fieldset'>) {
   return (
     <fieldset
@@ -26,6 +27,7 @@ export function FieldSet({ className, ...props }: React.ComponentProps<'fieldset
   );
 }
 
+/** Renders the styled field legend primitive. */
 export function FieldLegend({
   className,
   variant = 'legend',
@@ -41,6 +43,7 @@ export function FieldLegend({
   );
 }
 
+/** Renders the styled field group primitive. */
 export function FieldGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -75,6 +78,7 @@ const fieldLayoutVariants = cva('group/field flex w-full gap-3 data-[invalid=tru
   },
 });
 
+/** Renders the styled field layout primitive. */
 export function FieldLayout({
   className,
   orientation = 'vertical',
@@ -91,6 +95,7 @@ export function FieldLayout({
   );
 }
 
+/** Renders the styled field content primitive. */
 export function FieldContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -101,6 +106,7 @@ export function FieldContent({ className, ...props }: React.ComponentProps<'div'
   );
 }
 
+/** Renders the styled field label primitive. */
 export function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
   return (
     <Label
@@ -116,6 +122,7 @@ export function FieldLabel({ className, ...props }: React.ComponentProps<typeof 
   );
 }
 
+/** Renders the styled field title primitive. */
 export function FieldTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -129,6 +136,7 @@ export function FieldTitle({ className, ...props }: React.ComponentProps<'div'>)
   );
 }
 
+/** Renders the styled field description primitive. */
 export function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
   const [collapsed, setCollapsed] = React.useState(true);
 
@@ -160,6 +168,7 @@ export function FieldDescription({ className, ...props }: React.ComponentProps<'
   );
 }
 
+/** Renders the styled field separator primitive. */
 export function FieldSeparator({
   children,
   className,
@@ -187,6 +196,7 @@ export function FieldSeparator({
   );
 }
 
+/** Renders the styled field error primitive. */
 export function FieldError({
   className,
   children,
@@ -256,7 +266,8 @@ type FormProps<
   labelDirection?: LabelDirectionType;
 };
 
-export const Form = <
+/** Renders the styled form primitive. */
+export function Form<
   TFieldValues extends FieldValues,
   TContext = unknown,
   TTransformedValues extends FieldValues = TFieldValues,
@@ -267,14 +278,15 @@ export const Form = <
   ...props
 }: FormProps<TFieldValues, TContext, TTransformedValues> & {
   unsavedChanges?: boolean;
-}) => {
+}) {
   return (
     <FormProvider {...props}>
       <LabelDirectionContext.Provider value={labelDirection}>{children}</LabelDirectionContext.Provider>
     </FormProvider>
   );
-};
+}
 
+/** Renders the styled form field primitive. */
 export function FormField<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -304,6 +316,7 @@ export function FormField<
   );
 }
 
+/** Renders the styled form item primitive. */
 export function FormItem({ className, name, ...props }: Omit<React.ComponentProps<'div'>, 'name'> & { name?: string }) {
   const labelDirection = React.useContext(LabelDirectionContext);
   const { invalid, isDirty, isTouched } = useFieldState();
@@ -322,6 +335,7 @@ export function FormItem({ className, name, ...props }: Omit<React.ComponentProp
   );
 }
 
+/** Renders the styled form label primitive. */
 export function FormLabel({
   className,
   nativeLabel = true,
@@ -346,6 +360,7 @@ export function FormControl({ children }: { children: React.ReactElement }) {
   return <Field.Control render={children} />;
 }
 
+/** Renders the styled form description primitive. */
 export function FormDescription({ className, children, ...props }: React.ComponentProps<'p'>) {
   const [collapsed, setCollapsed] = React.useState(true);
 
@@ -377,6 +392,7 @@ export function FormDescription({ className, children, ...props }: React.Compone
   );
 }
 
+/** Renders the styled form message primitive. */
 export function FormMessage({ className, children, ...props }: React.ComponentProps<'p'>) {
   const { t, i18n } = useTranslation();
   const { error } = useFieldState();

@@ -23,13 +23,11 @@ import { getHashUrl } from '../hash-url';
  */
 function SchemasPage() {
   const { t } = useTranslation();
-  // Get active schema tag from URL search param (hash)
   const { schemaTag: activeSchemaTag } = useSearch({ from: '/_public/_content/docs/schemas' });
 
   // Prerender trigger for hover-intent DOM preparation
   const { prerender } = usePrerenderTrigger('schemas');
 
-  // Fetch schemas grouped by tag, and schema tags list
   const { data: allSchemas } = useSuspenseQuery(schemasQueryOptions);
   const { data: schemasByTag } = useSuspenseQuery(schemasByTagQueryOptions);
   const { data: schemaTags } = useSuspenseQuery(schemaTagsQueryOptions);

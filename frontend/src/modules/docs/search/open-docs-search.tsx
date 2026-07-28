@@ -4,6 +4,7 @@ import { DocsSearch } from '~/modules/docs/search/docs-search';
 /** Fallback focus target when opened via hotkey (no triggering button). */
 const hotkeyTriggerRef: TriggerRef = { current: null };
 
+/** Opens docs search. */
 export function openDocsSearch(triggerRef: TriggerRef = hotkeyTriggerRef) {
   return useDialoger.getState().create(<DocsSearch />, {
     id: 'docs-search',

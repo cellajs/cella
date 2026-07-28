@@ -64,6 +64,7 @@ function BlockNoteTooltipTrigger({
 }
 
 // Ensure compatibility, your ShadCN components should not use Portals (comment these out from your DropdownMenu, Popover and Select components).
+/** Maps BlockNote elements to the application UI components. */
 // biome-ignore lint/suspicious/noExplicitAny: BlockNote expects Radix-compatible types; our Base UI wrapper types are narrower
 export const shadCNComponents: Record<string, any> = {
   Button,

@@ -12,6 +12,7 @@ import { RenderModeLabel, renderModeLabelKey } from '~/modules/page/utils/render
 import { Badge } from '~/modules/ui/badge';
 import { dateShort } from '~/utils/date-short';
 
+/** Identifies the page table drag-handle column. */
 export const dragHandleColumnKey = 'drag-handle';
 
 /** Published/draft is stored as the `draft` frontmatter boolean; the editor works over these labels. */

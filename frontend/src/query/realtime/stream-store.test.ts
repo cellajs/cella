@@ -5,7 +5,7 @@ vi.mock('shared', () => ({
 }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
 vi.mock('~/lib/tracing', () => ({ reportCriticalError: vi.fn() }));
-vi.mock('~/query/basic/sync-stale-config', () => ({ setSyncStreamLive: vi.fn() }));
+vi.mock('~/query/basic/sync-stale-config', () => ({ setSyncStreamHealthy: vi.fn() }));
 vi.mock('~/query/realtime/sync-store', () => ({
   useSyncStore: {
     getState: () => ({

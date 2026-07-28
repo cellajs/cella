@@ -21,6 +21,7 @@ const emailEnabled = enabledStrategies.includes('passkey');
 const formSchema = zCheckEmailBody;
 type FormValues = z.infer<typeof formSchema>;
 
+/** Renders the check email step component. */
 export function CheckEmailStep() {
   const { t } = useTranslation();
 

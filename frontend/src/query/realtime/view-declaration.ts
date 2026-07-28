@@ -10,6 +10,7 @@ import { useSyncStore } from './sync-store';
  */
 let channelPathResolver: (channelType: string | null, channelId: string) => string | null = () => null;
 
+/** Registers channel path resolver. */
 export function registerChannelPathResolver(
   resolver: (channelType: string | null, channelId: string) => string | null,
 ): void {

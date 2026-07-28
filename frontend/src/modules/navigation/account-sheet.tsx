@@ -62,7 +62,7 @@ function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action 
 /**
  * Account navigation sheet content.
  */
-export const AccountSheet = () => {
+export function AccountSheet() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useCurrentUser();
@@ -164,4 +164,4 @@ export const AccountSheet = () => {
       </div>
     </div>
   );
-};
+}

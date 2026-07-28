@@ -1,5 +1,3 @@
-import type { FC } from 'react';
-
 interface CollapsedPreviewProps {
   itemCount: number;
   closeBracket: string;
@@ -16,14 +14,14 @@ interface CollapsedPreviewProps {
  * Renders the preview shown when a node is collapsed.
  * Shows item count, close bracket, match indicator, and optional type label.
  */
-export const CollapsedPreview: FC<CollapsedPreviewProps> = ({
+export function CollapsedPreview({
   itemCount,
   closeBracket,
   hiddenMatchCount,
   displayDataTypes,
   typeLabel,
   theme,
-}) => {
+}: CollapsedPreviewProps) {
   return (
     <>
       <span className="mx-1.5 whitespace-nowrap text-xs italic opacity-50">
@@ -41,4 +39,4 @@ export const CollapsedPreview: FC<CollapsedPreviewProps> = ({
       {displayDataTypes && <span className="ml-2 text-sm opacity-50">{typeLabel}</span>}
     </>
   );
-};
+}

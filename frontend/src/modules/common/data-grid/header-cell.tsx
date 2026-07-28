@@ -43,6 +43,7 @@ interface HeaderCellProps<R, SR> {
   isCellSelected: boolean;
 }
 
+/** Renders the header table cell. */
 export function HeaderCell<R, SR>({
   column,
   colSpan,

@@ -33,6 +33,7 @@ interface Props {
   className?: string;
 }
 
+/** Renders the file placeholder component. */
 export function FilePlaceholder({ contentType, strokeWidth, className = 'icon-lg' }: Props) {
   const FileIconComponent = getFileIcon(contentType);
   return <FileIconComponent strokeWidth={strokeWidth} className={className} />;

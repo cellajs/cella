@@ -18,6 +18,7 @@ interface FilterBarChildProps {
 }
 
 // Create a Context with default values
+/** Shares table filter-bar state with descendant components. */
 export const TableFilterBarContext = createContext<{
   isFilterActive: boolean;
   setFilterActive: (isActive: boolean) => void;
@@ -29,7 +30,7 @@ export const TableFilterBarContext = createContext<{
 /**
  * Actions section that fades out and slides left on mobile when filter is active.
  */
-export const FilterBarActions = ({ children, className = '' }: FilterBarChildProps) => {
+export function FilterBarActions({ children, className = '' }: FilterBarChildProps) {
   const { isFilterActive } = useContext(TableFilterBarContext);
 
   return (
@@ -45,10 +46,10 @@ export const FilterBarActions = ({ children, className = '' }: FilterBarChildPro
       {children}
     </motion.div>
   );
-};
+}
 
 /** Search input container: fades in over the actions on mobile; always visible on desktop. */
-export const FilterBarSearch = ({ children, className = '' }: FilterBarChildProps) => {
+export function FilterBarSearch({ children, className = '' }: FilterBarChildProps) {
   const { isFilterActive } = useContext(TableFilterBarContext);
 
   return (
@@ -71,10 +72,10 @@ export const FilterBarSearch = ({ children, className = '' }: FilterBarChildProp
       <div className={cn('hidden items-center gap-2 sm:flex', className)}>{children}</div>
     </>
   );
-};
+}
 
 /** Filter controls (non-search): slide in from the right on mobile; always visible on desktop. */
-export const FilterBarFilters = ({ children, className = '' }: FilterBarChildProps) => {
+export function FilterBarFilters({ children, className = '' }: FilterBarChildProps) {
   const { isFilterActive } = useContext(TableFilterBarContext);
 
   return (
@@ -97,13 +98,13 @@ export const FilterBarFilters = ({ children, className = '' }: FilterBarChildPro
       <div className={cn('hidden items-center gap-2 sm:flex', className)}>{children}</div>
     </>
   );
-};
+}
 
 /**
  * Filter bar container with toggle button for mobile.
  * Uses absolute positioning pattern for smooth mobile animations.
  */
-export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFilterBarProps) => {
+export function TableFilterBar({ onResetFilters, isFiltered, children }: TableFilterBarProps) {
   const { t } = useTranslation();
   const isDesktop = useBreakpointAbove('md');
 
@@ -161,4 +162,4 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
       </Button>
     </div>
   );
-};
+}

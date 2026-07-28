@@ -46,7 +46,7 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
             key={option.value}
             role="option"
             aria-selected={selected.includes(option.value)}
-            className="relative flex cursor-pointer select-none items-center justify-between rounded-md px-2 py-1.5 text-sm leading-normal outline-hidden hover:bg-accent hover:text-accent-foreground"
+            className="relative flex cursor-pointer select-none items-center justify-between rounded-md px-2 py-1.5 text-sm leading-normal outline-hidden hover:bg-accent hover:text-accent-foreground aria-selected:font-medium"
             onClick={() => toggleLanguage(option.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -70,7 +70,7 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
 /**
  * Multi-select dropdowner for choosing one or more languages from the configured app languages.
  */
-export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
+export function SelectLanguages({ value, onChange }: SelectLanguagesProps) {
   const { t } = useTranslation();
   const { ref: triggerRef, bounds } = useMeasure<HTMLButtonElement>();
 
@@ -109,4 +109,4 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
       <ChevronDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
     </Button>
   );
-};
+}

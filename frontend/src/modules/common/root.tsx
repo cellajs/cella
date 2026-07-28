@@ -12,6 +12,7 @@ function NoChatSupport() {
   return null;
 }
 
+/** Renders the root component. */
 export function Root() {
   const isOnline = useOnlineManager();
 

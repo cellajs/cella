@@ -14,7 +14,8 @@ import { MenuSheetPanels } from '~/modules/navigation/menu-sheet/sheet-panel';
 import { useUserStore } from '~/modules/user/user-store';
 import { useMenu } from './helpers/use-menu';
 
-export const MenuSheet = () => {
+/** Renders the menu sheet component. */
+export function MenuSheet() {
   const { user } = useUserStore();
   const { mutateAsync } = useMemberUpdateMutation();
 
@@ -66,7 +67,6 @@ export const MenuSheet = () => {
     return combine(...cleanups);
   }, [menu]);
 
-  // Show skeleton when loading or no user data yet
   if (isLoading || !user) return <Spinner />;
 
   const renderedSections = appConfig.menuStructure
@@ -94,4 +94,4 @@ export const MenuSheet = () => {
       </div>
     </div>
   );
-};
+}

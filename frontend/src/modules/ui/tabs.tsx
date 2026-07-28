@@ -20,12 +20,14 @@ const TabsListVariants = cva(
   },
 );
 
+/** Renders the styled tabs primitive. */
 export function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
   return <TabsPrimitive.Root data-slot="tabs" className={cn('flex flex-col gap-2', className)} {...props} />;
 }
 
 type TabsListProps = React.ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof TabsListVariants>;
 
+/** Renders the styled tabs list primitive. */
 export function TabsList({ className, variant, ...props }: TabsListProps) {
   return (
     <TabsPrimitive.List data-slot="tabs-list" className={cn(TabsListVariants({ variant, className }))} {...props} />
@@ -34,6 +36,7 @@ export function TabsList({ className, variant, ...props }: TabsListProps) {
 
 type TabsTriggerProps = React.ComponentProps<typeof TabsPrimitive.Tab>;
 
+/** Renders the styled tabs trigger primitive. */
 export function TabsTrigger({ className, ...props }: TabsTriggerProps) {
   return (
     <TabsPrimitive.Tab
@@ -44,6 +47,7 @@ export function TabsTrigger({ className, ...props }: TabsTriggerProps) {
   );
 }
 
+/** Renders the styled tabs content primitive. */
 export function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Panel>) {
   return <TabsPrimitive.Panel data-slot="tabs-content" className={cn('flex-1 outline-none', className)} {...props} />;
 }

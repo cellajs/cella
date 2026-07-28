@@ -1,6 +1,7 @@
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { ApiError as ApiErrorPayload } from 'sdk';
 
+/** Configures the generated API client used by the frontend. */
 export const clientConfig = {
   // hey-api passes a Request object as the sole argument to fetch.
   // OTel FetchInstrumentation drops the second arg when the first is a Request,

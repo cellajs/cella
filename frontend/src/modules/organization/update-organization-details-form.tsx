@@ -35,6 +35,7 @@ interface Props {
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
+/** Renders the form for updating organization details. */
 export function UpdateOrganizationDetailsForm({ organization, callback, sheet: isSheet }: Props) {
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();

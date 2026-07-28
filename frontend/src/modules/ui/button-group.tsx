@@ -4,6 +4,7 @@ import { Separator } from '~/modules/ui/separator';
 import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';
 
+/** Defines the style variants for button group. */
 export const buttonGroupVariants = cva(
   "flex w-fit items-stretch has-[>[data-slot=button-group]]:gap-2 [&>*]:focus-visible:relative [&>*]:focus-visible:z-10 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1",
   {
@@ -21,6 +22,7 @@ export const buttonGroupVariants = cva(
   },
 );
 
+/** Renders the styled button group primitive. */
 export function ButtonGroup({
   className,
   orientation,
@@ -37,6 +39,7 @@ export function ButtonGroup({
   );
 }
 
+/** Renders the styled button group text primitive. */
 export function ButtonGroupText({
   className,
   render,
@@ -60,6 +63,7 @@ export function ButtonGroupText({
   return <div {...computedProps}>{children}</div>;
 }
 
+/** Renders the styled button group separator primitive. */
 export function ButtonGroupSeparator({
   className,
   orientation = 'vertical',
