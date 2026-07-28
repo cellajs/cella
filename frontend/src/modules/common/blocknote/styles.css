@@ -212,6 +212,20 @@ li:has(.is-focused) {
   width: 100%;
 }
 
+/* Intrinsic aspect ratios reserve media space before loading. Resized wrappers cap to the
+   container; untouched fit-content wrappers fill the available width. */
+.bn-visual-media[style*="aspect-ratio"] {
+  background-color: var(--muted);
+}
+.bn-file-block-content-wrapper:has(> .bn-visual-media-wrapper > .bn-visual-media[style*="aspect-ratio"]) {
+  max-width: 100%;
+}
+.bn-file-block-content-wrapper[style*="fit-content"]:has(
+  > .bn-visual-media-wrapper > .bn-visual-media[style*="aspect-ratio"]
+) {
+  width: 100% !important;
+}
+
 .bn-toolbar.bn-formatting-toolbar button {
   height: 2.25rem;
   width: 2.25rem;
@@ -258,6 +272,14 @@ li:has(.is-focused) {
   height: 2.25rem;
   flex-direction: row;
   justify-content: space-between;
+}
+
+/* Normalize menu icons to the app's standard size. BlockNote's shadcn theme resets any icon without a
+   size-* class to its raw attribute width (react-icons 18px, lucide 24px) via an unlayered
+   `.bn-shadcn svg:not([class*="size-"]) { width: revert }` rule, so !important is required to win. */
+.slash-menu-item svg {
+  width: 1rem !important;
+  height: 1rem !important;
 }
 
 .slash-menu-item-badge {
@@ -360,6 +382,13 @@ li:has(.is-focused) {
 
 .inline-content {
   flex-grow: 1;
+}
+
+/* Notify renders its editable text in a div, not a <p>, so the `.bn-shadcn p`
+   size never applies. Match the paragraph size so notify text stays consistent. */
+.notify .inline-content {
+  font-size: 0.888rem;
+  line-height: 1.4;
 }
 
 /* For showing saved checklistItem */

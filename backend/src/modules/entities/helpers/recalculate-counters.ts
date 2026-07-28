@@ -254,6 +254,8 @@ export const recalculateCounters = async (db: DbOrTx) => {
 
   // 4b: Array-ref counters → channel_counters (e.g. label usage from tasks.labels[])
   for (const ref of appConfig.productEmbeddings) {
+    // Hydrated single-reference embeddings (client cache hints) have no array column to unnest
+    if (!(ref.hostColumn in getColumns(getEntityTable(ref.hostProduct as EntityType)))) continue;
     const src = tbl(ref.hostProduct as EntityType);
     const key = `e:c:${ref.hostProduct}`;
 

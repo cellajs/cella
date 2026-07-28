@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { Combobox, ComboboxItem, ComboboxList } from '~/modules/ui/combobox';
+import { Combobox, ComboboxItem, ComboboxItemIndicator, ComboboxList } from '~/modules/ui/combobox';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 import { Popover, PopoverContent } from '~/modules/ui/popover';
 import type { RenderEditCellProps } from '../types';
@@ -157,8 +157,9 @@ function EnumSelectMenu<TValue extends string>({
     >
       <ComboboxList ref={listRef} className="rounded-lg p-1 outline-none" tabIndex={-1}>
         {normalized.map((opt) => (
-          <ComboboxItem key={opt.value} value={opt.value} className="flex items-center gap-2 text-success">
+          <ComboboxItem key={opt.value} value={opt.value} className="flex items-center gap-2">
             <span className="flex-1 text-foreground">{opt.label}</span>
+            <ComboboxItemIndicator />
           </ComboboxItem>
         ))}
       </ComboboxList>

@@ -34,6 +34,7 @@ type ForwardedGridProps<TData> = Pick<
   | 'onRowReparent'
   | 'canDropRow'
   | 'renderRowDragPreview'
+  | 'rowClass'
   | 'enableStickyHeader'
   | 'enableDragAutoScroll'
   | 'onRowsChange'
@@ -78,7 +79,7 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
  * Bridge query presentation state and infinite scrolling to the DataGrid engine.
  * Pure engine props pass through unchanged via {@link ForwardedGridProps}.
  */
-export const DataTable = <TData,>({
+export function DataTable<TData>({
   // DataTable-owned / transformed props, destructured so they don't leak into `...gridProps`.
   columns,
   rows,
@@ -103,7 +104,7 @@ export const DataTable = <TData,>({
   rowHeight = 52,
   // Everything else is a pure passthrough to <DataGrid>
   ...gridProps
-}: DataTableProps<TData>) => {
+}: DataTableProps<TData>) {
   const { t } = useTranslation();
 
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -160,7 +161,6 @@ export const DataTable = <TData,>({
   return (
     <div className={cn('mb-4 h-full w-full md:mb-8', className)}>
       {isLoading || !rows ? (
-        // Render skeleton only on initial load
         <DataTableSkeleton
           cellsWidths={['3rem', '10rem', '4rem']}
           cellHeight={Number(rowHeight)}
@@ -204,4 +204,4 @@ export const DataTable = <TData,>({
       )}
     </div>
   );
-};
+}

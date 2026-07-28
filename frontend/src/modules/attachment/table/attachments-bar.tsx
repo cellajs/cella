@@ -1,4 +1,4 @@
-import { InfoIcon, SquareXIcon, TrashIcon, UploadIcon } from 'lucide-react';
+import { InfoIcon, TrashIcon, UploadIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
@@ -16,12 +16,14 @@ import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
+import { SelectionActionBar } from '~/modules/common/selection-action-bar';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type AttachmentsTableBarProps = AttachmentsTableProps & BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>;
 
-export const AttachmentsTableBar = ({
+/** Renders the action and filter toolbar for the attachments table. */
+export function AttachmentsTableBar({
   channel,
   selected,
   searchVars,
@@ -32,7 +34,7 @@ export const AttachmentsTableBar = ({
   isSheet = false,
   canUpload = false,
   queryKey,
-}: AttachmentsTableBarProps) => {
+}: AttachmentsTableBarProps) {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
   const { open } = useAttachmentsUploadDialog(channel.tenantId, channel.id);
@@ -82,28 +84,8 @@ export const AttachmentsTableBar = ({
         {/* Filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
-            {selected.length > 0 ? (
-              <>
-                {deletable.length > 0 && (
-                  <TableBarButton
-                    ref={deleteButtonRef}
-                    variant="destructive"
-                    onClick={openDeleteDialog}
-                    className="relative"
-                    badge={deletable.length}
-                    icon={TrashIcon}
-                    label="c:delete"
-                  />
-                )}
-
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={SquareXIcon} label="c:clear" />
-              </>
-            ) : (
-              showUpload && <TableBarButton icon={UploadIcon} label="c:upload" onClick={() => open()} />
-            )}
-            {selected.length === 0 && (
-              <TableCount count={total} label="c:attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />
-            )}
+            {showUpload && <TableBarButton icon={UploadIcon} label="c:upload" onClick={() => open()} />}
+            <TableCount count={total} label="c:attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />
           </FilterBarActions>
           <div className="sm:grow" />
           <FilterBarSearch>
@@ -118,6 +100,21 @@ export const AttachmentsTableBar = ({
         {!isSheet && <FocusView iconOnly />}
       </TableBarContainer>
 
+      {/* Floating actions for the current selection */}
+      <SelectionActionBar count={selected.length} onClear={clearSelection}>
+        {deletable.length > 0 && (
+          <TableBarButton
+            ref={deleteButtonRef}
+            variant="destructive"
+            onClick={openDeleteDialog}
+            className="relative"
+            badge={deletable.length < selected.length ? deletable.length : undefined}
+            icon={TrashIcon}
+            label="c:delete"
+          />
+        )}
+      </SelectionActionBar>
+
       {/* Explainer alert box */}
       {!!total && (
         <AlertBanner id="edit_attachment" variant="plain" className="mb-4" icon={InfoIcon} animate>
@@ -126,4 +123,4 @@ export const AttachmentsTableBar = ({
       )}
     </>
   );
-};
+}

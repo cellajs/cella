@@ -92,11 +92,16 @@ ${retentionSql}
     EXECUTE 'CREATE TABLE ${config.name} (LIKE ${config.name}_old INCLUDING ALL EXCLUDING INDEXES) PARTITION BY RANGE (${config.partitionColumn})';
 
     -- 4. Register with pg_partman (${config.interval} partitions + DEFAULT) and configure
-    --    retention${config.retention ? ` (${config.retention}, drop old partitions)` : ' (NONE — records kept indefinitely)'}
+    --    retention${config.retention ? ` (${config.retention}, drop old partitions)` : ' (NONE, records kept indefinitely)'}.
+    --    p_premake => 1: only one interval is guaranteed ahead of now. run_maintenance() runs
+    --    daily and extends the horizon, so with the smallest (weekly) interval that is still a
+    --    7x buffer before writes could fall into the DEFAULT partition. The default premake of 4
+    --    lays down ~2*4+1 partitions per table up front for no benefit here.
     PERFORM partman.create_parent(
       p_parent_table => 'public.${config.name}',
       p_control => '${config.partitionColumn}',
-      p_interval => '${config.interval}'
+      p_interval => '${config.interval}',
+      p_premake => 1
     );
 ${retentionSql}
     WHERE parent_table = 'public.${config.name}';

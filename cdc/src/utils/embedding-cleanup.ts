@@ -32,7 +32,13 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
     const columns = getColumns(hostTable) as Record<string, AnyPgColumn>;
 
     const hostColumn = columns[hostColumnName];
-    if (!hostColumn) throw new Error(`productEmbeddings: column "${hostColumnName}" not found on "${hostProduct}" table`);
+    if (!hostColumn) {
+      // Hydrated single-reference embedding: the host exposes an id column (`${hostColumnName}Id`)
+      // and no physical array column to clean. The entry exists for client cache hints, and delete
+      // flows reassign the id column synchronously.
+      if (columns[`${hostColumnName}Id`]) continue;
+      throw new Error(`productEmbeddings: column "${hostColumnName}" not found on "${hostProduct}" table`);
+    }
 
     const parentType = hierarchy.getParent(embeddedProduct);
     if (!parentType) throw new Error(`productEmbeddings: "${embeddedProduct}" has no parent context — cleanup requires a scoping column`);

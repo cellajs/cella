@@ -134,26 +134,21 @@ function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.
       data-slot="combobox-item"
       className={cn(
         'relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-3 py-1.5 text-sm outline-hidden',
-        'data-disabled:pointer-events-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:opacity-50',
+        'data-disabled:pointer-events-none data-highlighted:bg-accent data-selected:font-medium data-highlighted:text-accent-foreground data-disabled:opacity-50',
         "[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}
     >
       {children}
-      <ComboboxPrimitive.ItemIndicator
-        data-slot="combobox-item-indicator"
-        render={<span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />}
-      >
-        <CheckIcon className="pointer-events-none pointer-coarse:size-5 size-4" />
-      </ComboboxPrimitive.ItemIndicator>
     </ComboboxPrimitive.Item>
   );
 }
 
 /**
- * Item indicator kept mounted to reserve space (only shows the check when selected), so trailing
- * content (e.g. hotkey numbers) stays aligned.
+ * The single selected-check for combobox rows: green, inline in the row's flex flow (place it
+ * left of trailing content such as hotkey numbers). Kept mounted to reserve space on
+ * unselected rows, so trailing content stays column-aligned.
  */
 function ComboboxItemIndicator({ className, ...props }: ComboboxPrimitive.ItemIndicator.Props) {
   return (
@@ -161,7 +156,7 @@ function ComboboxItemIndicator({ className, ...props }: ComboboxPrimitive.ItemIn
       keepMounted
       data-slot="combobox-item-indicator"
       className={cn(
-        'pointer-events-none flex size-4 items-center justify-center [&:not([data-selected])]:invisible',
+        'pointer-events-none flex size-4 items-center justify-center text-success [&:not([data-selected])]:invisible',
         className,
       )}
       {...props}

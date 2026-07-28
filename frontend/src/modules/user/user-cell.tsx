@@ -23,22 +23,20 @@ const compactUserNameClass = 'in-data-[is-compact=true]:sr-only';
 /**
  * Render a user cell with avatar and name, wrapped in a link to open user sheet.
  */
-export const UserCell = ({
-  user,
-  tabIndex,
-  compactable,
-  className,
-  readOnly,
-}: BaseProps & { user: UserMinimalBase }) => {
+export function UserCell({ user, tabIndex, compactable, className, readOnly }: BaseProps & { user: UserMinimalBase }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const cellRef = useRef<HTMLButtonElement | null>(null);
 
   const setTriggerRef = sheeter.getState().setTriggerRef;
 
+  // While compacted the name is visually hidden, so the compact-scoped table tooltip shows it.
+  const compactTooltip =
+    compactable && user.name ? { 'data-tooltip': 'compact', 'data-tooltip-content': user.name } : undefined;
+
   if (readOnly) {
     return (
-      <div className={cn('flex items-center gap-2', className)}>
+      <div className={cn('flex items-center gap-2', className)} {...compactTooltip}>
         <EntityAvatar type="user" className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
         <span className={cn('truncate', { [compactUserNameClass]: compactable })}>{user.name || '-'}</span>
       </div>
@@ -53,6 +51,7 @@ export const UserCell = ({
       className={className}
       tabIndex={tabIndex}
       draggable={false}
+      {...compactTooltip}
       onClick={(e) => {
         if (!onlineManager.isOnline()) {
           e.preventDefault();
@@ -89,4 +88,4 @@ export const UserCell = ({
       </span>
     </Button>
   );
-};
+}

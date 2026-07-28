@@ -13,6 +13,11 @@ type RenderImageProps = {
   imageClassName?: string;
   showButtons?: boolean;
   onPanStateToggle?: (state: boolean) => void;
+  /**
+   * Dialog viewer: sizes the image to its content and lets the surrounding letterbox fall through to
+   * the backdrop so a click there dismisses the viewer, while panning on the image itself still works.
+   */
+  backdropDismiss?: boolean;
 };
 
 interface ControlButtonProps {
@@ -37,7 +42,15 @@ function ControlButton({ tooltipContent, onClick, icon, className }: ControlButt
   );
 }
 
-export function ReactPanZoom({ image, alt, showButtons, imageClassName, onPanStateToggle }: RenderImageProps) {
+/** Adds pan and zoom behavior to the image viewer. */
+export function ReactPanZoom({
+  image,
+  alt,
+  showButtons,
+  imageClassName,
+  onPanStateToggle,
+  backdropDismiss = false,
+}: RenderImageProps) {
   const { t } = useTranslation();
   const [dx, setDx] = useState(0);
   const [dy, setDy] = useState(0);
@@ -111,7 +124,7 @@ export function ReactPanZoom({ image, alt, showButtons, imageClassName, onPanSta
       )}
 
       <ImageViewer
-        className="z-10 flex h-full w-full items-center justify-center"
+        className={cn('z-10 flex h-full w-full items-center justify-center', backdropDismiss && 'pointer-events-none')}
         zoom={zoom}
         setZoom={setZoom}
         enablePan={panState}
@@ -123,7 +136,11 @@ export function ReactPanZoom({ image, alt, showButtons, imageClassName, onPanSta
         {/* Image */}
         <img
           style={{ transform: `rotate(${rotation * 90}deg)` }}
-          className={cn(imageClassName, 'h-full w-full object-contain')}
+          className={cn(
+            imageClassName,
+            'object-contain',
+            backdropDismiss ? 'pointer-events-auto max-h-full max-w-full' : 'h-full w-full',
+          )}
           src={image}
           alt={alt}
         />

@@ -1,14 +1,24 @@
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 import type { RenderHeaderCellProps } from './types';
 
+/** Renders header cell. */
 export function renderHeaderCell<R, SR>({ column, sortDirection }: RenderHeaderCellProps<R, SR>) {
+  // Native tooltip so a truncated header stays readable on hover; only strings are valid title text.
+  const title = typeof column.name === 'string' ? column.name : undefined;
+
   if (!column.sortable) {
-    return <div className="truncate">{column.name}</div>;
+    return (
+      <div className="truncate" title={title}>
+        {column.name}
+      </div>
+    );
   }
 
   return (
     <div className="group flex cursor-pointer items-center gap-2">
-      <span className="truncate">{column.name}</span>
+      <span className="truncate" title={title}>
+        {column.name}
+      </span>
       {sortDirection === 'DESC' ? (
         <ArrowDownIcon className="size-4 opacity-50 group-hover:opacity-75" />
       ) : sortDirection === 'ASC' ? (

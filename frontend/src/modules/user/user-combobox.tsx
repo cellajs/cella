@@ -16,6 +16,7 @@ import {
   ComboboxContent,
   ComboboxEmpty,
   ComboboxItem,
+  ComboboxItemIndicator,
   ComboboxList,
   ComboboxPrimitive,
   ComboboxSearchInput,
@@ -29,7 +30,8 @@ interface Props {
   channel: ChannelBase & { organizationId?: string };
 }
 
-export const UserCombobox = ({ value, onValueChange, channel }: Props) => {
+/** Renders the user combobox component. */
+export function UserCombobox({ value, onValueChange, channel }: Props) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
   const nameLabel = t('c:name').toLowerCase();
@@ -208,6 +210,7 @@ export const UserCombobox = ({ value, onValueChange, channel }: Props) => {
                             <span className="group-data-[already-member=true]:hidden group-data-[was-selected=true]:hidden max-sm:hidden">
                               {email}
                             </span>
+                            <ComboboxItemIndicator />
                           </div>
                         </ComboboxItem>
                       );
@@ -221,4 +224,4 @@ export const UserCombobox = ({ value, onValueChange, channel }: Props) => {
       </ComboboxContent>
     </Combobox>
   );
-};
+}

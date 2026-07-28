@@ -25,14 +25,14 @@ interface FloatingNavButtonProps {
 /**
  * Floating navigation button - a circular FAB-style button.
  */
-export const FloatingNavButton = ({
+export function FloatingNavButton({
   id,
   icon: Icon,
   onClick,
   ariaLabel,
   className,
   direction = 'right',
-}: FloatingNavButtonProps) => {
+}: FloatingNavButtonProps) {
   return (
     <Button
       id={id}
@@ -42,6 +42,8 @@ export const FloatingNavButton = ({
       onClick={onClick}
       className={cn(
         'fixed bottom-4 z-105 flex h-14 w-14 transform items-center justify-center rounded-full bg-secondary opacity-100 shadow-xl transition-all duration-300 ease-in-out hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
+        // Animate out while the floating selection action bar is shown
+        'group-[.selection-active]/body:pointer-events-none group-[.selection-active]/body:-bottom-12 group-[.selection-active]/body:scale-50 group-[.selection-active]/body:opacity-0',
         className,
       )}
       aria-label={ariaLabel ?? 'Navigate'}
@@ -49,4 +51,4 @@ export const FloatingNavButton = ({
       <Icon className="icon-xl" />
     </Button>
   );
-};
+}

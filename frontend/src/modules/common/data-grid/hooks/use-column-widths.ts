@@ -231,7 +231,7 @@ function measureColumnWidth(gridRef: React.RefObject<HTMLDivElement | null>, key
 }
 
 /** Measure all column widths in a single DOM query. */
-function measureAllColumnWidths(gridRef: React.RefObject<HTMLDivElement | null>): Map<string, number> {
+export function measureAllColumnWidths(gridRef: React.RefObject<HTMLDivElement | null>): Map<string, number> {
   const widths = new Map<string, number>();
   const cells = gridRef.current?.querySelectorAll<HTMLElement>('[data-measuring-cell-key]');
   if (cells) {
