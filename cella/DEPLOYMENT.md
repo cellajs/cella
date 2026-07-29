@@ -134,7 +134,7 @@ pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref
 
 The rollout records the release SHA as INTENT (`pendingSha`) in the S3 control object and lets the Pulumi program, the sole authority over generation identity, provision a **new VM generation** (`vm-<svc>-<genId>`) with the SHA baked into its cloud-init. The `genId` is **content-addressed** (a hash of the release SHA plus the generation's static config), so re-running a deploy reuses the same generation (a true no-op) and a manual `pulumi up` can never create a divergent generation identity. For LB-backed services the cutover expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, then contracts to `[new]`; displaced generations are reaped by one final stack update after every cutover succeeded (rollback = revert commit + redeploy). See [rollout strategies](#rollout-strategies) for the model.
 
-Pushes to main auto-deploy **staging**, so staging always mirrors the tip of main. This is **opt-in**: the push job runs only when the repo variable `AUTO_DEPLOY_STAGING` is `'true'` (`gh variable set AUTO_DEPLOY_STAGING --body true`). Until then, and for any app that has not bootstrapped staging, the push job **skips cleanly** (a neutral run, never a failing check), so pulling this template never red-Xes an app's CI. Turn it on once a manual staging deploy has proven the environment is live. A burst of merges coalesces: the newest push cancels a superseded in-flight staging run (`cancel-in-progress`), and production rollouts never cancel. You can always deploy staging on demand regardless of the variable: GitHub → Actions → Deploy → Run workflow → select `staging`.
+Pushes to main auto-deploy **staging**, so staging always mirrors the tip of main. An app built from the template must bootstrap a `staging` [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) holding the `SCW_*` secrets before merging to main, or the push job fails. A burst of merges coalesces: the newest push cancels a superseded in-flight staging run (`cancel-in-progress`), and production rollouts never cancel. You can also deploy staging on demand: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
 **Production** deploys only when a release is published (or a manual dispatch). To make it a manual promote, configure a [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) named `production` with required reviewers: the deploy job already targets that Environment, so the run pauses for an approval click before touching production.
 
@@ -385,10 +385,9 @@ infra/
 .github/workflows/
 ├── deploy.yml              Thin trigger: release published + manual dispatch
 ├── infra-deploy.yml        Reusable pipeline: setup, image builds, the deploy command
-└── infra-preview.yml       `pulumi preview` on PRs touching infra/ or shared/
 ```
 
-The workflows are tightly coupled to this package: `infra-deploy.yml` builds the release images in a matrix, then hands everything else to the single deploy command (authenticating with the CI deploy key). `infra-preview.yml` mirrors the **Preview** CLI action on PRs.
+The workflows are tightly coupled to this package: `infra-deploy.yml` builds the release images in a matrix, then hands everything else to the single deploy command (authenticating with the CI deploy key).
 
 ## Advanced operations
 
