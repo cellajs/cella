@@ -58,7 +58,6 @@ export default defineConfig({
       'frontend/src/styling/gradients.css',
       'frontend/src/modules/home/home-page.tsx',
       'frontend/src/modules/home/onboarding/onboarding-config.ts',
-      'frontend/src/modules/home/onboarding/onboarding-seed.ts',
       'frontend/src/modules/common/logo.tsx',
       'frontend/src/modules/user/user-profile-content.tsx',
       'json/text-blocks.json',
