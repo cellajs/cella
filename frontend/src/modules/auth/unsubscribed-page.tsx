@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
 
+/** Renders the unsubscribed component. */
 export function Unsubscribed() {
   const { t } = useTranslation();
   const { user } = useUserStore();

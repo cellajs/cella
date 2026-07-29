@@ -4,6 +4,8 @@ import {
   dropTargetForElements,
   monitorForElements,
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { preserveOffsetOnSource } from '@atlaskit/pragmatic-drag-and-drop/element/preserve-offset-on-source';
+import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { motion } from 'motion/react';
@@ -21,7 +23,9 @@ import {
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
+/** Defines the minimum width of an expanded board panel. */
 export const PANEL_MIN_WIDTH = 300;
+/** Defines the minimum width of a collapsed board panel. */
 export const COLLAPSED_PANEL_MIN_WIDTH = 50;
 
 export interface BoardLayoutPanel {
@@ -52,6 +56,7 @@ interface BoardLayoutProps {
 }
 
 // Panel widths are pixel-based (not percentage); the wrapping ScrollArea adds auto-scroll during drag-and-drop.
+/** Renders the shared board layout. */
 export function BoardLayout({
   boardId,
   panels,
@@ -133,69 +138,82 @@ export function BoardLayout({
     });
   }, [reorderable, onPanelReorder]);
 
+  const panelGroup = (
+    <ResizablePanelGroup
+      id={`panels-${boardId}`}
+      defaultLayout={defaultLayout}
+      onLayoutChanged={handleLayoutChanged}
+      onCollapseChange={handleCollapseChange}
+      onReady={handleReady}
+      className={cn('group/board', !autoHeight && 'h-[inherit]', groupClassName)}
+    >
+      {panels.map(({ panelId }, i) => (
+        <motion.div
+          key={panelId}
+          layout="position"
+          layoutId={`${boardId}-${panelId}`}
+          className="relative flex shrink-0"
+        >
+          {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'left' && (
+            <DropIndicator edge="left" gap={i === 0 ? 0 : 0.6} />
+          )}
+          <ResizablePanel
+            id={panelId}
+            minWidth={PANEL_MIN_WIDTH}
+            collapsedWidth={COLLAPSED_PANEL_MIN_WIDTH}
+            collapsible
+          >
+            {reorderable ? (
+              <PanelDragWrapper
+                panelId={panelId}
+                index={i}
+                total={panels.length}
+                panelIdsRef={panelIdsRef}
+                onEdgeChange={setDropIndicator}
+                onPanelToggle={handlePanelToggle}
+                onPanelReorder={onPanelReorder}
+              >
+                {children(panelId, i)}
+              </PanelDragWrapper>
+            ) : (
+              children(panelId, i)
+            )}
+          </ResizablePanel>
+          {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'right' && (
+            <DropIndicator edge="right" gap={-0.1} />
+          )}
+
+          {i < panels.length - 1 && (
+            <ResizableSeparator
+              index={i}
+              className={cn(
+                'mx-[0.02rem] w-1.5 rounded border border-background bg-transparent transition-all hover:bg-primary/50 data-[separator=drag]:bg-primary',
+                separatorClassName,
+              )}
+            />
+          )}
+        </motion.div>
+      ))}
+    </ResizablePanelGroup>
+  );
+
+  // Window-scroll mode clips horizontal overflow without creating a scroll container,
+  // allowing section bars and card headers to remain sticky to the window.
+  if (autoHeight) {
+    return <div className={cn('overflow-x-clip transition', className)}>{panelGroup}</div>;
+  }
+
   return (
     <ScrollArea
-      className={cn('transition', !autoHeight && 'sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)]', className)}
+      className={cn(
+        'transition sm:h-[calc(100vh-var(--board-offset-sm))] md:h-[calc(100vh-var(--board-offset-md))]',
+        className,
+      )}
       viewportClassName="overflow-y-hidden! overscroll-y-auto"
       horizontalScroll
       autoScrollOnDrag="horizontal"
     >
-      <ResizablePanelGroup
-        id={`panels-${boardId}`}
-        defaultLayout={defaultLayout}
-        onLayoutChanged={handleLayoutChanged}
-        onCollapseChange={handleCollapseChange}
-        onReady={handleReady}
-        className={cn('group/board', !autoHeight && 'h-[inherit]', groupClassName)}
-      >
-        {panels.map(({ panelId }, i) => (
-          <motion.div
-            key={panelId}
-            layout="position"
-            layoutId={`${boardId}-${panelId}`}
-            className="relative flex shrink-0"
-          >
-            {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'left' && (
-              <DropIndicator edge="left" gap={i === 0 ? 0 : 0.6} />
-            )}
-            <ResizablePanel
-              id={panelId}
-              minWidth={PANEL_MIN_WIDTH}
-              collapsedWidth={COLLAPSED_PANEL_MIN_WIDTH}
-              collapsible
-            >
-              {reorderable ? (
-                <PanelDragWrapper
-                  panelId={panelId}
-                  index={i}
-                  total={panels.length}
-                  panelIdsRef={panelIdsRef}
-                  onEdgeChange={setDropIndicator}
-                  onPanelToggle={handlePanelToggle}
-                  onPanelReorder={onPanelReorder}
-                >
-                  {children(panelId, i)}
-                </PanelDragWrapper>
-              ) : (
-                children(panelId, i)
-              )}
-            </ResizablePanel>
-            {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'right' && (
-              <DropIndicator edge="right" gap={-0.1} />
-            )}
-
-            {i < panels.length - 1 && (
-              <ResizableSeparator
-                index={i}
-                className={cn(
-                  'mx-[0.02rem] w-1.5 rounded border border-background bg-transparent transition-all hover:bg-primary/50 data-[separator=drag]:bg-primary',
-                  separatorClassName,
-                )}
-              />
-            )}
-          </motion.div>
-        ))}
-      </ResizablePanelGroup>
+      {panelGroup}
     </ScrollArea>
   );
 }
@@ -288,6 +306,24 @@ function PanelDragWrapper({
           element: wrapper,
           dragHandle: handleEl,
           getInitialData: () => ({ dragItem: true, type: 'panelReorder' as const, panelId }),
+          // Draw the drag preview from the small header handle, not the full-height wrapper: in
+          // window-scroll (autoHeight) boards the wrapper grows to its content height, so the
+          // default native preview would snapshot the entire panel and read as dragging the page.
+          onGenerateDragPreview: ({ location, nativeSetDragImage }) => {
+            const rect = handleEl.getBoundingClientRect();
+            setCustomNativeDragPreview({
+              nativeSetDragImage,
+              getOffset: preserveOffsetOnSource({ element: handleEl, input: location.current.input }),
+              render({ container }) {
+                const clone = handleEl.cloneNode(true);
+                if (clone instanceof HTMLElement) {
+                  clone.style.width = `${rect.width}px`;
+                  clone.style.height = `${rect.height}px`;
+                }
+                container.appendChild(clone);
+              },
+            });
+          },
         }),
       );
     }

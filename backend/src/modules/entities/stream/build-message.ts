@@ -67,6 +67,10 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
 
   const stx = (isProductEvent && event.stx) || null;
 
+  // Location path of the affected rows, computed from ancestor id columns (message groups
+  // are per path, so the representative row's path speaks for the whole batch).
+  const rowData = event.rowData as Record<string, unknown> | null;
+
   // Derive propagation hint for embedded product types (e.g., label → task.labels).
   // For batch events, propagation is pre-set by the CDC worker. For single entity
   // events, derive from productEmbeddings config without DB queries.
@@ -74,20 +78,18 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   if (!propagation && entityType) {
     const embedding = appConfig.productEmbeddings.find((e) => e.embeddedProduct === entityType);
     if (embedding) {
-      const isDelete = event.action === 'delete';
+      // Soft deletes arrive as updates with deletedAt set; hosts must drop the embedded
+      // copy, and an update-shaped hint cannot (the row leaves the client cache).
+      const isRemoval = event.action === 'delete' || rowData?.deletedAt != null;
       propagation = {
         embeddedProduct: embedding.embeddedProduct,
         hostProduct: embedding.hostProduct,
         hostColumn: embedding.hostColumn,
-        update: isDelete ? [] : [event.subjectId!],
-        remove: isDelete ? [event.subjectId!] : [],
+        update: isRemoval ? [] : [event.subjectId!],
+        remove: isRemoval ? [event.subjectId!] : [],
       };
     }
   }
-
-  // Location path of the affected rows, computed from ancestor id columns (message groups
-  // are per path, so the representative row's path speaks for the whole batch).
-  const rowData = event.rowData as Record<string, unknown> | null;
   const path = isProductEvent && rowData && entityType ? hierarchy.computeProductPath(entityType, rowData) : null;
 
   return {

@@ -7,6 +7,8 @@ type InfiniteLoaderProps = {
   hasNextPage: boolean;
   isFetching?: boolean;
   isFetchMoreError?: boolean;
+  /** Skip the all-loaded dot trail (embedded tables where the end marker is visual noise). */
+  hideEndIndicator?: boolean;
   /**
    * Fetch-more callback. When provided, an intersection observer triggers it as the
    * loader enters the viewport. Omit with DataGrid because it triggers via onNearEndChange.
@@ -18,7 +20,13 @@ type InfiniteLoaderProps = {
  * Infinite-scroll status indicators (loading, error, all-loaded, offline).
  * Optionally triggers fetch via intersection observer when `fetchMore` is provided.
  */
-export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, fetchMore }: InfiniteLoaderProps) {
+export function InfiniteLoader({
+  hasNextPage,
+  isFetching,
+  isFetchMoreError,
+  hideEndIndicator,
+  fetchMore,
+}: InfiniteLoaderProps) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
@@ -54,7 +62,7 @@ export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, fetc
       {fetchMore && hasNextPage && <div ref={measureRef} className="h-8 w-full" />}
 
       {isFetching && hasNextPage && <Loading />}
-      {!isFetching && !hasNextPage && <AllLoaded />}
+      {!isFetching && !hasNextPage && !hideEndIndicator && <AllLoaded />}
     </>
   );
 }

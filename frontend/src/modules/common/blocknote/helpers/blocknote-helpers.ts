@@ -5,6 +5,7 @@ import type { CustomBlock } from '~/modules/common/blocknote/types';
 
 // Shared headless editor singleton avoids expensive BlockNoteEditor.create() on every call.
 let headlessEditor: ReturnType<typeof BlockNoteEditor.create> | null = null;
+/** Returns the headless editor. */
 export const getHeadlessEditor = () => {
   if (!headlessEditor) {
     headlessEditor = BlockNoteEditor.create({
@@ -47,6 +48,7 @@ export const findClickedMedia = (
   return { src: (mediaElement as HTMLMediaElement | null)?.src };
 };
 
+/** Returns the parsed content. */
 export const getParsedContent = (initialStringifiedBlocks: string | undefined) => {
   if (!initialStringifiedBlocks) return undefined;
   try {
@@ -56,6 +58,7 @@ export const getParsedContent = (initialStringifiedBlocks: string | undefined) =
   }
 };
 
+/** Converts BlockNote blocks to HTML. */
 export const blocksToHTML = (srtBlocks: string) => {
   const blocks = JSON.parse(srtBlocks) as CustomBlock[];
   return getHeadlessEditor().blocksToHTMLLossy(blocks);

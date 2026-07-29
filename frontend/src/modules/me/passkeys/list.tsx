@@ -8,6 +8,7 @@ import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation 
 import { Button } from '~/modules/ui/button';
 import { useCurrentUser } from '~/modules/user/user-store';
 
+/** Renders the passkeys list. */
 export function PasskeysList() {
   const { t } = useTranslation();
 

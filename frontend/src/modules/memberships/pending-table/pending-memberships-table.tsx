@@ -40,7 +40,6 @@ export function PendingMembershipsTable({ channel }: PendingMembershipsTableProp
   const { sort, order } = search;
   const limit = LIMIT;
 
-  // Build columns
   const [columns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 

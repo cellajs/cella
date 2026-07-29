@@ -40,6 +40,7 @@ type WithTenantValues = z.infer<typeof withTenantSchema>;
 type NoTenantValues = z.infer<typeof noTenantSchema>;
 type FormValues = WithTenantValues | NoTenantValues;
 
+/** Renders the form for creating organization. */
 export function CreateOrganizationForm({ labelDirection = 'top', children, callback }: Props) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();

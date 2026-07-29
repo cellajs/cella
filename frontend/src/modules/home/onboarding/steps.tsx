@@ -29,6 +29,7 @@ interface OnboardingProps {
   setSeeded: (seeded: boolean) => void;
 }
 
+/** Renders the onboarding component. */
 export function Onboarding({
   onboarding = 'start',
   setOnboardingState,

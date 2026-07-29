@@ -18,7 +18,7 @@ interface PagesTableBarProps {
 }
 
 /** Toolbar for the read-only pages table: search, count and column visibility. */
-export const PagesTableBar = ({ total, searchVars, setSearch, columns, setColumns }: PagesTableBarProps) => {
+export function PagesTableBar({ total, searchVars, setSearch, columns, setColumns }: PagesTableBarProps) {
   const { q } = searchVars;
 
   const isFiltered = !!q;
@@ -49,4 +49,4 @@ export const PagesTableBar = ({ total, searchVars, setSearch, columns, setColumn
       <FocusView iconOnly />
     </TableBarContainer>
   );
-};
+}

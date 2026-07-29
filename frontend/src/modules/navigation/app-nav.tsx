@@ -90,7 +90,6 @@ export function AppNav() {
     }
   }, [isDesktop, keepOpenPreference, navSheetOpen]);
 
-  // Build floating nav items from route staticData
   const routerState = useRouterState();
   const floatingItems: FloatingNavItem[] = [];
 

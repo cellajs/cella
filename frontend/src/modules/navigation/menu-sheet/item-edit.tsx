@@ -18,7 +18,8 @@ interface MenuItemEditProps {
   icon?: IconComponent;
 }
 
-export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
+/** Renders the menu item edit component. */
+export function MenuItemEdit({ item, icon: Icon }: MenuItemEditProps) {
   const { t } = useTranslation();
 
   const { mutate: updateMembership, status } = useMemberUpdateMutation();
@@ -49,7 +50,7 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
       layoutId={`sheet-menu-item-${item.id}`}
       data-subitem={!item.submenu}
       data-archived={item.membership.archived}
-      className="group/optionsItem relative flex h-12 w-full items-center justify-start rounded-sm p-0 pr-2 ring-1 ring-muted/25 ring-inset hover:bg-accent/50 hover:text-accent-foreground focus:outline-hidden focus-visible:ring-foreground data-[archived=false]:cursor-grab group-data-[submenu=false]/menuOptions:h-10"
+      className="group/optionsItem relative flex h-12 w-full items-center justify-start rounded-sm p-0 pr-2 ring-1 ring-muted ring-inset hover:bg-accent/50 hover:text-accent-foreground focus:outline-hidden focus-visible:ring-foreground data-[archived=false]:cursor-grab group-data-[submenu=false]/menuOptions:h-10"
     >
       {status === 'pending' && onlineManager.isOnline() && (
         <div className="absolute z-10">
@@ -86,7 +87,7 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
       </div>
     </motion.div>
   );
-};
+}
 
 interface MenuItemEditButtonProps {
   icon: React.ElementType;

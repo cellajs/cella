@@ -2,6 +2,7 @@ import { useParams, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 
+/** Renders the email verification page. */
 export function EmailVerificationPage() {
   const { t } = useTranslation();
 

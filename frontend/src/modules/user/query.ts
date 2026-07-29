@@ -17,6 +17,7 @@ type UsersListParams = UserFilters & { limit?: number };
 
 const keys = createEntityKeys<UserFilters>('user');
 
+/** Defines React Query cache keys for user. */
 export const userQueryKeys = keys;
 
 /** Find a user in cache by id. */

@@ -32,18 +32,33 @@ type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
    * this for breathing-room margin (e.g. `my-2`) around the pin point.
    */
   placeholderClassName?: string;
+  /**
+   * CSS custom property name to publish the bar's height to (on the parent element),
+   * e.g. `--sticky-stack-nav` for page tabs that lower sticky bars pin below.
+   */
+  publishVar?: string;
 };
 
 /**
  * Pins a header within its scroll container using CSS sticky positioning.
  * A sentinel observer drives styling state, and `offsetBottom` releases the bar before the
  * container edge. Tall sidebars should use plain sticky CSS.
+ *
+ * Stacking: the bar pins below the sticky layers above it, at the larger of
+ * `--sticky-stack-top` (section bars, which fold the nav offset in) and
+ * `--sticky-stack-nav` (page tabs), plus `offsetTop`. A bar publishing one of these
+ * variables via `publishVar` never consumes that variable itself, since it inherits its
+ * own published value from the parent it publishes on. Variable changes animate,
+ * tracking the ancestor bar's show/hide transition.
  */
+const STACK_VARS = ['--sticky-stack-nav', '--sticky-stack-top'] as const;
+/** Renders the sticky box component. */
 export function StickyBox({
   enabled = true,
   offsetTop = 0,
   offsetBottom = 0,
   hideWhenOutOfView,
+  publishVar,
   children,
   className,
   placeholderClassName,
@@ -97,9 +112,20 @@ export function StickyBox({
         const parentRect = parent.getBoundingClientRect();
         const barHeight = bar.offsetHeight;
         const scrollTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
-        const stickyBottom = scrollTop + offsetTop + barHeight;
+        const barStyles = getComputedStyle(bar);
+        const stackPx = Math.max(
+          ...STACK_VARS.filter((v) => v !== publishVar).map(
+            (v) => Number.parseFloat(barStyles.getPropertyValue(v)) || 0,
+          ),
+        );
+        const stickyBottom = scrollTop + stackPx + offsetTop + barHeight;
         const spaceBelow = parentRect.bottom - stickyBottom;
-        setClampedTop(spaceBelow <= offsetBottom ? Math.max(0, parent.clientHeight - barHeight - offsetBottom) : null);
+        // Relative offset from the bar's natural top, marked by the sentinel: at the release
+        // boundary this equals the stuck position exactly, so the mode switch is seamless
+        // regardless of parent padding or content preceding the bar.
+        const naturalTop = sentinelRef.current?.getBoundingClientRect().top ?? parentRect.top;
+        const releasedTop = parentRect.bottom - offsetBottom - barHeight - naturalTop;
+        setClampedTop(spaceBelow <= offsetBottom ? Math.max(0, releasedTop) : null);
       });
     };
     check();
@@ -113,7 +139,7 @@ export function StickyBox({
       window.removeEventListener('resize', check);
       ro.disconnect();
     };
-  }, [enabled, offsetBottom, offsetTop]);
+  }, [enabled, offsetBottom, offsetTop, publishVar]);
 
   // hideWhenOutOfView: reveal on scroll up, hide on scroll down, always show at top.
   useEffect(() => {
@@ -157,6 +183,22 @@ export function StickyBox({
     if (hideWhenOutOfView && !stuck) setVisible(true);
   }, [hideWhenOutOfView, stuck]);
 
+  // Publish the bar's height under `publishVar` on the parent, so dependent sticky
+  // stacks (section bars, card headers) can pin below this bar.
+  useEffect(() => {
+    const bar = barRef.current;
+    const host = bar?.parentElement;
+    if (!publishVar || !enabled || !bar || !host) return;
+    const publish = () => host.style.setProperty(publishVar, `${bar.offsetHeight}px`);
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(bar);
+    return () => {
+      ro.disconnect();
+      host.style.removeProperty(publishVar);
+    };
+  }, [publishVar, enabled]);
+
   // Disabled: render children in a plain div (no sentinel, no sticky).
   if (!enabled) {
     return (
@@ -166,7 +208,16 @@ export function StickyBox({
     );
   }
 
-  const barStyle: React.CSSProperties = { ...style, position: 'sticky', top: offsetTop };
+  // `top` itself must never transition: the stack offset animates via the registered
+  // stack properties on their publishers, and a top transition here would also
+  // interpolate the stuck/released mode switch, parking the bar at stale offsets.
+  const consumedVars = STACK_VARS.filter((v) => v !== publishVar).map((v) => `var(${v}, 0px)`);
+  const stackExpr = consumedVars.length > 1 ? `max(${consumedVars.join(', ')})` : (consumedVars[0] ?? '0px');
+  const barStyle: React.CSSProperties = {
+    ...style,
+    position: 'sticky',
+    top: `calc(${stackExpr} + ${offsetTop}px)`,
+  };
   if (clampedTop !== null) {
     barStyle.position = 'relative';
     barStyle.top = clampedTop;

@@ -124,6 +124,7 @@ function collapsibleTagItemEqual<T>(prev: CollapsibleTagItemProps<T>, next: Coll
 }
 
 // memo doesn't preserve generics, so we cast
+/** Renders a collapsible tag branch in the documentation sidebar. */
 export const CollapsibleTagItem = memo(
   CollapsibleTagItemBase,
   collapsibleTagItemEqual,

@@ -4,6 +4,7 @@ interface HeadingBlock {
   props: Record<string, unknown>;
 }
 
+/** Checks whether a heading menu item matches the editor selection. */
 export const isHeadingMenuItemActive = (block: HeadingBlock, title: string): boolean => {
   if (block.type !== 'heading') return false;
 

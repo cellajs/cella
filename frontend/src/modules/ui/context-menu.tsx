@@ -11,10 +11,12 @@ function ContextMenuTrigger({ ...props }: ContextMenuPrimitive.Trigger.Props & R
   return <ContextMenuPrimitive.Trigger data-slot="context-menu-trigger" {...props} />;
 }
 
+/** Renders the styled context menu group primitive. */
 export function ContextMenuGroup({ ...props }: ContextMenuPrimitive.Group.Props & React.RefAttributes<HTMLDivElement>) {
   return <ContextMenuPrimitive.Group data-slot="context-menu-group" {...props} />;
 }
 
+/** Renders the styled context menu portal primitive. */
 export function ContextMenuPortal({ ...props }: ContextMenuPrimitive.Portal.Props) {
   return <ContextMenuPrimitive.Portal data-slot="context-menu-portal" {...props} />;
 }
@@ -113,7 +115,7 @@ function ContextMenuCheckboxItem({
     <ContextMenuPrimitive.CheckboxItem
       data-slot="context-menu-checkbox-item"
       className={cn(
-        "relative flex cursor-default select-none items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "relative flex cursor-default select-none items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-checked:font-medium data-disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}
@@ -135,7 +137,7 @@ function ContextMenuRadioItem({
     <ContextMenuPrimitive.RadioItem
       data-slot="context-menu-radio-item"
       className={cn(
-        "relative flex cursor-default select-none items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "relative flex cursor-default select-none items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-checked:font-medium data-disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}

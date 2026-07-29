@@ -44,7 +44,8 @@ type Props = {
   sortOptions?: readonly EntityGridSortOption[];
 };
 
-export const EntityGridBar = ({
+/** Renders the entity grid bar component. */
+export function EntityGridBar({
   queryKey,
   label,
   searchVars,
@@ -52,7 +53,7 @@ export const EntityGridBar = ({
   isSheet,
   focusView,
   sortOptions = entityGridSortOptions,
-}: Props) => {
+}: Props) {
   const { q, sort, role } = searchVars;
 
   const total = useListQueryTotal(queryKey);
@@ -100,4 +101,4 @@ export const EntityGridBar = ({
       {focusView && <FocusView iconOnly />}
     </TableBarContainer>
   );
-};
+}

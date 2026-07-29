@@ -18,7 +18,6 @@ interface InfoRow {
 export function OverviewTable() {
   const { t } = useTranslation();
 
-  // Fetch info via React Query (reduces bundle size)
   const { data: info } = useSuspenseQuery(infoQueryOptions);
 
   // Transform info object into rows for the table

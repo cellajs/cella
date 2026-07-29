@@ -55,4 +55,5 @@ function AttachmentDialogHandlerBase() {
   return null;
 }
 
+/** Coordinates the attachment dialog with route and carousel state. */
 export const AttachmentDialogHandler = memo(AttachmentDialogHandlerBase);

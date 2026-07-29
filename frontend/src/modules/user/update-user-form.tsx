@@ -40,6 +40,7 @@ interface UpdateUserFormProps {
   callback?: (args: CallbackArgs<User>) => void;
 }
 
+/** Renders the form for updating user. */
 export function UpdateUserForm({ user, callback, sheet: isSheet, compact, children }: UpdateUserFormProps) {
   const { t } = useTranslation();
   const currentUser = useCurrentUser();

@@ -13,6 +13,7 @@ interface Props {
   tabIndex: number;
 }
 
+/** Opens update sheet. */
 export function openUpdateSheet(
   organization: Organization | Organization,
   buttonRef: RefObject<HTMLButtonElement | null>,
@@ -38,6 +39,7 @@ export function openUpdateSheet(
   );
 }
 
+/** Renders the update table row. */
 export function UpdateRow({ organization, tabIndex }: Props) {
   const buttonRef = useRef(null);
 

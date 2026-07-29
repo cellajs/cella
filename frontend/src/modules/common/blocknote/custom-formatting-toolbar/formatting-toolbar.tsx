@@ -16,42 +16,47 @@ import { FileOpenPreviewButton } from '~/modules/common/blocknote/custom-formatt
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
 // Extracted as a named component so hooks (useEffect etc.) are valid
-const FormattingToolbarContent = ({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) => (
-  <FormattingToolbar>
-    {customFormattingToolBarConfig.blockTypeSelect && <CellaCustomBlockTypeSelect headingLevels={headingLevels} />}
-    {customFormattingToolBarConfig.blockStyleSelect && (
-      <>
-        <BasicTextStyleButton basicTextStyle="bold" />
-        <BasicTextStyleButton basicTextStyle="italic" />
-        <BasicTextStyleButton basicTextStyle="code" />
-        <BasicTextStyleButton basicTextStyle="strike" />
-        <BasicTextStyleButton basicTextStyle="underline" />
-      </>
-    )}
-    {customFormattingToolBarConfig.blockAlignSelect && <CustomTextAlignSelect />}
+function FormattingToolbarContent({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) {
+  return (
+    <FormattingToolbar>
+      {customFormattingToolBarConfig.blockTypeSelect && <CellaCustomBlockTypeSelect headingLevels={headingLevels} />}
+      {customFormattingToolBarConfig.blockStyleSelect && (
+        <>
+          <BasicTextStyleButton basicTextStyle="bold" />
+          <BasicTextStyleButton basicTextStyle="italic" />
+          <BasicTextStyleButton basicTextStyle="code" />
+          <BasicTextStyleButton basicTextStyle="strike" />
+          <BasicTextStyleButton basicTextStyle="underline" />
+        </>
+      )}
+      {customFormattingToolBarConfig.blockAlignSelect && <CustomTextAlignSelect />}
 
-    {customFormattingToolBarConfig.fileCaption && <FileCaptionButton key={'fileCaptionButton'} />}
-    {customFormattingToolBarConfig.openPreview && <FileOpenPreviewButton key={'openPreviewButton'} />}
+      {customFormattingToolBarConfig.fileCaption && <FileCaptionButton key={'fileCaptionButton'} />}
+      {customFormattingToolBarConfig.openPreview && <FileOpenPreviewButton key={'openPreviewButton'} />}
 
-    <FileDownloadButton key={'downloadButton'} />
+      <FileDownloadButton key={'downloadButton'} />
 
-    {customFormattingToolBarConfig.textColorSelect && <ColorStyleButton key={'colorStyleButton'} />}
+      {customFormattingToolBarConfig.textColorSelect && <ColorStyleButton key={'colorStyleButton'} />}
 
-    {customFormattingToolBarConfig.createLink && <CreateLinkButton key={'createLinkButton'} />}
+      {customFormattingToolBarConfig.createLink && <CreateLinkButton key={'createLinkButton'} />}
 
-    {customFormattingToolBarConfig.blockNestingSelect && (
-      <>
-        <NestBlockButton key={'nestBlockButton'} />
-        <UnnestBlockButton key={'unnestBlockButton'} />
-      </>
-    )}
-  </FormattingToolbar>
-);
+      {customFormattingToolBarConfig.blockNestingSelect && (
+        <>
+          <NestBlockButton key={'nestBlockButton'} />
+          <UnnestBlockButton key={'unnestBlockButton'} />
+        </>
+      )}
+    </FormattingToolbar>
+  );
+}
 
-export const CustomFormattingToolbar = ({
+/** Renders the custom formatting toolbar component. */
+export function CustomFormattingToolbar({
   headingLevels,
 }: {
   headingLevels: CustomBlockNoteMenuProps['headingLevels'];
-}) => (
-  <FormattingToolbarController formattingToolbar={() => <FormattingToolbarContent headingLevels={headingLevels} />} />
-);
+}) {
+  return (
+    <FormattingToolbarController formattingToolbar={() => <FormattingToolbarContent headingLevels={headingLevels} />} />
+  );
+}

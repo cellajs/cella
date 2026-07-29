@@ -39,7 +39,7 @@ function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props
       {url && <AvatarImage src={url} draggable={false} />}
       <AvatarFallback className={avatarBackground}>
         <span className="sr-only">{name}</span>
-        <div className="flex h-full items-center justify-center font-semibold text-black uppercase opacity-40">
+        <div className="flex h-full items-center justify-center font-semibold text-black uppercase opacity-50">
           {name?.charAt(0).toUpperCase() || '-'}
         </div>
       </AvatarFallback>
@@ -47,4 +47,5 @@ function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props
   );
 }
 
+/** Renders an entity avatar from its name, icon, or image. */
 export const EntityAvatar = memo(EntityAvatarBase);

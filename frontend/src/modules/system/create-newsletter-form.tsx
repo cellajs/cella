@@ -33,6 +33,7 @@ interface CreateNewsletterFormProps {
   callback?: (args: CallbackArgs) => void;
 }
 
+/** Renders the form for creating newsletter. */
 export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsletterFormProps) {
   const { t } = useTranslation();
   const subjectLabel = t('c:subject').toLowerCase();
@@ -44,7 +45,6 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
     defaultValues: { organizationIds, subject: '', roles: [], content: '' },
   };
 
-  // Create form
   const formContainerId = 'create-newsletter';
   const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 

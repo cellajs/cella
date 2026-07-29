@@ -406,32 +406,13 @@ export function createIDBPersister(scope = 'rq') {
         console.error('[QueryPersister] Failed to remove client:', error);
       }
     },
-
-    /** Cancel any pending throttled write and remove the scoped records (incl. tab mutation records). */
-    teardown: () => {
-      pendingClient = null;
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
-      }
-      const db = getAppDb();
-      // Fire-and-forget; best effort during beforeunload
-      db?.transaction('rw', db.queries, db.meta, async () => {
-        const ids = await db.queries.where('scope').equals(scope).primaryKeys();
-        await db.queries.bulkDelete(ids);
-        await db.meta.delete(scope);
-        const mutationKeys = await db.meta.where('key').startsWith(mutationRecordPrefix(scope)).primaryKeys();
-        await db.meta.bulkDelete(mutationKeys);
-      }).catch(() => {});
-      resetTracker();
-    },
-  } satisfies Persister & { flush: () => Promise<void>; teardown: () => void };
+  } satisfies Persister & { flush: () => Promise<void> };
 }
 
 /** Persistent offline persister: scope `rq`, survives browser restart. */
 export const persister = createIDBPersister('rq');
 
-/** Session-scoped persister: per-tab scope, cleaned on tab close. */
+/** Session-scoped persister: per-tab scope, survives reload, reclaimed after the tab closes. */
 export const sessionPersister = createIDBPersister(`${SESSION_KEY_PREFIX}${getTabSessionId()}`);
 
 /** Reset persister change trackers (called on owner rebind so they match the freshly bound DB). */
@@ -440,9 +421,10 @@ export function resetPersisters(): void {
 }
 
 /**
- * Remove session records older than 2 hours, for tabs where `beforeunload`
- * didn't fire (crash, mobile kill). Skips the current tab. Call once on app
- * startup (fire-and-forget); no-ops while signed out.
+ * Remove session records older than 2 hours left behind by closed tabs. This is the sole
+ * reclaim path for session scopes (a reload must keep its scope, so nothing is torn down on
+ * unload). Skips the current tab. Call once on app startup (fire-and-forget); no-ops while
+ * signed out.
  */
 export async function cleanupOrphanedSessions(): Promise<void> {
   const db = getAppDb();
@@ -474,8 +456,5 @@ export async function cleanupOrphanedSessions(): Promise<void> {
 // Advertise this tab's liveness for mutation-record ownership (see "Per-tab mutation ownership").
 holdMutationOwnershipLock();
 
-// Best-effort cleanup of session cache on tab close. teardown() cancels any
-// pending throttled flush first, so it can't re-create the record after deletion.
-window.addEventListener('beforeunload', () => {
-  sessionPersister.teardown();
-});
+// `beforeunload` also fires on reload, so orphan cleanup uses age and mutation-lock
+// liveness to preserve refresh caches while reclaiming closed tabs.

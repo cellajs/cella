@@ -20,7 +20,7 @@ interface OperationRequestProps {
  * Collapsible container for request schema (path, query, body).
  * Only renders if the operation has a request schema.
  */
-export const OperationRequest = ({ detail }: OperationRequestProps) => {
+export function OperationRequest({ detail }: OperationRequestProps) {
   const { t } = useTranslation();
 
   const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
@@ -55,4 +55,4 @@ export const OperationRequest = ({ detail }: OperationRequestProps) => {
       </CollapsibleContent>
     </Collapsible>
   );
-};
+}

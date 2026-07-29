@@ -58,7 +58,6 @@ export async function exportToPdf<R extends Row>(
   const backgroundColor = mode === 'dark' ? '#151519' : '#ffffff';
   const alternateBackgroundColor = mode === 'dark' ? '#2c2c2f' : '#e5e5e5';
 
-  // Add table to the PDF
   autoTable(doc, {
     head,
     body,

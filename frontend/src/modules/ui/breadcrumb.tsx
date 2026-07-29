@@ -73,6 +73,7 @@ function BreadcrumbSeparator({ children, className, ...props }: React.ComponentP
   );
 }
 
+/** Renders the styled breadcrumb ellipsis primitive. */
 export function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     <span

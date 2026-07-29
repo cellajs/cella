@@ -1,5 +1,6 @@
 import type { CellEvent } from '../types';
 
+/** Creates cell event. */
 export function createCellEvent<E extends React.SyntheticEvent<HTMLDivElement>>(event: E): CellEvent<E> {
   let defaultPrevented = false;
   const cellEvent = {

@@ -26,3 +26,4 @@ export type {
   SortColumn,
   TileSide,
 } from './types';
+export { estimateWrappedLines } from './utils/wrap-text-utils';

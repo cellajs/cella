@@ -39,14 +39,15 @@ const labelFor = (kind: string, value: string): string => {
   return cap;
 };
 
-export const OperationsTableBar = ({
+/** Renders the action and filter toolbar for the operations table. */
+export function OperationsTableBar({
   total,
   searchVars,
   setSearch,
   columns,
   setColumns,
   tagFilters,
-}: OperationsTableBarProps) => {
+}: OperationsTableBarProps) {
   const { t } = useTranslation();
   const { q, tag } = searchVars;
 
@@ -107,4 +108,4 @@ export const OperationsTableBar = ({
       <FocusView iconOnly />
     </TableBarContainer>
   );
-};
+}

@@ -90,7 +90,7 @@ function useColumns(tagName: string, tagKinds: string[]): ColumnOrColumnGroup<Ge
  * Read-only schemas table for a single schema-kind tag section.
  * Replaces the previous plain `<Link>` list with a sortable column layout.
  */
-export const TagSchemasTable = ({ schemas, tagName, tagKinds, onPrerender }: TagSchemasTableProps) => {
+export function TagSchemasTable({ schemas, tagName, tagKinds, onPrerender }: TagSchemasTableProps) {
   const columns = useColumns(tagName, tagKinds);
 
   return (
@@ -111,4 +111,4 @@ export const TagSchemasTable = ({ schemas, tagName, tagKinds, onPrerender }: Tag
       />
     </div>
   );
-};
+}

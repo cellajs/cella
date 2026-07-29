@@ -2,6 +2,7 @@ import { Progress as ProgressPrimitive } from '@base-ui/react/progress';
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
+/** Renders the styled progress primitive. */
 export function Progress({
   className,
   value,

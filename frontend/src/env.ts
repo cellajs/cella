@@ -1,6 +1,7 @@
 import { createEnv } from '@t3-oss/env-core';
 import { z } from 'zod';
 
+/** Provides validated environment variables for the frontend. */
 export const env = createEnv({
   client: {
     VITE_DEBUG_MODE: z
@@ -21,4 +22,5 @@ export const env = createEnv({
   emptyStringAsUndefined: true,
 });
 
+/** Reports whether frontend debug mode is enabled. */
 export const isDebugMode = env.VITE_DEBUG_MODE;

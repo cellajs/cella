@@ -12,11 +12,12 @@ interface SectionArchiveButtonProps {
 
 const EMPTY_CHANNEL_IDS: string[] = [];
 
-export const SectionArchiveButton = ({
+/** Renders the section archive button. */
+export function SectionArchiveButton({
   archiveToggleClick,
   archivedCount,
   archivedChannelIds = EMPTY_CHANNEL_IDS,
-}: SectionArchiveButtonProps) => {
+}: SectionArchiveButtonProps) {
   const { t } = useTranslation();
   const archivedUnseenCount = useUnseenCount(archivedChannelIds);
 
@@ -49,6 +50,6 @@ export const SectionArchiveButton = ({
       </Button>
     </motion.div>
   );
-};
+}
 
 SectionArchiveButton.displayName = 'SectionArchiveButton';

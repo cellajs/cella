@@ -7,13 +7,13 @@ import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field'
 /**
  * Combobox form field for selecting a timezone.
  */
-export const SelectTimezone = <TFieldValues extends FieldValues>({
+export function SelectTimezone<TFieldValues extends FieldValues>({
   control,
   name,
   disabled,
   label,
   required,
-}: BaseFormFieldProps<TFieldValues>) => {
+}: BaseFormFieldProps<TFieldValues>) {
   const seen = new Set<string>();
   const options = timezones.reduce<{ value: string; label: string }[]>((acc, { utc, text }) => {
     const value = utc[0];
@@ -55,4 +55,4 @@ export const SelectTimezone = <TFieldValues extends FieldValues>({
       )}
     />
   );
-};
+}

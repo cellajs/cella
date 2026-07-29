@@ -1,6 +1,7 @@
 import { CircleAlertIcon, CircleCheckIcon, CircleXIcon, InfoIcon } from 'lucide-react';
 
 // The types of notifies that users can choose from.
+/** Lists the supported notification block variants. */
 export const notifyTypes = [
   {
     title: 'Warning',

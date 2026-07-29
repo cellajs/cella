@@ -2,6 +2,7 @@ import { type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
+/** Renders the dialoger drawer component. */
 export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
   const { id, content, open, description, title, titleContent = title, className, headerClassName = '' } = dialog;
 

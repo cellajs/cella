@@ -9,7 +9,8 @@ interface DeleteFormProps {
   allowOfflineDelete?: boolean;
 }
 
-export const DeleteForm = ({ onDelete, onCancel, pending, allowOfflineDelete = false }: DeleteFormProps) => {
+/** Renders a reusable confirmation form for destructive actions. */
+export function DeleteForm({ onDelete, onCancel, pending, allowOfflineDelete = false }: DeleteFormProps) {
   const { t } = useTranslation();
 
   return (
@@ -29,4 +30,4 @@ export const DeleteForm = ({ onDelete, onCancel, pending, allowOfflineDelete = f
       </Button>
     </div>
   );
-};
+}

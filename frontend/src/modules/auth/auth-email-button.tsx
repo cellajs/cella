@@ -8,6 +8,7 @@ interface AuthEmailButtonProps {
   className?: string;
 }
 
+/** Renders the auth email button. */
 export function AuthEmailButton({ email, onClick, disabled, className = '' }: AuthEmailButtonProps) {
   return (
     <Button

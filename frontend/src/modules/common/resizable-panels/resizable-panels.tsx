@@ -404,6 +404,7 @@ interface PanelGroupProps {
   children: ReactNode;
 }
 
+/** Renders the resizable panel group component. */
 export function ResizablePanelGroup({
   id,
   defaultLayout,
@@ -925,6 +926,7 @@ interface PanelProps {
   [key: `data-${string}`]: string | undefined;
 }
 
+/** Renders the resizable panel. */
 export function ResizablePanel({
   id,
   minWidth,
@@ -957,7 +959,9 @@ export function ResizablePanel({
       ref={setRef}
       className={className}
       data-panel={id}
-      style={{ overflow: 'hidden', position: 'relative', flexShrink: 0 }}
+      // clip, not hidden: hidden would make this a scroll container that captures the
+      // panel's sticky elements, which must pin to the window in window-scroll layouts
+      style={{ overflow: 'clip', position: 'relative', flexShrink: 0 }}
       {...rest}
     >
       <div className="h-full" style={{ opacity: 'var(--content-opacity, 1)' }}>
@@ -992,6 +996,7 @@ interface SeparatorProps {
   [key: `data-${string}`]: string | undefined;
 }
 
+/** Renders the resizable separator component. */
 export function ResizableSeparator({ index, className, children, ...rest }: SeparatorProps) {
   const ctx = useContext(PanelGroupContext);
   const dragCtx = useContext(SeparatorDragContext);

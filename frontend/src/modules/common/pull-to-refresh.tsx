@@ -36,6 +36,7 @@ type Props = {
   isDisabled?: boolean;
 };
 
+/** Renders the pull to refresh component. */
 export function PullToRefresh({
   onRefresh,
   isFetching = false,

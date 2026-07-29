@@ -25,6 +25,7 @@ const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
   return Date.now() - createdTime > seenWindowMs;
 };
 
+/** Builds the column definitions for the enclosing table. */
 export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
   const { t } = useTranslation();
 

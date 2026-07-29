@@ -21,15 +21,26 @@ export const attachmentRefPropSchema = {
 };
 
 /**
- * Widen a media block spec's props with the attachment reference. Apply to the same
- * specs on every schema that round-trips a shared Y.Doc (frontend editor and Yjs
- * relay), so the ProseMirror node specs stay identical.
+ * Intrinsic pixel dimensions of the media, captured at upload time from the source file.
+ * Renderers set them as the img width/height attributes so the browser reserves the correct
+ * box before the image loads, removing layout reflow and the broken-image flash while the
+ * presigned URL resolves. Zero means unknown (e.g. media pasted as an external URL).
+ */
+export const mediaDimensionsPropSchema = {
+  width: { default: 0 as number },
+  height: { default: 0 as number },
+};
+
+/**
+ * Widen a media block spec's props with the attachment reference and intrinsic dimensions.
+ * Apply to the same specs on every schema that round-trips a shared Y.Doc (frontend editor
+ * and Yjs relay), so the ProseMirror node specs stay identical.
  */
 export const withAttachmentRef = <S extends { config: { propSchema: Record<string, unknown> } }>(spec: S) => ({
   ...spec,
   config: {
     ...spec.config,
-    propSchema: { ...spec.config.propSchema, ...attachmentRefPropSchema },
+    propSchema: { ...spec.config.propSchema, ...attachmentRefPropSchema, ...mediaDimensionsPropSchema },
   },
 });
 

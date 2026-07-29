@@ -26,7 +26,8 @@ interface TenantsTableBarProps {
   setSearch: (newValues: Partial<TenantsRouteSearchParams>, saveSearch?: boolean) => void;
 }
 
-export const TenantsTableBar = ({ queryKey, searchVars, setSearch, columns, setColumns }: TenantsTableBarProps) => {
+/** Renders the action and filter toolbar for the tenants table. */
+export function TenantsTableBar({ queryKey, searchVars, setSearch, columns, setColumns }: TenantsTableBarProps) {
   const { t } = useTranslation();
 
   const removeDialog = useDialoger((state) => state.remove);
@@ -84,4 +85,4 @@ export const TenantsTableBar = ({ queryKey, searchVars, setSearch, columns, setC
       <FocusView iconOnly />
     </TableBarContainer>
   );
-};
+}

@@ -2,14 +2,17 @@ import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
 import { type ComponentProps, type ComponentPropsWithoutRef, type ReactNode, type RefAttributes, useRef } from 'react';
 import { cn } from '~/utils/cn';
 
+/** Renders the styled popover primitive. */
 export function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
+/** Renders the styled popover trigger primitive. */
 export function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props & RefAttributes<HTMLElement>) {
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 
+/** Renders the styled popover content primitive. */
 export function PopoverContent({
   className,
   align = 'center',
@@ -59,6 +62,7 @@ export function PopoverContent({
   );
 }
 
+/** Renders the styled popover content no portal primitive. */
 export function PopoverContentNoPortal({
   className,
   align = 'center',
@@ -102,18 +106,22 @@ export function PopoverContentNoPortal({
   );
 }
 
+/** Renders the styled popover anchor primitive. */
 export function PopoverAnchor({ ...props }: PopoverPrimitive.Trigger.Props & RefAttributes<HTMLElement>) {
   return <PopoverPrimitive.Trigger data-slot="popover-anchor" {...props} />;
 }
 
+/** Renders the styled popover header primitive. */
 export function PopoverHeader({ className, ...props }: ComponentProps<'div'>) {
   return <div data-slot="popover-header" className={cn('flex flex-col gap-1 text-sm', className)} {...props} />;
 }
 
+/** Renders the styled popover title primitive. */
 export function PopoverTitle({ className, ...props }: ComponentProps<'h2'>) {
   return <div data-slot="popover-title" className={cn('font-medium', className)} {...props} />;
 }
 
+/** Renders the styled popover description primitive. */
 export function PopoverDescription({ className, ...props }: ComponentProps<'p'>) {
   return <p data-slot="popover-description" className={cn('text-muted-foreground', className)} {...props} />;
 }

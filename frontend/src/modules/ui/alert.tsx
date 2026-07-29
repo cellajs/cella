@@ -3,6 +3,7 @@ import { XIcon } from 'lucide-react';
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
+/** Defines the style variants for alert. */
 export const alertVariants = cva(
   'relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border px-4 py-3 text-sm has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current',
   {
@@ -35,6 +36,7 @@ export const alertVariants = cva(
   },
 );
 
+/** Renders the styled alert primitive. */
 export function Alert({
   className,
   variant,
@@ -60,6 +62,7 @@ export function Alert({
   );
 }
 
+/** Renders the styled alert title primitive. */
 export function AlertTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -70,6 +73,7 @@ export function AlertTitle({ className, ...props }: React.ComponentProps<'div'>)
   );
 }
 
+/** Renders the styled alert description primitive. */
 export function AlertDescription({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div

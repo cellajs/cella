@@ -17,14 +17,14 @@ type SelectTenantProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TF
  * System admins see all tenants (fetched from the API); regular users see only tenants they belong to
  * (derived from their memberships).
  */
-export const SelectTenantFormField = <TFieldValues extends FieldValues>({
+export function SelectTenantFormField<TFieldValues extends FieldValues>({
   control,
   name,
   label,
   options: opts,
   required,
   disabled,
-}: SelectTenantProps<TFieldValues>) => {
+}: SelectTenantProps<TFieldValues>) {
   const isSystemAdmin = useUserStore((s) => s.isSystemAdmin);
 
   // System admins: fetch all tenants from API (includes tenant names)
@@ -95,4 +95,4 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
       )}
     />
   );
-};
+}

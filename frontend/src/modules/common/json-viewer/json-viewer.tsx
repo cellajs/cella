@@ -1,4 +1,4 @@
-import { type FC, useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { JsonViewerContext, type JsonViewerContextValue } from './context';
 import { JsonNode } from './json-node';
 import type { DataType, JsonViewerProps } from './types';
@@ -81,7 +81,7 @@ function createRefDataType(onNavigate: (targetPath: string) => void): DataType<s
  * A lightweight JSON viewer component with collapsible nodes.
  * Supports OpenAPI spec mode with $ref navigation and mode for schema viewing.
  */
-export const JsonViewer: FC<JsonViewerProps> = ({
+export function JsonViewer({
   value,
   defaultInspectDepth = 3,
   rootName = 'root',
@@ -98,14 +98,13 @@ export const JsonViewer: FC<JsonViewerProps> = ({
   searchMatchPath = null,
   showKeyQuotes = true,
   expandChildrenDepth = 1,
-}) => {
+}: JsonViewerProps) {
   const maxStringLength = collapseStringsAfterLength === false ? Number.MAX_VALUE : collapseStringsAfterLength;
   const containerRef = useRef<HTMLDivElement>(null);
 
   // OpenAPI mode: track target path for $ref navigation (nodes along this path will expand)
   const [targetPath, setTargetPath] = useState<string[] | null>(null);
 
-  // Handle $ref navigation in openapi mode
   const handleRefNavigate = useCallback((refPath: string) => {
     const pathParts = parseRefPath(refPath);
     setTargetPath(pathParts);
@@ -121,7 +120,6 @@ export const JsonViewer: FC<JsonViewerProps> = ({
     [openapiMode, handleRefNavigate],
   );
 
-  // Combine valueTypes with refDataType for openapi mode
   const combinedValueTypes = useMemo(() => {
     if (refDataType) {
       return [refDataType, ...valueTypes];
@@ -178,4 +176,4 @@ export const JsonViewer: FC<JsonViewerProps> = ({
       </div>
     </JsonViewerContext.Provider>
   );
-};
+}

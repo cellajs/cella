@@ -93,7 +93,7 @@ interface Props {
 /**
  * Horizontal page tab navigation
  */
-export const PageTabNav = ({
+export function PageTabNav({
   tabs: explicitTabs,
   parentRouteId,
   filterTabIds,
@@ -102,7 +102,7 @@ export const PageTabNav = ({
   avatar,
   fallbackToFirst,
   className,
-}: Props) => {
+}: Props) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
   const { hasStarted } = useMountedState();
@@ -129,6 +129,7 @@ export const PageTabNav = ({
 
   return (
     <StickyBox
+      publishVar="--sticky-stack-nav"
       className={cn('group/sticky z-80 block gap-1 border-b bg-background/75 text-center backdrop-blur-xs', className)}
     >
       <div className="absolute left-0 hidden h-full items-center sm:group-data-[sticky=true]/sticky:flex">
@@ -194,4 +195,4 @@ export const PageTabNav = ({
       </div>
     </StickyBox>
   );
-};
+}

@@ -1,5 +1,6 @@
 import type { CalculatedColumn, ColSpanArgs } from '../types';
 
+/** Returns the col span. */
 export function getColSpan<R, SR>(
   column: CalculatedColumn<R, SR>,
   lastFrozenColumnIndex: number,

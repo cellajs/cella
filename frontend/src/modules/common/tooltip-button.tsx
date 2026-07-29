@@ -16,37 +16,35 @@ interface TooltipButtonProps {
 /**
  * A button that displays a tooltip when hovered.
  */
-export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps>(
-  (
-    {
-      children,
-      toolTipContent,
-      disabled,
-      side = 'bottom',
-      sideOffset = 8,
-      className,
-      hideWhenDetached,
-      portal = true,
-      ...props
-    },
-    _ref,
-  ) => {
-    if (disabled) return children;
-
-    const content = (
-      <TooltipContent side={side} {...props} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
-        {toolTipContent}
-      </TooltipContent>
-    );
-
-    const trigger = (
-      <Tooltip>
-        <TooltipTrigger render={children} />
-        {portal ? <TooltipPortal>{content}</TooltipPortal> : content}
-      </Tooltip>
-    );
-
-    if (className) return <span className={className}>{trigger}</span>;
-    return trigger;
+export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps>(function TooltipButton(
+  {
+    children,
+    toolTipContent,
+    disabled,
+    side = 'bottom',
+    sideOffset = 8,
+    className,
+    hideWhenDetached,
+    portal = true,
+    ...props
   },
-);
+  _ref,
+) {
+  if (disabled) return children;
+
+  const content = (
+    <TooltipContent side={side} {...props} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
+      {toolTipContent}
+    </TooltipContent>
+  );
+
+  const trigger = (
+    <Tooltip>
+      <TooltipTrigger render={children} />
+      {portal ? <TooltipPortal>{content}</TooltipPortal> : content}
+    </Tooltip>
+  );
+
+  if (className) return <span className={className}>{trigger}</span>;
+  return trigger;
+});

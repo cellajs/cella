@@ -1,4 +1,4 @@
-import { type FC, useState } from 'react';
+import { useState } from 'react';
 import { highlightText, JSON_SCHEMA_TYPES } from './utils';
 
 interface InlinePrimitiveValueProps {
@@ -10,7 +10,7 @@ interface InlinePrimitiveValueProps {
 /**
  * Renders a primitive value inline for single-line arrays.
  */
-export const InlinePrimitiveValue: FC<InlinePrimitiveValueProps> = ({ value, theme, searchText }) => {
+export function InlinePrimitiveValue({ value, theme, searchText }: InlinePrimitiveValueProps) {
   const lowerSearch = searchText?.toLowerCase() || '';
 
   const renderWithHighlight = (text: string, colorClass: string, quote = false) => {
@@ -60,7 +60,7 @@ export const InlinePrimitiveValue: FC<InlinePrimitiveValueProps> = ({ value, the
   if (typeof value === 'string') return renderWithHighlight(value, theme.string, true);
 
   return <span>{String(value)}</span>;
-};
+}
 
 interface PrimitiveValueProps {
   value: unknown;
@@ -81,14 +81,14 @@ interface PrimitiveValueProps {
 /**
  * Renders a primitive value with full formatting, search highlighting, and truncation.
  */
-export const PrimitiveValue: FC<PrimitiveValueProps> = ({
+export function PrimitiveValue({
   value,
   type,
   theme,
   collapseStringsAfterLength,
   searchText,
   openapiMode,
-}) => {
+}: PrimitiveValueProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const baseClass = 'break-word whitespace-pre-line';
 
@@ -167,4 +167,4 @@ export const PrimitiveValue: FC<PrimitiveValueProps> = ({
     default:
       return <span className={baseClass}>{String(value)}</span>;
   }
-};
+}

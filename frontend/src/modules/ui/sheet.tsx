@@ -4,14 +4,17 @@ import type * as React from 'react';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
+/** Renders the styled sheet primitive. */
 export function Sheet({ ...props }: SheetPrimitive.Root.Props) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />;
 }
 
+/** Renders the styled sheet trigger primitive. */
 export function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props & React.RefAttributes<HTMLElement>) {
   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
 }
 
+/** Renders the styled sheet close primitive. */
 export function SheetClose({ ...props }: SheetPrimitive.Close.Props & React.RefAttributes<HTMLButtonElement>) {
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
 }
@@ -33,6 +36,7 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props & R
   );
 }
 
+/** Renders the styled sheet content primitive. */
 export function SheetContent({
   className,
   children,
@@ -101,6 +105,7 @@ export function SheetContent({
   );
 }
 
+/** Renders the styled sheet header primitive. */
 export function SheetHeader({
   className,
   sticky,
@@ -129,10 +134,12 @@ export function SheetHeader({
   );
 }
 
+/** Renders the styled sheet footer primitive. */
 export function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="sheet-footer" className={cn('mt-auto flex flex-col gap-2 p-4', className)} {...props} />;
 }
 
+/** Renders the styled sheet title primitive. */
 export function SheetTitle({
   className,
   ...props
@@ -146,6 +153,7 @@ export function SheetTitle({
   );
 }
 
+/** Renders the styled sheet description primitive. */
 export function SheetDescription({
   className,
   ...props

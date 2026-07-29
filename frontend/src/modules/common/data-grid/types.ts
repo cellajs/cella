@@ -78,6 +78,12 @@ export interface SelectedCellRangeChangeArgs<R, SR> {
   cells?: Array<{ row: R; column: CalculatedColumn<R, SR>; rowIdx: number; colIdx: number }>;
 }
 
+/** Context passed to a column's `estimateLines` callback for width-aware row sizing. */
+export interface EstimateLinesContext {
+  /** The column's rendered width in pixels (flex-resolved, or the declared width). */
+  readonly width: number;
+}
+
 export interface Column<TRow, TSummaryRow = unknown> {
   /** The name of the column. Displayed in the header cell by default */
   readonly name: string | ReactElement;
@@ -145,8 +151,12 @@ export interface Column<TRow, TSummaryRow = unknown> {
 
   /** Wrap to a numeric line cap or effectively unlimited lines, expanding beyond base row height. */
   readonly wrapText?: Maybe<number | boolean>;
-  /** Overrides the default newline-counting heuristic for variable row height. */
-  readonly estimateLines?: (row: TRow) => number;
+  /**
+   * Overrides the default newline-counting heuristic for variable row height.
+   * Receives the column's rendered pixel width so estimates can track resizing
+   * and viewport size (see {@link estimateWrappedLines}).
+   */
+  readonly estimateLines?: (row: TRow, ctx: EstimateLinesContext) => number;
   /**
    * Override widths or merge into a host per display mode; mobile properties win over compact.
    * Missing hosts disable their merge and restore normal visibility.

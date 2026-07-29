@@ -177,4 +177,5 @@ class AttachmentUploadService {
   }
 }
 
+/** Coordinates queued and retried attachment uploads. */
 export const uploadService = new AttachmentUploadService();

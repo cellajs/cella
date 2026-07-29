@@ -21,7 +21,7 @@ type ResendButtonPrpos = {
 /**
  * Button to resend an invitation token email to a non-existing user. It can either be a membership invitation or a system-level invitation.
  */
-export const ResendInvitationButton = ({ resendData, wrapperClassName, buttonProps, callback }: ResendButtonPrpos) => {
+export function ResendInvitationButton({ resendData, wrapperClassName, buttonProps, callback }: ResendButtonPrpos) {
   const { t } = useTranslation();
   const [disabledResend, setDisabledResend] = useState(false);
 
@@ -71,4 +71,4 @@ export const ResendInvitationButton = ({ resendData, wrapperClassName, buttonPro
       </Button>
     </TooltipButton>
   );
-};
+}

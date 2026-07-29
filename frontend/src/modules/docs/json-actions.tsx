@@ -24,7 +24,7 @@ interface JsonActionsProps {
 /**
  * Reusable action buttons for JSON resources: open in new tab, copy to clipboard, and download.
  */
-export const JsonActions = ({
+export function JsonActions({
   url,
   data,
   filename = 'data.json',
@@ -32,7 +32,7 @@ export const JsonActions = ({
   className,
   smallMode,
   viewerUrl,
-}: JsonActionsProps) => {
+}: JsonActionsProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
 
@@ -111,4 +111,4 @@ export const JsonActions = ({
       </TooltipButton>
     </ButtonGroup>
   );
-};
+}

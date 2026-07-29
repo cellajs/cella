@@ -4,7 +4,8 @@ import { ChevronDownIcon, MoveHorizontalIcon } from 'lucide-react';
 // Infer BasicTextAlign type directly from component prop
 type BasicTextAlign = React.ComponentProps<typeof TextAlignButton>['textAlignment'];
 
-export const CustomTextAlignSelect = () => {
+/** Renders the custom text align select component. */
+export function CustomTextAlignSelect() {
   const Components = useComponentsContext()!;
 
   const variants = ['left', 'center', 'right', 'justify'] satisfies BasicTextAlign[];
@@ -30,4 +31,4 @@ export const CustomTextAlignSelect = () => {
       </Components.Generic.Menu.Dropdown>
     </Components.Generic.Menu.Root>
   );
-};
+}

@@ -29,14 +29,11 @@ function OperationsTable() {
   const q = search.q || '';
   const tag = search.tag;
 
-  // Sort state backed by URL search params
   const { sortColumns, setSortColumns } = useSortColumns(search.sort, search.order, setSearch);
 
-  // Fetch info to get extension definitions
   const { data: info } = useSuspenseQuery(infoQueryOptions);
   const extensions = info.extensions.filter((ext) => ext.kind === 'middleware');
 
-  // Fetch operations via React Query (reduces bundle size)
   const { data: operations } = useSuspenseQuery(operationsQueryOptions);
 
   // Derive distinct tag kinds from operations data

@@ -7,6 +7,7 @@ export type AvatarProps = AvatarPrimitive.Root.Props &
     size?: 'default' | 'sm' | 'lg';
   };
 
+/** Renders the styled avatar primitive. */
 export function Avatar({ className, size = 'default', ...props }: AvatarProps) {
   return (
     <AvatarPrimitive.Root
@@ -21,6 +22,7 @@ export function Avatar({ className, size = 'default', ...props }: AvatarProps) {
   );
 }
 
+/** Renders the styled avatar image primitive. */
 export function AvatarImage({
   className,
   ...props
@@ -30,6 +32,7 @@ export function AvatarImage({
   );
 }
 
+/** Renders the styled avatar fallback primitive. */
 export function AvatarFallback({
   className,
   ...props
@@ -78,19 +81,22 @@ export interface AvatarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
   limit?: number;
 }
 
-export const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
-  ({ children, className, limit, ...props }, ref) => {
-    return (
-      <AvatarGroupProvider limit={limit}>
-        <div ref={ref} className={cn('relative flex items-center justify-end -space-x-2', className)} {...props}>
-          {children}
-        </div>
-      </AvatarGroupProvider>
-    );
-  },
-);
+/** Renders the styled avatar group primitive. */
+export const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(function AvatarGroup(
+  { children, className, limit, ...props },
+  ref,
+) {
+  return (
+    <AvatarGroupProvider limit={limit}>
+      <div ref={ref} className={cn('relative flex items-center justify-end -space-x-2', className)} {...props}>
+        {children}
+      </div>
+    </AvatarGroupProvider>
+  );
+});
 AvatarGroup.displayName = 'AvatarGroup';
 
+/** Renders the styled avatar group list primitive. */
 export function AvatarGroupList({ children }: { children?: React.ReactNode }) {
   const { limit, setCount } = useAvatarGroupContext();
 
@@ -110,10 +116,11 @@ export function AvatarGroupList({ children }: { children?: React.ReactNode }) {
 
 interface AvatarOverflowIndicatorProps extends React.HTMLAttributes<HTMLSpanElement> {}
 
+/** Renders the styled avatar overflow indicator primitive. */
 export const AvatarOverflowIndicator = React.forwardRef<
   HTMLSpanElement,
   React.HTMLAttributes<HTMLSpanElement> & AvatarOverflowIndicatorProps
->(({ className, ...props }, ref) => {
+>(function AvatarOverflowIndicator({ className, ...props }, ref) {
   const { limit, count } = useAvatarGroupContext();
   // Determine if we need to display an additional avatar  or overflow
   if (!limit || !count || count <= limit) return null;

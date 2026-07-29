@@ -1,9 +1,11 @@
 import { Collapsible as CollapsiblePrimitive } from '@base-ui/react/collapsible';
 
+/** Renders the styled collapsible primitive. */
 export function Collapsible({ ...props }: CollapsiblePrimitive.Root.Props & React.RefAttributes<HTMLDivElement>) {
   return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />;
 }
 
+/** Renders the styled collapsible trigger primitive. */
 export function CollapsibleTrigger({
   render,
   nativeButton = !render,
@@ -19,6 +21,7 @@ export function CollapsibleTrigger({
   );
 }
 
+/** Renders the styled collapsible content primitive. */
 export function CollapsibleContent({
   ...props
 }: CollapsiblePrimitive.Panel.Props & React.RefAttributes<HTMLDivElement>) {

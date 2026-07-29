@@ -11,6 +11,7 @@ import type { Session } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 
+/** Renders the sessions list. */
 export function SessionsList() {
   const { t } = useTranslation();
 
@@ -21,8 +22,7 @@ export function SessionsList() {
 
   const sessionsWithoutCurrent = allSessions.filter((session) => !session.isCurrent);
 
-  // Group by device: current session first, then other sessions from the same device
-  // (matched on deviceIdHash; null for mfa/impersonation and legacy rows), then the rest.
+  // Group the current session first, followed by matching device hashes and ungrouped sessions.
   const currentDeviceHash = allSessions.find((session) => session.isCurrent)?.deviceIdHash ?? null;
   const isCurrentDevice = (session: Session) =>
     !session.isCurrent && session.deviceIdHash !== null && session.deviceIdHash === currentDeviceHash;

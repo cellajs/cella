@@ -14,11 +14,12 @@ import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote
 import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
-export const CellaCustomBlockTypeSelect = ({
+/** Renders the cella custom block type select component. */
+export function CellaCustomBlockTypeSelect({
   headingLevels,
 }: {
   headingLevels: CustomBlockNoteMenuProps['headingLevels'];
-}) => {
+}) {
   const Components = useComponentsContext()!;
   const dict = useDictionary();
   const editor = useBlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>();
@@ -110,4 +111,4 @@ export const CellaCustomBlockTypeSelect = ({
       </Components.Generic.Menu.Dropdown>
     </Components.Generic.Menu.Root>
   );
-};
+}

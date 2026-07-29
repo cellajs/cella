@@ -25,6 +25,7 @@ interface DomainTileProps {
   tenantId: string;
 }
 
+/** Renders the domain tile component. */
 export function DomainTile({ domain, tenantId }: DomainTileProps) {
   const { t } = useTranslation();
   const deleteMutation = useDomainDeleteMutation();

@@ -6,6 +6,7 @@ import { contactFormHandler } from '~/modules/common/contact-form/contact-form-h
 
 export type ErrorNoticeError = ApiError | Error | null;
 
+/** Handles ask for help. */
 export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
   if (!window.Gleap) return contactFormHandler(ref);
   window.Gleap.openConversations();

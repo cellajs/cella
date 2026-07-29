@@ -1,5 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 
+/** Returns the query key sort order. */
 export const getQueryKeySortOrder = (queryKey: QueryKey) => {
   // Find the object in queryKey that contains 'sort' and 'order' properties
   const sortData = queryKey.find(

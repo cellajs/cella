@@ -15,7 +15,8 @@ interface SessionTileProps {
   isPending: boolean;
 }
 
-export const SessionTile = ({ session, isCurrentDevice, handleDeleteSessions, isPending }: SessionTileProps) => {
+/** Renders the session tile component. */
+export function SessionTile({ session, isCurrentDevice, handleDeleteSessions, isPending }: SessionTileProps) {
   const { t, i18n } = useTranslation();
 
   const [expanded, setExpanded] = useState(false);
@@ -123,4 +124,4 @@ export const SessionTile = ({ session, isCurrentDevice, handleDeleteSessions, is
       </CardContent>
     </Card>
   );
-};
+}

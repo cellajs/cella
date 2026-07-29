@@ -110,6 +110,7 @@ function StepperBase(props: StepperProps, ref: React.Ref<HTMLDivElement>) {
   );
 }
 
+/** Renders and coordinates a multi-step flow. */
 export const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(StepperBase);
 
 function VerticalContent({ children }: { children: React.ReactNode }) {

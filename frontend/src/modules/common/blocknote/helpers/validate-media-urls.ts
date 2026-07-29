@@ -7,6 +7,7 @@ interface BlockLike {
   children?: BlockLike[];
 }
 
+/** Checks whether the current value contains untrusted media urls. */
 export const hasUntrustedMediaUrls = (blocks: BlockLike[]): boolean => {
   return hasUntrusted(blocks, trustedMediaDomains);
 };

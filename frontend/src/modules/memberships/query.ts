@@ -24,6 +24,7 @@ const keys = {
   delete: ['member', 'delete'] as const,
 };
 
+/** Defines React Query cache keys for member. */
 export const memberQueryKeys = keys;
 
 /** Infinite query options for a paginated list of members of the target entity. */

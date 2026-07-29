@@ -176,6 +176,27 @@ describe('handleMessage — sync step 1', () => {
     expect(clientDoc.getMap('test').get('key')).toBe('value');
   });
 
+  it('2.1.2b existing row — seeds the materialize baseline from the durable description, not the Y.Doc', async () => {
+    // Regression: the Y.Doc row and the durable description are separate stores that can diverge
+    // (e.g. an image url saved to the Y.Doc but not yet materialized). The baseline must anchor on
+    // the description so a later materialize of the diverged Y.Doc is not falsely skipped and drops
+    // the url. Before the fix, existing rows seeded the baseline from the Y.Doc and never read the
+    // description here.
+    const doc = new Y.Doc();
+    doc.getMap('test').set('key', 'value');
+    vi.mocked(loadState).mockResolvedValueOnce(Y.encodeStateAsUpdate(doc));
+    vi.mocked(loadEntityDescription).mockResolvedValueOnce(
+      JSON.stringify([{ id: 'd', type: 'paragraph', props: {}, content: [], children: [] }]),
+    );
+    const collab = joinCollab(ctx);
+    const ws = mockWebSocket();
+
+    await handleMessage(ctx, ws as any, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+
+    expect(loadEntityDescription).toHaveBeenCalledWith(ctx);
+    expect(collab.lastMaterializedJson).toBeDefined();
+  });
+
   it('2.1.3 corrupted state — falls back to full state', async () => {
     const doc = new Y.Doc();
     doc.getMap('test').set('key', 'value');

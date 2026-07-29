@@ -23,7 +23,6 @@ function UsersTable() {
   const { q, role, sort, order } = search;
   const limit = LIMIT;
 
-  // Build columns
   const [selected, setSelected] = useState<BaseUser[]>([]);
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);

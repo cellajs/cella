@@ -12,13 +12,14 @@ interface TableBarContainerProps {
   searchVars?: Record<string, unknown>;
 }
 
-export const TableBarContainer = ({
+/** Renders the table bar container component. */
+export function TableBarContainer({
   children,
   className,
   enableSticky = false,
   offsetTop,
   searchVars,
-}: TableBarContainerProps) => {
+}: TableBarContainerProps) {
   const focusView = useUIStore((state) => state.focusView);
   const scrollToReset = useScrollReset();
 
@@ -44,4 +45,4 @@ export const TableBarContainer = ({
       <div className={cn('flex items-center py-2 max-sm:justify-between md:gap-2', className)}>{children}</div>
     </StickyBox>
   );
-};
+}

@@ -8,7 +8,8 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
 
-export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
+/** Renders the sheeter sheet component. */
+export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
   const {
     id,
     modal,
@@ -120,4 +121,4 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
       </SheetContent>
     </Sheet>
   );
-};
+}

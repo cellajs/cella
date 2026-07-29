@@ -111,7 +111,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
     if (!baselineOnly) verifyViewCounts(views);
   }
 
-  // ── Org-level blocks: membership screening + propagation (legacy `changes`) ─
+  // Organization-level membership screening and propagation.
   const orgIds = Object.keys(changes);
   for (const organizationId of orgIds) {
     const { signals, propagation } = changes[organizationId];

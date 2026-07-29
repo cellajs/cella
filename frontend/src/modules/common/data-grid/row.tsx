@@ -108,6 +108,7 @@ function Row<R, SR>({
 }
 
 const RowComponent = memo(Row) as <R, SR>(props: RenderRowProps<R, SR>) => React.JSX.Element;
+/** Renders the default row. */
 export function defaultRenderRow<R, SR>(key: React.Key, props: RenderRowProps<R, SR>) {
   return <RowComponent key={key} {...props} />;
 }

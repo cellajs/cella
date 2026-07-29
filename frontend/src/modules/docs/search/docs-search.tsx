@@ -39,7 +39,7 @@ const scopeChips: { value: DocsSearchScope; label: string }[] = [
  * Docs search dialog: full client-side search over docs pages and the API
  * reference. Unlike the app search this needs no server and works offline.
  */
-export const DocsSearch = () => {
+export function DocsSearch() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -218,4 +218,4 @@ export const DocsSearch = () => {
       </div>
     </Combobox>
   );
-};
+}

@@ -54,6 +54,7 @@ interface CalculatedColumnsArgs<R, SR> {
   activeModes?: ActiveModes;
 }
 
+/** Provides calculated columns state and actions. */
 export function useCalculatedColumns<R, SR>({
   rawColumns,
   defaultColumnOptions,

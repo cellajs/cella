@@ -6,6 +6,7 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 
+/** Renders the dialoger dialog component. */
 export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   const {
     id,

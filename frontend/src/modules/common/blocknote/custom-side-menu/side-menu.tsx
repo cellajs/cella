@@ -8,7 +8,8 @@ import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types'
 import { DropdownMenu, DropdownMenuContentNoPortal, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
 // in this menu we have only drag button
-export const CustomSideMenu = ({ editor, allowedTypes, headingLevels }: CustomBlockNoteMenuProps) => {
+/** Renders the custom side menu component. */
+export function CustomSideMenu({ editor, allowedTypes, headingLevels }: CustomBlockNoteMenuProps) {
   return (
     <SideMenuController
       sideMenu={(props) => {
@@ -33,7 +34,7 @@ export const CustomSideMenu = ({ editor, allowedTypes, headingLevels }: CustomBl
       }}
     />
   );
-};
+}
 
 // Keep drag mousedown separate from Base UI's menu trigger.
 // Controlled click-only state prevents dragging from opening the menu.

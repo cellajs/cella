@@ -20,7 +20,7 @@ type BlockNoteFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<
 /**
  * A form field component that integrates the BlockNote editor with react-hook-form.
  */
-const BlockNoteContentFormField = <TFieldValues extends FieldValues>({
+function BlockNoteContentFormField<TFieldValues extends FieldValues>({
   control,
   label,
   name,
@@ -29,7 +29,7 @@ const BlockNoteContentFormField = <TFieldValues extends FieldValues>({
   autoFocus,
   containerClassName,
   baseBlockNoteProps: { excludeBlockTypes, baseFilePanelProps, ...restBlockNoteProps },
-}: BlockNoteFieldProps<TFieldValues>) => {
+}: BlockNoteFieldProps<TFieldValues>) {
   return (
     <FormField
       control={control}
@@ -64,6 +64,6 @@ const BlockNoteContentFormField = <TFieldValues extends FieldValues>({
       }}
     />
   );
-};
+}
 
 export { BlockNoteContentFormField };

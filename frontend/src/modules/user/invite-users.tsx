@@ -48,6 +48,7 @@ interface InviteUsersProps {
 }
 
 // When no entity type, it's a system invite
+/** Renders the invitation flow for users. */
 export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) {
   const { t } = useTranslation();
 

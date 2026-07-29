@@ -12,7 +12,7 @@ const pwaEnabled = appConfig.has.pwa;
 /**
  * Preferences content: appearance toggles and offline settings.
  */
-export const PreferencesContent = () => {
+export function PreferencesContent() {
   const { t } = useTranslation();
 
   const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
@@ -80,4 +80,4 @@ export const PreferencesContent = () => {
       )}
     </>
   );
-};
+}

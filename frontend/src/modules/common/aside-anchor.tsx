@@ -7,7 +7,8 @@ interface AsideAnchorProps {
   extraOffset?: boolean;
 }
 
-export const AsideAnchor = ({ id, className, children, extraOffset }: AsideAnchorProps) => {
+/** Renders the aside anchor component. */
+export function AsideAnchor({ id, className, children, extraOffset }: AsideAnchorProps) {
   return (
     <div id={`spy-${id}-anchor-wrap`} className={cn('last:mb-12 md:last:mb-[70vh]', className)}>
       {/* Offset element for anchor positioning */}
@@ -16,4 +17,4 @@ export const AsideAnchor = ({ id, className, children, extraOffset }: AsideAncho
       {children}
     </div>
   );
-};
+}

@@ -38,6 +38,12 @@ export const createNotFoundComponent = (boundary: BoundaryType, homePath?: strin
 
 // === Static route components ===
 
-export const ErrorNoticePageComponent = () => <ErrorNotice boundary="public" />;
+/** Renders an error notice as a full-page route fallback. */
+export function ErrorNoticePageComponent() {
+  return <ErrorNotice boundary="public" />;
+}
 
-export const SpinnerPage = () => <Spinner className="mt-[45vh] h-10 w-10" />;
+/** Renders the spinner page. */
+export function SpinnerPage() {
+  return <Spinner className="mt-[45vh] h-10 w-10" />;
+}

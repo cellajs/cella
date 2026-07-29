@@ -16,12 +16,14 @@ export function getYjsOwnedFields(entityType: ProductEntityType): string[] {
 /** Track active Yjs editors so stream updates cannot overwrite newer local document state. */
 const activeYjsEditors = new Map<ProductEntityType, Set<string>>();
 
+/** Registers the active Yjs editor for a collaborative document. */
 export function registerActiveYjsEditor(entityType: ProductEntityType, entityId: string): void {
   const ids = activeYjsEditors.get(entityType) ?? new Set();
   ids.add(entityId);
   activeYjsEditors.set(entityType, ids);
 }
 
+/** Unregisters the active Yjs editor for a collaborative document. */
 export function unregisterActiveYjsEditor(entityType: ProductEntityType, entityId: string): void {
   const ids = activeYjsEditors.get(entityType);
   if (!ids) return;
@@ -29,6 +31,7 @@ export function unregisterActiveYjsEditor(entityType: ProductEntityType, entityI
   if (ids.size === 0) activeYjsEditors.delete(entityType);
 }
 
+/** Checks whether a collaborative document currently has an active Yjs editor. */
 export function isYjsEditorActive(entityType: ProductEntityType, entityId: string): boolean {
   return activeYjsEditors.get(entityType)?.has(entityId) ?? false;
 }

@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { wideHierarchy } from 'shared/testing/wide-fixture';
 
+/** Provides an isolated React Query client for enrichment tests. */
 export const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, gcTime: 0 } },
 });
@@ -32,18 +33,22 @@ mockEntityQueryRegistry.set('organization', createMockEntityKeys('organization')
 mockEntityQueryRegistry.set('workspace', createMockEntityKeys('workspace'));
 mockEntityQueryRegistry.set('project', createMockEntityKeys('project'));
 
+/** Returns mocked entity query keys for enrichment tests. */
 export function mockGetEntityQueryKeys(entityType: string) {
   return mockEntityQueryRegistry.get(entityType);
 }
 
+/** Returns mocked registered entity types for enrichment tests. */
 export function mockGetRegisteredEntityTypes(): string[] {
   return Array.from(mockEntityQueryRegistry.keys());
 }
 
+/** Checks mocked entity query-key registration in enrichment tests. */
 export function mockHasEntityQueryKeys(entityType: string): boolean {
   return mockEntityQueryRegistry.has(entityType);
 }
 
+/** Registers mocked entity query keys for enrichment tests. */
 export function mockRegisterEntityQueryKeys(entityType: string, keys: ReturnType<typeof createMockEntityKeys>): void {
   mockEntityQueryRegistry.set(entityType, keys);
 }
@@ -61,6 +66,7 @@ interface TestMembership {
   [key: string]: unknown;
 }
 
+/** Builds membership. */
 export function makeMembership(entityId: string, overrides?: Partial<TestMembership>): TestMembership {
   return {
     organizationId: entityId,
@@ -74,6 +80,7 @@ export function makeMembership(entityId: string, overrides?: Partial<TestMembers
   };
 }
 
+/** Builds infinite data. */
 export function makeInfiniteData(items: { id: string; membership?: TestMembership | null }[]) {
   return { pages: [{ items }], pageParams: [undefined] };
 }
@@ -81,8 +88,10 @@ export function makeInfiniteData(items: { id: string; membership?: TestMembershi
 // Real builder instance from the shared wide fixture (org with workspace/project siblings).
 // The deep-path import stays unmocked when tests vi.mock('shared'), so traversal logic is
 // the real class, never a hand-rolled twin.
+/** Provides mock hierarchy for frontend query tests. */
 export const mockHierarchy = wideHierarchy;
 
+/** Configures mock app. */
 export const mockAppConfig = {
   channelEntityTypes: [...wideHierarchy.channelTypes] as string[],
   entityIdColumnKeys: wideHierarchy.idColumnKeys as Record<string, string>,

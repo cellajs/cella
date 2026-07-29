@@ -18,7 +18,8 @@ const orgMembersApi = getRouteApi('/_app/$tenantId/$organizationSlug/organizatio
 const orgAttachmentsApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/attachments');
 const orgSettingsApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/settings');
 
-export const OrganizationRouteComponent = () => {
+/** Renders the routed organization view. */
+export function OrganizationRouteComponent() {
   const { organization, tenantId } = orgRouteApi.useRouteContext();
   const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
   return (
@@ -26,9 +27,10 @@ export const OrganizationRouteComponent = () => {
       <OrganizationPage key={data.id} organizationId={data.id} tenantId={tenantId} />
     </Suspense>
   );
-};
+}
 
-export const OrganizationMembersComponent = () => {
+/** Renders the organization members route. */
+export function OrganizationMembersComponent() {
   const { organization, tenantId } = orgMembersApi.useRouteContext();
   const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
   return (
@@ -36,9 +38,10 @@ export const OrganizationMembersComponent = () => {
       <MembersTable key={data.id} channel={data} />
     </Suspense>
   );
-};
+}
 
-export const OrganizationAttachmentsComponent = () => {
+/** Renders the organization attachments route. */
+export function OrganizationAttachmentsComponent() {
   const { organization, tenantId } = orgAttachmentsApi.useRouteContext();
   const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
   return (
@@ -46,9 +49,10 @@ export const OrganizationAttachmentsComponent = () => {
       <AttachmentsTable key={data.id} channel={data} />
     </Suspense>
   );
-};
+}
 
-export const OrganizationSettingsComponent = () => {
+/** Renders the organization settings route. */
+export function OrganizationSettingsComponent() {
   const { organization, tenantId } = orgSettingsApi.useRouteContext();
   const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
   return (
@@ -56,4 +60,4 @@ export const OrganizationSettingsComponent = () => {
       <OrganizationSettings organization={data} />
     </Suspense>
   );
-};
+}

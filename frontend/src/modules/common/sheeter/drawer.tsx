@@ -6,7 +6,8 @@ import { cn } from '~/utils/cn';
 
 const sideToSwipeDirection = { top: 'up', bottom: 'down', left: 'left', right: 'right' } as const;
 
-export const SheeterDrawer = ({ sheet }: { sheet: InternalSheet }) => {
+/** Renders the sheeter drawer component. */
+export function SheeterDrawer({ sheet }: { sheet: InternalSheet }) {
   // Drawers on mobile are always modal (overlay + outside click to close)
   const {
     id,
@@ -69,4 +70,4 @@ export const SheeterDrawer = ({ sheet }: { sheet: InternalSheet }) => {
       </DrawerContent>
     </Drawer>
   );
-};
+}

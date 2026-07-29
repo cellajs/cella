@@ -13,7 +13,7 @@ import { useUserStore } from '~/modules/user/user-store';
  * Combined header with logo and preferences.
  * Also renders floating-nav return bar (visible only in floating-nav context).
  */
-export const MenuSheetHeader = () => {
+export function MenuSheetHeader() {
   const { user } = useUserStore();
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
   const accountButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -67,4 +67,4 @@ export const MenuSheetHeader = () => {
       </div>
     </div>
   );
-};
+}

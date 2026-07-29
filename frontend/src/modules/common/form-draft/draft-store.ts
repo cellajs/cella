@@ -20,6 +20,7 @@ interface DraftStoreState {
  */
 const initStore: Pick<DraftStoreState, 'forms' | 'dirtyForms'> = { forms: {}, dirtyForms: {} };
 
+/** Provides access to persisted form-draft state. */
 export const useDraftStore = create<DraftStoreState>()(
   immer(
     persist(

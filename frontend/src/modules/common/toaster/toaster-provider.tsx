@@ -4,7 +4,8 @@ import { useToastStore } from '~/modules/common/toaster/toast-store';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Toaster } from '~/modules/ui/sonner';
 
-export const ToasterProvider = () => {
+/** Provides toaster state to descendant components. */
+export function ToasterProvider() {
   const isMobile = useBreakpointBelow('sm');
   const toast = useToastStore((state) => state.toast);
   const clearToast = useToastStore((state) => state.clearToast);
@@ -18,4 +19,4 @@ export const ToasterProvider = () => {
   }, [toast]);
 
   return <Toaster richColors toastOptions={{ className: 'max-sm:mb-16' }} position={toastPosition} />;
-};
+}

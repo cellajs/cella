@@ -28,6 +28,7 @@ export interface JsonViewerContextValue {
   openapiMode?: 'spec' | 'schema';
 }
 
+/** Shares json viewer state with descendant components. */
 export const JsonViewerContext = createContext<JsonViewerContextValue>({
   theme: defaultTheme,
   indentWidth: 2,
@@ -46,4 +47,5 @@ export const JsonViewerContext = createContext<JsonViewerContextValue>({
   openapiMode: undefined,
 });
 
+/** Provides json viewer context state and actions. */
 export const useJsonViewerContext = () => useContext(JsonViewerContext);

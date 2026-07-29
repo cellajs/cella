@@ -20,7 +20,7 @@ type ChannelTileEntity = EnrichedChannel & {
 /**
  * Tile component to display an entity in a grid layout.
  */
-export const ChannelGridTile = ({ entity }: { entity: ChannelTileEntity }) => {
+export function ChannelGridTile({ entity }: { entity: ChannelTileEntity }) {
   const { to, params, search } = getChannelRoute(entity);
   const counts = entity.included?.counts;
   return (
@@ -71,4 +71,4 @@ export const ChannelGridTile = ({ entity }: { entity: ChannelTileEntity }) => {
       )}
     </Card>
   );
-};
+}

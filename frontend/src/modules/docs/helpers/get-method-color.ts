@@ -1,3 +1,4 @@
+/** Returns the method color. */
 export const getMethodColor = (method: string) => {
   switch (method.toLowerCase()) {
     case 'get':

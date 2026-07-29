@@ -1,5 +1,4 @@
 import { CheckIcon, CopyIcon } from 'lucide-react';
-import type { FC } from 'react';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 
 interface CopyButtonProps {
@@ -10,7 +9,7 @@ interface CopyButtonProps {
  * Copy-to-clipboard button that appears on hover.
  * Shows a checkmark briefly after successful copy.
  */
-export const CopyButton: FC<CopyButtonProps> = ({ value }) => {
+export function CopyButton({ value }: CopyButtonProps) {
   const { copied, copyToClipboard } = useCopyToClipboard(2000);
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -28,4 +27,4 @@ export const CopyButton: FC<CopyButtonProps> = ({ value }) => {
       {copied ? <CheckIcon className="icon-xs" /> : <CopyIcon className="icon-xs" />}
     </button>
   );
-};
+}

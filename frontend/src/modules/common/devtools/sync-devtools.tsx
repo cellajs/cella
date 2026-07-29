@@ -314,7 +314,6 @@ function StatsView({ spans: _spans }: { spans: SpanData[] }) {
 
 /** Timeline view showing end-to-end latency. */
 function TimelineView({ spans }: { spans: SpanData[] }) {
-  // Find spans with e2e latency attribute
   const spansWithLatency = spans.filter((s) => 'sync.e2e_latency_ms' in s.attributes);
 
   if (spansWithLatency.length === 0) {
@@ -329,7 +328,6 @@ function TimelineView({ spans }: { spans: SpanData[] }) {
     );
   }
 
-  // Get last 20, sorted by time
   const recent = [...spansWithLatency].sort((a, b) => b.startTime - a.startTime).slice(0, 20);
 
   const latencies = recent.map((s) => Number(s.attributes['sync.e2e_latency_ms']) || 0);

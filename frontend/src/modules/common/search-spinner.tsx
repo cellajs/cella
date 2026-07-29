@@ -13,6 +13,7 @@ interface SearchSpinnerProps {
   appearDelay?: number;
 }
 
+/** Renders the search spinner component. */
 export function SearchSpinner({ isSearching, value, appearDelay = 0.3 }: SearchSpinnerProps) {
   return (
     <AnimatePresence mode="wait" initial={false}>

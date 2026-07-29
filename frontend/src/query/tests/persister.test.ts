@@ -30,6 +30,13 @@ const { persister, sessionPersister, cleanupOrphanedSessions } = await import('~
 // The persister reads/writes the live per-user appdb; bind one (owner `u1`) per test.
 const { bindAppDb, deleteAppDb, getAppDb } = await import('~/query/app-db');
 
+// Snapshot the window listeners the persister registered at import time, before any test clears
+// mocks. A reload fires `beforeunload`, so a teardown wired there would wipe the session cache on
+// every refresh; this snapshot lets us assert none is registered even after later mock resets.
+const importTimeWindowEvents = (window.addEventListener as unknown as { mock: { calls: unknown[][] } }).mock.calls.map(
+  (call) => call[0],
+);
+
 // Helpers
 
 function makeQuery(hash: string, entityType: string, dataUpdatedAt: number, data: unknown = null) {
@@ -171,7 +178,6 @@ describe('per-query IDB persister', () => {
       await persister.persistClient(makePersistedClient([q1, q2]));
       await persister.flush();
 
-      // Update task query only
       const q1Updated = makeQuery('["task","list","org-1"]', 'task', 3000, [{ id: 't1' }, { id: 't2' }]);
       await persister.persistClient(makePersistedClient([q1Updated, q2]));
       await persister.flush();
@@ -390,5 +396,36 @@ describe('per-query IDB persister', () => {
       const metaAfter = await db.meta.get('rq');
       expect(metaAfter!.clientCacheVersion).toBe('v1');
     });
+  });
+});
+
+describe('session persister survives reload', () => {
+  beforeEach(async () => {
+    bindAppDb('u1');
+    await sessionPersister.removeClient();
+    sessionStorageMap.clear();
+  });
+
+  afterEach(async () => {
+    await deleteAppDb();
+  });
+
+  it('round-trips session-scoped queries so a refresh restores from cache', async () => {
+    const q = makeQuery('["task","list","org-1"]', 'task', 1000, [{ id: 't1' }]);
+
+    await sessionPersister.persistClient(makePersistedClient([q]));
+    await sessionPersister.flush();
+
+    // A reload re-reads the same session scope; the data must still be there.
+    const restored = await sessionPersister.restoreClient();
+    expect(restored).toBeDefined();
+    expect(restored!.clientState.queries).toHaveLength(1);
+    expect(restored!.clientState.queries[0].state.data).toEqual([{ id: 't1' }]);
+  });
+
+  it('registers no beforeunload teardown that would wipe the session cache on reload', () => {
+    // `beforeunload` cannot distinguish reloads from closed tabs. Age-based orphan cleanup
+    // preserves reload caches while reclaiming closed sessions.
+    expect(importTimeWindowEvents).not.toContain('beforeunload');
   });
 });

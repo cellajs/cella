@@ -4,19 +4,46 @@ import { useLatestRef } from '~/hooks/use-latest-ref';
 import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { FocusTrap } from '~/modules/common/focus-trap';
 import { Popover, PopoverContent } from '~/modules/ui/popover';
+import { cn } from '~/utils/cn';
 
-export const DropdownerDropdown = ({ dropdown }: { dropdown: InternalDropdown }) => {
+/** Renders the dropdowner dropdown component. */
+export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown }) {
   const triggerEl = dropdown.triggerRef?.current;
 
-  // Portaled content may autofocus before positioning and scroll the document.
-  // Restore the pre-mount scroll position on the next frame.
+  // Portaled content (popup positioning, combobox autofocus) can jump the document scroll
+  // to the top while the popup is still at (0,0), and this fires across several async frames
+  // (positioning, entry animation, data-gated autofocus), not just the first. Pin the
+  // pre-open scroll position: snap it back on any programmatic scroll until the user
+  // themselves scrolls (wheel/touch/key), which releases the pin.
   useLayoutEffect(() => {
     const scroller = document.scrollingElement ?? document.documentElement;
-    const { scrollTop, scrollLeft } = scroller;
-    const raf = requestAnimationFrame(() => {
-      scroller.scrollTo({ top: scrollTop, left: scrollLeft, behavior: 'instant' as ScrollBehavior });
-    });
-    return () => cancelAnimationFrame(raf);
+    const pinned = { top: scroller.scrollTop, left: scroller.scrollLeft };
+    let released = false;
+
+    const release = () => {
+      if (released) return;
+      released = true;
+      window.removeEventListener('scroll', onScroll, true);
+      for (const type of userScrollEvents) window.removeEventListener(type, release, true);
+    };
+
+    const onScroll = () => {
+      if (released) return;
+      if (scroller.scrollTop !== pinned.top || scroller.scrollLeft !== pinned.left) {
+        scroller.scrollTo({ top: pinned.top, left: pinned.left, behavior: 'instant' as ScrollBehavior });
+      }
+    };
+
+    const userScrollEvents = ['wheel', 'touchmove', 'keydown'] as const;
+    window.addEventListener('scroll', onScroll, true);
+    for (const type of userScrollEvents) window.addEventListener(type, release, true);
+    // Release after positioning + entry animation settle, so later user scrolling is free.
+    const timer = setTimeout(release, 400);
+
+    return () => {
+      clearTimeout(timer);
+      release();
+    };
   }, []);
 
   // Watch for trigger removal from DOM
@@ -37,9 +64,9 @@ export const DropdownerDropdown = ({ dropdown }: { dropdown: InternalDropdown })
 
   if (dropdown.kind === 'menu') return <MenuDropdown dropdown={dropdown} triggerEl={triggerEl} />;
   return <PanelDropdown dropdown={dropdown} triggerEl={triggerEl} />;
-};
+}
 
-const MenuDropdown = ({ dropdown, triggerEl }: { dropdown: InternalDropdown; triggerEl: HTMLElement }) => {
+function MenuDropdown({ dropdown, triggerEl }: { dropdown: InternalDropdown; triggerEl: HTMLElement }) {
   const triggerFocusRef = useLatestRef(triggerEl);
 
   const onOpenChange = (nextOpen: boolean) => {
@@ -51,7 +78,10 @@ const MenuDropdown = ({ dropdown, triggerEl }: { dropdown: InternalDropdown; tri
       <Menu.Portal>
         <Menu.Positioner anchor={triggerEl} align={dropdown.align} sideOffset={4} className="z-301">
           <Menu.Popup
-            className="min-w-32 rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-hidden"
+            className={cn(
+              'min-w-32 rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-hidden',
+              dropdown.popupClassName,
+            )}
             finalFocus={triggerFocusRef}
           >
             {dropdown.content}
@@ -60,9 +90,9 @@ const MenuDropdown = ({ dropdown, triggerEl }: { dropdown: InternalDropdown; tri
       </Menu.Portal>
     </Menu.Root>
   );
-};
+}
 
-const PanelDropdown = ({ dropdown, triggerEl }: { dropdown: InternalDropdown; triggerEl: HTMLElement }) => {
+function PanelDropdown({ dropdown, triggerEl }: { dropdown: InternalDropdown; triggerEl: HTMLElement }) {
   const triggerFocusRef = useLatestRef(triggerEl);
 
   const onOpenChange = (nextOpen: boolean) => {
@@ -78,4 +108,4 @@ const PanelDropdown = ({ dropdown, triggerEl }: { dropdown: InternalDropdown; tr
       </PopoverContent>
     </Popover>
   );
-};
+}

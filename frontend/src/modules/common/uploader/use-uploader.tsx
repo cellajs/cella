@@ -32,6 +32,7 @@ interface UploadStoreState {
   get: () => UploadData | null;
 }
 
+/** Provides the configured Uppy instance and upload actions. */
 export const useUploader = create<UploadStoreState>((set, get) => ({
   uploaderConfig: null,
 

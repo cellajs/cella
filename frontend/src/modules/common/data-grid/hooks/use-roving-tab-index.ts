@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 // https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/#kbd_general_within
+/** Provides roving tab index state and actions. */
 export function useRovingTabIndex(isSelected: boolean) {
   // https://www.w3.org/WAI/ARIA/apg/patterns/grid/#keyboardinteraction-settingfocusandnavigatinginsidecells
   const [isChildFocused, setIsChildFocused] = useState(false);

@@ -5,6 +5,7 @@ import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
 import { cn } from '~/utils/cn';
 
+/** Renders the styled input group primitive. */
 export function InputGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -51,6 +52,7 @@ const inputGroupAddonVariants = cva(
   },
 );
 
+/** Renders the styled input group addon primitive. */
 export function InputGroupAddon({
   className,
   align = 'inline-start',
@@ -88,6 +90,7 @@ const inputGroupButtonVariants = cva('flex items-center gap-2 text-sm shadow-non
   },
 });
 
+/** Renders the styled input group button primitive. */
 export function InputGroupButton({
   className,
   type = 'button',
@@ -106,6 +109,7 @@ export function InputGroupButton({
   );
 }
 
+/** Renders the styled input group text primitive. */
 export function InputGroupText({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     <span
@@ -118,6 +122,7 @@ export function InputGroupText({ className, ...props }: React.ComponentProps<'sp
   );
 }
 
+/** Renders the styled input group input primitive. */
 export function InputGroupInput({ className, ...props }: React.ComponentProps<'input'>) {
   return (
     <Input
@@ -131,6 +136,7 @@ export function InputGroupInput({ className, ...props }: React.ComponentProps<'i
   );
 }
 
+/** Renders the styled input group textarea primitive. */
 export function InputGroupTextarea({ className, ...props }: React.ComponentProps<'textarea'>) {
   return (
     <Textarea

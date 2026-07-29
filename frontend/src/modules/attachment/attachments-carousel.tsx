@@ -60,6 +60,7 @@ type CarouselProps =
       saveInSearchParams?: never; // Disallowed when isDialog is false
     });
 
+/** Renders the attachments carousel component. */
 export function AttachmentsCarousel({
   items,
   isDialog = false,
@@ -205,6 +206,7 @@ export function AttachmentsCarousel({
                 filename={filename}
                 altName={i18n.t('c:attachment')}
                 onPanStateToggle={toggleWatchDrag}
+                onBackdropClick={isDialog ? () => removeDialog() : undefined}
               />
             </CarouselItem>
           );

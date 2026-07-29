@@ -2,6 +2,7 @@ import { LoaderCircleIcon } from 'lucide-react';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { cn } from '~/utils/cn';
 
+/** Renders the spinner component. */
 export function Spinner({ className = '', noDelay = false }) {
   const { hasStarted } = useMountedState();
 

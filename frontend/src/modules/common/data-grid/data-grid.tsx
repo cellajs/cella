@@ -11,6 +11,7 @@ import {
   HeaderRowSelectionChangeContext,
   HeaderRowSelectionContext,
   type HeaderRowSelectionContextValue,
+  measureAllColumnWidths,
   RowSelectionChangeContext,
   useCalculatedColumns,
   useColumnWidths,
@@ -244,6 +245,18 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   'data-cy'?: Maybe<string>;
 }
 
+const emptyColumnWidths: ReadonlyMap<string, number> = new Map();
+
+/** Compare rendered-width maps, ignoring sub-pixel jitter, to skip redundant state updates. */
+function sameColumnWidths(a: ReadonlyMap<string, number>, b: ReadonlyMap<string, number>): boolean {
+  if (a.size !== b.size) return false;
+  for (const [key, width] of a) {
+    const other = b.get(key);
+    if (other === undefined || Math.abs(other - width) > 0.5) return false;
+  }
+  return true;
+}
+
 /**
  * Low-level virtualized grid with selection, editing, keyboard, layout, and drag support.
  * Query-backed tables should use the `DataTable` wrapper for loading, error, empty, and
@@ -376,7 +389,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const rowSelectionMode: RowSelectionMode = rawRowSelectionMode ?? 'none';
   const isCellSelectionEnabled = cellSelectionMode !== 'none';
 
-  // Get current breakpoint for responsive features
   const currentBreakpoint = useCurrentBreakpoint();
 
   // 'compact' = user density toggle, 'mobile' = viewport-driven (xs, hardcoded).
@@ -458,6 +470,27 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   // while a pragmatic-dnd drag is in progress.
   useDragAutoScroll(gridRef, enableDragAutoScroll);
 
+  // Measuring cells expose flex-resolved widths so wrapped-row estimates follow resizing.
+  // Only wrap-text tables install the observer.
+  const [renderedColumnWidths, setRenderedColumnWidths] = useState<ReadonlyMap<string, number>>(emptyColumnWidths);
+  const wrapTextEnabled = hasWrapTextColumns(columns);
+  useLayoutEffect(() => {
+    if (!wrapTextEnabled) {
+      setRenderedColumnWidths((prev) => (prev.size === 0 ? prev : emptyColumnWidths));
+      return;
+    }
+    const grid = gridRef.current;
+    const remeasure = () => {
+      const next = measureAllColumnWidths(gridRef);
+      setRenderedColumnWidths((prev) => (sameColumnWidths(prev, next) ? prev : next));
+    };
+    remeasure();
+    if (!grid || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(remeasure);
+    observer.observe(grid);
+    return () => observer.disconnect();
+  }, [wrapTextEnabled, columns, gridRef]);
+
   // Calculate row heights before virtualization for wrapped and merged content.
   // Mobile applies the grid-owned touch-target scaling.
   const rowHeight = useMemo(() => {
@@ -471,9 +504,12 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     if (!hasWrapTextColumns(columns)) {
       return slotExtra === 0 ? scaledBase : () => scaledBase + slotExtra;
     }
+    const getRenderedWidth = (column: CalculatedColumn<R, unknown>) =>
+      renderedColumnWidths.get(column.key) ?? (typeof column.width === 'number' ? column.width : column.minWidth);
     return (row: R) =>
-      computeWrapTextRowHeight(scaledBase, columns as readonly CalculatedColumn<R, unknown>[], row) + slotExtra;
-  }, [baseRowHeight, columns, isMobileBreakpoint]);
+      computeWrapTextRowHeight(scaledBase, columns as readonly CalculatedColumn<R, unknown>[], row, getRenderedWidth) +
+      slotExtra;
+  }, [baseRowHeight, columns, isMobileBreakpoint, renderedColumnWidths]);
 
   const groupedColumnHeaderRowsCount = headerRowsCount - 1;
   const minRowIdx = -headerRowsCount;

@@ -125,7 +125,7 @@ export function openExamplesSheet(operation: GenOperationSummary, trigger: HTMLB
  * Operation examples component that shows responses with examples.
  * Wrap the parent component in a Suspense boundary for optimal batching.
  */
-export const OperationExamples = ({ operationId, tagName }: OperationExamplesProps) => {
+export function OperationExamples({ operationId, tagName }: OperationExamplesProps) {
   const { t } = useTranslation();
 
   const { data: operations } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
@@ -154,4 +154,4 @@ export const OperationExamples = ({ operationId, tagName }: OperationExamplesPro
       typesIndex={typesIndex}
     />
   );
-};
+}

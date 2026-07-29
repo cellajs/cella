@@ -5,6 +5,7 @@ import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 import { appStreamManager } from '~/query/realtime/stream-store';
 
+/** Fetches the current user and updates the authenticated-user cache. */
 export const getAndSetMe = async () => {
   const { user, isSystemAdmin } = await getMe();
   const skipLastUser = useUIStore.getState().impersonating;

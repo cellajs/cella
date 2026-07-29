@@ -60,6 +60,7 @@ function MdxHeading({ id = '', children, ...props }: ComponentProps<'h2'>) {
   );
 }
 
+/** Maps MDX elements to documentation UI components. */
 export const mdxComponents = {
   a: MdxLink,
   h2: MdxHeading,

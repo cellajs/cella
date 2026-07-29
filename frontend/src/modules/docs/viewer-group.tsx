@@ -28,14 +28,14 @@ interface ViewerGroupProps {
  * Reusable component for displaying schema data with format/zod/type toggle views.
  * Used for responses, request body, and parameter schemas.
  */
-export const ViewerGroup = ({
+export function ViewerGroup({
   schema,
   zodCode,
   typeCode,
   example,
   defaultInspectDepth = 5,
   defaultViewMode = 'format',
-}: ViewerGroupProps) => {
+}: ViewerGroupProps) {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<SchemaViewMode>(defaultViewMode);
 
@@ -130,4 +130,4 @@ export const ViewerGroup = ({
       </div>
     </div>
   );
-};
+}

@@ -117,8 +117,10 @@ export const queryClient: QueryClient =
 
 /** Promise that resolves once the PersistQueryClientProvider has restored the IDB cache. */
 let resolveCacheRestored: () => void;
+/** Tracks completion of the persisted-cache restore. */
 export const cacheRestored: Promise<void> =
   (import.meta.hot?.data?.cacheRestored as Promise<void>) ?? new Promise<void>((r) => (resolveCacheRestored = r));
+/** Marks the persisted-cache restore as complete. */
 export function markCacheRestored() {
   resolveCacheRestored();
 }

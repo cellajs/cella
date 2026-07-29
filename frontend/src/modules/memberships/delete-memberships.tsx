@@ -15,6 +15,7 @@ interface Props {
   callback?: (args: CallbackArgs<Member[]>) => void;
 }
 
+/** Renders the deletion flow for memberships. */
 export function DeleteMemberships({
   members,
   entityId,

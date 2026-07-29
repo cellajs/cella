@@ -22,7 +22,7 @@ interface MenuSectionButtonProps {
 /**
  * Menu section component that is sticky and can contain action buttons.
  */
-export const MenuSectionButton = ({
+export function MenuSectionButton({
   data,
   channelIds,
   options,
@@ -30,7 +30,7 @@ export const MenuSectionButton = ({
   isSectionVisible,
   handleCreateAction,
   toggleIsEditing,
-}: MenuSectionButtonProps) => {
+}: MenuSectionButtonProps) {
   const { t } = useTranslation();
   const toggleSection = useNavigationStore((state) => state.toggleSection);
 
@@ -127,4 +127,4 @@ export const MenuSectionButton = ({
       </div>
     </div>
   );
-};
+}

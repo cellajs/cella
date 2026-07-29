@@ -19,4 +19,5 @@ function UserSheetHandlerBase() {
   return null;
 }
 
+/** Coordinates user-sheet state with the current route search parameters. */
 export const UserSheetHandler = memo(UserSheetHandlerBase);

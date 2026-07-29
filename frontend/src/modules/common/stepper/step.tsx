@@ -14,9 +14,10 @@ interface StepInternalConfig {
 
 interface FullStepProps extends StepProps, StepInternalConfig {}
 
+/** Renders the step component. */
 export const Step = React.forwardRef<HTMLLIElement, StepProps>(
   // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
-  (props, ref: React.Ref<any>) => {
+  function Step(props, ref: React.Ref<any>) {
     const {
       children,
       description,

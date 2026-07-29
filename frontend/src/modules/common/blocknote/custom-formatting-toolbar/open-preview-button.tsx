@@ -4,7 +4,8 @@ import { useMemo, useRef } from 'react';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 
-export const FileOpenPreviewButton = () => {
+/** Renders the file open preview button. */
+export function FileOpenPreviewButton() {
   const ref = useRef(null);
   const editor = useBlockNoteEditor(customSchema);
   const Components = useComponentsContext()!;
@@ -33,4 +34,4 @@ export const FileOpenPreviewButton = () => {
       icon={<ScalingIcon className="icon-sm" />}
     />
   );
-};
+}

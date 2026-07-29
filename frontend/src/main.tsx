@@ -22,10 +22,8 @@ client.setConfig(createClientConfig());
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
 
-// Render ASCII logo in console
 renderAscii();
 
-// Add badge to favicon based on config mode
 initFaviconBadge(appConfig.mode);
 
 // In dev server mode, unregister any lingering service workers left by `pnpm offline`.

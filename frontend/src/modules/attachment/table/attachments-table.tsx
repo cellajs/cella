@@ -53,7 +53,6 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
   const { q, sort, order } = search;
   const limit = LIMIT;
 
-  // Build columns
   const [selected, setSelected] = useState<Attachment[]>([]);
   const columnsFromHook = useColumns(channel, isSheet);
   const [hiddenOverrides, setHiddenOverrides] = useState<Record<string, boolean>>({});
@@ -110,7 +109,6 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
   const { data: rows, isLoading, isFetching, error } = isDefaultView ? canonical : filtered;
   const hasNextPage = isDefaultView ? false : filtered.hasNextPage;
 
-  // Update rows with mutation
   const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
     if (column.key !== 'name') return;
 

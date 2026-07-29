@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import type { ComponentType } from 'react';
 
 /** Path to a value in the JSON tree */
 export type Path = (string | number)[];
@@ -15,7 +15,7 @@ export interface DataType<T = any> {
   /** Function to check if this type should handle the value */
   is: (value: unknown, path: Path) => boolean;
   /** Component to render the value */
-  Component: FC<DataTypeProps<T>>;
+  Component: ComponentType<DataTypeProps<T>>;
 }
 
 /** Helper function to define a custom data type */

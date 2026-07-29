@@ -21,7 +21,8 @@ interface PageAsideProps<T> {
   setFocus?: boolean;
 }
 
-export const PageAside = <T extends PageTab>({ tabs, className, setFocus }: PageAsideProps<T>) => {
+/** Renders the page aside component. */
+export function PageAside<T extends PageTab>({ tabs, className, setFocus }: PageAsideProps<T>) {
   const isMobile = useBreakpointBelow('sm', false);
   const { t } = useTranslation();
 
@@ -68,4 +69,4 @@ export const PageAside = <T extends PageTab>({ tabs, className, setFocus }: Page
       })}
     </div>
   );
-};
+}

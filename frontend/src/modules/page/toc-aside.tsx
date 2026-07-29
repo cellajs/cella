@@ -21,7 +21,7 @@ interface TocAsideProps {
  * Section registration happens next to the content (view-page.tsx) because the body is lazy and
  * the spy observer only picks up elements present at registration time.
  */
-export const TocAside = ({ headings, className }: TocAsideProps) => {
+export function TocAside({ headings, className }: TocAsideProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
   const [layoutId] = useState(() => nanoid());
@@ -77,4 +77,4 @@ export const TocAside = ({ headings, className }: TocAsideProps) => {
       </div>
     </nav>
   );
-};
+}

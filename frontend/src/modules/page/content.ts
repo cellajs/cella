@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 const CONTENT_ROOT = '/src/content/docs/';
 
+/** Lists the supported documentation rendering modes. */
 export const docRenderModes = ['default', 'overview', 'nodeOnly'] as const;
 export type DocRenderMode = (typeof docRenderModes)[number];
 
@@ -30,6 +31,7 @@ const docsTileSchema = z.object({
   to: z.string().min(1),
 });
 
+/** Lists the section IDs used by the documentation pages. */
 export const docsSectionIds = ['apiReference', 'pages', 'links'] as const;
 export type DocsSectionId = (typeof docsSectionIds)[number];
 
@@ -176,6 +178,7 @@ export const docsConfig: DocsConfig = config;
 /** All docs pages, sorted by display order. Includes drafts (callers filter). */
 export const docPages: DocPage[] = pages;
 
+/** Returns the doc page. */
 export function getDocPage(slug: string): DocPage | undefined {
   return docPages.find((page) => page.id === slug);
 }

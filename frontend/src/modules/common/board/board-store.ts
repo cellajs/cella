@@ -45,6 +45,7 @@ const initStore: Pick<
   boardPanelOrders: {},
 };
 
+/** Provides access to shared board layout state. */
 export const useBoardStore = create<BoardUIState>()(
   devtools(
     persist(

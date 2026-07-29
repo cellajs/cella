@@ -7,6 +7,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
 
+/** Maps configured OAuth providers to authentication actions. */
 export const mapOAuthProviders = [
   { id: 'github', name: 'Github' },
   { id: 'google', name: 'Google' },
@@ -55,7 +56,6 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
       {appConfig.enabledOAuthProviders.map((provider) => {
-        // Map provider data
         const providerData = mapOAuthProviders.find(
           (p): p is OAuthProvider & { id: typeof provider } => p.id === provider,
         );

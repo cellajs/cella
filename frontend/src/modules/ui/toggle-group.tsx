@@ -21,6 +21,7 @@ interface ToggleGroupProps
   onValueChange?: (value: string | string[]) => void;
 }
 
+/** Renders the styled toggle group primitive. */
 export function ToggleGroup({
   className,
   variant,
@@ -68,6 +69,7 @@ export function ToggleGroup({
   );
 }
 
+/** Renders the styled toggle group item primitive. */
 export function ToggleGroupItem({
   className,
   children,

@@ -6,6 +6,12 @@ const wrapTextLineHeight = 20;
 /** Default vertical padding per cell in pixels */
 const wrapTextPadding = 12;
 
+/** Approximate average glyph advance (px) for the grid body font at text-sm. */
+const avgCharWidth = 7;
+
+/** Horizontal inset (px) subtracted from a column's rendered width before wrapping. */
+const wrapTextHorizontalPadding = 8;
+
 /** Default max lines when wrapText is `true` (unlimited) */
 const defaultMaxLines = 10;
 
@@ -17,6 +23,23 @@ export function resolveWrapTextLines(wrapText: Maybe<number | boolean>): number 
   if (wrapText === true) return defaultMaxLines;
   if (typeof wrapText === 'number' && wrapText >= 1) return Math.max(1, Math.floor(wrapText));
   return 0;
+}
+
+/**
+ * Estimates wrapped lines from text length and rendered column width.
+ * The width-derived character budget follows column and viewport resizing.
+ */
+export function estimateWrappedLines(
+  textLength: number,
+  width: number,
+  charWidth = avgCharWidth,
+  horizontalPadding = wrapTextHorizontalPadding,
+): number {
+  if (textLength <= 0) return 1;
+  const usable = width - horizontalPadding;
+  if (usable <= 0) return 1;
+  const charsPerLine = Math.max(1, Math.floor(usable / charWidth));
+  return Math.max(1, Math.ceil(textLength / charsPerLine));
 }
 
 /**
@@ -59,10 +82,12 @@ export function tierToHeight(
   return Math.max(baseHeight, tier * lineHeight + padding);
 }
 
+/** Computes wrap text row height. */
 export function computeWrapTextRowHeight<R>(
   baseHeight: number,
   columns: readonly CalculatedColumn<R, unknown>[],
   row: R,
+  getRenderedWidth: (column: CalculatedColumn<R, unknown>) => number,
   lineHeight = wrapTextLineHeight,
   padding = wrapTextPadding,
 ): number {
@@ -72,9 +97,9 @@ export function computeWrapTextRowHeight<R>(
     const cap = resolveWrapTextLines(column.wrapText);
     if (cap === 0) continue;
 
-    // Use custom estimator if provided, otherwise fall back to newline counting
+    // Use custom estimator (width-aware) if provided, otherwise fall back to newline counting.
     const estimated = column.estimateLines
-      ? column.estimateLines(row)
+      ? column.estimateLines(row, { width: getRenderedWidth(column) })
       : estimateTextLines((row as Record<string, unknown>)[column.key]);
     const clamped = Math.min(estimated, cap);
 

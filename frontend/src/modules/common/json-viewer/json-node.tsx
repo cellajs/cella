@@ -1,5 +1,5 @@
 import { ChevronRightIcon } from 'lucide-react';
-import { type FC, memo, useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { CollapsedPreview } from './collapsed-preview';
 import { useJsonViewerContext } from './context';
 import { CopyButton } from './copy-button';
@@ -23,8 +23,8 @@ interface JsonNodeProps {
 /**
  * Renders a single node in the JSON tree.
  */
-export const JsonNode: FC<JsonNodeProps> = memo(
-  ({ value, path, keyName, depth, visualDepth, cascadeDepth = 0 }) => {
+export const JsonNode = memo(
+  function JsonNode({ value, path, keyName, depth, visualDepth, cascadeDepth = 0 }: JsonNodeProps) {
     // Use visualDepth if provided, otherwise fall back to depth
     const effectiveVisualDepth = visualDepth ?? depth;
 
@@ -107,7 +107,6 @@ export const JsonNode: FC<JsonNodeProps> = memo(
 
     const paddingLeft = effectiveVisualDepth * indentWidth * 8;
 
-    // Check for custom data types first
     for (const dataType of valueTypes) {
       if (dataType.is(value, path)) {
         const CustomComponent = dataType.Component;
@@ -126,10 +125,8 @@ export const JsonNode: FC<JsonNodeProps> = memo(
       }
     }
 
-    // Handle different value types
     const valueType = getValueType(value);
 
-    // Check if current value is an object/array (for key dimming)
     const isObjectValue = valueType === 'object';
 
     // In schema mode, check if this node itself has required: true (boolean property on the object)
@@ -339,13 +336,11 @@ export const JsonNode: FC<JsonNodeProps> = memo(
       );
     }
 
-    // Check if array should be rendered on a single line (only primitives, no objects/arrays)
     const isPrimitiveArray =
       isArray &&
       singleLineArrays &&
       (value as unknown[]).every((item) => item === null || (typeof item !== 'object' && typeof item !== 'undefined'));
 
-    // Render single-line primitive array
     if (isPrimitiveArray) {
       const items = value as unknown[];
       return (

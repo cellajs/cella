@@ -20,7 +20,7 @@ const hasIncluded = (channel: EnrichedChannel): channel is EntityWithIncluded =>
  * Component to display pending memberships count.
  * Users can click to open them in a table in a sheet.
  */
-export const PendingMembershipsCount = ({ channel }: { channel: EnrichedChannel }) => {
+export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel }) {
   const { t } = useTranslation();
   const buttonRef = useRef(null);
 
@@ -63,4 +63,4 @@ export const PendingMembershipsCount = ({ channel }: { channel: EnrichedChannel 
       {new Intl.NumberFormat('de-DE').format(channel.included.counts.membership.pending)} {t('c:pending').toLowerCase()}
     </Button>
   );
-};
+}

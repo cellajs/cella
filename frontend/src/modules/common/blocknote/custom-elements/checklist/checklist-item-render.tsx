@@ -7,6 +7,7 @@ import { updateBlockWithoutHistory } from '~/modules/common/blocknote/helpers/bl
 
 type ChecklistItemRenderProps = ReactCustomBlockRenderProps<typeof checklistItemConfig>;
 
+/** Renders the checklist item render component. */
 export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItemRenderProps) {
   // Assign a checkboxId if missing OR if duplicated (e.g. block created by pressing Enter to split)
   useEffect(() => {

@@ -7,7 +7,8 @@ type TextEffectProps = {
   className?: string;
 };
 
-export const TextEffect = ({ text, className = '' }: TextEffectProps) => {
+/** Renders the text effect component. */
+export function TextEffect({ text, className = '' }: TextEffectProps) {
   const variants = {
     hidden: { opacity: 0 },
     show: (i: number) => ({
@@ -38,4 +39,4 @@ export const TextEffect = ({ text, className = '' }: TextEffectProps) => {
       ))}
     </motion.div>
   );
-};
+}

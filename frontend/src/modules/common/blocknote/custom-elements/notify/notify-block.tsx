@@ -8,6 +8,7 @@ import type { CustomBlockNoteEditor, IconType } from '~/modules/common/blocknote
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -15,6 +16,7 @@ import {
 } from '~/modules/ui/dropdown-menu';
 
 // Schema config is shared with the Yjs relay's server-side seeder; see shared/blocknote-schema-configs.
+/** Defines the custom BlockNote notification block. */
 export const notifyBlock = createReactBlockSpec(notifyConfig, {
   render: ({ block, editor, contentRef }) => {
     const [open, setOpen] = useState(false);
@@ -34,20 +36,22 @@ export const notifyBlock = createReactBlockSpec(notifyConfig, {
           </DropdownMenuTrigger>
 
           <DropdownMenuContent>
-            <DropdownMenuLabel>Notify Type</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {notifyTypes.map(({ icon: Icon, title, value }) => {
-              return (
-                <DropdownMenuItem
-                  key={value}
-                  className="flex min-h-8 flex-row gap-2 p-1"
-                  onClick={() => editor.updateBlock(block, { type: 'notify', props: { type: value } })}
-                >
-                  {<Icon className={'notify-icon'} data-notify-icon-type={value} />}
-                  <span className="text-sm">{title}</span>
-                </DropdownMenuItem>
-              );
-            })}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Notify Type</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {notifyTypes.map(({ icon: Icon, title, value }) => {
+                return (
+                  <DropdownMenuItem
+                    key={value}
+                    className="flex min-h-8 flex-row gap-2 p-1"
+                    onClick={() => editor.updateBlock(block, { type: 'notify', props: { type: value } })}
+                  >
+                    {<Icon className={'notify-icon'} data-notify-icon-type={value} />}
+                    <span className="text-sm">{title}</span>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
         {/*Rich text field for user to type in*/}
@@ -73,6 +77,7 @@ const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
 });
 
 // Side menu item to insert Notify block
+/** Inserts a notification block from the editor side menu. */
 export const insertSideNotifyItem = (): BlockTypeSelectItem & { oneInstanceOnly?: boolean } => ({
   name: 'Notify',
   type: 'notify',
@@ -80,4 +85,5 @@ export const insertSideNotifyItem = (): BlockTypeSelectItem & { oneInstanceOnly?
 });
 
 // Gets all default slash menu items and `insertNotify` item.
+/** Returns the slash notify slash item. */
 export const getSlashNotifySlashItem = (editor: CustomBlockNoteEditor) => insertSlashNotifyItem(editor);

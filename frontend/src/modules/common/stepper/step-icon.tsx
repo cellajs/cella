@@ -102,4 +102,5 @@ function StepIconBase(props: StepIconProps, ref: React.ForwardedRef<HTMLDivEleme
   return iconContent;
 }
 
+/** Renders the state icon for a step. */
 export const StepIcon = React.forwardRef<HTMLDivElement, StepIconProps>(StepIconBase);

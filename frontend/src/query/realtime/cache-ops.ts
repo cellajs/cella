@@ -206,7 +206,6 @@ function applyServerEntity(
     organizationId: organizationId ?? undefined,
   };
 
-  // Update detail cache
   queryClient.setQueryData(keys.detail.byId(entity.id), (old: ItemData | undefined) => {
     if (!old) return filtered;
     return { ...old, ...filtered };
@@ -286,6 +285,7 @@ const seqOf = (item: ItemData): number => {
   return typeof seq === 'number' ? seq : 0;
 };
 
+/** Fetches a changed entity range and patches matching caches. */
 export async function fetchRangeAndPatch(
   entityType: string,
   organizationId: string | null,

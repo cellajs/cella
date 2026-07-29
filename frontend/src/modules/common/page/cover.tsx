@@ -71,4 +71,5 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
   );
 }
 
+/** Renders a responsive page cover image. */
 export const PageCover = memo(PageCoverBase);
