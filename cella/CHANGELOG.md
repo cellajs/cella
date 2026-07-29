@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.6.1](https://github.com/cellajs/cella/compare/0.6.0...0.6.1) (2026-07-29)
+
+
+### 🔧 Small improvements
+
+* **backend:** adopt raak upstream (module hub, mutation bus, query/schema conventions, drop OperationResult) ([#972](https://github.com/cellajs/cella/issues/972)) ([317730b](https://github.com/cellajs/cella/commit/317730b95e578f58c231709be54f121906deaa7f))
+* faster SW install and reload UX (serwist, chunking, compression) ([#961](https://github.com/cellajs/cella/issues/961)) ([201e68d](https://github.com/cellajs/cella/commit/201e68dc55e6c9e72ec6e973386258cbd155dfe4))
+* **frontend:** rename appDb/appKvStore family to localUser* ([#969](https://github.com/cellajs/cella/issues/969)) ([e1a6ee5](https://github.com/cellajs/cella/commit/e1a6ee5b9a97bb5ce9e626c73c9729542a98d5da))
+* **frontend:** use vanilla stores for imperative state ([#967](https://github.com/cellajs/cella/issues/967)) ([a5a2fad](https://github.com/cellajs/cella/commit/a5a2fad188f228f934dbb9c2d8e72c8bb9e5e645))
+* remove unused onboarding demo-data seed hook ([#968](https://github.com/cellajs/cella/issues/968)) ([ff0ff9d](https://github.com/cellajs/cella/commit/ff0ff9d2abbab5b0caf92ef349f6603db9632305))
+* standardize template app vocabulary ([#970](https://github.com/cellajs/cella/issues/970)) ([74283bb](https://github.com/cellajs/cella/commit/74283bbd7c62afeae4498ac5f50b1440f86791d2))
+
+
+### 🧹 Chores
+
+* flag agent-associated prose ([#963](https://github.com/cellajs/cella/issues/963)) ([159d724](https://github.com/cellajs/cella/commit/159d7247a34c085630350c142a41d8ffce51f6b9))
+* triage raak contributions pull (keep template gains, drop domain leaks) ([#965](https://github.com/cellajs/cella/issues/965)) ([f88e045](https://github.com/cellajs/cella/commit/f88e045134c257df3d1f3ee7d43ce423a38cf490))
+* update deps ([#971](https://github.com/cellajs/cella/issues/971)) ([d70ec57](https://github.com/cellajs/cella/commit/d70ec57959ca80ee4d28eef0ab3f3fd2a4d87916))
+
 ## [0.6.0](https://github.com/cellajs/cella/compare/0.5.7...0.6.0) (2026-07-23)
 
 
