@@ -54,7 +54,10 @@ export async function dispatchDeferredInvites(ctx: AuthContext, { channelIds }: 
 
   for (const group of groups.values()) {
     const { channelType, channelId, role } = group[0];
-    const entity = await resolveEntity(ctx, channelType as ChannelEntityType, channelId);
+    const entity = await resolveEntity(ctx, {
+      entityType: channelType as ChannelEntityType,
+      identifier: channelId,
+    });
     if (!entity) continue;
 
     const staticProps = { senderName, senderThumbnailUrl, role, entityName: entity.name };

@@ -1,12 +1,12 @@
 import { z } from '@hono/zod-openapi';
-import { productEntityTypeSchema } from '#/schemas';
+import { productEntityTypeSchema, validIdSchema } from '#/schemas';
 
 /**
  * Request body for batch marking entities as seen.
  * Posted every 1 minute from the client with accumulated seen entity IDs.
  */
 export const seenBatchBodySchema = z.object({
-  entityIds: z.array(z.string().max(50)).min(1).max(500).describe('Entity IDs the user has viewed since last batch'),
+  entityIds: validIdSchema.array().min(1).max(500).describe('Entity IDs the user has viewed since last batch'),
   entityType: productEntityTypeSchema.describe('Entity type for all IDs in this batch'),
 });
 

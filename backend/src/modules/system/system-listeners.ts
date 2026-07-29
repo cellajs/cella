@@ -2,7 +2,7 @@ import { appConfig } from 'shared';
 import { baseDb } from '#/db/db';
 import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bus';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
-import { findUserById } from '#/modules/system/system-queries';
+import { findUserById } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 
 const securityEmailType = {
@@ -30,7 +30,6 @@ const notifySystemRoleChange = async (event: ActivityEvent) => {
   }
 };
 
-// TODO review: shouldn't we restrict an update and consider a delete fine security-wise? So only need to listen to create?
 activityBus.on('system_role.created', notifySystemRoleChange);
 activityBus.on('system_role.updated', notifySystemRoleChange);
 activityBus.on('system_role.deleted', notifySystemRoleChange);

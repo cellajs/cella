@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import '#/modules/tenants/tenants-module';
 import { createTenantOp } from '#/modules/tenants/operations/create-tenant';
 import { getTenantsOp } from '#/modules/tenants/operations/get-tenants';
 import { selfCreateTenantOp } from '#/modules/tenants/operations/self-create-tenant';

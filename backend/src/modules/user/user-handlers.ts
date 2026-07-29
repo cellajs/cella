@@ -3,7 +3,6 @@ import type { Env } from '#/core/context';
 import { getUserOp } from '#/modules/user/operations/get-user';
 import { getUsersOp } from '#/modules/user/operations/get-users';
 import { userRoutes } from '#/modules/user/user-routes';
-import '#/modules/user/user-module';
 import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });

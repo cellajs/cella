@@ -2,7 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { ilike } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
 import { requestsTable } from '#/modules/requests/requests-db';
-import { getRequestsList } from '#/modules/requests/requests-queries';
+import { findRequestsPaginated } from '#/modules/requests/requests-queries';
 import type { requestListQuerySchema } from '#/modules/requests/requests-schema';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
@@ -13,7 +13,7 @@ export async function getRequestsOp(ctx: AuthContext, input: GetRequestsInput) {
 
   const filter = q ? ilike(requestsTable.email, prepareStringForILikeFilter(q)) : undefined;
 
-  const { items, total } = await getRequestsList(ctx, { filter, sort, order, limit, offset });
+  const { items, total } = await findRequestsPaginated(ctx, { filter, sort, order, limit, offset });
 
   return { items, total };
 }

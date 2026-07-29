@@ -1,34 +1,46 @@
 import { and, count, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
+import { resolveListTotal } from '#/db/utils/list-total';
 import { activitiesTable } from '#/modules/activities/activities-db';
-import { getOrderColumn } from '#/utils/order-column';
+import { getOrderColumns } from '#/utils/order-column';
+import { pick } from '#/utils/pick';
 
-interface BuildActivitiesListOpts {
+interface FindActivitiesPaginatedOpts {
   filters: SQL[];
   sort?: 'type' | 'createdAt' | 'tableName';
   order?: 'asc' | 'desc';
+  limit: number;
+  offset: number;
 }
 
-/** Build the activities list query with filters and ordering. Returns a subquery. */
-export const buildActivitiesListQuery = (ctx: DbContext, { filters, sort, order }: BuildActivitiesListOpts) => {
+/** Find a paginated activity list and its exact total. */
+export const findActivitiesPaginated = (
+  ctx: DbContext,
+  { filters, sort, order, limit, offset }: FindActivitiesPaginatedOpts,
+) => {
   const { db } = ctx.var;
-  const orderColumn = getOrderColumn(sort, activitiesTable.createdAt, order, {
-    createdAt: activitiesTable.createdAt,
-    type: activitiesTable.type,
-    tableName: activitiesTable.tableName,
+  const whereClause = and(...filters);
+  const orderBy = getOrderColumns({
+    sort,
+    order,
+    fallback: ['createdAt', 'desc'],
+    columns: pick(activitiesTable, ['createdAt', 'type', 'tableName']),
+    tieBreaker: activitiesTable.id,
   });
 
-  return db
+  const itemsQuery = db
     .select()
     .from(activitiesTable)
-    .where(and(...filters))
-    .orderBy(orderColumn);
-};
+    .where(whereClause)
+    .orderBy(...orderBy)
+    .limit(limit)
+    .offset(offset);
 
-/** Count total activities matching the list query. */
-export const countActivitiesList = async (ctx: DbContext, { filters, sort, order }: BuildActivitiesListOpts) => {
-  const { db } = ctx.var;
-  const activitiesQuery = buildActivitiesListQuery(ctx, { filters, sort, order });
-  const [{ total }] = await db.select({ total: count() }).from(activitiesQuery.as('activities'));
-  return total;
+  return resolveListTotal(itemsQuery, {
+    kind: 'exact',
+    getTotal: async () => {
+      const [{ total }] = await db.select({ total: count() }).from(activitiesTable).where(whereClause);
+      return total;
+    },
+  });
 };

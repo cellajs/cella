@@ -42,12 +42,12 @@ export const insertDomain = async (ctx: AuthContext, { domain }: InsertDomainOpt
   return created;
 };
 
-interface FindDomainOpts {
+interface FindDomainByIdOpts {
   id: string;
 }
 
 /** Find a domain by ID and tenant. */
-export const findDomain = async (ctx: AuthContext, { id }: FindDomainOpts) => {
+export const findDomainById = async (ctx: AuthContext, { id }: FindDomainByIdOpts) => {
   const { db, tenantId } = ctx.var;
   const [domain] = await db
     .select()
@@ -57,8 +57,12 @@ export const findDomain = async (ctx: AuthContext, { id }: FindDomainOpts) => {
   return domain;
 };
 
+interface DeleteDomainOpts {
+  id: string;
+}
+
 /** Delete a domain by ID and tenant. Returns the deleted row. */
-export const deleteDomain = async (ctx: AuthContext, { id }: FindDomainOpts) => {
+export const deleteDomain = async (ctx: AuthContext, { id }: DeleteDomainOpts) => {
   const { db, tenantId } = ctx.var;
   const [deleted] = await db
     .delete(domainsTable)
@@ -69,12 +73,17 @@ export const deleteDomain = async (ctx: AuthContext, { id }: FindDomainOpts) => 
 
 interface UpdateDomainOpts {
   id: string;
-  values: Partial<typeof domainsTable.$inferInsert>;
+  values: Pick<typeof domainsTable.$inferInsert, 'lastCheckedAt'> &
+    Partial<Pick<typeof domainsTable.$inferInsert, 'verified' | 'verifiedAt'>>;
 }
 
-/** Update a domain by ID and return the updated row. */
-export const updateDomain = async (ctx: DbContext, { id, values }: UpdateDomainOpts) => {
-  const { db } = ctx.var;
-  const [updated] = await db.update(domainsTable).set(values).where(eq(domainsTable.id, id)).returning();
+/** Update a domain by ID and tenant, then return the updated row. */
+export const updateDomain = async (ctx: AuthContext, { id, values }: UpdateDomainOpts) => {
+  const { db, tenantId } = ctx.var;
+  const [updated] = await db
+    .update(domainsTable)
+    .set(values)
+    .where(and(eq(domainsTable.id, id), eq(domainsTable.tenantId, tenantId)))
+    .returning();
   return updated;
 };

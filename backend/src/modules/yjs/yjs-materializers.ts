@@ -1,25 +1,26 @@
 import type { ProductEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
-
-export interface YjsMaterializeInput {
-  entityId: string;
-  /** Serialized BlockNote blocks, sanitized before persistence. */
-  description: string;
-}
+import { onBackendModuleRegister } from '#/lib/module';
+import type { StxBase } from '#/schemas';
 
 /**
- * Persists a Yjs collab session's description for one entity type, typically through a thin
- * wrapper around the entity's standard update operation with `ops: { description }`
- * and a server-origin stx (empty `fieldTimestamps` → the pipeline stamps a server HLC).
+ * Persists a Yjs collab session's description to an entity's durable record. It is a reference to
+ * the entity's standard update op; the relay (materialize-description) invokes it with the
+ * server-origin envelope, so a module names which op, not the Yjs envelope contract (sourceId, stx shape,
+ * serverOrigin).
  */
-export type YjsMaterializer = (ctx: AuthContext, input: YjsMaterializeInput) => Promise<void>;
+export type YjsMaterializer = (
+  ctx: AuthContext,
+  id: string,
+  input: { ops: { description: string }; stx: StxBase },
+  opts: { serverOrigin: true },
+) => Promise<unknown>;
 
 const materializers = new Map<ProductEntityType, YjsMaterializer>();
 
-/** Register the materializer for an entity type. Call at module load time (e.g. in the entity's module file). */
-export function registerYjsMaterializer(entityType: ProductEntityType, materializer: YjsMaterializer): void {
-  materializers.set(entityType, materializer);
-}
+onBackendModuleRegister((module) => {
+  if (module.productEntity && module.yjsMaterializer) materializers.set(module.productEntity, module.yjsMaterializer);
+});
 
 export function getYjsMaterializer(entityType: ProductEntityType): YjsMaterializer | undefined {
   return materializers.get(entityType);

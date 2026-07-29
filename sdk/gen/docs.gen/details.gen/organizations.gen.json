@@ -44,42 +44,14 @@
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references.",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "description": "Minimal user data for references, or null when no user is available.",
+                    "ref": "#/components/schemas/NullableUserMinimalBase"
                   },
                   "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references.",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "description": "Minimal user data for references, or null when no user is available.",
+                    "ref": "#/components/schemas/NullableUserMinimalBase"
                   },
                   "publishedAt": {
                     "type": ["string", "null"],
@@ -283,12 +255,20 @@
         "example": {
           "data": [
             {
+              "createdAt": "2024-04-18T21:12:59.543Z",
               "id": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
-              "tenantId": "fyc7n2",
               "entityType": "organization",
-              "path": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "tenantId": "fyc7n2",
               "name": "Conroy, Kerluke and Rowe",
+              "updatedAt": "2024-04-18T21:12:59.543Z",
               "slug": "conroy-kerluke-and-rowe",
+              "thumbnailUrl": null,
+              "bannerUrl": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "publishedAt": "2024-04-18T21:12:59.543Z",
+              "publicAt": null,
+              "path": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
               "shortName": "Conroy,",
               "country": "Singapore",
               "timezone": "Asia/Kuala_Lumpur",
@@ -296,30 +276,22 @@
               "languages": ["en"],
               "notificationEmail": "notifications@conroy-kerluke-and-rowe.example",
               "color": "#dbcbc1",
-              "thumbnailUrl": null,
-              "bannerUrl": null,
               "logoUrl": null,
               "websiteUrl": "https://conroy-kerluke-and-rowe.example",
               "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
               "chatSupport": false,
               "organizationFlags": {},
               "setupConfig": {},
-              "publishedAt": "2024-04-18T21:12:59.543Z",
-              "publicAt": null,
-              "createdAt": "2024-04-18T21:12:59.543Z",
-              "createdBy": null,
-              "updatedAt": "2024-04-18T21:12:59.543Z",
-              "updatedBy": null,
               "included": {
                 "membership": {
                   "id": "1f366272-953c-486d-81dc-ee61f43478a1",
-                  "tenantId": "t4n7co",
+                  "tenantId": "fyc7n2",
                   "channelType": "organization",
-                  "channelId": "b5c28e6f-552e-42e4-940d-66f5ab0174ab",
-                  "userId": "8ed7182a-e09f-41c6-9302-0e59a26ff7ac",
+                  "channelId": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                  "userId": "d1a35ab5-c28e-46f5-852e-2e440d66f5ab",
                   "organizationId": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                   "role": "admin",
-                  "displayOrder": 98,
+                  "displayOrder": 45,
                   "muted": false,
                   "archived": false
                 },
@@ -338,12 +310,20 @@
               }
             },
             {
+              "createdAt": "2024-02-24T16:36:46.247Z",
               "id": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
-              "tenantId": "dwpxxb",
               "entityType": "organization",
-              "path": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "tenantId": "dwpxxb",
               "name": "Lemke, Bode and Reichel-Klocko",
+              "updatedAt": "2024-02-24T16:36:46.247Z",
               "slug": "lemke-bode-and-reichel-klocko",
+              "thumbnailUrl": null,
+              "bannerUrl": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "publishedAt": "2024-02-24T16:36:46.247Z",
+              "publicAt": null,
+              "path": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
               "shortName": "Lemke,",
               "country": "Pakistan",
               "timezone": "America/Aruba",
@@ -351,30 +331,22 @@
               "languages": ["en"],
               "notificationEmail": "notifications@lemke-bode-and-reichel-klocko.example",
               "color": "#2ad39a",
-              "thumbnailUrl": null,
-              "bannerUrl": null,
               "logoUrl": null,
               "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
               "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
               "chatSupport": false,
               "organizationFlags": {},
               "setupConfig": {},
-              "publishedAt": "2024-02-24T16:36:46.247Z",
-              "publicAt": null,
-              "createdAt": "2024-02-24T16:36:46.247Z",
-              "createdBy": null,
-              "updatedAt": "2024-02-24T16:36:46.247Z",
-              "updatedBy": null,
               "included": {
                 "membership": {
                   "id": "cf273cfa-8287-4b04-b641-897816829f30",
-                  "tenantId": "4oy2u1",
+                  "tenantId": "dwpxxb",
                   "channelType": "organization",
-                  "channelId": "a22457ca-c90f-46f6-aa80-2cd0efd36e4f",
-                  "userId": "ddfd40e3-e143-4676-8a93-314d23d2d92f",
+                  "channelId": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                  "userId": "1af0d0a2-2457-4cac-b90f-6f6a802cd0ef",
                   "organizationId": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                   "role": "admin",
-                  "displayOrder": 83,
+                  "displayOrder": 44,
                   "muted": false,
                   "archived": false
                 },
@@ -612,42 +584,14 @@
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references.",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "description": "Minimal user data for references, or null when no user is available.",
+                    "ref": "#/components/schemas/NullableUserMinimalBase"
                   },
                   "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references.",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "description": "Minimal user data for references, or null when no user is available.",
+                    "ref": "#/components/schemas/NullableUserMinimalBase"
                   },
                   "publishedAt": {
                     "type": ["string", "null"],
@@ -840,12 +784,20 @@
         "example": {
           "items": [
             {
+              "createdAt": "2024-11-21T01:19:53.533Z",
               "id": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
-              "tenantId": "6eo7z7",
               "entityType": "organization",
-              "path": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+              "tenantId": "6eo7z7",
               "name": "Anderson - Ferry",
+              "updatedAt": "2024-11-21T01:19:53.533Z",
               "slug": "anderson-ferry",
+              "thumbnailUrl": null,
+              "bannerUrl": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "publishedAt": "2024-11-21T01:19:53.533Z",
+              "publicAt": null,
+              "path": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
               "shortName": "Anderson",
               "country": "Bahamas",
               "timezone": "America/Moncton",
@@ -853,30 +805,22 @@
               "languages": ["en"],
               "notificationEmail": "notifications@anderson-ferry.example",
               "color": "#dfeb6e",
-              "thumbnailUrl": null,
-              "bannerUrl": null,
               "logoUrl": null,
               "websiteUrl": "https://anderson-ferry.example",
               "welcomeText": "Welcome to Anderson - Ferry!",
               "chatSupport": true,
               "organizationFlags": {},
               "setupConfig": {},
-              "publishedAt": "2024-11-21T01:19:53.533Z",
-              "publicAt": null,
-              "createdAt": "2024-11-21T01:19:53.533Z",
-              "createdBy": null,
-              "updatedAt": "2024-11-21T01:19:53.533Z",
-              "updatedBy": null,
               "included": {
                 "membership": {
                   "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
-                  "tenantId": "u87zf2",
+                  "tenantId": "6eo7z7",
                   "channelType": "organization",
-                  "channelId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
-                  "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
+                  "channelId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                  "userId": "d33f6120-b967-4064-bbb8-8b24b6b50c11",
                   "organizationId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                   "role": "admin",
-                  "displayOrder": 83,
+                  "displayOrder": 32,
                   "muted": false,
                   "archived": false
                 },
@@ -895,12 +839,20 @@
               }
             },
             {
+              "createdAt": "2024-10-29T04:35:17.725Z",
               "id": "772a771f-c150-465e-9635-46594859fc3d",
-              "tenantId": "yzrul7",
               "entityType": "organization",
-              "path": "772a771f-c150-465e-9635-46594859fc3d",
+              "tenantId": "yzrul7",
               "name": "Wiegand, Harber and Stark-Abshire",
+              "updatedAt": "2024-10-29T04:35:17.725Z",
               "slug": "wiegand-harber-and-stark-abshire",
+              "thumbnailUrl": null,
+              "bannerUrl": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "publishedAt": "2024-10-29T04:35:17.725Z",
+              "publicAt": null,
+              "path": "772a771f-c150-465e-9635-46594859fc3d",
               "shortName": "Wiegand,",
               "country": "Argentina",
               "timezone": "Europe/Gibraltar",
@@ -908,30 +860,22 @@
               "languages": ["en"],
               "notificationEmail": "notifications@wiegand-harber-and-stark-abshire.example",
               "color": "#a3cb87",
-              "thumbnailUrl": null,
-              "bannerUrl": null,
               "logoUrl": null,
               "websiteUrl": "https://wiegand-harber-and-stark-abshire.example",
               "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
               "chatSupport": false,
               "organizationFlags": {},
               "setupConfig": {},
-              "publishedAt": "2024-10-29T04:35:17.725Z",
-              "publicAt": null,
-              "createdAt": "2024-10-29T04:35:17.725Z",
-              "createdBy": null,
-              "updatedAt": "2024-10-29T04:35:17.725Z",
-              "updatedBy": null,
               "included": {
                 "membership": {
                   "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
-                  "tenantId": "lwj64z",
+                  "tenantId": "yzrul7",
                   "channelType": "organization",
-                  "channelId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
-                  "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
+                  "channelId": "772a771f-c150-465e-9635-46594859fc3d",
+                  "userId": "9e822f98-ecac-4acf-ab1f-e617c6f9a972",
                   "organizationId": "772a771f-c150-465e-9635-46594859fc3d",
-                  "role": "member",
-                  "displayOrder": 73,
+                  "role": "admin",
+                  "displayOrder": 94,
                   "muted": false,
                   "archived": false
                 },
@@ -1069,42 +1013,14 @@
             "createdBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references.",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
+              "description": "Minimal user data for references, or null when no user is available.",
+              "ref": "#/components/schemas/NullableUserMinimalBase"
             },
             "updatedBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references.",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
+              "description": "Minimal user data for references, or null when no user is available.",
+              "ref": "#/components/schemas/NullableUserMinimalBase"
             },
             "publishedAt": {
               "type": ["string", "null"],
@@ -1291,12 +1207,20 @@
           "contentType": "application/json"
         },
         "example": {
+          "createdAt": "2024-12-25T15:04:42.969Z",
           "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-          "tenantId": "d1lgzb",
           "entityType": "organization",
-          "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+          "tenantId": "d1lgzb",
           "name": "Spencer, Pouros and Bergnaum",
+          "updatedAt": "2024-12-25T15:04:42.969Z",
           "slug": "spencer-pouros-and-bergnaum",
+          "thumbnailUrl": null,
+          "bannerUrl": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "publishedAt": "2024-12-25T15:04:42.969Z",
+          "publicAt": null,
+          "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "shortName": "Spencer,",
           "country": "Sweden",
           "timezone": "Europe/Vaduz",
@@ -1304,30 +1228,22 @@
           "languages": ["en"],
           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
           "color": "#cda6af",
-          "thumbnailUrl": null,
-          "bannerUrl": null,
           "logoUrl": null,
           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
           "chatSupport": true,
           "organizationFlags": {},
           "setupConfig": {},
-          "publishedAt": "2024-12-25T15:04:42.969Z",
-          "publicAt": null,
-          "createdAt": "2024-12-25T15:04:42.969Z",
-          "createdBy": null,
-          "updatedAt": "2024-12-25T15:04:42.969Z",
-          "updatedBy": null,
           "included": {
             "membership": {
               "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
-              "tenantId": "6vxzq0",
+              "tenantId": "d1lgzb",
               "channelType": "organization",
-              "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
-              "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
+              "channelId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+              "userId": "2effb0cf-d2bd-45e6-abcd-21de08509c32",
               "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-              "role": "admin",
-              "displayOrder": 2,
+              "role": "member",
+              "displayOrder": 18,
               "muted": false,
               "archived": false
             },
@@ -1400,7 +1316,16 @@
         "properties": {
           "slug": {
             "required": false,
-            "anyOf": [{ "type": "string", "required": false }, { "type": "boolean", "required": false }]
+            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
+            "anyOf": [
+              {
+                "type": "string",
+                "required": false,
+                "enum": ["true", "false"]
+              },
+              { "type": "boolean", "required": false }
+            ],
+            "ref": "#/components/schemas/BooleanQueryValue"
           },
           "include": { "type": "string", "required": false }
         }
@@ -1447,42 +1372,14 @@
             "createdBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references.",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
+              "description": "Minimal user data for references, or null when no user is available.",
+              "ref": "#/components/schemas/NullableUserMinimalBase"
             },
             "updatedBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references.",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
+              "description": "Minimal user data for references, or null when no user is available.",
+              "ref": "#/components/schemas/NullableUserMinimalBase"
             },
             "publishedAt": {
               "type": ["string", "null"],
@@ -1669,12 +1566,20 @@
           "contentType": "application/json"
         },
         "example": {
+          "createdAt": "2024-12-25T15:04:42.969Z",
           "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-          "tenantId": "d1lgzb",
           "entityType": "organization",
-          "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+          "tenantId": "d1lgzb",
           "name": "Spencer, Pouros and Bergnaum",
+          "updatedAt": "2024-12-25T15:04:42.969Z",
           "slug": "spencer-pouros-and-bergnaum",
+          "thumbnailUrl": null,
+          "bannerUrl": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "publishedAt": "2024-12-25T15:04:42.969Z",
+          "publicAt": null,
+          "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "shortName": "Spencer,",
           "country": "Sweden",
           "timezone": "Europe/Vaduz",
@@ -1682,30 +1587,22 @@
           "languages": ["en"],
           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
           "color": "#cda6af",
-          "thumbnailUrl": null,
-          "bannerUrl": null,
           "logoUrl": null,
           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
           "chatSupport": true,
           "organizationFlags": {},
           "setupConfig": {},
-          "publishedAt": "2024-12-25T15:04:42.969Z",
-          "publicAt": null,
-          "createdAt": "2024-12-25T15:04:42.969Z",
-          "createdBy": null,
-          "updatedAt": "2024-12-25T15:04:42.969Z",
-          "updatedBy": null,
           "included": {
             "membership": {
               "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
-              "tenantId": "6vxzq0",
+              "tenantId": "d1lgzb",
               "channelType": "organization",
-              "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
-              "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
+              "channelId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+              "userId": "2effb0cf-d2bd-45e6-abcd-21de08509c32",
               "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-              "role": "admin",
-              "displayOrder": 2,
+              "role": "member",
+              "displayOrder": 18,
               "muted": false,
               "archived": false
             },

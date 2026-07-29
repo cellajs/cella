@@ -22,6 +22,33 @@ function resolveRef(ref: string, spec: OpenApiSpec): { schema: OpenApiSchema | u
   return { schema: undefined, name };
 }
 
+interface NullableReferenceAlias {
+  type: readonly string[];
+}
+
+/**
+ * Matches a named alias whose only alternatives are a schema reference and null.
+ * Nested uses can retain the alias reference without repeating the referenced schema.
+ */
+function matchNullableReferenceAlias(schema: OpenApiSchema, spec: OpenApiSpec): NullableReferenceAlias | undefined {
+  if (schema.anyOf && schema.oneOf) return undefined;
+  const alternatives = schema.anyOf ?? schema.oneOf;
+  if (alternatives?.length !== 2) return undefined;
+
+  const referenced = alternatives.find((candidate) => candidate.$ref);
+  const nullable = alternatives.find((candidate) => candidate.type === 'null');
+  if (!referenced?.$ref || !nullable || referenced === nullable) return undefined;
+
+  const { schema: target } = resolveRef(referenced.$ref, spec);
+  const targetType = target?.type ?? (target?.properties ? 'object' : undefined);
+  if (!targetType) return undefined;
+
+  const types = Array.isArray(targetType) ? targetType : [targetType];
+  return {
+    type: [...new Set([...types, 'null'])],
+  };
+}
+
 /**
  * Merges allOf schemas into a single flat schema.
  * Properties from later schemas override earlier ones.
@@ -131,6 +158,16 @@ export function resolveSchemaProperty(
 
     const { schema: resolved } = resolveRef(schema.$ref, spec);
     if (resolved) {
+      const nullableAlias = matchNullableReferenceAlias(resolved, spec);
+      if (nullableAlias) {
+        return {
+          type: nullableAlias.type,
+          required: isRequired,
+          ...(resolved.description && { description: resolved.description }),
+          ref: schema.$ref,
+        };
+      }
+
       const result = resolveSchemaProperty(resolved, isRequired, spec, newVisited);
       // Add ref metadata
       result.ref = schema.$ref;

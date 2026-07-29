@@ -1,6 +1,6 @@
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { AuthContext } from '#/core/context';
-import { getMembersList } from '#/modules/memberships/memberships-queries';
+import { findMembersPaginated } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
 interface GetMembersInput {
@@ -12,7 +12,7 @@ interface GetMembersInput {
   offset: number;
   limit: number;
   role?: EntityRole;
-  userIds?: string;
+  userIds?: string[];
 }
 
 export async function getMembersOp(ctx: AuthContext, input: GetMembersInput) {
@@ -22,7 +22,7 @@ export async function getMembersOp(ctx: AuthContext, input: GetMembersInput) {
 
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'read');
 
-  const { items, total } = await getMembersList(ctx, {
+  const { items, total } = await findMembersPaginated(ctx, {
     organizationId: organization.id,
     entityId: entity.id,
     entityType,

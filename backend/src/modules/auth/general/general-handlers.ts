@@ -3,7 +3,6 @@ import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import type { Env } from '#/core/context';
-import '#/modules/auth/auth-module';
 import { AppError, type ErrorKey } from '#/core/error';
 import { mailer } from '#/lib/mailer';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
@@ -11,11 +10,9 @@ import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   deleteSession,
-  findAuthUserById,
   findInactiveMembershipById,
   findInvitationToken,
   findLatestSessionByUser,
-  findUserByEmail,
   insertInvitationToken,
   linkTokenToUser,
 } from '#/modules/auth/auth-queries';
@@ -28,6 +25,7 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { resolveEntity } from '#/modules/entities/entities-queries';
+import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
@@ -145,7 +143,7 @@ app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
 app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
   const { targetUserId } = ctx.req.valid('json');
 
-  const user = await findAuthUserById(ctx, { userId: targetUserId });
+  const user = await findUserById(ctx, { id: targetUserId });
 
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { targetUserId } });
 
@@ -228,7 +226,7 @@ app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
 
   // Get original sender
   if (oldToken.createdBy) {
-    const sender = await findAuthUserById(ctx, { userId: oldToken.createdBy });
+    const sender = await findUserById(ctx, { id: oldToken.createdBy });
     if (sender) {
       defaultEmailProps.senderName = sender.name;
       defaultEmailProps.senderThumbnailUrl = sender.thumbnailUrl;
@@ -246,11 +244,10 @@ app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
     ] as keyof typeof inactiveMembership;
     if (!inactiveMembership[entityIdColumnKey]) throw new AppError(400, 'invalid_request', 'error');
     // Internal resolve: getting entity info for email template (no permission check needed)
-    const entity = await resolveEntity(
-      ctx,
-      inactiveMembership.channelType,
-      inactiveMembership[entityIdColumnKey] as string,
-    );
+    const entity = await resolveEntity(ctx, {
+      entityType: inactiveMembership.channelType,
+      identifier: inactiveMembership[entityIdColumnKey] as string,
+    });
 
     if (!entity) throw new AppError(400, 'invalid_request', 'error');
 

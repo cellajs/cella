@@ -8,11 +8,9 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import {
   disableMfa,
-  findAuthUserById,
   findCredentialIdsByUser,
   findRemainingMfaMethods,
-  findUserByCredentialId,
-  findUserByEmail,
+  findUserIdByCredentialId,
   insertPasskey,
 } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
@@ -24,6 +22,7 @@ import { parseAndValidatePasskeyAttestation, validatePasskey } from '#/modules/a
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { authPasskeysRoutes } from '#/modules/auth/passkeys/passkeys-routes';
 import type { UserModel } from '#/modules/user/user-db';
+import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -152,10 +151,10 @@ app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
 
   // If no user found by email, try to find by credentialId (supports conditional mediation / discoverable credentials)
   if (!user) {
-    const passkeyRecord = await findUserByCredentialId(ctx, { credentialId: passkeyData.credentialId });
+    const passkeyRecord = await findUserIdByCredentialId(ctx, { credentialId: passkeyData.credentialId });
 
     if (passkeyRecord) {
-      user = await findAuthUserById(ctx, { userId: passkeyRecord.userId });
+      user = await findUserById(ctx, { id: passkeyRecord.userId });
     }
   }
 

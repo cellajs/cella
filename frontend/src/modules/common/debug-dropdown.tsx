@@ -7,6 +7,7 @@ import { SyncDevtools } from '~/modules/common/devtools';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { queryClient } from '~/query/query-client';
+import { router } from '~/routes/router';
 import { cn } from '~/utils/cn';
 
 interface DebugItem {
@@ -75,7 +76,7 @@ function DebugDropdown({ className }: DebugDropdownProps) {
 
   return (
     <>
-      <TanStackRouterDevtools />
+      <TanStackRouterDevtools router={router} />
       <ReactQueryDevtools client={queryClient} />
       <SyncDevtools isOpen={syncDevtoolsOpen} onClose={() => setSyncDevtoolsOpen(false)} />
 

@@ -1,4 +1,5 @@
 import { appConfig } from 'shared';
+import '#/modules'; // composition root: registers every backend module before routes mount
 import { attachmentHandlers } from '#/modules/attachment/attachment-handlers';
 import { authGeneralHandlers } from '#/modules/auth/general/general-handlers';
 import { authMagicLinkHandlers } from '#/modules/auth/magic/magic-handlers';

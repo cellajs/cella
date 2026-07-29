@@ -70,7 +70,6 @@ export const memberSelect = (() => {
 type UserMinimalBaseKeys = keyof typeof userMinimalBaseSchema.shape;
 type UserMinimalBaseSelect = Pick<TableColumns, Exclude<UserMinimalBaseKeys, 'entityType'>>;
 
-// TODO shouldnt getAttachment(s) use this for audit props such as createdBy?
 /**
  * User select for minimal base data only (id, name, slug, thumbnailUrl).
  * Used for embedding user data in createdBy/updatedBy fields.

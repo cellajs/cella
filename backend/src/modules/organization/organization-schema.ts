@@ -8,7 +8,6 @@ import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { setupConfigSchema } from '#/modules/organization/setup-config-schema';
 import {
-  booleanTransformSchema,
   excludeArchivedQuerySchema,
   includeQuerySchema,
   languageSchema,
@@ -16,13 +15,14 @@ import {
   noDuplicateSlugsRefine,
   paginationQuerySchema,
   validCDNUrlSchema,
+  validIdSchema,
   validNameSchema,
   validSlugSchema,
   validTempIdSchema,
   validUrlSchema,
 } from '#/schemas';
 import { channelIncludedSchema } from '#/schemas/channel-included';
-import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import { nullableUserMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { mockOrganizationResponse } from './organization-mocks';
 
 const organizationIncludedSchema = channelIncludedSchema('organization');
@@ -42,8 +42,8 @@ export const organizationFlagsSchema = z.object(
 export const organizationSchema = z
   .object({
     ...createSelectSchema(organizationsTable).shape,
-    createdBy: userMinimalBaseSchema.nullable(),
-    updatedBy: userMinimalBaseSchema.nullable(),
+    createdBy: nullableUserMinimalBaseSchema,
+    updatedBy: nullableUserMinimalBaseSchema,
     languages: z.array(languageSchema).min(1),
     organizationFlags: organizationFlagsSchema,
     setupConfig: setupConfigSchema,
@@ -113,15 +113,10 @@ export const organizationCreateBodySchema = organizationContract.createItemSchem
 
 export const organizationUpdateBodySchema = organizationContract.updateBodySchema;
 
-export const organizationQuerySchema = z.object({
-  slug: booleanTransformSchema.optional(),
-  include: includeQuerySchema,
-});
-
 export const organizationListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'name', 'createdAt', 'displayOrder']).default('displayOrder').optional(),
-  order: z.enum(['asc', 'desc']).default('asc').optional(),
-  relatableUserId: z.string().max(maxLength.id).optional(),
+  sort: z.enum(['id', 'name', 'createdAt', 'displayOrder']).default('displayOrder'),
+  order: z.enum(['asc', 'desc']).default('asc'),
+  relatableUserId: validIdSchema.optional(),
   role: z.enum(roles.all).optional(),
   excludeArchived: excludeArchivedQuerySchema,
   include: includeQuerySchema,

@@ -1,13 +1,13 @@
 import dns from 'node:dns/promises';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { findDomain, updateDomain } from '#/modules/domains/domains-queries';
+import { findDomainById, updateDomain } from '#/modules/domains/domains-queries';
 import { log } from '#/utils/logger';
 
 export async function verifyDomainOp(ctx: AuthContext, id: string) {
   const tenantId = ctx.var.tenantId;
 
-  const domain = await findDomain(ctx, { id });
+  const domain = await findDomainById(ctx, { id });
 
   if (!domain) {
     throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'domain' } });

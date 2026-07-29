@@ -3,7 +3,7 @@ import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { sharesOrgFilter } from '#/modules/user/helpers/relatable-filter';
 import { usersTable } from '#/modules/user/user-db';
-import { findUser } from '#/modules/user/user-queries';
+import { findUserByFilters } from '#/modules/user/user-queries';
 
 interface GetUserOpts {
   bySlug?: boolean;
@@ -31,7 +31,7 @@ export async function getUserOp(ctx: AuthContext, relatableUserId: string, opts:
   const filters: SQL[] = [userCondition];
   if (!isSelf && !isSystemAdmin) filters.push(sharesOrgFilter({ var: { db } }, { myOrgIds }));
 
-  const targetUser = await findUser(ctx, { filters });
+  const targetUser = await findUserByFilters(ctx, { filters });
 
   if (!targetUser)
     throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: relatableUserId } });

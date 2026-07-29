@@ -2,9 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { streamSSE } from 'hono/streaming';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { assertSuccess } from '#/core/operation-result';
 import '#/modules/entities/entities-listeners';
-import '#/modules/entities/entities-module';
 import { entityRoutes } from '#/modules/entities/entities-routes';
 import { appCatchupOp, getLatestUserActivityId } from '#/modules/entities/operations/app-catchup';
 import { checkSlugOp } from '#/modules/entities/operations/check-slug';
@@ -19,8 +17,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 app.openapi(entityRoutes.checkSlug, async (ctx) => {
   const { slug, entityType } = ctx.req.valid('json');
   const result = await checkSlugOp(ctx, slug, entityType);
-  assertSuccess(result, 'user');
-  return result.data.available ? ctx.body(null, 204) : ctx.body(null, 409);
+  return result.available ? ctx.body(null, 204) : ctx.body(null, 409);
 });
 
 // Subscriber caps: memory/dispatch-CPU backpressure for the single-process stream. The
@@ -81,8 +78,7 @@ app.openapi(entityRoutes.appCatchup, async (ctx) => {
   const { cursor, views } = ctx.req.valid('json');
   const actor = actorFrom(ctx);
   const result = await appCatchupOp(ctx.var.memberships, cursor, actor, views);
-  assertSuccess(result, 'user');
-  return ctx.json(result.data);
+  return ctx.json(result);
 });
 
 export const entityHandlers = app;

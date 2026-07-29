@@ -1,4 +1,5 @@
-import { index, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { index, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -16,7 +17,13 @@ export const requestsTable = snakeCase.table(
     type: varchar({ enum: requestTypeEnum }).notNull(),
     tokenId: uuid(), // References tokens.id logically (no FK due to partitioning)
   },
-  (table) => [index('requests_emails').on(table.email.desc()), index('requests_created_at').on(table.createdAt.desc())],
+  (table) => [
+    index('requests_emails').on(table.email.desc()),
+    index('requests_created_at').on(table.createdAt.desc()),
+    uniqueIndex('requests_unique_signup_email_type')
+      .on(sql`lower(${table.email})`, table.type)
+      .where(sql`${table.type} in ('waitlist', 'newsletter')`),
+  ],
 );
 
 export type RequestModel = typeof requestsTable.$inferSelect;

@@ -8,7 +8,7 @@ type EntityTypeWithSlug = ChannelEntityType | 'user';
  * Checks if a slug is available for a specific entity type.
  */
 export const checkSlugAvailable = async (ctx: DbContext, slug: string, entityType: EntityTypeWithSlug) => {
-  const result = await resolveEntity(ctx, entityType, slug, true);
+  const result = await resolveEntity(ctx, { entityType, identifier: slug, bySlug: true });
   return !result;
 };
 

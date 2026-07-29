@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { SpanStatusCode } from '@opentelemetry/api';
-import { type ActivityEventType, activityEventTypes, isValidEventType, type PropagationHint } from 'shared';
+import { isValidEventType, type PropagationHint, type TrackedEventType, trackedEventTypes } from 'shared';
 import type { SyncTraceContext } from '#/lib/sync-metrics';
 import { eventAttrs, recordMessageReceived, startSyncSpan, syncSpanNames } from '#/lib/sync-metrics';
 import type { ActivityModel } from '#/modules/activities/activities-db';
@@ -10,7 +10,7 @@ import { log } from '#/utils/logger';
 /**
  * Set of valid event types for onAny/offAny wildcard iteration.
  */
-const allEventTypes = new Set<ActivityEventType>(activityEventTypes);
+const allEventTypes = new Set<TrackedEventType>(trackedEventTypes);
 
 /** Per-row batch payload (permission-relevant fields only), mirrored from the CDC wire. */
 export interface ActivityBatchRow {
@@ -25,7 +25,7 @@ export interface ActivityBatchRow {
  * notifications, while `trace` remains internal for OTel correlation.
  */
 export interface ActivityEvent extends Omit<ActivityModel, 'type' | 'createdAt'> {
-  type: ActivityEventType;
+  type: TrackedEventType;
   rowData: unknown;
   /** Old-row permission subset when the row's path changed (move-out), else null. */
   movedFrom?: Record<string, unknown> | null;
@@ -67,19 +67,19 @@ class ActivityBus {
   }
 
   /** Subscribe to a specific activity event type. */
-  on(eventType: ActivityEventType, handler: EventHandler): this {
+  on(eventType: TrackedEventType, handler: EventHandler): this {
     this.emitter.on(eventType, handler);
     return this;
   }
 
   /** Subscribe to a specific activity event type (one-time). */
-  once(eventType: ActivityEventType, handler: EventHandler): this {
+  once(eventType: TrackedEventType, handler: EventHandler): this {
     this.emitter.once(eventType, handler);
     return this;
   }
 
   /** Unsubscribe from a specific activity event type. */
-  off(eventType: ActivityEventType, handler: EventHandler): this {
+  off(eventType: TrackedEventType, handler: EventHandler): this {
     this.emitter.off(eventType, handler);
     return this;
   }

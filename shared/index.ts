@@ -40,8 +40,8 @@ export type { AppServiceEndpointConfig, RequestLimitsConfig, RequiredConfig, S3C
 // App-derived types
 export type {
   ActivityAction,
-  ActivityEventType,
   ActivityVerb,
+  TrackedEventType,
   AncestorChannelType,
   ChannelEntityType,
   EnabledOAuthProvider,
@@ -72,7 +72,7 @@ export type {
 } from './types';
 
 // Activity actions and event types (value exports)
-export { activityActions, activityEventTypes, activityVerbs, actionToVerb, isValidEventType } from './types';
+export { activityActions, activityVerbs, actionToVerb, isValidEventType, trackedEventTypes } from './types';
 
 export { hasKey, identityRecord, nonEmpty, recordFromKeys, typedEntries, typedKeys } from './src/config-builder/utils';
 export { seenWindowMs } from './src/seen-window';

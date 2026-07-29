@@ -16,6 +16,11 @@ export type UserMinimalBase = {
 };
 
 /**
+ * Minimal user data for references, or null when no user is available.
+ */
+export type NullableUserMinimalBase = UserMinimalBase | null;
+
+/**
  * Base user schema with essential fields for identification and display.
  */
 export type UserBase = {
@@ -55,14 +60,8 @@ export type ProductBase = {
   createdAt: string;
   updatedAt: string | null;
   description: string | null;
-  createdBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
-  updatedBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
+  createdBy: NullableUserMinimalBase;
+  updatedBy: NullableUserMinimalBase;
   entityType: 'attachment';
   keywords: string;
 };
@@ -104,6 +103,16 @@ export type StxBase = {
 };
 
 /**
+ * Sync transaction metadata, or null when an event has no sync transaction.
+ */
+export type NullableStxBase = StxBase | null;
+
+/**
+ * Boolean query value accepted as a boolean or its lowercase string representation.
+ */
+export type BooleanQueryValue = 'true' | 'false' | boolean;
+
+/**
  * Realtime notification delivered via SSE for entity and membership changes.
  */
 export type StreamNotification = {
@@ -136,10 +145,7 @@ export type StreamNotification = {
    * Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)
    */
   channelId: string | null;
-  stx: StxBase &
-    ({
-      [key: string]: unknown;
-    } | null);
+  stx: NullableStxBase;
   /**
    * Last sequence position for a batched notification — client should fetch range
    */
@@ -332,10 +338,7 @@ export type InactiveMembership = {
   role: 'admin' | 'member';
   rejectedAt: string | null;
   remindedAt: string | null;
-  createdBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
+  createdBy: NullableUserMinimalBase;
   organizationId: string;
 };
 
@@ -415,14 +418,8 @@ export type Organization = {
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
-  createdBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
-  updatedBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
+  createdBy: NullableUserMinimalBase;
+  updatedBy: NullableUserMinimalBase;
   publishedAt: string | null;
   publicAt: string | null;
   path: string | null;
@@ -2009,7 +2006,10 @@ export type GetUploadTokenData = {
   body?: never;
   path?: never;
   query: {
-    publicBucket?: string | boolean;
+    /**
+     * Boolean query value accepted as a boolean or its lowercase string representation.
+     */
+    publicBucket?: BooleanQueryValue;
     organizationId?: string;
     templateId: 'avatar' | 'cover' | 'attachment';
   };
@@ -2596,7 +2596,10 @@ export type SendNewsletterData = {
   };
   path?: never;
   query?: {
-    toSelf?: string | boolean;
+    /**
+     * Boolean query value accepted as a boolean or its lowercase string representation.
+     */
+    toSelf?: BooleanQueryValue;
   };
   url: '/system/newsletter';
 };
@@ -3433,7 +3436,10 @@ export type GetUserData = {
     relatableUserId: string;
   };
   query?: {
-    slug?: string | boolean;
+    /**
+     * Boolean query value accepted as a boolean or its lowercase string representation.
+     */
+    slug?: BooleanQueryValue;
   };
   url: '/users/users/{relatableUserId}';
 };
@@ -3746,7 +3752,10 @@ export type GetOrganizationData = {
     id: string;
   };
   query?: {
-    slug?: string | boolean;
+    /**
+     * Boolean query value accepted as a boolean or its lowercase string representation.
+     */
+    slug?: BooleanQueryValue;
     include?: string;
   };
   url: '/{tenantId}/organizations/{id}';
@@ -4274,7 +4283,10 @@ export type UpdateAttachmentData = {
     id: string;
   };
   query?: {
-    fullResponse?: string | boolean;
+    /**
+     * Boolean query value accepted as a boolean or its lowercase string representation.
+     */
+    fullResponse?: BooleanQueryValue;
   };
   url: '/{tenantId}/{organizationId}/attachments/{id}';
 };
@@ -4681,10 +4693,7 @@ export type GetPendingMembershipsResponses = {
       thumbnailUrl: string | null;
       role: 'admin' | 'member' | null;
       createdAt: string;
-      createdBy: UserMinimalBase &
-        ({
-          [key: string]: unknown;
-        } | null);
+      createdBy: NullableUserMinimalBase;
     }>;
     total: number;
   };

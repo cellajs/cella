@@ -3,8 +3,7 @@
  * Used for OpenAPI examples and tests.
  */
 
-import { faker } from '@faker-js/faker';
-import { MOCK_REF_DATE, mockUuid, withFakerSeed } from '#/mocks';
+import { mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
 import type { SystemRoleModel } from '#/modules/system/system-roles-db';
 
 /**
@@ -24,8 +23,7 @@ export const mockSystemRoleBase = (key = 'system-role:base') =>
  */
 export const mockSystemRoleResponse = (key = 'system-role:default'): SystemRoleModel =>
   withFakerSeed(key, () => {
-    const refDate = MOCK_REF_DATE;
-    const createdAt = faker.date.past({ refDate }).toISOString();
+    const createdAt = mockPastIsoDate();
 
     return {
       id: mockUuid(),
@@ -40,9 +38,8 @@ export const mockSystemRoleResponse = (key = 'system-role:default'): SystemRoleM
  * Generates a mock system invite response.
  * Used for systemInvite endpoint example.
  */
-export const mockSystemInviteResponse = (key = 'system-invite:default') =>
-  withFakerSeed(key, () => ({
-    data: [] as never[],
-    rejectedIds: [] as string[],
-    invitesSentCount: 2,
-  }));
+export const mockSystemInviteResponse = () => ({
+  data: [] as never[],
+  rejectedIds: [] as string[],
+  invitesSentCount: 2,
+});

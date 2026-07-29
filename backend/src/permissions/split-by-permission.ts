@@ -25,8 +25,8 @@ export const splitByPermission = async (
   // Auto-wrap in tenantRead when called outside an RLS context (bare baseDb)
   const entities =
     ctx.var.db === baseDb
-      ? await tenantRead(ctx, (readCtx) => resolveEntities(readCtx, entityType, ids))
-      : await resolveEntities(ctx, entityType, ids);
+      ? await tenantRead(ctx, (readCtx) => resolveEntities(readCtx, { entityType, ids }))
+      : await resolveEntities(ctx, { entityType, ids });
 
   // Check permissions for all entities in a single batch operation. Each entity doubles as
   // `row`, so row conditions and public read grants evaluate from real row data.

@@ -4,7 +4,8 @@ import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
 import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
 import type { RequestModel } from '#/modules/requests/requests-db';
-import { findExistingRequest, findUserByEmail, insertRequest } from '#/modules/requests/requests-queries';
+import { findExistingRequest, insertRequest } from '#/modules/requests/requests-queries';
+import { findUserByEmail } from '#/modules/user/user-queries';
 import { requestInfoEmail, requestResponseEmail } from '../../../../emails';
 
 // These requests are only allowed to be created if user has none yet
@@ -30,8 +31,8 @@ export async function createRequestOp(ctx: AuthContext, input: CreateRequestInpu
 
   // Check if not duplicate for unique requests
   if (uniqueRequests.includes(type)) {
-    const existingRequest = await findExistingRequest(ctx, { email: normalizedEmail, types: uniqueRequests });
-    if (existingRequest?.type === type) throw new AppError(409, 'request_exists', 'info');
+    const existingRequest = await findExistingRequest(ctx, { email: normalizedEmail, type });
+    if (existingRequest) throw new AppError(409, 'request_exists', 'info');
   }
 
   const createdRequest = await insertRequest(ctx, { email: normalizedEmail, type, message });

@@ -7,7 +7,7 @@ import { checkSlugsAvailable } from '#/modules/entities/helpers/check-slug';
 import { insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
-import { countOrgsInTenant, insertOrganizations } from '#/modules/organization/organization-queries';
+import { countOrganizationsByTenant, insertOrganizations } from '#/modules/organization/organization-queries';
 import { organizationContract } from '#/modules/organization/organization-schema';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { log } from '#/utils/logger';
@@ -24,7 +24,7 @@ export async function createOrganizationsOp(ctx: AuthContext, rawItems: CreateOr
   const db = ctx.var.db;
 
   // Count existing organizations in tenant
-  const existingOrgsCount = await countOrgsInTenant(ctx, tenantId);
+  const existingOrgsCount = await countOrganizationsByTenant(ctx, { tenantId });
 
   // 1 tenant = 1 organization. A hard structural constraint (unique index on
   // organizations.tenant_id is the backstop), so it binds system admins too, unlike the soft

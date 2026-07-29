@@ -73,32 +73,36 @@ export const actionToVerb = (action: ActivityAction): ActivityVerb => actionVerb
 /** All tracked types (entities + resources) for activity events. */
 type TrackedType = EntityType | ResourceType;
 
-/** Strongly typed activity event type, e.g. 'user.created', 'membership.updated'. */
-export type ActivityEventType = `${TrackedType}.${ActivityVerb}`;
+/**
+ * Event name for any tracked-type change, e.g. 'user.created', 'membership.updated'. Covers
+ * entities AND resources (TrackedType), so it names the one namespace shared by the activity/CDC
+ * stream and the synchronous mutation bus.
+ */
+export type TrackedEventType = `${TrackedType}.${ActivityVerb}`;
 
 /**
- * Runtime array of all valid activity event types for schema enum constraints.
+ * Runtime tuple of all valid tracked event types for schema enum constraints.
  * Zod enums require a non-empty tuple, so a config that declares no entity or resource type
  * fails here, at the point that names the cause.
  */
-export const activityEventTypes = ((): readonly [ActivityEventType, ...ActivityEventType[]] => {
+export const trackedEventTypes = ((): readonly [TrackedEventType, ...TrackedEventType[]] => {
   const types = [...appConfig.entityTypes, ...appConfig.resourceTypes].flatMap((type) =>
-    activityVerbs.map((verb): ActivityEventType => `${type}.${verb}`),
+    activityVerbs.map((verb): TrackedEventType => `${type}.${verb}`),
   );
   const [first, ...rest] = types;
   if (!first) {
     throw new Error(
-      'FATAL: activityEventTypes is empty. Config must declare at least one entity or resource type.',
+      'FATAL: trackedEventTypes is empty. Config must declare at least one entity or resource type.',
     );
   }
   return [first, ...rest];
 })();
 
 /** Set of valid event types for runtime validation. */
-const validEventTypes = new Set<string>(activityEventTypes);
+const validEventTypes = new Set<string>(trackedEventTypes);
 
-/** Type predicate to check if a string is a valid ActivityEventType. */
-export function isValidEventType(type: string): type is ActivityEventType {
+/** Type predicate to check if a string is a valid TrackedEventType. */
+export function isValidEventType(type: string): type is TrackedEventType {
   return validEventTypes.has(type);
 }
 

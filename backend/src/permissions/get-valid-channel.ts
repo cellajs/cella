@@ -34,7 +34,7 @@ export const getValidChannel = async <T extends ChannelEntityType>(
   bySlug = false,
 ): Promise<ValidChannelResult<T>> => {
   // Step 1: Resolve target entity by ID (or slug when bySlug is true)
-  const entity = await resolveEntity(ctx, entityType, entityId, bySlug);
+  const entity = await resolveEntity(ctx, { entityType, identifier: entityId, bySlug });
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)

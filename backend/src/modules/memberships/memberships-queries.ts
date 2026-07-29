@@ -2,6 +2,7 @@ import { and, count, eq, ilike, inArray, isNull, lte, or, type SQL, sql } from '
 import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
+import { resolveListTotal } from '#/db/utils/list-total';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -11,7 +12,7 @@ import type { UserMinimalBase } from '#/modules/user/helpers/audit-user';
 import { memberSelect, userBaseSelect } from '#/modules/user/helpers/select';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
-import { getOrderColumn } from '#/utils/order-column';
+import { getOrderColumns } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
 interface CountMembershipsByChannelOpts {
@@ -113,10 +114,14 @@ export const findMembershipAwareRows = async (
     .where(and(inArray(emailsTable.email, emails)));
 };
 
+interface FindPendingInactiveMembershipsByChannelsOpts {
+  channelIds: string[];
+}
+
 /** Pending (not rejected) inactive memberships for a set of contexts (deferred-invite dispatch). */
 export const findPendingInactiveMembershipsByChannels = async (
   ctx: DbContext,
-  { channelIds }: { channelIds: string[] },
+  { channelIds }: FindPendingInactiveMembershipsByChannelsOpts,
 ) => {
   const { db } = ctx.var;
   if (!channelIds.length) return [];
@@ -126,20 +131,30 @@ export const findPendingInactiveMembershipsByChannels = async (
     .where(and(inArray(inactiveMembershipsTable.channelId, channelIds), isNull(inactiveMembershipsTable.rejectedAt)));
 };
 
+interface StampInactiveMembershipsRemindedOpts {
+  ids: string[];
+  remindedAt: string;
+}
+
 /** Stamp remindedAt (last email dispatch) on inactive memberships. */
 export const stampInactiveMembershipsReminded = async (
   ctx: DbContext,
-  { ids, remindedAt }: { ids: string[]; remindedAt: string },
+  { ids, remindedAt }: StampInactiveMembershipsRemindedOpts,
 ) => {
   const { db } = ctx.var;
   if (!ids.length) return;
   return db.update(inactiveMembershipsTable).set({ remindedAt }).where(inArray(inactiveMembershipsTable.id, ids));
 };
 
+interface UpdateInactiveMembershipTokenOpts {
+  id: string;
+  tokenId: string;
+}
+
 /** Point an inactive membership at a fresh invitation token (rotation at deferred dispatch). */
 export const updateInactiveMembershipToken = async (
   ctx: DbContext,
-  { id, tokenId }: { id: string; tokenId: string },
+  { id, tokenId }: UpdateInactiveMembershipTokenOpts,
 ) => {
   const { db } = ctx.var;
   return db.update(inactiveMembershipsTable).set({ tokenId }).where(eq(inactiveMembershipsTable.id, id));
@@ -205,8 +220,12 @@ export const updateMembership = async (ctx: AuthContext, { id, values }: UpdateM
   return updated;
 };
 
+interface InsertTokensOpts {
+  tokens: (typeof tokensTable.$inferInsert)[];
+}
+
 /** Insert tokens in bulk and return the created rows. */
-export const insertTokens = async (ctx: DbContext, { tokens }: { tokens: (typeof tokensTable.$inferInsert)[] }) => {
+export const insertTokens = async (ctx: DbContext, { tokens }: InsertTokensOpts) => {
   const { db } = ctx.var;
   return db.insert(tokensTable).values(tokens).returning({
     id: tokensTable.id,
@@ -216,11 +235,12 @@ export const insertTokens = async (ctx: DbContext, { tokens }: { tokens: (typeof
   });
 };
 
+interface InsertInactiveMembershipsOpts {
+  memberships: (typeof inactiveMembershipsTable.$inferInsert)[];
+}
+
 /** Insert inactive memberships in bulk, ignoring conflicts. */
-export const insertInactiveMemberships = async (
-  ctx: DbContext,
-  { memberships }: { memberships: (typeof inactiveMembershipsTable.$inferInsert)[] },
-) => {
+export const insertInactiveMemberships = async (ctx: DbContext, { memberships }: InsertInactiveMembershipsOpts) => {
   const { db } = ctx.var;
   return db.insert(inactiveMembershipsTable).values(memberships).onConflictDoNothing().returning({
     id: inactiveMembershipsTable.id,
@@ -243,7 +263,7 @@ export const findInactiveMembershipForUser = async (ctx: AuthContext, { id }: Fi
   return membership;
 };
 
-interface GetMembersListOpts {
+interface FindMembersPaginatedOpts {
   organizationId: string;
   entityId: string;
   entityType: ChannelEntityType;
@@ -253,11 +273,11 @@ interface GetMembersListOpts {
   offset: number;
   limit: number;
   role?: EntityRole;
-  userIds?: string;
+  userIds?: string[];
 }
 
 /** Get paginated members list with total count for an entity. */
-export const getMembersList = async (ctx: DbContext, opts: GetMembersListOpts) => {
+export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPaginatedOpts) => {
   const { db } = ctx.var;
   const { organizationId, entityId, entityType, q, sort, order, offset, limit, role, userIds } = opts;
 
@@ -272,15 +292,21 @@ export const getMembersList = async (ctx: DbContext, opts: GetMembersListOpts) =
   ];
 
   if (role) membersFilters.push(eq(membershipsTable.role, role));
-  if (userIds) membersFilters.push(inArray(usersTable.id, userIds.split(',')));
+  if (userIds?.length) membersFilters.push(inArray(usersTable.id, userIds));
 
-  const orderColumn = getOrderColumn(sort, usersTable.id, order, {
-    id: usersTable.id,
-    name: usersTable.name,
-    email: usersTable.email,
-    createdAt: usersTable.createdAt,
-    lastSeenAt: sql`(SELECT ${userCountersTable.lastSeenAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id})`,
-    role: membershipsTable.role,
+  const orderBy = getOrderColumns({
+    sort,
+    order,
+    fallback: ['createdAt', 'desc'],
+    columns: {
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      createdAt: usersTable.createdAt,
+      lastSeenAt: sql`(SELECT ${userCountersTable.lastSeenAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id})`,
+      role: membershipsTable.role,
+    },
+    tieBreaker: usersTable.id,
   });
 
   const membersQuery = db
@@ -292,10 +318,18 @@ export const getMembersList = async (ctx: DbContext, opts: GetMembersListOpts) =
     .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
     .where(and(...membersFilters, or(...$or)));
 
-  const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('members'));
-  const items = await membersQuery.orderBy(orderColumn).limit(limit).offset(offset);
+  const itemsQuery = membersQuery
+    .orderBy(...orderBy)
+    .limit(limit)
+    .offset(offset);
 
-  return { items, total };
+  return resolveListTotal(itemsQuery, {
+    kind: 'exact',
+    getTotal: async () => {
+      const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('members'));
+      return total;
+    },
+  });
 };
 
 interface FindMemberPreviewsByChannelsOpts {
@@ -366,7 +400,7 @@ export const findMemberPreviewsByChannels = async (
   return previews;
 };
 
-interface GetPendingMembershipsListOpts {
+interface FindPendingMembershipsPaginatedOpts {
   organizationId: string;
   entityId: string;
   sort?: 'createdAt';
@@ -376,12 +410,18 @@ interface GetPendingMembershipsListOpts {
 }
 
 /** Get paginated pending memberships list with total count. */
-export const getPendingMembershipsList = async (ctx: DbContext, opts: GetPendingMembershipsListOpts) => {
+export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: FindPendingMembershipsPaginatedOpts) => {
   const { db } = ctx.var;
   const { organizationId, entityId, sort, order, offset, limit } = opts;
 
   const table = inactiveMembershipsTable;
-  const orderColumn = getOrderColumn(sort, table.createdAt, order, { createdAt: table.createdAt });
+  const orderBy = getOrderColumns({
+    sort,
+    order,
+    fallback: ['createdAt', 'desc'],
+    columns: { createdAt: table.createdAt },
+    tieBreaker: table.id,
+  });
 
   const pendingMembershipsQuery = db
     .select({
@@ -399,11 +439,18 @@ export const getPendingMembershipsList = async (ctx: DbContext, opts: GetPending
     .from(table)
     .leftJoin(usersTable, eq(usersTable.id, table.userId))
     .leftJoin(tokensTable, and(eq(tokensTable.inactiveMembershipId, table.id), eq(tokensTable.type, 'invitation')))
-    .where(and(eq(table.channelId, entityId), eq(table.organizationId, organizationId)))
-    .orderBy(orderColumn);
+    .where(and(eq(table.channelId, entityId), eq(table.organizationId, organizationId)));
 
-  const [{ total }] = await db.select({ total: count() }).from(pendingMembershipsQuery.as('pendingMemberships'));
-  const rawItems = await pendingMembershipsQuery.limit(limit).offset(offset);
+  const itemsQuery = pendingMembershipsQuery
+    .orderBy(...orderBy)
+    .limit(limit)
+    .offset(offset);
 
-  return { rawItems, total };
+  return resolveListTotal(itemsQuery, {
+    kind: 'exact',
+    getTotal: async () => {
+      const [{ total }] = await db.select({ total: count() }).from(pendingMembershipsQuery.as('pendingMemberships'));
+      return total;
+    },
+  });
 };

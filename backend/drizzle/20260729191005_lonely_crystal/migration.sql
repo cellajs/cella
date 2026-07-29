@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "requests_unique_signup_email_type" ON "requests" (lower("email"),"type") WHERE "type" in ('waitlist', 'newsletter');

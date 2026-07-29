@@ -33,6 +33,7 @@ export {
   tenantOrgParamSchema,
   userIdInTenantOrgParamSchema,
   validCDNUrlSchema,
+  validDomainSchema,
   validDomainsSchema,
   validEmailSchema,
   validIdSchema,
@@ -48,7 +49,6 @@ export {
   type ErrorCode,
   errorResponseRefs,
   errorResponses,
-  type OperationErrorCode,
   registerAllErrorResponses,
 } from './error-response-schemas';
 export { mapEntitiesToSchema } from './map-entities-to-schema';

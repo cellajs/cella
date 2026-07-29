@@ -118,7 +118,7 @@ export const appServices = defineServices({
     // singleVM: fold into the backend process (LB still routes to the host VM).
     coHosted: true,
     env: {
-      MODE: 'mcp-worker',
+      MODE: 'mcp',
       PORT: '4003',
       FRONTEND_URL: '${FRONTEND_URL}',
       BACKEND_URL: '${BACKEND_URL}',

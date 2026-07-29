@@ -1,17 +1,19 @@
 export { withFakerSeed } from './faker-seed';
-export { generateMockActivityStamps, type MockActivityStamps } from './mock-activity-stamps';
 export { type BatchResponse, mockBatchResponse } from './mock-batch-response';
+export { generateMockChannelCounts } from './mock-channel-counts';
 export {
+  generateMockActivityChannelIdColumns,
   generateMockChannelIdColumns,
   generateMockEntityBodyChannelIdColumns,
   generateMockEntityChannelIdColumns,
-  type MockChannelIdColumns,
-  type MockEntityChannelIdColumns,
 } from './mock-channel-id-columns';
-export { generateMockEntityCounts, type MockEntityCounts } from './mock-entity-counts';
-export { generateMockFullCounts } from './mock-full-counts';
+export {
+  mockChannelColumns,
+  mockProductColumns,
+  mockTenantEntityColumns,
+} from './mock-entity-columns';
 export { mockMany } from './mock-many';
-export { generateMockMembershipCounts, type MockMembershipCounts } from './mock-membership-counts';
+export { generateMockMembershipCounts } from './mock-membership-counts';
 export {
   LOADTEST_ID_PREFIX,
   LOADTEST_UUID_PREFIX,

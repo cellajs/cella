@@ -1,5 +1,6 @@
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { migrateConfig, migrationDb } from '#/db/db';
+import '#/modules'; // composition root: register modules so seed writes fire their mutation handlers
 import { appConfig } from 'shared';
 import { createDbRoles } from './db/create-db-roles';
 import { seedScripts } from './scripts-discovery';

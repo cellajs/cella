@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { requestsTable } from '#/modules/requests/requests-db';
-import { maxLength, paginationQuerySchema } from '#/schemas';
+import { maxLength, paginationQuerySchema, validEmailSchema } from '#/schemas';
 import { mockRequestBaseResponse } from './requests-mocks';
 
 const requestSelectSchema = createSelectSchema(requestsTable);
@@ -17,11 +17,11 @@ export const requestSchema = requestSelectSchema
   });
 
 export const requestCreateBodySchema = z.object({
-  email: z.email().max(maxLength.field),
+  email: validEmailSchema,
   type: requestSchema.shape.type,
   message: z.string().max(maxLength.field).nullable(),
 });
 
 export const requestListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
+  sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt'),
 });

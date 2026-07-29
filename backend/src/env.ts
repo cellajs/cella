@@ -96,7 +96,7 @@ export const env = createEnv({
 
     SCW_AI_API_KEY: z.string().optional(),
 
-    MODE: z.enum(['api', 'mcp-worker', 'cdc', 'migrate']).default('api'),
+    MODE: z.enum(['api', 'mcp', 'cdc', 'migrate']).default('api'),
 
     // Apply migrations and roles before binding the API port.
     // Production uses separate migrate mode; local development and tests default to boot-time setup.

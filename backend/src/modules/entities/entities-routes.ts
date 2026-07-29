@@ -2,8 +2,8 @@ import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
 import { authGuard, tenantGuard } from '#/middlewares/guard';
 import { singlePointsLimiter, streamConnectLimiter } from '#/middlewares/rate-limiter/limiters';
+import { mockStreamResponse } from '#/modules/entities/entities-mocks';
 import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
-import { mockStreamResponse } from '#/modules/me/me-mocks';
 import { appCatchupResponseSchema, errorResponseRefs, streamCatchupBodySchema, tenantOnlyParamSchema } from '#/schemas';
 
 const entityRoutes = {

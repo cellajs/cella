@@ -1,6 +1,6 @@
 import type { ChannelEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
-import { getPendingMembershipsList } from '#/modules/memberships/memberships-queries';
+import { findPendingMembershipsPaginated } from '#/modules/memberships/memberships-queries';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
@@ -19,7 +19,7 @@ export async function getPendingMembershipsOp(ctx: AuthContext, input: GetPendin
   const { entityId, entityType, sort, order, offset, limit } = input;
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'read');
 
-  const { rawItems, total } = await getPendingMembershipsList(ctx, {
+  const { items: rawItems, total } = await findPendingMembershipsPaginated(ctx, {
     organizationId: organization.id,
     entityId: entity.id,
     sort,

@@ -171,37 +171,50 @@
     },
     "description": "A product entity for file attachment metadata.",
     "example": {
+      "createdAt": "2024-05-01T22:40:37.374Z",
       "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
-      "tenantId": "t58r8f",
       "entityType": "attachment",
-      "name": "rightfully_lest_noted.mp3",
+      "tenantId": "t58r8f",
+      "name": "ick_thoroughly_coincide.text",
+      "updatedAt": "2024-05-01T22:40:37.374Z",
+      "stx": {
+        "mutationId": "d81d96a7-bdc8-427d-b21b-a6fd6449bad7",
+        "sourceId": "036cee36-25c5-42eb-81ab-e93904602179",
+        "fieldTimestamps": {}
+      },
       "description": null,
-      "keywords": "universe explicabo aliquid",
-      "publicBucket": false,
-      "bucketName": "attachments",
-      "groupId": null,
-      "filename": "rightfully_lest_noted.mp3",
-      "contentType": "text/calendar",
-      "convertedContentType": null,
-      "size": "6077039",
-      "originalKey": "uploads/enhqurk6hu54pnfytf99mpmu/rightfully_lest_noted.mp3",
-      "convertedKey": null,
-      "thumbnailKey": null,
-      "thumbnailTinyKey": null,
-      "createdAt": "2024-10-12T12:26:26.417Z",
-      "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
-      "updatedAt": "2024-10-12T12:26:26.417Z",
-      "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+      "keywords": "dolores cetera aetas",
+      "createdBy": {
+        "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+        "name": "Freddie Littel",
+        "slug": "freddie_littel16",
+        "thumbnailUrl": null,
+        "entityType": "user"
+      },
+      "updatedBy": {
+        "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+        "name": "Freddie Littel",
+        "slug": "freddie_littel16",
+        "thumbnailUrl": null,
+        "entityType": "user"
+      },
       "deletedAt": null,
       "deletedBy": null,
       "publicAt": null,
-      "seq": 246,
-      "stx": {
-        "mutationId": "e036cee3-625c-452e-ab1a-be9390460217",
-        "sourceId": "0841e0bb-2810-4252-8874-9789e1db3e97",
-        "fieldTimestamps": {}
-      },
-      "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
+      "seq": 447,
+      "publicBucket": false,
+      "bucketName": "attachments",
+      "taskId": null,
+      "groupId": null,
+      "filename": "ick_thoroughly_coincide.text",
+      "contentType": "application/epub+zip",
+      "convertedContentType": null,
+      "size": "7202058",
+      "originalKey": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text",
+      "convertedKey": null,
+      "thumbnailKey": null,
+      "thumbnailTinyKey": null,
+      "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
     }
   },
   {
@@ -275,42 +288,14 @@
         "createdBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references.",
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
-            "slug": { "type": "string", "required": true },
-            "thumbnailUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["user"]
-            }
-          },
-          "extendsRef": "#/components/schemas/UserMinimalBase"
+          "description": "Minimal user data for references, or null when no user is available.",
+          "ref": "#/components/schemas/NullableUserMinimalBase"
         },
         "updatedBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references.",
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
-            "slug": { "type": "string", "required": true },
-            "thumbnailUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["user"]
-            }
-          },
-          "extendsRef": "#/components/schemas/UserMinimalBase"
+          "description": "Minimal user data for references, or null when no user is available.",
+          "ref": "#/components/schemas/NullableUserMinimalBase"
         },
         "entityType": {
           "type": "string",
@@ -416,28 +401,8 @@
         "stx": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Sync transaction metadata for HLC conflict resolution",
-          "properties": {
-            "mutationId": {
-              "type": "string",
-              "required": true,
-              "description": "Unique mutation ID",
-              "maxLength": 36
-            },
-            "sourceId": {
-              "type": "string",
-              "required": true,
-              "description": "Tab/instance identifier for echo prevention",
-              "maxLength": 64
-            },
-            "fieldTimestamps": {
-              "type": "object",
-              "required": true,
-              "description": "Per-field HLC timestamps for scalar fields being changed",
-              "additionalProperties": { "type": "string", "required": false }
-            }
-          },
-          "extendsRef": "#/components/schemas/StxBase"
+          "description": "Sync transaction metadata, or null when an event has no sync transaction.",
+          "ref": "#/components/schemas/NullableStxBase"
         },
         "batchUntilSeq": {
           "type": ["integer", "null"],
@@ -620,26 +585,26 @@
     "description": "The currently authenticated user with their system admin status.",
     "example": {
       "user": {
-        "id": "caad4530-7189-4ad0-8822-372adc47fa07",
+        "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
         "entityType": "user",
-        "name": "Donald McClure",
-        "firstName": "Donald",
-        "lastName": "McClure",
-        "email": "donald.mcclure57@yahoo.com",
-        "slug": "donaldmcclure74",
+        "name": "Alicia Fritsch DVM",
+        "firstName": "Alicia",
+        "lastName": "Fritsch",
+        "email": "alicia_fritsch@hotmail.com",
+        "slug": "aliciafritsch34",
         "description": null,
         "thumbnailUrl": null,
         "bannerUrl": null,
         "language": "en",
         "newsletter": true,
         "mfaRequired": false,
-        "userFlags": {},
-        "createdAt": "2024-07-14T11:38:21.926Z",
-        "updatedAt": "2024-07-14T11:38:21.926Z",
+        "userFlags": { "finishedOnboarding": false },
+        "createdAt": "2024-05-02T20:53:18.498Z",
+        "updatedAt": "2024-05-02T20:53:18.498Z",
         "updatedBy": null,
-        "lastStartedAt": "2024-07-14T11:38:21.926Z",
-        "lastSignInAt": "2024-07-14T11:38:21.926Z",
-        "lastSeenAt": "2024-07-14T11:38:21.926Z"
+        "lastStartedAt": "2024-05-02T20:53:18.498Z",
+        "lastSignInAt": "2024-05-02T20:53:18.498Z",
+        "lastSeenAt": "2024-05-02T20:53:18.498Z"
       },
       "isSystemAdmin": false
     }
@@ -813,25 +778,19 @@
           "required": true
         },
         "params": {
+          "type": ["object", "null"],
           "required": true,
-          "anyOf": [
-            {
+          "properties": {
+            "auth": {
               "type": "object",
-              "required": false,
+              "required": true,
               "properties": {
-                "auth": {
-                  "type": "object",
-                  "required": true,
-                  "properties": {
-                    "key": { "type": "string", "required": true },
-                    "expires": { "type": "string", "required": false }
-                  }
-                }
-              },
-              "additionalProperties": { "type": "object", "required": false }
-            },
-            { "type": "null", "required": false }
-          ]
+                "key": { "type": "string", "required": true },
+                "expires": { "type": "string", "required": false }
+              }
+            }
+          },
+          "additionalProperties": { "type": "object", "required": false }
         }
       }
     },
@@ -895,22 +854,8 @@
         "createdBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references.",
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
-            "slug": { "type": "string", "required": true },
-            "thumbnailUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["user"]
-            }
-          },
-          "extendsRef": "#/components/schemas/UserMinimalBase"
+          "description": "Minimal user data for references, or null when no user is available.",
+          "ref": "#/components/schemas/NullableUserMinimalBase"
         },
         "organizationId": { "type": "string", "required": true, "format": "uuid" }
       }
@@ -923,19 +868,25 @@
     },
     "description": "A membership record for a user who has not yet accepted an invitation.",
     "example": {
-      "id": "cf791004-1364-4e1a-b066-c72c120aaea2",
+      "id": "4fa889f9-15ca-4730-a060-e4167170b7db",
       "channelType": "organization",
-      "channelId": "5440aeff-3fb0-400b-98b1-ebefcdf13a71",
-      "email": "luther34@gmail.com",
-      "userId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
-      "tokenId": "1ea0bf25-06d9-4e65-9415-68a14ed89fa2",
+      "channelId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
+      "email": "edna.ohara@gmail.com",
+      "userId": "2506d9e6-5415-468a-814e-d89fa24cf791",
+      "tokenId": "c72c120a-aea2-4d54-840a-eff3fb000b8b",
       "role": "admin",
       "rejectedAt": null,
       "remindedAt": null,
       "createdAt": "2024-02-07T13:46:57.160Z",
-      "createdBy": "d867375a-62c7-4ac5-86d4-66be272d180e",
-      "organizationId": "4fa889f9-15ca-4730-a060-e4167170b7db",
-      "tenantId": "test01"
+      "createdBy": {
+        "id": "ebefcdf1-3a71-453a-99a7-e765c6d86737",
+        "name": "Lynda Aufderhar",
+        "slug": "lynda_aufderhar85",
+        "thumbnailUrl": null,
+        "entityType": "user"
+      },
+      "organizationId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
+      "tenantId": "2wo2oz"
     }
   },
   {
@@ -989,20 +940,20 @@
     },
     "description": "A user's membership in a channel entity, including role and activity data.",
     "example": {
-      "id": "92f342dd-6e67-4956-ab1c-f91b3ce934d7",
+      "id": "14e27393-e22a-45d1-8c22-3250dc6fc109",
+      "tenantId": "k4z795",
       "channelType": "organization",
-      "channelId": "0b5344ae-d952-4047-b5e1-309a11b66764",
-      "userId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
-      "organizationId": "14e27393-e22a-45d1-8c22-3250dc6fc109",
+      "channelId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
+      "userId": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
+      "organizationId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
       "role": "member",
-      "displayOrder": 27,
+      "displayOrder": 93,
       "muted": false,
       "archived": false,
       "createdAt": "2024-10-28T10:38:59.996Z",
-      "createdBy": "e73242d3-88f3-450e-838c-c98f7f3d9215",
+      "createdBy": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
       "updatedAt": "2024-10-28T10:38:59.996Z",
-      "updatedBy": null,
-      "tenantId": "test01"
+      "updatedBy": null
     }
   },
   {
@@ -1045,14 +996,14 @@
     },
     "description": "Core membership fields shared across active and inactive memberships.",
     "example": {
-      "id": "da336271-583f-4567-913c-f17c567ab81d",
-      "tenantId": "vw3f7p",
+      "id": "ee163b99-3dce-4900-a23a-1256a303215e",
+      "tenantId": "7om1aq",
       "channelType": "organization",
-      "channelId": "993dce90-023a-4125-a6a3-03215e93aa04",
+      "channelId": "da336271-583f-4567-913c-f17c567ab81d",
       "userId": "154db176-be65-484a-bb34-246b1f99f492",
-      "organizationId": "45a11f6e-5760-4a44-96c4-3c1b43d10162",
-      "role": "member",
-      "displayOrder": 43,
+      "organizationId": "da336271-583f-4567-913c-f17c567ab81d",
+      "role": "admin",
+      "displayOrder": 38,
       "muted": false,
       "archived": false
     }
@@ -1091,42 +1042,14 @@
         "createdBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references.",
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
-            "slug": { "type": "string", "required": true },
-            "thumbnailUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["user"]
-            }
-          },
-          "extendsRef": "#/components/schemas/UserMinimalBase"
+          "description": "Minimal user data for references, or null when no user is available.",
+          "ref": "#/components/schemas/NullableUserMinimalBase"
         },
         "updatedBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references.",
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
-            "slug": { "type": "string", "required": true },
-            "thumbnailUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["user"]
-            }
-          },
-          "extendsRef": "#/components/schemas/UserMinimalBase"
+          "description": "Minimal user data for references, or null when no user is available.",
+          "ref": "#/components/schemas/NullableUserMinimalBase"
         },
         "publishedAt": {
           "type": ["string", "null"],
@@ -1318,12 +1241,20 @@
     },
     "description": "The main channel entity is an organization.",
     "example": {
+      "createdAt": "2024-12-25T15:04:42.969Z",
       "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-      "tenantId": "d1lgzb",
       "entityType": "organization",
-      "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+      "tenantId": "d1lgzb",
       "name": "Spencer, Pouros and Bergnaum",
+      "updatedAt": "2024-12-25T15:04:42.969Z",
       "slug": "spencer-pouros-and-bergnaum",
+      "thumbnailUrl": null,
+      "bannerUrl": null,
+      "createdBy": null,
+      "updatedBy": null,
+      "publishedAt": "2024-12-25T15:04:42.969Z",
+      "publicAt": null,
+      "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
       "shortName": "Spencer,",
       "country": "Sweden",
       "timezone": "Europe/Vaduz",
@@ -1331,30 +1262,22 @@
       "languages": ["en"],
       "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
       "color": "#cda6af",
-      "thumbnailUrl": null,
-      "bannerUrl": null,
       "logoUrl": null,
       "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
       "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
       "chatSupport": true,
       "organizationFlags": {},
       "setupConfig": {},
-      "publishedAt": "2024-12-25T15:04:42.969Z",
-      "publicAt": null,
-      "createdAt": "2024-12-25T15:04:42.969Z",
-      "createdBy": null,
-      "updatedAt": "2024-12-25T15:04:42.969Z",
-      "updatedBy": null,
       "included": {
         "membership": {
           "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
-          "tenantId": "6vxzq0",
+          "tenantId": "d1lgzb",
           "channelType": "organization",
-          "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
-          "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
+          "channelId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+          "userId": "2effb0cf-d2bd-45e6-abcd-21de08509c32",
           "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-          "role": "admin",
-          "displayOrder": 2,
+          "role": "member",
+          "displayOrder": 18,
           "muted": false,
           "archived": false
         },
@@ -1407,9 +1330,9 @@
       "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
       "email": "ahmed.braun57@gmail.com",
       "type": "contact",
-      "message": "Sapiente antiquus temptatio.",
-      "createdAt": "2024-12-03T03:40:42.368Z",
-      "wasInvited": true
+      "message": "Amitto sapiente antiquus temptatio verus mollitia.",
+      "createdAt": "2024-03-17T12:06:02.574Z",
+      "wasInvited": false
     }
   },
   {
@@ -1495,6 +1418,41 @@
       "owner": ["cella"]
     },
     "description": "A tenant representing an isolated data partition for multi-tenancy."
+  },
+  {
+    "name": "NullableUserMinimalBase",
+    "ref": "#/components/schemas/NullableUserMinimalBase",
+    "schema": {
+      "anyOf": [
+        {
+          "type": "object",
+          "description": "Minimal user data for references.",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "name": { "type": "string", "required": true },
+            "slug": { "type": "string", "required": true },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["user"]
+            }
+          },
+          "ref": "#/components/schemas/UserMinimalBase"
+        },
+        { "type": "null" }
+      ]
+    },
+    "schemaTag": "base",
+    "tagsByKind": {
+      "schema": ["base"],
+      "module": ["users"],
+      "owner": ["cella"]
+    },
+    "description": "Minimal user data for references, or null when no user is available."
   },
   {
     "name": "User",
@@ -1584,24 +1542,24 @@
     "example": {
       "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
       "entityType": "user",
-      "name": "Cathy Hodkiewicz",
-      "firstName": "Cathy",
-      "lastName": "Hodkiewicz",
-      "email": "cathy.hodkiewicz@hotmail.com",
-      "slug": "cathyhodkiewicz17",
+      "name": "Jake Senger",
+      "firstName": "Jake",
+      "lastName": "Senger",
+      "email": "jake_senger@hotmail.com",
+      "slug": "jakesenger90",
       "description": null,
       "thumbnailUrl": null,
       "bannerUrl": null,
       "language": "en",
       "newsletter": false,
       "mfaRequired": false,
-      "userFlags": {},
-      "createdAt": "2024-12-13T10:04:17.464Z",
-      "updatedAt": "2024-12-13T10:04:17.464Z",
+      "userFlags": { "finishedOnboarding": false },
+      "createdAt": "2024-06-15T02:53:22.776Z",
+      "updatedAt": "2024-06-15T02:53:22.776Z",
       "updatedBy": null,
-      "lastStartedAt": "2024-12-13T10:04:17.464Z",
-      "lastSignInAt": "2024-12-13T10:04:17.464Z",
-      "lastSeenAt": "2024-12-13T10:04:17.464Z"
+      "lastStartedAt": "2024-06-15T02:53:22.776Z",
+      "lastSignInAt": "2024-06-15T02:53:22.776Z",
+      "lastSeenAt": "2024-06-15T02:53:22.776Z"
     }
   },
   {
@@ -1823,6 +1781,25 @@
     }
   },
   {
+    "name": "BooleanQueryValue",
+    "ref": "#/components/schemas/BooleanQueryValue",
+    "schema": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": ["true", "false"]
+        },
+        { "type": "boolean" }
+      ]
+    },
+    "schemaTag": "base",
+    "tagsByKind": {
+      "schema": ["base"],
+      "owner": ["cella"]
+    },
+    "description": "Boolean query value accepted as a boolean or its lowercase string representation."
+  },
+  {
     "name": "ConflictError",
     "ref": "#/components/schemas/ConflictError",
     "type": "object",
@@ -2013,6 +1990,46 @@
       "severity": "warn",
       "timestamp": "2025-01-01T12:00:00.000Z"
     }
+  },
+  {
+    "name": "NullableStxBase",
+    "ref": "#/components/schemas/NullableStxBase",
+    "schema": {
+      "anyOf": [
+        {
+          "type": "object",
+          "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+          "properties": {
+            "mutationId": {
+              "type": "string",
+              "required": true,
+              "description": "Unique mutation ID",
+              "maxLength": 36
+            },
+            "sourceId": {
+              "type": "string",
+              "required": true,
+              "description": "Tab/instance identifier for echo prevention",
+              "maxLength": 64
+            },
+            "fieldTimestamps": {
+              "type": "object",
+              "required": true,
+              "description": "Per-field HLC timestamps for scalar fields being changed",
+              "additionalProperties": { "type": "string", "required": false }
+            }
+          },
+          "ref": "#/components/schemas/StxBase"
+        },
+        { "type": "null" }
+      ]
+    },
+    "schemaTag": "base",
+    "tagsByKind": {
+      "schema": ["base"],
+      "owner": ["cella"]
+    },
+    "description": "Sync transaction metadata, or null when an event has no sync transaction."
   },
   {
     "name": "StxBase",

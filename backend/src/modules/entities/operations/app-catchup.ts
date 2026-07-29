@@ -1,7 +1,6 @@
 import type { Actor, ProductEntityType } from 'shared';
 import { appConfig, pathHomeId } from 'shared';
 import type { DbContext } from '#/core/context';
-import type { OperationResult } from '#/core/operation-result';
 import { baseDb as db } from '#/db/db';
 import { findChannelCountersByKeys, findLatestUserActivityId } from '#/modules/entities/entities-queries';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
@@ -36,7 +35,7 @@ export async function answerCatchupViews(
       nodeKeys.add(pathHomeId(prefix));
     }
   }
-  const counterRows = nodeKeys.size > 0 ? await findChannelCountersByKeys(dbCtx, [...nodeKeys]) : [];
+  const counterRows = nodeKeys.size > 0 ? await findChannelCountersByKeys(dbCtx, { keys: [...nodeKeys] }) : [];
   const countersByNode = new Map(
     counterRows.map((r) => [r.channelKey, { ...parseCounterCounts(r.counts), path: r.path }]),
   );
@@ -102,20 +101,19 @@ export async function appCatchupOp(
   cursor?: string,
   actor?: Actor,
   views?: CatchupView[],
-): Promise<OperationResult<AppCatchupResponse>> {
+): Promise<AppCatchupResponse> {
   const organizationIds = new Set(memberships.map((m) => m.organizationId));
 
   // View answers are permission-resolved per prefix, independent of membership-derived
   // org enumeration (elevated readers hold no child memberships but declare views).
   const viewAnswers = actor && views?.length ? await answerCatchupViews(memberships, actor, views) : undefined;
 
-  if (organizationIds.size === 0)
-    return { success: true, data: { changes: {}, views: viewAnswers, cursor: cursor ?? null } };
+  if (organizationIds.size === 0) return { changes: {}, views: viewAnswers, cursor: cursor ?? null };
 
   const organizationIdArray = Array.from(organizationIds);
 
   // One query for all org counter rows (membership signal + frontier rollups for hints).
-  const allCounterRows = await findChannelCountersByKeys(dbCtx, organizationIdArray);
+  const allCounterRows = await findChannelCountersByKeys(dbCtx, { keys: organizationIdArray });
   const allCounters = new Map(allCounterRows.map((r) => [r.channelKey, r.counts]));
 
   const changes: AppCatchupResponse['changes'] = {};
@@ -133,15 +131,15 @@ export async function appCatchupOp(
   let newCursor: string | null = cursor ?? null;
   if (!cursor || Object.keys(changes).length > 0) {
     newCursor =
-      (await findLatestUserActivityId(dbCtx, Array.from(organizationIds), [
-        ...appConfig.productEntityTypes,
-        ...appConfig.channelEntityTypes,
-      ])) ??
+      (await findLatestUserActivityId(dbCtx, {
+        organizationIds: Array.from(organizationIds),
+        entityTypes: [...appConfig.productEntityTypes, ...appConfig.channelEntityTypes],
+      })) ??
       cursor ??
       null;
   }
 
-  return { success: true, data: { changes, views: viewAnswers, cursor: newCursor } };
+  return { changes, views: viewAnswers, cursor: newCursor };
 }
 
 /**
@@ -152,8 +150,8 @@ export async function appCatchupOp(
 export async function getLatestUserActivityId(organizationIds: Set<string>): Promise<string | null> {
   if (organizationIds.size === 0) return null;
 
-  return findLatestUserActivityId(dbCtx, Array.from(organizationIds), [
-    ...appConfig.productEntityTypes,
-    ...appConfig.channelEntityTypes,
-  ]);
+  return findLatestUserActivityId(dbCtx, {
+    organizationIds: Array.from(organizationIds),
+    entityTypes: [...appConfig.productEntityTypes, ...appConfig.channelEntityTypes],
+  });
 }

@@ -31,8 +31,8 @@ export const getValidProduct = async <K extends ProductEntityType>(
   // Skip tenantRead for tenant-less entities (e.g. pages) where tenantId is not set
   const entity =
     ctx.var.db === baseDb && ctx.var.tenantId
-      ? await tenantRead(ctx, (readCtx) => resolveEntity(readCtx, entityType, id))
-      : await resolveEntity(ctx, entityType, id);
+      ? await tenantRead(ctx, (readCtx) => resolveEntity(readCtx, { entityType, identifier: id }))
+      : await resolveEntity(ctx, { entityType, identifier: id });
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Unpublished drafts (publishedAt null) read as absent to everyone but their author.

@@ -1,18 +1,15 @@
 import { faker } from '@faker-js/faker';
 import { UniqueEnforcer } from 'enforce-unique';
-import { appConfig, type SystemRole, type UserFlags } from 'shared';
+import { appConfig, type SystemRole } from 'shared';
 import slugify from 'slugify';
-import { MOCK_REF_DATE, mockPaginated, mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
+import { mockPaginated, mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import type { InsertEmailModel } from '#/modules/user/emails-db';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
 import type { InsertUnsubscribeTokenModel } from '#/modules/user/unsubscribe-tokens-db';
 import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
 
-/** Optional overrides for mock user generation */
-type MockUserOptionalOverrides = Partial<{
-  email: string;
-}>;
+type MockUserOptions = { email?: string; enforceUnique?: boolean };
 
 // Enforces unique user slugs and emails
 const userSlug = new UniqueEnforcer();
@@ -26,18 +23,12 @@ export const resetUserMockEnforcers = () => {
   userEmail.reset();
 };
 
-/**
- * Generates a mock user with all fields populated.
- * Used for DB seeding and tests.
- * Enforces unique email and slug.
- */
-export const mockUser = (overrides: MockUserOptionalOverrides = {}): InsertUserModel => {
+const generateUser = ({ email: emailOverride, enforceUnique = false }: MockUserOptions = {}): UserModel => {
   const firstAndLastName = { firstName: faker.person.firstName(), lastName: faker.person.lastName() };
-  const email = overrides.email ?? userEmail.enforce(() => faker.internet.email(firstAndLastName).toLowerCase());
-  const slug = userSlug.enforce(
-    () => slugify(faker.internet.username(firstAndLastName), { lower: true, strict: true }),
-    { maxTime: 500, maxRetries: 500 },
-  );
+  const generateEmail = () => faker.internet.email(firstAndLastName).toLowerCase();
+  const generateSlug = () => slugify(faker.internet.username(firstAndLastName), { lower: true, strict: true });
+  const email = emailOverride ?? (enforceUnique ? userEmail.enforce(generateEmail) : generateEmail());
+  const slug = enforceUnique ? userSlug.enforce(generateSlug, { maxTime: 500, maxRetries: 500 }) : generateSlug();
   const createdAt = mockPastIsoDate();
 
   return {
@@ -54,12 +45,16 @@ export const mockUser = (overrides: MockUserOptionalOverrides = {}): InsertUserM
     language: appConfig.defaultLanguage,
     newsletter: faker.datatype.boolean(),
     mfaRequired: false,
-    userFlags: {} as UserFlags,
+    userFlags: { ...appConfig.defaultUserFlags },
     createdAt,
     updatedAt: createdAt,
     updatedBy: null,
   };
 };
+
+/** Generates a full insertable user while enforcing unique email and slug values. */
+export const mockUser = (overrides: Pick<MockUserOptions, 'email'> = {}): InsertUserModel =>
+  generateUser({ ...overrides, enforceUnique: true });
 
 /**
  * Generates a mock user API response with deterministic seeding.
@@ -67,33 +62,12 @@ export const mockUser = (overrides: MockUserOptionalOverrides = {}): InsertUserM
  */
 export const mockUserResponse = (key = 'user:default'): UserWithCounters =>
   withFakerSeed(key, () => {
-    const refDate = MOCK_REF_DATE;
-    const createdAt = faker.date.past({ refDate }).toISOString();
-    const firstAndLastName = { firstName: faker.person.firstName(), lastName: faker.person.lastName() };
-    const email = faker.internet.email(firstAndLastName).toLowerCase();
-    const slug = slugify(faker.internet.username(firstAndLastName), { lower: true, strict: true });
-
+    const user = generateUser();
     return {
-      id: mockUuid(),
-      entityType: 'user' as const,
-      name: faker.person.fullName(firstAndLastName),
-      firstName: firstAndLastName.firstName,
-      lastName: firstAndLastName.lastName,
-      email,
-      slug,
-      description: null,
-      thumbnailUrl: null,
-      bannerUrl: null,
-      language: appConfig.defaultLanguage,
-      newsletter: faker.datatype.boolean(),
-      mfaRequired: false,
-      userFlags: {} as UserFlags,
-      createdAt,
-      updatedAt: createdAt,
-      updatedBy: null,
-      lastStartedAt: createdAt,
-      lastSignInAt: createdAt,
-      lastSeenAt: createdAt,
+      ...user,
+      lastStartedAt: user.createdAt,
+      lastSignInAt: user.createdAt,
+      lastSeenAt: user.createdAt,
     };
   });
 
@@ -107,16 +81,12 @@ export interface UserListItem extends UserWithCounters {
  * Generates a mock user list item for getUsers response.
  * Includes user data with memberships array and optional system role.
  */
-export const mockUserListItem = (key = 'userListItem:default'): UserListItem =>
-  withFakerSeed(key, () => ({
-    ...mockUserResponse(`${key}:user`),
-    memberships: [mockMembershipBase(`${key}:membership`)],
-    role: undefined,
-  }));
+export const mockUserListItem = (key = 'userListItem:default'): UserListItem => ({
+  ...mockUserResponse(`${key}:user`),
+  memberships: [mockMembershipBase(`${key}:membership`)],
+  role: undefined,
+});
 
-/**
- * Generates a paginated mock user list response for getUsers endpoint.
- */
 export const mockPaginatedUsersResponse = (count = 2) => mockPaginated(mockUserListItem, count);
 
 /**

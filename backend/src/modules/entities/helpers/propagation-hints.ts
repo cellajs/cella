@@ -56,12 +56,11 @@ export async function buildPropagationHints(
       const frontier = frontiers[embeddedProduct] ?? 0;
       if (frontier <= clientCursor) continue;
 
-      const { updatedIds, deletedIds } = await findChangedEntityDeltaIds(
-        dbCtx,
-        embeddedProduct,
+      const { updatedIds, deletedIds } = await findChangedEntityDeltaIds(dbCtx, {
+        entityType: embeddedProduct,
         organizationId,
-        clientCursor,
-      );
+        afterSeq: clientCursor,
+      });
 
       for (const host of hosts) {
         if (updatedIds.length > 0 || deletedIds.length > 0) {

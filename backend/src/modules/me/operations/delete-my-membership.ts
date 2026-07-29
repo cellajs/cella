@@ -10,7 +10,7 @@ import { log } from '#/utils/logger';
 export async function deleteMyMembershipOp(ctx: AuthContext, entityType: ChannelEntityType, entityId: string) {
   const user = ctx.var.user;
 
-  const entity = await resolveEntity(ctx, entityType, entityId);
+  const entity = await resolveEntity(ctx, { entityType, identifier: entityId });
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   await deleteMyMembership({ var: { ...ctx.var, db: baseDb } }, { channelId: entity.id });

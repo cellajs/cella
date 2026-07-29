@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { domainsTable } from '#/modules/domains/domains-db';
-import { entityIdParamSchema, tenantOnlyParamSchema } from '#/schemas';
+import { entityIdParamSchema, tenantOnlyParamSchema, validDomainSchema } from '#/schemas';
 
 /**
  * Domain schema for API responses (excludes verificationToken).
@@ -36,13 +36,7 @@ export const verifyDomainResponseSchema = z.object({
  * Schema for adding a domain to a tenant.
  */
 export const createDomainBodySchema = createInsertSchema(domainsTable, {
-  domain: z
-    .string()
-    .min(4)
-    .max(255)
-    .regex(/^[a-z0-9].*[a-z0-9]$/i, 'Invalid domain format')
-    .refine((s) => s.includes('.'), 'Domain must contain a dot')
-    .transform((s) => s.toLowerCase().trim()),
+  domain: validDomainSchema,
 }).pick({ domain: true });
 
 /**

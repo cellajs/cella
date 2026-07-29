@@ -110,7 +110,13 @@
       "body": {
         "type": "object",
         "properties": {
-          "email": { "type": "string", "required": true, "format": "email" }
+          "email": {
+            "type": "string",
+            "required": true,
+            "format": "email",
+            "minLength": 4,
+            "maxLength": 255
+          }
         },
         "required": true,
         "contentType": "application/json"
@@ -526,7 +532,13 @@
       "body": {
         "type": "object",
         "properties": {
-          "email": { "type": "string", "required": true, "format": "email" }
+          "email": {
+            "type": "string",
+            "required": true,
+            "format": "email",
+            "minLength": 4,
+            "maxLength": 255
+          }
         },
         "required": true,
         "contentType": "application/json"
@@ -801,9 +813,12 @@
         "example": {
           "id": "e80d32e1-5270-4425-bdfd-40a4e3fc9492",
           "userId": "f95b6005-cf61-43b8-9a92-03dd84c4ebd9",
+          "deviceName": "iPhone",
+          "deviceType": "mobile",
+          "deviceOs": "iOS",
+          "browser": "Safari",
           "nameOnDevice": "Safari on iPhone",
-          "userAgent": "Mozilla/5.0 (Linux; Android 11; SM-G998B) AppleWebKit/576.15 (KHTML, like Gecko) Chrome/108.7.7.15 Mobile Safari/574.19",
-          "createdAt": "2024-08-15T07:07:12.485Z"
+          "createdAt": "2024-06-08T07:07:34.910Z"
         }
       },
       {
@@ -989,7 +1004,13 @@
             "required": true,
             "enum": ["authentication", "mfa", "registration"]
           },
-          "email": { "type": "string", "required": false, "maxLength": 255 }
+          "email": {
+            "type": "string",
+            "required": false,
+            "format": "email",
+            "minLength": 4,
+            "maxLength": 255
+          }
         },
         "required": true,
         "contentType": "application/json"
@@ -1056,7 +1077,13 @@
             "required": true,
             "enum": ["authentication", "mfa"]
           },
-          "email": { "type": "string", "required": false, "maxLength": 255 }
+          "email": {
+            "type": "string",
+            "required": false,
+            "format": "email",
+            "minLength": 4,
+            "maxLength": 255
+          }
         },
         "required": true,
         "contentType": "application/json"

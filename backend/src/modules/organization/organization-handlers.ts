@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import '#/modules/organization/organization-module';
 import { createOrganizationsOp } from '#/modules/organization/operations/create-organizations';
 import { deleteOrganizationsOp } from '#/modules/organization/operations/delete-organizations';
 import { getOrganizationOp } from '#/modules/organization/operations/get-organization';

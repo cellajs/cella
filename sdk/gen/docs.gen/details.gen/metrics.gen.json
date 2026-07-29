@@ -15,7 +15,7 @@
           },
           "contentType": "application/json"
         },
-        "example": { "user": 150, "organization": 12 }
+        "example": { "user": 404, "organization": 303, "attachment": 387 }
       },
       {
         "status": 400,

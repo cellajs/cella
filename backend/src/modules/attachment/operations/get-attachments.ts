@@ -1,18 +1,18 @@
 import type { z } from '@hono/zod-openapi';
 import { and, asc, count, eq, getColumns, ilike, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
-import type { OperationResult } from '#/core/operation-result';
 import { tenantRead, tenantReadIncludingDeleted } from '#/db/tenant-context';
+import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
-import { type ListTotalSource, resolveListTotal } from '#/modules/entities/helpers/list-total';
+import { getOrganizationEntityCount } from '#/modules/entities/entities-queries';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { auditUserSelect, coalesceAuditUsers, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
-import { getOrderColumn } from '#/utils/order-column';
+import { getOrderColumns } from '#/utils/order-column';
 import { seqCursorFilters } from '#/utils/seq-cursor';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
@@ -29,8 +29,7 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   const scopeWhere = buildCollectionReadWhere(readFilter, attachmentsTable, attachmentsTable.organizationId, actor);
 
   if (scopeWhere.kind === 'none') {
-    const data = { items: [], total: 0 };
-    return { success: true, data } as OperationResult<typeof data>;
+    return { items: [], total: 0 };
   }
 
   const filters: SQL[] = [eq(attachmentsTable.organizationId, organizationId)];
@@ -66,13 +65,17 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   // Seq reads are keyset-paged: seq order (id tiebreak) makes a capped page a clean prefix
   const orderBy = seqCursor
     ? [asc(attachmentsTable.seq), asc(attachmentsTable.id)]
-    : [
-        getOrderColumn(sort, attachmentsTable.createdAt, order, {
+    : getOrderColumns({
+        sort,
+        order,
+        fallback: ['createdAt', 'desc'],
+        columns: {
           name: attachmentsTable.name,
           createdAt: attachmentsTable.createdAt,
           contentType: attachmentsTable.contentType,
-        }),
-      ];
+        },
+        tieBreaker: attachmentsTable.id,
+      });
 
   // Delta sync (seqCursor) must see tombstones so the client can remove soft-deleted attachments
   const read = seqCursor ? tenantReadIncludingDeleted : tenantRead;
@@ -106,10 +109,13 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
     const totalSource: ListTotalSource = isDelta
       ? { kind: 'pageLength' }
       : counterEligible
-        ? { kind: 'counter', ctx: readCtx, channelKey: organizationId, entityType: 'attachment' }
+        ? {
+            kind: 'counter',
+            getTotal: () => getOrganizationEntityCount(readCtx, { organizationId, entityType: 'attachment' }),
+          }
         : {
             kind: 'exact',
-            count: async () => {
+            getTotal: async () => {
               const [{ total }] = await db.select({ total: count() }).from(attachmentsTable).where(whereClause);
               return total;
             },
@@ -121,6 +127,5 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   });
 
   const items = coalesceAuditUsers(rawItems);
-  const data = { items, total };
-  return { success: true, data } as OperationResult<typeof data>;
+  return { items, total };
 }

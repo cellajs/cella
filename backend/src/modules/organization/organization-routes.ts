@@ -5,7 +5,6 @@ import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limit
 import {
   organizationCreateBodySchema,
   organizationListQuerySchema,
-  organizationQuerySchema,
   organizationSchema,
   organizationUpdateBodySchema,
   organizationWithMembershipSchema,
@@ -15,6 +14,7 @@ import {
   errorResponseRefs,
   idsBodySchema,
   paginationSchema,
+  slugIncludeQuerySchema,
   tenantIdParamSchema,
   tenantOnlyParamSchema,
 } from '#/schemas';
@@ -93,7 +93,7 @@ const organizationRoutes = {
     tags: ['organizations', 'cella', 'channel'],
     summary: 'Get organization',
     description: 'Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.',
-    request: { params: tenantIdParamSchema, query: organizationQuerySchema },
+    request: { params: tenantIdParamSchema, query: slugIncludeQuerySchema },
     responses: {
       200: {
         description: 'Organization',

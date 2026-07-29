@@ -32,7 +32,7 @@ describe('Organization member previews (include=members)', async () => {
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
     const data = result.data as { items: OrgListItem[]; total: number } | undefined;
-    return { status: result.response.status, items: data?.items ?? [] };
+    return { status: result.response.status, items: data?.items ?? [], total: data?.total ?? 0 };
   };
 
   const insertMembership = async (
@@ -122,5 +122,13 @@ describe('Organization member previews (include=members)', async () => {
     for (const item of result.items) {
       expect(item.included.members).toBeUndefined();
     }
+  });
+
+  it('M5: an empty page preserves the total count', async () => {
+    const result = await listOrganizations({ limit: '1', offset: '2' });
+
+    expect(result.status).toBe(200);
+    expect(result.items).toEqual([]);
+    expect(result.total).toBe(2);
   });
 });

@@ -1,17 +1,22 @@
-import { and, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import type { EntityRole, OrganizationFlags, OrganizationSetupConfig } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
+import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { getChannelCountsSelect } from '#/modules/entities/entities-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationFlagsSelect, setupConfigSelect } from '#/modules/organization/helpers/select';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { auditUserSelect, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
-import { getOrderColumn } from '#/utils/order-column';
+import { getOrderColumns } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
+interface CountOrganizationsByTenantOpts {
+  tenantId: string;
+}
+
 /** Count organizations in a tenant. */
-export const countOrgsInTenant = async (ctx: DbContext, tenantId: string) => {
+export const countOrganizationsByTenant = async (ctx: DbContext, { tenantId }: CountOrganizationsByTenantOpts) => {
   const { db } = ctx.var;
   const [result] = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -20,11 +25,12 @@ export const countOrgsInTenant = async (ctx: DbContext, tenantId: string) => {
   return result?.count ?? 0;
 };
 
+interface InsertOrganizationsOpts {
+  orgs: (typeof organizationsTable.$inferInsert)[];
+}
+
 /** Insert organizations and return the created rows. */
-export const insertOrganizations = async (
-  ctx: DbContext,
-  { orgs }: { orgs: (typeof organizationsTable.$inferInsert)[] },
-) => {
+export const insertOrganizations = async (ctx: DbContext, { orgs }: InsertOrganizationsOpts) => {
   const { db } = ctx.var;
   return db.insert(organizationsTable).values(orgs).returning();
 };
@@ -72,7 +78,7 @@ export const deleteOrganizationsByIds = async (ctx: AuthContext, { ids }: Delete
     .where(and(inArray(organizationsTable.id, ids), eq(organizationsTable.tenantId, tenantId)));
 };
 
-interface GetOrganizationsListOpts {
+interface FindOrganizationsPaginatedOpts {
   isSystemAdmin: boolean;
   targetUserId: string;
   q?: string;
@@ -86,7 +92,8 @@ interface GetOrganizationsListOpts {
 }
 
 /** Get paginated list of organizations with conditional joins based on admin status. */
-export const getOrganizationsList = async ({ var: { db } }: DbContext, opts: GetOrganizationsListOpts) => {
+export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrganizationsPaginatedOpts) => {
+  const { db } = ctx.var;
   const { isSystemAdmin, targetUserId, q, sort, order, offset, limit, excludeArchived, role, includeCounts } = opts;
 
   const entityType = 'organization';
@@ -109,12 +116,18 @@ export const getOrganizationsList = async ({ var: { db } }: DbContext, opts: Get
   // Org-only filters belong in WHERE (safe for both admin + non-admin)
   const orgWhere: SQL[] = [...(q ? [ilike(organizationsTable.name, prepareStringForILikeFilter(q))] : [])];
 
-  const orderColumn = getOrderColumn(sort, organizationsTable.id, order, {
-    id: organizationsTable.id,
-    name: organizationsTable.name,
-    createdAt: organizationsTable.createdAt,
-    userRole: membershipsTable.role,
-    displayOrder: membershipsTable.displayOrder,
+  const orderBy = getOrderColumns({
+    sort,
+    order,
+    fallback: ['displayOrder', 'asc'],
+    columns: {
+      id: organizationsTable.id,
+      name: organizationsTable.name,
+      createdAt: organizationsTable.createdAt,
+      userRole: membershipsTable.role,
+      displayOrder: membershipsTable.displayOrder,
+    },
+    tieBreaker: organizationsTable.id,
   });
 
   // System admins see all orgs they have RLS access to (via createdBy or membership)
@@ -129,7 +142,6 @@ export const getOrganizationsList = async ({ var: { db } }: DbContext, opts: Get
     setupConfig: setupConfigSelect,
     ...auditUserSelect,
     ...(countData && { counts: countData.countsSelect }),
-    total: sql<number>`count(*) over()`.mapWith(Number),
   } as const;
 
   // Admins use LEFT JOIN; regular users use INNER JOIN on memberships.
@@ -144,11 +156,35 @@ export const getOrganizationsList = async ({ var: { db } }: DbContext, opts: Get
     ) as typeof query;
   }
 
-  return query
+  const itemsQuery = query
     .leftJoin(createdByUser, eq(createdByUser.id, organizationsTable.createdBy))
     .leftJoin(updatedByUser, eq(updatedByUser.id, organizationsTable.updatedBy))
     .where(and(...orgWhere))
-    .orderBy(orderColumn)
+    .orderBy(...orderBy)
     .limit(limit)
     .offset(offset);
+
+  const totalSource: ListTotalSource = {
+    kind: 'exact',
+    getTotal: async () => {
+      if (isSystemAdmin) {
+        const [{ total }] = await db
+          .select({ total: count() })
+          .from(organizationsTable)
+          .where(and(...orgWhere));
+        return total;
+      }
+
+      const baseQuery = db
+        .select({ id: organizationsTable.id })
+        .from(organizationsTable)
+        .innerJoin(membershipsTable, membershipOn)
+        .where(and(...orgWhere))
+        .as('organizations');
+      const [{ total }] = await db.select({ total: count() }).from(baseQuery);
+      return total;
+    },
+  };
+
+  return resolveListTotal(itemsQuery, totalSource);
 };

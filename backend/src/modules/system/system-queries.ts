@@ -4,9 +4,7 @@ import type { DbContext } from '#/core/context';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { requestsTable } from '#/modules/requests/requests-db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { userSelect } from '#/modules/user/helpers/select';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -48,24 +46,14 @@ export const findPendingInvitationTokens = async (ctx: DbContext, { emails }: Fi
     );
 };
 
-/** Insert invitation tokens and return created rows. */
-export const insertTokens = async (ctx: DbContext, { tokens }: { tokens: (typeof tokensTable.$inferInsert)[] }) => {
-  const { db } = ctx.var;
-  return db.insert(tokensTable).values(tokens).returning();
-};
-
-interface LinkWaitlistRequestOpts {
-  email: string;
-  tokenId: string;
+interface InsertTokensOpts {
+  tokens: (typeof tokensTable.$inferInsert)[];
 }
 
-/** Link a waitlist request to an invitation token. */
-export const linkWaitlistRequest = async (ctx: DbContext, { email, tokenId }: LinkWaitlistRequestOpts) => {
+/** Insert invitation tokens and return created rows. */
+export const insertTokens = async (ctx: DbContext, { tokens }: InsertTokensOpts) => {
   const { db } = ctx.var;
-  return db
-    .update(requestsTable)
-    .set({ tokenId })
-    .where(and(eq(requestsTable.email, email), eq(requestsTable.type, 'waitlist')));
+  return db.insert(tokensTable).values(tokens).returning();
 };
 
 interface FindUsersByIdsOpts {
@@ -82,17 +70,6 @@ export const findUsersByIds = async (ctx: DbContext, { ids }: FindUsersByIdsOpts
 export const deleteUsersByIds = async (ctx: DbContext, { ids }: FindUsersByIdsOpts) => {
   const { db } = ctx.var;
   return db.delete(usersTable).where(inArray(usersTable.id, ids));
-};
-
-interface FindUserByIdOpts {
-  id: string;
-}
-
-/** Find a single user by ID with full userSelect. */
-export const findUserById = async (ctx: DbContext, { id }: FindUserByIdOpts) => {
-  const { db } = ctx.var;
-  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, id)).limit(1);
-  return user;
 };
 
 interface UpdateUserOpts {

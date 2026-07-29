@@ -2,22 +2,9 @@ import { faker } from '@faker-js/faker';
 import { type EntityRole, roles } from 'shared';
 import { withFakerSeed } from './faker-seed';
 
-/**
- * Membership count structure for organizations.
- * Dynamically includes counts for each entity role from config.
- */
-export type MockMembershipCounts = {
-  [K in EntityRole]: number;
-} & {
-  pending: number;
-  total: number;
-};
-
-/**
- * @param key - seeds deterministic generation.
- */
-export const generateMockMembershipCounts = (key: string): MockMembershipCounts => {
-  const generator = (): MockMembershipCounts => {
+/** Generates deterministic membership counts for every configured role. */
+export const generateMockMembershipCounts = (key: string) =>
+  withFakerSeed(key, () => {
     const roleCounts = {} as Record<EntityRole, number>;
     let total = 0;
 
@@ -34,7 +21,4 @@ export const generateMockMembershipCounts = (key: string): MockMembershipCounts 
       pending: faker.number.int({ min: 0, max: 50 }),
       total,
     };
-  };
-
-  return withFakerSeed(key, generator);
-};
+  });

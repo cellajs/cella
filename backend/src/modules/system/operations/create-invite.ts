@@ -3,12 +3,8 @@ import { nanoid } from 'shared/utils/nanoid';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
-import {
-  findPendingInvitationTokens,
-  findVerifiedEmails,
-  insertTokens,
-  linkWaitlistRequest,
-} from '#/modules/system/system-queries';
+import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
+import { findPendingInvitationTokens, findVerifiedEmails, insertTokens } from '#/modules/system/system-queries';
 import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug-from-email';

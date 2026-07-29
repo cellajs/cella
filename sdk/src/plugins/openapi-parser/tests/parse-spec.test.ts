@@ -33,6 +33,62 @@ describe('parseOpenApiSpec', () => {
     });
   });
 
+  it('keeps nested nullable reference aliases compact while expanding their component definition', () => {
+    const spec: OpenApiSpec = {
+      openapi: '3.1.0',
+      info: { title: 'Nullable references', version: '1.0.0' },
+      tags: [{ name: 'data', kind: 'schema', description: 'Data schemas', 'x-default': true }] as OpenApiTag[],
+      paths: {},
+      components: {
+        schemas: {
+          UserMinimal: {
+            type: 'object',
+            properties: { id: { type: 'string' }, name: { type: 'string' } },
+            required: ['id', 'name'],
+          },
+          NullableUserMinimal: {
+            oneOf: [{ type: 'null' }, { $ref: '#/components/schemas/UserMinimal' }],
+            description: 'Minimal user data or null.',
+          },
+          StringOrNumber: {
+            anyOf: [{ type: 'string' }, { type: 'number' }],
+          },
+          AuditRecord: {
+            type: 'object',
+            properties: {
+              createdBy: { $ref: '#/components/schemas/NullableUserMinimal' },
+              source: { $ref: '#/components/schemas/StringOrNumber' },
+            },
+            required: ['createdBy'],
+          },
+        },
+      },
+    };
+
+    const schemas = Object.fromEntries(parseOpenApiSpec(spec).schemas.map((schema) => [schema.name, schema]));
+
+    expect(schemas.AuditRecord.schema.properties?.createdBy).toEqual({
+      type: ['object', 'null'],
+      required: true,
+      description: 'Minimal user data or null.',
+      ref: '#/components/schemas/NullableUserMinimal',
+    });
+    expect(schemas.NullableUserMinimal.schema.oneOf).toHaveLength(2);
+    expect(schemas.NullableUserMinimal.schema.oneOf?.[1]).toMatchObject({
+      type: 'object',
+      ref: '#/components/schemas/UserMinimal',
+      properties: {
+        id: { type: 'string', required: true },
+        name: { type: 'string', required: true },
+      },
+    });
+    expect(schemas.AuditRecord.schema.properties?.source).toMatchObject({
+      required: false,
+      ref: '#/components/schemas/StringOrNumber',
+      anyOf: [{ type: 'string' }, { type: 'number' }],
+    });
+  });
+
   it('drops hidden-tagged operations from the docs while counting the documented/hidden split', () => {
     const spec: OpenApiSpec = {
       openapi: '3.1.0',

@@ -1,7 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { membershipRoutes } from '#/modules/memberships/memberships-routes';
-import '#/modules/memberships/memberships-module';
 import { createMembershipsOp } from '#/modules/memberships/operations/create-memberships';
 import { deleteMembershipsOp } from '#/modules/memberships/operations/delete-memberships';
 import { getMembersOp } from '#/modules/memberships/operations/get-members';

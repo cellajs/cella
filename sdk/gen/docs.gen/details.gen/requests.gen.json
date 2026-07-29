@@ -161,9 +161,9 @@
           "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
           "email": "ahmed.braun57@gmail.com",
           "type": "contact",
-          "message": "Sapiente antiquus temptatio.",
-          "createdAt": "2024-12-03T03:40:42.368Z",
-          "wasInvited": true
+          "message": "Amitto sapiente antiquus temptatio verus mollitia.",
+          "createdAt": "2024-03-17T12:06:02.574Z",
+          "wasInvited": false
         }
       },
       {
@@ -217,6 +217,7 @@
             "type": "string",
             "required": true,
             "format": "email",
+            "minLength": 4,
             "maxLength": 255
           },
           "type": {

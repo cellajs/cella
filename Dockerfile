@@ -17,7 +17,7 @@
 #
 # Per service: `<svc>-deps` (prod install) / `<svc>-builder` (full install +
 # tsup build) → `<svc>` (production target). Targets: `backend` (also reused by
-# the `mcp` service, MODE=mcp-worker on :4003 via `reusesImageOf`), `cdc`,
+# the `mcp` service, MODE=mcp on :4003 via `reusesImageOf`), `cdc`,
 # `yjs`. Not used in local dev.
 # =============================================================================
 

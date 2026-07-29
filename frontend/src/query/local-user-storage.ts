@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import { useBoardStore } from '~/modules/common/board/board-store';
 import { useDraftStore } from '~/modules/common/form-draft/draft-store';
@@ -86,47 +85,6 @@ export function localUserStorageReady(): Promise<void> {
   return readyPromise;
 }
 
-// TODO can we get rid of ithis?
-/** One-time, best-effort GC of pre-localUserDb client storage (hard cutover, no migration). */
-function gcLegacyStorage(): void {
-  const flag = `${appConfig.slug}-storage-gc-v2`;
-  try {
-    if (localStorage.getItem(flag)) return;
-
-    // Obsolete zustand bases with keys in the `<slug>-<base>:<owner>` shape.
-    const legacyBases = ['seen', 'sync', 'navigation', 'drafts', 'alerts'];
-    const prefixes = legacyBases.map((b) => `${appConfig.slug}-${b}:`);
-    for (const web of [localStorage, sessionStorage]) {
-      for (const key of Object.keys(web)) {
-        if (prefixes.some((p) => key.startsWith(p))) web.removeItem(key);
-      }
-    }
-
-    // Retired global board-store key.
-    localStorage.removeItem(`${appConfig.slug}-board-store`);
-
-    // Retired standalone IndexedDB databases.
-    indexedDB
-      ?.databases?.()
-      .then((dbs) => {
-        for (const { name } of dbs) {
-          if (!name) continue;
-          const legacy =
-            name === `${appConfig.slug}-query-persister` ||
-            name.startsWith(`${appConfig.slug}-attachments:`) ||
-            name.startsWith(`${appConfig.slug}-failed-sync:`);
-          if (legacy) indexedDB.deleteDatabase(name);
-        }
-      })
-      .catch(() => {});
-
-    localStorage.setItem(flag, '1');
-  } catch {
-    // Non-critical: orphans are harmless and can be retried next boot.
-  }
-}
-
-gcLegacyStorage();
 userStore.subscribe(syncOwner);
 useUIStore.subscribe(syncOwner);
 syncOwner();

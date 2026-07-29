@@ -1,16 +1,14 @@
 import { faker } from '@faker-js/faker';
 import {
   generateMockEntityChannelIdColumns,
-  MOCK_REF_DATE,
   mockBatchResponse,
   mockNanoid,
   mockPaginated,
-  mockStx,
-  mockTenantId,
-  mockUuid,
+  mockProductColumns,
   withFakerSeed,
 } from '#/mocks';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
+import { mockAuditUsers } from '#/schemas/entity-base-mocks';
 
 /**
  * Generates a mock attachment with all fields populated.
@@ -19,21 +17,14 @@ import type { AttachmentModel } from '#/modules/attachment/attachment-db';
  */
 export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
   withFakerSeed(key, () => {
-    const refDate = MOCK_REF_DATE;
-    const createdAt = faker.date.past({ refDate }).toISOString();
-    const userId = mockUuid();
     const filename = faker.system.fileName();
     const channelIds = generateMockEntityChannelIdColumns('attachment');
 
     return {
-      id: mockUuid(),
-      tenantId: mockTenantId(),
-      entityType: 'attachment' as const,
-      name: filename,
-      description: null,
-      keywords: faker.lorem.words(3),
+      ...mockProductColumns('attachment', { name: filename, description: null }),
       publicBucket: false,
       bucketName: 'attachments',
+      taskId: null,
       groupId: null,
       filename,
       contentType: faker.system.mimeType(),
@@ -43,29 +34,16 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       convertedKey: null,
       thumbnailKey: null,
       thumbnailTinyKey: null,
-      createdAt,
-      createdBy: userId,
-      updatedAt: createdAt,
-      updatedBy: userId,
-      deletedAt: null,
-      deletedBy: null,
-      publicAt: null,
-      seq: faker.number.int({ min: 1, max: 500 }),
-      stx: mockStx(),
       ...channelIds,
     };
   });
 
-/** Alias for API response examples (attachment schema matches DB schema) */
-export const mockAttachmentResponse = mockAttachment;
+/** Attachment wire response with audit-user IDs hydrated to minimal user objects. */
+export const mockAttachmentResponse = (key = 'attachment:default') => {
+  const attachment = mockAttachment(key);
+  return { ...attachment, ...mockAuditUsers(attachment, key) };
+};
 
-/**
- * Generates a paginated mock attachment list response for getAttachments endpoint.
- */
 export const mockPaginatedAttachmentsResponse = (count = 2) => mockPaginated(mockAttachmentResponse, count);
 
-/**
- * Generates a mock batch attachments response.
- * Used for createAttachments endpoint examples.
- */
 export const mockBatchAttachmentsResponse = (count = 2) => mockBatchResponse(mockAttachmentResponse, count);
