@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/offline/attachments-db';
-import { getAppDb } from '~/query/app-db';
+import { getLocalUserDb } from '~/query/local-user-db';
 
 interface BlobUploadInfo {
   /** False when no local blob exists for this attachment, meaning it lives only in the cloud. */
@@ -48,7 +48,8 @@ function blobsToUploadInfo(blobs: AttachmentBlob[]): BlobUploadInfo {
  */
 export function useBlobUploadStatus(attachmentId: string | null | undefined): BlobUploadInfo {
   const blobs = useLiveQuery(
-    () => (attachmentId && getAppDb() ? attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray() : []),
+    () =>
+      attachmentId && getLocalUserDb() ? attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray() : [],
     [attachmentId],
     [] as AttachmentBlob[],
   );

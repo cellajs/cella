@@ -3,7 +3,7 @@ import { meQueryOptions } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
 import { useUserStore } from '~/modules/user/user-store';
-import { appStorageReady } from '~/query/app-storage';
+import { localUserStorageReady } from '~/query/local-user-storage';
 import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
 import { appStreamManager } from '~/query/realtime/stream-store';
@@ -45,10 +45,10 @@ export const Route = createFileRoute('/_app')({
 
     // Stored user -> continue into the app and revalidate the session in the background
     console.info('Continuing user with session');
-    // Wait for the per-user appdb to open + sync store to rehydrate so the stream
+    // Wait for the per-user localUserDb to open + sync store to rehydrate so the stream
     // connects with a valid cursor (else catchup resyncs from `now`). Eager hydration
     // started at sign-in, so this usually resolves immediately.
-    await appStorageReady();
+    await localUserStorageReady();
     // Start stream early so catchup runs in parallel with route loaders
     appStreamManager.connect();
     // Validate session in parallel; disconnect stream if stale.

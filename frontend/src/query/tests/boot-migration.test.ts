@@ -42,7 +42,7 @@ vi.stubGlobal('sessionStorage', {
 });
 
 const { persister, sessionPersister } = await import('~/query/persister');
-const { bindAppDb, deleteAppDb, getAppDb } = await import('~/query/app-db');
+const { bindLocalUserDb, deleteLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
 const { isBundleStale, resetBundleStale } = await import('~/query/schema-version-guard');
 const { migrateCachedEntity } = await import('shared/schema-evolution');
 
@@ -63,7 +63,7 @@ const queuedMutation = (variables: Record<string, unknown>) => ({
 
 /** Seed an old-shape attachment cache at a given persisted schema ordinal. */
 async function seedScope(scope: string, schemaVersion: number) {
-  const db = getAppDb()!;
+  const db = getLocalUserDb()!;
   await db.meta.put({
     key: scope,
     timestamp: Date.now(),
@@ -85,14 +85,14 @@ async function seedScope(scope: string, schemaVersion: number) {
 
 describe('persister lens boot migration', () => {
   beforeEach(async () => {
-    bindAppDb('u1');
+    bindLocalUserDb('u1');
     resetBundleStale();
     await persister.removeClient();
     vi.clearAllMocks();
   });
 
   afterEach(async () => {
-    await deleteAppDb();
+    await deleteLocalUserDb();
   });
 
   it('migrates cached rows + queued mutations and advances the pointer', async () => {
@@ -106,7 +106,7 @@ describe('persister lens boot migration', () => {
     expect(restored!.clientState.mutations[0].state.variables).toEqual({ title: 'offline edit' });
 
     // Pointer advanced on disk, a second restore runs no migration.
-    const meta = await getAppDb()!.meta.get('rq');
+    const meta = await getLocalUserDb()!.meta.get('rq');
     expect(meta!.schemaVersion).toBe(1);
     vi.mocked(migrateCachedEntity).mockClear();
     await persister.restoreClient();
@@ -131,9 +131,9 @@ describe('persister lens boot migration', () => {
     expect(isBundleStale()).toBe(true);
 
     // Newer store is untouched, no downgrade, no wipe.
-    const meta = await getAppDb()!.meta.get('rq');
+    const meta = await getLocalUserDb()!.meta.get('rq');
     expect(meta!.schemaVersion).toBe(5);
-    expect(await getAppDb()!.queries.where('scope').equals('rq').count()).toBe(1);
+    expect(await getLocalUserDb()!.queries.where('scope').equals('rq').count()).toBe(1);
   });
 
   it('stale bundle never persists (guard blocks flush)', async () => {
@@ -148,7 +148,7 @@ describe('persister lens boot migration', () => {
     await persister.flush();
 
     // Meta unchanged, the stale bundle's write was refused.
-    const meta = await getAppDb()!.meta.get('rq');
+    const meta = await getLocalUserDb()!.meta.get('rq');
     expect(meta!.schemaVersion).toBe(5);
     expect(meta!.timestamp).not.toBe(999);
   });
@@ -160,7 +160,7 @@ describe('persister lens boot migration', () => {
     expect(isBundleStale()).toBe(false);
 
     // ...then another (newer) tab migrates the store forward.
-    const db = getAppDb()!;
+    const db = getLocalUserDb()!;
     const meta = await db.meta.get('rq');
     await db.meta.put({ ...meta!, schemaVersion: 2 });
 
@@ -184,7 +184,7 @@ describe('persister lens boot migration', () => {
 
     const restored = await sessionPersister.restoreClient();
     expect(restored).toBeUndefined();
-    expect(await getAppDb()!.meta.get(sessionScope!)).toBeUndefined();
-    expect(await getAppDb()!.queries.where('scope').equals(sessionScope!).count()).toBe(0);
+    expect(await getLocalUserDb()!.meta.get(sessionScope!)).toBeUndefined();
+    expect(await getLocalUserDb()!.queries.where('scope').equals(sessionScope!).count()).toBe(0);
   });
 });

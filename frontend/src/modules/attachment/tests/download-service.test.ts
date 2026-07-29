@@ -45,7 +45,7 @@ vi.mock('~/query/query-client', () => ({
   },
 }));
 
-vi.mock('~/query/app-storage', () => ({
+vi.mock('~/query/local-user-storage', () => ({
   subscribeOwnerChange: () => () => {},
 }));
 
@@ -76,15 +76,15 @@ vi.mock('~/modules/user/user-store', () => ({
 
 vi.mock('~/modules/me/types', () => ({}));
 
-import { bindAppDb } from '~/query/app-db';
+import { bindLocalUserDb } from '~/query/local-user-db';
 import { downloadQueue } from '../offline/download-queue';
 import { downloadService } from '../offline/download-service';
 import { attachmentStorage } from '../offline/storage-service';
 import { findAttachmentInCache } from '../query';
 import { makeAttachment, makeQueueEntry } from './test-setup';
 
-// Attachment tables live in the per-user appdb; bind one so `attachmentsDb` resolves.
-bindAppDb('test-user');
+// Attachment tables live in the per-user localUserDb; bind one so `attachmentsDb` resolves.
+bindLocalUserDb('test-user');
 
 describe('downloadService.processQueue — failed download retry', () => {
   beforeEach(async () => {
@@ -276,19 +276,19 @@ describe('teardownUserState clears attachment IDB', () => {
     await attachmentsDb.downloadQueue.clear();
   });
 
-  it('deletes the appdb on sign-out, wiping all attachment data', async () => {
-    const { getAppDb, bindAppDb } = await import('~/query/app-db');
+  it('deletes the localUserDb on sign-out, wiping all attachment data', async () => {
+    const { getLocalUserDb, bindLocalUserDb } = await import('~/query/local-user-db');
     const { teardownUserState } = await import('~/utils/teardown-user-state');
 
-    // Sanity: the appdb is bound (attachment data reachable) before sign-out.
-    expect(getAppDb()).not.toBeNull();
+    // Sanity: the localUserDb is bound (attachment data reachable) before sign-out.
+    expect(getLocalUserDb()).not.toBeNull();
 
     await teardownUserState();
 
-    // Sign-out deletes and unbinds the appdb.
-    expect(getAppDb()).toBeNull();
+    // Sign-out deletes and unbinds the localUserDb.
+    expect(getLocalUserDb()).toBeNull();
 
     // Re-bind so the suite's afterEach table cleanup has a DB to operate on.
-    bindAppDb('test-user');
+    bindLocalUserDb('test-user');
   });
 });

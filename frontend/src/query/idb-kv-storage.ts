@@ -1,5 +1,5 @@
 import type { StateStorage } from 'zustand/middleware';
-import { type AppDatabase, getAppDb } from '~/query/app-db';
+import { getLocalUserDb, type LocalUserDatabase } from '~/query/local-user-db';
 
 /** Trailing-debounce window: batches write bursts (e.g. per-frame resize) into one txn. */
 const WRITE_DEBOUNCE_MS = 250;
@@ -18,7 +18,7 @@ if (typeof document !== 'undefined') {
  * are resolved on every operation. Pair with explicit post-bind hydration.
  */
 export function idbKvStorage(base: string): StateStorage {
-  let pending: { value: string; db: AppDatabase } | null = null;
+  let pending: { value: string; db: LocalUserDatabase } | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   const flush = () => {
@@ -28,18 +28,18 @@ export function idbKvStorage(base: string): StateStorage {
     const { value, db } = pending;
     pending = null;
     // Skip if signed out or rebound to another owner since scheduling (cross-user isolation).
-    if (getAppDb() === db) void db.kv.put({ key: base, value });
+    if (getLocalUserDb() === db) void db.kv.put({ key: base, value });
   };
   flushers.add(flush);
 
   return {
     getItem: async () => {
       if (pending) return pending.value; // read-after-write: pending value wins over disk
-      const row = await getAppDb()?.kv.get(base);
+      const row = await getLocalUserDb()?.kv.get(base);
       return row?.value ?? null;
     },
     setItem: (_name, value) => {
-      const db = getAppDb();
+      const db = getLocalUserDb();
       if (!db) return;
       pending = { value, db };
       if (timer) clearTimeout(timer);
@@ -49,7 +49,7 @@ export function idbKvStorage(base: string): StateStorage {
       if (timer) clearTimeout(timer);
       timer = null;
       pending = null;
-      await getAppDb()?.kv.delete(base);
+      await getLocalUserDb()?.kv.delete(base);
     },
   };
 }

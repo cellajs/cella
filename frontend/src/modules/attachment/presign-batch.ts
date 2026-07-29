@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { getPresignedUrls } from 'sdk/sdk.gen';
 import type { CloudFileVariant } from '~/modules/attachment/file-url';
-import { subscribeOwnerChange } from '~/query/app-storage';
+import { subscribeOwnerChange } from '~/query/local-user-storage';
 
 /**
  * The server rejected this attachment id: denied or nonexistent (the response deliberately does

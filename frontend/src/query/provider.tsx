@@ -5,9 +5,9 @@ import { downloadService } from '~/modules/attachment/offline/download-service';
 import { uploadService } from '~/modules/attachment/offline/upload-service';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { initChannelEnrichment } from '~/query/enrichment/init-enrichment';
-// Side-effect import: starts the auth-driven appdb lifecycle + eager kv hydration at root,
+// Side-effect import: starts the auth-driven localUserDb lifecycle + eager kv hydration at root,
 // before any route beforeLoad runs.
-import '~/query/app-storage';
+import '~/query/local-user-storage';
 import { initMutationDefaults } from '~/query/mutation-registry';
 import { cleanupOrphanedSessions, persister, sessionPersister } from '~/query/persister';
 import { markCacheRestored, queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';

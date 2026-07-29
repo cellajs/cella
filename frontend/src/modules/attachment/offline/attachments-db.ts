@@ -1,6 +1,6 @@
 import type { Dexie } from 'dexie';
 import type { UploadTemplateId } from 'shared';
-import { getAppDb } from '~/query/app-db';
+import { getLocalUserDb } from '~/query/local-user-db';
 
 type BlobSource = 'upload' | 'download';
 export type UploadStatus = 'pending' | 'uploading' | 'uploaded' | 'failed' | 'local-only';
@@ -109,18 +109,18 @@ export interface DownloadQueueEntry {
 }
 
 /**
- * Resolves attachment blob and download-queue tables from the active per-user appdb.
- * Accessors throw while signed out; guard with `getAppDb()` where no DB is reachable.
+ * Resolves attachment blob and download-queue tables from the active per-user localUserDb.
+ * Accessors throw while signed out; guard with `getLocalUserDb()` where no DB is reachable.
  */
 export const attachmentsDb = {
   get blobs(): Dexie.Table<AttachmentBlob, string> {
-    const db = getAppDb();
-    if (!db) throw new Error('[attachmentsDb] No appdb bound (signed out)');
+    const db = getLocalUserDb();
+    if (!db) throw new Error('[attachmentsDb] No localUserDb bound (signed out)');
     return db.blobs;
   },
   get downloadQueue(): Dexie.Table<DownloadQueueEntry, string> {
-    const db = getAppDb();
-    if (!db) throw new Error('[attachmentsDb] No appdb bound (signed out)');
+    const db = getLocalUserDb();
+    if (!db) throw new Error('[attachmentsDb] No localUserDb bound (signed out)');
     return db.downloadQueue;
   },
 };

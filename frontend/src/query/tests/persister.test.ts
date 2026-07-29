@@ -27,8 +27,8 @@ vi.stubGlobal('sessionStorage', {
 });
 
 const { persister, sessionPersister, cleanupOrphanedSessions } = await import('~/query/persister');
-// The persister reads/writes the live per-user appdb; bind one (owner `u1`) per test.
-const { bindAppDb, deleteAppDb, getAppDb } = await import('~/query/app-db');
+// The persister reads/writes the live per-user localUserDb; bind one (owner `u1`) per test.
+const { bindLocalUserDb, deleteLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
 
 // Snapshot the window listeners the persister registered at import time, before any test clears
 // mocks. A reload fires `beforeunload`, so a teardown wired there would wipe the session cache on
@@ -73,15 +73,15 @@ function makePersistedClient(queries: ReturnType<typeof makeQuery>[], timestamp 
 
 /** Delete the test-app database between tests */
 async function deleteDb() {
-  await deleteAppDb();
+  await deleteLocalUserDb();
 }
 
 // Tests
 
 describe('per-query IDB persister', () => {
   beforeEach(async () => {
-    // Bind a fresh per-user appdb, then clear internal lastPersistedAt state + IDB records
-    bindAppDb('u1');
+    // Bind a fresh per-user localUserDb, then clear internal lastPersistedAt state + IDB records
+    bindLocalUserDb('u1');
     await persister.removeClient();
     await sessionPersister.removeClient();
     sessionStorageMap.clear();
@@ -224,7 +224,7 @@ describe('per-query IDB persister', () => {
       await persister.flush();
 
       // Read from DB directly; product queries should be in queries table.
-      const productRecords = await getAppDb()!.queries.where('scope').equals('rq').toArray();
+      const productRecords = await getLocalUserDb()!.queries.where('scope').equals('rq').toArray();
       expect(productRecords).toHaveLength(3);
     });
 
@@ -239,11 +239,11 @@ describe('per-query IDB persister', () => {
       await persister.flush();
 
       // No individual records for context queries
-      const queryRecords = await getAppDb()!.queries.where('scope').equals('rq').toArray();
+      const queryRecords = await getLocalUserDb()!.queries.where('scope').equals('rq').toArray();
       expect(queryRecords).toHaveLength(0);
 
       // Context queries bundled in meta
-      const meta = await getAppDb()!.meta.get('rq');
+      const meta = await getLocalUserDb()!.meta.get('rq');
       expect(meta!.channelQueries).toHaveLength(3);
       const hashes = meta!.channelQueries.map((q: { queryHash: string }) => q.queryHash).sort();
       expect(hashes).toEqual(['["me"]', '["member","list"]', '["organization","list"]']);
@@ -322,7 +322,7 @@ describe('per-query IDB persister', () => {
   describe('orphaned session cleanup', () => {
     it('removes sessions older than the max age', async () => {
       // Manually insert an old session meta record
-      const db = getAppDb()!;
+      const db = getLocalUserDb()!;
 
       const oldScope = 's-old-uuid';
       await db.meta.put({
@@ -380,7 +380,7 @@ describe('per-query IDB persister', () => {
       await persister.flush();
 
       // Simulate a prior build's clientCacheVersion persisted on disk (now stale vs 'v1').
-      const db = getAppDb()!;
+      const db = getLocalUserDb()!;
       const meta = await db.meta.get('rq');
       await db.meta.put({ ...meta!, clientCacheVersion: 'v0' });
 
@@ -401,13 +401,13 @@ describe('per-query IDB persister', () => {
 
 describe('session persister survives reload', () => {
   beforeEach(async () => {
-    bindAppDb('u1');
+    bindLocalUserDb('u1');
     await sessionPersister.removeClient();
     sessionStorageMap.clear();
   });
 
   afterEach(async () => {
-    await deleteAppDb();
+    await deleteLocalUserDb();
   });
 
   it('round-trips session-scoped queries so a refresh restores from cache', async () => {

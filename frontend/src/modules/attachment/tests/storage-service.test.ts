@@ -6,11 +6,11 @@ vi.mock('shared', async () => ({
   appConfig: (await import('./test-setup')).mockAttachmentAppConfig,
 }));
 
-import { bindAppDb } from '~/query/app-db';
+import { bindLocalUserDb } from '~/query/local-user-db';
 import { attachmentStorage } from '../offline/storage-service';
 
-// Attachment tables live in the per-user appdb; bind one so `attachmentsDb` resolves.
-bindAppDb('test-user');
+// Attachment tables live in the per-user localUserDb; bind one so `attachmentsDb` resolves.
+bindLocalUserDb('test-user');
 
 function makeBlob(overrides: Partial<AttachmentBlob> = {}): AttachmentBlob {
   return {

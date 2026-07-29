@@ -3,8 +3,8 @@ import type { PersistedClient, Persister } from '@tanstack/react-query-persist-c
 import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { reportCriticalError } from '~/lib/tracing';
-import { type AppDatabase, getAppDb, type PersistedQueryRecord } from '~/query/app-db';
 import { entityTypeOf, migrateMutations, migrateQueryState } from '~/query/cache-migration';
+import { getLocalUserDb, type LocalUserDatabase, type PersistedQueryRecord } from '~/query/local-user-db';
 import { isBundleStale, markBundleStale } from '~/query/schema-version-guard';
 
 type DehydratedQuery = DehydratedState['queries'][number];
@@ -72,7 +72,7 @@ const PERSIST_THROTTLE_MS = 1000;
 const trackerResets: Array<() => void> = [];
 
 /**
- * Hybrid IndexedDB persister for React Query, backed by the live `appdb`: product entity queries
+ * Hybrid IndexedDB persister for React Query, backed by the live `localUserDb`: product entity queries
  * are individual IDB records (incremental diffing), context queries are bundled into the meta
  * record. All ops no-op while no per-user DB is bound (signed out).
  */
@@ -94,7 +94,7 @@ export function createIDBPersister(scope = 'rq') {
   trackerResets.push(resetTracker);
 
   /** Remove all records for this scope: queries, the meta record, and per-tab mutation records. */
-  async function clearScope(db: AppDatabase) {
+  async function clearScope(db: LocalUserDatabase) {
     await db.transaction('rw', db.queries, db.meta, async () => {
       const ids = await db.queries.where('scope').equals(scope).primaryKeys();
       await db.queries.bulkDelete(ids);
@@ -106,7 +106,7 @@ export function createIDBPersister(scope = 'rq') {
   }
 
   /** Clear incompatible query data while retaining queued mutations, then advance cache version. */
-  async function bustQueriesKeepMutations(db: AppDatabase) {
+  async function bustQueriesKeepMutations(db: LocalUserDatabase) {
     await db.transaction('rw', db.queries, db.meta, async () => {
       const ids = await db.queries.where('scope').equals(scope).primaryKeys();
       await db.queries.bulkDelete(ids);
@@ -125,7 +125,7 @@ export function createIDBPersister(scope = 'rq') {
    * Migrate cached rows, context queries, and mutation variables locally in restart-safe chunks.
    * Advance the schema pointer only in the final metadata transaction.
    */
-  async function migrateScopeToCurrent(db: AppDatabase, fromVersion: number) {
+  async function migrateScopeToCurrent(db: LocalUserDatabase, fromVersion: number) {
     const records = await db.queries.where('scope').equals(scope).toArray();
     for (let i = 0; i < records.length; i += MIGRATION_CHUNK_SIZE) {
       const chunk = records.slice(i, i + MIGRATION_CHUNK_SIZE);
@@ -176,7 +176,7 @@ export function createIDBPersister(scope = 'rq') {
 
     if (isBundleStale()) return;
 
-    const db = getAppDb();
+    const db = getLocalUserDb();
     if (!db) return;
 
     try {
@@ -280,7 +280,7 @@ export function createIDBPersister(scope = 'rq') {
 
   return {
     persistClient: async (client: PersistedClient) => {
-      if (!getAppDb()) return; // Signed out → in-memory only
+      if (!getLocalUserDb()) return; // Signed out → in-memory only
       pendingClient = client;
       if (!timeoutId) {
         timeoutId = setTimeout(flush, PERSIST_THROTTLE_MS);
@@ -297,7 +297,7 @@ export function createIDBPersister(scope = 'rq') {
     },
 
     restoreClient: async (): Promise<PersistedClient | undefined> => {
-      const db = getAppDb();
+      const db = getLocalUserDb();
       if (!db) return undefined; // Signed out → in-memory cache
       try {
         let meta = await db.meta.get(scope);
@@ -395,7 +395,7 @@ export function createIDBPersister(scope = 'rq') {
     },
 
     removeClient: async () => {
-      const db = getAppDb();
+      const db = getLocalUserDb();
       if (!db) {
         resetTracker();
         return;
@@ -427,7 +427,7 @@ export function resetPersisters(): void {
  * signed out.
  */
 export async function cleanupOrphanedSessions(): Promise<void> {
-  const db = getAppDb();
+  const db = getLocalUserDb();
   if (!db) return;
   try {
     const cutoff = Date.now() - ORPHAN_MAX_AGE_MS;

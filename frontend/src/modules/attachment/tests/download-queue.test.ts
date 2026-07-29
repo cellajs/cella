@@ -13,13 +13,13 @@ vi.mock('../offline/storage-service', () => ({
   },
 }));
 
-import { bindAppDb } from '~/query/app-db';
+import { bindLocalUserDb } from '~/query/local-user-db';
 import { downloadQueue } from '../offline/download-queue';
 import { attachmentStorage } from '../offline/storage-service';
 import { makeAttachment, makeQueueEntry } from './test-setup';
 
-// Attachment tables live in the per-user appdb; bind one so `attachmentsDb` resolves.
-bindAppDb('test-user');
+// Attachment tables live in the per-user localUserDb; bind one so `attachmentsDb` resolves.
+bindLocalUserDb('test-user');
 
 describe('downloadQueue', () => {
   beforeEach(async () => {

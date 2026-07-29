@@ -1,6 +1,6 @@
 import type { ProductEntityType } from 'shared';
 import { reportCriticalError } from '~/lib/tracing';
-import { getAppDb } from '~/query/app-db';
+import { getLocalUserDb } from '~/query/local-user-db';
 
 /** Client-side `failed_sync` quarantine row for failed offline mutation replay. */
 export interface FailedSyncRecord {
@@ -24,7 +24,7 @@ export interface FailedSyncRecord {
 
 /** Quarantine a failed mutation. De-duplicates on `mutationId`. No-ops while signed out. */
 export async function quarantineFailedSync(record: Omit<FailedSyncRecord, 'id' | 'createdAt'>): Promise<void> {
-  const db = getAppDb();
+  const db = getLocalUserDb();
   if (!db) return;
   try {
     const existing = await db.failedSync.where('mutationId').equals(record.mutationId).first();
@@ -38,14 +38,14 @@ export async function quarantineFailedSync(record: Omit<FailedSyncRecord, 'id' |
 
 /** List quarantined mutations, newest first. Empty while signed out. */
 export async function listFailedSync(): Promise<FailedSyncRecord[]> {
-  const db = getAppDb();
+  const db = getLocalUserDb();
   if (!db) return [];
   return db.failedSync.orderBy('createdAt').reverse().toArray();
 }
 
 /** Remove a quarantined record once manually replayed/repaired. */
 export async function clearFailedSync(id: number): Promise<void> {
-  await getAppDb()?.failedSync.delete(id);
+  await getLocalUserDb()?.failedSync.delete(id);
 }
 
 /** Export all quarantined records as a JSON string for support/repair. */

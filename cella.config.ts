@@ -46,7 +46,7 @@ export default defineConfig({
       'backend/src/modules/memberships/memberships-db.ts',
       'backend/src/modules/organization/organization-hooks.ts',
       'backend/src/modules/organization/setup-config-schema.ts',
-      'frontend/src/query/fork-app-kv-stores.ts',
+      'frontend/src/query/extra-local-user-stores.ts',
       'frontend/src/modules/organization/organization-settings-sections.tsx',
       'frontend/public/favicon.ico',
       'frontend/public/favicon.svg',

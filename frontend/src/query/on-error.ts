@@ -113,7 +113,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
         redirectOptions.search = { redirect: redirectPath };
       }
 
-      // Close sensitive stores without wiping, then go to sign-in. Pass `false` so the appdb (unsynced offline
+      // Close sensitive stores without wiping, then go to sign-in. Pass `false` so the localUserDb (unsynced offline
       // work) stays on disk: a 401 is involuntary and the same user usually re-auths and recovers it.
       teardownUserState(false);
       // Dynamic import breaks circular dep: query-client -> on-error -> router -> route tree -> query-client
