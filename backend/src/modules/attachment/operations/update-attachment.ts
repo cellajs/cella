@@ -1,6 +1,5 @@
 import type { z } from '@hono/zod-openapi';
 import type { AuthContext } from '#/core/context';
-import type { OperationResult } from '#/core/operation-result';
 import { tenantContext } from '#/db/tenant-context';
 import { updateAttachment } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentUpdateStxBodySchema } from '#/modules/attachment/attachment-schema';
@@ -42,5 +41,5 @@ export async function updateAttachmentOp(
     ? await withAuditUser(ctx, updatedAttachmentRecord, user)
     : withAuditUserLite(updatedAttachmentRecord, user);
 
-  return { success: true, data: attachmentResponse } as OperationResult<typeof attachmentResponse>;
+  return attachmentResponse;
 }

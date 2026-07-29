@@ -71,22 +71,19 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
     expect(findAttachmentsByIds).toHaveBeenCalledWith(ctx, { ids: ['att-a', 'att-b'] });
     expect(getSignedUrlFromKey).toHaveBeenCalledTimes(2);
     expect(res).toEqual({
-      success: true,
-      data: {
-        data: [
-          {
-            attachmentId: 'att-a',
-            variant: 'thumbnail',
-            url: `https://signed.example/${attachmentA.thumbnailKey}`,
-          },
-          {
-            attachmentId: 'att-b',
-            variant: 'original',
-            url: `https://signed.example/${attachmentB.originalKey}`,
-          },
-        ],
-        rejectedIds: [],
-      },
+      data: [
+        {
+          attachmentId: 'att-a',
+          variant: 'thumbnail',
+          url: `https://signed.example/${attachmentA.thumbnailKey}`,
+        },
+        {
+          attachmentId: 'att-b',
+          variant: 'original',
+          url: `https://signed.example/${attachmentB.originalKey}`,
+        },
+      ],
+      rejectedIds: [],
     });
   });
 
@@ -110,7 +107,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
       bucketName: 'private-bucket',
       publicBucket: false,
     });
-    expect(res.success && res.data.data[0]?.variant).toBe('converted');
+    expect(res.data[0]?.variant).toBe('converted');
   });
 
   it('puts unresolved ids in rejectedIds and never signs them', async () => {
@@ -125,7 +122,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
     });
 
     expect(getSignedUrlFromKey).toHaveBeenCalledTimes(1);
-    expect(res.success && res.data.rejectedIds).toEqual(['att-missing']);
+    expect(res.rejectedIds).toEqual(['att-missing']);
   });
 
   it('puts denied ids in rejectedIds, indistinguishable from missing ones', async () => {
@@ -145,7 +142,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
     });
 
     expect(getSignedUrlFromKey).toHaveBeenCalledTimes(1);
-    expect(res.success && res.data.rejectedIds).toEqual(['att-b', 'att-missing']);
+    expect(res.rejectedIds).toEqual(['att-b', 'att-missing']);
   });
 
   it('succeeds with empty data when every item is rejected', async () => {
@@ -154,7 +151,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
 
     const res = await getPresignedUrlsOp(ctx, { items: [{ attachmentId: 'att-missing', variant: 'original' }] });
 
-    expect(res).toEqual({ success: true, data: { data: [], rejectedIds: ['att-missing'] } });
+    expect(res).toEqual({ data: [], rejectedIds: ['att-missing'] });
     expect(getSignedUrlFromKey).not.toHaveBeenCalled();
   });
 });

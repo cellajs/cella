@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import { assertSuccess } from '#/core/operation-result';
 import { attachmentRoutes } from '#/modules/attachment/attachment-routes';
 import { createAttachmentsOp } from '#/modules/attachment/operations/create-attachments';
 import { deleteAttachmentsOp } from '#/modules/attachment/operations/delete-attachments';
@@ -14,43 +13,37 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(attachmentRoutes.getAttachments, async (ctx) => {
   const result = await getAttachmentsOp(ctx, ctx.req.valid('query'));
-  assertSuccess(result, 'attachment');
-  return ctx.json(result.data, 200);
+  return ctx.json(result, 200);
 });
 
 app.openapi(attachmentRoutes.getPresignedUrls, async (ctx) => {
   const result = await getPresignedUrlsOp(ctx, ctx.req.valid('json'));
-  assertSuccess(result, 'attachment');
-  return ctx.json(result.data, 200);
+  return ctx.json(result, 200);
 });
 
 app.openapi(attachmentRoutes.getAttachment, async (ctx) => {
   const { id } = ctx.req.valid('param');
   const result = await getAttachmentOp(ctx, id);
-  assertSuccess(result, 'attachment');
-  ctx.set('productCacheData', result.data);
-  return ctx.json(result.data, 200);
+  ctx.set('productCacheData', result);
+  return ctx.json(result, 200);
 });
 
 app.openapi(attachmentRoutes.createAttachments, async (ctx) => {
   const result = await createAttachmentsOp(ctx, ctx.req.valid('json'));
-  assertSuccess(result, 'attachment');
-  return ctx.json(result.data, 201);
+  return ctx.json(result, 201);
 });
 
 app.openapi(attachmentRoutes.updateAttachment, async (ctx) => {
   const { id } = ctx.req.valid('param');
   const { fullResponse } = ctx.req.valid('query');
   const result = await updateAttachmentOp(ctx, id, ctx.req.valid('json'), { fullResponse });
-  assertSuccess(result, 'attachment');
-  return ctx.json(result.data, 200);
+  return ctx.json(result, 200);
 });
 
 app.openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
   const { ids } = ctx.req.valid('json');
   const result = await deleteAttachmentsOp(ctx, Array.isArray(ids) ? ids : [ids]);
-  assertSuccess(result, 'attachment');
-  return ctx.json(result.data, 200);
+  return ctx.json(result, 200);
 });
 
 export const attachmentHandlers = app;

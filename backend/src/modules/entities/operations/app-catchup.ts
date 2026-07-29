@@ -1,7 +1,6 @@
 import type { Actor, ProductEntityType } from 'shared';
 import { appConfig, pathHomeId } from 'shared';
 import type { DbContext } from '#/core/context';
-import type { OperationResult } from '#/core/operation-result';
 import { baseDb as db } from '#/db/db';
 import { findChannelCountersByKeys, findLatestUserActivityId } from '#/modules/entities/entities-queries';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
@@ -102,15 +101,14 @@ export async function appCatchupOp(
   cursor?: string,
   actor?: Actor,
   views?: CatchupView[],
-): Promise<OperationResult<AppCatchupResponse>> {
+): Promise<AppCatchupResponse> {
   const organizationIds = new Set(memberships.map((m) => m.organizationId));
 
   // View answers are permission-resolved per prefix, independent of membership-derived
   // org enumeration (elevated readers hold no child memberships but declare views).
   const viewAnswers = actor && views?.length ? await answerCatchupViews(memberships, actor, views) : undefined;
 
-  if (organizationIds.size === 0)
-    return { success: true, data: { changes: {}, views: viewAnswers, cursor: cursor ?? null } };
+  if (organizationIds.size === 0) return { changes: {}, views: viewAnswers, cursor: cursor ?? null };
 
   const organizationIdArray = Array.from(organizationIds);
 
@@ -141,7 +139,7 @@ export async function appCatchupOp(
       null;
   }
 
-  return { success: true, data: { changes, views: viewAnswers, cursor: newCursor } };
+  return { changes, views: viewAnswers, cursor: newCursor };
 }
 
 /**

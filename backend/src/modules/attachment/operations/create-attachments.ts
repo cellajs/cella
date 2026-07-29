@@ -1,5 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import type { AuthContext } from '#/core/context';
+import { AppError } from '#/core/error';
 import { buildStx } from '#/core/stx';
 import { tenantContext, tenantRead } from '#/db/tenant-context';
 import { findAttachmentsByStxMutationId, insertAttachments } from '#/modules/attachment/attachment-queries';
@@ -20,7 +21,7 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
   const attachmentRestrictions = tenant.restrictions.quotas.attachment;
 
   if (attachmentRestrictions !== 0 && input.length > attachmentRestrictions) {
-    return { success: false as const, error: 'restrict_by_org', status: 429 as const };
+    throw new AppError(429, 'restrict_by_org', 'warn', { entityType: 'attachment' });
   }
 
   // Idempotency check
@@ -31,7 +32,7 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
       return withAuditUsers(readCtx, batch);
     }),
   );
-  if (existing) return { success: true as const, data: { data: existing, rejectedIds: [] as string[] } };
+  if (existing) return { data: existing, rejectedIds: [] as string[] };
 
   const currentAttachments = await getOrganizationEntityCount(ctx, {
     organizationId: organization.id,
@@ -39,7 +40,7 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
   });
 
   if (attachmentRestrictions !== 0 && currentAttachments + input.length > attachmentRestrictions) {
-    return { success: false as const, error: 'restrict_by_org', status: 429 as const };
+    throw new AppError(429, 'restrict_by_org', 'warn', { entityType: 'attachment' });
   }
 
   const attachmentsToInsert = input.map(({ stx, ...att }) => {
@@ -70,5 +71,5 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
 
   const attachmentResponses = await withAuditUsers(ctx, createdAttachments, ctx.var.user);
 
-  return { success: true as const, data: { data: attachmentResponses, rejectedIds: [] as string[] } };
+  return { data: attachmentResponses, rejectedIds: [] as string[] };
 }

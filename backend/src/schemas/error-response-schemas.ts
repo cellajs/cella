@@ -17,9 +17,6 @@ type Ref = ErrorOption['ref'];
 /** HTTP error status codes registered in the OpenAPI spec. */
 export type ErrorCode = ErrorOption['code'];
 
-/** Error codes that operations can produce; 401 is handled by auth middleware. */
-export type OperationErrorCode = Exclude<ErrorCode, 401>;
-
 /**
  * Standardized error response specifications for:
  * - Zod-backed response objects for route definitions

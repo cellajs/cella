@@ -1,6 +1,5 @@
 import type { z } from '@hono/zod-openapi';
 import type { AuthContext } from '#/core/context';
-import type { OperationResult } from '#/core/operation-result';
 import { tenantRead } from '#/db/tenant-context';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
 import { findAttachmentsByIds } from '#/modules/attachment/attachment-queries';
@@ -23,7 +22,6 @@ interface PresignedUrlsResult {
   rejectedIds: string[];
 }
 
-// TODO: review: can we prevent having to do this even if it will cost us a refactor or mo?
 /**
  * Key to sign for a variant, resolved from the row only (never client input).
  * Variants that were never generated fall back to the always-present original key.
@@ -44,10 +42,7 @@ const selectVariantKey = (attachment: AttachmentModel, variant: AttachmentVarian
  * `rejectedIds` list with no reason split, so the response is not an existence
  * oracle. Succeeds even when every item is rejected.
  */
-export async function getPresignedUrlsOp(
-  ctx: AuthContext,
-  { items }: PresignedUrlsBody,
-): Promise<OperationResult<PresignedUrlsResult>> {
+export async function getPresignedUrlsOp(ctx: AuthContext, { items }: PresignedUrlsBody): Promise<PresignedUrlsResult> {
   const pairs = new Map<string, { attachmentId: string; variant: AttachmentVariant }>();
   for (const { attachmentId, variant } of items) {
     pairs.set(`${attachmentId}:${variant}`, { attachmentId, variant });
@@ -75,5 +70,5 @@ export async function getPresignedUrlsOp(
     }),
   );
 
-  return { success: true, data: { data, rejectedIds } };
+  return { data, rejectedIds };
 }
