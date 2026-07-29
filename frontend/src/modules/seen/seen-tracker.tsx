@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { appConfig } from 'shared';
-import { setupSeenBeaconFlush, useSeenStore } from '~/modules/seen/seen-store';
+import { seenStore, setupSeenBeaconFlush } from '~/modules/seen/seen-store';
 import { useTotalUnseenCount } from './use-unseen-count';
 
 // Periodic Background Sync API (Chromium-only) and dev-only window helper.
@@ -19,7 +19,7 @@ declare global {
 /** Invisible component that boots seen-tracking (flush interval, unload beacon, PWA badge sync). Mount once in the app layout. */
 export function SeenTracker() {
   useEffect(() => {
-    const { startFlushInterval, stopFlushInterval, flush } = useSeenStore.getState();
+    const { startFlushInterval, stopFlushInterval, flush } = seenStore.getState();
     startFlushInterval();
     const cleanupBeacon = setupSeenBeaconFlush();
 

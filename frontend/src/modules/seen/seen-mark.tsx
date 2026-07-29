@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { ProductEntityType } from 'shared';
-import { useSeenStore } from '~/modules/seen/seen-store';
+import { seenStore } from '~/modules/seen/seen-store';
 
 type SeenMeta = {
   tenantId: string;
@@ -14,7 +14,7 @@ const elementMeta = new WeakMap<Element, SeenMeta>();
 const markedIds = new Set<string>();
 
 // Seed IDs persisted by the seen store.
-for (const id of useSeenStore.getState().flushedIds) markedIds.add(id);
+for (const id of seenStore.getState().flushedIds) markedIds.add(id);
 
 let sharedObserver: IntersectionObserver | null = null;
 let observerRefCount = 0;
@@ -23,7 +23,7 @@ function getSharedObserver(): IntersectionObserver {
   if (!sharedObserver) {
     sharedObserver = new IntersectionObserver(
       (entries) => {
-        const markProductSeen = useSeenStore.getState().markProductSeen;
+        const markProductSeen = seenStore.getState().markProductSeen;
 
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;

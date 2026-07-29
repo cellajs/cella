@@ -2,7 +2,7 @@ import type { GetMyMembershipsResponse } from 'sdk';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 import { deriveGrantBoundaryViews } from '~/query/realtime/views';
-import { useSyncStore } from './sync-store';
+import { syncStore } from './sync-store';
 
 /**
  * Resolve cached sub-organization channel paths through a fork registration.
@@ -41,7 +41,7 @@ export function declareViewsFromMemberships(): void {
     resolvePath: (channelType, channelId) => channelPathResolver(channelType, channelId),
   });
 
-  const store = useSyncStore.getState();
+  const store = syncStore.getState();
   const keep = new Set<string>();
   for (const view of derived) {
     // Exact org-subtree views duplicate the built-in org-view baseline.
@@ -55,7 +55,7 @@ export function declareViewsFromMemberships(): void {
     });
   }
 
-  for (const key of Object.keys(useSyncStore.getState().views)) {
+  for (const key of Object.keys(syncStore.getState().views)) {
     if (!keep.has(key)) store.removeSyncView(key);
   }
 }

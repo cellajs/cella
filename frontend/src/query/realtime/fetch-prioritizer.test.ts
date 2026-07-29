@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-config';
-import { useSyncStore } from '~/query/realtime/sync-store';
+import { syncStore } from '~/query/realtime/sync-store';
 
 // Mock the boundaries: fetch/invalidate, tiers, propagation, unseen recount, router.
 const fetchRangeAndPatch = vi.fn();
@@ -55,7 +55,7 @@ describe('fetch-prioritizer', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
-    useSyncStore.getState().reset();
+    syncStore.getState().reset();
     setSyncDeliveryTrusted(true);
     // reachedSeq Infinity = full delivery (reaches any untilSeq) unless a test overrides it.
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: Number.POSITIVE_INFINITY });
@@ -77,7 +77,7 @@ describe('fetch-prioritizer', () => {
 
     expect(fetchRangeAndPatch).toHaveBeenCalledTimes(1);
     expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('5,12'); // merged range
-    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
   });
 
   it('flushes viewing-tier channel views immediately (single events keep live behavior)', async () => {
@@ -97,11 +97,11 @@ describe('fetch-prioritizer', () => {
     await vi.advanceTimersByTimeAsync(60_000);
 
     expect(fetchRangeAndPatch).not.toHaveBeenCalled();
-    expect(useSyncStore.getState().getKnownSeq('project-9', 'attachment')).toBe(7);
+    expect(syncStore.getState().getKnownSeq('project-9', 'attachment')).toBe(7);
   });
 
   it('self-heals a small live gap by anchoring at caught-up+1', async () => {
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     enqueueRange({ ...base, fromSeq: 6, untilSeq: 8 }); // seq 5 was missed
 
     await flushAllNow();
@@ -111,15 +111,15 @@ describe('fetch-prioritizer', () => {
 
   it('org-homed channel views (wire channelId === orgId) share ONE watermark slot with catchup', async () => {
     // Catchup advanced the org slot; the live notification carries channelId = orgId.
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 6);
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 6);
     enqueueRange({ ...base, channelId: 'org-1', fromSeq: 3, untilSeq: 9 });
 
     await flushAllNow();
 
     // Anchors at the org slot (7,9) and advances that same slot after success.
     expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('7,9');
-    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
-    expect(useSyncStore.getState().getChannelSeq('org-1', 'org-1', 'attachment')).toBe(9);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
+    expect(syncStore.getState().getChannelSeq('org-1', 'org-1', 'attachment')).toBe(9);
   });
 
   it('retries transient errors with backoff, then invalidates and advances so the range cannot loop', async () => {
@@ -132,7 +132,7 @@ describe('fetch-prioritizer', () => {
 
     expect(fetchRangeAndPatch).toHaveBeenCalledTimes(3);
     expect(invalidateEntityListForOrg).toHaveBeenCalledTimes(1);
-    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(2);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(2);
   });
 
   it('invalidates immediately on overflow (no retries)', async () => {
@@ -178,7 +178,7 @@ describe('fetch-prioritizer', () => {
   });
 
   it('skips ranges the client already has (untilSeq <= caught-up)', async () => {
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 10);
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 10);
     enqueueRange({ ...base, fromSeq: 8, untilSeq: 10 });
 
     await vi.advanceTimersByTimeAsync(60_000);
@@ -187,7 +187,7 @@ describe('fetch-prioritizer', () => {
   });
 
   it('covers all due channels of one org with ONE fetch and advances each to the shared bound', async () => {
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 0);
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 0);
     enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
     enqueueRange({ ...base, channelId: 'proj-b', fromSeq: 9, untilSeq: 12 });
 
@@ -197,8 +197,8 @@ describe('fetch-prioritizer', () => {
     expect(fetchRangeAndPatch).toHaveBeenCalledTimes(1);
     expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('5,12');
     // Per-view advance accounting: both channels advance to the covered upper bound.
-    expect(useSyncStore.getState().getChannelSeq('org-1', 'proj-a', 'attachment')).toBe(12);
-    expect(useSyncStore.getState().getChannelSeq('org-1', 'proj-b', 'attachment')).toBe(12);
+    expect(syncStore.getState().getChannelSeq('org-1', 'proj-a', 'attachment')).toBe(12);
+    expect(syncStore.getState().getChannelSeq('org-1', 'proj-b', 'attachment')).toBe(12);
   });
 
   it('scopes the covering fetch to the channel id for a single viewed channel (no path lookup)', async () => {
@@ -238,24 +238,24 @@ describe('fetch-prioritizer', () => {
 
   it('short delivery: keeps the cursor honest, invalidates the view, and degrades sync trust', async () => {
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: 0 });
-    useSyncStore.getState().setChannelSeq('org-1', 'proj-a', 'attachment', 3);
+    syncStore.getState().setChannelSeq('org-1', 'proj-a', 'attachment', 3);
     enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 4, untilSeq: 7 });
 
     await flushAllNow();
 
-    expect(useSyncStore.getState().getChannelSeq('org-1', 'proj-a', 'attachment')).toBe(3); // not advanced
+    expect(syncStore.getState().getChannelSeq('org-1', 'proj-a', 'attachment')).toBe(3); // not advanced
     expect(invalidateEntityListForOrg).toHaveBeenCalled();
     expect(isSyncDeliveryTrusted()).toBe(false);
   });
 
   it('full delivery advances and stays trusted', async () => {
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [{ id: 'x', seq: 7 }], reachedSeq: 7 });
-    useSyncStore.getState().setChannelSeq('org-1', 'proj-a', 'attachment', 3);
+    syncStore.getState().setChannelSeq('org-1', 'proj-a', 'attachment', 3);
     enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 4, untilSeq: 7 });
 
     await flushAllNow();
 
-    expect(useSyncStore.getState().getChannelSeq('org-1', 'proj-a', 'attachment')).toBe(7);
+    expect(syncStore.getState().getChannelSeq('org-1', 'proj-a', 'attachment')).toBe(7);
     expect(isSyncDeliveryTrusted()).toBe(true);
   });
 

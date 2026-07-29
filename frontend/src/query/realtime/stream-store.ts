@@ -5,7 +5,7 @@ import { devtools } from 'zustand/middleware';
 import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
 import { setSyncStreamHealthy } from '~/query/basic/sync-stale-config';
-import { type CatchupViewRequest, useSyncStore } from '~/query/realtime/sync-store';
+import { type CatchupViewRequest, syncStore } from '~/query/realtime/sync-store';
 import { handleAppStreamNotification } from './app-stream-handler';
 import { catchupEntityTypes, processAppCatchup } from './catchup-processor';
 import {
@@ -13,7 +13,7 @@ import {
   initTabCoordinator,
   isLeader,
   onNotification,
-  useTabCoordinatorStore,
+  tabCoordinatorStore,
 } from './tab-coordinator';
 import type { AppStreamNotification, StreamState } from './types';
 import { declareViewsFromMemberships } from './view-declaration';
@@ -195,7 +195,7 @@ export class StreamManager {
       this.useStore.getState().setState('catching-up');
 
       for (let round = 0; ; round++) {
-        const currentCursor = useTabCoordination ? useSyncStore.getState().cursor : this.useStore.getState().cursor;
+        const currentCursor = useTabCoordination ? syncStore.getState().cursor : this.useStore.getState().cursor;
 
         console.debug(`[${this.name}] Fetching catchup from offset:`, currentCursor ?? 'null');
         const newCursor = await this.config.fetchAndProcessCatchup(currentCursor);
@@ -204,8 +204,8 @@ export class StreamManager {
         if (newCursor) {
           this.useStore.getState().setCursor(newCursor);
           if (useTabCoordination) {
-            useSyncStore.getState().setCursor(newCursor);
-            useSyncStore.getState().setLastSyncAt(new Date().toISOString());
+            syncStore.getState().setCursor(newCursor);
+            syncStore.getState().setLastSyncAt(new Date().toISOString());
           }
         }
 
@@ -275,7 +275,7 @@ export class StreamManager {
   private applyNotification(notification: unknown, eventId: string | undefined) {
     if (eventId) {
       this.useStore.getState().setCursor(eventId);
-      if (this.config.useTabCoordination) useSyncStore.getState().setCursor(eventId);
+      if (this.config.useTabCoordination) syncStore.getState().setCursor(eventId);
     }
     this.config.processNotification(notification);
   }
@@ -485,8 +485,8 @@ export class StreamManager {
   /** Subscribe to leader changes and reconnect when becoming leader. */
   private startLeaderReconnect() {
     if (!this.config.useTabCoordination || this.leaderUnsubscribe) return;
-    let wasLeader = useTabCoordinatorStore.getState().isLeader;
-    this.leaderUnsubscribe = useTabCoordinatorStore.subscribe((s) => {
+    let wasLeader = tabCoordinatorStore.getState().isLeader;
+    this.leaderUnsubscribe = tabCoordinatorStore.subscribe((s) => {
       if (s.isLeader && !wasLeader && !this.isConnected()) {
         console.debug(`[${this.name}] Became leader, reconnecting...`);
         this.reconnect();
@@ -584,7 +584,7 @@ export const appStreamManager = new StreamManager('AppStream', {
   fetchAndProcessCatchup: async (cursor) => {
     // Combine baseline organization views with membership-derived grant boundaries.
     declareViewsFromMemberships();
-    const views = toCatchupViews(useSyncStore.getState().getCatchupViews(catchupEntityTypes()));
+    const views = toCatchupViews(syncStore.getState().getCatchupViews(catchupEntityTypes()));
     const response = await postAppCatchup({
       body: {
         cursor: cursor ?? undefined,
