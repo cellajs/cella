@@ -92,7 +92,7 @@ export async function getHealthResponse(): Promise<{ response: HealthResponse; h
   components.api = { ...mapApiComponent(getEventLoopLagMs(), process.memoryUsage()), label: 'API' };
   components.database = { ...mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs), label: 'Database' };
 
-  if (env.MODE === 'mcp-worker') {
+  if (env.MODE === 'mcp') {
     components.mcp = { ...(await buildMcpSelfComponent()), label: 'MCP' };
   } else {
     if (appConfig.services.cdc.enabled !== false) components.cdc = { ...buildCdcComponent(), label: 'CDC' };
