@@ -2,7 +2,7 @@ import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { getChannelCounts } from '#/modules/entities/entities-queries';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
-import { withOrganizationFlagDefaults } from '#/modules/organization/helpers/select';
+import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { withAuditUser } from '#/modules/user/helpers/audit-user';
 import { getValidChannel } from '#/permissions';
 
@@ -17,7 +17,7 @@ export async function getOrganizationOp(
 
   const { entity, membership } = await getValidChannel(ctx, id, 'organization', 'read', bySlug);
   // Rows store organizationFlags sparse; merge config defaults under the stored bag
-  const organization = withOrganizationFlagDefaults(entity);
+  const organization = withOrganizationDefaults(entity);
 
   // Validate organization belongs to the specified tenant, in org itself we do not have orgGuard
   if (organization.tenantId !== tenantId) {

@@ -29,6 +29,8 @@ interface PresignedUrlsResult {
  */
 const selectVariantKey = (attachment: AttachmentModel, variant: AttachmentVariant): string => {
   if (variant === 'thumbnail') return attachment.thumbnailKey ?? attachment.originalKey;
+  if (variant === 'thumbnail-tiny')
+    return attachment.thumbnailTinyKey ?? attachment.thumbnailKey ?? attachment.originalKey;
   if (variant === 'converted') return attachment.convertedKey ?? attachment.originalKey;
   return attachment.originalKey;
 };

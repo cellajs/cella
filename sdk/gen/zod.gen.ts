@@ -365,6 +365,7 @@ export const zOrganization = z.object({
   welcomeText: z.string().max(1000000).nullable(),
   chatSupport: z.boolean(),
   organizationFlags: z.record(z.string(), z.unknown()),
+  setupConfig: z.record(z.string(), z.unknown()),
   included: z.object({
     membership: zMembershipBase.optional(),
     counts: z
@@ -419,6 +420,7 @@ export const zAttachment = z.object({
   originalKey: z.string().max(2048),
   convertedKey: z.string().max(2048).nullable(),
   thumbnailKey: z.string().max(2048).nullable(),
+  thumbnailTinyKey: z.string().max(2048).nullable(),
   organizationId: z.uuid(),
   viewCount: z.int().gte(0).optional(),
 });
@@ -1380,6 +1382,7 @@ export const zUpdateOrganizationBody = z.object({
   welcomeText: z.string().max(1000000).nullish(),
   chatSupport: z.boolean().optional(),
   organizationFlags: z.record(z.string(), z.unknown()).optional(),
+  setupConfig: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const zUpdateOrganizationPath = z.object({
@@ -1463,6 +1466,7 @@ export const zCreateAttachmentsBody = z
       convertedContentType: z.string().max(255).nullish(),
       convertedKey: z.string().max(2048).nullish(),
       thumbnailKey: z.string().max(2048).nullish(),
+      thumbnailTinyKey: z.string().max(2048).nullish(),
       stx: zStxBase,
     }),
   )
@@ -1492,7 +1496,7 @@ export const zGetPresignedUrlsBody = z.object({
     .array(
       z.object({
         attachmentId: z.uuid(),
-        variant: z.enum(['original', 'thumbnail', 'converted']).optional().default('original'),
+        variant: z.enum(['original', 'thumbnail', 'thumbnail-tiny', 'converted']).optional().default('original'),
       }),
     )
     .min(1)
@@ -1511,7 +1515,7 @@ export const zGetPresignedUrlsResponse = z.object({
   data: z.array(
     z.object({
       attachmentId: z.uuid(),
-      variant: z.enum(['original', 'thumbnail', 'converted']),
+      variant: z.enum(['original', 'thumbnail', 'thumbnail-tiny', 'converted']),
       url: z.string(),
     }),
   ),

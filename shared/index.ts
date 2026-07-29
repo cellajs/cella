@@ -55,6 +55,7 @@ export type {
   MenuSection,
   NullableAncestorType,
   OrganizationFlags,
+  OrganizationSetupConfig,
   ProductEntityType,
   RootChannelType,
   SeenTrackedProductType,

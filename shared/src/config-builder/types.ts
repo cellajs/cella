@@ -257,4 +257,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   // Organization defaults
   defaultOrganizationFlags: Record<string, boolean>;
+
+  // Per-organization setup config: fork-shaped defaults layered under each org's stored jsonb.
+  // Cella ships {}; forks widen the value (e.g. `{ primaryLabels: [...] }`) in their config.
+  defaultSetupConfig: Record<string, unknown>;
 }

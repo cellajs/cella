@@ -1790,6 +1790,10 @@
             "type": "object",
             "properties": {}
           },
+          "setupConfig": {
+            "type": "object",
+            "properties": {}
+          },
           "included": {
             "type": "object",
             "properties": {
@@ -1883,6 +1887,7 @@
           "welcomeText",
           "chatSupport",
           "organizationFlags",
+          "setupConfig",
           "included"
         ],
         "description": "The main channel entity is an organization.",
@@ -1907,6 +1912,7 @@
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
           "chatSupport": true,
           "organizationFlags": {},
+          "setupConfig": {},
           "publishedAt": "2024-12-25T15:04:42.969Z",
           "publicAt": null,
           "createdAt": "2024-12-25T15:04:42.969Z",
@@ -2061,7 +2067,12 @@
           "thumbnailKey": {
             "type": ["string", "null"],
             "maxLength": 2048,
-            "description": "Storage object key for the generated thumbnail; null when none."
+            "description": "Storage object key for the generated thumbnail (mid-size preview); null when none."
+          },
+          "thumbnailTinyKey": {
+            "type": ["string", "null"],
+            "maxLength": 2048,
+            "description": "Storage object key for the tiny (grid-cell) image thumbnail; null when none."
           },
           "organizationId": {
             "type": "string",
@@ -2098,6 +2109,7 @@
           "originalKey",
           "convertedKey",
           "thumbnailKey",
+          "thumbnailTinyKey",
           "organizationId"
         ],
         "description": "A product entity for file attachment metadata.",
@@ -2118,6 +2130,7 @@
           "originalKey": "uploads/enhqurk6hu54pnfytf99mpmu/rightfully_lest_noted.mp3",
           "convertedKey": null,
           "thumbnailKey": null,
+          "thumbnailTinyKey": null,
           "createdAt": "2024-10-12T12:26:26.417Z",
           "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
           "updatedAt": "2024-10-12T12:26:26.417Z",
@@ -7207,6 +7220,7 @@
                           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                           "chatSupport": true,
                           "organizationFlags": {},
+                          "setupConfig": {},
                           "publishedAt": "2024-12-25T15:04:42.969Z",
                           "publicAt": null,
                           "createdAt": "2024-12-25T15:04:42.969Z",
@@ -7291,6 +7305,7 @@
                       "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
                       "chatSupport": false,
                       "organizationFlags": {},
+                      "setupConfig": {},
                       "publishedAt": "2024-04-18T21:12:59.543Z",
                       "publicAt": null,
                       "createdAt": "2024-04-18T21:12:59.543Z",
@@ -7350,6 +7365,7 @@
                       "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
                       "chatSupport": false,
                       "organizationFlags": {},
+                      "setupConfig": {},
                       "publishedAt": "2024-02-24T16:36:46.247Z",
                       "publicAt": null,
                       "createdAt": "2024-02-24T16:36:46.247Z",
@@ -7663,6 +7679,7 @@
                       "welcomeText": "Welcome to Anderson - Ferry!",
                       "chatSupport": true,
                       "organizationFlags": {},
+                      "setupConfig": {},
                       "publishedAt": "2024-11-21T01:19:53.533Z",
                       "publicAt": null,
                       "createdAt": "2024-11-21T01:19:53.533Z",
@@ -7722,6 +7739,7 @@
                       "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
                       "chatSupport": false,
                       "organizationFlags": {},
+                      "setupConfig": {},
                       "publishedAt": "2024-10-29T04:35:17.725Z",
                       "publicAt": null,
                       "createdAt": "2024-10-29T04:35:17.725Z",
@@ -7874,6 +7892,7 @@
                   "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                   "chatSupport": true,
                   "organizationFlags": {},
+                  "setupConfig": {},
                   "publishedAt": "2024-12-25T15:04:42.969Z",
                   "publicAt": null,
                   "createdAt": "2024-12-25T15:04:42.969Z",
@@ -8046,6 +8065,10 @@
                   "organizationFlags": {
                     "type": "object",
                     "properties": {}
+                  },
+                  "setupConfig": {
+                    "type": "object",
+                    "properties": {}
                   }
                 }
               }
@@ -8081,6 +8104,7 @@
                   "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                   "chatSupport": true,
                   "organizationFlags": {},
+                  "setupConfig": {},
                   "publishedAt": "2024-12-25T15:04:42.969Z",
                   "publicAt": null,
                   "createdAt": "2024-12-25T15:04:42.969Z",
@@ -8343,6 +8367,7 @@
                       "originalKey": "uploads/gy3a9lhe0ctrmzc53x7z222y/vice.mar",
                       "convertedKey": null,
                       "thumbnailKey": null,
+                      "thumbnailTinyKey": null,
                       "createdAt": "2024-11-21T01:19:53.533Z",
                       "createdBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                       "updatedAt": "2024-11-21T01:19:53.533Z",
@@ -8375,6 +8400,7 @@
                       "originalKey": "uploads/vzac8qx1h9s6vzhgvcj0rs3x/bah_oof_truthfully.css",
                       "convertedKey": null,
                       "thumbnailKey": null,
+                      "thumbnailTinyKey": null,
                       "createdAt": "2024-10-29T04:35:17.725Z",
                       "createdBy": "772a771f-c150-465e-9635-46594859fc3d",
                       "updatedAt": "2024-10-29T04:35:17.725Z",
@@ -8509,7 +8535,12 @@
                     "thumbnailKey": {
                       "type": ["string", "null"],
                       "maxLength": 2048,
-                      "description": "Storage object key for the generated thumbnail; null when none."
+                      "description": "Storage object key for the generated thumbnail (mid-size preview); null when none."
+                    },
+                    "thumbnailTinyKey": {
+                      "type": ["string", "null"],
+                      "maxLength": 2048,
+                      "description": "Storage object key for the tiny (grid-cell) image thumbnail; null when none."
                     },
                     "stx": {
                       "$ref": "#/components/schemas/StxBase"
@@ -8576,6 +8607,7 @@
                       "originalKey": "uploads/3h55lgj31d63n9apx99a5auv/ugh_besides.svgz",
                       "convertedKey": null,
                       "thumbnailKey": null,
+                      "thumbnailTinyKey": null,
                       "createdAt": "2024-04-18T21:12:59.543Z",
                       "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                       "updatedAt": "2024-04-18T21:12:59.543Z",
@@ -8608,6 +8640,7 @@
                       "originalKey": "uploads/v1itpc9wztvbcy21q04oq81k/instead_volleyball.jpe",
                       "convertedKey": null,
                       "thumbnailKey": null,
+                      "thumbnailTinyKey": null,
                       "createdAt": "2024-02-24T16:36:46.247Z",
                       "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                       "updatedAt": "2024-02-24T16:36:46.247Z",
@@ -8681,6 +8714,7 @@
                       "originalKey": "uploads/3h55lgj31d63n9apx99a5auv/ugh_besides.svgz",
                       "convertedKey": null,
                       "thumbnailKey": null,
+                      "thumbnailTinyKey": null,
                       "createdAt": "2024-04-18T21:12:59.543Z",
                       "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                       "updatedAt": "2024-04-18T21:12:59.543Z",
@@ -8713,6 +8747,7 @@
                       "originalKey": "uploads/v1itpc9wztvbcy21q04oq81k/instead_volleyball.jpe",
                       "convertedKey": null,
                       "thumbnailKey": null,
+                      "thumbnailTinyKey": null,
                       "createdAt": "2024-02-24T16:36:46.247Z",
                       "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                       "updatedAt": "2024-02-24T16:36:46.247Z",
@@ -8928,7 +8963,7 @@
                         },
                         "variant": {
                           "type": "string",
-                          "enum": ["original", "thumbnail", "converted"],
+                          "enum": ["original", "thumbnail", "thumbnail-tiny", "converted"],
                           "default": "original"
                         }
                       },
@@ -8962,7 +8997,7 @@
                           },
                           "variant": {
                             "type": "string",
-                            "enum": ["original", "thumbnail", "converted"]
+                            "enum": ["original", "thumbnail", "thumbnail-tiny", "converted"]
                           },
                           "url": {
                             "type": "string"
@@ -9093,6 +9128,7 @@
                   "originalKey": "uploads/enhqurk6hu54pnfytf99mpmu/rightfully_lest_noted.mp3",
                   "convertedKey": null,
                   "thumbnailKey": null,
+                  "thumbnailTinyKey": null,
                   "createdAt": "2024-10-12T12:26:26.417Z",
                   "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
                   "updatedAt": "2024-10-12T12:26:26.417Z",
@@ -9242,6 +9278,7 @@
                   "originalKey": "uploads/enhqurk6hu54pnfytf99mpmu/rightfully_lest_noted.mp3",
                   "convertedKey": null,
                   "thumbnailKey": null,
+                  "thumbnailTinyKey": null,
                   "createdAt": "2024-10-12T12:26:26.417Z",
                   "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
                   "updatedAt": "2024-10-12T12:26:26.417Z",

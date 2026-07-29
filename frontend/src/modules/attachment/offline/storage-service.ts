@@ -12,11 +12,19 @@ import type { CustomUppyFile } from '~/modules/common/uploader/types';
 /** Fallback chain for blob resolution, in lookup order. */
 const displayFallbackChain: BlobVariant[] = ['converted', 'original', 'raw'];
 const thumbnailFallbackChain: BlobVariant[] = ['thumbnail', 'original', 'raw'];
+const thumbnailTinyFallbackChain: BlobVariant[] = ['thumbnail-tiny', 'thumbnail', 'original', 'raw'];
 
 /**
  * Attachment storage service with local-first capabilities.
  */
 class AttachmentStorageService {
+  /**
+   * Stable blob URLs for the shared render path (BlockNote), keyed by attachment id + variant.
+   * The service owns their lifecycle: an entry is revoked and dropped when the attachment's blobs
+   * change (store/evict/delete), so consumers must not revoke these URLs themselves.
+   */
+  private sharedBlobUrls = new Map<string, string>();
+
   /**
    * Get a blob by attachment ID and variant, with optional fallback chain.
    */
@@ -25,7 +33,13 @@ class AttachmentStorageService {
     variant: BlobVariant,
     useFallback = false,
   ): Promise<{ blob: AttachmentBlob; actualVariant: BlobVariant } | null> {
-    const chain = useFallback ? (variant === 'thumbnail' ? thumbnailFallbackChain : displayFallbackChain) : [variant];
+    const chain = !useFallback
+      ? [variant]
+      : variant === 'thumbnail-tiny'
+        ? thumbnailTinyFallbackChain
+        : variant === 'thumbnail'
+          ? thumbnailFallbackChain
+          : displayFallbackChain;
 
     for (const v of chain) {
       const key = makeBlobKey(attachmentId, v);
@@ -51,6 +65,37 @@ class AttachmentStorageService {
 
     const url = URL.createObjectURL(result.blob.blob);
     return { url, actualVariant: result.actualVariant };
+  }
+
+  /**
+   * Returns a cached blob URL that remains stable until attachment data changes.
+   * The service owns URL revocation.
+   */
+  async getSharedBlobUrl(attachmentId: string, variant: BlobVariant, useFallback = true): Promise<string | null> {
+    const key = `${attachmentId}::${variant}::${useFallback ? 'fb' : 'nf'}`;
+    const cached = this.sharedBlobUrls.get(key);
+    if (cached) return cached;
+
+    const result = await this.getBlobWithVariant(attachmentId, variant, useFallback);
+    if (!result) return null;
+
+    // A concurrent resolve may have populated the cache while this call awaited the blob lookup.
+    const raced = this.sharedBlobUrls.get(key);
+    if (raced) return raced;
+
+    const url = URL.createObjectURL(result.blob.blob);
+    this.sharedBlobUrls.set(key, url);
+    return url;
+  }
+
+  /** Revoke and drop every cached shared blob URL for an attachment; call whenever its blobs change. */
+  private invalidateSharedBlobUrls(attachmentId: string): void {
+    const prefix = `${attachmentId}::`;
+    for (const [key, url] of this.sharedBlobUrls) {
+      if (!key.startsWith(prefix)) continue;
+      URL.revokeObjectURL(url);
+      this.sharedBlobUrls.delete(key);
+    }
   }
 
   /**
@@ -80,6 +125,8 @@ class AttachmentStorageService {
 
     try {
       await attachmentsDb.blobs.put(record);
+      // A better/different variant is now available: drop stale shared URLs so the next resolve picks it up.
+      this.invalidateSharedBlobUrls(attachmentId);
       return record;
     } catch (error) {
       console.error('[AttachmentStorage] Failed to store download blob:', error);
@@ -107,6 +154,8 @@ class AttachmentStorageService {
       const exists = await attachmentsDb.blobs.get(rawKey);
       if (exists) {
         await attachmentsDb.blobs.delete(rawKey);
+        // A shared URL may have fallen back to the now-removed raw blob; drop it so the next resolve re-picks.
+        this.invalidateSharedBlobUrls(attachmentId);
         console.debug(`[AttachmentStorage] Evicted raw blob for ${attachmentId}`);
         return true;
       }
@@ -183,6 +232,7 @@ class AttachmentStorageService {
 
     try {
       await attachmentsDb.blobs.add(blob);
+      this.invalidateSharedBlobUrls(actualAttachmentId);
       return blob;
     } catch (error) {
       console.error('[AttachmentStorage] Failed to store upload blob:', error);
@@ -210,6 +260,7 @@ class AttachmentStorageService {
       // Delete all variants for each attachment ID
       for (const id of ids) {
         await attachmentsDb.blobs.where('attachmentId').equals(id).delete();
+        this.invalidateSharedBlobUrls(id);
       }
     } catch (error) {
       console.error('[AttachmentStorage] Failed to delete blobs:', error);

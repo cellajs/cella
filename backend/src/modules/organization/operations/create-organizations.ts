@@ -6,7 +6,7 @@ import { buildZeroCounts } from '#/modules/entities/helpers/build-zero-counts';
 import { checkSlugsAvailable } from '#/modules/entities/helpers/check-slug';
 import { insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
-import { withOrganizationFlagDefaults } from '#/modules/organization/helpers/select';
+import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { countOrgsInTenant, insertOrganizations } from '#/modules/organization/organization-queries';
 import { organizationContract } from '#/modules/organization/organization-schema';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
@@ -109,7 +109,7 @@ export async function createOrganizationsOp(ctx: AuthContext, rawItems: CreateOr
   const organizationResponses = orgsWithAudit.map((org) => {
     const membership = membershipByOrgId.get(org.id)!;
     const included = { membership: toMembershipBase(membership), counts };
-    return { ...withOrganizationFlagDefaults(org), included };
+    return { ...withOrganizationDefaults(org), included };
   });
 
   return { data: organizationResponses, ...rejectionState };

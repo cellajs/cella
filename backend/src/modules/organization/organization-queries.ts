@@ -1,10 +1,10 @@
 import { and, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
-import type { EntityRole, OrganizationFlags } from 'shared';
+import type { EntityRole, OrganizationFlags, OrganizationSetupConfig } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { getChannelCountsSelect } from '#/modules/entities/entities-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { organizationFlagsSelect } from '#/modules/organization/helpers/select';
+import { organizationFlagsSelect, setupConfigSelect } from '#/modules/organization/helpers/select';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { auditUserSelect, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 import { getOrderColumn } from '#/utils/order-column';
@@ -31,18 +31,24 @@ export const insertOrganizations = async (
 
 interface UpdateOrganizationOpts {
   id: string;
-  values: Partial<typeof organizationsTable.$inferInsert> & { organizationFlags?: Partial<OrganizationFlags> };
+  values: Partial<typeof organizationsTable.$inferInsert> & {
+    organizationFlags?: Partial<OrganizationFlags>;
+    setupConfig?: Partial<OrganizationSetupConfig>;
+  };
 }
 
-/** Update an organization by ID and return the updated row. Merges organizationFlags via jsonb || if provided. */
+/** Update an organization by ID and return the updated row. Merges organizationFlags/setupConfig via jsonb || if provided. */
 export const updateOrganization = async (ctx: AuthContext, { id, values }: UpdateOrganizationOpts) => {
   const { db, tenantId } = ctx.var;
-  const { organizationFlags, ...rest } = values;
+  const { organizationFlags, setupConfig, ...rest } = values;
 
   const updateData = {
     ...rest,
     ...(organizationFlags && {
       organizationFlags: sql`${organizationsTable.organizationFlags} || ${JSON.stringify(organizationFlags)}::jsonb`,
+    }),
+    ...(setupConfig && {
+      setupConfig: sql`${organizationsTable.setupConfig} || ${JSON.stringify(setupConfig)}::jsonb`,
     }),
   };
 
@@ -118,8 +124,9 @@ export const getOrganizationsList = async ({ var: { db } }: DbContext, opts: Get
   const { createdBy: _cb, updatedBy: _mb, ...orgCols } = getColumns(organizationsTable);
   const selectShape = {
     ...orgCols,
-    // Rows store organizationFlags sparse; merge config defaults under the stored bag
+    // Rows store organizationFlags/setupConfig sparse; merge config defaults under the stored bag
     organizationFlags: organizationFlagsSelect,
+    setupConfig: setupConfigSelect,
     ...auditUserSelect,
     ...(countData && { counts: countData.countsSelect }),
     total: sql<number>`count(*) over()`.mapWith(Number),

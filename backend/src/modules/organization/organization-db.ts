@@ -1,5 +1,5 @@
 import { boolean, index, json, jsonb, snakeCase, unique, varchar } from 'drizzle-orm/pg-core';
-import { appConfig, type Language, type OrganizationFlags } from 'shared';
+import { appConfig, type Language, type OrganizationFlags, type OrganizationSetupConfig } from 'shared';
 import { channelColumns } from '#/db/utils/channel-columns';
 import { maxLength } from '#/db/utils/constraints';
 
@@ -31,6 +31,9 @@ export const organizationsTable = snakeCase.table(
       .$type<OrganizationFlags>()
       .notNull()
       .default({} as OrganizationFlags),
+    // Per-org setup config; fork-shaped defaults declared in `appConfig.defaultSetupConfig`.
+    // Stored sparse like organizationFlags: reads merge config defaults under the stored bag.
+    setupConfig: jsonb().$type<Partial<OrganizationSetupConfig>>().notNull().default({}),
   },
   (table) => [
     index('organizations_name_index').on(table.name.desc()),

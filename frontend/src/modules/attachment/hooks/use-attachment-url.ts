@@ -18,7 +18,14 @@ export function useAttachmentUrl(
   attachment:
     | Pick<
         Attachment,
-        'id' | 'originalKey' | 'convertedKey' | 'thumbnailKey' | 'publicBucket' | 'tenantId' | 'organizationId'
+        | 'id'
+        | 'originalKey'
+        | 'convertedKey'
+        | 'thumbnailKey'
+        | 'thumbnailTinyKey'
+        | 'publicBucket'
+        | 'tenantId'
+        | 'organizationId'
       >
     | null
     | undefined,
