@@ -3,7 +3,6 @@ import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import type { Env } from '#/core/context';
-import '#/modules/auth/auth-module';
 import { AppError, type ErrorKey } from '#/core/error';
 import { mailer } from '#/lib/mailer';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';

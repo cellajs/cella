@@ -1,6 +1,6 @@
-import { registerModule } from 'shared/module-registry';
+import { defineBackendModule } from '#/lib/module';
 
-registerModule({
+defineBackendModule({
   name: 'memberships',
   owner: 'cella',
   scope: ['frontend', 'backend'],

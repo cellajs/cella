@@ -4,7 +4,6 @@ import type { z } from 'zod';
 import type { Env } from '#/core/context';
 import { countEntityRows } from '#/modules/metrics/metrics-queries';
 import { metricRouteConfig as metricRoutes } from '#/modules/metrics/metrics-routes';
-import '#/modules/metrics/metrics-module';
 import type { publicCountsSchema } from '#/modules/metrics/metrics-schema';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';

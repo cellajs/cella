@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { activityActions, activityEventTypes, appConfig } from 'shared';
+import { activityActions, appConfig, trackedEventTypes } from 'shared';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { paginationQuerySchema } from '#/schemas';
@@ -15,8 +15,8 @@ export const entityTypeSchema = z.enum(appConfig.entityTypes);
 /** Schema for resource types enum - uses literal types from appConfig */
 const resourceTypeSchema = z.enum(appConfig.resourceTypes);
 
-/** Schema for activity event types enum - uses literal types from activityEventTypes */
-const activityEventTypeSchema = z.enum(activityEventTypes);
+/** Schema for activity event types enum - uses literal types from trackedEventTypes */
+const activityEventTypeSchema = z.enum(trackedEventTypes);
 
 /** Full activity schema derived from table, with proper stx and changedFields typing */
 export const activitySchema = z

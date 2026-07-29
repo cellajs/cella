@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import '#/modules/requests/requests-module';
 import { baseDb } from '#/db/db';
 import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bus';
 import { createRequestOp } from '#/modules/requests/operations/create-request';

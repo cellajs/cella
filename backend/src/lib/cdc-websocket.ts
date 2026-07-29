@@ -265,7 +265,7 @@ class CdcWebSocketServer {
       this._messagesReceived++;
       this._lastMessageAt = new Date();
 
-      // Validate event type is a known ActivityEventType
+      // Validate event type is a known TrackedEventType
       const { type } = message.activity;
       if (!isValidEventType(type)) {
         this._parseErrors++;

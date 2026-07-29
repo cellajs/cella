@@ -1,6 +1,6 @@
-import { registerModule } from 'shared/module-registry';
+import { defineBackendModule } from '#/lib/module';
 
-registerModule({
+defineBackendModule({
   name: 'yjs',
   owner: 'cella',
   scope: ['backend'],

@@ -6,6 +6,7 @@ import { env } from '#/env';
 import { getPgBoss, stopPgBoss } from '#/lib/pg-boss';
 import { baseLog } from '#/lib/pino';
 import { otel } from '#/lib/tracing';
+import '#/modules'; // composition root: registers every backend module (this worker mounts only mcp routes)
 import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
 import { baseApp } from '#/server';
 

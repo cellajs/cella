@@ -1,5 +1,5 @@
 import { index, jsonb, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
-import { activityActions, activityEventTypes, appConfig } from 'shared';
+import { activityActions, appConfig, trackedEventTypes } from 'shared';
 import { activityChannelColumns } from '#/db/utils/channel-relation-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -20,7 +20,7 @@ export const activitiesTable = snakeCase.table(
     resourceType: varchar({ enum: appConfig.resourceTypes }),
     action: varchar({ enum: activityActions }).notNull(),
     tableName: varchar({ length: maxLength.field }).notNull(),
-    type: varchar({ enum: activityEventTypes }).notNull(),
+    type: varchar({ enum: trackedEventTypes }).notNull(),
     subjectId: varchar('subject_id', { length: maxLength.id }),
     ...activityChannelColumns(),
     createdAt: timestampColumns.createdAt,

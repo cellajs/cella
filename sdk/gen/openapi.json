@@ -172,6 +172,12 @@
       "kind": "hidden"
     },
     {
+      "name": "activities",
+      "description": "Endpoints for retrieving activities, which are audit log entries tracking create, update, and\n    delete operations across all resources. Activities provide an audit trail and can be extended for webhook\n    delivery.",
+      "parent": "cella",
+      "kind": "hidden"
+    },
+    {
       "name": "attachments",
       "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) linked to\n    entities such as organizations or users. Files are uploaded directly by the client, while the API handles\n    metadata registration, linking, access, and preview utilities.",
       "parent": "cella",
@@ -182,6 +188,12 @@
       "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth\n    (Google, Microsoft, GitHub) and passkeys (WebAuthn). They cover sign-up, sign-in, email verification,\n    account linking, and impersonation for system admins.",
       "parent": "cella",
       "kind": "module"
+    },
+    {
+      "name": "domains",
+      "description": "Endpoints for managing custom domains for tenants, including adding domains and verifying\n    ownership. Restricted to system administrators.",
+      "parent": "cella",
+      "kind": "hidden"
     },
     {
       "name": "entities",

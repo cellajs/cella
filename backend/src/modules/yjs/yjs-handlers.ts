@@ -1,7 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { z } from 'zod';
 import type { Env } from '#/core/context';
-import '#/modules/yjs/yjs-module';
 import { env } from '#/env';
 import { getYjsTokenOp } from '#/modules/yjs/operations/get-yjs-token';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';

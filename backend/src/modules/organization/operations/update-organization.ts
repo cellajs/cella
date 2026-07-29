@@ -1,11 +1,11 @@
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { dispatchMutation } from '#/lib/mutation-bus';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { getChannelCounts } from '#/modules/entities/entities-queries';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
-import { onOrganizationUpdated } from '#/modules/organization/organization-hooks';
 import { updateOrganization } from '#/modules/organization/organization-queries';
 import { organizationContract } from '#/modules/organization/organization-schema';
 import { withAuditUser } from '#/modules/user/helpers/audit-user';
@@ -46,8 +46,10 @@ export async function updateOrganizationOp(
   // Rows store organizationFlags/setupConfig sparse; merge config defaults under the stored bag
   const updatedOrganizationRecord = withOrganizationDefaults(updatedRecord);
 
-  // Fork hook: react to setupConfig changes (no-op in cella) before cache invalidation.
-  await onOrganizationUpdated(ctx, { organization: updatedOrganizationRecord, input });
+  await dispatchMutation(ctx, 'organization.updated', {
+    before: [withOrganizationDefaults(organization)],
+    after: [updatedOrganizationRecord],
+  });
 
   invalidateCache.org(tenantId, organization.id);
 

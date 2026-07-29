@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { isProduct } from 'shared';
+import { uuidv7 } from 'uuidv7';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -70,6 +71,13 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
     });
   }
 
-  await materializer(ctx, { entityId: input.entityId, description });
+  // The relay owns the server-origin envelope: empty fieldTimestamps lets the pipeline stamp a
+  // fresh server HLC; the module only names which update op runs.
+  await materializer(
+    ctx,
+    input.entityId,
+    { ops: { description }, stx: { mutationId: uuidv7(), sourceId: 'yjs-relay', fieldTimestamps: {} } },
+    { serverOrigin: true },
+  );
   return { sanitized };
 }

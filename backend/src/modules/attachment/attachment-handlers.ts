@@ -2,7 +2,6 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { assertSuccess } from '#/core/operation-result';
 import { attachmentRoutes } from '#/modules/attachment/attachment-routes';
-import '#/modules/attachment/attachment-module';
 import { createAttachmentsOp } from '#/modules/attachment/operations/create-attachments';
 import { deleteAttachmentsOp } from '#/modules/attachment/operations/delete-attachments';
 import { getAttachmentOp } from '#/modules/attachment/operations/get-attachment';
