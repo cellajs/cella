@@ -6,6 +6,14 @@ export interface Generation {
   id: string
   /** Image SHA baked into this generation. */
   sha: string
+  /**
+   * True for the generation already live in the control state (its VM exists and
+   * carries `ignoreChanges` on cloud-init and image). A newly rolling generation
+   * has this unset. Consumers require a pinnable boot image only for the newly
+   * rolling generations; a pre-existing one keeps running on its own booted image
+   * even when that image is no longer resolvable in the registry.
+   */
+  preexisting?: boolean
 }
 
 export interface SelectGenerationsOptions {
@@ -24,7 +32,7 @@ export interface SelectGenerationsOptions {
 export function selectGenerations(entry: ServiceRollout | undefined, opts: SelectGenerationsOptions): Generation[] {
   const activeRef = entry?.active
   const pending: Generation | undefined = entry?.pendingSha ? { id: opts.genIdFor(entry.pendingSha), sha: entry.pendingSha } : undefined
-  const active: Generation | undefined = activeRef ? { id: activeRef.id, sha: activeRef.sha } : undefined
+  const active: Generation | undefined = activeRef ? { id: activeRef.id, sha: activeRef.sha, preexisting: true } : undefined
 
   const generations: Generation[] = []
   const seen = new Set<string>()

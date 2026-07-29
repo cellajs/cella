@@ -11,7 +11,7 @@ describe('selectGenerations', () => {
   it('deploys as an active + pending overlap for lb services', () => {
     const out = selectGenerations(entry({ active: { id: 'gen-old', sha: 'old', seq: 1 }, pendingSha: 'new' }), base)
     expect(out).toEqual([
-      { id: 'gen-old', sha: 'old' },
+      { id: 'gen-old', sha: 'old', preexisting: true },
       { id: 'gen-new', sha: 'new' },
     ])
   })
@@ -26,7 +26,7 @@ describe('selectGenerations', () => {
 
   it('keeps only the active generation between deploys', () => {
     const out = selectGenerations(entry({ active: { id: 'gen-new', sha: 'new', seq: 2 } }), base)
-    expect(out).toEqual([{ id: 'gen-new', sha: 'new' }])
+    expect(out).toEqual([{ id: 'gen-new', sha: 'new', preexisting: true }])
   })
 
   it('falls back to a latest generation on first provision', () => {
@@ -35,6 +35,6 @@ describe('selectGenerations', () => {
 
   it('equal active and pending ids collapse to one VM', () => {
     const out = selectGenerations(entry({ active: { id: 'gen-new', sha: 'new', seq: 2 }, pendingSha: 'new' }), base)
-    expect(out).toEqual([{ id: 'gen-new', sha: 'new' }])
+    expect(out).toEqual([{ id: 'gen-new', sha: 'new', preexisting: true }])
   })
 })
