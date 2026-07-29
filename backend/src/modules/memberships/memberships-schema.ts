@@ -4,8 +4,14 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { channelEntityTypeSchema, paginationQuerySchema, validEmailSchema, validIdSchema } from '#/schemas';
-import { userBaseSchema, userMinimalBaseSchema } from '#/schemas/user-schema-base';
+import {
+  channelEntityTypeSchema,
+  paginationQuerySchema,
+  validEmailSchema,
+  validIdSchema,
+  validUuidSchema,
+} from '#/schemas';
+import { nullableUserMinimalBaseSchema, userBaseSchema } from '#/schemas/user-schema-base';
 import { mockInactiveMembershipResponse, mockMembershipBase, mockMembershipResponse } from './memberships-mocks';
 
 /** Schema for entity roles enum - uses literal types from appConfig */
@@ -30,7 +36,7 @@ export const inactiveMembershipSchema = z
     // Override enum columns with explicit schemas to preserve literal types
     role: entityRoleSchema,
     channelType: channelEntityTypeSchema,
-    createdBy: userMinimalBaseSchema.nullable(),
+    createdBy: nullableUserMinimalBaseSchema,
   })
   .openapi('InactiveMembership', {
     description: 'A membership record for a user who has not yet accepted an invitation.',
@@ -66,15 +72,19 @@ export const membershipUpdateBodySchema = z.object({
 export const memberListQuerySchema = paginationQuerySchema.extend({
   entityId: validIdSchema,
   entityType: channelEntityTypeSchema,
-  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
+  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt'),
   role: z.enum(roles.all).optional(),
-  userIds: z.string().optional(),
+  userIds: z
+    .string()
+    .transform((value) => value.split(',').map((id) => id.trim()))
+    .pipe(validUuidSchema.array().min(1).max(50))
+    .optional(),
 });
 
 export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({
   entityId: validIdSchema,
   entityType: channelEntityTypeSchema,
-  sort: z.enum(['createdAt']).default('createdAt').optional(),
+  sort: z.enum(['createdAt']).default('createdAt'),
 });
 
 export const pendingMembershipSchema = z.object({
@@ -83,5 +93,5 @@ export const pendingMembershipSchema = z.object({
   thumbnailUrl: userBaseSchema.shape.thumbnailUrl.nullable(),
   role: membershipSchema.shape.role.nullable(),
   createdAt: membershipSchema.shape.createdAt,
-  createdBy: userMinimalBaseSchema.nullable(),
+  createdBy: nullableUserMinimalBaseSchema,
 });

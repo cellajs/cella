@@ -19,8 +19,10 @@ export async function sendNewsletterOp(ctx: AuthContext, input: SendNewsletterIn
   const user = ctx.var.user;
   const { organizationIds, subject, content, roles, toSelf } = input;
 
-  // Get members from organizations
-  const recipientsRecords = await findNewsletterRecipients(ctx, { organizationIds, roles });
+  if (!toSelf && organizationIds.length === 0) throw new AppError(400, 'no_recipients', 'warn');
+
+  // Preview sends are addressed only to the initiating admin and need no organization scope.
+  const recipientsRecords = toSelf ? [] : await findNewsletterRecipients(ctx, { organizationIds, roles });
 
   // Stop if no recipients
   if (!recipientsRecords.length && !toSelf) throw new AppError(400, 'no_recipients', 'warn');

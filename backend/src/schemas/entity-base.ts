@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { channelEntityTypeSchema, productEntityTypeSchema } from '#/schemas';
-import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import { nullableUserMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { mockChannelBase, mockProductBase } from './entity-base-mocks';
 
 /**
@@ -18,8 +18,8 @@ const entityCoreShape = {
  * Audit fields for entities that track who created/modified them.
  */
 const auditShape = {
-  createdBy: userMinimalBaseSchema.nullable(),
-  updatedBy: userMinimalBaseSchema.nullable(),
+  createdBy: nullableUserMinimalBaseSchema,
+  updatedBy: nullableUserMinimalBaseSchema,
 };
 
 /**

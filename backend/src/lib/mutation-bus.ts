@@ -34,7 +34,7 @@ onBackendModuleRegister((module) => {
 
 /**
  * Fire the handlers registered for `<type>.<verb>` synchronously, in registration order, awaiting
- * each. Rejects on the first handler error so a failed reaction aborts the operation and its
+ * each. Rejects on the first handler error so an operation can let a failed requirement abort the
  * request. Pass the transactional ctx when handlers must run inside the write's transaction.
  */
 export async function dispatchMutation(

@@ -1,6 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { nanoid } from 'shared/utils/nanoid';
-import { MOCK_REF_DATE, mockUuid, withFakerSeed } from '#/mocks';
+import { mockNanoid, mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
 
 /**
  * Generates a mock passkey challenge response.
@@ -18,50 +17,27 @@ export const mockPasskeyChallengeResponse = (key = 'passkey-challenge:default') 
  */
 export const mockPasskeyResponse = (key = 'passkey:default') =>
   withFakerSeed(key, () => {
-    const refDate = MOCK_REF_DATE;
-    const createdAt = faker.date.past({ refDate });
-
+    const device = faker.helpers.arrayElement([
+      { deviceName: 'MacBook Pro', deviceType: 'desktop', deviceOs: 'macOS', browser: 'Chrome' },
+      { deviceName: 'iPhone', deviceType: 'mobile', deviceOs: 'iOS', browser: 'Safari' },
+    ] as const);
     return {
       id: mockUuid(),
       userId: mockUuid(),
-      nameOnDevice: faker.helpers.arrayElement(['Chrome on Mac', 'Safari on iPhone', 'Firefox on Windows']),
-      userAgent: faker.internet.userAgent(),
-      createdAt: createdAt.toISOString(),
+      ...device,
+      nameOnDevice: `${device.browser} on ${device.deviceName}`,
+      createdAt: mockPastIsoDate(),
     };
   });
-
-/**
- * Generates a mock sign in response.
- * Used for signIn endpoint example.
- */
-export const mockSignInResponse = (key = 'sign-in:default') =>
-  withFakerSeed(key, () => ({
-    emailVerified: true,
-    mfa: false,
-  }));
-
-/**
- * Generates a mock sign up with token response.
- * Used for signUpWithToken endpoint example.
- */
-export const mockSignUpWithTokenResponse = (key = 'sign-up-token:default') =>
-  withFakerSeed(key, () => ({
-    membershipInvite: true,
-  }));
 
 /**
  * Generates a mock TOTP key response.
  * Used for generateTotpKey endpoint example.
  */
-export const mockTotpKeyResponse = (key = 'totp-key:default') =>
-  withFakerSeed(key, () => {
-    const exampleManualKey = 'EXAMPLE-BASE32-KEY';
-
-    return {
-      totpUri: `otpauth://totp/App:user@example.com?secret=${exampleManualKey}&issuer=App`,
-      manualKey: exampleManualKey,
-    };
-  });
+export const mockTotpKeyResponse = () => ({
+  totpUri: 'otpauth://totp/App:user@example.com?secret=EXAMPLE-BASE32-KEY&issuer=App',
+  manualKey: 'EXAMPLE-BASE32-KEY',
+});
 
 /**
  * Generates a mock token data response.
@@ -81,9 +57,9 @@ export const mockTokenDataResponse = (key = 'token-data:default') =>
 export const mockPasskeyRecord = (userId: string, nameOnDevice = 'Test Device', key = 'passkey-record:default') =>
   withFakerSeed(key, () => ({
     userId,
-    credentialId: nanoid(32),
-    publicKey: nanoid(40),
+    credentialId: mockNanoid(32),
+    publicKey: mockNanoid(40),
     nameOnDevice,
     deviceType: 'desktop' as const,
-    createdAt: faker.date.past({ refDate: MOCK_REF_DATE }).toISOString(),
+    createdAt: mockPastIsoDate(),
   }));

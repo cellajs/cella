@@ -822,6 +822,7 @@
           "domain": {
             "type": "string",
             "required": true,
+            "format": "hostname",
             "minLength": 4,
             "maxLength": 255
           }

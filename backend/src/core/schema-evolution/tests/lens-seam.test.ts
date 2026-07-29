@@ -34,7 +34,7 @@ vi.mock('shared/schema-evolution', async (importOriginal) => {
 import type { ProductEntityType } from 'shared';
 import { normalizeCreateItem, widenBodySchema } from '#/core/schema-evolution/lens-seam';
 import { createUpdateSchema } from '#/core/schema-evolution/update-schema';
-import { arrayDeltaSchema } from '#/core/stx/array-delta';
+import { applyArrayDelta, arrayDeltaSchema } from '#/core/stx/array-delta';
 import { _resetHLC, compareHLC } from '#/core/stx/hlc';
 import { resolveServerUpdateOps, resolveUpdateOps } from '#/core/stx/resolve-update';
 
@@ -71,7 +71,7 @@ describe('createUpdateSchema widening', () => {
   });
 
   it('accepts an AWSet delta without an HLC', () => {
-    const deltaSchema = createUpdateSchema(LENSLESS, { labels: arrayDeltaSchema });
+    const deltaSchema = createUpdateSchema(LENSLESS, { labels: arrayDeltaSchema(z.string()) });
     expect(deltaSchema.parse({ ops: { labels: { add: ['a'] } }, stx: stx({}) }).ops).toEqual({
       labels: { add: ['a'], remove: [] },
     });
@@ -83,6 +83,39 @@ describe('createUpdateSchema widening', () => {
   it('does not alias entities without lenses (unknown key stripped → refine fails)', () => {
     const pageSchema = createUpdateSchema(LENSLESS, { title: z.string() });
     expect(() => pageSchema.parse({ ops: { bogus: 'x' }, stx: stx({}) })).toThrow();
+  });
+});
+
+describe('arrayDeltaSchema', () => {
+  const deltaSchema = arrayDeltaSchema(z.string().uuid(), 2);
+
+  it('validates item shape and applies defaults', () => {
+    expect(deltaSchema.parse({ add: ['00000000-0000-4000-8000-000000000001'] })).toEqual({
+      add: ['00000000-0000-4000-8000-000000000001'],
+      remove: [],
+    });
+  });
+
+  it.each([
+    { add: ['not-an-id'] },
+    { add: ['00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001'] },
+    {
+      add: [
+        '00000000-0000-4000-8000-000000000001',
+        '00000000-0000-4000-8000-000000000002',
+        '00000000-0000-4000-8000-000000000003',
+      ],
+    },
+    {
+      add: ['00000000-0000-4000-8000-000000000001'],
+      remove: ['00000000-0000-4000-8000-000000000001'],
+    },
+  ])('rejects an invalid delta %j', (input) => {
+    expect(deltaSchema.safeParse(input).success).toBe(false);
+  });
+
+  it('keeps direct application idempotent when an unchecked caller supplies duplicates', () => {
+    expect(applyArrayDelta([], { add: ['a', 'a'], remove: [] })).toEqual(['a']);
   });
 });
 

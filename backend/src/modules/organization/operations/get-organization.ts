@@ -29,7 +29,9 @@ export async function getOrganizationOp(
   const includeMembership = include.includes('membership');
 
   const [counts, organizationWithAudit] = await Promise.all([
-    includeCounts ? getChannelCounts(ctx, organization.entityType, organization.id) : undefined,
+    includeCounts
+      ? getChannelCounts(ctx, { entityType: organization.entityType, entityId: organization.id })
+      : undefined,
     withAuditUser(ctx, organization, user),
   ]);
 

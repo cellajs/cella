@@ -1,16 +1,32 @@
-import { type AnyColumn, asc, desc, type SQLWrapper } from 'drizzle-orm';
+import { type AnyColumn, asc, desc, type SQL, type SQLWrapper } from 'drizzle-orm';
+
+type OrderDirection = 'asc' | 'desc';
+
+interface GetOrderColumnsOpts<T extends Record<string, AnyColumn | SQLWrapper>, U extends keyof T> {
+  sort: U | undefined;
+  order: OrderDirection | undefined;
+  fallback: readonly [sort: U, order: OrderDirection];
+  columns: T;
+  tieBreaker?: AnyColumn | SQLWrapper;
+  append?: SQL[];
+}
 
 /**
- * Get a Drizzle `asc`/`desc` order column for `.orderBy()`, resolving `sort` against
- * `sortOptions` (a map of query-param sort keys → columns) and falling back to `def`.
+ * Resolve API sorting to deterministic Drizzle `.orderBy()` expressions.
  */
-export const getOrderColumn = <T extends Record<string, AnyColumn | SQLWrapper>, U extends keyof T>(
-  sort: U | undefined,
-  def: T[U],
-  // biome-ignore lint/style/useDefaultParameterLast: param order matches the URL query (sort, column, order, options); default kept for ~12 call-sites that omit it.
-  order: 'asc' | 'desc' = 'asc',
-  sortOptions: T,
-) => {
-  const orderFunc = order === 'asc' ? asc : desc;
-  return orderFunc(sort && sortOptions[sort] ? sortOptions[sort] : def);
+export const getOrderColumns = <T extends Record<string, AnyColumn | SQLWrapper>, U extends keyof T>({
+  sort,
+  order,
+  fallback,
+  columns,
+  tieBreaker,
+  append = [],
+}: GetOrderColumnsOpts<T, U>): SQL[] => {
+  const [fallbackSort, fallbackOrder] = fallback;
+  const orderFunc = (order ?? fallbackOrder) === 'asc' ? asc : desc;
+  const selected = columns[sort ?? fallbackSort] ?? columns[fallbackSort];
+  const primaryOrder = orderFunc(selected);
+  const stableOrder = tieBreaker && selected !== tieBreaker ? [orderFunc(tieBreaker)] : [];
+
+  return [primaryOrder, ...stableOrder, ...append];
 };

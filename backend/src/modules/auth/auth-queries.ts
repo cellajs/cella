@@ -7,24 +7,7 @@ import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encr
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { userSelect } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
-
-interface FindUserByEmailOpts {
-  email: string;
-}
-
-/** Find a user by email (via emailsTable join) with full userSelect. */
-export const findUserByEmail = async (ctx: DbContext, { email }: FindUserByEmailOpts) => {
-  const { db } = ctx.var;
-  const [user] = await db
-    .select(userSelect)
-    .from(usersTable)
-    .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
-    .where(eq(emailsTable.email, email))
-    .limit(1);
-  return user;
-};
 
 interface FindCredentialIdsByUserOpts {
   userId: string;
@@ -39,12 +22,12 @@ export const findCredentialIdsByUser = async (ctx: DbContext, { userId }: FindCr
     .where(eq(passkeysTable.userId, userId));
 };
 
-interface FindUserByCredentialIdOpts {
+interface FindUserIdByCredentialIdOpts {
   credentialId: string;
 }
 
 /** Find the user ID that owns a given passkey credential. */
-export const findUserByCredentialId = async (ctx: DbContext, { credentialId }: FindUserByCredentialIdOpts) => {
+export const findUserIdByCredentialId = async (ctx: DbContext, { credentialId }: FindUserIdByCredentialIdOpts) => {
   const { db } = ctx.var;
   const [record] = await db
     .select({ userId: passkeysTable.userId })
@@ -54,26 +37,19 @@ export const findUserByCredentialId = async (ctx: DbContext, { credentialId }: F
   return record;
 };
 
-interface FindUserByIdOpts {
+interface FindUserMfaOpts {
   userId: string;
 }
 
-/** Find a user by ID with full userSelect. */
-export const findAuthUserById = async (ctx: DbContext, { userId }: FindUserByIdOpts) => {
-  const { db } = ctx.var;
-  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-  return user;
-};
-
 /** Check if a user has an existing TOTP entry. */
-export const findExistingTotp = async (ctx: DbContext, { userId }: FindUserByIdOpts) => {
+export const findExistingTotp = async (ctx: DbContext, { userId }: FindUserMfaOpts) => {
   const { db } = ctx.var;
   const [existing] = await db.select().from(totpsTable).where(eq(totpsTable.userId, userId)).limit(1);
   return existing;
 };
 
 /** Check remaining MFA methods after removing one. Returns passkeys and totps. */
-export const findRemainingMfaMethods = async (ctx: DbContext, { userId }: FindUserByIdOpts) => {
+export const findRemainingMfaMethods = async (ctx: DbContext, { userId }: FindUserMfaOpts) => {
   const { db } = ctx.var;
   const [passkeys, totps] = await Promise.all([
     db.select().from(passkeysTable).where(eq(passkeysTable.userId, userId)),
@@ -83,7 +59,7 @@ export const findRemainingMfaMethods = async (ctx: DbContext, { userId }: FindUs
 };
 
 /** Disable MFA for a user. */
-export const disableMfa = async (ctx: DbContext, { userId }: FindUserByIdOpts) => {
+export const disableMfa = async (ctx: DbContext, { userId }: FindUserMfaOpts) => {
   const { db } = ctx.var;
   return db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, userId));
 };

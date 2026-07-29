@@ -5,15 +5,10 @@ import { mockInactiveMembershipResponse } from '#/modules/memberships/membership
 import { mockUserResponse } from '#/modules/user/user-mocks';
 import { mockChannelBase } from '#/schemas/entity-base-mocks';
 
-/**
- * Generates a mock Me response (current user with system role).
- * Used for getMe endpoint example.
- */
-export const mockMeResponse = (key = 'me:default'): MeResponse =>
-  withFakerSeed(key, () => ({
-    user: mockUserResponse('me:user'),
-    isSystemAdmin: false,
-  }));
+export const mockMeResponse = (key = 'me:default'): MeResponse => ({
+  user: mockUserResponse(`${key}:user`),
+  isSystemAdmin: false,
+});
 
 /**
  * Generates a mock MeAuthData response.
@@ -73,34 +68,9 @@ export const mockUploadTokenResponse = (key = 'upload-token:default'): UploadTok
     };
   });
 
-/**
- * Generates a mock pending invitation response.
- * Used for getMyInvitations endpoint example.
- */
-export const mockPendingInvitationResponse = (key = 'pending-invitation:default') =>
-  withFakerSeed(key, () => ({
-    entity: mockChannelBase(`${key}:entity`),
-    inactiveMembership: mockInactiveMembershipResponse(`${key}:inactive-membership`),
-  }));
+export const mockPendingInvitationResponse = (key = 'pending-invitation:default') => ({
+  entity: mockChannelBase(`${key}:entity`),
+  inactiveMembership: mockInactiveMembershipResponse(`${key}:inactive-membership`),
+});
 
-/**
- * Generates a paginated mock pending invitation list response for getMyInvitations endpoint.
- */
 export const mockPaginatedInvitationsResponse = (count = 2) => mockPaginated(mockPendingInvitationResponse, count);
-
-/**
- * Generates a mock stream response.
- * Used for getAppStream endpoint examples (JSON mode).
- */
-export const mockStreamResponse = (key = 'stream:default') =>
-  withFakerSeed(key, () => {
-    const cursor = mockNanoid();
-    return {
-      changes: {
-        'org-example-id': {
-          signals: { membership: 1 },
-        },
-      },
-      cursor,
-    };
-  });

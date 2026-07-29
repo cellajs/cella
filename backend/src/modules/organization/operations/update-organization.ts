@@ -55,7 +55,10 @@ export async function updateOrganizationOp(
 
   log.info('Organization updated', { organizationId: updatedOrganizationRecord.id });
 
-  const counts = await getChannelCounts(ctx, organization.entityType, organization.id);
+  const counts = await getChannelCounts(ctx, {
+    entityType: organization.entityType,
+    entityId: organization.id,
+  });
 
   const included = {
     ...(membership && { membership: toMembershipBase(membership) }),

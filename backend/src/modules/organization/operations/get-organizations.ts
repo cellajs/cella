@@ -3,7 +3,7 @@ import type { AuthContext } from '#/core/context';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { findMemberPreviewsByChannels } from '#/modules/memberships/memberships-queries';
-import { getOrganizationsList } from '#/modules/organization/organization-queries';
+import { findOrganizationsPaginated } from '#/modules/organization/organization-queries';
 import type { UserMinimalBase } from '#/modules/user/helpers/audit-user';
 import { coalesceAuditUsers } from '#/modules/user/helpers/audit-user';
 
@@ -36,9 +36,7 @@ export async function getOrganizationsOp(ctx: AuthContext, input: GetOrganizatio
   const includeMembers = include.includes('members');
 
   const opts = { isSystemAdmin, targetUserId, q, sort, order, offset, limit, excludeArchived, role, includeCounts };
-  const organizations = await getOrganizationsList(ctx, opts);
-
-  const total = organizations[0]?.total ?? 0;
+  const { items: organizations, total } = await findOrganizationsPaginated(ctx, opts);
 
   // Member previews (avatar stacks): ONE batched query per page for the most-privileged role,
   // capped at 3 per entity. Overflow counts come from the m:{role} counters, so no extra data
@@ -54,7 +52,7 @@ export async function getOrganizationsOp(ctx: AuthContext, input: GetOrganizatio
 
   // Build response with included wrapper for optional data
   const items = organizations.map((org) => {
-    const { counts, total: _, ...orgData } = org;
+    const { counts, ...orgData } = org;
 
     const included: { membership?: MembershipBaseModel; counts?: typeof counts; members?: UserMinimalBase[] } = {};
 

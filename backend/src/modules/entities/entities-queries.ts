@@ -22,8 +22,13 @@ function hasDeletedAt(table: ResolvableTable): table is ResolvableTable & { dele
 
 // Context counter queries
 
+interface FindChannelCountersByKeysOpts {
+  keys: string[];
+}
+
 /** Fetch context counter rows by keys (org IDs, project IDs, etc.). */
-export const findChannelCountersByKeys = async ({ var: { db } }: DbContext, keys: string[]) => {
+export const findChannelCountersByKeys = async (ctx: DbContext, { keys }: FindChannelCountersByKeysOpts) => {
+  const { db } = ctx.var;
   return db
     .select({
       channelKey: channelCountersTable.channelKey,
@@ -74,11 +79,17 @@ export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
   return { countsSelect };
 };
 
+interface GetChannelCountsOpts {
+  entityType: ChannelEntityType;
+  entityId: string;
+}
+
 /**
  * Fetches aggregated counts for a specific entity from channelCountersTable.
  * Single LEFT JOIN on pre-computed JSONB, no COUNT(*) subqueries.
  */
-export const getChannelCounts = async ({ var: { db } }: DbContext, entityType: ChannelEntityType, entityId: string) => {
+export const getChannelCounts = async (ctx: DbContext, { entityType, entityId }: GetChannelCountsOpts) => {
+  const { db } = ctx.var;
   const { countsSelect } = getChannelCountsSelect(entityType);
 
   const [counts] = await db
@@ -104,6 +115,11 @@ export const getChannelCounts = async ({ var: { db } }: DbContext, entityType: C
   return counts;
 };
 
+interface GetOrganizationEntityCountOpts {
+  organizationId: string;
+  entityType: EntityType;
+}
+
 /**
  * Reads a single pre-computed entity count from channelCountersTable.
  * Used for quota checks: reads `e:c:{entityType}` from the org's counter row.
@@ -112,7 +128,10 @@ export const getChannelCounts = async ({ var: { db } }: DbContext, entityType: C
  * rows INCLUDING drafts: the `e:c:` counter tracks published rows only, but a quota must
  * bound total storage, not published visibility. This prevents drafts from stockpiling for free.
  */
-export const getOrgEntityCount = async (ctx: DbContext, orgId: string, entityType: EntityType) => {
+export const getOrganizationEntityCount = async (
+  ctx: DbContext,
+  { organizationId, entityType }: GetOrganizationEntityCountOpts,
+) => {
   const { db } = ctx.var;
 
   const table = isProduct(entityType) ? getEntityTable(entityType) : null;
@@ -121,7 +140,7 @@ export const getOrgEntityCount = async (ctx: DbContext, orgId: string, entityTyp
     const [row] = await db
       .select({ count: count() })
       .from(table)
-      .where(sql`organization_id = ${orgId}${deletedFilter}`);
+      .where(sql`organization_id = ${organizationId}${deletedFilter}`);
     return row?.count ?? 0;
   }
 
@@ -129,18 +148,23 @@ export const getOrgEntityCount = async (ctx: DbContext, orgId: string, entityTyp
   const [row] = await db
     .select({ count: sql<number>`coalesce((${channelCountersTable.counts}->>${key})::int, 0)` })
     .from(channelCountersTable)
-    .where(eq(channelCountersTable.channelKey, orgId));
+    .where(eq(channelCountersTable.channelKey, organizationId));
   return row?.count ?? 0;
 };
 
 // Activity queries
 
+interface FindLatestUserActivityIdOpts {
+  organizationIds: string[];
+  entityTypes: SharedEntityType[];
+}
+
 /** Get the latest activity ID relevant to a user's organizations. */
 export const findLatestUserActivityId = async (
-  { var: { db } }: DbContext,
-  organizationIds: string[],
-  entityTypes: SharedEntityType[],
+  ctx: DbContext,
+  { organizationIds, entityTypes }: FindLatestUserActivityIdOpts,
 ) => {
+  const { db } = ctx.var;
   const result = await db
     .select({ id: activitiesTable.id })
     .from(activitiesTable)
@@ -158,6 +182,12 @@ export const findLatestUserActivityId = async (
 
 // Entity resolution queries
 
+interface ResolveEntityOpts<T extends EntityType> {
+  entityType: T;
+  identifier: string;
+  bySlug?: boolean;
+}
+
 /**
  * @internal Resolves an entity by ID or slug from its table.
  *
@@ -169,11 +199,10 @@ export const findLatestUserActivityId = async (
  * or self-operations where the user acts on their own data without permission checks.
  */
 export async function resolveEntity<T extends EntityType>(
-  { var: { db } }: DbContext,
-  entityType: T,
-  identifier: string,
-  bySlug = false,
+  ctx: DbContext,
+  { entityType, identifier, bySlug = false }: ResolveEntityOpts<T>,
 ): Promise<EntityModel<T> | undefined> {
+  const { db } = ctx.var;
   const table = getEntityTable(entityType);
 
   const identityCondition = bySlug && hasSlug(table) ? eq(table.slug, identifier) : eq(table.id, identifier);
@@ -187,12 +216,17 @@ export async function resolveEntity<T extends EntityType>(
   return entity as EntityModel<T> | undefined;
 }
 
+interface ResolveEntitiesOpts<T extends EntityType> {
+  entityType: T;
+  ids: string[];
+}
+
 /** @internal Resolves multiple entities by IDs. See {@link resolveEntity} for usage guidelines. */
 export async function resolveEntities<T extends EntityType>(
-  { var: { db } }: DbContext,
-  entityType: T,
-  ids: string[],
+  ctx: DbContext,
+  { entityType, ids }: ResolveEntitiesOpts<T>,
 ): Promise<Array<EntityModel<T>>> {
+  const { db } = ctx.var;
   if (!ids.length) return [];
 
   const table = getEntityTable(entityType);
@@ -213,13 +247,18 @@ export async function resolveEntities<T extends EntityType>(
 const publishedSqlFilter = (table: ResolvableTable) =>
   hasPublishedAt(table) ? sql.raw(' AND published_at IS NOT NULL') : sql.raw('');
 
+interface FindChangedEntityIdsOpts {
+  entityType: EntityType;
+  organizationId: string;
+  afterSeq: number;
+}
+
 /** Fetch IDs of entities that changed since a given seq. Lightweight ID-only query. */
 export const findChangedEntityIds = async (
-  { var: { db } }: DbContext,
-  entityType: EntityType,
-  organizationId: string,
-  afterSeq: number,
+  ctx: DbContext,
+  { entityType, organizationId, afterSeq }: FindChangedEntityIdsOpts,
 ) => {
+  const { db } = ctx.var;
   const table = getEntityTable(entityType);
 
   const rows = await db
@@ -232,11 +271,10 @@ export const findChangedEntityIds = async (
 
 /** Fetch IDs of entities that changed since a seq, split into live updates and soft-delete tombstones. */
 export const findChangedEntityDeltaIds = async (
-  { var: { db } }: DbContext,
-  entityType: EntityType,
-  organizationId: string,
-  afterSeq: number,
+  ctx: DbContext,
+  { entityType, organizationId, afterSeq }: FindChangedEntityIdsOpts,
 ) => {
+  const { db } = ctx.var;
   const table = getEntityTable(entityType);
   const deletedAtSelect = hasDeletedAt(table) ? sql.raw('deleted_at') : sql.raw('NULL');
 

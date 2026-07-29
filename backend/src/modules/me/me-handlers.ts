@@ -10,7 +10,7 @@ import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { getUserSessions } from '#/modules/me/helpers/get-user-info';
-import { deleteSessionsByIds, deleteUser, findUserById, updateUserMfa } from '#/modules/me/me-queries';
+import { deleteSessionsByIds, deleteUser, findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 import { meRoutes } from '#/modules/me/me-routes';
 import { deleteMyMembershipOp } from '#/modules/me/operations/delete-my-membership';
 import { getMeOp } from '#/modules/me/operations/get-me';
@@ -71,7 +71,7 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
   sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');
 
   // Re-select with userSelect to include activity timestamps (subqueries from user_counters table)
-  const userWithActivity = await findUserById(ctx);
+  const userWithActivity = await findCurrentUser(ctx);
 
   return ctx.json(userWithActivity, 200);
 });

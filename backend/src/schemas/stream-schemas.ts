@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { activityActions, appConfig } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { mockStreamNotification } from './stream-mocks';
-import { stxBaseSchema } from './sync-transaction-schemas';
+import { nullableStxBaseSchema } from './sync-transaction-schemas';
 
 /** Reusable schema for embedded-product propagation hints */
 const propagationHintSchema = z.object({
@@ -51,7 +51,7 @@ export const streamNotificationSchema = z
       .string()
       .nullable()
       .describe('Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)'),
-    stx: stxBaseSchema.nullable().describe('Sync transaction metadata for HLC conflict resolution'),
+    stx: nullableStxBaseSchema,
     batchUntilSeq: z
       .number()
       .int()

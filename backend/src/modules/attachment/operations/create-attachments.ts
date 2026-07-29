@@ -4,7 +4,7 @@ import { buildStx } from '#/core/stx';
 import { tenantContext, tenantRead } from '#/db/tenant-context';
 import { findAttachmentsByStxMutationId, insertAttachments } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
-import { getOrgEntityCount } from '#/modules/entities/entities-queries';
+import { getOrganizationEntityCount } from '#/modules/entities/entities-queries';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { canCreateEntity } from '#/permissions/can-create';
@@ -33,7 +33,10 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
   );
   if (existing) return { success: true as const, data: { data: existing, rejectedIds: [] as string[] } };
 
-  const currentAttachments = await getOrgEntityCount(ctx, organization.id, 'attachment');
+  const currentAttachments = await getOrganizationEntityCount(ctx, {
+    organizationId: organization.id,
+    entityType: 'attachment',
+  });
 
   if (attachmentRestrictions !== 0 && currentAttachments + input.length > attachmentRestrictions) {
     return { success: false as const, error: 'restrict_by_org', status: 429 as const };

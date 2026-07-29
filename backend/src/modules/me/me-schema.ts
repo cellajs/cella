@@ -6,8 +6,8 @@ import { passkeySchema, webAuthnAssertionSchema } from '#/modules/auth/passkeys/
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
 import { inactiveMembershipSchema } from '#/modules/memberships/memberships-schema';
-import { enabledOAuthProvidersEnum, userSchema } from '#/modules/user/user-schema';
-import { booleanTransformSchema } from '#/schemas';
+import { enabledOAuthProvidersSchema, userSchema } from '#/modules/user/user-schema';
+import { booleanTransformSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { mockMeAuthResponse, mockMeResponse, mockUploadTokenResponse } from './me-mocks';
 
@@ -28,7 +28,7 @@ export const meSchema = z
 
 export const meAuthDataSchema = z
   .object({
-    enabledOAuth: z.array(enabledOAuthProvidersEnum),
+    enabledOAuth: z.array(enabledOAuthProvidersSchema),
     hasTotp: z.boolean(),
     sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
     passkeys: z.array(passkeySchema),
@@ -45,18 +45,16 @@ export const uploadTokenSchema = z
     sub: z.string(),
     s3: z.boolean(),
     signature: z.string().nullable(),
-    params: z.union([
-      z
-        .object({
-          auth: z.object({
-            key: z.string(),
-            expires: z.string().optional(),
-          }),
-          // Allow additional arbitrary keys with any type in params
-        })
-        .catchall(z.any()),
-      z.null(),
-    ]),
+    params: z
+      .object({
+        auth: z.object({
+          key: z.string(),
+          expires: z.string().optional(),
+        }),
+        // Allow additional arbitrary keys with any type in params
+      })
+      .catchall(z.any())
+      .nullable(),
   })
   .openapi('UploadToken', {
     description: 'A signed token authorizing file uploads to the configured storage provider.',
@@ -69,7 +67,7 @@ export type { MeAuthResponse, MeResponse, UploadTokenResponse } from './types';
 
 export const uploadTokenQuerySchema = z.object({
   publicBucket: booleanTransformSchema,
-  organizationId: z.string().optional(),
+  organizationId: validUuidSchema.optional(),
   templateId: z.enum(appConfig.uploadTemplateIds),
 });
 

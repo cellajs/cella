@@ -64,14 +64,14 @@
         "example": {
           "data": [
             {
-              "id": "da336271-583f-4567-913c-f17c567ab81d",
-              "tenantId": "vw3f7p",
+              "id": "09ca1a84-3edb-4069-b434-4af619287b19",
+              "tenantId": "x38fpc",
               "channelType": "organization",
-              "channelId": "993dce90-023a-4125-a6a3-03215e93aa04",
-              "userId": "154db176-be65-484a-bb34-246b1f99f492",
-              "organizationId": "45a11f6e-5760-4a44-96c4-3c1b43d10162",
+              "channelId": "dbf3564f-37da-4f50-aea9-4469003a047f",
+              "userId": "cf39cd03-3802-43e4-83b7-1b24808a153d",
+              "organizationId": "dbf3564f-37da-4f50-aea9-4469003a047f",
               "role": "member",
-              "displayOrder": 43,
+              "displayOrder": 30,
               "muted": false,
               "archived": false
             }
@@ -319,20 +319,20 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "92f342dd-6e67-4956-ab1c-f91b3ce934d7",
+          "id": "14e27393-e22a-45d1-8c22-3250dc6fc109",
+          "tenantId": "k4z795",
           "channelType": "organization",
-          "channelId": "0b5344ae-d952-4047-b5e1-309a11b66764",
-          "userId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
-          "organizationId": "14e27393-e22a-45d1-8c22-3250dc6fc109",
+          "channelId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
+          "userId": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
+          "organizationId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
           "role": "member",
-          "displayOrder": 27,
+          "displayOrder": 93,
           "muted": false,
           "archived": false,
           "createdAt": "2024-10-28T10:38:59.996Z",
-          "createdBy": "e73242d3-88f3-450e-838c-c98f7f3d9215",
+          "createdBy": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
           "updatedAt": "2024-10-28T10:38:59.996Z",
-          "updatedBy": null,
-          "tenantId": "test01"
+          "updatedBy": null
         }
       },
       {
@@ -600,65 +600,51 @@
         "example": {
           "items": [
             {
-              "id": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
-              "entityType": "user",
-              "name": "Melinda Yost",
-              "firstName": "Chloe",
-              "lastName": "Feil",
-              "email": "stella.schultz64@gmail.com",
-              "slug": "orlo.oconner77",
+              "id": "407ebc2f-af54-4c33-9226-e98e2f9d8ade",
+              "createdAt": "2024-09-01T15:27:58.824Z",
+              "updatedAt": "2024-10-09T09:41:44.154Z",
+              "name": "Elmer Beahan",
               "description": null,
+              "entityType": "user",
+              "slug": "elmer.beahan",
               "thumbnailUrl": null,
               "bannerUrl": null,
-              "language": "en",
-              "mfaRequired": false,
-              "createdAt": "2024-11-21T01:19:53.533Z",
-              "updatedAt": "2024-11-21T01:19:53.533Z",
-              "updatedBy": null,
-              "lastStartedAt": "2024-11-21T01:19:53.533Z",
-              "lastSignInAt": "2024-11-21T01:19:53.533Z",
-              "lastSeenAt": "2024-11-21T01:19:53.533Z",
+              "email": "elmer_beahan40@hotmail.com",
+              "lastSeenAt": "2024-10-09T09:41:44.154Z",
               "membership": {
-                "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
-                "tenantId": "u87zf2",
+                "id": "d33f6120-b967-4064-bbb8-8b24b6b50c11",
+                "tenantId": "dbp099",
                 "channelType": "organization",
-                "channelId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
-                "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
-                "organizationId": "ab6c6ea4-cec4-470a-acfc-5636298aa0f2",
+                "channelId": "1008ac1a-ccec-476f-9baf-e65971876f04",
+                "userId": "407ebc2f-af54-4c33-9226-e98e2f9d8ade",
+                "organizationId": "1008ac1a-ccec-476f-9baf-e65971876f04",
                 "role": "admin",
-                "displayOrder": 83,
+                "displayOrder": 10,
                 "muted": false,
                 "archived": false
               }
             },
             {
-              "id": "772a771f-c150-465e-9635-46594859fc3d",
-              "entityType": "user",
-              "name": "Nash Miller",
-              "firstName": "Haskell",
-              "lastName": "Kulas",
-              "email": "rosario17@gmail.com",
-              "slug": "felix6",
+              "id": "74fc53a0-c64d-41a0-9d98-53aeb360296b",
+              "createdAt": "2024-05-10T18:17:52.266Z",
+              "updatedAt": "2024-11-05T16:38:04.981Z",
+              "name": "Nina Adams",
               "description": null,
+              "entityType": "user",
+              "slug": "nina.adams",
               "thumbnailUrl": null,
               "bannerUrl": null,
-              "language": "en",
-              "mfaRequired": false,
-              "createdAt": "2024-10-29T04:35:17.725Z",
-              "updatedAt": "2024-10-29T04:35:17.725Z",
-              "updatedBy": null,
-              "lastStartedAt": "2024-10-29T04:35:17.725Z",
-              "lastSignInAt": "2024-10-29T04:35:17.725Z",
-              "lastSeenAt": "2024-10-29T04:35:17.725Z",
+              "email": "nina.adams5@hotmail.com",
+              "lastSeenAt": "2024-11-05T16:38:04.981Z",
               "membership": {
-                "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
-                "tenantId": "lwj64z",
+                "id": "9e822f98-ecac-4acf-ab1f-e617c6f9a972",
+                "tenantId": "6xgvt4",
                 "channelType": "organization",
-                "channelId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
-                "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
-                "organizationId": "661de358-c94b-4156-816b-769bf63c907e",
-                "role": "member",
-                "displayOrder": 73,
+                "channelId": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
+                "userId": "74fc53a0-c64d-41a0-9d98-53aeb360296b",
+                "organizationId": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
+                "role": "admin",
+                "displayOrder": 6,
                 "muted": false,
                 "archived": false
               }
@@ -781,22 +767,8 @@
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references.",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "description": "Minimal user data for references, or null when no user is available.",
+                    "ref": "#/components/schemas/NullableUserMinimalBase"
                   }
                 }
               }
@@ -808,34 +780,46 @@
         "example": {
           "items": [
             {
-              "id": "e456f6f2-9b74-47a8-b97a-617f14497605",
+              "id": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
               "channelType": "organization",
-              "channelId": "c9f521e3-f100-4f6d-8b23-8d10af2a4b70",
-              "email": "vanessa_rau@yahoo.com",
-              "userId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
-              "tokenId": "fe212f50-796f-4e85-b592-b8e671b17b41",
-              "role": "admin",
+              "channelId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+              "email": "dustin_larkin@hotmail.com",
+              "userId": "50796fe8-5592-4b8e-9671-b17b41ee456f",
+              "tokenId": "617f1449-7605-4cc9-8f52-1e3f100f6db2",
+              "role": "member",
               "rejectedAt": null,
               "remindedAt": null,
               "createdAt": "2024-11-21T01:19:53.533Z",
-              "createdBy": "d29966a0-4b55-4092-86e5-ef73b6c996a2",
-              "organizationId": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
-              "tenantId": "test01"
+              "createdBy": {
+                "id": "8d10af2a-4b70-40b6-a3f2-0bc295d29966",
+                "name": "Adrain Kirlin",
+                "slug": "adrain_kirlin",
+                "thumbnailUrl": null,
+                "entityType": "user"
+              },
+              "organizationId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+              "tenantId": "yx645y"
             },
             {
-              "id": "d82be193-5e9d-4906-a125-ba7cf4de5ede",
+              "id": "ffcd93da-6f47-457f-bd00-cc2dc65b1a01",
               "channelType": "organization",
-              "channelId": "ccfef453-bf07-44c2-8ef7-7d580cc1edd9",
-              "email": "fanny_mccullough70@gmail.com",
-              "userId": "772a771f-c150-465e-9635-46594859fc3d",
-              "tokenId": "b422db63-39b8-413c-9f84-d7523c2ac382",
+              "channelId": "772a771f-c150-465e-9635-46594859fc3d",
+              "email": "ryann.jacobi12@gmail.com",
+              "userId": "6339b813-cf84-4d75-823c-2ac3827d82be",
+              "tokenId": "ba7cf4de-5ede-48cc-9fef-453bf074c2ef",
               "role": "member",
               "rejectedAt": null,
               "remindedAt": null,
               "createdAt": "2024-10-29T04:35:17.725Z",
-              "createdBy": "3cc0f3df-8449-4a14-a8ac-7c8981cd73a7",
-              "organizationId": "ffcd93da-6f47-457f-bd00-cc2dc65b1a01",
-              "tenantId": "test01"
+              "createdBy": {
+                "id": "7d580cc1-edd9-4017-be5b-49fb1c3cc0f3",
+                "name": "Okey Nikolaus",
+                "slug": "okey_nikolaus",
+                "thumbnailUrl": null,
+                "entityType": "user"
+              },
+              "organizationId": "772a771f-c150-465e-9635-46594859fc3d",
+              "tenantId": "pa56tp"
             }
           ],
           "total": 2

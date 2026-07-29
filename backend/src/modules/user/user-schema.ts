@@ -8,7 +8,7 @@ import { languageSchema, paginationQuerySchema, validCDNUrlSchema, validNameSche
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { mockUserResponse } from './user-mocks';
 
-export const enabledOAuthProvidersEnum = z.enum([...appConfig.enabledOAuthProviders] as [
+export const enabledOAuthProvidersSchema = z.enum([...appConfig.enabledOAuthProviders] as [
   EnabledOAuthProvider,
   ...EnabledOAuthProvider[],
 ]);
@@ -69,6 +69,6 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
   .partial();
 
 export const userListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
+  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt'),
   role: z.enum(appConfig.systemRoles).optional(),
 });

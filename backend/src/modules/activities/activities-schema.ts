@@ -2,15 +2,12 @@ import { z } from '@hono/zod-openapi';
 import { activityActions, appConfig, trackedEventTypes } from 'shared';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { activitiesTable } from '#/modules/activities/activities-db';
-import { paginationQuerySchema } from '#/schemas';
-import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
+import { entityTypeSchema, paginationQuerySchema } from '#/schemas';
+import { nullableStxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { mockActivityResponse } from './activities-mocks';
 
 /** Schema for activity actions enum - uses literal types from activityActions */
 export const activityActionSchema = z.enum(activityActions);
-
-/** Schema for entity types enum - uses literal types from appConfig */
-export const entityTypeSchema = z.enum(appConfig.entityTypes);
 
 /** Schema for resource types enum - uses literal types from appConfig */
 const resourceTypeSchema = z.enum(appConfig.resourceTypes);
@@ -29,8 +26,7 @@ export const activitySchema = z
     type: activityEventTypeSchema,
     // Override jsonb columns with properly typed schemas to avoid generic types in OpenAPI
     changedFields: z.array(z.string()).nullable(),
-    // A union generates proper anyOf in OpenAPI and avoids an allOf intersection.
-    stx: z.union([stxBaseSchema, z.null()]),
+    stx: nullableStxBaseSchema,
   })
   .openapi('Activity', {
     description: 'An auditable event recording an entity change, used for sync and history.',
@@ -39,12 +35,12 @@ export const activitySchema = z
 
 /** Query schema for filtering and paginating activities */
 export const activityListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['createdAt', 'type', 'tableName']).default('createdAt').optional(),
-  userId: activitySchema.shape.userId,
+  sort: z.enum(['createdAt', 'type', 'tableName']).default('createdAt'),
+  userId: activitySchema.shape.userId.optional(),
   entityType: entityTypeSchema.optional(),
   resourceType: resourceTypeSchema.optional(),
   action: activityActionSchema.optional(),
   tableName: activitySchema.shape.tableName.optional(),
   type: activityEventTypeSchema.optional(),
-  subjectId: activitySchema.shape.subjectId,
+  subjectId: activitySchema.shape.subjectId.optional(),
 });

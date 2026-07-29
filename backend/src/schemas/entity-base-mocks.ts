@@ -47,18 +47,30 @@ export const mockProductBase = (key = 'product-entity:default') =>
  * Generates a mock UserMinimalBase response.
  * Minimal user data for references (e.g. createdBy, updatedBy).
  */
-export const mockUserMinimalBase = (key = 'user-minimal:default') =>
+export const mockUserMinimalBase = (key = 'user-minimal:default', id?: string) =>
   withFakerSeed(key, () => {
     const firstName = faker.person.firstName();
     const lastName = faker.person.lastName();
     return {
-      id: mockUuid(),
+      id: id ?? mockUuid(),
       name: `${firstName} ${lastName}`,
       slug: faker.internet.username({ firstName, lastName }).toLowerCase(),
       thumbnailUrl: null,
       entityType: 'user' as const,
     };
   });
+
+/** Hydrates stored audit-user IDs to the minimal wire representation. */
+export const mockAuditUsers = (row: { createdBy: string | null; updatedBy: string | null }, key: string) => {
+  const createdBy = row.createdBy ? mockUserMinimalBase(`${key}:created-by`, row.createdBy) : null;
+  const updatedBy =
+    row.updatedBy === row.createdBy
+      ? createdBy
+      : row.updatedBy
+        ? mockUserMinimalBase(`${key}:updated-by`, row.updatedBy)
+        : null;
+  return { createdBy, updatedBy };
+};
 
 /**
  * Generates a mock UserBase response.

@@ -2,7 +2,7 @@ import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { findUserById, type UpdateMeOpts, updateMe } from '#/modules/me/me-queries';
+import { findCurrentUser, type UpdateMeOpts, updateMe } from '#/modules/me/me-queries';
 import { getIsoDate } from '#/utils/iso-date';
 
 interface UpdateMeInput {
@@ -42,6 +42,6 @@ export async function updateMeOp(ctx: AuthContext, input: UpdateMeInput) {
   await updateMe(ctx, { values: updateData as UpdateMeOpts['values'] });
   invalidateCache.user(user.id);
 
-  const userWithActivity = await findUserById(ctx);
+  const userWithActivity = await findCurrentUser(ctx);
   return userWithActivity;
 }

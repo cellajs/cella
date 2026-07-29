@@ -3,17 +3,24 @@ import { roles } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
-import { userSchema } from '#/modules/user/user-schema';
-import { maxLength } from '#/schemas';
+import { maxLength, validEmailSchema, validUuidSchema } from '#/schemas';
 import { mockSystemRoleBase, mockSystemRoleResponse } from './system-mocks';
 
 export const inviteBodySchema = z.object({
-  emails: userSchema.shape.email.array().min(1).max(50),
+  emails: validEmailSchema.array().min(1).max(50),
 });
 
 export const sendNewsletterBodySchema = z.object({
-  organizationIds: z.array(z.string().max(maxLength.id)),
-  roles: z.array(z.enum(roles.all)).min(1, { message: 'Role selection is required' }),
+  // An empty scope is allowed for the explicit toSelf preview mode.
+  organizationIds: validUuidSchema
+    .array()
+    .max(50)
+    .refine((ids) => new Set(ids).size === ids.length, 'Organization IDs must be unique'),
+  roles: z
+    .array(z.enum(roles.all))
+    .min(1, { message: 'Role selection is required' })
+    .max(roles.all.length)
+    .refine((items) => new Set(items).size === items.length, 'Roles must be unique'),
   subject: z.string().max(maxLength.field),
   content: z.string().max(maxLength.html),
 });

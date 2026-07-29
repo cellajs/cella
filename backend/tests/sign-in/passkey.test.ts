@@ -212,16 +212,14 @@ describe('Passkey Authentication', async () => {
       expect((error as ErrorResponse).type).toBe('forbidden_strategy');
     });
 
-    it('should handle malformed email in challenge request', async () => {
-      const { response: res, data } = await call(generatePasskeyChallenge, {
+    it('should reject malformed email in challenge request', async () => {
+      const { response, error } = await call(generatePasskeyChallenge, {
         body: { type: 'authentication', email: 'invalid-email' },
         headers: defaultHeaders,
       });
 
-      expect(res.status).toBe(200);
-      const response = data as { challengeBase64: string; credentialIds: string[] };
-      expect(response.challengeBase64).toBeDefined();
-      expect(response.credentialIds).toHaveLength(0);
+      expect(error).toBeInstanceOf(Error);
+      expect(response).toBeUndefined();
     });
   });
 

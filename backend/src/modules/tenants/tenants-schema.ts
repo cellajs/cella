@@ -103,6 +103,6 @@ export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
  * Query params for listing tenants.
  */
 export const tenantListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['createdAt', 'name']).default('createdAt').optional(),
+  sort: z.enum(['createdAt', 'name']).default('createdAt'),
   status: tenantStatusSchema.optional().describe('Filter by status'),
 });

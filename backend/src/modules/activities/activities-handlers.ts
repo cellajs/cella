@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { eq, ilike } from 'drizzle-orm';
 import type { Env } from '#/core/context';
 import { activitiesTable } from '#/modules/activities/activities-db';
-import { buildActivitiesListQuery, countActivitiesList } from '#/modules/activities/activities-queries';
+import { findActivitiesPaginated } from '#/modules/activities/activities-queries';
 import { activityRoutes } from '#/modules/activities/activities-routes';
 import { defaultHook } from '#/utils/default-hook';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -32,15 +32,8 @@ app.openapi(activityRoutes.getActivities, async (ctx) => {
     ...(q ? [ilike(activitiesTable.type, prepareStringForILikeFilter(q))] : []),
   ];
 
-  const activitiesQuery = buildActivitiesListQuery(ctx, { filters, sort, order });
-
-  // Total count
-  const total = await countActivitiesList(ctx, { filters, sort, order });
-
-  // Activites with pagination
-  const activities = await activitiesQuery.limit(limit).offset(offset);
-
-  return ctx.json({ items: activities, total }, 200);
+  const result = await findActivitiesPaginated(ctx, { filters, sort, order, limit, offset });
+  return ctx.json(result, 200);
 });
 
 export const activityHandlers = app;

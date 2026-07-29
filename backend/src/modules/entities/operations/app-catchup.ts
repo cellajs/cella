@@ -36,7 +36,7 @@ export async function answerCatchupViews(
       nodeKeys.add(pathHomeId(prefix));
     }
   }
-  const counterRows = nodeKeys.size > 0 ? await findChannelCountersByKeys(dbCtx, [...nodeKeys]) : [];
+  const counterRows = nodeKeys.size > 0 ? await findChannelCountersByKeys(dbCtx, { keys: [...nodeKeys] }) : [];
   const countersByNode = new Map(
     counterRows.map((r) => [r.channelKey, { ...parseCounterCounts(r.counts), path: r.path }]),
   );
@@ -115,7 +115,7 @@ export async function appCatchupOp(
   const organizationIdArray = Array.from(organizationIds);
 
   // One query for all org counter rows (membership signal + frontier rollups for hints).
-  const allCounterRows = await findChannelCountersByKeys(dbCtx, organizationIdArray);
+  const allCounterRows = await findChannelCountersByKeys(dbCtx, { keys: organizationIdArray });
   const allCounters = new Map(allCounterRows.map((r) => [r.channelKey, r.counts]));
 
   const changes: AppCatchupResponse['changes'] = {};
@@ -133,10 +133,10 @@ export async function appCatchupOp(
   let newCursor: string | null = cursor ?? null;
   if (!cursor || Object.keys(changes).length > 0) {
     newCursor =
-      (await findLatestUserActivityId(dbCtx, Array.from(organizationIds), [
-        ...appConfig.productEntityTypes,
-        ...appConfig.channelEntityTypes,
-      ])) ??
+      (await findLatestUserActivityId(dbCtx, {
+        organizationIds: Array.from(organizationIds),
+        entityTypes: [...appConfig.productEntityTypes, ...appConfig.channelEntityTypes],
+      })) ??
       cursor ??
       null;
   }
@@ -152,8 +152,8 @@ export async function appCatchupOp(
 export async function getLatestUserActivityId(organizationIds: Set<string>): Promise<string | null> {
   if (organizationIds.size === 0) return null;
 
-  return findLatestUserActivityId(dbCtx, Array.from(organizationIds), [
-    ...appConfig.productEntityTypes,
-    ...appConfig.channelEntityTypes,
-  ]);
+  return findLatestUserActivityId(dbCtx, {
+    organizationIds: Array.from(organizationIds),
+    entityTypes: [...appConfig.productEntityTypes, ...appConfig.channelEntityTypes],
+  });
 }

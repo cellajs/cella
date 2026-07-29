@@ -26,7 +26,7 @@ export const upsertLastStarted = async (ctx: AuthContext, { lastStartedAt }: Ups
 };
 
 /** Select a user by ID with activity timestamps (from user_counters). */
-export const findUserById = async (ctx: AuthContext) => {
+export const findCurrentUser = async (ctx: AuthContext) => {
   const { db, userId } = ctx.var;
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
   return user;
@@ -153,11 +153,13 @@ export const findPendingInvitations = async (ctx: DbContext, { userId }: FindPen
   return results.flat();
 };
 
+interface UpdateNewsletterOpts {
+  userId: string;
+  newsletter: boolean;
+}
+
 /** Update a user's newsletter preference. Used in unauthenticated unsubscribe flow. */
-export const updateNewsletter = async (
-  ctx: DbContext,
-  { userId, newsletter }: { userId: string; newsletter: boolean },
-) => {
+export const updateNewsletter = async (ctx: DbContext, { userId, newsletter }: UpdateNewsletterOpts) => {
   const { db } = ctx.var;
   return db.update(usersTable).set({ newsletter }).where(eq(usersTable.id, userId));
 };

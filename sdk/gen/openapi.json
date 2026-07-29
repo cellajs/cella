@@ -371,6 +371,18 @@
         },
         "x-tags": ["base", "users", "cella"]
       },
+      "NullableUserMinimalBase": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/UserMinimalBase"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Minimal user data for references, or null when no user is available.",
+        "x-tags": ["base", "users", "cella"]
+      },
       "UserBase": {
         "type": "object",
         "properties": {
@@ -510,24 +522,10 @@
             "type": ["string", "null"]
           },
           "createdBy": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/UserMinimalBase"
-              },
-              {
-                "type": ["object", "null"]
-              }
-            ]
+            "$ref": "#/components/schemas/NullableUserMinimalBase"
           },
           "updatedBy": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/UserMinimalBase"
-              },
-              {
-                "type": ["object", "null"]
-              }
-            ]
+            "$ref": "#/components/schemas/NullableUserMinimalBase"
           },
           "entityType": {
             "type": "string",
@@ -631,14 +629,14 @@
         ],
         "description": "Core membership fields shared across active and inactive memberships.",
         "example": {
-          "id": "da336271-583f-4567-913c-f17c567ab81d",
-          "tenantId": "vw3f7p",
+          "id": "ee163b99-3dce-4900-a23a-1256a303215e",
+          "tenantId": "7om1aq",
           "channelType": "organization",
-          "channelId": "993dce90-023a-4125-a6a3-03215e93aa04",
+          "channelId": "da336271-583f-4567-913c-f17c567ab81d",
           "userId": "154db176-be65-484a-bb34-246b1f99f492",
-          "organizationId": "45a11f6e-5760-4a44-96c4-3c1b43d10162",
-          "role": "member",
-          "displayOrder": 43,
+          "organizationId": "da336271-583f-4567-913c-f17c567ab81d",
+          "role": "admin",
+          "displayOrder": 38,
           "muted": false,
           "archived": false
         },
@@ -672,6 +670,32 @@
           "sourceId": "7762c287-9155-4500-95f3-d63ec6185e0c",
           "fieldTimestamps": {}
         },
+        "x-tags": ["base", "cella"]
+      },
+      "NullableStxBase": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/StxBase"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Sync transaction metadata, or null when an event has no sync transaction.",
+        "x-tags": ["base", "cella"]
+      },
+      "BooleanQueryValue": {
+        "anyOf": [
+          {
+            "type": "string",
+            "enum": ["true", "false"]
+          },
+          {
+            "type": "boolean"
+          }
+        ],
+        "default": "false",
+        "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
         "x-tags": ["base", "cella"]
       },
       "StreamNotification": {
@@ -722,15 +746,7 @@
             "description": "Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)"
           },
           "stx": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StxBase"
-              },
-              {
-                "type": ["object", "null"],
-                "description": "Sync transaction metadata for HLC conflict resolution"
-              }
-            ]
+            "$ref": "#/components/schemas/NullableStxBase"
           },
           "batchUntilSeq": {
             "type": ["integer", "null"],
@@ -1073,26 +1089,28 @@
         "description": "The currently authenticated user with their system admin status.",
         "example": {
           "user": {
-            "id": "caad4530-7189-4ad0-8822-372adc47fa07",
+            "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
             "entityType": "user",
-            "name": "Donald McClure",
-            "firstName": "Donald",
-            "lastName": "McClure",
-            "email": "donald.mcclure57@yahoo.com",
-            "slug": "donaldmcclure74",
+            "name": "Alicia Fritsch DVM",
+            "firstName": "Alicia",
+            "lastName": "Fritsch",
+            "email": "alicia_fritsch@hotmail.com",
+            "slug": "aliciafritsch34",
             "description": null,
             "thumbnailUrl": null,
             "bannerUrl": null,
             "language": "en",
             "newsletter": true,
             "mfaRequired": false,
-            "userFlags": {},
-            "createdAt": "2024-07-14T11:38:21.926Z",
-            "updatedAt": "2024-07-14T11:38:21.926Z",
+            "userFlags": {
+              "finishedOnboarding": false
+            },
+            "createdAt": "2024-05-02T20:53:18.498Z",
+            "updatedAt": "2024-05-02T20:53:18.498Z",
             "updatedBy": null,
-            "lastStartedAt": "2024-07-14T11:38:21.926Z",
-            "lastSignInAt": "2024-07-14T11:38:21.926Z",
-            "lastSeenAt": "2024-07-14T11:38:21.926Z"
+            "lastStartedAt": "2024-05-02T20:53:18.498Z",
+            "lastSignInAt": "2024-05-02T20:53:18.498Z",
+            "lastSeenAt": "2024-05-02T20:53:18.498Z"
           },
           "isSystemAdmin": false
         },
@@ -1205,24 +1223,26 @@
         "example": {
           "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
           "entityType": "user",
-          "name": "Cathy Hodkiewicz",
-          "firstName": "Cathy",
-          "lastName": "Hodkiewicz",
-          "email": "cathy.hodkiewicz@hotmail.com",
-          "slug": "cathyhodkiewicz17",
+          "name": "Jake Senger",
+          "firstName": "Jake",
+          "lastName": "Senger",
+          "email": "jake_senger@hotmail.com",
+          "slug": "jakesenger90",
           "description": null,
           "thumbnailUrl": null,
           "bannerUrl": null,
           "language": "en",
           "newsletter": false,
           "mfaRequired": false,
-          "userFlags": {},
-          "createdAt": "2024-12-13T10:04:17.464Z",
-          "updatedAt": "2024-12-13T10:04:17.464Z",
+          "userFlags": {
+            "finishedOnboarding": false
+          },
+          "createdAt": "2024-06-15T02:53:22.776Z",
+          "updatedAt": "2024-06-15T02:53:22.776Z",
           "updatedBy": null,
-          "lastStartedAt": "2024-12-13T10:04:17.464Z",
-          "lastSignInAt": "2024-12-13T10:04:17.464Z",
-          "lastSeenAt": "2024-12-13T10:04:17.464Z"
+          "lastStartedAt": "2024-06-15T02:53:22.776Z",
+          "lastSignInAt": "2024-06-15T02:53:22.776Z",
+          "lastSeenAt": "2024-06-15T02:53:22.776Z"
         },
         "x-tags": ["data", "users", "cella"]
       },
@@ -1451,14 +1471,7 @@
             "type": ["string", "null"]
           },
           "createdBy": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/UserMinimalBase"
-              },
-              {
-                "type": ["object", "null"]
-              }
-            ]
+            "$ref": "#/components/schemas/NullableUserMinimalBase"
           },
           "organizationId": {
             "type": "string",
@@ -1482,19 +1495,25 @@
         ],
         "description": "A membership record for a user who has not yet accepted an invitation.",
         "example": {
-          "id": "cf791004-1364-4e1a-b066-c72c120aaea2",
+          "id": "4fa889f9-15ca-4730-a060-e4167170b7db",
           "channelType": "organization",
-          "channelId": "5440aeff-3fb0-400b-98b1-ebefcdf13a71",
-          "email": "luther34@gmail.com",
-          "userId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
-          "tokenId": "1ea0bf25-06d9-4e65-9415-68a14ed89fa2",
+          "channelId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
+          "email": "edna.ohara@gmail.com",
+          "userId": "2506d9e6-5415-468a-814e-d89fa24cf791",
+          "tokenId": "c72c120a-aea2-4d54-840a-eff3fb000b8b",
           "role": "admin",
           "rejectedAt": null,
           "remindedAt": null,
           "createdAt": "2024-02-07T13:46:57.160Z",
-          "createdBy": "d867375a-62c7-4ac5-86d4-66be272d180e",
-          "organizationId": "4fa889f9-15ca-4730-a060-e4167170b7db",
-          "tenantId": "test01"
+          "createdBy": {
+            "id": "ebefcdf1-3a71-453a-99a7-e765c6d86737",
+            "name": "Lynda Aufderhar",
+            "slug": "lynda_aufderhar85",
+            "thumbnailUrl": null,
+            "entityType": "user"
+          },
+          "organizationId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
+          "tenantId": "2wo2oz"
         },
         "x-tags": ["data", "memberships", "cella"]
       },
@@ -1514,30 +1533,23 @@
             "type": ["string", "null"]
           },
           "params": {
-            "anyOf": [
-              {
+            "type": ["object", "null"],
+            "properties": {
+              "auth": {
                 "type": "object",
                 "properties": {
-                  "auth": {
-                    "type": "object",
-                    "properties": {
-                      "key": {
-                        "type": "string"
-                      },
-                      "expires": {
-                        "type": "string"
-                      }
-                    },
-                    "required": ["key"]
+                  "key": {
+                    "type": "string"
+                  },
+                  "expires": {
+                    "type": "string"
                   }
                 },
-                "required": ["auth"],
-                "additionalProperties": {}
-              },
-              {
-                "type": "null"
+                "required": ["key"]
               }
-            ]
+            },
+            "required": ["auth"],
+            "additionalProperties": {}
           }
         },
         "required": ["publicBucket", "sub", "s3", "signature", "params"],
@@ -1679,9 +1691,9 @@
           "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
           "email": "ahmed.braun57@gmail.com",
           "type": "contact",
-          "message": "Sapiente antiquus temptatio.",
-          "createdAt": "2024-12-03T03:40:42.368Z",
-          "wasInvited": true
+          "message": "Amitto sapiente antiquus temptatio verus mollitia.",
+          "createdAt": "2024-03-17T12:06:02.574Z",
+          "wasInvited": false
         },
         "x-tags": ["data", "requests", "cella"]
       },
@@ -1723,24 +1735,10 @@
             "maxLength": 2048
           },
           "createdBy": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/UserMinimalBase"
-              },
-              {
-                "type": ["object", "null"]
-              }
-            ]
+            "$ref": "#/components/schemas/NullableUserMinimalBase"
           },
           "updatedBy": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/UserMinimalBase"
-              },
-              {
-                "type": ["object", "null"]
-              }
-            ]
+            "$ref": "#/components/schemas/NullableUserMinimalBase"
           },
           "publishedAt": {
             "type": ["string", "null"]
@@ -1904,12 +1902,20 @@
         ],
         "description": "The main channel entity is an organization.",
         "example": {
+          "createdAt": "2024-12-25T15:04:42.969Z",
           "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-          "tenantId": "d1lgzb",
           "entityType": "organization",
-          "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+          "tenantId": "d1lgzb",
           "name": "Spencer, Pouros and Bergnaum",
+          "updatedAt": "2024-12-25T15:04:42.969Z",
           "slug": "spencer-pouros-and-bergnaum",
+          "thumbnailUrl": null,
+          "bannerUrl": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "publishedAt": "2024-12-25T15:04:42.969Z",
+          "publicAt": null,
+          "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "shortName": "Spencer,",
           "country": "Sweden",
           "timezone": "Europe/Vaduz",
@@ -1917,30 +1923,22 @@
           "languages": ["en"],
           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
           "color": "#cda6af",
-          "thumbnailUrl": null,
-          "bannerUrl": null,
           "logoUrl": null,
           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
           "chatSupport": true,
           "organizationFlags": {},
           "setupConfig": {},
-          "publishedAt": "2024-12-25T15:04:42.969Z",
-          "publicAt": null,
-          "createdAt": "2024-12-25T15:04:42.969Z",
-          "createdBy": null,
-          "updatedAt": "2024-12-25T15:04:42.969Z",
-          "updatedBy": null,
           "included": {
             "membership": {
               "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
-              "tenantId": "6vxzq0",
+              "tenantId": "d1lgzb",
               "channelType": "organization",
-              "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
-              "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
+              "channelId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+              "userId": "2effb0cf-d2bd-45e6-abcd-21de08509c32",
               "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-              "role": "admin",
-              "displayOrder": 2,
+              "role": "member",
+              "displayOrder": 18,
               "muted": false,
               "archived": false
             },
@@ -2126,37 +2124,50 @@
         ],
         "description": "A product entity for file attachment metadata.",
         "example": {
+          "createdAt": "2024-05-01T22:40:37.374Z",
           "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
-          "tenantId": "t58r8f",
           "entityType": "attachment",
-          "name": "rightfully_lest_noted.mp3",
+          "tenantId": "t58r8f",
+          "name": "ick_thoroughly_coincide.text",
+          "updatedAt": "2024-05-01T22:40:37.374Z",
+          "stx": {
+            "mutationId": "d81d96a7-bdc8-427d-b21b-a6fd6449bad7",
+            "sourceId": "036cee36-25c5-42eb-81ab-e93904602179",
+            "fieldTimestamps": {}
+          },
           "description": null,
-          "keywords": "universe explicabo aliquid",
-          "publicBucket": false,
-          "bucketName": "attachments",
-          "groupId": null,
-          "filename": "rightfully_lest_noted.mp3",
-          "contentType": "text/calendar",
-          "convertedContentType": null,
-          "size": "6077039",
-          "originalKey": "uploads/enhqurk6hu54pnfytf99mpmu/rightfully_lest_noted.mp3",
-          "convertedKey": null,
-          "thumbnailKey": null,
-          "thumbnailTinyKey": null,
-          "createdAt": "2024-10-12T12:26:26.417Z",
-          "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
-          "updatedAt": "2024-10-12T12:26:26.417Z",
-          "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+          "keywords": "dolores cetera aetas",
+          "createdBy": {
+            "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+            "name": "Freddie Littel",
+            "slug": "freddie_littel16",
+            "thumbnailUrl": null,
+            "entityType": "user"
+          },
+          "updatedBy": {
+            "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+            "name": "Freddie Littel",
+            "slug": "freddie_littel16",
+            "thumbnailUrl": null,
+            "entityType": "user"
+          },
           "deletedAt": null,
           "deletedBy": null,
           "publicAt": null,
-          "seq": 246,
-          "stx": {
-            "mutationId": "e036cee3-625c-452e-ab1a-be9390460217",
-            "sourceId": "0841e0bb-2810-4252-8874-9789e1db3e97",
-            "fieldTimestamps": {}
-          },
-          "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
+          "seq": 447,
+          "publicBucket": false,
+          "bucketName": "attachments",
+          "taskId": null,
+          "groupId": null,
+          "filename": "ick_thoroughly_coincide.text",
+          "contentType": "application/epub+zip",
+          "convertedContentType": null,
+          "size": "7202058",
+          "originalKey": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text",
+          "convertedKey": null,
+          "thumbnailKey": null,
+          "thumbnailTinyKey": null,
+          "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
         },
         "x-tags": ["data", "attachments", "cella"]
       },
@@ -2235,20 +2246,20 @@
         ],
         "description": "A user's membership in a channel entity, including role and activity data.",
         "example": {
-          "id": "92f342dd-6e67-4956-ab1c-f91b3ce934d7",
+          "id": "14e27393-e22a-45d1-8c22-3250dc6fc109",
+          "tenantId": "k4z795",
           "channelType": "organization",
-          "channelId": "0b5344ae-d952-4047-b5e1-309a11b66764",
-          "userId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
-          "organizationId": "14e27393-e22a-45d1-8c22-3250dc6fc109",
+          "channelId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
+          "userId": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
+          "organizationId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
           "role": "member",
-          "displayOrder": 27,
+          "displayOrder": 93,
           "muted": false,
           "archived": false,
           "createdAt": "2024-10-28T10:38:59.996Z",
-          "createdBy": "e73242d3-88f3-450e-838c-c98f7f3d9215",
+          "createdBy": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
           "updatedAt": "2024-10-28T10:38:59.996Z",
-          "updatedBy": null,
-          "tenantId": "test01"
+          "updatedBy": null
         },
         "x-tags": ["data", "memberships", "cella"]
       }
@@ -2326,7 +2337,9 @@
                 "properties": {
                   "email": {
                     "type": "string",
-                    "format": "email"
+                    "format": "email",
+                    "minLength": 4,
+                    "maxLength": 255
                   }
                 },
                 "required": ["email"]
@@ -2730,7 +2743,9 @@
                 "properties": {
                   "email": {
                     "type": "string",
-                    "format": "email"
+                    "format": "email",
+                    "minLength": 4,
+                    "maxLength": 255
                   }
                 },
                 "required": ["email"]
@@ -3067,9 +3082,12 @@
                 "example": {
                   "id": "e80d32e1-5270-4425-bdfd-40a4e3fc9492",
                   "userId": "f95b6005-cf61-43b8-9a92-03dd84c4ebd9",
+                  "deviceName": "iPhone",
+                  "deviceType": "mobile",
+                  "deviceOs": "iOS",
+                  "browser": "Safari",
                   "nameOnDevice": "Safari on iPhone",
-                  "userAgent": "Mozilla/5.0 (Linux; Android 11; SM-G998B) AppleWebKit/576.15 (KHTML, like Gecko) Chrome/108.7.7.15 Mobile Safari/574.19",
-                  "createdAt": "2024-08-15T07:07:12.485Z"
+                  "createdAt": "2024-06-08T07:07:34.910Z"
                 }
               }
             }
@@ -3168,6 +3186,8 @@
                   },
                   "email": {
                     "type": "string",
+                    "format": "email",
+                    "minLength": 4,
                     "maxLength": 255
                   }
                 },
@@ -3259,6 +3279,8 @@
                   },
                   "email": {
                     "type": "string",
+                    "format": "email",
+                    "minLength": 4,
                     "maxLength": 255
                   }
                 },
@@ -3721,26 +3743,28 @@
                 },
                 "example": {
                   "user": {
-                    "id": "caad4530-7189-4ad0-8822-372adc47fa07",
+                    "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
                     "entityType": "user",
-                    "name": "Donald McClure",
-                    "firstName": "Donald",
-                    "lastName": "McClure",
-                    "email": "donald.mcclure57@yahoo.com",
-                    "slug": "donaldmcclure74",
+                    "name": "Alicia Fritsch DVM",
+                    "firstName": "Alicia",
+                    "lastName": "Fritsch",
+                    "email": "alicia_fritsch@hotmail.com",
+                    "slug": "aliciafritsch34",
                     "description": null,
                     "thumbnailUrl": null,
                     "bannerUrl": null,
                     "language": "en",
                     "newsletter": true,
                     "mfaRequired": false,
-                    "userFlags": {},
-                    "createdAt": "2024-07-14T11:38:21.926Z",
-                    "updatedAt": "2024-07-14T11:38:21.926Z",
+                    "userFlags": {
+                      "finishedOnboarding": false
+                    },
+                    "createdAt": "2024-05-02T20:53:18.498Z",
+                    "updatedAt": "2024-05-02T20:53:18.498Z",
                     "updatedBy": null,
-                    "lastStartedAt": "2024-07-14T11:38:21.926Z",
-                    "lastSignInAt": "2024-07-14T11:38:21.926Z",
-                    "lastSeenAt": "2024-07-14T11:38:21.926Z"
+                    "lastStartedAt": "2024-05-02T20:53:18.498Z",
+                    "lastSignInAt": "2024-05-02T20:53:18.498Z",
+                    "lastSeenAt": "2024-05-02T20:53:18.498Z"
                   },
                   "isSystemAdmin": false
                 }
@@ -3844,24 +3868,26 @@
                 "example": {
                   "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
                   "entityType": "user",
-                  "name": "Cathy Hodkiewicz",
-                  "firstName": "Cathy",
-                  "lastName": "Hodkiewicz",
-                  "email": "cathy.hodkiewicz@hotmail.com",
-                  "slug": "cathyhodkiewicz17",
+                  "name": "Jake Senger",
+                  "firstName": "Jake",
+                  "lastName": "Senger",
+                  "email": "jake_senger@hotmail.com",
+                  "slug": "jakesenger90",
                   "description": null,
                   "thumbnailUrl": null,
                   "bannerUrl": null,
                   "language": "en",
                   "newsletter": false,
                   "mfaRequired": false,
-                  "userFlags": {},
-                  "createdAt": "2024-12-13T10:04:17.464Z",
-                  "updatedAt": "2024-12-13T10:04:17.464Z",
+                  "userFlags": {
+                    "finishedOnboarding": false
+                  },
+                  "createdAt": "2024-06-15T02:53:22.776Z",
+                  "updatedAt": "2024-06-15T02:53:22.776Z",
                   "updatedBy": null,
-                  "lastStartedAt": "2024-12-13T10:04:17.464Z",
-                  "lastSignInAt": "2024-12-13T10:04:17.464Z",
-                  "lastSeenAt": "2024-12-13T10:04:17.464Z"
+                  "lastStartedAt": "2024-06-15T02:53:22.776Z",
+                  "lastSignInAt": "2024-06-15T02:53:22.776Z",
+                  "lastSeenAt": "2024-06-15T02:53:22.776Z"
                 }
               }
             }
@@ -3986,24 +4012,26 @@
                 "example": {
                   "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
                   "entityType": "user",
-                  "name": "Cathy Hodkiewicz",
-                  "firstName": "Cathy",
-                  "lastName": "Hodkiewicz",
-                  "email": "cathy.hodkiewicz@hotmail.com",
-                  "slug": "cathyhodkiewicz17",
+                  "name": "Jake Senger",
+                  "firstName": "Jake",
+                  "lastName": "Senger",
+                  "email": "jake_senger@hotmail.com",
+                  "slug": "jakesenger90",
                   "description": null,
                   "thumbnailUrl": null,
                   "bannerUrl": null,
                   "language": "en",
                   "newsletter": false,
                   "mfaRequired": false,
-                  "userFlags": {},
-                  "createdAt": "2024-12-13T10:04:17.464Z",
-                  "updatedAt": "2024-12-13T10:04:17.464Z",
+                  "userFlags": {
+                    "finishedOnboarding": false
+                  },
+                  "createdAt": "2024-06-15T02:53:22.776Z",
+                  "updatedAt": "2024-06-15T02:53:22.776Z",
                   "updatedBy": null,
-                  "lastStartedAt": "2024-12-13T10:04:17.464Z",
-                  "lastSignInAt": "2024-12-13T10:04:17.464Z",
-                  "lastSeenAt": "2024-12-13T10:04:17.464Z"
+                  "lastStartedAt": "2024-06-15T02:53:22.776Z",
+                  "lastSignInAt": "2024-06-15T02:53:22.776Z",
+                  "lastSeenAt": "2024-06-15T02:53:22.776Z"
                 }
               }
             }
@@ -4158,19 +4186,25 @@
                         "bannerUrl": null
                       },
                       "inactiveMembership": {
-                        "id": "3f5e59d4-e502-4132-8e0d-915e1951a439",
+                        "id": "33bb76f4-56ce-4cd0-9331-f680165d54a9",
                         "channelType": "organization",
-                        "channelId": "dc3036bd-bd6a-4ea8-8385-228db2dcc869",
-                        "email": "preston36@gmail.com",
-                        "userId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
-                        "tokenId": "825afcfd-ad27-4c12-81b8-610c7358603f",
+                        "channelId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
+                        "email": "christine5@yahoo.com",
+                        "userId": "fdad27c1-21b8-4610-ac73-58603f33f5e5",
+                        "tokenId": "915e1951-a439-40dc-9303-6bdbd6aea838",
                         "role": "member",
                         "rejectedAt": null,
                         "remindedAt": null,
                         "createdAt": "2024-11-13T15:29:06.546Z",
-                        "createdBy": "00a860e8-42d5-4fdb-a0c0-498664dbe27b",
-                        "organizationId": "33bb76f4-56ce-4cd0-9331-f680165d54a9",
-                        "tenantId": "test01"
+                        "createdBy": {
+                          "id": "228db2dc-c869-402a-b1c2-b305fd00a860",
+                          "name": "Stacy Monahan",
+                          "slug": "stacy.monahan13",
+                          "thumbnailUrl": null,
+                          "entityType": "user"
+                        },
+                        "organizationId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
+                        "tenantId": "i5coyr"
                       }
                     },
                     {
@@ -4186,19 +4220,25 @@
                         "bannerUrl": null
                       },
                       "inactiveMembership": {
-                        "id": "40302515-5a0c-4427-9dd4-7dee4eb2c5eb",
+                        "id": "c2a25f30-823d-40d7-af0c-f6c90c7756a6",
                         "channelType": "organization",
-                        "channelId": "221aad91-1de2-4e38-93b7-dcc8a33619bf",
-                        "email": "mitchell.cummerata29@gmail.com",
-                        "userId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
-                        "tokenId": "7ef9bfca-0c17-4be8-8d73-0a05e99f5949",
+                        "channelId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
+                        "email": "preston_king81@hotmail.com",
+                        "userId": "ca0c17be-8d73-40a0-95e9-9f5949340302",
+                        "tokenId": "7dee4eb2-c5eb-4722-91aa-d911de2e383b",
                         "role": "admin",
                         "rejectedAt": null,
                         "remindedAt": null,
                         "createdAt": "2024-04-11T17:15:50.993Z",
-                        "createdBy": "79eeb9fc-d1b1-4f1e-a874-19513f16c2bc",
-                        "organizationId": "c2a25f30-823d-40d7-af0c-f6c90c7756a6",
-                        "tenantId": "test01"
+                        "createdBy": {
+                          "id": "dcc8a336-19bf-450f-b2bc-92443279eeb9",
+                          "name": "Joshua Morar",
+                          "slug": "joshua.morar34",
+                          "thumbnailUrl": null,
+                          "entityType": "user"
+                        },
+                        "organizationId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
+                        "tenantId": "gwylqy"
                       }
                     }
                   ],
@@ -4394,23 +4434,17 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "boolean"
-                }
-              ],
-              "default": "false"
+              "$ref": "#/components/schemas/BooleanQueryValue"
             },
             "required": false,
+            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
             "name": "publicBucket",
             "in": "query"
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
             "required": false,
             "name": "organizationId",
@@ -4984,7 +5018,9 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "format": "email"
+                      "format": "email",
+                      "minLength": 4,
+                      "maxLength": 255
                     },
                     "minItems": 1,
                     "maxItems": 50
@@ -5230,24 +5266,26 @@
                 "example": {
                   "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
                   "entityType": "user",
-                  "name": "Cathy Hodkiewicz",
-                  "firstName": "Cathy",
-                  "lastName": "Hodkiewicz",
-                  "email": "cathy.hodkiewicz@hotmail.com",
-                  "slug": "cathyhodkiewicz17",
+                  "name": "Jake Senger",
+                  "firstName": "Jake",
+                  "lastName": "Senger",
+                  "email": "jake_senger@hotmail.com",
+                  "slug": "jakesenger90",
                   "description": null,
                   "thumbnailUrl": null,
                   "bannerUrl": null,
                   "language": "en",
                   "newsletter": false,
                   "mfaRequired": false,
-                  "userFlags": {},
-                  "createdAt": "2024-12-13T10:04:17.464Z",
-                  "updatedAt": "2024-12-13T10:04:17.464Z",
+                  "userFlags": {
+                    "finishedOnboarding": false
+                  },
+                  "createdAt": "2024-06-15T02:53:22.776Z",
+                  "updatedAt": "2024-06-15T02:53:22.776Z",
                   "updatedBy": null,
-                  "lastStartedAt": "2024-12-13T10:04:17.464Z",
-                  "lastSignInAt": "2024-12-13T10:04:17.464Z",
-                  "lastSeenAt": "2024-12-13T10:04:17.464Z"
+                  "lastStartedAt": "2024-06-15T02:53:22.776Z",
+                  "lastSignInAt": "2024-06-15T02:53:22.776Z",
+                  "lastSeenAt": "2024-06-15T02:53:22.776Z"
                 }
               }
             }
@@ -5290,17 +5328,10 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "boolean"
-                }
-              ],
-              "default": "false"
+              "$ref": "#/components/schemas/BooleanQueryValue"
             },
             "required": false,
+            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
             "name": "toSelf",
             "in": "query"
           }
@@ -5316,8 +5347,9 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "maxLength": 50
-                    }
+                      "format": "uuid"
+                    },
+                    "maxItems": 50
                   },
                   "roles": {
                     "type": "array",
@@ -5325,7 +5357,8 @@
                       "type": "string",
                       "enum": ["admin", "member"]
                     },
-                    "minItems": 1
+                    "minItems": 1,
+                    "maxItems": 2
                   },
                   "subject": {
                     "type": "string",
@@ -5412,7 +5445,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "offset",
@@ -5420,7 +5454,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "limit",
@@ -5876,9 +5911,10 @@
                 "properties": {
                   "domain": {
                     "type": "string",
+                    "format": "hostname",
                     "minLength": 4,
                     "maxLength": 255,
-                    "pattern": "^[a-z0-9].*[a-z0-9]$"
+                    "pattern": "^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$"
                   }
                 },
                 "required": ["domain"]
@@ -6291,8 +6327,9 @@
                 "properties": {
                   "email": {
                     "type": "string",
-                    "maxLength": 255,
-                    "format": "email"
+                    "format": "email",
+                    "minLength": 4,
+                    "maxLength": 255
                   },
                   "type": {
                     "type": "string",
@@ -6392,7 +6429,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "offset",
@@ -6400,7 +6438,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "limit",
@@ -6601,8 +6640,9 @@
                   "required": ["user", "organization", "attachment"]
                 },
                 "example": {
-                  "user": 150,
-                  "organization": 12
+                  "user": 404,
+                  "organization": 303,
+                  "attachment": 387
                 }
               }
             }
@@ -6674,7 +6714,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "offset",
@@ -6682,7 +6723,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "limit",
@@ -6763,34 +6805,36 @@
                     {
                       "id": "af54c332-26e9-48e2-9f9d-8ade4a445d7f",
                       "entityType": "user",
-                      "name": "Beatrice Gutmann",
-                      "firstName": "Beatrice",
-                      "lastName": "Gutmann",
-                      "email": "beatrice.gutmann@gmail.com",
-                      "slug": "beatricegutmann",
+                      "name": "Elmer Beahan",
+                      "firstName": "Elmer",
+                      "lastName": "Beahan",
+                      "email": "elmer.beahan@gmail.com",
+                      "slug": "elmerbeahan78",
                       "description": null,
                       "thumbnailUrl": null,
                       "bannerUrl": null,
                       "language": "en",
                       "newsletter": false,
                       "mfaRequired": false,
-                      "userFlags": {},
-                      "createdAt": "2024-11-10T22:55:01.924Z",
-                      "updatedAt": "2024-11-10T22:55:01.924Z",
+                      "userFlags": {
+                        "finishedOnboarding": false
+                      },
+                      "createdAt": "2024-12-14T16:10:19.376Z",
+                      "updatedAt": "2024-12-14T16:10:19.376Z",
                       "updatedBy": null,
-                      "lastStartedAt": "2024-11-10T22:55:01.924Z",
-                      "lastSignInAt": "2024-11-10T22:55:01.924Z",
-                      "lastSeenAt": "2024-11-10T22:55:01.924Z",
+                      "lastStartedAt": "2024-12-14T16:10:19.376Z",
+                      "lastSignInAt": "2024-12-14T16:10:19.376Z",
+                      "lastSeenAt": "2024-12-14T16:10:19.376Z",
                       "memberships": [
                         {
-                          "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
-                          "tenantId": "u87zf2",
+                          "id": "d33f6120-b967-4064-bbb8-8b24b6b50c11",
+                          "tenantId": "dbp099",
                           "channelType": "organization",
-                          "channelId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
+                          "channelId": "1008ac1a-ccec-476f-9baf-e65971876f04",
                           "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
-                          "organizationId": "ab6c6ea4-cec4-470a-acfc-5636298aa0f2",
-                          "role": "admin",
-                          "displayOrder": 83,
+                          "organizationId": "1008ac1a-ccec-476f-9baf-e65971876f04",
+                          "role": "member",
+                          "displayOrder": 70,
                           "muted": false,
                           "archived": false
                         }
@@ -6799,34 +6843,36 @@
                     {
                       "id": "c64d1a0d-9853-4aeb-8360-296b55c24f83",
                       "entityType": "user",
-                      "name": "Lina Kuhn",
-                      "firstName": "Lina",
-                      "lastName": "Kuhn",
-                      "email": "lina_kuhn75@gmail.com",
-                      "slug": "linakuhn64",
+                      "name": "Nina Adams",
+                      "firstName": "Nina",
+                      "lastName": "Adams",
+                      "email": "nina.adams@hotmail.com",
+                      "slug": "ninaadams",
                       "description": null,
                       "thumbnailUrl": null,
                       "bannerUrl": null,
                       "language": "en",
                       "newsletter": true,
                       "mfaRequired": false,
-                      "userFlags": {},
-                      "createdAt": "2024-05-18T09:20:42.117Z",
-                      "updatedAt": "2024-05-18T09:20:42.117Z",
+                      "userFlags": {
+                        "finishedOnboarding": false
+                      },
+                      "createdAt": "2024-01-03T10:14:05.394Z",
+                      "updatedAt": "2024-01-03T10:14:05.394Z",
                       "updatedBy": null,
-                      "lastStartedAt": "2024-05-18T09:20:42.117Z",
-                      "lastSignInAt": "2024-05-18T09:20:42.117Z",
-                      "lastSeenAt": "2024-05-18T09:20:42.117Z",
+                      "lastStartedAt": "2024-01-03T10:14:05.394Z",
+                      "lastSignInAt": "2024-01-03T10:14:05.394Z",
+                      "lastSeenAt": "2024-01-03T10:14:05.394Z",
                       "memberships": [
                         {
-                          "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
-                          "tenantId": "lwj64z",
+                          "id": "9e822f98-ecac-4acf-ab1f-e617c6f9a972",
+                          "tenantId": "6xgvt4",
                           "channelType": "organization",
-                          "channelId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
+                          "channelId": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
                           "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
-                          "organizationId": "661de358-c94b-4156-816b-769bf63c907e",
-                          "role": "member",
-                          "displayOrder": 73,
+                          "organizationId": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
+                          "role": "admin",
+                          "displayOrder": 41,
                           "muted": false,
                           "archived": false
                         }
@@ -6885,17 +6931,10 @@
           },
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "boolean"
-                }
-              ],
-              "default": "false"
+              "$ref": "#/components/schemas/BooleanQueryValue"
             },
             "required": false,
+            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
             "name": "slug",
             "in": "query"
           }
@@ -6938,24 +6977,26 @@
                 "example": {
                   "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
                   "entityType": "user",
-                  "name": "Cathy Hodkiewicz",
-                  "firstName": "Cathy",
-                  "lastName": "Hodkiewicz",
-                  "email": "cathy.hodkiewicz@hotmail.com",
-                  "slug": "cathyhodkiewicz17",
+                  "name": "Jake Senger",
+                  "firstName": "Jake",
+                  "lastName": "Senger",
+                  "email": "jake_senger@hotmail.com",
+                  "slug": "jakesenger90",
                   "description": null,
                   "thumbnailUrl": null,
                   "bannerUrl": null,
                   "language": "en",
                   "newsletter": false,
                   "mfaRequired": false,
-                  "userFlags": {},
-                  "createdAt": "2024-12-13T10:04:17.464Z",
-                  "updatedAt": "2024-12-13T10:04:17.464Z",
+                  "userFlags": {
+                    "finishedOnboarding": false
+                  },
+                  "createdAt": "2024-06-15T02:53:22.776Z",
+                  "updatedAt": "2024-06-15T02:53:22.776Z",
                   "updatedBy": null,
-                  "lastStartedAt": "2024-12-13T10:04:17.464Z",
-                  "lastSignInAt": "2024-12-13T10:04:17.464Z",
-                  "lastSeenAt": "2024-12-13T10:04:17.464Z"
+                  "lastStartedAt": "2024-06-15T02:53:22.776Z",
+                  "lastSignInAt": "2024-06-15T02:53:22.776Z",
+                  "lastSeenAt": "2024-06-15T02:53:22.776Z"
                 }
               }
             }
@@ -7212,12 +7253,20 @@
                         ],
                         "description": "The main channel entity is an organization.",
                         "example": {
+                          "createdAt": "2024-12-25T15:04:42.969Z",
                           "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                          "tenantId": "d1lgzb",
                           "entityType": "organization",
-                          "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+                          "tenantId": "d1lgzb",
                           "name": "Spencer, Pouros and Bergnaum",
+                          "updatedAt": "2024-12-25T15:04:42.969Z",
                           "slug": "spencer-pouros-and-bergnaum",
+                          "thumbnailUrl": null,
+                          "bannerUrl": null,
+                          "createdBy": null,
+                          "updatedBy": null,
+                          "publishedAt": "2024-12-25T15:04:42.969Z",
+                          "publicAt": null,
+                          "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                           "shortName": "Spencer,",
                           "country": "Sweden",
                           "timezone": "Europe/Vaduz",
@@ -7225,30 +7274,22 @@
                           "languages": ["en"],
                           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
                           "color": "#cda6af",
-                          "thumbnailUrl": null,
-                          "bannerUrl": null,
                           "logoUrl": null,
                           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                           "chatSupport": true,
                           "organizationFlags": {},
                           "setupConfig": {},
-                          "publishedAt": "2024-12-25T15:04:42.969Z",
-                          "publicAt": null,
-                          "createdAt": "2024-12-25T15:04:42.969Z",
-                          "createdBy": null,
-                          "updatedAt": "2024-12-25T15:04:42.969Z",
-                          "updatedBy": null,
                           "included": {
                             "membership": {
                               "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
-                              "tenantId": "6vxzq0",
+                              "tenantId": "d1lgzb",
                               "channelType": "organization",
-                              "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
-                              "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
+                              "channelId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+                              "userId": "2effb0cf-d2bd-45e6-abcd-21de08509c32",
                               "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                              "role": "admin",
-                              "displayOrder": 2,
+                              "role": "member",
+                              "displayOrder": 18,
                               "muted": false,
                               "archived": false
                             },
@@ -7297,12 +7338,20 @@
                 "example": {
                   "data": [
                     {
+                      "createdAt": "2024-04-18T21:12:59.543Z",
                       "id": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
-                      "tenantId": "fyc7n2",
                       "entityType": "organization",
-                      "path": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                      "tenantId": "fyc7n2",
                       "name": "Conroy, Kerluke and Rowe",
+                      "updatedAt": "2024-04-18T21:12:59.543Z",
                       "slug": "conroy-kerluke-and-rowe",
+                      "thumbnailUrl": null,
+                      "bannerUrl": null,
+                      "createdBy": null,
+                      "updatedBy": null,
+                      "publishedAt": "2024-04-18T21:12:59.543Z",
+                      "publicAt": null,
+                      "path": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                       "shortName": "Conroy,",
                       "country": "Singapore",
                       "timezone": "Asia/Kuala_Lumpur",
@@ -7310,30 +7359,22 @@
                       "languages": ["en"],
                       "notificationEmail": "notifications@conroy-kerluke-and-rowe.example",
                       "color": "#dbcbc1",
-                      "thumbnailUrl": null,
-                      "bannerUrl": null,
                       "logoUrl": null,
                       "websiteUrl": "https://conroy-kerluke-and-rowe.example",
                       "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
                       "chatSupport": false,
                       "organizationFlags": {},
                       "setupConfig": {},
-                      "publishedAt": "2024-04-18T21:12:59.543Z",
-                      "publicAt": null,
-                      "createdAt": "2024-04-18T21:12:59.543Z",
-                      "createdBy": null,
-                      "updatedAt": "2024-04-18T21:12:59.543Z",
-                      "updatedBy": null,
                       "included": {
                         "membership": {
                           "id": "1f366272-953c-486d-81dc-ee61f43478a1",
-                          "tenantId": "t4n7co",
+                          "tenantId": "fyc7n2",
                           "channelType": "organization",
-                          "channelId": "b5c28e6f-552e-42e4-940d-66f5ab0174ab",
-                          "userId": "8ed7182a-e09f-41c6-9302-0e59a26ff7ac",
+                          "channelId": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                          "userId": "d1a35ab5-c28e-46f5-852e-2e440d66f5ab",
                           "organizationId": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                           "role": "admin",
-                          "displayOrder": 98,
+                          "displayOrder": 45,
                           "muted": false,
                           "archived": false
                         },
@@ -7357,12 +7398,20 @@
                       }
                     },
                     {
+                      "createdAt": "2024-02-24T16:36:46.247Z",
                       "id": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
-                      "tenantId": "dwpxxb",
                       "entityType": "organization",
-                      "path": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                      "tenantId": "dwpxxb",
                       "name": "Lemke, Bode and Reichel-Klocko",
+                      "updatedAt": "2024-02-24T16:36:46.247Z",
                       "slug": "lemke-bode-and-reichel-klocko",
+                      "thumbnailUrl": null,
+                      "bannerUrl": null,
+                      "createdBy": null,
+                      "updatedBy": null,
+                      "publishedAt": "2024-02-24T16:36:46.247Z",
+                      "publicAt": null,
+                      "path": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                       "shortName": "Lemke,",
                       "country": "Pakistan",
                       "timezone": "America/Aruba",
@@ -7370,30 +7419,22 @@
                       "languages": ["en"],
                       "notificationEmail": "notifications@lemke-bode-and-reichel-klocko.example",
                       "color": "#2ad39a",
-                      "thumbnailUrl": null,
-                      "bannerUrl": null,
                       "logoUrl": null,
                       "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
                       "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
                       "chatSupport": false,
                       "organizationFlags": {},
                       "setupConfig": {},
-                      "publishedAt": "2024-02-24T16:36:46.247Z",
-                      "publicAt": null,
-                      "createdAt": "2024-02-24T16:36:46.247Z",
-                      "createdBy": null,
-                      "updatedAt": "2024-02-24T16:36:46.247Z",
-                      "updatedBy": null,
                       "included": {
                         "membership": {
                           "id": "cf273cfa-8287-4b04-b641-897816829f30",
-                          "tenantId": "4oy2u1",
+                          "tenantId": "dwpxxb",
                           "channelType": "organization",
-                          "channelId": "a22457ca-c90f-46f6-aa80-2cd0efd36e4f",
-                          "userId": "ddfd40e3-e143-4676-8a93-314d23d2d92f",
+                          "channelId": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                          "userId": "1af0d0a2-2457-4cac-b90f-6f6a802cd0ef",
                           "organizationId": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                           "role": "admin",
-                          "displayOrder": 83,
+                          "displayOrder": 44,
                           "muted": false,
                           "archived": false
                         },
@@ -7589,7 +7630,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "offset",
@@ -7597,7 +7639,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "limit",
@@ -7671,12 +7714,20 @@
                 "example": {
                   "items": [
                     {
+                      "createdAt": "2024-11-21T01:19:53.533Z",
                       "id": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
-                      "tenantId": "6eo7z7",
                       "entityType": "organization",
-                      "path": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                      "tenantId": "6eo7z7",
                       "name": "Anderson - Ferry",
+                      "updatedAt": "2024-11-21T01:19:53.533Z",
                       "slug": "anderson-ferry",
+                      "thumbnailUrl": null,
+                      "bannerUrl": null,
+                      "createdBy": null,
+                      "updatedBy": null,
+                      "publishedAt": "2024-11-21T01:19:53.533Z",
+                      "publicAt": null,
+                      "path": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                       "shortName": "Anderson",
                       "country": "Bahamas",
                       "timezone": "America/Moncton",
@@ -7684,30 +7735,22 @@
                       "languages": ["en"],
                       "notificationEmail": "notifications@anderson-ferry.example",
                       "color": "#dfeb6e",
-                      "thumbnailUrl": null,
-                      "bannerUrl": null,
                       "logoUrl": null,
                       "websiteUrl": "https://anderson-ferry.example",
                       "welcomeText": "Welcome to Anderson - Ferry!",
                       "chatSupport": true,
                       "organizationFlags": {},
                       "setupConfig": {},
-                      "publishedAt": "2024-11-21T01:19:53.533Z",
-                      "publicAt": null,
-                      "createdAt": "2024-11-21T01:19:53.533Z",
-                      "createdBy": null,
-                      "updatedAt": "2024-11-21T01:19:53.533Z",
-                      "updatedBy": null,
                       "included": {
                         "membership": {
                           "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
-                          "tenantId": "u87zf2",
+                          "tenantId": "6eo7z7",
                           "channelType": "organization",
-                          "channelId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
-                          "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
+                          "channelId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                          "userId": "d33f6120-b967-4064-bbb8-8b24b6b50c11",
                           "organizationId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                           "role": "admin",
-                          "displayOrder": 83,
+                          "displayOrder": 32,
                           "muted": false,
                           "archived": false
                         },
@@ -7731,12 +7774,20 @@
                       }
                     },
                     {
+                      "createdAt": "2024-10-29T04:35:17.725Z",
                       "id": "772a771f-c150-465e-9635-46594859fc3d",
-                      "tenantId": "yzrul7",
                       "entityType": "organization",
-                      "path": "772a771f-c150-465e-9635-46594859fc3d",
+                      "tenantId": "yzrul7",
                       "name": "Wiegand, Harber and Stark-Abshire",
+                      "updatedAt": "2024-10-29T04:35:17.725Z",
                       "slug": "wiegand-harber-and-stark-abshire",
+                      "thumbnailUrl": null,
+                      "bannerUrl": null,
+                      "createdBy": null,
+                      "updatedBy": null,
+                      "publishedAt": "2024-10-29T04:35:17.725Z",
+                      "publicAt": null,
+                      "path": "772a771f-c150-465e-9635-46594859fc3d",
                       "shortName": "Wiegand,",
                       "country": "Argentina",
                       "timezone": "Europe/Gibraltar",
@@ -7744,30 +7795,22 @@
                       "languages": ["en"],
                       "notificationEmail": "notifications@wiegand-harber-and-stark-abshire.example",
                       "color": "#a3cb87",
-                      "thumbnailUrl": null,
-                      "bannerUrl": null,
                       "logoUrl": null,
                       "websiteUrl": "https://wiegand-harber-and-stark-abshire.example",
                       "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
                       "chatSupport": false,
                       "organizationFlags": {},
                       "setupConfig": {},
-                      "publishedAt": "2024-10-29T04:35:17.725Z",
-                      "publicAt": null,
-                      "createdAt": "2024-10-29T04:35:17.725Z",
-                      "createdBy": null,
-                      "updatedAt": "2024-10-29T04:35:17.725Z",
-                      "updatedBy": null,
                       "included": {
                         "membership": {
                           "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
-                          "tenantId": "lwj64z",
+                          "tenantId": "yzrul7",
                           "channelType": "organization",
-                          "channelId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
-                          "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
+                          "channelId": "772a771f-c150-465e-9635-46594859fc3d",
+                          "userId": "9e822f98-ecac-4acf-ab1f-e617c6f9a972",
                           "organizationId": "772a771f-c150-465e-9635-46594859fc3d",
-                          "role": "member",
-                          "displayOrder": 73,
+                          "role": "admin",
+                          "displayOrder": 94,
                           "muted": false,
                           "archived": false
                         },
@@ -7852,17 +7895,10 @@
           },
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "boolean"
-                }
-              ],
-              "default": "false"
+              "$ref": "#/components/schemas/BooleanQueryValue"
             },
             "required": false,
+            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
             "name": "slug",
             "in": "query"
           },
@@ -7884,12 +7920,20 @@
                   "$ref": "#/components/schemas/Organization"
                 },
                 "example": {
+                  "createdAt": "2024-12-25T15:04:42.969Z",
                   "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                  "tenantId": "d1lgzb",
                   "entityType": "organization",
-                  "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+                  "tenantId": "d1lgzb",
                   "name": "Spencer, Pouros and Bergnaum",
+                  "updatedAt": "2024-12-25T15:04:42.969Z",
                   "slug": "spencer-pouros-and-bergnaum",
+                  "thumbnailUrl": null,
+                  "bannerUrl": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "publishedAt": "2024-12-25T15:04:42.969Z",
+                  "publicAt": null,
+                  "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                   "shortName": "Spencer,",
                   "country": "Sweden",
                   "timezone": "Europe/Vaduz",
@@ -7897,30 +7941,22 @@
                   "languages": ["en"],
                   "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
                   "color": "#cda6af",
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
                   "logoUrl": null,
                   "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                   "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                   "chatSupport": true,
                   "organizationFlags": {},
                   "setupConfig": {},
-                  "publishedAt": "2024-12-25T15:04:42.969Z",
-                  "publicAt": null,
-                  "createdAt": "2024-12-25T15:04:42.969Z",
-                  "createdBy": null,
-                  "updatedAt": "2024-12-25T15:04:42.969Z",
-                  "updatedBy": null,
                   "included": {
                     "membership": {
                       "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
-                      "tenantId": "6vxzq0",
+                      "tenantId": "d1lgzb",
                       "channelType": "organization",
-                      "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
-                      "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
+                      "channelId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+                      "userId": "2effb0cf-d2bd-45e6-abcd-21de08509c32",
                       "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                      "role": "admin",
-                      "displayOrder": 2,
+                      "role": "member",
+                      "displayOrder": 18,
                       "muted": false,
                       "archived": false
                     },
@@ -8096,12 +8132,20 @@
                   "$ref": "#/components/schemas/Organization"
                 },
                 "example": {
+                  "createdAt": "2024-12-25T15:04:42.969Z",
                   "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                  "tenantId": "d1lgzb",
                   "entityType": "organization",
-                  "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+                  "tenantId": "d1lgzb",
                   "name": "Spencer, Pouros and Bergnaum",
+                  "updatedAt": "2024-12-25T15:04:42.969Z",
                   "slug": "spencer-pouros-and-bergnaum",
+                  "thumbnailUrl": null,
+                  "bannerUrl": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "publishedAt": "2024-12-25T15:04:42.969Z",
+                  "publicAt": null,
+                  "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                   "shortName": "Spencer,",
                   "country": "Sweden",
                   "timezone": "Europe/Vaduz",
@@ -8109,30 +8153,22 @@
                   "languages": ["en"],
                   "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
                   "color": "#cda6af",
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
                   "logoUrl": null,
                   "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                   "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                   "chatSupport": true,
                   "organizationFlags": {},
                   "setupConfig": {},
-                  "publishedAt": "2024-12-25T15:04:42.969Z",
-                  "publicAt": null,
-                  "createdAt": "2024-12-25T15:04:42.969Z",
-                  "createdBy": null,
-                  "updatedAt": "2024-12-25T15:04:42.969Z",
-                  "updatedBy": null,
                   "included": {
                     "membership": {
                       "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
-                      "tenantId": "6vxzq0",
+                      "tenantId": "d1lgzb",
                       "channelType": "organization",
-                      "channelId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
-                      "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
+                      "channelId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+                      "userId": "2effb0cf-d2bd-45e6-abcd-21de08509c32",
                       "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                      "role": "admin",
-                      "displayOrder": 2,
+                      "role": "member",
+                      "displayOrder": 18,
                       "muted": false,
                       "archived": false
                     },
@@ -8316,7 +8352,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "offset",
@@ -8324,7 +8361,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "limit",
@@ -8363,70 +8401,96 @@
                 "example": {
                   "items": [
                     {
-                      "id": "96fe8559-2b8e-4671-ab17-b41ee456f6f2",
-                      "tenantId": "qh9hmi",
+                      "createdAt": "2024-06-13T07:35:15.527Z",
+                      "id": "1b17b41e-e456-4f6f-829b-747a897a617f",
                       "entityType": "attachment",
-                      "name": "vice.mar",
+                      "tenantId": "a9lhe0",
+                      "name": "finally_wherever_nasalise.php",
+                      "updatedAt": "2024-06-13T07:35:15.527Z",
+                      "stx": {
+                        "mutationId": "5cc9f521-e3f1-400f-96db-238d10af2a4b",
+                        "sourceId": "00b63f20-bc29-45d2-9996-6a04b550926e",
+                        "fieldTimestamps": {}
+                      },
                       "description": null,
-                      "keywords": "magni deleniti quisquam",
-                      "publicBucket": false,
-                      "bucketName": "attachments",
-                      "groupId": null,
-                      "filename": "vice.mar",
-                      "contentType": "application/x-csh",
-                      "convertedContentType": null,
-                      "size": "1072844",
-                      "originalKey": "uploads/gy3a9lhe0ctrmzc53x7z222y/vice.mar",
-                      "convertedKey": null,
-                      "thumbnailKey": null,
-                      "thumbnailTinyKey": null,
-                      "createdAt": "2024-11-21T01:19:53.533Z",
-                      "createdBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
-                      "updatedAt": "2024-11-21T01:19:53.533Z",
-                      "updatedBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                      "keywords": "venia vulpes delego",
+                      "createdBy": {
+                        "id": "eacb4a6c-0fe2-412f-9507-96fe85592b8e",
+                        "name": "Adrain Kirlin",
+                        "slug": "adrain_kirlin",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
+                      "updatedBy": {
+                        "id": "eacb4a6c-0fe2-412f-9507-96fe85592b8e",
+                        "name": "Adrain Kirlin",
+                        "slug": "adrain_kirlin",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
                       "deletedAt": null,
                       "deletedBy": null,
                       "publicAt": null,
-                      "seq": 193,
-                      "stx": {
-                        "mutationId": "db238d10-af2a-44b7-a00b-63f20bc295d2",
-                        "sourceId": "966a04b5-5092-46e5-aef7-3b6c996a20eb",
-                        "fieldTimestamps": {}
-                      },
-                      "organizationId": "043315eb-ed4a-44ea-9cb4-a6c0fe212f50"
+                      "seq": 108,
+                      "publicBucket": false,
+                      "bucketName": "attachments",
+                      "taskId": null,
+                      "groupId": null,
+                      "filename": "finally_wherever_nasalise.php",
+                      "contentType": "image/gif",
+                      "convertedContentType": null,
+                      "size": "3838237",
+                      "originalKey": "uploads/sllfn51vpq8cnfsar9hbjwto/finally_wherever_nasalise.php",
+                      "convertedKey": null,
+                      "thumbnailKey": null,
+                      "thumbnailTinyKey": null,
+                      "organizationId": "f54ea01d-336a-43f3-90f2-043315ebed4a"
                     },
                     {
+                      "createdAt": "2024-03-16T09:09:58.231Z",
                       "id": "c2ac3827-d82b-4e19-b35e-9d906125ba7c",
-                      "tenantId": "auxcwu",
                       "entityType": "attachment",
-                      "name": "bah_oof_truthfully.css",
+                      "tenantId": "auxcwu",
+                      "name": "buzzing_brr_hm.rmi",
+                      "updatedAt": "2024-03-16T09:09:58.231Z",
+                      "stx": {
+                        "mutationId": "e8ccfef4-53bf-4074-bc2e-f77d580cc1ed",
+                        "sourceId": "9017e5b4-9fb1-4c3c-bc0f-3df8449a148a",
+                        "fieldTimestamps": {}
+                      },
                       "description": null,
-                      "keywords": "vallum infit terra",
-                      "publicBucket": false,
-                      "bucketName": "attachments",
-                      "groupId": null,
-                      "filename": "bah_oof_truthfully.css",
-                      "contentType": "image/svg+xml",
-                      "convertedContentType": null,
-                      "size": "9756698",
-                      "originalKey": "uploads/vzac8qx1h9s6vzhgvcj0rs3x/bah_oof_truthfully.css",
-                      "convertedKey": null,
-                      "thumbnailKey": null,
-                      "thumbnailTinyKey": null,
-                      "createdAt": "2024-10-29T04:35:17.725Z",
-                      "createdBy": "772a771f-c150-465e-9635-46594859fc3d",
-                      "updatedAt": "2024-10-29T04:35:17.725Z",
-                      "updatedBy": "772a771f-c150-465e-9635-46594859fc3d",
+                      "keywords": "depono terreo exercitationem",
+                      "createdBy": {
+                        "id": "c65b1a01-eb42-42db-8633-9b813cf84d75",
+                        "name": "Okey Nikolaus",
+                        "slug": "okey_nikolaus",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
+                      "updatedBy": {
+                        "id": "c65b1a01-eb42-42db-8633-9b813cf84d75",
+                        "name": "Okey Nikolaus",
+                        "slug": "okey_nikolaus",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
                       "deletedAt": null,
                       "deletedBy": null,
                       "publicAt": null,
-                      "seq": 415,
-                      "stx": {
-                        "mutationId": "d9017e5b-49fb-41c3-acc0-f3df8449a148",
-                        "sourceId": "c7c8981c-d73a-47bf-9e99-126641d43cb8",
-                        "fieldTimestamps": {}
-                      },
-                      "organizationId": "65b1a01e-b422-4db6-8339-b813cf84d752"
+                      "seq": 306,
+                      "publicBucket": false,
+                      "bucketName": "attachments",
+                      "taskId": null,
+                      "groupId": null,
+                      "filename": "buzzing_brr_hm.rmi",
+                      "contentType": "audio/3gpp2",
+                      "convertedContentType": null,
+                      "size": "1155007",
+                      "originalKey": "uploads/rvg8ngqzxmk35ee92ta8rpig/buzzing_brr_hm.rmi",
+                      "convertedKey": null,
+                      "thumbnailKey": null,
+                      "thumbnailTinyKey": null,
+                      "organizationId": "4859fc3d-4ffc-4d93-bda6-f4757fd00cc2"
                     }
                   ],
                   "total": 2
@@ -8603,70 +8667,96 @@
                 "example": {
                   "data": [
                     {
-                      "id": "6f3c4dff-2fe7-47a8-afb8-a8a44c41b543",
-                      "tenantId": "akf4ov",
+                      "createdAt": "2024-09-10T16:55:24.272Z",
+                      "id": "4380b296-f3c4-4dff-b2fe-77a8fb8a8a44",
                       "entityType": "attachment",
-                      "name": "ugh_besides.svgz",
+                      "tenantId": "93qcb6",
+                      "name": "inasmuch.xhtml",
+                      "updatedAt": "2024-09-10T16:55:24.272Z",
+                      "stx": {
+                        "mutationId": "b4862bef-a0a6-4172-9297-810621a44be4",
+                        "sourceId": "424ddc25-f82c-4138-aca8-87751adbdbf0",
+                        "fieldTimestamps": {}
+                      },
                       "description": null,
-                      "keywords": "voveo quis adaugeo",
-                      "publicBucket": false,
-                      "bucketName": "attachments",
-                      "groupId": null,
-                      "filename": "ugh_besides.svgz",
-                      "contentType": "font/ttf",
-                      "convertedContentType": null,
-                      "size": "3980524",
-                      "originalKey": "uploads/3h55lgj31d63n9apx99a5auv/ugh_besides.svgz",
-                      "convertedKey": null,
-                      "thumbnailKey": null,
-                      "thumbnailTinyKey": null,
-                      "createdAt": "2024-04-18T21:12:59.543Z",
-                      "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
-                      "updatedAt": "2024-04-18T21:12:59.543Z",
-                      "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                      "keywords": "surculus quas sollers",
+                      "createdBy": {
+                        "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
+                        "name": "Breana Sawayn",
+                        "slug": "breana_sawayn",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
+                      "updatedBy": {
+                        "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
+                        "name": "Breana Sawayn",
+                        "slug": "breana_sawayn",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
                       "deletedAt": null,
                       "deletedBy": null,
                       "publicAt": null,
-                      "seq": 385,
-                      "stx": {
-                        "mutationId": "25f82c13-8ca8-4877-b51a-dbdbf08b9af3",
-                        "sourceId": "691ea12d-93d0-4a05-89eb-59fada054211",
-                        "fieldTimestamps": {}
-                      },
-                      "organizationId": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2"
+                      "seq": 482,
+                      "publicBucket": false,
+                      "bucketName": "attachments",
+                      "taskId": null,
+                      "groupId": null,
+                      "filename": "inasmuch.xhtml",
+                      "contentType": "application/vnd.oasis.opendocument.spreadsheet",
+                      "convertedContentType": null,
+                      "size": "9057832",
+                      "originalKey": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml",
+                      "convertedKey": null,
+                      "thumbnailKey": null,
+                      "thumbnailTinyKey": null,
+                      "organizationId": "55b68dde-9bc4-4a07-a5e7-b48057f53a0c"
                     },
                     {
-                      "id": "3c32a472-30f5-492f-925e-fbf3260196c1",
-                      "tenantId": "a54hj9",
+                      "createdAt": "2024-04-01T00:36:54.729Z",
+                      "id": "e5ea44c3-c32a-4472-930f-592f25efbf32",
                       "entityType": "attachment",
-                      "name": "instead_volleyball.jpe",
+                      "tenantId": "03ldr2",
+                      "name": "victoriously.mp4",
+                      "updatedAt": "2024-04-01T00:36:54.729Z",
+                      "stx": {
+                        "mutationId": "74227841-ffc3-4e08-8db5-4efdd45f10b0",
+                        "sourceId": "ab3092c5-fd1f-4b31-9ba5-2c2db09b47a2",
+                        "fieldTimestamps": {}
+                      },
                       "description": null,
-                      "keywords": "adversus voco vos",
-                      "publicBucket": false,
-                      "bucketName": "attachments",
-                      "groupId": null,
-                      "filename": "instead_volleyball.jpe",
-                      "contentType": "image/tiff",
-                      "convertedContentType": null,
-                      "size": "1974477",
-                      "originalKey": "uploads/v1itpc9wztvbcy21q04oq81k/instead_volleyball.jpe",
-                      "convertedKey": null,
-                      "thumbnailKey": null,
-                      "thumbnailTinyKey": null,
-                      "createdAt": "2024-02-24T16:36:46.247Z",
-                      "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
-                      "updatedAt": "2024-02-24T16:36:46.247Z",
-                      "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                      "keywords": "volup quae chirographum",
+                      "createdBy": {
+                        "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
+                        "name": "Alvin Kutch",
+                        "slug": "alvin_kutch",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
+                      "updatedBy": {
+                        "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
+                        "name": "Alvin Kutch",
+                        "slug": "alvin_kutch",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
                       "deletedAt": null,
                       "deletedBy": null,
                       "publicAt": null,
-                      "seq": 79,
-                      "stx": {
-                        "mutationId": "c5fd1fb3-1ba5-42c2-9db0-9b47a24f941b",
-                        "sourceId": "1cc76d33-0afc-40f8-b565-ad527c313a69",
-                        "fieldTimestamps": {}
-                      },
-                      "organizationId": "7a21be26-ba4e-4e7e-b27d-369703e5ea44"
+                      "seq": 39,
+                      "publicBucket": false,
+                      "bucketName": "attachments",
+                      "taskId": null,
+                      "groupId": null,
+                      "filename": "victoriously.mp4",
+                      "contentType": "image/jpeg",
+                      "convertedContentType": null,
+                      "size": "4961674",
+                      "originalKey": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4",
+                      "convertedKey": null,
+                      "thumbnailKey": null,
+                      "thumbnailTinyKey": null,
+                      "organizationId": "044316a1-c906-4c0e-9632-932306ebef5b"
                     }
                   ],
                   "rejectedIds": []
@@ -8710,70 +8800,96 @@
                 "example": {
                   "data": [
                     {
-                      "id": "6f3c4dff-2fe7-47a8-afb8-a8a44c41b543",
-                      "tenantId": "akf4ov",
+                      "createdAt": "2024-09-10T16:55:24.272Z",
+                      "id": "4380b296-f3c4-4dff-b2fe-77a8fb8a8a44",
                       "entityType": "attachment",
-                      "name": "ugh_besides.svgz",
+                      "tenantId": "93qcb6",
+                      "name": "inasmuch.xhtml",
+                      "updatedAt": "2024-09-10T16:55:24.272Z",
+                      "stx": {
+                        "mutationId": "b4862bef-a0a6-4172-9297-810621a44be4",
+                        "sourceId": "424ddc25-f82c-4138-aca8-87751adbdbf0",
+                        "fieldTimestamps": {}
+                      },
                       "description": null,
-                      "keywords": "voveo quis adaugeo",
-                      "publicBucket": false,
-                      "bucketName": "attachments",
-                      "groupId": null,
-                      "filename": "ugh_besides.svgz",
-                      "contentType": "font/ttf",
-                      "convertedContentType": null,
-                      "size": "3980524",
-                      "originalKey": "uploads/3h55lgj31d63n9apx99a5auv/ugh_besides.svgz",
-                      "convertedKey": null,
-                      "thumbnailKey": null,
-                      "thumbnailTinyKey": null,
-                      "createdAt": "2024-04-18T21:12:59.543Z",
-                      "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
-                      "updatedAt": "2024-04-18T21:12:59.543Z",
-                      "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                      "keywords": "surculus quas sollers",
+                      "createdBy": {
+                        "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
+                        "name": "Breana Sawayn",
+                        "slug": "breana_sawayn",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
+                      "updatedBy": {
+                        "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
+                        "name": "Breana Sawayn",
+                        "slug": "breana_sawayn",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
                       "deletedAt": null,
                       "deletedBy": null,
                       "publicAt": null,
-                      "seq": 385,
-                      "stx": {
-                        "mutationId": "25f82c13-8ca8-4877-b51a-dbdbf08b9af3",
-                        "sourceId": "691ea12d-93d0-4a05-89eb-59fada054211",
-                        "fieldTimestamps": {}
-                      },
-                      "organizationId": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2"
+                      "seq": 482,
+                      "publicBucket": false,
+                      "bucketName": "attachments",
+                      "taskId": null,
+                      "groupId": null,
+                      "filename": "inasmuch.xhtml",
+                      "contentType": "application/vnd.oasis.opendocument.spreadsheet",
+                      "convertedContentType": null,
+                      "size": "9057832",
+                      "originalKey": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml",
+                      "convertedKey": null,
+                      "thumbnailKey": null,
+                      "thumbnailTinyKey": null,
+                      "organizationId": "55b68dde-9bc4-4a07-a5e7-b48057f53a0c"
                     },
                     {
-                      "id": "3c32a472-30f5-492f-925e-fbf3260196c1",
-                      "tenantId": "a54hj9",
+                      "createdAt": "2024-04-01T00:36:54.729Z",
+                      "id": "e5ea44c3-c32a-4472-930f-592f25efbf32",
                       "entityType": "attachment",
-                      "name": "instead_volleyball.jpe",
+                      "tenantId": "03ldr2",
+                      "name": "victoriously.mp4",
+                      "updatedAt": "2024-04-01T00:36:54.729Z",
+                      "stx": {
+                        "mutationId": "74227841-ffc3-4e08-8db5-4efdd45f10b0",
+                        "sourceId": "ab3092c5-fd1f-4b31-9ba5-2c2db09b47a2",
+                        "fieldTimestamps": {}
+                      },
                       "description": null,
-                      "keywords": "adversus voco vos",
-                      "publicBucket": false,
-                      "bucketName": "attachments",
-                      "groupId": null,
-                      "filename": "instead_volleyball.jpe",
-                      "contentType": "image/tiff",
-                      "convertedContentType": null,
-                      "size": "1974477",
-                      "originalKey": "uploads/v1itpc9wztvbcy21q04oq81k/instead_volleyball.jpe",
-                      "convertedKey": null,
-                      "thumbnailKey": null,
-                      "thumbnailTinyKey": null,
-                      "createdAt": "2024-02-24T16:36:46.247Z",
-                      "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
-                      "updatedAt": "2024-02-24T16:36:46.247Z",
-                      "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                      "keywords": "volup quae chirographum",
+                      "createdBy": {
+                        "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
+                        "name": "Alvin Kutch",
+                        "slug": "alvin_kutch",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
+                      "updatedBy": {
+                        "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
+                        "name": "Alvin Kutch",
+                        "slug": "alvin_kutch",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
                       "deletedAt": null,
                       "deletedBy": null,
                       "publicAt": null,
-                      "seq": 79,
-                      "stx": {
-                        "mutationId": "c5fd1fb3-1ba5-42c2-9db0-9b47a24f941b",
-                        "sourceId": "1cc76d33-0afc-40f8-b565-ad527c313a69",
-                        "fieldTimestamps": {}
-                      },
-                      "organizationId": "7a21be26-ba4e-4e7e-b27d-369703e5ea44"
+                      "seq": 39,
+                      "publicBucket": false,
+                      "bucketName": "attachments",
+                      "taskId": null,
+                      "groupId": null,
+                      "filename": "victoriously.mp4",
+                      "contentType": "image/jpeg",
+                      "convertedContentType": null,
+                      "size": "4961674",
+                      "originalKey": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4",
+                      "convertedKey": null,
+                      "thumbnailKey": null,
+                      "thumbnailTinyKey": null,
+                      "organizationId": "044316a1-c906-4c0e-9632-932306ebef5b"
                     }
                   ],
                   "rejectedIds": []
@@ -9124,37 +9240,50 @@
                   "$ref": "#/components/schemas/Attachment"
                 },
                 "example": {
+                  "createdAt": "2024-05-01T22:40:37.374Z",
                   "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
-                  "tenantId": "t58r8f",
                   "entityType": "attachment",
-                  "name": "rightfully_lest_noted.mp3",
+                  "tenantId": "t58r8f",
+                  "name": "ick_thoroughly_coincide.text",
+                  "updatedAt": "2024-05-01T22:40:37.374Z",
+                  "stx": {
+                    "mutationId": "d81d96a7-bdc8-427d-b21b-a6fd6449bad7",
+                    "sourceId": "036cee36-25c5-42eb-81ab-e93904602179",
+                    "fieldTimestamps": {}
+                  },
                   "description": null,
-                  "keywords": "universe explicabo aliquid",
-                  "publicBucket": false,
-                  "bucketName": "attachments",
-                  "groupId": null,
-                  "filename": "rightfully_lest_noted.mp3",
-                  "contentType": "text/calendar",
-                  "convertedContentType": null,
-                  "size": "6077039",
-                  "originalKey": "uploads/enhqurk6hu54pnfytf99mpmu/rightfully_lest_noted.mp3",
-                  "convertedKey": null,
-                  "thumbnailKey": null,
-                  "thumbnailTinyKey": null,
-                  "createdAt": "2024-10-12T12:26:26.417Z",
-                  "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
-                  "updatedAt": "2024-10-12T12:26:26.417Z",
-                  "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+                  "keywords": "dolores cetera aetas",
+                  "createdBy": {
+                    "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+                    "name": "Freddie Littel",
+                    "slug": "freddie_littel16",
+                    "thumbnailUrl": null,
+                    "entityType": "user"
+                  },
+                  "updatedBy": {
+                    "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+                    "name": "Freddie Littel",
+                    "slug": "freddie_littel16",
+                    "thumbnailUrl": null,
+                    "entityType": "user"
+                  },
                   "deletedAt": null,
                   "deletedBy": null,
                   "publicAt": null,
-                  "seq": 246,
-                  "stx": {
-                    "mutationId": "e036cee3-625c-452e-ab1a-be9390460217",
-                    "sourceId": "0841e0bb-2810-4252-8874-9789e1db3e97",
-                    "fieldTimestamps": {}
-                  },
-                  "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
+                  "seq": 447,
+                  "publicBucket": false,
+                  "bucketName": "attachments",
+                  "taskId": null,
+                  "groupId": null,
+                  "filename": "ick_thoroughly_coincide.text",
+                  "contentType": "application/epub+zip",
+                  "convertedContentType": null,
+                  "size": "7202058",
+                  "originalKey": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text",
+                  "convertedKey": null,
+                  "thumbnailKey": null,
+                  "thumbnailTinyKey": null,
+                  "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
                 }
               }
             }
@@ -9222,17 +9351,10 @@
           },
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "boolean"
-                }
-              ],
-              "default": "false"
+              "$ref": "#/components/schemas/BooleanQueryValue"
             },
             "required": false,
+            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
             "name": "fullResponse",
             "in": "query"
           }
@@ -9274,37 +9396,50 @@
                   "$ref": "#/components/schemas/Attachment"
                 },
                 "example": {
+                  "createdAt": "2024-05-01T22:40:37.374Z",
                   "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
-                  "tenantId": "t58r8f",
                   "entityType": "attachment",
-                  "name": "rightfully_lest_noted.mp3",
+                  "tenantId": "t58r8f",
+                  "name": "ick_thoroughly_coincide.text",
+                  "updatedAt": "2024-05-01T22:40:37.374Z",
+                  "stx": {
+                    "mutationId": "d81d96a7-bdc8-427d-b21b-a6fd6449bad7",
+                    "sourceId": "036cee36-25c5-42eb-81ab-e93904602179",
+                    "fieldTimestamps": {}
+                  },
                   "description": null,
-                  "keywords": "universe explicabo aliquid",
-                  "publicBucket": false,
-                  "bucketName": "attachments",
-                  "groupId": null,
-                  "filename": "rightfully_lest_noted.mp3",
-                  "contentType": "text/calendar",
-                  "convertedContentType": null,
-                  "size": "6077039",
-                  "originalKey": "uploads/enhqurk6hu54pnfytf99mpmu/rightfully_lest_noted.mp3",
-                  "convertedKey": null,
-                  "thumbnailKey": null,
-                  "thumbnailTinyKey": null,
-                  "createdAt": "2024-10-12T12:26:26.417Z",
-                  "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
-                  "updatedAt": "2024-10-12T12:26:26.417Z",
-                  "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+                  "keywords": "dolores cetera aetas",
+                  "createdBy": {
+                    "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+                    "name": "Freddie Littel",
+                    "slug": "freddie_littel16",
+                    "thumbnailUrl": null,
+                    "entityType": "user"
+                  },
+                  "updatedBy": {
+                    "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+                    "name": "Freddie Littel",
+                    "slug": "freddie_littel16",
+                    "thumbnailUrl": null,
+                    "entityType": "user"
+                  },
                   "deletedAt": null,
                   "deletedBy": null,
                   "publicAt": null,
-                  "seq": 246,
-                  "stx": {
-                    "mutationId": "e036cee3-625c-452e-ab1a-be9390460217",
-                    "sourceId": "0841e0bb-2810-4252-8874-9789e1db3e97",
-                    "fieldTimestamps": {}
-                  },
-                  "organizationId": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2"
+                  "seq": 447,
+                  "publicBucket": false,
+                  "bucketName": "attachments",
+                  "taskId": null,
+                  "groupId": null,
+                  "filename": "ick_thoroughly_coincide.text",
+                  "contentType": "application/epub+zip",
+                  "convertedContentType": null,
+                  "size": "7202058",
+                  "originalKey": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text",
+                  "convertedKey": null,
+                  "thumbnailKey": null,
+                  "thumbnailTinyKey": null,
+                  "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
                 }
               }
             }
@@ -9393,9 +9528,9 @@
                     "type": "array",
                     "items": {
                       "type": "string",
+                      "format": "email",
                       "minLength": 4,
-                      "maxLength": 255,
-                      "format": "email"
+                      "maxLength": 255
                     },
                     "minItems": 1,
                     "maxItems": 50
@@ -9450,14 +9585,14 @@
                 "example": {
                   "data": [
                     {
-                      "id": "da336271-583f-4567-913c-f17c567ab81d",
-                      "tenantId": "vw3f7p",
+                      "id": "09ca1a84-3edb-4069-b434-4af619287b19",
+                      "tenantId": "x38fpc",
                       "channelType": "organization",
-                      "channelId": "993dce90-023a-4125-a6a3-03215e93aa04",
-                      "userId": "154db176-be65-484a-bb34-246b1f99f492",
-                      "organizationId": "45a11f6e-5760-4a44-96c4-3c1b43d10162",
+                      "channelId": "dbf3564f-37da-4f50-aea9-4469003a047f",
+                      "userId": "cf39cd03-3802-43e4-83b7-1b24808a153d",
+                      "organizationId": "dbf3564f-37da-4f50-aea9-4469003a047f",
                       "role": "member",
-                      "displayOrder": 43,
+                      "displayOrder": 30,
                       "muted": false,
                       "archived": false
                     }
@@ -9692,20 +9827,20 @@
                   "$ref": "#/components/schemas/Membership"
                 },
                 "example": {
-                  "id": "92f342dd-6e67-4956-ab1c-f91b3ce934d7",
+                  "id": "14e27393-e22a-45d1-8c22-3250dc6fc109",
+                  "tenantId": "k4z795",
                   "channelType": "organization",
-                  "channelId": "0b5344ae-d952-4047-b5e1-309a11b66764",
-                  "userId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
-                  "organizationId": "14e27393-e22a-45d1-8c22-3250dc6fc109",
+                  "channelId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
+                  "userId": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
+                  "organizationId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
                   "role": "member",
-                  "displayOrder": 27,
+                  "displayOrder": 93,
                   "muted": false,
                   "archived": false,
                   "createdAt": "2024-10-28T10:38:59.996Z",
-                  "createdBy": "e73242d3-88f3-450e-838c-c98f7f3d9215",
+                  "createdBy": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
                   "updatedAt": "2024-10-28T10:38:59.996Z",
-                  "updatedBy": null,
-                  "tenantId": "test01"
+                  "updatedBy": null
                 }
               }
             }
@@ -9872,7 +10007,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "offset",
@@ -9880,7 +10016,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "limit",
@@ -9984,65 +10121,51 @@
                 "example": {
                   "items": [
                     {
-                      "id": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
-                      "entityType": "user",
-                      "name": "Melinda Yost",
-                      "firstName": "Chloe",
-                      "lastName": "Feil",
-                      "email": "stella.schultz64@gmail.com",
-                      "slug": "orlo.oconner77",
+                      "id": "407ebc2f-af54-4c33-9226-e98e2f9d8ade",
+                      "createdAt": "2024-09-01T15:27:58.824Z",
+                      "updatedAt": "2024-10-09T09:41:44.154Z",
+                      "name": "Elmer Beahan",
                       "description": null,
+                      "entityType": "user",
+                      "slug": "elmer.beahan",
                       "thumbnailUrl": null,
                       "bannerUrl": null,
-                      "language": "en",
-                      "mfaRequired": false,
-                      "createdAt": "2024-11-21T01:19:53.533Z",
-                      "updatedAt": "2024-11-21T01:19:53.533Z",
-                      "updatedBy": null,
-                      "lastStartedAt": "2024-11-21T01:19:53.533Z",
-                      "lastSignInAt": "2024-11-21T01:19:53.533Z",
-                      "lastSeenAt": "2024-11-21T01:19:53.533Z",
+                      "email": "elmer_beahan40@hotmail.com",
+                      "lastSeenAt": "2024-10-09T09:41:44.154Z",
                       "membership": {
-                        "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
-                        "tenantId": "u87zf2",
+                        "id": "d33f6120-b967-4064-bbb8-8b24b6b50c11",
+                        "tenantId": "dbp099",
                         "channelType": "organization",
-                        "channelId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
-                        "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
-                        "organizationId": "ab6c6ea4-cec4-470a-acfc-5636298aa0f2",
+                        "channelId": "1008ac1a-ccec-476f-9baf-e65971876f04",
+                        "userId": "407ebc2f-af54-4c33-9226-e98e2f9d8ade",
+                        "organizationId": "1008ac1a-ccec-476f-9baf-e65971876f04",
                         "role": "admin",
-                        "displayOrder": 83,
+                        "displayOrder": 10,
                         "muted": false,
                         "archived": false
                       }
                     },
                     {
-                      "id": "772a771f-c150-465e-9635-46594859fc3d",
-                      "entityType": "user",
-                      "name": "Nash Miller",
-                      "firstName": "Haskell",
-                      "lastName": "Kulas",
-                      "email": "rosario17@gmail.com",
-                      "slug": "felix6",
+                      "id": "74fc53a0-c64d-41a0-9d98-53aeb360296b",
+                      "createdAt": "2024-05-10T18:17:52.266Z",
+                      "updatedAt": "2024-11-05T16:38:04.981Z",
+                      "name": "Nina Adams",
                       "description": null,
+                      "entityType": "user",
+                      "slug": "nina.adams",
                       "thumbnailUrl": null,
                       "bannerUrl": null,
-                      "language": "en",
-                      "mfaRequired": false,
-                      "createdAt": "2024-10-29T04:35:17.725Z",
-                      "updatedAt": "2024-10-29T04:35:17.725Z",
-                      "updatedBy": null,
-                      "lastStartedAt": "2024-10-29T04:35:17.725Z",
-                      "lastSignInAt": "2024-10-29T04:35:17.725Z",
-                      "lastSeenAt": "2024-10-29T04:35:17.725Z",
+                      "email": "nina.adams5@hotmail.com",
+                      "lastSeenAt": "2024-11-05T16:38:04.981Z",
                       "membership": {
-                        "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
-                        "tenantId": "lwj64z",
+                        "id": "9e822f98-ecac-4acf-ab1f-e617c6f9a972",
+                        "tenantId": "6xgvt4",
                         "channelType": "organization",
-                        "channelId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
-                        "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
-                        "organizationId": "661de358-c94b-4156-816b-769bf63c907e",
-                        "role": "member",
-                        "displayOrder": 73,
+                        "channelId": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
+                        "userId": "74fc53a0-c64d-41a0-9d98-53aeb360296b",
+                        "organizationId": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
+                        "role": "admin",
+                        "displayOrder": 6,
                         "muted": false,
                         "archived": false
                       }
@@ -10138,7 +10261,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "offset",
@@ -10146,7 +10270,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d+$"
             },
             "required": false,
             "name": "limit",
@@ -10211,14 +10336,7 @@
                             "type": "string"
                           },
                           "createdBy": {
-                            "allOf": [
-                              {
-                                "$ref": "#/components/schemas/UserMinimalBase"
-                              },
-                              {
-                                "type": ["object", "null"]
-                              }
-                            ]
+                            "$ref": "#/components/schemas/NullableUserMinimalBase"
                           }
                         },
                         "required": ["id", "email", "thumbnailUrl", "role", "createdAt", "createdBy"]
@@ -10233,34 +10351,46 @@
                 "example": {
                   "items": [
                     {
-                      "id": "e456f6f2-9b74-47a8-b97a-617f14497605",
+                      "id": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
                       "channelType": "organization",
-                      "channelId": "c9f521e3-f100-4f6d-8b23-8d10af2a4b70",
-                      "email": "vanessa_rau@yahoo.com",
-                      "userId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
-                      "tokenId": "fe212f50-796f-4e85-b592-b8e671b17b41",
-                      "role": "admin",
+                      "channelId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                      "email": "dustin_larkin@hotmail.com",
+                      "userId": "50796fe8-5592-4b8e-9671-b17b41ee456f",
+                      "tokenId": "617f1449-7605-4cc9-8f52-1e3f100f6db2",
+                      "role": "member",
                       "rejectedAt": null,
                       "remindedAt": null,
                       "createdAt": "2024-11-21T01:19:53.533Z",
-                      "createdBy": "d29966a0-4b55-4092-86e5-ef73b6c996a2",
-                      "organizationId": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
-                      "tenantId": "test01"
+                      "createdBy": {
+                        "id": "8d10af2a-4b70-40b6-a3f2-0bc295d29966",
+                        "name": "Adrain Kirlin",
+                        "slug": "adrain_kirlin",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
+                      "organizationId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                      "tenantId": "yx645y"
                     },
                     {
-                      "id": "d82be193-5e9d-4906-a125-ba7cf4de5ede",
+                      "id": "ffcd93da-6f47-457f-bd00-cc2dc65b1a01",
                       "channelType": "organization",
-                      "channelId": "ccfef453-bf07-44c2-8ef7-7d580cc1edd9",
-                      "email": "fanny_mccullough70@gmail.com",
-                      "userId": "772a771f-c150-465e-9635-46594859fc3d",
-                      "tokenId": "b422db63-39b8-413c-9f84-d7523c2ac382",
+                      "channelId": "772a771f-c150-465e-9635-46594859fc3d",
+                      "email": "ryann.jacobi12@gmail.com",
+                      "userId": "6339b813-cf84-4d75-823c-2ac3827d82be",
+                      "tokenId": "ba7cf4de-5ede-48cc-9fef-453bf074c2ef",
                       "role": "member",
                       "rejectedAt": null,
                       "remindedAt": null,
                       "createdAt": "2024-10-29T04:35:17.725Z",
-                      "createdBy": "3cc0f3df-8449-4a14-a8ac-7c8981cd73a7",
-                      "organizationId": "ffcd93da-6f47-457f-bd00-cc2dc65b1a01",
-                      "tenantId": "test01"
+                      "createdBy": {
+                        "id": "7d580cc1-edd9-4017-be5b-49fb1c3cc0f3",
+                        "name": "Okey Nikolaus",
+                        "slug": "okey_nikolaus",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
+                      "organizationId": "772a771f-c150-465e-9635-46594859fc3d",
+                      "tenantId": "pa56tp"
                     }
                   ],
                   "total": 2

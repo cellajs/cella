@@ -1,14 +1,10 @@
 import { faker } from '@faker-js/faker';
 import { UniqueEnforcer } from 'enforce-unique';
 import { appConfig, type Language } from 'shared';
-import slugify from 'slugify';
 import {
-  generateMockFullCounts,
-  MOCK_REF_DATE,
-  type MockActivityStamps,
-  type MockEntityCounts,
-  type MockMembershipCounts,
+  generateMockChannelCounts,
   mockBatchResponse,
+  mockChannelColumns,
   mockPaginated,
   mockPastIsoDate,
   mockTenantId,
@@ -31,16 +27,18 @@ export const resetOrganizationMockEnforcers = () => {
 
 /** Base organization fields shared between insert and response mocks. */
 const generateOrganizationBase = (id: string, tenantId: string, name: string, createdAt: string) => {
-  const slug = slugify(name, { lower: true, strict: true });
-
-  return {
+  const base = mockChannelColumns('organization', {
     id,
     tenantId,
-    entityType: 'organization' as const,
-    // Generated column in the live schema (channelPathColumn); mocks mirror the SQL rule.
-    path: id,
     name,
-    slug,
+    createdAt,
+    updatedAt: createdAt,
+    publishedAt: createdAt,
+  });
+  const { slug } = base;
+
+  return {
+    ...base,
     shortName: name.split(' ')[0],
     country: faker.location.country(),
     timezone: faker.location.timeZone(),
@@ -56,12 +54,6 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
     chatSupport: faker.datatype.boolean(),
     organizationFlags: { ...appConfig.defaultOrganizationFlags },
     setupConfig: { ...appConfig.defaultSetupConfig },
-    publishedAt: createdAt,
-    publicAt: null,
-    createdAt,
-    createdBy: null,
-    updatedAt: createdAt,
-    updatedBy: null,
   };
 };
 
@@ -84,16 +76,11 @@ export const mockOrganizationResponse = (
 ): OrganizationModel & {
   included: {
     membership: MembershipBaseModel;
-    counts: {
-      membership: MockMembershipCounts;
-      entities: MockEntityCounts;
-      activity: MockActivityStamps;
-    };
+    counts: ReturnType<typeof generateMockChannelCounts>;
   };
 } =>
   withFakerSeed(key, () => {
-    const refDate = MOCK_REF_DATE;
-    const createdAt = faker.date.past({ refDate }).toISOString();
+    const createdAt = mockPastIsoDate();
     const organizationId = mockUuid();
     const tenantId = mockTenantId();
 
@@ -101,24 +88,21 @@ export const mockOrganizationResponse = (
     const base = generateOrganizationBase(organizationId, tenantId, faker.company.name(), createdAt);
 
     // Generate membership base with the organization ID
-    const membership = mockMembershipBase(`${key}:membership`);
-    membership.organizationId = organizationId;
+    const membership = mockMembershipBase(`${key}:membership`, {
+      channelType: 'organization',
+      channelId: organizationId,
+      channelIds: { organizationId },
+      tenantId,
+    });
 
     return {
       ...base,
       included: {
         membership,
-        counts: generateMockFullCounts(`${key}:counts`),
+        counts: generateMockChannelCounts('organization', `${key}:counts`),
       },
     };
   });
-/**
- * Generates a paginated mock organization list response for getOrganizations endpoint.
- */
 export const mockPaginatedOrganizationsResponse = (count = 2) => mockPaginated(mockOrganizationResponse, count);
 
-/**
- * Generates a mock batch organizations response.
- * Used for createOrganizations endpoint examples.
- */
 export const mockBatchOrganizationsResponse = (count = 2) => mockBatchResponse(mockOrganizationResponse, count);

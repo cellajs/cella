@@ -2,16 +2,20 @@ import { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
 import { appConfig } from 'shared';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
+import { schemaTags } from '#/core/openapi-helpers';
 import { maxLength } from '#/db/utils/constraints';
 
 export { maxLength };
 
-/** Schema to use boolean parameters (transform string to boolean) */
+/** Schema for boolean query parameters, accepting booleans and their exact string representations. */
 export const booleanTransformSchema = z
-  .union([z.string(), z.boolean()])
+  .union([z.enum(['true', 'false']), z.boolean()])
   .default('false')
-  .transform((v) => v === true || v === 'true')
-  .pipe(z.boolean());
+  .transform((value) => value === true || value === 'true')
+  .openapi('BooleanQueryValue', {
+    description: 'Boolean query value accepted as a boolean or its lowercase string representation.',
+    'x-tags': schemaTags('base', 'cella'),
+  });
 
 // Entity schemas
 
@@ -103,32 +107,41 @@ export const relatableUserIdParamSchema = z.object({
 /** Schema for id that must be a specific entity type */
 export const entityWithTypeQuerySchema = z.object({ entityId: validIdSchema, entityType: channelEntityTypeSchema });
 
-const offsetRefine = (value: number) => value >= 0;
 const limitMax = 1000;
-const limitRefine = (value: number) => value > 0 && value <= limitMax;
+const integerQuerySchema = (fallback: number, message: string) =>
+  z
+    .string()
+    .regex(/^\d+$/, message)
+    .optional()
+    .transform((value) => (value === undefined ? fallback : Number(value)))
+    .refine(Number.isSafeInteger, message);
+
+const seqCursorSchema = z
+  .string()
+  .regex(/^\d+,\d+$/)
+  .superRefine((value, ctx) => {
+    const [lower, upper] = value.split(',').map(Number);
+    if (!Number.isSafeInteger(lower) || !Number.isSafeInteger(upper)) {
+      ctx.addIssue({ code: 'custom', message: 'Sequence cursor bounds must be safe integers' });
+    } else if (lower > upper) {
+      ctx.addIssue({ code: 'custom', message: 'Sequence cursor lower bound must not exceed its upper bound' });
+    }
+  });
 
 /** Schema for pagination query parameters */
 export const paginationQuerySchema = z.object({
   q: z.string().max(maxLength.field).optional(), // Optional search query
-  sort: z.enum(['createdAt']).default('createdAt').optional(), // Sorting field
-  order: z.enum(['asc', 'desc']).default('desc').optional(), // Sorting order
+  sort: z.enum(['createdAt']).default('createdAt'), // Sorting field
+  order: z.enum(['asc', 'desc']).default('desc'), // Sorting order
   // Pagination offset
-  offset: z
-    .string()
-    .optional()
-    .transform((val) => (val ? Number.parseInt(val, 10) : 0)) // convert to number
-    .refine(offsetRefine, t('error:invalid_offset')),
+  offset: integerQuerySchema(0, t('error:invalid_offset')),
   // Pagination limit
-  limit: z
-    .string()
-    .optional()
-    .transform((val) => (val ? Number.parseInt(val, 10) : appConfig.requestLimits.default)) // convert to number
-    .refine(limitRefine, t('error:invalid_limit', { max: limitMax })),
+  limit: integerQuerySchema(appConfig.requestLimits.default, t('error:invalid_limit', { max: limitMax })).refine(
+    (value) => value > 0 && value <= limitMax,
+    t('error:invalid_limit', { max: limitMax }),
+  ),
   /** Org-sequence delta filter: bounded inclusive range "51,150" (seq >= 51 AND <= 150). */
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  seqCursor: seqCursorSchema.optional(),
 });
 
 /** Schema for optional excludeArchived query param (transforms to boolean) */
@@ -245,10 +258,38 @@ export const validNameSchema = z
 
 /** Schema for a valid email */
 export const validEmailSchema = z
-  .email({ message: t('error:invalid_email') })
-  .min(4, t('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }))
-  .max(maxLength.field, t('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }))
-  .transform((str) => str.toLowerCase().trim());
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(
+    z
+      .email({ message: t('error:invalid_email') })
+      .min(4, t('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }))
+      .max(maxLength.field, t('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field })),
+  )
+  .openapi({ type: 'string', format: 'email', minLength: 4, maxLength: maxLength.field });
+
+/** Schema for a canonical DNS hostname containing at least one dot. */
+const canonicalDomainPattern =
+  /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
+export const validDomainSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(
+    z
+      .string()
+      .min(4, t('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
+      .max(maxLength.field, t('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
+      .regex(canonicalDomainPattern, { message: t('error:invalid_domain') }),
+  )
+  .openapi({
+    type: 'string',
+    format: 'hostname',
+    minLength: 4,
+    maxLength: maxLength.field,
+    pattern: canonicalDomainPattern.source,
+  });
 
 /** Schema for a valid slug: string between 2 and max field length, allowing alphanumeric and hyphens */
 export const validSlugSchema = z
@@ -270,15 +311,5 @@ export const validCDNUrlSchema = z
   .superRefine(refineWithType((url: string) => isCDNUrl(url), 'invalid_cdn_url'))
   .transform((str) => str.trim());
 
-/** Schema for an array of valid domains */
-export const validDomainsSchema = z
-  .array(
-    z
-      .string()
-      .min(4, t('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
-      .max(maxLength.field, t('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
-      .regex(/^[a-z0-9][a-z0-9.-]*\.[a-z0-9][a-z0-9.-]*[a-z0-9]$/i, { message: t('error:invalid_domain') })
-      .superRefine(refineWithType((s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'), 'invalid_domain'))
-      .transform((str) => str.toLowerCase().trim()),
-  )
-  .optional();
+/** Schema for an optional array of canonical DNS hostnames. */
+export const validDomainsSchema = validDomainSchema.array().optional();

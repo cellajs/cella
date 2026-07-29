@@ -26,7 +26,10 @@ export async function handleMembershipInvitationOp(
 
   await baseDb.transaction(async (tx) => {
     if (acceptOrReject === 'accept') {
-      const entity = await resolveEntity({ var: { db: tx } }, inactiveMembership.channelType, entityFieldId);
+      const entity = await resolveEntity(
+        { var: { db: tx } },
+        { entityType: inactiveMembership.channelType, identifier: entityFieldId },
+      );
       if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.channelType });
 
       const activatedMemberships = await insertMemberships(
@@ -54,7 +57,10 @@ export async function handleMembershipInvitationOp(
   const rootEntityId = inactiveMembership.organizationId;
   if (!rootEntityId) throw new AppError(500, 'server_error', 'error', { entityType: rootChannelType });
 
-  const entity = await resolveEntity({ var: { db: baseDb } }, rootChannelType, rootEntityId);
+  const entity = await resolveEntity(
+    { var: { db: baseDb } },
+    { entityType: rootChannelType, identifier: rootEntityId },
+  );
   if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: rootChannelType });
 
   return entity;

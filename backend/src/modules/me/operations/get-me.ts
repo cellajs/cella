@@ -1,5 +1,5 @@
 import type { AuthContext } from '#/core/context';
-import { findUserById, upsertLastStarted } from '#/modules/me/me-queries';
+import { findCurrentUser, upsertLastStarted } from '#/modules/me/me-queries';
 import { getIsoDate } from '#/utils/iso-date';
 
 const THROTTLE_MS = 60 * 1000; // 1 minute
@@ -20,7 +20,7 @@ export async function getMeOp(ctx: AuthContext) {
     });
   }
 
-  const user = await findUserById(ctx);
+  const user = await findCurrentUser(ctx);
 
   return { user, isSystemAdmin };
 }
