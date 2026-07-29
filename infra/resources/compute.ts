@@ -10,7 +10,7 @@ import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-
 import type { ServiceDefinition } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from '../lib/scaleway/vm-reader-secret'
-import { resolveImageDigest } from '../lib/scaleway/registry-digest'
+import { resolveBootImage, type ResolvedBootImage } from '../lib/scaleway/boot-image'
 import { renderCloudInit } from './cloud-init'
 import { createComposeEnvBuilder } from './compose-env'
 import { activeGenerations, coHosted, enabled, hostSlug, secretConsumersFor, type Generation } from './generations'
@@ -103,21 +103,22 @@ interface ServiceConfig {
   composeEnv: Record<string, () => pulumi.Input<string>>
 }
 
-// Per-tag digest memo: every generation of a release resolves the boot image
-// digest once, not once per VM.
-const bootImageDigests = new Map<string, Promise<string | undefined>>()
+// Per-tag boot-image memo: every generation of a release resolves the boot image
+// name+digest once, not once per VM.
+const bootImages = new Map<string, Promise<ResolvedBootImage | undefined>>()
 
 /**
- * Resolve the boot runner tag to its manifest digest so the launcher pins the
- * root-equivalent (socket-mounted) image against later registry pushes. Fail
- * closed on a real `up`; a dry run degrades to the tag with a warning so
- * previews never require registry availability.
+ * Resolve the boot runner tag to the name+digest it is pullable by, so the
+ * launcher pins the root-equivalent (socket-mounted) image against later registry
+ * pushes. Falls back to the legacy image name for generations deployed before the
+ * boot-image rename (see resolveBootImage). Fail closed on a real `up`; a dry run
+ * degrades to the tag with a warning so previews never require registry availability.
  */
-function bootImageDigestFor(registry: string, releaseSha: string, secretKey: string): Promise<string | undefined> {
+function bootImageFor(registry: string, releaseSha: string, secretKey: string): Promise<ResolvedBootImage | undefined> {
   const memoKey = `${registry}|${releaseSha}`
-  let pending = bootImageDigests.get(memoKey)
+  let pending = bootImages.get(memoKey)
   if (!pending) {
-    pending = resolveImageDigest({ registry, image: 'infra-boot', tag: releaseSha, secretKey }).catch((err: unknown) => {
+    pending = resolveBootImage({ registry, releaseSha, secretKey }).catch((err: unknown) => {
       const message = err instanceof Error ? err.message : String(err)
       if (pulumi.runtime.isDryRun()) {
         pulumi.log.warn(`boot image digest resolution failed (preview continues on the tag): ${message}`)
@@ -125,7 +126,7 @@ function bootImageDigestFor(registry: string, releaseSha: string, secretKey: str
       }
       throw new Error(`Refusing to plan a VM with an unpinned boot image: ${message}`)
     })
-    bootImageDigests.set(memoKey, pending)
+    bootImages.set(memoKey, pending)
   }
   return pending
 }
@@ -137,8 +138,8 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
     ),
   )
 
-  const bootImageDigest = pulumi.all([registryEndpoint, vmSecretKey]).apply(([registry, secretKey]) =>
-    bootImageDigestFor(registry, releaseSha, secretKey),
+  const bootImage = pulumi.all([registryEndpoint, vmSecretKey]).apply(([registry, secretKey]) =>
+    bootImageFor(registry, releaseSha, secretKey),
   )
 
   return pulumi.all([
@@ -150,8 +151,8 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
     vmSecretKey,
     registryEndpoint,
     bootDiagBucketName,
-    bootImageDigest,
-  ]).apply(([env, manifest, accessKey, secretKey, registry, bootDiagBucket, digest]) =>
+    bootImage,
+  ]).apply(([env, manifest, accessKey, secretKey, registry, bootDiagBucket, resolvedBootImage]) =>
     renderCloudInit({
       slug: naming.slug,
       service: service.name,
@@ -162,7 +163,8 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
       manifestContent: manifest,
       composeContent,
       registry,
-      bootImageDigest: digest,
+      bootImageName: resolvedBootImage?.image,
+      bootImageDigest: resolvedBootImage?.digest,
       accessKey,
       secretKey,
       region,

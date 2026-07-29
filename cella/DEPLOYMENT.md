@@ -426,6 +426,8 @@ pnpm --filter infra boot:image   # tsup bundle + docker build (tag via BOOT_IMAG
 
 The VM base image itself is the stock `docker` marketplace label (`compute.image`); set it to a literal image UUID only to **pin** a specific base for rollback.
 
+Renaming the boot image is a sync-breaking change with a built-in migration. Each live VM generation pins its boot image by name and release sha, and a manifest digest is only pullable from its own repository, so a generation deployed under an older name has its boot image only in the legacy repository. When resolving a generation's boot image ([lib/scaleway/boot-image.ts](../infra/lib/scaleway/boot-image.ts)), the current name is tried first and, on a 404, each name in `LEGACY_BOOT_IMAGE_NAMES` in turn; the resolved name is threaded into cloud-init so the ref points at the repository the digest lives in. This lets a deploy plan and pin pre-rename generations with no registry surgery. Drop the legacy entry once no live generation predates the rename, which is one successful deploy per environment. The 2026-07 `cella-boot` to `infra-boot` rename is the first use.
+
 ### Key rotation
 
 1. Generate a temporary bootstrap key. Personal API Key is fastest.

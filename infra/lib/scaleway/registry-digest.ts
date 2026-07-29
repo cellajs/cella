@@ -78,7 +78,11 @@ export async function resolveImageDigest(opts: ResolveImageDigestOptions): Promi
   }
 
   if (!response.ok) {
-    throw new Error(`Could not fetch manifest for ${repository}:${opts.tag} from ${host} (status ${response.status}).`)
+    // Attach the HTTP status so callers can branch on 404 (tag not found) versus
+    // auth/network failures without parsing the message.
+    throw Object.assign(new Error(`Could not fetch manifest for ${repository}:${opts.tag} from ${host} (status ${response.status}).`), {
+      status: response.status,
+    })
   }
   const body = await response.text()
   return `sha256:${createHash('sha256').update(body).digest('hex')}`
