@@ -16,7 +16,7 @@ vi.stubGlobal('localStorage', {
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
-const { useSyncStore } = await import('~/query/realtime/sync-store');
+const { syncStore } = await import('~/query/realtime/sync-store');
 const { declareViewsFromMemberships } = await import('./view-declaration');
 
 const orgMembership = (organizationId: string, role: 'admin' | 'member') => ({
@@ -35,7 +35,7 @@ const orgMembership = (organizationId: string, role: 'admin' | 'member') => ({
 describe('declareViewsFromMemberships (template equivalence)', () => {
   afterEach(() => {
     queryClient.clear();
-    useSyncStore.getState().reset();
+    syncStore.getState().reset();
   });
 
   it('derives NO registered views for org-homed template grants: catchup stays org-view-only', () => {
@@ -43,22 +43,22 @@ describe('declareViewsFromMemberships (template equivalence)', () => {
     queryClient.setQueryData(['me', 'memberships'], {
       items: [orgMembership('org-1', 'admin'), orgMembership('org-2', 'member')],
     });
-    useSyncStore.getState().setOrgTenantId('org-1', 'tenant-1');
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 7);
+    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 7);
 
-    const before = useSyncStore.getState().getCatchupViews(['attachment']);
+    const before = syncStore.getState().getCatchupViews(['attachment']);
     declareViewsFromMemberships();
-    const after = useSyncStore.getState().getCatchupViews(['attachment']);
+    const after = syncStore.getState().getCatchupViews(['attachment']);
 
     // Org subtree views duplicate the built-in baseline, so the registry stays empty and the
     // request is unchanged.
-    expect(useSyncStore.getState().views).toEqual({});
+    expect(syncStore.getState().views).toEqual({});
     expect(after).toEqual(before);
   });
 
   it('removes registered views whose grant disappeared', () => {
     registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
-    useSyncStore.getState().declareSyncView('org-1:attachment:self', {
+    syncStore.getState().declareSyncView('org-1:attachment:self', {
       organizationId: 'org-1',
       prefixes: ['org-1/course-9'],
       entityTypes: ['attachment'],
@@ -68,12 +68,12 @@ describe('declareViewsFromMemberships (template equivalence)', () => {
 
     declareViewsFromMemberships();
 
-    expect(useSyncStore.getState().getView('org-1:attachment:self')).toBeUndefined();
+    expect(syncStore.getState().getView('org-1:attachment:self')).toBeUndefined();
   });
 
   it('handles a missing memberships cache without touching declared state', () => {
     registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
     expect(() => declareViewsFromMemberships()).not.toThrow();
-    expect(useSyncStore.getState().views).toEqual({});
+    expect(syncStore.getState().views).toEqual({});
   });
 });

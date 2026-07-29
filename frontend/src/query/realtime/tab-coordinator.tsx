@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { currentSchemaVersion } from 'shared/schema-evolution';
-import { create } from 'zustand';
+import { createStore } from 'zustand/vanilla';
 import { markBundleStale } from '~/query/schema-version-guard';
 import type { AppStreamNotification } from './types';
 
@@ -22,8 +22,8 @@ interface TabCoordinatorState {
   setIsActive: (isActive: boolean) => void;
 }
 
-/** Zustand store for tab coordination state */
-export const useTabCoordinatorStore = create<TabCoordinatorState>((set) => ({
+/** Vanilla Zustand store for tab coordination state. */
+export const tabCoordinatorStore = createStore<TabCoordinatorState>((set) => ({
   isLeader: false,
   isReady: false,
   isActive: false,
@@ -72,7 +72,7 @@ export const initTabCoordinator = async (): Promise<void> => {
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-    const store = useTabCoordinatorStore.getState();
+    const store = tabCoordinatorStore.getState();
 
     // Mark coordinator as active
     store.setIsActive(true);
@@ -113,7 +113,7 @@ export const initTabCoordinator = async (): Promise<void> => {
  * the pending promotion request, so a sole tab picks the stream back up when it returns.
  */
 export const releaseTabLeadership = (): void => {
-  const store = useTabCoordinatorStore.getState();
+  const store = tabCoordinatorStore.getState();
 
   lockController?.abort();
   lockController = null;
@@ -126,7 +126,7 @@ export const releaseTabLeadership = (): void => {
 
 /** Acquire the leader lock (first tab to acquire it becomes leader); resolves once leader status is known. */
 const attemptLeaderElection = (): Promise<void> => {
-  const store = useTabCoordinatorStore.getState();
+  const store = tabCoordinatorStore.getState();
   // One controller per election: aborting it releases whichever lock this tab currently holds or
   // awaits. `ifAvailable` cannot be combined with a signal, so the callback checks it by hand.
   lockController = new AbortController();
@@ -190,7 +190,7 @@ const attemptLeaderElection = (): Promise<void> => {
  * Called by follower tabs to eventually become leader when current leader closes.
  */
 const waitForLeadership = (signal: AbortSignal): void => {
-  const store = useTabCoordinatorStore.getState();
+  const store = tabCoordinatorStore.getState();
 
   navigator.locks
     .request(leaderLockName, { signal }, async () => {
@@ -213,7 +213,7 @@ const waitForLeadership = (signal: AbortSignal): void => {
  * Handle incoming BroadcastChannel messages.
  */
 const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => {
-  const store = useTabCoordinatorStore.getState();
+  const store = tabCoordinatorStore.getState();
   const message = event.data;
 
   if (message.type === 'schema-version') {
@@ -269,7 +269,7 @@ export const onNotification = (
  * Check if this tab is currently the leader.
  */
 export const isLeader = (): boolean => {
-  return useTabCoordinatorStore.getState().isLeader;
+  return tabCoordinatorStore.getState().isLeader;
 };
 
 /** Initializes multi-tab coordination. Only mounted in AppLayout. */

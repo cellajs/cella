@@ -4,7 +4,7 @@ import { invalidateUnseenCounts } from '~/modules/seen/query';
 import { applyUnfetchableRemovalUnseen } from '~/modules/seen/unseen-sync';
 import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline/stx-utils';
-import { useSyncStore } from '~/query/realtime/sync-store';
+import { syncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
 import { enqueueRange } from './fetch-prioritizer';
 import * as membershipOps from './membership-ops';
@@ -25,11 +25,11 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
     () => {
       // Checked before setOrgTenantId creates the entry: an org the sync store has never
       // seen means the SSE connection is not registered on its channel.
-      const isUnknownOrg = !!organizationId && !useSyncStore.getState().orgs[organizationId];
+      const isUnknownOrg = !!organizationId && !syncStore.getState().orgs[organizationId];
 
       // Store tenantId in sync store whenever we see it in a notification
       if (organizationId && tenantId) {
-        useSyncStore.getState().setOrgTenantId(organizationId, tenantId);
+        syncStore.getState().setOrgTenantId(organizationId, tenantId);
       }
 
       // Membership changes use targeted query invalidation, not the seq sync path.

@@ -1,6 +1,6 @@
-import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { createStore } from 'zustand/vanilla';
 import { isDebugMode } from '~/env';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
@@ -91,8 +91,8 @@ function ensureOrg(orgs: Record<string, OrgSyncState>, orgId: string, tenantId?:
   return existing;
 }
 
-/** Offline sync state: `orgs` (per-org tenantId + entity/child-context seqs), plus global `cursor`/`lastSyncAt`. */
-export const useSyncStore = create<SyncStoreState>()(
+/** Vanilla Zustand store for offline sync state: per-org sequences plus the global cursor and last-sync time. */
+export const syncStore = createStore<SyncStoreState>()(
   devtools(
     persist(
       immer((set, get) => ({
@@ -205,5 +205,5 @@ export const useSyncStore = create<SyncStoreState>()(
 
 /** Get the current cursor value (for SSE reconnect). Returns 'now' if no cursor is set. */
 export function getSyncCursor(): string {
-  return useSyncStore.getState().cursor ?? 'now';
+  return syncStore.getState().cursor ?? 'now';
 }

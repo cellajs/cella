@@ -7,7 +7,7 @@ vi.mock('~/env', () => ({ isDebugMode: false }));
 vi.mock('~/lib/tracing', () => ({ reportCriticalError: vi.fn() }));
 vi.mock('~/query/basic/sync-stale-config', () => ({ setSyncStreamHealthy: vi.fn() }));
 vi.mock('~/query/realtime/sync-store', () => ({
-  useSyncStore: {
+  syncStore: {
     getState: () => ({
       cursor: null,
       setCursor: vi.fn(),
@@ -47,7 +47,7 @@ vi.mock('./tab-coordinator', () => ({
   initTabCoordinator: vi.fn(() => Promise.resolve()),
   isLeader: () => leaderControl.isLeader(),
   onNotification: vi.fn(() => () => {}),
-  useTabCoordinatorStore: { getState: () => leaderControl.getState(), subscribe: leaderControl.subscribe },
+  tabCoordinatorStore: { getState: () => leaderControl.getState(), subscribe: leaderControl.subscribe },
 }));
 vi.mock('sdk', () => ({ postAppCatchup: vi.fn() }));
 

@@ -2,7 +2,7 @@ import type { GetMyMembershipsResponse } from 'sdk';
 import { isProduct } from 'shared';
 import { queryClient } from '~/query/query-client';
 import { isObservedChannel } from '~/query/realtime/observed-channels';
-import { useSyncStore } from '~/query/realtime/sync-store';
+import { syncStore } from '~/query/realtime/sync-store';
 import { getRouter } from '~/routes/-router-instance';
 
 /** Get the current org ID from the router's matched route context, if user is within an org layout. */
@@ -46,7 +46,7 @@ export function resolveQueryOrgTenantIds(
 /** Resolve tenantId for an organizationId. Checks sync store first (persisted, instant), then query cache. */
 export function getTenantIdForOrg(organizationId: string): string | null {
   // Sync store is persisted to localStorage, available before query cache hydration.
-  const fromStore = useSyncStore.getState().getOrgTenantId(organizationId);
+  const fromStore = syncStore.getState().getOrgTenantId(organizationId);
   if (fromStore) return fromStore;
 
   const data = queryClient.getQueryData<GetMyMembershipsResponse>(['me', 'memberships']);

@@ -6,7 +6,7 @@ vi.stubGlobal('navigator', { onLine: true });
 
 const { queryClient } = await import('~/query/query-client');
 const { isSeenTracked, seenKeys } = await import('./helpers');
-const { useSeenStore } = await import('./seen-store');
+const { seenStore } = await import('./seen-store');
 const { applyUnfetchableRemovalUnseen, ingestSyncedRows, noteUnseenReconciled } = await import('./unseen-sync');
 
 // Derive tracked type and effective home from config so the fixture works across fork hierarchies.
@@ -46,7 +46,7 @@ describe('unseen count deltas from synced rows', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     queryClient.setQueryData(seenKeys.unseenCounts, { [CHANNEL]: { [TRACKED]: 5 } });
-    useSeenStore.getState().reset();
+    seenStore.getState().reset();
     noteUnseenReconciled();
   });
 
@@ -73,7 +73,7 @@ describe('unseen count deltas from synced rows', () => {
 
   it('does not count rows outside the seen window or rows this client already saw', async () => {
     vi.advanceTimersByTime(10);
-    useSeenStore.getState().markProductSeen('tenant-1', ORG, CHANNEL, TRACKED, 'seen-1');
+    seenStore.getState().markProductSeen('tenant-1', ORG, CHANNEL, TRACKED, 'seen-1');
     await settle(); // markProductSeen itself queued a -1 (5 → 4)
 
     ingestSyncedRows(TRACKED, CHANNEL, [
@@ -118,7 +118,7 @@ describe('unseen count deltas from synced rows', () => {
     await settle();
     expect(counts()[CHANNEL][TRACKED]).toBe(4);
 
-    useSeenStore.getState().markProductSeen('tenant-1', ORG, CHANNEL, TRACKED, 'gone-2');
+    seenStore.getState().markProductSeen('tenant-1', ORG, CHANNEL, TRACKED, 'gone-2');
     await settle(); // view-mark −1 (4 → 3)
     applyUnfetchableRemovalUnseen(TRACKED, 'gone-2', CHANNEL); // seen → net 0
     await settle();

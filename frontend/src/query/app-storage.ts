@@ -3,13 +3,13 @@ import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import { useBoardStore } from '~/modules/common/board/board-store';
 import { useDraftStore } from '~/modules/common/form-draft/draft-store';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { useSeenStore } from '~/modules/seen/seen-store';
+import { seenStore } from '~/modules/seen/seen-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { userStore } from '~/modules/user/user-store';
 import { bindAppDb, closeAppDb } from '~/query/app-db';
 import { forkAppKvStores } from '~/query/fork-app-kv-stores';
 import { resetPersisters } from '~/query/persister';
-import { useSyncStore } from '~/query/realtime/sync-store';
+import { syncStore } from '~/query/realtime/sync-store';
 
 /** Minimal contract a per-user kv store must satisfy to join {@link appKvStores}: hydrate on bind, reset on sign-out. */
 export interface AppKvStore {
@@ -21,8 +21,8 @@ export interface AppKvStore {
  *  Each exposes a uniform `reset()` so {@link unbind} can drop in-memory state on sign-out.
  *  Forks append their own stores via {@link forkAppKvStores}. */
 const appKvStores = [
-  useSeenStore,
-  useSyncStore,
+  seenStore,
+  syncStore,
   useNavigationStore,
   useDraftStore,
   useAlertStore,
