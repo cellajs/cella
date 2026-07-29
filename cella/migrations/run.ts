@@ -1,11 +1,11 @@
 /**
- * Fork migration planner.
+ * App migration planner.
  *
- * Computes which cella migrations a fork still has to apply and prints them in order, so a
- * human or an agent can work the list. The source of truth for "already done" is the fork's
+ * Computes which cella migrations an app still has to apply and prints them in order, so a
+ * human or an agent can work the list. The source of truth for "already done" is the app's
  * applied-set file ({@link APPLIED_FILE} at the repo root), not version math: pending =
  * every migration in `manifest.json` whose id is absent from the applied-set. This is stable
- * across release- and branch-tracking forks alike.
+ * across release- and branch-tracking apps alike.
  *
  * Usage (from the repo root):
  *   pnpm exec tsx cella/migrations/run.ts            # print the pending plan (human)
@@ -29,8 +29,8 @@ interface MigrationEntry {
   title: string
   /** How the change is applied. */
   kind: 'codemod' | 'sql' | 'manual' | 'mixed'
-  /** Changes upstream in a way fork-specific code must follow. */
-  forkBreaking: boolean
+  /** Changes upstream in a way app-specific code must follow. */
+  syncBreaking: boolean
   /** Bumped `clientCacheVersion` or shipped a lens module. */
   clientCacheBump: boolean
   /** Repo-root-relative path to the codemod, or null. */
@@ -48,7 +48,7 @@ interface Manifest {
   migrations: MigrationEntry[]
 }
 
-/** Fork-owned record of applied migration ids, at the repo root. */
+/** App-owned record of applied migration ids, at the repo root. */
 const APPLIED_FILE = 'cella.migrations.json'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -63,7 +63,7 @@ function readManifest(): Manifest {
   return parsed
 }
 
-/** Read the fork's applied-set; empty when the file is absent. */
+/** Read the app's applied-set; empty when the file is absent. */
 function readApplied(): Set<string> {
   if (!existsSync(appliedPath)) return new Set()
   const parsed = JSON.parse(readFileSync(appliedPath, 'utf8')) as { applied?: string[] }
@@ -101,12 +101,12 @@ function driftWarnings(manifest: Manifest): string[] {
 /** Print the pending plan for humans. */
 function printPlan(pending: MigrationEntry[]): void {
   if (pending.length === 0) {
-    console.info('✓ No pending migrations. This fork is up to date.')
+    console.info('✓ No pending migrations. This app is up to date.')
     return
   }
   console.info(`${pending.length} pending migration(s), in order:\n`)
   for (const [i, m] of pending.entries()) {
-    const tags = [m.kind, m.forkBreaking ? 'fork-breaking' : null, m.clientCacheBump ? 'cache-bump' : null]
+    const tags = [m.kind, m.syncBreaking ? 'sync-breaking' : null, m.clientCacheBump ? 'cache-bump' : null]
       .filter(Boolean)
       .join(', ')
     console.info(`${i + 1}. ${m.title}  [${tags}]`)

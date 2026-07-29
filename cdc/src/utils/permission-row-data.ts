@@ -3,7 +3,7 @@ import type { CdcRowData } from '../types';
 
 /**
  * Permission-only row fields carried for per-subscriber SSE visibility checks.
- * Fork-specific permission inputs must be added here; content never belongs in batch metadata.
+ * App-specific permission inputs must be added here; content never belongs in batch metadata.
  */
 const permissionRowKeys: Set<string> = (() => {
   const keys = new Set<string>(['id', 'createdBy', 'deletedAt', 'publicAt', 'publishedAt']);

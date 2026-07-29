@@ -22,7 +22,7 @@ const browserOrigin = serviceUrl(browserOriginSlug)
 const operatorApplicationId: string | undefined = process.env.SCW_OPERATOR_APPLICATION_ID?.trim() || undefined
 
 // Optionally grant the operator application S3 access alongside CI in deny-by-default policies.
-// Omit its statement when unset so existing forks keep their policy unchanged.
+// Omit its statement when unset so existing apps keep their policy unchanged.
 const operatorAccess = (bucketName: pulumi.Input<string>) =>
   operatorApplicationId
     ? [{

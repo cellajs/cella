@@ -15,9 +15,9 @@ id when they need a distinct identity or controlled updates.
 
 ## Blast radius
 
-This is fork-breaking for frontend code that still passes severity as the second positional
+This is sync-breaking for frontend code that still passes severity as the second positional
 argument. The codemod safely handles literal severities and reports dynamic severities for manual
-review. Forks without custom toaster calls are unaffected because upstream call sites arrive
+review. Apps without custom toaster calls are unaffected because upstream call sites arrive
 already migrated.
 
 There is no database, OpenAPI, SDK, persisted entity, or wire-shape change. No
@@ -25,18 +25,18 @@ There is no database, OpenAPI, SDK, persisted entity, or wire-shape change. No
 
 ## Run
 
-From the repository root, inspect the fork-specific work first and then apply it:
+From the repository root, inspect the app-specific work first and then apply it:
 
 ```sh
 pnpm exec tsx cella/migrations/20260722T2050-sonner-style-toaster-api/sonner-style-toaster-api.ts inventory frontend/src
 pnpm exec tsx cella/migrations/20260722T2050-sonner-style-toaster-api/sonner-style-toaster-api.ts rewrite   frontend/src
 ```
 
-If a fork imports the same `toaster` export from another module path, add the repeatable module
+If an app imports the same `toaster` export from another module path, add the repeatable module
 flag:
 
 ```sh
-pnpm exec tsx cella/migrations/20260722T2050-sonner-style-toaster-api/sonner-style-toaster-api.ts rewrite frontend/src --module "~/fork/toaster"
+pnpm exec tsx cella/migrations/20260722T2050-sonner-style-toaster-api/sonner-style-toaster-api.ts rewrite frontend/src --module "~/app/toaster"
 ```
 
 ## Manual steps

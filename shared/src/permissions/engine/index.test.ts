@@ -21,8 +21,8 @@ const attachmentSubject = (
   });
 };
 
-// Real-config guard sanity checks. These assertions hold in every fork (organization is always the
-// root channel with roles admin/member; a product is never a channel), so the block is fork-stable.
+// Real-config guard sanity checks. These assertions hold in every app (organization is always the
+// root channel with roles admin/member; a product is never a channel), so the block is stable across app configurations.
 describe('hierarchy guards (real app config)', () => {
   describe('hierarchy.getOrderedAncestors', () => {
     it('returns empty array for root channel', () => {

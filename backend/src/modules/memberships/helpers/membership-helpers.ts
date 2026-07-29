@@ -11,7 +11,7 @@ import { log } from '#/utils/logger';
 
 /**
  * The root channel entity type: the parentless channel entity (e.g. 'organization').
- * Derived from the hierarchy so forks that change the root entity type
+ * Derived from the hierarchy so apps that change the root entity type
  * don't need to update membership helper code.
  */
 const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t) === null)!;
@@ -174,7 +174,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
         role: resolveParentMembershipRole(
           associatedType as ChannelEntityType,
           baseMembership.role,
-          // Config literals only carry the property when a fork sets it
+          // Config literals only carry the property when an app sets it
           'carryRole' in relation ? (relation as MenuStructureItem).carryRole : undefined,
         ),
         ...remainingIdColumnKeys,

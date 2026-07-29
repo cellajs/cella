@@ -29,7 +29,7 @@ describe('mcp-server', () => {
     expect(result.protocolVersion).toBe('2024-11-05');
   });
 
-  it('returns an empty tool list for the default (fork-less) registry', async () => {
+  it('returns an empty tool list for the template registry', async () => {
     const res = await handleMcpMessage(ctx, { jsonrpc: '2.0', id: 2, method: 'tools/list' });
     expect(res?.result).toEqual({ tools: [] });
   });

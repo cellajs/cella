@@ -18,8 +18,8 @@ describe('yjs schema-naming conventions match the drizzle schema', () => {
     }
   });
 
-  it('snake_cases camelCase entity types (multi-word forks)', () => {
-    // No cella entity type is camelCase, but forks add them (e.g. courseSection);
+  it('snake_cases camelCase entity types from app configs', () => {
+    // No cella entity type is camelCase, but app configs add them (e.g. courseSection);
     // the yjs relay would derive a wrong physical name without snake_casing here.
     expect(toTableName('courseSection')).toBe('course_sections');
     expect(toTableName('task')).toBe('tasks');

@@ -48,7 +48,7 @@ describe('loadbalancer module — registry-driven wiring', () => {
 
   it('health-checks the app\'s own health path (no ingress hop)', () => {
     // The app binds the host port directly in the immutable-node model, so the
-    // LB health-checks its real health path (the fork's health contract): a
+    // LB health-checks its real health path (the app's health contract): a
     // crashed generation is marked down.
     expect(src).toMatch(/uri:\s*healthContract\.path/)
     expect(src).not.toContain('__ingress/health')

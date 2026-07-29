@@ -39,7 +39,7 @@ describe('Draft context invite deferral', async () => {
       organization.tenantId,
     );
     const sessionCookie = await createTestSession(admin);
-    // The template always publishes at creation; draft state is a fork flow
+    // The template always publishes at creation; draft state is an app-specific flow.
     await db.update(organizationsTable).set({ publishedAt: null }).where(eq(organizationsTable.id, organization.id));
     return { organization, admin, sessionCookie };
   };
@@ -103,7 +103,7 @@ describe('Draft context invite deferral', async () => {
     expect(before.response.status).toBe(200);
     expect((before.data as { items: unknown[] }).items).toHaveLength(0);
 
-    // A fork's publish flow: stamp publishedAt, then release the held invites
+    // An app's publish flow: stamp publishedAt, then release the held invites
     await db
       .update(organizationsTable)
       .set({ publishedAt: new Date().toISOString() })

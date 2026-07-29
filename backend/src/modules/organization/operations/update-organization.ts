@@ -46,7 +46,7 @@ export async function updateOrganizationOp(
   // Rows store organizationFlags/setupConfig sparse; merge config defaults under the stored bag
   const updatedOrganizationRecord = withOrganizationDefaults(updatedRecord);
 
-  // Fork hook: react to setupConfig changes (no-op in cella) before cache invalidation.
+  // App hook: react to setupConfig changes (no-op in cella) before cache invalidation.
   await onOrganizationUpdated(ctx, { organization: updatedOrganizationRecord, input });
 
   invalidateCache.org(tenantId, organization.id);

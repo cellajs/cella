@@ -5,7 +5,7 @@ import { deriveGrantBoundaryViews } from '~/query/realtime/views';
 import { syncStore } from './sync-store';
 
 /**
- * Resolve cached sub-organization channel paths through a fork registration.
+ * Resolve cached sub-organization channel paths through an app registration.
  * Unknown paths skip precise grant views while organization baselines retain coverage.
  */
 let channelPathResolver: (channelType: string | null, channelId: string) => string | null = () => null;
@@ -19,7 +19,7 @@ export function registerChannelPathResolver(
 
 /**
  * Resolve a channel's canonical path via the registered resolver. `channelType` is null when
- * the caller only knows the id (the fetch prioritizer's covering-prefix computation); fork resolvers
+ * the caller only knows the id (the fetch prioritizer's covering-prefix computation); app resolvers
  * then search their cached channel types.
  */
 export function resolveChannelPath(channelType: string | null, channelId: string): string | null {

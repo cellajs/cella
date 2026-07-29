@@ -18,9 +18,9 @@ import { withClient } from './db';
 /**
  * Column names that exist on a table, read once from Postgres and cached per process.
  *
- * Lets the relay select only the columns a table actually has (each fork's entities differ)
+ * Lets the relay select only the columns a table actually has (each app's entities differ)
  * without importing backend drizzle schema. The DB is
- * the source of truth, so this stays correct across forks and migrations.
+ * the source of truth, so this stays correct across apps and migrations.
  */
 const tableColumnsCache = new Map<string, Promise<Set<string>>>();
 
@@ -75,7 +75,7 @@ export interface EntityScopeRow extends Partial<ChannelIdColumns> {
  * Reads only the columns the permission engine needs. Table and column names are derived from the
  * app's schema conventions (`toTableName`/`toColumnName`, validated against drizzle by a backend
  * test) and filtered to the columns the table actually has via {@link getTableColumnNames}, so it
- * works for every fork's entity types without importing backend drizzle schema. The entity id is
+ * works for every app's entity types without importing backend drizzle schema. The entity id is
  * parameterized. Returns `null` if the entity type is not declared or the row does not exist.
  */
 export async function resolveEntityScope(

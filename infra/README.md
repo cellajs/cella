@@ -60,7 +60,7 @@ one final stack update reaps every displaced generation
 Three design rules carry the model:
 
 1. **Create-then-replace.** A release never mutates a running server. Each deploy provisions a new immutable **generation** per service, moves load-balancer traffic once the new generation provably serves the expected version, then destroys the displaced one. Rollback is a revert commit through the same forward path.
-2. **Content-addressed identity.** A generation's id is a hash of the release SHA plus its static config, so re-running a deploy is a no-op and a manual `pulumi up` can never fork identity. Rollout state lives in one S3 **control object** that both the deploy command and the Pulumi program read.
+2. **Content-addressed identity.** A generation's id is a hash of the release SHA plus its static config, so re-running a deploy is a no-op and a manual `pulumi up` can never create a divergent generation identity. Rollout state lives in one S3 **control object** that both the deploy command and the Pulumi program read.
 3. **Descending-privilege credentials.** Three keys, each creating the next: a short-lived bootstrap key (password manager only), a project-scoped CI deploy key (GitHub Environment), and a read-only VM reader key (baked into servers). No privileged key lives on a laptop or a VM.
 
 ## Observability
@@ -77,7 +77,7 @@ pnpm --filter infra status [--mode <production|staging>] [--json]
 
 Each check reports one of `ok | warn | missing | error | unknown`, where `unknown` means "could not be evaluated" (almost always a missing credential), never a failure: a check that needs Scaleway API access (`credential: "scaleway"`, satisfied by any operator or CI deploy key) degrades to `unknown` when no key is present, so the command always completes. The report's single `nextAction` is the highest-priority pending step, with an exact command to run.
 
-`--json` emits a stable, versioned contract that forks, agents, and CI may depend on; a breaking shape change bumps `schemaVersion`.
+`--json` emits a stable, versioned contract that apps, agents, and CI may depend on; a breaking shape change bumps `schemaVersion`.
 
 ```jsonc
 {
@@ -99,7 +99,7 @@ Check `id`s are stable identifiers (`tooling.pulumi`, `config.stackState`, `iden
 
 ## Extending
 
-The engine is plain Pulumi + the Scaleway SDK; there is no plugin framework to learn. Fork-owned registries ([config/services.config.ts](config/services.config.ts), [config/runtime-secrets.config.ts](config/runtime-secrets.config.ts), [config/general.config.ts](config/general.config.ts)) declare services, sizing, routing, and secret wiring; resource modules under [resources/](resources/) are ordinary Pulumi programs you can read and change. The app description itself is injected through [config/engine-config.ts](config/engine-config.ts), which keeps the engine decoupled from any one workspace.
+The engine is plain Pulumi + the Scaleway SDK; there is no plugin framework to learn. App-owned registries ([config/services.config.ts](config/services.config.ts), [config/runtime-secrets.config.ts](config/runtime-secrets.config.ts), [config/general.config.ts](config/general.config.ts)) declare services, sizing, routing, and secret wiring; resource modules under [resources/](resources/) are ordinary Pulumi programs you can read and change. The app description itself is injected through [config/engine-config.ts](config/engine-config.ts), which keeps the engine decoupled from any one workspace.
 
 An app is deployable when it satisfies a small contract: a Docker image per service, a `/health` endpoint that reports the `X-App-Version` release SHA, and a one-shot `migrate` companion for schema changes.
 

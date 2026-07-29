@@ -20,7 +20,7 @@ export const getChannelRoute = (item: EnrichedChannel, isSubitem?: boolean): Ent
   const { entityType, slug, tenantId, ancestorSlugs = {} } = item;
 
   // Narrow config keeps `path` a literal route type (for `to`); the widened view exposes the
-  // optional `subitemOf`, not a common member when `config` is a union in a deep-hierarchy fork.
+  // optional `subitemOf`, not a common member when `config` is a union in a deep-hierarchy app.
   const config = channelRouteConfig[entityType];
   const entry: ChannelRouteEntry = config;
 

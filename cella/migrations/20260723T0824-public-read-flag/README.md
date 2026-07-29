@@ -20,13 +20,13 @@ twin, not as a second mode string.
 
 ## Blast radius
 
-Fork-breaking at the type level only, and only for forks that use public read. No wire-shape
+Sync-breaking at the type level only, and only for apps that use public read. No wire-shape
 change, no `clientCacheVersion` bump, no database change (`publicAt` columns are untouched, and
 entities that never declare `publicRead()` keep them dormant as before).
 
-A fork is affected if it: calls `publicRead('publicSelf')` in `shared/config/permissions-config.ts`;
+An app is affected if it: calls `publicRead('publicSelf')` in `shared/config/permissions-config.ts`;
 imports the `PublicReadMode` type; builds a `PublicReadGrants` literal by hand (tests, fixtures);
-or asserts on `grantedBy` entries of `{ type: 'public', mode: … }`. A fork that never declares
+or asserts on `grantedBy` entries of `{ type: 'public', mode: … }`. An app that never declares
 public read has nothing to do.
 
 ## Run
@@ -44,7 +44,7 @@ grep -rn "publicSelf\|PublicReadMode" --include="*.ts" --include="*.tsx" --inclu
    (`{ attachment: 'publicSelf' }` -> `{ attachment: true }`).
 3. Test assertions on public attribution: `{ type: 'public', mode: 'publicSelf' }` ->
    `{ type: 'public' }`. Debug-output snapshots that contain `public:publicSelf` become `public`.
-4. Fork docs that show the call site (upstream updated `cella/PERMISSIONS.md` and
+4. App docs that show the call site (upstream updated `cella/PERMISSIONS.md` and
    `cella/ADD_ENTITY.md`).
 
 ## Verify

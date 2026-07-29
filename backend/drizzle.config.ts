@@ -11,7 +11,7 @@ const databaseAdminUrl = process.env.DATABASE_ADMIN_URL || databaseUrl;
 export default defineConfig({
   // Schemas are discovered by location, not via a barrel file. Every table lives
   // alongside its module as `*-db.ts`. drizzle-kit statically scans this glob, so new
-  // tables self-register simply by existing (forks add app tables as `*-db.ts` too).
+  // tables self-register simply by existing (apps add their tables as `*-db.ts` too).
   schema: ['./src/modules/**/*-db.ts'],
   out: './drizzle',
   dialect: 'postgresql',

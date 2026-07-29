@@ -12,8 +12,8 @@ import { seedDb } from '#/db/db';
  */
 const roles = createRoleRegistry(['admin', 'member'] as const);
 
-// Synthetic org-homed product, fork-independent: mirrors cella's default attachment hierarchy
-// without binding to the real config (forks that re-home the product would break the assertion).
+// Synthetic org-homed product, configuration-independent: mirrors cella's default attachment hierarchy
+// without binding to the real config (apps that re-home the product would break the assertion).
 const orgHomedH = createEntityHierarchy(roles)
   .user()
   .channel('organization', { parent: null, roles: roles.all })

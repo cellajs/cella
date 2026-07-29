@@ -2,12 +2,12 @@ import { defineStores } from '../lib/stores'
 import { postgresManaged } from '../resources/stores/postgres-managed'
 
 /**
- * Fork-owned registry of stateful backing resources, provisioned by the deploy
+ * App-owned registry of stateful backing resources, provisioned by the deploy
  * engine and wired into services via runtime secrets. The first entry is the
  * primary store (its outputs feed the stack's `db*` exports).
  *
  * cella's default is a single managed PostgreSQL with row-level security and the
- * CDC logical-replication slot. A fork swaps this for a managed MySQL/Redis, an
+ * CDC logical-replication slot. An app swaps this for a managed MySQL/Redis, an
  * external `databaseUrl` (any Drizzle-compatible URL: Neon, Turso, Supabase,
  * PlanetScale), or `none`, without touching engine code.
  */

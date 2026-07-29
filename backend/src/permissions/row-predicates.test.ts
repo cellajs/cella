@@ -34,16 +34,16 @@ import { buildCollectionReadWhere } from './row-predicates';
 // attachment's ancestor chain, most-specific → root. raak: [project, organization]; cella: [organization].
 const CHAIN = hierarchy.getOrderedAncestors('attachment') as ChannelEntityType[];
 const ROOT = CHAIN[CHAIN.length - 1]; // organization (the collection is scoped to one root instance)
-const HOME = CHAIN.length > 1 ? CHAIN[0] : null; // narrowable home-channel, null on an org-only fork
+const HOME = CHAIN.length > 1 ? CHAIN[0] : null; // narrowable home-channel, null on an org-only app
 const ROOT_ID = 'org1';
 const HOME_INSTANCES = HOME ? ['s1', 's2', 's3'] : []; // home-channel instance ids (empty when there is no home-channel)
 
 // Home-channel id column on the scratch table (raak: `project_id`), derived from config. Null on an
-// org-only fork, where the read is org-wide and no home-channel column is ever referenced.
+// org-only app, where the read is org-wide and no home-channel column is ever referenced.
 const homeIdKey = HOME ? appConfig.entityIdColumnKeys[HOME] : null; // 'projectId' | null
 const homeColumnName = homeIdKey ? toColumnName(homeIdKey) : null; // 'project_id' | null
 
-// Root id column ('organizationId'): forks that configure `elevatedRoles` compile
+// Root id column ('organizationId'): apps that configure `elevatedRoles` compile
 // home-scoped grants against it, so the scratch table must carry it like real product
 // tables do (on the template config it is simply never referenced).
 const rootIdKey = appConfig.entityIdColumnKeys[ROOT];
@@ -61,7 +61,7 @@ const parityTable = pgTable(
   'test_permission_parity_rows',
   homeIdKey && homeColumnName ? { ...baseColumns, [homeIdKey]: varchar(homeColumnName).notNull() } : baseColumns,
 );
-// The home-channel column passed to `buildCollectionReadWhere`. On an org-only fork the read is
+// The home-channel column passed to `buildCollectionReadWhere`. On an org-only app the read is
 // org-wide (homeChannelIds always undefined/[]), so this column is never referenced; `id` stands in.
 const homeChannelColumn = (
   homeIdKey ? (parityTable as unknown as Record<string, PgColumn>)[homeIdKey] : parityTable.id
@@ -285,7 +285,7 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
   });
 
   // Explicit home-channel narrowing needs a nested channel (e.g. organization > project). Skips on an
-  // org-only fork, which has no home-channel to narrow into.
+  // org-only app, which has no home-channel to narrow into.
   describe.runIf(HOME !== null)('home-channel narrowing', () => {
     it('explicitly requested home-channel narrows conditional scopes the same way', async () => {
       const random = mulberry32(0xbee5);

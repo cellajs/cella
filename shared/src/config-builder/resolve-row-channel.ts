@@ -10,7 +10,7 @@ export interface AncestorSource {
  * The id-column key convention (`project` to `projectId`), the single runtime source of the
  * rule. Config validation pins `appConfig.entityIdColumnKeys` to this shape, so the rule holds
  * for any entity type, including injected or under-construction hierarchies whose types are
- * absent from the current fork's config.
+ * absent from the current app's config.
  */
 export const entityIdColumnKey = (entityType: string): string => `${entityType}Id`;
 

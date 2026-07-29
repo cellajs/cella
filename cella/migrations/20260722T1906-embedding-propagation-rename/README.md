@@ -18,13 +18,13 @@ fields are also tightened from `z.string()` to `z.enum(productEntityTypes)`.
 
 ## Blast radius
 
-Fork-breaking and cache-bumping. The `productEmbeddings` config keys are unchanged, so config needs
+Sync-breaking and cache-bumping. The `productEmbeddings` config keys are unchanged, so config needs
 no edit. But the wire shape of `StreamNotification.propagation` changed, which is a breaking OpenAPI
-diff: the fork's `schema-bust-gate` will demand a `clientCacheVersion` bump on the sync PR even for a
-fork with `productEmbeddings: []` that never emits a hint. Any fork code that reads a propagation
+diff: the app's `schema-bust-gate` will demand a `clientCacheVersion` bump on the sync PR even for an
+app with `productEmbeddings: []` that never emits a hint. Any app code that reads a propagation
 hint's `.sourceType` / `.targetType` / `.field`, constructs a `PropagationHint`, or imports the
 `PropagationHint` type and destructures its fields, breaks at compile time (caught by `pnpm check`).
-A fork that added no custom propagation code only needs the `clientCacheVersion` bump.
+An app that added no custom propagation code only needs the `clientCacheVersion` bump.
 
 No database change.
 
@@ -35,7 +35,7 @@ a safe word-boundary codemod (`field` especially), so rename by hand in propagat
 
 ## Manual steps
 
-1. Grep your fork for hint field reads outside the upstream files (which arrive already migrated):
+1. Grep your app for hint field reads outside the upstream files (which arrive already migrated):
 
    ```sh
    grep -rnE "\.(sourceType|targetType)\b" --include=*.ts --include=*.tsx \
@@ -47,9 +47,9 @@ a safe word-boundary codemod (`field` especially), so rename by hand in propagat
    `field` -> `hostColumn`. Do not touch unrelated identifiers named `field`, `sourceType`, or
    `targetType` (e.g. `resourceType`, data-grid columns, form fields).
 
-2. If your fork references the renamed map `propagationTargets`, use `hostsByEmbeddedProduct`.
+2. If your app references the renamed map `propagationTargets`, use `hostsByEmbeddedProduct`.
 
-3. Bump `clientCacheVersion` in your fork's `shared/config/config.default.ts` (any new value) so the
+3. Bump `clientCacheVersion` in your app's `shared/config/config.default.ts` (any new value) so the
    `schema-bust-gate` passes and clients wipe stale cache. Queued mutations survive the wipe.
 
 ## Verify

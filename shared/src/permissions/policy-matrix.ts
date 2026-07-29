@@ -135,7 +135,7 @@ export const configurePolicyMatrix = (
 /**
  * Gets the policy entries for a specific entity type.
  * The lookup is total: an entity type the matrix does not cover yields no entries, which the
- * engine reads as denied. Callers hold runtime strings (fork-configurable entity names), so the
+ * engine reads as denied. Callers hold runtime strings (app-configurable entity names), so the
  * parameter is a string and the miss is a normal result.
  */
 export const getEntityPolicies = (entityType: string, policies: PolicyMatrix): EntityPolicies => {

@@ -45,7 +45,7 @@ The recommended settings to put in your `.vscode/settings.json` or to edit in th
 The JSON files per language do not map 1:1 to runtime namespaces:
 
 - `common.json`: texts that are in a generic part of cella, used in frontend and backend
-- `app.json`: app-specific texts. Forks add their own keys here, so upstream syncs don't conflict with cella-owned `common.json`
+- `app.json`: app-specific texts. Apps add their own keys here, so upstream syncs don't conflict with cella-owned `common.json`
 - `about.json`: texts in the marketing 'about' page (`about:` namespace)
 - `error.json`: error texts used in both frontend and backend (`error:` namespace)
 - `backend.json`: pure backend texts, mostly email translations (`backend:` namespace)

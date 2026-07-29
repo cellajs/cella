@@ -28,7 +28,7 @@ export function PageHeader({ entity, panel, parent, ...coverProps }: PageHeaderP
   // Use enriched membership from entity data (baked in via cache enrichment)
   const membership = entity.entityType !== 'user' ? (entity.membership ?? null) : null;
 
-  // Get parent route using app-specific resolver (handles hierarchy differences per fork)
+  // Get parent route using app-specific resolver (handles hierarchy differences per app)
   const parentRoute = parent ? getChannelRoute(parent) : null;
 
   return (

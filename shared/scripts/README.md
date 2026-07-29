@@ -4,6 +4,9 @@
 
 CI guard for concrete terminology in authored Markdown and MDX. Run via `pnpm docs:style`; exits 1 with file and line diagnostics when prose should name a more precise rule, constraint, guarantee, requirement, contract, precondition, or assumption. `pnpm prose:check` combines this with the equivalent source-comment rule and is the CI entry point.
 
+`pnpm vocabulary:check` rejects source-control-oriented template terminology in paths and tracked
+text. The Cella CLI configuration and migration compatibility instructions are explicit exceptions.
+
 ## check-lenses.ts
 
 CI guard for the schema-evolution lens system in `shared/src/schema-evolution/`. Run via `pnpm --filter shared lens:check`; exits 1 on any violation.

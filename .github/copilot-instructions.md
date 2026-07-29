@@ -1,8 +1,8 @@
 # Cella Copilot instructions
 
-## Template vs fork
+## Template vs app
 
-Cella is a TypeScript monorepo template for building collaborative web apps with sync & offline capabilities. It is designed to be forked and extended, with a dynamic, per-app configurable entity model (`user` and `organization` are built-in). If package.json has `cella` as its name, it is the template. Otherwise it is a 'fork'.
+Cella is a TypeScript monorepo template for building collaborative web apps with sync & offline capabilities. It is designed to be customized and extended, with a dynamic, per-app configurable entity model (`user` and `organization` are built-in). If package.json has `cella` as its name, it is the template. Otherwise it is an 'app'.
 
 The canonical agent guidelines live in [cella/AGENTS.md](../cella/AGENTS.md). Read it for architecture, routing, guards, permissions, state/query patterns, sync engine, coding style, testing, deploy debugging, and commands. This file is intentionally thin so it stays in sync.
 
@@ -36,7 +36,7 @@ The canonical agent guidelines live in [cella/AGENTS.md](../cella/AGENTS.md). Re
 - `pnpm sdk`: regenerate OpenAPI spec + frontend SDK.
 - `pnpm seed`: seed test data.
 - `pnpm test`: full Vitest suite (`pnpm test:storybook` for Storybook component tests).
-- `pnpm cella`: sync changes from upstream cella to fork.
+- `pnpm cella`: sync changes from upstream cella to an app.
 
 ## Git safety
 

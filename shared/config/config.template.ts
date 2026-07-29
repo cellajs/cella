@@ -36,7 +36,7 @@ export const config = {
 
   /**
    * Product embeddings: declares which product entities are embedded as ID arrays inside
-   * other product entities. Forks extend when adding new embedding relationships.
+   * other product entities. Apps extend when adding new embedding relationships.
    * `lifecycle: 'owned'` additionally lets CDC garbage-collect embedded rows that no live
    * host references; the default 'shared' only strips references to dead rows.
    */
@@ -110,7 +110,7 @@ export const config = {
   },
 
   // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
-  // service in-process: one VM for previews/small forks. Default false keeps the
+  // service in-process: one VM for previews/small apps. Default false keeps the
   // split (one service per process). cdc co-hosting forfeits API blue-green.
   singleVM: false as boolean,
 
@@ -357,11 +357,11 @@ export const config = {
 
   // Organization defaults
 
-  /** Per-organization feature flags with their default values. Cella ships none; forks declare
+  /** Per-organization feature flags with their default values. Cella ships none; apps declare
    *  theirs here (e.g. `coursesEnabled: true`) and read them from `organization.organizationFlags`. */
   defaultOrganizationFlags: {},
 
   /** Per-organization setup config defaults, layered under each org's stored jsonb. Cella ships {};
-   *  forks widen the value (e.g. `{ primaryLabels: [...] }`) and read `organization.setupConfig`. */
+   *  apps widen the value (e.g. `{ primaryLabels: [...] }`) and read `organization.setupConfig`. */
   defaultSetupConfig: {},
 } satisfies RequiredConfig;

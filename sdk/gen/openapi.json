@@ -191,7 +191,7 @@
     },
     {
       "name": "mcp",
-      "description": "Endpoints exposing the AI capability layer, which is a server-side tool registry surfaced to\n    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its\n    own; forks build AI features and agent products (such as chat) on top, reusing the same tool registry.",
+      "description": "Endpoints exposing the AI capability layer, which is a server-side tool registry surfaced to\n    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its\n    own; apps build AI features and agent products (such as chat) on top, reusing the same tool registry.",
       "parent": "cella",
       "kind": "module"
     },

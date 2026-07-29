@@ -148,7 +148,7 @@ export const seenStore = createStore<SeenStoreState>()(
 
 /**
  * True when this client already saw the entity (flushed to the server, or queued to be).
- * Fork code must use this accessor and keep store internals private.
+ * App code must use this accessor and keep store internals private.
  */
 export function isSeenLocally(entityId: string): boolean {
   if (seenStore.getState().flushedIds.has(entityId)) return true;

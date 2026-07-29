@@ -50,7 +50,7 @@ export interface ConditionalScope {
  * An unconditional grant at an intermediate ancestor level (deep chains only, e.g.
  * course/courseSection between organization and an item's home project): rows are
  * scoped by THAT level's own id column. Root grants stay org-wide and home grants
- * stay in `homeChannelIds`, so two-level forks never produce these. With `elevatedRoles`
+ * stay in `homeChannelIds`, so two-level apps never produce these. With `elevatedRoles`
  * configured, only subtree-scoped roles land here.
  */
 export interface IntermediateScope {

@@ -69,7 +69,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
 }
 
 /**
- * Expand one fork app-service entry into a full Compose service block.
+ * Expand one app service entry into a full Compose service block.
  *
  * `extraEnv` is the service's release-step `appEnv` (the env applied to the app
  * block whenever a release companion exists, e.g. to keep the app from repeating
@@ -105,7 +105,7 @@ function appBlock(
 
 /**
  * One-shot release companion derived from a service that declares a `release`
- * step. Reuses the service image with the fork's release command/env, then
+ * step. Reuses the service image with the app's release command/env, then
  * exits. Run at the new generation's boot BEFORE the app starts
  * (expand-before-cutover), gated on exit 0. No port/healthcheck (not long-running).
  */
@@ -121,11 +121,11 @@ function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
   }
 }
 
-// Machinery: the one-shot release companion and the compose assembly. Not fork
-// data; driven by the fork's service registry.
+// Template machinery for the one-shot release companion and Compose assembly,
+// driven by the app's service registry.
 
 /**
- * Assemble the full `ComposeFile` from the fork's service registry. Under the
+ * Assemble the full `ComposeFile` from the app's service registry. Under the
  * immutable-node model each service is a single app block that binds the host
  * port directly (no per-VM ingress proxy); zero-downtime overlap happens at the
  * load balancer between VM generations, not inside the VM. A service that
@@ -134,7 +134,7 @@ function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
  *
  * `processIdentityEnv` names the env keys that select a container's process
  * identity (which worker/mode, which port); they are never folded from a
- * co-hosted worker into the singleVM host. Fork-owned so the engine names no
+ * co-hosted worker into the singleVM host. App-owned so the engine names no
  * app-specific env key.
  */
 export function assembleCompose(appServices: AppServices, options: { processIdentityEnv?: readonly string[] } = {}): ComposeFile {

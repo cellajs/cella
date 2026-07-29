@@ -1,9 +1,9 @@
 import { defineRuntimeSecrets } from '../lib/runtime-secrets'
 
 /**
- * Fork-owned mapping from runtime secrets to their consuming services.
+ * App-owned mapping from runtime secrets to their consuming services.
  * Per-service manifests restrict each VM to the values it needs; `runtime-secrets.ts`
- * provisions containers and validates the registry. The file is pinned so forks can
+ * provisions containers and validates the registry. The file is pinned so apps can
  * customize distribution without upstream sync conflicts.
  */
 export const runtimeSecretsConfig = defineRuntimeSecrets({

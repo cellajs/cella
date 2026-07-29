@@ -51,9 +51,9 @@ describe('answerCatchupViews', () => {
   });
 
   it('answers a view outside the caller memberships without leaking numbers', async () => {
-    // The exact non-'ok' status is fork-dependent: 'forbidden' when the product type has no
+    // The exact non-'ok' status is app-dependent: 'forbidden' when the product type has no
     // public read route, 'opaque' when a publicRead() grant means a readable row can exist.
-    // The guarantee both forks share is what this test asserts: not 'ok', and no numbers.
+    // The guarantee both apps share is what this test asserts: not 'ok', and no numbers.
     const answers = await answerCatchupViews(orgAdmin, { userId: 'actor', isSystemAdmin: false }, [
       { key: 'v2', organizationId: OTHER_ORG, prefixes: [OTHER_ORG], entityTypes: [productType], cursor: 0 },
     ]);
@@ -72,7 +72,7 @@ describe('answerCatchupViews', () => {
     ]);
 
     // View 'a' is the caller's own org (ok); view 'b' is a non-member org, whose exact
-    // non-'ok' status is fork-dependent (see the previous test).
+    // non-'ok' status is app-dependent (see the previous test).
     expect(answers.map((a) => a.key)).toEqual(['a', 'b']);
     expect(answers[0].status).toBe('ok');
     expect(answers[1].status).not.toBe('ok');

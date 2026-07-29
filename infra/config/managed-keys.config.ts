@@ -1,7 +1,7 @@
 import { defineManagedKeys } from '../lib/managed-keys'
 
 /**
- * Fork-owned registry of scoped IAM keys the infrastructure CLI can mint into operator
+ * App-owned registry of scoped IAM keys the infrastructure CLI can mint into operator
  * runtime secrets. `lib/managed-keys.ts` owns provisioning and validation; targets remain
  * manually settable. Every mint or rotation requires operator confirmation.
  */

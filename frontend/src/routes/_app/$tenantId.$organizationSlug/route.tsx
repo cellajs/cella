@@ -3,7 +3,7 @@ import { organizationLayoutBeforeLoad } from '~/modules/organization/route-logic
 import { noDirectAccess } from '~/utils/no-direct-access';
 
 /**
- * Layout route for tenant + organization-scoped pages. Forks can nest additional routes
+ * Layout route for tenant + organization-scoped pages. Apps can nest additional routes
  * (workspace, project, etc.) under this layout.
  */
 export const Route = createFileRoute('/_app/$tenantId/$organizationSlug')({

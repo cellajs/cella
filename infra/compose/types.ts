@@ -35,7 +35,7 @@ export type ServiceInstanceType = string | Partial<Record<Environment, string>>
 /**
  * A one-shot release step run at a new generation's boot BEFORE the app starts
  * (expand-before-cutover), gated on exit 0. The engine runs the service image as
- * a companion; what the step DOES is fork-defined. Mirrors Fly's release_command
+ * a companion; what the step DOES is app-defined. Mirrors Fly's release_command
  * / Render's pre-deploy: a schema migration, a data backfill, a seed.
  */
 export interface ReleaseStep {
@@ -99,7 +99,7 @@ export interface ServiceMeta {
   target?: string
   /** Under `appConfig.singleVM`, this service runs in-process on the host VM (backend) */
   coHosted?: boolean
-  /** Per-service VM size; a fork resizes its fleet by editing this. Required: every service declares its own box. */
+  /** Per-service VM size; an app resizes its fleet by editing this. Required: every service declares its own box. */
   instanceType: ServiceInstanceType
   /**
    * Deploy-time env bindings: env var → value template resolved by the compute
@@ -139,7 +139,7 @@ export interface ComposeFile {
 }
 
 /**
- * Declarative fork-owned service entry synthesized into Compose and deployment metadata.
+ * Declarative app-owned service entry synthesized into Compose and deployment metadata.
  * The engine injects shared ingress, rollout, health, and environment machinery. Entry presence
  * determines whether the service belongs to the fleet.
  */
@@ -233,7 +233,7 @@ export interface AppServiceConfig {
    */
   coHosted?: boolean
   /**
-   * Per-service VM size: a fork resizes its fleet by editing this. Required:
+   * Per-service VM size: an app resizes its fleet by editing this. Required:
    * every service declares its own box (there is no fleet-wide fallback). A
    * single type for all modes, or a per-mode map.
    */
@@ -262,5 +262,5 @@ export interface AppServiceConfig {
   stopGracePeriod?: string
 }
 
-/** The fork-owned service registry: slug → declarative config. */
+/** The app-owned service registry: slug → declarative config. */
 export type AppServices = Readonly<Record<string, AppServiceConfig>>

@@ -46,8 +46,8 @@ env:
 
 jobs:
   preview:
-    # Skip preview for PRs from forks: they cannot access repo secrets, and
-    # we do not want to expose Scaleway/Pulumi credentials to fork code.
+    # Skip previews for external-repository PRs: they cannot access repo secrets,
+    # and untrusted code must not receive Scaleway/Pulumi credentials.
     # Manual dispatches run from a trusted ref and always proceed.
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     # Source SCW_*/PULUMI_CONFIG_PASSPHRASE from the selected Environment.

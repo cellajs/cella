@@ -4,7 +4,7 @@ import type { StoreOutputs } from '../../lib/stores'
 
 // Provision every registered store exactly once (importing this module triggers
 // it). Registry order is stable; the first store is primary. This is the single
-// seam between the fork's store registry and the rest of the Pulumi program.
+// seam between the app's store registry and the rest of the Pulumi program.
 const results = Object.entries(appStores).map(([id, store]) => {
   store.validate?.()
   return [id, store.provision()] as const
@@ -16,7 +16,7 @@ export const primaryStoreOutputs: StoreOutputs = results[0]?.[1].outputs ?? {}
 /**
  * Runtime-secret values merged across all stores, keyed by runtime-secret id.
  * `secrets.ts` looks these up by the ids declared in `runtime-secrets.config.ts`.
- * A collision means two stores bind the same secret, a fork misconfiguration.
+ * A collision means two stores bind the same secret, an app misconfiguration.
  */
 export const derivedRuntimeSecretData: Record<string, pulumi.Input<string>> = (() => {
   const merged: Record<string, pulumi.Input<string>> = {}
