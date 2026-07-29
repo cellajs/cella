@@ -6,6 +6,7 @@ import {
   getPresignedUrls,
   updateOrganization,
 } from 'sdk';
+import { getEntityPolicies, getPolicyPermissions, hierarchy, policyMatrix } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateMockEntityBodyChannelIdColumns } from '#/mocks';
 import { defaultHeaders } from '../fixtures';
@@ -90,10 +91,18 @@ describe('Permission enforcement via HTTP', async () => {
     });
   });
 
-  // The role split follows the configured policy matrix (default: org member read is 1, so both
-  // roles sign); a fork with a row-conditional read cell pins its own expectations on top.
+  // The member/admin split follows the configured policy matrix, so this suite holds across forks:
+  // cella grants org members unconditional attachment read (cell 1, so a member signs a row they did
+  // not create), while a fork that scopes attachment read to the creator (cell 'own') rejects it.
   describe('Presigned URLs by role', () => {
     const presignAttachmentId = '00000000-0000-4000-a000-0000000000b1';
+
+    // Derive the member's expectation from the policy: read cell 1 signs an unowned row; 'own'/0 rejects.
+    const rootChannelType = hierarchy.channelTypes.find((type) => hierarchy.getParent(type) === null);
+    const memberAttachmentRead = rootChannelType
+      ? getPolicyPermissions(getEntityPolicies('attachment', policyMatrix), rootChannelType, 'member')?.read
+      : undefined;
+    const memberSignsUnowned = memberAttachmentRead === 1;
 
     beforeAll(async () => {
       const { response } = await call(createAttachments, {
@@ -127,7 +136,7 @@ describe('Permission enforcement via HTTP', async () => {
       expect(result.rejectedIds).toEqual([]);
     });
 
-    it('should sign an attachment the member did not create (default policy: member read is unconditional)', async () => {
+    it('signs or rejects a member reading an unowned attachment per the configured read policy', async () => {
       const { data, response } = await call(getPresignedUrls, {
         path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
         body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },
@@ -135,8 +144,13 @@ describe('Permission enforcement via HTTP', async () => {
       });
       expect(response.status).toBe(200);
       const result = data as GetPresignedUrlsResponse;
-      expect(result.data).toHaveLength(1);
-      expect(result.rejectedIds).toEqual([]);
+      if (memberSignsUnowned) {
+        expect(result.data).toHaveLength(1);
+        expect(result.rejectedIds).toEqual([]);
+      } else {
+        expect(result.data).toEqual([]);
+        expect(result.rejectedIds).toEqual([presignAttachmentId]);
+      }
     });
   });
 

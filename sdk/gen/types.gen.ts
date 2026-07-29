@@ -440,6 +440,9 @@ export type Organization = {
   organizationFlags: {
     [key: string]: unknown;
   };
+  setupConfig: {
+    [key: string]: unknown;
+  };
   included: {
     membership?: MembershipBase;
     counts?: {
@@ -513,9 +516,13 @@ export type Attachment = {
    */
   convertedKey: string | null;
   /**
-   * Storage object key for the generated thumbnail; null when none.
+   * Storage object key for the generated thumbnail (mid-size preview); null when none.
    */
   thumbnailKey: string | null;
+  /**
+   * Storage object key for the tiny (grid-cell) image thumbnail; null when none.
+   */
+  thumbnailTinyKey: string | null;
   organizationId: string;
   viewCount?: number;
 };
@@ -3803,6 +3810,9 @@ export type UpdateOrganizationData = {
     organizationFlags?: {
       [key: string]: unknown;
     };
+    setupConfig?: {
+      [key: string]: unknown;
+    };
   };
   path: {
     tenantId: string;
@@ -4049,9 +4059,13 @@ export type CreateAttachmentsData = {
      */
     convertedKey?: string | null;
     /**
-     * Storage object key for the generated thumbnail; null when none.
+     * Storage object key for the generated thumbnail (mid-size preview); null when none.
      */
     thumbnailKey?: string | null;
+    /**
+     * Storage object key for the tiny (grid-cell) image thumbnail; null when none.
+     */
+    thumbnailTinyKey?: string | null;
     stx: StxBase;
   }>;
   path: {
@@ -4132,7 +4146,7 @@ export type GetPresignedUrlsData = {
   body: {
     items: Array<{
       attachmentId: string;
-      variant?: 'original' | 'thumbnail' | 'converted';
+      variant?: 'original' | 'thumbnail' | 'thumbnail-tiny' | 'converted';
     }>;
   };
   path: {
@@ -4179,7 +4193,7 @@ export type GetPresignedUrlsResponses = {
   200: {
     data: Array<{
       attachmentId: string;
-      variant: 'original' | 'thumbnail' | 'converted';
+      variant: 'original' | 'thumbnail' | 'thumbnail-tiny' | 'converted';
       url: string;
     }>;
     /**

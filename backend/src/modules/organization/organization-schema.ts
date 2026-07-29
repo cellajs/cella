@@ -6,6 +6,7 @@ import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { organizationsTable } from '#/modules/organization/organization-db';
+import { setupConfigSchema } from '#/modules/organization/setup-config-schema';
 import {
   booleanTransformSchema,
   excludeArchivedQuerySchema,
@@ -45,6 +46,7 @@ export const organizationSchema = z
     updatedBy: userMinimalBaseSchema.nullable(),
     languages: z.array(languageSchema).min(1),
     organizationFlags: organizationFlagsSchema,
+    setupConfig: setupConfigSchema,
     included: organizationIncludedSchema,
   })
   .openapi('Organization', {
@@ -77,6 +79,8 @@ export const organizationContract = evolutionContract.channel('organization', {
     welcomeText: z.string().max(maxLength.html).nullable(),
     // Partial per key: a single flag can be toggled; the update query merges via jsonb ||
     organizationFlags: organizationFlagsSchema.partial(),
+    // setupConfig merges via jsonb || on update, mirroring organizationFlags
+    setupConfig: setupConfigSchema.partial(),
   })
     .pick({
       slug: true,
@@ -95,6 +99,7 @@ export const organizationContract = evolutionContract.channel('organization', {
       welcomeText: true,
       chatSupport: true,
       organizationFlags: true,
+      setupConfig: true,
     })
     .partial(),
 });

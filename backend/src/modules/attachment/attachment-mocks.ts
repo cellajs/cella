@@ -42,6 +42,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       originalKey: `uploads/${mockNanoid()}/${filename}`,
       convertedKey: null,
       thumbnailKey: null,
+      thumbnailTinyKey: null,
       createdAt,
       createdBy: userId,
       updatedAt: createdAt,

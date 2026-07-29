@@ -55,6 +55,7 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
     welcomeText: `Welcome to ${name}!`,
     chatSupport: faker.datatype.boolean(),
     organizationFlags: { ...appConfig.defaultOrganizationFlags },
+    setupConfig: { ...appConfig.defaultSetupConfig },
     publishedAt: createdAt,
     publicAt: null,
     createdAt,

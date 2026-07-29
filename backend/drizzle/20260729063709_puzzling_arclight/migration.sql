@@ -1,0 +1,1 @@
+ALTER TABLE "attachments" ADD COLUMN "thumbnail_tiny_key" varchar(2048);

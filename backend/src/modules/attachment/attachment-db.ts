@@ -26,6 +26,7 @@ export const attachmentsTable = snakeCase.table(
     originalKey: varchar({ length: maxLength.url }).notNull(),
     convertedKey: varchar({ length: maxLength.url }),
     thumbnailKey: varchar({ length: maxLength.url }),
+    thumbnailTinyKey: varchar({ length: maxLength.url }),
     ...channelRelationColumns('attachment'),
   },
   (table) => [

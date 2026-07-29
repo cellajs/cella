@@ -150,7 +150,13 @@
         "thumbnailKey": {
           "type": ["string", "null"],
           "required": true,
-          "description": "Storage object key for the generated thumbnail; null when none.",
+          "description": "Storage object key for the generated thumbnail (mid-size preview); null when none.",
+          "maxLength": 2048
+        },
+        "thumbnailTinyKey": {
+          "type": ["string", "null"],
+          "required": true,
+          "description": "Storage object key for the tiny (grid-cell) image thumbnail; null when none.",
           "maxLength": 2048
         },
         "organizationId": { "type": "string", "required": true, "format": "uuid" },
@@ -181,6 +187,7 @@
       "originalKey": "uploads/enhqurk6hu54pnfytf99mpmu/rightfully_lest_noted.mp3",
       "convertedKey": null,
       "thumbnailKey": null,
+      "thumbnailTinyKey": null,
       "createdAt": "2024-10-12T12:26:26.417Z",
       "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
       "updatedAt": "2024-10-12T12:26:26.417Z",
@@ -1191,6 +1198,11 @@
           "required": true,
           "properties": {}
         },
+        "setupConfig": {
+          "type": "object",
+          "required": true,
+          "properties": {}
+        },
         "included": {
           "type": "object",
           "required": true,
@@ -1326,6 +1338,7 @@
       "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
       "chatSupport": true,
       "organizationFlags": {},
+      "setupConfig": {},
       "publishedAt": "2024-12-25T15:04:42.969Z",
       "publicAt": null,
       "createdAt": "2024-12-25T15:04:42.969Z",

@@ -23,12 +23,15 @@ interface PresignedUrlsResult {
   rejectedIds: string[];
 }
 
+// TODO: review: can we prevent having to do this even if it will cost us a refactor or mo?
 /**
  * Key to sign for a variant, resolved from the row only (never client input).
  * Variants that were never generated fall back to the always-present original key.
  */
 const selectVariantKey = (attachment: AttachmentModel, variant: AttachmentVariant): string => {
   if (variant === 'thumbnail') return attachment.thumbnailKey ?? attachment.originalKey;
+  if (variant === 'thumbnail-tiny')
+    return attachment.thumbnailTinyKey ?? attachment.thumbnailKey ?? attachment.originalKey;
   if (variant === 'converted') return attachment.convertedKey ?? attachment.originalKey;
   return attachment.originalKey;
 };

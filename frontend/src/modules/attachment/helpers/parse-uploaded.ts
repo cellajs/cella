@@ -5,6 +5,7 @@ import { generateId } from 'shared/utils/entity-id';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 
+/** Parses uploaded attachments. */
 export const parseUploadedAttachments = (
   result: UploadedUppyFile<'attachment'>,
   organizationId: string,
@@ -70,7 +71,11 @@ export const parseUploadedAttachments = (
         target.convertedContentType = mime ?? null;
       }
 
-      if (step.startsWith('thumb_')) {
+      // Check the tiny image thumbnail before the generic thumb_ mapping: both share the thumb_ prefix
+      // but write different keys, so the specific case must win.
+      if (step === 'thumb_image_tiny') {
+        target.thumbnailTinyKey = url ?? null;
+      } else if (step.startsWith('thumb_')) {
         target.thumbnailKey = url ?? null;
       }
     }

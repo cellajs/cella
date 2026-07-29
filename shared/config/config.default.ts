@@ -136,7 +136,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v2',
-  clientCacheVersion: 'v6-batch-presigned-urls',
+  clientCacheVersion: 'v7-thumbnail-tiny',
 
   // Authentication
 
@@ -299,5 +299,7 @@ export const config = {
   // Organization defaults
 
   defaultOrganizationFlags: {},
+
+  defaultSetupConfig: {},
 
 } satisfies RequiredConfig;

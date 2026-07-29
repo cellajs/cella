@@ -18,6 +18,7 @@ const baseAttachment = {
   originalKey: 'org/attachments/original/a.jpg',
   convertedKey: null,
   thumbnailKey: null,
+  thumbnailTinyKey: null,
 };
 
 describe('getCloudUrl public/private branch', () => {

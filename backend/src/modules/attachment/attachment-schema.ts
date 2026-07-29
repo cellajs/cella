@@ -14,7 +14,8 @@ const attachmentFieldDescriptions = {
   publicBucket: 'When true, the file is stored in the public bucket and served from the CDN without a presigned URL.',
   originalKey: 'Storage object key for the original uploaded file.',
   convertedKey: 'Storage object key for the converted variant; null when none.',
-  thumbnailKey: 'Storage object key for the generated thumbnail; null when none.',
+  thumbnailKey: 'Storage object key for the generated thumbnail (mid-size preview); null when none.',
+  thumbnailTinyKey: 'Storage object key for the tiny (grid-cell) image thumbnail; null when none.',
 } as const;
 
 const attachmentInsertSchema = describeFields(createInsertSchema(attachmentsTable), attachmentFieldDescriptions);
@@ -48,6 +49,7 @@ const attachmentCreateBodySchema = attachmentInsertSchema
     convertedContentType: true,
     convertedKey: true,
     thumbnailKey: true,
+    thumbnailTinyKey: true,
   })
   .extend({
     id: validUuidSchema,
@@ -78,7 +80,7 @@ export const attachmentListQuerySchema = paginationQuerySchema.extend({
 });
 
 /** Selectable stored-file variants. Mirrors the frontend `BlobVariant`. */
-export const attachmentVariantSchema = z.enum(['original', 'thumbnail', 'converted']);
+export const attachmentVariantSchema = z.enum(['original', 'thumbnail', 'thumbnail-tiny', 'converted']);
 
 /**
  * Body schema for the batch presigned URLs endpoint. Callers reference private

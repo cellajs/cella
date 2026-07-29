@@ -7,7 +7,10 @@ import { getPresignedUrlBatched } from '~/modules/attachment/presign-batch';
 export type CloudFileVariant = Exclude<BlobVariant, 'raw'>;
 
 /** Cloud-key fields an attachment carries, enough to resolve any variant's URL. */
-type CloudKeyFields = Pick<Attachment, 'originalKey' | 'convertedKey' | 'thumbnailKey' | 'publicBucket'>;
+type CloudKeyFields = Pick<
+  Attachment,
+  'originalKey' | 'convertedKey' | 'thumbnailKey' | 'thumbnailTinyKey' | 'publicBucket'
+>;
 
 /**
  * The cloud key holding a given variant, or null when the variant has no cloud object.
@@ -17,6 +20,8 @@ export function getVariantKey(attachment: CloudKeyFields, variant: BlobVariant):
   switch (variant) {
     case 'thumbnail':
       return attachment.thumbnailKey || null;
+    case 'thumbnail-tiny':
+      return attachment.thumbnailTinyKey || null;
     case 'converted':
       return attachment.convertedKey || null;
     case 'original':

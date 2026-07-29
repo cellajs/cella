@@ -27,7 +27,7 @@ export type DeltaFetchFn = (
   organizationId: string | null,
   tenantId: string | null,
   seqCursor: string,
-  pathPrefix?: string,
+  channelId?: string,
 ) => Promise<{ items: ItemData[]; total: number }>;
 
 /** Registry decoupling entity modules from stream handlers: modules register keys at load time, stream/cache code looks them up by entityType. */

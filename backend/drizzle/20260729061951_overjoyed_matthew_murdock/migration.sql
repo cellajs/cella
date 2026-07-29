@@ -1,0 +1,1 @@
+ALTER TABLE "organizations" ADD COLUMN "setup_config" jsonb DEFAULT '{}' NOT NULL;

@@ -6,6 +6,7 @@ import { findAttachmentsByStxMutationId, insertAttachments } from '#/modules/att
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
 import { getOrgEntityCount } from '#/modules/entities/entities-queries';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
+import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { canCreateEntity } from '#/permissions/can-create';
 import { checkIdempotency } from '#/utils/idempotency';
 import { getIsoDate } from '#/utils/iso-date';
@@ -52,10 +53,9 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
       stx: buildStx(stx),
     };
 
-    canCreateEntity(ctx, {
-      entityType: 'attachment',
-      channelIds: { organization: organization.id },
-    });
+    // Derive the create-check channel scope from the row per the hierarchy (org for cella; a fork
+    // that re-homes attachments on a product entity picks up its channel ids with no change here).
+    canCreateEntity(ctx, buildSubjectFromEntity('attachment', attachment));
     return attachment;
   });
 

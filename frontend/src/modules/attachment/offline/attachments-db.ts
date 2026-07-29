@@ -6,8 +6,11 @@ type BlobSource = 'upload' | 'download';
 export type UploadStatus = 'pending' | 'uploading' | 'uploaded' | 'failed' | 'local-only';
 export type DownloadStatus = 'pending' | 'downloading' | 'downloaded' | 'failed' | 'skipped';
 
-/** Transloadit blob stages: raw upload, processed original, conversion, or thumbnail. */
-export type BlobVariant = 'raw' | 'original' | 'converted' | 'thumbnail';
+/**
+ * Transloadit blob stages: raw upload, processed original, conversion, mid-size thumbnail (image
+ * preview / doc-video poster), or the tiny grid-cell image thumbnail.
+ */
+export type BlobVariant = 'raw' | 'original' | 'converted' | 'thumbnail' | 'thumbnail-tiny';
 
 /**
  * Create composite key for variant-aware blob storage.

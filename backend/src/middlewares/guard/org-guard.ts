@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
-import { withOrganizationFlagDefaults } from '#/modules/organization/helpers/select';
+import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { getOrgCache, setOrgCache } from './org-cache';
 
@@ -52,7 +52,7 @@ export const orgGuard = xMiddleware(
     if (!orgRow) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
 
     // Rows store organizationFlags sparse; merge config defaults under the stored bag
-    const organization = withOrganizationFlagDefaults(orgRow);
+    const organization = withOrganizationDefaults(orgRow);
 
     // Sanity check apart from RLS: Verify organization belongs to current tenant
     if (organization.tenantId !== tenantId) {

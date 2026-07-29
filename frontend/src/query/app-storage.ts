@@ -7,12 +7,28 @@ import { useSeenStore } from '~/modules/seen/seen-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { userStore } from '~/modules/user/user-store';
 import { bindAppDb, closeAppDb } from '~/query/app-db';
+import { forkAppKvStores } from '~/query/fork-app-kv-stores';
 import { resetPersisters } from '~/query/persister';
 import { useSyncStore } from '~/query/realtime/sync-store';
 
+/** Minimal contract a per-user kv store must satisfy to join {@link appKvStores}: hydrate on bind, reset on sign-out. */
+export interface AppKvStore {
+  persist: { rehydrate: () => void | Promise<void> };
+  getState: () => { reset: () => void };
+}
+
 /** Persisted zustand stores that live in `appdb.kv` (per-user; in-memory while signed out).
- *  Each exposes a uniform `reset()` so {@link unbind} can drop in-memory state on sign-out. */
-const appKvStores = [useSeenStore, useSyncStore, useNavigationStore, useDraftStore, useAlertStore, useBoardStore];
+ *  Each exposes a uniform `reset()` so {@link unbind} can drop in-memory state on sign-out.
+ *  Forks append their own stores via {@link forkAppKvStores}. */
+const appKvStores = [
+  useSeenStore,
+  useSyncStore,
+  useNavigationStore,
+  useDraftStore,
+  useAlertStore,
+  useBoardStore,
+  ...forkAppKvStores,
+];
 
 let boundOwner: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();
@@ -70,6 +86,7 @@ export function appStorageReady(): Promise<void> {
   return readyPromise;
 }
 
+// TODO can we get rid of ithis?
 /** One-time, best-effort GC of pre-appdb client storage (hard cutover, no migration). */
 function gcLegacyStorage(): void {
   const flag = `${appConfig.slug}-storage-gc-v2`;

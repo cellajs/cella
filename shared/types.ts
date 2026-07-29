@@ -44,6 +44,9 @@ export type UserFlags = typeof appConfig.defaultUserFlags;
 /** Organization flags (per-org feature toggles; keys declared in fork config) */
 export type OrganizationFlags = typeof appConfig.defaultOrganizationFlags;
 
+/** Organization setup config (fork-shaped defaults, layered under each org's stored jsonb) */
+export type OrganizationSetupConfig = typeof appConfig.defaultSetupConfig;
+
 /** Theme options */
 export type Theme = keyof typeof appConfig.theme.colors | 'none';
 

@@ -1,5 +1,11 @@
 import type { Attachment } from 'sdk';
-import { getCloudUrl, getPrivateFileUrlById, getPublicFileUrl, getVariantKey } from '~/modules/attachment/file-url';
+import {
+  type CloudFileVariant,
+  getCloudUrl,
+  getPrivateFileUrlById,
+  getPublicFileUrl,
+  getVariantKey,
+} from '~/modules/attachment/file-url';
 import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
 import { downloadService } from '~/modules/attachment/offline/download-service';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
@@ -19,7 +25,7 @@ export interface ResolveOptions {
 /** Cloud-key fields needed to build a URL without consulting the react-query cache. */
 type AttachmentMeta = Pick<
   Attachment,
-  'originalKey' | 'convertedKey' | 'thumbnailKey' | 'publicBucket' | 'organizationId' | 'tenantId'
+  'originalKey' | 'convertedKey' | 'thumbnailKey' | 'thumbnailTinyKey' | 'publicBucket' | 'organizationId' | 'tenantId'
 >;
 
 /**
@@ -67,20 +73,26 @@ interface RefContext {
 
 /**
  * Resolves slashed public keys through the CDN and private attachment IDs through local storage
- * or a presigned URL. Unresolvable values return an empty string. Callers repeatedly resolving
- * local blobs must revoke returned object URLs themselves.
+ * or a presigned URL. Unresolvable values return an empty string. Local blob URLs come from the
+ * storage service's shared cache: the same ref returns a stable URL across calls (so BlockNote
+ * re-resolving on every render does not reload the image) and the service owns their revocation.
  */
 export async function resolveBlockNoteFileRef(ref: string, ctx: RefContext = {}): Promise<string> {
   if (!ref.length) return '';
 
-  // Attachment ids are UUIDs (no slashes); public cloud keys contain slashes.
+  // Attachment ids are UUIDs (no slashes); public cloud keys contain slashes. Public image blocks
+  // already store the mid-size thumbnail key at upload time, so no variant choice is needed here.
   if (ref.includes('/')) return getPublicFileUrl(ref);
 
-  // Private attachment: prefer a local blob, else resolve a presigned URL by id.
-  const localResult = await attachmentStorage.createBlobUrlWithVariant(ref, 'converted', true);
-  if (localResult) return localResult.url;
-
+  // Private attachment referenced by id. Inline images use the lighter mid-size thumbnail; other
+  // types (video, audio, documents) keep the converted variant so they stay playable/readable.
   const cached = findAttachmentInCache(ref);
+  const variant: CloudFileVariant = cached?.contentType?.startsWith('image/') ? 'thumbnail' : 'converted';
+
+  // Prefer a stable local blob URL, else resolve a presigned URL by id.
+  const localUrl = await attachmentStorage.getSharedBlobUrl(ref, variant, true);
+  if (localUrl) return localUrl;
+
   const tenantId = cached?.tenantId ?? ctx.tenantId;
   const organizationId = cached?.organizationId ?? ctx.organizationId;
   if (!tenantId || !organizationId) {
@@ -88,5 +100,5 @@ export async function resolveBlockNoteFileRef(ref: string, ctx: RefContext = {})
     return '';
   }
 
-  return getPrivateFileUrlById(ref, 'converted', tenantId, organizationId);
+  return getPrivateFileUrlById(ref, variant, tenantId, organizationId);
 }

@@ -14,7 +14,7 @@ import { flattenInfiniteData } from '~/query/basic/flatten';
 import { queryClient } from '~/query/query-client';
 
 /** Variant download priority, in download order. 'raw' is local-only, so never fetched. */
-const variantPriority: CloudFileVariant[] = ['thumbnail', 'converted', 'original'];
+const variantPriority: CloudFileVariant[] = ['thumbnail-tiny', 'thumbnail', 'converted', 'original'];
 
 /** Per-fetch timeout for variant downloads. */
 const variantFetchTimeoutMs = 30_000;
