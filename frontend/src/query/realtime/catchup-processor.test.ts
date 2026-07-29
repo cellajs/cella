@@ -74,7 +74,7 @@ vi.stubGlobal('localStorage', {
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
-const { useSyncStore } = await import('~/query/realtime/sync-store');
+const { syncStore } = await import('~/query/realtime/sync-store');
 const { flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
 const { processAppCatchup } = await import('./catchup-processor');
 
@@ -92,7 +92,7 @@ const okViewResponse = (frontier: number, count = 1, key = 'org-1:attachment'): 
 describe('catchup processor (view-driven)', () => {
   afterEach(() => {
     queryClient.clear();
-    useSyncStore.getState().reset();
+    syncStore.getState().reset();
     vi.clearAllMocks();
   });
 
@@ -104,8 +104,8 @@ describe('catchup processor (view-driven)', () => {
     }));
     registerEntityQueryKeys('attachment', keys, deltaFetch);
 
-    useSyncStore.getState().setOrgTenantId('org-1', 'tenant-1');
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.detail.byId('attachment-1'), {
       id: 'attachment-1',
       organizationId: 'org-1',
@@ -119,7 +119,7 @@ describe('catchup processor (view-driven)', () => {
     await processAppCatchup(okViewResponse(6));
 
     expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,6', undefined);
-    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
     expect(queryClient.getQueryData(keys.detail.byId('attachment-1'))).toMatchObject({ name: 'fresh' });
     expect(queryClient.getQueryData(keys.list.org('org-1'))).toEqual({
       items: [{ id: 'attachment-1', entityType: 'attachment', organizationId: 'org-1', name: 'fresh', seq: 6 }],
@@ -138,8 +138,8 @@ describe('catchup processor (view-driven)', () => {
     }));
     registerEntityQueryKeys('attachment', keys, deltaFetch);
 
-    useSyncStore.getState().setOrgTenantId('org-1', 'tenant-1');
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 10);
+    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 10);
     queryClient.setQueryData(keys.detail.byId('att-proj'), {
       id: 'att-proj',
       organizationId: 'org-1',
@@ -154,7 +154,7 @@ describe('catchup processor (view-driven)', () => {
     expect(deltaFetch).toHaveBeenCalledTimes(1);
     expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '11,12', undefined);
     expect(queryClient.getQueryData(keys.detail.byId('att-proj'))).toMatchObject({ name: 'fresh-proj' });
-    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
   });
 
   it('never advances the cursor silently: a failed delta fetch invalidates before advancing', async () => {
@@ -164,7 +164,7 @@ describe('catchup processor (view-driven)', () => {
     });
     registerEntityQueryKeys('attachment', keys, deltaFetch);
 
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
@@ -172,7 +172,7 @@ describe('catchup processor (view-driven)', () => {
 
     // Fetch failed → list invalidated (recovery handed to react-query), THEN cursor advanced.
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
-    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
   });
 
   it('short delivery (ok but empty window) holds the cursor, invalidates, and degrades trust', async () => {
@@ -182,8 +182,8 @@ describe('catchup processor (view-driven)', () => {
     registerEntityQueryKeys('attachment', keys, deltaFetch);
 
     setSyncDeliveryTrusted(true);
-    useSyncStore.getState().setOrgTenantId('org-1', 'tenant-1');
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
@@ -191,7 +191,7 @@ describe('catchup processor (view-driven)', () => {
 
     // Fetched the window, but reachedSeq (0) < frontier (9): never advance silently.
     expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9', undefined);
-    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
     expect(isSyncDeliveryTrusted()).toBe(false);
   });
@@ -201,12 +201,12 @@ describe('catchup processor (view-driven)', () => {
     const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
     registerEntityQueryKeys('attachment', keys, deltaFetch);
 
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
 
     await processAppCatchup(okViewResponse(6));
 
     expect(deltaFetch).not.toHaveBeenCalled();
-    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
   });
 
   it('a baseline view (cursor 0) stores the frontier without fetching', async () => {
@@ -217,7 +217,7 @@ describe('catchup processor (view-driven)', () => {
     await processAppCatchup(okViewResponse(42));
 
     expect(deltaFetch).not.toHaveBeenCalled();
-    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(42);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(42);
   });
 
   it('a caught-up view (frontier <= cursor) neither fetches nor invalidates the cached list', async () => {
@@ -227,8 +227,8 @@ describe('catchup processor (view-driven)', () => {
     const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
     registerEntityQueryKeys('attachment', keys, deltaFetch);
 
-    useSyncStore.getState().setOrgTenantId('org-caughtup', 'tenant-1');
-    useSyncStore.getState().setOrgSeq('org-caughtup', 'attachment', 6);
+    syncStore.getState().setOrgTenantId('org-caughtup', 'tenant-1');
+    syncStore.getState().setOrgSeq('org-caughtup', 'attachment', 6);
     queryClient.setQueryData(keys.list.org('org-caughtup'), { items: [], total: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
@@ -239,7 +239,7 @@ describe('catchup processor (view-driven)', () => {
     expect(invalidateSpy).not.toHaveBeenCalledWith(
       expect.objectContaining({ queryKey: keys.list.org('org-caughtup') }),
     );
-    expect(useSyncStore.getState().getOrgSeq('org-caughtup', 'attachment')).toBe(6);
+    expect(syncStore.getState().getOrgSeq('org-caughtup', 'attachment')).toBe(6);
   });
 
   it('an opaque view falls back to invalidation of cached lists, no numbers consumed', async () => {
@@ -247,7 +247,7 @@ describe('catchup processor (view-driven)', () => {
     const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
     registerEntityQueryKeys('attachment', keys, deltaFetch);
 
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
@@ -260,7 +260,7 @@ describe('catchup processor (view-driven)', () => {
     expect(deltaFetch).not.toHaveBeenCalled();
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
     // Cursor untouched: opaque answers carry no frontier to advance to.
-    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
   });
 
   it('invalidates org lists when a server count CHANGES between catchups (never vs cached totals)', async () => {
@@ -268,7 +268,7 @@ describe('catchup processor (view-driven)', () => {
     const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
     registerEntityQueryKeys('attachment', keys, deltaFetch);
 
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 6);
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 6);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 5 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
@@ -297,12 +297,12 @@ describe('catchup processor (view-driven)', () => {
 describe('registered grant-boundary views', () => {
   afterEach(() => {
     queryClient.clear();
-    useSyncStore.getState().reset();
+    syncStore.getState().reset();
     vi.clearAllMocks();
   });
 
   const declare = () =>
-    useSyncStore.getState().declareSyncView('org-1:attachment:subtree', {
+    syncStore.getState().declareSyncView('org-1:attachment:subtree', {
       organizationId: 'org-1',
       prefixes: ['org-1/c1'],
       entityTypes: ['attachment'],
@@ -324,7 +324,7 @@ describe('registered grant-boundary views', () => {
       vi.fn(async () => ({ items: [], total: 0 })),
     );
     declare();
-    useSyncStore.getState().setViewCursor('org-1:attachment:subtree', 10);
+    syncStore.getState().setViewCursor('org-1:attachment:subtree', 10);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
@@ -333,7 +333,7 @@ describe('registered grant-boundary views', () => {
 
     await processAppCatchup(answer({ status: 'ok', frontiers: { attachment: 15 } }));
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
-    expect(useSyncStore.getState().getView('org-1:attachment:subtree')?.cursor).toBe(15);
+    expect(syncStore.getState().getView('org-1:attachment:subtree')?.cursor).toBe(15);
   });
 
   it('baseline adopts frontier without invalidating; forbidden removes the view', async () => {
@@ -348,18 +348,18 @@ describe('registered grant-boundary views', () => {
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     await processAppCatchup(answer({ status: 'ok', frontiers: { attachment: 33 } }));
-    expect(useSyncStore.getState().getView('org-1:attachment:subtree')?.cursor).toBe(33);
+    expect(syncStore.getState().getView('org-1:attachment:subtree')?.cursor).toBe(33);
     expect(invalidateSpy).not.toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
 
     await processAppCatchup(answer({ status: 'forbidden' }));
-    expect(useSyncStore.getState().getView('org-1:attachment:subtree')).toBeUndefined();
+    expect(syncStore.getState().getView('org-1:attachment:subtree')).toBeUndefined();
   });
 });
 
 describe('catchup → fetch prioritizer fold', () => {
   afterEach(() => {
     queryClient.clear();
-    useSyncStore.getState().reset();
+    syncStore.getState().reset();
     vi.clearAllMocks();
   });
 
@@ -371,19 +371,19 @@ describe('catchup → fetch prioritizer fold', () => {
     const deltaFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
     registerEntityQueryKeys('attachment', keys, deltaFetch);
 
-    useSyncStore.getState().setOrgTenantId('org-1', 'tenant-1');
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
     await processAppCatchup(okViewResponse(9));
 
     // Advance-at-flush: the fetch prioritizer owns the cursor for enqueued ranges.
     expect(deltaFetch).not.toHaveBeenCalled();
-    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
 
     await flushAllNow();
     expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9', undefined);
-    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
   });
 
   it('still reconciles viewing orgs inline through the fetch prioritizer flush (mutation-replay gate)', async () => {
@@ -394,14 +394,14 @@ describe('catchup → fetch prioritizer fold', () => {
     const deltaFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
     registerEntityQueryKeys('attachment', keys, deltaFetch);
 
-    useSyncStore.getState().setOrgTenantId('org-1', 'tenant-1');
-    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
     await processAppCatchup(okViewResponse(9));
 
     // Awaited before processAppCatchup resolved: the delta is already ingested here.
     expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9', undefined);
-    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
   });
 });

@@ -8,7 +8,7 @@ import { queryClient } from '~/query/query-client';
 import * as cacheOps from './cache-ops';
 import { propagateEmbeddings } from './propagation';
 import { getSyncTier, isViewingChannel } from './sync-priority';
-import { useSyncStore } from './sync-store';
+import { syncStore } from './sync-store';
 import type { AppStreamNotification } from './types';
 import { resolveChannelPath } from './view-declaration';
 
@@ -73,7 +73,7 @@ export function enqueueRange(input: EnqueueInput): void {
   const tier = getSyncTier(input.entityType, input.organizationId, input.channelId);
   if (tier.min === Number.POSITIVE_INFINITY) {
     // Muted and archived scopes record the known watermark and fetch when opened.
-    useSyncStore.getState().setKnownSeq(input.channelId ?? input.organizationId, input.entityType, input.untilSeq);
+    syncStore.getState().setKnownSeq(input.channelId ?? input.organizationId, input.entityType, input.untilSeq);
     return;
   }
   enqueueWithTier(input, tier);
@@ -87,7 +87,7 @@ export function enqueueCatchupRange(input: EnqueueInput): void {
 
 function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }): void {
   const { entityType, organizationId, tenantId, channelId, fromSeq, untilSeq, isCreate, propagation } = input;
-  const store = useSyncStore.getState();
+  const store = syncStore.getState();
   const channelViewId = channelId ?? organizationId;
 
   // Known watermark: free, recorded even for scopes we never fetch (powers catch-up-on-open).
@@ -297,7 +297,7 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
 }
 
 function advanceCaughtUp(entry: DirtyEntry): void {
-  const store = useSyncStore.getState();
+  const store = syncStore.getState();
   if (entry.channelId) {
     store.setChannelSeq(entry.organizationId, entry.channelId, entry.entityType, entry.untilSeq);
   } else {

@@ -1,8 +1,8 @@
 // biome-ignore lint/style/noRestrictedImports: imperative call from Zustand action, batched seen-flush not eligible for a React Query hook.
 import { markSeen } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
-import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
+import { createStore } from 'zustand/vanilla';
 import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
 import { isSeenTracked } from '~/modules/seen/helpers';
@@ -52,11 +52,11 @@ interface SeenStoreState {
 }
 
 /**
- * Store for "seen" entities. Queued from IntersectionObserver, batch-flushed to
+ * Vanilla Zustand store for "seen" entities. Queued from IntersectionObserver, batch-flushed to
  * POST /:tenantId/:organizationId/seen periodically (or on unload via sendBeacon).
  * Pending IDs stay in memory; confirmed IDs persist to prevent resending next session.
  */
-export const useSeenStore = create<SeenStoreState>()(
+export const seenStore = createStore<SeenStoreState>()(
   devtools(
     persist(
       (set, get) => ({
@@ -151,7 +151,7 @@ export const useSeenStore = create<SeenStoreState>()(
  * Fork code must use this accessor and keep store internals private.
  */
 export function isSeenLocally(entityId: string): boolean {
-  if (useSeenStore.getState().flushedIds.has(entityId)) return true;
+  if (seenStore.getState().flushedIds.has(entityId)) return true;
   for (const batch of pending.values()) if (batch.productIds.has(entityId)) return true;
   return false;
 }

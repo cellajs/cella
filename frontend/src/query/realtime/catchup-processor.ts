@@ -9,7 +9,7 @@ import {
 } from '~/query/basic/entity-query-registry';
 import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-config';
 import { queryClient } from '~/query/query-client';
-import { useSyncStore } from '~/query/realtime/sync-store';
+import { syncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
 import { enqueueCatchupRange, flushChannelViewNow, resetFetchPrioritizer } from './fetch-prioritizer';
 import * as membershipOps from './membership-ops';
@@ -23,7 +23,7 @@ import { getSyncTier, getTenantIdForOrg } from './sync-priority';
  */
 export async function processAppCatchup(response: PostAppCatchupResponse, baselineOnly = false): Promise<void> {
   const { changes, views } = response;
-  const syncStore = useSyncStore.getState();
+  const syncState = syncStore.getState();
   let hadGap = false; // any view still behind the server frontier this cycle
 
   // ── Views: product entity sync per (org, entityType) ──────────────────────
@@ -32,8 +32,8 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
 
     for (const answer of views) {
       // Registered grant-boundary views (views.ts) take precedence over org-view keys.
-      if (syncStore.getView(answer.key)) {
-        if (!baselineOnly) processRegisteredViewAnswer(answer, syncStore);
+      if (syncState.getView(answer.key)) {
+        if (!baselineOnly) processRegisteredViewAnswer(answer, syncState);
         continue;
       }
 
@@ -58,7 +58,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       }
 
       const frontier = answer.frontiers?.[entityType] ?? 0;
-      const clientCursor = syncStore.getOrgSeq(organizationId, entityType);
+      const clientCursor = syncState.getOrgSeq(organizationId, entityType);
 
       // Baseline (first session for this org view): store the frontier, let route loaders /
       // hydration supply data. With something already cached, refetch it.
@@ -67,19 +67,19 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
           cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
           console.debug(`[CatchupProcessor] View ${answer.key}: first session → full refetch`);
         }
-        syncStore.setOrgSeq(organizationId, entityType, frontier);
+        syncState.setOrgSeq(organizationId, entityType, frontier);
         continue;
       }
 
       if (frontier <= clientCursor) continue; // caught up
       hadGap = true;
 
-      const tenantId = syncStore.getOrgTenantId(organizationId) ?? getTenantIdForOrg(organizationId);
+      const tenantId = syncState.getOrgTenantId(organizationId) ?? getTenantIdForOrg(organizationId);
 
       // Cache-symmetry guard: with nothing cached there is nothing to patch; mount
       // hydration fetches fresh. Advance so the window is not re-offered forever.
       if (!hasAnyCachedList(keys, organizationId)) {
-        syncStore.setOrgSeq(organizationId, entityType, frontier);
+        syncState.setOrgSeq(organizationId, entityType, frontier);
         console.debug(`[CatchupProcessor] View ${answer.key}: no cached list → skip delta`);
         continue;
       }
@@ -118,13 +118,13 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
 
     // Seed the org entry so the NEXT catchup request declares views for it (fresh
     // sessions have no stored orgs yet; membership-derived `changes` names them).
-    syncStore.setOrgTenantId(organizationId, syncStore.getOrgTenantId(organizationId) ?? '');
+    syncState.setOrgTenantId(organizationId, syncState.getOrgTenantId(organizationId) ?? '');
 
     // Membership change via the bump-only membership signal; stored after comparison.
     const serverMembershipSignal = signals?.membership;
     if (serverMembershipSignal !== undefined) {
-      const membershipChanged = serverMembershipSignal !== syncStore.getOrgSeq(organizationId, 'membership');
-      syncStore.setOrgSeq(organizationId, 'membership', serverMembershipSignal);
+      const membershipChanged = serverMembershipSignal !== syncState.getOrgSeq(organizationId, 'membership');
+      syncState.setOrgSeq(organizationId, 'membership', serverMembershipSignal);
       if (membershipChanged && !baselineOnly) membershipOps.invalidateMemberQueries(organizationId);
     }
 
@@ -189,13 +189,13 @@ export function catchupEntityTypes(): string[] {
  */
 function processRegisteredViewAnswer(
   answer: NonNullable<PostAppCatchupResponse['views']>[number],
-  syncStore: ReturnType<typeof useSyncStore.getState>,
+  syncState: ReturnType<typeof syncStore.getState>,
 ): void {
-  const view = syncStore.getView(answer.key);
+  const view = syncState.getView(answer.key);
   if (!view) return;
 
   if (answer.status === 'forbidden') {
-    syncStore.removeSyncView(answer.key);
+    syncState.removeSyncView(answer.key);
     console.debug(`[CatchupProcessor] View ${answer.key}: forbidden → removed`);
     return;
   }
@@ -219,14 +219,14 @@ function processRegisteredViewAnswer(
   const frontier = Math.max(0, ...Object.values(answer.frontiers ?? {}));
   if (view.cursor === 0) {
     // Baseline: adopt frontier; hydration/route loaders supply the data.
-    syncStore.setViewCursor(answer.key, frontier);
+    syncState.setViewCursor(answer.key, frontier);
     console.debug(`[CatchupProcessor] View ${answer.key}: baseline → cursor ${frontier}`);
     return;
   }
   if (frontier <= view.cursor) return; // unchanged: skip refetches, the precision win
 
   invalidateTypes();
-  syncStore.setViewCursor(answer.key, frontier);
+  syncState.setViewCursor(answer.key, frontier);
   console.debug(`[CatchupProcessor] View ${answer.key}: frontier ${view.cursor} → ${frontier} → invalidated`);
 }
 
