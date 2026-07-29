@@ -1,6 +1,6 @@
 name: Deploy
 
-# Thin trigger with three paths into one reusable pipeline (infra-deploy.yml):
+# Thin trigger with three paths into one reusable pipeline (deploy-pipeline.yml):
 #   push to main      -> auto staging, so main is always mirrored on staging.
 #                        An app built from the template must bootstrap a
 #                        `staging` Environment with the SCW_* secrets before
@@ -9,7 +9,7 @@ name: Deploy
 #                        Environment named `production` to make it a manual
 #                        promote; the deploy job already targets that Environment)
 #   workflow_dispatch -> pick the environment by hand
-# The pipeline itself lives in infra-deploy.yml; this is the only workflow an
+# The pipeline itself lives in deploy-pipeline.yml; this is the only workflow an
 # app edits.
 
 permissions: {}
@@ -39,7 +39,7 @@ concurrency:
 
 jobs:
   deploy:
-    uses: ./.github/workflows/infra-deploy.yml
+    uses: ./.github/workflows/deploy-pipeline.yml
     with:
       environment: ${{ inputs.environment || (github.event_name == 'push' && 'staging') || 'production' }}
     secrets: inherit

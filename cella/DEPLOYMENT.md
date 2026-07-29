@@ -124,7 +124,7 @@ A fourth secret sits outside this chain: the **Pulumi passphrase**, which encryp
 
 ## CI deploys
 
-The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger (push to main, release, and manual dispatch) that calls the reusable pipeline in [.github/workflows/infra-deploy.yml](../.github/workflows/infra-deploy.yml). Inside the reusable workflow, a `setup` job derives names/matrices from config, a build matrix pushes images, and one `deploy` job runs the whole deployment as a single command:
+The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger (push to main, release, and manual dispatch) that calls the reusable pipeline in [.github/workflows/deploy-pipeline.yml](../.github/workflows/deploy-pipeline.yml). Inside the reusable workflow, a `setup` job derives names/matrices from config, a build matrix pushes images, and one `deploy` job runs the whole deployment as a single command:
 
 ```
 pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref <ref>
@@ -384,10 +384,10 @@ infra/
 
 .github/workflows/
 ├── deploy.yml              Thin trigger: release published + manual dispatch
-├── infra-deploy.yml        Reusable pipeline: setup, image builds, the deploy command
+├── deploy-pipeline.yml     Reusable pipeline: setup, image builds, the deploy command
 ```
 
-The workflows are tightly coupled to this package: `infra-deploy.yml` builds the release images in a matrix, then hands everything else to the single deploy command (authenticating with the CI deploy key).
+The workflows are tightly coupled to this package: `deploy-pipeline.yml` builds the release images in a matrix, then hands everything else to the single deploy command (authenticating with the CI deploy key).
 
 ## Advanced operations
 
