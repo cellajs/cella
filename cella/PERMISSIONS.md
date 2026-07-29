@@ -99,7 +99,7 @@ The compiled-predicate paths (the SQL twin: `compileRowConditionSql`, collection
 
 ## The policy consulted
 
-The policy is declared once, validated at boot, and never varies per request. Two files, both fork-facing. They must change together — the hierarchy defines what channels exist, the policies must then cover every role in every one of them.
+The policy is declared once, validated at boot, and never varies per request. Two files, both app-facing. They must change together — the hierarchy defines what channels exist, the policies must then cover every role in every one of them.
 
 **`shared/config/hierarchy-config.ts`** — a fluent builder, not an object literal:
 
@@ -185,7 +185,7 @@ Boundary code that starts from DB rows, route params, or CDC events uses `buildS
 
 ## Row conditions
 
-Two mechanisms widen access beyond the policy matrix, and both read the row's own columns. There are exactly two rules — `own` and `public` — and that set is **closed**, not a fork extension point: every rule must be evaluable in all three forms (JS, compiled SQL, frontend) _and_ by dispatch from the row alone, which rules out cross-row and fork-defined conditions.
+Two mechanisms widen access beyond the policy matrix, and both read the row's own columns. There are exactly two rules — `own` and `public` — and that set is **closed**, not an app extension point: every rule must be evaluable in all three forms (JS, compiled SQL, frontend) _and_ by dispatch from the row alone, which rules out cross-row and app-defined conditions.
 
 A **row condition** (`shared/src/permissions/row-conditions.ts`) qualifies a grant per row: a cell of `1` grants the action on every row the channel scope reaches; a condition cell grants it only on rows the condition matches. Because the set is closed, a condition is just its **name**:
 
@@ -224,7 +224,7 @@ The engine produces a verdict. Each tier is responsible for _asking_ — and eve
 | **Yjs relay** | `canEditEntity` on WS upgrade | Reads the entity row and memberships over raw `pg` (table/column names derived via `toTableName`/`toColumnName`), then runs the same engine. |
 | **Postgres RLS** | `tenantRead` / `tenantContext` | Tenant isolation only. Not a permission layer. |
 
-One row-lifecycle check runs **before** the engine on every row path: unpublished drafts (`publishedAt` null — an opt-in product-table column, see `shared/src/published-rows.ts`) are visible to their author alone. The PRIMARY draft boundary sits below all of this: a publication row filter keeps draft product rows out of the replication stream entirely (publish arrives as INSERT, unpublish as DELETE — see SYNC_ENGINE.md), so the SSE dispatch veto is fail-closed defense-in-depth for a misconfigured fork, not the mechanism. The API-side checks remain required because the TABLE still contains drafts: collection/delta reads exclude them by predicate, the detail read 404s non-authors, the detail cache refuses to serve them, and the yjs relay rejects non-author write connections. The engine itself has no draft vocabulary — the column is the contract, and every check is introspection-guarded so tables without the column are untouched.
+One row-lifecycle check runs **before** the engine on every row path: unpublished drafts (`publishedAt` null — an opt-in product-table column, see `shared/src/published-rows.ts`) are visible to their author alone. The PRIMARY draft boundary sits below all of this: a publication row filter keeps draft product rows out of the replication stream entirely (publish arrives as INSERT, unpublish as DELETE — see SYNC_ENGINE.md), so the SSE dispatch veto is fail-closed defense-in-depth for a misconfigured app, not the mechanism. The API-side checks remain required because the TABLE still contains drafts: collection/delta reads exclude them by predicate, the detail read 404s non-authors, the detail cache refuses to serve them, and the yjs relay rejects non-author write connections. The engine itself has no draft vocabulary — the column is the contract, and every check is introspection-guarded so tables without the column are untouched.
 
 Product `publishedAt` is distinct from channel `publishedAt`, which gates setup, and from `publicAt`, which grants non-members read access.
 

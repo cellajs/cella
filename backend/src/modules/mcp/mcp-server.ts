@@ -7,7 +7,7 @@ import { describeMcpTools, getMcpTools } from '#/modules/mcp/tool-source';
  *
  * Implements the core methods MCP clients rely on (`initialize`, `tools/list`,
  * `tools/call`, `ping`) and exposes Cella's server tool registry. Tools are the
- * same ones the in-app model runner uses, so a fork declares a capability once
+ * same ones the in-app model runner uses, so an app declares a capability once
  * in `buildTools` and it is available to both surfaces.
  *
  * @see https://modelcontextprotocol.io

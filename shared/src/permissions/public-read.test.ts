@@ -47,7 +47,7 @@ describe('public read grants — anonymous actor', () => {
 
   it('reads the row itself, never an ancestor: a public parent does NOT publish its children', () => {
     // The project (parent) is public; the task is not. Publication does not cascade through the
-    // permission engine: a fork that wants it propagates `publicAt` to the child row.
+    // permission engine: an app that wants it propagates `publicAt` to the child row.
     const task = wideSubject({
       entityType: 'task',
       id: 't1',

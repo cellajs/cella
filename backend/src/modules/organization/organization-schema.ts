@@ -27,7 +27,7 @@ import { mockOrganizationResponse } from './organization-mocks';
 
 const organizationIncludedSchema = channelIncludedSchema('organization');
 
-/** Flag keys come from the fork-owned config, so the wire contract stays strictly typed per fork.
+/** Flag keys come from the app-owned config, so the wire contract stays strictly typed per app.
  *  Built loose then cast: with zero flags (cella default) `keyof OrganizationFlags` is `never`. */
 export const organizationFlagsSchema = z.object(
   Object.keys(appConfig.defaultOrganizationFlags).reduce(

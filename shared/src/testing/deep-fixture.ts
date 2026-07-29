@@ -4,7 +4,7 @@ import { configurePolicyMatrix } from '../permissions/policy-matrix';
 import type { EntityType } from '../../types';
 
 // Deep synthetic hierarchy (projectcampus-shaped): 4 channel levels with an `item` product whose
-// rows attach at any depth, typed independently of any fork's app config. Path, home-resolution,
+// rows attach at any depth, typed independently of any app config. Path, home-resolution,
 // counter, permission-proving, and view-derivation suites all test against this ONE hierarchy so
 // the subsystems that must agree on path semantics are proven against the same shape.
 export type DeepChannelType = 'organization' | 'course' | 'courseSection' | 'project';

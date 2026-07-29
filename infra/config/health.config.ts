@@ -1,8 +1,8 @@
 /**
- * Fork-owned health contract every deployed service implements. The engine
+ * App-owned health contract every deployed service implements. The engine
  * probes `path` (container healthcheck, LB health check, cutover version gate,
  * smoke) and reads the release version from `versionHeader`. The app must serve
- * these; a fork that changes them updates its app in lockstep. Per-service
+ * these; an app that changes them updates its implementation in lockstep. Per-service
  * response codes are declared as `healthExpectStatus` in services.config.ts.
  */
 export const healthContract = {

@@ -53,7 +53,7 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
       stx: buildStx(stx),
     };
 
-    // Derive the create-check channel scope from the row per the hierarchy (org for cella; a fork
+    // Derive the create-check channel scope from the row per the hierarchy (org for cella; an app
     // that re-homes attachments on a product entity picks up its channel ids with no change here).
     canCreateEntity(ctx, buildSubjectFromEntity('attachment', attachment));
     return attachment;

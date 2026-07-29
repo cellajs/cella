@@ -12,7 +12,7 @@ export const Route = createFileRoute('/_app/$tenantId/$organizationSlug/organiza
   staticData: { isAuth: true, floatingNavButtons: { left: 'menu' } },
   beforeLoad: ({ matches }) => {
     // Default tab comes from channelRouteConfig, so direct visits and entity links agree on the
-    // organization's canonical landing surface (forks change it in routes-config, a pinned file)
+    // organization's canonical landing surface (apps change it in routes-config, a pinned file)
     noDirectAccess(matches, '/_app/$tenantId/$organizationSlug/organization', channelRouteConfig.organization.path);
   },
   head: ({ match }) => ({ meta: [{ title: appTitle(match.context.organization?.name) }] }),

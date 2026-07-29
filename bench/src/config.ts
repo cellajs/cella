@@ -7,13 +7,13 @@ try {
 } catch {}
 
 /**
- * Load-test config derived from the fork's own config (`appConfig`, `backend/.env`)
- * so bench follows a fork's port offset automatically. Dev-only, local stack.
+ * Load-test config derived from the app's own config (`appConfig`, `backend/.env`)
+ * so bench follows an app's port offset automatically. Dev-only, local stack.
  */
 // Benchmark the backend port directly to avoid Vite proxy serialization and connection resets.
 // Preserve the configured mount path so API routes still resolve.
 const backendMountPath = new URL(appConfig.backendUrl).pathname.replace(/\/$/, '');
-// biome-ignore lint/style/noProcessEnv: bench reads the fork's backend PORT from backend/.env here.
+// biome-ignore lint/style/noProcessEnv: bench reads the app's backend PORT from backend/.env here.
 export const BACKEND_PORT = Number(process.env.PORT ?? '4000');
 export const BASE_URL = `http://localhost:${BACKEND_PORT}${backendMountPath}`;
 
@@ -29,7 +29,7 @@ export const SSE_HOLD_MS = Number(process.env.HOLD_MS ?? 25_000);
 export const SSE_SYNC_MODE = process.env.SYNC_MODE === 'immediate' ? 'immediate' : 'lazy';
 
 // Admin (superuser) connection: bench seeds bypass RLS via `session_replication_role`.
-// biome-ignore lint/style/noProcessEnv: bench reads the fork's DATABASE_ADMIN_URL here.
+// biome-ignore lint/style/noProcessEnv: bench reads the app's DATABASE_ADMIN_URL here.
 export const DB_URL = process.env.DATABASE_ADMIN_URL ?? 'postgres://postgres:postgres@0.0.0.0:5432/postgres';
 
 // Inject BASE_URL so Artillery scenarios can interpolate $processEnvironment.BASE_URL.

@@ -8,7 +8,7 @@ const caddyfile = readFileSync(resolve(__dirname, '../../caddy/Caddyfile'), 'utf
 const dockerfile = readFileSync(resolve(__dirname, '../../caddy/Dockerfile'), 'utf-8')
 
 // Derived from the canonical fixture so the negative assertion below stays
-// fork-agnostic (the point is "no bucket is hardcoded", not "not this slug").
+// configuration-independent (the point is "no bucket is hardcoded", not "not this slug").
 const frontendBucket = deriveInfra(fakeConfig()).naming.frontendBucket
 
 // Pins the Caddyfile contract the rollout and smoke tests depend on.
@@ -63,7 +63,7 @@ describe('frontend Caddyfile', () => {
   })
 
   it('reverse-proxies to the {$ORIGIN_HOST} env, not a hardcoded bucket', () => {
-    // Hard-coding would couple the image to a single fork's bucket name.
+    // Hard-coding would couple the image to a single app's bucket name.
     expect(caddyfile).toContain('{$ORIGIN_HOST}')
     expect(caddyfile).not.toContain(`${frontendBucket}.s3.`)
   })

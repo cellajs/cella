@@ -12,7 +12,7 @@ export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: NonNullable<T
 
 /** Fields added by the frontend cache enrichment pipeline (membership, permissions, ancestor slugs) */
 export type ChannelEnrichment = {
-  /** Parent organization ID - used by sub-context-entities (e.g. workspace) in forks */
+  /** Parent organization ID - used by sub-context-entities (e.g. workspace) in apps */
   organizationId?: string;
   /** Membership data - populated via cache enrichment from myMemberships */
   membership?: MembershipBase | null;

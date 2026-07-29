@@ -11,7 +11,7 @@ const servicePublicUrl = (slug: string): string => {
 }
 
 // Same-origin services collapse into connect-src 'self': emit an origin only
-// when it differs from the app origin (a fork still on per-service subdomains).
+// when it differs from the app origin (an app still on per-service subdomains).
 const appOrigin = new URL(appConfig.frontendUrl).origin
 const originUnlessSelf = (url: string): string => {
   // ws(s):// normalizes to http(s) for the comparison; WebSocket URLs on the

@@ -42,7 +42,7 @@ export default defineConfig({
     pinned: [
       'backend/src/tables.ts',
       'backend/src/routes.ts',
-      'backend/src/mocks/fork-product-mocks.ts',
+      'backend/src/mocks/app-product-mocks.ts',
       'backend/src/modules/memberships/memberships-db.ts',
       'backend/src/modules/organization/organization-hooks.ts',
       'backend/src/modules/organization/setup-config-schema.ts',

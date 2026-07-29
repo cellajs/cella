@@ -21,13 +21,13 @@ narrow against `COALESCED` keep working untouched.
 
 ## Blast radius
 
-Fork-breaking, frontend only. Any fork mutation hook that imports `usePreparedMutation` breaks at
-compile time (`pnpm check` catches every site). In a stock cella fork these are the per-entity
+Sync-breaking, frontend only. Any app mutation hook that imports `usePreparedMutation` breaks at
+compile time (`pnpm check` catches every site). In a stock cella app these are the per-entity
 `query.ts` files that drive offline create/update/delete (e.g. `attachment`, and in a task-style
-fork also `label` and `task`). The `prepare` functions themselves, the squash/coalesce logic, and
+app also `label` and `task`). The `prepare` functions themselves, the squash/coalesce logic, and
 the `COALESCED` call sites do not change.
 
-No wire-shape change, so no `clientCacheVersion` bump and no lens. No database change. A fork that
+No wire-shape change, so no `clientCacheVersion` bump and no lens. No database change. An app that
 never wrote a mutation hook on top of `usePreparedMutation` (only consumed the entity hooks) is
 unaffected beyond pulling the upstream files.
 
@@ -39,7 +39,7 @@ safe word-boundary codemod. Call sites are few (one block per mutation hook).
 
 ## Manual steps
 
-1. Find every fork call site (upstream files arrive already migrated):
+1. Find every app call site (upstream files arrive already migrated):
 
    ```sh
    grep -rn "usePreparedMutation" frontend/src --include=*.ts --include=*.tsx

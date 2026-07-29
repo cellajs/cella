@@ -10,12 +10,12 @@ Add a matching entry to `manifest.json` in the same PR.
 ## What & why
 
 <One paragraph: what pattern changed upstream and why. Name the concrete symbols, files, or
-columns involved so a reader can grep for them in their fork.>
+columns involved so a reader can grep for them in their app.>
 
 ## Blast radius
 
-<Who is affected and how badly. State plainly whether this is fork-breaking, whether it bumps
-`clientCacheVersion` or ships a lens, and whether it touches the database. If a fork that never
+<Who is affected and how badly. State plainly whether this is sync-breaking, whether it bumps
+`clientCacheVersion` or ships a lens, and whether it touches the database. If an app that never
 customized this area is unaffected, say so.>
 
 ## Run

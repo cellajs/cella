@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { deepestAncestorExpr } from './recalculate-counters';
 
 // Counter recovery and CDC must use the same deepest non-null ancestor. Synthetic
-// hierarchies keep this SQL-shape assertion independent of a fork's entity structure.
+// hierarchies keep this SQL-shape assertion independent of an app's entity structure.
 describe('deepestAncestorExpr', () => {
   it('two-level hierarchy: product groups by parent context, then organization', () => {
     const roles = createRoleRegistry(['admin', 'member'] as const);

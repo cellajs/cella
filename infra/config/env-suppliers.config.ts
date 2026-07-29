@@ -5,7 +5,7 @@ import { region, serviceUrl } from '../pulumi-context'
 import { frontendBucketName } from '../resources/storage'
 
 /**
- * Fork-owned suppliers for the app-wide compose `${VAR}` placeholders that are
+ * App-owned suppliers for the app-wide compose `${VAR}` placeholders that are
  * not service-to-service bindings. Service-specific wiring is declared as
  * `bindings` on the service registry entry; these are the shared values.
  *

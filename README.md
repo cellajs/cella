@@ -46,7 +46,7 @@
 
 ## Create app
 
-Do **not fork** this repo directly. Use the create CLI to get started:
+Do **not create your app from a GitHub repository copy**. Use the create CLI to get started:
 
 ```bash
 pnpm create @cellajs/cella

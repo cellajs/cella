@@ -21,7 +21,7 @@ const frontmatterSchema = z.object({
 
 /**
  * Global docs config, authored as the content root `index.mdx` frontmatter. Drives the /docs
- * landing page (title, intro, tiles) and sidebar sections so forks can customize both without
+ * landing page (title, intro, tiles) and sidebar sections so apps can customize both without
  * code; tiles and sections render in array order.
  */
 const docsTileSchema = z.object({
@@ -56,7 +56,7 @@ export type DocsConfig = z.infer<typeof docsConfigSchema>;
 export type DocsTile = z.infer<typeof docsTileSchema>;
 export type DocsSection = z.infer<typeof docsSectionSchema>;
 
-// Migration cushion for forks that sync code before adding a root index.mdx: warn and
+// Migration cushion for apps that sync code before adding a root index.mdx: warn and
 // keep the docs section working with default section labels and prevent a build failure.
 const defaultDocsConfig: DocsConfig = {
   title: 'Docs',

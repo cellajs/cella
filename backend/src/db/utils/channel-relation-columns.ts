@@ -40,7 +40,7 @@ export type ActivityChannelColumns = EntityIdColumns<AncestorChannelType<Product
 /**
  * Generates a product entity's ancestor and related-channel ID columns from hierarchy config.
  * Declared nullable ancestors and related channels remain optional; table definitions retain
- * fork-specific indexes and foreign keys.
+ * app-specific indexes and foreign keys.
  */
 export const channelRelationColumns = <E extends ProductEntityType>(entityType: E): ChannelRelationColumns<E> => {
   const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(entityType));
@@ -59,7 +59,7 @@ export const channelRelationColumns = <E extends ProductEntityType>(entityType: 
 /**
  * Generates nullable ancestor-context id columns for every product entity in the app.
  * Intended for shared tables that persist rows for multiple entity types (e.g. `activities`).
- * Forks only adjust the hierarchy; the column set follows automatically.
+ * Apps only adjust the hierarchy; the column set follows automatically.
  */
 export const activityChannelColumns = (): ActivityChannelColumns => {
   const columns = {} as Record<string, NullableUuid>;

@@ -8,12 +8,12 @@ import type * as pulumi from '@pulumi/pulumi'
 export type EnvSupplier = () => pulumi.Input<string>
 
 /**
- * Fork-owned pool of app-wide compose env suppliers, for `${VAR}` placeholders
+ * App-owned pool of app-wide compose env suppliers, for `${VAR}` placeholders
  * that are not service-to-service `bindings` (which the engine resolves from the
  * endpoint registry). Mirrors `defineServices` / `defineStores`: a typed identity
  * preserving literal keys. The engine (`resources/compose-env.ts`) reads this
  * generically, so app-specific values (public URLs, CSP, an origin host) live in
- * the fork, not in engine code.
+ * the app, not in engine code.
  */
 export function defineEnvSuppliers<const T extends Record<string, EnvSupplier>>(suppliers: T): T {
   return suppliers

@@ -132,7 +132,7 @@ export function buildEvent(opts: {
 }
 
 // OTLP instrumentation scope: names the emitting component (this deploy engine),
-// not the deployed app. Fork/app identity travels in the `resource` attributes.
+// not the deployed app. App identity travels in the `resource` attributes.
 const SCOPE_NAME = 'infra'
 
 /** OTLP/JSON envelope for a logs export request. */

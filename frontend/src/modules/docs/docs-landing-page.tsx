@@ -8,7 +8,7 @@ import { mdxComponents } from '~/modules/page/mdx-components';
 
 /**
  * The /docs landing page (title + intro MDX + link tiles), driven by the global docs config
- * (content root index.mdx frontmatter) so forks can customize it without touching code.
+ * (content root index.mdx frontmatter) so apps can customize it without touching code.
  */
 export function DocsLandingPage() {
   // Body resolved by the index route loader; the lazy path covers other callers and

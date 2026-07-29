@@ -54,7 +54,7 @@ The key resources and how traffic flows between them:
      └─────────────────────────────┘  presigned URLs)
 ```
 
-- **Load balancer:** the single public entrypoint, and **dual-homed**: a public IP terminates TLS on one side, a private-network attachment forwards plain HTTP to VM private IPs on the other. The frontend (SPA proxy) is the default backend; backend, yjs and mcp are reached on the same app origin via registry-declared `lbPathBegin` prefixes (`/api`, `/yjs`, `/mcp`). The LB never rewrites paths, so each service serves itself under its prefix. No shipped service is host-routed; host routes remain only for forks that add them.
+- **Load balancer:** the single public entrypoint, and **dual-homed**: a public IP terminates TLS on one side, a private-network attachment forwards plain HTTP to VM private IPs on the other. The frontend (SPA proxy) is the default backend; backend, yjs and mcp are reached on the same app origin via registry-declared `lbPathBegin` prefixes (`/api`, `/yjs`, `/mcp`). The LB never rewrites paths, so each service serves itself under its prefix. No shipped service is host-routed; host routes remain only for apps that add them.
 - **Private network (VPC):** VMs and db connect over private IPs. Only the LB accepts inbound public traffic. Each VM keeps a public IP for egress (image pulls) but drops all inbound, including SSH.
 - **Frontend:** a Caddy VM behind the LB that reverse-proxies the SPA bucket over its public S3 endpoint, adding security headers/CSP and the SPA deep-link fallback.
 - **Backend VM:** the critical API path; replaced one generation at a time with LB overlap.
@@ -132,9 +132,9 @@ pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref
 
 [tasks/deploy-run.ts](../infra/tasks/deploy-run.ts) (entered via the thin [tasks/deploy.ts](../infra/tasks/deploy.ts) loader) owns everything after the image builds: preflights, the stack lock (released in `finally`), the frontend build and hashed-asset upload (concurrent with the wait for image tags), the base stack update, the waved rollout, public version verification, the atomic frontend entry publish, smoke checks, and boot diagnostics on failure. Any CI system (or an operator shell) with the SCW_* credentials runs the same command.
 
-The rollout records the release SHA as INTENT (`pendingSha`) in the S3 control object and lets the Pulumi program, the sole authority over generation identity, provision a **new VM generation** (`vm-<svc>-<genId>`) with the SHA baked into its cloud-init. The `genId` is **content-addressed** (a hash of the release SHA plus the generation's static config), so re-running a deploy reuses the same generation (a true no-op) and a manual `pulumi up` can never fork identity. For LB-backed services the cutover expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, then contracts to `[new]`; displaced generations are reaped by one final stack update after every cutover succeeded (rollback = revert commit + redeploy). See [rollout strategies](#rollout-strategies) for the model.
+The rollout records the release SHA as INTENT (`pendingSha`) in the S3 control object and lets the Pulumi program, the sole authority over generation identity, provision a **new VM generation** (`vm-<svc>-<genId>`) with the SHA baked into its cloud-init. The `genId` is **content-addressed** (a hash of the release SHA plus the generation's static config), so re-running a deploy reuses the same generation (a true no-op) and a manual `pulumi up` can never create a divergent generation identity. For LB-backed services the cutover expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, then contracts to `[new]`; displaced generations are reaped by one final stack update after every cutover succeeded (rollback = revert commit + redeploy). See [rollout strategies](#rollout-strategies) for the model.
 
-Pushes to main auto-deploy **staging**, so staging always mirrors the tip of main. This is **opt-in**: the push job runs only when the repo variable `AUTO_DEPLOY_STAGING` is `'true'` (`gh variable set AUTO_DEPLOY_STAGING --body true`). Until then, and for any fork that has not bootstrapped staging, the push job **skips cleanly** (a neutral run, never a failing check), so pulling this template never red-Xes a fork's CI. Turn it on once a manual staging deploy has proven the environment is live. A burst of merges coalesces: the newest push cancels a superseded in-flight staging run (`cancel-in-progress`), and production rollouts never cancel. You can always deploy staging on demand regardless of the variable: GitHub → Actions → Deploy → Run workflow → select `staging`.
+Pushes to main auto-deploy **staging**, so staging always mirrors the tip of main. This is **opt-in**: the push job runs only when the repo variable `AUTO_DEPLOY_STAGING` is `'true'` (`gh variable set AUTO_DEPLOY_STAGING --body true`). Until then, and for any app that has not bootstrapped staging, the push job **skips cleanly** (a neutral run, never a failing check), so pulling this template never red-Xes an app's CI. Turn it on once a manual staging deploy has proven the environment is live. A burst of merges coalesces: the newest push cancels a superseded in-flight staging run (`cancel-in-progress`), and production rollouts never cancel. You can always deploy staging on demand regardless of the variable: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
 **Production** deploys only when a release is published (or a manual dispatch). To make it a manual promote, configure a [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) named `production` with required reviewers: the deploy job already targets that Environment, so the run pauses for an approval click before touching production.
 
@@ -149,7 +149,7 @@ On GitHub Actions the reusable workflow builds images as a parallel matrix (fast
 
 ## Rollout strategies
 
-Every deploy is a **create-then-replace**: the image SHA is baked into a new VM generation's cloud-init, so a release and an infra change flow through one path. Each service declares its replacement strategy in the fork-owned registry ([config/services.config.ts](../infra/config/services.config.ts)).
+Every deploy is a **create-then-replace**: the image SHA is baked into a new VM generation's cloud-init, so a release and an infra change flow through one path. Each service declares its replacement strategy in the app-owned registry ([config/services.config.ts](../infra/config/services.config.ts)).
 
 | `replacementStrategy` | Services | How |
 | --- | --- | --- |
@@ -190,7 +190,7 @@ All tunable infra config lives in committed, type-checked files under [config/](
 | [config/general.config.ts](../infra/config/general.config.ts) | DB node type & volume, asset retention | DB fields via CLI **Apply infra change** (bootstrap-owned RDB); the rest via routine CI deploy |
 | [config/runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts) | Which services receive each runtime secret | routine CI deploy |
 
-What stays in Pulumi config (not committed fork data): the encryption salt, the transient DB public-endpoint break-glass toggle (`infra:dbPublicEndpoint` / `infra:dbPublicAcl`), and the bootstrap `computeDeferred` lifecycle marker. Per-service rollout state (generation + image SHA) lives in the **S3 control object** (`control/<stack>.json` in the state bucket), not in committed config: written by the deploy around each cutover and read by the Pulumi program at plan time. A conditional-write lock (`control/<stack>.lock.json`) prevents a CI deploy and an operator `apply` from mutating the same stack concurrently; clear a stale lock with the CLI **Unlock** action.
+What stays in Pulumi config (not committed app data): the encryption salt, the transient DB public-endpoint break-glass toggle (`infra:dbPublicEndpoint` / `infra:dbPublicAcl`), and the bootstrap `computeDeferred` lifecycle marker. Per-service rollout state (generation + image SHA) lives in the **S3 control object** (`control/<stack>.json` in the state bucket), not in committed config: written by the deploy around each cutover and read by the Pulumi program at plan time. A conditional-write lock (`control/<stack>.lock.json`) prevents a CI deploy and an operator `apply` from mutating the same stack concurrently; clear a stale lock with the CLI **Unlock** action.
 
 ## Changing infrastructure
 
@@ -292,7 +292,7 @@ A fresh database has **no users**, but no manual seeding is needed: the one-shot
 After the first successful deploy:
 
 1. Open the app and request a magic link for the admin email.
-2. Sign in. Working outbound email is required, so seed the Brevo API key (or your fork's email provider credentials) via **Manage runtime secrets** if magic links do not arrive.
+2. Sign in. Working outbound email is required, so seed the Brevo API key (or your app's email provider credentials) via **Manage runtime secrets** if magic links do not arrive.
 
 **Fallback: seed by hand.** If you need to (re)seed outside the boot path, the backend image ships a bundled, production-safe seed runner ([backend/scripts/seeds-bundle.ts](../backend/scripts/seeds-bundle.ts)). Run it on a VM via the serial console (open a backend instance in the [Scaleway console](https://console.scaleway.com/instance/servers) → **Console**, log in with the root password shown on the instance page):
 
@@ -352,7 +352,7 @@ infra/config/engine-config.ts      → loads the app description the deploy need
                                      (from `shared`, or the INFRA_CONFIG_MODULE
                                      module pointer in package mode)
         ↓
-infra/config/*.config.ts           → fork-owned sizing/feature knobs (VMs, DB, secrets map)
+infra/config/*.config.ts           → app-owned sizing/feature knobs (VMs, DB, secrets map)
         ↓
 infra/pulumi-context.ts            → stack identity + derived naming (the stack
                                      name IS the mode; APP_MODE derives from it)

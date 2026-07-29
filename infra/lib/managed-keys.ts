@@ -10,7 +10,7 @@ import { runtimeSecrets, type RuntimeSecretId } from './runtime-secrets'
 export type MintedKeyField = 'accessKey' | 'secretKey'
 
 /**
- * One managed key's fork-owned data, authored in `managed-keys.config.ts`. The
+ * One managed key's app-owned data, authored in `managed-keys.config.ts`. The
  * `id` is the config object key, so it is not repeated here (see
  * `ManagedKeyDefinition` for the flattened shape).
  */
@@ -48,13 +48,13 @@ export function defineManagedKeys<const T extends Record<string, ManagedKeyConfi
   return keys
 }
 
-/** Flattened, ordered managed-key definitions derived from the fork config. */
+/** Flattened, ordered managed-key definitions derived from the app config. */
 export const managedKeys: ManagedKeyDefinition[] = Object.entries(managedKeysConfig).map(([id, definition]) => ({
   id: id as ManagedKeyId,
   ...definition,
 }))
 
-// Fail fast at load time on a fork misconfiguration, preventing a bad IAM
+// Fail fast at load time on an app misconfiguration, preventing a bad IAM
 // call or a mis-seeded secret at bootstrap time.
 {
   const operatorSecretIds = new Set(runtimeSecrets.filter((secret) => secret.valueSource === 'operator').map((secret) => secret.id))

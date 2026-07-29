@@ -11,8 +11,8 @@ const roleEnum = roles.all;
 
 /**
  * Sub-context relation columns (below `organization`) shared with inactive-memberships,
- * so both membership tables stay structurally identical. Fork-owned: cella ships none;
- * forks add e.g. `workspaceId`/`projectId` here (with their foreign keys). Returns fresh
+ * so both membership tables stay structurally identical. App-owned: cella ships none;
+ * apps add e.g. `workspaceId`/`projectId` here (with their foreign keys). Returns fresh
  * column builders on each call so the two tables don't share builder instances.
  */
 export const membershipChannelColumns = () => ({});

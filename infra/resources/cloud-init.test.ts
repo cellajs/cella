@@ -42,7 +42,7 @@ describe('renderCloudInit', () => {
 
   it('namespaces VM config paths and serial markers under the app slug', () => {
     const out = renderCloudInit(params({ slug: 'acme' }))
-    // A fork's slug drives /etc/<slug> and the ::<slug>:: serial marker; the
+    // An app's slug drives /etc/<slug> and the ::<slug>:: serial marker; the
     // engine hardcodes no app name.
     expect(out).toContain('cat > /etc/acme/boot-plan.json')
     expect(out).toContain('boot --plan /etc/acme/boot-plan.json')

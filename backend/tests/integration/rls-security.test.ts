@@ -77,13 +77,13 @@ async function cleanupEntityHierarchy(...plans: TestEntityHierarchyPlan[]) {
 /**
  * Org-scoped product entities are the RLS-subject tables (tenant SELECT policy + FORCE RLS).
  * Derived from config so the suite adapts to whatever entity model is loaded:
- * base Cella → ['attachment']; a fork may add e.g. 'task', 'label'.
+ * base Cella → ['attachment']; an app may add e.g. 'task', 'label'.
  */
 const rlsProductTypes = appConfig.productEntityTypes;
 
 /**
  * Seed fixture backing one product entity's generic RLS tests (write-through, composite FK, CDC
- * seq, unseen counts). Fully derived from the entity model, so a fork needs no per-entity edits:
+ * seq, unseen counts). Fully derived from the entity model, so an app needs no per-entity edits:
  * the row is built from the type's registered mock ({@link buildInsertableProduct}) and its
  * ancestor columns come from a hierarchy plan seeded alongside it.
  */
@@ -99,7 +99,7 @@ interface RlsProductFixture {
   /**
    * Home channel id of the representative row: its deepest seeded ancestor, mirroring
    * findUnseenCountsByUser's COALESCE attribution (org in base topology; e.g. project
-   * when the fork nests products deeper). Used by the unseen-count tests.
+   * when the app nests products deeper). Used by the unseen-count tests.
    */
   homeChannelId: string;
   /** Ancestor channel plan seeded for this entity (organization + any deeper contexts). */
@@ -170,7 +170,7 @@ const makeRlsProductFixture = (entityType: ProductEntityType): RlsProductFixture
 
 /**
  * Fixtures for every configured product entity (collection-time). Table existence is checked at
- * runtime in `beforeAll` (see {@link activeRlsProducts}); a fork's new product type flows in here
+ * runtime in `beforeAll` (see {@link activeRlsProducts}); an app's new product type flows in here
  * automatically via config + its registered mock, with no edits to this file.
  */
 const iterableRlsProducts = rlsProductTypes.map((t) => [t, makeRlsProductFixture(t)] as const);
@@ -204,7 +204,7 @@ async function tableExists(tableName: string): Promise<boolean> {
 }
 
 async function checkRequiredTablesExist(): Promise<boolean> {
-  // Base entities present in every Cella app, fork-specific product tables are checked per-fixture.
+  // Base entities present in every Cella app, app-specific product tables are checked per-fixture.
   const requiredTables = ['attachments', 'organizations', 'memberships'];
   const results = await Promise.all(requiredTables.map((tableName) => tableExists(tableName)));
   return results.every(Boolean);
@@ -216,7 +216,7 @@ async function checkRequiredTablesExist(): Promise<boolean> {
  *
  * Table targets are derived from the entity model so the setup adapts to whatever
  * product entities the app defines, base Cella forces RLS on `attachments` +
- * `yjs_documents`; a fork additionally covers e.g. `tasks`, `labels`.
+ * `yjs_documents`; an app additionally covers e.g. `tasks`, `labels`.
  */
 async function ensureRlsRoles() {
   // Create roles if missing (idempotent)
@@ -248,7 +248,7 @@ async function ensureRlsRoles() {
   }
 
   // Grant runtime access to configured non-RLS channel tables and seen tracking.
-  // Config derivation covers deeper fork contexts used by triggers; application guards enforce writes.
+  // Config derivation covers deeper app contexts used by triggers; application guards enforce writes.
   const channelTableNames = appConfig.channelEntityTypes
     .map((type) => entityTables[type as keyof typeof entityTables])
     .filter(Boolean)
@@ -299,7 +299,7 @@ async function setupTestData() {
     ON CONFLICT (id) DO NOTHING
   `);
 
-  // Seed each product entity's ancestor hierarchy (deeper contexts below the org, if the fork
+  // Seed each product entity's ancestor hierarchy (deeper contexts below the org, if the app
   // nests products; a no-op for org-homed products like base Cella's attachment).
   for (const { fixture } of activeRlsProducts) {
     await seedEntityHierarchy(fixture.plan, TEST_TENANT_A, TEST_USER_A, `rls-a-${Date.now()}`);
@@ -314,7 +314,7 @@ async function setupTestData() {
     ON CONFLICT (id) DO NOTHING
   `);
 
-  // Seed RLS-subject product entities via their fixtures (base: attachment; forks add more).
+  // Seed RLS-subject product entities via their fixtures (base: attachment; apps add more).
   for (const { fixture } of activeRlsProducts) {
     await fixture.seed();
   }
