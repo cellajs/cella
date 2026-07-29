@@ -1,9 +1,9 @@
 # Migrations
 
 When an upstream cella change rewrites a pattern across the codebase (a codemod sweep, a schema
-shift, a renamed contract), upstream code arrives already migrated, but fork-specific code still
+shift, a renamed contract), upstream code arrives already migrated, but app-specific code still
 uses the old pattern. This folder ships the tooling and instructions to replay each such change on
-a fork after pulling it.
+an app after pulling it.
 
 ## How it is structured
 
@@ -14,18 +14,18 @@ Three moving parts:
   merge activity, where a date alone collides. Each folder holds a `README.md` (from
   [`_TEMPLATE.md`](./_TEMPLATE.md)) and whatever the sweep needs (codemod script, data files, SQL).
 - **[`manifest.json`](./manifest.json)** — the machine-readable index. One entry per folder,
-  carrying its `version` (the cella release it ships in), `kind`, fork-breaking flag, codemod path,
+  carrying its `version` (the cella release it ships in), `kind`, sync-breaking flag, codemod path,
   scan roots, and follow-up commands. This is what lets a tool or agent compute the pending set
   instead of eyeballing a prose list. Version lives here, never in the folder name, so a folder is
-  never renamed after forks have run it.
-- **[`run.ts`](./run.ts)** — the planner. It diffs `manifest.json` against the fork's applied-set
+  never renamed after apps have run it.
+- **[`run.ts`](./run.ts)** — the planner. It diffs `manifest.json` against the app's applied-set
   and prints the migrations still to run, in order.
 
-The applied-set is a fork-owned file, `cella.migrations.json` at the repo root, listing the ids a
-fork has already run. Pending is a plain set difference (all declared ids minus applied ids), so it
-works the same whether the fork tracks releases or a branch.
+The applied-set is an app-owned file, `cella.migrations.json` at the repo root, listing the ids an
+app has already run. Pending is a plain set difference (all declared ids minus applied ids), so it
+works the same whether the app tracks releases or a branch.
 
-## For forks: applying migrations
+## For apps: applying migrations
 
 After a `cella sync` pull, from the repo root:
 
@@ -53,9 +53,9 @@ Ship the migration in the same PR as the breaking change:
    (`date -u +%Y%m%dT%H%M` for the prefix). Add the codemod / SQL / data files it needs.
 2. Add an entry to [`manifest.json`](./manifest.json). Set `version` to the target release, or
    `"next"` if unknown; backfill the real version when the release is cut.
-3. Keep codemods entity-agnostic and driven by allow-lists or explicit maps, so forks extend them
+3. Keep codemods entity-agnostic and driven by allow-lists or explicit maps, so apps extend them
    via a flag (e.g. `--extra-renames`) rather than editing the shipped script, which would conflict
    on the next sync.
 
-A `forkBreaking: true` change without a migration folder is the thing this system exists to
+A `syncBreaking: true` change without a migration folder is the thing this system exists to
 prevent; treat it like a missing `clientCacheVersion` bump.

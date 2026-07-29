@@ -12,29 +12,29 @@ runs as one command, `pnpm --filter infra deploy` (`infra/tasks/deploy.ts`); the
 bindings that baked a generation IP (`@{backend.privateIp}`) moved to the LB's stable,
 ACL-guarded internal route: the registry gained `internalRoute: true` (backend) and cdc's
 binding became `ws://@{backend.internalHost}:@{backend.internalPort}/internal/cdc`.
-Sequential per-service `pulumi up` pairs made a 5-service fork deploy exceed 20 minutes;
+Sequential per-service `pulumi up` pairs made a 5-service app deploy exceed 20 minutes;
 raak's release run 30040238120 was cancelled by the job timeout.
 
 ## Blast radius
 
-Fork-breaking for every fork that syncs `.github/workflows/deploy.yml` and `infra/` (all
+Sync-breaking for every app that syncs `.github/workflows/deploy.yml` and `infra/` (all
 of them). No `clientCacheVersion` bump, no lens, no database change; the wire shape of app
-entities is untouched. Forks with extra services (yjs, mcp) benefit most: their services
-now deploy concurrently. Forks that added their OWN `@{<svc>.privateIp}` bindings keep
+entities is untouched. Apps with extra services (yjs, mcp) benefit most: their services
+now deploy concurrently. Apps that added their OWN `@{<svc>.privateIp}` bindings keep
 working in the default monolith topology but must move to `internalRoute` +
 `internalHost`/`internalPort` before adopting the micro stack topology.
 
 ## Run
 
 No script — manual. The sync pulls the new `infra/` and `.github/workflows/deploy.yml`;
-fork-owned config needs the steps below.
+app-owned config needs the steps below.
 
 ## Manual steps
 
 1. In `infra/config/services.config.ts`: add `internalRoute: true` to the primary
    (backend) service, and change cdc's binding to
    `API_WS_URL: 'ws://@{backend.internalHost}:@{backend.internalPort}/internal/cdc'`.
-   Apply the same pattern to any fork-added service that other services dial by
+   Apply the same pattern to any app-specific service that other services dial by
    `@{...privateIp}`.
 2. Regenerate the compose artifact: `pnpm --filter infra compose:generate`.
 3. In GitHub branch protection (and any deployment dashboards): the required checks

@@ -279,7 +279,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
 
   // Host-header routes for every host-routed service with a DNS record.
   // (No shipped service is host-routed after the same-origin migration; the
-  // loop stays for forks that still run. Or add. Host-routed services.)
+  // Keep the loop for apps that still run or add host-routed services.
   for (const service of lbServices) {
     if (service.lbRoute !== 'host' || !dnsRecords.has(serviceHost(service.slug))) continue
     new scaleway.loadbalancers.Route(`${baseName(service.slug)}-route`, {

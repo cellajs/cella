@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import net from 'node:net';
 import { appConfig } from '../../shared';
 
-// Derive Storybook's port from appConfig so each fork gets a stable local port.
+// Derive Storybook's port from appConfig so each app gets a stable local port.
 const port = Number(new URL(appConfig.frontendUrl).port) + 3006;
 
 /**

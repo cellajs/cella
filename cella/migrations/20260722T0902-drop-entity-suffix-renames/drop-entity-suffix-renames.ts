@@ -15,7 +15,7 @@
  * Usage (from the repo root):
  *   pnpm exec tsx cella/migrations/<id>/drop-entity-suffix-renames.ts inventory <roots…>
  *   pnpm exec tsx cella/migrations/<id>/drop-entity-suffix-renames.ts rewrite   <roots…>
- *   pnpm exec tsx cella/migrations/<id>/drop-entity-suffix-renames.ts rewrite   <roots…> --extra-renames fork.json
+ *   pnpm exec tsx cella/migrations/<id>/drop-entity-suffix-renames.ts rewrite   <roots…> --extra-renames app.json
  */
 
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'

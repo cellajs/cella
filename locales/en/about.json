@@ -65,7 +65,7 @@
   "features.cdc_batching": "CDC batching",
   "features.cdc_batching.text": "Many row changes in one transaction collapse into a single live update per type, keeping traffic light.",
   "features.cella_cli": "Cella CLI",
-  "features.cella_cli.text": "Pull bug fixes and new features from upstream Cella into your fork with minimal merge friction.",
+  "features.cella_cli.text": "Pull bug fixes and new features from upstream Cella into your app with minimal merge friction.",
   "features.circuit_breaker": "Per-table circuit breaker",
   "features.circuit_breaker.text": "One table's repeated failures can't stall the whole CDC processing pipeline. Its changes are skipped during a short cooldown, then automatically retested and resumed.",
   "features.channel_entities": "Channel entities",

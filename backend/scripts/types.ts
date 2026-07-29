@@ -18,7 +18,7 @@ export interface SideEffectBlock {
   /**
    * The SQL for this block. Must be IDEMPOTENT: whenever ANY block changes, the collector
    * re-emits a folder that re-runs the whole set, so every block re-applies on that migrate.
-   * Return an empty string to emit nothing (e.g. a fork that disabled this feature).
+   * Return an empty string to emit nothing (e.g. an app that disabled this feature).
    * Do not add the auto-generated header or edge `--> statement-breakpoint`; the collector does.
    */
   sql: string;

@@ -6,7 +6,7 @@ import type { ServiceMeta } from './types'
 export const composeConfig = assembleCompose(appServices, { processIdentityEnv })
 
 /**
- * The literal service-name union, derived from the fork's service registry
+ * The literal service-name union, derived from the app's service registry
  * (including the backend, a normal `blue-green` entry).
  */
 export type ServiceName = keyof typeof appServices

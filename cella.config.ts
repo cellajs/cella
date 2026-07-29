@@ -42,7 +42,7 @@ export default defineConfig({
     pinned: [
       'backend/src/tables.ts',
       'backend/src/routes.ts',
-      'backend/src/mocks/fork-product-mocks.ts',
+      'backend/src/mocks/app-product-mocks.ts',
       'backend/src/modules/memberships/memberships-db.ts',
       'backend/src/modules/organization/organization-hooks.ts',
       'backend/src/modules/organization/setup-config-schema.ts',
@@ -58,7 +58,6 @@ export default defineConfig({
       'frontend/src/styling/gradients.css',
       'frontend/src/modules/home/home-page.tsx',
       'frontend/src/modules/home/onboarding/onboarding-config.ts',
-      'frontend/src/modules/home/onboarding/onboarding-seed.ts',
       'frontend/src/modules/common/logo.tsx',
       'frontend/src/modules/user/user-profile-content.tsx',
       'json/text-blocks.json',

@@ -74,14 +74,14 @@ describe('compute module source contracts', () => {
     expect(source).toMatch(/deployedServices\(appConfig\.services, appConfig\.singleVM\)/)
   })
 
-  it('binds compose env from the registry placeholder scan + bindings + fork env suppliers (no per-service env maps)', () => {
+  it('binds compose env from the registry placeholder scan + bindings + app env suppliers (no per-service env maps)', () => {
 // Derive each service's compose environment from placeholders, resolving bindings before the shared pool.
 // New services need compute changes only for genuinely new Pulumi values.
     expect(source).toMatch(/appEnvSuppliers/)
     expect(source).toMatch(/composePlaceholders\(/)
     expect(source).toMatch(/block\.profiles\.includes\(/)
     // Registry bindings resolve first (unioned with folded co-hosted bindings
-    // on the singleVM host), the shared fork env suppliers second.
+    // on the singleVM host), the shared app env suppliers second.
     expect(source).toMatch(/effectiveBindings\(/)
     expect(source).toMatch(/resolveBinding\(/)
     // Unknown placeholders must fail before a broken VM can boot.
@@ -135,7 +135,7 @@ describe('compute module source contracts', () => {
     expect(source).toMatch(/genIdFor: \(sha\) => deriveGenId\(sha, fingerprint\)/)
   })
 
-  it('fork env suppliers do not bind backend secrets as compose env values', () => {
+  it('app env suppliers do not bind backend secrets as compose env values', () => {
     // The .env file is still mounted via env_file: .env, but secrets travel via
     // the runtime-secrets manifest, never as shared compose env supplier values.
     const poolBlock = envSuppliersSource.match(/defineEnvSuppliers\(\{[\s\S]*?\}\)/)

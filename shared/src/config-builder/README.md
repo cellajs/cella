@@ -9,7 +9,7 @@ Each product entity has exactly one home channel: its declared `parent`. The hom
 
 Public readability is a permission concern, declared per subject via `publicRead(mode)` in `shared/src/permissions/public-read.ts`, not in the hierarchy.
 
-**Fork contract**: every tenant-scoped table must have `tenant_id`. Tables with an organization parent must also have `organization_id` with a composite FK to `organizations(tenant_id, id)`. Covered by `backend/tests/integration/schema-verification.test.ts`.
+**App contract**: every tenant-scoped table must have `tenant_id`. Tables with an organization parent must also have `organization_id` with a composite FK to `organizations(tenant_id, id)`. Covered by `backend/tests/integration/schema-verification.test.ts`.
 
 ## Row-to-channel attribution
 

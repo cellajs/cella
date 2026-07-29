@@ -41,10 +41,10 @@ export type Language = (typeof appConfig.languages)[number];
 /** User flags */
 export type UserFlags = typeof appConfig.defaultUserFlags;
 
-/** Organization flags (per-org feature toggles; keys declared in fork config) */
+/** Organization flags (per-org feature toggles; keys declared in app config) */
 export type OrganizationFlags = typeof appConfig.defaultOrganizationFlags;
 
-/** Organization setup config (fork-shaped defaults, layered under each org's stored jsonb) */
+/** Organization setup config (app-configured defaults, layered under each org's stored jsonb) */
 export type OrganizationSetupConfig = typeof appConfig.defaultSetupConfig;
 
 /** Theme options */
@@ -132,7 +132,7 @@ export type EntityIdColumnKey<T extends EntityType> = EntityIdColumnKeys[T];
 export type EntityIdColumns<TS extends EntityType, V> = { [T in TS as EntityIdColumnKey<T>]: V };
 
 // Channel relation types derived from the hierarchy's phantom parent/related maps. They
-// generate channel-entity id columns on product/channel tables in a fork-agnostic way.
+// generate channel-entity id columns on product/channel tables in a configuration-independent way.
 
 /** Type-level map of each entity to its strict parent (null = root). */
 type HierarchyParentMap = typeof hierarchy._parentMap;
@@ -154,7 +154,7 @@ export type AncestorChannelType<E extends string> = E extends keyof HierarchyPar
 
 /**
  * The root channel entity type: the parentless channel (no ancestors), e.g. `'organization'`.
- * Derived from the hierarchy so forks that rename/restructure the root don't need code changes.
+ * Derived from the hierarchy so apps that rename/restructure the root don't need code changes.
  * Root channel identifiers use `EntityIdColumnKey<RootChannelType>`.
  */
 export type RootChannelType = {

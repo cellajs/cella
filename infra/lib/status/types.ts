@@ -1,7 +1,7 @@
 import type { StackState } from '../stack/bootstrap-stack-state'
 
 /**
- * Public JSON contract for `infra status`. Forks, agents, and CI may depend on
+ * Public JSON contract for `infra status`. Apps, agents, and CI may depend on
  * this shape; a breaking change bumps `STATUS_SCHEMA_VERSION`. See the schema
  * section in infra/README.md.
  */

@@ -8,7 +8,7 @@ vi.mock('./scaleway-secret-manager', () => ({
   createSecretManagerClient: () => ({ listSecrets: (...args: unknown[]) => listSecretsMock(...args) }),
 }))
 
-// A controlled two-secret operator set so the test is independent of the fork
+// A controlled two-secret operator set so the test is independent of the app
 // runtime-secrets config.
 vi.mock('../runtime-secrets', () => ({
   operatorManagedRuntimeSecrets: [

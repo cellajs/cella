@@ -24,7 +24,7 @@ The id-column snake-caser is single-sourced: `entityIdColumnName(type)` delegate
 
 ## Blast radius
 
-Fork-breaking on imports and call shape, mechanical to apply. No wire, DB, or behavior
+Sync-breaking on imports and call shape, mechanical to apply. No wire, DB, or behavior
 change: every removed function's implementation is the method's implementation. Tests that
 passed hand-rolled `{ getOrderedAncestors: ... }` fakes must build real instances with
 `createEntityHierarchy` (see `shared/testing/deep-fixture.ts` and `wide-fixture.ts`).
@@ -40,9 +40,9 @@ No script — manual. The patterns are regular enough for search-and-replace:
 
 ## Manual steps
 
-1. Sweep fork-local code for the removed imports (`grep -rn "isProductEntity\|isChannelEntity\|getChannelRoles\|AncestorSource\|resolveDeepestAncestorId\|computeProductPath\|computeChannelPath\|computeAncestorPath\|possibleHomeChannels\|resolveNonNullAncestors" src/`) and apply the patterns above.
+1. Sweep app-specific code for the removed imports (`grep -rn "isProductEntity\|isChannelEntity\|getChannelRoles\|AncestorSource\|resolveDeepestAncestorId\|computeProductPath\|computeChannelPath\|computeAncestorPath\|possibleHomeChannels\|resolveNonNullAncestors" src/`) and apply the patterns above.
 2. Replace any hand-rolled hierarchy fakes in tests with real builder instances.
-3. If fork code relied on `isProductEntity(nullableValue)` null tolerance, the instance
+3. If app code relied on `isProductEntity(nullableValue)` null tolerance, the instance
    methods now accept `null | undefined` directly.
 
 ## Verify

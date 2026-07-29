@@ -3,7 +3,7 @@ import { isRecord } from '../lib/utils/guards'
 import { isMain } from '../lib/utils/is-main'
 // The canonical strategy vocabulary lives on the Compose model (`x-service`
 // metadata). types.ts is Pulumi-free, so the pure core can import it directly
-// without silently forking the unions.
+// without duplicating the unions.
 import type { DrainPolicy, ReplacementStrategy } from '../compose/types'
 import { getFlag, getNumFlag, sleep as defaultSleep } from './args'
 import { createFetchProbe, pollForVersion } from './wait-for-version'

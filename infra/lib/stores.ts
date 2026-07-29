@@ -25,7 +25,7 @@ export interface ProvisionedStore {
 
 /**
  * One runtime-secret this store contributes (P3+). Until stores own their secret
- * declarations, the fork's `runtime-secrets.config.ts` still lists them and this
+ * declarations, the app's `runtime-secrets.config.ts` still lists them and this
  * stays unused; the store supplies only the values via {@link ProvisionedStore.secretValues}.
  */
 export interface StoreSecretContribution {
@@ -66,18 +66,18 @@ export interface StoreProvisioner {
    */
   provision(): ProvisionedStore
   /**
-   * Runtime-secret declarations this store owns (P3+). Optional: while the fork
+   * Runtime-secret declarations this store owns (P3+). Optional: while the app
    * config still declares the secrets, a store returns nothing here.
    */
   secrets?(): StoreSecretContribution[]
   /** Store operations for the operator CLI. Wired in P4. */
   ops?: StoreOps
-  /** Fork-time posture checks (e.g. refuse a plaintext external URL). */
+  /** App-defined posture checks (e.g. refuse a plaintext external URL). */
   validate?(): void
 }
 
 /**
- * Fork-owned registry of stateful backing resources. Mirrors `defineServices` /
+ * App-owned registry of stateful backing resources. Mirrors `defineServices` /
  * `defineRuntimeSecrets`: a typed identity that preserves literal keys so a
  * store id is a compile-time value. The first registered store is treated as
  * primary (its outputs feed the stack's `db*` exports) until P4 makes the role

@@ -10,8 +10,8 @@ export type OrganizationsRouteSearchParams = z.infer<typeof organizationsRouteSe
 export type EnrichedOrganization = Organization & ChannelEnrichment;
 
 /**
- * A fork-provided card rendered in `OrganizationSettings` between the built-in details and delete
- * sections, and surfaced as a page-aside tab. Forks declare these in `organization-settings-sections`.
+ * An app-provided card rendered in `OrganizationSettings` between the built-in details and delete
+ * sections, and surfaced as a page-aside tab. Apps declare these in `organization-settings-sections`.
  */
 export interface OrganizationSettingsSection {
   /** Stable id used for the aside anchor and the tab. */

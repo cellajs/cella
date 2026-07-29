@@ -48,7 +48,7 @@ merged.services = {
 };
 
   // Require a URL-safe resource slug with at least four non-hyphen characters for Scaleway.
-  // Forks must provide a valid value; validation never rewrites it.
+  // Apps must provide a valid value; validation never rewrites it.
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 if (!slugPattern.test(merged.slug)) {
   throw new Error(`Invalid config slug "${merged.slug}": must be lowercase alphanumeric, hyphen-separated (e.g. "my-app").`);

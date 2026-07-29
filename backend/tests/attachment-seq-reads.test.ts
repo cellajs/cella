@@ -27,8 +27,8 @@ const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 10
 describe('Attachment seq reads', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
-  // Ancestor context chain for attachment, derived from the app's real hierarchy: a fork with
-  // organization → project → attachment seeds a project; an org-only fork seeds nothing.
+  // Ancestor context chain for attachment, derived from the app's real hierarchy: an app with
+  // organization → project → attachment seeds a project; an org-only app seeds nothing.
   let plan: TestEntityHierarchyPlan;
 
   const listAttachments = async (query: Record<string, string | number>) => {

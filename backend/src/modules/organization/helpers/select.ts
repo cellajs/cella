@@ -11,7 +11,7 @@ export const organizationFlagsSelect = sql<OrganizationFlags>`${JSON.stringify(a
 
 /**
  * SQL select expression for `setupConfig`: merges config-declared defaults under the stored (sparse)
- * bag, so a fork widening `defaultSetupConfig` later needs no backfill. Twin of `organizationFlagsSelect`.
+ * bag, so an app widening `defaultSetupConfig` later needs no backfill. Twin of `organizationFlagsSelect`.
  */
 export const setupConfigSelect = sql<OrganizationSetupConfig>`${JSON.stringify(appConfig.defaultSetupConfig)}::jsonb || ${organizationsTable.setupConfig}`;
 

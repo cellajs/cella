@@ -14,8 +14,8 @@ import {
   type SubjectForPermission,
 } from '../permissions';
 
-// Wide entity/role vocabulary typed independently of any fork's app config so the tests that
-// use these names compile in every fork (a fork whose real config lacks `project` still builds).
+// Wide entity/role vocabulary typed independently of any app config so the tests that
+// use these names compile in every app (an app whose real config lacks `project` still builds).
 export type WideChannelType = 'organization' | 'workspace' | 'project';
 export type WideProductType = 'task' | 'label' | 'attachment';
 export type WideEntityType = 'user' | WideChannelType | WideProductType;
@@ -23,7 +23,7 @@ export type WideRole = 'admin' | 'member' | 'guest';
 
 export const wideRoles = createRoleRegistry(['admin', 'member', 'guest'] as const);
 
-/** Fork-independent hierarchy with sibling channels, deep products, and guest roles. */
+/** Configuration-independent hierarchy with sibling channels, deep products, and guest roles. */
 export const wideHierarchy = createEntityHierarchy(wideRoles)
   .user()
   .channel('organization', { parent: null, roles: ['admin', 'member'] })

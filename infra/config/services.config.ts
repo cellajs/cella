@@ -1,7 +1,7 @@
 import { defineServices } from '../compose/infrastructure'
 
 /**
- * Fork-owned registry synthesized into Compose and deployment resources.
+ * App-owned registry synthesized into Compose and deployment resources.
  * Entry presence controls the service's VM, routing, certificate, profile, and release
  * metadata. Run `pnpm --filter infra compose:synth` after editing.
  */
@@ -158,7 +158,7 @@ export const appServices = defineServices({
  * Env keys that select a container's process identity: which in-process worker
  * to boot (`MODE`) and which port it binds (`PORT`). Under `singleVM` these are
  * never folded from a co-hosted worker onto the host, since the workers run
- * in-process under the host's own identity. Fork-owned so the engine names no
+ * in-process under the host's own identity. App-owned so the engine names no
  * app-specific env key.
  */
 export const processIdentityEnv = ['MODE', 'PORT'] as const;

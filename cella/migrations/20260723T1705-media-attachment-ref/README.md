@@ -15,17 +15,17 @@ Two cleanups ride along. `checklistGroupConfig` and its two unreferenced fronten
 registered in any schema. The four independent `mediaBlockTypes` sets are consolidated onto the one
 exported from `shared/utils/text-from-block` (`shared/blocknote`). New
 `shared/utils/derive-description-core.ts` holds the single block walk (checkbox and media counts,
-attachment-id collection, summary-source selection) that a fork's backend and frontend derivation
+attachment-id collection, summary-source selection) that an app's backend and frontend derivation
 can share.
 
 ## Blast radius
 
-Fork-breaking only for forks that import `checklistGroupConfig` / `checklistGroupBlock` /
+Sync-breaking only for apps that import `checklistGroupConfig` / `checklistGroupBlock` /
 `getChecklistGroupSlashItem`, or that keep their own copy of the media block specs. No database
 change, no wire-shape change, and no `clientCacheVersion` bump: descriptions stay JSON strings and
 BlockNote fills the new prop with its `''` default when reading older content.
 
-The one silent failure mode: a fork that extends only one of the two schemas. The editor schema and
+The one silent failure mode: an app that extends only one of the two schemas. The editor schema and
 the relay's server schema must carry identical ProseMirror node specs, so `withAttachmentRef` has to
 be applied in both places or the prop is dropped on every Y.Doc round-trip.
 
@@ -35,13 +35,13 @@ No script, manual.
 
 ## Manual steps
 
-1. If your fork defines its own editor schema, wrap the four media specs in both schemas:
+1. If your app defines its own editor schema, wrap the four media specs in both schemas:
    `audio/file/image/video: withAttachmentRef(defaultBlockSpecs.<type>)`. The yjs relay uses the
    same helper on `defaultBlockSpecs`.
-2. If your fork stamps uploaded media into blocks outside `UppyFilePanel`, add
+2. If your app stamps uploaded media into blocks outside `UppyFilePanel`, add
    `attachmentId: attachment.id` to the props it writes.
 3. Delete any local `checklistGroup` wiring (`checklistGroupConfig` import, slash-menu item,
-   schema entry). The upstream block had no schema registration; a fork that registered it must
+   schema entry). The upstream block had no schema registration; an app that registered it must
    keep its own copy of the config.
 4. Replace local `new Set(['image', 'video', 'audio', 'file'])` definitions with
    `import { mediaBlockTypes } from 'shared/blocknote'`.

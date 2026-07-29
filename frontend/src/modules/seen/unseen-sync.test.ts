@@ -9,7 +9,7 @@ const { isSeenTracked, seenKeys } = await import('./helpers');
 const { seenStore } = await import('./seen-store');
 const { applyUnfetchableRemovalUnseen, ingestSyncedRows, noteUnseenReconciled } = await import('./unseen-sync');
 
-// Derive tracked type and effective home from config so the fixture works across fork hierarchies.
+// Derive tracked type and effective home from config so the fixture works across app hierarchies.
 // Rows include the chosen deepest ancestor and all required parents like real sync payloads.
 const TRACKED = appConfig.seenTrackedProductTypes[0];
 const ANCESTORS = hierarchy.getOrderedAncestors(TRACKED); // deepest → root
@@ -141,7 +141,7 @@ describe('unseen count deltas from synced rows', () => {
     vi.advanceTimersByTime(10);
     // The draft's createdAt is outside the window and before the reconcile anchor; its recent
     // publishedAt makes it count as new. The client recency rule (`publishedAt ?? createdAt`) is
-    // generic, so a synced row carrying publishedAt exercises it regardless of the fork's feeds.
+    // generic, so a synced row carrying publishedAt exercises it regardless of the app's feeds.
     ingestSyncedRows(TRACKED, CHANNEL, [row('pub-1', { createdAt: daysAgo(100), publishedAt: now() })]);
     await settle();
 

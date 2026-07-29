@@ -10,8 +10,8 @@ import type { AppStreamProductEvent } from './types';
 
 /**
  * Verifies that only subscribers losing read access receive `moveOut` with the old path.
- * The draft veto creates a fork-independent visibility difference through the same permission
- * path used by deeper fork topologies.
+ * The draft veto creates a configuration-independent visibility difference through the same permission
+ * path used by deeper app topologies.
  */
 const ORG = 'org-moveout-a';
 
@@ -95,7 +95,7 @@ describe('dispatchMoveOuts', () => {
 
     // New row is an unpublished draft (veto: unreadable for everyone); old row was published.
     // The old row is authored by the reader so it stays readable under a read:'own' policy too,
-    // keeping the readability difference fork-independent (read:1 reads it regardless).
+    // keeping the readability difference configuration-independent (read:1 reads it regardless).
     await dispatchMoveOuts(
       updateEvent({
         rowData: row('att-1', { publishedAt: null }),
@@ -151,7 +151,7 @@ describe('dispatchMoveOuts', () => {
 
     // Rows meant to be readable by member-user (the old side of att-2, both sides of att-3) are
     // authored by them, so they stay readable under a read:'own' policy too (read:1 reads them
-    // regardless), keeping the readability differences fork-independent.
+    // regardless), keeping the readability differences configuration-independent.
     await dispatchMoveOuts(
       updateEvent({
         rowData: row('att-1'),

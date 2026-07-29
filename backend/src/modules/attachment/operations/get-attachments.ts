@@ -44,7 +44,7 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
 
   // Unpublished drafts are excluded from every read, including deltas, because they are outside
   // the sync engine until published. No-op here (attachments carry no publishedAt);
-  // kept so fork entity ops copy the pattern.
+  // kept so app-specific entity operations can copy the pattern.
   const publishedOnly = publishedRowsPredicate(attachmentsTable);
   if (publishedOnly) filters.push(publishedOnly);
 

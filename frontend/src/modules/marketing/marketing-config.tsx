@@ -112,7 +112,7 @@ export const featuresPageItems: FeaturesPageItem[] = [
   { id: 'schema_evolution', category: 'data' },
   { id: 'user', category: 'data' },
   { id: 'organization', category: 'data' },
-  // Optional built-in product entities (can be removed in forks)
+  // Optional built-in product entities (can be removed in apps)
   { id: 'attachment', category: 'data' },
 
   // Security & multi-tenancy

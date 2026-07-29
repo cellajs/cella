@@ -33,7 +33,7 @@ interface SyncStoreState {
   cursor: string | null;
   lastSyncAt: string | null;
   orgs: Record<string, OrgSyncState>;
-  /** Grant-boundary views registered by the app/fork (views.ts), keyed by view key. */
+  /** Grant-boundary views registered by the app (views.ts), keyed by view key. */
   views: Record<string, RegisteredSyncView>;
   /**
    * Track non-persisted server-known sequence per view, including muted notifications.

@@ -18,7 +18,7 @@ export interface LocalUserStore {
 
 /** Persisted zustand stores that live in `localUserDb.kv` (per-user; in-memory while signed out).
  *  Each exposes a uniform `reset()` so {@link unbind} can drop in-memory state on sign-out.
- *  An app appends its own stores via {@link extraLocalUserStores}. */
+ * An app appends its own stores via {@link extraLocalUserStores}. */
 const localUserStores = [
   seenStore,
   syncStore,

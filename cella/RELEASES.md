@@ -53,11 +53,11 @@ Types map to changelog sections (`changelog-sections` in [release-please-config.
 - `style:` → 🎨 Styles
 - `test:` → 🧪 Tests
 
-A `!` (e.g. `feat!:`) or a `BREAKING CHANGE:` footer forces a breaking-change section and larger bump; link a fork-facing migration note in `cella/` from the commit body.
+A `!` (e.g. `feat!:`) or a `BREAKING CHANGE:` footer forces a breaking-change section and larger bump; link an app-facing migration note in `cella/` from the commit body.
 
 ## Pre-1.0 versioning
 
-While on `0.x` (`bump-minor-pre-major`), breaking changes bump the minor and features bump the patch, keeping versions meaningful for forks consuming upstream via `pnpm cella`.
+While on `0.x` (`bump-minor-pre-major`), breaking changes bump the minor and features bump the patch, keeping versions meaningful for apps consuming upstream via `pnpm cella`.
 
 ## Automation setup
 

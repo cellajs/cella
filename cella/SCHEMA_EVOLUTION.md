@@ -19,7 +19,7 @@ Breaking schema changes (e.g., rename `attachment.name` → `attachment.title`) 
 1. **Widened wire schemas** (build time): during the expand window, ops/create schemas accept both old and new field names; entity rows carry both columns so responses dual-emit both
 2. **Ops normalization** (server, runtime touch point 1): old-shape `ops` + `stx.fieldTimestamps` keys normalized to canonical inside the existing stx resolve path
 3. **Client cache migration** (client, runtime touch point 2): boot-time Dexie pass rewrites cached rows + queued mutations locally, no refetch
-4. **Versioned OpenAPI specs + response down-migration** (Phase 2 only): for fork mesh negotiation
+4. **Versioned OpenAPI specs + response down-migration** (Phase 2 only): for cross-app negotiation
 
 **Phase 1 has exactly two runtime transformation touch points.** Everything else is build-time schema generation, data-level dual-emit during expand windows, or deferred to Phase 2.
 
@@ -28,7 +28,7 @@ doba provides the migration chain executor, bidirectional migrations, graph path
 **Two phases:**
 
 - **Phase 1 (internal version tolerance)**: app's own offline clients survive deploys (PWA skew, mid-exam, offline queue replay). Built; passthrough until lens #1.
-- **Phase 2 (fork mesh)**: independently-deployed Cella forks interoperate via version negotiation. Future work.
+- **Phase 2 (cross-app negotiation)**: independently deployed Cella apps interoperate via version negotiation. Future work.
 
 ---
 
@@ -138,10 +138,10 @@ Authoring note: expect `add` to dominate. Additions are >50% of schema changes i
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│           Phase 2 - fork mesh adds per-version edge transforms (▣)           │
+│       Phase 2 - cross-app negotiation adds per-version transforms (▣)       │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   Fork B (schemaVersion 5)                This fork (schemaVersion 9)        │
+│   App B (schemaVersion 5)                This app (schemaVersion 9)        │
 │                                                                              │
 │   ops:{name} ── Accept-Version: 5 ──>  ▣ upgrade via doba path               │
 │                                          (v5 → v7 → current)                 │
@@ -168,7 +168,7 @@ Verified against doba source (`packages/doba`, v0.1.0):
 | --- | --- | --- |
 | Bidirectional lenses | `'v0<->v1': { forward, backward }` reversible migrations | `migration.ts`, `resolveMigrations` |
 | Declarative single-source transform | pipe builder: `p.rename().map().drop().add()` | helpers docs + playground |
-| Lens graph + shortest path (fork mesh) | BFS/Dijkstra, `cost`/`preferred`/`deprecated` edges, `findPath`, `explain()` | `graph.ts`, `registry.ts#L328` |
+| Lens graph + shortest path (cross-app) | BFS/Dijkstra, `cost`/`preferred`/`deprecated` edges, `findPath`, `explain()` | `graph.ts`, `registry.ts#L328` |
 | Zod compat | Standard Schema v1 (`~standard.validate`); Cella ships Zod 4.4.3 (native SSv1) | `standard-schema.ts` |
 | Browser + Node | Zero runtime deps, pure ESM, no Node APIs (`performance.now()` only) | package.json, registry source |
 | Hot-path perf | `validate: 'none'` skips all schema validation; `from === to` fast path; graph precomputed at construction | `transformCore`, `transform()` |
@@ -217,7 +217,7 @@ const keyMaps: Record<LensEntityType, Record<string, string>>; // ops + stx time
 
 - `currentSchemaVersion = lenses.length` (global ordinal, monotonic, baked into both bundles from `shared`).
 - Per entity type, version **nodes** exist only where that entity changed: attachment lenses at global ordinals 3 and 7 → attachment nodes `v0` (pre-3), `v3`, `v7` (= current). A consumer at global version 5 maps to attachment node `v3` (latest node ≤ 5). This keeps chains short and avoids no-op hops.
-- Within the app, chains are linear → BFS. Fork mesh (Phase 2) adds branches → Dijkstra with `deprecated`/`cost` edges. Both are doba built-ins; nothing changes in our code.
+- Within an app, chains are linear → BFS. Cross-app negotiation (Phase 2) adds branches → Dijkstra with `deprecated`/`cost` edges. Both are doba built-ins; nothing changes in our code.
 
 ### D3: Phase 1 needs no version negotiation for correctness
 
@@ -352,7 +352,7 @@ export const organizationContract = evolutionContract.channel("organization", {
 - **One runtime normalizer core**: `normalizeBody(entityType, body)` (a thin `normalizeOps` wrapper) for plain bodies; every create/update operation calls its contract-bound seam first thing.
 - **`createItem` stays a module-assembled ZodObject** rather than being derived from a shared field source: create schemas carry picks, defaults, and batch refines that a raw-shape union can't express without reinventing drizzle-zod. The update shape is still declared exactly once (in `updateOps`/`updateBody`, adjacent to `createItem` in the same call).
 - **Typed by construction**: the factories are generic over the raw shapes (`z.ZodObject<S>` parameters, not a `ZodObject<ZodRawShape>` constraint, which would collapse inference to `Record<string, unknown>` and silently degrade the generated SDK).
-- **Completeness is CI-enforced**: `lens:check` rule 4 asserts every `appConfig` product/channel entity type calls its contract factory in `backend/src/modules` — a (fork) entity can never silently miss the seams.
+- **Completeness is CI-enforced**: `lens:check` rule 4 asserts every `appConfig` product/channel entity type calls its contract factory in `backend/src/modules` — an app-specific entity can never silently miss the seams.
 
 Update _semantics_ stay divergent by design: product updates merge per-field (HLC/AWSet over `{ ops, stx }`), channel updates stay full-body-partial PUT with server-authoritative last-write. Likewise create vs update keep different _shapes_ (full vs partial, create-only fields): the factory aligns their _source and derivation_, not their contracts.
 
@@ -466,9 +466,9 @@ The race this closes: an old-bundle tab persisting old-shape rows after a new-bu
 
 ---
 
-## Phase 2: fork mesh
+## Cross-app schemas
 
-Builds on Phase 1's lens registry; adds negotiation between independently-deployed Cella forks whose entity models diverge. Not started; items below are in dependency order.
+Builds on Phase 1's lens registry; adds negotiation between independently-deployed Cella apps whose entity models diverge. Not started; items below are in dependency order.
 
 ### 2.1 Versioned OpenAPI spec artifact
 
@@ -483,12 +483,12 @@ Builds on Phase 1's lens registry; adds negotiation between independently-deploy
 - Server behavior: peer requests flow through the same write-path seam (key maps cover the live expand window; older peers get an explicit doba chain upgrade before `normalizeOps`; context bodies go through the same widener/normalizer). Responses gain the **first true response transform**: `downgradeEntity(entity, peerVersion)` applied post-TTL-cache on all entity routes (Tier 1+2) when `Accept-Version < currentSchemaVersion`. `lossyBackward` lenses omit rather than restore removed fields (security: a field dropped for exposure reasons must not reappear for old peers).
 - Unknown/too-old version (no path in the registry graph) → `426 Upgrade Required` with the `/versions` URL: explicit, never silent.
 
-### 2.3 Cross-fork lens graphs (where doba pays off)
+### 2.3 Cross-app lens graphs (where doba pays off)
 
-- A fork's registry = upstream cella lenses + fork-local lenses. Schema nodes get namespaced ids (`cella:v7`, `fork:v3`) and the graph **branches**: exactly doba's model (schemas are nodes, migrations are edges, Dijkstra with `deprecated`/`cost` edges picks routes).
-- Shared-core contract: forks interoperate on the **upstream entity subset** (entities + fields defined in cella core). Fork-divergent fields are dropped with `ctx.defaulted` telemetry when crossing the boundary (lossy edge, costed higher).
-- The `cella` sync CLI gains a check: fork-local lenses must not collide with upstream lens ids (date-prefix + fork namespace makes this mechanical).
-- Peer-to-peer calls between forks at different upstream baselines route through the shared upstream chain: `forkA@v3 → cella:v7 → cella:v5 → forkB@v2`. doba `findPath` + `explain()` give debuggable routing; `pathStrategy: 'direct'` available for pinned contracts.
+- An app's registry = upstream cella lenses + app-specific lenses. Schema nodes get namespaced ids (`cella:v7`, `app:v3`) and the graph **branches**: exactly doba's model (schemas are nodes, migrations are edges, Dijkstra with `deprecated`/`cost` edges picks routes).
+- Shared-core contract: apps interoperate on the **upstream entity subset** (entities + fields defined in cella core). App-divergent fields are dropped with `ctx.defaulted` telemetry when crossing the boundary (lossy edge, costed higher).
+- The `cella` sync CLI gains a check: app-specific lenses must not collide with upstream lens ids (date-prefix + app namespace makes this mechanical).
+- Peer-to-peer calls between apps at different upstream baselines route through the shared upstream chain: `appA@v3 → cella:v7 → cella:v5 → appB@v2`. doba `findPath` + `explain()` give debuggable routing; `pathStrategy: 'direct'` available for pinned contracts.
 
 ### 2.4 Server `failed_mutations` DLQ
 
@@ -506,7 +506,7 @@ Builds on Phase 1's lens registry; adds negotiation between independently-deploy
 ## Known challenges
 
 1. **Expand windows are long-lived state**: old+new columns coexist for days-to-weeks, and overlapping expand windows for the same entity must compose (key-map chains are order-sensitive). Covered by chain property tests; worth a "max concurrent expand lenses per entity" lint.
-2. **doba maturity**: v0.1.0, single maintainer. Mitigated by facade + pin + vendoring path, but worth a periodic health check; if we hit a bug, contributing upstream is cheaper than forking. Phase 1 exercises it only as a chain executor, so the blast radius is small.
+2. **doba maturity**: v0.1.0, single maintainer. Mitigated by facade + pin + vendoring path, but worth a periodic health check; if we hit a bug, contributing upstream is cheaper than maintaining a separate implementation. Phase 1 exercises it only as a chain executor, so the blast radius is small.
 3. **Derivation in `engine.ts`** (delta → schema widening, key maps, doba migrations, spec deltas) is our code, not doba's. It is the highest-correctness-risk module and gets the densest property tests.
 4. **`retype` deltas** (e.g., `string → number`) need `custom` converters and may lose data during
    backward conversion; each lens sets its own `lossyBackward` policy and telemetry.

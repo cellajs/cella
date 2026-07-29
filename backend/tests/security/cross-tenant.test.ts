@@ -23,7 +23,7 @@ const attachmentBody = (id: string) => ({
   size: '1024',
   originalKey: `test/cross-tenant-${id}.pdf`,
   bucketName: 'test-bucket',
-  // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in forks).
+  // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
   ...generateMockEntityBodyChannelIdColumns('attachment'),
   stx: { mutationId: id, sourceId: 'cross-tenant', fieldTimestamps: {} },
 });

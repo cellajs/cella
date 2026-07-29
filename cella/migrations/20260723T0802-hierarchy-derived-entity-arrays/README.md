@@ -12,12 +12,12 @@ guaranteed now), and the `EntityIdColumnKeysShape` type export is removed as orp
 
 ## Blast radius
 
-Fork-breaking on `config.default.ts` only. Call sites do not change: the derived arrays keep
+Sync-breaking on `config.default.ts` only. Call sites do not change: the derived arrays keep
 the exact literal-union element types, and `nonEmpty()` preserves the tuple shape enum sites
 need, so `z.enum(appConfig.productEntityTypes)` and `varchar({ enum: ... })` compile as
-before. A fork that keeps its literal arrays still compiles but reintroduces the drift the
+before. An app that keeps its literal arrays still compiles but reintroduces the drift the
 old validation existed to catch, with that validation now gone: derive, do not redeclare.
-Any fork import of `EntityIdColumnKeysShape` must be dropped (the derived map makes it
+Any app import of `EntityIdColumnKeysShape` must be dropped (the derived map makes it
 meaningless).
 
 ## Run
@@ -26,7 +26,7 @@ No script — manual.
 
 ## Manual steps
 
-1. In your fork's `config.default.ts`, delete the hand-written `entityTypes`,
+1. In your app's `config.default.ts`, delete the hand-written `entityTypes`,
    `channelEntityTypes`, and `productEntityTypes` arrays (including any hoisted `const`s)
    and replace them with:
    `entityTypes: nonEmpty(hierarchy.allTypes)`,
@@ -36,7 +36,7 @@ No script — manual.
    config module.
 2. Rewrite any local `(typeof productEntityTypes)[number]` style references to
    `(typeof hierarchy.productTypes)[number]`.
-3. Remove fork imports of `EntityIdColumnKeysShape` if any exist.
+3. Remove app imports of `EntityIdColumnKeysShape` if any exist.
 
 ## Verify
 

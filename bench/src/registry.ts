@@ -19,13 +19,13 @@ export interface TableBenchSeed {
    * Snake_case column names (e.g. `'languages'`).
    */
   pgArrayColumns?: string[];
-  /** Seed order within the extensible tier (lower seeds first). Core uses <100, forks ≥100. */
+  /** Seed order within the extensible tier (lower seeds first). Core uses <100, apps ≥100. */
   order: number;
   /**
    * Variant byte (UUID group-4, e.g. `'a005'`) for every id minted by this seed.
    * When set, the cleanup predicate is derived as
    * `id::text LIKE '<BENCH_UUID_PREFIX><idVariant>%'`, keeping the id helper and
-   * cleanup in sync from one value. Core seeds use the `a*` band; forks use `b*`.
+   * cleanup in sync from one value. Core seeds use the `a*` band; apps use `b*`.
    */
   idVariant?: string;
   /**
@@ -71,7 +71,7 @@ export const getBenchSeedCleanupWhere = (seed: TableBenchSeed): string => {
 
 /**
  * Registers a bench seed as an import side effect (mirrors the module/tag registry
- * in `shared/src/module-registry.ts`). A fork adds a load-test table by dropping in
+ * in `shared/src/module-registry.ts`). An app adds a load-test table by dropping in
  * one `*.bench.ts` file. Idempotent by name; rejects malformed or duplicate id variants.
  *
  * @see seeds/README.md
@@ -84,13 +84,13 @@ export const registerBenchSeed = (seed: BenchSeed): void => {
     const variant = seed.idVariant;
     if (!VARIANT_PATTERN.test(variant)) {
       throw new Error(
-        `Bench seed '${name}' has an invalid idVariant '${variant}'. Use a 4-hex-char UUID variant byte starting with 8, 9, a or b (core: a*, forks: b*).`,
+        `Bench seed '${name}' has an invalid idVariant '${variant}'. Use a 4-hex-char UUID variant byte starting with 8, 9, a or b (core: a*, apps: b*).`,
       );
     }
     const clash = seeds.find((s) => s.kind !== 'custom' && s.idVariant === variant);
     if (clash) {
       throw new Error(
-        `Bench seed '${name}' reuses idVariant '${variant}' already claimed by '${getBenchSeedName(clash)}'. Pick a unique variant (core: a*, forks: b*).`,
+        `Bench seed '${name}' reuses idVariant '${variant}' already claimed by '${getBenchSeedName(clash)}'. Pick a unique variant (core: a*, apps: b*).`,
       );
     }
   }

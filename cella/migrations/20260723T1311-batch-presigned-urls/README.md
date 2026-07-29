@@ -16,11 +16,11 @@ removed: `getPresignedUrlOp`, `findAttachmentById`, `presignedUrlQuerySchema` (s
 
 ## Blast radius
 
-Fork-breaking for any fork code that calls the removed SDK function `getPresignedUrl` or imports
+Sync-breaking for any app code that calls the removed SDK function `getPresignedUrl` or imports
 the removed backend symbols. Bumps `clientCacheVersion` (`v6-batch-presigned-urls`). No database
-change. A fork whose presign call sites are only the synced cella files (`file-url.ts`,
+change. An app whose presign call sites are only the synced cella files (`file-url.ts`,
 `resolve-url.ts`, `download-service.ts`, attachment table/carousel) gets everything through the
-sync pull and has nothing to do beyond the checks below. Forks that widened `findAttachmentById`
+sync pull and has nothing to do beyond the checks below. Apps that widened `findAttachmentById`
 locally (or carry a pre-hardening copy without the `deletedAt` filter) should adopt the new
 `findAttachmentsByIds`, which keeps the `isNull(deletedAt)` guard so soft-deleted rows are never
 signed.
@@ -44,7 +44,7 @@ grep -rn "getPresignedUrl\b\|getPresignedUrlOp\|findAttachmentById\|presignedUrl
 3. Rejection handling: a denied or missing id is no longer an HTTP 403/404; it appears in
    `rejectedIds` on a 200 response. Client code catching per-id failures should catch
    `PresignRejectedError` from `~/modules/attachment/presign-batch` (permanent; do not retry).
-4. Bump your fork's `clientCacheVersion` if it overrides the default config.
+4. Bump your app's `clientCacheVersion` if it overrides the default config.
 
 ## Verify
 

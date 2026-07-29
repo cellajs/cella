@@ -27,9 +27,7 @@ const mockIdColumns = (entityTypes: Iterable<ChannelEntityType>) => {
   return columns;
 };
 
-/**
- * Generates all configured channel ID columns.
- */
+/** Generates all configured channel ID columns. */
 export const generateMockChannelIdColumns = (): MockChannelIdColumns =>
   mockIdColumns(appConfig.channelEntityTypes) as MockChannelIdColumns;
 
@@ -55,7 +53,7 @@ const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t
 
 /**
  * Generates required non-root ancestor and related-channel IDs for create-body mocks.
- * The route supplies the root ID; hierarchy-derived values keep fork tests aligned when deeper
+ * The route supplies the root ID; hierarchy-derived values keep app tests aligned when deeper
  * contexts are added.
  */
 export const generateMockEntityBodyChannelIdColumns = <E extends ProductEntityType>(
