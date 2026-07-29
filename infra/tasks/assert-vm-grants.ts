@@ -53,15 +53,63 @@ export async function resolveApplicationIdByName(fetchImpl: FetchLike, secretKey
   return applications.find((app) => app.name === name)?.id ?? null
 }
 
-/** Union of permission set names granted to an application across all its policies' rules. */
+interface IamPolicy {
+  id: string
+  name: string
+  /** Principal bindings: a policy targets exactly one of application / user / group. */
+  application_id?: string
+  user_id?: string
+  group_id?: string
+}
+
+/**
+ * Every policy in the organization, paging past `page_size`. The list endpoint's
+ * `application_id` filter is unreliable (Scaleway returns all policies regardless),
+ * so callers filter by principal client-side against the `application_id` /
+ * `group_id` each list item carries.
+ */
+async function listOrganizationPolicies(fetchImpl: FetchLike, secretKey: string, organizationId: string): Promise<IamPolicy[]> {
+  const pageSize = 100
+  const all: IamPolicy[] = []
+  for (let page = 1; page <= 100; page++) {
+    const { policies = [], total_count = 0 } = await scwGet<{ policies?: IamPolicy[]; total_count?: number }>(
+      fetchImpl,
+      secretKey,
+      `${IAM_BASE}/policies?organization_id=${organizationId}&page=${page}&page_size=${pageSize}`,
+    )
+    all.push(...policies)
+    if (policies.length === 0 || all.length >= total_count) break
+  }
+  return all
+}
+
+/** Group ids the application belongs to; a group's policies grant the app too. */
+async function fetchApplicationGroupIds(fetchImpl: FetchLike, secretKey: string, organizationId: string, applicationId: string): Promise<Set<string>> {
+  const ids = new Set<string>()
+  for (let page = 1; page <= 100; page++) {
+    const { groups = [], total_count = 0 } = await scwGet<{ groups?: Array<{ id: string; application_ids?: string[] }>; total_count?: number }>(
+      fetchImpl,
+      secretKey,
+      `${IAM_BASE}/groups?organization_id=${organizationId}&page=${page}&page_size=100`,
+    )
+    for (const group of groups) if ((group.application_ids ?? []).includes(applicationId)) ids.add(group.id)
+    if (groups.length === 0 || (page - 1) * 100 + groups.length >= total_count) break
+  }
+  return ids
+}
+
+/**
+ * Union of permission set names actually granted to an application: the rules of
+ * every policy whose principal is the application itself or a group it belongs to.
+ * Policies bound to other principals (other applications, users, or unrelated
+ * groups) are excluded, so a shared organization's policies do not leak in.
+ */
 export async function fetchGrantedPermissionSets(fetchImpl: FetchLike, secretKey: string, organizationId: string, applicationId: string): Promise<string[]> {
-  const { policies = [] } = await scwGet<{ policies?: Array<{ id: string; name: string }> }>(
-    fetchImpl,
-    secretKey,
-    `${IAM_BASE}/policies?application_id=${applicationId}&organization_id=${organizationId}&page_size=100`,
-  )
+  const groupIds = await fetchApplicationGroupIds(fetchImpl, secretKey, organizationId, applicationId)
+  const policies = await listOrganizationPolicies(fetchImpl, secretKey, organizationId)
+  const bound = policies.filter((policy) => policy.application_id === applicationId || (policy.group_id !== undefined && groupIds.has(policy.group_id)))
   const granted = new Set<string>()
-  for (const policy of policies) {
+  for (const policy of bound) {
     const { rules = [] } = await scwGet<{ rules?: Array<{ permission_set_names?: string[] }> }>(
       fetchImpl,
       secretKey,
