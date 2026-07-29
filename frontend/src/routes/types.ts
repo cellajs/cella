@@ -18,7 +18,7 @@ declare module '@tanstack/react-router' {
       /** Sort position among sibling tabs (default 0, lower first; ties keep route order) */
       order?: number;
       /** Grant this tab needs to be shown: hidden unless PageTabNav receives it via `grants`.
-       *  Declarative so pages never hardcode sibling tab ids (which can't know fork tabs). */
+       *  Declarative so pages never hardcode sibling tab ids (which can't know app tabs). */
       requires?: 'update';
     };
   }

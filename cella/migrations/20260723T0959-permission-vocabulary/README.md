@@ -50,7 +50,7 @@ Renamed files: `shared/src/permissions/permission-manager/` → `shared/src/perm
 
 ## Blast radius
 
-Fork-breaking at the type and config level for every fork: `shared/config/permissions-config.ts`
+Sync-breaking at the type and config level for every app: `shared/config/permissions-config.ts`
 uses the renamed DSL, and any handler or test importing the renamed symbols stops compiling. No
 wire-shape change, no `clientCacheVersion` bump, no lens, no database change. The decision logic
 is untouched; the parity property test and the full permission suites pass unchanged apart from
@@ -73,7 +73,7 @@ grep -rnE "AccessPolic|accessPolicies|PermissionValue|ActionPermissionState|reso
    `({ entityType, channels })`, `switch (subject.name)` → `switch (entityType)`.
 3. Replace `options.topology`/`{ topology: { hierarchy: h } }` with `{ hierarchy: h }` (and
    `entityActions` alongside if overridden).
-4. `git mv` any fork-local imports of the renamed files (`#/permissions/actor` →
+4. `git mv` any app-specific imports of the renamed files (`#/permissions/actor` →
    `#/permissions/access`, `shared/src/permissions/permission-manager/*` → `.../engine/*`).
 5. In collection-scope consumers, rename filter fields per the table (`subChannelIds` at the
    top level is `homeChannelIds`; inside scope slices it is `channelIds`).

@@ -24,19 +24,19 @@ Both throw while signed out, naming the requirement at the read.
 rather than failing. `buildTree` is now overloaded: a row satisfying `TreeItem` may omit the
 accessors, and any other row shape must supply all three.
 
-Also in the same sweep, with no fork action needed unless you call them directly:
+Also in the same sweep, with no app action needed unless you call them directly:
 `getEntityPolicies` / `getPolicyPermissions` take `string` (all four call-site casts dropped);
 `actorFrom` / `accessFrom` take a structural `AccessContext`, and `actorFrom` returns
 `{ anonymous: true }` for a context with no `userId` rather than a malformed `Actor`.
 
 ## Blast radius
 
-Fork-breaking at the type level. No wire-shape change, no `clientCacheVersion` bump, no database
+Sync-breaking at the type level. No wire-shape change, no `clientCacheVersion` bump, no database
 change.
 
-A fork is affected if it reads `useUserStore().user` (almost certainly: any account, profile,
+An app is affected if it reads `useUserStore().user` (almost certainly: any account, profile,
 onboarding, or navigation component), or calls `useTreeRows` with a row type lacking
-`id`/`parentId`/`displayOrder`. A fork that never uses the tree data table is unaffected by the
+`id`/`parentId`/`displayOrder`. An app that never uses the tree data table is unaffected by the
 second change.
 
 The user-store change is compile-time-detected: `pnpm check` lists every unguarded read, so there
@@ -63,12 +63,12 @@ grep -rn "useTreeRows\|buildTree" --include="*.ts" --include="*.tsx" frontend/sr
      `null` explicitly. Upstream examples are `unsubscribed-page.tsx` and the Gleap subscriber.
 3. Update the import on each touched file: `useCurrentUser` / `getCurrentUser` come from
    `~/modules/user/user-store`. Drop `useUserStore` where it is no longer referenced.
-4. If a fork calls `useUserStore.setState({ user: ... })` for a signed-out state, pass `null`
+4. If an app calls `useUserStore.setState({ user: ... })` for a signed-out state, pass `null`
    directly; the `as unknown as MeUser` cast is no longer needed.
 5. For each `useTreeRows<T>` call, confirm `T` has `id: string`, `parentId: string | null`, and
    `displayOrder: number`. If it does not, either add those fields, or call `buildTree` directly
    and pass all three accessors (`getId`, `getParentId`, `getDisplayOrder`).
-6. If a fork defined its own default accessors by casting to `TreeItem`, delete them and import
+6. If an app defined its own default accessors by casting to `TreeItem`, delete them and import
    `treeItemAccessors` from `~/modules/common/data-table/tree/build-tree`.
 
 ## Verify

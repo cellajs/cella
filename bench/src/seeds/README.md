@@ -4,7 +4,7 @@ How load-test seed data is defined, registered, and cleaned up.
 
 ## Self-registration
 
-Each `*.bench.ts` file in this directory calls `registerBenchSeed()` as an import side effect (mirrors the cella module/tag registry pattern in `shared/src/module-registry.ts`). `data-setup.ts` auto-imports every `*.bench.ts` file under `seeds/`, so a fork adds a load-test table (entity or resource) by dropping in one new file, no barrel or `data-setup.ts` edit required.
+Each `*.bench.ts` file in this directory calls `registerBenchSeed()` as an import side effect (mirrors the cella module/tag registry pattern in `shared/src/module-registry.ts`). `data-setup.ts` auto-imports every `*.bench.ts` file under `seeds/`, so an app adds a load-test table (entity or resource) by dropping in one new file, no barrel or `data-setup.ts` edit required.
 
 ## Seed kinds
 
@@ -13,9 +13,9 @@ Each `*.bench.ts` file in this directory calls `registerBenchSeed()` as an impor
 
 ## Identity bands
 
-Every id-based seed claims a UUID variant byte (`idVariant`, the fourth UUID group, e.g. `a005`). cella core owns the `a*` band; forks claim the `b*` band, so core and fork entities never collide across upstream syncs (mirrors the `order` under 100 / 100-or-higher split below). The id helpers in `ids.ts` and each seed's `idVariant` share the same `CORE_ID_VARIANTS` source, so an id and the cleanup predicate that deletes it can't drift apart. `registerBenchSeed` rejects malformed or duplicate variants at load time.
+Every id-based seed claims a UUID variant byte (`idVariant`, the fourth UUID group, e.g. `a005`). cella core owns the `a*` band; apps claim the `b*` band, so core and app entities never collide across upstream syncs (mirrors the `order` under 100 / 100-or-higher split below). The id helpers in `ids.ts` and each seed's `idVariant` share the same `CORE_ID_VARIANTS` source, so an id and the cleanup predicate that deletes it can't drift apart. `registerBenchSeed` rejects malformed or duplicate variants at load time.
 
-## Adding a fork seed
+## Adding an app seed
 
 Copy an existing `*.bench.ts` file (`attachment.bench.ts` is the reference implementation) to `seeds/<name>.bench.ts`, point it at your table/mock, then:
 

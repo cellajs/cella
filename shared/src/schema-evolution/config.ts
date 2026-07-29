@@ -10,7 +10,7 @@ export type UnknownFieldHandling = 'ignore' | 'strip' | 'fail';
 /**
  * Schema-evolution lifecycle policy: centralizes the timing knobs that gate
  * expand-to-contract transitions and force stale bundles to update.
- * Conservative defaults; forks may tune them. Pure constants, safe to import
+ * Conservative defaults; apps may tune them. Pure constants, safe to import
  * anywhere (no runtime deps).
  */
 export const schemaEvolutionPolicy: {

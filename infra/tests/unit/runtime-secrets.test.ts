@@ -105,7 +105,7 @@ describe('runtime secret schema alignment', () => {
 })
 
 describe('runtime secret config seam', () => {
-  it('defineRuntimeSecrets is a typed identity that preserves the fork config', () => {
+  it('defineRuntimeSecrets is a typed identity that preserves the app config', () => {
     const config = defineRuntimeSecrets({
       example: {
         secretName: 'example-secret',
@@ -130,7 +130,7 @@ describe('runtime secret config seam', () => {
     })
   })
 
-  it('derives runtimeSecrets from the fork config, keyed by id, preserving order', () => {
+  it('derives runtimeSecrets from the app config, keyed by id, preserving order', () => {
     expect(runtimeSecrets.map((secret) => secret.id)).toEqual(Object.keys(runtimeSecretsConfig))
     for (const secret of runtimeSecrets) {
       const { id, ...rest } = secret

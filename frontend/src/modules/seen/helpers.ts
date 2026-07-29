@@ -26,7 +26,7 @@ export function getSeenChannelId(entityType: ProductEntityType, entity: Record<s
 
 /**
  * Mirror server unseen exclusions when applying client badge deltas, including unpublished drafts.
- * Fork-specific feed filters must be added here to prevent drift before exact recounts.
+ * App-specific feed filters must be added here to prevent drift before exact recounts.
  */
 export function matchesUnseenFilters(_entityType: ProductEntityType, row: Record<string, unknown>): boolean {
   return row.publishedAt !== null;

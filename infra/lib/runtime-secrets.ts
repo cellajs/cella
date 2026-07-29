@@ -10,7 +10,7 @@ export type RuntimeSecretValueSource = 'pulumi' | 'operator'
 export type RuntimeSecretGeneration = 'manual' | 'random'
 
 /**
- * One runtime secret's fork-owned mapping data, authored in
+ * One runtime secret's app-owned mapping data, authored in
  * `runtime-secrets.config.ts`. The `id` is the config object key, so it is not
  * repeated here (see {@link RuntimeSecretDefinition} for the flattened shape).
  */
@@ -31,7 +31,7 @@ export interface RuntimeSecretConfig {
   services: readonly RuntimeSecretConsumer[]
 }
 
-/** The literal union of fork-config secret ids (the config object keys). */
+/** The literal union of app-config secret ids (the config object keys). */
 export type RuntimeSecretId = keyof typeof runtimeSecretsConfig & string
 
 /** A runtime secret definition: its config data plus the id (the config key). */
@@ -44,14 +44,14 @@ export function defineRuntimeSecrets<const T extends Record<string, RuntimeSecre
   return secrets
 }
 
-/** Flattened, ordered runtime secret definitions derived from the fork config. */
+/** Flattened, ordered runtime secret definitions derived from the app config. */
 export const runtimeSecrets: RuntimeSecretDefinition[] = Object.entries(runtimeSecretsConfig).map(([id, definition]) => ({
   // Object.entries widens keys to string; the entries ARE the config keys.
   id: id as RuntimeSecretId,
   ...definition,
 }))
 
-// Fail fast at load time on a fork misconfiguration, preventing a missing
+// Fail fast at load time on an app misconfiguration, preventing a missing
 // container at deploy time or a missing variable at runtime.
 {
   const knownServices = new Set<string>(serviceNames)

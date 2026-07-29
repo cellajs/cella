@@ -2,7 +2,7 @@ name: Infra deploy (reusable)
 
 # The whole deploy pipeline as a reusable workflow: build images + frontend,
 # then ONE `infra deploy` command (preflights, lock, stack update, waved
-# rollout, verify, entry publish, smoke). Forks call this from their thin
+# rollout, verify, entry publish, smoke). Apps call this from their thin
 # deploy.yml and never edit this file; secrets arrive via `secrets: inherit`.
 
 permissions: {}
@@ -178,7 +178,7 @@ jobs:
   # -------------------------------------------------------------------------
   deploy:
     runs-on: ubuntu-latest
-    # Cold rollouts of many services (a fork deploying yjs/mcp) need headroom.
+    # Cold rollouts of many services (an app deploying yjs/mcp) need headroom.
     timeout-minutes: 35
     # No build-images dependency: the command's wait-for-images step is the real
     # gate, so preflights, the frontend build, and the base stack update all

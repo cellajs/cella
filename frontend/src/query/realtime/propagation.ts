@@ -6,10 +6,10 @@ import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { EntityQueryData, InfiniteEntityQueryData, ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 
-/** Wire-compatible propagation hint. Product types stay a plain union to tolerate types this fork's config omits. */
+/** Wire-compatible propagation hint. Product types stay a plain union to tolerate types this app's config omits. */
 type PropagationHintInput = {
   embeddedProduct: ProductEntityType;
-  /** Advisory on the wire: host fan-out derives from this fork's productEmbeddings config. */
+  /** Advisory on the wire: host fan-out derives from this app's productEmbeddings config. */
   hostProduct?: ProductEntityType;
   hostColumn?: string;
   update: string[];
@@ -17,7 +17,7 @@ type PropagationHintInput = {
 };
 
 /**
- * Patch stale embedded-product references across every host column this fork's
+ * Patch stale embedded-product references across every host column this app's
  * productEmbeddings config declares for the changed product. The hint's own host fields are
  * advisory: local config is the authority on where this client caches embedded copies.
  * Used by live SSE handlers, catchup after delta fetches, and optimistic mutation hooks.

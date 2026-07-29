@@ -4,7 +4,7 @@ import { managedKeysConfig } from '../../config/managed-keys.config'
 import { runtimeSecrets } from '../../lib/runtime-secrets'
 
 describe('managed key registry', () => {
-  it('derives managedKeys from the fork config, keyed by id, preserving order', () => {
+  it('derives managedKeys from the app config, keyed by id, preserving order', () => {
     expect(managedKeys.map((key) => key.id)).toEqual(Object.keys(managedKeysConfig))
     for (const key of managedKeys) {
       const { id, ...rest } = key
@@ -45,7 +45,7 @@ describe('managed key registry', () => {
     expect(managedKeyById('s3')?.assign).toEqual({ accessKey: 's3AccessKeyId', secretKey: 's3AccessKeySecret' })
   })
 
-  it('defineManagedKeys is a typed identity that preserves the fork config', () => {
+  it('defineManagedKeys is a typed identity that preserves the app config', () => {
     const config = defineManagedKeys({
       example: {
         suffix: 'example',

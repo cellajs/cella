@@ -22,7 +22,7 @@ export function LinksSection({ label, onClose }: LinksSectionProps) {
   const { t } = useTranslation();
   const contactRef = useRef<HTMLButtonElement | null>(null);
   const hasStatusPage = !!appConfig.statusUrl?.trim();
-  // Fork-safe: only link the llms page when the content file exists
+  // Only link the llms page when the content file exists.
   const hasLlmsPage = !!getDocPage('llms');
 
   return (

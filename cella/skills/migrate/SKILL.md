@@ -1,9 +1,9 @@
 ---
 name: migrate
-description: Apply pending cella upstream migrations to a fork after a sync. Computes the pending set from cella/migrations/manifest.json, runs each migration's codemod or manual steps in order, gates on pnpm check, and records what was applied.
+description: Apply pending cella upstream migrations to an app after a sync. Computes the pending set from cella/migrations/manifest.json, runs each migration's codemod or manual steps in order, gates on pnpm check, and records what was applied.
 ---
 
-# Applying cella migrations to a fork
+# Applying cella migrations to an app
 
 Run this after a `cella sync` pull, or whenever `cella/migrations/run.ts` reports pending work.
 The pipeline is **inventory → plan → transform → validate → ship**, one migration at a time, in
@@ -17,9 +17,9 @@ From the repo root, get the pending plan as JSON:
 pnpm exec tsx cella/migrations/run.ts --json
 ```
 
-Each element has `id`, `title`, `kind`, `forkBreaking`, `clientCacheBump`, `script`, `roots`,
+Each element has `id`, `title`, `kind`, `syncBreaking`, `clientCacheBump`, `script`, `roots`,
 `requires`, `summary`. Address `warnings` (manifest/folder drift) before proceeding — they mean the
-manifest and the folders disagree. If the list is empty, the fork is up to date; stop.
+manifest and the folders disagree. If the list is empty, the app is up to date; stop.
 
 ## 2. For each pending migration, in array order
 
@@ -32,12 +32,12 @@ summary. Then:
   pnpm exec tsx <script> inventory <roots>   # or the exact command in the README
   pnpm exec tsx <script> rewrite   <roots>
   ```
-  If the fork renamed or added entities, pass the migration's fork-extension flag (e.g.
-  `--extra-renames fork-renames.json`); do not edit the shipped script.
+  If the app renamed or added entities, pass the migration's customization flag (e.g.
+  `--extra-renames app-renames.json`); do not edit the shipped script.
 - **`kind: sql`**: apply the SQL / run the drizzle regen exactly as the README's **Manual steps**
   and **Verify** sections describe. Answer drizzle rename prompts as instructed.
 - **`kind: manual`**: work the numbered **Manual steps**. These are the ambiguous, per-file changes
-  a codemod deliberately skips — apply them wherever the fork forked that surface.
+  a codemod deliberately skips — apply them wherever the app customized that code.
 
 Then run every command in `requires` (e.g. `pnpm generate`, `pnpm sdk`) and any follow-up the
 README's **Verify** section lists (recalculation runbooks, seed steps).
@@ -69,6 +69,6 @@ pending migration.
   skip ahead.
 - **Idempotency.** Codemods are no-ops on already-migrated code, so a rerun after a partial failure
   is safe. Manual and SQL steps may not be — read before re-running.
-- **`forkBreaking: false`** migrations that an in-sync fork gets for free (compiler-enforced renames
-  with no fork-specific surface) still get recorded once `pnpm check` is green, so the plan stays
+- **`syncBreaking: false`** migrations that an in-sync app gets for free (compiler-enforced renames
+  with no app-specific surface) still get recorded once `pnpm check` is green, so the plan stays
   accurate.

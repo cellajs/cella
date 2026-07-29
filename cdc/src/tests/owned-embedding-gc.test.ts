@@ -10,7 +10,7 @@ let referencedIds: string[] = [];
 const updates: Array<{ values: Record<string, unknown>; params: unknown[] }> = [];
 
 // Synthetic host/embedded tables: the GC reads columns off whatever `getEntityTable` returns,
-// so a fork's real tables are irrelevant to the mechanism under test.
+// so an app's real tables are irrelevant to the mechanism under test.
 vi.mock('#/tables', async () => {
   const { pgTable, jsonb, text, uuid } = await import('drizzle-orm/pg-core');
 

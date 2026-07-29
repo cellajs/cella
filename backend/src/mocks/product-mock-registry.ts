@@ -1,6 +1,6 @@
 import { getTableColumns } from 'drizzle-orm';
 import type { ProductEntityType } from 'shared';
-import { forkProductMocks } from '#/mocks/fork-product-mocks';
+import { appProductMocks } from '#/mocks/app-product-mocks';
 import { mockAttachment } from '#/modules/attachment/attachment-mocks';
 import { getEntityTable } from '#/tables';
 
@@ -12,12 +12,12 @@ export type ProductMockFn = (key?: string) => Record<string, unknown>;
 
 /**
  * Maps every product entity type to its mock factory. Cella registers its own product entities here;
- * forks add theirs in `forkProductMocks`. Exhaustive typing and a drift test keep shared
- * product-seeding suites aligned with fork schemas.
+ * apps add theirs in `appProductMocks`. Exhaustive typing and a drift test keep shared
+ * product-seeding suites aligned with app schemas.
  */
 export const productMocksByType = {
   attachment: mockAttachment,
-  ...forkProductMocks,
+  ...appProductMocks,
 } as const satisfies Record<ProductEntityType, ProductMockFn>;
 
 /** Create an insert-ready product mock by dropping generated columns and applying overrides last. */

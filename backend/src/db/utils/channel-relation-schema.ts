@@ -13,10 +13,10 @@ export type RelatedChannelShape<E extends string> = EntityIdColumns<
 /**
  * Builds a Zod raw shape with optional uuid fields for an entity's declared `relatedChannels`.
  * Spread into request body/query schemas to expose denormalized context references without
- * hardcoding fork-specific column names. Returns an empty shape when the entity has none.
+ * hardcoding app-specific column names. Returns an empty shape when the entity has none.
  *
  * Counterpart to `channelRelationColumns` (which builds the drizzle columns): this keeps the
- * request/query validation layer in lockstep with the hierarchy config, so forks only adjust
+ * request/query validation layer in lockstep with the hierarchy config, so apps only adjust
  * the hierarchy, keeping this rule out of individual schemas.
  */
 export const relatedChannelShape = <E extends ProductEntityType>(entityType: E): RelatedChannelShape<E> => {

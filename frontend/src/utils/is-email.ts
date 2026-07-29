@@ -1,4 +1,4 @@
-// forked from https://github.com/chriso/validator.js
+// adapted from https://github.com/chriso/validator.js
 // biome-ignore-all lint/suspicious/noControlCharactersInRegex: RFC 5322 email validation requires control-char ranges in quoted-string production.
 
 interface IFqdnOptions {

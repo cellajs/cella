@@ -173,9 +173,9 @@ describe('Catchup (view-driven, sequence)', async () => {
 
     expect(result.response.status).toBe(200);
     const { views } = result.data as AppCatchupResponse;
-    // The other org's exact non-'ok' status is fork-dependent: 'forbidden' with no public read
+    // The other org's exact non-'ok' status is app-dependent: 'forbidden' with no public read
     // route, 'opaque' when a publicRead() grant means a readable row can exist there. The
-    // guarantee both forks share is what this test asserts: not 'ok', and no numbers leaked.
+    // guarantee both apps share is what this test asserts: not 'ok', and no numbers leaked.
     expect(views!.map((v) => v.key)).toEqual(['other:attachment', `${orgId}:attachment`]);
     expect(views![0].status).not.toBe('ok');
     expect(views![1].status).toBe('ok');

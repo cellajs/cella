@@ -21,7 +21,7 @@ type EntityGridBarSearch = {
   role?: string;
 };
 
-/** Sort option for the entity grid bar. Forks pass their own set via the `sortOptions` prop. */
+/** Sort option for the entity grid bar. Apps pass their own set via the `sortOptions` prop. */
 export type EntityGridSortOption = {
   name: string;
   icon: IconComponent;

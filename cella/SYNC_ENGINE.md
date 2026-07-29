@@ -22,7 +22,7 @@ Cella distinguishes two entity kinds: `channel` and `product`.
 | `ChannelEntityType` | REST CRUD, memberships, permission boundaries, server IDs | `organization` |
 | `ProductEntityType` | Sequence stamps, realtime notifications, range catchup, optimistic merge metadata | `attachment` |
 
-The template ships the minimal hierarchy `organization -> attachment`. Forks can add deeper channel hierarchies, draft lifecycles, embedded entities, and Yjs-backed fields without changing the core flow.
+The template ships the minimal hierarchy `organization -> attachment`. Apps can add deeper channel hierarchies, draft lifecycles, embedded entities, and Yjs-backed fields without changing the core flow.
 
 Cached reads can persist for offline use. Offline writes queue as paused mutations: network failures retry briefly and pause once the client reports offline, then persist for replay. Server errors never queue. See [Writes](#writes) for the exact boundary and its edges.
 
@@ -112,7 +112,7 @@ Product tables that opt into drafts use a PostgreSQL publication row filter:
 - Draft creates, edits, and deletes do not reach the worker.
 - Soft-deleting a published row keeps it inside the publication. It flows as an update tombstone.
 
-Channel tables are not filtered. Their `publishedAt` value controls invitees, not replication. A worker entrance check and a dispatch veto reject drafts if a fork adds a draft column without regenerating the publication. API reads continue to apply their published-row predicate because drafts still exist in the table.
+Channel tables are not filtered. Their `publishedAt` value controls invitees, not replication. A worker entrance check and a dispatch veto reject drafts if an app adds a draft column without regenerating the publication. API reads continue to apply their published-row predicate because drafts still exist in the table.
 
 ### Moves
 
@@ -151,7 +151,7 @@ Canonical ancestry comes from `channel_counters.path`, never from a client claim
 
 ### Deep example
 
-For depth-sensitive behavior, imagine a fork with `organization -> course -> section -> project`. Its product is an item. Staff roles are elevated; members are not. Ada is an organization admin, Sam is course staff, and Maya is a course member with membership in one project.
+For depth-sensitive behavior, imagine an app with `organization -> course -> section -> project`. Its product is an item. Staff roles are elevated; members are not. Ada is an organization admin, Sam is course staff, and Maya is a course member with membership in one project.
 
 | View | Ada | Sam | Section staff | Maya | Course member |
 | --- | --- | --- | --- | --- | --- |
@@ -214,7 +214,7 @@ At organization level, route state identifies the viewed channel. Below that lev
 
 The server's `spreadWindow` grows with the online audience and database pool pressure, capped at 120 seconds. Deterministic jitter spreads clients across that window. The fetch prioritizer merges contiguous ranges per product type and home channel; new notifications never postpone an earlier deadline. It also flushes when navigation enters a channel, a channel gains its first observer, the tab hides, or the browser returns online.
 
-At flush time, every due channel of one organization and product type shares a single covering fetch: the merged bounded range, narrowed with a `pathPrefix` when a registered channel-path resolver can prove a common true ancestor for all due channels (forks; the template always fetches org-wide). Returned rows route to their home lists during patching, and each covered channel advances to the shared upper bound.
+At flush time, every due channel of one organization and product type shares a single covering fetch: the merged bounded range, narrowed with a `pathPrefix` when a registered channel-path resolver can prove a common true ancestor for all due channels (apps; the template always fetches org-wide). Returned rows route to their home lists during patching, and each covered channel advances to the shared upper bound.
 
 Each channel view records both the newest known position and the successfully ingested position. Fetches start after the ingested cursor, so small live gaps repair themselves. Repeated failures fall back to targeted invalidation and advance, preventing a range from looping forever.
 

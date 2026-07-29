@@ -33,7 +33,7 @@
 * align toaster API with Sonner ([#949](https://github.com/cellajs/cella/issues/949)) ([5c375ca](https://github.com/cellajs/cella/commit/5c375cae665fec920e5f4740853b6aad0732d51e))
 * back to useMutation, cleanup query.ts files ([#950](https://github.com/cellajs/cella/issues/950)) ([0538424](https://github.com/cellajs/cella/commit/0538424b2ede266a0b0be1011549e57e0b682376))
 * consolidate permission vocabulary onto repo terms ([#955](https://github.com/cellajs/cella/issues/955)) ([1642b7d](https://github.com/cellajs/cella/commit/1642b7dc9dbd857726d2a0f317dda68178d7251f))
-* improve fork alignment ([#943](https://github.com/cellajs/cella/issues/943)) ([6f21e07](https://github.com/cellajs/cella/commit/6f21e0737de691963c31250ae7ea09ff543b239d))
+* improve app alignment ([#943](https://github.com/cellajs/cella/issues/943)) ([6f21e07](https://github.com/cellajs/cella/commit/6f21e0737de691963c31250ae7ea09ff543b239d))
 * public read is a flag, not a mode ([#953](https://github.com/cellajs/cella/issues/953)) ([702955a](https://github.com/cellajs/cella/commit/702955ae853afd44f21f0b3d78cb6ccd8f445597))
 * rename attachment storage flag to publicBucket ([#954](https://github.com/cellajs/cella/issues/954)) ([32847fe](https://github.com/cellajs/cella/commit/32847feb1f8076f615b0ed07beff29ef41b11720))
 * replace unchecked type assertions that hid real defects ([#956](https://github.com/cellajs/cella/issues/956)) ([dad46cb](https://github.com/cellajs/cella/commit/dad46cb09d11915af13109016ee9a6a535c5c4ca))
@@ -185,7 +185,7 @@
 
 - **docs:** derive page updatedAt from git (page + imported docs) ([#887](https://github.com/cellajs/cella/issues/887)) ([7064e0e](https://github.com/cellajs/cella/commit/7064e0ea577581c2d2e6285eab54159ff3119c60))
 - **infra:** LB path-begin routes for same-origin migration (option A, phase 0+1) ([#880](https://github.com/cellajs/cella/issues/880)) ([7c5b2fd](https://github.com/cellajs/cella/commit/7c5b2fd47ef73f19a8ba38c4063eb50d1b2c1485))
-- **permissions:** fork-safe hazard fixes + public-read migration tooling ([#885](https://github.com/cellajs/cella/issues/885)) ([88161b7](https://github.com/cellajs/cella/commit/88161b7b58c3ea6195e8f72a7ba01cace5fbc9b3))
+- **permissions:** configuration-safe hazard fixes + public-read migration tooling ([#885](https://github.com/cellajs/cella/issues/885)) ([88161b7](https://github.com/cellajs/cella/commit/88161b7b58c3ea6195e8f72a7ba01cace5fbc9b3))
 - same-origin phases 2+3 — url flip, cookie hardening, legacy-host redirects ([#881](https://github.com/cellajs/cella/issues/881)) ([5af3e56](https://github.com/cellajs/cella/commit/5af3e5606eb0a933f37ec677f3d8470c8d4e9ac1))
 
 ### 🐞 Bug fixes
@@ -257,10 +257,10 @@
 
 - autolink repo file paths in docs inline code to GitHub ([#858](https://github.com/cellajs/cella/issues/858)) ([3a3b382](https://github.com/cellajs/cella/commit/3a3b3822309c0e1eace2aaed6ba863be322b59b2))
 - deepest-non-null-ancestor context attribution + template-adapted tests ([7f6d940](https://github.com/cellajs/cella/commit/7f6d9402e2ffef0139871c47466c04f1046b8fde))
-- fork alignment ([ded27fb](https://github.com/cellajs/cella/commit/ded27fb10e183ab4696e5d9723b47b589d0f97f6))
+- app alignment ([ded27fb](https://github.com/cellajs/cella/commit/ded27fb10e183ab4696e5d9723b47b589d0f97f6))
 - many improvements ([#862](https://github.com/cellajs/cella/issues/862)) ([6b1ca8f](https://github.com/cellajs/cella/commit/6b1ca8f33d7f6ab41e38ac022ec3bef7cc6ccd34))
 - mdx consolidation ([#857](https://github.com/cellajs/cella/issues/857)) ([5e69279](https://github.com/cellajs/cella/commit/5e69279581d9e728e45ba57cd64eaf7df45fff2f))
-- **permissions:** topology seam + wide-fixture kit for fork-independent engine tests ([#861](https://github.com/cellajs/cella/issues/861)) ([d4c3de6](https://github.com/cellajs/cella/commit/d4c3de6e857479ec67915f92b61167cada1e36aa))
+- **permissions:** topology seam + wide-fixture kit for configuration-independent engine tests ([#861](https://github.com/cellajs/cella/issues/861)) ([d4c3de6](https://github.com/cellajs/cella/commit/d4c3de6e857479ec67915f92b61167cada1e36aa))
 - Worktree mdx pages instead of db model for pages ([#855](https://github.com/cellajs/cella/issues/855)) ([d7af703](https://github.com/cellajs/cella/commit/d7af70330ec915ee3725ed9530e5e0e9476e995a))
 
 ### 🐞 Bug fixes

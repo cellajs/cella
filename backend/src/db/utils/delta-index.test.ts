@@ -7,7 +7,7 @@ import { entityTables } from '#/tables';
 /**
  * Every product entity table must carry a composite `(organization_id, seq)` index so
  * seq-range delta reads are index range scans.
- * Forks add product tables in their own modules; this guard fails if the index is missing.
+ * Apps add product tables in their own modules; this guard fails if the index is missing.
  */
 describe('every product entity table has the (organization_id, seq) delta index', () => {
   const productTables = Object.entries(entityTables).filter(([type]) =>

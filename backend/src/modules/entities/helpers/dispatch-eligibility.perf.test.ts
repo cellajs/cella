@@ -158,7 +158,7 @@ describe('dispatch batch eligibility: fan-out benchmark', () => {
     organizationIds: new Set([ORG]),
   }));
 
-  // Eligibility count depends on fork policies, so assert batch/baseline parity plus universal
+  // Eligibility count depends on app policies, so assert batch/baseline parity plus universal
   // reader and non-member expectations.
   const scenarios: Scenario[] = [
     {

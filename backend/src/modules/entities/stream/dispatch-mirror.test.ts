@@ -54,7 +54,7 @@ const fakeSubscriber = (
 /**
  * Rows and events must carry the full ancestor scope of the configured hierarchy.
  * `null` (not absent) for contexts the row isn't homed under, or `buildSubject`
- * fail-closes with MissingScopeError. Empty in base cella (organization only); forks
+ * fail-closes with MissingScopeError. Empty in base cella (organization only); apps
  * with deeper chains (e.g. project) get their id columns nulled here.
  */
 const nullAncestorScopes = Object.fromEntries(
@@ -113,7 +113,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
       streamSubscriberManager.register(subscriber);
     }
 
-    // Row authored by the org member: keeps "read granted" true under forks where org
+    // Row authored by the org member: keeps "read granted" true under apps where org
     // members hold a row-conditional read:'own' grant, not an unconditional read grant.
     await dispatchToAppStream(
       attachmentEvent(ORG_A, {
@@ -158,7 +158,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
 
   it('drops draft rows for everyone — author and admin included (defense-in-depth veto)', async () => {
     // The publication row filter keeps drafts out of the stream at the source; this veto
-    // is the fail-closed backstop for a misconfigured fork (filter missing). It must
+    // is the fail-closed backstop for a misconfigured app (filter missing). It must
     // still hold for EVERYONE, author included.
     const author = fakeSubscriber([membership(ORG_A, 'member', 'author-user')], 'author-user', [ORG_A], ORG_A);
     const admin = fakeSubscriber([membership(ORG_A, 'admin', 'admin-user')], 'admin-user', [ORG_A], ORG_A);

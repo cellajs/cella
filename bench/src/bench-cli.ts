@@ -54,7 +54,7 @@ function discoverScenarios(): string[] {
     .sort();
 }
 
-/** Scenario description from the first `#` comment line of its YAML. Keeps the picker in sync as forks add scenarios, no hardcoded map. */
+/** Scenario description from the first `#` comment line of its YAML. Keeps the picker in sync as apps add scenarios, no hardcoded map. */
 function scenarioDescription(name: string): string {
   try {
     const content = readFileSync(resolve(BENCH_ROOT, 'scenarios', `${name}.yaml`), 'utf-8');

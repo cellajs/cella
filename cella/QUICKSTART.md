@@ -72,7 +72,7 @@ Contributions are welcome: [open an issue or PR](https://github.com/cellajs/cell
 
 ## Cella CLI
 
-Keep your app in sync with the Cella template - pull upstream bug fixes, features and dependency updates while preserving your customizations. It also covers auditing outdated/vulnerable packages, file stats, and (for template maintainers) syncing downstream forks.
+Keep your app in sync with the Cella template - pull upstream bug fixes, features and dependency updates while preserving your customizations. It also covers auditing outdated/vulnerable packages, file stats, and (for template maintainers) syncing configured downstream repositories.
 
 See the [@cellajs/cli](https://github.com/cellajs/cella-cli#readme) package for full documentation, services, and configuration.
 

@@ -6,7 +6,7 @@ import { attachmentId, CORE_ID_VARIANTS, ORG_ID, TENANT_ID, userId } from './ids
 export const TOTAL_ATTACHMENTS = 500;
 
 /**
- * Reference implementation for the fork seed pattern.
+ * Reference implementation for the app seed pattern.
  *
  * @see seeds/README.md
  */

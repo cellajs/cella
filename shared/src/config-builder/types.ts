@@ -130,7 +130,7 @@ export interface ConfigStringArrays {
 }
 
 /**
- * The config a fork must satisfy (`satisfies RequiredConfig` in its default.ts). The generic keeps
+ * The config an app must satisfy (`satisfies RequiredConfig` in its default.ts). The generic keeps
  * arrays as literal tuples (`['organization']`, not `readonly string[]`) so Drizzle v1 gets strict enums.
  */
 export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArrays> {
@@ -258,7 +258,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   // Organization defaults
   defaultOrganizationFlags: Record<string, boolean>;
 
-  // Per-organization setup config: fork-shaped defaults layered under each org's stored jsonb.
-  // Cella ships {}; forks widen the value (e.g. `{ primaryLabels: [...] }`) in their config.
+  // Per-organization setup config: app-configured defaults layered under each org's stored jsonb.
+  // Cella ships {}; apps widen the value (e.g. `{ primaryLabels: [...] }`) in their config.
   defaultSetupConfig: Record<string, unknown>;
 }

@@ -8,7 +8,7 @@ import { endpoints, mode } from '../pulumi-context'
 import { internalLbPort, lbInternalAddress } from './lb-internal'
 import { registryEndpoint } from './registry'
 
-// The `${VAR}` placeholder suppliers for shared, app-wide values are fork-owned
+// The `${VAR}` placeholder suppliers for shared, app-wide values are app-owned
 // (config/env-suppliers.config.ts). Service-specific wiring is declared as
 // `bindings` on the registry entry and resolved generically below.
 const envSuppliers: Record<string, EnvSupplier> = appEnvSuppliers

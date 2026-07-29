@@ -19,7 +19,7 @@ export function noteUnseenReconciled(): void {
 /**
  * Apply badge deltas for the rows a synced seq range delivered: new-and-unseen rows +1,
  * tombstoned-and-unseen rows −1. Applies the same row filters as the server's
- * `findUnseenCountsByUser`; forks add theirs in `matchesUnseenFilters` (helpers.ts).
+ * `findUnseenCountsByUser`; apps add theirs in `matchesUnseenFilters` (helpers.ts).
  */
 export function ingestSyncedRows(
   productType: ProductEntityType,

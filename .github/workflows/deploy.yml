@@ -3,15 +3,15 @@ name: Deploy
 # Thin trigger with three paths into one reusable pipeline (infra-deploy.yml):
 #   push to main      -> auto staging, so main is always mirrored on staging.
 #                        OPT-IN: only runs when the repo variable
-#                        AUTO_DEPLOY_STAGING == 'true'. A fork that has not
+#                        AUTO_DEPLOY_STAGING == 'true'. An app that has not
 #                        bootstrapped staging leaves it unset and the job skips
 #                        cleanly (no failing CI), so the template is safe to pull.
 #   release published -> production (gate it with a required-reviewer
 #                        Environment named `production` to make it a manual
 #                        promote; the deploy job already targets that Environment)
 #   workflow_dispatch -> pick the environment by hand
-# The pipeline itself lives in infra-deploy.yml; this file is the only one a
-# fork ever edits.
+# The pipeline itself lives in infra-deploy.yml; this is the only workflow an
+# app edits.
 
 permissions: {}
 
@@ -42,7 +42,7 @@ jobs:
   deploy:
     # Auto staging (push to main) runs only when opted in via the repo variable
     # AUTO_DEPLOY_STAGING == 'true'. Release (production) and manual dispatch
-    # always run. An un-bootstrapped fork skips the push job cleanly.
+    # always run. An un-bootstrapped app skips the push job cleanly.
     if: github.event_name != 'push' || vars.AUTO_DEPLOY_STAGING == 'true'
     uses: ./.github/workflows/infra-deploy.yml
     with:

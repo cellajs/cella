@@ -22,7 +22,7 @@ import { UpdateOrganizationForm } from '~/modules/organization/update-organizati
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-// Built-in tabs, plus any fork-provided section tabs spliced in before the danger zone.
+// Built-in tabs, plus any app-provided section tabs spliced in before the danger zone.
 const tabs = [
   { id: 'general', label: 'c:general' },
   { id: 'details', label: 'c:details' },
@@ -37,7 +37,7 @@ function OrganizationSettings({ organization }: { organization: EnrichedOrganiza
   const { tenantId } = useOrganizationLayoutContext();
 
   // The settings ROUTE requires `can.organization.update`; the danger zone is gated on its
-  // own action. Update and delete are distinct grants in the can map, and a fork may split
+  // own action. Update and delete are distinct grants in the can map, and an app may split
   // them even though the template's admin role holds both.
   const resolveCan = useResolveCan();
   const canDelete = resolveCan(organization.can?.organization?.delete, organization.createdBy);

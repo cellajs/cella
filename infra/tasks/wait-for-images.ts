@@ -24,7 +24,7 @@ export interface WaitOptions {
    * Override which image services to wait for. Defaults to `imageServiceNames`
    * (the canonical registry-derived list, which already excludes image-reuse
    * services like `ai`). The deploy workflow passes the feature-gated build set
-   * here so a fork with yjs/mcp disabled doesn't wait for an image that is never
+   * here so an app with yjs/mcp disabled doesn't wait for an image that is never
    * built.
    */
   services?: ServiceName[]

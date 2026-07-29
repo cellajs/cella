@@ -21,7 +21,7 @@ describe('recalculateCounters (sequence + frontier)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
 
-  // Derive the seeded product's effective home from fork hierarchy.
+  // Derive the seeded product's effective home from app hierarchy.
   // Shared generated ancestor IDs make all rows roll into one assertable self-counter node.
   const PRODUCT = 'attachment';
   const ANCESTORS = hierarchy.getOrderedAncestors(PRODUCT); // deepest → root
