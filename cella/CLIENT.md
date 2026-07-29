@@ -14,9 +14,9 @@ Before we go into the query client: not everything is server data. The client ha
 | State kind | Runtime owner | Persistence |
 | --- | --- | --- |
 | Shareable navigation and view state | TanStack Router | URL and browser history |
-| **Server entities and resources** | TanStack Query | Selected queries in per-user `appdb` |
-| Signed-in client state | Zustand | Per-user `appdb` key/value records |
-| Bootstrap user and UI preferences | Zustand | `localStorage`, available before `appdb` opens |
+| **Server entities and resources** | TanStack Query | Selected queries in `localUserDb` |
+| Signed-in client state | Zustand | `localUserDb` key/value records |
+| Bootstrap user and UI preferences | Zustand | `localStorage`, available before `localUserDb` opens |
 | App shell and static assets | Browser | Service-worker Cache Storage |
 
 
@@ -37,7 +37,7 @@ The rest of this document walks the query client's anatomy:
  └──────┬──────────────────┬──────────────────┬────────┘
         │ subscribers      │ persister        │ feeds
         ▼                  ▼                  ▼
-   enrichment         per-user appdb     download queue
+   enrichment         localUserDb        download queue
    unseen deltas      (queries, meta,    + blob storage
    blob cleanup       kv, failed sync)   (blobs table)
 ```

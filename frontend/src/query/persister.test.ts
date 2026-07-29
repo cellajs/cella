@@ -13,10 +13,10 @@ vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn(
 // No locks API: liveness detection falls back to the record-age threshold.
 vi.stubGlobal('navigator', { onLine: true });
 
-const { bindAppDb, getAppDb } = await import('~/query/app-db');
+const { bindLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
 const { createIDBPersister } = await import('~/query/persister');
 
-bindAppDb('persister-test-user');
+bindLocalUserDb('persister-test-user');
 
 const pausedMutation = (key: string) =>
   ({
@@ -44,13 +44,13 @@ describe('persister per-tab mutation records (D5)', () => {
   const persister = createIDBPersister('rq');
 
   beforeEach(async () => {
-    const db = getAppDb();
+    const db = getLocalUserDb();
     await db?.queries.clear();
     await db?.meta.clear();
   });
 
   afterEach(async () => {
-    const db = getAppDb();
+    const db = getLocalUserDb();
     await db?.queries.clear();
     await db?.meta.clear();
   });
@@ -59,7 +59,7 @@ describe('persister per-tab mutation records (D5)', () => {
     await persister.persistClient(clientWith([pausedMutation('m1')]));
     await persister.flush();
 
-    const db = getAppDb();
+    const db = getLocalUserDb();
     const records = (await db?.meta.toArray()) ?? [];
     const shared = records.find((r) => r.key === 'rq');
     const tabRecord = records.find((r) => r.key.startsWith('rq:mut:'));
@@ -75,12 +75,12 @@ describe('persister per-tab mutation records (D5)', () => {
     const restored = await persister.restoreClient();
     expect(restored?.clientState.mutations).toHaveLength(1);
     // The own record is NOT deleted at restore: a crash before the next flush must not lose it.
-    const db = getAppDb();
+    const db = getLocalUserDb();
     expect(((await db?.meta.toArray()) ?? []).some((r) => r.key.startsWith('rq:mut:'))).toBe(true);
   });
 
   it('absorbs and removes a DEAD tab record (age fallback without locks API)', async () => {
-    const db = getAppDb();
+    const db = getLocalUserDb();
     await db?.meta.put({
       key: 'rq',
       timestamp: Date.now(),
@@ -103,7 +103,7 @@ describe('persister per-tab mutation records (D5)', () => {
   });
 
   it('leaves a fresh (assumed-live) foreign tab record alone', async () => {
-    const db = getAppDb();
+    const db = getLocalUserDb();
     await db?.meta.put({
       key: 'rq',
       timestamp: Date.now(),
@@ -131,12 +131,12 @@ describe('persister per-tab mutation records (D5)', () => {
     await persister.persistClient(clientWith([]));
     await persister.flush();
 
-    const db = getAppDb();
+    const db = getLocalUserDb();
     expect(((await db?.meta.toArray()) ?? []).some((r) => r.key.startsWith('rq:mut:'))).toBe(false);
   });
 
   it('still restores mutations from the legacy shared-record shape', async () => {
-    const db = getAppDb();
+    const db = getLocalUserDb();
     await db?.meta.put({
       key: 'rq',
       timestamp: Date.now(),

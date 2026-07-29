@@ -8,7 +8,7 @@ import { reportCriticalError } from '~/lib/tracing';
 import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/offline/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { isUploadCandidate } from '~/modules/attachment/offline/upload-retry';
-import { getAppDb } from '~/query/app-db';
+import { getLocalUserDb } from '~/query/local-user-db';
 
 /**
  * Background service that uploads pending local blobs to cloud, periodically and on reconnect.
@@ -48,7 +48,7 @@ class AttachmentUploadService {
   async processPendingUploads(): Promise<void> {
     if (this.processing) return;
     if (!onlineManager.isOnline()) return;
-    if (!getAppDb()) return; // Signed out, no per-user blob store to process.
+    if (!getLocalUserDb()) return; // Signed out, no per-user blob store to process.
 
     this.processing = true;
 

@@ -1,6 +1,6 @@
 import { useUIStore } from '~/modules/ui/ui-store';
 import { useUserStore } from '~/modules/user/user-store';
-import { deleteAppDb } from '~/query/app-db';
+import { deleteLocalUserDb } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 
 /**
@@ -12,12 +12,12 @@ export const teardownUserState = async (wipe = true): Promise<void> => {
   queryClient.clear();
 
   // Hard sign-out only: destroy all per-user persisted data while the owner is still known.
-  if (wipe) await deleteAppDb();
+  if (wipe) await deleteLocalUserDb();
 
   // Reset the bootstrap UI session flags (impersonation, offline access); theme/mode persist.
   useUIStore.getState().reset();
 
-  // Nulling the user drives the appdb lifecycle to unbind (close) the DB and reset every
+  // Nulling the user drives the localUserDb lifecycle to unbind (close) the DB and reset every
   // per-user store's in-memory state. A hard wipe also forgets `lastUser`; a soft teardown keeps it.
   if (wipe) useUserStore.getState().reset();
   else useUserStore.setState({ user: null, isSystemAdmin: false, yjsTokens: {} });

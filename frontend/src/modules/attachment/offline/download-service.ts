@@ -8,9 +8,9 @@ import { downloadQueue, SKIP_REASON_NO_ORIGINAL_KEY } from '~/modules/attachment
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { attachmentQueryKeys, findAttachmentInCache } from '~/modules/attachment/query';
 import { isPersisted } from '~/modules/attachment/types';
-import { getAppDb } from '~/query/app-db';
-import { subscribeOwnerChange } from '~/query/app-storage';
 import { flattenInfiniteData } from '~/query/basic/flatten';
+import { getLocalUserDb } from '~/query/local-user-db';
+import { subscribeOwnerChange } from '~/query/local-user-storage';
 import { queryClient } from '~/query/query-client';
 
 /** Variant download priority, in download order. 'raw' is local-only, so never fetched. */
@@ -61,7 +61,7 @@ class AttachmentDownloadService {
     // Drive processing reactively from the queue itself.
     this.subscribeQueue();
 
-    // liveQuery only tracks the DB it first resolved, but the per-user appdb rebinds on
+    // liveQuery only tracks the DB it first resolved, but the per-user localUserDb rebinds on
     // Re-subscribe and schedule a run against the new instance after sign-in or an account switch.
     this.ownerUnsubscribe = subscribeOwnerChange(() => {
       this.subscribeQueue();
@@ -117,7 +117,7 @@ class AttachmentDownloadService {
   private subscribeQueue(): void {
     this.queueSubscription?.unsubscribe();
     this.queueSubscription = liveQuery(() =>
-      getAppDb() ? attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').count() : 0,
+      getLocalUserDb() ? attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').count() : 0,
     ).subscribe({
       next: (count) => {
         if (count > 0) this.processQueueSoon();
@@ -198,7 +198,7 @@ class AttachmentDownloadService {
     if (!this.config?.enabled) return;
     if (this.processing) return;
     if (!onlineManager.isOnline()) return;
-    if (!getAppDb()) return; // Signed out, no per-user queue to process.
+    if (!getLocalUserDb()) return; // Signed out, no per-user queue to process.
 
     this.processing = true;
 

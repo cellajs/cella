@@ -6,28 +6,28 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { seenStore } from '~/modules/seen/seen-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { userStore } from '~/modules/user/user-store';
-import { bindAppDb, closeAppDb } from '~/query/app-db';
-import { forkAppKvStores } from '~/query/fork-app-kv-stores';
+import { extraLocalUserStores } from '~/query/extra-local-user-stores';
+import { bindLocalUserDb, closeLocalUserDb } from '~/query/local-user-db';
 import { resetPersisters } from '~/query/persister';
 import { syncStore } from '~/query/realtime/sync-store';
 
-/** Minimal contract a per-user kv store must satisfy to join {@link appKvStores}: hydrate on bind, reset on sign-out. */
-export interface AppKvStore {
+/** Minimal contract a per-user store must satisfy to join {@link localUserStores}: hydrate on bind, reset on sign-out. */
+export interface LocalUserStore {
   persist: { rehydrate: () => void | Promise<void> };
   getState: () => { reset: () => void };
 }
 
-/** Persisted zustand stores that live in `appdb.kv` (per-user; in-memory while signed out).
+/** Persisted zustand stores that live in `localUserDb.kv` (per-user; in-memory while signed out).
  *  Each exposes a uniform `reset()` so {@link unbind} can drop in-memory state on sign-out.
- *  Forks append their own stores via {@link forkAppKvStores}. */
-const appKvStores = [
+ *  An app appends its own stores via {@link extraLocalUserStores}. */
+const localUserStores = [
   seenStore,
   syncStore,
   useNavigationStore,
   useDraftStore,
   useAlertStore,
   useBoardStore,
-  ...forkAppKvStores,
+  ...extraLocalUserStores,
 ];
 
 let boundOwner: string | null = null;
@@ -37,7 +37,7 @@ let readyPromise: Promise<void> = Promise.resolve();
 const ownerListeners = new Set<(owner: string | null) => void>();
 
 /**
- * Fires AFTER the DB is (re)bound or closed, so callbacks see the live instance via `getAppDb()`.
+ * Fires AFTER the DB is (re)bound or closed, so callbacks see the live instance via `getLocalUserDb()`.
  * Long-lived consumers (e.g. attachment services holding a `liveQuery`) must re-subscribe here.
  */
 export function subscribeOwnerChange(listener: (owner: string | null) => void): () => void {
@@ -53,22 +53,22 @@ function resolveOwner(): string | null {
 }
 
 async function hydrateAll(): Promise<void> {
-  await Promise.all(appKvStores.map((store) => store.persist.rehydrate()));
+  await Promise.all(localUserStores.map((store) => store.persist.rehydrate()));
 }
 
 function bindOwner(ownerId: string): void {
   boundOwner = ownerId;
-  bindAppDb(ownerId);
+  bindLocalUserDb(ownerId);
   resetPersisters();
   readyPromise = hydrateAll();
 }
 
 function unbind(): void {
   boundOwner = null;
-  closeAppDb();
+  closeLocalUserDb();
   resetPersisters();
   // Reset in-memory state of every per-user store (DB is closed, so these writes no-op on persist).
-  for (const store of appKvStores) store.getState().reset();
+  for (const store of localUserStores) store.getState().reset();
   readyPromise = Promise.resolve();
 }
 
@@ -81,13 +81,13 @@ function syncOwner(): void {
   for (const listener of ownerListeners) listener(boundOwner);
 }
 
-/** Resolves once `appdb` is open and all app kv stores have rehydrated for the current owner. */
-export function appStorageReady(): Promise<void> {
+/** Resolves once `localUserDb` is open and all local user stores have rehydrated for the current owner. */
+export function localUserStorageReady(): Promise<void> {
   return readyPromise;
 }
 
 // TODO can we get rid of ithis?
-/** One-time, best-effort GC of pre-appdb client storage (hard cutover, no migration). */
+/** One-time, best-effort GC of pre-localUserDb client storage (hard cutover, no migration). */
 function gcLegacyStorage(): void {
   const flag = `${appConfig.slug}-storage-gc-v2`;
   try {

@@ -5,7 +5,7 @@ vi.mock('sdk/sdk.gen', () => ({
   getPresignedUrls: (...args: unknown[]) => getPresignedUrls(...args),
 }));
 
-vi.mock('~/query/app-storage', () => ({
+vi.mock('~/query/local-user-storage', () => ({
   subscribeOwnerChange: () => () => {},
 }));
 

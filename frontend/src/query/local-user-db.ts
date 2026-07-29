@@ -44,7 +44,7 @@ export interface PersistedMetaRecord {
  * Per-user Dexie database. All tables share one version ladder: bump the single
  * `version(n)` here and centralize schema changes (concurrent PRs must serialize).
  */
-export class AppDatabase extends Dexie {
+export class LocalUserDatabase extends Dexie {
   kv!: Dexie.Table<KvRecord, string>;
   queries!: Dexie.Table<PersistedQueryRecord, string>;
   meta!: Dexie.Table<PersistedMetaRecord, string>;
@@ -68,33 +68,33 @@ export class AppDatabase extends Dexie {
   }
 }
 
-let currentDb: AppDatabase | null = null;
+let currentDb: LocalUserDatabase | null = null;
 let currentOwnerId: string | null = null;
 
 /** The currently bound per-user DB, or `null` while signed out. */
-export function getAppDb(): AppDatabase | null {
+export function getLocalUserDb(): LocalUserDatabase | null {
   return currentDb;
 }
 
 /** Open (or reuse) the per-user DB for `ownerId`. Idempotent per owner; closes any prior owner. */
-export function bindAppDb(ownerId: string): AppDatabase {
+export function bindLocalUserDb(ownerId: string): LocalUserDatabase {
   if (currentDb && currentOwnerId === ownerId) return currentDb;
-  if (currentDb) closeAppDb();
-  currentDb = new AppDatabase(ownerId);
+  if (currentDb) closeLocalUserDb();
+  currentDb = new LocalUserDatabase(ownerId);
   currentOwnerId = ownerId;
   return currentDb;
 }
 
 /** Close and unbind the current per-user DB (sign-out / account switch). */
-export function closeAppDb(): void {
+export function closeLocalUserDb(): void {
   currentDb?.close();
   currentDb = null;
   currentOwnerId = null;
 }
 
 /** Permanently delete the current per-user DB for account removal. */
-export async function deleteAppDb(): Promise<void> {
+export async function deleteLocalUserDb(): Promise<void> {
   const owner = currentOwnerId;
-  closeAppDb();
+  closeLocalUserDb();
   if (owner) await Dexie.delete(`${appConfig.slug}:${owner}`);
 }
