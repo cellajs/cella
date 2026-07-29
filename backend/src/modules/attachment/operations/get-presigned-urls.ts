@@ -23,6 +23,7 @@ interface PresignedUrlsResult {
   rejectedIds: string[];
 }
 
+// TODO: review: can we prevent having to do this even if it will cost us a refactor or mo?
 /**
  * Key to sign for a variant, resolved from the row only (never client input).
  * Variants that were never generated fall back to the always-present original key.

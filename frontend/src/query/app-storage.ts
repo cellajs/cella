@@ -86,6 +86,7 @@ export function appStorageReady(): Promise<void> {
   return readyPromise;
 }
 
+// TODO can we get rid of ithis?
 /** One-time, best-effort GC of pre-appdb client storage (hard cutover, no migration). */
 function gcLegacyStorage(): void {
   const flag = `${appConfig.slug}-storage-gc-v2`;

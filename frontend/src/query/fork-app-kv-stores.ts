@@ -1,5 +1,6 @@
 import type { AppKvStore } from '~/query/app-storage';
 
+// TODO rename, why not just kvStorage indicating the whole user-specific structure and kvStore for each store in it?
 /**
  * Fork-owned per-user zustand stores, appended to the app's kv-store list in `app-storage`.
  *
