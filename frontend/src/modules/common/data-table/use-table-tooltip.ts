@@ -1,5 +1,14 @@
 import { useEffect, useRef } from 'react';
 
+/** Delay before a tooltip first appears on hover (ms). */
+const showDelay = 400;
+/**
+ * After a tooltip hides, the next one appears without delay within this window (ms).
+ * Keeps a "pass-over" feel when moving between adjacent trigger cells whose small hit
+ * areas are separated by non-trigger gaps (cell padding, merged-cell text, borders).
+ */
+const skipDelayWindow = 500;
+
 /**
  * Position tooltip to the right of the reference element with a gap, centered vertically.
  */
@@ -19,6 +28,7 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const lastShownCellRef = useRef<HTMLElement | null>(null);
+  const lastHiddenAtRef = useRef<number>(0);
   const observerRef = useRef<MutationObserver | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -62,8 +72,18 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
       tooltip.textContent = tooltipContent;
     };
 
+    // Resolve the tooltip host for an event target. `data-tooltip="true"` always qualifies;
+    // `data-tooltip="compact"` qualifies only while the host sits inside a compacted grid context,
+    // so a label collapsed by the compact toggle can still be read on hover.
+    const resolveTooltipCell = (target: HTMLElement): HTMLElement | null => {
+      const cell = target.closest<HTMLElement>('[data-tooltip]');
+      if (!cell) return null;
+      if (cell.dataset.tooltip === 'compact' && !cell.closest('[data-is-compact="true"]')) return null;
+      return cell;
+    };
+
     const handleMouseMove = (e: MouseEvent) => {
-      const cell: HTMLElement | null = (e.target as HTMLElement).closest("[data-tooltip='true']");
+      const cell = resolveTooltipCell(e.target as HTMLElement);
       if (!cell) return clearTooltip();
 
       // Already showing tooltip for this exact element
@@ -71,28 +91,29 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
 
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
-      if (lastShownCellRef.current) {
+      // Show instantly while one is already up, or shortly after one hid (pass-over across gaps).
+      const skipDelay = lastShownCellRef.current !== null || Date.now() - lastHiddenAtRef.current < skipDelayWindow;
+      if (skipDelay) {
         showTooltip(cell);
       } else {
-        timeoutRef.current = window.setTimeout(() => showTooltip(cell), 400);
+        timeoutRef.current = window.setTimeout(() => showTooltip(cell), showDelay);
       }
     };
 
     const handleFocus = (e: FocusEvent) => {
-      const cell: HTMLElement | null = (e.target as HTMLElement).closest("[data-tooltip='true']");
+      const cell = resolveTooltipCell(e.target as HTMLElement);
       if (cell) showTooltip(cell);
     };
 
-    const handleMouseLeave = () => {
-      clearTooltip();
+    const handleMouseLeave = () => clearTooltip();
 
+    const clearTooltip = () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
-    };
-
-    const clearTooltip = () => {
+      // Stamp the hide time so a quick move to the next trigger skips the delay.
+      if (lastShownCellRef.current) lastHiddenAtRef.current = Date.now();
       tooltip.style.display = 'none';
       lastShownCellRef.current = null;
       if (rafRef.current) {

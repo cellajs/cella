@@ -141,12 +141,19 @@ async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector
     fullState = storedState;
   }
 
+  // The durable entity description (the entity's stored description) anchors both the fresh-session
+  // seed and the materialize baseline below. Load it once, lazily, and reuse.
+  let durableDescription: string | null | undefined;
+  const getDurableDescription = async () => {
+    if (durableDescription === undefined) durableDescription = await loadEntityDescription(ctx);
+    return durableDescription;
+  };
+
   // No row in DB and no pending state: fresh session. Seed the doc from the
   // entity's stored description server-side, so clients never seed (no client
   // seed race, no undo-history pollution, no markContentAsSent handshake).
   if (!fullState && storedState === null) {
-    const description = await loadEntityDescription(ctx);
-    const seed = descriptionToYUpdate(description);
+    const seed = descriptionToYUpdate(await getDurableDescription());
     await createDoc(ctx, seed);
     // Re-load the canonical row: a concurrent connector (this or another instance)
     // may have won the insert with its own seed; merging two independently
@@ -155,11 +162,16 @@ async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector
     if (canonical && canonical.length > 0) fullState = canonical;
   }
 
-  // Record the session's initial blocks JSON so seed-only sessions and unchanged
-  // rejoins never POST a durable entity update.
+  // Seed the materialize baseline from the DURABLE description, never from the Y.Doc state. The Y.Doc
+  // row (yjs_documents.state) and the entity description are separate stores that can diverge: an
+  // image url can be saved to the Y.Doc row but not yet materialized into the description. Anchoring
+  // the baseline on the Y.Doc would mark that content as already materialized and permanently suppress
+  // the corrective write, dropping the url from the description. Anchoring on the durable description
+  // keeps unchanged rejoins from POSTing, while a divergence forces the next save window to heal it.
   const collabForBaseline = getCollab(ctx.entityType, ctx.entityId);
-  if (collabForBaseline && !collabForBaseline.lastMaterializedJson && fullState && fullState.length > 0) {
-    collabForBaseline.lastMaterializedJson = stateToBlocksJson(fullState) ?? undefined;
+  if (collabForBaseline && !collabForBaseline.lastMaterializedJson) {
+    const durableState = descriptionToYUpdate(await getDurableDescription());
+    if (durableState) collabForBaseline.lastMaterializedJson = stateToBlocksJson(durableState) ?? undefined;
   }
 
   // No content to diff against: send empty doc update

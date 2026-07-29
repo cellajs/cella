@@ -115,17 +115,11 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
       }}
       onSuccess={() => {
         markCacheRestored();
-        // Wait for stream catchup to complete before resuming paused mutations.
-        // Wait until replayed mutations can use fresh cache data.
-        waitForActiveCatchup().then(() => {
-          queryClient.resumePausedMutations().then(() => {
-            // Only invalidate queries if we're in offline mode (IDB persister)
-            // Session mode doesn't need aggressive revalidation
-            if (offlineAccess) {
-              queryClient.invalidateQueries();
-            }
-          });
-        });
+        // Catchup reconciles the restored cache selectively (per-view deltas), so resume paused
+        // mutations once it completes and let replays read the reconciled data. No blanket
+        // invalidation: the sync engine owns freshness, and a full refetch here would refetch
+        // every cached list on startup and defeat catchup's per-view decisions.
+        waitForActiveCatchup().then(() => queryClient.resumePausedMutations());
       }}
     >
       {children}

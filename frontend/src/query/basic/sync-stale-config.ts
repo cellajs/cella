@@ -1,31 +1,32 @@
-/** StaleTime for sync-managed queries when stream is live. */
-const syncLiveStaleTime = Number.POSITIVE_INFINITY;
+/** StaleTime for sync-managed queries while the sync engine owns freshness. */
+const syncTrustedStaleTime = Number.POSITIVE_INFINITY;
 
-/** Fallback staleTime when the sync stream is not live (5 minutes). */
+/** Fallback staleTime when the sync stream cannot be trusted (5 minutes). */
 const syncFallbackStaleTime = 5 * 60 * 1000;
 
-/**
- * Mirror stream liveness below the realtime layer so stale-time logic avoids a circular import.
- * The realtime store pushes state through `setSyncStreamLive`.
- */
-let syncStreamLive = false;
+// Mirror stream health below realtime to avoid a circular import. Catch-up reconciles
+// every connection, so only a hard stream error enables time-based freshness.
+let syncStreamHealthy = true;
 
 // Cleared on a delivery shortfall (a promised seq that never arrived), restored on a clean
-// catchup. AND-ed with stream liveness: either failure drops us to the fallback staleTime.
+// catchup. AND-ed with stream health: either failure drops us to the fallback staleTime.
 let syncDeliveryTrusted = true;
 
 /** Called by the realtime stream store on every app-stream state transition. */
-export const setSyncStreamLive = (live: boolean): void => {
-  syncStreamLive = live;
+export const setSyncStreamHealthy = (healthy: boolean): void => {
+  syncStreamHealthy = healthy;
 };
 
+/** Marks synchronized delivery as trusted for the current session. */
 export const setSyncDeliveryTrusted = (trusted: boolean): void => {
   syncDeliveryTrusted = trusted;
 };
+/** Reports whether synchronized delivery is trusted for the current session. */
 export const isSyncDeliveryTrusted = (): boolean => syncDeliveryTrusted;
 
 /**
  * Dynamic staleTime for product entity queries covered by the catchup pipeline.
- * Infinity while the stream is live AND deliveries reconcile; else a 5 minute fallback.
+ * Infinity while the stream is healthy AND deliveries reconcile; else a 5 minute fallback.
  */
-export const syncStaleTime = () => (syncStreamLive && syncDeliveryTrusted ? syncLiveStaleTime : syncFallbackStaleTime);
+export const syncStaleTime = () =>
+  syncStreamHealthy && syncDeliveryTrusted ? syncTrustedStaleTime : syncFallbackStaleTime;

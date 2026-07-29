@@ -1,5 +1,5 @@
 import { FilePanelExtension } from '@blocknote/core/extensions';
-import { type FilePanelProps, useBlockNoteEditor, useExtension } from '@blocknote/react';
+import { useBlockNoteEditor, useExtension } from '@blocknote/react';
 import Audio from '@uppy/audio';
 import type { Body, Meta } from '@uppy/core';
 import ImageEditor from '@uppy/image-editor';
@@ -15,7 +15,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
-import type { BaseUppyFilePanelProps } from '~/modules/common/blocknote/types';
+import type { BaseUppyFilePanelProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { Spinner } from '~/modules/common/spinner';
 import { getImageEditorOptions } from '~/modules/common/uploader/helpers/image-editor-options';
 import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restrictions-note';
@@ -45,13 +45,51 @@ const basicBlockTypes = {
   },
 };
 
+/**
+ * Read an image blob's intrinsic pixel size locally. Offline-first: it decodes the blob the user
+ * picked, so it needs no network and no server-side metadata, and returns null if it cannot decode.
+ */
+const measureImageBlobSize = (blob: Blob): Promise<{ width: number; height: number } | null> =>
+  new Promise((resolve) => {
+    const url = URL.createObjectURL(blob);
+    const image = new Image();
+    image.onload = () => {
+      const size =
+        image.naturalWidth > 0 && image.naturalHeight > 0
+          ? { width: image.naturalWidth, height: image.naturalHeight }
+          : null;
+      URL.revokeObjectURL(url);
+      resolve(size);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    image.src = url;
+  });
+
+type UppyFilePanelProps = BaseUppyFilePanelProps & {
+  blockId: string;
+  /**
+   * The live editor to read the target block from and write the result into. Read through a ref so
+   * swapping to a fresh editor instance (e.g. a Yjs reconnect remount) never re-runs the uppy setup
+   * effect and resets the dialog. This lets the panel live outside the editor's React subtree.
+   */
+  editor: CustomBlockNoteEditor;
+  /** Close the panel: reset the editor's file-panel state, refocus, and drop any host request. */
+  onClose: () => void;
+};
+
+/** Renders the uppy file panel. */
 export function UppyFilePanel({
   onComplete,
   onError,
   organizationId,
   blockId,
   mediaMode,
-}: BaseUppyFilePanelProps & FilePanelProps) {
+  editor,
+  onClose,
+}: UppyFilePanelProps) {
   // Private media lives in the private bucket and is referenced by attachment id;
   // both public modes use the public bucket and are referenced by cloud key.
   const publicBucket = mediaMode !== 'private-attachment';
@@ -59,18 +97,26 @@ export function UppyFilePanel({
   const mode = useUIStore((state) => state.mode);
   const isOnline = useOnlineManager();
 
-  const filePanel = useExtension(FilePanelExtension);
-  const editor = useBlockNoteEditor(customSchema);
+  // Access the editor through a ref so a swapped editor instance does not re-run the setup effect.
+  const editorRef = useRef(editor);
+  editorRef.current = editor;
 
-  const block = editor.getBlock(blockId);
   const latestBlockIdRef = useRef(blockId);
   latestBlockIdRef.current = blockId;
   const latestOnCompleteRef = useRef(onComplete);
   latestOnCompleteRef.current = onComplete;
   const latestOnErrorRef = useRef(onError);
   latestOnErrorRef.current = onError;
+  // Intrinsic image dimensions measured from the local blob during upload, keyed by attachment id.
+  const imageSizesRef = useRef(new Map<string, { width: number; height: number }>());
 
-  const blockType = block && block.type in basicBlockTypes ? (block.type as keyof typeof basicBlockTypes) : 'file';
+  // The block kind fixes the upload restrictions; resolve it once per target block from the current
+  // editor (read via ref so it survives an editor swap without recreating uppy).
+  const blockType = useMemo<keyof typeof basicBlockTypes>(() => {
+    const block = editorRef.current.getBlock(blockId);
+    return block && block.type in basicBlockTypes ? (block.type as keyof typeof basicBlockTypes) : 'file';
+  }, [blockId]);
+
   const uppyOptions: CustomUppyOpt = useMemo(
     () => ({
       restrictions: {
@@ -85,15 +131,18 @@ export function UppyFilePanel({
   const [open, setOpen] = useState(!!blockId);
   const [isInitializing, setIsInitializing] = useState(true);
 
+  // Call onClose exactly once when the dialog closes (user dismiss or completed upload).
+  const closedRef = useRef(false);
+
   useEffect(() => {
     setOpen(Boolean(blockId));
   }, [blockId]);
 
   useEffect(() => {
-    if (open) return;
-    filePanel.closeMenu();
-    focusEditor(editor);
-  }, [editor, filePanel, open]);
+    if (open || closedRef.current) return;
+    closedRef.current = true;
+    onClose();
+  }, [onClose, open]);
 
   useEffect(() => {
     let isMounted = true;
@@ -115,6 +164,13 @@ export function UppyFilePanel({
 
             latestOnErrorRef.current?.(error);
           })
+          .on('file-added', async (file) => {
+            // Measure the intrinsic size from the local blob during upload so it is ready when the
+            // block is set below, letting the block reserve the correct box before the image loads.
+            if (!file.type?.startsWith('image/') || !file.meta.attachmentId || !(file.data instanceof Blob)) return;
+            const size = await measureImageBlobSize(file.data);
+            if (size) imageSizesRef.current.set(file.meta.attachmentId, size);
+          })
           .on('transloadit:complete', (assembly) => {
             if (assembly?.error) throw new Error(assembly?.error);
 
@@ -122,16 +178,34 @@ export function UppyFilePanel({
             const result = assembly.results as UploadedUppyFile<'attachment'>;
             // Parse once so the block reference and the persisted entity share the same id.
             const attachments = parseUploadedAttachments(result, organizationId);
-            const currentBlock = editor.getBlock(latestBlockIdRef.current);
-            if (!currentBlock) return;
+            const activeEditor = editorRef.current;
 
             for (const attachment of attachments) {
-              // Private → display reference by attachment id (presigned); public → cloud key (CDN).
-              // attachmentId is the canonical entity linkage a host entity derives its references from.
-              const url = mediaMode === 'private-attachment' ? attachment.id : attachment.originalKey;
-              editor.updateBlock(currentBlock, {
-                props: { name: attachment.filename, url, attachmentId: attachment.id },
-              });
+              // Private → display reference by attachment id (presigned, resolved per-type in
+              // resolveBlockNoteFileRef). Public → cloud key (CDN): images use the mid-size thumbnail,
+              // other types the converted variant, so inline descriptions never load the full-size file.
+              const publicKey =
+                blockType === 'image'
+                  ? attachment.thumbnailKey || attachment.convertedKey || attachment.originalKey
+                  : attachment.convertedKey || attachment.originalKey;
+              const url = mediaMode === 'private-attachment' ? attachment.id : publicKey;
+              const props = {
+                name: attachment.filename,
+                url,
+                attachmentId: attachment.id,
+                ...imageSizesRef.current.get(attachment.id),
+              };
+
+              const targetBlock = activeEditor.getBlock(latestBlockIdRef.current);
+              if (targetBlock) {
+                activeEditor.updateBlock(targetBlock, { props });
+              } else {
+                // The placeholder block is gone (e.g. a remount dropped it before completion). Append a
+                // fresh block of the same kind so the uploaded attachment is never orphaned.
+                const doc = activeEditor.document;
+                const ref = doc[doc.length - 1];
+                if (ref) activeEditor.insertBlocks([{ type: blockType, props }], ref, 'after');
+              }
             }
 
             // Hand the parsed attachments (stable client ids) to the host so it can add
@@ -176,7 +250,7 @@ export function UppyFilePanel({
       setUppy(null);
       if (localUppy) localUppy.destroy();
     };
-  }, [blockType, editor, publicBucket, organizationId, uppyOptions]);
+  }, [blockType, publicBucket, organizationId, uppyOptions, mediaMode]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -203,5 +277,25 @@ export function UppyFilePanel({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Adapter for the in-editor file panel: supplies the live editor and a closer from BlockNote context.
+ * Used when the panel renders inside the editor (standalone editors with no upload host).
+ */
+export function InlineUppyFilePanel({ base, blockId }: { base: BaseUppyFilePanelProps; blockId: string }) {
+  const editor = useBlockNoteEditor(customSchema);
+  const filePanel = useExtension(FilePanelExtension);
+  return (
+    <UppyFilePanel
+      {...base}
+      blockId={blockId}
+      editor={editor}
+      onClose={() => {
+        filePanel.closeMenu();
+        focusEditor(editor);
+      }}
+    />
   );
 }

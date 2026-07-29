@@ -1,4 +1,4 @@
-import type { ProductEntityType } from 'shared';
+import { appConfig, type ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
@@ -9,20 +9,22 @@ import { queryClient } from '~/query/query-client';
 /** Wire-compatible propagation hint. Product types stay a plain union to tolerate types this fork's config omits. */
 type PropagationHintInput = {
   embeddedProduct: ProductEntityType;
-  hostProduct: ProductEntityType;
-  hostColumn: string;
+  /** Advisory on the wire: host fan-out derives from this fork's productEmbeddings config. */
+  hostProduct?: ProductEntityType;
+  hostColumn?: string;
   update: string[];
   remove: string[];
 };
 
 /**
- * Scan cached host products and patch stale embedded-product references.
- * Used by live SSE handlers and catchup after delta fetches.
+ * Patch stale embedded-product references across every host column this fork's
+ * productEmbeddings config declares for the changed product. The hint's own host fields are
+ * advisory: local config is the authority on where this client caches embedded copies.
+ * Used by live SSE handlers, catchup after delta fetches, and optimistic mutation hooks.
  */
 export function propagateEmbeddings(hint: PropagationHintInput): void {
-  const { embeddedProduct, hostProduct, hostColumn, update, remove } = hint;
+  const { embeddedProduct, update, remove } = hint;
   if (update.length === 0 && remove.length === 0) return;
-  if (!hasEntityQueryKeys(hostProduct)) return;
 
   const updateSet = new Set(update);
   const removeSet = new Set(remove);
@@ -33,6 +35,22 @@ export function propagateEmbeddings(hint: PropagationHintInput): void {
     const data = findInCache<ItemData>(embeddedProduct, id);
     if (data) freshEmbedded.set(id, data);
   }
+
+  for (const embedding of appConfig.productEmbeddings) {
+    if (embedding.embeddedProduct !== embeddedProduct) continue;
+    patchHostCaches(embedding.hostProduct, embedding.hostColumn, updateSet, removeSet, freshEmbedded);
+  }
+}
+
+/** Patch one host product's cached lists and details for a single embedded column. */
+function patchHostCaches(
+  hostProduct: ProductEntityType,
+  hostColumn: string,
+  updateSet: Set<string>,
+  removeSet: Set<string>,
+  freshEmbedded: Map<string, ItemData>,
+): void {
+  if (!hasEntityQueryKeys(hostProduct)) return;
 
   const keys = getEntityQueryKeys(hostProduct);
 
@@ -69,6 +87,37 @@ export function propagateEmbeddings(hint: PropagationHintInput): void {
     if (patched !== host) {
       queryClient.setQueryData(queryKey, patched);
     }
+  }
+}
+
+/**
+ * Hint-builder for mutation hooks: optimistic propagation of an embedded product's change,
+ * so the actor's own cache updates immediately without waiting on the stream.
+ * For updates, the fresh embedded copy must already be in cache when this runs.
+ */
+export function propagateEmbeddedProduct(
+  embeddedProduct: ProductEntityType,
+  ids: string[],
+  kind: 'update' | 'remove',
+): void {
+  propagateEmbeddings({
+    embeddedProduct,
+    update: kind === 'update' ? ids : [],
+    remove: kind === 'remove' ? ids : [],
+  });
+}
+
+/**
+ * Invalidate list caches of every host product embedding the given product. Rollback path
+ * for optimistic removals: propagation can patch or strip an embedded copy but cannot
+ * re-insert one, so a failed delete recovers host data through a refetch.
+ */
+export function invalidateEmbeddingHosts(embeddedProduct: ProductEntityType, organizationId: string): void {
+  for (const embedding of appConfig.productEmbeddings) {
+    if (embedding.embeddedProduct !== embeddedProduct) continue;
+    if (!hasEntityQueryKeys(embedding.hostProduct)) continue;
+    const keys = getEntityQueryKeys(embedding.hostProduct);
+    queryClient.invalidateQueries({ queryKey: keys.list.org(organizationId) });
   }
 }
 

@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
-import { setSyncStreamLive } from '~/query/basic/sync-stale-config';
+import { setSyncStreamHealthy } from '~/query/basic/sync-stale-config';
 import { type CatchupViewRequest, useSyncStore } from '~/query/realtime/sync-store';
 import { handleAppStreamNotification } from './app-stream-handler';
 import { catchupEntityTypes, processAppCatchup } from './catchup-processor';
@@ -576,6 +576,7 @@ function toCatchupViews(views: readonly CatchupViewRequest[]): CatchupView[] {
   return accepted;
 }
 
+/** Coordinates the application event stream and catch-up lifecycle. */
 export const appStreamManager = new StreamManager('AppStream', {
   endpoint: `${appConfig.backendUrl}/entities/app/stream`,
   withCredentials: true,
@@ -596,9 +597,9 @@ export const appStreamManager = new StreamManager('AppStream', {
   processNotification: (notification) => handleAppStreamNotification(notification as AppStreamNotification),
 });
 
-// Mirror app-stream liveness into the low-level basic-layer flag so `syncStaleTime` can read it
-// without importing this (realtime) module. Inverts a `query/basic` -> `query/realtime` dependency.
-appStreamManager.useStore.subscribe((s) => setSyncStreamLive(s.state === 'live'));
+// Mirror stream health into the basic layer without introducing a circular dependency.
+// Catch-up reconciles every connection, so only errors enable time-based freshness.
+appStreamManager.useStore.subscribe((s) => setSyncStreamHealthy(s.state !== 'error'));
 
 /**
  * Wait for the first stream catchup after page load (resolves on catchup or failure).

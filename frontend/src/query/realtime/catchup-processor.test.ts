@@ -1,5 +1,6 @@
 import type { PostAppCatchupResponse } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-config';
 
 // Real builder instance and real resolvers over a synthetic sub-org hierarchy; only the
 // app-bound config and hierarchy singletons are replaced.
@@ -174,6 +175,27 @@ describe('catchup processor (view-driven)', () => {
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
   });
 
+  it('short delivery (ok but empty window) holds the cursor, invalidates, and degrades trust', async () => {
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    // ok status but no rows reach the promised frontier: the delivery fell short.
+    const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, deltaFetch);
+
+    setSyncDeliveryTrusted(true);
+    useSyncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    useSyncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    await processAppCatchup(okViewResponse(9));
+
+    // Fetched the window, but reachedSeq (0) < frontier (9): never advance silently.
+    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9', undefined);
+    expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
+    expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
+    expect(isSyncDeliveryTrusted()).toBe(false);
+  });
+
   it('skips the delta fetch for orgs with nothing cached (scope-symmetry guard), still advancing', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
@@ -196,6 +218,28 @@ describe('catchup processor (view-driven)', () => {
 
     expect(deltaFetch).not.toHaveBeenCalled();
     expect(useSyncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(42);
+  });
+
+  it('a caught-up view (frontier <= cursor) neither fetches nor invalidates the cached list', async () => {
+    // Reload contract: a cursor at the frontier confirms the warm cache without refetching.
+    // A fresh organization avoids count-drift comparison in the module-level tracker.
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, deltaFetch);
+
+    useSyncStore.getState().setOrgTenantId('org-caughtup', 'tenant-1');
+    useSyncStore.getState().setOrgSeq('org-caughtup', 'attachment', 6);
+    queryClient.setQueryData(keys.list.org('org-caughtup'), { items: [], total: 0 });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    // Server frontier equals the ingested cursor: no new sequence positions since last sync.
+    await processAppCatchup(okViewResponse(6, 0, 'org-caughtup:attachment'));
+
+    expect(deltaFetch).not.toHaveBeenCalled();
+    expect(invalidateSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: keys.list.org('org-caughtup') }),
+    );
+    expect(useSyncStore.getState().getOrgSeq('org-caughtup', 'attachment')).toBe(6);
   });
 
   it('an opaque view falls back to invalidation of cached lists, no numbers consumed', async () => {

@@ -3,6 +3,7 @@ import { ScrollArea as ScrollAreaPrimitive } from '@base-ui/react/scroll-area';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
+/** Renders the styled scroll area primitive. */
 export function ScrollArea({
   className,
   children,
@@ -36,17 +37,26 @@ export function ScrollArea({
   }, [autoScrollOnDrag, viewportRef]);
 
   // TODO [#13]: Remove when Base UI observes content subtrees.
-  // Toggle viewport min-height so inner mutations wake its viewport-only ResizeObserver.
+  // Base UI recomputes scrollbar state on viewport resize and scroll events, and its
+  // content ResizeObserver cannot fire while the content div is height-pinned to 100%.
+  // When a subtree mutation changes the scrollable size, re-dispatch a scroll event on
+  // the viewport: React attaches onScroll directly to the node, so this runs the
+  // primitive's recompute without touching layout. Mutations that leave the scrollable
+  // size unchanged (virtualized lists churning while scrolling) are ignored.
   React.useEffect(() => {
     const viewport = viewportRef.current;
     if (typeof MutationObserver === 'undefined' || !viewport) return;
-    let toggle = false;
+    let lastWidth = viewport.scrollWidth;
+    let lastHeight = viewport.scrollHeight;
     let frame = 0;
     const mo = new MutationObserver(() => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        toggle = !toggle;
-        viewport.style.minHeight = toggle ? 'calc(100% + 1px)' : '100%';
+        const { scrollWidth, scrollHeight } = viewport;
+        if (scrollWidth === lastWidth && scrollHeight === lastHeight) return;
+        lastWidth = scrollWidth;
+        lastHeight = scrollHeight;
+        viewport.dispatchEvent(new Event('scroll'));
       });
     });
     mo.observe(viewport, { childList: true, subtree: true });
@@ -80,6 +90,7 @@ export function ScrollArea({
   );
 }
 
+/** Renders the styled scroll bar primitive. */
 export function ScrollBar({
   className,
   orientation = 'vertical',

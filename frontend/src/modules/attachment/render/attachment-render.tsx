@@ -1,4 +1,5 @@
 import { DownloadIcon } from 'lucide-react';
+import type React from 'react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
@@ -7,6 +8,7 @@ import { getFileIcon } from '~/modules/attachment/file-placeholder';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 import { lazyNamed } from '~/utils/lazy-named';
 
 const ReactPanZoom = lazyNamed(() => import('~/modules/attachment/render/image'), 'ReactPanZoom');
@@ -25,13 +27,18 @@ interface AttachmentRenderProps {
   itemClassName?: string;
   containerClassName?: string;
   onPanStateToggle?: (state: boolean) => void;
+  /**
+   * When set, a click on the empty letterbox around the media dismisses the viewer. Enabling it also
+   * sizes the media to its content so that surrounding area is a real click target, not the image box.
+   */
+  onBackdropClick?: () => void;
 }
 
 /**
  * Pure presentational component for rendering attachments.
  * Expects a valid URL - URL resolution should happen at a higher level.
  */
-export const AttachmentRender = ({
+export function AttachmentRender({
   url,
   type,
   filename,
@@ -41,15 +48,25 @@ export const AttachmentRender = ({
   itemClassName,
   containerClassName,
   onPanStateToggle,
-}: AttachmentRenderProps) => {
+  onBackdropClick,
+}: AttachmentRenderProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
   const { download, isInProgress } = useDownloader();
 
   if (!url) return <Spinner className="mt-[45vh] h-12 w-12" />;
 
+  // Only the container itself is the backdrop; clicks on the media or controls bubble here but are
+  // ignored by the target check, so just the empty letterbox dismisses the viewer.
+  const handleBackdropClick = onBackdropClick
+    ? (e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) onBackdropClick();
+      }
+    : undefined;
+
   return (
-    <div className={containerClassName}>
+    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop dismiss is a mouse affordance; ESC closes the dialog for keyboard users
+    <div className={containerClassName} onClick={handleBackdropClick}>
       <Suspense fallback={<Spinner className="mt-[45vh]" />}>
         {type.includes('image') &&
           (imagePanZoom && !isMobile ? (
@@ -59,9 +76,14 @@ export const AttachmentRender = ({
               onPanStateToggle={onPanStateToggle}
               imageClassName={itemClassName}
               showButtons={showButtons}
+              backdropDismiss={!!onBackdropClick}
             />
           ) : (
-            <img src={url} alt={altName} className={`${itemClassName} h-full w-full`} />
+            <img
+              src={url}
+              alt={altName}
+              className={cn(itemClassName, onBackdropClick ? 'max-h-full max-w-full' : 'h-full w-full')}
+            />
           ))}
         {type.includes('audio') && <RenderAudio src={url} className="mx-auto -mt-48 h-20 w-[80vw]" />}
         {type.includes('video') && <RenderVideo src={url} className="mx-auto max-h-[90vh] max-w-7xl" />}
@@ -90,4 +112,4 @@ export const AttachmentRender = ({
       </Suspense>
     </div>
   );
-};
+}

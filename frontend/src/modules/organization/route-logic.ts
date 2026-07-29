@@ -1,57 +1,37 @@
-import { onlineManager } from '@tanstack/react-query';
-import { getOrganization, type Organization } from 'sdk';
+import { getOrganization } from 'sdk';
 import {
   findOrganizationByIdOrSlug,
   organizationQueryKeys,
   organizationQueryOptions,
 } from '~/modules/organization/query';
-import { fetchSlugCacheId } from '~/query/basic/fetch-slug-cache-id';
-import { queryClient } from '~/query/query-client';
-import { redirectOnMissing } from '~/utils/redirect-on-missing';
-import { rewriteUrlToSlug } from '~/utils/rewrite-url-to-slug';
+import { resolveChannelBySlug } from '~/query/basic/resolve-channel-by-slug';
 
 type OrganizationLayoutBeforeLoadArgs = {
   params: { tenantId: string; organizationSlug: string };
   cause: 'preload' | 'enter' | 'stay';
 };
 
+/** Loads and authorizes the organization route context. */
 export const organizationLayoutBeforeLoad = async ({ params, cause }: OrganizationLayoutBeforeLoadArgs) => {
   // TODO [#12] Revalidate on initial entry; child useSuspenseQuery handles search param changes.
   const shouldRevalidate = cause === 'enter';
 
   const { tenantId, organizationSlug } = params;
-  const isOnline = onlineManager.isOnline();
 
-  // Resolve slug to ID via list cache (from menu), or fetch if not cached
-  const cached = findOrganizationByIdOrSlug(organizationSlug, tenantId);
-  const organizationId = cached?.id;
-
-  // If we have the ID from cache, use ID-based query; otherwise fetch by slug first
-  let organization: Organization | undefined;
-
-  if (organizationId) {
-    const orgOptions = organizationQueryOptions(organizationId, tenantId);
-
-    // Prime detail cache from list cache so ensureQueryData returns immediately
-    // without blocking on a fetch. It will still revalidate in the background if stale.
-    if (cached && !queryClient.getQueryData(orgOptions.queryKey)) {
-      queryClient.setQueryData(orgOptions.queryKey, cached);
-    }
-
-    organization =
-      queryClient.getQueryData(orgOptions.queryKey) ??
-      (await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: shouldRevalidate }));
-  } else if (isOnline) {
-    organization = await fetchSlugCacheId(
-      () => getOrganization({ path: { tenantId, id: organizationSlug }, query: { slug: true, include: 'counts' } }),
-      organizationQueryKeys.detail.byId,
-    );
-  }
-
-  redirectOnMissing(organization);
-
-  // Rewrite URL to use slug if user navigated with ID
-  rewriteUrlToSlug(params, { tenantId, organizationSlug: organization.slug }, '/$tenantId/$organizationSlug');
+  const organization = await resolveChannelBySlug({
+    idOrSlug: organizationSlug,
+    tenantId,
+    findInCache: findOrganizationByIdOrSlug,
+    detailQueryOptions: (id) => organizationQueryOptions(id, tenantId),
+    fetchBySlug: () =>
+      getOrganization({ path: { tenantId, id: organizationSlug }, query: { slug: true, include: 'counts' } }),
+    slugFetchCacheKey: organizationQueryKeys.detail.byId,
+    ensureRequiresOnline: false,
+    revalidateIfStale: shouldRevalidate,
+    params,
+    buildSlugOverrides: (entity) => ({ tenantId, organizationSlug: entity.slug }),
+    routeTo: '/$tenantId/$organizationSlug',
+  });
 
   return { organization, tenantId };
 };
