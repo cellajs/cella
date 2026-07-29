@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { writeFileSync } from 'node:fs'
+import { copyFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { confirm, input } from '@inquirer/prompts'
@@ -18,10 +18,37 @@ import { parseAclInput } from './db-exposure-acl'
 import { pc, checkMark, crossMark, warningMark } from '../../lib/utils/cli-output'
 
 // Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
-const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint'
-const DB_ACL_KEY = 'infra:dbPublicAcl'
+export const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint'
+export const DB_ACL_KEY = 'infra:dbPublicAcl'
 const PUBLIC_DSN_OUTPUT = 'dbConnectionStringAdminPublic'
 const DB_CA_OUTPUT = 'dbCaCertificate'
+
+/**
+ * Gitignored per-environment stack config overlay that carries the DB-exposure
+ * keys. Exposure converges run `pulumi up --config-file` with this file, so the
+ * committed `Pulumi.<env>.yaml` never records an open endpoint and any normal
+ * deploy (CI uses the committed file) converges the endpoint closed again.
+ */
+export function exposureOverlayPath(environment: string): string {
+  return join(infraDir, `Pulumi.${environment}.exposure.yaml`)
+}
+
+/**
+ * Create the exposure overlay as a copy of the committed stack config (the copy
+ * carries `encryptionsalt`, so secret config encrypts with the same passphrase).
+ * Returns the overlay path; while the file exists it also marks the endpoint as
+ * exposure-managed for the CLI menu.
+ */
+export function writeExposureOverlay(stackPath: string, environment: string): string {
+  const overlayPath = exposureOverlayPath(environment)
+  copyFileSync(stackPath, overlayPath)
+  return overlayPath
+}
+
+/** Delete the exposure overlay after a successful close of the endpoint. */
+export function removeExposureOverlay(environment: string): void {
+  rmSync(exposureOverlayPath(environment), { force: true })
+}
 
 /** Detect the operator's current public IPv4 via a well-known echo service. */
 export async function detectPublicIp(): Promise<string | undefined> {
@@ -35,9 +62,10 @@ export async function detectPublicIp(): Promise<string | undefined> {
   }
 }
 
-/** Set one stack config key, exiting on failure. `secret` encrypts the value. */
-export function pulumiConfigSet(env: NodeJS.ProcessEnv, stack: string, key: string, value: string, opts: { secret?: boolean } = {}): void {
-  const args = ['config', 'set', ...(opts.secret ? ['--secret'] : []), key, value, '--stack', stack]
+/** Set one stack config key, exiting on failure. `secret` encrypts the value;
+ *  `configFile` targets an alternate stack config file (the exposure overlay). */
+export function pulumiConfigSet(env: NodeJS.ProcessEnv, stack: string, key: string, value: string, opts: { secret?: boolean; configFile?: string } = {}): void {
+  const args = ['config', 'set', ...(opts.secret ? ['--secret'] : []), key, value, '--stack', stack, ...(opts.configFile ? ['--config-file', opts.configFile] : [])]
   const result = spawnSync('pulumi', args, { cwd: infraDir, env, stdio: 'inherit' })
   if (result.status !== 0) {
     console.error(`${crossMark} pulumi config set ${key} failed (exit ${result.status}).`)
@@ -80,14 +108,16 @@ export function writeDbCaFile(env: NodeJS.ProcessEnv, stack: string, environment
  * The privileged bootstrap-key converge shared by expose/unexpose: acquire keys
  * and the stack lock, adopt any orphaned IAM/secret state, reconcile rollout
  * config from live state (so a local `up` cannot revert compute to a stale
- * generation), apply the caller's config mutation, then run `pulumi up`. Returns
- * the provider env and stack so the caller can read outputs after the lock is
- * released. Exits the process on any hard failure.
+ * generation), apply the caller's config mutation, then run `pulumi up`.
+ * `prepare` may return an alternate stack config file (the exposure overlay)
+ * that the `up` then runs with; returning undefined converges the committed
+ * config. Returns the provider env and stack so the caller can read outputs
+ * after the lock is released. Exits the process on any hard failure.
  */
 export async function convergePublicEndpoint(
   context: InfraContext,
   operation: string,
-  mutate: (env: NodeJS.ProcessEnv, stack: string) => void,
+  prepare: (env: NodeJS.ProcessEnv, stack: string) => string | undefined,
 ): Promise<{ env: NodeJS.ProcessEnv; stack: string }> {
   if (context.state !== 'bootstrapped') {
     console.error(`${warningMark} This action requires a fully bootstrapped stack (state=${context.state}). Run Resume first.`)
@@ -130,10 +160,10 @@ export async function convergePublicEndpoint(
     process.exit(sync.status ?? 1)
   }
 
-  mutate(env, stack)
+  const configFile = prepare(env, stack)
 
   while (true) {
-    const { code, output } = await runPulumiUpWithHint(stack, infraDir, env)
+    const { code, output } = await runPulumiUpWithHint(stack, infraDir, env, configFile)
     if (code === 0) break
     const orphans = parseOrphanedDeletes(output)
     if (orphans.length > 0 && (await confirm({ message: `Prune ${orphans.length} stale state entr${orphans.length === 1 ? 'y' : 'ies'} and retry?`, default: true }))) {
@@ -188,7 +218,8 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
 
   console.warn(
     `\n${pc.yellow(pc.bold('⚠  This opens an internet-reachable database endpoint'))}, restricted to: ${pc.cyan(acl)}.\n` +
-      `  ${pc.dim('The stack config file records the endpoint as enabled — do not commit it. Run "Stop public DB exposure" when done.')}\n`,
+      `  ${pc.dim(`Exposure lives only in the gitignored overlay Pulumi.${context.environment}.exposure.yaml; the committed stack config stays clean,`)}\n` +
+      `  ${pc.dim('so the next CI deploy converges the endpoint closed. Run "Stop public DB exposure" when done sooner.')}\n`,
   )
   if (!(await confirm({ message: 'Proceed with exposing the database?', default: false }))) {
     console.info('Aborted; no changes made.')
@@ -196,10 +227,12 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
   }
 
   const { env, stack } = await convergePublicEndpoint(context, 'expose-db', (e, s) => {
-    pulumiConfigSet(e, s, DB_ENDPOINT_KEY, 'true')
+    const overlay = writeExposureOverlay(context.stackPath, context.environment)
+    pulumiConfigSet(e, s, DB_ENDPOINT_KEY, 'true', { configFile: overlay })
     // Encrypt the ACL: it records the operator's source IP and should not sit in
-    // plaintext in the committed stack config.
-    pulumiConfigSet(e, s, DB_ACL_KEY, acl, { secret: true })
+    // plaintext in the overlay either.
+    pulumiConfigSet(e, s, DB_ACL_KEY, acl, { secret: true, configFile: overlay })
+    return overlay
   })
 
   const dsn = readPublicDsn(env, stack)
@@ -231,9 +264,15 @@ export async function runUnexposeDatabase(context: InfraContext): Promise<void> 
   }
 
   const { env, stack } = await convergePublicEndpoint(context, 'unexpose-db', (e, s) => {
-    pulumiConfigSet(e, s, DB_ENDPOINT_KEY, 'false')
-    pulumiConfigRm(e, s, DB_ACL_KEY)
+    // Compat: stacks that predate the overlay recorded the exposure keys in the
+    // committed stack config; remove them so the plain converge closes the
+    // endpoint. Overlay-based exposure needs no config change here: converging
+    // the committed file (which lacks the keys) is the close.
+    if (context.stackYaml?.includes(DB_ENDPOINT_KEY)) pulumiConfigRm(e, s, DB_ENDPOINT_KEY)
+    if (context.stackYaml?.includes(DB_ACL_KEY)) pulumiConfigRm(e, s, DB_ACL_KEY)
+    return undefined
   })
+  removeExposureOverlay(context.environment)
 
   const dsn = readPublicDsn(env, stack)
   if (dsn) {
