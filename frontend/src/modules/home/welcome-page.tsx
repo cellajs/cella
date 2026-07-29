@@ -17,9 +17,6 @@ function WelcomePage() {
     user.userFlags.finishedOnboarding ? 'completed' : 'start',
   );
   const [createdOrganization, setCreatedOrganization] = useState<Organization | null>(null);
-  // null = seed didn't run yet (e.g. user already had an org or skipped org step);
-  // true/false = result of the seed attempt from the org-create callback.
-  const [seeded, setSeeded] = useState<boolean | null>(null);
 
   const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
     if (!nextOpen && eventDetails.reason === 'escape-key') {
@@ -48,12 +45,11 @@ function WelcomePage() {
             setOnboardingState={setOnboardingState}
             createdOrganization={createdOrganization}
             setCreatedOrganization={setCreatedOrganization}
-            setSeeded={setSeeded}
           />
         </DialogContent>
       </Dialog>
 
-      {onboarding === 'completed' && <OnboardingCompleted createdOrganization={createdOrganization} seeded={seeded} />}
+      {onboarding === 'completed' && <OnboardingCompleted />}
     </>
   );
 }

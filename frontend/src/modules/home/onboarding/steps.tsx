@@ -8,7 +8,6 @@ import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { Step, Stepper } from '~/modules/common/stepper/stepper';
 import { StepperFooter } from '~/modules/home/onboarding/footer';
 import { onboardingSteps } from '~/modules/home/onboarding/onboarding-config';
-import { seedOnboardingDemoData } from '~/modules/home/onboarding/onboarding-seed';
 import { WelcomeText } from '~/modules/home/onboarding/welcome-text';
 import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
@@ -26,7 +25,6 @@ interface OnboardingProps {
   setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void;
   createdOrganization: Organization | null;
   setCreatedOrganization: (organization: Organization | null) => void;
-  setSeeded: (seeded: boolean) => void;
 }
 
 /** Renders the onboarding component. */
@@ -35,7 +33,6 @@ export function Onboarding({
   setOnboardingState,
   createdOrganization,
   setCreatedOrganization,
-  setSeeded,
 }: OnboardingProps) {
   const user = useCurrentUser();
   const { hasStarted } = useMountedState();
@@ -95,14 +92,10 @@ export function Onboarding({
                       )}
                       {id === 'organization' && !organization && (
                         <CreateOrganizationForm
-                          callback={async (args: CallbackArgs<Organization>) => {
+                          callback={(args: CallbackArgs<Organization>) => {
                             if (args.status === 'success') {
                               setOrganization(args.data);
                               setCreatedOrganization(args.data);
-                              // Await seeding here so the user cannot leave onboarding before the
-                              // demo workspace + projects are persisted and the menu cache is primed.
-                              const result = await seedOnboardingDemoData(args.data);
-                              setSeeded(result);
                             }
                           }}
                         >
