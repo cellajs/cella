@@ -4,7 +4,7 @@ import { Suspense, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
 import type { ContextRole } from 'shared/tools-config';
-import type { ChannelSettingsEntity, ChannelSettingsToolFor } from '~/lib/placements';
+import type { ChannelEntityContext, ChannelSettingsToolFor } from '~/lib/placements';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ToolCard } from '~/modules/common/tool-card';
 import { Button } from '~/modules/ui/button';
@@ -59,13 +59,13 @@ interface ChannelSettingsToolsInput<C extends ChannelEntityType> {
   /** Who may see the admin tools-arrangement card (elevation is explicit: list every pair). */
   toolsCardVisibleTo: ContextRole[];
   /** Renders the general form body (standard unsaved-badge card provided). */
-  renderGeneral: (entity: ChannelSettingsEntity<C>) => ReactNode;
+  renderGeneral: (entity: ChannelEntityContext<C>) => ReactNode;
   /** Renders the details form body; omit to skip the details tool. */
-  renderDetails?: (entity: ChannelSettingsEntity<C>) => ReactNode;
+  renderDetails?: (entity: ChannelEntityContext<C>) => ReactNode;
   /** Renders the tools-arrangement card, wired to the channel's update mutation. */
-  renderTools: (entity: ChannelSettingsEntity<C>) => ReactNode;
+  renderTools: (entity: ChannelEntityContext<C>) => ReactNode;
   /** Renders the danger-zone delete confirmation content (standard card and dialog provided). */
-  renderDeleteDialog: (entity: ChannelSettingsEntity<C>) => ReactNode;
+  renderDeleteDialog: (entity: ChannelEntityContext<C>) => ReactNode;
 }
 
 /**
@@ -101,7 +101,7 @@ export function channelSettingsTools<C extends ChannelEntityType>(
             id: 'details',
             label: 'c:details',
             order: 20,
-            render: (entity: ChannelSettingsEntity<C>) => (
+            render: (entity: ChannelEntityContext<C>) => (
               <ToolCard label="c:details" id={`update-${channelType}-details`}>
                 {renderDetails(entity)}
               </ToolCard>

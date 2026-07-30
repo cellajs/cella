@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 import { appConfig, type ChannelEntityType } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
-import { type ChannelSettingsEntity, getChannelSettingsTools, resolvePlacementList } from '~/lib/placements';
+import { type ChannelEntityContext, getChannelSettingsTools, resolvePlacementList } from '~/lib/placements';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { PageAside } from '~/modules/common/page/aside';
 import { heldContextRoles } from '~/modules/entities/context-roles';
@@ -10,7 +10,7 @@ import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 
 interface ChannelSettingsPageProps<C extends ChannelEntityType> {
-  entity: ChannelSettingsEntity<C> & { entityType: C; toolsConfig?: ToolsConfig };
+  entity: ChannelEntityContext<C> & { entityType: C; toolsConfig?: ToolsConfig };
 }
 
 /**

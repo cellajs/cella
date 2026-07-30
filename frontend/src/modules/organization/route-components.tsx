@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi } from '@tanstack/react-router';
 import { Suspense } from 'react';
+import { SlotTabHost } from '~/modules/common/page/slot-tab-host';
 import { Spinner } from '~/modules/common/spinner';
 import { organizationQueryOptions } from '~/modules/organization/query';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -17,6 +18,7 @@ const orgRouteApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization'
 const orgMembersApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/members');
 const orgAttachmentsApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/attachments');
 const orgSettingsApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/settings');
+const orgToolApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/$tool');
 
 /** Renders the routed organization view. */
 export function OrganizationRouteComponent() {
@@ -58,6 +60,18 @@ export function OrganizationSettingsComponent() {
   return (
     <Suspense>
       <OrganizationSettings organization={data} />
+    </Suspense>
+  );
+}
+
+/** Renders a registry tab tool for the organization: the `organization.tabs` slot's `$tool` host. */
+export function OrganizationToolComponent() {
+  const { organization, tenantId } = orgToolApi.useRouteContext();
+  const { tool } = orgToolApi.useParams();
+  const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
+  return (
+    <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
+      <SlotTabHost slot="organization.tabs" toolId={tool} context={data} />
     </Suspense>
   );
 }

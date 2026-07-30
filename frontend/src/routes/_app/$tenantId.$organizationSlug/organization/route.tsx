@@ -9,7 +9,7 @@ import { noDirectAccess } from '~/utils/no-direct-access';
  * Main organization page with details and navigation.
  */
 export const Route = createFileRoute('/_app/$tenantId/$organizationSlug/organization')({
-  staticData: { isAuth: true, floatingNavButtons: { left: 'menu' } },
+  staticData: { isAuth: true, floatingNavButtons: { left: 'menu' }, tabsSlot: 'organization.tabs' },
   beforeLoad: ({ matches }) => {
     // Default tab comes from channelRouteConfig, so direct visits and entity links agree on the
     // organization's canonical landing surface (apps change it in routes-config, a pinned file)

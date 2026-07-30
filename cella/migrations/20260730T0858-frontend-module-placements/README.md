@@ -28,8 +28,13 @@ and resolve the final list with `resolvePlacementList`. The contracts:
   `organizations`): per-slot `order`/`hidden`/`settings`, edited by the new admin "Tools" card
   on the organization settings page, reconciled fail-closed (unknown tool ids drop, newly
   deployed tools append at their default order). `locked` tools ignore channel-stored hiding.
-- `staticData.navTab` is typed `PlacementDescriptor` (requires widened to any grant name); the system
-  panel's default tab derives from the first visible tab (`defaultNavTabPath('/_app/system')`).
+- Page tabs merge two sources in `resolveNavTabs`: child routes declaring `staticData.navTab`
+  (typed `PlacementDescriptor`) and, when the layout route declares `staticData.tabsSlot`, that
+  slot's registry `.tabs` tools rendered by one `$tool` host child route via `SlotTabHost`. So a
+  module (or a future installed tool) contributes a tab with no new route file. Overrides and
+  channel arrangement key by the slot id (unified with sections). The organization
+  (`organization.tabs`) and the non-entity system panel (`system.tabs`) both ship a `$tool` host
+  route; the default tab derives from the first visible tab (`defaultNavTabPath`).
 - `nav-buttons.tsx` id special-cases moved into `navItems` (`iconSlot`/`badgeSlot` fields in the
   pinned `frontend/src/nav-config.tsx`).
 
@@ -83,7 +88,8 @@ No script - manual.
 5. Deep hierarchies (projectcampus): each channel entity can host its own settings slot, and the
    generic pieces make one channel's slot cost its forms plus one call:
    - Augment the render-context map once, e.g. in an app-owned module:
-     `declare module '~/lib/placements' { interface ChannelSettingsEntityByType { course: EnrichedCourse; courseSection: EnrichedCourseSection; project: EnrichedProject } }`
+     `declare module '~/lib/placements' { interface ChannelEntityByType { course: EnrichedCourse; courseSection: EnrichedCourseSection; project: EnrichedProject } }`
+     (this one interface types both the channel's settings and tabs slots).
    - In the channel's module file, declare
      `tools: channelSettingsTools({ channelType: 'course', resource: 'c:course', toolsCardVisibleTo: ['course.staff', 'organization.admin'], renderGeneral, renderDetails?, renderTools, renderDeleteDialog })`
      (`~/modules/entities/channel-settings-tools`); wire `renderTools` to

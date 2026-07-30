@@ -1,4 +1,4 @@
-import type { PlacementDescriptor } from '~/lib/placements';
+import type { PlacementDescriptor, Slot } from '~/lib/placements';
 import type { NavItemId } from '~/modules/navigation/types';
 
 /** Boundary type for top-level layout routes. */
@@ -19,5 +19,12 @@ declare module '@tanstack/react-router' {
      * know app tabs).
      */
     navTab?: PlacementDescriptor;
+    /**
+     * Marks a layout route as a tabbed surface bound to this slot. `resolveNavTabs` then merges
+     * the slot's registry tab tools (routed through the surface's `$tool` host child) with the
+     * route-file tabs, and keys app overrides plus channel arrangement by this slot id. Absent =
+     * a route-file-only tab bar keyed by the parent route id (no registry or 3rd-party tabs).
+     */
+    tabsSlot?: Slot;
   }
 }

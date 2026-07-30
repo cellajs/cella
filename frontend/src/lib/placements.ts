@@ -37,35 +37,44 @@ export interface PlacementDescriptor {
 }
 
 /**
- * Render context per settings channel type. Apps augment this interface (via
- * `declare module '~/lib/placements'`) to type their channels' slots precisely; unlisted
- * channel types fall back to {@link EnrichedChannel}.
+ * Render context per channel type, shared by that channel's `settings` and `tabs` slots. Apps
+ * augment this interface (via `declare module '~/lib/placements'`) to type their channels' slots
+ * precisely; unlisted channel types fall back to {@link EnrichedChannel}.
  */
-export interface ChannelSettingsEntityByType {
+export interface ChannelEntityByType {
   organization: EnrichedOrganization;
 }
 
 /**
- * Render context for a channel type's settings slot: always at least the enriched channel
- * base, intersected with the app-declared type from {@link ChannelSettingsEntityByType} so generic
- * channel components can read base fields while concrete slots stay precisely typed.
+ * Render context for a channel type's slots: always at least the enriched channel base,
+ * intersected with the app-declared type from {@link ChannelEntityByType} so generic channel
+ * components can read base fields while concrete slots stay precisely typed.
  */
-export type ChannelSettingsEntity<C extends ChannelEntityType> = EnrichedChannel &
-  (C extends keyof ChannelSettingsEntityByType ? ChannelSettingsEntityByType[C] : unknown);
+export type ChannelEntityContext<C extends ChannelEntityType> = EnrichedChannel &
+  (C extends keyof ChannelEntityByType ? ChannelEntityByType[C] : unknown);
 
 /** The channel settings slot family: one entry per channel type, context is its enriched entity. */
 type ChannelSettingsSlotContexts = {
-  [C in ChannelEntityType as `${C}.settings`]: ChannelSettingsEntity<C>;
+  [C in ChannelEntityType as `${C}.settings`]: ChannelEntityContext<C>;
+};
+
+/** The channel tabs slot family: one entry per channel type, context is its enriched entity. */
+type ChannelTabsSlotContexts = {
+  [C in ChannelEntityType as `${C}.tabs`]: ChannelEntityContext<C>;
 };
 
 /**
  * The slot map: every slot id a tool can be placed into, mapped to the context its `render`
  * receives. The slot id names the surface; this map is the single place binding surface to
  * context. New slot families add entries here (and apps could augment via module declaration).
+ * A slot's presentation (stacked sections vs a tab bar) is the consumer's choice, not the tool's:
+ * one tool shape feeds settings sections, channel tabs, and the non-entity system tab bar alike.
  */
-export interface SlotContexts extends ChannelSettingsSlotContexts {
+export interface SlotContexts extends ChannelSettingsSlotContexts, ChannelTabsSlotContexts {
   /** The current user's account settings page (the consumer passes no grants or pairs). */
   'account.settings': MeUser;
+  /** The system admin panel's tab bar: a non-entity surface, so tools render with no context. */
+  'system.tabs': undefined;
 }
 
 /** Every slot id a frontend module can place tools into. */
@@ -136,10 +145,19 @@ export function getTools<S extends Slot>(slot: S): ToolFor<S>[] {
   return registered as ToolFor<S>[];
 }
 
+/**
+ * Registered tool descriptors for a slot given at runtime (render context erased). Navigation and
+ * arrangement consumers use this when the slot id is dynamic (e.g. a tab bar resolving a surface's
+ * `tabsSlot`); rendering still goes through {@link getTools} with the statically known slot.
+ */
+export function getSlotDescriptors(slot: string): (PlacementDescriptor & { slot: string })[] {
+  return bySlot.get(slot) ?? [];
+}
+
 /** The settings tool shape for one concrete channel type (sugar over {@link ToolFor}). */
 export type ChannelSettingsToolFor<C extends ChannelEntityType> = PlacementDescriptor & {
   slot: `${C}.settings`;
-  render: (entity: ChannelSettingsEntity<C>) => ReactNode;
+  render: (entity: ChannelEntityContext<C>) => ReactNode;
 };
 
 /** Typed {@link getTools} for a channel type's settings slot, for generic channel components. */

@@ -9,7 +9,7 @@ import { noDirectAccess } from '~/utils/no-direct-access';
  * System admin panel for platform-wide management.
  */
 export const Route = createFileRoute('/_app/system')({
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, tabsSlot: 'system.tabs' },
   beforeLoad: ({ matches }) => {
     // The account-sheet link is isSystemAdmin-gated, but a direct URL must be too.
     requireSystemAdmin();
