@@ -36,17 +36,8 @@ export interface PlacementDescriptor {
   locked?: boolean;
 }
 
-/** Slot on a channel entity's settings page: tools render as cards with an aside tab. */
-export type ChannelSettingsSlot = `${ChannelEntityType}.settings`;
-
-/** Slot on the current user's account settings page (the consumer passes no grants or pairs). */
-export type AccountSettingsSlot = 'account.settings';
-
-/** Every slot a frontend module can place tools into; the union grows as slot families ship. */
-export type PlacementSlot = ChannelSettingsSlot | AccountSettingsSlot;
-
 /**
- * Render context per settings-aside channel type. Apps augment this interface (via
+ * Render context per settings channel type. Apps augment this interface (via
  * `declare module '~/lib/placements'`) to type their channels' slots precisely; unlisted
  * channel types fall back to {@link EnrichedChannel}.
  */
@@ -55,36 +46,45 @@ export interface ChannelSettingsEntityByType {
 }
 
 /**
- * Render context for a channel type's settings aside slot: always at least the enriched channel
+ * Render context for a channel type's settings slot: always at least the enriched channel
  * base, intersected with the app-declared type from {@link ChannelSettingsEntityByType} so generic
  * channel components can read base fields while concrete slots stay precisely typed.
  */
 export type ChannelSettingsEntity<C extends ChannelEntityType> = EnrichedChannel &
   (C extends keyof ChannelSettingsEntityByType ? ChannelSettingsEntityByType[C] : unknown);
 
-/**
- * A tool placed on a channel entity's settings page. `render` returns the full card (use the
- * shared card components for the standard look) and must lazy-load heavy UI; the consumer wraps
- * it in the aside anchor and sorts everything on `order` (built-ins 10/20, danger zone 90,
- * module tools default 50).
- */
-export type ChannelSettingsTool = {
-  [C in ChannelEntityType]: PlacementDescriptor & {
-    slot: `${C}.settings`;
-    /** Renders the card for the hosting channel entity. */
-    render: (entity: ChannelSettingsEntity<C>) => ReactNode;
-  };
-}[ChannelEntityType];
+/** The channel settings slot family: one entry per channel type, context is its enriched entity. */
+type ChannelSettingsSlotContexts = {
+  [C in ChannelEntityType as `${C}.settings`]: ChannelSettingsEntity<C>;
+};
 
-/** A tool placed on the current user's account settings page, sorted like {@link ChannelSettingsTool}. */
-export interface AccountSettingsTool extends PlacementDescriptor {
-  slot: AccountSettingsSlot;
-  /** Renders the card for the signed-in user. */
-  render: (user: MeUser) => ReactNode;
+/**
+ * The slot map: every slot id a tool can be placed into, mapped to the context its `render`
+ * receives. The slot id names the surface; this map is the single place binding surface to
+ * context. New slot families add entries here (and apps could augment via module declaration).
+ */
+export interface SlotContexts extends ChannelSettingsSlotContexts {
+  /** The current user's account settings page (the consumer passes no grants or pairs). */
+  'account.settings': MeUser;
 }
 
-/** Union of tool shapes a frontend module can declare under `tools`. */
-export type Tool = ChannelSettingsTool | AccountSettingsTool;
+/** Every slot id a frontend module can place tools into. */
+export type Slot = keyof SlotContexts & string;
+
+/**
+ * A tool placed into one slot: descriptor plus a renderer receiving that slot's context.
+ * `render` returns the slot's full content unit (a card for settings slots; use `ToolCard` for
+ * the standard look) and must lazy-load heavy UI. Settings slots sort built-ins 10/20, danger
+ * zone 90, module tools default 50.
+ */
+export type ToolFor<S extends Slot> = PlacementDescriptor & {
+  slot: S;
+  /** Renders the tool for the slot's context. */
+  render: (context: SlotContexts[S]) => ReactNode;
+};
+
+/** Union of tool shapes a frontend module can declare under `tools`, discriminated by `slot`. */
+export type Tool = { [S in Slot]: ToolFor<S> }[Slot];
 
 /** App adjustment to a declared placement or nav tab (see `~/placement-config`, a pinned file). */
 export interface PlacementOverride {
@@ -129,24 +129,24 @@ onFrontendModuleRegister((module) => {
   }
 });
 
-/** The settings-aside tool shape for one concrete channel type. */
+/** Tools registered for a slot, sorted on `order` (default 50). */
+export function getTools<S extends Slot>(slot: S): ToolFor<S>[] {
+  const registered = bySlot.get(slot) ?? [];
+  // Cast: registration erased the render context; the slot key guarantees the family's shape
+  return registered as ToolFor<S>[];
+}
+
+/** The settings tool shape for one concrete channel type (sugar over {@link ToolFor}). */
 export type ChannelSettingsToolFor<C extends ChannelEntityType> = PlacementDescriptor & {
   slot: `${C}.settings`;
   render: (entity: ChannelSettingsEntity<C>) => ReactNode;
 };
 
-/** Tools registered for a channel type's settings aside slot, sorted on `order` (default 50). */
+/** Typed {@link getTools} for a channel type's settings slot, for generic channel components. */
 export function getChannelSettingsTools<C extends ChannelEntityType>(channelType: C): ChannelSettingsToolFor<C>[] {
   const registered = bySlot.get(`${channelType}.settings`) ?? [];
   // Cast: registration erased the render context; the slot key guarantees this family's shape
   return registered as ChannelSettingsToolFor<C>[];
-}
-
-/** Tools registered for the account settings aside slot, sorted on `order` (default 50). */
-export function getAccountSettingsTools(): AccountSettingsTool[] {
-  const registered = bySlot.get('account.settings') ?? [];
-  // Cast: registration erased the render context; the slot key guarantees this family's shape
-  return registered as AccountSettingsTool[];
 }
 
 /**

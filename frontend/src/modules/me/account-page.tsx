@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getAccountSettingsTools, resolvePlacementList } from '~/lib/placements';
+import { getTools, resolvePlacementList } from '~/lib/placements';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { PageAside } from '~/modules/common/page/aside';
 import { SimpleHeader } from '~/modules/common/simple-header';
@@ -16,7 +16,7 @@ function UserAccountPage() {
 
   const sections = resolvePlacementList(
     slot,
-    getAccountSettingsTools().map((tool) => ({ ...tool, order: tool.order ?? 50 })),
+    getTools('account.settings').map((tool) => ({ ...tool, order: tool.order ?? 50 })),
   );
 
   return (

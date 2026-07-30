@@ -1,12 +1,7 @@
 import { getModules } from 'shared/module-registry';
 import { describe, expect, it } from 'vitest';
 import { defineFrontendModule } from '~/lib/module';
-import {
-  getAccountSettingsTools,
-  getChannelSettingsTools,
-  orderBySlotConfig,
-  resolvePlacementList,
-} from '~/lib/placements';
+import { getChannelSettingsTools, getTools, orderBySlotConfig, resolvePlacementList } from '~/lib/placements';
 
 describe('tool registry', () => {
   it('indexes module tools by slot, sorted on order with a default of 50', () => {
@@ -41,7 +36,7 @@ describe('tool registry', () => {
       tools: [{ slot: 'account.settings', id: 'api-tokens', label: 'c:api_tokens', render: () => null }],
     });
 
-    expect(getAccountSettingsTools().map((tool) => tool.id)).toEqual(['api-tokens']);
+    expect(getTools('account.settings').map((tool) => tool.id)).toEqual(['api-tokens']);
     expect(getChannelSettingsTools('organization').some((tool) => tool.id === 'api-tokens')).toBe(false);
   });
 

@@ -9,7 +9,7 @@ registration runs before first render with no import list to maintain.
 
 The first capability is UI placements (`frontend/src/lib/placements.ts`), with settled
 vocabulary: a **tool** is a component placed into a **slot**; the **consumer** is the page
-hosting the slot. Modules declare tools under `tools`; consumers read them with typed getters
+hosting the slot. Modules declare tools under `tools`; consumers read them with `getTools(slot)`, typed by the `SlotContexts` slot map,
 and resolve the final list with `resolvePlacementList`. The contracts:
 
 - Slot families: `` `${channelType}.settings` `` and `account.settings`. A tool's
