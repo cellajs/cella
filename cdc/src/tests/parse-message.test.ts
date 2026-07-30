@@ -5,19 +5,30 @@ vi.mock('../lib/pino', () => ({
 }));
 
 import type { Pgoutput } from 'pg-logical-replication';
+import { entityIdColumnKey, hierarchy } from 'shared';
 import { log } from '../lib/pino';
 import { parseMessage } from '../pipeline/parse-message';
 
 const warn = vi.mocked(log.warn);
 
 /**
- * Raw pgoutput rows are snake_case. Base cella's only product is `attachment`
- * (no publishedAt column in its schema). Injecting `published_at: null` simulates
- * EXACTLY the misconfiguration the guard exists for: an app added `publishedColumn`
- * but did not regenerate the publication, so draft rows leak into the stream.
+ * Snake-cased ancestor id columns for attachment, derived from the hierarchy config so the
+ * fixture passes under any app topology: a row missing an ancestor column would fire
+ * `warnMissingAncestors` on every edit and drown the draft-guard warning this suite asserts on.
+ */
+const ancestorIdColumns = Object.fromEntries(
+  hierarchy
+    .getOrderedAncestors('attachment')
+    .map((ancestor) => [entityIdColumnKey(ancestor).replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), `${ancestor}-1`]),
+);
+
+/**
+ * Raw pgoutput rows are snake_case. Injecting `published_at: null` simulates EXACTLY the
+ * misconfiguration the guard exists for: an app added `publishedColumn` but did not
+ * regenerate the publication, so draft rows leak into the stream.
  */
 function attachmentRow(overrides: Record<string, unknown> = {}): Record<string, unknown> {
-  return { id: 'att-1', organization_id: 'org-1', created_at: '2026-07-01T10:00:00.000Z', ...overrides };
+  return { id: 'att-1', ...ancestorIdColumns, created_at: '2026-07-01T10:00:00.000Z', ...overrides };
 }
 
 function dmlMessage(tag: 'insert' | 'update' | 'delete', table: string, row: Record<string, unknown>, oldRow?: Record<string, unknown>): Pgoutput.Message {
