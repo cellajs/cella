@@ -8,8 +8,8 @@ import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { HelpText } from '~/modules/common/help-text';
+import { SettingsToolCard } from '~/modules/common/settings-tool-card';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteSelf } from '~/modules/me/delete-self';
 import { MfaSwitch } from '~/modules/me/mfa/switch';
 import { PasskeysList } from '~/modules/me/passkeys/list';
@@ -18,29 +18,22 @@ import { SessionsList } from '~/modules/me/sessions-list';
 import { Totp } from '~/modules/me/totp';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { useCurrentUser } from '~/modules/user/user-store';
 
 const enabledStrategies = appConfig.enabledAuthStrategies;
 
+const cardClass = 'mx-auto sm:w-full';
+
 /** General account settings card (profile fields). */
 export function AccountGeneralCard() {
-  const { t } = useTranslation();
   const user = useCurrentUser();
 
   return (
-    <Card className="mx-auto sm:w-full" id="update-user">
-      <CardHeader>
-        <CardTitle>
-          <UnsavedBadge title={t('c:general')} />
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <UpdateUserForm user={user} />
-      </CardContent>
-    </Card>
+    <SettingsToolCard label="c:general" unsaved id="update-user" className={cardClass}>
+      <UpdateUserForm user={user} />
+    </SettingsToolCard>
   );
 }
 
@@ -49,15 +42,9 @@ export function AccountSessionsCard() {
   const { t } = useTranslation();
 
   return (
-    <Card className="mx-auto sm:w-full">
-      <CardHeader>
-        <CardTitle>{t('c:sessions')}</CardTitle>
-        <CardDescription>{t('c:sessions.text')}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <SessionsList />
-      </CardContent>
-    </Card>
+    <SettingsToolCard label="c:sessions" description={t('c:sessions.text')} className={cardClass}>
+      <SessionsList />
+    </SettingsToolCard>
   );
 }
 
@@ -96,12 +83,8 @@ export function AccountAuthenticationCard() {
   };
 
   return (
-    <Card className="mx-auto sm:w-full">
-      <CardHeader>
-        <CardTitle>{t('c:authentication')}</CardTitle>
-        <CardDescription>{t('c:authentication.text')}</CardDescription>
-      </CardHeader>
-      <CardContent className="text-sm">
+    <SettingsToolCard label="c:authentication" description={t('c:authentication.text')} className={cardClass}>
+      <div className="text-sm">
         {
           /* MFA */
           enabledStrategies.includes('passkey') && enabledStrategies.includes('totp') && (
@@ -193,8 +176,8 @@ export function AccountAuthenticationCard() {
             </>
           )
         }
-      </CardContent>
-    </Card>
+      </div>
+    </SettingsToolCard>
   );
 }
 
@@ -223,17 +206,15 @@ export function AccountDeleteCard() {
   };
 
   return (
-    <Card className="mx-auto sm:w-full">
-      <CardHeader>
-        <CardTitle>{t('c:delete_account')}</CardTitle>
-        <CardDescription>{t('c:delete_account.text', { appName: appConfig.name })}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-          <TrashIcon className="mr-2" />
-          {t('c:delete_account')}
-        </Button>
-      </CardContent>
-    </Card>
+    <SettingsToolCard
+      label="c:delete_account"
+      description={t('c:delete_account.text', { appName: appConfig.name })}
+      className={cardClass}
+    >
+      <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
+        <TrashIcon className="mr-2" />
+        {t('c:delete_account')}
+      </Button>
+    </SettingsToolCard>
   );
 }

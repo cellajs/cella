@@ -1,31 +1,25 @@
 import { useNavigate } from '@tanstack/react-router';
-import { TrashIcon } from 'lucide-react';
-import { useRef } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { appConfig } from 'shared';
-import { useOrganizationLayoutContext } from '~/hooks/use-route-context';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { UnsavedBadge } from '~/modules/common/unsaved-badge';
+import { ToolsArrangementCard } from '~/modules/entities/tools-arrangement-card';
 import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
+import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { UpdateOrganizationDetailsForm } from '~/modules/organization/update-organization-details-form';
 import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
-import { Button } from '~/modules/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
 /** Redirects to the settings page under the new slug after a slug-changing update. */
 function useSlugChangeCallback(organization: EnrichedOrganization) {
   const navigate = useNavigate();
-  const { tenantId } = useOrganizationLayoutContext();
 
   return (args: CallbackArgs<Organization>) => {
     if (args.status === 'success' && organization.slug !== args.data.slug) {
       navigate({
         to: '/$tenantId/$organizationSlug/organization/settings',
-        params: { tenantId, organizationSlug: args.data.slug },
+        params: { tenantId: organization.tenantId, organizationSlug: args.data.slug },
         hash: '',
         replace: true,
       });
@@ -33,93 +27,47 @@ function useSlugChangeCallback(organization: EnrichedOrganization) {
   };
 }
 
-/** General organization settings card (name, slug, visuals). */
-export function OrganizationGeneralCard({ organization }: { organization: EnrichedOrganization }) {
-  const { t } = useTranslation();
+/** General organization form body (name, slug, visuals). */
+export function OrganizationGeneralForm({ organization }: { organization: EnrichedOrganization }) {
   const callback = useSlugChangeCallback(organization);
+  return <UpdateOrganizationForm organization={organization} callback={callback} />;
+}
 
+/** Organization details form body (locale, contact, links). */
+export function OrganizationDetailsForm({ organization }: { organization: EnrichedOrganization }) {
+  const callback = useSlugChangeCallback(organization);
+  return <UpdateOrganizationDetailsForm organization={organization} callback={callback} />;
+}
+
+/** Tools arrangement card wired to the organization update mutation. */
+export function OrganizationToolsCard({ organization }: { organization: EnrichedOrganization }) {
+  const { mutate } = useOrganizationUpdateMutation();
   return (
-    <Card id="update-organization">
-      <CardHeader>
-        <CardTitle>
-          <UnsavedBadge title={t('c:general')} />
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <UpdateOrganizationForm organization={organization} callback={callback} />
-      </CardContent>
-    </Card>
+    <ToolsArrangementCard
+      entity={organization}
+      persist={(toolsConfig) =>
+        mutate({ path: { tenantId: organization.tenantId, id: organization.id }, body: { toolsConfig } })
+      }
+    />
   );
 }
 
-/** Organization details card (locale, contact, links). */
-export function OrganizationDetailsCard({ organization }: { organization: EnrichedOrganization }) {
-  const { t } = useTranslation();
-  const callback = useSlugChangeCallback(organization);
-
-  return (
-    <Card id="update-organization-details">
-      <CardHeader>
-        <CardTitle>{t('c:details')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <UpdateOrganizationDetailsForm organization={organization} callback={callback} />
-      </CardContent>
-    </Card>
-  );
-}
-
-/** Danger-zone card: delete the organization behind a confirm dialog. */
-export function OrganizationDeleteCard({ organization }: { organization: EnrichedOrganization }) {
+/** Delete confirmation content for the organization danger zone. */
+export function OrganizationDeleteDialog({ organization }: { organization: EnrichedOrganization }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { tenantId } = useOrganizationLayoutContext();
-  const deleteButtonRef = useRef(null);
-
-  const openDeleteDialog = () => {
-    useDialoger.getState().create(
-      <DeleteOrganizations
-        dialog
-        tenantId={tenantId}
-        organizations={[organization]}
-        callback={({ status }: CallbackArgs<Organization[]>) => {
-          if (status === 'success') {
-            toaster.success(t('c:success.delete_resource', { resource: t('c:organization') }));
-            navigate({ to: appConfig.defaultRedirectPath, replace: true });
-          }
-        }}
-      />,
-      {
-        id: 'delete-organization',
-        triggerRef: deleteButtonRef,
-        className: 'md:max-w-xl',
-        title: t('c:delete_resource', { resource: t('c:organization').toLowerCase() }),
-        description: t('c:confirm.delete_resource', {
-          name: organization.name,
-          resource: t('c:organization').toLowerCase(),
-        }),
-      },
-    );
-  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('c:delete_resource', { resource: t('c:organization').toLowerCase() })}</CardTitle>
-        <CardDescription>
-          <Trans
-            t={t}
-            i18nKey="c:delete_resource_notice.text"
-            values={{ name: organization.name, resource: t('c:organization').toLowerCase() }}
-          />
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-          <TrashIcon className="mr-2 size-4" />
-          <span>{t('c:delete_resource', { resource: t('c:organization').toLowerCase() })}</span>
-        </Button>
-      </CardContent>
-    </Card>
+    <DeleteOrganizations
+      dialog
+      tenantId={organization.tenantId}
+      organizations={[organization]}
+      callback={({ status }: CallbackArgs<Organization[]>) => {
+        if (status === 'success') {
+          toaster.success(t('c:success.delete_resource', { resource: t('c:organization') }));
+          navigate({ to: appConfig.defaultRedirectPath, replace: true });
+        }
+      }}
+    />
   );
 }

@@ -73,25 +73,32 @@ No script - manual.
    });
    ```
 
-   `render` returns the full card: wrap the existing form in `Card`/`CardHeader`/`CardContent`
-   (see `frontend/src/modules/organization/settings-cards.tsx` for the pattern) and lazy-load it
-   with `lazyNamed`. The `organization` parameter is typed `EnrichedOrganization` via
-   `SettingsAsideEntityByType`.
+   `render` returns the full card: wrap the existing form in the `SettingsToolCard` shell
+   (`~/modules/common/settings-tool-card`) and lazy-load it with `lazyNamed`. The `organization`
+   parameter is typed `EnrichedOrganization` via `SettingsAsideEntityByType`.
 3. Delete `frontend/src/modules/organization/organization-settings-sections.tsx` and its pinned
    entry in `cella.config.ts`; add `frontend/src/placement-config.ts` to `overrides.pinned`.
    Replace `OrganizationSettingsSection` imports with the `Tool` types from `~/lib/placements`.
 4. Run `pnpm generate` so the app's drizzle folder picks up the `tools_config` column.
-5. Deep hierarchies (projectcampus): each channel entity can host its own settings slot.
+5. Deep hierarchies (projectcampus): each channel entity can host its own settings slot, and the
+   generic pieces make one channel's slot cost its forms plus one call:
    - Augment the render-context map once, e.g. in an app-owned module:
      `declare module '~/lib/placements' { interface SettingsAsideEntityByType { course: EnrichedCourse; courseSection: EnrichedCourseSection; project: EnrichedProject } }`
-   - Clone the organization settings consumer pattern for each channel's settings page, passing
-     that channel's `toolsConfig`, grants, and `heldContextRoles(entity, memberships)`.
+   - In the channel's module file, declare
+     `tools: channelSettingsTools({ channelType: 'course', resource: 'c:course', toolsCardVisibleTo: ['course.staff', 'organization.admin'], renderGeneral, renderDetails?, renderTools, renderDeleteDialog })`
+     (`~/modules/entities/channel-settings-tools`); wire `renderTools` to
+     `ToolsArrangementCard` with the channel's update mutation (see
+     `frontend/src/modules/organization/settings-cards.tsx` for the four thin wrappers).
+   - The settings route component is one line: `<ChannelSettingsPage entity={course} />`
+     (`~/modules/entities/channel-settings-page`).
    - To persist per-channel arrangement, add the same `toolsConfig` jsonb column to the app's
      channel tables (copy the `organizations` column declaration) and thread it through the
      channel's update schema and query like `setupConfig`.
    - `visibleTo` pairs may name any hierarchy role (`'course.staff'`, `'project.owner'`);
      elevation is explicit, so a tool org admins should see must list `'organization.admin'`.
      Repeated audiences belong in app-owned preset constants that manifests spread.
+   - Standalone cards use the `SettingsToolCard` shell (`~/modules/common/settings-tool-card`)
+     and `DangerZoneCard` (`~/modules/entities/danger-zone-card`) for the standard look.
 6. In the pinned `frontend/src/nav-config.tsx`, copy the template's `iconSlot`/`badgeSlot`
    entries (account avatar, home loader, menu unseen badge) or those affordances disappear.
 7. Apps that edited template files to customize the account settings page or system panel can

@@ -54,9 +54,13 @@ export interface SettingsAsideEntityByType {
   organization: EnrichedOrganization;
 }
 
-type SettingsAsideEntity<C extends ChannelEntityType> = C extends keyof SettingsAsideEntityByType
-  ? SettingsAsideEntityByType[C]
-  : EnrichedChannel;
+/**
+ * Render context for a channel type's settings aside slot: always at least the enriched channel
+ * base, intersected with the app-declared type from {@link SettingsAsideEntityByType} so generic
+ * channel components can read base fields while concrete slots stay precisely typed.
+ */
+export type SettingsAsideEntity<C extends ChannelEntityType> = EnrichedChannel &
+  (C extends keyof SettingsAsideEntityByType ? SettingsAsideEntityByType[C] : unknown);
 
 /**
  * A tool placed on a channel entity's settings page. `render` returns the full card (use the
@@ -125,7 +129,8 @@ onFrontendModuleRegister((module) => {
   }
 });
 
-type SettingsAsideToolFor<C extends ChannelEntityType> = PlacementTab & {
+/** The settings-aside tool shape for one concrete channel type. */
+export type SettingsAsideToolFor<C extends ChannelEntityType> = PlacementTab & {
   slot: `${C}.settings.aside`;
   render: (entity: SettingsAsideEntity<C>) => ReactNode;
 };

@@ -23,4 +23,4 @@ export interface SlotToolsConfig {
  * row (`toolsConfig` jsonb): a missing slot key means the slot renders manifest defaults.
  * Unknown tool ids reconcile fail-closed: they are dropped, never widened.
  */
-export type ToolsConfig = Partial<Record<string, SlotToolsConfig>>;
+export type ToolsConfig = Record<string, SlotToolsConfig>;
