@@ -20,7 +20,9 @@ export default defineConfig({
     passWithNoTests: true,
     // Applies when this config is flattened into a single `frontend` project by
     // the root vitest config (which ignores the nested `projects` below). Keeps
-    // console noise silenced in both the root and standalone test runs.
+    // console noise silenced in both the root and standalone test runs. Env stays
+    // node (most src tests stub their own window); DOM tests opt in per-file with
+    // `// @vitest-environment jsdom`.
     setupFiles: ['./vitest.setup.ts'],
     projects: [
       // Node-side tests (vite plugins, helpers, etc.)
@@ -37,7 +39,10 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'unit',
-          include: ['src/**/*.test.ts'],
+          // `.tsx` included so component/registry tests are collected in the
+          // standalone run too. Env stays node; DOM tests opt in per-file with
+          // `// @vitest-environment jsdom`.
+          include: ['src/**/*.test.{ts,tsx}'],
           environment: 'node',
           setupFiles: ['./vitest.setup.ts'],
         },

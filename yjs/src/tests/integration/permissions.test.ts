@@ -125,7 +125,7 @@ async function seedAttachment(
     'filename',
     'content_type',
     'size',
-    'original_key',
+    'keys',
     'stx',
   ];
   const values = [
@@ -137,7 +137,7 @@ async function seedAttachment(
     'authz.pdf',
     'application/pdf',
     '1024',
-    `authz/${id}.pdf`,
+    JSON.stringify({ original: `authz/${id}.pdf` }),
     JSON.stringify({ mutationId: id, sourceId: 'test', fieldTimestamps: {} }),
   ];
   const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');

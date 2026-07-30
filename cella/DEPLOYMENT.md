@@ -12,11 +12,11 @@ each stage has only the permissions it needs.
 
 ## Overview
 
-The infrastructure is built around three principles:
+The deployment setup is built around three principles:
 
 1. **Create-then-replace.** A release and an infra change are the same operation: every deploy bakes the image SHA into a _new_ VM generation's cloud-init, brings it up, cuts traffic over, then reaps the old one.
 2. **Descending-privilege credentials.** Three keys, each creating the next (bootstrap → CI deploy → VM reader), so no privileged key ever lives on your laptop. CI only holds what it needs.
-3. **DRY config.** IaC is great to keep configuration DRY. See also [config files](#configuration).
+3. **Automation without kubernetes.** IaC is great to organize semi-complex configurations without needing a DevOps expert. See also [config files](#configuration).
 
 The key resources and how traffic flows between them:
 
@@ -28,7 +28,7 @@ The key resources and how traffic flows between them:
             │             Scaleway Load Balancer              │  TLS termination,
             │  default    →  frontend VM                      │  one public IP
             │  /api       →  backend VM                       │
-            │  /yjs, /mcp →  worker VMs                       │
+            │  /cdc, /yjs →  worker VMs                       │
  ┌──────────┤                                                 ├────────────┐
  │          └───────┬────────────────┬──────────────────┬─────┘            │
  │ Private network  │                │                  │  plain HTTP to   │
@@ -54,7 +54,7 @@ The key resources and how traffic flows between them:
      └─────────────────────────────┘  presigned URLs)
 ```
 
-- **Load balancer:** the single public entrypoint, and **dual-homed**: a public IP terminates TLS on one side, a private-network attachment forwards plain HTTP to VM private IPs on the other. The frontend (SPA proxy) is the default backend; backend, yjs and mcp are reached on the same app origin via registry-declared `lbPathBegin` prefixes (`/api`, `/yjs`, `/mcp`). The LB never rewrites paths, so each service serves itself under its prefix. No shipped service is host-routed; host routes remain only for apps that add them.
+- **Load balancer:** the single public entrypoint, and **dual-homed**: a public IP terminates TLS on one side, a private-network attachment forwards plain HTTP to VM private IPs on the other. The frontend (SPA proxy) is the default backend; backend, yjs and mcp are reached on the same app origin via registry-declared `lbPathBegin` prefixes (`/api`, `/yjs`, `/mcp`). The LB never rewrites paths, so each service serves itself under its prefix.
 - **Private network (VPC):** VMs and db connect over private IPs. Only the LB accepts inbound public traffic. Each VM keeps a public IP for egress (image pulls) but drops all inbound, including SSH.
 - **Frontend:** a Caddy VM behind the LB that reverse-proxies the SPA bucket over its public S3 endpoint, adding security headers/CSP and the SPA deep-link fallback.
 - **Backend VM:** the critical API path; replaced one generation at a time with LB overlap.
