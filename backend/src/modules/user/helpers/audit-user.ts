@@ -3,7 +3,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import type { z } from 'zod';
 import type { DbOrTx } from '#/db/db';
 import { usersTable } from '#/modules/user/user-db';
-import type { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { pick } from '#/utils/pick';
 
 export type UserMinimalBase = z.infer<typeof userMinimalBaseSchema>;
@@ -12,8 +12,11 @@ export type UserMinimalBase = z.infer<typeof userMinimalBaseSchema>;
 export const createdByUser = alias(usersTable, 'created_by_user');
 export const updatedByUser = alias(usersTable, 'updated_by_user');
 
-// Column keys to select for audit users (entityType is added as a SQL literal)
-const selectKeys = ['id', 'name', 'slug', 'thumbnailUrl'] as const;
+// Minimal-user columns minus entityType (added as a SQL literal); derived so this tracks userMinimalBaseSchema.
+type AuditUserColumnKey = Exclude<keyof typeof userMinimalBaseSchema.shape, 'entityType'>;
+const selectKeys = (Object.keys(userMinimalBaseSchema.shape) as (keyof typeof userMinimalBaseSchema.shape)[]).filter(
+  (key): key is AuditUserColumnKey => key !== 'entityType',
+);
 
 /**
  * Build minimal user select columns from an aliased users table.
@@ -90,12 +93,7 @@ export async function withAuditUsers<T extends { createdBy: string | null; updat
   if (unknownIds.size > 0) {
     // biome-ignore lint/suspicious/noExplicitAny: drizzle-orm union-table inference fails with DbOrTx (issue #4367).
     const users = await (db as any)
-      .select({
-        id: usersTable.id,
-        name: usersTable.name,
-        slug: usersTable.slug,
-        thumbnailUrl: usersTable.thumbnailUrl,
-      })
+      .select(pick(getColumns(usersTable), selectKeys))
       .from(usersTable)
       .where(inArray(usersTable.id, [...unknownIds]));
 
