@@ -2,9 +2,11 @@ name: Deploy
 
 # Thin trigger with three paths into one reusable pipeline (deploy-pipeline.yml):
 #   push to main      -> auto staging, so main is always mirrored on staging.
-#                        An app built from the template must bootstrap a
-#                        `staging` Environment with the SCW_* secrets before
-#                        merging to main, or this job fails.
+#                        The gate job runs it only once staging is bootstrapped:
+#                        it checks infra/Pulumi.staging.yaml for a bootstrap
+#                        marker. A fresh app has no bootstrapped staging stack, so
+#                        the push job skips cleanly (no failing CI) and the
+#                        template is safe to pull.
 #   release published -> production (gate it with a required-reviewer
 #                        Environment named `production` to make it a manual
 #                        promote; the deploy job already targets that Environment)
@@ -38,7 +40,38 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'push' }}
 
 jobs:
+  # Decide whether a push to main may auto-deploy staging. The signal is a
+  # bootstrap marker in the committed infra/Pulumi.staging.yaml (written by the
+  # `pnpm infra` bootstrap). A fresh app has no bootstrapped staging stack, so
+  # staging_ready is false and the deploy job skips: no manual opt-in variable,
+  # and the template stays safe to pull. Only runs for push events; release and
+  # manual dispatch bypass it.
+  gate:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    outputs:
+      staging_ready: ${{ steps.check.outputs.staging_ready }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Detect bootstrapped staging stack
+        id: check
+        run: |
+          if grep -Eq 'infra:(bootstrapComplete|vmAccessKey|applicationId)' infra/Pulumi.staging.yaml 2>/dev/null; then
+            echo 'staging_ready=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'staging_ready=false' >> "$GITHUB_OUTPUT"
+          fi
+
   deploy:
+    needs: [gate]
+    # Release (production) and manual dispatch always run. A push runs only when
+    # the gate found a bootstrapped staging stack. `!cancelled()` keeps this job
+    # evaluating its condition even though `gate` is skipped for non-push events.
+    if: ${{ !cancelled() && (github.event_name != 'push' || needs.gate.outputs.staging_ready == 'true') }}
     uses: ./.github/workflows/deploy-pipeline.yml
     with:
       environment: ${{ inputs.environment || (github.event_name == 'push' && 'staging') || 'production' }}
