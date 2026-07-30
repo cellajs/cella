@@ -37,6 +37,9 @@ export async function createRequestOp(ctx: AuthContext, input: CreateRequestInpu
 
   const createdRequest = await insertRequest(ctx, { email: normalizedEmail, type, message });
 
+  // A duplicate that slipped past the check above (concurrent submit) is rejected by the unique index
+  if (!createdRequest) throw new AppError(409, 'request_exists', 'info');
+
   // Determine message content based on notification type
   let textMessage: string;
   let title: string;

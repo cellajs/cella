@@ -23,10 +23,10 @@ describe('request query uniqueness', () => {
     });
   });
 
-  it('enforces signup uniqueness case-insensitively at the database boundary', async () => {
+  it('swallows duplicate signups case-insensitively at the database boundary', async () => {
     await insertRequest(ctx, { email, type: 'waitlist' });
 
-    await expect(insertRequest(ctx, { email: email.toUpperCase(), type: 'waitlist' })).rejects.toThrow();
+    await expect(insertRequest(ctx, { email: email.toUpperCase(), type: 'waitlist' })).resolves.toBeUndefined();
   });
 
   it('allows repeated contact requests', async () => {
