@@ -16,6 +16,10 @@ export const env = createEnv({
       .string()
       .default('false')
       .transform((v) => v === 'true'),
+    VITE_MAPLE: z
+      .string()
+      .default('false')
+      .transform((v) => v === 'true'),
   },
   clientPrefix: 'VITE_',
   runtimeEnv: import.meta.env,
@@ -24,3 +28,6 @@ export const env = createEnv({
 
 /** Reports whether frontend debug mode is enabled. */
 export const isDebugMode = env.VITE_DEBUG_MODE;
+
+/** Reports whether Maple telemetry is opted in for local development. */
+export const isMapleOptedIn = env.VITE_MAPLE;
