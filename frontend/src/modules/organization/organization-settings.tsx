@@ -2,11 +2,13 @@
 
 import { useNavigate } from '@tanstack/react-router';
 import { TrashIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { appConfig } from 'shared';
 import { useOrganizationLayoutContext } from '~/hooks/use-route-context';
+import { getPlacements, type PlacementTab } from '~/lib/placements';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -15,21 +17,14 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
-import { organizationSettingsSections } from '~/modules/organization/organization-settings-sections';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { UpdateOrganizationDetailsForm } from '~/modules/organization/update-organization-details-form';
 import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-// Built-in tabs, plus any app-provided section tabs spliced in before the danger zone.
-const tabs = [
-  { id: 'general', label: 'c:general' },
-  { id: 'details', label: 'c:details' },
-  // { id: 'subscription', label: 'c:subscription' },
-  ...organizationSettingsSections.map(({ id, label, resource }) => ({ id, label, ...(resource && { resource }) })),
-  { id: 'delete-organization', label: 'c:delete_resource', resource: 'c:organization' },
-];
+/** One settings section: aside tab descriptor plus the rendered card, sorted on `order`. */
+type SettingsSection = PlacementTab & { order: number; node: ReactNode };
 
 function OrganizationSettings({ organization }: { organization: EnrichedOrganization }) {
   const { t } = useTranslation();
@@ -41,7 +36,9 @@ function OrganizationSettings({ organization }: { organization: EnrichedOrganiza
   // them even though the template's admin role holds both.
   const resolveCan = useResolveCan();
   const canDelete = resolveCan(organization.can?.organization?.delete, organization.createdBy);
-  const visibleTabs = canDelete ? tabs : tabs.filter((tab) => tab.id !== 'delete-organization');
+
+  // Grants for placement gating: contributions declaring `requires` hide without them
+  const grants = canDelete ? ['update', 'delete'] : ['update'];
 
   const deleteButtonRef = useRef(null);
 
@@ -82,88 +79,108 @@ function OrganizationSettings({ organization }: { organization: EnrichedOrganiza
     }
   };
 
+  // Module contributions for this page's placement slot, wrapped in the standard titled card
+  const contributionSections: SettingsSection[] = getPlacements('organization.settings.aside')
+    .filter((placement) => !placement.requires || grants.includes(placement.requires))
+    .map((placement) => ({
+      ...placement,
+      order: placement.order ?? 50,
+      node: (
+        <Card id={placement.id}>
+          <CardHeader>
+            <CardTitle>{t(placement.label, { resource: t(placement.resource || '').toLowerCase() })}</CardTitle>
+          </CardHeader>
+          <CardContent>{placement.render(organization)}</CardContent>
+        </Card>
+      ),
+    }));
+
+  const sections: SettingsSection[] = [
+    {
+      id: 'general',
+      label: 'c:general',
+      order: 10,
+      node: (
+        <Card id="update-organization">
+          <CardHeader>
+            <CardTitle>
+              <UnsavedBadge title={t('c:general')} />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <UpdateOrganizationForm organization={organization} callback={callback} />
+          </CardContent>
+        </Card>
+      ),
+    },
+    {
+      id: 'details',
+      label: 'c:details',
+      order: 20,
+      node: (
+        <Card id="update-organization-details">
+          <CardHeader>
+            <CardTitle>{t('c:details')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <UpdateOrganizationDetailsForm organization={organization} callback={callback} />
+          </CardContent>
+        </Card>
+      ),
+    },
+    // { id: 'subscription', label: 'c:subscription', order: 30, node: <Subscription organization={organization} /> },
+    ...contributionSections,
+    ...(canDelete
+      ? [
+          {
+            id: 'delete-organization',
+            label: 'c:delete_resource',
+            resource: 'c:organization',
+            order: 90,
+            node: (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('c:delete_resource', { resource: t('c:organization').toLowerCase() })}</CardTitle>
+                  <CardDescription>
+                    <Trans
+                      t={t}
+                      i18nKey="c:delete_resource_notice.text"
+                      values={{ name: organization.name, resource: t('c:organization').toLowerCase() }}
+                    />
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    ref={deleteButtonRef}
+                    variant="destructive"
+                    className="w-full sm:w-auto"
+                    onClick={openDeleteDialog}
+                  >
+                    <TrashIcon className="mr-2 size-4" />
+                    <span>{t('c:delete_resource', { resource: t('c:organization').toLowerCase() })}</span>
+                  </Button>
+                </CardContent>
+              </Card>
+            ),
+          },
+        ]
+      : []),
+  ].sort((a, b) => a.order - b.order);
+
   return (
     <div className="container mx-auto my-4 gap-4 md:flex md:flex-row">
       <div className="mx-auto flex h-auto flex-col max-md:hidden md:w-[30%] md:min-w-48">
         <div className="max-md:block! sticky top-15 z-10 max-h-[calc(100dvh-3.75rem)] overflow-y-auto md:mt-3">
-          <PageAside tabs={visibleTabs} className="pb-2" />
+          <PageAside tabs={sections} className="pb-2" />
         </div>
       </div>
 
       <div className="flex flex-col gap-8 md:w-[70%]">
-        <AsideAnchor id="general" extraOffset>
-          <Card id="update-organization">
-            <CardHeader>
-              <CardTitle>
-                <UnsavedBadge title={t('c:general')} />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <UpdateOrganizationForm organization={organization} callback={callback} />
-            </CardContent>
-          </Card>
-        </AsideAnchor>
-
-        <AsideAnchor id="details" extraOffset>
-          <Card id="update-organization-details">
-            <CardHeader>
-              <CardTitle>{t('c:details')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <UpdateOrganizationDetailsForm organization={organization} callback={callback} />
-            </CardContent>
-          </Card>
-        </AsideAnchor>
-
-        {organizationSettingsSections.map((section) => (
-          <AsideAnchor key={section.id} id={section.id} extraOffset>
-            <Card id={section.id}>
-              <CardHeader>
-                <CardTitle>{t(section.label)}</CardTitle>
-              </CardHeader>
-              <CardContent>{section.render(organization)}</CardContent>
-            </Card>
+        {sections.map(({ id, node }) => (
+          <AsideAnchor key={id} id={id} extraOffset>
+            {node}
           </AsideAnchor>
         ))}
-
-        {/* <AsideAnchor id="subscription" extraOffset>
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('c:subscription')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Subscription organization={organization} />
-            </CardContent>
-          </Card>
-        </AsideAnchor> */}
-
-        {canDelete && (
-          <AsideAnchor id="delete-organization" extraOffset>
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('c:delete_resource', { resource: t('c:organization').toLowerCase() })}</CardTitle>
-                <CardDescription>
-                  <Trans
-                    t={t}
-                    i18nKey="c:delete_resource_notice.text"
-                    values={{ name: organization.name, resource: t('c:organization').toLowerCase() }}
-                  />
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  ref={deleteButtonRef}
-                  variant="destructive"
-                  className="w-full sm:w-auto"
-                  onClick={openDeleteDialog}
-                >
-                  <TrashIcon className="mr-2 size-4" />
-                  <span>{t('c:delete_resource', { resource: t('c:organization').toLowerCase() })}</span>
-                </Button>
-              </CardContent>
-            </Card>
-          </AsideAnchor>
-        )}
       </div>
     </div>
   );

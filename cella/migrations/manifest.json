@@ -315,6 +315,23 @@
         "pnpm check"
       ],
       "summary": "attachments' per-variant originalKey/convertedKey/thumbnailKey/thumbnailTinyKey columns collapse into one keys jsonb map (AttachmentKeys: { original, preview?, thumbnail?, converted? }); selectVariantKey becomes keys[variant] ?? keys.original. Variant vocabulary realigned: mid-size thumbnail->preview, grid-cell thumbnail-tiny->thumbnail (attachmentVariantSchema/BlobVariant = original|preview|thumbnail|converted). Wire-breaking: clientCacheVersion bumped to v8-attachment-keys. DB: drop the four *_key columns, add keys jsonb with a jsonb_build_object backfill (thumbnail_key->preview, thumbnail_tiny_key->thumbnail). Manual: field-specific rename plus a data-preserving migration, no codemod. Apps that home attachments on a product entity keep their own taskId/projectId columns."
+    },
+    {
+      "id": "20260730T0858-frontend-module-placements",
+      "version": "next",
+      "title": "Frontend module registry and UI placements",
+      "kind": "manual",
+      "syncBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "frontend/src",
+        "cella.config.ts"
+      ],
+      "requires": [
+        "pnpm check"
+      ],
+      "summary": "Frontend *-module.ts files switch registerModule -> defineFrontendModule (~/lib/module); a glob composition root frontend/src/modules.ts loads them before first render. UI placements land as the first capability: organizationSettingsSections (pinned file + OrganizationSettingsSection type) is removed in favor of placements entries with slot 'organization.settings.aside' (SettingsAsidePlacement from ~/lib/placements), sorted with built-ins on order and gated with requires. staticData.navTab is typed PlacementTab (requires widened to any grant name). nav-buttons id special-cases move to NavItem iconSlot/badgeSlot in the pinned nav-config.tsx. Manual: apps convert their module files, relocate settings sections, and copy the new nav-config entries. Needs @cellajs/cli with the define*Module territory-scan matcher. No wire-shape or DB change."
     }
   ]
 }
