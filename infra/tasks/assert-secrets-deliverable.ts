@@ -121,7 +121,7 @@ export async function assertSecretsDeliverable(opts: AssertSecretsDeliverableOpt
  * disabled service (e.g. ai) never produces a false failure.
  */
 export function secretsForServices(enabled: readonly ServiceName[]): SecretToCheck[] {
-  const enabledSet = new Set<ServiceName>(enabled)
+  const enabledSet = new Set<string>(enabled)
   return runtimeSecrets
     .filter((secret) => secret.services.some((svc) => enabledSet.has(svc)))
     .map((secret) => ({ envVar: secret.envVar, secretName: secret.secretName, required: secret.required }))

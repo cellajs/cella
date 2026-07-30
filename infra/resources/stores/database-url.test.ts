@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
+import type { ProvisionContext } from '../../lib/stores'
 import { databaseUrl } from './database-url'
 import { none } from './none'
 
-// External stores are pure modules: no Pulumi graph, no mocks needed.
+// External stores are pure modules: no Pulumi graph, no mocks needed. They
+// ignore the provision context entirely, so an empty stub satisfies the call.
+const ctx = {} as ProvisionContext
 
 describe('databaseUrl store', () => {
   it('provisions nothing', () => {
-    const provisioned = databaseUrl({ services: ['api'] }).provision()
+    const provisioned = databaseUrl({ services: ['api'] }).provision(ctx)
     expect(provisioned.outputs).toEqual({})
     expect(provisioned.secretValues).toEqual({})
   })
@@ -56,7 +59,7 @@ describe('databaseUrl store', () => {
 describe('none store', () => {
   it('provisions nothing and declares no secrets', () => {
     const store = none()
-    expect(store.provision()).toEqual({ outputs: {}, secretValues: {} })
+    expect(store.provision(ctx)).toEqual({ outputs: {}, secretValues: {} })
     expect(store.secrets).toBeUndefined()
   })
 })
