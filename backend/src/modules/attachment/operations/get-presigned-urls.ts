@@ -26,13 +26,8 @@ interface PresignedUrlsResult {
  * Key to sign for a variant, resolved from the row only (never client input).
  * Variants that were never generated fall back to the always-present original key.
  */
-const selectVariantKey = (attachment: AttachmentModel, variant: AttachmentVariant): string => {
-  if (variant === 'thumbnail') return attachment.thumbnailKey ?? attachment.originalKey;
-  if (variant === 'thumbnail-tiny')
-    return attachment.thumbnailTinyKey ?? attachment.thumbnailKey ?? attachment.originalKey;
-  if (variant === 'converted') return attachment.convertedKey ?? attachment.originalKey;
-  return attachment.originalKey;
-};
+const selectVariantKey = (attachment: AttachmentModel, variant: AttachmentVariant): string =>
+  attachment.keys[variant] ?? attachment.keys.original;
 
 /**
  * Sign private-bucket download URLs for up to 50 attachments the caller may read.

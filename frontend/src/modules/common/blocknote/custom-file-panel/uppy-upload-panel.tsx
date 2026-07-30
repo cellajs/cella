@@ -182,12 +182,12 @@ export function UppyFilePanel({
 
             for (const attachment of attachments) {
               // Private → display reference by attachment id (presigned, resolved per-type in
-              // resolveBlockNoteFileRef). Public → cloud key (CDN): images use the mid-size thumbnail,
+              // resolveBlockNoteFileRef). Public → cloud key (CDN): images use the mid-size preview,
               // other types the converted variant, so inline descriptions never load the full-size file.
               const publicKey =
                 blockType === 'image'
-                  ? attachment.thumbnailKey || attachment.convertedKey || attachment.originalKey
-                  : attachment.convertedKey || attachment.originalKey;
+                  ? attachment.keys.preview || attachment.keys.converted || attachment.keys.original
+                  : attachment.keys.converted || attachment.keys.original;
               const url = mediaMode === 'private-attachment' ? attachment.id : publicKey;
               const props = {
                 name: attachment.filename,

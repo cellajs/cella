@@ -476,14 +476,8 @@ export type Attachment = {
   stx: StxBase;
   description: string | null;
   keywords: string;
-  createdBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
-  updatedBy: UserMinimalBase &
-    ({
-      [key: string]: unknown;
-    } | null);
+  createdBy: NullableUserMinimalBase;
+  updatedBy: NullableUserMinimalBase;
   deletedAt: string | null;
   deletedBy: string | null;
   publicAt: string | null;
@@ -505,21 +499,14 @@ export type Attachment = {
   convertedContentType: string | null;
   size: string;
   /**
-   * Storage object key for the original uploaded file.
+   * Storage object keys per variant, keyed by variant name; only generated variants are present.
    */
-  originalKey: string;
-  /**
-   * Storage object key for the converted variant; null when none.
-   */
-  convertedKey: string | null;
-  /**
-   * Storage object key for the generated thumbnail (mid-size preview); null when none.
-   */
-  thumbnailKey: string | null;
-  /**
-   * Storage object key for the tiny (grid-cell) image thumbnail; null when none.
-   */
-  thumbnailTinyKey: string | null;
+  keys: {
+    original: string;
+    preview?: string;
+    thumbnail?: string;
+    converted?: string;
+  };
   organizationId: string;
   viewCount?: number;
 };
@@ -4049,10 +4036,12 @@ export type CreateAttachmentsData = {
      */
     contentType: string;
     size: string;
-    /**
-     * Storage object key for the original uploaded file.
-     */
-    originalKey: string;
+    keys: {
+      original: string;
+      preview?: string;
+      thumbnail?: string;
+      converted?: string;
+    };
     bucketName: string;
     /**
      * When true, the file is stored in the public bucket and served from the CDN without a presigned URL.
@@ -4063,18 +4052,6 @@ export type CreateAttachmentsData = {
      * MIME type of the server-converted variant; null when none.
      */
     convertedContentType?: string | null;
-    /**
-     * Storage object key for the converted variant; null when none.
-     */
-    convertedKey?: string | null;
-    /**
-     * Storage object key for the generated thumbnail (mid-size preview); null when none.
-     */
-    thumbnailKey?: string | null;
-    /**
-     * Storage object key for the tiny (grid-cell) image thumbnail; null when none.
-     */
-    thumbnailTinyKey?: string | null;
     stx: StxBase;
   }>;
   path: {
@@ -4155,7 +4132,7 @@ export type GetPresignedUrlsData = {
   body: {
     items: Array<{
       attachmentId: string;
-      variant?: 'original' | 'thumbnail' | 'thumbnail-tiny' | 'converted';
+      variant?: 'original' | 'preview' | 'thumbnail' | 'converted';
     }>;
   };
   path: {
@@ -4202,7 +4179,7 @@ export type GetPresignedUrlsResponses = {
   200: {
     data: Array<{
       attachmentId: string;
-      variant: 'original' | 'thumbnail' | 'thumbnail-tiny' | 'converted';
+      variant: 'original' | 'preview' | 'thumbnail' | 'converted';
       url: string;
     }>;
     /**
@@ -4273,7 +4250,6 @@ export type UpdateAttachmentData = {
   body: {
     ops: {
       name?: string;
-      originalKey?: string;
     };
     stx: StxBase;
   };

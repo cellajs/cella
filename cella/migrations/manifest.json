@@ -291,6 +291,30 @@
         "pnpm check"
       ],
       "summary": "Boot runner image renamed cella-boot->infra-boot, centralized as BOOT_IMAGE_NAME in infra/lib/scaleway/boot-image.ts (build-images.ts, deploy-pipeline.yml, compute.ts). Immutable generations pin the boot image by name+sha and a digest is only pullable from its own repository, so resolveBootImage falls back to LEGACY_BOOT_IMAGE_NAMES on a 404 (threading the resolved name into cloud-init) and a pre-existing generation whose image is gone degrades to an unpinned tag instead of failing the plan. Auto-migrating: no app code changes; deploy staging first, drop 'cella-boot' from LEGACY_BOOT_IMAGE_NAMES once no environment runs a pre-rename generation. No wire-shape or DB change."
+    },
+    {
+      "id": "20260730T0624-attachment-keys-map",
+      "version": "next",
+      "title": "Attachment variant keys collapse to a single jsonb map",
+      "kind": "manual",
+      "syncBreaking": true,
+      "clientCacheBump": true,
+      "script": null,
+      "roots": [
+        "backend/src",
+        "backend/tests",
+        "backend/scripts",
+        "backend/drizzle",
+        "frontend/src",
+        "shared",
+        "bench/src"
+      ],
+      "requires": [
+        "pnpm generate",
+        "pnpm sdk",
+        "pnpm check"
+      ],
+      "summary": "attachments' per-variant originalKey/convertedKey/thumbnailKey/thumbnailTinyKey columns collapse into one keys jsonb map (AttachmentKeys: { original, preview?, thumbnail?, converted? }); selectVariantKey becomes keys[variant] ?? keys.original. Variant vocabulary realigned: mid-size thumbnail->preview, grid-cell thumbnail-tiny->thumbnail (attachmentVariantSchema/BlobVariant = original|preview|thumbnail|converted). Wire-breaking: clientCacheVersion bumped to v8-attachment-keys. DB: drop the four *_key columns, add keys jsonb with a jsonb_build_object backfill (thumbnail_key->preview, thumbnail_tiny_key->thumbnail). Manual: field-specific rename plus a data-preserving migration, no codemod. Apps that home attachments on a product entity keep their own taskId/projectId columns."
     }
   ]
 }

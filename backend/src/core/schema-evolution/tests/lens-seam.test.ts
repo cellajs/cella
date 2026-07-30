@@ -47,7 +47,7 @@ afterEach(() => _resetHLC());
 const LENSLESS = 'doc' as ProductEntityType;
 
 describe('createUpdateSchema widening', () => {
-  const schema = createUpdateSchema('attachment', { title: z.string(), originalKey: z.string() });
+  const schema = createUpdateSchema('attachment', { title: z.string() });
 
   it('accepts the old field name as alias during expand', () => {
     const parsed = schema.parse({ ops: { name: 'x' }, stx: stx({ name: hlc }) });

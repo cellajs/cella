@@ -113,7 +113,7 @@ describe('Permission enforcement via HTTP', async () => {
             filename: 'perm-test.pdf',
             contentType: 'application/pdf',
             size: '1024',
-            originalKey: `test/perm-${presignAttachmentId}.pdf`,
+            keys: { original: `test/perm-${presignAttachmentId}.pdf` },
             bucketName: 'test-bucket',
             ...generateMockEntityBodyChannelIdColumns('attachment'),
             stx: { mutationId: presignAttachmentId, sourceId: 'perm-test', fieldTimestamps: {} },

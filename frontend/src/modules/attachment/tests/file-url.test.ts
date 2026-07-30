@@ -15,10 +15,7 @@ const baseAttachment = {
   id: 'att-1',
   tenantId: 'tenant-1',
   organizationId: 'org-1',
-  originalKey: 'org/attachments/original/a.jpg',
-  convertedKey: null,
-  thumbnailKey: null,
-  thumbnailTinyKey: null,
+  keys: { original: 'org/attachments/original/a.jpg' },
 };
 
 describe('getCloudUrl public/private branch', () => {
@@ -40,7 +37,7 @@ describe('getCloudUrl public/private branch', () => {
 
   it('returns null when the variant has no cloud key', async () => {
     const url = await getCloudUrl({ ...baseAttachment, publicBucket: false }, 'converted');
-    // convertedKey is null: nothing to fetch, and nothing is signed either.
+    // No converted key present: nothing to fetch, and nothing is signed either.
     expect(url).toBeNull();
     expect(getPresignedUrlBatched).not.toHaveBeenCalled();
   });

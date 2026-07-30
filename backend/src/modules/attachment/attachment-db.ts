@@ -1,8 +1,9 @@
-import { boolean, foreignKey, index, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, foreignKey, index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { channelRelationColumns } from '#/db/utils/channel-relation-columns';
 import { maxLength } from '#/db/utils/constraints';
 import { productColumns } from '#/db/utils/product-columns';
+import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
 import { organizationsTable } from '#/modules/organization/organization-db';
 
 /**
@@ -23,10 +24,13 @@ export const attachmentsTable = snakeCase.table(
     contentType: varchar({ length: maxLength.field }).notNull(),
     convertedContentType: varchar({ length: maxLength.field }),
     size: varchar({ length: maxLength.field }).notNull(),
-    originalKey: varchar({ length: maxLength.url }).notNull(),
-    convertedKey: varchar({ length: maxLength.url }),
-    thumbnailKey: varchar({ length: maxLength.url }),
-    thumbnailTinyKey: varchar({ length: maxLength.url }),
+    // Storage object keys per variant, keyed by variant name. `original` is always present;
+    // other variants appear only once the upload pipeline generates them. One map replaces the
+    // former per-variant columns so signing/resolution never enumerates variant names.
+    keys: jsonb()
+      .$type<AttachmentKeys>()
+      .notNull()
+      .default({} as AttachmentKeys),
     ...channelRelationColumns('attachment'),
   },
   (table) => [
