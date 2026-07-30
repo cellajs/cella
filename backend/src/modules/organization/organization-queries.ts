@@ -1,5 +1,6 @@
 import { and, count, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import type { EntityRole, OrganizationFlags, OrganizationSetupConfig } from 'shared';
+import type { ToolsConfig } from 'shared/tools-config';
 import type { AuthContext, DbContext } from '#/core/context';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
@@ -40,13 +41,14 @@ interface UpdateOrganizationOpts {
   values: Partial<typeof organizationsTable.$inferInsert> & {
     organizationFlags?: Partial<OrganizationFlags>;
     setupConfig?: Partial<OrganizationSetupConfig>;
+    toolsConfig?: ToolsConfig;
   };
 }
 
-/** Update an organization by ID and return the updated row. Merges organizationFlags/setupConfig via jsonb || if provided. */
+/** Update an organization by ID and return the updated row. Merges organizationFlags/setupConfig/toolsConfig via jsonb || if provided. */
 export const updateOrganization = async (ctx: AuthContext, { id, values }: UpdateOrganizationOpts) => {
   const { db, tenantId } = ctx.var;
-  const { organizationFlags, setupConfig, ...rest } = values;
+  const { organizationFlags, setupConfig, toolsConfig, ...rest } = values;
 
   const updateData = {
     ...rest,
@@ -55,6 +57,10 @@ export const updateOrganization = async (ctx: AuthContext, { id, values }: Updat
     }),
     ...(setupConfig && {
       setupConfig: sql`${organizationsTable.setupConfig} || ${JSON.stringify(setupConfig)}::jsonb`,
+    }),
+    // Top-level jsonb merge: each listed slot key replaces that slot's stored arrangement wholesale
+    ...(toolsConfig && {
+      toolsConfig: sql`${organizationsTable.toolsConfig} || ${JSON.stringify(toolsConfig)}::jsonb`,
     }),
   };
 
