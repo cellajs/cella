@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// tab-nav.tsx transitively imports use-breakpoints.tsx, which reads `window` at module load.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // A minimal fake router: only the fields resolveNavTabs reads (routesById, children, options, path).
