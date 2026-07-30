@@ -51,6 +51,9 @@ function tagVar(slug: string): string {
 export interface CoHostingContext {
   hostSlug: ServiceName | undefined
   coHosted: readonly ServiceDefinition[]
+  /** `placement: 'host'` containers started on the host VM; the host's .env
+   *  must satisfy their compose placeholders, bindings, and image tags. */
+  collocated: readonly ServiceDefinition[]
 }
 
 /**
@@ -135,6 +138,19 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
         bindings[name] = { template, owner: worker.slug, loopbackSlug: svc.slug }
       }
     }
+    // Collocated containers run beside the host container, not inside its
+    // process: their bindings resolve with real values (no loopback collapse).
+    for (const container of coHosting.collocated) {
+      for (const [name, template] of Object.entries(container.bindings ?? {})) {
+        const existing = bindings[name]
+        if (existing && existing.template !== template) {
+          throw new Error(
+            `compute: collocated binding '${name}' on '${container.slug}' (${template}) conflicts with '${existing.owner}' (${existing.template}) — collocated containers must not overload a host binding.`,
+          )
+        }
+        bindings[name] = { template, owner: container.slug }
+      }
+    }
     return bindings
   }
 
@@ -158,15 +174,20 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
   /** Compose env for one service: universal vars + the baked image tag + binding/pool values. */
   return function buildComposeEnv(svc: ServiceDefinition, releaseSha: string): Record<string, () => pulumi.Input<string>> {
     const { slug } = svc
+    const isHost = coHosting !== undefined && slug === coHosting.hostSlug
+    const collocated = isHost ? coHosting.collocated : []
     const env: Record<string, () => pulumi.Input<string>> = {
       REGISTRY: () => registryEndpoint,
       APP_MODE: () => mode,
       // The generation's pinned image tag: the VM pulls exactly this SHA at boot.
       [tagVar(slug)]: () => releaseSha,
     }
+    // Collocated containers ship at the same release SHA as the host.
+    for (const container of collocated) env[tagVar(container.slug)] = () => releaseSha
     const bindings = effectiveBindings(svc)
-    const skippable = coHosting && slug === coHosting.hostSlug ? inactiveCoHostedVars() : new Set<string>()
-    for (const name of composePlaceholders(slug)) {
+    const skippable = isHost ? inactiveCoHostedVars() : new Set<string>()
+    const placeholderOwners = [slug, ...collocated.map((s) => s.slug)]
+    for (const name of placeholderOwners.flatMap((owner) => composePlaceholders(owner))) {
       if (INJECTED_VARS.has(name) || name.endsWith('_TAG')) continue
       const binding = bindings[name]
       if (binding) {

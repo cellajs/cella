@@ -6,6 +6,7 @@ function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
     slug: 'cella',
     service: 'backend',
     profile: 'backend',
+    startServices: ['backend'],
     runRelease: true,
     releaseSha: 'abc123def',
     envFileContent: 'APP_MODE=production\nBACKEND_TAG=abc123def\nBACKEND_URL=https://api.example.test',

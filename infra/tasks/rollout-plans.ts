@@ -1,7 +1,7 @@
 import { engineConfig } from '../config/engine-config'
 import { healthContract } from '../config/health.config'
 import type { ServiceName } from '../compose/compose'
-import { coHostedServices, servicesByName } from '../lib/services'
+import { coHostedServices, collocatedServices, servicesByName } from '../lib/services'
 import type { RolloutServicePlan } from './rollout'
 
 function normalizeHealthUrl(explicit?: string): string | undefined {
@@ -34,14 +34,17 @@ export function planForService(serviceFlag: string, healthUrl?: string): Rollout
   }
 
   // LB pools that must follow this service's cutover because Pulumi ignores
-  // their live server lists: co-hosted workers' pools (singleVM) and the
-  // service's own internal pool (internalRoute).
+  // their live server lists: co-hosted workers' and collocated containers'
+  // pools (singleVM) and the service's own internal pool (internalRoute).
   const repointKeys: string[] = []
   if (definition.primaryRollout && appConfig.singleVM) {
     repointKeys.push(
-      ...coHostedServices(appConfig.services, appConfig.singleVM)
-        .filter((worker) => worker.lbRoute)
-        .map((worker) => worker.slug),
+      ...[
+        ...coHostedServices(appConfig.services, appConfig.singleVM),
+        ...collocatedServices(appConfig.services, appConfig.singleVM),
+      ]
+        .filter((follower) => follower.lbRoute)
+        .map((follower) => follower.slug),
     )
   }
   if (definition.internalRoute) repointKeys.push(`${service}-internal`)

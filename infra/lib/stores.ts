@@ -48,8 +48,8 @@ export interface StoreSecretContribution {
 
 /**
  * Engine facilities injected into `provision()`. Stores receive their Pulumi
- * toolchain and engine helpers as arguments instead of importing them, so store
- * modules stay pure at import time: the secret-declaration merge in
+ * toolchain and engine helpers as call arguments and keep their module scope
+ * free of Pulumi imports, so the secret-declaration merge in
  * `lib/runtime-secrets.ts` and standalone CLI tasks can import the store
  * registry without touching the Pulumi resource graph.
  */

@@ -64,6 +64,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   if (cfg.dockerfile) meta.dockerfile = cfg.dockerfile
   if (cfg.target) meta.target = cfg.target
   if (cfg.coHosted) meta.coHosted = true
+  if (cfg.placement) meta.placement = cfg.placement
   if (cfg.bindings) meta.bindings = cfg.bindings
   return meta
 }

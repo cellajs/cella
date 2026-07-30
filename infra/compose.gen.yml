@@ -209,3 +209,4 @@ services:
       drainPolicy: requests
       lbRoute: default
       dockerfile: infra/caddy/Dockerfile
+      placement: host

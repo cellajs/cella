@@ -32,6 +32,9 @@ export type LbPathBegin = `/${string}`
 /** A service's VM size: one type for all modes, or a per-mode map. */
 export type ServiceInstanceType = string | Partial<Record<Environment, string>>
 
+/** Where a service's container runs: its own VM generation, or collocated on the singleVM host. */
+export type ServicePlacement = 'vm' | 'host'
+
 /**
  * A one-shot release step run at a new generation's boot BEFORE the app starts
  * (expand-before-cutover), gated on exit 0. The engine runs the service image as
@@ -99,6 +102,8 @@ export interface ServiceMeta {
   target?: string
   /** Under `appConfig.singleVM`, this service runs in-process on the host VM (backend) */
   coHosted?: boolean
+  /** Under `appConfig.singleVM`, `'host'` runs this service as a second container on the host VM. */
+  placement?: ServicePlacement
   /** Per-service VM size; an app resizes its fleet by editing this. Required: every service declares its own box. */
   instanceType: ServiceInstanceType
   /**
@@ -232,6 +237,16 @@ export interface AppServiceConfig {
    * false.
    */
   coHosted?: boolean
+  /**
+   * Where this service's container runs. `'vm'` (default) gives it a dedicated
+   * VM generation. `'host'` collocates it as a second container on the
+   * singleVM host VM: the boot runner starts it alongside the host container,
+   * its LB pool follows the host cutover, and its image/env join the host's
+   * genId fingerprint. Ignored when `singleVM` is false. For services that
+   * cannot fold in-process (a different runtime than the host, e.g. the SPA
+   * proxy); `coHosted` covers in-process workers.
+   */
+  placement?: ServicePlacement
   /**
    * Per-service VM size: an app resizes its fleet by editing this. Required:
    * every service declares its own box (there is no fleet-wide fallback). A

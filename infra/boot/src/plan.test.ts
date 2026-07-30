@@ -34,6 +34,12 @@ describe('parseBootPlanJson', () => {
     expect(() => parseBootPlanJson(plan({ surprise: true }))).toThrow(/unknown top-level field/)
   })
 
+  it('parses the optional start-services list, absent in pre-collocation plans', () => {
+    expect(parseBootPlanJson(plan()).services).toBeUndefined()
+    expect(parseBootPlanJson(plan({ services: ['backend', 'frontend'] })).services).toEqual(['backend', 'frontend'])
+    expect(() => parseBootPlanJson(plan({ services: [] }))).toThrow(/non-empty command array/)
+  })
+
   it('rejects empty release commands', () => {
     expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command: [] } }))).toThrow(/non-empty command array/)
     expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command: ['docker', ''] } }))).toThrow(/empty or non-string/)

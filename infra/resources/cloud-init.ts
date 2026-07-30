@@ -7,6 +7,8 @@ export interface CloudInitParams {
   service: string
   /** Docker compose profile to bring up (equals the service slug). */
   profile: string
+  /** Compose services the boot runner starts (the service plus any collocated containers). */
+  startServices: string[]
   /** Run the one-shot release companion before the app (expand-before-cutover). */
   runRelease: boolean
   /** Release SHA baked into this generation (also the compose image tag). */
@@ -93,6 +95,7 @@ function bootPlan(p: CloudInitParams): string {
     schemaVersion: supportedSchemaVersion,
     service: p.service,
     profile: p.profile,
+    ...(p.startServices.length > 0 ? { services: p.startServices as [string, ...string[]] } : {}),
     releaseSha: p.releaseSha,
     ...(p.traceparent ? { traceparent: p.traceparent } : {}),
     imageContract: supportedImageContract,

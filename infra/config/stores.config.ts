@@ -16,7 +16,7 @@ export const appStores = defineStores({
     roles: ['admin', 'runtime', 'cdc'],
     logicalReplication: true,
     // The store owns the DSN/CA secret declarations; this maps each one to its
-    // consuming services (what runtime-secrets.config.ts previously declared).
+    // consuming services. They merge ahead of runtime-secrets.config.ts.
     secretConsumers: {
       runtime: ['backend', 'yjs', 'mcp'],
       admin: ['backend', 'mcp'],
