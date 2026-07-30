@@ -23,7 +23,7 @@ export interface ResolvedBootImage {
 }
 
 export interface ResolveBootImageOptions {
-  /** Registry endpoint including namespace, e.g. `rg.nl-ams.scw.cloud/cellastaging`. */
+  /** Registry endpoint including namespace, e.g. `rg.nl-ams.scw.cloud/mynamespace`. */
   registry: string
   /** Release sha (the boot image tag for this generation). */
   releaseSha: string

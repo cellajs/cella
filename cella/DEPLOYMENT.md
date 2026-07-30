@@ -287,7 +287,7 @@ After bootstrap, only the long-lived deploy and VM keys should remain. From here
 
 ### 7. Sign in as the first admin
 
-A fresh database has **no users**, but no manual seeding is needed: the one-shot `migrate` companion that runs before the app on every new generation also seeds a single admin user when the users table is empty ([backend/src/main.migrate.ts](../backend/src/main.migrate.ts), idempotent). It uses the **required** `admin-email` runtime secret (`ADMIN_EMAIL`), which the wizard prompts for at setup; the deploy preflight refuses to roll anything while it is missing, so a completed deploy implies the admin exists.
+A fresh database has **no users**, but no manual seeding is needed: the one-shot `backend-release` companion (cella's migrate step) that runs before the app on every new generation also seeds a single admin user when the users table is empty ([backend/src/main.migrate.ts](../backend/src/main.migrate.ts), idempotent). It uses the **required** `admin-email` runtime secret (`ADMIN_EMAIL`), which the wizard prompts for at setup; the deploy preflight refuses to roll anything while it is missing, so a completed deploy implies the admin exists.
 
 After the first successful deploy:
 
@@ -298,10 +298,10 @@ After the first successful deploy:
 
 ```bash
 cd /opt/app
-docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com migrate node dist/seeds-bundle.js init
+docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com backend-release node dist/seeds-bundle.js init
 ```
 
-This reuses the `migrate` companion's image and `.env`/`.env.runtime` (which carry `DATABASE_ADMIN_URL`), overriding only the command to run the seed bundle.
+This reuses the `backend-release` companion's image and `.env`/`.env.runtime` (which carry `DATABASE_ADMIN_URL`), overriding only the command to run the seed bundle.
 
 **Alternative: break-glass from your laptop.** If you'd rather not use the serial console, temporarily expose the database with the CLI, run the seed locally against `DATABASE_ADMIN_URL`, then close it again. This briefly exposes the DB (ACL-locked to your IP), so prefer the serial-console path:
 
@@ -401,8 +401,8 @@ Then run the two steps it prints, on the serial console:
 
 ```bash
 cd /opt/app
-docker compose --profile backend run --rm migrate
-docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com migrate node dist/seeds-bundle.js init
+docker compose --profile backend run --rm backend-release
+docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com backend-release node dist/seeds-bundle.js init
 ```
 
 Confirm with `curl https://<your-app>/api/health?depth=full`: all components `healthy`.

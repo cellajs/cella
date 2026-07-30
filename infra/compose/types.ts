@@ -41,7 +41,7 @@ export type ServiceInstanceType = string | Partial<Record<Environment, string>>
 export interface ReleaseStep {
   /** Command override for the release container. Omit to use the image's default entrypoint. */
   command?: readonly string[]
-  /** Env applied to the release container (e.g. a mode selector that runs migrations). */
+  /** Env applied to the release container (e.g. an app-owned process selector). */
   env?: Readonly<Record<string, string>>
   /** Env applied to the long-running app block whenever a release step exists (e.g. disable app-boot migration). */
   appEnv?: Readonly<Record<string, string>>
@@ -66,7 +66,7 @@ export interface ServiceMeta {
   /** HTTP status a healthy response returns, matched exactly by the LB health check. */
   healthExpectStatus: number
   /** Whether a one-shot release companion runs before rolling this service (derived from `release`). */
-  runMigrate: boolean
+  runRelease: boolean
   /** Deploy this service before the rest of the VM fleet. At most one enabled service may set this. */
   primaryRollout?: boolean
   /**
@@ -148,13 +148,13 @@ export interface AppServiceConfig {
   image: string
   /**
    * The single port this service listens on. Drives both the Compose `expose:`
-   * and the reconciler's identity healthcheck (`http://127.0.0.1:<port>/health`).
+   * and the reconciler's identity healthcheck on the app's health path.
    */
   port: number
   /**
-   * Seconds the reconciler waits for a new container to answer `/health` with
-   * the desired version before rolling back. Heavy images (the backend, and ai
-   * which reuses it) need a larger budget than the lightweight workers.
+   * Seconds the reconciler waits for a new container to answer the health path
+   * with the desired version before rolling back. Heavy images (the backend,
+   * and ai which reuses it) need a larger budget than the lightweight workers.
    */
   healthTimeoutSeconds: number
   /**

@@ -49,7 +49,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
     healthPort: cfg.port,
     healthTimeoutSeconds: cfg.healthTimeoutSeconds,
     healthExpectStatus: cfg.healthExpectStatus ?? 200,
-    runMigrate: cfg.release !== undefined,
+    runRelease: cfg.release !== undefined,
     replacementStrategy: cfg.replacementStrategy,
     drainSeconds: cfg.drainSeconds ?? 0,
     instanceType: cfg.instanceType,
@@ -92,7 +92,7 @@ function appBlock(
     profiles: [slug],
     restart: 'unless-stopped',
     // Publish the host port directly: the LB targets it and health-checks the
-    // app's real `/health` (no ingress hop in the immutable-node model).
+    // app's own health path (no ingress hop in the immutable-node model).
     ports: [`${cfg.port}:${cfg.port}`],
     stop_grace_period: cfg.stopGracePeriod ?? '30s',
     ...(cfg.includeEnvFile === false ? {} : { env_file: ['.env', '.env.runtime'] }),
@@ -103,11 +103,20 @@ function appBlock(
   return block
 }
 
+/** The one-shot release companion's compose service name (and its own profile). */
+export function releaseServiceName(slug: string): string {
+  return `${slug}-release`
+}
+
 /**
  * One-shot release companion derived from a service that declares a `release`
  * step. Reuses the service image with the app's release command/env, then
  * exits. Run at the new generation's boot BEFORE the app starts
  * (expand-before-cutover), gated on exit 0. No port/healthcheck (not long-running).
+ * Shares the service's profile; the boot runner invokes it explicitly by name
+ * and starts long-running services by name, so a profile-wide `up` never races
+ * it. The profile membership is genId-fingerprinted, so moving it to its own
+ * profile would re-roll every generation.
  */
 function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
   const release = cfg.release
@@ -142,7 +151,7 @@ export function assembleCompose(appServices: AppServices, options: { processIden
   const services: Record<string, ComposeService> = {}
   for (const [slug, cfg] of Object.entries(appServices)) {
     services[slug] = appBlock(slug, cfg, { extraEnv: cfg.release?.appEnv })
-    if (cfg.release) services.migrate = releaseBlock(slug, cfg)
+    if (cfg.release) services[releaseServiceName(slug)] = releaseBlock(slug, cfg)
   }
   publishCoHostedPorts(appServices, services)
   publishCoHostedEnv(appServices, services, processIdentityEnv)

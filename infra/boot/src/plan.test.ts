@@ -12,7 +12,7 @@ function plan(overrides: Record<string, unknown> = {}): string {
     region: 'nl-ams',
     credentials: { scwAccessKeyFile: '/etc/cella/scw-access-key', scwSecretKeyFile: '/etc/cella/scw-secret-key' },
     bootDiagnostics: { bucket: 'cella-boot-diag', logFile: '/var/log/infra-boot.log' },
-    releaseCommand: { enabled: true, command: ['docker', 'compose', 'run', 'migrate'] },
+    releaseCommand: { enabled: true, command: ['docker', 'compose', 'run', 'backend-release'] },
     docker: { composeFile: '/opt/app/compose.yml' },
     files: { compose: 'services: {}', env: 'BACKEND_TAG=abc', runtimeSecretManifest: [{ envVar: 'COOKIE_SECRET', secretId: 'uuid', required: true }] },
     timeouts: { privateNetworkSeconds: 150, pullAttempts: 2, pullRetrySeconds: 1 },

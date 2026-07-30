@@ -87,8 +87,8 @@ const composeContent = fs.readFileSync(
 interface ServiceConfig {
   name: string
   profile: string
-  /** Whether this service runs the one-shot migrate companion before the app. */
-  runMigrate: boolean
+  /** Whether this service runs the one-shot release companion before the app. */
+  runRelease: boolean
   /**
    * Runtime-secret consumers whose secrets this VM's `.env.runtime` manifest
    * carries. Usually just the service itself; the singleVM host also lists the
@@ -171,7 +171,7 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string, requirePinne
       slug: naming.slug,
       service: service.name,
       profile: service.profile,
-      runMigrate: service.runMigrate,
+      runRelease: service.runRelease,
       releaseSha,
       envFileContent: env.join('\n'),
       manifestContent: manifest,
@@ -259,7 +259,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   const serviceConfig: ServiceConfig = {
     name: svc.slug,
     profile: svc.slug,
-    runMigrate: svc.runMigrate ?? false,
+    runRelease: svc.runRelease ?? false,
     secretConsumers: secretConsumersFor(svc),
     composeEnv: buildComposeEnv(svc, generation.sha),
   }

@@ -157,7 +157,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     certGates.push(new CertReadyGate('apex-cert-ready', { certificateId: apexCert.id }, { dependsOn: [apexCert] }))
   }
 
-  // Pulumi seeds backend IPs, then cutover owns live expand/health/contract changes.
+  // Pulumi seeds backend IPs, then cutover owns live expand, health, and contract changes.
   // Direct app health checks mark crashed generations down. Drain policy preserves HTTP requests
   // or closes WebSockets so clients reconnect to the new generation.
 

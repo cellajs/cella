@@ -172,7 +172,7 @@ describe('serialConsoleSteps', () => {
   it('prints the two steps the CLI cannot run, and no worker restart', () => {
     const steps = serialConsoleSteps('cella')
 
-    expect(steps).toContain('docker compose --profile backend run --rm migrate')
+    expect(steps).toContain('docker compose --profile backend run --rm backend-release')
     expect(steps).toContain('dist/seeds-bundle.js init')
     // The slot is re-ensured on every retry, so a restart would be cargo cult.
     expect(steps).toMatch(/no restart/i)

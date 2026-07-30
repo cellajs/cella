@@ -1,6 +1,6 @@
 import * as pulumi from '@pulumi/pulumi'
 import { defineEnvSuppliers } from '../lib/env-suppliers'
-import { frontendCsp } from '../lib/frontend-csp'
+import { frontendCsp } from './frontend-csp.config'
 import { region, serviceUrl } from '../pulumi-context'
 import { frontendBucketName } from '../resources/storage'
 

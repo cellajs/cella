@@ -69,7 +69,9 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
   return {
     slug: svc.slug,
     port: svc.healthPort,
-    runMigrate: svc.runMigrate ?? false,
+    // Fingerprint key pinned to its original name: the key itself is hashed
+    // into every live genId, so renaming it would re-roll every generation.
+    runMigrate: svc.runRelease ?? false,
     // Only fold in the strategy when singleVM changes it (host co-hosting an
     // exclusive worker). Keeps the split-VM fingerprint byte-stable so this
     // feature doesn't churn every existing service's genId.
