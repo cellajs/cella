@@ -1,5 +1,5 @@
 import { type ModuleConfig, registerModule } from 'shared/module-registry';
-import type { PlacementContribution } from '~/lib/placements';
+import type { Tool } from '~/lib/placements';
 
 /**
  * A frontend module's registration: shared metadata plus frontend-only capabilities. Subsystems
@@ -7,8 +7,8 @@ import type { PlacementContribution } from '~/lib/placements';
  * capabilities in one place and each subsystem projects the ones it owns.
  */
 export interface FrontendModule extends ModuleConfig {
-  /** UI contributions this module places into named slots (indexed by `~/lib/placements`). */
-  placements?: PlacementContribution[];
+  /** UI tools this module places into named slots (indexed by `~/lib/placements`). */
+  tools?: Tool[];
 }
 
 const frontendModules: FrontendModule[] = [];
@@ -20,7 +20,7 @@ const listeners: ((module: FrontendModule) => void)[] = [];
  * time in the module's `*-module.ts`, which the composition root `~/modules.ts` glob-imports.
  */
 export function defineFrontendModule(module: FrontendModule): void {
-  const { placements: _placements, ...metadata } = module;
+  const { tools: _tools, ...metadata } = module;
   registerModule(metadata);
   frontendModules.push(module);
   for (const listener of listeners) listener(module);

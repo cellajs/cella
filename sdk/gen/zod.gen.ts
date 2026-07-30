@@ -381,6 +381,14 @@ export const zOrganization = z.object({
   chatSupport: z.boolean(),
   organizationFlags: z.record(z.string(), z.unknown()),
   setupConfig: z.record(z.string(), z.unknown()),
+  toolsConfig: z.record(
+    z.string(),
+    z.object({
+      order: z.array(z.string()).optional(),
+      hidden: z.array(z.string()).optional(),
+      settings: z.record(z.string(), z.unknown()).optional(),
+    }),
+  ),
   included: z.object({
     membership: zMembershipBase.optional(),
     counts: z
@@ -1403,6 +1411,16 @@ export const zUpdateOrganizationBody = z.object({
   chatSupport: z.boolean().optional(),
   organizationFlags: z.record(z.string(), z.unknown()).optional(),
   setupConfig: z.record(z.string(), z.unknown()).optional(),
+  toolsConfig: z
+    .record(
+      z.string(),
+      z.object({
+        order: z.array(z.string()).optional(),
+        hidden: z.array(z.string()).optional(),
+        settings: z.record(z.string(), z.unknown()).optional(),
+      }),
+    )
+    .optional(),
 });
 
 export const zUpdateOrganizationPath = z.object({

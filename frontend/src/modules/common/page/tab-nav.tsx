@@ -64,7 +64,7 @@ export function resolveNavTabs(parentRouteId: string, filterTabIds?: string[], g
     })
     .filter((tab) => tab !== null);
 
-  const tabs: PageTab[] = resolvePlacementList(parentRouteId, candidates, grants);
+  const tabs: PageTab[] = resolvePlacementList(parentRouteId, candidates, { grants });
 
   if (filterTabIds) {
     return tabs.filter((tab) => filterTabIds.includes(tab.id));

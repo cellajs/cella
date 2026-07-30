@@ -1,106 +1,200 @@
 import type { ReactNode } from 'react';
 import type { ChannelEntityType } from 'shared';
+import { hierarchy } from 'shared';
+import type { ContextRole, SlotToolsConfig } from 'shared/tools-config';
 import { onFrontendModuleRegister } from '~/lib/module';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import type { MeUser } from '~/modules/me/types';
+import type { EnrichedOrganization } from '~/modules/organization/types';
 import { placementOverrides } from '~/placement-config';
 
 /**
- * Shared descriptor for placement-driven tabs and sections. Route tabs reuse it via
- * `staticData.navTab`; slot contributions extend it with a `slot` and a renderer.
+ * Shared descriptor for placement-driven tabs and tools. Route tabs reuse it via
+ * `staticData.navTab`; tools extend it with a `slot` and a renderer.
  */
 export interface PlacementTab {
-  /** Stable id: anchors, tab ids, and React keys derive from it. */
+  /** Stable id: anchors, tab ids, stored config references, and React keys derive from it. */
   id: string;
-  /** i18n key for the tab or section label. */
+  /** i18n key for the tab or card label. */
   label: string;
   /** Optional resource i18n key interpolated into the label. */
   resource?: string;
   /** Sort position within the slot (lower first; each slot documents its default). */
   order?: number;
-  /** Grant name this placement needs to be shown; hidden unless the hosting page passes it. */
+  /** Grant name this placement needs to be shown; hidden unless the hosting consumer passes it. */
   requires?: string;
+  /**
+   * Context-role pairs (e.g. 'organization.admin', 'course.staff') that may see this placement;
+   * hidden unless the consumer passes a matching held pair. A UI visibility condition only,
+   * never data authorization. Omit for no identity condition.
+   */
+  visibleTo?: ContextRole[];
+  /**
+   * Locked placements cannot be hidden by channel-stored config (reorder still works); app
+   * overrides in code may still hide them, since code layers are reviewed decisions.
+   */
+  locked?: boolean;
 }
 
-/** Slot on a channel entity's settings page: contributions render as cards with an aside tab. */
+/** Slot on a channel entity's settings page: tools render as cards with an aside tab. */
 export type SettingsAsideSlot = `${ChannelEntityType}.settings.aside`;
 
-/** Slot on the current user's account settings page (the page passes no grants). */
+/** Slot on the current user's account settings page (the consumer passes no grants or pairs). */
 export type AccountSettingsAsideSlot = 'account.settings.aside';
 
-/** Every slot a frontend module can contribute to; the union grows as new slot families ship. */
+/** Every slot a frontend module can place tools into; the union grows as slot families ship. */
 export type PlacementSlot = SettingsAsideSlot | AccountSettingsAsideSlot;
 
 /**
- * A card contributed to a channel entity's settings page. The hosting page wraps `render` in a
- * titled card, adds an aside tab, and sorts built-ins and contributions together on `order`
- * (contribution default 50; the template's built-ins use 10/20, and 90 for the danger zone).
+ * Render context per settings-aside channel type. Apps augment this interface (via
+ * `declare module '~/lib/placements'`) to type their channels' slots precisely; unlisted
+ * channel types fall back to {@link EnrichedChannel}.
  */
-export interface SettingsAsidePlacement extends PlacementTab {
-  slot: SettingsAsideSlot;
-  /** Renders the card body for the given enriched channel entity. Lazy-load heavy UI here. */
-  render: (entity: EnrichedChannel) => ReactNode;
+export interface SettingsAsideEntityByType {
+  organization: EnrichedOrganization;
 }
 
+type SettingsAsideEntity<C extends ChannelEntityType> = C extends keyof SettingsAsideEntityByType
+  ? SettingsAsideEntityByType[C]
+  : EnrichedChannel;
+
 /**
- * A card contributed to the current user's account settings page, wrapped and sorted like
- * {@link SettingsAsidePlacement} (built-ins 10/20/30, danger zone 90, contribution default 50).
+ * A tool placed on a channel entity's settings page. `render` returns the full card (use the
+ * shared card components for the standard look) and must lazy-load heavy UI; the consumer wraps
+ * it in the aside anchor and sorts everything on `order` (built-ins 10/20, danger zone 90,
+ * module tools default 50).
  */
-export interface AccountSettingsAsidePlacement extends PlacementTab {
+export type SettingsAsideTool = {
+  [C in ChannelEntityType]: PlacementTab & {
+    slot: `${C}.settings.aside`;
+    /** Renders the card for the hosting channel entity. */
+    render: (entity: SettingsAsideEntity<C>) => ReactNode;
+  };
+}[ChannelEntityType];
+
+/** A tool placed on the current user's account settings page, sorted like {@link SettingsAsideTool}. */
+export interface AccountSettingsAsideTool extends PlacementTab {
   slot: AccountSettingsAsideSlot;
-  /** Renders the card body for the signed-in user. Lazy-load heavy UI here. */
+  /** Renders the card for the signed-in user. */
   render: (user: MeUser) => ReactNode;
 }
 
-/** Union of contribution shapes a frontend module can declare under `placements`. */
-export type PlacementContribution = SettingsAsidePlacement | AccountSettingsAsidePlacement;
+/** Union of tool shapes a frontend module can declare under `tools`. */
+export type Tool = SettingsAsideTool | AccountSettingsAsideTool;
 
 /** App adjustment to a declared placement or nav tab (see `~/placement-config`, a pinned file). */
 export interface PlacementOverride {
-  /** Drops the placement from its host. */
+  /** Drops the placement from its host (applies even to `locked` placements: this layer is code). */
   hidden?: boolean;
   /** Replaces the declared sort position. */
   order?: number;
   /** Replaces the declared grant requirement. */
   requires?: string;
+  /** Replaces the declared context-role visibility condition. */
+  visibleTo?: ContextRole[];
 }
 
-/** Override map keyed by host (slot id for aside sections, parent route id for nav tabs), then placement id. */
+/** Host-keyed override map: slot id for tools, parent route id for nav tabs. */
 export type PlacementOverrides = Partial<Record<string, Partial<Record<string, PlacementOverride>>>>;
 
-const bySlot = new Map<PlacementSlot, PlacementContribution[]>();
+/** Internal registry entry: render context erased so all slot families share one index. */
+type RegisteredTool = PlacementTab & { slot: string; render: (context: never) => ReactNode };
+
+const bySlot = new Map<string, RegisteredTool[]>();
+
+/** Startup contract check: every visibleTo pair must name a real role of a real channel type. */
+function assertContextRoles(tool: Tool): void {
+  for (const pair of tool.visibleTo ?? []) {
+    const dot = pair.indexOf('.');
+    const channelType = pair.slice(0, dot);
+    const role = pair.slice(dot + 1);
+    const roles = hierarchy.getRoles(channelType) as readonly string[];
+    if (!roles.includes(role)) {
+      throw new Error(`Tool '${tool.id}' declares invalid context-role pair '${pair}' (slot '${tool.slot}')`);
+    }
+  }
+}
 
 onFrontendModuleRegister((module) => {
-  for (const contribution of module.placements ?? []) {
-    const list = bySlot.get(contribution.slot) ?? [];
-    list.push(contribution);
+  for (const tool of module.tools ?? []) {
+    assertContextRoles(tool);
+    const list = bySlot.get(tool.slot) ?? [];
+    list.push(tool);
     list.sort((a, b) => (a.order ?? 50) - (b.order ?? 50));
-    bySlot.set(contribution.slot, list);
+    bySlot.set(tool.slot, list);
   }
 });
 
-/** Contributions registered for a slot, sorted on `order` (default 50, lower first). */
-export function getPlacements(slot: SettingsAsideSlot): SettingsAsidePlacement[];
-export function getPlacements(slot: AccountSettingsAsideSlot): AccountSettingsAsidePlacement[];
-export function getPlacements(slot: PlacementSlot): PlacementContribution[] {
-  return bySlot.get(slot) ?? [];
+type SettingsAsideToolFor<C extends ChannelEntityType> = PlacementTab & {
+  slot: `${C}.settings.aside`;
+  render: (entity: SettingsAsideEntity<C>) => ReactNode;
+};
+
+/** Tools registered for a channel type's settings aside slot, sorted on `order` (default 50). */
+export function getSettingsAsideTools<C extends ChannelEntityType>(channelType: C): SettingsAsideToolFor<C>[] {
+  const registered = bySlot.get(`${channelType}.settings.aside`) ?? [];
+  // Cast: registration erased the render context; the slot key guarantees this family's shape
+  return registered as SettingsAsideToolFor<C>[];
+}
+
+/** Tools registered for the account settings aside slot, sorted on `order` (default 50). */
+export function getAccountSettingsTools(): AccountSettingsAsideTool[] {
+  const registered = bySlot.get('account.settings.aside') ?? [];
+  // Cast: registration erased the render context; the slot key guarantees this family's shape
+  return registered as AccountSettingsAsideTool[];
 }
 
 /**
- * Resolves a host's final placement list: applies app overrides (hide, reorder, re-gate), drops
- * entries whose `requires` grant is absent, and sorts on `order` (stable, so ties keep the
- * declared order). Hosting pages and tab bars run their merged built-in + contribution lists
- * through this so overrides in `~/placement-config` work uniformly.
+ * Orders a slot's placements against channel-stored arrangement: stored ids come first in their
+ * stored sequence, unlisted placements append by their declared `order`, and stored ids with no
+ * matching placement are ignored (fail-closed reconciliation of code registry vs stored config).
+ */
+export function orderByChannelConfig<T extends PlacementTab & { order: number }>(
+  items: T[],
+  channelConfig?: SlotToolsConfig,
+): T[] {
+  const stored = channelConfig?.order;
+  if (!stored?.length) return [...items].sort((a, b) => a.order - b.order);
+  const rank = new Map(stored.map((id, index) => [id, index]));
+  return [...items].sort((a, b) => {
+    const rankA = rank.get(a.id);
+    const rankB = rank.get(b.id);
+    if (rankA !== undefined && rankB !== undefined) return rankA - rankB;
+    if (rankA !== undefined) return -1;
+    if (rankB !== undefined) return 1;
+    return a.order - b.order;
+  });
+}
+
+/** Resolution inputs a consumer passes for its host (all optional; absent means unconditioned). */
+export interface ResolvePlacementOptions {
+  /** Grants the actor holds; placements declaring `requires` hide without a match. */
+  grants?: readonly string[];
+  /** Context-role pairs the actor holds; placements declaring `visibleTo` hide without a match. */
+  pairs?: readonly ContextRole[];
+  /** Channel-stored arrangement for this slot (order + hidden), reconciled fail-closed. */
+  channelConfig?: SlotToolsConfig;
+  /** App override map (defaults to `~/placement-config`). */
+  overrides?: PlacementOverrides;
+}
+
+/**
+ * Resolves a host's final placement list: applies app overrides, channel-stored hiding, grant
+ * (`requires`) and context-role (`visibleTo`) gating, then channel-stored ordering with the
+ * stable `order` sort as fallback. `locked` placements ignore channel-stored hiding only.
  */
 export function resolvePlacementList<T extends PlacementTab & { order: number }>(
   host: string,
   items: T[],
-  grants: readonly string[] = [],
-  overrides: PlacementOverrides = placementOverrides,
+  options: ResolvePlacementOptions = {},
 ): T[] {
+  const { grants = [], pairs = [], channelConfig, overrides = placementOverrides } = options;
   const hostOverrides = overrides[host];
-  return items
+  const channelHidden = new Set(channelConfig?.hidden ?? []);
+
+  const adjusted = items
     .filter((item) => !hostOverrides?.[item.id]?.hidden)
+    .filter((item) => item.locked || !channelHidden.has(item.id))
     .map((item) => {
       const override = hostOverrides?.[item.id];
       if (!override) return item;
@@ -108,8 +202,11 @@ export function resolvePlacementList<T extends PlacementTab & { order: number }>
         ...item,
         ...(override.order !== undefined && { order: override.order }),
         ...(override.requires !== undefined && { requires: override.requires }),
+        ...(override.visibleTo !== undefined && { visibleTo: override.visibleTo }),
       };
     })
     .filter((item) => !item.requires || grants.includes(item.requires))
-    .sort((a, b) => a.order - b.order);
+    .filter((item) => !item.visibleTo || item.visibleTo.some((pair) => pairs.includes(pair)));
+
+  return orderByChannelConfig(adjusted, channelConfig);
 }
