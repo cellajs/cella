@@ -24,11 +24,14 @@ export interface ProvisionedStore {
 }
 
 /**
- * One runtime-secret this store contributes (P3+). Until stores own their secret
- * declarations, the app's `runtime-secrets.config.ts` still lists them and this
- * stays unused; the store supplies only the values via {@link ProvisionedStore.secretValues}.
+ * One runtime-secret this store contributes, keyed by its runtime-secret id.
+ * Managed stores contribute `valueSource: 'pulumi'` entries whose values arrive
+ * via {@link ProvisionedStore.secretValues}; external-URL stores contribute
+ * `valueSource: 'operator'` entries the operator fills through the CLI.
  */
 export interface StoreSecretContribution {
+  /** Runtime-secret id (the key other layers address the secret by). */
+  id: string
   /** Scaleway Secret Manager container name (kebab-case). */
   secretName: string
   /** Environment variable the consuming service reads the value as. */
@@ -37,6 +40,8 @@ export interface StoreSecretContribution {
   description: string
   /** Whether health/deploy gating treats absence as fatal. */
   required: boolean
+  /** `'pulumi'` = the store binds a version; `'operator'` = supplied out-of-band. */
+  valueSource: 'pulumi' | 'operator'
   /** Services that receive the secret in their per-VM `.env.runtime`. */
   services: readonly string[]
 }
