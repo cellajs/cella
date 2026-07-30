@@ -21,7 +21,7 @@ Three moving parts:
 - **[`run.ts`](./run.ts)** — the planner. It diffs `manifest.json` against the app's applied-set
   and prints the migrations still to run, in order.
 
-The applied-set is an app-owned file, `cella.migrations.json` at the repo root, listing the ids an
+The applied-set is an app-owned file, `cella/cella.migrations.json`, listing the ids an
 app has already run. Pending is a plain set difference (all declared ids minus applied ids), so it
 works the same whether the app tracks releases or a branch.
 

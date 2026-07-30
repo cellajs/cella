@@ -334,6 +334,24 @@
         "pnpm check"
       ],
       "summary": "Frontend *-module.ts(x) files switch registerModule -> defineFrontendModule (~/lib/module); a glob composition root frontend/src/modules.ts loads them before first render. UI placements arrive with settled vocabulary: modules declare tools into slots ('${channelType}.settings', 'account.settings'); built-in settings sections are registered tools and the settings pages are pure consumers. Tools render full cards (lazy), gate on requires (grants) and visibleTo context-role pairs ('organization.admin', hierarchy-validated, matched over the ancestor chain; UI-only). Arrangement layers: manifest defaults, pinned placement-config.ts overrides, then the new organizations.tools_config jsonb (per-slot order/hidden/settings, admin Tools card, fail-closed reconciliation; locked tools immune to channel hiding). organizationSettingsSections (pinned file + type) removed. staticData.navTab typed PlacementDescriptor; system default tab derives from first visible tab. nav-buttons id special-cases move to NavItem iconSlot/badgeSlot in pinned nav-config.tsx. DB: additive tools_config column (pnpm generate); wire: additive optional toolsConfig on organization (no cache bump). Needs @cellajs/cli with the define*Module territory-scan matcher."
+    },
+    {
+      "id": "20260730T1258-cella-config-into-cella-folder",
+      "version": "next",
+      "title": "Move cella sync files into the cella/ folder",
+      "kind": "manual",
+      "syncBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "cella.config.ts",
+        "cella.manifest.json",
+        "cella.migrations.json"
+      ],
+      "requires": [
+        "pnpm check"
+      ],
+      "summary": "Relocate cella.config.ts, cella.manifest.json and cella.migrations.json from the repo root into the cella/ folder (cella/cella.config.ts, cella/cella.manifest.json, cella/cella.migrations.json). The @cellajs/cli release with cella/-folder discovery finds them there (config loader, MANIFEST_FILE, managed-file match); run.ts reads/writes the applied-set at cella/cella.migrations.json with a read-only fallback to the old root path. Manual git mv, no codemod; sync-breaking, no wire-shape or DB change. App localPath values still resolve against the repo root and the config contents are unchanged."
     }
   ]
 }

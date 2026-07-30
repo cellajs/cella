@@ -8,7 +8,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const defaultRepoRoot = join(here, '..', '..');
 const disallowedTerm = /fork/gi;
 const allowedFiles = new Set([
-  'cella.config.ts',
+  'cella/cella.config.ts',
   // The cella-sync skill documents the CLI sync workflow and the app-side marker convention,
   // both of which use the CLI's source-control term. It must stay byte-identical with the
   // copies shipped to apps so `pnpm cella sync` reports it as identical.
