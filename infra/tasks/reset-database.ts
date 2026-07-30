@@ -145,11 +145,11 @@ export function serialConsoleSteps(databaseName: string): string {
     `${warningMark} ${pc.bold('Two steps remain, on the Scaleway serial console')} ${pc.dim(`(${databaseName} is empty until they run)`)}:`,
     '',
     `  ${pc.dim('# 1. schema — self-verifying since the 99-verify block; a bad migrate aborts loudly')}`,
-    `  cd /opt/app && docker compose --profile backend run --rm migrate`,
+    `  cd /opt/app && docker compose --profile backend run --rm backend-release`,
     '',
     `  ${pc.dim('# 2. first admin — signs in by magic link')}`,
     `  cd /opt/app && docker compose --profile backend run --rm \\`,
-    `    -e ADMIN_EMAIL=you@example.com migrate node dist/seeds-bundle.js init`,
+    `    -e ADMIN_EMAIL=you@example.com backend-release node dist/seeds-bundle.js init`,
     '',
     `  ${pc.dim('The CDC worker needs no restart: it re-ensures its replication slot on every retry.')}`,
   ].join('\n')

@@ -51,7 +51,7 @@ export function deriveInfra(appConfig: Cfg) {
       // PostgreSQL identifiers cannot contain hyphens.
       dbName: appConfig.slug.replace(/-/g, '_'),
     },
-    // DNS zone the app's records live under (e.g. `cellajs.com`). Per-service
+    // DNS zone the app's records live under (e.g. `example.com`). Per-service
     // hostnames (api/yjs/mcp/www) come from the service registry, not here.
     dnsZone: appConfig.domain,
     region,

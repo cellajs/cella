@@ -5,45 +5,11 @@ import { defineRuntimeSecrets } from '../lib/runtime-secrets'
  * Per-service manifests restrict each VM to the values it needs; `runtime-secrets.ts`
  * provisions containers and validates the registry. The file is pinned so apps can
  * customize distribution without upstream sync conflicts.
+ *
+ * Database DSN/CA secrets are declared by the primary store
+ * (config/stores.config.ts `secretConsumers`) and merge ahead of these entries.
  */
 export const runtimeSecretsConfig = defineRuntimeSecrets({
-  databaseUrlRuntime: {
-    secretName: 'database-url-runtime',
-    description: 'PostgreSQL runtime_role connection string (backend API, subject to RLS)',
-    envVar: 'DATABASE_URL',
-    required: true,
-    valueSource: 'pulumi',
-    generation: 'manual',
-    services: ['backend', 'yjs', 'mcp'],
-  },
-  databaseUrlAdmin: {
-    secretName: 'database-url-admin',
-    description: 'PostgreSQL admin_role connection string (migrations, seeds, BYPASSRLS)',
-    envVar: 'DATABASE_ADMIN_URL',
-    required: true,
-    valueSource: 'pulumi',
-    generation: 'manual',
-    services: ['backend', 'mcp'],
-  },
-  databaseUrlCdc: {
-    secretName: 'database-url-cdc',
-    description: 'PostgreSQL CDC worker connection string (admin_role with replication access)',
-    envVar: 'DATABASE_CDC_URL',
-    required: true,
-    valueSource: 'pulumi',
-    generation: 'manual',
-    services: ['cdc'],
-  },
-  databaseSslCa: {
-    secretName: 'database-ssl-ca',
-    description:
-      'base64-encoded PEM CA cert of the Scaleway RDB instance, used by services to verify the PostgreSQL TLS connection (derived by pulumi from the database instance; base64 keeps the multi-line PEM deliverable through the line-based .env.runtime)',
-    envVar: 'DATABASE_SSL_CA',
-    required: true,
-    valueSource: 'pulumi',
-    generation: 'manual',
-    services: ['backend', 'yjs', 'mcp', 'cdc'],
-  },
   cookieSecret: {
     secretName: 'cookie-secret',
     description: 'Cookie signing secret',

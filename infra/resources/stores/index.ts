@@ -1,13 +1,33 @@
-import type * as pulumi from '@pulumi/pulumi'
+import * as pulumi from '@pulumi/pulumi'
+import * as scaleway from '@pulumiverse/scaleway'
 import { appStores } from '../../config/stores.config'
-import type { StoreOutputs } from '../../lib/stores'
+import { sizing } from '../../config/sizing'
+import type { ProvisionContext, StoreOutputs } from '../../lib/stores'
+import { isProduction, naming, region, zone } from '../../pulumi-context'
+import { configuredOrRandomSecret } from '../configured-secret'
+import { privateNetworkId } from '../network'
+
+// The engine facilities handed to every store's provision(). Store modules are
+// pure at import time; this module is the single place that binds them to the
+// live Pulumi program.
+const provisionContext: ProvisionContext = {
+  pulumi,
+  scaleway,
+  naming,
+  region,
+  zone,
+  isProduction,
+  sizing: { dbNodeType: sizing.dbNodeType, dbVolumeSize: sizing.dbVolumeSize },
+  privateNetworkId,
+  configuredOrRandomSecret,
+}
 
 // Provision every registered store exactly once (importing this module triggers
 // it). Registry order is stable; the first store is primary. This is the single
 // seam between the app's store registry and the rest of the Pulumi program.
 const results = Object.entries(appStores).map(([id, store]) => {
   store.validate?.()
-  return [id, store.provision()] as const
+  return [id, store.provision(provisionContext)] as const
 })
 
 /** The primary store's outputs (empty only if no store is registered). */
@@ -15,8 +35,9 @@ export const primaryStoreOutputs: StoreOutputs = results[0]?.[1].outputs ?? {}
 
 /**
  * Runtime-secret values merged across all stores, keyed by runtime-secret id.
- * `secrets.ts` looks these up by the ids declared in `runtime-secrets.config.ts`.
- * A collision means two stores bind the same secret, an app misconfiguration.
+ * `secrets.ts` looks these up by the ids the registry (store contributions +
+ * `runtime-secrets.config.ts`) declares. A collision means two stores bind the
+ * same secret, an app misconfiguration.
  */
 export const derivedRuntimeSecretData: Record<string, pulumi.Input<string>> = (() => {
   const merged: Record<string, pulumi.Input<string>> = {}

@@ -38,7 +38,7 @@ services:
       healthPort: 4000
       healthTimeoutSeconds: 240
       healthExpectStatus: 204
-      runMigrate: true
+      runRelease: true
       replacementStrategy: lb-overlap
       drainSeconds: 10
       instanceType:
@@ -51,7 +51,7 @@ services:
       internalRoute: true
       dockerfile: Dockerfile
       target: backend
-  migrate:
+  backend-release:
     image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
     profiles: [backend]
     restart: 'no'
@@ -93,7 +93,7 @@ services:
       healthPort: 4001
       healthTimeoutSeconds: 90
       healthExpectStatus: 204
-      runMigrate: false
+      runRelease: false
       replacementStrategy: exclusive
       drainSeconds: 0
       instanceType: DEV1-S
@@ -129,7 +129,7 @@ services:
       healthPort: 4002
       healthTimeoutSeconds: 90
       healthExpectStatus: 204
-      runMigrate: false
+      runRelease: false
       replacementStrategy: lb-overlap
       drainSeconds: 5
       instanceType: DEV1-S
@@ -170,7 +170,7 @@ services:
       healthPort: 4003
       healthTimeoutSeconds: 240
       healthExpectStatus: 204
-      runMigrate: false
+      runRelease: false
       replacementStrategy: lb-overlap
       drainSeconds: 10
       instanceType: DEV1-S
@@ -202,10 +202,11 @@ services:
       healthPort: 80
       healthTimeoutSeconds: 90
       healthExpectStatus: 200
-      runMigrate: false
+      runRelease: false
       replacementStrategy: lb-overlap
       drainSeconds: 0
       instanceType: DEV1-S
       drainPolicy: requests
       lbRoute: default
       dockerfile: infra/caddy/Dockerfile
+      placement: host

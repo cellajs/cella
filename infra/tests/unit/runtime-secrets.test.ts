@@ -15,6 +15,19 @@ const envSources = {
 } as const
 
 describe('runtime secret registry', () => {
+  it('merges store-owned declarations ahead of app-config entries', () => {
+    // The per-consumer union order is genId-fingerprinted: the primary store's
+    // DSN/CA declarations must keep their historical lead positions.
+    const ids = runtimeSecrets.map((secret) => secret.id)
+    expect(ids.slice(0, 4)).toEqual(['databaseUrlRuntime', 'databaseUrlAdmin', 'databaseUrlCdc', 'databaseSslCa'])
+    expect(Object.keys(runtimeSecretsConfig)).not.toContain('databaseUrlRuntime')
+  })
+
+  it('preserves the historical per-consumer manifest order for the backend VM', () => {
+    const backendIds = runtimeSecretsForConsumer('backend').map((secret) => secret.id)
+    expect(backendIds.slice(0, 4)).toEqual(['databaseUrlRuntime', 'databaseUrlAdmin', 'databaseSslCa', 'cookieSecret'])
+  })
+
   it('uses unique ids, secret names and env vars', () => {
     const ids = new Set<string>()
     const secretNames = new Set<string>()
@@ -31,7 +44,7 @@ describe('runtime secret registry', () => {
   })
 
   it('assigns every runtime secret to at least one known consumer VM', () => {
-    const knownConsumers = new Set(runtimeSecretConsumers)
+    const knownConsumers = new Set<string>(runtimeSecretConsumers)
 
     for (const secret of runtimeSecrets) {
       expect(secret.services.length, `${secret.id} must target at least one VM`).toBeGreaterThan(0)
@@ -130,9 +143,11 @@ describe('runtime secret config seam', () => {
     })
   })
 
-  it('derives runtimeSecrets from the app config, keyed by id, preserving order', () => {
-    expect(runtimeSecrets.map((secret) => secret.id)).toEqual(Object.keys(runtimeSecretsConfig))
-    for (const secret of runtimeSecrets) {
+  it('derives the registry tail from the app config, keyed by id, preserving order', () => {
+    const configIds = Object.keys(runtimeSecretsConfig)
+    const tail = runtimeSecrets.slice(runtimeSecrets.length - configIds.length)
+    expect(tail.map((secret) => secret.id)).toEqual(configIds)
+    for (const secret of tail) {
       const { id, ...rest } = secret
       expect(rest).toEqual(runtimeSecretsConfig[id as keyof typeof runtimeSecretsConfig])
     }

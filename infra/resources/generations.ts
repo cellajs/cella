@@ -4,32 +4,31 @@ import { composeConfig } from '../compose/compose'
 import { deriveGenId } from '../lib/gen-id'
 import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import { type Generation, selectGenerations } from '../lib/select-generations'
-import { deployedServices, coHostedServices, type ServiceDefinition } from '../lib/services'
+import { deployedServices, coHostedServices, collocatedServices, type ServiceDefinition } from '../lib/services'
 import { sizing } from '../config/sizing'
 import { controlState } from './control'
 
-// Give each service a VM except workers co-hosted on the backend in single-VM mode.
-// Load-balanced co-hosts still route through the host VM; shared-worker placement is guarded below.
-export const enabled = deployedServices(appConfig.services, appConfig.singleVM).map((svc) => {
-  const placement = svc.placement ?? 'dedicated-vm'
-  if (placement !== 'dedicated-vm') {
-    throw new Error(`compute: placement '${placement}' for service '${svc.slug}' is not yet supported`)
-  }
-  return svc
-})
+// Give each service a VM except workers co-hosted on the backend and
+// containers collocated on the host in single-VM mode. Load-balanced co-hosts
+// and collocated containers still route through the host VM.
+export const enabled = deployedServices(appConfig.services, appConfig.singleVM)
 
 // Workers folded into the host backend process under singleVM. Empty in the
 // normal split-VM deploy. Their runtime secrets are unioned onto the host VM and
 // an `exclusive` one among them forces the host to cut over exclusively.
 export const coHosted = coHostedServices(appConfig.services, appConfig.singleVM)
+
+// Containers the boot runner starts on the host VM next to the host container
+// under singleVM (placement 'host'). Empty in the normal split-VM deploy.
+export const collocated = collocatedServices(appConfig.services, appConfig.singleVM)
 export const hostSlug = enabled.find((s) => s.primaryRollout)?.slug
 
 /** Runtime-secret consumers whose secrets a service's VM must carry. In singleVM
- *  the host VM additionally carries every co-hosted worker's secrets (the folded
- *  workers read them from the same process). */
+ *  the host VM additionally carries every co-hosted worker's and collocated
+ *  container's secrets. */
 export function secretConsumersFor(svc: ServiceDefinition): RuntimeSecretConsumer[] {
   if (appConfig.singleVM && svc.slug === hostSlug) {
-    return [svc.slug, ...coHosted.map((s) => s.slug)] as RuntimeSecretConsumer[]
+    return [svc.slug, ...coHosted.map((s) => s.slug), ...collocated.map((s) => s.slug)] as RuntimeSecretConsumer[]
   }
   return [svc.slug as RuntimeSecretConsumer]
 }
@@ -40,7 +39,11 @@ export function secretConsumersFor(svc: ServiceDefinition): RuntimeSecretConsume
  * The level-triggered load-balancer reconciler then repairs traffic onto the replacement.
  */
 export function effectiveStrategy(svc: ServiceDefinition): ServiceDefinition['replacementStrategy'] {
-  if (appConfig.singleVM && svc.slug === hostSlug && coHosted.some((s) => s.replacementStrategy === 'exclusive')) {
+  if (
+    appConfig.singleVM &&
+    svc.slug === hostSlug &&
+    [...coHosted, ...collocated].some((s) => s.replacementStrategy === 'exclusive')
+  ) {
     return 'exclusive'
   }
   return svc.replacementStrategy
@@ -56,8 +59,14 @@ export type { Generation } from '../lib/select-generations'
  * cloud-init (a Pulumi Output, unavailable at plan time) and secret VALUES.
  */
 function serviceFingerprint(svc: ServiceDefinition): unknown {
+  // Collocated containers live on the host VM, so their compose blocks (and a
+  // marker of who is collocated) join the host's fingerprint: a change to a
+  // collocated image or env rolls the shared generation. Empty outside
+  // singleVM, keeping the split-VM fingerprint byte-stable.
+  const collocatedSlugs = appConfig.singleVM && svc.slug === hostSlug ? collocated.map((s) => s.slug) : []
+  const blockOwners = new Set<string>([svc.slug, ...collocatedSlugs])
   const blocks = Object.values(composeConfig.services)
-    .filter((block) => block.profiles.includes(svc.slug))
+    .filter((block) => block.profiles.some((profile) => blockOwners.has(profile)))
     .map((block) => ({ image: block.image, ports: block.ports ?? [], environment: block.environment ?? {} }))
   // Union across secret consumers so the singleVM host's genId also captures the
   // co-hosted workers' secret manifest (any change rolls a new generation).
@@ -69,12 +78,15 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
   return {
     slug: svc.slug,
     port: svc.healthPort,
-    runMigrate: svc.runMigrate ?? false,
+    // Fingerprint key pinned to its original name: the key itself is hashed
+    // into every live genId, so renaming it would re-roll every generation.
+    runMigrate: svc.runRelease ?? false,
     // Only fold in the strategy when singleVM changes it (host co-hosting an
     // exclusive worker). Keeps the split-VM fingerprint byte-stable so this
     // feature doesn't churn every existing service's genId.
     ...(effectiveStrategy(svc) !== svc.replacementStrategy ? { singleVmStrategy: effectiveStrategy(svc) } : {}),
     bindings: svc.bindings ?? {},
+    ...(collocatedSlugs.length > 0 ? { collocated: collocatedSlugs } : {}),
     blocks,
     secrets,
     computeImage: typeof sizing.computeImage === 'string' ? sizing.computeImage : 'dynamic',

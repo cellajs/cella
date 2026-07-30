@@ -13,7 +13,7 @@ import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } fro
 import { resolveBootImage, type ResolvedBootImage } from '../lib/scaleway/boot-image'
 import { renderCloudInit } from './cloud-init'
 import { createComposeEnvBuilder } from './compose-env'
-import { activeGenerations, coHosted, enabled, hostSlug, secretConsumersFor, type Generation } from './generations'
+import { activeGenerations, coHosted, collocated, enabled, hostSlug, secretConsumersFor, type Generation } from './generations'
 import { privateNetworkId } from './network'
 import { registryEndpoint } from './registry'
 import { bootDiagBucketName } from './storage'
@@ -87,8 +87,15 @@ const composeContent = fs.readFileSync(
 interface ServiceConfig {
   name: string
   profile: string
-  /** Whether this service runs the one-shot migrate companion before the app. */
-  runMigrate: boolean
+  /**
+   * Compose services the boot runner starts on this VM: the service itself
+   * plus, on the singleVM host, every collocated (`placement: 'host'`)
+   * container. Explicit names keep the one-shot release companion (which
+   * shares the host profile) out of `compose up`.
+   */
+  startServices: string[]
+  /** Whether this service runs the one-shot release companion before the app. */
+  runRelease: boolean
   /**
    * Runtime-secret consumers whose secrets this VM's `.env.runtime` manifest
    * carries. Usually just the service itself; the singleVM host also lists the
@@ -171,7 +178,8 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string, requirePinne
       slug: naming.slug,
       service: service.name,
       profile: service.profile,
-      runMigrate: service.runMigrate,
+      startServices: service.startServices,
+      runRelease: service.runRelease,
       releaseSha,
       envFileContent: env.join('\n'),
       manifestContent: manifest,
@@ -194,7 +202,7 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string, requirePinne
 // in resources/compose-env.ts; the per-generation private-IP supplier is the
 // only piece compute owns (it depends on VM planning state below).
 
-const buildComposeEnv = createComposeEnvBuilder(currentGenBindingIp, { hostSlug, coHosted })
+const buildComposeEnv = createComposeEnvBuilder(currentGenBindingIp, { hostSlug, coHosted, collocated })
 
 // Generation planning owns the service set and content-addressed IDs; this
 // module provisions the resulting VMs.
@@ -259,7 +267,8 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   const serviceConfig: ServiceConfig = {
     name: svc.slug,
     profile: svc.slug,
-    runMigrate: svc.runMigrate ?? false,
+    startServices: [svc.slug, ...(appConfig.singleVM && svc.slug === hostSlug ? collocated.map((s) => s.slug) : [])],
+    runRelease: svc.runRelease ?? false,
     secretConsumers: secretConsumersFor(svc),
     composeEnv: buildComposeEnv(svc, generation.sha),
   }
@@ -358,11 +367,13 @@ export const computeGenerationMetadata = pulumi.all(instances.map((i) => pulumi.
  * declares `ignoreChanges: ['serverIps']`).
  *
  * Under singleVM a co-hosted worker (cdc/yjs/mcp) runs in the host backend
- * process, so its LB backend targets the host VM's
- * generation IPs (on the worker's own port, which the host block publishes).
+ * process and a collocated container (placement 'host') runs on the host VM,
+ * so their LB backends target the host VM's generation IPs (on the service's
+ * own port: the host block publishes folded worker ports, a collocated
+ * container binds its own).
  */
 export function serviceGenerationIps(slug: string): pulumi.Output<string>[] {
   const target =
-    appConfig.singleVM && hostSlug && coHosted.some((s) => s.slug === slug) ? hostSlug : slug
+    appConfig.singleVM && hostSlug && [...coHosted, ...collocated].some((s) => s.slug === slug) ? hostSlug : slug
   return instances.filter((i) => i.service === target).map((i) => i.privateIp)
 }

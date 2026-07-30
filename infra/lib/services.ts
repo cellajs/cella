@@ -4,14 +4,12 @@ import type { EngineConfig, EngineServiceEndpoint } from '../config/engine-confi
 
 /**
  * One deployable service: the Compose model's `x-service` (`ServiceMeta`) narrowed
- * to this app's slug, plus `placement`. Field meanings
- * are documented on `ServiceMeta` in `../compose/types.ts`; every other infra
- * surface derives from this list (see this module's header).
+ * to this app's slug. Field meanings are documented on `ServiceMeta` in
+ * `../compose/types.ts`; every other infra surface derives from this list (see
+ * this module's header).
  */
 export interface ServiceDefinition extends ServiceMeta {
   slug: ServiceName
-  /** Service placement. Only dedicated VMs are currently supported. */
-  placement?: 'dedicated-vm' | 'shared-workers'
 }
 
 /** Ordered service definitions, derived from the typed Compose model. */
@@ -38,8 +36,8 @@ export function enabledServices(serviceConfig: Record<string, EngineServiceEndpo
 
 /**
  * Returns services receiving dedicated VMs.
- * Single-VM mode removes co-hosted workers from compute while preserving their enabled routing
- * through the host target.
+ * Single-VM mode removes co-hosted workers and host-collocated containers from
+ * compute while preserving their enabled routing through the host target.
  */
 export function deployedServices(
   serviceConfig: Record<string, EngineServiceEndpoint>,
@@ -47,7 +45,7 @@ export function deployedServices(
 ): readonly ServiceDefinition[] {
   const enabled = enabledServices(serviceConfig)
   if (!singleVM) return enabled
-  return enabled.filter((s) => !s.coHosted)
+  return enabled.filter((s) => !s.coHosted && s.placement !== 'host')
 }
 
 /**
@@ -63,6 +61,26 @@ export function coHostedServices(
 ): readonly ServiceDefinition[] {
   if (!singleVM) return []
   return enabledServices(serviceConfig).filter((s) => s.coHosted)
+}
+
+/**
+ * Enabled `placement: 'host'` services for an app under singleVM (empty when
+ * singleVM is off): containers the boot runner starts on the host VM next to
+ * the host container. Their LB pools follow the host cutover, their runtime
+ * secrets union onto the host VM, and their compose blocks join the host's
+ * genId fingerprint.
+ */
+export function collocatedServices(
+  serviceConfig: Record<string, EngineServiceEndpoint>,
+  singleVM: boolean,
+): readonly ServiceDefinition[] {
+  if (!singleVM) return []
+  const collocated = enabledServices(serviceConfig).filter((s) => s.placement === 'host')
+  for (const svc of collocated) {
+    if (svc.primaryRollout) throw new Error(`services: '${svc.slug}' cannot combine placement 'host' with primaryRollout (the host cannot collocate onto itself).`)
+    if (svc.coHosted) throw new Error(`services: '${svc.slug}' cannot set both coHosted and placement 'host' — in-process fold and container collocation are mutually exclusive.`)
+  }
+  return collocated
 }
 
 /** A public service's resolved endpoint, derived from appConfig by the registry. */
