@@ -330,8 +330,9 @@ const processOAuthAccount = async (info: OAuthFlowResult & { ctx: Context<Env>; 
     // Redirect to determined URL
     return ctx.redirect(redirectUrl, 302);
   }
-  // For unverified accounts, send an OAuth verification email
-  sendOAuthVerificationEmail({
+  // For unverified accounts, send an OAuth verification email. Awaited so the verification token is
+  // persisted before we redirect the user to the "check your email" page.
+  await sendOAuthVerificationEmail({
     userId: oauthAccount.userId,
     oauthAccountId: oauthAccount.id,
     redirectPath: redirectAfterPath,
