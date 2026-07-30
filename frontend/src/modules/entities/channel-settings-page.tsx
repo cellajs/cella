@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 import { appConfig, type ChannelEntityType } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
-import { getSettingsAsideTools, resolvePlacementList, type SettingsAsideEntity } from '~/lib/placements';
+import { type ChannelSettingsEntity, getChannelSettingsTools, resolvePlacementList } from '~/lib/placements';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { PageAside } from '~/modules/common/page/aside';
 import { heldContextRoles } from '~/modules/entities/context-roles';
@@ -10,17 +10,17 @@ import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 
 interface ChannelSettingsPageProps<C extends ChannelEntityType> {
-  entity: SettingsAsideEntity<C> & { entityType: C; toolsConfig?: ToolsConfig };
+  entity: ChannelSettingsEntity<C> & { entityType: C; toolsConfig?: ToolsConfig };
 }
 
 /**
- * Generic settings consumer for a channel entity: hosts its `settings.aside` slot. Sections come
+ * Generic settings consumer for a channel entity: hosts its `settings` slot. Sections come
  * from the tool registry, arranged by app overrides and the entity's `toolsConfig`, gated on the
  * actor's resolved action grants (`requires`) and held context-role pairs (`visibleTo`).
  */
 export function ChannelSettingsPage<C extends ChannelEntityType>({ entity }: ChannelSettingsPageProps<C>) {
   const channelType = entity.entityType;
-  const slot = `${channelType}.settings.aside`;
+  const slot = `${channelType}.settings`;
 
   // Grants: every entity action the actor holds on this channel, resolved per row
   const resolveCan = useResolveCan();
@@ -32,8 +32,8 @@ export function ChannelSettingsPage<C extends ChannelEntityType>({ entity }: Cha
 
   const sections = resolvePlacementList(
     slot,
-    getSettingsAsideTools(channelType).map((tool) => ({ ...tool, order: tool.order ?? 50 })),
-    { grants, pairs, channelConfig: entity.toolsConfig?.[slot] },
+    getChannelSettingsTools(channelType).map((tool) => ({ ...tool, order: tool.order ?? 50 })),
+    { grants, pairs, slotConfig: entity.toolsConfig?.[slot] },
   );
 
   return (

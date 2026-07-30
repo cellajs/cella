@@ -12,9 +12,9 @@ vocabulary: a **tool** is a component placed into a **slot**; the **consumer** i
 hosting the slot. Modules declare tools under `tools`; consumers read them with typed getters
 and resolve the final list with `resolvePlacementList`. The contracts:
 
-- Slot families: `` `${channelType}.settings.aside` `` and `account.settings.aside`. A tool's
+- Slot families: `` `${channelType}.settings` `` and `account.settings`. A tool's
   `render` returns the full card and must lazy-load heavy UI (module files load eagerly). The
-  per-channel-type render context comes from the `SettingsAsideEntityByType` interface, widened
+  per-channel-type render context comes from the `ChannelSettingsEntityByType` interface, widened
   by apps via `declare module '~/lib/placements'`.
 - The template's built-in settings sections (organization general/details/danger zone, account
   general/sessions/authentication/danger zone) are themselves registered tools now; the
@@ -28,7 +28,7 @@ and resolve the final list with `resolvePlacementList`. The contracts:
   `organizations`): per-slot `order`/`hidden`/`settings`, edited by the new admin "Tools" card
   on the organization settings page, reconciled fail-closed (unknown tool ids drop, newly
   deployed tools append at their default order). `locked` tools ignore channel-stored hiding.
-- `staticData.navTab` is typed `PlacementTab` (requires widened to any grant name); the system
+- `staticData.navTab` is typed `PlacementDescriptor` (requires widened to any grant name); the system
   panel's default tab derives from the first visible tab (`defaultNavTabPath('/_app/system')`).
 - `nav-buttons.tsx` id special-cases moved into `navItems` (`iconSlot`/`badgeSlot` fields in the
   pinned `frontend/src/nav-config.tsx`).
@@ -63,7 +63,7 @@ No script - manual.
      // ...existing metadata...
      tools: [
        {
-         slot: 'organization.settings.aside',
+         slot: 'organization.settings',
          id: 'update-primary-labels',
          label: 'c:primary_labels',
          visibleTo: ['organization.admin'],
@@ -73,9 +73,9 @@ No script - manual.
    });
    ```
 
-   `render` returns the full card: wrap the existing form in the `SettingsToolCard` shell
-   (`~/modules/common/settings-tool-card`) and lazy-load it with `lazyNamed`. The `organization`
-   parameter is typed `EnrichedOrganization` via `SettingsAsideEntityByType`.
+   `render` returns the full card: wrap the existing form in the `ToolCard` shell
+   (`~/modules/common/tool-card`) and lazy-load it with `lazyNamed`. The `organization`
+   parameter is typed `EnrichedOrganization` via `ChannelSettingsEntityByType`.
 3. Delete `frontend/src/modules/organization/organization-settings-sections.tsx` and its pinned
    entry in `cella.config.ts`; add `frontend/src/placement-config.ts` to `overrides.pinned`.
    Replace `OrganizationSettingsSection` imports with the `Tool` types from `~/lib/placements`.
@@ -83,12 +83,12 @@ No script - manual.
 5. Deep hierarchies (projectcampus): each channel entity can host its own settings slot, and the
    generic pieces make one channel's slot cost its forms plus one call:
    - Augment the render-context map once, e.g. in an app-owned module:
-     `declare module '~/lib/placements' { interface SettingsAsideEntityByType { course: EnrichedCourse; courseSection: EnrichedCourseSection; project: EnrichedProject } }`
+     `declare module '~/lib/placements' { interface ChannelSettingsEntityByType { course: EnrichedCourse; courseSection: EnrichedCourseSection; project: EnrichedProject } }`
    - In the channel's module file, declare
      `tools: channelSettingsTools({ channelType: 'course', resource: 'c:course', toolsCardVisibleTo: ['course.staff', 'organization.admin'], renderGeneral, renderDetails?, renderTools, renderDeleteDialog })`
      (`~/modules/entities/channel-settings-tools`); wire `renderTools` to
      `ToolsArrangementCard` with the channel's update mutation (see
-     `frontend/src/modules/organization/settings-cards.tsx` for the four thin wrappers).
+     `frontend/src/modules/organization/settings-tools.tsx` for the four thin wrappers).
    - The settings route component is one line: `<ChannelSettingsPage entity={course} />`
      (`~/modules/entities/channel-settings-page`).
    - To persist per-channel arrangement, add the same `toolsConfig` jsonb column to the app's
@@ -97,12 +97,11 @@ No script - manual.
    - `visibleTo` pairs may name any hierarchy role (`'course.staff'`, `'project.owner'`);
      elevation is explicit, so a tool org admins should see must list `'organization.admin'`.
      Repeated audiences belong in app-owned preset constants that manifests spread.
-   - Standalone cards use the `SettingsToolCard` shell (`~/modules/common/settings-tool-card`)
-     and `DangerZoneCard` (`~/modules/entities/danger-zone-card`) for the standard look.
+   - Standalone cards use the `ToolCard` shell (`~/modules/common/tool-card`) for the standard look.
 6. In the pinned `frontend/src/nav-config.tsx`, copy the template's `iconSlot`/`badgeSlot`
    entries (account avatar, home loader, menu unseen badge) or those affordances disappear.
 7. Apps that edited template files to customize the account settings page or system panel can
-   move those edits to `account.settings.aside` tools, new `routes/_app/system/*.tsx` tab
+   move those edits to `account.settings` tools, new `routes/_app/system/*.tsx` tab
    routes, or `placementOverrides` entries, and drop the divergence.
 
 ## Verify

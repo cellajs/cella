@@ -8,8 +8,8 @@ import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { HelpText } from '~/modules/common/help-text';
-import { SettingsToolCard } from '~/modules/common/settings-tool-card';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { ToolCard } from '~/modules/common/tool-card';
 import { DeleteSelf } from '~/modules/me/delete-self';
 import { MfaSwitch } from '~/modules/me/mfa/switch';
 import { PasskeysList } from '~/modules/me/passkeys/list';
@@ -31,9 +31,9 @@ export function AccountGeneralCard() {
   const user = useCurrentUser();
 
   return (
-    <SettingsToolCard label="c:general" unsaved id="update-user" className={cardClass}>
+    <ToolCard label="c:general" unsaved id="update-user" className={cardClass}>
       <UpdateUserForm user={user} />
-    </SettingsToolCard>
+    </ToolCard>
   );
 }
 
@@ -42,9 +42,9 @@ export function AccountSessionsCard() {
   const { t } = useTranslation();
 
   return (
-    <SettingsToolCard label="c:sessions" description={t('c:sessions.text')} className={cardClass}>
+    <ToolCard label="c:sessions" description={t('c:sessions.text')} className={cardClass}>
       <SessionsList />
-    </SettingsToolCard>
+    </ToolCard>
   );
 }
 
@@ -83,7 +83,7 @@ export function AccountAuthenticationCard() {
   };
 
   return (
-    <SettingsToolCard label="c:authentication" description={t('c:authentication.text')} className={cardClass}>
+    <ToolCard label="c:authentication" description={t('c:authentication.text')} className={cardClass}>
       <div className="text-sm">
         {
           /* MFA */
@@ -177,7 +177,7 @@ export function AccountAuthenticationCard() {
           )
         }
       </div>
-    </SettingsToolCard>
+    </ToolCard>
   );
 }
 
@@ -206,7 +206,7 @@ export function AccountDeleteCard() {
   };
 
   return (
-    <SettingsToolCard
+    <ToolCard
       label="c:delete_account"
       description={t('c:delete_account.text', { appName: appConfig.name })}
       className={cardClass}
@@ -215,6 +215,6 @@ export function AccountDeleteCard() {
         <TrashIcon className="mr-2" />
         {t('c:delete_account')}
       </Button>
-    </SettingsToolCard>
+    </ToolCard>
   );
 }

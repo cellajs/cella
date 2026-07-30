@@ -1,8 +1,8 @@
 import { ChevronDownIcon, ChevronUpIcon, LockIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { SlotToolsConfig, ToolsConfig } from 'shared/tools-config';
-import { getSettingsAsideTools, orderByChannelConfig } from '~/lib/placements';
-import { SettingsToolCard } from '~/modules/common/settings-tool-card';
+import { getChannelSettingsTools, orderBySlotConfig } from '~/lib/placements';
+import { ToolCard } from '~/modules/common/tool-card';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 import { Switch } from '~/modules/ui/switch';
@@ -22,11 +22,11 @@ interface ToolsArrangementCardProps {
 export function ToolsArrangementCard({ entity, persist }: ToolsArrangementCardProps) {
   const { t } = useTranslation();
 
-  const slot = `${entity.entityType}.settings.aside`;
+  const slot = `${entity.entityType}.settings`;
   const slotConfig = entity.toolsConfig?.[slot];
   const hidden = new Set(slotConfig?.hidden ?? []);
-  const tools = orderByChannelConfig(
-    getSettingsAsideTools(entity.entityType).map((tool) => ({ ...tool, order: tool.order ?? 50 })),
+  const tools = orderBySlotConfig(
+    getChannelSettingsTools(entity.entityType).map((tool) => ({ ...tool, order: tool.order ?? 50 })),
     slotConfig,
   );
 
@@ -46,7 +46,7 @@ export function ToolsArrangementCard({ entity, persist }: ToolsArrangementCardPr
   };
 
   return (
-    <SettingsToolCard label="c:tools" description={t('c:tools.text')}>
+    <ToolCard label="c:tools" description={t('c:tools.text')}>
       <ul className="flex flex-col gap-1">
         {tools.map((tool, index) => (
           <li key={tool.id} className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent/50">
@@ -79,6 +79,6 @@ export function ToolsArrangementCard({ entity, persist }: ToolsArrangementCardPr
           </li>
         ))}
       </ul>
-    </SettingsToolCard>
+    </ToolCard>
   );
 }

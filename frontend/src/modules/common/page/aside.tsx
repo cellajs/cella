@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import type { PlacementTab } from '~/lib/placements';
+import type { PlacementDescriptor } from '~/lib/placements';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-interface PageTab extends PlacementTab {
+interface PageTab extends PlacementDescriptor {
   icon?: IconComponent;
 }
 

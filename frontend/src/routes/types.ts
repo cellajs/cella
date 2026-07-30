@@ -1,4 +1,4 @@
-import type { PlacementTab } from '~/lib/placements';
+import type { PlacementDescriptor } from '~/lib/placements';
 import type { NavItemId } from '~/modules/navigation/types';
 
 /** Boundary type for top-level layout routes. */
@@ -18,6 +18,6 @@ declare module '@tanstack/react-router' {
      * passes via `grants`, declarative so pages never hardcode sibling tab ids (which cannot
      * know app tabs).
      */
-    navTab?: PlacementTab;
+    navTab?: PlacementDescriptor;
   }
 }

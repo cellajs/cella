@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-interface SettingsToolCardProps {
+interface ToolCardProps {
   /** i18n key for the card title. */
   label: string;
   /** Optional resource i18n key interpolated into the title. */
@@ -18,15 +18,7 @@ interface SettingsToolCardProps {
 }
 
 /** Standard card shell for settings tools: titled card with optional description and unsaved badge. */
-export function SettingsToolCard({
-  label,
-  resource,
-  description,
-  unsaved,
-  id,
-  className,
-  children,
-}: SettingsToolCardProps) {
+export function ToolCard({ label, resource, description, unsaved, id, className, children }: ToolCardProps) {
   const { t } = useTranslation();
   const title = t(label, { resource: t(resource || '').toLowerCase() });
 

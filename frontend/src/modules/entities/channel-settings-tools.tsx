@@ -1,9 +1,56 @@
+import { TrashIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { Suspense, useRef } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
 import type { ContextRole } from 'shared/tools-config';
-import type { SettingsAsideEntity, SettingsAsideToolFor } from '~/lib/placements';
-import { SettingsToolCard } from '~/modules/common/settings-tool-card';
-import { DangerZoneCard } from '~/modules/entities/danger-zone-card';
+import type { ChannelSettingsEntity, ChannelSettingsToolFor } from '~/lib/placements';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { ToolCard } from '~/modules/common/tool-card';
+import { Button } from '~/modules/ui/button';
+
+interface DeleteToolCardProps {
+  /** Entity display name, interpolated into the notice and confirm texts. */
+  name: string;
+  /** i18n resource key for the entity, e.g. 'c:organization'. */
+  resource: string;
+  /** Dialog id, also the aside anchor's danger id (e.g. 'delete-organization'). */
+  dialogId: string;
+  /** Renders the per-entity delete confirmation content inside the dialog. */
+  renderDialog: () => ReactNode;
+}
+
+/** The standard danger-zone tool: a free-form ToolCard body with the confirm-dialog delete button. */
+function DeleteToolCard({ name, resource, dialogId, renderDialog }: DeleteToolCardProps) {
+  const { t } = useTranslation();
+  const deleteButtonRef = useRef(null);
+
+  const resourceName = t(resource).toLowerCase();
+
+  const openDeleteDialog = () => {
+    // Suspense: dialog content is typically a lazy-loaded per-entity component
+    useDialoger.getState().create(<Suspense fallback={null}>{renderDialog()}</Suspense>, {
+      id: dialogId,
+      triggerRef: deleteButtonRef,
+      className: 'md:max-w-xl',
+      title: t('c:delete_resource', { resource: resourceName }),
+      description: t('c:confirm.delete_resource', { name, resource: resourceName }),
+    });
+  };
+
+  return (
+    <ToolCard
+      label="c:delete_resource"
+      resource={resource}
+      description={<Trans t={t} i18nKey="c:delete_resource_notice.text" values={{ name, resource: resourceName }} />}
+    >
+      <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
+        <TrashIcon className="mr-2 size-4" />
+        <span>{t('c:delete_resource', { resource: resourceName })}</span>
+      </Button>
+    </ToolCard>
+  );
+}
 
 interface ChannelSettingsToolsInput<C extends ChannelEntityType> {
   channelType: C;
@@ -12,13 +59,13 @@ interface ChannelSettingsToolsInput<C extends ChannelEntityType> {
   /** Who may see the admin tools-arrangement card (elevation is explicit: list every pair). */
   toolsCardVisibleTo: ContextRole[];
   /** Renders the general form body (standard unsaved-badge card provided). */
-  renderGeneral: (entity: SettingsAsideEntity<C>) => ReactNode;
+  renderGeneral: (entity: ChannelSettingsEntity<C>) => ReactNode;
   /** Renders the details form body; omit to skip the details tool. */
-  renderDetails?: (entity: SettingsAsideEntity<C>) => ReactNode;
+  renderDetails?: (entity: ChannelSettingsEntity<C>) => ReactNode;
   /** Renders the tools-arrangement card, wired to the channel's update mutation. */
-  renderTools: (entity: SettingsAsideEntity<C>) => ReactNode;
+  renderTools: (entity: ChannelSettingsEntity<C>) => ReactNode;
   /** Renders the danger-zone delete confirmation content (standard card and dialog provided). */
-  renderDeleteDialog: (entity: SettingsAsideEntity<C>) => ReactNode;
+  renderDeleteDialog: (entity: ChannelSettingsEntity<C>) => ReactNode;
 }
 
 /**
@@ -29,10 +76,10 @@ interface ChannelSettingsToolsInput<C extends ChannelEntityType> {
  */
 export function channelSettingsTools<C extends ChannelEntityType>(
   input: ChannelSettingsToolsInput<C>,
-): SettingsAsideToolFor<C>[] {
+): ChannelSettingsToolFor<C>[] {
   const { channelType, resource, toolsCardVisibleTo, renderGeneral, renderDetails, renderTools, renderDeleteDialog } =
     input;
-  const slot: `${C}.settings.aside` = `${channelType}.settings.aside`;
+  const slot: `${C}.settings` = `${channelType}.settings`;
 
   return [
     {
@@ -42,9 +89,9 @@ export function channelSettingsTools<C extends ChannelEntityType>(
       order: 10,
       locked: true,
       render: (entity) => (
-        <SettingsToolCard label="c:general" unsaved id={`update-${channelType}`}>
+        <ToolCard label="c:general" unsaved id={`update-${channelType}`}>
           {renderGeneral(entity)}
-        </SettingsToolCard>
+        </ToolCard>
       ),
     },
     ...(renderDetails
@@ -54,10 +101,10 @@ export function channelSettingsTools<C extends ChannelEntityType>(
             id: 'details',
             label: 'c:details',
             order: 20,
-            render: (entity: SettingsAsideEntity<C>) => (
-              <SettingsToolCard label="c:details" id={`update-${channelType}-details`}>
+            render: (entity: ChannelSettingsEntity<C>) => (
+              <ToolCard label="c:details" id={`update-${channelType}-details`}>
                 {renderDetails(entity)}
-              </SettingsToolCard>
+              </ToolCard>
             ),
           },
         ]
@@ -81,7 +128,7 @@ export function channelSettingsTools<C extends ChannelEntityType>(
       locked: true,
       requires: 'delete',
       render: (entity) => (
-        <DangerZoneCard
+        <DeleteToolCard
           name={entity.name}
           resource={resource}
           dialogId={`delete-${channelType}`}

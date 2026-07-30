@@ -5,10 +5,10 @@ import { PageAside } from '~/modules/common/page/aside';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { useCurrentUser } from '~/modules/user/user-store';
 
-const slot = 'account.settings.aside';
+const slot = 'account.settings';
 
 /**
- * Account settings consumer: hosts the `account.settings.aside` slot. Sections come from the tool
+ * Account settings consumer: hosts the `account.settings` slot. Sections come from the tool
  * registry, arranged by app overrides; this consumer passes no grants or context-role pairs.
  */
 function UserAccountPage() {

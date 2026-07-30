@@ -2,10 +2,10 @@ import { appConfig } from 'shared';
 import { defineFrontendModule } from '~/lib/module';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const AccountGeneralCard = lazyNamed(() => import('~/modules/me/account-cards'), 'AccountGeneralCard');
-const AccountSessionsCard = lazyNamed(() => import('~/modules/me/account-cards'), 'AccountSessionsCard');
-const AccountAuthenticationCard = lazyNamed(() => import('~/modules/me/account-cards'), 'AccountAuthenticationCard');
-const AccountDeleteCard = lazyNamed(() => import('~/modules/me/account-cards'), 'AccountDeleteCard');
+const AccountGeneralCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountGeneralCard');
+const AccountSessionsCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountSessionsCard');
+const AccountAuthenticationCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountAuthenticationCard');
+const AccountDeleteCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountDeleteCard');
 
 defineFrontendModule({
   name: 'me',
@@ -14,7 +14,7 @@ defineFrontendModule({
   description: 'UI for current user profile, settings, and account management.',
   tools: [
     {
-      slot: 'account.settings.aside',
+      slot: 'account.settings',
       id: 'general',
       label: 'c:general',
       order: 10,
@@ -22,7 +22,7 @@ defineFrontendModule({
       render: () => <AccountGeneralCard />,
     },
     {
-      slot: 'account.settings.aside',
+      slot: 'account.settings',
       id: 'sessions',
       label: 'c:sessions',
       order: 20,
@@ -32,7 +32,7 @@ defineFrontendModule({
     ...(appConfig.enabledAuthStrategies.length
       ? [
           {
-            slot: 'account.settings.aside',
+            slot: 'account.settings',
             id: 'authentication',
             label: 'c:authentication',
             order: 30,
@@ -41,7 +41,7 @@ defineFrontendModule({
         ]
       : []),
     {
-      slot: 'account.settings.aside',
+      slot: 'account.settings',
       id: 'delete-account',
       label: 'c:delete_account',
       order: 90,

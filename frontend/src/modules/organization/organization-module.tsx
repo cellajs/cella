@@ -3,16 +3,16 @@ import { channelSettingsTools } from '~/modules/entities/channel-settings-tools'
 import { lazyNamed } from '~/utils/lazy-named';
 
 const OrganizationGeneralForm = lazyNamed(
-  () => import('~/modules/organization/settings-cards'),
+  () => import('~/modules/organization/settings-tools'),
   'OrganizationGeneralForm',
 );
 const OrganizationDetailsForm = lazyNamed(
-  () => import('~/modules/organization/settings-cards'),
+  () => import('~/modules/organization/settings-tools'),
   'OrganizationDetailsForm',
 );
-const OrganizationToolsCard = lazyNamed(() => import('~/modules/organization/settings-cards'), 'OrganizationToolsCard');
+const OrganizationToolsCard = lazyNamed(() => import('~/modules/organization/settings-tools'), 'OrganizationToolsCard');
 const OrganizationDeleteDialog = lazyNamed(
-  () => import('~/modules/organization/settings-cards'),
+  () => import('~/modules/organization/settings-tools'),
   'OrganizationDeleteDialog',
 );
 

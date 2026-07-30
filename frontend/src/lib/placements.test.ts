@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { defineFrontendModule } from '~/lib/module';
 import {
   getAccountSettingsTools,
-  getSettingsAsideTools,
-  orderByChannelConfig,
+  getChannelSettingsTools,
+  orderBySlotConfig,
   resolvePlacementList,
 } from '~/lib/placements';
 
@@ -16,13 +16,13 @@ describe('tool registry', () => {
       scope: ['frontend'],
       description: 'Tool registry test module.',
       tools: [
-        { slot: 'organization.settings.aside', id: 'last', label: 'c:last', order: 60, render: () => null },
-        { slot: 'organization.settings.aside', id: 'first', label: 'c:first', order: 10, render: () => null },
-        { slot: 'organization.settings.aside', id: 'middle', label: 'c:middle', render: () => null },
+        { slot: 'organization.settings', id: 'last', label: 'c:last', order: 60, render: () => null },
+        { slot: 'organization.settings', id: 'first', label: 'c:first', order: 10, render: () => null },
+        { slot: 'organization.settings', id: 'middle', label: 'c:middle', render: () => null },
       ],
     });
 
-    const ids = getSettingsAsideTools('organization').map((tool) => tool.id);
+    const ids = getChannelSettingsTools('organization').map((tool) => tool.id);
     expect(ids).toEqual(['first', 'middle', 'last']);
   });
 
@@ -38,11 +38,11 @@ describe('tool registry', () => {
       owner: 'app',
       scope: ['frontend'],
       description: 'Account tool registry test module.',
-      tools: [{ slot: 'account.settings.aside', id: 'api-tokens', label: 'c:api_tokens', render: () => null }],
+      tools: [{ slot: 'account.settings', id: 'api-tokens', label: 'c:api_tokens', render: () => null }],
     });
 
     expect(getAccountSettingsTools().map((tool) => tool.id)).toEqual(['api-tokens']);
-    expect(getSettingsAsideTools('organization').some((tool) => tool.id === 'api-tokens')).toBe(false);
+    expect(getChannelSettingsTools('organization').some((tool) => tool.id === 'api-tokens')).toBe(false);
   });
 
   it('rejects context-role pairs that name no hierarchy role', () => {
@@ -54,7 +54,7 @@ describe('tool registry', () => {
         description: 'Invalid pair test module.',
         tools: [
           {
-            slot: 'organization.settings.aside',
+            slot: 'organization.settings',
             id: 'bad',
             label: 'c:bad',
             // Cast: the invalid pair is the point of this test
@@ -67,7 +67,7 @@ describe('tool registry', () => {
   });
 });
 
-describe('orderByChannelConfig', () => {
+describe('orderBySlotConfig', () => {
   const items = [
     { id: 'a', label: 'c:a', order: 10 },
     { id: 'b', label: 'c:b', order: 20 },
@@ -75,12 +75,12 @@ describe('orderByChannelConfig', () => {
   ];
 
   it('puts stored ids first in stored sequence, appends unlisted by declared order', () => {
-    const ordered = orderByChannelConfig(items, { order: ['c', 'a'] });
+    const ordered = orderBySlotConfig(items, { order: ['c', 'a'] });
     expect(ordered.map((i) => i.id)).toEqual(['c', 'a', 'b']);
   });
 
   it('ignores stored ids with no matching placement', () => {
-    const ordered = orderByChannelConfig(items, { order: ['removed-tool', 'b'] });
+    const ordered = orderBySlotConfig(items, { order: ['removed-tool', 'b'] });
     expect(ordered.map((i) => i.id)).toEqual(['b', 'a', 'c']);
   });
 });
@@ -108,7 +108,7 @@ describe('resolvePlacementList', () => {
       overrides: {},
       grants: ['delete'],
       pairs: ['organization.admin'],
-      channelConfig: { order: ['danger', 'general'], hidden: ['extra', 'general'] },
+      slotConfig: { order: ['danger', 'general'], hidden: ['extra', 'general'] },
     });
     // 'extra' hides; locked 'general' survives its hidden entry; stored order wins
     expect(resolved.map((i) => i.id)).toEqual(['danger', 'general', 'staff-only']);
