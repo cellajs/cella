@@ -11,8 +11,8 @@ import type { CustomUppyFile } from '~/modules/common/uploader/types';
 
 /** Fallback chain for blob resolution, in lookup order. */
 const displayFallbackChain: BlobVariant[] = ['converted', 'original', 'raw'];
-const thumbnailFallbackChain: BlobVariant[] = ['thumbnail', 'original', 'raw'];
-const thumbnailTinyFallbackChain: BlobVariant[] = ['thumbnail-tiny', 'thumbnail', 'original', 'raw'];
+const previewFallbackChain: BlobVariant[] = ['preview', 'original', 'raw'];
+const thumbnailFallbackChain: BlobVariant[] = ['thumbnail', 'preview', 'original', 'raw'];
 
 /**
  * Attachment storage service with local-first capabilities.
@@ -35,10 +35,10 @@ class AttachmentStorageService {
   ): Promise<{ blob: AttachmentBlob; actualVariant: BlobVariant } | null> {
     const chain = !useFallback
       ? [variant]
-      : variant === 'thumbnail-tiny'
-        ? thumbnailTinyFallbackChain
-        : variant === 'thumbnail'
-          ? thumbnailFallbackChain
+      : variant === 'thumbnail'
+        ? thumbnailFallbackChain
+        : variant === 'preview'
+          ? previewFallbackChain
           : displayFallbackChain;
 
     for (const v of chain) {

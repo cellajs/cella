@@ -419,8 +419,8 @@ export const zAttachment = z.object({
   stx: zStxBase,
   description: z.string().max(1000000).nullable(),
   keywords: z.string().max(1000000),
-  createdBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
-  updatedBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
+  createdBy: zNullableUserMinimalBase,
+  updatedBy: zNullableUserMinimalBase,
   deletedAt: z.string().nullable(),
   deletedBy: z.uuid().nullable(),
   publicAt: z.string().nullable(),
@@ -432,10 +432,12 @@ export const zAttachment = z.object({
   contentType: z.string().max(255),
   convertedContentType: z.string().max(255).nullable(),
   size: z.string().max(255),
-  originalKey: z.string().max(2048),
-  convertedKey: z.string().max(2048).nullable(),
-  thumbnailKey: z.string().max(2048).nullable(),
-  thumbnailTinyKey: z.string().max(2048).nullable(),
+  keys: z.object({
+    original: z.string(),
+    preview: z.string().optional(),
+    thumbnail: z.string().optional(),
+    converted: z.string().optional(),
+  }),
   organizationId: z.uuid(),
   viewCount: z.int().gte(0).optional(),
 });
@@ -1477,14 +1479,16 @@ export const zCreateAttachmentsBody = z
       filename: z.string().max(255),
       contentType: z.string().max(255),
       size: z.string().max(255),
-      originalKey: z.string().max(2048),
+      keys: z.object({
+        original: z.string(),
+        preview: z.string().optional(),
+        thumbnail: z.string().optional(),
+        converted: z.string().optional(),
+      }),
       bucketName: z.string().max(255),
       publicBucket: z.boolean().optional(),
       groupId: z.uuid().nullish(),
       convertedContentType: z.string().max(255).nullish(),
-      convertedKey: z.string().max(2048).nullish(),
-      thumbnailKey: z.string().max(2048).nullish(),
-      thumbnailTinyKey: z.string().max(2048).nullish(),
       stx: zStxBase,
     }),
   )
@@ -1514,7 +1518,7 @@ export const zGetPresignedUrlsBody = z.object({
     .array(
       z.object({
         attachmentId: z.uuid(),
-        variant: z.enum(['original', 'thumbnail', 'thumbnail-tiny', 'converted']).optional().default('original'),
+        variant: z.enum(['original', 'preview', 'thumbnail', 'converted']).optional().default('original'),
       }),
     )
     .min(1)
@@ -1533,7 +1537,7 @@ export const zGetPresignedUrlsResponse = z.object({
   data: z.array(
     z.object({
       attachmentId: z.uuid(),
-      variant: z.enum(['original', 'thumbnail', 'thumbnail-tiny', 'converted']),
+      variant: z.enum(['original', 'preview', 'thumbnail', 'converted']),
       url: z.string(),
     }),
   ),
@@ -1555,7 +1559,6 @@ export const zGetAttachmentResponse = zAttachment;
 export const zUpdateAttachmentBody = z.object({
   ops: z.object({
     name: z.string().max(255).optional(),
-    originalKey: z.string().optional(),
   }),
   stx: zStxBase,
 });

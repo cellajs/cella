@@ -74,9 +74,9 @@ describe('parseUploadedAttachments', () => {
 
     // Variant correlation still keys off original_id, NOT the attachment id.
     expect(attachment.id).toBe('att-uuid-1');
-    expect(attachment.convertedKey).toBe('files/holiday.webp');
+    expect(attachment.keys.converted).toBe('files/holiday.webp');
     expect(attachment.convertedContentType).toBe('image/webp');
-    expect(attachment.thumbnailKey).toBe('files/holiday-thumb.png');
+    expect(attachment.keys.preview).toBe('files/holiday-thumb.png');
   });
 
   it('groups a multi-file upload under one groupId, and leaves a single upload ungrouped', () => {

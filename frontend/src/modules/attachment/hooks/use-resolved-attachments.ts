@@ -7,10 +7,7 @@ import { PresignRejectedError } from '~/modules/attachment/presign-batch';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 
 /** Cloud-key fields needed to resolve a URL without the react-query cache. */
-type AttachmentMetaFields = Pick<
-  Attachment,
-  'originalKey' | 'convertedKey' | 'thumbnailKey' | 'thumbnailTinyKey' | 'publicBucket' | 'organizationId' | 'tenantId'
->;
+type AttachmentMetaFields = Pick<Attachment, 'keys' | 'publicBucket' | 'organizationId' | 'tenantId'>;
 
 /** A carousel item that may already carry its own attachment metadata (group/single items do). */
 type ResolvableItem = Partial<CarouselItemData> & Partial<AttachmentMetaFields> & { id: string };
@@ -104,7 +101,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
             // Prefer the list cache's fresher metadata, but fall back to the item's own keys
             // (group/single are full attachments) so a dropped cache entry doesn't show "not found".
             const cachedMeta = findAttachmentInCache(item.id);
-            const meta = cachedMeta ?? (item.originalKey ? (item as AttachmentMetaFields) : null);
+            const meta = cachedMeta ?? (item.keys?.original ? (item as AttachmentMetaFields) : null);
 
             const result = await resolveAttachmentUrl(item.id, meta, { preferredVariant: 'converted' });
             if (result) {
@@ -115,7 +112,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
             // is a cache miss (both false) or a no-cloud-key resource whose local blob is gone.
             console.warn(
               `[useResolvedAttachments] Unresolvable attachment ${item.id} (no local blob and no cloud URL, ` +
-                `cachedMeta=${!!cachedMeta}, itemKey=${!!item.originalKey})`,
+                `cachedMeta=${!!cachedMeta}, itemKey=${!!item.keys?.original})`,
             );
             return { errorId: item.id, permanent: false };
           } catch (err) {

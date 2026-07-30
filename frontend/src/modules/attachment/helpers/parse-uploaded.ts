@@ -42,7 +42,7 @@ export const parseUploadedAttachments = (
       description: '',
       publicBucket: user_meta?.publicBucket === 'true',
       bucketName: user_meta?.bucketName,
-      originalKey: url ?? '',
+      keys: { original: url ?? '' },
       groupId,
       organizationId,
     });
@@ -67,16 +67,17 @@ export const parseUploadedAttachments = (
       if (!target) continue;
 
       if (step.startsWith('converted_')) {
-        target.convertedKey = url ?? null;
+        if (url) target.keys.converted = url;
         target.convertedContentType = mime ?? null;
       }
 
       // Check the tiny image thumbnail before the generic thumb_ mapping: both share the thumb_ prefix
-      // but write different keys, so the specific case must win.
+      // but write different variants, so the specific case must win. The tiny grid-cell image maps to
+      // the `thumbnail` variant; other thumb_ steps produce the mid-size `preview` variant.
       if (step === 'thumb_image_tiny') {
-        target.thumbnailTinyKey = url ?? null;
+        if (url) target.keys.thumbnail = url;
       } else if (step.startsWith('thumb_')) {
-        target.thumbnailKey = url ?? null;
+        if (url) target.keys.preview = url;
       }
     }
   }

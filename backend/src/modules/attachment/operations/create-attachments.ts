@@ -46,9 +46,7 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
   const attachmentsToInsert = input.map(({ stx, ...att }) => {
     const attachment = {
       ...att,
-      convertedKey: att.convertedKey || null,
       convertedContentType: att.convertedContentType || null,
-      thumbnailKey: att.thumbnailKey || null,
       groupId: att.groupId || null,
       tenantId: organization.tenantId,
       organizationId: organization.id,

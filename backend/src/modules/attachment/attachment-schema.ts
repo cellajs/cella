@@ -4,28 +4,45 @@ import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema, describeFields } from '#/db/utils/drizzle-schema';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
-import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import { nullableUserMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { mockAttachmentResponse } from './attachment-mocks';
+
+/**
+ * Storage object keys per variant, keyed by the variant name. `original` is always present
+ * (every upload has one); other variants appear only once the pipeline generates them.
+ * This is the single place the variant set is enumerated for storage keys.
+ */
+export const attachmentKeysSchema = z.object({
+  original: z.string(),
+  preview: z.string().optional(),
+  thumbnail: z.string().optional(),
+  converted: z.string().optional(),
+});
+export type AttachmentKeys = z.infer<typeof attachmentKeysSchema>;
 
 // Attachment-specific field docs, applied to both generated schemas so they reach every CRUD surface.
 const attachmentFieldDescriptions = {
   contentType: 'MIME type of the uploaded file (e.g. image/png).',
   convertedContentType: 'MIME type of the server-converted variant; null when none.',
   publicBucket: 'When true, the file is stored in the public bucket and served from the CDN without a presigned URL.',
-  originalKey: 'Storage object key for the original uploaded file.',
-  convertedKey: 'Storage object key for the converted variant; null when none.',
-  thumbnailKey: 'Storage object key for the generated thumbnail (mid-size preview); null when none.',
-  thumbnailTinyKey: 'Storage object key for the tiny (grid-cell) image thumbnail; null when none.',
+  keys: 'Storage object keys per variant, keyed by variant name; only generated variants are present.',
 } as const;
 
-const attachmentInsertSchema = describeFields(createInsertSchema(attachmentsTable), attachmentFieldDescriptions);
-const attachmentSelectSchema = describeFields(createSelectSchema(attachmentsTable), attachmentFieldDescriptions);
+const keysRefinement = { keys: attachmentKeysSchema };
+const attachmentInsertSchema = describeFields(
+  createInsertSchema(attachmentsTable, keysRefinement),
+  attachmentFieldDescriptions,
+);
+const attachmentSelectSchema = describeFields(
+  createSelectSchema(attachmentsTable, keysRefinement),
+  attachmentFieldDescriptions,
+);
 
 export const attachmentSchema = z
   .object({
     ...attachmentSelectSchema.shape,
-    createdBy: userMinimalBaseSchema.nullable(),
-    updatedBy: userMinimalBaseSchema.nullable(),
+    createdBy: nullableUserMinimalBaseSchema,
+    updatedBy: nullableUserMinimalBaseSchema,
     stx: stxBaseSchema,
     viewCount: z.number().int().min(0).optional(),
   })
@@ -42,17 +59,17 @@ const attachmentCreateBodySchema = attachmentInsertSchema
     filename: true,
     contentType: true,
     size: true,
-    originalKey: true,
+    keys: true,
     bucketName: true,
     publicBucket: true,
     groupId: true,
     convertedContentType: true,
-    convertedKey: true,
-    thumbnailKey: true,
-    thumbnailTinyKey: true,
   })
   .extend({
     id: validUuidSchema,
+    // The column defaults to {}, which would make `keys` optional on the generated insert schema.
+    // Creates must carry at least the original key, so require it here.
+    keys: attachmentKeysSchema,
   });
 
 /** Wire registration: lens-widened schemas + entity-bound runtime seams for attachment */
@@ -60,7 +77,6 @@ export const attachmentContract = evolutionContract.product('attachment', {
   createItem: attachmentCreateBodySchema,
   updateOps: {
     name: z.string().max(maxLength.field),
-    originalKey: z.string(),
   },
 });
 
@@ -80,7 +96,7 @@ export const attachmentListQuerySchema = paginationQuerySchema.extend({
 });
 
 /** Selectable stored-file variants. Mirrors the frontend `BlobVariant`. */
-export const attachmentVariantSchema = z.enum(['original', 'thumbnail', 'thumbnail-tiny', 'converted']);
+export const attachmentVariantSchema = z.enum(['original', 'preview', 'thumbnail', 'converted']);
 
 /**
  * Body schema for the batch presigned URLs endpoint. Callers reference private

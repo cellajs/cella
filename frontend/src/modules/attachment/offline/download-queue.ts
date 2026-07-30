@@ -120,7 +120,7 @@ function shouldRevive(
   config: NonNullable<typeof appConfig.localBlobStorage>,
 ): boolean {
   // Queued before its keys had synced; now they have.
-  if (entry.status === 'skipped' && entry.skipReason === SKIP_REASON_NO_ORIGINAL_KEY && attachment.originalKey) {
+  if (entry.status === 'skipped' && entry.skipReason === SKIP_REASON_NO_ORIGINAL_KEY && attachment.keys?.original) {
     return true;
   }
 
