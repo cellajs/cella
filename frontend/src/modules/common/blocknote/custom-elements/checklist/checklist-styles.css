@@ -31,8 +31,10 @@
     border-color 0.15s;
 }
 
+/* Disabled inputs swallow mouse events entirely; let clicks fall through to the wrapper so
+   click-intercepts (e.g. an expanded card's checkbox toggle) still receive them. */
 .checklist-checkbox:disabled {
-  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .checklist-checkbox:checked {

@@ -55,6 +55,7 @@ registerEntityQueryKeys('attachment', keys, (organizationId, tenantId, seqCursor
     query: { seqCursor, limit: String(SYNC_CHUNK_SIZE) },
   });
 });
+/** Defines React Query cache keys for attachment. */
 export const attachmentQueryKeys = keys;
 
 const attachmentsMutationKeyBase = ['attachment'] as const;
@@ -66,6 +67,7 @@ type AttachmentsListParams = Omit<NonNullable<GetAttachmentsData['query']>, 'lim
   limit?: number;
 };
 
+/** Builds React Query options for attachments list. */
 export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   const defaults = attachmentsSearchDefaults;
 
@@ -98,6 +100,7 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   });
 };
 
+/** Builds the canonical cache lookup options for attachments. */
 export const attachmentsCanonicalOptions = ({
   organizationId,
   tenantId,
@@ -117,14 +120,17 @@ export const attachmentsCanonicalOptions = ({
   });
 };
 
+/** Builds React Query options for attachment. */
 export const attachmentQueryOptions = (tenantId: string, organizationId: string, id: string) => ({
   queryKey: keys.detail.byId(id),
   queryFn: () => getAttachment({ path: { tenantId, organizationId, id } }),
   initialData: () => findAttachmentInCache(id),
 });
 
+/** Finds an attachment in the React Query cache. */
 export const findAttachmentInCache = createCacheFinder<Attachment>('attachment');
 
+/** Provides attachment activity feed state and actions. */
 export function useAttachmentActivityFeed(tenantId: string, organizationId: string, limit = 20) {
   const { data } = useQuery({
     ...attachmentsCanonicalOptions({ organizationId, tenantId }),
@@ -133,6 +139,7 @@ export function useAttachmentActivityFeed(tenantId: string, organizationId: stri
   return data ?? [];
 }
 
+/** Provides group attachments state and actions. */
 export function useGroupAttachments(
   tenantId: string | undefined,
   organizationId: string | undefined,
@@ -269,6 +276,7 @@ const attachmentDeleteOptions = (
   },
 });
 
+/** Provides the React Query mutation for attachment create. */
 export const useAttachmentCreateMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
   const mutation = useMutation(attachmentCreateOptions(queryClient));
@@ -281,6 +289,7 @@ export const useAttachmentCreateMutation = (tenantId: string, organizationId: st
   return { ...mutation, ...buildPreparedHandlers(mutation, prepare) };
 };
 
+/** Provides the React Query mutation for attachment update. */
 export const useAttachmentUpdateMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
   const mutation = useMutation(attachmentUpdateOptions(queryClient));

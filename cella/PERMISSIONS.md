@@ -226,7 +226,12 @@ The engine produces a verdict. Each tier is responsible for _asking_ — and eve
 
 One row-lifecycle check runs **before** the engine on every row path: unpublished drafts (`publishedAt` null — an opt-in product-table column, see `shared/src/published-rows.ts`) are visible to their author alone. The PRIMARY draft boundary sits below all of this: a publication row filter keeps draft product rows out of the replication stream entirely (publish arrives as INSERT, unpublish as DELETE — see SYNC_ENGINE.md), so the SSE dispatch veto is fail-closed defense-in-depth for a misconfigured app, not the mechanism. The API-side checks remain required because the TABLE still contains drafts: collection/delta reads exclude them by predicate, the detail read 404s non-authors, the detail cache refuses to serve them, and the yjs relay rejects non-author write connections. The engine itself has no draft vocabulary — the column is the contract, and every check is introspection-guarded so tables without the column are untouched.
 
-Product `publishedAt` is distinct from channel `publishedAt`, which gates setup, and from `publicAt`, which grants non-members read access.
+Two independent axes, easily confused:
+
+- **Draft** (`publishedAt`, an opt-in product column): a product is a draft (author-only, outside the sync stream) until published. Publish is one-way; there is no unpublish. Channel `publishedAt` is a separate thing (`defaultNow`, gates setup and invites), not a read gate.
+- **Visibility** (`publicAt`): make public / make private, row-local and client-driven. A row is publicly readable only when its own `publicAt` is set. The server never derives it: the client sends `publicAt` on create and the backend trusts the value (omitted means private). The template client stamps the cached parent's `publicAt` as the sensible default; an app client may choose any per-product value. After create the row owns its value (no cascade). Make private acts per row, channel, or batch.
+
+Anonymous read therefore requires the row's own `publicAt` to be set, and (for entities that carry the draft column) `publishedAt` to be set.
 
 Two rules bind every path: **the system-admin bypass applies to collection reads too** (a sysadmin passes `orgGuard` with no membership, so scope resolution must not be membership-only), and **any grant the single-row path honours must appear in lists and over SSE** — a row fetchable by id but absent from collections is worse than no grant.
 
@@ -250,7 +255,7 @@ A bare `undefined` WHERE would leak the table, which is exactly the bug this sha
 | Member with `update: 'own'` edits a row they created | Allowed, `grantedBy: relation` (`own`) |
 | Member with `update: 'own'` edits someone else's row | Denied. The UI optimistically enables the control; the backend rejects on save |
 | Actor reads a row whose `publicAt` is set (entity declares `publicRead()`) | Allowed, `grantedBy: public` — single-row, in lists, and over SSE alike. Anonymous actors included |
-| Row's parent is public but the row itself is not | Denied. Publication does not cascade through the engine; propagate `publicAt` to the row |
+| Row's parent is public but the row itself is not | Denied. Publication is row-local and never cascades: a row is public only if its OWN `publicAt` is set. The client stamps the parent's `publicAt` as the default at create time; after that the row owns its value. Make public / make private acts per row (or batch), not through the parent |
 | System admin acts on any single row | Allowed, `grantedBy: systemAdmin`, short-circuited before membership lookup |
 | System admin without an org membership lists a collection | Every row in the org. The bypass applies to the collection path too |
 | Membership role has no policy row for the subject | Denies every action for that membership |
