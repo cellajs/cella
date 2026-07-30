@@ -7,14 +7,12 @@ export const staging = {
   slug: 'cella-staging',
 
   domain: 'cellajs.com',
-  // Same-origin like production: services are paths under the staging origin.
+
   frontendUrl: 'https://staging.cellajs.com',
   backendUrl: 'https://staging.cellajs.com/api',
   backendAuthUrl: 'https://staging.cellajs.com/api/auth',
   yjsUrl: 'wss://staging.cellajs.com/yjs',
   mcpUrl: 'https://staging.cellajs.com/mcp',
 
-  // Staging runs single-VM: the backend co-hosts every enabled worker in-process,
-  // so cdc folds into the backend VM. Keeps staging at two VMs (backend + frontend).
   singleVM: true,
 } satisfies DeepPartial<typeof _default>;
