@@ -167,7 +167,7 @@ describe('downloadQueue', () => {
     it('skipped entries with No originalKey get reset when key arrives', async () => {
       await attachmentsDb.downloadQueue.add(makeQueueEntry({ status: 'skipped', skipReason: 'No originalKey' }));
 
-      await downloadQueue.enqueue([makeAttachment({ originalKey: 'files/now-available.png' })], 'org-1');
+      await downloadQueue.enqueue([makeAttachment({ keys: { original: 'files/now-available.png' } })], 'org-1');
 
       const entry = await attachmentsDb.downloadQueue.get('att-1');
       expect(entry?.status).toBe('pending');

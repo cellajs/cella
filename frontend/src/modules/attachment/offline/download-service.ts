@@ -14,7 +14,7 @@ import { subscribeOwnerChange } from '~/query/local-user-storage';
 import { queryClient } from '~/query/query-client';
 
 /** Variant download priority, in download order. 'raw' is local-only, so never fetched. */
-const variantPriority: CloudFileVariant[] = ['thumbnail-tiny', 'thumbnail', 'converted', 'original'];
+const variantPriority: CloudFileVariant[] = ['thumbnail', 'preview', 'converted', 'original'];
 
 /** Per-fetch timeout for variant downloads. */
 const variantFetchTimeoutMs = 30_000;
@@ -242,7 +242,7 @@ class AttachmentDownloadService {
     }
   }
 
-  /** Downloads variants in priority order (thumbnail, converted, original), then evicts raw. */
+  /** Downloads variants in priority order (thumbnail, preview, converted, original), then evicts raw. */
   private async downloadAttachment(attachmentId: string, organizationId: string): Promise<void> {
     // Look up in cache *before* claiming the row, so we don't burn an attempt on rows whose
     // metadata hasn't synced yet; the liveQuery re-triggers us once the cache fills.
@@ -252,7 +252,7 @@ class AttachmentDownloadService {
       return;
     }
 
-    if (!attachment.originalKey) {
+    if (!attachment.keys?.original) {
       await downloadQueue.transition(attachmentId, 'skipped', SKIP_REASON_NO_ORIGINAL_KEY);
       return;
     }

@@ -15,20 +15,7 @@ interface UseAttachmentUrlResult {
  * Resolves an attachment URL local-first: checks the local blob store, falls back to a cloud URL.
  */
 export function useAttachmentUrl(
-  attachment:
-    | Pick<
-        Attachment,
-        | 'id'
-        | 'originalKey'
-        | 'convertedKey'
-        | 'thumbnailKey'
-        | 'thumbnailTinyKey'
-        | 'publicBucket'
-        | 'tenantId'
-        | 'organizationId'
-      >
-    | null
-    | undefined,
+  attachment: Pick<Attachment, 'id' | 'keys' | 'publicBucket' | 'tenantId' | 'organizationId'> | null | undefined,
   { preferredVariant }: ResolveOptions = {},
 ): UseAttachmentUrlResult {
   const [result, setResult] = useState<UseAttachmentUrlResult>({
@@ -93,7 +80,7 @@ export function useAttachmentUrl(
         blobUrlRef.current = null;
       }
     };
-  }, [attachment?.id, attachment?.originalKey, preferredVariant]);
+  }, [attachment?.id, attachment?.keys.original, preferredVariant]);
 
   return result;
 }

@@ -14,7 +14,7 @@ const attachmentBody = (id: string) => ({
   filename: 'cross-org.pdf',
   contentType: 'application/pdf',
   size: '1024',
-  originalKey: `test/cross-org-${id}.pdf`,
+  keys: { original: `test/cross-org-${id}.pdf` },
   bucketName: 'test-bucket',
   // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
   ...generateMockEntityBodyChannelIdColumns('attachment'),

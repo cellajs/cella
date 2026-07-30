@@ -19,7 +19,7 @@ export const loadtestAttachment = (index: number): InsertAttachmentModel => ({
   contentType: 'application/pdf',
   size: '1024',
   bucketName: 'attachments',
-  originalKey: `uploads/xbench/${attachmentId(index)}/xbench-file-${index}.pdf`,
+  keys: { original: `uploads/xbench/${attachmentId(index)}/xbench-file-${index}.pdf` },
   organizationId: ORG_ID,
   createdBy: userId(index % 100),
   updatedBy: userId(index % 100),
