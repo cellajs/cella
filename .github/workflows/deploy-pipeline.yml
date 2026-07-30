@@ -1,4 +1,4 @@
-name: Infra deploy (reusable)
+name: Deploy pipeline
 
 # The whole deploy pipeline as a reusable workflow: build images + frontend,
 # then ONE `infra deploy` command (preflights, lock, stack update, waved

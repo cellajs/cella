@@ -54,11 +54,12 @@ export function detectComputeDeferred(yamlText?: string): string | undefined {
 }
 
 /**
- * Detect whether the local stack config opts the database into a public
- * endpoint (`infra:dbPublicEndpoint: "true"`), the state the expose/unexpose
- * flow toggles. Read from the committed/local yaml, so it drives the menu's
- * status-aware label without any I/O. The converge itself is idempotent, so a
- * stale read only mislabels the menu, never misacts. Pure.
+ * Detect whether a stack config text opts the database into a public endpoint
+ * (`infra:dbPublicEndpoint: "true"`), the state the expose/unexpose flow
+ * toggles. Callers pass the gitignored exposure overlay when present, falling
+ * back to the committed yaml for stacks that predate the overlay. The converge
+ * itself is idempotent, so a stale read only mislabels the menu, never misacts.
+ * Pure.
  */
 export function detectDbPublicEndpoint(yamlText?: string): boolean {
   return yamlText ? /(?:^|\n)\s*infra:dbPublicEndpoint:\s*["']?true/.test(yamlText) : false

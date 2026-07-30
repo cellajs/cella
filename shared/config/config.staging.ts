@@ -13,4 +13,8 @@ export const staging = {
   backendAuthUrl: 'https://staging.cellajs.com/api/auth',
   yjsUrl: 'wss://staging.cellajs.com/yjs',
   mcpUrl: 'https://staging.cellajs.com/mcp',
+
+  // Staging runs single-VM: the backend co-hosts every enabled worker in-process,
+  // so cdc folds into the backend VM. Keeps staging at two VMs (backend + frontend).
+  singleVM: true,
 } satisfies DeepPartial<typeof _default>;

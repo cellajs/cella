@@ -68,6 +68,9 @@ frontend/stats.html
 .devcontainer/
 
 # Cella
+# DB exposure overlay: apply-time copy of the stack config carrying the
+# public-endpoint keys, written by the infra CLI expose/seed flows.
+infra/Pulumi.*.exposure.yaml
 *storybook.log
 storybook-static
 .locales-cache
