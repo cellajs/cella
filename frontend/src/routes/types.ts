@@ -1,3 +1,4 @@
+import type { PlacementDescriptor, Slot } from '~/lib/placements';
 import type { NavItemId } from '~/modules/navigation/types';
 
 /** Boundary type for top-level layout routes. */
@@ -11,15 +12,19 @@ declare module '@tanstack/react-router' {
       right?: NavItemId;
       left?: NavItemId;
     };
-    /** Tab metadata for PageTabNav - if defined, this route will appear as a nav tab */
-    navTab?: {
-      id: string;
-      label: string;
-      /** Sort position among sibling tabs (default 0, lower first; ties keep route order) */
-      order?: number;
-      /** Grant this tab needs to be shown: hidden unless PageTabNav receives it via `grants`.
-       *  Declarative so pages never hardcode sibling tab ids (which can't know app tabs). */
-      requires?: 'update';
-    };
+    /**
+     * Tab placement for PageTabNav: a child route declaring this appears as a nav tab (default
+     * order 0, lower first; ties keep route order). `requires` names a grant the hosting page
+     * passes via `grants`, declarative so pages never hardcode sibling tab ids (which cannot
+     * know app tabs).
+     */
+    navTab?: PlacementDescriptor;
+    /**
+     * Marks a layout route as a tabbed surface bound to this slot. `resolveNavTabs` then merges
+     * the slot's registry tab tools (routed through the surface's `$tool` host child) with the
+     * route-file tabs, and keys app overrides plus channel arrangement by this slot id. Absent =
+     * a route-file-only tab bar keyed by the parent route id (no registry or 3rd-party tabs).
+     */
+    tabsSlot?: Slot;
   }
 }

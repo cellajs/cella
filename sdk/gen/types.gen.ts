@@ -440,6 +440,15 @@ export type Organization = {
   setupConfig: {
     [key: string]: unknown;
   };
+  toolsConfig: {
+    [key: string]: {
+      order?: Array<string>;
+      hidden?: Array<string>;
+      settings?: {
+        [key: string]: unknown;
+      };
+    };
+  };
   included: {
     membership?: MembershipBase;
     counts?: {
@@ -3808,6 +3817,15 @@ export type UpdateOrganizationData = {
     };
     setupConfig?: {
       [key: string]: unknown;
+    };
+    toolsConfig?: {
+      [key: string]: {
+        order?: Array<string>;
+        hidden?: Array<string>;
+        settings?: {
+          [key: string]: unknown;
+        };
+      };
     };
   };
   path: {

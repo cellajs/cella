@@ -1,5 +1,6 @@
 import { boolean, index, json, jsonb, snakeCase, unique, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, type Language, type OrganizationFlags, type OrganizationSetupConfig } from 'shared';
+import type { ToolsConfig } from 'shared/tools-config';
 import { channelColumns } from '#/db/utils/channel-columns';
 import { maxLength } from '#/db/utils/constraints';
 
@@ -34,6 +35,9 @@ export const organizationsTable = snakeCase.table(
     // Per-org setup config; app-configured defaults declared in `appConfig.defaultSetupConfig`.
     // Stored sparse like organizationFlags: reads merge config defaults under the stored bag.
     setupConfig: jsonb().$type<Partial<OrganizationSetupConfig>>().notNull().default({}),
+    // Per-org tool arrangement per placement slot (order/hidden/settings, tool ids only).
+    // Stored sparse: a missing slot renders manifest defaults, so new tools need no backfill.
+    toolsConfig: jsonb().$type<ToolsConfig>().notNull().default({}),
   },
   (table) => [
     index('organizations_name_index').on(table.name.desc()),

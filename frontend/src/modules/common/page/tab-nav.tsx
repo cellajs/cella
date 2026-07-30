@@ -3,9 +3,16 @@ import { Link, type LinkComponentProps } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ContextRole, SlotToolsConfig } from 'shared/tools-config';
 import { nanoid } from 'shared/utils/nanoid';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
+import {
+  getSlotDescriptors,
+  type PlacementDescriptor,
+  type PlacementOverrides,
+  resolvePlacementList,
+} from '~/lib/placements';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useScrollReset } from '~/modules/common/scroll-reset';
 import { StickyBox } from '~/modules/common/sticky-box';
@@ -33,11 +40,32 @@ function getChildRoutes(route: AnyRoute): AnyRoute[] {
   return Array.isArray(route.children) ? route.children : [];
 }
 
+/** A resolved nav candidate: a placement descriptor plus where its tab links. */
+type NavCandidate = PlacementDescriptor & { order: number; path: PageTab['path']; params: PageTab['params'] };
+
+/** Resolution inputs for a tabbed surface (all optional; absent conditions never hide a tab). */
+export interface ResolveNavTabsOptions {
+  /** Explicit allow-list of tab ids (prefer grant/pair gating over this). */
+  filterTabIds?: string[];
+  /** Grants the actor holds; tabs declaring `requires` hide without a match. */
+  grants?: readonly string[];
+  /** Context-role pairs the actor holds; registry tabs declaring `visibleTo` hide without a match. */
+  pairs?: readonly ContextRole[];
+  /** Channel-stored arrangement for the surface's tabs slot (order + hidden). */
+  slotConfig?: SlotToolsConfig;
+  /** App override map (defaults to `~/placement-config`). */
+  overrides?: PlacementOverrides;
+}
+
 /**
- * Extract navigation tabs from child routes based on their staticData.navTab configuration.
- * Only routes with navTab defined in staticData will be included.
+ * Tabs for a tabbed surface, merging two sources into one gated, ordered list:
+ * child routes declaring `staticData.navTab` (linked to their own path) and, when the parent
+ * route declares `staticData.tabsSlot`, that slot's registry tab tools (linked through the
+ * surface's `$tool` host child). App overrides and channel arrangement key by the slot id when
+ * present, else the parent route id; `requires` gates on `grants` and `visibleTo` on `pairs`
+ * before the stable sort on `order` (default 0, lower first; ties keep registration order).
  */
-function useNavTabs(parentRouteId: string, filterTabIds?: string[], grants?: readonly string[]): PageTab[] {
+export function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOptions = {}): PageTab[] {
   if (!parentRouteId) return [];
 
   // Cast: generated FileRoutesById is a closed interface without index signature
@@ -46,29 +74,59 @@ function useNavTabs(parentRouteId: string, filterTabIds?: string[], grants?: rea
 
   const parentRoute = routesById[parentRouteId];
   const children = getChildRoutes(parentRoute);
+  const slot = parentRoute.options?.staticData?.tabsSlot;
 
-  const tabs: PageTab[] = children
-    .map((route) => {
+  // Route-file tabs: each child declaring staticData.navTab, linked to its own path.
+  const routeCandidates = children
+    .map((route): NavCandidate | null => {
       const navTab = route.options?.staticData?.navTab;
       if (!navTab) return null;
-      // Deny by default: a tab declaring `requires` is hidden unless that grant is passed
-      if (navTab.requires && !grants?.includes(navTab.requires)) return null;
+      // Cast: PageTab link props are the loose LinkComponentProps; `true` inherits current params
       return {
-        id: navTab.id,
-        label: navTab.label,
-        path: route.fullPath as PageTab['path'],
+        ...navTab,
         order: navTab.order ?? 0,
+        path: route.fullPath as PageTab['path'],
+        params: true as PageTab['params'],
       };
     })
-    .filter((tab): tab is PageTab & { order: number } => tab !== null)
-    // Stable sort on navTab.order (default 0, lower first; ties keep route registration order)
-    .sort((a, b) => a.order - b.order);
+    .filter((tab): tab is NavCandidate => tab !== null);
 
-  if (filterTabIds) {
-    return tabs.filter((tab) => filterTabIds.includes(tab.id));
+  // Registry tabs: the surface's slot tools, linked through its `$tool` host child.
+  const hostChild = children.find((route) => route.path === '$tool');
+  const registryCandidates: NavCandidate[] =
+    slot && hostChild
+      ? getSlotDescriptors(slot).map((tool) => ({
+          ...tool,
+          order: tool.order ?? 0,
+          path: hostChild.fullPath as PageTab['path'],
+          // Cast: preserve the surface's own params (tenant/org), set only the host's `$tool` id
+          params: ((prev: Record<string, string>) => ({ ...prev, tool: tool.id })) as PageTab['params'],
+        }))
+      : [];
+
+  const host = slot ?? parentRouteId;
+  const resolved = resolvePlacementList(host, [...routeCandidates, ...registryCandidates], {
+    grants: options.grants,
+    pairs: options.pairs,
+    slotConfig: options.slotConfig,
+    overrides: options.overrides,
+  });
+
+  const tabs: PageTab[] = resolved.map(({ id, label, path, params }) => ({ id, label, path, params }));
+
+  if (options.filterTabIds) {
+    const allow = options.filterTabIds;
+    return tabs.filter((tab) => allow.includes(tab.id));
   }
-
   return tabs;
+}
+
+/**
+ * First visible tab path under a parent route: the derived default-tab redirect target for
+ * layout routes, so the landing tab follows `order` and app overrides.
+ */
+export function defaultNavTabPath(parentRouteId: string, options?: ResolveNavTabsOptions): string | undefined {
+  return resolveNavTabs(parentRouteId, options)[0]?.path;
 }
 
 interface Props {
@@ -80,6 +138,10 @@ interface Props {
   filterTabIds?: string[];
   /** Grants held by the current user; tabs declaring navTab.requires are hidden unless granted */
   grants?: readonly string[];
+  /** Context-role pairs held by the current user; registry tabs declaring visibleTo hide without a match */
+  pairs?: readonly ContextRole[];
+  /** Channel-stored arrangement for the surface's tabs slot (order + hidden) */
+  slotConfig?: SlotToolsConfig;
   title?: string;
   avatar?: {
     id: string;
@@ -98,6 +160,8 @@ export function PageTabNav({
   parentRouteId,
   filterTabIds,
   grants,
+  pairs,
+  slotConfig,
   title,
   avatar,
   fallbackToFirst,
@@ -108,7 +172,7 @@ export function PageTabNav({
   const { hasStarted } = useMountedState();
 
   // Use explicit tabs or auto-generate from parent route's children
-  const autoTabs = useNavTabs(parentRouteId ?? '', filterTabIds, grants);
+  const autoTabs = resolveNavTabs(parentRouteId ?? '', { filterTabIds, grants, pairs, slotConfig });
   const tabs = explicitTabs ?? autoTabs;
 
   const layoutId = useRef(nanoid()).current;

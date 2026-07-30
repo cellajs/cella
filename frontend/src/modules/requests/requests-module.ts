@@ -1,6 +1,6 @@
-import { registerModule } from 'shared/module-registry';
+import { defineFrontendModule } from '~/lib/module';
 
-registerModule({
+defineFrontendModule({
   name: 'requests',
   owner: 'cella',
   scope: ['frontend', 'backend'],

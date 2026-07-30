@@ -54,6 +54,7 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
     chatSupport: faker.datatype.boolean(),
     organizationFlags: { ...appConfig.defaultOrganizationFlags },
     setupConfig: { ...appConfig.defaultSetupConfig },
+    toolsConfig: {},
   };
 };
 

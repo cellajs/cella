@@ -9,6 +9,10 @@ const defaultRepoRoot = join(here, '..', '..');
 const disallowedTerm = /fork/gi;
 const allowedFiles = new Set([
   'cella/cella.config.ts',
+  // The cella-sync skill documents the CLI sync workflow and the app-side marker convention,
+  // both of which use the CLI's source-control term. It must stay byte-identical with the
+  // copies shipped to apps so `pnpm cella sync` reports it as identical.
+  'cella/skills/cella-sync/SKILL.md',
   'shared/scripts/check-app-vocabulary.test.ts',
   'shared/scripts/check-app-vocabulary.ts',
 ]);

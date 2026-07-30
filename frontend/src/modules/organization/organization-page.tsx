@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet } from '@tanstack/react-router';
 import { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +7,9 @@ import { PageHeader } from '~/modules/common/page/header';
 import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { ScrollReset } from '~/modules/common/scroll-reset';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { heldContextRoles } from '~/modules/entities/context-roles';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
+import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -33,6 +35,11 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
 
   // Grants for declarative tab gating: tabs declaring navTab.requires (settings) hide without them
   const grants = useMemo(() => (canUpdate ? ['update'] : []), [canUpdate]);
+
+  // Context-role pairs and channel arrangement for registry tabs (visibleTo gating + order/hidden)
+  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
+  const pairs = heldContextRoles(organization, myMemberships?.items ?? []);
+  const tabsConfig = organization.toolsConfig?.['organization.tabs'];
 
   const { mutate } = useOrganizationUpdateMutation();
 
@@ -74,6 +81,8 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
           avatar={organization}
           parentRouteId="/_app/$tenantId/$organizationSlug/organization"
           grants={grants}
+          pairs={pairs}
+          slotConfig={tabsConfig}
         />
         <FocusViewContainer>
           <Outlet />

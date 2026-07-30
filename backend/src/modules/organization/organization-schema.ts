@@ -22,6 +22,7 @@ import {
   validUrlSchema,
 } from '#/schemas';
 import { channelIncludedSchema } from '#/schemas/channel-included';
+import { toolsConfigSchema } from '#/schemas/tools-config';
 import { nullableUserMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { mockOrganizationResponse } from './organization-mocks';
 
@@ -47,6 +48,7 @@ export const organizationSchema = z
     languages: z.array(languageSchema).min(1),
     organizationFlags: organizationFlagsSchema,
     setupConfig: setupConfigSchema,
+    toolsConfig: toolsConfigSchema,
     included: organizationIncludedSchema,
   })
   .openapi('Organization', {
@@ -81,6 +83,8 @@ export const organizationContract = evolutionContract.channel('organization', {
     organizationFlags: organizationFlagsSchema.partial(),
     // setupConfig merges via jsonb || on update, mirroring organizationFlags
     setupConfig: setupConfigSchema.partial(),
+    // toolsConfig merges via jsonb || on update: each listed slot key is replaced wholesale
+    toolsConfig: toolsConfigSchema,
   })
     .pick({
       slug: true,
@@ -100,6 +104,7 @@ export const organizationContract = evolutionContract.channel('organization', {
       chatSupport: true,
       organizationFlags: true,
       setupConfig: true,
+      toolsConfig: true,
     })
     .partial(),
 });
