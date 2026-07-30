@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.7.0](https://github.com/cellajs/cella/compare/0.6.1...0.7.0) (2026-07-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* move cella config/manifest/migrations into the cella/ folder ([#983](https://github.com/cellajs/cella/issues/983))
+* **frontend:** frontend module registry, UI placements, and per-channel tools config ([#982](https://github.com/cellajs/cella/issues/982))
+* collapse attachment variant keys into a single jsonb map ([#979](https://github.com/cellajs/cella/issues/979))
+
+### 🎉 New features
+
+* collapse attachment variant keys into a single jsonb map ([#979](https://github.com/cellajs/cella/issues/979)) ([d3c3c63](https://github.com/cellajs/cella/commit/d3c3c63b57d28c52f8ef224f5f608073f9bd1a8e))
+* **frontend:** frontend module registry, UI placements, and per-channel tools config ([#982](https://github.com/cellajs/cella/issues/982)) ([2f249fa](https://github.com/cellajs/cella/commit/2f249fa6bcc3d740fd1bf656033ee1440dbdc6d3))
+* **frontend:** gate Maple telemetry on a dedicated VITE_MAPLE opt-in ([#984](https://github.com/cellajs/cella/issues/984)) ([901ee4a](https://github.com/cellajs/cella/commit/901ee4a2e350a2d3a5b8e8f4f9dc0da11dc79d8c))
+* **infra:** general-purpose plan phases P1-P3.5 (de-cella gate, store plugins, secret ownership, container collocation) ([#980](https://github.com/cellajs/cella/issues/980)) ([7bac7b0](https://github.com/cellajs/cella/commit/7bac7b0657c7edab99dae2d6a9c70b2ff2b5257f))
+* move cella config/manifest/migrations into the cella/ folder ([#983](https://github.com/cellajs/cella/issues/983)) ([ff757dc](https://github.com/cellajs/cella/commit/ff757dcabf23d553399c6bcd19a3441ffbae17ea))
+
+
+### 🐞 Bug fixes
+
+* **backend:** adopt entity-agnostic raak contributions (audit-user, oauth, schema tests) ([#977](https://github.com/cellajs/cella/issues/977)) ([3829feb](https://github.com/cellajs/cella/commit/3829feb1e72f014f99c7056090e534060746b0cf))
+* **backend:** make requests unique-signup index deploy-safe and race-safe ([#985](https://github.com/cellajs/cella/issues/985)) ([d8b34fb](https://github.com/cellajs/cella/commit/d8b34fbf74bcef2412f35e3b7b41c9a542733501))
+* **infra:** keep DB-exposure state out of the committed stack config ([#974](https://github.com/cellajs/cella/issues/974)) ([11bad96](https://github.com/cellajs/cella/commit/11bad969de1d1c9f2a16a62199dea9b87af903be))
+
+
+### 🏗️ Build & deps
+
+* **deploy:** gate staging auto-deploy on a bootstrapped stack ([#978](https://github.com/cellajs/cella/issues/978)) ([1dd8377](https://github.com/cellajs/cella/commit/1dd8377fd6f6510da45ee6fd852e0e7ef4c2d245))
+
+
+### 🧹 Chores
+
+* adopt raak generic contributions (docs, schema exports, cella-sync skill) ([#981](https://github.com/cellajs/cella/issues/981)) ([cc97795](https://github.com/cellajs/cella/commit/cc97795ca4c8b96886dbeba12b0c138aea2c59ef))
+* **ci:** always deploy staging on push to main; remove infra-preview workflow ([#973](https://github.com/cellajs/cella/issues/973)) ([42e4a65](https://github.com/cellajs/cella/commit/42e4a651fee851152ee911576592f7a5c8b34a9d))
+* fix tests ([#986](https://github.com/cellajs/cella/issues/986)) ([4271079](https://github.com/cellajs/cella/commit/4271079e43f3dfda8d49e05a5883708fb93e2ace))
+* **infra:** run staging single-VM (co-host cdc in the backend) ([#976](https://github.com/cellajs/cella/issues/976)) ([3e4c3e8](https://github.com/cellajs/cella/commit/3e4c3e857d42554dc72fd39d647f47c08962d684))
+
 ## [0.6.1](https://github.com/cellajs/cella/compare/0.6.0...0.6.1) (2026-07-29)
 
 
