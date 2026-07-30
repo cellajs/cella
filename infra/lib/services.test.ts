@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { coHostedServices, deployedServices, enabledServices, services } from './services'
+import { coHostedServices, collocatedServices, deployedServices, enabledServices, services } from './services'
 
 const allOn = { yjs: { enabled: true }, mcp: { enabled: true } }
 const allOff = { yjs: { enabled: false }, mcp: { enabled: false } }
@@ -45,13 +45,18 @@ describe('service registry — singleVM (deployedServices / coHostedServices)', 
     expect(deployed).toContain('mcp')
   })
 
-  it('singleVM folds co-hosted workers off their own VM but keeps the host + SPA proxy', () => {
+  it('singleVM folds workers and collocates the SPA proxy: only the host VM remains', () => {
     const deployed = deployedServices(allOn, true).map((s) => s.slug)
-    expect(deployed).toContain('backend')
-    expect(deployed).toContain('frontend')
-    expect(deployed).not.toContain('cdc')
-    expect(deployed).not.toContain('yjs')
-    expect(deployed).not.toContain('mcp')
+    expect(deployed).toEqual(['backend'])
+  })
+
+  it('collocatedServices lists placement-host services, only under singleVM', () => {
+    expect(collocatedServices(allOn, false)).toEqual([])
+    expect(collocatedServices(allOn, true).map((s) => s.slug)).toEqual(['frontend'])
+  })
+
+  it('a disabled placement-host service is not collocated', () => {
+    expect(collocatedServices({ frontend: { enabled: false } }, true)).toEqual([])
   })
 
   it('coHostedServices lists only enabled co-hosted workers, and only under singleVM', () => {

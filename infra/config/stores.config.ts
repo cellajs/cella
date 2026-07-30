@@ -12,5 +12,16 @@ import { postgresManaged } from '../resources/stores/postgres-managed'
  * PlanetScale), or `none`, without touching engine code.
  */
 export const appStores = defineStores({
-  primary: postgresManaged({ roles: ['admin', 'runtime', 'cdc'], logicalReplication: true }),
+  primary: postgresManaged({
+    roles: ['admin', 'runtime', 'cdc'],
+    logicalReplication: true,
+    // The store owns the DSN/CA secret declarations; this maps each one to its
+    // consuming services. They merge ahead of runtime-secrets.config.ts.
+    secretConsumers: {
+      runtime: ['backend', 'yjs', 'mcp'],
+      admin: ['backend', 'mcp'],
+      cdc: ['cdc'],
+      ca: ['backend', 'yjs', 'mcp', 'cdc'],
+    },
+  }),
 })

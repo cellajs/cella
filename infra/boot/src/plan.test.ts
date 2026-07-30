@@ -12,7 +12,7 @@ function plan(overrides: Record<string, unknown> = {}): string {
     region: 'nl-ams',
     credentials: { scwAccessKeyFile: '/etc/cella/scw-access-key', scwSecretKeyFile: '/etc/cella/scw-secret-key' },
     bootDiagnostics: { bucket: 'cella-boot-diag', logFile: '/var/log/infra-boot.log' },
-    releaseCommand: { enabled: true, command: ['docker', 'compose', 'run', 'migrate'] },
+    releaseCommand: { enabled: true, command: ['docker', 'compose', 'run', 'backend-release'] },
     docker: { composeFile: '/opt/app/compose.yml' },
     files: { compose: 'services: {}', env: 'BACKEND_TAG=abc', runtimeSecretManifest: [{ envVar: 'COOKIE_SECRET', secretId: 'uuid', required: true }] },
     timeouts: { privateNetworkSeconds: 150, pullAttempts: 2, pullRetrySeconds: 1 },
@@ -32,6 +32,12 @@ describe('parseBootPlanJson', () => {
 
   it('rejects unknown top-level fields', () => {
     expect(() => parseBootPlanJson(plan({ surprise: true }))).toThrow(/unknown top-level field/)
+  })
+
+  it('parses the optional start-services list, absent in pre-collocation plans', () => {
+    expect(parseBootPlanJson(plan()).services).toBeUndefined()
+    expect(parseBootPlanJson(plan({ services: ['backend', 'frontend'] })).services).toEqual(['backend', 'frontend'])
+    expect(() => parseBootPlanJson(plan({ services: [] }))).toThrow(/non-empty command array/)
   })
 
   it('rejects empty release commands', () => {

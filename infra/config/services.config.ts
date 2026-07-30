@@ -146,6 +146,9 @@ export const appServices = defineServices({
     // The SPA proxy reads no app secret: no standard env, no .env files.
     includeStandardEnv: false,
     includeEnvFile: false,
+    // singleVM: run the Caddy container on the host VM (no in-process fold
+    // possible for a non-Node runtime); its LB pool follows the host cutover.
+    placement: 'host',
     instanceType: 'DEV1-S',
     env: {
       FRONTEND_CSP: '${FRONTEND_CSP}',

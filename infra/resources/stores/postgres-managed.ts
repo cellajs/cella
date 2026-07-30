@@ -1,10 +1,5 @@
-import * as pulumi from '@pulumi/pulumi'
-import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, isProduction } from '../../pulumi-context'
-import { sizing } from '../../config/sizing'
-import type { ProvisionedStore, StoreProvisioner } from '../../lib/stores'
-import { configuredOrRandomSecret } from '../configured-secret'
-import { privateNetworkId } from '../network'
+import type * as pulumi from '@pulumi/pulumi'
+import type { ProvisionContext, ProvisionedStore, StoreProvisioner, StoreSecretContribution } from '../../lib/stores'
 
 /** Roles provisioned on the instance. Each maps to a PostgreSQL user + DSN. */
 export type PostgresRole = 'admin' | 'runtime' | 'cdc'
@@ -22,6 +17,18 @@ export interface PostgresManagedConfig {
    * and expose the cdc connection string. Defaults to true.
    */
   logicalReplication?: boolean
+  /**
+   * Services that consume each role's DSN (and the instance CA) as runtime
+   * secrets. When set, the store owns the secret declarations; when omitted,
+   * the app's `runtime-secrets.config.ts` must declare them and the store only
+   * binds values.
+   */
+  secretConsumers?: {
+    runtime?: readonly string[]
+    admin?: readonly string[]
+    cdc?: readonly string[]
+    ca?: readonly string[]
+  }
 }
 
 /**
@@ -42,7 +49,8 @@ export function formatPostgresUrl(user: string, pass: string, host: string, port
  * Managed Scaleway PostgreSQL store: provisions an RDB instance with per-role
  * users and RLS-backing privileges, and binds the runtime/admin/cdc DSNs plus
  * the instance CA to their runtime secrets. Row-level security and CDC are
- * capabilities of this store, not engine concepts.
+ * capabilities of this store, not engine concepts. Pure at import time; all
+ * Pulumi access arrives through the {@link ProvisionContext}.
  */
 export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvisioner {
   const logicalReplication = config.logicalReplication ?? true
@@ -50,7 +58,63 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
   return {
     kind: 'postgres-managed',
 
-    provision(): ProvisionedStore {
+    secrets(): StoreSecretContribution[] {
+      const consumers = config.secretConsumers
+      if (!consumers) return []
+      const contributions: StoreSecretContribution[] = []
+      // Declaration order mirrors the historical app-config order: the union
+      // per consumer is genId-fingerprinted, so reordering rolls generations.
+      if (consumers.runtime) {
+        contributions.push({
+          id: 'databaseUrlRuntime',
+          secretName: 'database-url-runtime',
+          envVar: 'DATABASE_URL',
+          description: 'PostgreSQL runtime_role connection string (backend API, subject to RLS)',
+          required: true,
+          valueSource: 'pulumi',
+          services: consumers.runtime,
+        })
+      }
+      if (consumers.admin) {
+        contributions.push({
+          id: 'databaseUrlAdmin',
+          secretName: 'database-url-admin',
+          envVar: 'DATABASE_ADMIN_URL',
+          description: 'PostgreSQL admin_role connection string (migrations, seeds, BYPASSRLS)',
+          required: true,
+          valueSource: 'pulumi',
+          services: consumers.admin,
+        })
+      }
+      if (consumers.cdc) {
+        contributions.push({
+          id: 'databaseUrlCdc',
+          secretName: 'database-url-cdc',
+          envVar: 'DATABASE_CDC_URL',
+          description: 'PostgreSQL CDC worker connection string (admin_role with replication access)',
+          required: true,
+          valueSource: 'pulumi',
+          services: consumers.cdc,
+        })
+      }
+      if (consumers.ca) {
+        contributions.push({
+          id: 'databaseSslCa',
+          secretName: 'database-ssl-ca',
+          envVar: 'DATABASE_SSL_CA',
+          description:
+            'base64-encoded PEM CA cert of the Scaleway RDB instance, used by services to verify the PostgreSQL TLS connection (derived by pulumi from the database instance; base64 keeps the multi-line PEM deliverable through the line-based .env.runtime)',
+          required: true,
+          valueSource: 'pulumi',
+          services: consumers.ca,
+        })
+      }
+      return contributions
+    },
+
+    provision(ctx: ProvisionContext): ProvisionedStore {
+      const { pulumi, scaleway, naming, region, isProduction, sizing, privateNetworkId, configuredOrRandomSecret } = ctx
+
       // Stack config for infrastructure opt-ins (public endpoint exposure).
       const infraConfig = new pulumi.Config('infra')
 

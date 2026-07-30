@@ -24,7 +24,7 @@ export const tildeMark = pc.bold(pc.yellowBright('~'))
 export const DIVIDER = '─'.repeat(60)
 
 /** Prints the shared CLI header with optional version and right-aligned label. */
-export function printHeader(name: string, version?: string, right = 'cellajs.com'): void {
+export function printHeader(name: string, version?: string, right = ''): void {
   const visibleLeft = version ? `⧈ ${name} · v${version}` : `⧈ ${name}`
   const padding = Math.max(1, 60 - visibleLeft.length - right.length)
   const left = version ? `${pc.cyan(`⧈ ${name}`)}${pc.dim(` · v${version}`)}` : pc.cyan(`⧈ ${name}`)

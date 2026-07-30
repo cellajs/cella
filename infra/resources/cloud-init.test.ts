@@ -6,7 +6,8 @@ function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
     slug: 'cella',
     service: 'backend',
     profile: 'backend',
-    runMigrate: true,
+    startServices: ['backend'],
+    runRelease: true,
     releaseSha: 'abc123def',
     envFileContent: 'APP_MODE=production\nBACKEND_TAG=abc123def\nBACKEND_URL=https://api.example.test',
     manifestContent: '[\n  { "envVar": "COOKIE_SECRET", "secretId": "uuid-1", "required": true }\n]',
@@ -74,14 +75,14 @@ describe('renderCloudInit', () => {
     expect(out).toContain('"envVar": "COOKIE_SECRET"')
   })
 
-  it('gates the migrate companion through the boot plan', () => {
-    const withMigrate = renderCloudInit(params({ runMigrate: true }))
-    const withoutMigrate = renderCloudInit(params({ runMigrate: false }))
+  it('gates the release companion through the boot plan', () => {
+    const withRelease = renderCloudInit(params({ runRelease: true }))
+    const withoutRelease = renderCloudInit(params({ runRelease: false }))
 
-    expect(withMigrate).toContain('"enabled": true')
-    expect(withMigrate).toContain('"docker",')
-    expect(withMigrate).toContain('"migrate"')
-    expect(withoutMigrate).toContain('"enabled": false')
+    expect(withRelease).toContain('"enabled": true')
+    expect(withRelease).toContain('"docker",')
+    expect(withRelease).toContain('"backend-release"')
+    expect(withoutRelease).toContain('"enabled": false')
   })
 
   it('does not contain legacy boot implementation details', () => {

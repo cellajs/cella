@@ -13,6 +13,12 @@ export interface BootPlan {
   schemaVersion: typeof supportedSchemaVersion
   service: string
   profile: string
+  /**
+   * Compose services to start (explicit names, so the one-shot release
+   * companion sharing the profile is never `up`ed). Absent in plans written
+   * before container collocation; the boot runner falls back to [profile].
+   */
+  services?: [string, ...string[]]
   releaseSha: string
   /** W3C traceparent of the deploy that provisioned this generation; boot telemetry joins that trace. */
   traceparent?: string
@@ -51,6 +57,7 @@ const topLevelKeys = new Set([
   'service',
   'traceparent',
   'profile',
+  'services',
   'releaseSha',
   'imageContract',
   'registry',
@@ -154,10 +161,13 @@ export function parseBootPlanJson(json: string): BootPlan {
 
   const traceparent = typeof parsed.traceparent === 'string' && parsed.traceparent.trim() !== '' ? parsed.traceparent : undefined
 
+  const services = parsed.services === undefined ? undefined : commandField(parsed, 'services')
+
   return {
     schemaVersion,
     service: stringField(parsed, 'service'),
     profile: stringField(parsed, 'profile'),
+    ...(services ? { services } : {}),
     releaseSha: stringField(parsed, 'releaseSha'),
     ...(traceparent ? { traceparent } : {}),
     imageContract,

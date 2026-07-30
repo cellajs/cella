@@ -67,8 +67,13 @@ async function dockerLogin(plan: BootPlan, secretKey: string, exec: ExecFn): Pro
   await mustExec(exec, 'docker', ['login', registryHost, '-u', 'nologin', '--password-stdin'], { input: secretKey })
 }
 
+/** Compose services this VM runs: explicit names (plans written before container collocation carry none). */
+function startServices(plan: BootPlan): [string, ...string[]] {
+  return plan.services ?? [plan.profile]
+}
+
 async function pullImage(plan: BootPlan, exec: ExecFn): Promise<void> {
-  await retry(() => mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'pull', plan.profile], { cwd: '/opt/app' }), {
+  await retry(() => mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'pull', ...startServices(plan)], { cwd: '/opt/app' }), {
     attempts: plan.timeouts.pullAttempts,
     delayMs: plan.timeouts.pullRetrySeconds * 1000,
   })
@@ -81,18 +86,20 @@ async function runReleaseCommand(plan: BootPlan, exec: ExecFn): Promise<void> {
 }
 
 /**
- * Start the app and wait for its compose healthcheck. `--wait` blocks until the
- * container is healthy.
+ * Start the app (and any collocated containers) and wait for the compose
+ * healthchecks. `--wait` blocks until every started container is healthy.
+ * Explicitly naming a service activates its profile, so collocated containers
+ * outside the host profile start too.
  */
 async function startService(plan: BootPlan, exec: ExecFn): Promise<void> {
-  await mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'up', '-d', '--wait', '--wait-timeout', String(startupTimeoutSeconds), plan.profile], { cwd: '/opt/app' })
+  await mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'up', '-d', '--wait', '--wait-timeout', String(startupTimeoutSeconds), ...startServices(plan)], { cwd: '/opt/app' })
 }
 
 /** Best-effort tail of the app container's own stdout/stderr for diagnostics,
  *  secret-scrubbed at capture so every downstream sink (telemetry event body,
  *  boot-diag upload) only ever sees the scrubbed form. */
 async function captureServiceLogs(plan: BootPlan, exec: ExecFn): Promise<string> {
-  const res = await exec('docker', ['compose', '--profile', plan.profile, 'logs', '--no-color', '--tail', '200', plan.profile], { cwd: '/opt/app' })
+  const res = await exec('docker', ['compose', '--profile', plan.profile, 'logs', '--no-color', '--tail', '200', ...startServices(plan)], { cwd: '/opt/app' })
   return scrubSecretLines((res.stdout || res.stderr || '').trim())
 }
 
