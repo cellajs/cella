@@ -8,7 +8,7 @@ import { infraDir } from '../lib/utils/paths'
 import { runApply } from './actions/apply'
 import { runPreview } from './actions/preview'
 import { runResetDatabase } from './actions/reset-database'
-import { runExposeDatabase, runUnexposeDatabase } from './actions/db-exposure'
+import { exposureOverlayPath, runExposeDatabase, runUnexposeDatabase } from './actions/db-exposure'
 import { runSeedDatabase } from './actions/seed-db'
 import { runRotatePassphrase } from './actions/rotate-passphrase'
 import { runSecrets } from './actions/secrets'
@@ -199,7 +199,11 @@ async function chooseStackAction(): Promise<Exclude<CliMode, 'status'> | 'back'>
 }
 
 async function chooseAction(ctx: InfraContext): Promise<Exclude<CliMode, 'status'>> {
-  const dbExposed = detectDbPublicEndpoint(ctx.stackYaml)
+  // Exposure state lives in the gitignored overlay; the committed stack yaml is
+  // only consulted for stacks that predate the overlay flow.
+  const overlayPath = exposureOverlayPath(ctx.environment)
+  const overlayYaml = existsSync(overlayPath) ? readFileSync(overlayPath, 'utf8') : undefined
+  const dbExposed = detectDbPublicEndpoint(overlayYaml ?? ctx.stackYaml)
   const { runStatus } = await import('../tasks/status')
   while (true) {
     const category = await select<'status' | 'database' | 'keys' | 'stack'>({

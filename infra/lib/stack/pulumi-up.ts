@@ -65,13 +65,16 @@ export interface PulumiUpResult {
 }
 
 /** Runs `pulumi up --stack <s> --yes --non-interactive` in `cwd` with `env`.
- *  On non-zero exit, prints a permission hint when stderr indicates one. */
-export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJS.ProcessEnv): Promise<PulumiUpResult> {
-  console.info(`\n→ pulumi up (base infra)\n  $ pulumi up --stack ${stack} --yes --non-interactive`)
+ *  `configFile` swaps the stack config for an alternate file (`--config-file`),
+ *  used by the DB-exposure overlay. On non-zero exit, prints a permission hint
+ *  when stderr indicates one. */
+export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJS.ProcessEnv, configFile?: string): Promise<PulumiUpResult> {
+  const configFileArgs = configFile ? ['--config-file', configFile] : []
+  console.info(`\n→ pulumi up (base infra)\n  $ pulumi up --stack ${stack} --yes --non-interactive${configFileArgs.map((a) => ` ${a}`).join('')}`)
   // stdout is teed, not inherited, so the Diagnostics section reaches
   // parseOrphanedDeletes; with --non-interactive pulumi already uses the plain
   // (non-TTY) display, so piping does not change what the operator sees.
-  const child = spawn('pulumi', ['up', '--stack', stack, '--yes', '--non-interactive'], {
+  const child = spawn('pulumi', ['up', '--stack', stack, '--yes', '--non-interactive', ...configFileArgs], {
     cwd,
     env,
     stdio: ['inherit', 'pipe', 'pipe'],
