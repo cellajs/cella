@@ -73,6 +73,24 @@ describe('no-unexpected-public sweep', () => {
     }
   })
 
+  // Exposure keys must only ever live in the gitignored Pulumi.<env>.exposure.yaml
+  // overlay (written by the expose/seed flows): a committed key would make every
+  // CI deploy re-converge the public endpoint open.
+  it('no committed stack config records DB-exposure keys', () => {
+    const infraRoot = resolve(__dirname, '../..')
+    const offenders: string[] = []
+    for (const file of readdirSync(infraRoot)) {
+      if (!/^Pulumi\..+\.yaml$/.test(file) || file.endsWith('.exposure.yaml')) continue
+      const src = readFileSync(resolve(infraRoot, file), 'utf-8')
+      if (/dbPublicEndpoint:\s*["']?true/.test(src) || /dbPublicAcl/.test(src)) offenders.push(file)
+    }
+    expect(
+      offenders,
+      `DB-exposure keys found in committed stack config: ${offenders.join(', ')}. ` +
+        'Run "Stop public DB exposure" (infra CLI) and remove the keys; exposure belongs in the gitignored overlay.',
+    ).toEqual([])
+  })
+
   it('does not flag pristine surface — sanity check the scanner itself runs', () => {
     // If PATTERNS array got accidentally emptied, this test catches it.
     expect(PATTERNS.length).toBeGreaterThan(0)

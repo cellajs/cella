@@ -4,10 +4,18 @@ import { confirm } from '@inquirer/prompts'
 import { pc, checkMark, crossMark, warningMark } from '../../lib/utils/cli-output'
 import { infraDir } from '../../lib/utils/paths'
 import type { InfraContext } from '../shared'
-import { convergePublicEndpoint, detectPublicIp, pulumiConfigRm, pulumiConfigSet, readDbCa, readPublicDsn } from './db-exposure'
-
-const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint'
-const DB_ACL_KEY = 'infra:dbPublicAcl'
+import {
+  DB_ACL_KEY,
+  DB_ENDPOINT_KEY,
+  convergePublicEndpoint,
+  detectPublicIp,
+  pulumiConfigRm,
+  pulumiConfigSet,
+  readDbCa,
+  readPublicDsn,
+  removeExposureOverlay,
+  writeExposureOverlay,
+} from './db-exposure'
 
 /**
  * One guarded flow for demo data on a non-production environment: temporarily
@@ -33,8 +41,12 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
   }
 
   const { env, stack } = await convergePublicEndpoint(context, 'seed-db', (e, s) => {
-    pulumiConfigSet(e, s, DB_ENDPOINT_KEY, 'true')
-    pulumiConfigSet(e, s, DB_ACL_KEY, `${detected}/32`, { secret: true })
+    // Exposure keys go into the gitignored overlay, never the committed stack
+    // config; see db-exposure.ts.
+    const overlay = writeExposureOverlay(context.stackPath, context.environment)
+    pulumiConfigSet(e, s, DB_ENDPOINT_KEY, 'true', { configFile: overlay })
+    pulumiConfigSet(e, s, DB_ACL_KEY, `${detected}/32`, { secret: true, configFile: overlay })
+    return overlay
   })
 
   try {
@@ -58,10 +70,16 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
   } finally {
     console.info(pc.dim('\n-> Closing the public endpoint...\n'))
     const closed = await convergePublicEndpoint(context, 'unseed-db', (e, s) => {
-      pulumiConfigSet(e, s, DB_ENDPOINT_KEY, 'false')
-      pulumiConfigRm(e, s, DB_ACL_KEY)
+      // Compat cleanup for stacks that predate the overlay; converging the
+      // committed (key-free) config is what closes the endpoint.
+      if (context.stackYaml?.includes(DB_ENDPOINT_KEY)) pulumiConfigRm(e, s, DB_ENDPOINT_KEY)
+      if (context.stackYaml?.includes(DB_ACL_KEY)) pulumiConfigRm(e, s, DB_ACL_KEY)
+      return undefined
     }).then(
-      () => true,
+      () => {
+        removeExposureOverlay(context.environment)
+        return true
+      },
       (err) => {
         console.error(`${warningMark} closing the endpoint failed: ${err instanceof Error ? err.message : String(err)}`)
         return false
