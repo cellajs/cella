@@ -20,6 +20,12 @@ export interface CloudInitParams {
   /** Registry endpoint (`<host>/<namespace>`); login uses the host part. */
   registry: string
   /**
+   * Boot runner image repository name. Defaults to the current name; a generation
+   * deployed before the boot-image rename resolves under its legacy name, and the
+   * digest below is only pullable from that repository, so the ref must use it.
+   */
+  bootImageName?: string
+  /**
    * Manifest digest (`sha256:…`) the boot runner tag resolved to at plan time.
    * When set, the launcher runs the boot image by digest, so a later registry
    * push cannot swap the root-equivalent (socket-mounted) boot runner under a
@@ -119,8 +125,10 @@ function bootPlan(p: CloudInitParams): string {
 }
 
 /** Boot runner image reference: pinned by digest when resolved, else the release-SHA tag. */
-const bootImageRef = (p: CloudInitParams): string =>
-  p.bootImageDigest ? `${p.registry}/infra-boot@${p.bootImageDigest}` : `${p.registry}/infra-boot:${p.releaseSha}`
+const bootImageRef = (p: CloudInitParams): string => {
+  const image = p.bootImageName ?? 'infra-boot'
+  return p.bootImageDigest ? `${p.registry}/${image}@${p.bootImageDigest}` : `${p.registry}/${image}:${p.releaseSha}`
+}
 
 /**
  * Launcher: log the host daemon into the registry (to pull the boot runner

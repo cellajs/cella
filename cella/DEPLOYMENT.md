@@ -124,7 +124,7 @@ A fourth secret sits outside this chain: the **Pulumi passphrase**, which encryp
 
 ## CI deploys
 
-The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger (push to main, release, and manual dispatch) that calls the reusable pipeline in [.github/workflows/infra-deploy.yml](../.github/workflows/infra-deploy.yml). Inside the reusable workflow, a `setup` job derives names/matrices from config, a build matrix pushes images, and one `deploy` job runs the whole deployment as a single command:
+The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger (push to main, release, and manual dispatch) that calls the reusable pipeline in [.github/workflows/deploy-pipeline.yml](../.github/workflows/deploy-pipeline.yml). Inside the reusable workflow, a `setup` job derives names/matrices from config, a build matrix pushes images, and one `deploy` job runs the whole deployment as a single command:
 
 ```
 pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref <ref>
@@ -134,7 +134,7 @@ pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref
 
 The rollout records the release SHA as INTENT (`pendingSha`) in the S3 control object and lets the Pulumi program, the sole authority over generation identity, provision a **new VM generation** (`vm-<svc>-<genId>`) with the SHA baked into its cloud-init. The `genId` is **content-addressed** (a hash of the release SHA plus the generation's static config), so re-running a deploy reuses the same generation (a true no-op) and a manual `pulumi up` can never create a divergent generation identity. For LB-backed services the cutover expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, then contracts to `[new]`; displaced generations are reaped by one final stack update after every cutover succeeded (rollback = revert commit + redeploy). See [rollout strategies](#rollout-strategies) for the model.
 
-Pushes to main auto-deploy **staging**, so staging always mirrors the tip of main. This is **opt-in**: the push job runs only when the repo variable `AUTO_DEPLOY_STAGING` is `'true'` (`gh variable set AUTO_DEPLOY_STAGING --body true`). Until then, and for any app that has not bootstrapped staging, the push job **skips cleanly** (a neutral run, never a failing check), so pulling this template never red-Xes an app's CI. Turn it on once a manual staging deploy has proven the environment is live. A burst of merges coalesces: the newest push cancels a superseded in-flight staging run (`cancel-in-progress`), and production rollouts never cancel. You can always deploy staging on demand regardless of the variable: GitHub → Actions → Deploy → Run workflow → select `staging`.
+Pushes to main auto-deploy **staging**, so staging always mirrors the tip of main. An app built from the template must bootstrap a `staging` [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) holding the `SCW_*` secrets before merging to main, or the push job fails. A burst of merges coalesces: the newest push cancels a superseded in-flight staging run (`cancel-in-progress`), and production rollouts never cancel. You can also deploy staging on demand: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
 **Production** deploys only when a release is published (or a manual dispatch). To make it a manual promote, configure a [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) named `production` with required reviewers: the deploy job already targets that Environment, so the run pauses for an approval click before touching production.
 
@@ -384,11 +384,10 @@ infra/
 
 .github/workflows/
 ├── deploy.yml              Thin trigger: release published + manual dispatch
-├── infra-deploy.yml        Reusable pipeline: setup, image builds, the deploy command
-└── infra-preview.yml       `pulumi preview` on PRs touching infra/ or shared/
+├── deploy-pipeline.yml     Reusable pipeline: setup, image builds, the deploy command
 ```
 
-The workflows are tightly coupled to this package: `infra-deploy.yml` builds the release images in a matrix, then hands everything else to the single deploy command (authenticating with the CI deploy key). `infra-preview.yml` mirrors the **Preview** CLI action on PRs.
+The workflows are tightly coupled to this package: `deploy-pipeline.yml` builds the release images in a matrix, then hands everything else to the single deploy command (authenticating with the CI deploy key).
 
 ## Advanced operations
 
@@ -426,6 +425,11 @@ pnpm --filter infra boot:image   # tsup bundle + docker build (tag via BOOT_IMAG
 ```
 
 The VM base image itself is the stock `docker` marketplace label (`compute.image`); set it to a literal image UUID only to **pin** a specific base for rollback.
+
+Renaming the boot image is a sync-breaking change with a built-in migration, and pinning tolerates a pre-existing generation whose boot image is gone. Each VM generation pins its boot image by name and release sha, and a manifest digest is only pullable from its own repository, so a generation deployed under an older name has its boot image only in the legacy repository. Two mechanisms keep a deploy planning:
+
+- **Legacy-name resolution.** When resolving a generation's boot image ([lib/scaleway/boot-image.ts](../infra/lib/scaleway/boot-image.ts)), the current name is tried first and, on a 404, each name in `LEGACY_BOOT_IMAGE_NAMES` in turn; the resolved name is threaded into cloud-init so the ref points at the repository the digest lives in. Drop the legacy entry once no live generation predates the rename, which is one successful deploy per environment. The 2026-07 `cella-boot` to `infra-boot` rename is the first use.
+- **Pre-existing generations degrade.** A newly rolling generation must have a pinnable boot image (the deploy fails closed otherwise). A generation already live in the control state has its VM booted and carries `ignoreChanges` on cloud-init, so if its boot image is no longer resolvable at all (for example the registry pruned the old tag) resolution degrades to an unpinned tag with a warning ([resources/compute.ts](../infra/resources/compute.ts)) rather than blocking the cutover to the new generation.
 
 ### Key rotation
 

@@ -1,3 +1,4 @@
+import { BOOT_IMAGE_NAME } from '../lib/scaleway/boot-image'
 import { parseServiceRows } from '../lib/utils/service-rows'
 
 // Engine-side image builder behind `infra deploy --build`: targets derive from
@@ -41,9 +42,9 @@ export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { grou
   target['boot-runner'] = {
     context: `${context === '.' ? '' : `${context}/`}infra/boot`,
     dockerfile: 'Dockerfile',
-    tags: [image('infra-boot')],
-    'cache-from': [`type=registry,ref=${cacheRef('infra-boot')}`],
-    'cache-to': [`type=registry,ref=${cacheRef('infra-boot')},mode=max`],
+    tags: [image(BOOT_IMAGE_NAME)],
+    'cache-from': [`type=registry,ref=${cacheRef(BOOT_IMAGE_NAME)}`],
+    'cache-to': [`type=registry,ref=${cacheRef(BOOT_IMAGE_NAME)},mode=max`],
   }
   return { group: { default: { targets: [...rows.map((row) => row.service), 'boot-runner'] } }, target }
 }

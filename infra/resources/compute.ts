@@ -10,7 +10,7 @@ import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-
 import type { ServiceDefinition } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from '../lib/scaleway/vm-reader-secret'
-import { resolveImageDigest } from '../lib/scaleway/registry-digest'
+import { resolveBootImage, type ResolvedBootImage } from '../lib/scaleway/boot-image'
 import { renderCloudInit } from './cloud-init'
 import { createComposeEnvBuilder } from './compose-env'
 import { activeGenerations, coHosted, enabled, hostSlug, secretConsumersFor, type Generation } from './generations'
@@ -103,42 +103,57 @@ interface ServiceConfig {
   composeEnv: Record<string, () => pulumi.Input<string>>
 }
 
-// Per-tag digest memo: every generation of a release resolves the boot image
-// digest once, not once per VM.
-const bootImageDigests = new Map<string, Promise<string | undefined>>()
+// Per-tag boot-image memo: every generation of a release resolves the boot image
+// name+digest once, not once per VM. Stores the raw resolution (which may reject);
+// each caller applies its own dry-run / pin-requirement handling below.
+const bootImageResolutions = new Map<string, Promise<ResolvedBootImage>>()
 
-/**
- * Resolve the boot runner tag to its manifest digest so the launcher pins the
- * root-equivalent (socket-mounted) image against later registry pushes. Fail
- * closed on a real `up`; a dry run degrades to the tag with a warning so
- * previews never require registry availability.
- */
-function bootImageDigestFor(registry: string, releaseSha: string, secretKey: string): Promise<string | undefined> {
+function resolveBootImageOnce(registry: string, releaseSha: string, secretKey: string): Promise<ResolvedBootImage> {
   const memoKey = `${registry}|${releaseSha}`
-  let pending = bootImageDigests.get(memoKey)
+  let pending = bootImageResolutions.get(memoKey)
   if (!pending) {
-    pending = resolveImageDigest({ registry, image: 'infra-boot', tag: releaseSha, secretKey }).catch((err: unknown) => {
-      const message = err instanceof Error ? err.message : String(err)
-      if (pulumi.runtime.isDryRun()) {
-        pulumi.log.warn(`boot image digest resolution failed (preview continues on the tag): ${message}`)
-        return undefined
-      }
-      throw new Error(`Refusing to plan a VM with an unpinned boot image: ${message}`)
-    })
-    bootImageDigests.set(memoKey, pending)
+    pending = resolveBootImage({ registry, releaseSha, secretKey })
+    bootImageResolutions.set(memoKey, pending)
   }
   return pending
 }
 
-function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Output<string> {
+/**
+ * Resolve the boot runner tag to the name+digest it is pullable by, so the
+ * launcher pins the root-equivalent (socket-mounted) image against later registry
+ * pushes. Falls back to the legacy image name for generations deployed before the
+ * boot-image rename (see resolveBootImage).
+ *
+ * `requirePinned` fails closed on a real `up` for a newly rolling generation whose
+ * boot image must exist. A pre-existing generation degrades to an unpinned tag
+ * with a warning: its VM already booted and carries `ignoreChanges` on cloud-init,
+ * so a boot image no longer resolvable in the registry must not block the deploy.
+ * A dry run always degrades so previews never require registry availability.
+ */
+function bootImageFor(registry: string, releaseSha: string, secretKey: string, requirePinned: boolean): Promise<ResolvedBootImage | undefined> {
+  return resolveBootImageOnce(registry, releaseSha, secretKey).catch((err: unknown) => {
+    const message = err instanceof Error ? err.message : String(err)
+    if (pulumi.runtime.isDryRun()) {
+      pulumi.log.warn(`boot image digest resolution failed (preview continues on the tag): ${message}`)
+      return undefined
+    }
+    if (!requirePinned) {
+      pulumi.log.warn(`boot image not resolvable for existing generation ${releaseSha}; it keeps running on its booted image: ${message}`)
+      return undefined
+    }
+    throw new Error(`Refusing to plan a VM with an unpinned boot image: ${message}`)
+  })
+}
+
+function buildCloudInit(service: ServiceConfig, releaseSha: string, requirePinnedBootImage: boolean): pulumi.Output<string> {
   const envLines = pulumi.all(
     Object.entries(service.composeEnv).map(([k, supply]) =>
       pulumi.output(supply()).apply((val) => `${k}=${val}`),
     ),
   )
 
-  const bootImageDigest = pulumi.all([registryEndpoint, vmSecretKey]).apply(([registry, secretKey]) =>
-    bootImageDigestFor(registry, releaseSha, secretKey),
+  const bootImage = pulumi.all([registryEndpoint, vmSecretKey]).apply(([registry, secretKey]) =>
+    bootImageFor(registry, releaseSha, secretKey, requirePinnedBootImage),
   )
 
   return pulumi.all([
@@ -150,8 +165,8 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
     vmSecretKey,
     registryEndpoint,
     bootDiagBucketName,
-    bootImageDigest,
-  ]).apply(([env, manifest, accessKey, secretKey, registry, bootDiagBucket, digest]) =>
+    bootImage,
+  ]).apply(([env, manifest, accessKey, secretKey, registry, bootDiagBucket, resolvedBootImage]) =>
     renderCloudInit({
       slug: naming.slug,
       service: service.name,
@@ -162,7 +177,8 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
       manifestContent: manifest,
       composeContent,
       registry,
-      bootImageDigest: digest,
+      bootImageName: resolvedBootImage?.image,
+      bootImageDigest: resolvedBootImage?.digest,
       accessKey,
       secretKey,
       region,
@@ -255,7 +271,9 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     zone,
     tags,
     securityGroupId: securityGroup.id,
-    cloudInit: buildCloudInit(serviceConfig, generation.sha),
+    // A newly rolling generation must have a pinnable boot image; a pre-existing
+    // generation (its VM already booted, cloud-init ignored) degrades gracefully.
+    cloudInit: buildCloudInit(serviceConfig, generation.sha, !generation.preexisting),
     ipIds: [ip.id],
   }, {
     // Generation VMs keep their initial cloud-init and image; changes create a content-addressed
