@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { nanoid } from 'shared/utils/nanoid';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
+import { resolvePlacementList } from '~/lib/placements';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useScrollReset } from '~/modules/common/scroll-reset';
 import { StickyBox } from '~/modules/common/sticky-box';
@@ -35,9 +36,11 @@ function getChildRoutes(route: AnyRoute): AnyRoute[] {
 
 /**
  * Extract navigation tabs from child routes based on their staticData.navTab configuration.
- * Only routes with navTab defined in staticData will be included.
+ * Only routes with navTab defined in staticData are included. Overrides in `~/placement-config`
+ * (keyed by the parent route id) and grant gating via `requires` apply before the stable sort
+ * on `order` (default 0, lower first; ties keep route registration order).
  */
-function useNavTabs(parentRouteId: string, filterTabIds?: string[], grants?: readonly string[]): PageTab[] {
+export function resolveNavTabs(parentRouteId: string, filterTabIds?: string[], grants?: readonly string[]): PageTab[] {
   if (!parentRouteId) return [];
 
   // Cast: generated FileRoutesById is a closed interface without index signature
@@ -47,28 +50,35 @@ function useNavTabs(parentRouteId: string, filterTabIds?: string[], grants?: rea
   const parentRoute = routesById[parentRouteId];
   const children = getChildRoutes(parentRoute);
 
-  const tabs: PageTab[] = children
+  const candidates = children
     .map((route) => {
       const navTab = route.options?.staticData?.navTab;
       if (!navTab) return null;
-      // Deny by default: a tab declaring `requires` is hidden unless that grant is passed
-      if (navTab.requires && !grants?.includes(navTab.requires)) return null;
       return {
         id: navTab.id,
         label: navTab.label,
         path: route.fullPath as PageTab['path'],
         order: navTab.order ?? 0,
+        requires: navTab.requires,
       };
     })
-    .filter((tab): tab is PageTab & { order: number } => tab !== null)
-    // Stable sort on navTab.order (default 0, lower first; ties keep route registration order)
-    .sort((a, b) => a.order - b.order);
+    .filter((tab) => tab !== null);
+
+  const tabs: PageTab[] = resolvePlacementList(parentRouteId, candidates, grants);
 
   if (filterTabIds) {
     return tabs.filter((tab) => filterTabIds.includes(tab.id));
   }
 
   return tabs;
+}
+
+/**
+ * First visible tab path under a parent route: the derived default-tab redirect target for
+ * layout routes, so the landing tab follows `order` and app overrides.
+ */
+export function defaultNavTabPath(parentRouteId: string, grants?: readonly string[]): string | undefined {
+  return resolveNavTabs(parentRouteId, undefined, grants)[0]?.path;
 }
 
 interface Props {
@@ -108,7 +118,7 @@ export function PageTabNav({
   const { hasStarted } = useMountedState();
 
   // Use explicit tabs or auto-generate from parent route's children
-  const autoTabs = useNavTabs(parentRouteId ?? '', filterTabIds, grants);
+  const autoTabs = resolveNavTabs(parentRouteId ?? '', filterTabIds, grants);
   const tabs = explicitTabs ?? autoTabs;
 
   const layoutId = useRef(nanoid()).current;

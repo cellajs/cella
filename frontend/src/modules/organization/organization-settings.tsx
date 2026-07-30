@@ -8,7 +8,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { appConfig } from 'shared';
 import { useOrganizationLayoutContext } from '~/hooks/use-route-context';
-import { getPlacements, type PlacementTab } from '~/lib/placements';
+import { getPlacements, type PlacementTab, resolvePlacementList } from '~/lib/placements';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -80,92 +80,92 @@ function OrganizationSettings({ organization }: { organization: EnrichedOrganiza
   };
 
   // Module contributions for this page's placement slot, wrapped in the standard titled card
-  const contributionSections: SettingsSection[] = getPlacements('organization.settings.aside')
-    .filter((placement) => !placement.requires || grants.includes(placement.requires))
-    .map((placement) => ({
-      ...placement,
-      order: placement.order ?? 50,
-      node: (
-        <Card id={placement.id}>
-          <CardHeader>
-            <CardTitle>{t(placement.label, { resource: t(placement.resource || '').toLowerCase() })}</CardTitle>
-          </CardHeader>
-          <CardContent>{placement.render(organization)}</CardContent>
-        </Card>
-      ),
-    }));
+  const contributionSections: SettingsSection[] = getPlacements('organization.settings.aside').map((placement) => ({
+    ...placement,
+    order: placement.order ?? 50,
+    node: (
+      <Card id={placement.id}>
+        <CardHeader>
+          <CardTitle>{t(placement.label, { resource: t(placement.resource || '').toLowerCase() })}</CardTitle>
+        </CardHeader>
+        <CardContent>{placement.render(organization)}</CardContent>
+      </Card>
+    ),
+  }));
 
-  const sections: SettingsSection[] = [
-    {
-      id: 'general',
-      label: 'c:general',
-      order: 10,
-      node: (
-        <Card id="update-organization">
-          <CardHeader>
-            <CardTitle>
-              <UnsavedBadge title={t('c:general')} />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <UpdateOrganizationForm organization={organization} callback={callback} />
-          </CardContent>
-        </Card>
-      ),
-    },
-    {
-      id: 'details',
-      label: 'c:details',
-      order: 20,
-      node: (
-        <Card id="update-organization-details">
-          <CardHeader>
-            <CardTitle>{t('c:details')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <UpdateOrganizationDetailsForm organization={organization} callback={callback} />
-          </CardContent>
-        </Card>
-      ),
-    },
-    // { id: 'subscription', label: 'c:subscription', order: 30, node: <Subscription organization={organization} /> },
-    ...contributionSections,
-    ...(canDelete
-      ? [
-          {
-            id: 'delete-organization',
-            label: 'c:delete_resource',
-            resource: 'c:organization',
-            order: 90,
-            node: (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('c:delete_resource', { resource: t('c:organization').toLowerCase() })}</CardTitle>
-                  <CardDescription>
-                    <Trans
-                      t={t}
-                      i18nKey="c:delete_resource_notice.text"
-                      values={{ name: organization.name, resource: t('c:organization').toLowerCase() }}
-                    />
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    ref={deleteButtonRef}
-                    variant="destructive"
-                    className="w-full sm:w-auto"
-                    onClick={openDeleteDialog}
-                  >
-                    <TrashIcon className="mr-2 size-4" />
-                    <span>{t('c:delete_resource', { resource: t('c:organization').toLowerCase() })}</span>
-                  </Button>
-                </CardContent>
-              </Card>
-            ),
-          },
-        ]
-      : []),
-  ].sort((a, b) => a.order - b.order);
+  // Overrides in ~/placement-config can hide, reorder, or re-gate any entry; `requires` gates on grants
+  const sections: SettingsSection[] = resolvePlacementList(
+    'organization.settings.aside',
+    [
+      {
+        id: 'general',
+        label: 'c:general',
+        order: 10,
+        node: (
+          <Card id="update-organization">
+            <CardHeader>
+              <CardTitle>
+                <UnsavedBadge title={t('c:general')} />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <UpdateOrganizationForm organization={organization} callback={callback} />
+            </CardContent>
+          </Card>
+        ),
+      },
+      {
+        id: 'details',
+        label: 'c:details',
+        order: 20,
+        node: (
+          <Card id="update-organization-details">
+            <CardHeader>
+              <CardTitle>{t('c:details')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <UpdateOrganizationDetailsForm organization={organization} callback={callback} />
+            </CardContent>
+          </Card>
+        ),
+      },
+      // { id: 'subscription', label: 'c:subscription', order: 30, node: <Subscription organization={organization} /> },
+      ...contributionSections,
+      {
+        id: 'delete-organization',
+        label: 'c:delete_resource',
+        resource: 'c:organization',
+        order: 90,
+        requires: 'delete',
+        node: (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('c:delete_resource', { resource: t('c:organization').toLowerCase() })}</CardTitle>
+              <CardDescription>
+                <Trans
+                  t={t}
+                  i18nKey="c:delete_resource_notice.text"
+                  values={{ name: organization.name, resource: t('c:organization').toLowerCase() }}
+                />
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                ref={deleteButtonRef}
+                variant="destructive"
+                className="w-full sm:w-auto"
+                onClick={openDeleteDialog}
+              >
+                <TrashIcon className="mr-2 size-4" />
+                <span>{t('c:delete_resource', { resource: t('c:organization').toLowerCase() })}</span>
+              </Button>
+            </CardContent>
+          </Card>
+        ),
+      },
+    ],
+    grants,
+  );
 
   return (
     <div className="container mx-auto my-4 gap-4 md:flex md:flex-row">

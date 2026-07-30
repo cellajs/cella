@@ -50,6 +50,7 @@ export default defineConfig({
       'frontend/public/favicon.ico',
       'frontend/public/favicon.svg',
       'frontend/src/nav-config.tsx',
+      'frontend/src/placement-config.ts',
       'frontend/src/routes-config.tsx',
       'frontend/src/menu-config.tsx',
       'frontend/src/alert-config.tsx',
