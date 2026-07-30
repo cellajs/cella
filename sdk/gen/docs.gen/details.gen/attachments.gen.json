@@ -66,42 +66,14 @@
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references.",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "description": "Minimal user data for references, or null when no user is available.",
+                    "ref": "#/components/schemas/NullableUserMinimalBase"
                   },
                   "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references.",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "description": "Minimal user data for references, or null when no user is available.",
+                    "ref": "#/components/schemas/NullableUserMinimalBase"
                   },
                   "deletedAt": {
                     "type": ["string", "null"],
@@ -147,29 +119,16 @@
                     "maxLength": 255
                   },
                   "size": { "type": "string", "required": true, "maxLength": 255 },
-                  "originalKey": {
-                    "type": "string",
+                  "keys": {
+                    "type": "object",
                     "required": true,
-                    "description": "Storage object key for the original uploaded file.",
-                    "maxLength": 2048
-                  },
-                  "convertedKey": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "description": "Storage object key for the converted variant; null when none.",
-                    "maxLength": 2048
-                  },
-                  "thumbnailKey": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "description": "Storage object key for the generated thumbnail (mid-size preview); null when none.",
-                    "maxLength": 2048
-                  },
-                  "thumbnailTinyKey": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "description": "Storage object key for the tiny (grid-cell) image thumbnail; null when none.",
-                    "maxLength": 2048
+                    "description": "Storage object keys per variant, keyed by variant name; only generated variants are present.",
+                    "properties": {
+                      "original": { "type": "string", "required": true },
+                      "preview": { "type": "string", "required": false },
+                      "thumbnail": { "type": "string", "required": false },
+                      "converted": { "type": "string", "required": false }
+                    }
                   },
                   "organizationId": { "type": "string", "required": true, "format": "uuid" },
                   "viewCount": { "type": "integer", "required": false, "minimum": 0 }
@@ -217,16 +176,12 @@
               "seq": 108,
               "publicBucket": false,
               "bucketName": "attachments",
-              "taskId": null,
               "groupId": null,
               "filename": "finally_wherever_nasalise.php",
               "contentType": "image/gif",
               "convertedContentType": null,
               "size": "3838237",
-              "originalKey": "uploads/sllfn51vpq8cnfsar9hbjwto/finally_wherever_nasalise.php",
-              "convertedKey": null,
-              "thumbnailKey": null,
-              "thumbnailTinyKey": null,
+              "keys": { "original": "uploads/sllfn51vpq8cnfsar9hbjwto/finally_wherever_nasalise.php" },
               "organizationId": "f54ea01d-336a-43f3-90f2-043315ebed4a"
             },
             {
@@ -263,16 +218,12 @@
               "seq": 306,
               "publicBucket": false,
               "bucketName": "attachments",
-              "taskId": null,
               "groupId": null,
               "filename": "buzzing_brr_hm.rmi",
               "contentType": "audio/3gpp2",
               "convertedContentType": null,
               "size": "1155007",
-              "originalKey": "uploads/rvg8ngqzxmk35ee92ta8rpig/buzzing_brr_hm.rmi",
-              "convertedKey": null,
-              "thumbnailKey": null,
-              "thumbnailTinyKey": null,
+              "keys": { "original": "uploads/rvg8ngqzxmk35ee92ta8rpig/buzzing_brr_hm.rmi" },
               "organizationId": "4859fc3d-4ffc-4d93-bda6-f4757fd00cc2"
             }
           ],
@@ -416,42 +367,14 @@
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references.",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "description": "Minimal user data for references, or null when no user is available.",
+                    "ref": "#/components/schemas/NullableUserMinimalBase"
                   },
                   "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references.",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "description": "Minimal user data for references, or null when no user is available.",
+                    "ref": "#/components/schemas/NullableUserMinimalBase"
                   },
                   "deletedAt": {
                     "type": ["string", "null"],
@@ -497,29 +420,16 @@
                     "maxLength": 255
                   },
                   "size": { "type": "string", "required": true, "maxLength": 255 },
-                  "originalKey": {
-                    "type": "string",
+                  "keys": {
+                    "type": "object",
                     "required": true,
-                    "description": "Storage object key for the original uploaded file.",
-                    "maxLength": 2048
-                  },
-                  "convertedKey": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "description": "Storage object key for the converted variant; null when none.",
-                    "maxLength": 2048
-                  },
-                  "thumbnailKey": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "description": "Storage object key for the generated thumbnail (mid-size preview); null when none.",
-                    "maxLength": 2048
-                  },
-                  "thumbnailTinyKey": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "description": "Storage object key for the tiny (grid-cell) image thumbnail; null when none.",
-                    "maxLength": 2048
+                    "description": "Storage object keys per variant, keyed by variant name; only generated variants are present.",
+                    "properties": {
+                      "original": { "type": "string", "required": true },
+                      "preview": { "type": "string", "required": false },
+                      "thumbnail": { "type": "string", "required": false },
+                      "converted": { "type": "string", "required": false }
+                    }
                   },
                   "organizationId": { "type": "string", "required": true, "format": "uuid" },
                   "viewCount": { "type": "integer", "required": false, "minimum": 0 }
@@ -578,16 +488,12 @@
               "seq": 482,
               "publicBucket": false,
               "bucketName": "attachments",
-              "taskId": null,
               "groupId": null,
               "filename": "inasmuch.xhtml",
               "contentType": "application/vnd.oasis.opendocument.spreadsheet",
               "convertedContentType": null,
               "size": "9057832",
-              "originalKey": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml",
-              "convertedKey": null,
-              "thumbnailKey": null,
-              "thumbnailTinyKey": null,
+              "keys": { "original": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml" },
               "organizationId": "55b68dde-9bc4-4a07-a5e7-b48057f53a0c"
             },
             {
@@ -624,16 +530,12 @@
               "seq": 39,
               "publicBucket": false,
               "bucketName": "attachments",
-              "taskId": null,
               "groupId": null,
               "filename": "victoriously.mp4",
               "contentType": "image/jpeg",
               "convertedContentType": null,
               "size": "4961674",
-              "originalKey": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4",
-              "convertedKey": null,
-              "thumbnailKey": null,
-              "thumbnailTinyKey": null,
+              "keys": { "original": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4" },
               "organizationId": "044316a1-c906-4c0e-9632-932306ebef5b"
             }
           ],
@@ -704,42 +606,14 @@
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references.",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "description": "Minimal user data for references, or null when no user is available.",
+                    "ref": "#/components/schemas/NullableUserMinimalBase"
                   },
                   "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references.",
-                    "properties": {
-                      "id": { "type": "string", "required": true },
-                      "name": { "type": "string", "required": true },
-                      "slug": { "type": "string", "required": true },
-                      "thumbnailUrl": {
-                        "type": ["string", "null"],
-                        "required": true
-                      },
-                      "entityType": {
-                        "type": "string",
-                        "required": true,
-                        "enum": ["user"]
-                      }
-                    },
-                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                    "description": "Minimal user data for references, or null when no user is available.",
+                    "ref": "#/components/schemas/NullableUserMinimalBase"
                   },
                   "deletedAt": {
                     "type": ["string", "null"],
@@ -785,29 +659,16 @@
                     "maxLength": 255
                   },
                   "size": { "type": "string", "required": true, "maxLength": 255 },
-                  "originalKey": {
-                    "type": "string",
+                  "keys": {
+                    "type": "object",
                     "required": true,
-                    "description": "Storage object key for the original uploaded file.",
-                    "maxLength": 2048
-                  },
-                  "convertedKey": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "description": "Storage object key for the converted variant; null when none.",
-                    "maxLength": 2048
-                  },
-                  "thumbnailKey": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "description": "Storage object key for the generated thumbnail (mid-size preview); null when none.",
-                    "maxLength": 2048
-                  },
-                  "thumbnailTinyKey": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "description": "Storage object key for the tiny (grid-cell) image thumbnail; null when none.",
-                    "maxLength": 2048
+                    "description": "Storage object keys per variant, keyed by variant name; only generated variants are present.",
+                    "properties": {
+                      "original": { "type": "string", "required": true },
+                      "preview": { "type": "string", "required": false },
+                      "thumbnail": { "type": "string", "required": false },
+                      "converted": { "type": "string", "required": false }
+                    }
                   },
                   "organizationId": { "type": "string", "required": true, "format": "uuid" },
                   "viewCount": { "type": "integer", "required": false, "minimum": 0 }
@@ -866,16 +727,12 @@
               "seq": 482,
               "publicBucket": false,
               "bucketName": "attachments",
-              "taskId": null,
               "groupId": null,
               "filename": "inasmuch.xhtml",
               "contentType": "application/vnd.oasis.opendocument.spreadsheet",
               "convertedContentType": null,
               "size": "9057832",
-              "originalKey": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml",
-              "convertedKey": null,
-              "thumbnailKey": null,
-              "thumbnailTinyKey": null,
+              "keys": { "original": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml" },
               "organizationId": "55b68dde-9bc4-4a07-a5e7-b48057f53a0c"
             },
             {
@@ -912,16 +769,12 @@
               "seq": 39,
               "publicBucket": false,
               "bucketName": "attachments",
-              "taskId": null,
               "groupId": null,
               "filename": "victoriously.mp4",
               "contentType": "image/jpeg",
               "convertedContentType": null,
               "size": "4961674",
-              "originalKey": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4",
-              "convertedKey": null,
-              "thumbnailKey": null,
-              "thumbnailTinyKey": null,
+              "keys": { "original": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4" },
               "organizationId": "044316a1-c906-4c0e-9632-932306ebef5b"
             }
           ],
@@ -995,11 +848,15 @@
               "maxLength": 255
             },
             "size": { "type": "string", "required": true, "maxLength": 255 },
-            "originalKey": {
-              "type": "string",
+            "keys": {
+              "type": "object",
               "required": true,
-              "description": "Storage object key for the original uploaded file.",
-              "maxLength": 2048
+              "properties": {
+                "original": { "type": "string", "required": true },
+                "preview": { "type": "string", "required": false },
+                "thumbnail": { "type": "string", "required": false },
+                "converted": { "type": "string", "required": false }
+              }
             },
             "bucketName": { "type": "string", "required": true, "maxLength": 255 },
             "publicBucket": {
@@ -1017,24 +874,6 @@
               "required": false,
               "description": "MIME type of the server-converted variant; null when none.",
               "maxLength": 255
-            },
-            "convertedKey": {
-              "type": ["string", "null"],
-              "required": false,
-              "description": "Storage object key for the converted variant; null when none.",
-              "maxLength": 2048
-            },
-            "thumbnailKey": {
-              "type": ["string", "null"],
-              "required": false,
-              "description": "Storage object key for the generated thumbnail (mid-size preview); null when none.",
-              "maxLength": 2048
-            },
-            "thumbnailTinyKey": {
-              "type": ["string", "null"],
-              "required": false,
-              "description": "Storage object key for the tiny (grid-cell) image thumbnail; null when none.",
-              "maxLength": 2048
             },
             "stx": {
               "type": "object",
@@ -1193,7 +1032,7 @@
                   "variant": {
                     "type": "string",
                     "required": true,
-                    "enum": ["original", "thumbnail", "thumbnail-tiny", "converted"]
+                    "enum": ["original", "preview", "thumbnail", "converted"]
                   },
                   "url": { "type": "string", "required": true }
                 }
@@ -1291,7 +1130,7 @@
                 "variant": {
                   "type": "string",
                   "required": false,
-                  "enum": ["original", "thumbnail", "thumbnail-tiny", "converted"]
+                  "enum": ["original", "preview", "thumbnail", "converted"]
                 }
               }
             }
@@ -1363,42 +1202,14 @@
             "createdBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references.",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
+              "description": "Minimal user data for references, or null when no user is available.",
+              "ref": "#/components/schemas/NullableUserMinimalBase"
             },
             "updatedBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references.",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
+              "description": "Minimal user data for references, or null when no user is available.",
+              "ref": "#/components/schemas/NullableUserMinimalBase"
             },
             "deletedAt": {
               "type": ["string", "null"],
@@ -1444,29 +1255,16 @@
               "maxLength": 255
             },
             "size": { "type": "string", "required": true, "maxLength": 255 },
-            "originalKey": {
-              "type": "string",
+            "keys": {
+              "type": "object",
               "required": true,
-              "description": "Storage object key for the original uploaded file.",
-              "maxLength": 2048
-            },
-            "convertedKey": {
-              "type": ["string", "null"],
-              "required": true,
-              "description": "Storage object key for the converted variant; null when none.",
-              "maxLength": 2048
-            },
-            "thumbnailKey": {
-              "type": ["string", "null"],
-              "required": true,
-              "description": "Storage object key for the generated thumbnail (mid-size preview); null when none.",
-              "maxLength": 2048
-            },
-            "thumbnailTinyKey": {
-              "type": ["string", "null"],
-              "required": true,
-              "description": "Storage object key for the tiny (grid-cell) image thumbnail; null when none.",
-              "maxLength": 2048
+              "description": "Storage object keys per variant, keyed by variant name; only generated variants are present.",
+              "properties": {
+                "original": { "type": "string", "required": true },
+                "preview": { "type": "string", "required": false },
+                "thumbnail": { "type": "string", "required": false },
+                "converted": { "type": "string", "required": false }
+              }
             },
             "organizationId": { "type": "string", "required": true, "format": "uuid" },
             "viewCount": { "type": "integer", "required": false, "minimum": 0 }
@@ -1508,16 +1306,12 @@
           "seq": 447,
           "publicBucket": false,
           "bucketName": "attachments",
-          "taskId": null,
           "groupId": null,
           "filename": "ick_thoroughly_coincide.text",
           "contentType": "application/epub+zip",
           "convertedContentType": null,
           "size": "7202058",
-          "originalKey": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text",
-          "convertedKey": null,
-          "thumbnailKey": null,
-          "thumbnailTinyKey": null,
+          "keys": { "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text" },
           "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
         }
       },
@@ -1635,42 +1429,14 @@
             "createdBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references.",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
+              "description": "Minimal user data for references, or null when no user is available.",
+              "ref": "#/components/schemas/NullableUserMinimalBase"
             },
             "updatedBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references.",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
+              "description": "Minimal user data for references, or null when no user is available.",
+              "ref": "#/components/schemas/NullableUserMinimalBase"
             },
             "deletedAt": {
               "type": ["string", "null"],
@@ -1716,29 +1482,16 @@
               "maxLength": 255
             },
             "size": { "type": "string", "required": true, "maxLength": 255 },
-            "originalKey": {
-              "type": "string",
+            "keys": {
+              "type": "object",
               "required": true,
-              "description": "Storage object key for the original uploaded file.",
-              "maxLength": 2048
-            },
-            "convertedKey": {
-              "type": ["string", "null"],
-              "required": true,
-              "description": "Storage object key for the converted variant; null when none.",
-              "maxLength": 2048
-            },
-            "thumbnailKey": {
-              "type": ["string", "null"],
-              "required": true,
-              "description": "Storage object key for the generated thumbnail (mid-size preview); null when none.",
-              "maxLength": 2048
-            },
-            "thumbnailTinyKey": {
-              "type": ["string", "null"],
-              "required": true,
-              "description": "Storage object key for the tiny (grid-cell) image thumbnail; null when none.",
-              "maxLength": 2048
+              "description": "Storage object keys per variant, keyed by variant name; only generated variants are present.",
+              "properties": {
+                "original": { "type": "string", "required": true },
+                "preview": { "type": "string", "required": false },
+                "thumbnail": { "type": "string", "required": false },
+                "converted": { "type": "string", "required": false }
+              }
             },
             "organizationId": { "type": "string", "required": true, "format": "uuid" },
             "viewCount": { "type": "integer", "required": false, "minimum": 0 }
@@ -1780,16 +1533,12 @@
           "seq": 447,
           "publicBucket": false,
           "bucketName": "attachments",
-          "taskId": null,
           "groupId": null,
           "filename": "ick_thoroughly_coincide.text",
           "contentType": "application/epub+zip",
           "convertedContentType": null,
           "size": "7202058",
-          "originalKey": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text",
-          "convertedKey": null,
-          "thumbnailKey": null,
-          "thumbnailTinyKey": null,
+          "keys": { "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text" },
           "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
         }
       },
@@ -1868,8 +1617,7 @@
             "type": "object",
             "required": true,
             "properties": {
-              "name": { "type": "string", "required": false, "maxLength": 255 },
-              "originalKey": { "type": "string", "required": false }
+              "name": { "type": "string", "required": false, "maxLength": 255 }
             }
           },
           "stx": {

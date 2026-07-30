@@ -54,42 +54,14 @@
         "createdBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references.",
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
-            "slug": { "type": "string", "required": true },
-            "thumbnailUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["user"]
-            }
-          },
-          "extendsRef": "#/components/schemas/UserMinimalBase"
+          "description": "Minimal user data for references, or null when no user is available.",
+          "ref": "#/components/schemas/NullableUserMinimalBase"
         },
         "updatedBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references.",
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
-            "slug": { "type": "string", "required": true },
-            "thumbnailUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["user"]
-            }
-          },
-          "extendsRef": "#/components/schemas/UserMinimalBase"
+          "description": "Minimal user data for references, or null when no user is available.",
+          "ref": "#/components/schemas/NullableUserMinimalBase"
         },
         "deletedAt": {
           "type": ["string", "null"],
@@ -135,29 +107,16 @@
           "maxLength": 255
         },
         "size": { "type": "string", "required": true, "maxLength": 255 },
-        "originalKey": {
-          "type": "string",
+        "keys": {
+          "type": "object",
           "required": true,
-          "description": "Storage object key for the original uploaded file.",
-          "maxLength": 2048
-        },
-        "convertedKey": {
-          "type": ["string", "null"],
-          "required": true,
-          "description": "Storage object key for the converted variant; null when none.",
-          "maxLength": 2048
-        },
-        "thumbnailKey": {
-          "type": ["string", "null"],
-          "required": true,
-          "description": "Storage object key for the generated thumbnail (mid-size preview); null when none.",
-          "maxLength": 2048
-        },
-        "thumbnailTinyKey": {
-          "type": ["string", "null"],
-          "required": true,
-          "description": "Storage object key for the tiny (grid-cell) image thumbnail; null when none.",
-          "maxLength": 2048
+          "description": "Storage object keys per variant, keyed by variant name; only generated variants are present.",
+          "properties": {
+            "original": { "type": "string", "required": true },
+            "preview": { "type": "string", "required": false },
+            "thumbnail": { "type": "string", "required": false },
+            "converted": { "type": "string", "required": false }
+          }
         },
         "organizationId": { "type": "string", "required": true, "format": "uuid" },
         "viewCount": { "type": "integer", "required": false, "minimum": 0 }
@@ -204,16 +163,12 @@
       "seq": 447,
       "publicBucket": false,
       "bucketName": "attachments",
-      "taskId": null,
       "groupId": null,
       "filename": "ick_thoroughly_coincide.text",
       "contentType": "application/epub+zip",
       "convertedContentType": null,
       "size": "7202058",
-      "originalKey": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text",
-      "convertedKey": null,
-      "thumbnailKey": null,
-      "thumbnailTinyKey": null,
+      "keys": { "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text" },
       "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
     }
   },

@@ -73,7 +73,7 @@ export const attachmentsSeed = async () => {
           name: file.filename,
           contentType: file.contentType,
           size: file.size,
-          originalKey: file.originalKey,
+          keys: { original: file.originalKey },
           public: file.public,
           bucketName: file.public ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
         };

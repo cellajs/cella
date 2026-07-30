@@ -35,9 +35,9 @@ export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
 
   const wrapClass = 'relative flex space-x-2 items-center justify-center w-full h-full';
 
-  // Use attachment URL hook - prefer the tiny image thumbnail for table cells (falls back to the
-  // mid-size thumbnail for non-image types, which have no tiny variant).
-  const { url } = useAttachmentUrl(row, { preferredVariant: 'thumbnail-tiny' });
+  // Use attachment URL hook - prefer the tiny thumbnail for table cells (falls back to the
+  // mid-size preview for non-image types, which have no tiny variant).
+  const { url } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });
 
   const handleClick = () => {
     // Store focus anchor

@@ -29,17 +29,19 @@ const attachmentA = {
   id: 'att-a',
   createdBy: 'user-1',
   bucketName: 'private-bucket',
-  originalKey: 'org/attachments/original/a.jpg',
-  thumbnailKey: 'org/attachments/thumbnail/a.jpg',
-  convertedKey: null,
+  keys: {
+    original: 'org/attachments/original/a.jpg',
+    preview: 'org/attachments/preview/a.jpg',
+  },
 };
 const attachmentB = {
   id: 'att-b',
   createdBy: 'user-2',
   bucketName: 'private-bucket',
-  originalKey: 'org/attachments/original/b.jpg',
-  thumbnailKey: null,
-  convertedKey: 'org/attachments/converted/b.pdf',
+  keys: {
+    original: 'org/attachments/original/b.jpg',
+    converted: 'org/attachments/converted/b.pdf',
+  },
 };
 
 /** Allow every subject the engine sees, keyed like the real BatchPermissionResult. */
@@ -61,9 +63,9 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
 
     const res = await getPresignedUrlsOp(ctx, {
       items: [
-        { attachmentId: 'att-a', variant: 'thumbnail' },
+        { attachmentId: 'att-a', variant: 'preview' },
         { attachmentId: 'att-b', variant: 'original' },
-        { attachmentId: 'att-a', variant: 'thumbnail' },
+        { attachmentId: 'att-a', variant: 'preview' },
       ],
     });
 
@@ -74,13 +76,13 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
       data: [
         {
           attachmentId: 'att-a',
-          variant: 'thumbnail',
-          url: `https://signed.example/${attachmentA.thumbnailKey}`,
+          variant: 'preview',
+          url: `https://signed.example/${attachmentA.keys.preview}`,
         },
         {
           attachmentId: 'att-b',
           variant: 'original',
-          url: `https://signed.example/${attachmentB.originalKey}`,
+          url: `https://signed.example/${attachmentB.keys.original}`,
         },
       ],
       rejectedIds: [],
@@ -103,7 +105,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
 
     const res = await getPresignedUrlsOp(ctx, { items: [{ attachmentId: 'att-a', variant: 'converted' }] });
 
-    expect(getSignedUrlFromKey).toHaveBeenCalledWith(attachmentA.originalKey, {
+    expect(getSignedUrlFromKey).toHaveBeenCalledWith(attachmentA.keys.original, {
       bucketName: 'private-bucket',
       publicBucket: false,
     });

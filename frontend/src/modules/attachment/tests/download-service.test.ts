@@ -222,9 +222,11 @@ describe('downloadService — auth fail-fast (401/403)', () => {
   it('marks failed and stops fetching remaining variants on 403', async () => {
     vi.mocked(findAttachmentInCache).mockReturnValue(
       makeAttachment({
-        thumbnailKey: 'files/thumb.png',
-        convertedKey: 'files/conv.png',
-        originalKey: 'files/orig.png',
+        keys: {
+          original: 'files/orig.png',
+          preview: 'files/thumb.png',
+          converted: 'files/conv.png',
+        },
       }),
     );
 
@@ -246,9 +248,11 @@ describe('downloadService — auth fail-fast (401/403)', () => {
   it('marks failed and stops fetching remaining variants on 401', async () => {
     vi.mocked(findAttachmentInCache).mockReturnValue(
       makeAttachment({
-        thumbnailKey: 'files/thumb.png',
-        convertedKey: 'files/conv.png',
-        originalKey: 'files/orig.png',
+        keys: {
+          original: 'files/orig.png',
+          preview: 'files/thumb.png',
+          converted: 'files/conv.png',
+        },
       }),
     );
 
