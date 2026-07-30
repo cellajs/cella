@@ -59,7 +59,7 @@ Never mark a migration applied over a red check.
 pnpm exec tsx cella/migrations/run.ts mark <id>
 ```
 
-This appends the id to `cella.migrations.json` at the repo root so the migration drops out of future
+This appends the id to `cella/cella.migrations.json` so the migration drops out of future
 plans. Commit that file alongside the migration's code changes. Then return to step 2 for the next
 pending migration.
 

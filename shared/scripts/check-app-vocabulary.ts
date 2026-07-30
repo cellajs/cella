@@ -8,7 +8,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const defaultRepoRoot = join(here, '..', '..');
 const disallowedTerm = /fork/gi;
 const allowedFiles = new Set([
-  'cella.config.ts',
+  'cella/cella.config.ts',
   'shared/scripts/check-app-vocabulary.test.ts',
   'shared/scripts/check-app-vocabulary.ts',
 ]);

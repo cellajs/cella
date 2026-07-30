@@ -3,7 +3,7 @@
  *
  * Computes which cella migrations an app still has to apply and prints them in order, so a
  * human or an agent can work the list. The source of truth for "already done" is the app's
- * applied-set file ({@link APPLIED_FILE} at the repo root), not version math: pending =
+ * applied-set file ({@link APPLIED_FILE} in the cella/ folder), not version math: pending =
  * every migration in `manifest.json` whose id is absent from the applied-set. This is stable
  * across release- and branch-tracking apps alike.
  *
@@ -48,13 +48,16 @@ interface Manifest {
   migrations: MigrationEntry[]
 }
 
-/** App-owned record of applied migration ids, at the repo root. */
+/** App-owned record of applied migration ids, in the cella/ folder. */
 const APPLIED_FILE = 'cella.migrations.json'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const repoRoot = resolve(here, '..', '..')
+const cellaDir = resolve(here, '..')
 const manifestPath = join(here, 'manifest.json')
-const appliedPath = join(repoRoot, APPLIED_FILE)
+const appliedPath = join(cellaDir, APPLIED_FILE)
+// Pre-relocation location (repo root). Read-only fallback so the pending plan stays correct in the
+// window between pulling this move and running the migration that git-mv's the file into cella/.
+const legacyAppliedPath = join(cellaDir, '..', APPLIED_FILE)
 
 /** Read and lightly validate `manifest.json`. */
 function readManifest(): Manifest {
@@ -65,8 +68,9 @@ function readManifest(): Manifest {
 
 /** Read the app's applied-set; empty when the file is absent. */
 function readApplied(): Set<string> {
-  if (!existsSync(appliedPath)) return new Set()
-  const parsed = JSON.parse(readFileSync(appliedPath, 'utf8')) as { applied?: string[] }
+  const path = existsSync(appliedPath) ? appliedPath : legacyAppliedPath
+  if (!existsSync(path)) return new Set()
+  const parsed = JSON.parse(readFileSync(path, 'utf8')) as { applied?: string[] }
   return new Set(parsed.applied ?? [])
 }
 

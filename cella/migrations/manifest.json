@@ -315,6 +315,24 @@
         "pnpm check"
       ],
       "summary": "attachments' per-variant originalKey/convertedKey/thumbnailKey/thumbnailTinyKey columns collapse into one keys jsonb map (AttachmentKeys: { original, preview?, thumbnail?, converted? }); selectVariantKey becomes keys[variant] ?? keys.original. Variant vocabulary realigned: mid-size thumbnail->preview, grid-cell thumbnail-tiny->thumbnail (attachmentVariantSchema/BlobVariant = original|preview|thumbnail|converted). Wire-breaking: clientCacheVersion bumped to v8-attachment-keys. DB: drop the four *_key columns, add keys jsonb with a jsonb_build_object backfill (thumbnail_key->preview, thumbnail_tiny_key->thumbnail). Manual: field-specific rename plus a data-preserving migration, no codemod. Apps that home attachments on a product entity keep their own taskId/projectId columns."
+    },
+    {
+      "id": "20260730T1258-cella-config-into-cella-folder",
+      "version": "next",
+      "title": "Move cella sync files into the cella/ folder",
+      "kind": "manual",
+      "syncBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "cella.config.ts",
+        "cella.manifest.json",
+        "cella.migrations.json"
+      ],
+      "requires": [
+        "pnpm check"
+      ],
+      "summary": "Relocate cella.config.ts, cella.manifest.json and cella.migrations.json from the repo root into the cella/ folder (cella/cella.config.ts, cella/cella.manifest.json, cella/cella.migrations.json). The @cellajs/cli release with cella/-folder discovery finds them there (config loader, MANIFEST_FILE, managed-file match); run.ts reads/writes the applied-set at cella/cella.migrations.json with a read-only fallback to the old root path. Manual git mv, no codemod; sync-breaking, no wire-shape or DB change. App localPath values still resolve against the repo root and the config contents are unchanged."
     }
   ]
 }

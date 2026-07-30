@@ -132,7 +132,7 @@
         "**/tailwind.config.ts",
         "**/drizzle.config.ts",
         "**/svgo.config.mjs",
-        "cella.config.ts",
+        "cella/cella.config.ts",
         "sdk/openapi-ts.config.ts",
         "frontend/.storybook/**",
         "frontend/src/content/mdx.d.ts",

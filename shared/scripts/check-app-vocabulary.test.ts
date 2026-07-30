@@ -37,6 +37,6 @@ describe('findAppVocabularyFindings', () => {
   });
 
   it('allows the Cella CLI configuration', () => {
-    expect(findAppVocabularyFindings('cella.config.ts', legacyTerm)).toEqual([]);
+    expect(findAppVocabularyFindings('cella/cella.config.ts', legacyTerm)).toEqual([]);
   });
 });
