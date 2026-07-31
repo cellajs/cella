@@ -9,6 +9,8 @@ export interface HydrateRuntimeSecretsOptions {
   secretKey: string
   region: string
   outputPath: string
+  /** Extra env lines appended verbatim (e.g. the v2 S3 credential export). */
+  extraLines?: readonly string[]
   fetchImpl?: FetchLike
 }
 
@@ -49,6 +51,7 @@ export async function hydrateRuntimeSecrets(opts: HydrateRuntimeSecretsOptions):
   }
 
   if (errors.length > 0) throw new Error(`runtime-secret-sync failed: ${errors.join(', ')}`)
-  await writeFile(opts.outputPath, lines.length > 0 ? `${lines.join('\n')}\n` : '', 'utf-8')
+  const allLines = [...lines, ...(opts.extraLines ?? [])]
+  await writeFile(opts.outputPath, allLines.length > 0 ? `${allLines.join('\n')}\n` : '', 'utf-8')
   await chmod(opts.outputPath, 0o600)
 }

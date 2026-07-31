@@ -41,6 +41,7 @@ export type TaskName =
   | 'wait-for-images'
   | 'repair-certs'
   | 'sync-rollout-config'
+  | 'mint-generation-keys'
   | 'assert-vm-grants'
   | 'assert-secrets-deliverable'
   | 'smoke'
@@ -56,6 +57,8 @@ export interface DeployEffects {
   exec(cmd: string, args: string[], opts?: { allowFailure?: boolean; stdin?: string; env?: Record<string, string> }): void
   /** Upload the built frontend bundle (hashed assets skip when present; entry files excluded). */
   uploadAssets(opts: { distDir: string; bucket: string; region: string }): Promise<void>
+  /** Read one stack config value (empty string when unset). */
+  stackConfigGet(stack: string, key: string): string
   /** One full stack update through the configured Pulumi driver. */
   update(stack: string): Promise<void>
   rollout(argv: string[]): Promise<void>
@@ -183,13 +186,36 @@ export async function runDeploy(
       if (settled.status === 'rejected') throw settled.reason
     }
 
+    // IAM model v2 (per-service apps): mint this generation's keys + handoff
+    // bundles BEFORE the stack update bakes their references into cloud-init.
+    const iamV2 = fx.stackConfigGet(stack, 'infra:iamModel') === 'v2'
+    if (iamV2) {
+      await step('Mint generation keys', async () => {
+        const { tmpdir } = await import('node:os')
+        const outFile = resolve(tmpdir(), `generation-keys-${stack}-${opts.sha.slice(0, 10)}.json`)
+        await fx.task('mint-generation-keys', ['--sha', opts.sha, '--out', outFile])
+        // The pulumi child (fx.update) inherits this env and bakes the boot
+        // key + handoff ids into the new generation's cloud-init.
+        process.env.INFRA_GENERATION_KEYS_FILE = outFile
+      })
+    }
+
     await step('Repair errored LB certificates', () => fx.task('repair-certs', ['--stack', stack]))
     await step('Base stack update', async () => {
       await fx.task('sync-rollout-config', ['--stack', stack])
       await fx.update(stack)
     })
-    await step('Verify VM reader IAM grant', () =>
-      fx.task('assert-vm-grants', ['--application-name', env.vm_reader_app, '--fallback-application-name', env.vm_reader_app.replace(`-${env.environment}-`, '-'), '--secret-condition', env.vm_secret_condition, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--organization-id', process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '']))
+    await step('Verify VM IAM grants', async () => {
+      if (iamV2) {
+        // One assertion per principal: exact sets AND exact path condition.
+        const rows = JSON.parse(env.vm_assert_json) as Array<{ app: string; sets: string[]; condition: string }>
+        for (const row of rows) {
+          await fx.task('assert-vm-grants', ['--application-name', row.app, '--required-sets', row.sets.join(','), '--secret-condition', row.condition, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--organization-id', process.env.SCW_DEFAULT_ORGANIZATION_ID ?? ''])
+        }
+        return
+      }
+      await fx.task('assert-vm-grants', ['--application-name', env.vm_reader_app, '--fallback-application-name', env.vm_reader_app.replace(`-${env.environment}-`, '-'), '--secret-condition', env.vm_secret_condition, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--organization-id', process.env.SCW_DEFAULT_ORGANIZATION_ID ?? ''])
+    })
     await step('Verify runtime secrets are deliverable', () =>
       fx.task('assert-secrets-deliverable', ['--region', env.region, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--services-json', env.enabled_services_json]))
 
@@ -276,6 +302,7 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'wait-for-images': async (argv) => (await import('./wait-for-images')).main(argv),
   'repair-certs': async (argv) => (await import('./repair-certs')).main(argv),
   'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
+  'mint-generation-keys': async (argv) => (await import('./mint-generation-keys')).main(argv),
   'assert-vm-grants': async (argv) => (await import('./assert-vm-grants')).main(argv),
   'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),
   smoke: async (argv) => (await import('./smoke')).main(argv),
@@ -302,6 +329,10 @@ function createRealEffects(): DeployEffects {
       initDeployTelemetry({ mode, sha, endpoint: config?.endpoint, headers: config?.headers, onError: (message) => console.warn(`[deploy] ${message}`) })
     },
     task: (name, argv = []) => taskRunners[name](argv),
+    stackConfigGet(stack, key) {
+      const res = spawnSync('pulumi', ['config', 'get', key, '--stack', stack], { cwd: infraDir, encoding: 'utf8' })
+      return res.status === 0 ? (res.stdout ?? '').trim() : ''
+    },
     exec(cmd, args, opts = {}) {
       const res = spawnSync(cmd, args, {
         cwd: infraDir,

@@ -65,6 +65,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   if (cfg.target) meta.target = cfg.target
   if (cfg.coHosted) meta.coHosted = true
   if (cfg.placement) meta.placement = cfg.placement
+  if (cfg.s3Access) meta.s3Access = true
   if (cfg.bindings) meta.bindings = cfg.bindings
   return meta
 }

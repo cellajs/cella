@@ -52,6 +52,39 @@ export function vmSecretCondition(slug: string, mode: string, serviceNames: read
   return paths.map((path) => `resource.name.startsWith("${path}")`).join(' || ')
 }
 
+// P3 (per-service model): handoff folders + per-principal conditions.
+
+/** Folder for per-generation single-access handoff bundles of one service. */
+export function handoffServicePath(slug: string, mode: string, service: string): string {
+  return `/${slug}-${mode}/handoff/${service}/`
+}
+
+/** Folder prefix covering every service's handoff bundles. */
+export function handoffFolderPath(slug: string, mode: string): string {
+  return `/${slug}-${mode}/handoff/`
+}
+
+/**
+ * Condition for ONE service application: its own folder + shared. Narrower
+ * than {@link vmSecretCondition} (the single-app P2 grant), which unions all
+ * services.
+ */
+export function serviceKeyCondition(slug: string, mode: string, service: string): string {
+  return [serviceSecretPath(slug, mode, service), sharedSecretPath(slug, mode)]
+    .map((path) => `resource.name.startsWith("${path}")`)
+    .join(' || ')
+}
+
+/**
+ * Condition for the boot application: ONLY the handoff folder. The boot key is
+ * baked into cloud-init, so its secret reach must be exactly the single-access
+ * bundles — reading one that a VM already consumed fails, which IS the tamper
+ * alarm.
+ */
+export function bootKeyCondition(slug: string, mode: string): string {
+  return `resource.name.startsWith("${handoffFolderPath(slug, mode)}")`
+}
+
 /** Shape of the JSON payload stored in the VM reader key secret version. */
 export interface VmReaderKeyPayload {
   accessKey: string

@@ -107,6 +107,13 @@ export interface ServiceMeta {
   /** Per-service VM size; an app resizes its fleet by editing this. Required: every service declares its own box. */
   instanceType: ServiceInstanceType
   /**
+   * This service signs S3 requests (uploads, presigned URLs) with its own
+   * per-deploy service key (REQ-20): its IAM app gets granular object sets,
+   * the uploads bucket policies admit it, and the boot runner exports
+   * S3_ACCESS_KEY_ID/SECRET into its runtime env from the service key.
+   */
+  s3Access?: boolean
+  /**
    * Deploy-time env bindings: env var → value template resolved by the compute
    * module. Templates reference other services by slug with the `@{…}` sigil
    * (distinct from compose's `${…}`): `@{<slug>.url}` (public URL),
@@ -149,6 +156,8 @@ export interface ComposeFile {
  * determines whether the service belongs to the fleet.
  */
 export interface AppServiceConfig {
+  /** This service signs S3 requests with its own service key (see ServiceMeta.s3Access). */
+  s3Access?: boolean
   /** Container image ref, e.g. `'${REGISTRY}/yjs:${YJS_TAG:-latest}'`. */
   image: string
   /**

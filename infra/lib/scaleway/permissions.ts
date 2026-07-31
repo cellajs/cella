@@ -87,6 +87,40 @@ export const VM_PROJECT_PERMISSION_SETS = [
   'SecretManagerSecretAccess',
 ] as const
 
+// Per-service model (P3): service, boot, and CI key-mint grants
+
+/** Secret-value read sets; always paired with a resource-level path condition. */
+export const SERVICE_SECRET_PERMISSION_SETS = ['SecretManagerReadOnly', 'SecretManagerSecretAccess'] as const
+
+/**
+ * Extra sets for the backend service app (REQ-20): S3 request signing for
+ * attachment uploads + presigned URLs, replacing the retired `<slug>-s3`
+ * managed key. Granular object sets, NOT FullAccess — bucket policies then
+ * scope which buckets.
+ */
+export const BACKEND_S3_PERMISSION_SETS = ['ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite', 'ObjectStorageObjectsDelete'] as const
+
+/**
+ * Boot application sets: pull images (boot runner + service images) and write
+ * boot diagnostics. Its Secret Manager rule is separate and conditioned to the
+ * handoff folder only (bootKeyCondition).
+ */
+export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'] as const
+
+/**
+ * The CI key-mint grant (D3, live-validated 2026-07-31): IAMApplicationManager
+ * conditioned to `resource.id in [<service/boot app ids>]` lets CI rotate
+ * those apps' API keys every deploy while creating apps/policies stays denied
+ * (create carries no matching resource.id) — the escalation firewall holds.
+ * STRICT condition: no `!has(resource.id)` escape, listing stays denied.
+ */
+export const CI_KEY_MINT_PERMISSION_SETS = ['IAMApplicationManager'] as const
+
+/** CEL condition for the CI key-mint rule. */
+export function ciKeyMintCondition(appIds: readonly string[]): string {
+  return `resource.id in [${appIds.map((id) => `"${id}"`).join(', ')}]`
+}
+
 // Bootstrap-owned boundary
 
 /**

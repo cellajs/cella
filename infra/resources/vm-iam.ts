@@ -3,11 +3,25 @@ import * as scaleway from '@pulumiverse/scaleway'
 import { engineConfig } from '../config/engine-config'
 const appConfig = engineConfig()
 import { principalNames } from '../lib/scaleway/principals'
-import { serviceNames } from '../lib/services'
-import { vmSecretCondition } from '../lib/scaleway/vm-reader-secret'
+import {
+  BACKEND_S3_PERMISSION_SETS,
+  BOOT_PROJECT_PERMISSION_SETS,
+  SERVICE_SECRET_PERMISSION_SETS,
+} from '../lib/scaleway/permissions'
+import { deployedServices, serviceNames } from '../lib/services'
+import { bootKeyCondition, serviceKeyCondition, vmSecretCondition } from '../lib/scaleway/vm-reader-secret'
 import { naming, mode, organizationId, projectId, tags } from '../pulumi-context'
 
 const names = principalNames(appConfig.slug, mode)
+
+/**
+ * IAM model gate. `infra:iamModel = 'v2'` (set by a fresh bootstrap or the
+ * "Migrate IAM model" CLI action) switches from the single vm-reader app to
+ * per-service applications with per-deploy minted keys and single-access
+ * handoff bundles. Absent = legacy model; every consumer of this module
+ * branches on this ONE flag so a stack flips atomically with its config.
+ */
+export const iamModelV2 = new pulumi.Config('infra').get('iamModel') === 'v2'
 
 // The engine's IAM principals, resolved from IAM by name. Owned here because
 // IAM is this module's concern; other resource modules (storage bucket
@@ -53,8 +67,15 @@ function requirePrincipalId(resolved: pulumi.Output<string | undefined>, label: 
 /** CI deploy application id: the principal CI authenticates as. Required. */
 export const ciDeployApplicationId = requirePrincipalId(resolvePrincipalId(names.ciDeploy, names.legacy.ciDeploy), `CI deploy ('${names.ciDeploy}')`)
 
-/** VM reader application id: the principal baked into service VMs. Required. */
-export const vmReaderApplicationId = requirePrincipalId(resolvePrincipalId(names.vmReader, names.legacy.vmReader), `VM reader ('${names.vmReader}')`)
+/**
+ * VM reader application id (legacy model). Required under legacy (its policy
+ * and every VM depend on it); under v2 it is optional — kept resolvable so the
+ * boot-diag bucket statement can retain it through a migration window.
+ */
+const vmReaderResolved = resolvePrincipalId(names.vmReader, names.legacy.vmReader)
+export const vmReaderApplicationId: pulumi.Output<string | undefined> = iamModelV2
+  ? vmReaderResolved
+  : requirePrincipalId(vmReaderResolved, `VM reader ('${names.vmReader}')`)
 
 /**
  * Admin application id: the standing human principal (bucket access + infra
@@ -74,53 +95,116 @@ export const adminApplicationId: pulumi.Output<string | undefined> = resolvePrin
   return undefined
 })
 
-/**
- * Build the project-scoped policy rules for the VM reader. Registry pull is
- * unconditioned; Secret Manager access carries a resource-level condition
- * restricting value reads to the service/shared folders (REQ-8) — engine
- * credentials (admin-key, vm-reader-key under /engine/) stay unreadable from
- * VMs. Conditions only narrow: `assert-vm-grants` additionally verifies no
- * OTHER (unconditioned) policy grants this app secret access, because one
- * such policy would silently un-scope this one (union semantics).
- */
-function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types.input.iam.PolicyRule[] {
-  return [
-    {
-      permissionSetNames: ['ContainerRegistryReadOnly'],
-      projectIds: [scopeProjectId],
-    },
-    {
-      permissionSetNames: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
-      projectIds: [scopeProjectId],
-      condition: vmSecretCondition(naming.slug, mode, serviceNames),
-    },
-  ]
-}
+// v2 principals: one application per deployed service + the boot fetcher.
+
+const v2Services = iamModelV2 ? deployedServices(appConfig.services, appConfig.singleVM ?? false) : []
+
+/** Per-service application ids (v2; empty map under legacy). Required when v2. */
+export const serviceApplicationIds: Record<string, pulumi.Output<string>> = Object.fromEntries(
+  v2Services.map((svc) => [svc.slug, requirePrincipalId(findApplicationId(names.vmService(svc.slug)), `service VM ('${names.vmService(svc.slug)}')`)]),
+)
+
+/** Boot fetcher application id (v2). Required when v2, undefined under legacy. */
+export const bootApplicationId: pulumi.Output<string | undefined> = iamModelV2
+  ? requirePrincipalId(findApplicationId(names.boot), `boot fetcher ('${names.boot}')`)
+  : pulumi.output(undefined)
 
 /**
- * Pulumi-managed IAM policy granting the VM reader application its read-only
- * registry + object-storage + secret-manager permission sets. Reconciled on
- * every `pulumi up`.
+ * Legacy `<slug>-s3` managed-key application (retired by REQ-20). Resolved so
+ * bucket policies can keep admitting it through a migration window — a stack
+ * whose backend still signs with the old s3 key must not lose uploads the
+ * moment a policy lands on the private bucket. Migration deletes the app,
+ * after which the statement drops out on the next up.
+ */
+export const legacyS3ApplicationId: pulumi.Output<string | undefined> = resolvePrincipalId(`${appConfig.slug}-${mode}-s3`, `${appConfig.slug}-s3`)
+
+/**
+ * Pulumi-managed IAM policies for the VM-side principals, reconciled on every
+ * `pulumi up`. Bootstrap-owned: IAM policy write is forbidden to the CI key
+ * (permission escalation), so a bootstrap-key up creates these before compute
+ * exists. Compute VMs depend on them so a fresh bootstrap attaches grants
+ * before the first runtime-secret hydration.
  *
- * Compute VMs depend on this so that on a fresh bootstrap the grant is attached
- * before the VMs boot and run their first runtime-secret hydration.
- *
- * Bootstrap-owned: IAM policy write is forbidden to the CI key (permission
- * escalation), so a bootstrap-key up creates this before compute exists.
+ * Legacy: one vm-reader policy (registry pull + path-conditioned secret read,
+ * see P2). v2: one policy per service app (secret read conditioned to its own
+ * + shared folders; backend additionally granular S3 object sets) and one for
+ * the boot app (registry pull + diag write + handoff-only secret read).
+ * Conditions only narrow: `assert-vm-grants` verifies no other policy
+ * un-scopes these (union semantics).
  *
  * @see resources/compute.ts
  */
-export const vmReaderPolicy = new scaleway.iam.Policy('vm-reader-policy', {
-  name: naming.resource('vm-reader-policy'),
-  description: 'Read-only registry + secret manager grant for service VMs (managed by Pulumi)',
-  applicationId: vmReaderApplicationId,
-  // Set the org explicitly because the provider default org env may be absent
-  // when only SCW_DEFAULT_PROJECT_ID is injected.
-  organizationId,
-  rules: buildVmReaderPolicyRules(projectId),
-  tags,
-}, {
-  // CI intentionally cannot write IAM policies. Keep permission rules managed,
-  // but do not let cosmetic provider/API description drift block deployments.
-  ignoreChanges: ['description'],
-})
+export const vmIamPolicies: scaleway.iam.Policy[] = []
+
+if (!iamModelV2) {
+  vmIamPolicies.push(new scaleway.iam.Policy('vm-reader-policy', {
+    name: naming.resource('vm-reader-policy'),
+    description: 'Read-only registry + secret manager grant for service VMs (managed by Pulumi)',
+    applicationId: vmReaderApplicationId.apply((id) => id ?? ''),
+    // Set the org explicitly because the provider default org env may be absent
+    // when only SCW_DEFAULT_PROJECT_ID is injected.
+    organizationId,
+    rules: [
+      {
+        permissionSetNames: ['ContainerRegistryReadOnly'],
+        projectIds: [projectId],
+      },
+      {
+        permissionSetNames: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
+        projectIds: [projectId],
+        condition: vmSecretCondition(naming.slug, mode, serviceNames),
+      },
+    ],
+    tags,
+  }, {
+    // CI intentionally cannot write IAM policies. Keep permission rules managed,
+    // but do not let cosmetic provider/API description drift block deployments.
+    ignoreChanges: ['description'],
+  }))
+} else {
+  for (const svc of v2Services) {
+    const isBackend = svc.s3Access === true
+    vmIamPolicies.push(new scaleway.iam.Policy(`vm-${svc.slug}-policy`, {
+      name: naming.resource(`vm-${svc.slug}-policy`),
+      description: `Path-conditioned secret read${isBackend ? ' + S3 object access' : ''} for the ${svc.slug} service VMs (managed by Pulumi)`,
+      applicationId: serviceApplicationIds[svc.slug],
+      organizationId,
+      rules: [
+        {
+          permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS],
+          projectIds: [projectId],
+          condition: serviceKeyCondition(naming.slug, mode, svc.slug),
+        },
+        ...(isBackend
+          ? [{
+              permissionSetNames: [...BACKEND_S3_PERMISSION_SETS],
+              projectIds: [projectId],
+            }]
+          : []),
+      ],
+      tags,
+    }, { ignoreChanges: ['description'] }))
+  }
+  vmIamPolicies.push(new scaleway.iam.Policy('vm-boot-policy', {
+    name: naming.resource('vm-boot-policy'),
+    description: 'Registry pull + boot-diag write + handoff-only secret read for the boot fetcher (managed by Pulumi)',
+    applicationId: bootApplicationId.apply((id) => id ?? ''),
+    organizationId,
+    rules: [
+      {
+        permissionSetNames: [...BOOT_PROJECT_PERMISSION_SETS],
+        projectIds: [projectId],
+      },
+      {
+        permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS],
+        projectIds: [projectId],
+        condition: bootKeyCondition(naming.slug, mode),
+      },
+    ],
+    tags,
+  }, { ignoreChanges: ['description'] }))
+}
+
+/** Backend service app id when it exists (REQ-20 bucket statements); undefined otherwise. */
+export const backendServiceApplicationId: pulumi.Output<string | undefined> =
+  iamModelV2 && serviceApplicationIds.backend ? serviceApplicationIds.backend : pulumi.output(undefined)

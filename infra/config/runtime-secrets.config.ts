@@ -127,24 +127,8 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     generation: 'manual',
     services: ['backend', 'mcp'],
   },
-  // The S3 pair shares one scoped key and keeps its empty containers Pulumi-owned.
-  // It is backend-only because attachment signing and upload are API concerns.
-  s3AccessKeyId: {
-    secretName: 's3-access-key-id',
-    description: 'Scaleway Object Storage access key id (attachment upload + presigned URLs)',
-    envVar: 'S3_ACCESS_KEY_ID',
-    required: false,
-    valueSource: 'operator',
-    generation: 'manual',
-    services: ['backend'],
-  },
-  s3AccessKeySecret: {
-    secretName: 's3-access-key-secret',
-    description: 'Scaleway Object Storage secret key (attachment upload + presigned URLs)',
-    envVar: 'S3_ACCESS_KEY_SECRET',
-    required: false,
-    valueSource: 'operator',
-    generation: 'manual',
-    services: ['backend'],
-  },
+  // The S3 credential pair (s3AccessKeyId / s3AccessKeySecret) is retired
+  // (REQ-20): under IAM model v2 the boot runner exports
+  // S3_ACCESS_KEY_ID/S3_ACCESS_KEY_SECRET from the backend's own per-deploy
+  // service key (services registry `s3Access`), so no standing S3 key exists.
 });

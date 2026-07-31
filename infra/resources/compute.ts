@@ -18,11 +18,11 @@ import { privateNetworkId } from './network'
 import { registryEndpoint } from './registry'
 import { bootDiagBucketName } from './storage'
 import { secretIds } from './secrets'
-import { vmReaderPolicy } from './vm-iam'
+import { iamModelV2, vmIamPolicies } from './vm-iam'
 
 // Reads the VM reader key pair (minimal-privilege: registry pull + Secret
 // Manager read) from Scaleway Secret Manager. Owned here: compute is its only
-// consumer, baking it into each generation's cloud-init.
+// consumer, baking it into each generation's cloud-init. Legacy model only.
 function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulumi.Output<string> } {
   // Engine folder is canonical; pre-migration stacks seeded the container at
   // the env root, so fall back rather than failing the deploy.
@@ -44,9 +44,38 @@ function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulum
   return { accessKey: pulumi.secret(payload.accessKey), secretKey: pulumi.secret(payload.secretKey) }
 }
 
-const vmReaderKey = sizing.computeEnabled ? readVmReaderKey() : undefined
-const vmAccessKey = vmReaderKey?.accessKey ?? pulumi.secret('')
-const vmSecretKey = vmReaderKey?.secretKey ?? pulumi.secret('')
+/**
+ * v2 model: this deploy's minted credentials, written by
+ * tasks/mint-generation-keys.ts and passed via INFRA_GENERATION_KEYS_FILE.
+ * Absent on non-deploy ups (apply/preview): pre-existing generations carry
+ * `ignoreChanges: ['cloudInit']`, so their inputs may compute from an empty
+ * placeholder — but planning a NEW generation without minted keys is refused
+ * below (createGenerationVm guard).
+ */
+interface GenerationKeysFile {
+  bootAccessKey: string
+  bootSecretKey: string
+  handoffSecretIds: Record<string, string>
+}
+
+function readGenerationKeysFile(): GenerationKeysFile | undefined {
+  const file = process.env.INFRA_GENERATION_KEYS_FILE
+  if (!file) return undefined
+  const parsed = JSON.parse(fs.readFileSync(file, 'utf8')) as Partial<GenerationKeysFile>
+  if (typeof parsed.bootAccessKey !== 'string' || typeof parsed.bootSecretKey !== 'string' || typeof parsed.handoffSecretIds !== 'object') {
+    throw new Error('INFRA_GENERATION_KEYS_FILE is malformed — re-run the deploy (mint-generation-keys writes it).')
+  }
+  return parsed as GenerationKeysFile
+}
+
+const generationKeys = iamModelV2 ? readGenerationKeysFile() : undefined
+
+// The credential pair baked into cloud-init: v2 = the boot fetcher key
+// (registry pull + handoff read + diag write ONLY — the real service key
+// arrives via the single-access handoff bundle); legacy = the vm-reader key.
+const vmReaderKey = sizing.computeEnabled && !iamModelV2 ? readVmReaderKey() : undefined
+const vmAccessKey = generationKeys ? pulumi.secret(generationKeys.bootAccessKey) : (vmReaderKey?.accessKey ?? pulumi.secret(''))
+const vmSecretKey = generationKeys ? pulumi.secret(generationKeys.bootSecretKey) : (vmReaderKey?.secretKey ?? pulumi.secret(''))
 
 // Security Group: fully closed inbound; LB reaches VMs via private network.
 // Break-glass access is via Scaleway's serial console (no SSH on the public
@@ -113,6 +142,10 @@ interface ServiceConfig {
    * are only resolved when VMs are actually created.
    */
   composeEnv: Record<string, () => pulumi.Input<string>>
+  /** v2: single-access handoff secret id holding this service's minted key. */
+  handoffSecretId?: string
+  /** v2 + s3Access: the boot runner exports the service key as S3_* env. */
+  exportS3Env?: boolean
 }
 
 // Per-tag boot-image memo: every generation of a release resolves the boot image
@@ -196,6 +229,8 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string, requirePinne
       secretKey,
       region,
       bootDiagBucket,
+      handoffSecretId: service.handoffSecretId,
+      exportS3Env: service.exportS3Env,
       // Deploy trace context (deploy-run exports it before the stack update);
       // ignoreChanges on cloudInit keeps existing generations untouched.
       traceparent: process.env.TRACEPARENT,
@@ -269,6 +304,13 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   const genPrivateIp = genIps.get(genIpKey(svc.slug, generation.id))
   if (!genPrivateIp) throw new Error(`compute: no reserved private IP for ${svc.slug} gen ${generation.id} (pass 1 must run first)`)
 
+  // v2: a NEW generation must carry its minted handoff reference; planning one
+  // without the keys file means the mint step did not run — refuse rather than
+  // bake an empty credential. Pre-existing generations compute placeholder
+  // inputs safely (their cloudInit is ignored).
+  if (iamModelV2 && !generation.preexisting && !generationKeys) {
+    throw new Error(`compute: planning a NEW ${svc.slug} generation under iamModel=v2 without INFRA_GENERATION_KEYS_FILE — deploy via the deploy task (it runs mint-generation-keys first).`)
+  }
   const serviceConfig: ServiceConfig = {
     name: svc.slug,
     profile: svc.slug,
@@ -276,6 +318,8 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     runRelease: svc.runRelease ?? false,
     secretConsumers: secretConsumersFor(svc),
     composeEnv: buildComposeEnv(svc, generation.sha),
+    handoffSecretId: generationKeys?.handoffSecretIds[svc.slug],
+    exportS3Env: svc.s3Access === true,
   }
 
   const server = new scaleway.instance.Server(resourceName, {
@@ -292,9 +336,9 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   }, {
     // Generation VMs keep their initial cloud-init and image; changes create a content-addressed
     // generation through the rollout path. Ignoring provider image UUID drift prevents destructive
-    // in-place replacement outside load-balancer cutover. The IAM grant must
+    // in-place replacement outside load-balancer cutover. The IAM grants must
     // exist before the VM's first runtime-secret hydration.
-    dependsOn: [vmReaderPolicy],
+    dependsOn: [...vmIamPolicies],
     ignoreChanges: ['cloudInit', 'image'],
   })
 

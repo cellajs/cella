@@ -23,6 +23,7 @@ import { seedVmReaderKey } from '../../tasks/seed-vm-reader-key'
 import { fetchAppPermissionSetsByName } from '../../tasks/assert-vm-grants'
 import { setupAdminApp } from '../../tasks/setup-admin-app'
 import { setupCiKey } from '../../tasks/setup-ci-key'
+import { setupServiceApps } from '../../tasks/setup-service-apps'
 import { setupVmKey } from '../../tasks/setup-vm-key'
 import type { CliMode, InfraContext } from '../shared'
 import { acquireStackLockOrExit, autoAcceptDefaults, confirmOrDefault, createStepRunner, envOr, inputOrDefault, nonInteractive, promptRequiredInput, promptStackName, pulumiLoginUrl, resolveOrCreatePassphrase } from '../shared'
@@ -115,11 +116,11 @@ async function warnOnCiPolicyDrift(ctx: SetupContext): Promise<void> {
   }
 }
 
-/** Mint (or rotate) the `<slug>-ci-deploy` key, retrying on operator confirm. */
-async function mintCiKey(ctx: SetupContext): Promise<CiKeyResult> {
+/** Mint (or rotate) the CI deploy key, retrying on operator confirm. */
+async function mintCiKey(ctx: SetupContext, keyMintAppIds?: readonly string[]): Promise<CiKeyResult> {
   while (true) {
     try {
-      const key = await setupCiKey({ callerSecretKey: ctx.secretKey, projectId: ctx.projectId, slug: ctx.appConfig.slug, mode: ctx.context.environment, dnsZone: deriveInfra(ctx.appConfig).dnsZone })
+      const key = await setupCiKey({ callerSecretKey: ctx.secretKey, projectId: ctx.projectId, slug: ctx.appConfig.slug, mode: ctx.context.environment, dnsZone: deriveInfra(ctx.appConfig).dnsZone, keyMintAppIds })
       return { accessKey: key.accessKey, secretKey: key.secretKey, organizationId: key.organizationId }
     } catch (error) {
       console.error(`\n${warningMark} CI key setup failed: ${errorMessage(error)}`)
@@ -549,16 +550,43 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // The pre-apply gap check is read-only.
   if (!inputs.operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx)
 
-  // Identities: CI deploy key, VM reader key, operator app
+  // IAM model: fresh bootstraps start on v2 (per-service apps + per-deploy
+  // minted keys); existing stacks stay on their recorded model until the
+  // "Migrate IAM model" action flips the stack config.
+  const iamV2 = isInitialBootstrap || /\biamModel:\s*["']?v2["']?/.test(context.stackYaml ?? '')
+
+  // Identities: per-service + boot apps (v2), CI deploy key, VM reader key
+  // (legacy only), admin app. Service apps come FIRST: their ids feed the CI
+  // policy's conditioned key-mint rule.
+  let serviceAppIds: readonly string[] = []
+  if (iamV2 && needsCiKey) {
+    console.info('\n→ Service VM applications (per-service principals; keys minted per deploy)')
+    try {
+      const { deployedServices } = await import('../../lib/services')
+      const deployed = deployedServices(appConfig.services, appConfig.singleVM ?? false).map((svc) => svc.slug)
+      const apps = await setupServiceApps({
+        callerSecretKey: ctx.secretKey,
+        projectId: ctx.projectId,
+        slug: appConfig.slug,
+        mode: context.environment,
+        services: deployed,
+      })
+      serviceAppIds = apps.allAppIds
+    } catch (error) {
+      console.warn(`${warningMark} Service app setup failed: ${errorMessage(error)} — the CI key-mint rule will be omitted; re-run "Rotate keys".`)
+    }
+  }
+
   let ciKey: CiKeyResult = { accessKey: '', secretKey: '', organizationId: '' }
   if (needsCiKey) {
-    ciKey = await mintCiKey(ctx)
+    ciKey = await mintCiKey(ctx, serviceAppIds.length > 0 ? serviceAppIds : undefined)
   } else {
     console.info('\n→ CI deploy key — skipped (already in stack config)')
     await warnOnCiPolicyDrift(ctx)
   }
 
-  const vmAccessKey = await ensureVmKey(ctx, needsCiKey)
+  // Legacy model only: v2 VMs never hold a standing reader key.
+  const vmAccessKey = iamV2 ? '' : await ensureVmKey(ctx, needsCiKey)
   const adminAppId = needsCiKey ? await ensureAdminApp(ctx) : (process.env.SCW_ADMIN_APPLICATION_ID?.trim() ?? '')
 
   // Identity ids (CI, VM reader, admin application ids) are derived
@@ -567,6 +595,11 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   const bootstrapComplete = context.hasCiKey || !!ciKey.accessKey
   if (bootstrapComplete) {
     await must('Mark bootstrap complete', 'pulumi', ['config', 'set', 'infra:bootstrapComplete', new Date().toISOString(), '--stack', stackName], spawnSync)
+    if (iamV2) {
+      // The one flag every consumer branches on (vm-iam.ts, deploy-run):
+      // per-service apps + per-deploy minted keys instead of the vm-reader.
+      await must('Mark IAM model v2', 'pulumi', ['config', 'set', 'infra:iamModel', 'v2', '--stack', stackName], spawnSync)
+    }
   }
 
   // The passphrase is synced on every run (idempotent): it is verified against

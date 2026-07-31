@@ -48,6 +48,16 @@ export interface EnsureSecretInput {
   path: string
   description: string
   protect?: boolean
+  /**
+   * Scaleway ephemeral policy, set at creation and irremovable afterwards.
+   * `expires_once_accessed: true` + action 'disable' = single-access versions:
+   * the first read disables the version — the handoff tamper alarm.
+   */
+  ephemeralPolicy?: {
+    expires_once_accessed: boolean
+    action: 'disable' | 'delete'
+    time_to_live?: string
+  }
 }
 
 export interface PutSecretValueInput {
@@ -118,6 +128,7 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
         path: input.path,
         description: input.description,
         protected: input.protect ?? false,
+        ...(input.ephemeralPolicy ? { ephemeral_policy: input.ephemeralPolicy } : {}),
       })
     },
 

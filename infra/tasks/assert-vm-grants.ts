@@ -251,7 +251,9 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   const fallbackApplicationName = getFlag(argv, '--fallback-application-name') ?? undefined
   const requiredSecretCondition = getFlag(argv, '--secret-condition') ?? undefined
-  const result = await assertVmGrants({ secretKey, applicationId, applicationName, projectId, organizationId, fallbackApplicationName, requiredSecretCondition })
+  const requiredSetsCsv = getFlag(argv, '--required-sets')
+  const required = requiredSetsCsv ? requiredSetsCsv.split(',').map((set) => set.trim()).filter(Boolean) : undefined
+  const result = await assertVmGrants({ secretKey, applicationId, applicationName, projectId, organizationId, fallbackApplicationName, requiredSecretCondition, required })
   if (!result.ok) {
     const problems = [
       result.missing.length > 0 ? `missing required permission sets: ${result.missing.join(', ')}` : '',

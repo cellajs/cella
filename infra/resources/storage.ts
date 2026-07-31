@@ -3,7 +3,7 @@ import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tagsAsMap, isProduction, serviceUrl } from '../pulumi-context'
 import { sizing } from '../config/sizing'
 import { services } from '../lib/services'
-import { adminApplicationId, ciDeployApplicationId, vmReaderApplicationId } from './vm-iam'
+import { adminApplicationId, backendServiceApplicationId, bootApplicationId, ciDeployApplicationId, legacyS3ApplicationId, vmReaderApplicationId } from './vm-iam'
 
 // The browser app origin allowed to call the upload buckets: the service that
 // owns the LB's default route (the SPA), resolved without naming a service.
@@ -83,6 +83,34 @@ const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
   ],
   Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
 })
+
+/**
+ * Backend service-app statement on the uploads buckets (REQ-20): object-level
+ * only — the backend signs uploads and presigned URLs with its per-deploy
+ * service key. The legacy `<slug>-s3` managed-key app rides along until
+ * migration deletes it, so pre-migration backends keep signing. Both resolve
+ * gracefully (absent app = statement dropped).
+ */
+const uploadsSignerAccess = (bucketName: pulumi.Input<string>) =>
+  pulumi.all([backendServiceApplicationId, legacyS3ApplicationId]).apply(([backendId, s3Id]) =>
+    [backendId, s3Id]
+      .filter((id): id is string => !!id)
+      .map((id, index) => ({
+        Sid: index === 0 && backendId ? 'BackendObjectAccess' : 'LegacyS3ObjectAccess',
+        Effect: 'Allow',
+        Principal: { SCW: `application_id:${id}` },
+        Action: [
+          's3:ListBucket',
+          's3:ListBucketMultipartUploads',
+          's3:ListMultipartUploadParts',
+          's3:GetObject',
+          's3:PutObject',
+          's3:DeleteObject',
+          's3:AbortMultipartUpload',
+        ],
+        Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
+      })),
+  )
 
 // Expire stale hashed assets only after old browser tabs are unlikely to lazy-load them.
 // Root entry files stay outside this lifecycle prefix.
@@ -173,7 +201,7 @@ new scaleway.object.BucketPolicy('public-uploads-policy', {
   region,
   policy: pulumi.jsonStringify({
     Version: '2023-04-17',
-    Statement: adminAccess(publicUploadsBucket.name).apply((admin) => [
+    Statement: pulumi.all([adminAccess(publicUploadsBucket.name), uploadsSignerAccess(publicUploadsBucket.name)]).apply(([admin, signers]) => [
       {
         Sid: 'PublicRead',
         Effect: 'Allow',
@@ -183,6 +211,7 @@ new scaleway.object.BucketPolicy('public-uploads-policy', {
       },
       deployAccessNoVersionDelete(publicUploadsBucket.name),
       ...admin,
+      ...signers,
     ]),
   }),
 }, { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }] })
@@ -216,7 +245,25 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
   ],
 }, { aliases: [{ type: 'scaleway:index/objectBucket:ObjectBucket' }] , protect: isProduction })
 
-// No public policy: access via signed URLs only.
+/**
+ * First-ever policy on the private bucket (P3): still NO public statement —
+ * signed URLs only — but now deny-by-default like every other bucket. Admitted:
+ * the upload signers (backend service app; legacy s3 app until migration),
+ * CI (without version deletes, REQ-14), and the admin app. Anything else —
+ * including a compromised VM's boot key or another service's key — is denied.
+ */
+new scaleway.object.BucketPolicy('private-uploads-policy', {
+  bucket: privateUploadsBucket.name,
+  region,
+  policy: pulumi.jsonStringify({
+    Version: '2023-04-17',
+    Statement: pulumi.all([adminAccess(privateUploadsBucket.name), uploadsSignerAccess(privateUploadsBucket.name)]).apply(([admin, signers]) => [
+      deployAccessNoVersionDelete(privateUploadsBucket.name),
+      ...admin,
+      ...signers,
+    ]),
+  }),
+})
 
 // Boot diagnostics bucket (VM write-only diagnostics channel)
 
@@ -241,14 +288,19 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
   region,
   policy: pulumi.jsonStringify({
     Version: '2023-04-17',
-    Statement: adminAccess(bootDiagBucket.name).apply((admin) => [
-      {
-        Sid: 'VmWriteBootDiagnostics',
-        Effect: 'Allow',
-        Principal: { SCW: pulumi.interpolate`application_id:${vmReaderApplicationId}` },
-        Action: ['s3:PutObject'],
-        Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/*`],
-      },
+    Statement: pulumi.all([adminAccess(bootDiagBucket.name), vmReaderApplicationId, bootApplicationId]).apply(([admin, vmReaderId, bootId]) => [
+      // Whichever VM-side principal exists writes diagnostics: the vm-reader
+      // (legacy) and/or the boot fetcher (v2). Both statements during a
+      // migration window is harmless overlap.
+      ...[vmReaderId, bootId]
+        .filter((id): id is string => !!id)
+        .map((id) => ({
+          Sid: id === bootId ? 'BootWriteBootDiagnostics' : 'VmWriteBootDiagnostics',
+          Effect: 'Allow',
+          Principal: { SCW: `application_id:${id}` },
+          Action: ['s3:PutObject'],
+          Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/*`],
+        })),
       deployAccess(bootDiagBucket.name),
       ...admin,
     ]),

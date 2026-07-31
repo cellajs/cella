@@ -2,8 +2,10 @@ import { isMain } from '../lib/utils/is-main'
 import type { EngineConfig } from '../config/engine-config'
 import { deriveInfra } from '../lib/naming'
 import { deployedServices, enabledServices, serviceEndpoints, serviceNames } from '../lib/services'
+import { BACKEND_S3_PERMISSION_SETS, BOOT_PROJECT_PERMISSION_SETS, SERVICE_SECRET_PERMISSION_SETS } from '../lib/scaleway/permissions'
+import { principalNames } from '../lib/scaleway/principals'
 import { getFlag } from './args'
-import { vmSecretCondition } from '../lib/scaleway/vm-reader-secret'
+import { bootKeyCondition, serviceKeyCondition, vmSecretCondition } from '../lib/scaleway/vm-reader-secret'
 
 type Cfg = EngineConfig
 
@@ -18,6 +20,7 @@ export const ALLOWED_KEYS = [
   'state_bucket',
   'vm_reader_app',
   'vm_secret_condition',
+  'vm_assert_json',
   'enabled_services_json',
   'build_images_matrix',
   'primary_rollout_matrix',
@@ -87,6 +90,21 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     // same shared builder the Pulumi program uses, so the deploy's
     // assert-vm-grants step compares strings, not semantics.
     vm_secret_condition: vmSecretCondition(appConfig.slug, appConfig.mode, serviceNames),
+    // v2 model: one assertion row per principal (exact sets + exact
+    // condition), consumed by the deploy's grant-verification step when the
+    // stack config says iamModel=v2.
+    vm_assert_json: JSON.stringify([
+      ...deployedServices(appConfig.services, appConfig.singleVM ?? false).map((svc) => ({
+        app: principalNames(appConfig.slug, appConfig.mode).vmService(svc.slug),
+        sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
+        condition: serviceKeyCondition(appConfig.slug, appConfig.mode, svc.slug),
+      })),
+      {
+        app: principalNames(appConfig.slug, appConfig.mode).boot,
+        sets: [...BOOT_PROJECT_PERMISSION_SETS, ...SERVICE_SECRET_PERMISSION_SETS],
+        condition: bootKeyCondition(appConfig.slug, appConfig.mode),
+      },
+    ]),
     enabled_services_json: JSON.stringify(enabledServiceRows),
     build_images_matrix: JSON.stringify(buildImages),
     primary_rollout_matrix: JSON.stringify(primaryRollout),
