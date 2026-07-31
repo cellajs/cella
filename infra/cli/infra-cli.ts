@@ -13,6 +13,7 @@ import { runSeedDatabase } from './actions/seed-db'
 import { runRotatePassphrase } from './actions/rotate-passphrase'
 import { runSecrets } from './actions/secrets'
 import { runSetup } from './actions/setup'
+import { runMigrateIam } from './actions/migrate-iam'
 import { runTeardown } from './actions/teardown'
 import { runUnlock } from './actions/unlock'
 import { autoAcceptDefaults, nonInteractive } from './shared'
@@ -180,6 +181,7 @@ async function chooseKeysAction(): Promise<Exclude<CliMode, 'status'> | 'back'> 
       { name: 'Rotate keys', value: 'rotate', description: 'Replace the CI deploy and VM reader keys with fresh ones.' },
       { name: 'Rotate passphrase', value: 'rotate-passphrase', description: 'Re-encrypt stack state with a new Pulumi passphrase and sync it.' },
       { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete the runtime secrets.' },
+      { name: 'Migrate IAM model', value: 'migrate-iam', description: 'Adopt per-mode/per-service principals (v2), or clean up legacy ones afterwards.' },
       backChoice,
     ],
   })
@@ -281,6 +283,11 @@ if (mode === 'unlock') {
 
 if (mode === 'teardown') {
   await runTeardown(context)
+  process.exit(0)
+}
+
+if (mode === 'migrate-iam') {
+  await runMigrateIam(context)
   process.exit(0)
 }
 
