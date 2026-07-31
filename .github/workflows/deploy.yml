@@ -2,6 +2,10 @@ name: Deploy
 
 # Thin trigger with three paths into one reusable pipeline (deploy-pipeline.yml):
 #   push to main      -> auto staging, so main is always mirrored on staging.
+#                        Exception: the release-please release commit is skipped
+#                        (its code is promoted to production by the paired
+#                        `release: published` event, so a staging run would just
+#                        redeploy the same SHA at the same moment).
 #                        The gate job runs it only once staging is bootstrapped:
 #                        it checks infra/Pulumi.staging.yaml for a bootstrap
 #                        marker. A fresh app has no bootstrapped staging stack, so
@@ -46,8 +50,14 @@ jobs:
   # staging_ready is false and the deploy job skips: no manual opt-in variable,
   # and the template stays safe to pull. Only runs for push events; release and
   # manual dispatch bypass it.
+  # Skip the release-please release commit: its exact code is promoted to
+  # production by the paired `release: published` event, so mirroring it to
+  # staging at the same moment is redundant. Every other push to main still
+  # deploys staging.
   gate:
-    if: github.event_name == 'push'
+    if: >-
+      github.event_name == 'push' &&
+      !startsWith(github.event.head_commit.message, 'chore(main): release')
     runs-on: ubuntu-latest
     timeout-minutes: 2
     permissions:

@@ -97,6 +97,10 @@ Each check reports one of `ok | warn | missing | error | unknown`, where `unknow
 
 Check `id`s are stable identifiers (`tooling.pulumi`, `config.stackState`, `identity.project`, `github.environment`, `state.bucket`, `state.lock`, `rollout`, `secrets.required`, `live.<service>`, `dns.zone`). The evaluator is a pure function of gathered facts, so the mapping from facts to verdicts is unit-tested in isolation.
 
+## Teardown
+
+There is no teardown command, on purpose. Destroying a stack is a rare, irreversible operation that needs owner-tier credentials the descending-privilege model deliberately keeps off laptops and out of CI — the CI deploy key can create but not delete the database or VPC, and the state-bucket policy denies it `DeleteBucket`. So you do it yourself, by hand, in the Scaleway console. See **Teardown** in [../cella/DEPLOYMENT.md](../cella/DEPLOYMENT.md) for the order.
+
 ## Extending
 
 The engine is plain Pulumi + the Scaleway SDK; there is no plugin framework to learn. App-owned registries ([config/services.config.ts](config/services.config.ts), [config/runtime-secrets.config.ts](config/runtime-secrets.config.ts), [config/general.config.ts](config/general.config.ts)) declare services, sizing, routing, and secret wiring; resource modules under [resources/](resources/) are ordinary Pulumi programs you can read and change. The app description itself is injected through [config/engine-config.ts](config/engine-config.ts), which keeps the engine decoupled from any one workspace.

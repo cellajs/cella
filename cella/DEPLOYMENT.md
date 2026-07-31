@@ -460,6 +460,14 @@ Unlike **Rotate keys**, no bootstrap key is needed: nothing changes on the Scale
 
 > Losing the current passphrase means you cannot decrypt existing secret outputs; there is no recovery. The GitHub Environment holds a copy, but Actions secrets are write-only: CI keeps working with it, yet it can never be viewed again, so keep your password-manager copy current.
 
+### Teardown (manual)
+
+Decommissioning a stack — deleting every resource to stop billing — is a deliberate manual operation you perform yourself in the Scaleway console. The CLI has **no** teardown action on purpose: a full destroy needs owner-tier credentials the [descending-privilege model](#credentials) keeps off laptops and out of CI (the CI deploy key can create but not delete the database or VPC, and the state-bucket policy denies it `DeleteBucket`), and `pulumi destroy` is unavailable once the passphrase is gone.
+
+Delete in dependency order: load balancer (+IP) → instance (+volumes, +IP) → database → registry namespace → secrets → buckets (empty incl. versions, then delete; state bucket last) → private network → VPC → IAM apps/policies → DNS records → the now-empty project. The database and VPC need an owner or full-access key, not the CI key.
+
+> **Clean slate** below is *not* a teardown — it resets stack tracking to re-bootstrap a still-running stack, and leaves live resources in place.
+
 <a id="clean-slate"></a>
 
 ### Clean slate (start over from scratch)
