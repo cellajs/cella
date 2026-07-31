@@ -73,8 +73,10 @@ const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
     's3:PutBucketTagging',
     's3:GetBucketVersioning',
     's3:PutBucketVersioning',
-    's3:GetBucketCors',
-    's3:PutBucketCors',
+    // Scaleway spells CORS all-caps (unlike AWS's s3:GetBucketCors) — the
+    // AWS casing is rejected as an invalid action (MalformedPolicy 400).
+    's3:GetBucketCORS',
+    's3:PutBucketCORS',
     's3:GetLifecycleConfiguration',
     's3:PutLifecycleConfiguration',
     's3:GetBucketAcl',
