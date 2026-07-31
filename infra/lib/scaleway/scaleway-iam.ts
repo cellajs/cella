@@ -1,5 +1,6 @@
 import { scwFetch, scwSend } from './scw-fetch'
 import { DNS_PERMISSION_SETS } from './permissions'
+import { principalNames, principalTags } from './principals'
 import { changeMark, checkMark, tildeMark } from '../utils/cli-output'
 
 const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1'
@@ -34,6 +35,12 @@ export interface PolicyRule {
   permission_set_names: readonly string[]
   project_ids?: string[]
   organization_id?: string
+  /**
+   * Optional CEL condition narrowing the rule (request- or resource-level).
+   * Conditions can only narrow an allow: one unconditioned policy on the same
+   * principal bypasses every condition (union semantics, no deny primitive).
+   */
+  condition?: string
 }
 
 /** Per-identity differences in the scoped IAM application, policy, and API key flow. */
@@ -68,6 +75,13 @@ export interface ProvisionScopedKeyOptions {
   organizationId?: string
   projectId: string
   slug: string
+  /**
+   * Deploy mode (`production` / `staging`). When set, the application is named
+   * per-mode (`<slug>-<mode>-<suffix>`), tagged, and enrolled in the
+   * `<slug>-<mode>` IAM group. Omitted only by legacy callers; new code always
+   * passes it.
+   */
+  mode?: string
   /** Injected for tests; defaults to console.info. */
   log?: (msg: string) => void
 }
@@ -109,12 +123,12 @@ export async function resolveOrganizationId(secretKey: string, projectId: string
  * at creation time, so the caller must persist it immediately.
  */
 export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config: ScopedKeyConfig): Promise<ScopedKeyResult> {
-  const { callerSecretKey, projectId, slug } = opts
+  const { callerSecretKey, projectId, slug, mode } = opts
   const log = opts.log ?? ((msg) => console.info(msg))
 
   const organizationId = opts.organizationId ?? (await resolveOrganizationId(callerSecretKey, projectId))
 
-  const appName = `${slug}-${config.suffix}`
+  const appName = mode ? `${slug}-${mode}-${config.suffix}` : `${slug}-${config.suffix}`
   const policyName = `${appName}-policy`
 
   // 1. Find or create the IAM application.
@@ -130,8 +144,18 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
       name: appName,
       organization_id: organizationId,
       description: config.appDescription,
+      ...(mode ? { tags: principalTags(slug, mode) } : {}),
     })
     log(`  ${changeMark} Created IAM application: ${app.name} (${app.id})`)
+  }
+
+  // Enroll the app in the per-mode IAM group. Organizational only (the group
+  // carries no grants): it is the one navigable unit in the console's flat
+  // org-wide lists, and teardown enumerates members instead of guessing names.
+  if (mode) {
+    await ensureGroupMembership({ callerSecretKey, organizationId, slug, mode, applicationId: app.id, log }).catch((error) => {
+      log(`  ${tildeMark} Group enrollment skipped: ${error instanceof Error ? error.message : String(error)}`)
+    })
   }
 
   // Recreate managed policies so rules match current permissions.
@@ -232,6 +256,166 @@ export async function findPolicyIdByName(secretKey: string, organizationId: stri
     `${IAM_BASE}/policies?organization_id=${organizationId}&policy_name=${encodeURIComponent(name)}&page_size=20`,
   )
   return policies.find((p) => p.name === name)?.id
+}
+
+interface ScwGroup {
+  id: string
+  name: string
+  application_ids?: string[]
+}
+
+/** Find the per-mode IAM group, or undefined. */
+async function findGroup(callerSecretKey: string, organizationId: string, name: string): Promise<ScwGroup | undefined> {
+  const { groups = [] } = await scwFetch<{ groups?: ScwGroup[] }>({ secretKey: callerSecretKey },
+    'GET',
+    `${IAM_BASE}/groups?organization_id=${organizationId}&name=${encodeURIComponent(name)}&page_size=20`,
+  )
+  return groups.find((group) => group.name === name)
+}
+
+/**
+ * Ensure the `<slug>-<mode>` IAM group exists and contains the application.
+ * The group is purely organizational (never a policy principal — a group
+ * policy would grant every member): console navigation + teardown enumeration.
+ */
+export async function ensureGroupMembership(opts: {
+  callerSecretKey: string
+  organizationId: string
+  slug: string
+  mode: string
+  applicationId: string
+  log?: (msg: string) => void
+}): Promise<void> {
+  const log = opts.log ?? ((msg) => console.info(msg))
+  const groupName = principalNames(opts.slug, opts.mode).group
+  let group: ScwGroup | undefined
+  try {
+    group = await findGroup(opts.callerSecretKey, opts.organizationId, groupName)
+  } catch (error) {
+    if (!isPermissionDenied(error)) throw error
+    // Write-only bootstrap key (IAMManager without IAMReadOnly): create
+    // directly and tolerate the duplicate.
+  }
+  if (!group) {
+    try {
+      group = await scwFetch<ScwGroup>({ secretKey: opts.callerSecretKey }, 'POST', `${IAM_BASE}/groups`, {
+        name: groupName,
+        organization_id: opts.organizationId,
+        description: `All ${opts.slug} ${opts.mode} IAM applications (managed by cella-infra; organizational only, never attach policies)`,
+        tags: principalTags(opts.slug, opts.mode),
+      })
+      log(`  ${changeMark} Created IAM group: ${groupName}`)
+    } catch (error) {
+      if (!isAlreadyExists(error)) throw error
+      group = await findGroup(opts.callerSecretKey, opts.organizationId, groupName)
+    }
+  }
+  if (!group) return
+  if ((group.application_ids ?? []).includes(opts.applicationId)) return
+  try {
+    await scwFetch<ScwGroup>({ secretKey: opts.callerSecretKey }, 'POST', `${IAM_BASE}/groups/${group.id}/add-member`, {
+      application_id: opts.applicationId,
+    })
+    log(`  ${checkMark} Enrolled in IAM group ${groupName}`)
+  } catch (error) {
+    if (!isAlreadyExists(error)) throw error
+  }
+}
+
+/**
+ * IAM principal inventory for one app×mode: the per-mode group's members plus
+ * any legacy-named (pre-per-mode) applications. Drives teardown and migration
+ * cleanup, so nothing is deleted by name-guessing alone.
+ */
+export async function listManagedPrincipals(opts: {
+  callerSecretKey: string
+  organizationId: string
+  slug: string
+  mode: string
+}): Promise<{ group?: ScwGroup; applications: ScwApp[] }> {
+  const names = principalNames(opts.slug, opts.mode)
+  const group = await findGroup(opts.callerSecretKey, opts.organizationId, names.group)
+  const applications: ScwApp[] = []
+  const seen = new Set<string>()
+  const addByName = async (name: string) => {
+    const { applications: found = [] } = await scwFetch<{ applications?: ScwApp[] }>({ secretKey: opts.callerSecretKey },
+      'GET',
+      `${IAM_BASE}/applications?name=${encodeURIComponent(name)}&organization_id=${opts.organizationId}&page_size=20`,
+    )
+    for (const app of found) {
+      if (app.name === name && !seen.has(app.id)) {
+        seen.add(app.id)
+        applications.push(app)
+      }
+    }
+  }
+  for (const id of group?.application_ids ?? []) {
+    if (seen.has(id)) continue
+    seen.add(id)
+    const app = await scwFetch<ScwApp>({ secretKey: opts.callerSecretKey }, 'GET', `${IAM_BASE}/applications/${id}`)
+    applications.push(app)
+  }
+  for (const name of [names.legacy.ciDeploy, names.legacy.vmReader, names.legacy.operator]) await addByName(name)
+  return { group, applications }
+}
+
+/**
+ * Delete one application and everything hanging off it: its API keys and the
+ * policies bound to it. Used by teardown and by migration cleanup of legacy
+ * principals. Requires IAMManager (+ IAMReadOnly for the listings).
+ */
+export async function deleteApplicationCascade(opts: {
+  callerSecretKey: string
+  organizationId: string
+  applicationId: string
+  log?: (msg: string) => void
+}): Promise<void> {
+  const log = opts.log ?? ((msg) => console.info(msg))
+  const { api_keys = [] } = await scwFetch<{ api_keys?: Array<{ access_key: string }> }>({ secretKey: opts.callerSecretKey },
+    'GET',
+    `${IAM_BASE}/api-keys?application_id=${opts.applicationId}&organization_id=${opts.organizationId}&page_size=100`,
+  )
+  for (const key of api_keys) {
+    await scwSend({ secretKey: opts.callerSecretKey }, 'DELETE', `${IAM_BASE}/api-keys/${key.access_key}`)
+  }
+  // The list endpoint's application_id filter is unreliable (see
+  // assert-vm-grants); filter client-side on the principal each item carries.
+  const { policies = [] } = await scwFetch<{ policies?: Array<ScwPolicy & { application_id?: string }> }>({ secretKey: opts.callerSecretKey },
+    'GET',
+    `${IAM_BASE}/policies?organization_id=${opts.organizationId}&page_size=100`,
+  )
+  for (const policy of policies.filter((p) => p.application_id === opts.applicationId)) {
+    await scwSend({ secretKey: opts.callerSecretKey }, 'DELETE', `${IAM_BASE}/policies/${policy.id}`)
+  }
+  await scwSend({ secretKey: opts.callerSecretKey }, 'DELETE', `${IAM_BASE}/applications/${opts.applicationId}`)
+  log(`  ${tildeMark} Deleted IAM application ${opts.applicationId} (${api_keys.length} key(s))`)
+}
+
+/** Delete the per-mode IAM group (after its members are gone). */
+export async function deleteGroup(opts: { callerSecretKey: string; organizationId: string; slug: string; mode: string }): Promise<void> {
+  const group = await findGroup(opts.callerSecretKey, opts.organizationId, principalNames(opts.slug, opts.mode).group)
+  if (group) await scwSend({ secretKey: opts.callerSecretKey }, 'DELETE', `${IAM_BASE}/groups/${group.id}`)
+}
+
+/**
+ * Remove the org-wide `<slug>-bootstrap-dns` policy. Called at the end of
+ * bootstrap (the first `pulumi up` no longer needs it) and by teardown: it is
+ * the widest standing grant the engine ever creates, and it must not outlive
+ * the bootstrap key it was minted for.
+ */
+export async function removeBootstrapDnsGrant(opts: {
+  callerSecretKey: string
+  organizationId: string
+  slug: string
+  log?: (msg: string) => void
+}): Promise<boolean> {
+  const log = opts.log ?? ((msg) => console.info(msg))
+  const policyName = `${opts.slug}-bootstrap-dns`
+  const id = await findPolicyIdByName(opts.callerSecretKey, opts.organizationId, policyName)
+  if (!id) return false
+  await scwSend({ secretKey: opts.callerSecretKey }, 'DELETE', `${IAM_BASE}/policies/${id}`)
+  log(`  ${tildeMark} Removed org-wide bootstrap DNS grant '${policyName}'`)
+  return true
 }
 
 /**

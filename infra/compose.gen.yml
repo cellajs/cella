@@ -51,6 +51,7 @@ services:
       internalRoute: true
       dockerfile: Dockerfile
       target: backend
+      s3Access: true
   backend-release:
     image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
     profiles: [backend]

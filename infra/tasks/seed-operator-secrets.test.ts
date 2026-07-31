@@ -23,7 +23,8 @@ const baseOptions = {
   secretKey: 'caller-secret',
   projectId: 'proj-1',
   region: 'nl-ams',
-  path: '/demo-production/',
+  slug: 'demo',
+  mode: 'production',
   log: vi.fn(),
 }
 

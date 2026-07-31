@@ -12,7 +12,9 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
     registry_ns: 'cella-registry',
     frontend_bucket: 'cella-frontend',
     state_bucket: 'cella-pulumi-state',
-    vm_reader_app: 'cella-vm-reader',
+    vm_reader_app: 'cella-production-vm-reader',
+    vm_secret_condition: 'resource.name.startsWith("/cella-production/backend/")',
+    vm_assert_json: JSON.stringify([]),
     enabled_services_json: JSON.stringify([
       { service: 'backend', public_url: 'https://www.cellajs.com/api' },
       { service: 'cdc', public_url: '' },
@@ -38,6 +40,10 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean } = {}) 
     },
     exec: (cmd, args, execOpts) => {
       ops.push(`exec:${cmd}:${args[0]}${execOpts?.allowFailure ? ':allow-failure' : ''}`)
+    },
+    stackConfigGet: (_stack, key) => {
+      ops.push(`config-get:${key}`)
+      return ''
     },
     update: async (stack) => {
       ops.push(`update:${stack}`)

@@ -96,7 +96,7 @@ async function gatherScaleway(opts: { region: string; slug: string; projectId?: 
   if (opts.projectId) {
     try {
       const client = createSecretManagerClient({ secretKey: opts.secretKey, region: opts.region, projectId: opts.projectId })
-      const existing = await client.listSecrets(secretManagerPath(opts.slug, opts.mode))
+      const existing = await client.listSecretsUnder(secretManagerPath(opts.slug, opts.mode))
       const versioned = new Set(existing.filter((s) => (s.version_count ?? 0) > 0).map((s) => s.name))
       out.requiredSecretsMissing = operatorManagedRuntimeSecrets.filter((s) => s.required && !versioned.has(s.secretName)).map((s) => s.secretName)
     } catch {
@@ -181,7 +181,7 @@ export async function gatherInputs(ctx: StatusContext): Promise<StatusInputs> {
     hasDomain,
     credentialsAvailable,
     projectId,
-    operatorAppId: process.env.SCW_OPERATOR_APPLICATION_ID?.trim() || undefined,
+    adminAppId: process.env.SCW_ADMIN_APPLICATION_ID?.trim() || process.env.SCW_OPERATOR_APPLICATION_ID?.trim() || undefined,
     github,
     stateBucketExists: scaleway.stateBucketExists,
     lock: scaleway.lock,

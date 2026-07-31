@@ -38,11 +38,18 @@ describe('storage module', () => {
     }
   })
 
-  it('private uploads bucket has NO public BucketPolicy', () => {
+  it('private uploads bucket policy admits signers only — never a public statement', () => {
     const policies = h.resources.filter((r) => /bucketPolicy/i.test(r.type))
     const privatePolicies = policies.filter((p) => /private/i.test(p.name))
-    expect(privatePolicies).toHaveLength(0)
+    // P3: the private bucket gained its first policy (deny-by-default), but
+    // access stays signed-URL only — no '*' principal may ever appear.
+    expect(privatePolicies).toHaveLength(1)
+    const doc = JSON.parse(String(privatePolicies[0]?.inputs.policy ?? '{}')) as { Statement?: Array<{ Principal?: unknown }> }
+    for (const statement of doc.Statement ?? []) {
+      expect(statement.Principal).not.toBe('*')
+    }
   })
+
 
   it('boot diagnostics bucket grants VM write to boot-diag/ only, never public read', () => {
     const policies = h.resources.filter((r) => /bucketPolicy/i.test(r.type))

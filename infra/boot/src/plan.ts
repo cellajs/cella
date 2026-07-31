@@ -9,6 +9,13 @@ export interface RuntimeSecretManifestEntry {
   required: boolean
 }
 
+export interface ServiceKeyHandoff {
+  /** Single-access secret holding this generation's service key pair. */
+  secretId: string
+  /** Where the fetched pair persists (0600) so reboots never re-fetch. */
+  cacheFile: string
+}
+
 export interface BootPlan {
   schemaVersion: typeof supportedSchemaVersion
   service: string
@@ -29,6 +36,15 @@ export interface BootPlan {
     scwAccessKeyFile: string
     scwSecretKeyFile: string
   }
+  /**
+   * v2 model: fetch the real service key from a single-access handoff bundle
+   * using the (baked) boot credentials. A failed fetch on FIRST boot means the
+   * bundle was already consumed — interception signal, boot halts. Cache-first
+   * on reboots. Absent = legacy model (baked key does everything).
+   */
+  serviceKeyHandoff?: ServiceKeyHandoff
+  /** Export the service key as S3_ACCESS_KEY_ID/S3_ACCESS_KEY_SECRET into the runtime env (backend uploads/presigning). */
+  exportS3Env?: boolean
   bootDiagnostics: {
     bucket: string
     logFile: string
@@ -63,6 +79,8 @@ const topLevelKeys = new Set([
   'registry',
   'region',
   'credentials',
+  'serviceKeyHandoff',
+  'exportS3Env',
   'bootDiagnostics',
   'releaseCommand',
   'docker',
@@ -161,6 +179,15 @@ export function parseBootPlanJson(json: string): BootPlan {
 
   const traceparent = typeof parsed.traceparent === 'string' && parsed.traceparent.trim() !== '' ? parsed.traceparent : undefined
 
+  let serviceKeyHandoff: ServiceKeyHandoff | undefined
+  if (parsed.serviceKeyHandoff !== undefined) {
+    const handoff = objectField(parsed, 'serviceKeyHandoff')
+    const cacheFile = stringField(handoff, 'cacheFile')
+    assertAllowedPath(cacheFile)
+    serviceKeyHandoff = { secretId: stringField(handoff, 'secretId'), cacheFile }
+  }
+  const exportS3Env = parsed.exportS3Env === undefined ? undefined : booleanField(parsed, 'exportS3Env')
+
   const services = parsed.services === undefined ? undefined : commandField(parsed, 'services')
 
   return {
@@ -174,6 +201,8 @@ export function parseBootPlanJson(json: string): BootPlan {
     registry: stringField(parsed, 'registry'),
     region: stringField(parsed, 'region'),
     credentials: { scwAccessKeyFile, scwSecretKeyFile },
+    ...(serviceKeyHandoff ? { serviceKeyHandoff } : {}),
+    ...(exportS3Env !== undefined ? { exportS3Env } : {}),
     bootDiagnostics: {
       bucket: stringField(bootDiagnostics, 'bucket'),
       logFile,

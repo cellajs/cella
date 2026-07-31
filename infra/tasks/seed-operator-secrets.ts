@@ -1,11 +1,13 @@
 import { operatorManagedRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager'
+import { secretPathFor } from '../lib/scaleway/vm-reader-secret'
 
 export interface SeedOperatorSecretsOptions {
   secretKey: string
   projectId: string
   region: string
-  path: string
+  slug: string
+  mode: string
   /** Initial values keyed by runtime secret id (e.g. `adminEmail`). Empty/undefined entries are skipped. */
   values: Partial<Record<string, string>>
   log?: (message: string) => void
@@ -35,7 +37,8 @@ export async function seedOperatorSecrets(options: SeedOperatorSecretsOptions): 
     const value = options.values[secret.id]
     if (!value) continue
 
-    const existing = await client.getSecretByName(secret.secretName, options.path)
+    const path = secretPathFor(secret, options.slug, options.mode)
+    const existing = await client.getSecretByName(secret.secretName, path)
     if (existing?.version_count && existing.version_count > 0) {
       log(`skip ${secret.secretName}: already has ${existing.version_count} version(s)`)
       continue
@@ -43,7 +46,7 @@ export async function seedOperatorSecrets(options: SeedOperatorSecretsOptions): 
 
     const ensured = existing ?? await client.ensureSecret({
       name: secret.secretName,
-      path: options.path,
+      path,
       description: secret.description,
     })
     await client.putSecretValue({

@@ -11,7 +11,7 @@ import { pc, crossMark, warningMark } from '../lib/utils/cli-output'
 type AppConfigType = EngineConfig
 
 /** Infra CLI operation modes */
-export type CliMode = 'status' | 'resume' | 'rotate' | 'rotate-passphrase' | 'apply' | 'preview' | 'secrets' | 'reset-database' | 'seed-db' | 'expose-db' | 'unexpose-db' | 'unlock'
+export type CliMode = 'status' | 'resume' | 'rotate' | 'rotate-passphrase' | 'apply' | 'preview' | 'secrets' | 'reset-database' | 'seed-db' | 'expose-db' | 'unexpose-db' | 'unlock' | 'teardown' | 'migrate-iam'
 
 /**
  * Context for the infra CLI, including stack information and state. Passed to each service handler to provide necessary information about the current infra status and configuration.

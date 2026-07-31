@@ -13,6 +13,8 @@ import { runSeedDatabase } from './actions/seed-db'
 import { runRotatePassphrase } from './actions/rotate-passphrase'
 import { runSecrets } from './actions/secrets'
 import { runSetup } from './actions/setup'
+import { runMigrateIam } from './actions/migrate-iam'
+import { runTeardown } from './actions/teardown'
 import { runUnlock } from './actions/unlock'
 import { autoAcceptDefaults, nonInteractive } from './shared'
 import type { CliMode, InfraContext } from './shared'
@@ -102,9 +104,9 @@ async function loadContext(): Promise<InfraContext> {
 
   // Bootstrap creates the operator application and writes its id to backend/.env.
   // Bootstrapped stacks require it for operator access to CI-scoped buckets.
-  const operatorApplicationId = process.env.SCW_OPERATOR_APPLICATION_ID?.trim()
-  if (!operatorApplicationId && state === 'bootstrapped') {
-    throw new Error('SCW_OPERATOR_APPLICATION_ID is not set — add it to backend/.env before running the infra CLI.')
+  const adminApplicationId = process.env.SCW_ADMIN_APPLICATION_ID?.trim() || process.env.SCW_OPERATOR_APPLICATION_ID?.trim()
+  if (!adminApplicationId && state === 'bootstrapped') {
+    console.warn('SCW_ADMIN_APPLICATION_ID is not set — admin bucket-policy statements will be dropped on the next up. Run "Rotate keys" to create the admin app.')
   }
 
   return {
@@ -179,6 +181,7 @@ async function chooseKeysAction(): Promise<Exclude<CliMode, 'status'> | 'back'> 
       { name: 'Rotate keys', value: 'rotate', description: 'Replace the CI deploy and VM reader keys with fresh ones.' },
       { name: 'Rotate passphrase', value: 'rotate-passphrase', description: 'Re-encrypt stack state with a new Pulumi passphrase and sync it.' },
       { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete the runtime secrets.' },
+      { name: 'Migrate IAM model', value: 'migrate-iam', description: 'Adopt per-mode/per-service principals (v2), or clean up legacy ones afterwards.' },
       backChoice,
     ],
   })
@@ -193,6 +196,7 @@ async function chooseStackAction(): Promise<Exclude<CliMode, 'status'> | 'back'>
       { name: 'Preview', value: 'preview', description: 'Show what a deploy would change. Read-only, makes no changes.' },
       { name: 'Resume', value: 'resume', description: 'Re-sync config and GitHub secrets, and self-heal missing keys.' },
       { name: 'Unlock', value: 'unlock', description: 'Clear a stale lock from an interrupted run.' },
+      { name: 'Teardown', value: 'teardown', description: 'DESTRUCTIVE: destroy every stack resource, then optionally delete the IAM principals.' },
       backChoice,
     ],
   })
@@ -274,6 +278,16 @@ if (mode === 'unexpose-db') {
 
 if (mode === 'unlock') {
   await runUnlock(context)
+  process.exit(0)
+}
+
+if (mode === 'teardown') {
+  await runTeardown(context)
+  process.exit(0)
+}
+
+if (mode === 'migrate-iam') {
+  await runMigrateIam(context)
   process.exit(0)
 }
 

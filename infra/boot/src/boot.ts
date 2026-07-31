@@ -7,6 +7,7 @@ import { retry } from '../../lib/utils/retry'
 import { createJsonLogger } from './logger'
 import { execCommand, mustExec, type ExecFn } from './exec'
 import { scrubSecretLines, uploadBootDiagnostics } from './diagnostics'
+import { fetchServiceKey } from './service-key'
 import { hydrateRuntimeSecrets } from './runtime-secrets'
 import { parseBootPlanJson, type BootPlan } from './plan'
 
@@ -152,8 +153,24 @@ export async function boot(opts: BootOptions): Promise<void> {
     await phase('wait-private-network', () => waitForPrivateNetwork({ exec, timeoutSeconds: plan.timeouts.privateNetworkSeconds }))
     await phase('write-app-files', () => writeAppFiles(plan))
     await phase('docker-login', () => dockerLogin(plan, secretKey, exec))
+    // v2: swap the baked boot key for the real service key via the
+    // single-access handoff bundle (cache-first on reboots; a consumed bundle
+    // on first boot = interception → this phase throws and the boot halts).
+    let serviceKey = { accessKey, secretKey }
+    if (plan.serviceKeyHandoff) {
+      await phase('fetch-service-key', async () => {
+        serviceKey = await fetchServiceKey({ handoff: plan.serviceKeyHandoff!, bootSecretKey: secretKey, region: plan.region })
+      })
+    }
     await phase('hydrate-runtime-secrets', () =>
-      hydrateRuntimeSecrets({ manifest: plan.files.runtimeSecretManifest, secretKey, region: plan.region, outputPath: '/opt/app/.env.runtime' }))
+      hydrateRuntimeSecrets({
+        manifest: plan.files.runtimeSecretManifest,
+        secretKey: serviceKey.secretKey,
+        region: plan.region,
+        outputPath: '/opt/app/.env.runtime',
+        // REQ-20: the backend signs S3 requests with its own service key.
+        extraLines: plan.exportS3Env ? [`S3_ACCESS_KEY_ID=${serviceKey.accessKey}`, `S3_ACCESS_KEY_SECRET=${serviceKey.secretKey}`] : [],
+      }))
     const mapleKey = await mapleKeyFromRuntimeEnv('/opt/app/.env.runtime')
     if (mapleKey) telemetry.configureExport({ endpoint: 'https://ingest.maple.dev/v1', headers: { 'x-maple-ingest-key': mapleKey } })
     await phase('pull-image', () => pullImage(plan, exec))

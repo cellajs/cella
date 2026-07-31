@@ -122,7 +122,7 @@ export interface StatusInputs {
   /** True when SCW_ or AWS_ credentials are present for `scaleway`-tier checks. */
   credentialsAvailable: boolean
   projectId?: string
-  operatorAppId?: string
+  adminAppId?: string
   github?: GithubInputs
   /** undefined = not checked (no creds or error). */
   stateBucketExists?: boolean

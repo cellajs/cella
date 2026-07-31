@@ -8,6 +8,7 @@ const prompts = {
 }
 
 const listSecrets = vi.fn()
+const listSecretsUnder = vi.fn()
 const getSecretByName = vi.fn()
 const ensureSecret = vi.fn()
 const putSecretValue = vi.fn()
@@ -17,6 +18,7 @@ const provisionManagedKey = vi.fn()
 vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
   createSecretManagerClient: () => ({
     listSecrets,
+    listSecretsUnder,
     getSecretByName,
     ensureSecret,
     putSecretValue,
@@ -33,6 +35,7 @@ function resetMocks() {
   prompts.password.mockReset()
   prompts.confirm.mockReset()
   listSecrets.mockReset()
+  listSecretsUnder.mockReset()
   getSecretByName.mockReset()
   ensureSecret.mockReset()
   putSecretValue.mockReset()
@@ -45,6 +48,7 @@ const baseOptions = {
   projectId: 'proj-1',
   region: 'nl-ams',
   slug: 'demo',
+  mode: 'production',
   path: '/demo-production/',
   prompts,
   log: vi.fn(),
@@ -56,14 +60,14 @@ describe('manageRuntimeSecrets', () => {
     prompts.select.mockResolvedValueOnce('list').mockResolvedValueOnce('exit')
     // brevo-api-key has a version (content) → present; github-client-id exists as an
     // empty container (0 versions) → empty, not present. Everything else is missing.
-    listSecrets.mockResolvedValueOnce([
+    listSecretsUnder.mockResolvedValueOnce([
       { name: 'brevo-api-key', id: 'secret-1', version_count: 1 },
       { name: 'github-client-id', id: 'secret-2', version_count: 0 },
     ])
 
     await manageRuntimeSecrets(baseOptions)
 
-    expect(listSecrets).toHaveBeenCalledWith('/demo-production/')
+    expect(listSecretsUnder).toHaveBeenCalledWith('/demo-production/')
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Runtime secrets'))
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/brevo-api-key.*present/))
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/github-client-id.*empty/))

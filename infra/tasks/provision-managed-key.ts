@@ -2,6 +2,7 @@ import type { ManagedKeyDefinition, MintedKeyField } from '../lib/managed-keys'
 import { runtimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
 import { provisionScopedKey } from '../lib/scaleway/scaleway-iam'
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager'
+import { secretPathFor } from '../lib/scaleway/vm-reader-secret'
 import { checkMark } from '../lib/utils/cli-output'
 
 export interface ProvisionManagedKeyOptions {
@@ -12,7 +13,9 @@ export interface ProvisionManagedKeyOptions {
   projectId: string
   region: string
   slug: string
-  /** Secret Manager folder, e.g. `/cella-production/`. */
+  /** Deploy mode: per-mode app naming/grouping + per-service container paths. */
+  mode: string
+  /** Env root folder, e.g. `/cella-production/` (display only; containers live in per-service folders). */
   path: string
   log?: (message: string) => void
 }
@@ -54,7 +57,7 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
   // missing so a live key is never leaked.
   const containerBySecretName = new Map<string, { id: string }>()
   for (const { secret } of targets) {
-    const container = await client.getSecretByName(secret.secretName, opts.path)
+    const container = await client.getSecretByName(secret.secretName, secretPathFor(secret, opts.slug, opts.mode))
     if (!container) {
       throw new Error(
         `${secret.secretName} (${secret.envVar}) has no container yet — run \`pulumi up\` so Pulumi creates it, then provision the ${definition.label} key.`,
@@ -64,7 +67,7 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
   }
 
   const minted = await provisionScopedKey(
-    { callerSecretKey: opts.callerSecretKey, projectId: opts.projectId, slug: opts.slug, log },
+    { callerSecretKey: opts.callerSecretKey, projectId: opts.projectId, slug: opts.slug, mode: opts.mode, log },
     {
       suffix: definition.suffix,
       appDescription: definition.appDescription,

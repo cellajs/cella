@@ -32,6 +32,9 @@ export const appServices = defineServices({
     // Private ACL-guarded LB frontend: in-network consumers (cdc) dial a stable
     // address that follows every cutover.
     internalRoute: true,
+    // Attachment uploads + presigned URLs are signed with the backend's own
+    // per-deploy service key (replaces the retired s3 managed key).
+    s3Access: true,
     // Per-service VM size (required on every service).
     instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },
     env: {

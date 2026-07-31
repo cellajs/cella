@@ -3,7 +3,7 @@ import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tagsAsMap, isProduction, serviceUrl } from '../pulumi-context'
 import { sizing } from '../config/sizing'
 import { services } from '../lib/services'
-import { ciDeployApplicationId, vmReaderApplicationId } from './vm-iam'
+import { adminApplicationId, backendServiceApplicationId, bootApplicationId, ciDeployApplicationId, legacyS3ApplicationId, vmReaderApplicationId } from './vm-iam'
 
 // The browser app origin allowed to call the upload buckets: the service that
 // owns the LB's default route (the SPA), resolved without naming a service.
@@ -12,27 +12,27 @@ if (!browserOriginSlug) throw new Error('storage: no service owns the LB default
 const browserOrigin = serviceUrl(browserOriginSlug)
 
 /**
- * Optional operator application id (SCW_OPERATOR_APPLICATION_ID). When set, this
- * IAM application is granted full S3 access on the CI-scoped bucket policies, so
- * an operator key under it can read/refresh buckets without being the CI deploy
+ * Admin application S3 access on the CI-scoped bucket policies, so a human key
+ * under the admin app can read/refresh buckets without being the CI deploy
  * app. Bucket policies are deny-by-default: without this, even an org-admin or
  * personal key 403s on ListObjects/GetBucketCors during `pulumi up --refresh`.
- * Empty = only the CI deploy app + public reads, the default.
+ * Resolved from IAM by name (vm-iam.ts) so local and CI ups produce the SAME
+ * policy — the old env-var source (backend/.env only) made the statement
+ * flip-flop between local and CI updates. Absent admin app = statement
+ * dropped (vm-iam warns once).
  */
-const operatorApplicationId: string | undefined = process.env.SCW_OPERATOR_APPLICATION_ID?.trim() || undefined
-
-// Optionally grant the operator application S3 access alongside CI in deny-by-default policies.
-// Omit its statement when unset so existing apps keep their policy unchanged.
-const operatorAccess = (bucketName: pulumi.Input<string>) =>
-  operatorApplicationId
-    ? [{
-        Sid: 'OperatorAccess',
-        Effect: 'Allow',
-        Principal: { SCW: `application_id:${operatorApplicationId}` },
-        Action: ['s3:*'],
-        Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
-      }]
-    : []
+const adminAccess = (bucketName: pulumi.Input<string>) =>
+  adminApplicationId.apply((adminId) =>
+    adminId
+      ? [{
+          Sid: 'AdminAccess',
+          Effect: 'Allow',
+          Principal: { SCW: `application_id:${adminId}` },
+          Action: ['s3:*'],
+          Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
+        }]
+      : [],
+  )
 
 // Full S3 access for the CI deploy application: the same statement on every
 // bucket policy (bucket policies are deny-by-default, so without it even the
@@ -44,6 +44,73 @@ const deployAccess = (bucketName: pulumi.Input<string>) => ({
   Action: ['s3:*'],
   Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
 })
+
+/**
+ * CI access on buckets holding irreplaceable user data (REQ-14): everything a
+ * deploy/refresh needs EXCEPT `s3:DeleteObjectVersion` — mirroring the state
+ * bucket, a leaked CI key can delete objects (recoverable markers on a
+ * versioned bucket) but cannot destroy version history. `PutBucketVersioning`
+ * stays granted: Pulumi (as CI) manages the versioning config itself, so
+ * denying it would break the up that applies this very posture — accepted
+ * residual: a leaked key can suspend FUTURE versioning, never erase history.
+ * The action list is the riskiest piece of this file: Scaleway's supported
+ * bucket-policy action vocabulary is not fully documented, so validate on
+ * staging before trusting it (fallback: revert to `s3:*`).
+ */
+const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
+  Sid: 'DeployAccess',
+  Effect: 'Allow',
+  Principal: { SCW: pulumi.interpolate`application_id:${ciDeployApplicationId}` },
+  Action: [
+    's3:ListBucket',
+    's3:ListBucketMultipartUploads',
+    's3:ListMultipartUploadParts',
+    's3:GetObject',
+    's3:PutObject',
+    's3:DeleteObject',
+    's3:AbortMultipartUpload',
+    's3:GetBucketTagging',
+    's3:PutBucketTagging',
+    's3:GetBucketVersioning',
+    's3:PutBucketVersioning',
+    's3:GetBucketCors',
+    's3:PutBucketCors',
+    's3:GetLifecycleConfiguration',
+    's3:PutLifecycleConfiguration',
+    's3:GetBucketAcl',
+    's3:GetBucketLocation',
+    's3:GetBucketWebsite',
+  ],
+  Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
+})
+
+/**
+ * Backend service-app statement on the uploads buckets (REQ-20): object-level
+ * only — the backend signs uploads and presigned URLs with its per-deploy
+ * service key. The legacy `<slug>-s3` managed-key app rides along until
+ * migration deletes it, so pre-migration backends keep signing. Both resolve
+ * gracefully (absent app = statement dropped).
+ */
+const uploadsSignerAccess = (bucketName: pulumi.Input<string>) =>
+  pulumi.all([backendServiceApplicationId, legacyS3ApplicationId]).apply(([backendId, s3Id]) =>
+    [backendId, s3Id]
+      .filter((id): id is string => !!id)
+      .map((id, index) => ({
+        Sid: index === 0 && backendId ? 'BackendObjectAccess' : 'LegacyS3ObjectAccess',
+        Effect: 'Allow',
+        Principal: { SCW: `application_id:${id}` },
+        Action: [
+          's3:ListBucket',
+          's3:ListBucketMultipartUploads',
+          's3:ListMultipartUploadParts',
+          's3:GetObject',
+          's3:PutObject',
+          's3:DeleteObject',
+          's3:AbortMultipartUpload',
+        ],
+        Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
+      })),
+  )
 
 // Expire stale hashed assets only after old browser tabs are unlikely to lazy-load them.
 // Root entry files stay outside this lifecycle prefix.
@@ -85,7 +152,7 @@ new scaleway.object.BucketPolicy('frontend-policy', {
   region,
   policy: pulumi.jsonStringify({
     Version: '2023-04-17',
-    Statement: [
+    Statement: adminAccess(frontendBucket.name).apply((admin) => [
       {
         Sid: 'PublicRead',
         Effect: 'Allow',
@@ -94,8 +161,8 @@ new scaleway.object.BucketPolicy('frontend-policy', {
         Resource: [pulumi.interpolate`${frontendBucket.name}/*`],
       },
       deployAccess(frontendBucket.name),
-      ...operatorAccess(frontendBucket.name),
-    ],
+      ...admin,
+    ]),
   }),
 }, { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }] })
 
@@ -106,7 +173,18 @@ const publicUploadsBucket = new scaleway.object.Bucket('public-uploads-bucket', 
   region,
   tags: tagsAsMap,
   forceDestroy: !isProduction,
-  versioning: { enabled: false },
+  // User uploads are irreplaceable: versioning + a noncurrent-expiry window is
+  // the backup floor (REQ-14) — overwrites/deletes are recoverable for 30
+  // days, and the CI statement below cannot delete versions.
+  versioning: { enabled: true },
+  lifecycleRules: [
+    {
+      id: 'cleanup-old-versions',
+      enabled: true,
+      noncurrentVersionExpiration: { noncurrentDays: 30 },
+      expiration: { expiredObjectDeleteMarker: true },
+    },
+  ],
   corsRules: [
     {
       allowedHeaders: ['*'],
@@ -123,7 +201,7 @@ new scaleway.object.BucketPolicy('public-uploads-policy', {
   region,
   policy: pulumi.jsonStringify({
     Version: '2023-04-17',
-    Statement: [
+    Statement: pulumi.all([adminAccess(publicUploadsBucket.name), uploadsSignerAccess(publicUploadsBucket.name)]).apply(([admin, signers]) => [
       {
         Sid: 'PublicRead',
         Effect: 'Allow',
@@ -131,9 +209,10 @@ new scaleway.object.BucketPolicy('public-uploads-policy', {
         Action: ['s3:GetObject'],
         Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
       },
-      deployAccess(publicUploadsBucket.name),
-      ...operatorAccess(publicUploadsBucket.name),
-    ],
+      deployAccessNoVersionDelete(publicUploadsBucket.name),
+      ...admin,
+      ...signers,
+    ]),
   }),
 }, { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }] })
 
@@ -144,7 +223,18 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
   region,
   tags: tagsAsMap,
   forceDestroy: !isProduction,
-  versioning: { enabled: false },
+  // Same backup floor as public uploads (REQ-14). This bucket stays
+  // policy-less (signed URLs only), so version protection here is IAM-side
+  // only until P3 adds the per-service backend statement.
+  versioning: { enabled: true },
+  lifecycleRules: [
+    {
+      id: 'cleanup-old-versions',
+      enabled: true,
+      noncurrentVersionExpiration: { noncurrentDays: 30 },
+      expiration: { expiredObjectDeleteMarker: true },
+    },
+  ],
   corsRules: [
     {
       allowedHeaders: ['*'],
@@ -155,7 +245,25 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
   ],
 }, { aliases: [{ type: 'scaleway:index/objectBucket:ObjectBucket' }] , protect: isProduction })
 
-// No public policy: access via signed URLs only.
+/**
+ * First-ever policy on the private bucket (P3): still NO public statement —
+ * signed URLs only — but now deny-by-default like every other bucket. Admitted:
+ * the upload signers (backend service app; legacy s3 app until migration),
+ * CI (without version deletes, REQ-14), and the admin app. Anything else —
+ * including a compromised VM's boot key or another service's key — is denied.
+ */
+new scaleway.object.BucketPolicy('private-uploads-policy', {
+  bucket: privateUploadsBucket.name,
+  region,
+  policy: pulumi.jsonStringify({
+    Version: '2023-04-17',
+    Statement: pulumi.all([adminAccess(privateUploadsBucket.name), uploadsSignerAccess(privateUploadsBucket.name)]).apply(([admin, signers]) => [
+      deployAccessNoVersionDelete(privateUploadsBucket.name),
+      ...admin,
+      ...signers,
+    ]),
+  }),
+})
 
 // Boot diagnostics bucket (VM write-only diagnostics channel)
 
@@ -180,17 +288,22 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
   region,
   policy: pulumi.jsonStringify({
     Version: '2023-04-17',
-    Statement: [
-      {
-        Sid: 'VmWriteBootDiagnostics',
-        Effect: 'Allow',
-        Principal: { SCW: pulumi.interpolate`application_id:${vmReaderApplicationId}` },
-        Action: ['s3:PutObject'],
-        Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/*`],
-      },
+    Statement: pulumi.all([adminAccess(bootDiagBucket.name), vmReaderApplicationId, bootApplicationId]).apply(([admin, vmReaderId, bootId]) => [
+      // Whichever VM-side principal exists writes diagnostics: the vm-reader
+      // (legacy) and/or the boot fetcher (v2). Both statements during a
+      // migration window is harmless overlap.
+      ...[vmReaderId, bootId]
+        .filter((id): id is string => !!id)
+        .map((id) => ({
+          Sid: id === bootId ? 'BootWriteBootDiagnostics' : 'VmWriteBootDiagnostics',
+          Effect: 'Allow',
+          Principal: { SCW: `application_id:${id}` },
+          Action: ['s3:PutObject'],
+          Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/*`],
+        })),
       deployAccess(bootDiagBucket.name),
-      ...operatorAccess(bootDiagBucket.name),
-    ],
+      ...admin,
+    ]),
   }),
 })
 

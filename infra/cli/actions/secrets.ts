@@ -66,6 +66,7 @@ export async function runSecrets(context: InfraContext): Promise<void> {
     projectId,
     region: appConfig.s3.region,
     slug: appConfig.slug,
+    mode: context.environment,
     path,
     prompts: { select: selectWithEscape, password: maskedSecret, confirm },
   })

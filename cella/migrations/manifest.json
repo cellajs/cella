@@ -352,6 +352,21 @@
         "pnpm check"
       ],
       "summary": "Relocate cella.config.ts, cella.manifest.json and cella.migrations.json from the repo root into the cella/ folder (cella/cella.config.ts, cella/cella.manifest.json, cella/cella.migrations.json). The @cellajs/cli release with cella/-folder discovery finds them there (config loader, MANIFEST_FILE, managed-file match); run.ts reads/writes the applied-set at cella/cella.migrations.json with a read-only fallback to the old root path. Manual git mv, no codemod; sync-breaking, no wire-shape or DB change. App localPath values still resolve against the repo root and the config contents are unchanged."
+    },
+    {
+      "id": "20260731T0844-iam-model-v2",
+      "version": "next",
+      "title": "IAM model v2: per-mode/per-service principals, per-deploy keys, S3 key retirement",
+      "kind": "manual",
+      "syncBreaking": false,
+      "clientCacheBump": false,
+      "roots": [
+        "infra"
+      ],
+      "requires": [
+        "pnpm check"
+      ],
+      "summary": "Operational migration: per-mode IAM principals in a group, admin app replaces operator, per-service secret folders with resource-level conditions, per-deploy key rotation + single-access handoff, s3 managed key and s3AccessKeyId/Secret removed (backend signs with its service key; S3_* env names unchanged). Run the infra CLI 'Migrate IAM model' per environment."
     }
   ]
 }

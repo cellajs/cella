@@ -21,35 +21,47 @@ function resetMocks() {
 }
 
 // biome-ignore lint/style/noNonNullAssertion: fixtures come straight from the real registry.
-const s3Key = managedKeys.find((key) => key.id === 's3')!
-// biome-ignore lint/style/noNonNullAssertion: fixtures come straight from the real registry.
+// biome-ignore lint/style/noNonNullAssertion: fixture comes straight from the real registry.
 const aiKey = managedKeys.find((key) => key.id === 'ai')!
+
+/** Synthetic two-half definition: the registry's s3 key is retired (REQ-20),
+ *  but the accessKey+secretKey assignment path must stay covered. Targets are
+ *  real registry ids so runtimeSecretById resolves them. */
+const pairKey = {
+  ...aiKey,
+  id: 'pair',
+  suffix: 'pair',
+  label: 'Pair fixture',
+  permissionSets: ['ObjectStorageFullAccess'] as const,
+  assign: { accessKey: 'adminEmail', secretKey: 'brevoApiKey' },
+} as unknown as typeof aiKey
 
 const baseOptions = {
   callerSecretKey: 'caller-secret',
   projectId: 'proj-1',
   region: 'nl-ams',
   slug: 'demo',
+  mode: 'production',
   path: '/demo-production/',
   log: vi.fn(),
 }
 
 describe('provisionManagedKey', () => {
-  it('mints a scoped key and writes both halves of an access/secret pair (S3)', async () => {
+  it('mints a scoped key and writes both halves of an access/secret pair', async () => {
     resetMocks()
     getSecretByName.mockImplementation(async (name: string) =>
-      ({ 's3-access-key-id': { id: 'container-id' }, 's3-access-key-secret': { id: 'container-secret' } })[name],
+      ({ 'admin-email': { id: 'container-id' }, 'brevo-api-key': { id: 'container-secret' } })[name],
     )
-    provisionScopedKey.mockResolvedValue({ accessKey: 'AK', secretKey: 'SK', applicationId: 'app-s3', organizationId: 'org-1' })
+    provisionScopedKey.mockResolvedValue({ accessKey: 'AK', secretKey: 'SK', applicationId: 'app-pair', organizationId: 'org-1' })
     putSecretValue.mockResolvedValue({ revision: 1 })
 
-    const result = await provisionManagedKey({ ...baseOptions, definition: s3Key })
+    const result = await provisionManagedKey({ ...baseOptions, definition: pairKey })
 
     // Scoped to Object Storage, in the caller's project, minting a key.
     expect(provisionScopedKey).toHaveBeenCalledTimes(1)
     // biome-ignore lint/style/noNonNullAssertion: asserted called exactly once above.
     const config = provisionScopedKey.mock.calls[0]![1]
-    expect(config).toMatchObject({ suffix: 's3', mintKey: true })
+    expect(config).toMatchObject({ suffix: 'pair', mintKey: true })
     expect(config.buildRules({ projectId: 'proj-1', organizationId: 'org-1' })).toEqual([
       { permission_set_names: ['ObjectStorageFullAccess'], project_ids: ['proj-1'] },
     ])
@@ -57,7 +69,7 @@ describe('provisionManagedKey', () => {
     // Access key → id container, secret key → secret container, each superseding prior versions.
     expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: 'container-id', value: 'AK', disablePrevious: true }))
     expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: 'container-secret', value: 'SK', disablePrevious: true }))
-    expect(result.applicationId).toBe('app-s3')
+    expect(result.applicationId).toBe('app-pair')
   })
 
   it('writes only the secret half for a single-token key (AI)', async () => {

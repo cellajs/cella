@@ -48,6 +48,16 @@ export interface EnsureSecretInput {
   path: string
   description: string
   protect?: boolean
+  /**
+   * Scaleway ephemeral policy, set at creation and irremovable afterwards.
+   * `expires_once_accessed: true` + action 'disable' = single-access versions:
+   * the first read disables the version — the handoff tamper alarm.
+   */
+  ephemeralPolicy?: {
+    expires_once_accessed: boolean
+    action: 'disable' | 'delete'
+    time_to_live?: string
+  }
 }
 
 export interface PutSecretValueInput {
@@ -88,6 +98,20 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
       return response.secrets
     },
 
+    /**
+     * Every secret at `root` or in a folder below it. The API's `path` filter
+     * is exact-match only, so subtree listing filters client-side over the
+     * project listing (per-service folders made env listings subtree-shaped).
+     */
+    async listSecretsUnder(root: string): Promise<SecretManagerSecret[]> {
+      const normalizedRoot = normalizeSecretPath(root)
+      const secrets = await this.listSecrets()
+      return secrets.filter((secret) => {
+        const path = normalizeSecretPath(secret.path)
+        return path === normalizedRoot || path.startsWith(`${normalizedRoot}/`)
+      })
+    },
+
     async getSecretByName(name: string, path: string): Promise<SecretManagerSecret | undefined> {
       const wantPath = normalizeSecretPath(path)
       const secrets = await this.listSecrets(path)
@@ -104,6 +128,7 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
         path: input.path,
         description: input.description,
         protected: input.protect ?? false,
+        ...(input.ephemeralPolicy ? { ephemeral_policy: input.ephemeralPolicy } : {}),
       })
     },
 

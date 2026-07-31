@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { deployedServices, serviceNames } from '../lib/services'
+import { BACKEND_S3_PERMISSION_SETS, BOOT_PROJECT_PERMISSION_SETS, SERVICE_SECRET_PERMISSION_SETS } from '../lib/scaleway/permissions'
+import { bootKeyCondition, serviceKeyCondition, vmSecretCondition } from '../lib/scaleway/vm-reader-secret'
 import { ALLOWED_KEYS, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env'
 
 const fakeAppConfig = {
@@ -36,7 +39,16 @@ describe('buildDeployEnv', () => {
       registry_ns: 'cella',
       frontend_bucket: 'cella-frontend',
       state_bucket: 'cella-pulumi-state',
-      vm_reader_app: 'cella-vm-reader',
+      vm_reader_app: 'cella-production-vm-reader',
+      vm_secret_condition: vmSecretCondition('cella', 'production', serviceNames),
+      vm_assert_json: JSON.stringify([
+        ...deployedServices(fakeAppConfig.services, false).map((svc) => ({
+          app: `cella-production-vm-${svc.slug}`,
+          sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
+          condition: serviceKeyCondition('cella', 'production', svc.slug),
+        })),
+        { app: 'cella-production-boot', sets: [...BOOT_PROJECT_PERMISSION_SETS, ...SERVICE_SECRET_PERMISSION_SETS], condition: bootKeyCondition('cella', 'production') },
+      ]),
       enabled_services_json: JSON.stringify([
         {
           service: 'backend',

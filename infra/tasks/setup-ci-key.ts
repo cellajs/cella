@@ -1,7 +1,7 @@
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env'
 import { isMain } from '../lib/utils/is-main'
 import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project'
-import { DNS_PERMISSION_SETS, ORG_SCOPED_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'
+import { CI_KEY_MINT_PERMISSION_SETS, DNS_PERMISSION_SETS, ORG_SCOPED_PERMISSION_SETS, PROJECT_PERMISSION_SETS, ciKeyMintCondition } from '../lib/scaleway/permissions'
 import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam'
 import { syncGithubEnvironment } from '../lib/github-sync'
 import { pc, DIVIDER, checkMark, warningMark } from '../lib/utils/cli-output'
@@ -9,6 +9,14 @@ import { pc, DIVIDER, checkMark, warningMark } from '../lib/utils/cli-output'
 export interface SetupCiKeyOptions extends ProvisionScopedKeyOptions {
   /** The stack's DNS zone; scopes the DNS grant to the projects that serve it. */
   dnsZone?: string
+  /** Deploy mode; per-mode CI apps keep staging/production keys independent. */
+  mode: string
+  /**
+   * Service + boot application ids (v2 model): adds the conditioned
+   * IAMApplicationManager rule so CI can rotate exactly those apps' keys per
+   * deploy — and nothing else (creates carry no matching resource.id).
+   */
+  keyMintAppIds?: readonly string[]
 }
 export type CiKeyResult = ScopedKeyResult
 
@@ -29,6 +37,13 @@ export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> 
       // rule): DNS is project-scoped, IAMReadOnly is organization-scoped.
       { permission_set_names: DNS_PERMISSION_SETS, project_ids: dnsProjectIds },
       { permission_set_names: ORG_SCOPED_PERMISSION_SETS, organization_id: organizationId },
+      // v2: per-deploy service-key rotation. STRICTLY conditioned to the
+      // known app ids (live-validated: mint on target ALLOW, mint elsewhere /
+      // create app / create policy DENY). Set via PUT /rules by the API layer;
+      // read back + asserted by warnOnCiPolicyDrift and assert-vm-grants.
+      ...(opts.keyMintAppIds && opts.keyMintAppIds.length > 0
+        ? [{ permission_set_names: CI_KEY_MINT_PERMISSION_SETS, organization_id: organizationId, condition: ciKeyMintCondition(opts.keyMintAppIds) }]
+        : []),
     ],
   })
 }
@@ -50,7 +65,7 @@ if (isMain(import.meta.url)) {
 
   console.info('\n→ Setting up CI deploy key')
   const { deriveInfra } = await import('../lib/naming')
-  const result = await setupCiKey({ callerSecretKey: secretKey, organizationId, projectId, slug: appConfig.slug, dnsZone: deriveInfra(appConfig).dnsZone })
+  const result = await setupCiKey({ callerSecretKey: secretKey, organizationId, projectId, slug: appConfig.slug, mode: appConfig.mode, dnsZone: deriveInfra(appConfig).dnsZone })
 
   const divider = pc.dim(DIVIDER)
   console.info(`\n${divider}`)

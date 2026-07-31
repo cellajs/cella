@@ -40,9 +40,10 @@ describe('managed key registry', () => {
     }
   })
 
-  it('wires the AI key to a single bearer secret and the S3 key to an access/secret pair', () => {
+  it('wires the AI key to a single bearer secret; the s3 key is retired (REQ-20)', () => {
     expect(managedKeyById('ai')?.assign).toEqual({ secretKey: 'scwAiApiKey' })
-    expect(managedKeyById('s3')?.assign).toEqual({ accessKey: 's3AccessKeyId', secretKey: 's3AccessKeySecret' })
+    // The backend signs S3 requests with its own per-deploy service key now.
+    expect(managedKeyById('s3')).toBeUndefined()
   })
 
   it('defineManagedKeys is a typed identity that preserves the app config', () => {
