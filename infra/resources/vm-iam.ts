@@ -7,9 +7,10 @@ import {
   BACKEND_S3_PERMISSION_SETS,
   BOOT_PROJECT_PERMISSION_SETS,
   SERVICE_SECRET_PERMISSION_SETS,
+  VM_PROJECT_PERMISSION_SETS,
 } from '../lib/scaleway/permissions'
-import { deployedServices, serviceNames } from '../lib/services'
-import { bootKeyCondition, serviceKeyCondition, vmSecretCondition } from '../lib/scaleway/vm-reader-secret'
+import { deployedServices } from '../lib/services'
+import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/vm-reader-secret'
 import { naming, mode, organizationId, projectId, tags } from '../pulumi-context'
 
 const names = principalNames(appConfig.slug, mode)
@@ -144,15 +145,16 @@ if (!iamModelV2) {
     // Set the org explicitly because the provider default org env may be absent
     // when only SCW_DEFAULT_PROJECT_ID is injected.
     organizationId,
+    // Byte-identical to the pre-rewrite policy: one project-scoped rule, NO
+    // resource condition. The vm-reader policy is bootstrap-owned (CI cannot
+    // write IAM), so a legacy stack must see zero diff here or CI's `pulumi up`
+    // 403s. Path-scoped secret reads are a v2-only feature (the per-service
+    // policies below), applied via the migration's bootstrap `Apply infra
+    // change` — never pushed onto a legacy stack by CI.
     rules: [
       {
-        permissionSetNames: ['ContainerRegistryReadOnly'],
+        permissionSetNames: [...VM_PROJECT_PERMISSION_SETS],
         projectIds: [projectId],
-      },
-      {
-        permissionSetNames: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
-        projectIds: [projectId],
-        condition: vmSecretCondition(naming.slug, mode, serviceNames),
       },
     ],
     tags,
