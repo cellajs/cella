@@ -2,12 +2,16 @@ import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tags, mode } from '../pulumi-context'
 import { runtimeSecrets, type RuntimeSecretDefinition, type RuntimeSecretId } from '../lib/runtime-secrets'
-import { secretManagerPath } from '../lib/scaleway/vm-reader-secret'
+import { secretPathFor } from '../lib/scaleway/vm-reader-secret'
 import { configuredOrRandomSecret } from './configured-secret'
 import { derivedRuntimeSecretData } from './stores'
 
-/** Folder path for secret organization, e.g. '/<slug>-production/' */
-const secretPath = secretManagerPath(naming.slug, mode)
+// Folder per secret (REQ-8): `/<slug>-<mode>/<service>/` for single-consumer
+// secrets, `/<slug>-<mode>/shared/` for multi-consumer ones. The path is the
+// security boundary (the VM grant is conditioned on these prefixes), so it is
+// derived from the consumer list, never hand-assigned. Path updates apply
+// in-place (same secret id — manifests and hydration are unaffected).
+const secretPath = (definition: RuntimeSecretDefinition) => secretPathFor(definition, naming.slug, mode)
 
 /**
  * Parses one-time imports for operator secret containers created outside Pulumi.
@@ -35,12 +39,13 @@ const operatorSecretImports = parseOperatorSecretImports(process.env.OPERATOR_SE
 
 function createSecretContainer(
   name: string,
+  path: string,
   description: string,
   opts?: { retainOnDelete?: boolean; importId?: string },
 ) {
   return new scaleway.secrets.Secret(`secret-${name}`, {
     name,
-    path: secretPath,
+    path,
     description,
     region,
     tags,
@@ -84,7 +89,7 @@ const secretResources = Object.fromEntries(runtimeSecrets.map((definition) => {
   const isOperator = definition.valueSource === 'operator'
 // Pulumi creates every secret container; operators add versions through the CLI.
 // Retain operator values when registry entries disappear, leaving manual orphan cleanup.
-  const secret = createSecretContainer(definition.secretName, definition.description, {
+  const secret = createSecretContainer(definition.secretName, secretPath(definition), definition.description, {
     retainOnDelete: isOperator,
     importId: isOperator ? operatorSecretImports[definition.secretName] : undefined,
   })

@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { isMain } from '../lib/utils/is-main'
 import { managedKeys } from '../lib/managed-keys'
 import { runtimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
+import { secretPathFor } from '../lib/scaleway/vm-reader-secret'
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager'
 import { provisionManagedKey } from './provision-managed-key'
 import { pc, checkMark, tildeMark, warningMark } from '../lib/utils/cli-output'
@@ -25,8 +26,11 @@ export interface ManageRuntimeSecretsOptions {
   secretKey: string
   projectId: string
   region: string
-  /** App slug that names the `<slug>-<suffix>` IAM app when minting a managed key. */
+  /** App slug that names the `<slug>-<mode>-<suffix>` IAM app when minting a managed key. */
   slug: string
+  /** Deploy mode: paths are per-service under the env root (REQ-8). */
+  mode: string
+  /** Env root folder (display + mint path), e.g. `/cella-production/`. */
   path: string
   prompts: RuntimeSecretPrompts
   log?: (message: string) => void
@@ -64,6 +68,7 @@ interface MenuContext {
   projectId: string
   region: string
   slug: string
+  mode: string
   log: (message: string) => void
 }
 
@@ -77,7 +82,7 @@ async function selectSecret(ctx: MenuContext, message: string, choices: ManagedR
 }
 
 async function handleList(ctx: MenuContext): Promise<void> {
-  const existing = await ctx.client.listSecrets(ctx.path)
+  const existing = await ctx.client.listSecretsUnder(ctx.path)
   const byName = new Map(existing.map((secret) => [secret.name, secret]))
   ctx.log(`\n${pc.bold('Runtime secrets')} ${pc.dim(ctx.path)}`)
   for (const secret of ctx.secrets) {
@@ -104,7 +109,7 @@ async function handleRotate(ctx: MenuContext): Promise<void> {
   // Pulumi owns container creation (resources/secrets.ts); refuse to create one
   // out-of-band here, since that would make the next `pulumi up` fail with
   // "secret already exists". Deploy first so the container exists, then rotate.
-  const existing = await ctx.client.getSecretByName(secret.secretName, ctx.path)
+  const existing = await ctx.client.getSecretByName(secret.secretName, secretPathFor(secret, ctx.slug, ctx.mode))
   if (!existing) {
     ctx.log(`${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. Deploy first so Pulumi creates it, then rotate.`)
     return
@@ -121,9 +126,9 @@ async function handleRotate(ctx: MenuContext): Promise<void> {
 async function handleDelete(ctx: MenuContext): Promise<void> {
   const secret = await selectSecret(ctx, 'Select a runtime secret to delete (Esc to go back)', ctx.secrets)
   if (!secret) return
-  const existingSecret = await ctx.client.getSecretByName(secret.secretName, ctx.path)
+  const existingSecret = await ctx.client.getSecretByName(secret.secretName, secretPathFor(secret, ctx.slug, ctx.mode))
   if (!existingSecret) {
-    ctx.log(`${tildeMark} ${secret.secretName} does not exist in ${ctx.path}`)
+    ctx.log(`${tildeMark} ${secret.secretName} does not exist in ${secretPathFor(secret, ctx.slug, ctx.mode)}`)
     return
   }
   const confirmed = await ctx.prompts.confirm({
@@ -143,7 +148,7 @@ async function handleSet(ctx: MenuContext): Promise<void> {
   if (!secret) return
     // Refuse out-of-band container creation because Pulumi owns it and would hit a duplicate.
     // Operators must deploy the empty container before setting its value.
-  const existingSecret = await ctx.client.getSecretByName(secret.secretName, ctx.path)
+  const existingSecret = await ctx.client.getSecretByName(secret.secretName, secretPathFor(secret, ctx.slug, ctx.mode))
   if (!existingSecret) {
     ctx.log(
       `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. ` +
@@ -207,6 +212,7 @@ async function handleMint(ctx: MenuContext): Promise<void> {
       projectId: ctx.projectId,
       region: ctx.region,
       slug: ctx.slug,
+      mode: ctx.mode,
       path: ctx.path,
       log: ctx.log,
     })
@@ -226,6 +232,7 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     projectId: options.projectId,
     region: options.region,
     slug: options.slug,
+    mode: options.mode,
     log: options.log ?? defaultLog,
   }
 

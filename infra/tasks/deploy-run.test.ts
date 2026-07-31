@@ -13,6 +13,7 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
     frontend_bucket: 'cella-frontend',
     state_bucket: 'cella-pulumi-state',
     vm_reader_app: 'cella-production-vm-reader',
+    vm_secret_condition: 'resource.name.startsWith("/cella-production/backend/")',
     enabled_services_json: JSON.stringify([
       { service: 'backend', public_url: 'https://www.cellajs.com/api' },
       { service: 'cdc', public_url: '' },

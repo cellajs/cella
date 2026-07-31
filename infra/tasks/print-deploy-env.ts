@@ -1,8 +1,9 @@
 import { isMain } from '../lib/utils/is-main'
 import type { EngineConfig } from '../config/engine-config'
 import { deriveInfra } from '../lib/naming'
-import { deployedServices, enabledServices, serviceEndpoints } from '../lib/services'
+import { deployedServices, enabledServices, serviceEndpoints, serviceNames } from '../lib/services'
 import { getFlag } from './args'
+import { vmSecretCondition } from '../lib/scaleway/vm-reader-secret'
 
 type Cfg = EngineConfig
 
@@ -16,6 +17,7 @@ export const ALLOWED_KEYS = [
   'frontend_bucket',
   'state_bucket',
   'vm_reader_app',
+  'vm_secret_condition',
   'enabled_services_json',
   'build_images_matrix',
   'primary_rollout_matrix',
@@ -81,6 +83,10 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     // pre-migration stacks). CI's "Verify VM reader IAM grant" step resolves
     // the application id by this name.
     vm_reader_app: `${appConfig.slug}-${appConfig.mode}-vm-reader`,
+    // Exact CEL condition the VM secret rules must carry (REQ-9); built by the
+    // same shared builder the Pulumi program uses, so the deploy's
+    // assert-vm-grants step compares strings, not semantics.
+    vm_secret_condition: vmSecretCondition(appConfig.slug, appConfig.mode, serviceNames),
     enabled_services_json: JSON.stringify(enabledServiceRows),
     build_images_matrix: JSON.stringify(buildImages),
     primary_rollout_matrix: JSON.stringify(primaryRollout),

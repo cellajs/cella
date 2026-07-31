@@ -9,7 +9,7 @@ import { sizing } from '../config/sizing'
 import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import type { ServiceDefinition } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
-import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from '../lib/scaleway/vm-reader-secret'
+import { engineSecretPath, secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from '../lib/scaleway/vm-reader-secret'
 import { resolveBootImage, type ResolvedBootImage } from '../lib/scaleway/boot-image'
 import { renderCloudInit } from './cloud-init'
 import { createComposeEnvBuilder } from './compose-env'
@@ -24,8 +24,13 @@ import { vmReaderPolicy } from './vm-iam'
 // Manager read) from Scaleway Secret Manager. Owned here: compute is its only
 // consumer, baking it into each generation's cloud-init.
 function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulumi.Output<string> } {
-  const secretPath = secretManagerPath(naming.slug, mode)
-  const container = scaleway.secrets.getSecretOutput({ name: VM_READER_SECRET_NAME, path: secretPath, region })
+  // Engine folder is canonical; pre-migration stacks seeded the container at
+  // the env root, so fall back rather than failing the deploy.
+  const container = pulumi.output(
+    scaleway.secrets
+      .getSecret({ name: VM_READER_SECRET_NAME, path: engineSecretPath(naming.slug, mode), region })
+      .catch(() => scaleway.secrets.getSecret({ name: VM_READER_SECRET_NAME, path: secretManagerPath(naming.slug, mode), region })),
+  )
   const payload = scaleway.secrets.getVersionOutput({ secretId: container.id, revision: 'latest', region }).data.apply(
     (data): VmReaderKeyPayload => {
       const parsed: unknown = JSON.parse(Buffer.from(data, 'base64').toString('utf8'))

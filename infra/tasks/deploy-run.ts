@@ -189,7 +189,7 @@ export async function runDeploy(
       await fx.update(stack)
     })
     await step('Verify VM reader IAM grant', () =>
-      fx.task('assert-vm-grants', ['--application-name', env.vm_reader_app, '--fallback-application-name', env.vm_reader_app.replace(`-${env.environment}-`, '-'), '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--organization-id', process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '']))
+      fx.task('assert-vm-grants', ['--application-name', env.vm_reader_app, '--fallback-application-name', env.vm_reader_app.replace(`-${env.environment}-`, '-'), '--secret-condition', env.vm_secret_condition, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--organization-id', process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '']))
     await step('Verify runtime secrets are deliverable', () =>
       fx.task('assert-secrets-deliverable', ['--region', env.region, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--services-json', env.enabled_services_json]))
 

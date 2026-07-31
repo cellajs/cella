@@ -75,7 +75,9 @@ export async function adoptOrphanedSecrets(opts: AdoptOrphanedSecretsOptions): P
   let liveByName: Map<string, { id: string; region?: string }>
   try {
     const client = createSecretManagerClient({ secretKey: opts.secretKey, region: opts.region, projectId: opts.projectId })
-    const secrets = await client.listSecrets(opts.path)
+    // Subtree listing: per-service folders (REQ-8) put containers below the
+    // env root, while pre-migration orphans still sit AT the root.
+    const secrets = await client.listSecretsUnder(opts.path)
     liveByName = new Map(secrets.map((secret) => [secret.name, { id: secret.id, region: secret.region }]))
   } catch (error) {
     log(`  (skipping secret adoption — could not list Secret Manager containers: ${errorMessage(error)})`)

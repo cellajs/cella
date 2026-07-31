@@ -1,7 +1,7 @@
 import { ADMIN_ORG_PERMISSION_SETS, ADMIN_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'
 import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam'
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager'
-import { secretManagerPath } from '../lib/scaleway/vm-reader-secret'
+import { engineSecretPath } from '../lib/scaleway/vm-reader-secret'
 
 /** Secret Manager container name for the admin key pair. */
 export const ADMIN_KEY_SECRET_NAME = 'admin-key'
@@ -40,7 +40,9 @@ export async function setupAdminApp(opts: SetupAdminAppOptions): Promise<AdminAp
   const client = createSecretManagerClient({ secretKey: opts.callerSecretKey, region: opts.region, projectId: opts.projectId })
   const container = await client.ensureSecret({
     name: ADMIN_KEY_SECRET_NAME,
-    path: secretManagerPath(opts.slug, opts.mode),
+    // Engine folder: outside the VM secret condition — a VM must never be
+    // able to read the admin key.
+    path: engineSecretPath(opts.slug, opts.mode),
     description: 'Admin IAM key pair (bucket access + infra reads) — retrieve with a bootstrap key when needed',
   })
   await client.putSecretValue({

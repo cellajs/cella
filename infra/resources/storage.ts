@@ -45,6 +45,45 @@ const deployAccess = (bucketName: pulumi.Input<string>) => ({
   Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
 })
 
+/**
+ * CI access on buckets holding irreplaceable user data (REQ-14): everything a
+ * deploy/refresh needs EXCEPT `s3:DeleteObjectVersion` — mirroring the state
+ * bucket, a leaked CI key can delete objects (recoverable markers on a
+ * versioned bucket) but cannot destroy version history. `PutBucketVersioning`
+ * stays granted: Pulumi (as CI) manages the versioning config itself, so
+ * denying it would break the up that applies this very posture — accepted
+ * residual: a leaked key can suspend FUTURE versioning, never erase history.
+ * The action list is the riskiest piece of this file: Scaleway's supported
+ * bucket-policy action vocabulary is not fully documented, so validate on
+ * staging before trusting it (fallback: revert to `s3:*`).
+ */
+const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
+  Sid: 'DeployAccess',
+  Effect: 'Allow',
+  Principal: { SCW: pulumi.interpolate`application_id:${ciDeployApplicationId}` },
+  Action: [
+    's3:ListBucket',
+    's3:ListBucketMultipartUploads',
+    's3:ListMultipartUploadParts',
+    's3:GetObject',
+    's3:PutObject',
+    's3:DeleteObject',
+    's3:AbortMultipartUpload',
+    's3:GetBucketTagging',
+    's3:PutBucketTagging',
+    's3:GetBucketVersioning',
+    's3:PutBucketVersioning',
+    's3:GetBucketCors',
+    's3:PutBucketCors',
+    's3:GetLifecycleConfiguration',
+    's3:PutLifecycleConfiguration',
+    's3:GetBucketAcl',
+    's3:GetBucketLocation',
+    's3:GetBucketWebsite',
+  ],
+  Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
+})
+
 // Expire stale hashed assets only after old browser tabs are unlikely to lazy-load them.
 // Root entry files stay outside this lifecycle prefix.
 const assetRetentionDays = sizing.assetRetentionDays
@@ -106,7 +145,18 @@ const publicUploadsBucket = new scaleway.object.Bucket('public-uploads-bucket', 
   region,
   tags: tagsAsMap,
   forceDestroy: !isProduction,
-  versioning: { enabled: false },
+  // User uploads are irreplaceable: versioning + a noncurrent-expiry window is
+  // the backup floor (REQ-14) — overwrites/deletes are recoverable for 30
+  // days, and the CI statement below cannot delete versions.
+  versioning: { enabled: true },
+  lifecycleRules: [
+    {
+      id: 'cleanup-old-versions',
+      enabled: true,
+      noncurrentVersionExpiration: { noncurrentDays: 30 },
+      expiration: { expiredObjectDeleteMarker: true },
+    },
+  ],
   corsRules: [
     {
       allowedHeaders: ['*'],
@@ -131,7 +181,7 @@ new scaleway.object.BucketPolicy('public-uploads-policy', {
         Action: ['s3:GetObject'],
         Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
       },
-      deployAccess(publicUploadsBucket.name),
+      deployAccessNoVersionDelete(publicUploadsBucket.name),
       ...admin,
     ]),
   }),
@@ -144,7 +194,18 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
   region,
   tags: tagsAsMap,
   forceDestroy: !isProduction,
-  versioning: { enabled: false },
+  // Same backup floor as public uploads (REQ-14). This bucket stays
+  // policy-less (signed URLs only), so version protection here is IAM-side
+  // only until P3 adds the per-service backend statement.
+  versioning: { enabled: true },
+  lifecycleRules: [
+    {
+      id: 'cleanup-old-versions',
+      enabled: true,
+      noncurrentVersionExpiration: { noncurrentDays: 30 },
+      expiration: { expiredObjectDeleteMarker: true },
+    },
+  ],
   corsRules: [
     {
       allowedHeaders: ['*'],

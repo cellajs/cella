@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { serviceNames } from '../lib/services'
+import { vmSecretCondition } from '../lib/scaleway/vm-reader-secret'
 import { ALLOWED_KEYS, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env'
 
 const fakeAppConfig = {
@@ -37,6 +39,7 @@ describe('buildDeployEnv', () => {
       frontend_bucket: 'cella-frontend',
       state_bucket: 'cella-pulumi-state',
       vm_reader_app: 'cella-production-vm-reader',
+      vm_secret_condition: vmSecretCondition('cella', 'production', serviceNames),
       enabled_services_json: JSON.stringify([
         {
           service: 'backend',

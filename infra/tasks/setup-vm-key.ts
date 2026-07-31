@@ -1,6 +1,6 @@
 import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam'
 import { isMain } from '../lib/utils/is-main'
-import { secretManagerPath } from '../lib/scaleway/vm-reader-secret'
+import { engineSecretPath } from '../lib/scaleway/vm-reader-secret'
 import { seedVmReaderKey } from './seed-vm-reader-key'
 import { pc, DIVIDER, checkMark } from '../lib/utils/cli-output'
 
@@ -40,8 +40,9 @@ if (isMain(import.meta.url)) {
   const result = await setupVmKey({ callerSecretKey: secretKey, organizationId, projectId, slug: appConfig.slug, mode: appConfig.mode })
 
   // Store the key pair in Secret Manager so the Pulumi program can read it
-  // during `pulumi up` and bake it into VM cloud-init.
-  const path = secretManagerPath(appConfig.slug, appConfig.mode)
+  // during `pulumi up` and bake it into VM cloud-init. Engine folder: outside
+  // the VM secret condition, so VMs can never read their own key container.
+  const path = engineSecretPath(appConfig.slug, appConfig.mode)
   await seedVmReaderKey({
     secretKey,
     projectId,

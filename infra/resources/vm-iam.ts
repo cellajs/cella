@@ -3,7 +3,8 @@ import * as scaleway from '@pulumiverse/scaleway'
 import { engineConfig } from '../config/engine-config'
 const appConfig = engineConfig()
 import { principalNames } from '../lib/scaleway/principals'
-import { VM_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'
+import { serviceNames } from '../lib/services'
+import { vmSecretCondition } from '../lib/scaleway/vm-reader-secret'
 import { naming, mode, organizationId, projectId, tags } from '../pulumi-context'
 
 const names = principalNames(appConfig.slug, mode)
@@ -73,12 +74,25 @@ export const adminApplicationId: pulumi.Output<string | undefined> = resolvePrin
   return undefined
 })
 
-/** Build the single project-scoped policy rule for the VM reader. */
+/**
+ * Build the project-scoped policy rules for the VM reader. Registry pull is
+ * unconditioned; Secret Manager access carries a resource-level condition
+ * restricting value reads to the service/shared folders (REQ-8) — engine
+ * credentials (admin-key, vm-reader-key under /engine/) stay unreadable from
+ * VMs. Conditions only narrow: `assert-vm-grants` additionally verifies no
+ * OTHER (unconditioned) policy grants this app secret access, because one
+ * such policy would silently un-scope this one (union semantics).
+ */
 function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types.input.iam.PolicyRule[] {
   return [
     {
-      permissionSetNames: [...VM_PROJECT_PERMISSION_SETS],
+      permissionSetNames: ['ContainerRegistryReadOnly'],
       projectIds: [scopeProjectId],
+    },
+    {
+      permissionSetNames: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
+      projectIds: [scopeProjectId],
+      condition: vmSecretCondition(naming.slug, mode, serviceNames),
     },
   ]
 }

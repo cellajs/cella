@@ -16,7 +16,7 @@ import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets'
 import { managedKeys, type ManagedKeyId } from '../../lib/managed-keys'
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager'
 import { maskedSecret } from '../prompts/masked-secret'
-import { secretManagerPath, VM_READER_SECRET_NAME } from '../../lib/scaleway/vm-reader-secret'
+import { engineSecretPath, secretManagerPath, VM_READER_SECRET_NAME } from '../../lib/scaleway/vm-reader-secret'
 import { provisionManagedKey } from '../../tasks/provision-managed-key'
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets'
 import { seedVmReaderKey } from '../../tasks/seed-vm-reader-key'
@@ -76,7 +76,7 @@ interface CiKeyResult {
 async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
   try {
     const client = createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId })
-    const existing = await client.listSecrets(ctx.runtimeSecretPath)
+    const existing = await client.listSecretsUnder(ctx.runtimeSecretPath)
     const versioned = new Set(existing.filter((secret) => (secret.version_count ?? 0) > 0).map((secret) => secret.name))
     const missing = operatorManagedRuntimeSecrets.filter((secret) => secret.required && !versioned.has(secret.secretName))
     if (missing.length > 0) {
@@ -139,7 +139,11 @@ async function ensureVmKey(ctx: SetupContext, needsCiKey: boolean): Promise<stri
   if (!needsCiKey) {
     try {
       const client = createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId })
-      const existing = await client.getSecretByName(VM_READER_SECRET_NAME, ctx.runtimeSecretPath)
+      const enginePath = engineSecretPath(ctx.appConfig.slug, ctx.context.environment)
+      const existing =
+        (await client.getSecretByName(VM_READER_SECRET_NAME, enginePath)) ??
+        // Pre-migration stacks seeded the key at the env root.
+        (await client.getSecretByName(VM_READER_SECRET_NAME, ctx.runtimeSecretPath))
       hasVmKey = (existing?.version_count ?? 0) > 0
     } catch {
       hasVmKey = true
@@ -162,7 +166,7 @@ async function ensureVmKey(ctx: SetupContext, needsCiKey: boolean): Promise<stri
         secretKey: vmCallerSecretKey,
         projectId: ctx.projectId,
         region: ctx.appConfig.s3.region,
-        path: ctx.runtimeSecretPath,
+        path: engineSecretPath(ctx.appConfig.slug, ctx.context.environment),
         key: { accessKey: key.accessKey, secretKey: key.secretKey },
       })
       return key.accessKey
@@ -254,6 +258,7 @@ async function provisionConfirmedManagedKeys(ctx: SetupContext, mintDecisions: M
         projectId: ctx.projectId,
         region: ctx.appConfig.s3.region,
         slug: ctx.appConfig.slug,
+        mode: ctx.context.environment,
         path: ctx.runtimeSecretPath,
       })
       console.info(`  ${checkMark} Minted ${key.label} ${pc.dim(`(app ${result.applicationId})`)}`)
@@ -337,7 +342,8 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
     secretKey: ctx.secretKey,
     projectId: ctx.projectId,
     region: ctx.appConfig.s3.region,
-    path: ctx.runtimeSecretPath,
+    slug: ctx.appConfig.slug,
+    mode: ctx.context.environment,
     values: {
       adminEmail: inputs.operatorSecrets.adminEmail || undefined,
       brevoApiKey: inputs.operatorSecrets.brevoApiKey || undefined,

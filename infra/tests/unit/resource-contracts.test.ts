@@ -115,10 +115,11 @@ describe('secrets module', () => {
   })
 
   it('namespaces every secret under the slug/mode path', () => {
-    expect(secrets).toContain('const secretPath = secretManagerPath(naming.slug, mode)')
+    expect(secrets).toContain('const secretPath = (definition: RuntimeSecretDefinition) => secretPathFor(definition, naming.slug, mode)')
     expect(vmReaderSecret).toMatch(/return `\/\$\{slug\}-\$\{mode\}\/`/)
-    // The Secret resource must set path: secretPath so secrets never land at root.
-    expect(secrets).toMatch(/path:\s*secretPath/)
+    // The Secret resource must take a per-definition path so secrets never land at root.
+    expect(secrets).toMatch(/path,/)
+    expect(secrets).toContain('secretPath(definition)')
   })
 
   it('writes SecretVersions only through the createSecretVersion helper', () => {

@@ -88,6 +88,20 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
       return response.secrets
     },
 
+    /**
+     * Every secret at `root` or in a folder below it. The API's `path` filter
+     * is exact-match only, so subtree listing filters client-side over the
+     * project listing (per-service folders made env listings subtree-shaped).
+     */
+    async listSecretsUnder(root: string): Promise<SecretManagerSecret[]> {
+      const normalizedRoot = normalizeSecretPath(root)
+      const secrets = await this.listSecrets()
+      return secrets.filter((secret) => {
+        const path = normalizeSecretPath(secret.path)
+        return path === normalizedRoot || path.startsWith(`${normalizedRoot}/`)
+      })
+    },
+
     async getSecretByName(name: string, path: string): Promise<SecretManagerSecret | undefined> {
       const wantPath = normalizeSecretPath(path)
       const secrets = await this.listSecrets(path)

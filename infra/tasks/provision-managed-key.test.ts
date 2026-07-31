@@ -30,6 +30,7 @@ const baseOptions = {
   projectId: 'proj-1',
   region: 'nl-ams',
   slug: 'demo',
+  mode: 'production',
   path: '/demo-production/',
   log: vi.fn(),
 }
